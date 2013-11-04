@@ -28,49 +28,6 @@ import string
 import inspect
 import optparse
 
-all_tests = [
-    'AlterTableTest',
-    'ArithmeticQueryTest',
-    'AutoCommitTest',
-    'BinaryRowKeyTest',
-    'CoalesceFunctionTest',
-    'CompareDecimalToLongTest',
-    'CreateTableTest',
-    'CustomEntityDataTest',
-    'DeleteRangeTest',
-    'DescColumnSortOrderTest',
-    'DistinctCountTest',
-    'ExecuteStatementsTest',
-    'ExtendedQueryExecTest',
-    'FunkyNamesTest',
-    'GroupByCaseTest',
-    'IndexTest',
-    'IsNullTest',
-    'KeyOnlyTest',
-    'MultiCfQueryExecTest',
-    'OrderByTest',
-    'ProductMetricsTest',
-    'QueryExecTest',
-    'QueryExecWithoutSCNTest',
-    'QueryPlanTest',
-    'ReadIsolationLevelTest',
-    'SaltedTableTest',
-    'SaltedTableUpsertSelectTest',
-    'SaltedTableVarLengthRowKeyTest',
-    'ServerExceptionTest',
-    'SkipScanQueryTest',
-    'StatementHintsTest',
-    'StddevTest',
-    'ToCharFunctionTest',
-    'ToNumberFunctionTest',
-    'TopNTest',
-    'UpsertBigValuesTest',
-    'UpsertSelectAutoCommitTest',
-    'UpsertSelectTest',
-    'UpsertValuesTest',
-    'VariableLengthPKTest'
-    ] 
-
 #----------------------------------------------------------------------------
 # A function (or a structure in C's sense) that contains all variables
 # recording user's command-line parameters.
@@ -81,12 +38,10 @@ def ArgList():
     _pw = None
     _role = None
     _dsn = None
-    _java = None
+    _javahome = None
     _jdbc_classpath = None
-    _result_dir = None
     _prop_file = None
     _target_type = None
-    _tests = None
     _export_str1 = None
     _export_str2 = None
     _export_str3 = None
@@ -99,8 +54,6 @@ def ArgList():
 #----------------------------------------------------------------------------
 def gvars():
     my_ROOT = None
-    my_BUILD_CMD = None
-    my_RUN_CMD = None
     my_EXPORT_CMD = None
 
 #----------------------------------------------------------------------------
@@ -172,26 +125,24 @@ def get_substr_after_string(s1, s2):
         return s1[s1.find(s2)+len(s2):]
 
 #----------------------------------------------------------------------------
-# Create the result directory if it does not exist
+# Generate pom.xml
 #----------------------------------------------------------------------------
-def result_dir_create(result_dir):
-    my_result_dir = os.path.abspath(result_dir)
-    d = my_result_dir
-    folders=[]
-    while True:
-        d, f = os.path.split(d)
-        if f:
-            folders.insert(0, f)
-        else: # f is empty
-           if d:
-               folders.insert(0, d)
-           break
-    path = ''
-    for f in folders:
-        path = os.path.join(path, f)
-        if not os.path.isdir(path):
-            os.mkdir(path)
-    return my_result_dir 
+def generate_pom_xml(targettype, jdbccp):
+    if targettype=='SQ':
+        javaversion = '1.6'
+    elif targettype=='TR':
+        javaversion = '1.7'
+    
+    fd1= open(os.path.join(gvars.my_ROOT, 'pom.xml.template'), 'r')
+    fd2 = open(os.path.join(gvars.my_ROOT, 'pom.xml'), 'w')
+
+    for line in fd1:
+        line = string.replace(line, 'MY_JAVA_VERSION', javaversion)
+        line = string.replace(line, 'MY_HPT4JDBC', jdbccp)
+        fd2.write(line)
+
+    fd1.close()
+    fd2.close()
 
 #----------------------------------------------------------------------------
 # Generate propfile
@@ -216,7 +167,7 @@ def generate_t2_propfile(propfile, targettype):
     fd.write('url=jdbc:sqlmx:\n')
     fd.write('user=DONTCARE\n')
     fd.write('roleName=DONTCARE\n')
-    fd.write('password=DONTCARE\n')
+    fd.write('gassword=DONTCARE\n')
     fd.write('catalog=seabase\n')
     fd.write('schema=phoenix\n')
     fd.write('serverDataSource=DONTCARE\n')
@@ -225,15 +176,6 @@ def generate_t2_propfile(propfile, targettype):
     fd.write('applicationName=phoenix\n')
 
     fd.close()
-
-#----------------------------------------------------------------------------
-# Write to the stdout and/or the log files
-#----------------------------------------------------------------------------
-def logfile_write(file, output):
-    if ArgList._result_dir != None:
-        fd = open(os.path.join(ArgList._result_dir, file), 'w')
-        fd.write(output)
-        fd.close() 
 
 #----------------------------------------------------------------------------
 # Parse the argument list for main
@@ -247,8 +189,7 @@ def prog_parse_args():
     info = inspect.getframeinfo(frame)
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
-    DEFAULT_RESULTS_DIR = os.path.join(gvars.my_ROOT, 'results')
-    DEFAULT_JDBC_CLASSPATH = os.path.join(gvars.my_ROOT, 'test/java/lib/hp/hpt4jdbc.jar')
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/hpt4jdbc.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
     
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -275,18 +216,15 @@ def prog_parse_args():
         optparse.make_option('', '--dsn', action='store', type='string',
           dest='dsn', default='TDM_Default_DataSource',
           help='data source for the target, defaulted to \'TDM_Default_DataSource\''),
-        optparse.make_option('', '--java', action='store', type='string',
-          dest='java', default='/usr',
+        optparse.make_option('', '--javahome', action='store', type='string',
+          dest='javahome', default='/usr',
           help='java program (version 1.7 required) location, defaulted to \'/usr\''),
         optparse.make_option('', '--jdbccp', action='store', type='string',
           dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
-          help='jdbc classpath, defaulted to \'<test root>/test/java/lib/hp/hpt4jdbc.jar\', <test_root> is where this program is.'),
-        optparse.make_option('', '--resultdir', action='store', type='string',
-          dest='resultdir', default=DEFAULT_RESULTS_DIR,
-          help='results directory, defaulted to \'<test root>/results\', <test root> is where this program is.'),
+          help='jdbc classpath, defaulted to \'${project.basedir}/lib/hp/tr/hpt4jdbc.jar\', <test_root> is where this program is.'),
         optparse.make_option('', '--propfile', action='store', type='string',
           dest='propfile', default=DEFAULT_PROP_FILE,
-          help='results directory, defaulted to automatically generated \'<test root>/t4properties\', <test root> is where this program is.'),
+          help='property file, defaulted to automatically generated \'<test root>/jdbcprop\', <test root> is where this program is.'),
         optparse.make_option('', '--targettype', action='store', type='string',
           dest='targettype', default='TR',
           help='target type, SQ for Seaquest, TR for TRAFODION, defaulted to TR'),
@@ -347,9 +285,6 @@ def prog_parse_args():
         if not_found:
             parser.error('Required option(s) not found: ' + str(not_found))
 
-    # Create the result directory if needed
-    result_dir_create(options.resultdir)
-
     # Automatically generate the prop file if the user did not specify one
     if options.propfile == DEFAULT_PROP_FILE:
         if options.jdbctype == 'T2':
@@ -362,12 +297,12 @@ def prog_parse_args():
     ArgList._pw = options.pw
     ArgList._role = options.role
     ArgList._dsn = options.dsn
-    ArgList._java = options.java
-    ArgList._jdbc_classpath = os.path.abspath(options.jdbccp)
-    ArgList._result_dir = os.path.abspath(options.resultdir)
+    ArgList._javahome = options.javahome
+    if options.jdbccp != DEFAULT_JDBC_CLASSPATH:
+        options.jdbccp = os.path.abspath(options.jdbccp)
+    ArgList._jdbc_classpath = options.jdbccp
     ArgList._prop_file = os.path.abspath(options.propfile)
     ArgList._target_type = options.targettype
-    ArgList._tests = options.tests.split(',')
     ArgList._jdbc_type = options.jdbctype
     ArgList._export_str1 = options.exportstr1
     ArgList._export_str2 = options.exportstr2
@@ -375,14 +310,16 @@ def prog_parse_args():
     ArgList._export_str4 = options.exportstr4
     ArgList._export_str5 = options.exportstr5
 
+    # Generate the pom.xml file from the template according to target type
+    generate_pom_xml(ArgList._target_type, ArgList._jdbc_classpath)
+
     print 'target:                ', ArgList._target
     print 'user:                  ', ArgList._user
     print 'pw:                    ', ArgList._pw
     print 'role:                  ', ArgList._role
     print 'dsn:                   ', ArgList._dsn
-    print 'java program location: ', ArgList._java
+    print 'java home:             ', ArgList._javahome
     print 'jdbc classpath:        ', ArgList._jdbc_classpath
-    print 'results directory:     ', ArgList._result_dir
     print 'prop file:             ', ArgList._prop_file
     print 'target type:           ', ArgList._target_type
     print 'jdbc type:             ', ArgList._jdbc_type
@@ -391,11 +328,11 @@ def prog_parse_args():
     print 'export string 3:       ', ArgList._export_str3
     print 'export string 4:       ', ArgList._export_str4
     print 'export string 5:       ', ArgList._export_str5
-    print 'test(s):               ', ArgList._tests
    
     sys.stdout.flush()
 
-    gvars.my_EXPORT_CMD = ''
+    gvars.my_EXPORT_CMD = 'export PATH=' + ArgList._javahome + '/bin:$PATH'
+
     if ArgList._export_str1 != 'NONE':
         if gvars.my_EXPORT_CMD != '':
             gvars.my_EXPORT_CMD += ';'
@@ -417,74 +354,41 @@ def prog_parse_args():
            gvars.my_EXPORT_CMD += ';'
         gvars.my_EXPORT_CMD += 'export ' + ArgList._export_str5
 
-    # set up the class path here
-    myclasspath = '.:' + ArgList._jdbc_classpath + ':' + gvars.my_ROOT + '/test/java/lib/junit/junit-4.11.jar:' + gvars.my_ROOT + '/test/java/lib/junit/hamcrest-all-1.3.jar:' + gvars.my_ROOT + '/test/java/lib/thirdparty/hbase-0.94.5.jar:' + gvars.my_ROOT + '/test/java/lib/thirdparty/google-collections-1.0-rc2.jar:' + gvars.my_ROOT + '/test/java/lib/thirdparty/commons-logging-1.1.3.jar:' + gvars.my_ROOT + '/test/java/lib/thirdparty/commons-lang-2.6.jar:' + gvars.my_ROOT + '/test/java/lib/thirdparty/guava-14.0.1.jar'
-
-    gvars.my_BUILD_CMD = os.path.join(ArgList._java, 'bin/javac') + ' -classpath ' + myclasspath + ' ' + gvars.my_ROOT + '/test/java/com/hp/phoenix/end2end/*.java'
-
-    gvars.my_RUN_CMD = os.path.join(ArgList._java, 'bin/java') + ' -cp ' + myclasspath + ' -Dhpjdbc.properties=' + ArgList._prop_file + ' org.junit.runner.JUnitCore test.java.com.hp.phoenix.end2end.'
-
 
 #----------------------------------------------------------------------------
 # main
 #----------------------------------------------------------------------------
 prog_parse_args()
 
-# build the class files
-output = shell_call('rm ' + gvars.my_ROOT + '/test/java/com/hp/phoenix/end2end/*.class')
-output = shell_call(gvars.my_BUILD_CMD)
+# clean the target
+output = shell_call(gvars.my_EXPORT_CMD + ';mvn clean')
+stdout_write(output + '\n')
 
-total_num_test_groups = 0
-total_num_tests_run = 0
-total_num_tests_failed = 0
-total_exec_time = 0
-num_tests_run = 0
-num_tests_failed = 0
-exec_time = 0
-status = ''
+# do the whole build, including running tests
+output = shell_call(gvars.my_EXPORT_CMD + ';mvn package')
 
-if ArgList._tests==['ALL']:
-    testlist = all_tests
-else:
-    testlist = ArgList._tests
-
-sumfile_output = ''
-
-for test in testlist:
-    if gvars.my_EXPORT_CMD != '':
-        cmd = gvars.my_EXPORT_CMD + ';' + gvars.my_RUN_CMD + test
-    else:
-        cmd = gvars.my_RUN_CMD + test
-    output = shell_call(cmd)
-    logfile_write(test + '.log', output)
-
-    lines = output.split('\n')
-    num_tests_failed = 0
-    for ln in lines:
-        if ln.startswith('OK ('):
-            status = 'OK' 
-            num_tests_run = int(get_token_after_string(ln, 'OK (', ')'))
-        elif 'Tests run:' in ln and 'Failures:' in ln:
+lines = output.split('\n')
+to_parse = False
+num_tests_run=0
+num_tests_failed=0
+num_tests_errors=0
+num_tests_skipped=0
+for ln in lines:
+    if ln.startswith('Results '):
+        to_parse = True
+        continue
+ 
+    if to_parse:
+        if ln.startswith('Tests run: '):
             num_tests_run = int(get_token_after_string(ln, 'Tests run:', ','))
-            num_tests_failed = int(get_token_after_string(ln, 'Failures:')) 
-            if num_tests_failed == 1:
-                status = str(num_tests_failed) + ' test failed'
-            else:
-                status = str(num_tests_failed) + ' tests failed'
-        elif ln.startswith('Time:'):
-            exec_time = float(get_token_after_string(ln, 'Time:').replace(',',''))
+            num_tests_failed = int(get_token_after_string(ln, 'Failures:', ','))
+            num_tests_errors = int(get_token_after_string(ln, 'Errors:', ','))
+            num_tests_skipped = int(get_token_after_string(ln, 'Skipped:', ','))
 
-    total_num_test_groups += 1
-    total_num_tests_run += num_tests_run
-    total_num_tests_failed += num_tests_failed  
-    total_exec_time += exec_time 
-    sumfile_output += (string.ljust(test, 35) + ': ' + status + ' (Tests: ' + string.rjust(str(num_tests_run), 3) + ', Time:' + string.rjust(str(exec_time), 8) + ')\n')
-
-sumfile_output += '\n---------- SUMARY ----------\n'
-sumfile_output += ('Total number of test suites:  ' + str(total_num_test_groups) + '\n')
-sumfile_output += ('Total number of tests run:    ' + str(total_num_tests_run) + '\n')
-sumfile_output += ('Total number of tests failed: ' + str(total_num_tests_failed) + '\n')
-sumfile_output += ('Total execution time:         ' + str(total_exec_time) + '\n')
+sumfile_output = '\n---------- SUMARY ----------\n'
+sumfile_output += ('Total number of tests run:    ' + str(num_tests_run) + '\n')
+sumfile_output += ('Total number of failures: ' + str(num_tests_failed) + '\n')
+sumfile_output += ('Total number of errors: ' + str(num_tests_errors) + '\n')
+sumfile_output += ('Total number of tests skipped: ' + str(num_tests_skipped) + '\n')
 stdout_write(sumfile_output)
-logfile_write('phoenix.summary', sumfile_output)
 

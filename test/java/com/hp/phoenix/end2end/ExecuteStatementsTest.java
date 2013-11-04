@@ -119,8 +119,7 @@ public class ExecuteStatementsTest extends BaseTest {
 
             "alter table " + PTSDB_NAME + " add IF NOT EXISTS val1 decimal;\n", // Shouldn't error out b/c of if not exists clause 
 
-// TRAF "alter table " + PTSDB_NAME + " drop column if exists blah;\n",  // Shouldn't error out b/c of if exists clause
-            "alter table " + PTSDB_NAME + " drop column val1;\n",
+            "alter table " + PTSDB_NAME + " drop column if exists blah;\n",  // Shouldn't error out b/c of if exists clause
 
             "drop table IF EXISTS FOO.BAR;\n", // Shouldn't error out b/c of if exists clause
 
