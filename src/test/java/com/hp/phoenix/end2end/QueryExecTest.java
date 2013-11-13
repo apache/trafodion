@@ -822,7 +822,7 @@ public class QueryExecTest extends BaseTest {
 
         String query = null;
         if (tgtPH()) query = "SELECT a_integer,b_string FROM atable WHERE organization_id=? and a_integer <= 5 limit 2";
-        else if (tgtTR()) query = "SELECT [first 2] a_integer,b_string FROM atable WHERE organization_id=? and a_integer <= 5 order by 1";
+        else if (tgtTR()) query = "SELECT a_integer,b_string FROM atable WHERE organization_id=? and a_integer <= 5 order by 1 limit 2";
         else if (tgtSQ()) query = "SELECT [first 2] a_integer,b_string FROM atable WHERE organization_id=? and a_integer <= 5 order by 1";
         PreparedStatement statement = conn.prepareStatement(query);
         statement.setString(1, tenantId);
@@ -1058,7 +1058,7 @@ public class QueryExecTest extends BaseTest {
         initATableValues();
         String query = null;
         if (tgtPH()) query = "SELECT DISTINCT a_string, count(1), 'foo' FROM atable WHERE organization_id=? GROUP BY a_string, b_string ORDER BY count(1) desc,a_string LIMIT 2";
-        else if (tgtTR()) query = "SELECT [first 2] DISTINCT a_string, count(1), 'foo' FROM atable WHERE organization_id=? GROUP BY a_string, b_string ORDER BY 2 desc, 1";
+        else if (tgtTR()) query = "SELECT DISTINCT a_string, count(1), 'foo' FROM atable WHERE organization_id=? GROUP BY a_string, b_string ORDER BY 2 desc, 1 LIMIT 2";
         else if (tgtSQ()) query = "SELECT [first 2] DISTINCT a_string, count(1), 'foo' FROM atable WHERE organization_id=? GROUP BY a_string, b_string ORDER BY 2 desc, 1";
         try {
             PreparedStatement statement = conn.prepareStatement(query);
@@ -1103,7 +1103,7 @@ public class QueryExecTest extends BaseTest {
         initATableValues();
         String query = null;
         if (tgtPH()) query = "SELECT a_string, count(1) FROM atable WHERE organization_id=? GROUP BY a_string LIMIT 2";
-        else if (tgtTR()) query = "SELECT [first 2] a_string, count(1) FROM atable WHERE organization_id=? GROUP BY a_string order by 1";
+        else if (tgtTR()) query = "SELECT a_string, count(1) FROM atable WHERE organization_id=? GROUP BY a_string order by 1 LIMIT 2";
         else if (tgtSQ()) query = "SELECT [first 2] a_string, count(1) FROM atable WHERE organization_id=? GROUP BY a_string order by 1";
         try {
             PreparedStatement statement = conn.prepareStatement(query);
@@ -1339,8 +1339,8 @@ public class QueryExecTest extends BaseTest {
         }
 
         String query = null;
-        if (tgtPH()) query = "SELECT count(1) FROM atable WHERE organization_id=? and a_string = ? LIMIT 3";
-        else if (tgtSQ()||tgtTR()) query = "SELECT [first 3] count(1) FROM atable WHERE organization_id=? and a_string = ?";
+        if (tgtPH()||tgtTR()) query = "SELECT count(1) FROM atable WHERE organization_id=? and a_string = ? LIMIT 3";
+        else if (tgtSQ()) query = "SELECT [first 3] count(1) FROM atable WHERE organization_id=? and a_string = ?";
         PreparedStatement statement = conn.prepareStatement(query);
         statement.setString(1, tenantId);
         statement.setString(2, B_VALUE);
@@ -2618,12 +2618,12 @@ public class QueryExecTest extends BaseTest {
         };
         // TRAF: null||'5'||'bar' in both SQ and TRAF is null, not '5bar'
         else if (tgtTR()) queries = new String[] {
-                        "SELECT [first 1] RTRIM(organization_id) || '5' || 'bar' FROM atable order by 1",
-                        "SELECT [first 1] a_string || '5' || 'bar' FROM atable order by 1",
-                        "SELECT [first 1] RTRIM(CAST(a_date as CHAR(128)))||'5'||'bar' FROM atable order by 1",
-                        "SELECT [first 1] RTRIM(CAST(a_integer as CHAR(128)))||'5'||'bar' FROM atable order by 1",
-                        "SELECT [first 1] RTRIM(CAST(x_decimal as CHAR(128)))||'5'||'bar' FROM atable order by 1 desc",
-                        "SELECT [first 1] RTRIM(CAST(x_long as CHAR(128)))||'5'||'bar' FROM atable order by 1 desc"
+                        "SELECT RTRIM(organization_id) || '5' || 'bar' FROM atable order by 1 limit 1",
+                        "SELECT a_string || '5' || 'bar' FROM atable order by 1 limit 1",
+                        "SELECT RTRIM(CAST(a_date as CHAR(128)))||'5'||'bar' FROM atable order by 1 limit 1",
+                        "SELECT RTRIM(CAST(a_integer as CHAR(128)))||'5'||'bar' FROM atable order by 1 limit 1",
+                        "SELECT RTRIM(CAST(x_decimal as CHAR(128)))||'5'||'bar' FROM atable order by 1 desc limit 1",
+                        "SELECT RTRIM(CAST(x_long as CHAR(128)))||'5'||'bar' FROM atable order by 1 desc limit 1"
         };
         // TRAF: null||'5'||'bar' in both SQ and TRAF is null, not '5bar'
         else if (tgtSQ()) queries = new String[] {

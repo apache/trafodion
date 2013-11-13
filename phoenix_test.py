@@ -128,16 +128,10 @@ def get_substr_after_string(s1, s2):
 # Generate pom.xml
 #----------------------------------------------------------------------------
 def generate_pom_xml(targettype, jdbccp):
-    if targettype=='SQ':
-        javaversion = '1.6'
-    elif targettype=='TR':
-        javaversion = '1.7'
-    
     fd1= open(os.path.join(gvars.my_ROOT, 'pom.xml.template'), 'r')
     fd2 = open(os.path.join(gvars.my_ROOT, 'pom.xml'), 'w')
 
     for line in fd1:
-        line = string.replace(line, 'MY_JAVA_VERSION', javaversion)
         line = string.replace(line, 'MY_HPT4JDBC', jdbccp)
         fd2.write(line)
 

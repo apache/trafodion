@@ -1163,8 +1163,8 @@ public class ProductMetricsTest extends BaseTest {
         // No count(1) aggregation, so it will get added automatically
         // LIMIT has no effect, since it's applied at the end and we'll always have a single row for ungrouped aggregation
         String query = null;
-        if (tgtPH()) query = "SELECT sum(unique_users),sum(cpu_utilization),sum(transactions),sum(db_utilization),sum(response_time) feature FROM PRODUCT_METRICS WHERE organization_id=? LIMIT 3";
-        else if (tgtSQ()||tgtTR()) query = "SELECT [first 3] sum(unique_users),sum(cpu_utilization),sum(transactions),sum(db_utilization),sum(response_time) feature FROM PRODUCT_METRICS WHERE organization_id=?";
+        if (tgtPH()||tgtTR()) query = "SELECT sum(unique_users),sum(cpu_utilization),sum(transactions),sum(db_utilization),sum(response_time) feature FROM PRODUCT_METRICS WHERE organization_id=? LIMIT 3";
+        else if (tgtSQ()) query = "SELECT [first 3] sum(unique_users),sum(cpu_utilization),sum(transactions),sum(db_utilization),sum(response_time) feature FROM PRODUCT_METRICS WHERE organization_id=?";
         try {
             initTableValues();
             PreparedStatement statement = conn.prepareStatement(query);
@@ -1420,7 +1420,7 @@ public class ProductMetricsTest extends BaseTest {
         initTableValues();
         String query = null;
         if (tgtPH()) query = "SELECT date, transactions t FROM PRODUCT_METRICS WHERE organization_id=? AND unique_users <= 30 ORDER BY t DESC LIMIT 2";
-        else if (tgtTR()) query = "SELECT [first 2] date1, transactions t FROM PRODUCT_METRICS WHERE organization_id=? AND unique_users <= 30 ORDER BY t DESC";
+        else if (tgtTR()) query = "SELECT date1, transactions t FROM PRODUCT_METRICS WHERE organization_id=? AND unique_users <= 30 ORDER BY t DESC LIMIT 2";
         else if (tgtSQ()) query = "SELECT [first 2] date1, transactions t FROM PRODUCT_METRICS WHERE organization_id=? AND unique_users <= 30 ORDER BY t DESC";
         try {
             PreparedStatement statement = conn.prepareStatement(query);

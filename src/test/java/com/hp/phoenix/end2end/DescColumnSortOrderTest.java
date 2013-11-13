@@ -765,7 +765,7 @@ public class DescColumnSortOrderTest extends BaseTest {
                 query += orderBy.columnNames.get(i) + " " + orderBy.directions.get(i).toString() + " ";
             }
           
-            if (tgtPH()) 
+            if (tgtPH() || tgtTR()) 
                 query += " LIMIT 1000 ";
 
             return query;

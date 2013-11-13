@@ -22,8 +22,6 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.16</version>
         <configuration>
-          <source>MY_JAVA_VERSION</source>
-          <target>MY_JAVA_VERSION</target>
           <systemPropertyVariables>
             <hpjdbc.properties>jdbcprop</hpjdbc.properties>
             <buildDirectory>${project.build.directory}</buildDirectory>

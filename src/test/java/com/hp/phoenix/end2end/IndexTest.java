@@ -294,8 +294,8 @@ public class IndexTest extends BaseTest{
             // Will use data table now, since there's a LIMIT clause and
             // we're able to optimize out the ORDER BY, unless the data
             // table is salted.
-            if (tgtPH()) query = "SELECT k,v FROM t WHERE v >= 'x' ORDER BY k LIMIT 2";
-            else if (tgtSQ()||tgtTR()) query = "SELECT [first 2] k,v FROM t WHERE v >= 'x' ORDER BY k";
+            if (tgtPH()||tgtTR()) query = "SELECT k,v FROM t WHERE v >= 'x' ORDER BY k LIMIT 2";
+            else if (tgtSQ()) query = "SELECT [first 2] k,v FROM t WHERE v >= 'x' ORDER BY k";
             rs = conn.createStatement().executeQuery(query);
             assertTrue(rs.next());
             assertEquals("a",rs.getString(1));
@@ -335,7 +335,11 @@ public class IndexTest extends BaseTest{
     public void testIndexWithNullableFixedWithCols() throws Exception {
         printTestDescription();
 
-    	conn.setAutoCommit(false);
+        if (tgtPH()||tgtSQ())
+    	    conn.setAutoCommit(false);
+        else if (tgtTR())
+            conn.setAutoCommit(true);
+ 
     	try {
             createTestTable(INDEX_DATA_TABLE);
             populateTestTable();

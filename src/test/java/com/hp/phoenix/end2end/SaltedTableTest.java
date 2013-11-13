@@ -451,7 +451,7 @@ public class SaltedTableTest extends BaseTest {
             
             String query = null;
             if (tgtPH()) query = "SELECT a_integer FROM " + TABLE_WITH_SALTING + " WHERE a_string='abc' LIMIT 1";
-            else if (tgtTR()) query = "SELECT [first 1] a_integer FROM " + TABLE_WITH_SALTING + " WHERE a_string='abc' order by 1";
+            else if (tgtTR()) query = "SELECT a_integer FROM " + TABLE_WITH_SALTING + " WHERE a_string='abc' order by 1 LIMIT 1";
             else if (tgtSQ()) query = "SELECT [first 1] a_integer FROM " + TABLE_WITH_SALTING + " WHERE a_string='abc' order by 1";
             PreparedStatement stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();

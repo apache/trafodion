@@ -167,7 +167,10 @@ public class VariableLengthPKTest extends BaseTest {
         stmt.execute();
 
         createTestTable(BTABLE_NAME);
-        conn.setAutoCommit(false);
+        if (tgtPH()||tgtSQ())
+            conn.setAutoCommit(false);
+        else if (tgtTR())
+            conn.setAutoCommit(true);
 
         // Insert all rows at ts
         if (tgtPH()) stmt = conn.prepareStatement(
@@ -261,7 +264,8 @@ public class VariableLengthPKTest extends BaseTest {
         stmt.setString(1, "   ghi   ");
         stmt.execute();
 
-        conn.commit();
+        if (tgtPH()||tgtSQ())
+            conn.commit();
     }
 
     @Test
@@ -384,7 +388,7 @@ public class VariableLengthPKTest extends BaseTest {
 
         String query = null;
         if (tgtPH()) query = "SELECT MAX(INST),MAX(DATE) FROM PTSDB WHERE INST='abc' AND DATE>=TO_DATE('1970-01-01 00:00:00') AND DATE <TO_DATE('2171-01-01 00:00:00') LIMIT 2";
-        else if (tgtTR()) query = "SELECT [first 2] MAX(INST),MAX(DATE1) FROM PTSDB WHERE INST='abc' AND DATE1>=TIMESTAMP '1970-01-01 00:00:00' AND DATE1 <TIMESTAMP '2171-01-01 00:00:00'";
+        else if (tgtTR()) query = "SELECT MAX(INST),MAX(DATE1) FROM PTSDB WHERE INST='abc' AND DATE1>=TIMESTAMP '1970-01-01 00:00:00' AND DATE1 <TIMESTAMP '2171-01-01 00:00:00' LIMIT 2";
         else if (tgtSQ()) query = "SELECT [FIRST 2] MAX(INST),MAX(DATE1) FROM PTSDB WHERE INST='abc' AND DATE1>=TIMESTAMP '1970-01-01 00:00:00' AND DATE1 <TIMESTAMP '2171-01-01 00:00:00'";
         try {
             initTableValues();
@@ -1469,21 +1473,21 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT pk FROM VarcharKeyTest WHERE substr(pk, 0, 3)='jkl'",
         };
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] substr('ABC',-1,1) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',-4,1) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',2,4) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',1,1) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',0,1) FROM BTABLE",
+            "SELECT substr('ABC',-1,1) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',-4,1) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',2,4) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',1,1) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',0,1) FROM BTABLE LIMIT 1",
             // Test for multibyte characters support.
             // TRAF: use ASCII for now.
-            "SELECT [first 1] substr('ABC',0,2) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',0,3) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',1,2) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',1,3) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',2,1) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',2,2) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',2,4) FROM BTABLE",
-            "SELECT [first 1] substr('ABC',1,100) FROM BTABLE",
+            "SELECT substr('ABC',0,2) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',0,3) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',1,2) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',1,3) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',2,1) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',2,2) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',2,4) FROM BTABLE LIMIT 1",
+            "SELECT substr('ABC',1,100) FROM BTABLE LIMIT 1",
             "SELECT pk FROM VarcharKeyTest WHERE substr(pk, 1, 3)='jkl'",
          };
         else if (tgtSQ()) query = new String[] {
@@ -1683,11 +1687,11 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT CASE WHEN 'ABC%DE' LIKE 'ABC\\%D%' THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
         };
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] CASE WHEN 'ABC' LIKE '' THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN 'ABC' LIKE 'A_' THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN 'ABC' LIKE 'A__' THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN 'AB_C' LIKE 'AB\\_C' ESCAPE '\\' THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN 'ABC%DE' LIKE 'ABC\\%D%' ESCAPE '\\' THEN '1' ELSE '2' END FROM BTABLE",
+            "SELECT CASE WHEN 'ABC' LIKE '' THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN 'ABC' LIKE 'A_' THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN 'ABC' LIKE 'A__' THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN 'AB_C' LIKE 'AB\\_C' ESCAPE '\\' THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN 'ABC%DE' LIKE 'ABC\\%D%' ESCAPE '\\' THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
         };
         else if (tgtSQ()) query = new String[] {
             "SELECT [FIRST 1] CASE WHEN 'ABC' LIKE '' THEN '1' ELSE '2' END FROM BTABLE",
@@ -1732,11 +1736,11 @@ public class VariableLengthPKTest extends BaseTest {
         // TRAF: null is not allowed in predicate ('a'=null).  This is a 4099
         // error. (only col IS NULL is supported)  Remove null from IN () predicates.
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] CASE WHEN 'a' IN ('a') THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN NOT 'a' IN ('b') THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN 'a' IN ('b') THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN NOT 'a' IN ('c','b') THEN '1' ELSE '2' END FROM BTABLE",
-            "SELECT [first 1] CASE WHEN 1 IN (2,1) THEN '1' ELSE '2' END FROM BTABLE",
+            "SELECT CASE WHEN 'a' IN ('a') THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN NOT 'a' IN ('b') THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN 'a' IN ('b') THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN NOT 'a' IN ('c','b') THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
+            "SELECT CASE WHEN 1 IN (2,1) THEN '1' ELSE '2' END FROM BTABLE LIMIT 1",
         };
         else if (tgtSQ()) query = new String[] {
             "SELECT [FIRST 1] CASE WHEN 'a' IN ('a') THEN '1' ELSE '2' END FROM BTABLE",
@@ -1936,13 +1940,13 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT A_STRING FROM BTABLE WHERE length(A_STRING)=3",
         };
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] char_length('') FROM BTABLE",
-            "SELECT [first 1] char_length(' ') FROM BTABLE",
-            "SELECT [first 1] char_length('1') FROM BTABLE",
-            "SELECT [first 1] char_length('1234') FROM BTABLE",
-            "SELECT [first 1] char_length('Ã¦ɰɸ') FROM BTABLE",
-            "SELECT [first 1] char_length('ǢÃ') FROM BTABLE",
-            "SELECT [first 1] char_length('This is a test!') FROM BTABLE",
+            "SELECT char_length('') FROM BTABLE LIMIT 1",
+            "SELECT char_length(' ') FROM BTABLE LIMIT 1",
+            "SELECT char_length('1') FROM BTABLE LIMIT 1",
+            "SELECT char_length('1234') FROM BTABLE LIMIT 1",
+            "SELECT char_length('Ã¦ɰɸ') FROM BTABLE LIMIT 1",
+            "SELECT char_length('ǢÃ') FROM BTABLE LIMIT 1",
+            "SELECT char_length('This is a test!') FROM BTABLE LIMIT 1",
             "SELECT A_STRING FROM BTABLE WHERE char_length(A_STRING)=3",
         };
         else if (tgtSQ()) query = new String[] {
@@ -2004,12 +2008,12 @@ public class VariableLengthPKTest extends BaseTest {
                 "SELECT upper('ß') FROM BTABLE LIMIT 1",
         };
         else if (tgtTR()) query = new String[] {
-                "SELECT [first 1] upper('abc') FROM BTABLE",
-                "SELECT [first 1] upper('Abc') FROM BTABLE",
-                "SELECT [first 1] upper('ABC') FROM BTABLE",
+                "SELECT upper('abc') FROM BTABLE LIMIT 1",
+                "SELECT upper('Abc') FROM BTABLE LIMIT 1",
+                "SELECT upper('ABC') FROM BTABLE LIMIT 1",
                 // TRAF: test only ASCII for now
-                "SELECT [first 1] upper('123') FROM BTABLE",
-                "SELECT [first 1] upper('#$+') FROM BTABLE",
+                "SELECT upper('123') FROM BTABLE LIMIT 1",
+                "SELECT upper('#$+') FROM BTABLE LIMIT 1",
         };
         else if (tgtSQ()) query = new String[] {
                 "SELECT [FIRST 1] upper('abc') FROM BTABLE",
@@ -2062,13 +2066,13 @@ public class VariableLengthPKTest extends BaseTest {
                 "SELECT lower('SS') FROM BTABLE LIMIT 1",
         };
         else if (tgtTR()) query = new String[] {
-                "SELECT [first 1] lower('abc') FROM BTABLE",
-                "SELECT [first 1] lower('Abc') FROM BTABLE",
-                "SELECT [first 1] lower('ABC') FROM BTABLE",
+                "SELECT lower('abc') FROM BTABLE LIMIT 1",
+                "SELECT lower('Abc') FROM BTABLE LIMIT 1",
+                "SELECT lower('ABC') FROM BTABLE LIMIT 1",
                 // TRAF: test only ASCII for now
-                "SELECT [first 1] upper('123') FROM BTABLE",
-                "SELECT [first 1] upper('#$+') FROM BTABLE",
-                "SELECT [first 1] lower('SS') FROM BTABLE",
+                "SELECT upper('123') FROM BTABLE LIMIT 1",
+                "SELECT upper('#$+') FROM BTABLE LIMIT 1",
+                "SELECT lower('SS') FROM BTABLE LIMIT 1",
         };
         else if (tgtSQ()) query = new String[] {
                 "SELECT [FIRST 1] lower('abc') FROM BTABLE",
@@ -2129,15 +2133,15 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT pk FROM VarcharKeyTest WHERE rtrim(pk)='jkl' LIMIT 1",
         };
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] rtrim('') FROM BTABLE",
-            "SELECT [first 1] rtrim(' ') FROM BTABLE",
-            "SELECT [first 1] rtrim('   ') FROM BTABLE",
-            "SELECT [first 1] rtrim('abc') FROM BTABLE",
-            "SELECT [first 1] rtrim('abc   ') FROM BTABLE",
-            "SELECT [first 1] rtrim('abc   def') FROM BTABLE",
-            "SELECT [first 1] rtrim('abc   def   ') FROM BTABLE",
+            "SELECT rtrim('') FROM BTABLE LIMIT 1",
+            "SELECT rtrim(' ') FROM BTABLE LIMIT 1",
+            "SELECT rtrim('   ') FROM BTABLE LIMIT 1",
+            "SELECT rtrim('abc') FROM BTABLE LIMIT 1",
+            "SELECT rtrim('abc   ') FROM BTABLE LIMIT 1",
+            "SELECT rtrim('abc   def') FROM BTABLE LIMIT 1",
+            "SELECT rtrim('abc   def   ') FROM BTABLE LIMIT 1",
             // TRAF: Test only ASCII for now
-            "SELECT [first 1] rtrim('12 3   ') FROM BTABLE",
+            "SELECT rtrim('12 3   ') FROM BTABLE LIMIT 1",
             "SELECT pk FROM VarcharKeyTest WHERE rtrim(pk)='jkl'",
         };
         else if (tgtSQ()) query = new String[] {
@@ -2208,16 +2212,16 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT pk FROM VarcharKeyTest WHERE ltrim(pk)='def' LIMIT 1",
         };
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] ltrim('') FROM BTABLE",
-            "SELECT [first 1] ltrim(' ') FROM BTABLE",
-            "SELECT [first 1] ltrim('   ') FROM BTABLE",
-            "SELECT [first 1] ltrim('abc') FROM BTABLE",
-            "SELECT [first 1] ltrim('   abc') FROM BTABLE",
-            "SELECT [first 1] ltrim('abc   def') FROM BTABLE",
-            "SELECT [first 1] ltrim('   abc   def') FROM BTABLE",
+            "SELECT ltrim('') FROM BTABLE LIMIT 1",
+            "SELECT ltrim(' ') FROM BTABLE LIMIT 1",
+            "SELECT ltrim('   ') FROM BTABLE LIMIT 1",
+            "SELECT ltrim('abc') FROM BTABLE LIMIT 1",
+            "SELECT ltrim('   abc') FROM BTABLE LIMIT 1",
+            "SELECT ltrim('abc   def') FROM BTABLE LIMIT 1",
+            "SELECT ltrim('   abc   def') FROM BTABLE LIMIT 1",
             // TRAF: Test ASCII only for now.
-            "SELECT [first 1] ltrim('   12 3') FROM BTABLE",
-            "SELECT [first 1] pk FROM VarcharKeyTest WHERE ltrim(pk)='def'",
+            "SELECT ltrim('   12 3') FROM BTABLE LIMIT 1",
+            "SELECT pk FROM VarcharKeyTest WHERE ltrim(pk)='def' LIMIT 1",
         };
         else if (tgtSQ()) query = new String[] {
             "SELECT [FIRST 1] ltrim('') FROM BTABLE",
@@ -2399,18 +2403,18 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT pk FROM VarcharKeyTest WHERE trim(pk)='ghi'",
         };
         else if (tgtTR()) query = new String[] {
-            "SELECT [first 1] trim('') FROM BTABLE",
-            "SELECT [first 1] trim(' ') FROM BTABLE",
-            "SELECT [first 1] trim('   ') FROM BTABLE",
-            "SELECT [first 1] trim('abc') FROM BTABLE",
-            "SELECT [first 1] trim('   abc') FROM BTABLE",
-            "SELECT [first 1] trim('abc   ') FROM BTABLE",
-            "SELECT [first 1] trim('abc   def') FROM BTABLE",
-            "SELECT [first 1] trim('   abc   def') FROM BTABLE",
-            "SELECT [first 1] trim('abc   def   ') FROM BTABLE",
-            "SELECT [first 1] trim('   abc   def   ') FROM BTABLE",
+            "SELECT trim('') FROM BTABLE LIMIT 1",
+            "SELECT trim(' ') FROM BTABLE LIMIT 1",
+            "SELECT trim('   ') FROM BTABLE LIMIT 1",
+            "SELECT trim('abc') FROM BTABLE LIMIT 1",
+            "SELECT trim('   abc') FROM BTABLE LIMIT 1",
+            "SELECT trim('abc   ') FROM BTABLE LIMIT 1",
+            "SELECT trim('abc   def') FROM BTABLE LIMIT 1",
+            "SELECT trim('   abc   def') FROM BTABLE LIMIT 1",
+            "SELECT trim('abc   def   ') FROM BTABLE LIMIT 1",
+            "SELECT trim('   abc   def   ') FROM BTABLE LIMIT 1",
             // TRAF: Test only ASCII for now.
-            "SELECT [first 1] trim('   12 3        ') FROM BTABLE",
+            "SELECT trim('   12 3        ') FROM BTABLE LIMIT 1",
             "SELECT pk FROM VarcharKeyTest WHERE trim(pk)='ghi'",
         };
         else if (tgtSQ()) query = new String[] {

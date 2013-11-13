@@ -71,8 +71,8 @@ public class TopNTest extends BaseTest {
 
         initATableValues();
         String query = null;
-        if (tgtPH()) query = "SELECT entity_id FROM aTable ORDER BY b_string, entity_id LIMIT 5";
-        else if (tgtSQ()||tgtTR()) query = "SELECT [first 5] entity_id FROM aTable ORDER BY b_string, entity_id";
+        if (tgtPH()||tgtTR()) query = "SELECT entity_id FROM aTable ORDER BY b_string, entity_id LIMIT 5";
+        else if (tgtSQ()) query = "SELECT [first 5] entity_id FROM aTable ORDER BY b_string, entity_id";
         try {
             PreparedStatement statement = conn.prepareStatement(query);
             ResultSet rs = statement.executeQuery();
@@ -100,7 +100,7 @@ public class TopNTest extends BaseTest {
         initATableValues();
         String query = null;
         if (tgtPH()) query = "SELECT entity_id FROM aTable ORDER BY b_string || entity_id desc LIMIT 5";
-        else if (tgtTR()) query = "SELECT [first 5] entity_id, CONCAT(b_string, entity_id) as c FROM aTable ORDER BY c desc";
+        else if (tgtTR()) query = "SELECT entity_id, CONCAT(b_string, entity_id) as c FROM aTable ORDER BY c desc LIMIT 5";
         else if (tgtSQ()) query = "SELECT [first 5] entity_id, CONCAT(b_string, entity_id) as c FROM aTable ORDER BY c desc";
         try {
             PreparedStatement statement = conn.prepareStatement(query);
@@ -158,7 +158,7 @@ public class TopNTest extends BaseTest {
 
         conn = getConnection();
         if (tgtPH()) query = "SELECT entity_id FROM aTable ORDER BY b_string, x_decimal nulls last, 8-a_integer LIMIT 5";
-        else if (tgtTR()) query = "SELECT [first 5] entity_id FROM aTable ORDER BY b_string, x_decimal, a_integer desc";
+        else if (tgtTR()) query = "SELECT entity_id FROM aTable ORDER BY b_string, x_decimal, a_integer desc LIMIT 5";
         else if (tgtSQ()) query = "SELECT [first 5] entity_id FROM aTable ORDER BY b_string, x_decimal, a_integer desc";
         try {
             PreparedStatement statement = conn.prepareStatement(query);
