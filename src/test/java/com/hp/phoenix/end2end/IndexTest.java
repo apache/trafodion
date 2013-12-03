@@ -213,9 +213,9 @@ public class IndexTest extends BaseTest{
                      "CLIENT MERGE SORT");
                 assertEquals(expectedPlan,getExplainPlan(rs));
             } else if (tgtTR()) {
-                 // TRAF: For now, only make sure that seabase_index_scan is in there.
+                 // TRAF: For now, only make sure that trafodion_index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
-                 assertTrue(getExplainPlan(rs).contains("seabase_index_scan"));
+                 assertTrue(getExplainPlan(rs).contains("trafodion_index_scan"));
             } else if (tgtSQ()) {
                  // TRAF: For now, only make sure that index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
@@ -243,9 +243,9 @@ public class IndexTest extends BaseTest{
                      "CLIENT MERGE SORT");
                 assertEquals(expectedPlan,getExplainPlan(rs));
             } else if (tgtTR()) {
-                 // TRAF: For now, only make sure that seabase_index_scan is in there.
+                 // TRAF: For now, only make sure that trafodion_index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
-                 assertTrue(getExplainPlan(rs).contains("seabase_index_scan"));
+                 assertTrue(getExplainPlan(rs).contains("trafodion_index_scan"));
             } else if (tgtSQ()) {
                  // TRAF: For now, only make sure that index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
@@ -279,9 +279,9 @@ public class IndexTest extends BaseTest{
                      "CLIENT MERGE SORT");
                 assertEquals(expectedPlan,getExplainPlan(rs));
             } else if (tgtTR()) {
-                 // TRAF: For now, only make sure that seabase_scan is in there.
+                 // TRAF: For now, only make sure that trafodion_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
-                 assertTrue(getExplainPlan(rs).contains("seabase_scan"));
+                 assertTrue(getExplainPlan(rs).contains("trafodion_scan"));
             } else if (tgtSQ()) {
                  // TRAF: For now, only make sure that index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
@@ -316,9 +316,9 @@ public class IndexTest extends BaseTest{
                     "CLIENT MERGE SORT";
                 assertEquals(expectedPlan,getExplainPlan(rs));
             } else if (tgtTR()) {
-                 // TRAF: For now, only make sure that seabase_scan is in there.
+                 // TRAF: For now, only make sure that trafodion_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
-                 assertTrue(getExplainPlan(rs).contains("seabase_scan"));
+                 assertTrue(getExplainPlan(rs).contains("trafodion_scan"));
             } else if (tgtSQ()) {
                  // TRAF: For now, only make sure that index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
@@ -360,9 +360,9 @@ public class IndexTest extends BaseTest{
                 rs = conn.createStatement().executeQuery("EXPLAIN " + query);
                 assertEquals("CLIENT PARALLEL 1-WAY FULL SCAN OVER INDEX_TEST.IDX", getExplainPlan(rs));
             } else if (tgtTR()) {
-                 // TRAF: For now, only make sure that seabase_index_scan is in there.
+                 // TRAF: For now, only make sure that trafodion_index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);
-                 assertTrue(getExplainPlan(rs).contains("seabase_index_scan"));
+                 assertTrue(getExplainPlan(rs).contains("trafodion_index_scan"));
             } else if (tgtSQ()) {
                  // TRAF: For now, only make sure that index_scan is in there.
                  rs = conn.createStatement().executeQuery("EXPLAIN options 'f' " + query);

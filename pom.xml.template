@@ -2,10 +2,14 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <licenses>
     <license>
+      <name>(C) Copyright 2013 Hewlett-Packard Development Company, L.P</name>
+      <comments>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at</comments>
+    </license>
+    <license>
       <name>The Apache Software License, Version 2.0</name>
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
-      <comments>A business-friendly OSS license</comments>
+      <comments>Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</comments>
     </license>
   </licenses>
   <modelVersion>4.0.0</modelVersion>
