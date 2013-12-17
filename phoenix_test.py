@@ -248,7 +248,7 @@ def prog_parse_args():
           help='any export string, defaulted to NONE'
 ),
         optparse.make_option('', '--tests', action='store', type='string',
-          dest='tests', default='ALL',
+          dest='tests', default='.*',
           help='specify a subset of tests to run, for example: --tests=AlterTableTest or --tests=AlterTableTest,ArithmeticQueryTest.  Multiple tests can be specified as a string with each test sperated by \',\' without space characters.  When this option is omitted, the default is ALL tests.')
     ]
     usage = 'usage: %prog [-h|--help|<options>]'
