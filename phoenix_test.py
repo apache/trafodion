@@ -48,6 +48,7 @@ def ArgList():
     _export_str4 = None
     _export_str5 = None
     _jdbc_type = None
+    _tests = None
 
 #----------------------------------------------------------------------------
 # Tracking all of the global variables in here.
@@ -303,6 +304,7 @@ def prog_parse_args():
     ArgList._export_str3 = options.exportstr3
     ArgList._export_str4 = options.exportstr4
     ArgList._export_str5 = options.exportstr5
+    ArgList._tests = options.tests
 
     # Generate the pom.xml file from the template according to target type
     generate_pom_xml(ArgList._target_type, ArgList._jdbc_classpath)
@@ -322,6 +324,11 @@ def prog_parse_args():
     print 'export string 3:       ', ArgList._export_str3
     print 'export string 4:       ', ArgList._export_str4
     print 'export string 5:       ', ArgList._export_str5
+    if options.tests != '.*':
+        print 'tests to be run:       ', ArgList._tests
+    else:
+        print 'tests to be run:        ALL tests'
+    print
    
     sys.stdout.flush()
 
@@ -359,7 +366,7 @@ output = shell_call(gvars.my_EXPORT_CMD + ';mvn clean')
 stdout_write(output + '\n')
 
 # do the whole build, including running tests
-output = shell_call(gvars.my_EXPORT_CMD + ';mvn package')
+output = shell_call(gvars.my_EXPORT_CMD + ';mvn test -Dtest=' + ArgList._tests)
 
 lines = output.split('\n')
 to_parse = False
