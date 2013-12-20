@@ -1944,8 +1944,8 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT char_length(' ') FROM BTABLE LIMIT 1",
             "SELECT char_length('1') FROM BTABLE LIMIT 1",
             "SELECT char_length('1234') FROM BTABLE LIMIT 1",
-            "SELECT char_length('Ã¦ɰɸ') FROM BTABLE LIMIT 1",
-            "SELECT char_length('ǢÃ') FROM BTABLE LIMIT 1",
+            "SELECT char_length('ABCD') FROM BTABLE LIMIT 1",
+            "SELECT char_length('!@#$') FROM BTABLE LIMIT 1",
             "SELECT char_length('This is a test!') FROM BTABLE LIMIT 1",
             "SELECT A_STRING FROM BTABLE WHERE char_length(A_STRING)=3",
         };
@@ -1954,8 +1954,8 @@ public class VariableLengthPKTest extends BaseTest {
             "SELECT [FIRST 1] char_length(' ') FROM BTABLE",
             "SELECT [FIRST 1] char_length('1') FROM BTABLE",
             "SELECT [FIRST 1] char_length('1234') FROM BTABLE",
-            "SELECT [FIRST 1] char_length('É¦ɰɸ') FROM BTABLE",
-            "SELECT [FIRST 1] char_length('ǢÇ') FROM BTABLE",
+            "SELECT [FIRST 1] char_length('ABCD') FROM BTABLE",
+            "SELECT [FIRST 1] char_length('!@#$') FROM BTABLE",
             "SELECT [FIRST 1] char_length('This is a test!') FROM BTABLE",
             "SELECT A_STRING FROM BTABLE WHERE char_length(A_STRING)=3",
         };
@@ -1977,7 +1977,7 @@ public class VariableLengthPKTest extends BaseTest {
             "1",
             "4",
             "4",
-            "2",
+            "4",
             "15",
             "abc",
         };
