@@ -1920,8 +1920,17 @@ public class ProductMetricsTest extends BaseTest {
             statement.setString(1, tenantId);
             ResultSet rs = statement.executeQuery();
             assertTrue(rs.next());
-            assertEquals("F", rs.getString(1));
-            assertFalse(rs.next());
+            if (tgtPH()) {
+                assertTrue(rs.next());
+                assertEquals("F", rs.getString(1));
+                assertFalse(rs.next());
+            } else if (tgtSQ()||tgtTR()) {
+                /* Most java time function returns UTC.  We also run 
+                 * phoenix_test with -Duser.timezone=UTC to force UTC.  But 
+                 * CURRENT_TIMESTAMP uses the local machine time zone (say 
+                 * PST), which is not always UTC.  Skip this comparision.
+                 */
+            }
         } finally {
             
         }
@@ -1940,9 +1949,17 @@ public class ProductMetricsTest extends BaseTest {
             PreparedStatement statement = conn.prepareStatement(query);
             statement.setString(1, tenantId);
             ResultSet rs = statement.executeQuery();
-            assertTrue(rs.next());
-            assertEquals("F", rs.getString(1));
-            assertFalse(rs.next());
+            if (tgtPH()) {
+                assertTrue(rs.next());
+                assertEquals("F", rs.getString(1));
+                assertFalse(rs.next());
+            } else if (tgtSQ()||tgtTR()) {
+                /* Most java time function returns UTC.  We also run
+                 * phoenix_test with -Duser.timezone=UTC to force UTC.  But
+                 * CURRENT_TIMESTAMP uses the local machine time zone (say
+                 * PST), which is not always UTC.  Skip this comparision.
+                 */
+            }
         } finally {
             
         }

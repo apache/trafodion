@@ -51,6 +51,7 @@ import java.math.*;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
+import java.text.*;
 
 /**
  * Tests for the TO_NUMBER built-in function.
@@ -316,7 +317,14 @@ public class ToNumberFunctionTest extends BaseTest {
     	    String pattern = "HH:mm:ss z";
             query = "SELECT a_id FROM " + TO_NUMBER_TABLE_NAME + " WHERE to_number(a_time, '" + pattern + "') = " + row1Time.getTime() ;
         } else {
-            query = "SELECT [first 1] a_id FROM " + TO_NUMBER_TABLE_NAME + " WHERE (JULIANTIMESTAMP(a_time) - JULIANTIMESTAMP(TIMESTAMP '1970-01-01 00:00:00'))/1000 = " + (row1Time.getTime()/1000)*1000 + " order by 1" ;
+            /* Most java time function returns UTC.  We also run phoenix_test
+             * with -Duser.timezone=UTC to force UTC.  But when the column type
+             * is Time, Julian timestamp may still stick in the local date i
+             * part with the machine time zone setting (say, PST).  This query
+             * skips the date part, and only compares HH:mm:ss.
+             */
+            SimpleDateFormat sd = new SimpleDateFormat("HH:mm:ss");
+            query = "SELECT [first 1] a_id FROM " + TO_NUMBER_TABLE_NAME + " WHERE (JULIANTIMESTAMP(a_time) - JULIANTIMESTAMP(CURRENT_DATE))/1000 = " + (sd.parse(sd.format(row1Time)).getTime()/1000)*1000 + " order by 1";
         }
         int expectedId = 1;
         runOneRowQueryTest(query, expectedId);
@@ -342,7 +350,16 @@ public class ToNumberFunctionTest extends BaseTest {
         initTable();
         String query = null;
         if (tgtPH()) query = "SELECT a_id FROM " + TO_NUMBER_TABLE_NAME + " WHERE to_number(a_time) = " + row2Time.getTime() ;
-        else query = "SELECT [first 1] a_id FROM " + TO_NUMBER_TABLE_NAME + " WHERE (JULIANTIMESTAMP(a_time) - JULIANTIMESTAMP(TIMESTAMP '1970-01-01 00:00:00'))/1000 = " + (row2Time.getTime()/1000)*1000 + " order by a_timestamp desc" ;
+        else {
+            /* Most java time function returns UTC.  We also run phoenix_test 
+             * with -Duser.timezone=UTC to force UTC.  But when the column type
+             * is Time, Julian timestamp may still stick in the local date i
+             * part with the machine time zone setting (say, PST).  This query 
+             * skips the date part, and only compares HH:mm:ss.
+             */
+            SimpleDateFormat sd = new SimpleDateFormat("HH:mm:ss");
+            query = "SELECT [first 1] a_id FROM " + TO_NUMBER_TABLE_NAME + " WHERE (JULIANTIMESTAMP(a_time) - JULIANTIMESTAMP(CURRENT_DATE))/1000 = " + (sd.parse(sd.format(row2Time)).getTime()/1000)*1000 + " order by a_timestamp desc" ;
+        }
         int expectedId = 2;
         runOneRowQueryTest(query, expectedId);
     }
@@ -380,7 +397,7 @@ public class ToNumberFunctionTest extends BaseTest {
  
         runOneRowQueryTest(query, expectedDecimalValue);
     }
-    
+ 
     @Test
     public void testTimeProjection() throws Exception {
         printTestDescription();
@@ -392,8 +409,15 @@ public class ToNumberFunctionTest extends BaseTest {
             query = "select to_number(a_time) from " + TO_NUMBER_TABLE_NAME + " where a_id = 2";
             expectedDecimalValue = new BigDecimal(row2Time.getTime());
         } else if (tgtSQ()||tgtTR()) {
-            query = "select (JULIANTIMESTAMP(a_time) - JULIANTIMESTAMP(TIMESTAMP '1970-01-01 00:00:00'))/1000 from " + TO_NUMBER_TABLE_NAME + " where a_id = 2";
-            expectedDecimalValue = new BigDecimal((row2Time.getTime()/1000)*1000);
+            /* Most java time function returns UTC.  We also run phoenix_test
+             * with -Duser.timezone=UTC to force UTC.  But when the column type
+             * is Time, Julian timestamp may still stick in the local date i
+             * part with the machine time zone setting (say, PST).  This query
+             * skips the date part, and only compares HH:mm:ss.
+             */
+            SimpleDateFormat sd = new SimpleDateFormat("HH:mm:ss");
+            query = "select (JULIANTIMESTAMP(a_time) - JULIANTIMESTAMP(CURRENT_DATE))/1000 from " + TO_NUMBER_TABLE_NAME + " where a_id = 2";
+            expectedDecimalValue = new BigDecimal((sd.parse(sd.format(row2Time)).getTime()/1000)*1000);
         }
         runOneRowQueryTest(query, expectedDecimalValue);
     }

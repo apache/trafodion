@@ -28,6 +28,7 @@
         <configuration>
           <systemPropertyVariables>
             <hpjdbc.properties>jdbcprop</hpjdbc.properties>
+            <user.timezone>UTC</user.timezone>
             <buildDirectory>${project.build.directory}</buildDirectory>
           </systemPropertyVariables>
         </configuration>
