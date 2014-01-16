@@ -69,7 +69,6 @@ public class ArithmeticQueryTest extends BaseTest {
     public void testDecimalUpsertValue() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS testDecimalArithmetic" + 
@@ -83,6 +82,8 @@ public class ArithmeticQueryTest extends BaseTest {
                                     "col1 DECIMAL(18,0), col2 DECIMAL(5), col3 DECIMAL(5,2), col4 DECIMAL)";
 
             conn.createStatement().execute(ddl);
+
+            conn.setAutoCommit(false);
  
             // Test upsert correct values 
             String query = null;
@@ -172,7 +173,6 @@ public class ArithmeticQueryTest extends BaseTest {
     public void testDecimalUpsertSelect() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS source" + 
@@ -191,7 +191,9 @@ public class ArithmeticQueryTest extends BaseTest {
             else if (tgtSQ()) ddl = "CREATE TABLE target" +
                                     " (pk VARCHAR(128) NOT NULL PRIMARY KEY, col1 DECIMAL(5,1), col2 DECIMAL(5,2), col3 DECIMAL(4,4))";
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk, col1) VALUES(?,?)";
             else if (tgtSQ()) query = "INSERT INTO source(pk, col1) VALUES(?,?)";
@@ -303,7 +305,6 @@ public class ArithmeticQueryTest extends BaseTest {
     public void testDecimalAveraging() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS testDecimalArithmatic" + 
@@ -313,7 +314,9 @@ public class ArithmeticQueryTest extends BaseTest {
             else if (tgtSQ()) ddl = "CREATE TABLE testDecimalArithmatic" +
                                     "  (pk VARCHAR(128) NOT NULL PRIMARY KEY, col1 DECIMAL(18, 11), col2 DECIMAL(18,1), col3 DECIMAL(18,1))";         
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO testDecimalArithmatic(pk, col1, col2, col3) VALUES(?,?,?,?)";
             else if (tgtSQ()) query = "INSERT INTO testDecimalArithmatic(pk, col1, col2, col3) VALUES(?,?,?,?)";
@@ -379,7 +382,6 @@ public class ArithmeticQueryTest extends BaseTest {
     public void testDecimalArithmeticWithIntAndLong() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS testDecimalArithmatic" + 
@@ -392,7 +394,9 @@ public class ArithmeticQueryTest extends BaseTest {
                                     "  (pk VARCHAR(128) NOT NULL PRIMARY KEY, " +
                                     "col1 DECIMAL(18,0), col2 DECIMAL(5, 2), col3 INTEGER, col4 BIGINT, col5 DECIMAL)";
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO testDecimalArithmatic(pk, col1, col2, col3, col4, col5) VALUES(?,?,?,?,?,?)";
             else if (tgtSQ()) query = "INSERT INTO testDecimalArithmatic(pk, col1, col2, col3, col4, col5) VALUES(?,?,?,?,?,?)";

@@ -513,8 +513,6 @@ public class DescColumnSortOrderTest extends BaseTest {
         throws Exception 
     {
         try {
-            conn.setAutoCommit(false);
-
             conn.createStatement().execute(ddl);
 
             String columns = appendColumns(columnNames);
@@ -532,7 +530,6 @@ public class DescColumnSortOrderTest extends BaseTest {
                 }
                 stmt.execute();
             }
-            conn.commit();
             
             String selectClause = "SELECT " + appendColumns(projections) + " FROM " + TABLE;
 

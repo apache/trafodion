@@ -66,13 +66,15 @@ public class SaltedTableVarLengthRowKeyTest extends BaseTest {
     /* @AfterClass, @Before, @After are defined in BaseTest */
 
     private void initTableValues() throws Exception {
-        conn.setAutoCommit(false);
         
         try {
             if (tgtPH()) conn.createStatement().execute("create table testVarcharKey " +
                     " (key_string varchar not null primary key, kv integer) SALT_BUCKETS=4\n");
             else if (tgtSQ()||tgtTR()) conn.createStatement().execute("create table testVarcharKey " +
                     " (key_string varchar(128) not null primary key, kv integer)\n");
+
+            conn.setAutoCommit(false);
+
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO testVarcharKey VALUES(?,?)";
             else if (tgtSQ()) query = "INSERT INTO testVarcharKey VALUES(?,?)";
@@ -97,13 +99,14 @@ public class SaltedTableVarLengthRowKeyTest extends BaseTest {
     public void testSelectValueWithPointKeyQuery() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             initTableValues();
             String query;
             PreparedStatement stmt;
             ResultSet rs;
-            
+        
+            conn.setAutoCommit(false);
+    
             query = "SELECT * FROM testVarcharKey where key_string = 'abc'";
             stmt = conn.prepareStatement(query);
             rs = stmt.executeQuery();

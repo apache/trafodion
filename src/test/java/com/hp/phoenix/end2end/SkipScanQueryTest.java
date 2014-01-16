@@ -82,7 +82,6 @@ public class SkipScanQueryTest extends BaseTest {
             stmt.setInt(1, i);
             stmt.execute();
         }
-        conn.commit();
     }
     
     private void initVarCharCrossProductInTable(List<String> c1, List<String> c2) throws SQLException {
@@ -107,7 +106,6 @@ public class SkipScanQueryTest extends BaseTest {
                 stmt.execute();
             }
         }
-        conn.commit();
     }
     
     private void initVarCharParallelListInTable(List<String> c1, List<String> c2) throws SQLException {
@@ -131,15 +129,14 @@ public class SkipScanQueryTest extends BaseTest {
             stmt.setString(2, i < c2.size() ? c2.get(i) : null);
             stmt.execute();
         }
-        conn.commit();
     }
     
     @Test
     public void testInQuery() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         initIntInTable(Arrays.asList(2,7,10));
+        conn.setAutoCommit(false);
         try {
             String query = null;
             if (tgtPH()) query = "SELECT i FROM inTest WHERE i IN (1,2,4,5,7,8,10)";
@@ -160,8 +157,8 @@ public class SkipScanQueryTest extends BaseTest {
     public void testVarCharParallelListInQuery() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         initVarCharParallelListInTable(Arrays.asList("d","da","db"),Arrays.asList("m","mc","tt"));
+        conn.setAutoCommit(false);
         try {
             String query;
             query = "SELECT s1,s2 FROM inVarTest WHERE s1 IN ('a','b','da','db') AND s2 IN ('c','ma','m','mc','ttt','z')";
@@ -178,8 +175,8 @@ public class SkipScanQueryTest extends BaseTest {
     public void testVarCharXInQuery() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         initVarCharCrossProductInTable(Arrays.asList("d","da","db"),Arrays.asList("m","mc","tt"));
+        conn.setAutoCommit(false);
         try {
             String query = null;
             if (tgtPH()) query = "SELECT s1,s2 FROM inVarTest WHERE s1 IN ('a','b','da','db') AND s2 IN ('c','ma','m','mc','ttt','z')";
@@ -207,8 +204,8 @@ public class SkipScanQueryTest extends BaseTest {
     public void testVarCharXIntInQuery() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         initVarCharCrossProductInTable(Arrays.asList("d","da","db"),Arrays.asList("m","mc","tt"));
+        conn.setAutoCommit(false);
         try {
             String query;
             query = "SELECT s1,s2 FROM inVarTest " +

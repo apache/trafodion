@@ -69,7 +69,6 @@ public class StatementHintsTest extends BaseTest {
     /* @AfterClass, @Before, @After are defined in BaseTest */
 
     private static void initTableValues() throws Exception {
-        conn.setAutoCommit(false);
         
         try {
             String ddl = null;
@@ -87,7 +86,9 @@ public class StatementHintsTest extends BaseTest {
                     "    , CONSTRAINT pk PRIMARY KEY (a_integer, a_string, a_id))\n";
 
             conn.createStatement().execute(ddl);
-            
+       
+            conn.setAutoCommit(false);
+     
             String query = null;
             PreparedStatement stmt;
             

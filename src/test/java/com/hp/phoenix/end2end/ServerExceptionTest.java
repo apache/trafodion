@@ -69,7 +69,6 @@ public class ServerExceptionTest extends BaseTest {
     public void testServerExceptionBackToClient() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS t1(pk VARCHAR NOT NULL PRIMARY KEY, " +
@@ -80,7 +79,9 @@ public class ServerExceptionTest extends BaseTest {
                     "col1 INTEGER, col2 INTEGER)";
 
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO t1 VALUES(?,?,?)";
             else if (tgtSQ()) query = "INSERT INTO t1 VALUES(?,?,?)";

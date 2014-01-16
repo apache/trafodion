@@ -68,7 +68,7 @@ public class AlterTableTest extends BaseTest {
     public void testAlterTableWithVarBinaryKey() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
+        conn.setAutoCommit(true);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE test_table " +
@@ -94,7 +94,7 @@ public class AlterTableTest extends BaseTest {
     public void testAddVarCharColToPK() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
+        conn.setAutoCommit(true);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE test_table " +
@@ -123,7 +123,6 @@ public class AlterTableTest extends BaseTest {
                 stmt.setNull(2, java.sql.Types.INTEGER);
                 stmt.execute();
             }
-            conn.commit();
            
             String query = null; 
             if (tgtPH()) query = "SELECT * FROM test_table";
@@ -157,7 +156,6 @@ public class AlterTableTest extends BaseTest {
                 stmt.setNull(3, java.sql.Types.VARCHAR);
             }
             stmt.execute();
-            conn.commit();
            
             query = "SELECT * FROM test_table WHERE a_string = 'c' AND b_string IS NULL";
             rs = conn.createStatement().executeQuery(query);
@@ -172,7 +170,6 @@ public class AlterTableTest extends BaseTest {
             else if (tgtSQ()||tgtTR()) stmt.setString(1, "d"); // a_string is primary key
             stmt.setInt(2, 5);
             stmt.execute();
-            conn.commit();
           
             if (tgtPH()) { 
                 query = "SELECT a_string,col1 FROM test_table WHERE a_string = 'a' AND b_string IS NULL";

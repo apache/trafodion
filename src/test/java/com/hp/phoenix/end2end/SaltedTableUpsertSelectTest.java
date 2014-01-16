@@ -69,7 +69,6 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
     public void testUpsertIntoSaltedTableFromNormalTable() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS source" + 
@@ -87,7 +86,9 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
             else if (tgtSQ()) ddl = "CREATE TABLE target" +
                     " (pk VARCHAR(128) NOT NULL PRIMARY KEY, col INTEGER) ";
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk, col) VALUES(?,?)";
             else if (tgtSQ()) query = "INSERT INTO source(pk, col) VALUES(?,?)";
@@ -118,7 +119,6 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
     public void testUpsertIntoNormalTableFromSaltedTable() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS source" + 
@@ -135,6 +135,8 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
             else if (tgtSQ()) ddl = "CREATE TABLE target" +
                     " (pk VARCHAR(128) NOT NULL PRIMARY KEY, col INTEGER) ";
             conn.createStatement().execute(ddl);
+
+            conn.setAutoCommit(false);
 
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk, col) VALUES(?,?)";
@@ -166,7 +168,6 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
     public void testUpsertSaltedTableIntoSaltedTable() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS source" + 
@@ -183,7 +184,9 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
             else if (tgtSQ()) ddl = "CREATE TABLE target" +
                     " (pk VARCHAR(128) NOT NULL PRIMARY KEY, col INTEGER)";
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk, col) VALUES(?,?)";
             else if (tgtSQ()) query = "INSERT INTO source(pk, col) VALUES(?,?)";
@@ -214,7 +217,6 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
     public void testUpsertSelectOnSameSaltedTable() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS source" + 
@@ -224,7 +226,9 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
             else if (tgtSQ()) ddl = "CREATE TABLE source" +
                     " (pk VARCHAR(128) NOT NULL PRIMARY KEY, col1 INTEGER, col2 INTEGER)";
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk, col1) VALUES(?,?)";
             else if (tgtSQ()) query = "INSERT INTO source(pk, col1) VALUES(?,?)";
@@ -254,7 +258,6 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
     public void testUpsertSelectOnSameSaltedTableWithEmptyPKColumn() throws Exception {
         printTestDescription();
 
-        conn.setAutoCommit(false);
         try {
             String ddl = null;
             if (tgtPH()) ddl = "CREATE TABLE IF NOT EXISTS source" + 
@@ -268,7 +271,9 @@ public class SaltedTableUpsertSelectTest extends BaseTest {
                     " , CONSTRAINT pk_SaltedTableUpsertSelectSource PRIMARY KEY (pk3))";
 
             conn.createStatement().execute(ddl);
-            
+        
+            conn.setAutoCommit(false);
+    
             String query = null;
             if (tgtPH()||tgtTR()) query = "UPSERT INTO source(pk1, pk2, pk3, col1) VALUES(?,?,?,?)";
             else if (tgtSQ()) query = "INSERT INTO source(pk1, pk2, pk3, col1) VALUES(?,?,?,?)";

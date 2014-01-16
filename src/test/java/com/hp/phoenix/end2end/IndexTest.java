@@ -156,7 +156,6 @@ public class IndexTest extends BaseTest{
             String query;
             ResultSet rs;
             
-            conn.setAutoCommit(false);
             if (tgtPH()) conn.createStatement().execute("CREATE TABLE t (k VARCHAR NOT NULL PRIMARY KEY, v VARCHAR) IMMUTABLE_ROWS=true " +  (tableSaltBuckets == null ? "" : ", SALT_BUCKETS=" + tableSaltBuckets));
             else if (tgtSQ()||tgtTR()) conn.createStatement().execute("CREATE TABLE t (k VARCHAR(1) NOT NULL PRIMARY KEY, v VARCHAR(1))");
             query = "SELECT * FROM t";
@@ -172,6 +171,8 @@ public class IndexTest extends BaseTest{
                 conn.createStatement().execute("CREATE INDEX i ON t (v DESC)");
                 // TRAF: does not allow direct access to indexes
             }
+
+            conn.setAutoCommit(false);
  
             PreparedStatement stmt = null;
             if (tgtPH()||tgtTR()) stmt = conn.prepareStatement("UPSERT INTO t VALUES(?,?)");

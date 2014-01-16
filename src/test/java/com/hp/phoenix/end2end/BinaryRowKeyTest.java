@@ -65,7 +65,6 @@ public class BinaryRowKeyTest extends BaseTest {
     /* @AfterClass, @Before, @After are defined in BaseTest */
 
     private void initTableValues() throws SQLException {
-        conn.setAutoCommit(false);
         
         try {
             String ddl = null;
@@ -80,7 +79,9 @@ public class BinaryRowKeyTest extends BaseTest {
                     "    b_binary varchar(128) \n" +
                     "    , CONSTRAINT pk PRIMARY KEY (a_binary, a_string))\n";
             conn.createStatement().execute(ddl);
-            
+       
+            conn.setAutoCommit(false);
+     
             String query = null;
             PreparedStatement stmt;
             
