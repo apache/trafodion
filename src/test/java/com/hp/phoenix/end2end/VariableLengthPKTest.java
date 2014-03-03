@@ -1288,7 +1288,7 @@ public class VariableLengthPKTest extends BaseTest {
             fail();
         } catch (Exception e) {
             if (tgtPH()) assertTrue(e.getMessage().contains(" may not exceed 2 bytes"));
-            else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage().contains("Invalid Parameter Value: VARCHAR data longer than column length"));
+            else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage().contains("VARCHAR data longer than column length"));
         } finally {
         }
     }
@@ -1337,7 +1337,7 @@ public class VariableLengthPKTest extends BaseTest {
             fail();
         } catch (Exception e) {
             if (tgtPH()) assertTrue(e.getMessage().contains(" may not exceed 3 bytes"));
-            else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage().contains("Invalid Parameter Value: VARCHAR data longer than column length"));
+            else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage().contains("VARCHAR data longer than column length"));
         } finally {
         }
     }

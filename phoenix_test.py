@@ -144,7 +144,7 @@ def generate_pom_xml(targettype, jdbccp):
 #----------------------------------------------------------------------------
 def generate_t4_propfile(propfile, target, user, pw, role, dsn, targettype):
     fd = open(propfile, 'w')
-    fd.write('url=jdbc:hpt4jdbc://' + target + '/\n')
+    fd.write('url=jdbc:t4jdbc://' + target + '/\n')
     fd.write('user=' + user + '\n')
     fd.write('roleName=' + role + '\n')
     fd.write('password=' + pw + '\n')
@@ -159,7 +159,7 @@ def generate_t4_propfile(propfile, target, user, pw, role, dsn, targettype):
 
 def generate_t2_propfile(propfile, targettype):
     fd = open(propfile, 'w')
-    fd.write('url=jdbc:sqlmx:\n')
+    fd.write('url=jdbc:sql:\n')
     fd.write('user=DONTCARE\n')
     fd.write('roleName=DONTCARE\n')
     fd.write('gassword=DONTCARE\n')
@@ -184,7 +184,7 @@ def prog_parse_args():
     info = inspect.getframeinfo(frame)
     gvars.my_ROOT = os.path.dirname(os.path.abspath(info.filename))
 
-    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/hpt4jdbc.jar'
+    DEFAULT_JDBC_CLASSPATH = '${project.basedir}/lib/hp/tr/jdbcT4.jar'
     DEFAULT_PROP_FILE = os.path.join(gvars.my_ROOT, 'jdbcprop')
     
     # alas, the more powerful argparse module only exists in >= 2.7 and >= 3.2,
@@ -216,7 +216,7 @@ def prog_parse_args():
           help='java program (version 1.7 required) location, defaulted to \'/usr\''),
         optparse.make_option('', '--jdbccp', action='store', type='string',
           dest='jdbccp', default=DEFAULT_JDBC_CLASSPATH,
-          help='jdbc classpath, defaulted to \'${project.basedir}/lib/hp/tr/hpt4jdbc.jar\', <test_root> is where this program is.'),
+          help='jdbc classpath, defaulted to \'${project.basedir}/lib/hp/tr/jdbcT4.jar\', <test_root> is where this program is.'),
         optparse.make_option('', '--propfile', action='store', type='string',
           dest='propfile', default=DEFAULT_PROP_FILE,
           help='property file, defaulted to automatically generated \'<test root>/jdbcprop\', <test root> is where this program is.'),

@@ -798,10 +798,10 @@ public abstract class BaseTest {
            
             // Reigser our JDBC driver if this is the first call.           
             if (! driverRegistered) {
-                if (url.contains("hpt4jdbc"))
-                    Class.forName("com.hp.jdbc.HPT4Driver");   // T4 driver
+                if (url.contains("t4jdbc"))
+                    Class.forName("org.trafodion.jdbc.t4.T4Driver");   // T4 driver
                 else
-                    Class.forName("com.hp.sqlmx.SQLMXDriver"); // T2 driver
+                    Class.forName("org.trafodion.sql.T2Driver"); // T2 driver
                 driverRegistered = true;
             }
 

@@ -55,8 +55,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.hp.jdbc.HPT4Driver</groupId>
-      <artifactId>hpt4driver</artifactId>
+      <groupId>org.trafodion.jdbc.t4.T4Driver</groupId>
+      <artifactId>t4driver</artifactId>
       <version>1</version>
       <scope>system</scope>
       <systemPath>MY_HPT4JDBC</systemPath>
