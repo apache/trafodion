@@ -46,7 +46,7 @@
   <groupId>org.trafodion</groupId>
   <artifactId>dcs</artifactId>
   <packaging>jar</packaging>
-  <version>0.7.0-beta</version>
+  <version>0.7.0</version>
   <name>dcs</name>
   <url>http://dcs.trafodion.org</url>
   
