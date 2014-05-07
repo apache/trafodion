@@ -1,0 +1,442 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#  Setup Trafodion environment on a Cluster System
+
+#==============================================
+# Default values
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+typeset TOOLS_TAR="$TRAF_WORKDIR/traf_other_tools.tgz"
+typeset TRAF_USER="trafodion"
+typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
+typeset NODE_LIST="$HOSTNAME"
+typeset CLUSTERNAME="$HOSTNAME"
+
+#==============================================
+
+function print_usage {
+cat << EOF
+This script will do the one-time setup needed
+to establish the Trafodion environment.
+
+NOTE: This script does NOT install a Trafodion build
+      it merely sets up everything needed to support
+      Trafodion.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                Print this message and exit.
+    --nodes "<node_list>" Blank separated list of nodes (within quotes) in this Trafodion environment
+                          From 1 to N nodes, although two is the recommended minimum.
+    --username <user>     Trafodion user name (default "$TRAF_USER")
+    --password <password> Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
+    --clustername <name>  Name of Trafodion cluster. (default $HOSTNAME)
+
+EOF
+}
+
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --cloudera)
+            HADOOP_OPTION="cloudera"
+            shift
+            ;;
+        --ambari|hortonworks)
+            HADOOP_OPTION="hortonworks"
+            shift
+            ;;
+        --username)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TRAF_USER=$2
+            shift
+            ;;
+        --password)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TRAF_USER_PASSWORD=$2
+            shift
+            ;;
+        --nodes)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            NODE_LIST=$2
+            shift
+            ;;
+        --clustername)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            CLUSTERNAME=$2
+            shift
+            ;;
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+            echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+timestamp=$(date +%F-%H-%M-%S)
+echo "***INFO: Starting Trafodion environment setup ($timestamp)"
+mkdir -p $TRAF_WORKDIR/logs
+OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
+
+#==============================================
+# display license text and get acceptance
+echo "=== $timestamp ==="
+cat $( cd "$( dirname "$0" )" && pwd )/trafodion_beta_license
+read -p "BY TYPING “ACCEPT” YOU AGREE TO THE TERMS OF THIS AGREEMENT: " answer
+answer=${answer,,}
+if [ "$answer" != "accept" ]; then
+    echo "***ERROR: You must accept this license by typing \"accept\" to install."
+    exit -1
+fi
+
+#============================
+# check that we are running from a userid with sudo access
+sudo echo "***INFO: testing sudo access"
+if [ $? -ne 0 ]; then
+    echo "***ERROR: This script must be ran from userid with sudo access."
+    exit -1
+fi
+
+#================================
+# make sure the user didn't specify the sudo userid as the Trafodion userid
+# because we rewrite the .bashrc file and don't want to mess up the user's
+# current environment
+if [ "$USER" == "$TRAF_USER" ]; then
+    echo "***ERROR: The Trafodion username cannot be the same as the install username"
+    exit -1
+fi
+
+#================================
+#Check for private key errors if on HP cloud VM
+if [ $OPENSTACK_VM -ne 0 ]; then
+    echo "***INFO: Checking for private key errors"
+
+    #If file has not been copied over, then script will exit
+
+    fileFound=$(find / -wholename /root/.ssh/id_rsa | wc -l)
+
+    if [[ $fileFound -lt 1 ]]; then
+       echo
+       echo "***ERROR[1]: Private Key file not found"
+       echo "Script exiting..."
+       echo
+       exit -1
+    fi
+
+    #There should be as many begin statements as end statements. If there is not an
+    #equal matching it may be the result of a copy error.
+
+    begin=$(grep "\-\-\-\-\-BEGIN RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
+    end=$(grep "\-\-\-\-\-END RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
+
+    if [[ $begin -ne $end ]]; then
+       echo
+       echo "***ERROR[2]: Private Key file copy error"
+       echo "Script exiting..."
+       echo
+       exit -1
+    fi
+
+    ##If there are no begin or end statements then there is a copy error.
+
+    if [[ $begin -eq 0 ]]; then
+       echo
+       echo "***ERROR[3]: Private Key file copy error"
+       echo "Script exiting..."
+       echo
+       exit -1
+    fi
+fi
+
+#=========================================================
+# validate specified nodes and that we can get to them with passwordless ssh
+echo "***INFO: Checking all nodes in specified node list"
+bad_nodes=""
+MY_NODES=""
+
+for node in $NODE_LIST
+do
+    # use BatchMode so it will just give an error instead of prompting for password
+    ssh -oStrictHostKeyChecking=no -oBatchMode=yes $node hostname
+    if [ $? != 0 ]; then
+        bad_nodes="$bad_nodes $node"
+    fi
+    # build MY_NODES env var to be used for pdsh & pdcp commands
+    MY_NODES="$MY_NODES -w $node"
+done
+if [ -n "$bad_nodes" ]; then
+    echo "***ERROR: unable to access all nodes in the node list with passwordless ssh"
+    echo "***ERROR: problem nodes: $bad_nodes"
+    exit -1
+fi
+node_count=$(echo $NODE_LIST | wc -w)
+echo "***INFO: Total number of nodes = $node_count"
+if [ $node_count -eq 1 ]; then
+    TRAF_PDSH=""
+else
+    # use the -S option to cause pdsh to return largest of
+    # the remote command return values so we can tell if one
+    # or more of the remote commands failed
+    TRAF_PDSH="pdsh -S $MY_NODES"
+fi
+
+echo "$NODE_LIST" > $TRAF_WORKDIR/node_list
+echo "$MY_NODES" > $TRAF_WORKDIR/my_nodes
+
+#================================
+echo "***INFO: installing required packages"
+YUM_LOG=$TRAF_WORKDIR/logs/trafodion_yum_$timestamp.log
+
+# first install pdsh on each node so we can use it to install
+# everything else.  don't need pdsh if only a single node
+if [ $node_count -ne 1 ]; then
+    for node in $NODE_LIST
+    do
+        echo "***INFO: ... pdsh on node $node"
+
+        # if not already installed on this node, then install it
+        ssh $node rpm -qa | grep pdsh
+        if [ $? -ne 0 ]; then
+            ssh $node sudo yum --assumeyes install pdsh &>> $YUM_LOG
+            if [ $? != 0 ]; then
+                echo "***ERROR: Can't install pdsh on node $node"
+                exit -1
+            fi
+        fi
+    done
+fi
+package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite expect perl-DBD-SQLite*"
+for package in $package_list
+do
+    echo "***INFO: ... $package"
+    $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+    if [ $? != 0 ]; then
+        echo "***ERROR: Can't install $package"
+        exit -1
+    fi
+done
+
+#================================
+echo "***INFO: installing optional packages"
+package_list="tigervnc-server firefox"
+for package in $package_list
+do
+    echo "***INFO: ... $package"
+    $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+    if [ $? != 0 ]; then
+        echo "***WARNING: Can't install optional package $package"
+    fi
+done
+
+echo "***INFO: ... Desktop 'Desktop Platform' 'X Windows System' 'Fonts'"
+$TRAF_PDSH "sudo yum --assumeyes groupinstall \"Desktop\" \"Desktop Platform\" \"X Windows System\" \"Fonts\" " 2>> $YUM_LOG >> $YUM_LOG
+if [ $? != 0 ]; then
+    echo "***WARNING: Can't group install optional packages 'Desktop' 'Desktop Platform' 'X Windows System' 'Fonts'"
+fi
+
+#=======================================
+echo "***INFO: installing additional libraries"
+echo "***INFO: ... libqpidclient.so.6 libqpidcommon.so.6 libqpidtypes.so.1"
+cd $TRAF_WORKDIR
+tar -xzf $TOOLS_TAR traf_other_tools/qpidlibs.6
+if [ $? != 0 ]; then
+    echo "***ERROR: Problem untarring $TOOLS_TAR"
+    exit -1
+fi
+if [ $node_count -gt 1 ]; then
+    pdsh $MY_NODES -x $HOSTNAME mkdir -p $TRAF_WORKDIR/traf_other_tools
+    pdcp $MY_NODES -r $TRAF_WORKDIR/traf_other_tools/qpidlibs.6 $TRAF_WORKDIR/traf_other_tools
+fi
+
+$TRAF_PDSH sudo cp $TRAF_WORKDIR/traf_other_tools/qpidlibs.6/* /usr/lib64
+if [ $? != 0 ]; then
+    echo "***ERROR: Problem copying additional libraries to /usr/lib64"
+    exit -1
+fi
+
+#=======================================
+# install additional packages if we are on an openstack VM
+if [ $OPENSTACK_VM -ne 0 ]; then
+    echo "***INFO: Openstack VM detected"
+    echo "***INFO: installing addtional packages for Openstack VMs"
+    package_list="python-pip git"
+    for package in $package_list
+    do
+        echo "***INFO: ... $package"
+        $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+        if [ $? != 0 ]; then
+            echo "***WARNING: Can't install VM-only package $package"
+        fi
+    done
+
+fi
+
+#=======================================
+# set some limits needed by Trafodion
+traf_limits_conf="$TRAF_WORKDIR/trafodion_limits.conf"
+echo "***INFO: modifying limits in /etc/security/limits.conf on all nodes"
+
+# save a copy for uninstaller to restore
+sudo cp /etc/security/limits.conf $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL
+
+# strip out any current settings
+grep --invert-match -E " *memlock | *nofile | *core | *nproc | Trafodion" /etc/security/limits.conf > $traf_limits_conf
+
+# append Trafodion settings to end of file
+echo "# Trafodion settings" >> $traf_limits_conf
+echo "*   soft   core unlimited" >> $traf_limits_conf
+echo "*   hard   core unlimited" >> $traf_limits_conf
+echo "*   soft   memlock unlimited" >> $traf_limits_conf
+echo "*   hard   memlock unlimited" >> $traf_limits_conf
+echo "*   soft   nofile 32768" >> $traf_limits_conf
+echo "*   hard   nofile 65536" >> $traf_limits_conf
+echo "*   soft   nproc 100000" >> $traf_limits_conf
+echo "*   hard   nproc 100000" >> $traf_limits_conf
+
+# copy to all nodes
+if [ $node_count -eq 1 ]; then
+    sudo cp $traf_limits_conf /etc/security/limits.conf
+else
+    pdcp $MY_NODES -x $HOSTNAME $traf_limits_conf $TRAF_WORKDIR
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL $TRAF_WORKDIR
+    pdsh $MY_NODES sudo cp $traf_limits_conf /etc/security/limits.conf
+fi
+
+#=======================================
+echo "***INFO: create trafodion userid \"$TRAF_USER\" "
+$TRAF_WORKDIR/installer/traf_add_user \
+    --username $TRAF_USER \
+    --password $TRAF_USER_PASSWORD \
+    --nodes "$NODE_LIST" \
+    --clustername "$CLUSTERNAME"
+if [ $? != 0 ]; then
+    echo "***ERROR: Unable to create trafodion userid: $TRAF_USER"
+    exit -1
+fi
+
+# put build tar files in users $HOME
+sudo cp $TRAF_WORKDIR/trafodion_build.tgz /home/$TRAF_USER &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_server*.tgz /home/$TRAF_USER/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/dcs_build.tgz /home/$TRAF_USER &> /dev/null
+sudo cp $TRAF_WORKDIR/dcs-*.tgz /home/$TRAF_USER/dcs_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/traf_other_tools.tgz /home/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/dcs_installer /home/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults /home/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller /home/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_installer /home/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_beta_license /home/$TRAF_USER
+sudo chown --recursive $TRAF_USER.$TRAF_GROUP /home/$TRAF_USER
+
+echo "***INFO: setting SELINUX=disabled in /etc/selinux.config"
+sudo cp /etc/selinux/config $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
+sudo sh -c "sed -e 's@^SELINUX=.*@SELINUX=disabled@' <$TRAF_WORKDIR/etc_selinux_config_ORIGINAL >/etc/selinux/config"
+
+if [ $node_count -gt 1 ] ; then
+    echo "***INFO: modifying /etc/selinux/config on remaining nodes"
+
+    sudo cp /etc/selinux/config $TRAF_WORKDIR/traf_selinux.conf
+
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/traf_selinux.conf $TRAF_WORKDIR
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
+    pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
+fi
+
+echo "***INFO: Checking the size of /var for Cloudera DB"
+
+var_min=20000000
+var_file='/var'
+var_lib_file='/var/lib'
+var_size=0
+var_on_root=0
+clouderadb_varfile="/var/lib/cloudera-scm-server-db"
+clouderadb_file="cloudera-scm-server-db"
+root="/"
+
+    if [ -d ${var_file} ] ; then
+           df /var | grep var
+           if [ $? -eq 0 ] ; then
+               var_size=`df /var |grep var | tr -s [:space:] ':' | cut -d':' -f4`
+           else
+               var_on_root=1
+           fi
+    fi
+
+    if [ -d ${clouderadb_varfile} ] ; then
+           echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists."
+            if [ -h ${clouderadb_varfile} ] ; then
+                echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory."
+                if ! [ -L ${clouderadb_varfile} ] ; then
+                    echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not."
+                echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory."
+                fi
+            elif [ ${var_on_root} -eq 0 ] ; then
+                if [ ${var_size} -lt ${var_min} ] ; then
+                    echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
+                    echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space."
+                fi
+            else
+                echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /."
+                echo "*** WARNING: No additional movement of the file is recommended."
+            fi
+    else
+        if [ ${var_size} -lt ${var_min} ] ; then
+            echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
+            echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory."
+            if [ $UID -ne 0 ] ; then
+                echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access."
+            else
+                if [ ! -d ${root}${clouderadb_file} ] ; then
+                    mkdir ${root}${clouderadb_file}
+                fi
+                if [ ! -d ${var_lib_file} ] ; then
+                    mkdir ${var_lib_file}
+                fi
+                ln -s ${root}${clouderadb_file} ${var_lib_file}
+                if [ $? -ne 0 ] ; then
+                    echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib."
+                fi
+           fi
+       fi
+    fi
+
+echo "***INFO: Trafodion setup completed"

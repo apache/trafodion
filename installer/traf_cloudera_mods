@@ -1,0 +1,234 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#
+# This script will configure HBase with HBase-trx 
+# and co-processors needed for Trafodion.  It uses
+# Cloudera Manager's REST api to do this.
+#
+# NOTE: Only for Cloudera installations
+
+###Default Values###
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
+MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
+node_count=$(echo $NODE_LIST | wc -w)
+
+CLOUDERA_ADMIN="admin"
+CLOUDERA_PASSWORD="admin"
+CLOUDERA_MANAGER_URL=$(hostname --long):7180
+TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
+
+function displayHelp
+{
+  echo
+  echo "This script will configure HBase with Hbase-trx and co-processors needed" 
+  echo "for Trafodion."
+  echo
+  echo "Usage: $(basename $0) [options]"
+  echo 
+  echo "Options:"
+  echo "    --help               Print this message and exit."
+  echo "    --trafodion_build    The Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz"
+  echo "    --cloudera_userid    Cloudera username if not chosen will default to admin" 
+  echo "    --cloudera_password  Cloudera password if not chosen will default to admin" 
+  echo "    --cloudera_url       Cloudera url:port if not chosen will default to hostname:7180"
+  echo
+}
+
+while [ $# -gt 0 ]; do
+
+  case $1 in 
+   --trafodion_build)
+     shift
+     TRAF_BUILD=$1
+     ;;
+
+   --cloudera_userid)
+     shift
+     CLOUDERA_ADMIN=$1
+     ;;
+   
+   --cloudera_password)
+     shift
+     CLOUDERA_PASSWORD=$1
+     ;;
+  
+   --cloudera_url)
+     shift
+     CLOUDERA_MANAGER_URL=$1
+     ;;
+
+   --help)
+     shift
+     displayHelp
+     exit
+     ;;
+   
+   **)
+     echo "***ERROR: Incorrect Command."
+     displayHelp
+     exit
+     ;;
+
+  esac
+  shift
+done
+
+CLUSTER_NAME=$(curl -su $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD http://$CLOUDERA_MANAGER_URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+
+if [ -z $CLUSTER_NAME ]; then
+  echo
+  echo "***ERROR: Please check input parameters"
+  echo
+  exit -1 
+fi
+
+# make sure we're on a Cloudera system
+cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
+if [ $cloudera_installed -eq 0 ]; then
+    echo "***ERROR: Cloudera not detected.  This script is for Cloudera distro only."
+    exit -1
+fi
+
+# copy Trafodion trx jar to Cloudera's plugins directory on all nodes
+cd $TRAF_WORKDIR
+tar -xzf $TRAF_BUILD export/lib/hbase_jdk1_6-trx-0.94.6.jar
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to find export/lib/hbase_jdk1_6-trx-0.94.6.jar in $TRAF_BUILD"
+    exit -1
+fi
+
+# if more than one node then copy to all nodes
+if [ $node_count -ne 1 ]; then
+    pdcp $MY_NODES export/lib/hbase_jdk1_6-trx-0.94.6.jar $TRAF_WORKDIR
+    pdsh $MY_NODES chmod 755 $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar
+    pdsh $MY_NODES sudo cp $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar /usr/share/cmf/lib/plugins
+else
+    cp export/lib/hbase_jdk1_6-trx-0.94.6.jar $TRAF_WORKDIR
+    chmod 755 $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar
+    sudo cp $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar /usr/share/cmf/lib/plugins
+fi
+
+rm $TRAF_WORKDIR/traf_hdfs1_config_temp 2> /dev/null
+rm $TRAF_WORKDIR/traf_hbase_config_temp 2> /dev/null
+
+curl -X PUT -H 'Content-Type:application/json' -u $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD  --data \
+'{ "roleTypeConfigs" :  [ {
+        "roleType" : "NAMENODE",
+        "items": [ {
+                "name" : "namenode_java_heapsize",
+        "value" : "1073741824"
+                } ]
+   }, {
+        "roleType" : "SECONDARYNAMENODE",
+        "items":[ {
+                "name" : "secondary_namenode_java_heapsize",
+        "value" : "1073741824"
+                } ]
+     } ]
+}' \
+http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/services/hdfs1/config > $TRAF_WORKDIR/traf_hdfs1_config_temp
+
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hdfs configuration through Cloudera's REST API."
+    exit -1
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hdfs1_config_temp | grep Error | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***INFO: unable to modify hdfs configuration through Cloudera's REST API."
+    exit -1
+fi
+
+rm $TRAF_WORKDIR/traf_hdfs1_config_temp 2> /dev/null
+
+# change the hbase configuration using Cloudera Manager's REST api
+curl -X PUT -H 'Content-Type:application/json' -u $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD  --data \
+'{ "roleTypeConfigs" : 	[ {
+	"roleType" : "MASTER", 
+	"items" : [ { 
+		"name" : "hbase_master_config_safety_valve", 
+        "value" : "<property>\r\n   <name>hbase.master.distributed.log.splitting</name>\r\n   <value>false</value>\r\n</property>\r\n"
+		} ]
+    }, {
+	"roleType" : "REGIONSERVER", 
+	"items" : [ { 
+		"name" : "hbase_coprocessor_region_classes", 
+                "value" : "org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl"
+		}, {
+		"name" : "hbase_regionserver_class", 
+                "value" : "org.apache.hadoop.hbase.ipc.TransactionalRegionInterface"
+		}, {
+		"name" : "hbase_regionserver_config_safety_valve", 
+		"value" : "<property>\r\n   <name>hbase.regionserver.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer</value>\r\n</property>\r\n<property>\r\n  <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n<property>\r\n   <name>hbase.hlog.splitter.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value>\r\n</property>\r\n<property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n"
+		} ] 
+	} ] 
+}' \
+http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/services/hbase1/config > $TRAF_WORKDIR/traf_hbase_config_temp
+
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase configuration through Cloudera's REST API."
+    exit -1
+fi
+
+# in most cases curl does not return an error
+# so curl's actual output needs to be checked, too
+curl_error=$(grep TITLE $TRAF_WORKDIR/traf_hbase_config_temp | grep Error | wc -l)
+if [ $curl_error -ne 0 ]; then
+    echo "***INFO: unable to modify hbase configuration through Cloudera's REST API."
+    exit -1
+fi
+
+rm $TRAF_WORKDIR/traf_hbase_config_temp 2> /dev/null
+
+poll_time=30
+echo "***INFO: restarting hbase to pickup Trafodion transaction jar"
+echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+restart_info=$(curl -X POST -u $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD \
+    http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
+echo $restart_info
+command_id=$(echo $restart_info | grep id | awk '{print $4}' | sed -e 's@,@@' )
+echo "***DEBUG: Cloudera command_id=$command_id"
+
+# poll until restart is completed as a restart can take a while
+active=1
+while [ $active -ne 0 ]; do
+    sleep $poll_time
+    curl -u $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD \
+        http://$CLOUDERA_MANAGER_URL/api/v1/commands/$command_id \
+        > $TRAF_WORKDIR/hbase_restart_status_temp
+    cat $TRAF_WORKDIR/hbase_restart_status_temp
+    echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+    # if restart command is still active, then active will not equal 0
+    active=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"active" : true' | wc -l)
+done
+
+# make sure restart completed successfully
+failures=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"success" : false' | wc -l)
+if [ $failures -ne 0 ]; then
+    echo "***ERROR: Unable to restart HBase."
+    exit -1
+fi
+
+echo "***INFO: HBase restart completed successfully"
+

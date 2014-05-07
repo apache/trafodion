@@ -1,0 +1,221 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#
+# This script will configure HBase with HBase-trx 
+# and co-processors needed for Trafodion.  It uses
+# Ambari's configs.sh script to do this.
+#
+# NOTE: Only for Ambari installations
+
+###Default Values###
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
+MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
+node_count=$(echo $NODE_LIST | wc -w)
+
+AMBARI_ADMIN="admin"
+AMBARI_PASSWORD="admin"
+AMBARI_URL=$(hostname --long):8080
+TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
+
+function displayHelp
+{
+  echo
+  echo "This script will configure HBase with Hbase-trx and co-processors needed" 
+  echo "for Trafodion."
+  echo
+  echo "Usage: $(basename $0) [options]"
+  echo 
+  echo "Options:"
+  echo "    --help               Print this message and exit."
+  echo "    --trafodion_build    The Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz"
+  echo "    --ambari_userid    Ambari username if not choosen will default to admin" 
+  echo "    --ambari_password  Ambari password if not choosen will default to admin" 
+  echo "    --ambari_url       Ambari url:port if not choosen will default to hostname:7180"
+  echo
+}
+
+while [ $# -gt 0 ]; do
+
+  case $1 in 
+   --trafodion_build)
+     shift
+     TRAF_BUILD=$1
+     ;;
+
+   --ambari_userid)
+     shift
+     AMBARI_ADMIN=$1
+     ;;
+   
+   --ambari_password)
+     shift
+     AMBARI_PASSWORD=$1
+     ;;
+  
+   --ambari_url)
+     shift
+     AMBARI__URL=$1
+     ;;
+
+   --help)
+     shift
+     displayHelp
+     exit
+     ;;
+   
+   **)
+     echo "***ERROR: Incorrect Command."
+     displayHelp
+     exit
+     ;;
+
+  esac
+  shift
+done
+
+CLUSTER_NAME=$(curl -su $AMBARI_ADMIN:$AMBARI_PASSWORD http://$AMBARI_URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+
+if [ -z $CLUSTER_NAME ]; then
+  echo
+  echo "***ERROR: Please check input parameters"
+  echo
+  exit -1 
+fi
+
+# make sure we're on a Ambari system
+ambari_installed=$(rpm -qa | grep ambari | wc -l )
+if [ $ambari_installed -eq 0 ]; then
+    echo "***ERROR: Ambari not detected.  This script is for Ambari distro only."
+    exit -1
+fi
+
+# copy Trafodion trx jar to /usr/lib/hbase/lib
+cd $TRAF_WORKDIR
+tar -xzf $TRAF_BUILD export/lib/hbase_jdk1_7_ambari-trx-0.94.6.jar
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to find export/lib/hbase_jdk1_7_ambari-trx-0.94.6.jar in $TRAF_BUILD"
+    exit -1
+fi
+
+# TODO: need to figure out how to handle multiple versions of hbase-trx jar file
+
+# if more than one node then copy to all nodes
+if [ $node_count -ne 1 ]; then
+    pdcp $MY_NODES export/lib/hbase_jdk1_7_ambari-trx-0.94.6.jar $TRAF_WORKDIR
+	if [ $? != 0 ]; then
+	    echo "***ERROR: hbase_jdk1_7_ambari-trx-0.94.6.jar is missing.  Perhaps the rebuild step didn't get done?"
+	    exit -1
+	fi
+    pdsh $MY_NODES chmod 755 $TRAF_WORKDIR/hbase_jdk1_7_ambari-trx-0.94.6.jar
+    pdsh $MY_NODES sudo cp $TRAF_WORKDIR/hbase_jdk1_7_ambari-trx-0.94.6.jar /usr/lib/hbase/lib
+else
+    cp export/lib/hbase_jdk1_6-trx-0.94.6.jar $TRAF_WORKDIR
+	if [ $? != 0 ]; then
+	    echo "***ERROR: hbase_jdk1_7_ambari-trx-0.94.6.jar is missing.  Perhaps the rebuild step didn't get done?"
+	    exit -1
+	fi
+    chmod 755 $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar
+    sudo cp $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar /usr/lib/hbase/lib
+fi
+
+# change the hbase configuration using Ambari's script
+AMBARI_DIR=/var/lib/ambari-server/resources/scripts
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.master.distributed.log.splitting false
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.master.distributed.log.splitting through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.coprocessor.region.classes org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.coprocessor.region.classes through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.regionserver.class org.apache.hadoop.hbase.ipc.TransactionalRegionInterface
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.regionserver.class through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.regionserver.impl org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.regionserver.impl through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.hregion.impl org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.hregion.impl through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.hlog.splitter.impl org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.hlog.splitter.impl through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.regionserver.region.split.policy org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.regionserver.region.split.policy through Ambari's configs.sh script."
+    exit -1
+fi
+$AMBARI_DIR/configs.sh set $(hostname --long) $CLUSTER_NAME hbase-site hbase.snapshot.enabled true
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.snapshot.enabled through Ambari's configs.sh script."
+    exit -1
+fi
+
+echo "***WARNING: Unable to restart HBase programatically..."
+echo "***WARNING: ...please manually restart HBase through the Ambari web GUI"
+exit
+
+#=================================================
+#=================================================
+#TODO: figure our how to restart HBase through Ambari REST API, the following
+# code only works for Cloudera
+poll_time=30
+echo "***INFO: restarting hbase to pickup Trafodion transaction jar"
+echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+restart_info=$(curl -X POST -u $AMBARI_ADMIN:$AMBARI_PASSWORD \
+    http://$AMBARI__URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
+echo $restart_info
+command_id=$(echo $restart_info | grep id | awk '{print $4}' | sed -e 's@,@@' )
+echo "***DEBUG: Ambari command_id=$command_id"
+
+# poll until restart is completed as a restart can take a while
+active=1
+while [ $active -ne 0 ]; do
+    sleep $poll_time
+    curl -u $AMBARI_ADMIN:$AMBARI_PASSWORD \
+        http://$AMBARI__URL/api/v1/commands/$command_id \
+        > $TRAF_WORKDIR/hbase_restart_status_temp
+    cat $TRAF_WORKDIR/hbase_restart_status_temp
+    echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+    # if restart command is still active, then active will not equal 0
+    active=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"active" : true' | wc -l)
+done
+
+# make sure restart completed successfully
+failures=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"success" : false' | wc -l)
+if [ $failures -ne 0 ]; then
+    echo "***ERROR: Unable to restart HBase."
+    exit -1
+fi
+
+echo "***INFO: HBase restart completed successfully"
+

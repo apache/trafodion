@@ -1,0 +1,410 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#==========================================
+# Install Trafodion build on a Cluster System
+#==========================================
+
+function print_usage {
+cat << EOF
+This script will install a specified Trafodion build.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                Print this message and exit.
+    --build <file>        Full pathname to the Trafodion build tar file.
+    --dcs_build <file>    Full pathname to the DCS build tar file.
+    --install_path <dir>  Full pathname to the install directory location.
+    --tools_tar <file>    Full pathname to the Trafodion tools tar file.
+    --nostart             This will install but not start Trafodion
+    --init_trafodion      Run init_trafodion after sqstart (ignored for --nostart)
+    --config <file>       Full pathname of sqconfig. (default $HOME/sqconfig)
+    --dcs_servers <count>     Total number of DCS servers to start.  These
+                              will be allocated in a round-robin fashion on
+                              all nodes. (default, 1 per node)
+    --cloudera_userid     Cloudera username if not chosen will default to admin
+    --cloudera_password   Cloudera password if not chosen will default to admin
+    --cloudera_url        Cloudera url:port if not chosen will default to hostname:7180
+
+EOF
+}
+
+#============================================
+# Default values
+
+# This is the directory where all the trafodion install scripts and
+# tar files are initally downloaded to
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
+
+# input parameter defaults
+typeset BUILD_FILE=""
+typeset SQ_ROOT="$HOME/trafodion"
+typeset NODES="$HOSTNAME"
+typeset TOOLS_TAR="$HOME/traf_other_tools.tgz"
+typeset DCS_BUILD="$HOME/dcs_build.tgz"
+typeset INIT_TRAFODION="N"
+typeset NOSTART="N"
+typeset SQCONFIG="$HOME/sqconfig"
+typeset DCS_SERVERS_PARM=""
+typeset CLOUDERA_ADMIN="admin"
+typeset CLOUDERA_PASSWORD="admin"
+typeset CLOUDERA_MANAGER_URL=$(hostname --long):7180
+
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --build)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            BUILD_FILE="$( readlink -f $2 )"
+            shift
+            ;;
+        --install_path)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            SQ_ROOT="$( readlink -f $2 )"
+            shift
+            ;;
+        --dcs_build)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            DCS_BUILD="$( readlink -f $2 )"
+            shift
+            ;;
+        --tools_tar)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TOOLS_TAR="$( readlink -f $2 )"
+            shift
+            ;;
+        --config)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            SQCONFIG="$( readlink -f $2 )"
+            shift
+            ;;
+        --dcs_servers)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            DCS_SERVERS_PARM="--dcs_servers $2"
+            shift
+            ;;
+        --init_trafodion)
+            INIT_TRAFODION="Y"
+            ;;
+        --nostart)
+            NOSTART="Y"
+            ;;
+        --cloudera_userid)
+          shift
+          CLOUDERA_ADMIN=$1
+          ;;
+        --cloudera_password)
+          shift
+          CLOUDERA_PASSWORD=$1
+          ;;
+        --cloudera_url)
+          shift
+          CLOUDERA_MANAGER_URL=$1
+          ;;
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+timestamp=$(date +%F-%H-%M-%S)
+echo "***INFO: Starting Trafodion installer ($timestamp)"
+
+#===========================================
+#Check that cloudera username, password, and url are correct. Will not get a cluster
+#name if these are not correct.
+
+CLUSTER_NAME=$(curl -su $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD http://$CLOUDERA_MANAGER_URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+
+if [ -z $CLUSTER_NAME ]; then
+  echo
+  echo "ERROR: Please check Cloudera input parameters"
+  echo
+  exit -1
+fi
+
+node_count=$(echo $NODE_LIST | wc -w)
+#============================================
+#check if an existing instance is up
+process_count=$(cstat -noheader 2>/dev/null| wc -l)
+if [ "$process_count" -ne 0 ]; then
+    echo "***ERROR: Trafodion processes are still running. Please stop the current"
+    echo "***ERROR: instance with sqstop before installing a new Trafodion build."
+    exit -1
+fi
+
+#============================================
+# if an sqconfig file was specified, then we'll use it instead of the default
+if [ "$SQCONFIG" != "" ]; then
+    SQCONFIG_MASTER="$SQCONFIG"
+    if [[ ! -f "$SQCONFIG" ]]; then
+        echo "***ERROR: Specified SQ config file cannot be found ($SQCONFIG_MASTER)."
+        exit -1
+    fi
+else
+    if [ "$node_count" -ne "1" ]; then
+        # for clusters this sqconfig file was generated when the trafodion user was added
+        SQCONFIG_MASTER=$HOME/sqconfig
+    else
+        # for single node, we use the sqconfig in the build
+        SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
+    fi
+fi
+
+#============================================
+# create install directory
+mkdir -p $SQ_ROOT
+cd $SQ_ROOT
+
+# did the user specify a buildfile? if not apply defaults
+if [ "$BUILD_FILE" == "" ]; then
+
+    # look for any trafodion_server*.tgz file first
+    # and take the newest one, if any
+    file_list=$(ls -rt $HOME/trafodion_server*.tgz 2>/dev/null)
+    if [ "$file_list" != "" ]; then
+        for build in $file_list
+        do
+            BUILD_FILE=$build
+            break;
+        done
+
+    else
+        # otherwise use this as the default
+        BUILD_FILE="$HOME/trafodion_build.tgz"
+    fi
+fi
+
+# untar Trafodion build into install directory
+echo "***INFO: untarring build file $BUILD_FILE to $SQ_ROOT"
+tar -xzf $BUILD_FILE
+if [ "$?" != "0" ]; then
+    echo "***ERROR: There was a problem untarring the Trafodion build file.  Check install log files for details."
+    exit -1;
+fi
+
+# untar the trafodion tools
+TRAF_TOOLSDIR=$SQ_ROOT/traf_other_tools
+echo "***INFO: untarring Trafodion tools file $TOOLS_TAR to $TRAF_TOOLSDIR"
+cd $SQ_ROOT
+tar -xzf $TOOLS_TAR
+if [ "$?" != "0" ]; then
+    echo "***ERROR: There was a problem untarring the Trafodion tools file.  Check install log files for details."
+    exit -1;
+fi
+chmod +w -R $TRAF_TOOLSDIR
+if [ "$?" != "0" ]; then
+    echo "***ERROR: Can't chmod +w -R $TRAF_TOOLSDIR"
+    exit -1;
+fi
+
+#============================================
+echo "***INFO: modifying .bashrc to set SQ_HOME, TOOLSDIR, MY_NODES and NODE_LIST"
+cd $HOME
+cp .bashrc bashrc_temp
+# NOTE: have to use '@' as delimiter because the usual slash '/' doesn't work
+#       because $SQ_ROOT's value has slashes in it
+sed -e "s@export SQ_HOME=.*@export SQ_HOME=$SQ_ROOT@" <bashrc_temp >$HOME/.bashrc
+
+cp .bashrc bashrc_temp
+sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOME/.bashrc
+
+# delete any existing MY_NODES and NODE_LIST from .bashrc
+#cp .bashrc bashrc_temp
+#grep -vE "MY_NODES|NODE_LIST" bashrc_temp > $HOME/.bashrc
+
+# Create NODE_LIST and MY_NODES variable.
+# These variables will contain the list of nodes from the sqconfig file.
+NODES=$(grep "node-name=" $SQCONFIG_MASTER | sed -e "s@^.*node-name=\(.*\);cores.*@\1@" | sort)
+NODE_LIST=$(echo $NODES)
+MY_NODES=$(echo $NODES | sed 's@^@ @g' | sed 's@ @ -w @g' | sed 's@$@ @')
+cp .bashrc bashrc_temp
+sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <bashrc_temp >$HOME/.bashrc
+cp .bashrc bashrc_temp
+sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <bashrc_temp >$HOME/.bashrc
+
+# re-source .bashrc to pick up these changes
+source ~/.bashrc
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying .bashrc file to all nodes"
+    pdcp $MY_NODES -x $HOSTNAME $HOME/.bashrc $HOME
+fi
+
+
+#==========================================
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying sqconfig file ($SQCONFIG_MASTER) to $SQ_ROOT/sql/scripts/sqconfig"
+    cp $SQCONFIG_MASTER $SQ_ROOT/sql/scripts/sqconfig
+fi
+
+cd $SQ_ROOT
+
+echo "***INFO: creating SQSystemDefaults.conf"
+$TRAF_WORKDIR/traf_create_systemdefaults --cloudera_userid $CLOUDERA_ADMIN --cloudera_password $CLOUDERA_PASSWORD --cloudera_url $CLOUDERA_MANAGER_URL --cluster_name $CLUSTER_NAME
+
+# if Cloudera installed, modify SQ_CLASSPATH
+cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
+if [ $cloudera_installed -ge 1 ]; then
+    echo "***INFO: Modifying sqenvcom.sh for Cloudera distro"
+    cp $MY_SQROOT/sqenvcom.sh sqenvcom.sh_temp
+    sed -e "s@^SQ_CLASSPATH=\$@SQ_CLASSPATH=$MY_SQROOT/conf@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
+
+    # re-source .bashrc to pick up these changes
+    source ~/.bashrc
+fi
+
+#=================================================
+echo "***INFO: modifying $SQ_ROOT/conf/hbase-site.xml to add ZooKeeper Quorum"
+# get current zookeeper quorum
+ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -U zookeeper -o pid 2>/dev/null | awk '{print $1}' | sort)
+ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+
+# add property to end of configuration
+cd $SQ_ROOT/conf
+rm hbase-site.temp 2>/dev/null
+cat hbase-site.xml | sed -e "s@</configuration>@  <property>\n    <name>hbase.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n</configuration>@" > hbase-site.temp
+cp hbase-site.temp hbase-site.xml
+rm hbase-site.temp 2>/dev/null
+
+#=================================================
+
+echo "***INFO: Creating $SQ_ROOT directory on all nodes"
+pdsh $MY_NODES -x $HOSTNAME mkdir -p $SQ_ROOT
+
+echo "***INFO: starting sqgen"
+cd $MY_SQROOT/sql/scripts
+sqgen
+SQGEN_RC=$?
+if [ "$SQGEN_RC" != "0" ]; then
+    echo "***ERROR: sqgen failed with RC=$SQGEN_RC. Check install log file for details."
+    exit -1;
+fi
+#==========================================
+
+if [ "$node_count" -ne "1" ]; then
+    echo "***INFO: copying $HOME/sqcert directory to all nodes"
+    pdcp $MY_NODES -x $HOSTNAME -r $HOME/sqcert $HOME
+fi
+
+#==========================================
+# install dcs
+
+# did the user specify a dcs build file? if not apply defaults
+if [ "$DCS_BUILD" == "" ]; then
+
+    # look for any dcs-*.tgz file first
+    # and take the newest one, if any
+    file_list=$(ls -rt $HOME/dcs-*.tgz)
+    if [ "$file_list" != "" ]; then
+        for build in $file_list
+        do
+            BUILD_FILE=$HOME/$build
+            break;
+        done
+
+    else
+        # otherwise use this as the default
+        BUILD_FILE="$HOME/dcs_build.tgz"
+    fi
+fi
+$TRAF_WORKDIR/dcs_installer --dcs_build $DCS_BUILD $DCS_SERVERS_PARM
+if [ "$?" != "0" ]; then
+    echo "***ERROR: DCS install failed.  Check install log files for details."
+    exit -1;
+fi
+
+#==========================================
+echo "***INFO: copying install to all nodes"
+pdcp $MY_NODES -x $HOSTNAME -r $SQ_ROOT $SQ_ROOT/..
+if [ "$?" != "0" ]; then
+    echo "***ERROR: Unable to copy Trafodion install to all machines in this cluster.  Check install log files for details."
+    exit -1;
+fi
+
+if [ "$NOSTART" == "Y" ]; then
+    echo "***INFO: --nostart was specified, skipping sqstart."
+else
+    echo "***INFO: starting Trafodion instance"
+
+    # get first node listed in MY_NODES
+    STARTING_NODE=$(echo $MY_NODES | awk '{print $2}')
+
+    ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts; sqstart"
+    SQSTART_RC=$?
+    if [ "$SQSTART_RC" != "0" ]; then
+        echo "***ERROR: sqstart failed with RC=$SQSTART_RC. Check $MY_SQROOT/sqmon.log file for details."
+        exit -1;
+    fi
+
+    # do init_trafodion if specified
+    if [ "$INIT_TRAFODION" == "Y" ]; then
+        ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize trafodion;\" | sqlci"
+        if [ "$?" != "0" ]; then
+            echo "***ERROR: initialize trafodion failed.  Check install log files for details."
+            exit -1;
+        fi
+    fi
+
+    # stop/start DCS (not needed now that sqstart will start dcs
+    echo "***INFO: skipping start-dcs.sh as DCS should be autostarted by sqstart, now."
+    #DCS_VERSION=$(ls $MY_SQROOT | grep dcs)
+    #$MY_SQROOT/$DCS_VERSION/bin/stop-dcs.sh
+    #$MY_SQROOT/$DCS_VERSION/bin/start-dcs.sh
+    #if [ "$?" != "0" ]; then
+    #    echo "***ERROR: start-dcs.sh failed.  Check install log files for details."
+    #    exit -1;
+    #fi
+fi
+
+#==========================================
+echo "***INFO: Installation completed successfully."
+

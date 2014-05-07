@@ -1,0 +1,153 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+function print_usage {
+cat << EOF
+This script will uninstall a single instance or all of Trafodion.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                  Print this message and exit.
+
+    --instance <dir-name>   Directory path of Trafodion instance to remove.
+                            This is ran from a Trafodion userid.
+
+    --all                   This will remove Trafodion completely, including the
+                            the Trafodion userid and its $HOME directory.
+                            This must be ran from a userid with sudo access.
+
+EOF
+}
+
+TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+
+#=========================================
+# define defaults
+TRAF_USER=$(cat $TRAF_WORKDIR/trafodion_userid)
+NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
+MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
+CLUSTERNAME="$HOSTNAME"
+TRAF_GROUP="trafodion"
+HBASE_TRX="hbase_jdk1_6-trx-0.94.6.jar"
+
+UNINSTALL_ALL="N"
+UNINSTALL_DIR=""
+
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --instance)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            UNINSTALL_DIR=$2
+            shift
+            ;;
+        --all)
+            UNINSTALL_ALL="Y"
+            shift
+            ;;
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+            echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+if [ -z "$UNINSTALL_DIR" ]; then
+    if [ "$UNINSTALL_ALL" != "Y" ]; then
+        echo "***ERROR: no directory to uninstall was specified or '--all' otpion was not used"
+        print_usage
+        exit -1
+    fi
+fi
+
+# create logs directory and logfile name
+timestamp=$(date +%F-%H-%M-%S)
+logsdir="$TRAF_WORKDIR/logs"
+logfile="$logsdir/uninstall_$timestamp.log"
+
+node_count=$(echo $NODE_LIST | wc -w)
+if [ $node_count -eq 1 ]; then
+    TRAF_PDSH=""
+else
+    # use the -S option to cause pdsh to return largest of
+    # the remote command return values so we can tell if one
+    # or more of the remote commands failed
+    TRAF_PDSH="pdsh -S $MY_NODES"
+fi
+
+if [ "$UNINSTALL_ALL" != "Y" ]; then
+    # handle removing the current instance
+    # TODO: check that instance directory exists (do we need to do this?)
+    # TODO: maybe check that we are running from the trafodion userid?
+
+    echo "***INFO: stopping Trafodion instance"
+    sqstop
+    ckillall
+
+    # remove directory on all nodes
+    echo "***INFO: removing Trafodion build files"
+    $TRAF_PDSH rm -rf $UNINSTALL_DIR
+
+else
+    # check sudo access which is required for "--all" option
+    sudo echo "***INFO: testing sudo access"
+    if [ $? -ne 0 ]; then
+        echo "***ERROR: The '--all' option requires this script be ran from a userid with sudo access."
+        exit -1
+    fi
+
+    echo "***INFO: NOTE, rpms that were installed will not be removed."
+
+    # handle removing all of Trafodion
+    echo "***INFO: stopping Trafodion instance"
+    sudo su $TRAF_USER --login --command "sqstop"
+    sudo su $TRAF_USER --login --command "ckillall"
+    sudo su $TRAF_USER --login --command "vncserver -kill :1"
+
+    echo "***INFO: restoring linux system files that were changed"
+    sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
+    if [ $node_count -eq 1 ]; then
+        sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
+        sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
+    else
+        pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
+        pdsh $MY_NODES sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
+    fi
+
+    echo "***INFO remove the Trafodion userid and group"
+    $TRAF_PDSH sudo rm -rf $TRAF_WORKDIR/$TRAF_USER
+    $TRAF_PDSH sudo /usr/sbin/userdel --force --remove $TRAF_USER
+    $TRAF_PDSH sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null
+
+    # remove all download files
+    echo "***DEBUG: skipping deleting downloaded directory"
+#    sudo rm -rf $TRAF_WORKDIR
+fi
+

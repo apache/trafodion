@@ -1,0 +1,203 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# This script configures cloudera to use mysql
+# for the hive metastore.  It will also install
+# mysql if it is not already installed
+
+#=====================
+# TODO: make these run line parameters
+MYSQL_ROOT_PASSWORD="redhat06"
+MYSQL_HIVE_USER="hive1"
+MYSQL_HIVE_PASSWORD="hive"
+#=====================
+
+MYSQL_HIVE_SCHEMA="/usr/lib/hive/scripts/metastore/upgrade/mysql/hive-schema-0.10.0.mysql.sql"
+
+#==============================================
+function print_usage {
+cat << EOF
+This script will add a Trafodion instance userid
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                Print this message and exit.
+
+    --nodes "<node_list>" Blank separated list of nodes (within quotes)
+                          in this Trafodion environment.
+EOF
+}
+
+#==============================================
+
+# Default values
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+typeset NODE_LIST="$HOSTNAME"
+
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --nodes)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            NODE_LIST=$2
+            shift
+            ;;
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+            echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+#============================
+# check that we are running from a userid with sudo access
+sudo echo "***INFO: testing sudo access"
+if [ $? -ne 0 ]; then
+    echo "***ERROR: This script must be ran from userid with sudo access."
+    exit -1
+fi
+
+node_count=$(echo $NODE_LIST | wc -w)
+if [ $node_count -eq 1 ]; then
+    TRAF_PDSH=""
+else
+    MY_NODES=""
+    for node in $NODE_LIST
+    do
+        MY_NODES="$MY_NODES -w $node"
+    done
+    TRAF_PDSH="pdsh -S $MY_NODES"
+fi
+
+YUM_LOG=$TRAF_WORKDIR/logs/mysql_yum_$timestamp.log
+
+# is mysql already installed? if not install it
+MYSQL_INSTALLED=$(rpm -qa | grep mysql-server | wc -l)
+if [ "$MYSQL_INSTALLED" == "0" ]; then
+    echo "***INFO: installing and starting mysql-server"
+    sudo yum --assumeyes install mysql-server &>> $YUM_LOG
+else
+    echo "***INFO: mysql-server already installed"
+fi
+
+# start mysql and set a few config options, doesn't hurt if its already running
+sudo service mysqld start
+if [ $? -ne 0 ]; then
+    echo "***ERROR: Unable to start mysql daemon"
+    exit -1
+fi
+
+sudo /sbin/chkconfig mysqld on
+sudo /sbin/chkconfig --list mysqld
+
+# install other mysql components if not already installed
+MYSQL_CONN_INSTALLED=$(rpm -qa | grep mysql-connector-java | wc -l)
+if [ "$MYSQL_CONN_INSTALLED" == "0" ]; then
+    echo "***INFO: installing mysql-connector-java on all nodes in the cluster"
+    $TRAF_PDSH sudo yum --assumeyes install mysql-connector-java &>> $YUM_LOG
+else
+    echo "***INFO: mysql-connector-java already installed"
+fi
+# TODO: is this really needed?
+#$TRAF_PDSH sudo ln -s /usr/share/java/mysql-connector-java.jar /usr/lib/hive/lib/mysql-connector-java.jar
+
+#==============================
+# script to run mysql_secure_installation without prompts
+# TODO: add logic to determine if this has already been ran and skip it
+echo "***INFO: running mysql_secure_installation"
+SECURE_MYSQL=$(expect -c " 
+set timeout 10
+spawn mysql_secure_installation
+expect \"Enter current password for root (enter for none):\"
+send \"\r\" 
+expect {
+    \" root password?\" {
+        send \"y\r\" 
+        expect \"New password:\"
+        send \"$MYSQL_ROOT_PASSWORD\r\" 
+        expect \"Re-enter new password:\"
+        send \"$MYSQL_ROOT_PASSWORD\r\" 
+    }
+    \"Enter current password for root (enter for none):\" {
+        send \"$MYSQL_ROOT_PASSWORD\r\"
+        expect \"Change the root password?\"
+        send \"n\r\" 
+    }
+}
+expect \"Remove anonymous users?\"
+send \"y\r\" 
+expect \"Disallow root login remotely?\"
+send \"y\r\" 
+expect \"Remove test database and access to it?\"
+send \"y\r\" 
+expect \"Reload privilege tables now?\"
+send \"y\r\" 
+expect eof") 
+echo "$SECURE_MYSQL" 
+
+#==============================
+# create database, ignoring "database exists" error if already created
+mysql_output=$(echo "CREATE DATABASE metastore;" | mysql --user=root --password="$MYSQL_ROOT_PASSWORD" 2>&1)
+if [ $? -ne 0 ]; then
+    database_exists=$(echo $mysql_output | grep exists | wc -l)
+    if [ "$database_exists" -eq 0 ]; then
+        echo "***ERROR: can't create database metastore for the following reason:"
+        echo $mysql_output
+        exit -1
+    fi
+fi
+
+# clean up any previous metastore/user, ignoring any errors
+echo "DROP USER '$MYSQL_HIVE_USER'@'%';" | mysql --user=root --password="$MYSQL_ROOT_PASSWORD" 2>/dev/null
+
+# Create hive metastore user in mysql
+mysql --user=root --password="$MYSQL_ROOT_PASSWORD" << EOF
+    USE metastore;
+    grant all privileges on metastore.* TO 'root'@'%';
+    CREATE USER '$MYSQL_HIVE_USER'@'%' IDENTIFIED BY '$MYSQL_HIVE_PASSWORD';
+    REVOKE ALL PRIVILEGES, GRANT OPTION FROM '$MYSQL_HIVE_USER'@'%';
+    GRANT ALL PRIVILEGES ON metastore.* TO '$MYSQL_HIVE_USER'@'%';
+    FLUSH PRIVILEGES;
+EOF
+if [ $? -ne 0 ]; then
+    echo "***ERROR: unable to complete Hive metastore creation in MySQL"
+    exit -1
+fi
+
+# configure cloudera to use mysql for hive metastore
+echo "***INFO: MySQL has been installed and Hive metastore created."
+echo "***INFO: Now, manually use Cloudera Manager to configure Hive metastore to use MySQL."
+echo "***INFO: using the following information:"
+echo "***INFO:    Host: $(hostname --long):3306"
+echo "***INFO:    Type: mysql"
+echo "***INFO:    Database name: metastore"
+echo "***INFO:    Username: $MYSQL_HIVE_USER"
+echo "***INFO:    Password: $MYSQL_HIVE_PASSWORD"
+

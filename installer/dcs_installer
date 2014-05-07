@@ -1,0 +1,180 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#==========================================
+#  Install DCS on a Trafodion cluster
+#==========================================
+
+function print_usage {
+cat << EOF
+This script will install/configure the specified DCS build.
+While this script can be ran manually, it is normally
+executed from the Trafodion installer.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                    Print this message and exit.
+    --dcs_build <file>        Path to the DCS build tar file.
+    --dcs_install_path <dir>  Path to the install directory. (defaults to $MY_SQROOT)
+    --dcs_servers <count>     Total number of DCS servers to start.  These
+                              will be allocated in a round-robin fashion on
+                              all nodes. (default, 1 per node)
+EOF
+}
+
+# check that required options have values
+function checkOpts {
+    PARAMCHECK=0
+    MESSAGE=""
+    for PARAM in $REQUIRED_OPTIONS; do
+        VALUE=$(eval echo \$$PARAM)
+        if [[ -z "$VALUE" ]]; then
+            MESSAGE="***ERROR: Parameter $PARAM has no value. $MESSAGE"
+            PARAMCHECK=1
+        fi
+    done
+    if [[ $PARAMCHECK -ne 0 ]]; then
+        echo "$MESSAGE"
+        exit -1
+    fi
+}
+
+
+# Default parameters
+typeset DCS_BUILD_FILE=""
+typeset DCS_INSTALL_PATH="$MY_SQROOT"
+typeset DCS_SERVER_COUNT=""
+typeset REQUIRED_OPTIONS="DCS_BUILD_FILE"
+
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dcs_build)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            DCS_BUILD_FILE=$2
+            shift
+            ;;
+        --dcs_install_path)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            DCS_INSTALL_PATH=$2
+            shift
+            ;;
+        --dcs_servers)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            DCS_SERVER_COUNT=$2
+            shift
+            ;;
+        --help)
+            print_usage
+            ;;
+        *)
+            print_usage
+            exit -1
+  esac
+  shift
+done
+
+checkOpts
+
+echo "***INFO: Start of DCS install"
+
+# Make sure required env vars have been set first
+if [[ -z "$MY_SQROOT" ]]; then
+    echo "***ERROR: environment variable MY_SQROOT has no value."
+    exit -1
+fi
+if [[ -z "$NODE_LIST" ]]; then
+    echo "***ERROR: environment variable NODE_LIST has no value."
+    exit -1
+fi
+
+# Set server count default if no user supplied value
+node_count=$(echo $NODE_LIST | wc -w)
+if [ -z $DCS_SERVER_COUNT ]; then
+    DCS_SERVER_COUNT=$node_count
+fi
+
+# create install directory
+mkdir -p $DCS_INSTALL_PATH
+cd $DCS_INSTALL_PATH
+
+# untar DCS build into install directory
+echo "***INFO: untarring build file $DCS_BUILD_FILE"
+tar -xzf $DCS_BUILD_FILE
+
+# get the dcs install directory name which is imbedded in the tar file
+DCS_DIR=$(tar -tf $DCS_BUILD_FILE | grep LICENSE | sed -e "s@\(^.*\)/LICENSE.txt@\1@")
+DCS_DIR=$DCS_INSTALL_PATH/$DCS_DIR
+
+# set env var in sqenvcom.sh for DCS install directory
+grep --invert-match "DCS_INSTALL_DIR=" $MY_SQROOT/sqenvcom.sh > $MY_SQROOT/sqenvcom.temp
+echo "export DCS_INSTALL_DIR=$DCS_DIR" >> $MY_SQROOT/sqenvcom.temp
+mv $MY_SQROOT/sqenvcom.temp $MY_SQROOT/sqenvcom.sh
+
+cd $DCS_DIR/conf
+
+echo "***INFO: modifying $DCS_DIR/conf/dcs-env.sh"
+rm dcs-env.temp 2>/dev/null
+cat dcs-env.sh | sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" > dcs-env.temp
+cp dcs-env.temp dcs-env.sh
+rm dcs-env.temp 2>/dev/null
+
+
+echo "***INFO: modifying $DCS_DIR/conf/dcs-site.xml"
+# get zookeeper quorum
+ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
+ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+
+# add property to end of configuration
+rm dcs-site.temp 2>/dev/null
+cat dcs-site.xml | sed -e "s@</configuration>@  <property>\n    <name>dcs.zookeeper.quorum</name>\n    <value>$ZOOKEEPER_NODES</value>\n  </property>\n</configuration>@" > dcs-site.temp
+cp dcs-site.temp dcs-site.xml
+rm dcs-site.temp 2>/dev/null
+
+
+echo "***INFO: creating $DCS_DIR/conf/servers file"
+rm servers 2>/dev/null
+server_count=0
+while true; do
+    for node_name in $NODE_LIST
+    do
+	    echo $node_name >> servers
+        (( server_count++ ))
+        if [ $server_count -ge $DCS_SERVER_COUNT ]; then
+            break 2;
+        fi
+    done
+done
+
+echo "***INFO: End of DCS install."
+
