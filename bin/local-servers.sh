@@ -20,20 +20,33 @@
 bin=`dirname "${BASH_SOURCE-$0}"`
 bin=`cd "$bin" >/dev/null && pwd`
 
-if [ $# -lt 2 ]; then
+if [ $# -lt 3 ]; then
   S=`basename "${BASH_SOURCE-$0}"`
-  echo "Usage: $S [start|stop] offset(s)"
+  echo "Usage: $S [--config <conf-dir>] [start|stop] offset(s)"
   echo ""
   echo "    e.g. $S start 1 2"
   exit
 fi
+
+#check to see if the conf dir is given as an optional argument
+while [ $# -gt 1 ]
+do
+  if [ "--config" = "$1" ]
+  then
+    shift
+    confdir="--config $1"
+    shift
+    DCS_CONF_DIR=$confdir
+    break
+  fi
+done
 
 export DCS_SERVER_OPTS=" "
 
 run_server () {
   DN=$2
   export DCS_IDENT_STRING="$USER-$DN"
-  "$bin"/dcs-daemon.sh $1 server $DN
+  "$bin"/dcs-daemon.sh $DCS_CONF_DIR $1 server $DN
 }
 
 cmd=$1
