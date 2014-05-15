@@ -16,6 +16,9 @@ typeset TRAF_USER="trafodion"
 typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
 typeset NODE_LIST="$HOSTNAME"
 typeset CLUSTERNAME="$HOSTNAME"
+CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
+AMBARI=$(rpm -qa | grep ambari | wc -l)
+
 
 #==============================================
 
@@ -102,7 +105,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 #==============================================
-#Test clustername for any unacceptable characters
+#Test Clustername for any syntax errors.
 
 clusterName=`echo $CLUSTERNAME | grep [A-Z]`
 
@@ -414,62 +417,64 @@ if [ $node_count -gt 1 ] ; then
 
 fi
 
-echo "***INFO: Checking the size of /var for Cloudera DB"
+if [[ $CLOUDERA -ne 0 ]]; then
+   echo "***INFO: Checking the size of /var for Cloudera DB"
 
-var_min=20000000
-var_file='/var'
-var_lib_file='/var/lib'
-var_size=0
-var_on_root=0
-clouderadb_varfile="/var/lib/cloudera-scm-server-db"
-clouderadb_file="cloudera-scm-server-db"
-root="/"
+   var_min=20000000
+   var_file='/var'
+   var_lib_file='/var/lib'
+   var_size=0
+   var_on_root=0
+   clouderadb_varfile="/var/lib/cloudera-scm-server-db"
+   clouderadb_file="cloudera-scm-server-db"
+   root="/"
 
-    if [ -d ${var_file} ] ; then
-           df /var | grep var
-           if [ $? -eq 0 ] ; then
-               var_size=`df /var |grep var | tr -s [:space:] ':' | cut -d':' -f4`
-           else
-               var_on_root=1
+   if [ -d ${var_file} ] ; then
+      df /var | grep var
+      if [ $? -eq 0 ] ; then
+         var_size=`df /var |grep / | tr -s [:space:] ':' | cut -d':' -f4`
+      else
+         var_on_root=1
+      fi
+   fi
+
+   if [ -d ${clouderadb_varfile} ] ; then
+      echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists."
+      if [ -h ${clouderadb_varfile} ] ; then
+         echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory."
+         if ! [ -L ${clouderadb_varfile} ] ; then
+              echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not."
+              echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory."
+         fi
+      elif [ ${var_on_root} -eq 0 ] ; then
+           if [ ${var_size} -lt ${var_min} ] ; then
+              echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
+              echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space."
            fi
-    fi
-
-    if [ -d ${clouderadb_varfile} ] ; then
-           echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists."
-            if [ -h ${clouderadb_varfile} ] ; then
-                echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory."
-                if ! [ -L ${clouderadb_varfile} ] ; then
-                    echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not."
-                echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory."
-                fi
-            elif [ ${var_on_root} -eq 0 ] ; then
-                if [ ${var_size} -lt ${var_min} ] ; then
-                    echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
-                    echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space."
-                fi
-            else
-                echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /."
-                echo "*** WARNING: No additional movement of the file is recommended."
-            fi
+      else
+           echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /."
+           echo "*** WARNING: No additional movement of the file is recommended."
+      fi
     else
-        if [ ${var_size} -lt ${var_min} ] ; then
-            echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
-            echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory."
-            if [ $UID -ne 0 ] ; then
-                echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access."
-            else
-                if [ ! -d ${root}${clouderadb_file} ] ; then
-                    mkdir ${root}${clouderadb_file}
-                fi
-                if [ ! -d ${var_lib_file} ] ; then
-                    mkdir ${var_lib_file}
-                fi
-                ln -s ${root}${clouderadb_file} ${var_lib_file}
-                if [ $? -ne 0 ] ; then
-                    echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib."
-                fi
-           fi
-       fi
+      if [ ${var_size} -lt ${var_min} ] ; then
+         echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
+         echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory."
+         if [ $UID -ne 0 ] ; then
+            echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access."
+         else
+            if [ ! -d ${root}${clouderadb_file} ] ; then
+               mkdir ${root}${clouderadb_file}
+            fi
+            if [ ! -d ${var_lib_file} ] ; then
+               mkdir ${var_lib_file}
+            fi
+            ln -s ${root}${clouderadb_file} ${var_lib_file}
+            if [ $? -ne 0 ] ; then
+               echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib."
+            fi
+         fi
+      fi
     fi
+fi
 
 echo "***INFO: Trafodion setup completed"
