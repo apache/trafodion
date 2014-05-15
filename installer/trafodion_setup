@@ -1,21 +1,9 @@
 #!/bin/bash
 
 # @@@ START COPYRIGHT @@@
-#
+
 # (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
+
 # @@@ END COPYRIGHT @@@
 
 #  Setup Trafodion environment on a Cluster System
@@ -112,6 +100,46 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+#==============================================
+#Test clustername for any unacceptable characters
+
+clusterName=`echo $CLUSTERNAME | grep [A-Z]`
+
+if [ "$?" = "0" ]; then
+  echo "***ERROR: Cluster name is not named properly."
+  echo "***ERROR: Rename cluster to not include capital letters. Exiting..."
+  exit
+fi
+
+clusterName=`echo $CLUSTERNAME | sed 's/[\,\!\@\~\`\#\$\%\^\&\*\(\)\+\=\:\;\<\>\?\/]//g'`
+
+if [[ "$clusterName" != "$CLUSTERNAME" ]]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not include any special characters other than '-'."
+   echo "***ERROR: Exiting..."
+   exit
+fi
+
+clusterName=`echo $CLUSTERNAME | grep [\']`
+
+if [ "$?" = "0" ]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not include any special characters other than '-'."
+   echo "***ERROR: Exiting..."
+   exit
+fi
+
+firstChar="$(echo $CLUSTERNAME | head -c 1)"
+
+clusterName=`echo $firstChar | grep [0-9]`
+
+if [ "$?" = "0" ]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not begin with a number."
+   echo "***ERROR: Exiting..."
+   exit
+fi
 
 timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion environment setup ($timestamp)"
