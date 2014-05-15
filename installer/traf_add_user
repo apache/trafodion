@@ -28,6 +28,7 @@ typeset TRAF_USER_PASSWORD="traf123"   # 8 char max, 6 char min
 typeset NODE_LIST="$HOSTNAME"
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 typeset CLUSTERNAME="$HOSTNAME"
+typeset QPIDPORT="65500"
 
 #=========================================
 function print_usage {
@@ -143,16 +144,16 @@ else
 fi
 
 #==============================
-# find an unused uid and gid on all nodes for the trafodion userid
-# need to make sure the uid and gid are free on all nodes in the cluster,
+# Find an unused uid and gid on all nodes for the Trafodion userid.
+# Need to make sure the uid and gid are free on all nodes in the cluster,
 # just because they are unused on one node doesn’t mean they will be
 # unused on another node.
 
-# create trafodion group if there is not one already
+# Create Trafodion group if there is not one already
 traf_gid=$(cat /etc/group | grep $TRAF_GROUP | sed -e 's@^.*:x:\([0-9]*\):.*@\1@'| grep --max-count=1 -E "[0-9]")
 if [ -z "$traf_gid" ]; then
 
-    # trafodion group does not exist need to find an unused gid and create it
+    # Trafodion group does not exist need to find an unused gid and create it
     found=1
     traf_gid=500    # start at gid 500 (just a randomly chosen start)
     while [ $found -ne 0 ]
@@ -166,24 +167,24 @@ if [ -z "$traf_gid" ]; then
     done
     $TRAF_PDSH sudo /usr/sbin/groupadd --gid $traf_gid $TRAF_GROUP
     if [ $? -ne 0 ]; then
-        echo "***ERROR: unable to create trafodion group: $TRAF_GROUP"
+        echo "***ERROR: unable to create Trafodion group: $TRAF_GROUP"
         exit -1
     fi
 else
-    # make sure trafodion group exists on all nodes and create it if its not
+    # Make sure Trafodion group exists on all nodes and create it if its not
     $TRAF_PDSH sudo /usr/sbin/groupadd --gid $traf_gid $TRAF_GROUP
     return_code=$?
     if [ $return_code -ne 0 ]; then
         # if its not a duplicate group error then we have a problem
         if [ $return_code -ne 9 ]; then
-            echo "***ERROR: unable to create trafodion group: $TRAF_GROUP"
+            echo "***ERROR: unable to create Trafodion group: $TRAF_GROUP"
             exit -1
         fi
     fi
 fi
 
 #=================================================
-# create trafodion user, if not already created
+# Create Trafodion user, if not already created
 found=1
 traf_uid=500    # start at uid 500 (just a randomly chosen start)
 while [ $found -ne 0 ]
@@ -211,14 +212,14 @@ if [ $return_code -ne 0 ]; then
         echo "***WARNING: ...and assume it was setup properly with passwordless ssh access to all nodes."
         userid_already_exists="Y"
     else
-        echo "***ERROR: unable to create trafodion userid: $TRAF_USER.$TRAF_GROUP, RC=$return_code"
+        echo "***ERROR: unable to create Trafodion userid: $TRAF_USER.$TRAF_GROUP, RC=$return_code"
         exit -1
     fi
 fi
 
 #=================================================
 
-# setup passwordless ssh for this trafodion userid
+# Setup passwordless ssh for this Trafodion userid
 if [ "$userid_already_exists" == "Y" ]; then
     echo "***INFO: skipping passwordless ssh setup because userid ($TRAF_USER) already exists"
 else
@@ -232,16 +233,16 @@ fi
 echo "***INFO: creating .qpidports file"
 sudo su $TRAF_USER --command="echo $QPIDPORT > $TRAF_USER_DIR/.qpidports"
 
-# create .bashrc for this user
+# Create .bashrc for this user
 echo "***INFO: creating .bashrc file"
 sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <$TRAF_WORKDIR/installer/bashrc_default >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 sed -e "s@export CLUSTERNAME=.*@export CLUSTERNAME=\"$CLUSTERNAME\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
 sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 
-# if we are on an openstack VM add additional entries to bashrc
+# If we are on an OpenStack VM add additional entries to bashrc
 OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
 if [ $OPENSTACK_VM -ne 0 ]; then
-    echo "# Added for openstack VM support" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
+    echo "# Added for OpenStack VM support" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
     echo "export OS_TENANT_NAME=yvescadieux-project1" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
     echo "export OS_USERNAME=yvescadieux" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
     echo "export OS_PASSWORD=mtl_1028" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
@@ -263,8 +264,8 @@ sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.bashrc
 rm $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
 
 #=================================================
-# create initial sqconfig file only if we have more than one node
-# if only one node, then we'll use the sqconfig included in the trafodion build
+# Create initial sqconfig file only if we have more than one node.
+# If only one node, then we'll use the sqconfig included in the Trafodion build
 echo "***INFO: creating sqconfig file"
 sqconfig=$TRAF_WORKDIR/sqconfig_${CLUSTERNAME}_${TRAF_USER}
 rm $sqconfig &> /dev/null
@@ -273,7 +274,7 @@ if [ "$node_count" -ne "1" ]; then
     #TODO: add check to make sure cores are not more than 16 (i.e. "0-15")
     processors=$(lscpu | grep "Socket(s)" | awk '{print $2}')
 
-    # on some VMs it seems that "Socket(s)" is not listed in
+    # On some VMs it seems that "Socket(s)" is not listed in
     # lscpu so, we will default processors=1 in that case
     if [ "$processors" == "" ]; then
         echo "***WARNING: unable to determine number of sockets with 'lscpu'..."
@@ -297,7 +298,7 @@ if [ "$node_count" -ne "1" ]; then
     sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqconfig
 fi
 
-# For open stack VM on HP Cloud copy this additional file
+# For OpenStack VM on HP Cloud copy this additional file
 if [ $OPENSTACK_VM -ne 0 ]; then
 	sudo cp /root/.novarc $TRAF_USER_DIR
     sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.novarc
@@ -305,8 +306,8 @@ fi
 
 # copy TRAF_USER_DIR to all other nodes if more than one
 if [ "$node_count" -ne 1 ]; then
-    # have to copy in a round-about way since passwordless
-    # ssh is not setup yet for the trafodion userid and pdcp
+    # Have to copy in a round-about way since passwordless
+    # ssh is not setup yet for the Trafodion userid and pdcp
     # may not work with sudo.
     echo "***INFO: Setting up userid $TRAF_USER on all other nodes in cluster"
     sudo rm -rf $TRAF_WORKDIR/$TRAF_USER 2>/dev/null
@@ -319,7 +320,7 @@ if [ "$node_count" -ne 1 ]; then
 fi
 
 #=================================================
-# cycle through all nodes to create known_hosts file, even if only one node
+# Cycle through all nodes to create known_hosts file, even if only one node
 echo "***INFO: Creating known_hosts file for all nodes"
 for node in $NODE_LIST
 do
@@ -331,12 +332,12 @@ do
 done
 
 if [ "$node_count" -ne 1 ]; then
-    # copy known_hosts file to all other nodes
+    # Copy known_hosts file to all other nodes
     sudo su $TRAF_USER --command "pdcp $MY_NODES -x $HOSTNAME $TRAF_USER_DIR/.ssh/known_hosts $TRAF_USER_DIR/.ssh"
 fi
 
 #=================================================
-# setup and start a vncserver for this userid
+# Setup and start a vncserver for this userid
 echo "***INFO: starting up a vncserver"
 
 # kill any left over existing vnc server
@@ -354,4 +355,3 @@ echo "$VNC_SERVER"
 
 #=================================================
 echo "***INFO: $TRAF_USER user added successfully"
-

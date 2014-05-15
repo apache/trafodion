@@ -32,8 +32,8 @@ newLocation=$1
 
 if [ ${#newLocation} -lt 1 ] ; then
 	echo "Syntax:  clouderMoveDB.sh[-d <database>] <newLocation>"
-	echo "This script will create <newLocation> and then tell postgresql"
-	echo "for cloudera to move the postgresql <database> DB."
+	echo "This script will create <newLocation> and then tell PostgreSQL"
+	echo "for Cloudera to move the PostgreSQL <database> DB."
 	echo "-d <database> to specify which DB to move."
 	echo "    default is ${dbToMove}.  This is the large DB."
 	echo "Note:  You have to be root to run this script."
@@ -94,12 +94,12 @@ fi
 
 cloudera_dbprops="/etc/cloudera-scm-server/db.properties"
 if [ ! -f ${cloudera_dbprops} ] ; then
-	echo "Could not find cloudera db.properties files."
+	echo "Could not find Cloudera db.properties files."
 	exit 0
 fi
 hostPort=$(grep com.cloudera.cmf.db.host ${cloudera_dbprops} | awk -F= '{print $2}')
 if [ ${#hostPort} -eq 0 ] ; then
-	echo "Could not find com.cloudera.cmf.db.host in cloudera db.properties file."
+	echo "Could not find com.cloudera.cmf.db.host in Cloudera db.properties file."
 	exit 0
 fi
 unset cloudera_dbprops
@@ -126,7 +126,7 @@ phost=$(echo ${hostPort} | awk -F: '{print $1}')
 pport=$(echo ${hostPort} | awk -F: '{print $2}')
 
 if [ $(psql -h ${phost} -p ${pport} -U ${clouderaUser} -l -q -t | grep -c ${dbToMove}) -eq 0 ] ; then
-	echo "Db ${dbToMove} was not found in the postgresql."
+	echo "Db ${dbToMove} was not found in the PostgreSQL."
 	cleanPASSFILE
 	exit 0
 fi

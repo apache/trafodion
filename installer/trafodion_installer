@@ -18,6 +18,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
+
 #==========================================
 # Install Trafodion build on a Cluster System
 #==========================================
@@ -40,9 +41,12 @@ Options:
     --dcs_servers <count>     Total number of DCS servers to start.  These
                               will be allocated in a round-robin fashion on
                               all nodes. (default, 1 per node)
-    --cloudera_userid     Cloudera username if not chosen will default to admin
+    --cloudera_userid     Cloudera username if not chosen will default to admin 
     --cloudera_password   Cloudera password if not chosen will default to admin
     --cloudera_url        Cloudera url:port if not chosen will default to hostname:7180
+    --ambari_userid       Ambari username if not chosen will default to admin
+    --ambari_password     Ambari password if not chosen will default to admin
+    --ambari_url          Ambari url:port if not chosen will default to <hostname>:8080 
 
 EOF
 }
@@ -50,8 +54,8 @@ EOF
 #============================================
 # Default values
 
-# This is the directory where all the trafodion install scripts and
-# tar files are initally downloaded to
+# This is the directory where all the Trafodion install scripts and
+# tar files are initially downloaded to
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 
 # input parameter defaults
@@ -64,9 +68,19 @@ typeset INIT_TRAFODION="N"
 typeset NOSTART="N"
 typeset SQCONFIG="$HOME/sqconfig"
 typeset DCS_SERVERS_PARM=""
-typeset CLOUDERA_ADMIN="admin"
-typeset CLOUDERA_PASSWORD="admin"
-typeset CLOUDERA_MANAGER_URL=$(hostname --long):7180
+typeset USER_NAME="admin"
+typeset PASSWORD="admin"
+
+CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
+AMBARI=$(rpm -qa | grep ambari | wc -l)
+
+if [[ $CLOUDERA -ne 0 ]]; then
+   typeset URL_PORT=$(hostname --long):7180
+fi
+
+if [[ $AMBARI -ne 0 ]]; then
+   typeset URL_PORT=$(hostname --long):8080   
+fi
 
 # Parse input parameters
 while [[ $# -gt 0 ]]; do
@@ -133,23 +147,35 @@ while [[ $# -gt 0 ]]; do
             ;;
         --cloudera_userid)
           shift
-          CLOUDERA_ADMIN=$1
+          USER_NAME=$1
           ;;
         --cloudera_password)
           shift
-          CLOUDERA_PASSWORD=$1
+          PASSWORD=$1
           ;;
         --cloudera_url)
           shift
-          CLOUDERA_MANAGER_URL=$1
+          URL_PORT=$1
+          ;;
+        --ambari_userid)
+          shift
+          USER_NAME=$1
+          ;;
+        --ambari_password)
+          shift
+          PASSWORD=$1
+          ;;
+        --ambari_url)
+          shift
+          URL_PORT=$1
           ;;
         --help)
             print_usage
-            exit -1
+            exit -1 
             ;;
         *)
             print_usage
-            exit -1
+            exit -1 
     esac
     shift
 done
@@ -158,22 +184,22 @@ timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion installer ($timestamp)"
 
 #===========================================
-#Check that cloudera username, password, and url are correct. Will not get a cluster
-#name if these are not correct.
+# Check that Cloudera username, password, and url are correct. Will not get a cluster
+# name if these are not correct.
 
-CLUSTER_NAME=$(curl -su $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD http://$CLOUDERA_MANAGER_URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+CLUSTER_NAME=$(curl -su $USER_NAME:$PASSWORD http://$URL_PORT/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 if [ -z $CLUSTER_NAME ]; then
   echo
-  echo "ERROR: Please check Cloudera input parameters"
+  echo "***ERROR: Please check userid, password, and url and try again. "
   echo
   exit -1
 fi
 
 node_count=$(echo $NODE_LIST | wc -w)
 #============================================
-#check if an existing instance is up
-process_count=$(cstat -noheader 2>/dev/null| wc -l)
+# Check if an existing instance is up
+process_count=$(cstat -noheader 2>/dev/null | wc -l)
 if [ "$process_count" -ne 0 ]; then
     echo "***ERROR: Trafodion processes are still running. Please stop the current"
     echo "***ERROR: instance with sqstop before installing a new Trafodion build."
@@ -181,7 +207,7 @@ if [ "$process_count" -ne 0 ]; then
 fi
 
 #============================================
-# if an sqconfig file was specified, then we'll use it instead of the default
+# If an sqconfig file was specified, then we'll use it instead of the default
 if [ "$SQCONFIG" != "" ]; then
     SQCONFIG_MASTER="$SQCONFIG"
     if [[ ! -f "$SQCONFIG" ]]; then
@@ -190,23 +216,23 @@ if [ "$SQCONFIG" != "" ]; then
     fi
 else
     if [ "$node_count" -ne "1" ]; then
-        # for clusters this sqconfig file was generated when the trafodion user was added
+        # For clusters this sqconfig file was generated when the Trafodion user was added
         SQCONFIG_MASTER=$HOME/sqconfig
     else
-        # for single node, we use the sqconfig in the build
+        # For single node, we use the sqconfig in the build
         SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
     fi
 fi
 
 #============================================
-# create install directory
+# Create install directory
 mkdir -p $SQ_ROOT
 cd $SQ_ROOT
 
-# did the user specify a buildfile? if not apply defaults
+# Did the user specify a buildfile? if not apply defaults
 if [ "$BUILD_FILE" == "" ]; then
 
-    # look for any trafodion_server*.tgz file first
+    # Look for any Trafodion_server*.tgz file first
     # and take the newest one, if any
     file_list=$(ls -rt $HOME/trafodion_server*.tgz 2>/dev/null)
     if [ "$file_list" != "" ]; then
@@ -217,7 +243,7 @@ if [ "$BUILD_FILE" == "" ]; then
         done
 
     else
-        # otherwise use this as the default
+        # Otherwise use this as the default
         BUILD_FILE="$HOME/trafodion_build.tgz"
     fi
 fi
@@ -230,7 +256,7 @@ if [ "$?" != "0" ]; then
     exit -1;
 fi
 
-# untar the trafodion tools
+# untar the Trafodion tools
 TRAF_TOOLSDIR=$SQ_ROOT/traf_other_tools
 echo "***INFO: untarring Trafodion tools file $TOOLS_TAR to $TRAF_TOOLSDIR"
 cd $SQ_ROOT
@@ -256,7 +282,7 @@ sed -e "s@export SQ_HOME=.*@export SQ_HOME=$SQ_ROOT@" <bashrc_temp >$HOME/.bashr
 cp .bashrc bashrc_temp
 sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOME/.bashrc
 
-# delete any existing MY_NODES and NODE_LIST from .bashrc
+# Delete any existing MY_NODES and NODE_LIST from .bashrc
 #cp .bashrc bashrc_temp
 #grep -vE "MY_NODES|NODE_LIST" bashrc_temp > $HOME/.bashrc
 
@@ -289,7 +315,13 @@ fi
 cd $SQ_ROOT
 
 echo "***INFO: creating SQSystemDefaults.conf"
-$TRAF_WORKDIR/traf_create_systemdefaults --cloudera_userid $CLOUDERA_ADMIN --cloudera_password $CLOUDERA_PASSWORD --cloudera_url $CLOUDERA_MANAGER_URL --cluster_name $CLUSTER_NAME
+if [[ $CLOUDERA -ne 0 ]]; then
+   $TRAF_WORKDIR/traf_create_systemdefaults --cloudera_userid $USER_NAME --cloudera_password $PASSWORD --cloudera_url $URL_PORT --cluster_name $CLUSTER_NAME
+fi
+
+if [[ $AMBARI -ne 0 ]]; then
+   $TRAF_WORKDIR/traf_create_systemdefaults --ambari_userid $USER_NAME --ambari_password $PASSWORD --ambari_url $URL_PORT --cluster_name $CLUSTER_NAME
+fi
 
 # if Cloudera installed, modify SQ_CLASSPATH
 cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
@@ -385,11 +417,11 @@ else
         exit -1;
     fi
 
-    # do init_trafodion if specified
+    # Do init_trafodion if specified
     if [ "$INIT_TRAFODION" == "Y" ]; then
-        ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize trafodion;\" | sqlci"
+        ssh $STARTING_NODE "cd $MY_SQROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci"
         if [ "$?" != "0" ]; then
-            echo "***ERROR: initialize trafodion failed.  Check install log files for details."
+            echo "***ERROR: initialize Trafodion failed.  Check install log files for details."
             exit -1;
         fi
     fi
@@ -407,4 +439,3 @@ fi
 
 #==========================================
 echo "***INFO: Installation completed successfully."
-

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # @@@ START COPYRIGHT @@@
 #
 # (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
@@ -17,7 +16,6 @@
 #  limitations under the License.
 #
 # @@@ END COPYRIGHT @@@
-
 #
 # This script will create the SQSystemdefaults.conf file
 # by extracting info from Cloudera or Hortonworks REST API.
@@ -25,9 +23,20 @@
 # NOTE: Currently only works for Cloudera installations
 #
 
-CLOUDERA_ADMIN="admin"
-CLOUDERA_PASSWORD="admin"
-CLOUDERA_MANAGER_URL=$(hostname --long):7180
+USER_NAME="admin"
+PASSWORD="admin"
+
+
+CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
+AMBARI=$(rpm -qa | grep ambari | wc -l)
+
+if [[ $CLOUDERA -ne 0 ]]; then
+   typeset URL_PORT=$(hostname --long):7180
+fi
+
+if [[ $AMBARI -ne 0 ]]; then
+   typeset URL_PORT=$(hostname --long):8080
+fi
 
 mkdir -p $MY_SQROOT/etc
 SYS_DEFAULTS=$MY_SQROOT/etc/SQSystemDefaults.conf
@@ -44,7 +53,11 @@ function displayHelp
   echo "    --cloudera_userid    Cloudera username if not chosen will default to admin"
   echo "    --cloudera_password  Cloudera password if not chosen will default to admin"
   echo "    --cloudera_url       Cloudera url:port if not chosen will default to hostname:7180"
+  echo "    --ambari_userid      Ambari username if not chosen will default to admin"
+  echo "    --ambari_password    Ambari password if not chosen will default to admin"
+  echo "    --ambari_url         Ambari url:port if not chosen will default to hostname:8080"
   echo
+
 }
 
 while [ $# -gt 0 ]; do
@@ -52,22 +65,37 @@ while [ $# -gt 0 ]; do
   case $1 in
    --cloudera_userid)
      shift
-     CLOUDERA_ADMIN=$1
+     USER_NAME=$1
      ;;
 
    --cloudera_password)
      shift
-     CLOUDERA_PASSWORD=$1
+     PASSWORD=$1
      ;;
 
    --cloudera_url)
      shift
-     CLOUDERA_MANAGER_URL=$1
+     URL_PORT=$1
      ;;
 
    --cluster_name)
      shift
      CLUSTER_NAME=$1
+     ;;
+
+   --ambari_userid)
+     shift
+     USER_NAME=$1
+     ;;
+
+   --ambari_password)
+     shift
+     PASSWORD=$1;
+     ;;
+
+   --ambari_url)
+     shift
+     URL_PORT=$1
      ;;
 
    --help)
@@ -107,18 +135,18 @@ function get_hbase_config()
 }
 #=================================
 
-# get the hive & hbase configurations from cloudera using REST API
+# Get the hive & hbase configurations from Cloudera using REST API
 rm $MY_SQROOT/traf_hive_config_temp 2> /dev/null
 rm $MY_SQROOT/traf_hbase_config_temp 2> /dev/null
-curl -u "$CLOUDERA_ADMIN:$CLOUDERA_PASSWORD" \
-    http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/services/hive1/config?view=full \
+curl -u "$USER_NAME:$PASSWORD" \
+    http://$URL_PORT/api/v1/clusters/$CLUSTER_NAME/services/hive1/config?view=full \
     > $MY_SQROOT/traf_hive_config_temp
 if [ $? != "0" ]; then
     echo "***ERROR: unable to get hive configuration info from Cloudera.  Check that Cloudera is up."
     exit -1
 fi
 
-# in most cases curl does not return an error
+# In most cases curl does not return an error 
 # so curl's actual output needs to be checked, too
 curl_error=$(grep TITLE $MY_SQROOT/traf_hive_config_temp | grep Error | wc -l)
 if [ $curl_error -ne 0 ]; then
@@ -126,15 +154,15 @@ if [ $curl_error -ne 0 ]; then
     exit -1
 fi
 
-curl -u "$CLOUDERA_ADMIN:$CLOUDERA_PASSWORD" \
-    http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/services/hbase1/config?view=full \
+curl -u "$USER_NAME:$PASSWORD" \
+    http://$URL_PORT/api/v1/clusters/$CLUSTER_NAME/services/hbase1/config?view=full \
     > $MY_SQROOT/traf_hbase_config_temp
 if [ $? != "0" ]; then
     echo "***ERROR: unable to get hive configuration info from Cloudera.  Check that Cloudera is up."
     exit -1
 fi
 
-# in most cases curl does not return an error
+# In most cases curl does not return an error 
 # so curl's actual output needs to be checked, too.
 curl_error=$(grep TITLE $MY_SQROOT/traf_hbase_config_temp | grep Error | wc -l)
 if [ $curl_error -ne 0 ]; then
@@ -143,14 +171,14 @@ if [ $curl_error -ne 0 ]; then
 fi
 
 
-# pull out just the names, values and defaults to make parsing the
+# Pull out just the names, values and defaults to make parsing the
 # JSON output a little easier.  NOTE: there isn't always a 'value' line
 grep -E "\"name\"|\"value\"|\"default\"" $MY_SQROOT/traf_hive_config_temp > $MY_SQROOT/traf_hive_conf
 grep -E "\"name\"|\"value\"|\"default\"" $MY_SQROOT/traf_hbase_config_temp > $MY_SQROOT/traf_hbase_conf
 rm $MY_SQROOT/traf_hive_config_temp
 rm $MY_SQROOT/traf_hbase_config_temp
 
-# get all the settings we need
+# Get all the settings we need
 HBASE_THRIFT_PORT=$(get_hbase_config "hbase_thriftserver_port")
 HIVE_HOST=$(get_hive_config "hive_metastore_database_host")
 HIVE_PORT=$(get_hive_config "hive_metastore_database_port")
@@ -159,7 +187,7 @@ HIVE_USER=$(get_hive_config "hive_metastore_database_user")
 HIVE_METASTORE_NAME=$(get_hive_config "hive_metastore_database_name")
 HIVE_TYPE=$(get_hive_config "hive_metastore_database_type")
 
-# write them out to the conf file
+# Write them out to the conf file
 echo "HBASE_THRIFT_PORT, $HBASE_THRIFT_PORT" > $SYS_DEFAULTS
 echo "HIVE_METADATA_CPCC_URL, tcp://$HIVE_HOST:$HIVE_PORT" >> $SYS_DEFAULTS
 echo "HIVE_METADATA_USER, $HIVE_USER" >> $SYS_DEFAULTS
@@ -170,4 +198,3 @@ echo "***INFO: generated $SYS_DEFAULTS file"
 cat $SYS_DEFAULTS
 
 echo "***INFO: $SYS_DEFAULTS file created"
-

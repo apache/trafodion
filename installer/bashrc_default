@@ -30,7 +30,7 @@ fi
 cd $HOME
 
 #-------------------------------------------
-# full path of your trafodion installation
+# full path of your Trafodion installation
 #-------------------------------------------
 export SQ_HOME=XXXXXX
 export MY_SQROOT=$SQ_HOME
@@ -64,7 +64,7 @@ if [ -f $MY_SQROOT/sqenv.sh ]; then
 fi
 
 #-------------------------------------------
-# additional settings for trafodion environment
+# additional settings for Trafodion environment
 #-------------------------------------------
 ETC_SECURITY_MSG="***ERROR: To fix this please configure /etc/security/limits.conf properly on $HOSTNAME."
 
@@ -77,4 +77,3 @@ if [ $? -ne 0 ]; then
     echo "***ERROR: Unable to set max open files. Current value $(ulimit -n)"
     echo $ETC_SECURITY_MSG
 fi
-

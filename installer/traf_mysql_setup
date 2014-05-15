@@ -18,9 +18,9 @@
 #
 # @@@ END COPYRIGHT @@@
 
-# This script configures cloudera to use mysql
+# This script configures Cloudera to use mysql
 # for the hive metastore.  It will also install
-# mysql if it is not already installed
+# mysql if it is not already installed.
 
 #=====================
 # TODO: make these run line parameters
@@ -77,10 +77,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 #============================
-# check that we are running from a userid with sudo access
+# Check that we are running from a userid with sudo access
 sudo echo "***INFO: testing sudo access"
 if [ $? -ne 0 ]; then
-    echo "***ERROR: This script must be ran from userid with sudo access."
+    echo "***ERROR: This script must be run from a userid with sudo access."
     exit -1
 fi
 
@@ -98,7 +98,7 @@ fi
 
 YUM_LOG=$TRAF_WORKDIR/logs/mysql_yum_$timestamp.log
 
-# is mysql already installed? if not install it
+# Is mysql already installed? if not install it
 MYSQL_INSTALLED=$(rpm -qa | grep mysql-server | wc -l)
 if [ "$MYSQL_INSTALLED" == "0" ]; then
     echo "***INFO: installing and starting mysql-server"
@@ -107,7 +107,7 @@ else
     echo "***INFO: mysql-server already installed"
 fi
 
-# start mysql and set a few config options, doesn't hurt if its already running
+# Start mysql and set a few config options, doesn't hurt if it is already running
 sudo service mysqld start
 if [ $? -ne 0 ]; then
     echo "***ERROR: Unable to start mysql daemon"
@@ -117,7 +117,7 @@ fi
 sudo /sbin/chkconfig mysqld on
 sudo /sbin/chkconfig --list mysqld
 
-# install other mysql components if not already installed
+# Install other mysql components if not already installed
 MYSQL_CONN_INSTALLED=$(rpm -qa | grep mysql-connector-java | wc -l)
 if [ "$MYSQL_CONN_INSTALLED" == "0" ]; then
     echo "***INFO: installing mysql-connector-java on all nodes in the cluster"
@@ -129,7 +129,7 @@ fi
 #$TRAF_PDSH sudo ln -s /usr/share/java/mysql-connector-java.jar /usr/lib/hive/lib/mysql-connector-java.jar
 
 #==============================
-# script to run mysql_secure_installation without prompts
+# Script to run mysql_secure_installation without prompts
 # TODO: add logic to determine if this has already been ran and skip it
 echo "***INFO: running mysql_secure_installation"
 SECURE_MYSQL=$(expect -c " 
@@ -163,7 +163,7 @@ expect eof")
 echo "$SECURE_MYSQL" 
 
 #==============================
-# create database, ignoring "database exists" error if already created
+# Create database, ignoring "database exists" error if already created
 mysql_output=$(echo "CREATE DATABASE metastore;" | mysql --user=root --password="$MYSQL_ROOT_PASSWORD" 2>&1)
 if [ $? -ne 0 ]; then
     database_exists=$(echo $mysql_output | grep exists | wc -l)
@@ -174,7 +174,7 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
-# clean up any previous metastore/user, ignoring any errors
+# Clean up any previous metastore/user, ignoring any errors
 echo "DROP USER '$MYSQL_HIVE_USER'@'%';" | mysql --user=root --password="$MYSQL_ROOT_PASSWORD" 2>/dev/null
 
 # Create hive metastore user in mysql
@@ -191,7 +191,7 @@ if [ $? -ne 0 ]; then
     exit -1
 fi
 
-# configure cloudera to use mysql for hive metastore
+# Configure Cloudera to use mysql for hive metastore
 echo "***INFO: MySQL has been installed and Hive metastore created."
 echo "***INFO: Now, manually use Cloudera Manager to configure Hive metastore to use MySQL."
 echo "***INFO: using the following information:"
@@ -200,4 +200,3 @@ echo "***INFO:    Type: mysql"
 echo "***INFO:    Database name: metastore"
 echo "***INFO:    Username: $MYSQL_HIVE_USER"
 echo "***INFO:    Password: $MYSQL_HIVE_PASSWORD"
-

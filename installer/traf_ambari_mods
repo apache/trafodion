@@ -19,7 +19,7 @@
 # @@@ END COPYRIGHT @@@
 
 #
-# This script will configure HBase with HBase-trx 
+# This script will configure HBase with HBase-trx
 # and co-processors needed for Trafodion.  It uses
 # Ambari's configs.sh script to do this.
 #
@@ -39,23 +39,23 @@ TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
 function displayHelp
 {
   echo
-  echo "This script will configure HBase with Hbase-trx and co-processors needed" 
+  echo "This script will configure HBase with Hbase-trx and co-processors needed"
   echo "for Trafodion."
   echo
   echo "Usage: $(basename $0) [options]"
-  echo 
+  echo
   echo "Options:"
   echo "    --help               Print this message and exit."
   echo "    --trafodion_build    The Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz"
-  echo "    --ambari_userid    Ambari username if not choosen will default to admin" 
-  echo "    --ambari_password  Ambari password if not choosen will default to admin" 
-  echo "    --ambari_url       Ambari url:port if not choosen will default to hostname:7180"
+  echo "    --ambari_userid    Ambari username if not chosen will default to admin"
+  echo "    --ambari_password  Ambari password if not chosen will default to admin"
+  echo "    --ambari_url       Ambari url:port if not chosen will default to hostname:7180"
   echo
 }
 
 while [ $# -gt 0 ]; do
 
-  case $1 in 
+  case $1 in
    --trafodion_build)
      shift
      TRAF_BUILD=$1
@@ -65,12 +65,12 @@ while [ $# -gt 0 ]; do
      shift
      AMBARI_ADMIN=$1
      ;;
-   
+
    --ambari_password)
      shift
      AMBARI_PASSWORD=$1
      ;;
-  
+
    --ambari_url)
      shift
      AMBARI__URL=$1
@@ -81,7 +81,7 @@ while [ $# -gt 0 ]; do
      displayHelp
      exit
      ;;
-   
+
    **)
      echo "***ERROR: Incorrect Command."
      displayHelp
@@ -98,7 +98,7 @@ if [ -z $CLUSTER_NAME ]; then
   echo
   echo "***ERROR: Please check input parameters"
   echo
-  exit -1 
+  exit -1
 fi
 
 # make sure we're on a Ambari system

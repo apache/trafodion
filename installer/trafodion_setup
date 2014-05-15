@@ -188,7 +188,7 @@ if [ $OPENSTACK_VM -ne 0 ]; then
     fi
 fi
 
-#=========================================================
+#================================
 # validate specified nodes and that we can get to them with passwordless ssh
 echo "***INFO: Checking all nodes in specified node list"
 bad_nodes=""
@@ -245,7 +245,7 @@ if [ $node_count -ne 1 ]; then
         fi
     done
 fi
-package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite expect perl-DBD-SQLite*"
+package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite expect perl-DBD-SQLite* protobuf-compiler.x86_64 protobuf-devel.x86_64 xerces-c-devel.x86_64 libiodbc-3.52.7-1.el6.x86_64 unixODBC-2.2.14-11.el6.x86_64"
 for package in $package_list
 do
     echo "***INFO: ... $package"
@@ -277,6 +277,8 @@ fi
 #=======================================
 echo "***INFO: installing additional libraries"
 echo "***INFO: ... libqpidclient.so.6 libqpidcommon.so.6 libqpidtypes.so.1"
+# TODO: perhaps change this to install the qpid-cpp-client-0.14-16.el6.x86_64.rpm
+# but we already install qpid-cpp-client so shouldn't that one work?
 cd $TRAF_WORKDIR
 tar -xzf $TOOLS_TAR traf_other_tools/qpidlibs.6
 if [ $? != 0 ]; then
@@ -295,10 +297,11 @@ if [ $? != 0 ]; then
 fi
 
 #=======================================
-# install additional packages if we are on an openstack VM
+# Install additional packages if we are on an OpenStack VM
+OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
 if [ $OPENSTACK_VM -ne 0 ]; then
-    echo "***INFO: Openstack VM detected"
-    echo "***INFO: installing addtional packages for Openstack VMs"
+    echo "***INFO: OpenStack VM detected"
+    echo "***INFO: Installing additional packages for OpenStack VMs"
     package_list="python-pip git"
     for package in $package_list
     do
@@ -312,7 +315,7 @@ if [ $OPENSTACK_VM -ne 0 ]; then
 fi
 
 #=======================================
-# set some limits needed by Trafodion
+# Set some limits needed by Trafodion
 traf_limits_conf="$TRAF_WORKDIR/trafodion_limits.conf"
 echo "***INFO: modifying limits in /etc/security/limits.conf on all nodes"
 
@@ -343,18 +346,18 @@ else
 fi
 
 #=======================================
-echo "***INFO: create trafodion userid \"$TRAF_USER\" "
+echo "***INFO: create Trafodion userid \"$TRAF_USER\" "
 $TRAF_WORKDIR/installer/traf_add_user \
     --username $TRAF_USER \
     --password $TRAF_USER_PASSWORD \
     --nodes "$NODE_LIST" \
     --clustername "$CLUSTERNAME"
 if [ $? != 0 ]; then
-    echo "***ERROR: Unable to create trafodion userid: $TRAF_USER"
+    echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
     exit -1
 fi
 
-# put build tar files in users $HOME
+# Put build tar files in user's $HOME
 sudo cp $TRAF_WORKDIR/trafodion_build.tgz /home/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_server*.tgz /home/$TRAF_USER/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs_build.tgz /home/$TRAF_USER &> /dev/null
@@ -367,10 +370,11 @@ sudo cp $TRAF_WORKDIR/installer/trafodion_installer /home/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_beta_license /home/$TRAF_USER
 sudo chown --recursive $TRAF_USER.$TRAF_GROUP /home/$TRAF_USER
 
-echo "***INFO: setting SELINUX=disabled in /etc/selinux.config"
+#=======================================
+
+echo "***INFO: Setting SELINUX=disabled in /etc/selinux.config"
 sudo cp /etc/selinux/config $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
 sudo sh -c "sed -e 's@^SELINUX=.*@SELINUX=disabled@' <$TRAF_WORKDIR/etc_selinux_config_ORIGINAL >/etc/selinux/config"
-
 if [ $node_count -gt 1 ] ; then
     echo "***INFO: modifying /etc/selinux/config on remaining nodes"
 
@@ -379,6 +383,7 @@ if [ $node_count -gt 1 ] ; then
     pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/traf_selinux.conf $TRAF_WORKDIR
     pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
     pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
+
 fi
 
 echo "***INFO: Checking the size of /var for Cloudera DB"
