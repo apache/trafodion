@@ -314,15 +314,6 @@ fi
 
 cd $SQ_ROOT
 
-echo "***INFO: creating SQSystemDefaults.conf"
-if [[ $CLOUDERA -ne 0 ]]; then
-   $TRAF_WORKDIR/traf_create_systemdefaults --cloudera_userid $USER_NAME --cloudera_password $PASSWORD --cloudera_url $URL_PORT --cluster_name $CLUSTER_NAME
-fi
-
-if [[ $AMBARI -ne 0 ]]; then
-   $TRAF_WORKDIR/traf_create_systemdefaults --ambari_userid $USER_NAME --ambari_password $PASSWORD --ambari_url $URL_PORT --cluster_name $CLUSTER_NAME
-fi
-
 # if Cloudera installed, modify SQ_CLASSPATH
 cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
 if [ $cloudera_installed -ge 1 ]; then
