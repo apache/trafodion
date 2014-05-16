@@ -188,34 +188,34 @@ exit
 #=================================================
 #TODO: figure our how to restart HBase through Ambari REST API, the following
 # code only works for Cloudera
-poll_time=30
-echo "***INFO: restarting hbase to pickup Trafodion transaction jar"
-echo "***INFO: ...polling every $poll_time seconds until restart is completed."
-restart_info=$(curl -X POST -u $AMBARI_ADMIN:$AMBARI_PASSWORD \
-    http://$AMBARI__URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
-echo $restart_info
-command_id=$(echo $restart_info | grep id | awk '{print $4}' | sed -e 's@,@@' )
-echo "***DEBUG: Ambari command_id=$command_id"
+#poll_time=30
+#echo "***INFO: restarting hbase to pickup Trafodion transaction jar"
+#echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+#restart_info=$(curl -X POST -u $AMBARI_ADMIN:$AMBARI_PASSWORD \
+#    http://$AMBARI__URL/api/v1/clusters/$CLUSTER_NAME/commands/restart)
+#echo $restart_info
+#command_id=$(echo $restart_info | grep id | awk '{print $4}' | sed -e 's@,@@' )
+#echo "***DEBUG: Ambari command_id=$command_id"
 
 # poll until restart is completed as a restart can take a while
-active=1
-while [ $active -ne 0 ]; do
-    sleep $poll_time
-    curl -u $AMBARI_ADMIN:$AMBARI_PASSWORD \
-        http://$AMBARI__URL/api/v1/commands/$command_id \
-        > $TRAF_WORKDIR/hbase_restart_status_temp
-    cat $TRAF_WORKDIR/hbase_restart_status_temp
-    echo "***INFO: ...polling every $poll_time seconds until restart is completed."
-    # if restart command is still active, then active will not equal 0
-    active=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"active" : true' | wc -l)
-done
+#active=1
+#while [ $active -ne 0 ]; do
+#    sleep $poll_time
+#    curl -u $AMBARI_ADMIN:$AMBARI_PASSWORD \
+#        http://$AMBARI__URL/api/v1/commands/$command_id \
+#        > $TRAF_WORKDIR/hbase_restart_status_temp
+#    cat $TRAF_WORKDIR/hbase_restart_status_temp
+#    echo "***INFO: ...polling every $poll_time seconds until restart is completed."
+#    # if restart command is still active, then active will not equal 0
+#    active=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"active" : true' | wc -l)
+#done
 
 # make sure restart completed successfully
-failures=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"success" : false' | wc -l)
-if [ $failures -ne 0 ]; then
-    echo "***ERROR: Unable to restart HBase."
-    exit -1
-fi
+#failures=$(cat $TRAF_WORKDIR/hbase_restart_status_temp | grep '"success" : false' | wc -l)
+#if [ $failures -ne 0 ]; then
+#    echo "***ERROR: Unable to restart HBase."
+#    exit -1
+#fi
 
-echo "***INFO: HBase restart completed successfully"
+#echo "***INFO: HBase restart completed successfully"
 
