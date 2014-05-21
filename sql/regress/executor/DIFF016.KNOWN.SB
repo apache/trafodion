@@ -1,0 +1,11 @@
+253,256c253
+< A B C
+< ----------
+< 
+<  1234567890123456789012345.123456789012 12345678901234567890 .100000000000000000000
+---
+> *** ERROR[8413] The string argument contains characters that cannot be converted.
+258c255
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.

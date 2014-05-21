@@ -1,0 +1,353 @@
+-- Test008 (CORE)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality:
+--      Test the performance of transitive closure
+--      This test script exercises the implementation of
+--      transitive closure in the normalizer, the optimizer
+--      and the generator.
+--      Each test consists of a set of two queries which differ
+--      only in the contents of the select list. The first
+--      query contains column names in the select list; its
+--      twin contains only a count(*). The purpose of testing
+--      the implementation in this way is to be able to assert
+--      that the dataflow is set up correctly for the two cases
+--      mentioned above. Namely, when the data flows from the
+--      leaves of the query tree upto its root for satisfying
+--      the select list; when the data flows only upto some
+--      intermediate operator for the evaluation of a predicate
+--      (the count(*) case).
+-- Expected Files: EXPECTED008
+-- History: (01/30/2003) Moved from fullstack2 
+
+?section ddl
+drop table t008t1;
+drop table t008t2;
+drop table t008t3;
+drop table t008t4;
+drop table t008t20;
+drop table t008t30;
+
+?section crdb
+log LOG008 clear;
+
+create table t008t1(a1 int, c1 int, b1 char(6));
+create table t008t2(a2 int, c2 int, b2 char(6));
+create table t008t3(a3 int, c3 int, b3 char(6));
+create table t008t4(a4 int, c4 int, b4 char(6));
+create table t008t20(a20 int, c20 int, b20 char(6));
+create table t008t30(a30 int, c30 int, b30 char(6));
+
+
+?section dml
+insert into t008t1 values(10,10, 't1r1');
+insert into t008t1 values(10,20, 't1r2');
+insert into t008t1 values(10,30, 't1r3'); 
+insert into t008t1 values(20,10, 't1r4'); 
+insert into t008t1 values(20,20, 't1r5'); 
+insert into t008t1 values(20,30, 't1r6'); 
+insert into t008t1 values(30,10, 't1r7'); 
+insert into t008t1 values(30,20, 't1r8'); 
+insert into t008t1 values(30,30, 't1r9'); 
+
+insert into t008t2 values(10,10, 't2r1'); 
+insert into t008t2 values(10,20, 't2r2'); 
+insert into t008t2 values(20,10, 't2r3'); 
+insert into t008t2 values(20,20, 't2r4'); 
+
+insert into t008t3 values(10,10, 't3r1'); 
+insert into t008t3 values(10,30, 't3r2'); 
+insert into t008t3 values(30,10, 't3r3'); 
+insert into t008t3 values(30,30, 't3r4'); 
+
+insert into t008t4 values(20,20, 't4r1');
+insert into t008t4 values(20,30, 't4r2'); 
+insert into t008t4 values(30,20, 't4r3'); 
+insert into t008t4 values(30,30, 't4r4'); 
+
+insert into t008t20 values(10,10, 't20r1'); 
+insert into t008t20 values(10,20, 't20r2'); 
+insert into t008t20 values(20,10, 't20r3'); 
+insert into t008t20 values(20,20, 't20r4'); 
+
+insert into t008t30 values(10,10, 't30r1'); 
+insert into t008t30 values(10,30, 't30r2'); 
+insert into t008t30 values(30,10, 't30r3'); 
+insert into t008t30 values(30,30, 't30r4'); 
+
+?section q0
+-- Check: "=" Predicate not lost when it contains an expression
+select a2, c2 from t008t2 where c2 = 2 * a2;
+
+?section q1
+-- Special case: Equivalence class contains only one element.
+select * from t008t2 where a2 = a2;
+-- should get 4 rows
+
+?section q2
+-- Special case: Equivalence class contains only one element.
+select count(*) from t008t2 where a2 = a2;
+-- should get 4
+
+?section q3
+-- Should not see c2 < 20 rewritten as c2 < a2 in display
+select * from t008t2 where a2 = 20 and c2 < 20; 
+-- should get 1 row 
+
+?section q4
+select count(*) from t008t2 where a2 = 20 and c2 < 20; 
+-- should get 1
+
+?section q5
+select a2,b2,b4 from t008t2 join t008t4 on a2 = 20 and a4 = a2;
+-- should get 4 rows 
+
+?section q6
+select count(*) from t008t2 join t008t4 on a2 = 20 and a4 = a2;
+-- should get 4 
+
+?section q7
+select a2,b2,b4 from t008t2 join t008t4 on a2 = 20 and a4 = 20;
+-- should get 4 rows 
+
+?section q8
+select count(*) from t008t2 join t008t4 on a2 = 20 and a4 = 20;
+-- should get 4 
+
+?section q9
+select a2,b2,b4 from t008t2 join t008t4 on a2 < 30 and a4 = a2;
+-- should get 4 rows 
+
+?section q10
+select count(*) from t008t2 join t008t4 on a2 < 30 and a4 = a2;
+-- should get 4 
+
+?section q11
+-- A cross product between t008t2 and t4
+select a2,b2,b4 from t008t2 join t008t4 on a2 = a2; 
+-- should get 16 rows { (10,t2r1,t4r*),(20,t2r4,t4r*) }
+ 
+?section q12
+select count(*) from t008t2 join t008t4 on a2 = a2; 
+-- should get 16 
+
+?section q13
+ select a1, b1, b2, b3 
+   from t008t1 join t008t2  on a1 = a2 and c2 = 20
+           join t008t3  on a2 = a3 and c3 = 30
+;
+-- should get 3 rows {(t1r1,t2r2,t3r2),(t1r2,t2r2,t3r2),(t1r3,t2r2,t3r2) } 
+
+?section q14
+ select count(*)
+   from t008t1 join t008t2  on a1 = a2 and c2 = 20
+           join t008t3  on a2 = a3 and c3 = 30
+;
+-- should get 3 
+
+?section q15
+ select a1, b1, b2, b3 
+   from t008t1 join t008t2  on a1 = a2 and c2 = 20 and a1 = c1
+           join t008t3  on a2 = a3 and c3 = 30
+;
+-- should get 1 row {(t1r1,t2r2,t3r2) } where a1 = c1 = 10
+
+?section q16
+ select count(*)
+   from t008t1 join t008t2  on a1 = a2 and c2 = 20 and a1 = c1
+           join t008t3  on a2 = a3 and c3 = 30
+;
+-- should get 1 
+
+?section q17
+ select a1, b1, b2, b3 
+   from t008t1 join t008t2  on a1 = a2 and a1 = c1 and a2 = c2
+           join t008t3  on c2 = c3 and a2 = a3 
+; 
+-- should get 1 row {(t1r1,t2r1,t3r1) } where a1 = c1 = 10
+
+?section q18
+ select count(*)
+   from t008t1 join t008t2  on a1 = a2 and a1 = c1 and a2 = c2
+           join t008t3  on c2 = c3 and a2 = a3 
+; 
+-- should get 1 
+
+?section q19
+ select X.xa2, X.xb2, X.xb3, Y.yc2, Y.yb2, Y.yb3
+   from 
+(select a2, b2, b3 from t008t2 join t008t3 on a2 = a3) as X(xa2, xb2, xb3)
+-- ({t2r1,t3r1},{t2r1,t3r2},{t2r2,t3r1},{t2r2,t3r2})
+   join
+(select c20, b20, b30 from t008t20 join t008t30 on c20 = c30) as Y(yc2, yb2, yb3)
+-- ({t20r1,t30r1},{t20r1,t30r2},{t20r2,t30r1},{t20r2,t30r2})
+   on xa2 = yc2
+;
+-- should get 16 rows
+
+?section q20
+ select count(*)
+   from 
+(select a2, b2, b3 from t008t2 join t008t3 on a2 = a3) as X(xa2, xb2, xb3)
+-- ({t2r1,t3r1},{t2r1,t3r2},{t2r2,t3r1},{t2r2,t3r2})
+   join
+(select c20, b20, b30 from t008t20 join t008t30 on c20 = c30) as Y(yc2, yb2, yb3)
+-- ({t20r1,t30r1},{t20r1,t30r2},{t20r2,t30r1},{t20r2,t30r2})
+   on xa2 = yc2
+;
+-- should get 16 
+
+?section q21
+-- TBF: Syntax error
+?ignore
+ select za2,zb2,zb3
+   from 
+( (select a2, a3, b2, b3 from t008t2 join t008t3 on a2 = a3) as P(xa2, xa3, xb2, xb3)
+   union
+  (select c20, c30, b20, b30 from t008t20 join t008t30 on c20 = c30) as Q(yc2, yc3, yb2, yb3)
+) as Z(za2, za3, zb2, zb3) 
+where za2 = za3
+;
+?ignore
+
+?section q22
+-- TBF: Syntax error
+ select count(*)
+   from 
+( (select a2, a3, b2, b3 from t008t2 join t008t3 on a2 = a3) as P(xa2, xa3, xb2, xb3)
+   union
+  (select c20, c30, b20, b30 from t008t20 join t008t30 on c20 = c30) as Q(yc2, yc3, yb2, yb3)
+) as Z(za2, za3, zb2, zb3) 
+where za2 = za3
+;
+
+?section q23
+select b2,b4,c4,a4
+  from t008t2 left join t008t4 on c4 = 20
+ where a4 is not null
+;
+-- should get 8 rows 
+-- { (t2r1,t4r1),(t2r1,t4r3), ..., (t2r4,t4r1),(t2r4,t4r3) }
+
+?section q24
+select b2,b3,b4
+  from t008t2 left join t008t3 on c2 = c3 
+	  left join t008t4 on c2 = c4
+;
+-- should get 8 rows
+-- {(t2r1,t3r1,null),(t2r1,t3r3,null),(t2r2,null,t4r1),(t2r2,null,t4r3),
+--  (t2r3,t3r1,null),(t2r3,t3r3,null),(t2r4,null,t4r1),(t2r4,null,t4r3) }
+
+?section q25 
+select count(*)
+  from t008t2 left join t008t3 on c2 = c3 
+	  left join t008t4 on c2 = c4
+;
+-- should get 8 
+
+?section q26
+select b2,b3,b4
+  from t008t2 left join t008t3 on c2 = c3 
+	  left join t008t4 on c3 = c4
+;
+-- should get 6 rows
+-- {(t2r1,t3r1,null),(t2r1,t3r3,null),(t2r2,null,null)
+--  (t2r3,t3r1,null),(t2r3,t3r3,null),(t2r4,null,null) }
+
+?section q27
+select count(*)
+  from t008t2 left join t008t3 on c2 = c3 
+	  left join t008t4 on c3 = c4
+;
+-- should get 6
+
+?section q28 
+select b2,b3,b4
+  from t008t2 left join t008t3 on c2 = c3 
+          left join t008t4 on c2 = c4
+ where a3 = 30
+;
+-- should get 2 rows
+-- {(t2r1,t3r3,null),(t2r3,t3r1,null) }
+
+-- Run the equivalent inner join query for verifying the answer
+select b2,b3,b4
+  from t008t2 join t008t3 on c2 = c3 and a3 = 30 
+          left join t008t4 on c2 = c4
+;
+-- should get 2 rows
+-- {(t2r1,t3r3,null),(t2r3,t3r1,null) }
+
+?section q29 
+-- Transform the LJ at the root into an IJ, force a VEG merge
+select count(*)
+  from t008t2 left join t008t3 on c2 = c3 
+	  left join t008t4 on c2 = c4
+ where a3 = 30
+;
+-- should get 2 rows
+-- {(t2r1,t3r3,null),(t2r3,t3r3,null) }
+
+select count(*)
+  from t008t2 join t008t3 on c2 = c3 and a3 = 30 
+          left join t008t4 on c2 = c4
+;
+-- should get 2 rows
+-- {(t2r1,t3r3,null),(t2r3,t3r3,null) }
+
+?section q30 
+-- Test the MapValueId transformation performed by the 
+-- normalizer
+select b3, count(*)
+  from t008t2 left join t008t3 on c2 = c3 
+	  left join t008t4 on c2 = c4
+ where a3 = 30
+ group by b3
+;
+-- should get 1 group
+-- {(t3r3,2)}
+
+?section q31 
+-- Transform the LJ at the leaf into an IJ, force a VEG merge
+select b2,b3,b4
+  from t008t2 left join t008t3 on c2 = c3 
+          left join t008t4 on c3 = c4
+ where a4 = 30
+;
+-- should get 0 rows
+
+-- Transform the LJ at the leaf into an IJ, force a VEG merge
+?section q32
+select count(*)
+  from t008t2 left join t008t3 on c2 = c3 
+          left join t008t4 on c3 = c4
+ where a4 = 30
+;
+-- should get 0
+
+?section clnup
+-- cleanup the database
+drop table t008t1;
+drop table t008t2;
+drop table t008t3;
+drop table t008t4;
+drop table t008t20;
+drop table t008t30;
+
+log;

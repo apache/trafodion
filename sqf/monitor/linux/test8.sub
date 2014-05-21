@@ -1,0 +1,28 @@
+! Test TM sync requests with collisions
+!
+exec {type dtm,nowait,nid 2,out TM02.lst}testtm
+exec {type dtm,nowait,name $TM01, nid 1,out TM01.lst}testtm
+exec {type dtm,nowait,nid 0,out TM00.lst}testtm
+delay 5
+ps {DTM}
+
+! Start Test3 - No collision commit test
+event {DTM} 3
+delay 5
+
+! Start Test4 - No collision abort test
+event {DTM} 4
+delay 5
+
+! Start Test5 - Collision commit test
+event {DTM} 5
+delay 40 
+
+! Start Test6 - Collision abort test
+event {DTM} 6
+delay 40 
+ 
+! Start Test7 - Dead TM test
+event {DTM} 7
+delay 10
+exit !

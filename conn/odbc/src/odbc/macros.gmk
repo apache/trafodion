@@ -1,0 +1,153 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+ifeq ($(SQ_MTYPE),32)
+CXX		= $(CXX32)
+CC		= $(CC32)
+CXXFLAGS        = $(GCCMODE32) $(DBG_FLGS) $(OPTIM_FLGS) $(INTEL_TOOL_FLGS)
+GCCMODE         = $(GCCMODE32)
+LOC_JVMLIBS     = $(JAVA_HOME)/jre/lib/i386/server
+else
+CXX             = $(CXX64)
+CC              = $(CC64)
+CXXFLAGS        = $(DBG_FLGS) $(OPTIM_FLGS) $(INTEL_TOOL_FLGS)
+GCCMODE         = $(GCCMODE64)
+LOC_JVMLIBS     = $(JAVA_HOME)/jre/lib/amd64/server
+HADOOP_LIBS     = -L $(HADOOP_LIB_DIR) -L $(LOC_JVMLIBS) -lhdfs -ljvm
+endif
+
+# flags
+CXXFLAGS	+= $(DEFINES) $(CXXWARN) -fcheck-new $(CODEGEN)
+
+
+# common rules
+
+.CPP.o:
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
+
+# common pattern rules
+
+LEX = flex
+YACC = bison
+
+$(OUTDIR)/%.o : linux/%.l
+	$(LEX) -o $*.cpp $<;
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $*.cpp
+
+$(OUTDIR)/%.o : linux/%.y
+	$(YACC) -d -v -o $*.cpp $<;
+	perl -p -i.bak -e 's/\$$end/end/g' $*.cpp;
+	perl -p -i.bak -e 's/\$$undefined/undefined/g' $*.cpp;
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $*.cpp
+
+$(OUTDIR)/%.o : %.y
+	$(YACC) -d -v -o $*.cpp $<;
+	perl -p -i.bak -e 's/\$$end/end/g' $*.cpp;
+	perl -p -i.bak -e 's/\$$undefined/undefined/g' $*.cpp;
+	echo "//LCOV_EXCL_START" > $*.cpp.tmp;
+	cat $*.cpp >> $*.cpp.tmp;
+	echo "//LCOV_EXCL_STOP" >> $*.cpp.tmp;
+	mv $*.cpp.tmp $*.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $*.cpp
+
+$(OUTDIR)/%.o : %.l
+	$(LEX) -o $*.cpp $<;
+	echo "//LCOV_EXCL_START" > $*.cpp.tmp;
+	cat $*.cpp >> $*.cpp.tmp;
+	echo "//LCOV_EXCL_STOP" >> $*.cpp.tmp;
+	mv $*.cpp.tmp $*.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $*.cpp
+
+$(OUTDIR)/%.o: ../dependencies/linux/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: ../dependencies/liblzf/%.c
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: ../dependencies/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Modules in current directory
+$(OUTDIR)/%.o: %.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Executables such as mxoas and mxosrvr use modules from Common directory
+$(OUTDIR)/%.o: ../Common/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: ../Common/linux/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Executables such as mxoas and mxosrvr use modules in Interface subdirectory
+$(OUTDIR)/%.o: Interface/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Platform specific modules in Interface subdirectory
+$(OUTDIR)/%.o: Interface/linux/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Platform specific modules
+$(OUTDIR)/%.o: linux/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Source modules needed by zcfg.so
+$(OUTDIR)/%.o: ../OssCfgCl/Interface/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Config service modules needed by zcfg.so
+$(OUTDIR)/%.o: ../nskcfgsvc/Interface/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: ../nskcfgsvc/%.cpp
+	@if [ -d "(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)";fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: ../OssCfgCl/src/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OUTDIR)/%.o: ../OssCfgCl/src/linux/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+#zcfgdll
+
+$(OUTDIR)/%.o: ../CmdCfgDll/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+
+# Executables such as memtst use modules from Common directory
+$(OUTDIR)/%.o: ../../../Common/%.cpp
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+

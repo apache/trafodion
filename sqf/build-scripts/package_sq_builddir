@@ -1,0 +1,369 @@
+#!/usr/bin/perl
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# This script packages the src- file for SeaQuest.
+# It contains all files in a build area, except:
+#   - Files stored in Subversion
+#   - Files stored in the deliverable product tar file
+#   - .o files
+#
+
+use warnings;
+use strict;
+use Cwd;
+use File::Basename;
+use File::Find;
+use File::Path;
+use File::stat;
+
+my $scriptName = basename($0);
+
+#################################################
+#
+# Function to report the accepted syntax
+#
+sub usage {
+   my $helpText = "
+Usage: $scriptName [-h] [-v]
+			   -f <src-file>
+			   -b <build-dir>
+			   -t <tarfile>
+			   [-o]
+
+where:
+ -h			give help text
+ -v			means verbose output
+ -f <src-tarfile>	is the tar file to be made
+ -b <build-dir>		is the build directory
+ -t <tarfile>		is an existing SeaQuest deliverable tarfile
+ -o			means delete .o files
+ -s BUILD		skip check that basename of build-dir is exactly 'BUILD'
+
+";
+   print "$helpText";
+}    # End of usage()
+
+#################################################
+#
+# Function to give ls -l output for a file
+#
+sub lsld {
+my $F = shift;
+   my $lsL = `ls -ld $F`;
+   print "$lsL";
+}
+
+#################################################
+#
+# Function to give du -sm output for a directory
+#
+sub dusm {
+my $D = shift;
+   my $du_sm = `du -sm $D`;
+   print "$du_sm";
+}
+
+#################################################
+#
+# Function to delete a list of files
+#
+# Arg 1 = Directory within which files are deleted
+# Arg 2 = File with list of files within Arg 1
+#
+sub unlink_list_o_files {
+my $D = shift;
+my $L = shift;
+	open(INFILE, '<' . $L ) or warn "WARNING: $0 : Error opening file '$L' for read:$!";
+	my @Lines = map { chomp ; $_ } (<INFILE>);
+	close(INFILE)           or warn "WARNING: $0 : Error closing file '$L' after read:$!";
+	my $oCtr = 0;
+	my $aLine = "";
+	my $cpdFile = "";
+	my $sb;
+
+	print "Size before (MB) :  \n";
+	dusm $D;
+my $specialFile = "dbtservices/Linux-x86_64/64/rls/vproc.o";
+
+	foreach my $Line( @Lines ) {
+		$oCtr ++;
+		$aLine = $Line;
+		$cpdFile = $D . "/" . $aLine;
+		unlink ( $cpdFile );
+		$sb = stat( $cpdFile );
+		if ( $sb ) {
+			print "ERROR: File not deleted : $cpdFile\n";
+			exit 1;
+		}
+if ( $aLine =~ $specialFile ) { print "Deleted : $aLine\n"; }
+	}
+	print "Files deleted count = $oCtr\n";
+	print "Size after (MB) : \n";
+	dusm $D;
+}
+
+#################################################
+#
+# Main body of script
+#
+
+use File::Basename;
+use Getopt::Std;
+
+my %options=();
+getopts('hvf:b:t:os:', \%options);
+my $verboseMode = 0;
+my $no_o_filesMode = 0;
+my $checkMakefile = 0;
+my $buildDIR = "";
+my $tmpDIR = "";
+my $tmpDIR_default = "/tmp/package_sq_builddir";
+my $badInput = 0;
+my $srcTarFile = "";
+my $tarFile = "";
+my $skipCheck = 0;
+my $skipCheck_BUILD = "";
+my $origDir =  getcwd;
+my $currentDir;
+
+if (defined $options{h}) {
+   usage();
+   exit 0;
+}
+
+if (defined $options{v}) {
+   $verboseMode=1;
+}
+
+if (defined $options{o}) {
+   $no_o_filesMode=1;
+}
+
+if (defined $options{b}) {
+   $buildDIR = $options{b};
+   if ($verboseMode) {
+      print "buildDIR = $buildDIR\n";
+   }
+   if ( ! -d $buildDIR ) {
+      print "ERROR: Not a directory: $buildDIR\n\n";
+      $badInput = 1;
+   }
+} else {
+   print "ERROR: $scriptName is missing option -b\n\n";
+   $badInput = 1;
+}
+
+if (defined $options{f}) {
+   $srcTarFile = $options{f};
+   # Find absolute path for this file
+   if ( $srcTarFile !~ '^/' ) {
+      $srcTarFile = "$origDir/$srcTarFile";
+   }
+   if ($verboseMode) {
+      print "srcTarFile = $srcTarFile\n";
+   }
+   if ( -e $srcTarFile ) {
+      print "ERROR: Target tarfile already exists: $srcTarFile\n\n";
+      $badInput = 1;
+   }
+
+} else {
+   print "ERROR: $scriptName is missing option -f\n\n";
+   $badInput = 1;
+}
+
+if (defined $options{t}) {
+   $tarFile = $options{t};
+   # Find absolute path for this file
+   if ( $tarFile !~ '^/' ) {
+      $tarFile = "$origDir/$tarFile";
+   }
+   if ($verboseMode) {
+      print "tarFile = $tarFile\n";
+   }
+   if ( ! -s $tarFile ) {
+      print "ERROR: Tarfile not found: $tarFile\n";
+      lsld $tarFile;
+      $badInput = 1;
+   }
+} else {
+   print "ERROR: $scriptName is missing option -t\n\n";
+   $badInput = 1;
+}
+
+if (defined $options{s}) {
+   my $skipOption = $options{s};
+   if ($verboseMode) {
+      print "skipOption = $skipOption\n";
+   }
+   if ( $skipOption eq "BUILD" ) {
+      $skipCheck_BUILD = $skipOption;
+   } else {
+      print "ERROR: Unrecognized value for -s : $skipOption\n\n";
+      $badInput = 1;
+   }
+}
+
+my $buildBase = basename ( $buildDIR );
+my $buildDirname = dirname ( $buildDIR );
+if ( ! "$skipCheck_BUILD" ) {
+   if ( $buildBase ne "BUILD" ) {
+      print "ERROR: Build directory basename is not BUILD: $buildDIR\n\n";
+      $badInput = 1;
+   }
+}
+
+if ( $badInput ) {
+#    usage();
+    exit 1;
+}
+
+# Create temporary directory for these lists of files:
+#  1. All filenames in build area
+#  2. All filenames in packaged product
+#  3. All .o files in build area
+
+$tmpDIR = `mktemp -d ${tmpDIR_default}.XXXX`;
+chomp( $tmpDIR );
+`chmod 777 $tmpDIR`;
+if ($verboseMode) {
+   print "tmpDIR = $tmpDIR\n";
+   lsld $tmpDIR;
+}
+
+print "Creating file lists in $tmpDIR ...\n\n";
+my $allFilenames =     $tmpDIR . "/builddir-files-all";
+my $allProductFiles =  $tmpDIR . "/product-files";
+my $all_o_Files =      $tmpDIR . "/builddir-files-o";
+
+chdir $buildDIR;
+if ($verboseMode) {
+   print "allFilenames = $allFilenames\n";
+   $currentDir = getcwd;
+   print "currentDir = $currentDir\n";
+   print "\nfind * -type f | sort > $allFilenames\n";
+}
+`find * -type f | sort > $allFilenames`;
+if ($verboseMode) {
+   lsld $allFilenames;
+   print "\ntar -tzf  $tarFile | grep -v '/\$' | sort > $allProductFiles\n";
+}
+`tar -tzf  $tarFile | grep -v '/\$' | sort > $allProductFiles`;
+if ($verboseMode) {
+   lsld $allProductFiles;
+   print "\negrep -e '\\.o\$' $allFilenames > $all_o_Files\n";
+}
+`egrep -e '\\.o\$' $allFilenames > $all_o_Files`;
+if ($verboseMode) {
+   lsld $all_o_Files;
+}
+
+#
+# Duplicate the build directory then remove unneeded files
+#
+
+# Create temporary directory for duplicate of build area
+
+my $cmdPrefix = "";
+my $newBuildDir = `mktemp -d ${buildDIR}.XXXX`;
+chomp( $newBuildDir );
+`chmod 777 $newBuildDir`;
+if ($verboseMode) {
+   print "newBuildDir = $newBuildDir\n";
+   lsld $newBuildDir;
+   $cmdPrefix = "time ";
+}
+chdir $newBuildDir;
+print "\nDuplicating build area to $newBuildDir ...\n";
+if ($verboseMode) {
+   print "${cmdPrefix}cp -rp $buildDIR/* $newBuildDir\n";
+}
+`${cmdPrefix}cp -rp $buildDIR/* $newBuildDir`;
+print "Sizes (MB) :\n";
+dusm $buildDIR;
+dusm $newBuildDir;
+
+if ( $no_o_filesMode ) {
+   # Remove files in .o list
+   print "\nRemoving .o files from $newBuildDir ...\n";
+   unlink_list_o_files( $newBuildDir, $all_o_Files );
+}
+
+# Always remove files already packaged into product
+print "\nRemoving files packaged into product tar file from ${newBuildDir}/sqf ...\n";
+unlink_list_o_files( "$newBuildDir/sqf" , $allProductFiles );
+dusm $newBuildDir;
+
+print "\nRemoving specific directories ${newBuildDir} ...\n";
+print "Size before (MB) :  \n";
+dusm $newBuildDir;
+my @removeTheseDirs = ( "sqf/build-scripts/open-src-pkg",
+			"sqf/seapilot/thirdparty_export",
+			"sqf/sql/database",
+			"sql/regress" );
+my $dCtr = 0;
+my $delDir;
+foreach my $aDir (@removeTheseDirs) {
+	$dCtr ++;
+	$delDir = $newBuildDir . "/" . $aDir;
+	print "\t$delDir\n";
+	rmtree ( $delDir );
+	my $sb = stat( $delDir );
+	if ( $sb ) {
+		print "ERROR: Directory not deleted : $delDir\n";
+		exit 1;
+	}
+}
+print "Directories deleted count = $dCtr\n";
+print "Size after (MB) :  \n";
+dusm $newBuildDir;
+
+
+print "\nCreating tar file $srcTarFile ...\n";
+if ($verboseMode) {
+   print "\n${cmdPrefix}tar -czf $srcTarFile *\n";
+}
+`${cmdPrefix}tar -czf $srcTarFile *`;
+print "Tar file created =\n";
+lsld $srcTarFile;
+print "\n";
+
+chdir $origDir;
+
+if ($verboseMode) {
+   print "Verbose mode means these temporary files are not deleted:\n";
+   print "  $tmpDIR\n  $newBuildDir\n";
+   exit 0
+} else {
+
+   #  Delete temporary directories
+
+   foreach my $aDir ( $tmpDIR, $newBuildDir ) {
+      my $rmOut = `rm -rf $aDir 2>&1`;
+      my $OutputERR = $? >> 8;
+      if ($OutputERR > 0) {
+         print "Error occurred while attempting to delete $aDir\n";
+        exit 1;
+     }
+     print "Deleted $aDir\n";
+  }
+}
+
+print "\nAll done !\n";

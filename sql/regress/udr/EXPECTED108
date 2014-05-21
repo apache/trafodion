@@ -1,0 +1,208 @@
+>>
+>>create table docs
++>  ( seqno int not null not droppable primary key, text_data varchar(4000) );
+
+--- SQL operation complete.
+>>
+>>create table docs_part
++>  ( seqno int not null not droppable primary key, text_data varchar(4000) )
++> location $$partition$$
++> hash2 partition
++> (
++>     add location $$partition1$$
++>   , add location $$partition2$$
++>   , add location $$partition3$$
++> );
+
+--- SQL operation complete.
+>>
+>>create table clicks
++>  ( seqno int not null primary key, userid varchar(40), ts timestamp(6),
++>    ipaddr char(20) )
++> location $$partition$$
++> hash2 partition
++> (
++>     add location $$partition1$$
++>   , add location $$partition2$$
++>   , add location $$partition3$$
++> );
+
+--- SQL operation complete.
+>>
+>>create library TEST108 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL2$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>create table_mapping function tokenizer1(inval char(1))
++>returns (outval varchar(40))
++>external name 'TOKENIZER1'
++>library TEST108;
+
+--- SQL operation complete.
+>>
+>>create table_mapping function sessionize108(gap int)
++>returns (ts timestamp(6), userid varchar(40), sessionid int)
++>external name 'SESSIONIZE'
++>library TEST108;
+
+--- SQL operation complete.
+>>
+>>cqd DEF_NUM_SMP_CPUS '1' ;
+
+--- SQL operation complete.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs_part ), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from 
++>docs), ' ')) XO(token);
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs), ' ')) XO(token)
++>where token = 'haha' ;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1( ' ')) XO;
+
+*** ERROR[11249] User-defined function XO completed with an error with SQLSTATE 00000. Details: Expecting one table input.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>prepare s1 from
++>select token from 
++>UDF(tokenizer1(TABLE(select text_data from docs), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs), ' ')) XO ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs) inp, ' ')) XO ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs) inp(text), ' ')) XO ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs_part partition by text_data), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs as tt partition by 1), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs partition by 1 order by 1), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs partition by text_data order by text_data), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs as tt NO PARTITION), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs NO PARTITION), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs REPLICATE PARTITION), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs NO PARTITION order by 1 ASC), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs REPLICATE PARTITION order by 1 DESC), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>
+>>cqd def_num_smp_cpus '4' ;
+
+--- SQL operation complete.
+>>
+>>prepare s1 from
++>select token, count(*) from 
++>UDF(tokenizer1(TABLE(select text_data from docs_part <<+ cardinality 10e8 >>), ' ')) XO(token)
++>group by token ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select * from 
++>UDF(tokenizer1(TABLE(select text_data from docs_part partition by text_data), ' ')) XO(token) ;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>SELECT ts, userid, sessionid 
++>FROM UDF(sessionize108 
++>(TABLE(SELECT userid, ts FROM clicks <<+ cardinality 10e8 >> PARTITION BY userid ORDER BY ts),60)) XO;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>SELECT ts, userid, sessionid 
++>FROM UDF(sessionize108 
++>(TABLE(SELECT userid, ts FROM clicks PARTITION BY userid),60)) XO
++>;
+
+--- SQL command prepared.
+>>
+>>prepare s1 from
++>select token, count(*) from
++>UDF(tokenizer1(TABLE(select * from (values
++>(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo1.txt'),
++>(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo2.txt'),
++>(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo3.txt'),
++>(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo4.txt')
++>) as val(text_data) ), ' ')) XO(token)
++>group by token
++>order by 2,1;
+
+--- SQL command prepared.
+>>
+>>log;

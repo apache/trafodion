@@ -1,0 +1,39 @@
+#! /bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+
+# Remove the query output that contains the actal MDAM costs, since they are
+# likely to change slightly over time and cause false regressions. The filtered
+# output contains information on whether or not MDAM was used for each of the
+# tested key predicates, and a list of any for which the plan selection is at
+# odds with the cost. The unfiltered log output can be consulted if the actual
+# costs are of interest.
+# Also filter out table and histogram ids from the showstats output.
+sed "
+/^>>execute showcost/,/^--- 1 row(s) selected./d
+s/Table ID: [0-9]*/Table ID: <table id>/g
+s/Hist ID:    [0-9]*/Hist ID:    <hist id>/g
+s/^' '*[0-9.]*' '*[0-9.]*' '*yes' '/'      <more>         <less>  yes '/g
+s/^' '*[0-9.]*' '*[0-9.]*' '*no' '/'      <less>         <more>  yes '/g
+" $fil

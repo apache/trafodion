@@ -1,0 +1,1117 @@
+>>
+>>?section case_10_060807_4104
+>>control query default * reset;
+
+--- SQL operation complete.
+>>
+>>#ifdef SEABASE_REGRESS
+>>cqd  mode_seabase 'ON';
+
+--- SQL operation complete.
+>>cqd seabase_volatile_tables 'ON';
+
+--- SQL operation complete.
+>>cqd mdam_scan_method 'OFF';
+
+--- SQL operation complete.
+>>set schema $$TEST_CATALOG$$.sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>           create table t4tab1a (
++>              vch7 varchar(7) , chu3 char(3) ) no partition;
+
+--- SQL operation complete.
+>>
+>>           create table t4tab2a (
++>              vch7 varchar(7) , chu3 char(3) ) no partition;
+
+--- SQL operation complete.
+>>
+>>           create table t4tab3a (
++>              vch7 varchar(7) , chu3 char(3) ) no partition;
+
+--- SQL operation complete.
+>>
+>>           create table t4tab4a (
++>              vch7 varchar(7) , chu3 char(3) ) no partition;
+
+--- SQL operation complete.
+>>
+>>           insert into t4tab1a values 
++>              (NULL, '1xu' )
++>            , ('ab', '1xv' )
++>            , ('ac', '1xw' )
++>            , ('ad', '1xy' )
++>            , ('abcd', '1xz' )
++>              ;
+
+--- 5 row(s) inserted.
+>>
+>>           insert into t4tab2a values 
++>              ('ab', '2xu' )
++>            , ('ab', '2xv' )
++>            , ('bc', '2xw' )
++>            , ('bd', '2xy' )
++>            , ('abcd', '1xz' )
++>              ;
+
+--- 5 row(s) inserted.
+>>
+>>           insert into t4tab3a values 
++>              (NULL, '3xu' )
++>            , ('ac', '3xv' )
++>            , ('bc', '3xw' )
++>            , ('cd', '3xy' )
++>            , ('abcd', '1xz' )
++>              ;
+
+--- 5 row(s) inserted.
+>>
+>>           insert into t4tab4a values 
++>              ('cd', '4xu' )
++>            , ('ad', '4xv' )
++>            , ('bd', '4xw' )
++>            , ('cd', '4xy' )
++>            , ('abcd', '1xz' )
++>              ;
+
+--- 5 row(s) inserted.
+>>
+>>           create view t4view1a
++>              ( c1, c2, c3, c4, c5, c6, c7, c8 ) as
++>              select t1.vch7, t1.chu3, t2.vch7, t2.chu3
++>                 , t3.vch7, t3.chu3, t4.vch7, t4.chu3
++>              from t4tab1a t1
++>              inner join t4tab2a t2 on t1.vch7 = t2.vch7
++>              left join t4tab3a t3 on t2.vch7 = t3.vch7
++>              left join t4tab4a t4 on t3.vch7 = t4.vch7
++>           ;
+
+--- SQL operation complete.
+>>
+>>           create view t4view2a
++>              ( c1, c2, c3, c4, c5, c6, c7, c8 ) as
++>              select t1.vch7, t1.chu3, t2.vch7, t2.chu3
++>                 , t3.vch7, t3.chu3, t4.vch7, t4.chu3
++>              from t4tab1a t1
++>              left join t4tab2a t2 on t1.vch7 = t2.vch7
++>              inner join t4tab3a t3 on t1.vch7 = t3.vch7
++>              left join t4tab4a t4 on t1.vch7 = t4.vch7
++>           ;
+
+--- SQL operation complete.
+>>
+>>        --  NATURAL Join the views.
+>>-- used to get warning 2053 optimizer pass two asserstion failure
+>>-- (orderedMJPreds.entries() > 0) in file
+>>-- w:\nskomake\../optimizer\OptPhysRelExpr.cpp at line 6240
+>>        prepare s from
++>           select * from t4view1a v1
++>           NATURAL join t4view2a v2
++>           order by 1, 5
++>           ;
+
+--- SQL command prepared.
+>>
+>>        -- expect 1 row returns, but got 6561 row(s) selected.
+>>        -- C1       C2   C3       C4   C5       C6   C7       C8
+>>        -- abcd     1xz  abcd     1xz  abcd     1xz  abcd     1xz
+>>        execute s;
+
+C1       C2   C3       C4   C5       C6   C7       C8 
+-------  ---  -------  ---  -------  ---  -------  ---
+
+abcd     1xz  abcd     1xz  abcd     1xz  abcd     1xz
+
+--- 1 row(s) selected.
+>>
+>>-- verify we get same result with merge joins
+>>control query default hash_joins 'off';
+
+--- SQL operation complete.
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>>        prepare sm from
++>           select * from t4view1a v1
++>           NATURAL join t4view2a v2
++>           order by 1, 5
++>           ;
+
+--- SQL command prepared.
+>>        execute sm;
+
+C1       C2   C3       C4   C5       C6   C7       C8 
+-------  ---  -------  ---  -------  ---  -------  ---
+
+abcd     1xz  abcd     1xz  abcd     1xz  abcd     1xz
+
+--- 1 row(s) selected.
+>>        select count(*) as number_of_merge_joins
++>        from table(explain(null,'SM'))
++>        where operator = 'MERGE_JOIN';
+
+NUMBER_OF_MERGE_JOINS
+---------------------
+
+                    7
+
+--- 1 row(s) selected.
+>>
+>>
+>>?section soln_10_060807_8199
+>>
+>>control query default * reset;
+
+--- SQL operation complete.
+>>
+>>#ifdef SEABASE_REGRESS
+>>cqd  mode_seabase 'ON';
+
+--- SQL operation complete.
+>>cqd seabase_volatile_tables 'ON';
+
+--- SQL operation complete.
+>>cqd mdam_scan_method 'OFF';
+
+--- SQL operation complete.
+>>set schema $$TEST_CATALOG$$.sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>create table t4tab1 (
++>vch7 varchar(7) , chu3 char(3) ) no partition;
+
+--- SQL operation complete.
+>>
+>>insert into t4tab1 values 
++>(NULL, '1xu' ), ('ab', '1xv' );
+
+--- 2 row(s) inserted.
+>>
+>>create view t4view1
++>( c1, c2, c3, c4) as
++>select t1.vch7, t1.chu3, t2.vch7, t2.chu3
++>from t4tab1 t1 inner join t4tab1 t2 on t1.vch7 = t2.vch7;
+
+--- SQL operation complete.
+>>
+>>-- used to get warning 2053 "optimizer passs two assertion failure
+>>-- (orderedMJPreds.entries() > 0) in file 
+>>-- w:\nskomake\../optimizer\OptPhysRelExpr.cpp at line 6240. Attempting
+>>-- to recover and produce a plan."
+>>prepare s from
++>select * from t4view1 v1 natural join t4view1 v2 natural join t4view1 v3;
+
+--- SQL command prepared.
+>>execute s;
+
+C1       C2   C3       C4 
+-------  ---  -------  ---
+
+ab       1xv  ab       1xv
+
+--- 1 row(s) selected.
+>>
+>>-- verify mxcmp considers merge_join plans
+>>control query default hash_joins 'off';
+
+--- SQL operation complete.
+>>control query default nested_joins 'off';
+
+--- SQL operation complete.
+>>prepare s from
++>select * from t4view1 v1 natural join t4view1 v2 natural join t4view1 v3;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_merge_joins
++>from table(explain(null,'S'))
++>where operator = 'MERGE_JOIN';
+
+NUMBER_OF_MERGE_JOINS
+---------------------
+
+                    5
+
+--- 1 row(s) selected.
+>>
+>>execute s;
+
+C1       C2   C3       C4 
+-------  ---  -------  ---
+
+ab       1xv  ab       1xv
+
+--- 1 row(s) selected.
+>>
+>>?section soln_10-070416-4141
+>>
+>>control query default * reset;
+
+--- SQL operation complete.
+>>
+>>#ifdef SEABASE_REGRESS
+>>cqd  mode_seabase 'ON';
+
+--- SQL operation complete.
+>>cqd seabase_volatile_tables 'ON';
+
+--- SQL operation complete.
+>>cqd mdam_scan_method 'OFF';
+
+--- SQL operation complete.
+>>set schema $$TEST_CATALOG$$.sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>create volatile table t4tab2 (
++>  u1  smallint unsigned
++>, u2  integer unsigned
++>) store by (syskey) no partition;
+
+--- SQL operation complete.
+>>
+>>create volatile table t4tab2dest (
++>  u1  smallint unsigned
++>, u2  integer 
++>) store by (syskey) no partition;
+
+--- SQL operation complete.
+>>
+>>        insert into t4tab2 values
++>        (        10,  9        ),
++>        (        10,  10       ),
++>        (        10,  10       ),
++>        (        10,  10       ),
++>        (        10,  20        ),
++>        (        10,  20        ),
++>        (        10,  20        ),
++>        (        10,  30        ),
++>        (        10,  30        ),
++>        (        10,  30        ),
++>        (        20,  10        ),
++>        (        20,  10        ),
++>        (        20,  10        ),
++>        (        20,  20        ),
++>        (        20,  20        ),
++>        (        20,  20        ),
++>        (        20,  30        ),
++>        (        20,  30        ),
++>        (        20,  30        ),
++>        (        30,  10        ),
++>        (        30,  10        ),
++>        (        30,  10        ),
++>        (        30,  20        ),
++>        (        30,  20        ),
++>        (        30,  20        ),
++>        (        30,  30        ),
++>        (        30,  30        ),
++>        (        30,  30        ),
++>        (        10,  10        ),
++>        (        10,  null      ),
++>        (        10,  null        ),
++>        (        null,10        ),
++>        (        null,  10        ),
++>        (        null,  10        ),
++>        (        null,  null        ),
++>        (        null,  null        );
+
+--- 36 row(s) inserted.
+>>
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default rounding_mode '2';
+
+--- SQL operation complete.
+>>
+>>-- FORCE a sort_groupby plan
+>>control query default comp_int_77 '33554432';
+
+--- SQL operation complete.
+>>
+>>prepare xx from insert into t4tab2dest       
++>select u1, u2/10
++>          from t4tab2
++>          group by u1, u2
++>         order by 2 desc;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_sort_groupbys
++>from table(explain(null,'XX'))
++>where operator = 'SORT_GROUPBY';
+
+NUMBER_OF_SORT_GROUPBYS
+-----------------------
+
+                      1
+
+--- 1 row(s) selected.
+>>
+>>execute xx;
+
+--- 13 row(s) inserted.
+>> -- should insert 13 (not 14) rows
+>>
+>>delete from t4tab2dest;
+
+--- 13 row(s) deleted.
+>>
+>>prepare xx from insert into t4tab2dest
++>select u1, u2 * 1/10
++>          from t4tab2
++>          group by u1, u2
++>         order by 2 desc;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_sort_groupbys
++>from table(explain(null,'XX'))
++>where operator = 'SORT_GROUPBY';
+
+NUMBER_OF_SORT_GROUPBYS
+-----------------------
+
+                      1
+
+--- 1 row(s) selected.
+>>
+>>execute xx;
+
+--- 13 row(s) inserted.
+>> -- should insert 13 (not 14) rows
+>>
+>>delete from t4tab2dest;
+
+--- 13 row(s) deleted.
+>>
+>>prepare xx from insert into t4tab2dest
++>select u1, 1/10 * u2
++>          from t4tab2
++>          group by u1, u2
++>         order by 2 desc;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_sort_groupbys
++>from table(explain(null,'XX'))
++>where operator = 'SORT_GROUPBY';
+
+NUMBER_OF_SORT_GROUPBYS
+-----------------------
+
+                      1
+
+--- 1 row(s) selected.
+>>
+>>execute xx;
+
+--- 13 row(s) inserted.
+>> -- should insert 13 (not 14) rows
+>>
+>>delete from t4tab2dest;
+
+--- 13 row(s) deleted.
+>>
+>>prepare xx from insert into t4tab2dest
++>select u1, u2 / -10
++>          from t4tab2
++>          group by u1, u2
++>         order by 2 desc;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_sort_groupbys
++>from table(explain(null,'XX'))
++>where operator = 'SORT_GROUPBY';
+
+NUMBER_OF_SORT_GROUPBYS
+-----------------------
+
+                      1
+
+--- 1 row(s) selected.
+>>
+>>execute xx;
+
+--- 13 row(s) inserted.
+>> -- should insert 13 (not 14) rows
+>>
+>>delete from t4tab2dest;
+
+--- 13 row(s) deleted.
+>>
+>>prepare xx from insert into t4tab2dest
++>select u1, u2 * 1 / -10
++>          from t4tab2
++>          group by u1, u2
++>         order by 2 desc;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_sort_groupbys
++>from table(explain(null,'XX'))
++>where operator = 'SORT_GROUPBY';
+
+NUMBER_OF_SORT_GROUPBYS
+-----------------------
+
+                      1
+
+--- 1 row(s) selected.
+>>
+>>execute xx;
+
+--- 13 row(s) inserted.
+>> -- should insert 13 (not 14) rows
+>>
+>>delete from t4tab2dest;
+
+--- 13 row(s) deleted.
+>>
+>>prepare xx from insert into t4tab2dest
++>select u1, 1 / -10 * u2
++>          from t4tab2
++>          group by u1, u2
++>         order by 2 desc;
+
+--- SQL command prepared.
+>>
+>>select count(*) as number_of_sort_groupbys
++>from table(explain(null,'XX'))
++>where operator = 'SORT_GROUPBY';
+
+NUMBER_OF_SORT_GROUPBYS
+-----------------------
+
+                      1
+
+--- 1 row(s) selected.
+>>
+>>execute xx;
+
+--- 13 row(s) inserted.
+>> -- should insert 13 (not 14) rows
+>>
+>>delete from t4tab2dest;
+
+--- 13 row(s) deleted.
+>>
+>>
+>>?section solu-10-080403-2090 
+>>
+>>#ifndef SEABASE_REGRESS
+>>set schema $$TEST_CATALOG$$.sch;
+>>#else
+>>set schema $$TEST_CATALOG$$.sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>log off;
+>>
+>>-- setup
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>
+>>-- tests
+>>
+>>-- fully specified exposed name
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'CAT.SCH.T4TAB');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'CAT.SCH.T4TAB'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from select * from sch.t4tab where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from select * from t4tab where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from select * from t4view where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- expect error
+>>prepare s from select * from sch.t4tab x where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>-- use only object name
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'T4TAB', mdam forced);
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'T4TAB', mdam forced));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from sch.t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from sch.t4view x where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>
+>>-- expect error
+>>prepare s from select * from t4tab x where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>-- delimited identifier where unnecessary
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table '"T4TAB"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table '"T4TAB"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from sch."t4tab" t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from "t4tab" where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- expect error
+>>prepare s from select * from t4tab x where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- expect error
+>>
+>>-- correlation name
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'X');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'X'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4tab x where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4view_x y where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>
+>>-- delimited identifier
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'cat."t4sch"."t4tab"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'cat."t4sch"."t4tab"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'cat."t4sch"."t4tab"', 
++>                            path  'cat."t4sch"."t4tab"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'cat."t4sch"."t4tab"', 
++>                            path  'cat."t4sch"."t4tab"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table '"t4tab"', 
++>                            path  '"t4tab"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table '"t4tab"', 
++>                            path  '"t4tab"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table '"t4tab"', 
++>                            path  'cat."t4sch"."t4tab"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table '"t4tab"', 
++>                            path  'cat."t4sch"."t4tab"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- delimited identifier on single name
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table '"t4tab"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table '"t4tab"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$."t4sch"."t4tab" where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from $$TEST_CATALOG$$.sch."t4tab" where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from "t4sch".t4view where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>prepare s from select * from t4tab "t4tab" where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>
+>>-- expect error
+>>prepare s from select * from t4tab where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>-- delimited identifiers with embedded dots
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'cat.sch."SCH.T4TAB"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'cat.sch."SCH.T4TAB"'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch."SCH.T4TAB" where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Index names
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'T4TAB', path '$DISK.SUBVOL.IX');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'T4TAB', path '$DISK.SUBVOL.IX'));
+>>#endif
+>>
+>>prepare s from select b from $$TEST_CATALOG$$.sch.t4tab where b=5;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'T4TAB', path 'T4TAB');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'T4TAB', path 'T4TAB'));
+>>#endif
+>>
+>>prepare s from select b from $$TEST_CATALOG$$.sch.t4tab where b=5;
+
+--- SQL command prepared.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'T4TAB', path 't4tabx');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'T4TAB', path 't4tabx'));
+>>#endif
+>>
+>>prepare s from select b from $$TEST_CATALOG$$.sch.t4tab where b=5;
+
+--- SQL command prepared.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table '"t4tab"', path '"t4tabx"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table '"t4tab"', path '"t4tabx"'));
+>>#endif
+>>
+>>prepare s from select b from $$TEST_CATALOG$$.sch."t4tab" where b=5;
+
+--- SQL command prepared.
+>>
+>>
+>>-- Negative tests
+>>
+>>-- syntax errors
+>>control query shape pa(scan(table '123%'));
+
+*** ERROR[3113] Error in CONTROL statement: Table name is not an ANSI name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query shape pa(scan(table 'a.b.*'));
+
+*** ERROR[3113] Error in CONTROL statement: Table name is not an ANSI name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query shape pa(scan(table 'a', path '456'));
+
+*** ERROR[3113] Error in CONTROL statement: Index name is not an ANSI name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- exposed, and partially qualified pattern names are supported 
+>>-- (to be matched with the partially qualified table names).
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'SCH.T4TAB');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'SCH.T4TAB'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>-- expect error
+>>prepare s from select * from sch.t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>-- expect error
+>>prepare s from select * from t4tab where a < 2 or a > 10;
+
+--- SQL command prepared.
+>>-- expect error
+>>
+>>-- correlation name must be a single name
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 'SEABASE.SCH.X');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 'CAT.SCH.X'));
+>>#endif
+>>
+>>prepare s from select * from $$TEST_CATALOG$$.sch.t4tab x where a < 2 or a > 10;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- expect error
+>>
+>>
+>>-- more tests on index names
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 't4ttt', path '"t4ij1"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 't4ttt', path '"t4ij1"'));
+>>#endif
+>>
+>>prepare xx from select * from t4ttt;
+
+--- SQL command prepared.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 't4ttt', path '"t4Ij1"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 't4ttt', path '"t4Ij1"'));
+>>#endif
+>>prepare xx from select * from t4ttt;
+
+--- SQL command prepared.
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 't4ttt', path 't4ij1');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 't4ttt', path 't4ij1'));
+>>#endif
+>>prepare xx from select * from t4ttt;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan(table 't4ttt', path '"t4iJ1"');
+
+--- SQL operation complete.
+>>#else
+>>control query shape pa(scan(table 't4ttt', path '"t4iJ1"'));
+>>#endif
+>>
+>>prepare xx from select * from t4ttt;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>-- verify fix to solution 10-091016-5452
+>>-- this prepare used to crash mxcmp
+>>#ifndef SEABASE_REGRESS
+>>set schema compgeneral;
+>>#else
+>>set schema $$TEST_CATALOG$$.compgeneral;
+
+--- SQL operation complete.
+>>#endif
+>>prepare xx from 
++> select v_tsj_t_t.val01,v_tsj_t_t.val02 
++>          from v_tsj_t_t 
++>          where (v_tsj_t_t.val01,v_tsj_t_t.val02) in 
++>          ( select F01.val01,D01.val02 
++>            from F01 
++>            left join D01 on F01.fk_d01=D01.val01 
++>            where F01.val02>0 
++>          )
++>        ;
+
+--- SQL command prepared.
+>>
+>>?section verify_sap_update_fix
+>>control query shape cut;
+
+--- SQL operation complete.
+>>create table faetest1(faetest char(10) not null,
++>                      sid     integer not null,
++>                      intcol  integer not null,
++>                      ccol    char(10) not null,
++>                      primary key(faetest))
++>#ifndef SEABASE_REGRESS
++>  hash2 partition by (faetest)
++>#endif
++>;
+
+--- SQL operation complete.
+>>
+>>insert into faetest1
++>select cast(num as char(10)), num, 0,' '
++>from (select 100*hundreds+10*tens+ones as num
++>      from (values (0)) seed(c)
++>      transpose 0,1,2,3,4,5,6,7,8,9 as ones
++>      transpose 0,1,2,3,4,5,6,7,8,9 as tens
++>      transpose 0,1,2,3,4,5,6,7,8,9 as hundreds) T
++>order by num;
+
+--- 1000 row(s) inserted.
+>>
+>>update statistics for table faetest1 on every column;
+
+--- SQL operation complete.
+>>
+>>prepare s120 from
++>update faetest1 set intcol=9999
++>where sid in (
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?
++>);
+
+--- SQL command prepared.
+>>-- should be a tuple_flow(hash_join(pa,groupby(tuplelist)),cursor_update) plan
+>>--#ifNT
+>>--explain options 'f' s120;
+>>--#ifNT
+>>
+>>-- execute used to update only 1 row and the wrong row!
+>>execute s120 using
++>003,023,043,063,083,093,094,095,096,099,
++>103,123,143,163,183,193,194,195,196,199,
++>203,223,243,263,283,293,294,295,296,299,
++>303,323,343,363,383,393,394,395,396,399,
++>403,423,443,463,483,493,494,495,496,499,
++>503,523,543,563,583,593,594,595,596,599,
++>603,623,643,663,683,693,694,695,696,699,
++>703,723,743,763,783,793,794,795,796,799,
++>803,823,843,863,883,893,894,895,896,899,
++>903,923,943,963,983,993,994,995,996,999,
++>004,024,044,064,084,086,014,034,054,074,
++>005,025,045,065,085,087,015,035,055,075;
+
+--- 120 row(s) updated.
+>>-- should update 120 rows
+>>
+>>-- force a poor nested_join plan
+>>control query shape implicit exchange nested_join(sort(nested_join(cut,cut)),cut);
+
+--- SQL operation complete.
+>>prepare s120 from
++>update faetest1 set intcol=9999
++>where sid in (
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?,
++>?,?,?,?,?,?,?,?,?,?
++>);
+
+--- SQL command prepared.
+>>control query shape cut;
+
+--- SQL operation complete.
+>>--#ifNT
+>>--explain options 'f' s120;
+>>--#ifNT
+>>
+>>-- execute used to update only 1 row and the wrong row!
+>>execute s120 using
++>003,023,043,063,083,093,094,095,096,099,
++>103,123,143,163,183,193,194,195,196,199,
++>203,223,243,263,283,293,294,295,296,299,
++>303,323,343,363,383,393,394,395,396,399,
++>403,423,443,463,483,493,494,495,496,499,
++>503,523,543,563,583,593,594,595,596,599,
++>603,623,643,663,683,693,694,695,696,699,
++>703,723,743,763,783,793,794,795,796,799,
++>803,823,843,863,883,893,894,895,896,899,
++>903,923,943,963,983,993,994,995,996,999,
++>004,024,044,064,084,086,014,034,054,074,
++>005,025,045,065,085,087,015,035,055,075;
+
+--- 120 row(s) updated.
+>>-- should update 120 rows
+>>
+>>
+>>prepare s1 from
++>INSERT INTO query_sql_text1
++>(CLUSTER_ID,SQL_TEXT)VALUES
++>(CAST(?[2] AS INTEGER UNSIGNED),
++>TRANSLATE(CAST (?[2] AS
++>VARCHAR(60000)) USING UTF8TOUCS2));
+
+--- SQL command prepared.
+>>
+>>-- do a showplan to make sure displayContents code gets covered.
+>>log;
+Contents of EX_UNPACK_ROWS :
+Expression: packingFactor
+Expression: unPackColsExpr
+>>
+>>?section ALM_6748
+>>
+>>create table v_t1 (a int not null primary key, b date, b2 char(10));
+
+--- SQL operation complete.
+>>create table v_t2 (c int not null primary key, d date, d2 char(10));
+
+--- SQL operation complete.
+>>
+>>prepare st1 from
++>SELECT
++>  CASE
++>     WHEN( v_t1.b=current_date)
++>     THEN 'Expired' ELSE 'Active'
++>  END "Col1"
++>FROM v_t1 INNER JOIN v_t2 ON ( v_t1.b  =  v_t2.d ) ;
+
+--- SQL command prepared.
+>>
+>>prepare st1 from
++>SELECT
++>  v_t2.d2 ||
++>  CASE
++>     WHEN( v_t1.b=current_date)
++>     THEN 'Expired' ELSE 'Active'
++>  END "Col1"
++>FROM v_t1 INNER JOIN v_t2 ON ( v_t1.b  =  v_t2.d ) ;
+
+--- SQL command prepared.
+>>
+>>?section tests_end
+>>log;

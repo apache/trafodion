@@ -1,0 +1,12 @@
+! Test to register and cancel process death
+! notices from non-parent process.
+!
+exec {nowait,name $serv0, out serv0.lst} server waitforclose
+exec {nowait,name $serv1, out serv1.lst} server waitforclose
+exec {nowait,nid 0,name $TM00,out tm00.lst} server waitforclose
+exec {nowait,nid 1,name $TM01,out tm01.lst} server waitforclose
+exec {nowait,nid 2,name $TM02,out tm02.lst} server waitforclose
+ps
+! To enable tracing add "-t" argument to the end of the "exec" line
+!
+exec {nid 0} deathNotice

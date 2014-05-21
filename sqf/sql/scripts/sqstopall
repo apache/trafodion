@@ -1,0 +1,296 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+#
+#SQ Shutdown all SQ subsystems.
+
+
+
+
+function hms
+{
+  seconds=$elapsed_seconds
+  hours=$((seconds / 3600))
+  seconds=$((seconds % 3600))
+  minutes=$((seconds / 60))
+  seconds=$((seconds % 60))
+  echo " $hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+
+
+
+
+#--------------------------------------
+# Desc  : Parse the sqconfig file
+# Usage : GetSQcnfg
+#--------------------------------------
+ function GetSQcnfg {
+
+ # Get SQ Node configuration
+ TempList=`grep "^node-id=" $MY_SQROOT/sql/scripts/sqconfig | cut -d "=" -f 3 | cut -d ";" -f 1 | sort`
+ i=0
+ echo "Processor node names"
+ for NODE in $TempList
+   do
+     SQNodeNames[$i]=$NODE
+     echo "Node name: ${SQNodeNames[$i]} "
+
+     ((i=i+1))
+
+     done
+
+ # Check that the Node names were corretly added
+ NumberOfSQnodes=${#SQNodeNames[*]}
+
+
+ # Get SQ connect node server
+ CONN_NODE=`grep -v '^#' $MY_SQROOT/sql/scripts/sqconfig | grep -m 1 connection | sed -e "s@node-name=\(n[0-9]*\);.*@\1@" | cut -d ';' -f2`
+
+ echo "Connect Node for startup/shutdown: $CONN_NODE " 
+ echo 
+ sync
+
+ }
+
+
+
+
+#--------------------------------------
+# Desc  : sq check status
+# Usage : SeaQChecksqstart
+#--------------------------------------
+function SeaQChecksqstart {
+ ssh $CONN_NODE "$MY_SQROOT/sql/scripts/sqcheck -i 1 -d 1 > /dev/null 2>&1" 
+ sq_stat=$?
+ if [[ $sq_stat == 0 ]]; then
+     echo "sqstart (seabed) environment is up."
+
+ fi
+
+ }
+
+
+
+
+
+
+#---------------------------------
+# Desc  :  Find out if SQLMX has been initialized
+#         
+# Usage :  SQLinitCheck
+#---------------------------------
+function SQLinitCheck {
+ if [ -f $MY_SQROOT/export/bin$SQ_MBTYPE/sqlci ]; then 
+     echo 
+     sync
+     rm -rf /home/$USER/SQLcheck
+     unset SQLINIT
+     ssh $CONN_NODE "$MY_SQROOT/export/bin$SQ_MBTYPE/sqlci -i >> SQLcheck <<EOFILE1
+     SELECT count (*) from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS ;
+     EXIT;
+EOFILE1"
+     
+     SQLINIT=`grep "8577" /home/$USER/SQLcheck | wc -l`
+     if [ "$SQLINIT" != "0" ] ; then
+
+         echo
+         echo "SQLMX has not been initialized yet" 
+         echo
+
+     else
+         echo
+         echo "SQLMX has been initialized" 
+         echo
+
+     fi
+
+ fi
+
+ }
+
+
+
+#---------------------------------
+# Desc  :  Stop WMS subsystem
+#         
+# Usage :  StopWMS
+#---------------------------------
+function StopWMS {
+
+  if [ -f $MY_SQROOT/sql/scripts/wmscheck ] ; then
+
+         echo
+         ssh $CONN_NODE "$MY_SQROOT/sql/scripts/wmsstop" 
+
+         sleep 30
+         
+  fi
+
+
+  }
+
+
+
+
+#---------------------------------
+# Desc  :  Stop the MXOAS NDCS subsystem
+#         
+# Usage :  StopNDCS
+#---------------------------------
+function StopNDCS {
+      
+   if [ -e /home/dont_delete_me ]; then 
+       echo
+       printf "Stop NDCS Subsystem (Dev mode) \n"
+       sync
+       NN=`echo $USER | sed -e "s@[a-z]*@@"`
+       export ODBC_PORT=0
+       let ODBC_PORT=$NN*100+20000
+
+       echo "ODBC/JDBC Port number: $ODBC_PORT"
+       echo "ssh $CONN_NODE '$MY_SQROOT/sql/scripts/ndcsstop -n '\$MXOAS' '  "
+       ssh $CONN_NODE "$MY_SQROOT/sql/scripts/ndcsstop -n '\$MXOAS'  " 
+
+  
+   # else customer config - non-shared hardware
+   else 
+       echo
+       printf "Stop NDCS Subsystem  (Customer mode - default configuration) \n"
+       sync
+       ODBC_PORT=18650
+       echo "ODBC/JDBC Port number: $ODBC_PORT"
+       echo "ssh $CONN_NODE '$MY_SQROOT/sql/scripts/ndcsstop -n '\$MXOAS'  '  "
+       ssh $CONN_NODE "$MY_SQROOT/sql/scripts/ndcsstop -n '\$MXOAS'  " 
+
+
+   fi
+
+
+  }
+
+
+
+
+
+
+
+
+#########################################################
+# MAIN portion of sqstartall begins here
+#########################################################
+
+DATE=`date +%d%b%Y-%T | tr ':' '_'`
+STARTtime=$(date +%s)
+myworkingdir=`pwd`
+cd $HOME; . .bashrc
+cd $myworkingdir
+
+
+
+if [ ! -z $MY_SQROOT ]; then
+    cd $MY_SQROOT/sql/scripts
+else
+    echo
+    echo "The MY_SQROOT environment variable does not exist."
+    echo "Please ensure sqenv.sh has been sourced, and re-run sqstart."
+    echo
+    exit 1;
+fi
+
+if [[ -z $SQSCRIPTS_DIR ]]; then
+    SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
+fi
+
+SQLOG_DIR=$MY_SQROOT/logs
+StopAll_Log=$SQLOG_DIR/stopall-${DATE}.log
+
+
+ echo "Log file will be written to: $StopAll_Log "
+ echo
+ echo "Get the SQ instance configuration information"
+ date
+ GetSQcnfg $StopAll_Log
+
+
+
+ echo
+ echo "Stop NDCS Subsystem   "
+ date
+ sync
+
+    if [ -f $MY_SQROOT/sql/scripts/ndcscheck ] ; then
+
+       StopNDCS >> $StopAll_Log
+
+    else
+        echo "WARNING *** $MY_SQROOT/sql/scripts/ndcscheck NOT found. "
+        echo "Cant stop NDCS Subsystem "
+        echo
+    fi
+
+
+
+
+ echo
+ echo "Stop Workload Management Subsystem  WMS "
+ date
+ sync
+  if [ -f $MY_SQROOT/sql/scripts/wmscheck ] ; then
+
+      StopWMS >> $StopAll_Log
+
+  else
+      echo "WARNING *** $MY_SQROOT/sql/scripts/wmscheck NOT found. "
+      echo "Cant stop WMS Subsystem "
+      echo
+   fi
+
+        
+
+
+
+ echo
+ echo "Stopping SQ infrastructure processes"
+ date
+ ssh $CONN_NODE "cd $MY_SQROOT/sql/scripts ; $MY_SQROOT/sql/scripts/sqstop " >> $StopAll_Log
+ sq_stat=$?
+ if [[ $sq_stat != 0 ]]; then
+     echo "SQ Shutdown was not successful. These are the processes still running:"
+     cstat
+ fi
+
+ echo
+ echo "Checking SQ infrastructure processes"
+ date
+ SeaQChecksqstart >> $StopAll_Log
+
+
+
+echo
+STOPtime=$(date +%s)
+elapsed_seconds=$(( $STOPtime - $STARTtime))
+printf "Total shutdown time " | tee -a $StopAll_Log
+hms  "$elapsed_seconds" | tee -a $StopAll_Log
+echo
+
+
+
+exit 

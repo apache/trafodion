@@ -1,0 +1,177 @@
+-- Test: TEST050 (TBD. See below)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: SQLCI (MXCI) section, error messages, constant binder
+-- Expected files: EXPECTED050, EXPECTED050.MX
+-- Table created: T050a
+-- Limitations: Not run on MP tables
+-- Revision history:
+-- 01/28/02: - Copied from fullstack/TEST050
+-- 03/19/03: split this test into two: one for MXCI (this one) and 
+--           one for MX Compiler (regress/modmgt/test050)
+-- TEST050
+
+--------------------------------------------------------------------
+obey TEST050(ddb);
+log  LOG050 clear;
+obey TEST050(cdb);
+obey TEST050(tests);
+log;
+obey TEST050(ddb);
+exit;
+-- End of test main
+--------------------------------------------------------------------
+
+
+?section ddb
+drop table T050a;
+drop table T050b;
+
+?section cdb
+create table T050a(a char(5) default 'Low',
+		   b char(5) upshift default 'Upp',
+		   c char(5) upshift default null,
+		   d int default 0,
+		   e int default 0,
+		   "f" int default 0);
+insert into T050a values('aa','BB','cc', 1, 1, 1);
+
+?section tests
+obey TEST050 (	test_sqlci_section 	)	;
+obey TEST050(test_sqlci_errmsgs);
+obey TEST050(test_binder_upper);
+obey TEST050(test_olt_warnings);
+?section
+
+
+ 	?section test_sqlci_section		-- this should be ok!
+ 	-- this should be ok even with the funny spacing
+	error 0;	-- INFO/success
+	error 100;	-- WARN/no data
+	error 123;	-- ERR/msg-not-fnd
+	error 3000;	-- ERR/state fabricated from ZZZZZ
+	error 4001;	-- ERR/42000
+	error 6007;	-- WARN/01000
+	error 8402;	-- ERR *and* WARN states (yes, both are valid)
+	error 15015;	-- ERR/07001
+
+	error 0, get;	-- INFO/success
+	error 100, get;	-- WARN/no data
+	error 123, get;	-- ERR/msg-not-fnd
+	error 3000, get;	-- ERR/state fabricated from ZZZZZ
+	error 4001, get;	-- ERR/42000
+	error 6007, get;	-- WARN/01000
+	error 8402, get;	-- ERR *and* WARN states (yes, both are valid)
+	error 15015, get;	-- ERR/07001
+
+        
+?section test_sqlci_errmsgs
+
+set list_count 1;
+
+select * from T050a where d=?ee;		-- 15016
+set param ?ee e;
+select * from T050a where d=?ee;		-- 15015
+set param ?ee 1;
+select * from T050a where d=?ee;		-- 1 row, LIST_COUNT reached
+
+set param ?c=c;					-- 15001
+set param ?c c;
+select * from T050a where b=?c;			-- 0 rows
+select * from T050a where c=?c;			-- 0 rows
+set param ?c 'aa';
+select * from T050a where ?c=a;			-- 1 rows, LIST_COUNT reached
+
+set list_count;
+
+select a,?x from T050a where b=?y;		-- 15016 (twice)
+select a,? from T050a where b=?;		-- 15016 (twice)
+
+execute aBc using 1,'a';			-- 15017
+prepare x from select a,? from T050a where d=?d;
+execute x;					-- 15016 (twice)
+execute x using 77;				-- 15016
+execute x using 77,1;				-- 15016 15019
+set param ?d foo;
+show param;
+execute x using 77;				-- 15015
+set param ?d 1;
+execute x using 77;				-- 1 row
+set param ?d '1';
+execute x using b;				-- 1 row
+execute x using 'b';				-- 1 row
+execute x using ' b o''bab +()       x';	-- 1 row
+execute x using ' b o''bab +()                                 x';	-- 15023
+execute x using 'b o''bab' , z;			-- 15019, 1 row
+execute x using 'b o''bab'   z;			-- 15024
+execute x using.;				-- 15001
+execute x using;				-- 15020
+execute x using ;				-- 15020
+execute x using,;				-- 15019, 1 row (yucky syntax)
+execute x using ,;				-- 15019, 1 row (yucky syntax)
+execute x using , ;				-- 15019, 1 row (yucky syntax)
+execute x using a, ;				-- 15019, 1 row (yucky syntax)
+execute x using 77,99;				-- 15019, 1 row
+execute x using 77,99,foo;			-- 15019, 1 row
+prepare A from table T050a;
+execute a using p,q;				-- 15019, 1 row
+
+?section test_binder_upper
+
+-- Genesis 10-970902-0878
+select * from T050a where a="Lower";		-- 4001, 4104
+select * from T050a where e="Lower";		-- 4001, 4104
+select * from T050a where a=T050a."Lower";	-- 4003
+select * from T050a,T050a x where x.e="f";	-- 4004, 4104
+select * from T050a,T050a x where x.e='f';	-- 4034 or 4041 or like that
+
+-- Genesis 10-980402-1556 + OLT add'l fix
+insert into T050a default values;
+insert into T050a values('zz','zz','zz', 1, 1, 1);
+execute a;		-- aa,BB,CC; Low,UPP,?; zz,ZZ,ZZ
+
+-- Ansi 6.13 GR 2:  char and varchar concats are different vis-a-vis length
+#ifndef SEABASE_REGRESS
+-- skip this update until transaction support is in
+update T050a set b=a, c=trim(lower(b))||trim(a);		-- 1 warn 8402
+#endif
+execute a;		-- aa,AA,BBAA; Low,LOW,UPPLO; zz,ZZ,ZZZZ
+update T050a set b=a, c=lower(b)||a;				-- 3 ERROR 8402
+execute a;		-- aa,AA,AA; Low,LOW,LOW; zz,ZZ,ZZ
+update T050a set a='xx'||'yy';
+execute a;		-- xxyy,AA,AA; xxyy,LOW,LOW; xxyy,ZZ,ZZ
+
+-- Genesis 10-980611-7115
+select cast('Are you up for a party? Now?' as char(30) upshift) lit,
+       cast(a as char(6) upshift) lu,
+       cast(c as varchar(6) upshift) uu,
+       cast(e as char(6) upshift)i1,
+       cast("f" as char(6) upshift)i2
+       from T050a;
+
+insert into T050a(b,c,"f")values(cast('bLoop' as char(6)upshift),
+				 cast(129 as char(4)upshift),
+				 12900);
+select * from T050a where "f">100;
+
+?section test_olt_warnings
+-- Genesis 10-090626-2647 - warning diags in proj expr in UniqueOLT
+create table T050b (a int not null, b varchar(100), primary key(a));
+insert into T050b values (1,'abc');
+select cast(rtrim(b) as char(1)) from T050b where a = 1;

@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+function perform_work {
+    
+    lv_host=$1
+    
+    echo "In perform_work: $lv_host"
+
+    if [ -e $SQ_PDSH ]; then
+	ssh="ssh $lv_host"
+    fi
+    
+    echo "remove shared memory ids on host $lv_host"
+    $ssh sqnodeipcrm
+    ids=`$ssh ipcs -m|grep -w $w|awk '{ print $2 }'`
+    for id in $ids; do
+	echo "$ssh ipcrm -m $id"
+	$ssh ipcrm -m $id
+    done
+    
+    echo "remove semaphore ids on host $lv_host"
+    ids=`$ssh ipcs -s|grep -w $w|awk '{ print $2 }'`
+    for id in $ids; do
+	echo "$ssh ipcrm -s $id"
+	$ssh ipcrm -s $id
+    done
+
+   echo "remove leftover semaphores on host $lv_host"
+     rm -f /dev/shm/sem.rms* 2>/dev/null
+     rm -f /dev/shm/sem.monitor* 2>/dev/null
+ 
+    echo "remove message queue ids on host $lv_host"
+    ids=`$ssh ipcs -q|grep -w $w|awk '{ print $2 }'`
+    for id in $ids; do
+	echo "$ssh ipcrm -q $id"
+	$ssh ipcrm -q $id
+    done
+    
+    echo "show ids on host $lv_host"
+    $ssh ipcs -a|egrep -w "(key|------|$w)"
+}
+
+w=`whoami`
+if [ -e $SQ_PDSH ]; then
+	setup_sqpdsh
+	hosts=`eval "$SQPDSHA hostname" |awk '{ print $2 }'|sort`
+else
+	hosts=`hostname`
+fi
+
+if [ -z "$1" ]; then
+  for host in $hosts; do
+    perform_work $host &
+  done
+else
+  perform_work $1 &
+fi
+
+setup_sqpdsh
+eval '$SQPDSHA rm -f /dev/shm/sem.sb-disc-sem-$USER 2>/dev/null'
+
+wait

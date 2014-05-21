@@ -1,0 +1,294 @@
+-- Test: TEST027 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Test several special cases for Hash join and hash groupby
+-- Expected file: EXPECTED027 , EXPECTED027.MX
+-- Filter file: 
+-- Tables created: t027t1, t027tinner, t027touter, t027t32
+--                 T027_ALARMS, T027_DIALOUTS, 
+-- Views created:  vw027_alerts
+-- Limitations: 
+-- Revision history:
+--     (11/17/09) - Initial version
+
+?section ddl
+
+obey TEST027(clnup);
+
+-- CREATE database
+?section crdb
+
+----------
+--  D D L
+----------
+
+#ifNSK
+create table t027t32 (i int not null, vc varchar(32000) not null) no partition;
+
+insert into t027t32 values (111,'ABCD');
+#ifNSK
+
+CREATE TABLE T027_ALARMS
+  (
+    RESOURCE_NAME  VARCHAR(100) CHARACTER SET ISO88591 NO DEFAULT -- NOT NULL
+  , SPECIFIC_PROBLEM  VARCHAR(100) CHARACTER SET ISO88591 NO DEFAULT -- NOT NULL
+  , SEGMENT                 INT NO DEFAULT -- NOT NULL
+  , CREATE_UTC_TS           TIMESTAMP(6) NO DEFAULT -- NOT NULL
+  , CREATE_LCT_TS           TIMESTAMP(6) DEFAULT NULL
+  , EVENT_NUMBER            INT DEFAULT NULL
+  , COUNTER                 INT DEFAULT 1 -- NOT NULL
+  , CONSTRAINT T027_ALARMS_175966654_5523 PRIMARY KEY (RESOURCE_NAME ASC,
+                        SPECIFIC_PROBLEM ASC, SEGMENT ASC, CREATE_UTC_TS ASC)
+  , CONSTRAINT T027_ALARMS_918466654_5523 CHECK
+         (T027_ALARMS.RESOURCE_NAME IS NOT NULL AND
+          T027_ALARMS.SPECIFIC_PROBLEM IS NOT NULL AND T027_ALARMS.SEGMENT IS
+          NOT NULL AND T027_ALARMS.CREATE_UTC_TS IS NOT NULL AND
+          T027_ALARMS.COUNTER IS NOT NULL)
+  )
+  ATTRIBUTES ALIGNED FORMAT
+  HASH PARTITION
+  ;
+
+CREATE TABLE T027_DIALOUTS
+  (
+    IRID                             SMALLINT UNSIGNED NO DEFAULT -- NOT NULL
+  , DIALOUT_SEGMENT                  INT NO DEFAULT -- NOT NULL
+  , DETECTED_UTC_TS                  TIMESTAMP(6) NO DEFAULT -- NOT NULL
+  , DETECTED_LCT_TS                  TIMESTAMP(6) DEFAULT NULL
+  , RESOURCE_NAME             VARCHAR(100) CHARACTER SET ISO88591  DEFAULT NULL
+  , SPECIFIC_PROBLEM          VARCHAR(100) CHARACTER SET ISO88591  DEFAULT NULL
+  , ALARM_SEGMENT                    INT DEFAULT NULL
+  , ALARM_CREATED_UTC_TS             TIMESTAMP(6) DEFAULT NULL
+  , CONSTRAINT T027_DIALOUTS_265417854_5523 PRIMARY KEY (IRID ASC,
+      DIALOUT_SEGMENT ASC, DETECTED_UTC_TS ASC)
+  , CONSTRAINT T027_DIALOUTS_411996854_5523 CHECK (T027_DIALOUTS.IRID IS
+      NOT NULL AND T027_DIALOUTS.DIALOUT_SEGMENT IS NOT NULL AND
+      T027_DIALOUTS.DETECTED_UTC_TS IS NOT NULL)
+  )
+  ATTRIBUTES ALIGNED FORMAT
+  HASH PARTITION  ;
+
+create view vw027_alerts as
+  SELECT 
+    CASE
+    WHEN AL.CREATE_UTC_TS IS NULL THEN DL.DETECTED_UTC_TS ELSE
+    AL.CREATE_UTC_TS END AS ALARM_CREATE_UTC_TS, 
+    CASE WHEN AL.CREATE_LCT_TS
+    IS NULL THEN DL.DETECTED_LCT_TS ELSE AL.CREATE_LCT_TS END AS
+    ALARM_CREATE_LCT_TS FROM
+    T027_ALARMS AL FULL JOIN T027_DIALOUTS
+    DL ON AL.RESOURCE_NAME = DL.RESOURCE_NAME AND AL.SPECIFIC_PROBLEM =
+    DL.SPECIFIC_PROBLEM AND AL.SEGMENT = DL.ALARM_SEGMENT AND
+    AL.CREATE_UTC_TS = DL.ALARM_CREATED_UTC_TS WHERE AL.EVENT_NUMBER <> 4000
+    OR AL.EVENT_NUMBER IS NULL FOR READ UNCOMMITTED ACCESS ;
+
+insert into T027_ALARMS
+values
+( '(1,255,1):- "$ZPM"',
+  'Subsystem Problem - Process $LP002 restart limit of 10, exceeded.',
+   1,
+   timestamp '2009-11-06 04:31:23.914579',
+   timestamp '2009-11-05 20:31:23.914579',
+   1144,
+   1
+),
+( '(1,255,1):- "$ZPM"',
+  'Subsystem Problem - Process $LP008 restart limit of 10, exceeded.',
+  1,
+  timestamp '2009-11-06 04:31:23.593958',
+  timestamp '2009-11-05 20:31:23.593958',
+  1144,
+   1
+),
+( '(1,255,1):- "$ZPM"',
+  'Subsystem Problem - Process $MM004 restart limit of 10, exceeded.',
+  1,
+  timestamp '2009-10-23 12:02:19.954216',
+  timestamp '2009-10-23 04:02:19.954216',
+  1144,
+   1
+);
+
+
+insert into T027_DIALOUTS
+values
+( 6762,
+  1,
+  timestamp '2009-10-13 04:55:02.570246',
+  timestamp '2009-10-12 20:55:02.570246',
+  'ZEMS-TKN-LDEVNUMBER: 337, ZDSK-TKN-VOL-NAME:- $FC0000',
+  'Subsystem Problem - LDEV 0337 Bad label $FC0000.ZSDZL4FN.CFPW1V00',
+   1,
+  timestamp '2009-10-13 04:53:29.953141'
+),
+( 6798,
+  1,
+  timestamp '2009-10-14 00:12:13.813576',
+  timestamp '2009-10-13 16:12:13.813576',
+  '(1,255,3):- "\MER0101.$Z1AB"',
+  'Subsystem Problem - *** ERROR[11242] The Language Manager encountered',
+   1,
+   timestamp '2009-10-14 00:10:48.678580'
+),
+( 6812,
+  1,
+  timestamp '2009-10-14 01:33:49.303722',
+  timestamp '2009-10-13 17:33:49.303722',
+  '(1,255,3):- "\MER0102.9,698"',
+  'Subsystem Problem - *** ERROR[20505] Failed to access the catalog data.',
+  1,
+  timestamp '2009-10-14 01:31:24.916896'
+);
+
+--
+create table t027t1(a char(10) not null, b integer not null, c integer, 
+       	     	    primary key (a,b));
+
+insert into t027t1 values ('abc', 1, 1), ('def', 2, 2);
+--
+create table t027outer (o1 int not null, o2 int not null);
+create table t027inner (i1 int not null, i2 int not null);
+--
+?section dml
+log LOG027 clear;
+
+#ifNSK
+-- -------------------------------------------------------------
+-- (soln 10-090922-4789) Test HJ with wide input rows ( > 56 KB)
+-- -------------------------------------------------------------
+control query default COMP_BOOL_140 'OFF';
+
+select [last 0] t3.vc1, t3.vc2, t4.vc  from
+  (select t1.i,t1.vc,t2.vc from t027t32 t1, t027t32 t2 
+     where t1.i = t2.i) t3(i,vc1,vc2), t027t32 t4 where t3.i = t4.i;
+
+-- should return Optimizer assertion (to be fixed - soln 10-090109-8311)
+
+control query default COMP_BOOL_140 'ON'; -- avoid Optimizer assertion
+
+select [last 0] t3.vc1, t3.vc2, t4.vc  from
+  (select t1.i,t1.vc,t2.vc from t027t32 t1, t027t32 t2 
+     where t1.i = t2.i) t3(i,vc1,vc2), t027t32 t4 where t3.i = t4.i;
+
+-- should get error 7352 (input row to upper HJ longer than hash buffer size)
+
+-- CQS: Send a large row (~ 96 KB) thru exchange; and use an Ordered HJ 
+-- to avoid the hash buffer limit (that's a DP2 limit for the overflow, 
+-- hence does not apply to OHJ)
+
+control query shape exchange(OHJ(cut,cut));
+
+
+select [last 0] t3.vc1, t3.vc2, t4.vc  from
+  (select t1.i,t1.vc,t2.vc from t027t32 t1, t027t32 t2 
+     where t1.i = t2.i) t3(i,vc1,vc2), t027t32 t4 where t3.i = t4.i;
+
+-- should succeed with no error
+
+control query shape cut;
+
+#ifNSK
+
+-- -------------------------------------------------------------
+-- (soln 10-091103-5991) Test FOJ with input to after join pred
+-- -------------------------------------------------------------
+
+-- This query uses an input parameter (the current timestamp) for an
+-- after-join-predicate in an FOJ
+SELECT [LAST 0] 1 FROM   VW027_ALERTS 
+  WHERE ALARM_CREATE_LCT_TS BETWEEN 
+    CAST(DATE_SUB(CURRENT_DATE, INTERVAL '29' DAY) AS TIMESTAMP(6)) 
+    AND CURRENT_TIMESTAMP 
+FOR READ UNCOMMITTED ACCESS ;
+
+-- should pass (earlier buggy code got ERROR[8416]) 
+
+-- -------------------------------------------------------------
+-- (soln 10-090504-1337) Test FOJ with input to left join expr
+-- -------------------------------------------------------------
+set param ?p 1234;
+insert into t027inner values (1234,5678);
+select * from 
+   t027outer t1 full outer join 
+     (select * from t027inner where t027inner.i1 = ?p) t2 
+         on t1.o1 = t2.i1 and t1.o2 = t2.i2;
+
+-- value of I1 should be 1234 !!
+
+-- ------------------------------------------------------------------------
+-- (soln 10-090706-2833) Test Distinct Partial HGB with a HAVING expression
+-- ------------------------------------------------------------------------
+#ifdef SEABASE_REGRESS
+control query shape
+implicit enforcers
+join (
+  join (
+   join (
+     cut,
+     hash_groupby(cut)),
+   cut),
+  cut);
+#else
+control query shape 
+implicit enforcers
+join (
+  join (
+   join (
+     cut,
+     hash_groupby(hash_groupby(cut))),
+   cut),
+  cut);
+#endif
+ 
+
+select *
+from  (select a from t027t1 x) x
+     left outer join
+      (select y1.a, y2.c
+       from t027t1 y1 join t027t1 y2 on y1.b=y2.b
+       where y1.a <> ''
+       group by 1,2) y
+      on x.a=y.a
+     right outer join
+      (select a from t027t1 z) z
+      on x.a=z.a
+     inner join
+      (select a from t027t1 w) w
+      on x.a=w.a
+;
+
+-- should work (in prior code the ESPs abended!)
+
+control query shape cut;
+
+log;
+
+?section clnup
+-- CLEANUP database
+drop table t027t1 cascade;
+drop table t027inner;
+drop table t027outer;
+
+DROP VIEW vw027_alerts;
+DROP TABLE T027_ALARMS;
+DROP TABLE T027_DIALOUTS;
+
+#ifNSK
+drop table t027t32;
+#ifNSK

@@ -1,0 +1,521 @@
+-- Test: TEST012 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: String functions, BIT functions
+-- Expected files: EXPECTED012, EXPECTED012.MP
+-- Table created: t012t1, t012ut1
+-- Limitations:
+-- To do: - Rerun on NSK after Unicode are supported
+--        - Remove DIFF001.KNOWN.NSK when Unicode is supported on MX tables
+--          while Unicode may never be supported on MP tables
+--          (Done 5/19/02)
+-- Revision history:
+--     (1/28/02) - Copied from fullstack/TEST012
+--     (2/12/02) - Moved some tests to TEST038(core): POSITION, TRIM,
+--                 ASCII, CHAR, INSERT, REPEAT, REPLACE.
+--     (2/14/02) - Merged in NCHAR function tests from TEST012U
+--     (3/04/02) - Comment out Unicode tests for MP tables
+--     (5/19/02) - Removed DIFF012.KNOWN.NSK as Unicode is supported
+--     (8/12/07) - Added BIT functions
+
+?section ddl
+-- CREATE database
+drop table t012t1 cascade;
+?ifMX
+drop table t012ut1 cascade;
+?ifMX
+drop table t012t3 cascade;
+
+?section crdb
+log LOG012 clear;
+
+create table t012t1(a int, b char(10), c varchar(30));
+?ifMX
+create table t012ut1(a int, b nchar(10), c nchar varying(30));
+?ifMX
+
+create table t012t3(
+    a smallint not null, b smallint, 
+    c smallint unsigned not null, d smallint unsigned,
+    e int not null, f int,
+    g int unsigned not null, h int unsigned,
+    i largeint not null,
+    j decimal(3,0) , k decimal(2,0) unsigned not null,
+    l decimal(7,0) not null, m decimal(9,0) unsigned,
+    n decimal(17,0), o decimal(9,0) unsigned
+    ) no partition;
+
+?section dml
+-- INSERT queries
+insert into t012t1 values(10, 'abcdef', 'ghij');
+insert into t012t1 values(20, 'ABCDEF', 'GHIJ');
+insert into t012t1 values(30, '   abc   ', '   def   ');
+insert into t012t1 values(40, 'test', 'trim on non-space');
+
+?ifMX
+insert into t012ut1 values(10, N'abcdef', N'ghij');
+insert into t012ut1 values(20, N'ABCDEF', N'GHIJ');
+insert into t012ut1 values(30, N'   abc   ', N'   def   ');
+insert into t012ut1 values(40, N'test', N'trim on non-space');
+?ifMX
+
+insert into t012t3 values
+  (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+  (1,1,1,1,1,1,1,1,1,1,1,1,1,1,1),
+  (3,3,3,3,3,3,3,3,3,3,3,3,3,3,3),
+  (4,4,4,4,4,4,4,4,4,4,4,4,4,4,4),
+  (-1,-1,1,1,-1,-1,1,1,-1,-1,1,-1,1,-1,1),
+  (-3,-3,3,3,-3,-3,3,3,-3,-3,3,-3,3,-3,3),
+  (-4,-4,4,4,-4,-4,4,4,-4,-4,4,-4,4,-4,4),
+  (0,1,0,1,0,1,0,1,0,0,1,0,1,0,1);
+
+insert into t012t3 values 
+(0, null, 0, null, 0, null, 0, null, 0, 
+ null, 0, 0,  null, null, null);
+
+-- SELECT queries
+select * from t012t1;
+
+?ifMX
+select * from t012ut1;
+?ifMX
+
+-- testing LOWER function
+select lower(b),lower(c) from t012t1;
+select lower(lower(b)),lower(lower(c)) from t012t1;
+select * from t012t1 where lower(c) = 'ghij';
+
+?ifMX
+select lower(b),lower(c) from t012ut1;
+select lower(lower(b)),lower(lower(c)) from t012ut1;
+select * from t012ut1 where lower(c) = N'ghij';
+?ifMX
+
+-- testing UPPER function
+select upper(b),upper(c) from t012t1;
+select upper(upper(b)), upper(upper(c)) from t012t1;
+select * from t012t1 where upper(c) = 'GHIJ';
+
+?ifMX
+select upper(b),upper(c) from t012ut1;
+select upper(upper(b)), upper(upper(c)) from t012ut1;
+select * from t012ut1 where upper(c) = N'GHIJ';
+?ifMX
+
+-- testing UPSHIFT function (same as UPPER)
+select upshift(b),upshift(c) from t012t1;
+select upshift(upshift(b)), upshift(upshift(c)) from t012t1;
+select * from t012t1 where upshift(c) = 'GHIJ';
+
+?ifMX
+select upshift(b),upshift(c) from t012ut1;
+select upshift(upshift(b)), upshift(upshift(c)) from t012ut1;
+select * from t012ut1 where upshift(c) = N'GHIJ';
+?ifMX
+
+-- testing LOWER and UPPER together
+select lower(upper(b)),lower(upper(c)) from t012t1;
+select upper(lower(b)),upper(lower(c)) from t012t1;
+select * from t012t1 where lower(upper(c)) = 'ghij';
+select * from t012t1 where upper(lower(c)) = 'GHIJ';
+
+?ifMX
+select lower(upper(b)),lower(upper(c)) from t012ut1;
+select upper(lower(b)),upper(lower(c)) from t012ut1;
+select * from t012ut1 where lower(upper(c)) = N'ghij';
+select * from t012ut1 where upper(lower(c)) = N'GHIJ';
+?ifMX
+
+-- testing CHAR_LENGTH function
+select b,char_length(b),c,char_length(c) from t012t1;
+select max(char_length(b)), max(char_length(c)) from t012t1;
+select min(char_length(b)), min(char_length(c)) from t012t1;
+select sum(char_length(b)), sum(char_length(c)) from t012t1;
+select avg(char_length(b)), avg(char_length(c)) from t012t1;
+select distinct char_length(b), char_length(c) from t012t1;
+select b,char_length(b),'',char_length('') from t012t1;
+select * from t012t1 where char_length(c) = 4;
+select * from t012t1 where char_length(b) + 5 = 15;
+select * from t012t1 where char_length(c) <> 4;
+select * from t012t1 where char_length(c) > 4;
+select * from t012t1 where char_length(c) >= 4;
+select * from t012t1 where char_length(c) < 5;
+select * from t012t1 where char_length(c) <= 4;
+
+?ifMX
+select b,char_length(b),c,char_length(c) from t012ut1;
+select max(char_length(b)), max(char_length(c)) from t012ut1;
+select min(char_length(b)), min(char_length(c)) from t012ut1;
+select sum(char_length(b)), sum(char_length(c)) from t012ut1;
+select avg(char_length(b)), avg(char_length(c)) from t012ut1;
+select distinct char_length(b), char_length(c) from t012ut1;
+select b,char_length(b),'',char_length('') from t012ut1;
+select * from t012ut1 where char_length(c) = 4;
+select * from t012ut1 where char_length(b) + 5 = 15;
+select * from t012ut1 where char_length(c) <> 4;
+select * from t012ut1 where char_length(c) > 4;
+select * from t012ut1 where char_length(c) >= 4;
+select * from t012ut1 where char_length(c) < 5;
+select * from t012ut1 where char_length(c) <= 4;
+?ifMX
+
+-- testing OCTET_LENGTH function
+select b,octet_length(b),c,octet_length(c) from t012t1;
+select b,octet_length(b),'',octet_length('') from t012t1;
+select * from t012t1 where octet_length(c) = 4;
+select * from t012t1 where octet_length(b) + 5 = 15;
+select * from t012t1 where octet_length(c) <> 4;
+select * from t012t1 where octet_length(c) > 4;
+select * from t012t1 where octet_length(c) >= 4;
+select * from t012t1 where octet_length(c) < 5;
+select * from t012t1 where octet_length(c) <= 4;
+
+?ifMX
+select b,octet_length(b),c,octet_length(c) from t012ut1;
+select b,octet_length(b),'',octet_length('') from t012ut1;
+select * from t012ut1 where octet_length(c) = 8;
+select * from t012ut1 where octet_length(b) + 5 = 25;
+select * from t012ut1 where octet_length(c) <> 8;
+select * from t012ut1 where octet_length(c) > 8;
+select * from t012ut1 where octet_length(c) >= 8;
+select * from t012ut1 where octet_length(c) < 10;
+select * from t012ut1 where octet_length(c) <= 8;
+?ifMX
+
+-- testing POSITION function
+-- tests moved to TEST038(Core) marked "-- *"
+select b, position('ab' in b) from t012t1;
+-- * select b, position('xy' in b) from t012t1;
+select b, position('ef' in b) from t012t1;
+-- * select b, position('f' in b) from t012t1;
+-- * select c, position('hi' in c) from t012t1;
+-- * select b, position('' in b), c, position('' in c) from t012t1;
+-- * select b, position('' in '') from t012t1;
+select * from t012t1 where position('b' in b) = 2;
+select * from t012t1 where position('b' in b) <> 0;
+select * from t012t1 where position('b' in b) > 1;
+select * from t012t1 where position('b' in b) >= 2;
+-- * select * from t012t1 where position('b' in b) < 3;
+-- * select * from t012t1 where position('b' in b) <= 2;
+
+?ifMX
+select b, position(N'ab' in b) from t012ut1;
+select b, position(N'xy' in b) from t012ut1;
+select b, position(N'ef' in b) from t012ut1;
+select b, position(N'f' in b) from t012ut1;
+select c, position(N'hi' in c) from t012ut1;
+select b, position(N'' in b), c, position(N'' in c) from t012ut1;
+select b, position(N'' in N'') from t012ut1;
+select * from t012ut1 where position(N'b' in b) = 2;
+select * from t012ut1 where position(N'b' in b) <> 0;
+select * from t012ut1 where position(N'b' in b) > 1;
+select * from t012ut1 where position(N'b' in b) >= 2;
+select * from t012ut1 where position(N'b' in b) < 3;
+select * from t012ut1 where position(N'b' in b) <= 2;
+?ifMX
+
+-- testing SUBSTRING function
+select b,substring(b from 2 for 1) as u,char_length(substring(b from 2 for 1)) len from t012t1;
+select b,substring(b from 2),char_length(substring(b from 2)) from t012t1;
+select c,substring(c from 2 for 1),char_length(substring(c from 2 for 1)) from t012t1;
+select c,substring(c from 2),char_length(substring(c from 2)) from t012t1;
+select b,substring(b from 6 for 1),char_length(substring(b from 6 for 1)) from t012t1;
+select c,substring(c from 2 for 3),char_length(substring(c from 2 for 3)) from t012t1;
+select b,substring(b from 2 for 4),char_length(substring(b from 2 for 4)) from t012t1;
+select c,substring(c from 2 for 5),char_length(substring(c from 2 for 5)) from t012t1;
+select b,substring(b from 2 for 0),char_length(substring(b from 2 for 0)) from t012t1;
+select b,substring(b from -8 for 2),char_length(substring(b from -8 for 2)) from t012t1;
+select c,substring(c from -2 for 6),char_length(substring(c from -2 for 6)) from t012t1;
+select c,substring(c from -1 for 6),char_length(substring(c from -1 for 6)) from t012t1;
+select c,substring(c from 0 for 6),char_length(substring(c from 0 for 6)) from t012t1;
+select c,substring(c from 1 for 6),char_length(substring(c from 1 for 6)) from t012t1;
+select c,substring(c from 7 for 3),char_length(substring(c from 7 for 3)) from t012t1;
+select b,substring(b from 2),substring(substring(b from 2) from 2) from t012t1;
+select b,substring('' from 1 for 2),char_length(substring('' from 1 for 2)) from t012t1;
+select * from t012t1 where substring(c from 2) = 'hij';
+select * from t012t1 where substring(c from 2) <> 'hij';
+-- The following query should raise a SQL exception. (To be implemented)
+-- select b,substring(b from 2 for -2) from t012t1;
+
+?ifMX
+select b,substring(b from 2 for 1),char_length(substring(b from 2 for 1)) from t012ut1;
+select b,substring(b from 2),char_length(substring(b from 2)) from t012ut1;
+select c,substring(c from 2 for 1),char_length(substring(c from 2 for 1)) from t012ut1;
+select c,substring(c from 2),char_length(substring(c from 2)) from t012ut1;
+select b,substring(b from 6 for 1),char_length(substring(b from 6 for 1)) from t012ut1;
+select c,substring(c from 2 for 3),char_length(substring(c from 2 for 3)) from t012ut1;
+select b,substring(b from 2 for 4),char_length(substring(b from 2 for 4)) from t012ut1;
+select c,substring(c from 2 for 5),char_length(substring(c from 2 for 5)) from t012ut1;
+select b,substring(b from 2 for 0),char_length(substring(b from 2 for 0)) from t012ut1;
+select b,substring(b from -8 for 2),char_length(substring(b from -8 for 2)) from t012ut1;
+select c,substring(c from -2 for 6),char_length(substring(c from -2 for 6)) from t012ut1;
+select c,substring(c from -1 for 6),char_length(substring(c from -1 for 6)) from t012ut1;
+select c,substring(c from 0 for 6),char_length(substring(c from 0 for 6)) from t012ut1;
+select c,substring(c from 1 for 6),char_length(substring(c from 1 for 6)) from t012ut1;
+select c,substring(c from 7 for 3),char_length(substring(c from 7 for 3)) from t012ut1;
+select b,substring(b from 2),substring(substring(b from 2) from 2) from t012ut1;
+select b,substring(N'' from 1 for 2),char_length(substring(N'' from 1 for 2)) from t012ut1;
+select * from t012ut1 where substring(c from 2) = N'hij';
+select * from t012ut1 where substring(c from 2) <> N'hij';
+-- The following query should raise a SQL exception. (To be implemented)
+-- select b,substring(b from 2 for -2) from t012ut1;
+?ifMX
+
+-- testing TRIM function
+-- tests moved to TEST038(Core) marked "-- *"
+select b,trim(leading from b),char_length(trim(leading from b)) from t012t1;
+-- * select c,trim(leading from c),char_length(trim(leading from c)) from t012t1;
+-- * select b,trim(leading ' ' from b),char_length(trim(leading ' ' from b)) from t012t1;
+select c,trim(leading ' ' from c),char_length(trim(leading ' ' from c)) from t012t1;
+-- * select b,trim(trailing from b),char_length(trim(trailing from b)) from t012t1;
+select c,trim(trailing from c),char_length(trim(trailing from c)) from t012t1;
+-- * select b,trim(both from b),char_length(trim(both from b)) from t012t1;
+select c,trim(both from c),char_length(trim(both from c)) from t012t1;
+select b,trim(b),char_length(trim(b)) from t012t1;
+select c,trim(c),char_length(trim(c)) from t012t1;
+select b,trim('a' from b),char_length(trim('a' from b)) from t012t1;
+-- * select b,trim('b' from trim('a' from b)),char_length(trim('b' from trim('a' from b))) from t012t1;
+select b,trim('t' from b),char_length(trim('t' from b)) from t012t1;    
+-- * select * from t012t1 where trim(c)='def';
+-- * select * from t012t1 where trim(leading from c) = 'def';
+-- The following query should raise a SQL exception.(To be implemented)  
+-- select b,trim('ab' from b),c from t012t1;
+
+?ifMX
+select b,trim(leading from b),char_length(trim(leading from b)) from t012ut1;
+select c,trim(leading from c),char_length(trim(leading from c)) from t012ut1;
+select b,trim(leading N' ' from b),char_length(trim(leading N' ' from b)) from t012ut1;
+select c,trim(leading N' ' from c),char_length(trim(leading N' ' from c)) from t012ut1;
+select b,trim(trailing from b),char_length(trim(trailing from b)) from t012ut1;
+select c,trim(trailing from c),char_length(trim(trailing from c)) from t012ut1;
+select b,trim(both from b),char_length(trim(both from b)) from t012ut1;
+select c,trim(both from c),char_length(trim(both from c)) from t012ut1;
+select b,trim(b),char_length(trim(b)) from t012ut1;
+select c,trim(c),char_length(trim(c)) from t012ut1;
+select b,trim(N'a' from b),char_length(trim(N'a' from b)) from t012ut1;
+select b,trim(N'b' from trim(N'a' from b)),char_length(trim(N'b' from trim(N'a' from b))) from t012ut1;
+select b,trim(N't' from b),char_length(trim(N't' from b)) from t012ut1;    
+select * from t012ut1 where trim(c)=N'def';
+select * from t012ut1 where trim(leading from c) = N'def';
+-- The following query should raise a SQL exception.(To be implemented)  
+-- select b,trim(N'ab' from b),c from t012ut1;
+?ifMX
+
+-- test CONCAT operation
+select b||b,char_length(b||b) from t012t1;
+select b||trim(b),char_length(b||trim(b)) from t012t1;
+select trim(b)||trim(b),char_length(trim(b)||trim(b)) from t012t1;
+select b||'',char_length(b||'') from t012t1;
+select b||'1234',char_length(b||'1234') from t012t1;
+select '1234'||b,char_length('1234'||b) from t012t1;
+select b, '1234'||'5678' from t012t1;
+select b, '1234'||''||'5678' from t012t1;
+select b, '1234'||' '||'5678' from t012t1;
+select c||c,char_length(c||c) from t012t1;
+select c||trim(c),char_length(c||trim(c)) from t012t1;
+select trim(c)||trim(c),char_length(trim(c)||trim(c)) from t012t1;
+select c||'',char_length(c||'') from t012t1;
+select c||'1234',char_length(c||'1234') from t012t1;
+select '1234'||c,char_length('1234'||c) from t012t1;
+select b||c,char_length(b||c) from t012t1;
+select trim(b)||trim(c),char_length(trim(b)||trim(c)) from t012t1;
+select trim(b)||trim(c)||trim(b),char_length(trim(b)||trim(c)||trim(b)) from t012t1;
+select * from t012t1 where trim(b)||trim(c) = 'abcdef';
+
+?ifMX
+select b||b,char_length(b||b) from t012ut1;
+select b||trim(b),char_length(b||trim(b)) from t012ut1;
+select trim(b)||trim(b),char_length(trim(b)||trim(b)) from t012ut1;
+select b||N'',char_length(b||N'') from t012ut1;
+select b||N'1234',char_length(b||N'1234') from t012ut1;
+select N'1234'||b,char_length(N'1234'||b) from t012ut1;
+select b, N'1234'||N'5678' from t012ut1;
+select b, N'1234'||N''||N'5678' from t012ut1;
+select b, N'1234'||N' '||N'5678' from t012ut1;
+select c||c,char_length(c||c) from t012ut1;
+select c||trim(c),char_length(c||trim(c)) from t012ut1;
+select trim(c)||trim(c),char_length(trim(c)||trim(c)) from t012ut1;
+select c||N'',char_length(c||N'') from t012ut1;
+select c||N'1234',char_length(c||N'1234') from t012ut1;
+select N'1234'||c,char_length(N'1234'||c) from t012ut1;
+select b||c,char_length(b||c) from t012ut1;
+select trim(b)||trim(c),char_length(trim(b)||trim(c)) from t012ut1;
+select trim(b)||trim(c)||trim(b),char_length(trim(b)||trim(c)||trim(b)) from t012ut1;
+select * from t012ut1 where trim(b)||trim(c) = N'abcdef';
+?ifMX
+
+-- test BIT functions
+select bitand(1,1), bitor(1,1), bitxor(1,1), bitnot(1) from (values(1)) x(a);
+select bitand(1,-1), bitor(1,-1), bitxor(-1,1), bitnot(-1) from (values(1)) x(a);
+select bitnot(bitnot(1)) from (values(1)) x(a);
+select bitand(1,123456789), bitor(1,123456789), bitxor(1,123456789), bitnot(123456789) from (values(1)) x(a);
+select bitand(1,-123456789), bitor(1,-123456789), bitxor(-123456789,1), bitnot(-123456789) from (values(1)) x(a);
+
+select 1 & 1, 1 | 1, 1 ^ 1, ~ 1 from (values(1)) x(a);
+select 1 & 123456789, 1 | 123456789, 1 ^ 123456789, ~ 123456789 from (values(1)) x(a);
+select 1 | 2 | 4 from (values(1)) x(a);
+select 1 & 2 & 4 from (values(1)) x(a);
+select ~ (1 | 2 | 4) from (values(1)) x(a);
+select ~ (1 ^ 2 ^ 4) from (values(1)) x(a);
+select 1 & bitor(1,1) from (values(1)) x(a);
+select 1 & bitxor(1,1) from (values(1)) x(a);
+
+select bitand(a,a), bitand(b,b), bitand(c,c), bitand(d,d),
+       bitand(e,e), bitand(f,f), bitand(g,g), bitand(h,h),
+       bitand(i,i), bitand(j,j), bitand(k,k), bitand(l,l),
+       bitand(m,m), bitand(n,n), bitand(o,o)
+from t012t3;
+
+select bitor(a,a), bitor(b,b), bitor(c,c), bitor(d,d),
+       bitor(e,e), bitor(f,f), bitor(g,g), bitor(h,h),
+       bitor(i,i), bitor(j,j), bitor(k,k), bitor(l,l),
+       bitor(m,m), bitor(n,n), bitor(o,o)
+from t012t3;
+
+select bitxor(a,a), bitxor(b,b), bitxor(c,c), bitxor(d,d),
+       bitxor(e,e), bitxor(f,f), bitxor(g,g), bitxor(h,h),
+       bitxor(i,i), bitxor(j,j), bitxor(k,k), bitxor(l,l),
+       bitxor(m,m), bitxor(n,n), bitxor(o,o)
+from t012t3;
+
+select bitand(a,b), bitand(c,d), bitand(e,f), bitand(g,h),
+       bitand(i,i),
+       bitand(j,k), bitand(l,m), bitand(n,o)
+from t012t3;
+
+select bitor(a,b), bitor(c,d), bitor(e,f), bitor(g,h),
+       bitor(i,i),
+       bitor(j,k), bitor(l,m), bitor(n,o)
+from t012t3;
+
+select bitxor(a,b), bitxor(c,d), bitxor(e,f), bitxor(g,h),
+       bitxor(i,i),
+       bitxor(j,k), bitxor(l,m), bitxor(n,o)
+from t012t3;
+
+select bitnot(a), bitnot(b), bitnot(c), bitnot(d), bitnot(e), bitnot(f),
+       bitnot(g), bitnot(h), bitnot(i), bitnot(j), bitnot(k), bitnot(l),
+       bitnot(m), bitnot(n), bitnot(o)
+from t012t3;
+
+select bitand(a,c), bitand(a,d), bitand(a,e), bitand(a,f), bitand(a,g),
+       bitand(a,h), bitand(a,i), bitand(a,j), bitand(a,k), bitand(a,l),
+       bitand(a,m), bitand(a,n), bitand(a,o)
+from t012t3;
+
+select bitor(a,c), bitor(a,d), bitor(a,e), bitor(a,f), bitor(a,g),
+       bitor(a,h), bitor(a,i), bitor(a,j), bitor(a,k), bitor(a,l),
+       bitor(a,m), bitor(a,n), bitor(a,o)
+from t012t3;
+
+select bitxor(a,c), bitxor(a,d), bitxor(a,e), bitxor(a,f), bitxor(a,g),
+       bitxor(a,h), bitxor(a,i), bitxor(a,j), bitxor(a,k), bitxor(a,l),
+       bitxor(a,m), bitxor(a,n), bitxor(a,o)
+from t012t3;
+
+select converttobits(a), converttobits(b), converttobits(c), converttobits(d),
+       converttobits(e), converttobits(f), converttobits(g), converttobits(h),
+       converttobits(i), converttobits(j), converttobits(k), converttobits(l),
+       converttobits(m), converttobits(n), converttobits(o)
+from t012t3;
+
+select bitextract(3, 15, 1) from (values(1)) x(a);
+select bitextract(3, 14, 1) from (values(1)) x(a);
+select bitextract(3, 14, 2) from (values(1)) x(a);
+select bitextract(3, 0, 1) from (values(1)) x(a);
+select bitextract(3, 0, 15) from (values(1)) x(a);
+select bitextract(3, 0, 16) from (values(1)) x(a);
+
+select a from t012t3 where a = bitand(a,a);
+select b from t012t3 where b = bitor(b,b);
+select c from t012t3 where c = bitxor(c,c);
+
+select bitand(a,a) + bitor(a,a) + bitxor(a,a) from t012t3;
+select converttobits(bitand(a,a) + bitor(a,a) + bitxor(a,a)) from t012t3;
+select converttobits(bitnot(bitand(a,a) + bitor(a,a) + bitxor(a,a))) from t012t3;
+
+
+-- negative BIT function tests
+select bitand(1, 1.0) from (values(1)) x(a);
+select bitor(1, 1.0) from (values(1)) x(a);
+select bitxor(1, 1.0) from (values(1)) x(a);
+select bitand(1e0, 1) from (values(1)) x(a);
+select bitor('a', 1) from (values(1)) x(a);
+select bitnot(1,1) from (values(1)) x(a);
+
+-- test ASCII, CHAR functions
+-- all tests moved to TEST038(Core)
+-- * select b, { fn CHAR(ASCII(b)) }, c, { fn CHAR(ASCII(c)) } from t012t1;
+-- * select b, CHAR(ASCII(b)), c, CHAR(ASCII(c)) from t012t1;
+-- * select 'c', CHAR(ASCII('cba')) from t012t1;
+
+-- * select 65, { fn ASCII(CHAR(65)) } from t012t1;
+-- * select 65, ASCII(CHAR(65)) from t012t1;
+
+-- -ve
+-- all tests moved to TEST038(Core)
+-- * select { fn ASCII(1) } from t012t1;
+
+-- * select CHAR(b) from t012t1;
+-- * select CHAR(256) from t012t1;
+-- * select CHAR(1.1) from t012t1;
+
+
+-- INSERT function
+-- test moved to TEST038(Core)
+-- * select insert('abc', 2, 1, 'zz') from t012t1;
+
+-- REPEAT
+-- all tests moved to TEST038(Core)
+-- * select repeat('aa', 10) from t012t1;
+
+-- test fix to genesis case: 10-981211-6071
+-- makes sure we catch and diagnose invalid repeat count
+-- * select REPEAT(b, 9999999999999999999) from t012t1;
+-- * select REPEAT(c, 9999999999999999999) from t012t1;
+
+-- REPLACE
+-- test moved to TEST038(Core)
+-- * select replace('abcdabcdab', 'cd', 'abc') from t012t1;
+
+-- SPACE
+-- test moved to TEST038(Core)
+-- * select 's' || space(10) || 'e', char_length(space(10)) from t012t1;
+
+-- VEG conversion should not change the result of string function.
+-- should return 10
+-- test moved to TEST038(Core)
+-- * select char_length(b) from t012t1 where b = 'abcdef';
+
+-- should return 'abcdef    abcdef    '
+-- test moved to TEST038(Core)
+-- * select repeat(b, 2) from t012t1 where b = 'abcdef';
+
+
+?section clnup
+-- CLEANUP database;
+drop table t012t1;
+?ifMX
+drop table t012ut1;
+?ifMX
+
+drop table t012t3;
+
+log;
+

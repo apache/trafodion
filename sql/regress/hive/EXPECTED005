@@ -1,0 +1,447 @@
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>set terminal_charset utf8;
+>>
+>>cqd AUTO_QUERY_RETRY 'OFF';
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '25' ;
+
+--- SQL operation complete.
+>>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>cqd CALL_EMBEDDED_ARKCMP 'OFF';
+
+--- SQL operation complete.
+>>------------------------------------------------------------
+>>-- Testing query plan invalidation in the compiler, but
+>>-- not the executor. Perform DML/DDL operations on a
+>>-- table and try re-executing the old plan as well as
+>>-- getting a query cache hit and updating the changed
+>>-- Hive and HDFS metadata
+>>------------------------------------------------------------
+>>
+>>prepare s1 from 
++>  select c_preferred_cust_flag,
++>         count(*) 
++>  from customer_ddl 
++>  group by 1 
++>  order by 1
++>  ;
+
+--- SQL command prepared.
+>>execute s1;
+
+--- 0 row(s) selected.
+>>-- expect 0 rows
+>>
+>>prepare s1part from 
++>  -- selecting part col not supported right now
++>  select --c_preferred_cust_flag,
++>         count(*) 
++>  from customer_bp 
++>  --group by 1 
++>  --order by 1
++>  ;
+
+--- SQL command prepared.
+>>execute s1part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>-- expect 0 rows
+>>
+>>-- insert some data and add one more partition
+>>sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_b.hive.sql;
+>>
+>>-- query cache hit, no validation at all
+>>  select c_preferred_cust_flag,
++>         count(*) 
++>  from customer_ddl 
++>  group by 1 
++>  order by 1
++>  ;
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+N                                          9789
+Y                                          9525
+?                                           685
+
+--- 3 row(s) selected.
+>>
+>>-- vary query to avoid query cache hit
+>>prepare s2 from 
++>  select c_preferred_cust_flag,
++>         count(c_customer_sk) 
++>  from customer_ddl 
++>  group by 1 
++>  order by 1
++>  ;
+
+--- SQL command prepared.
+>>
+>>prepare s2part from
++>  -- selecting part col not supported right now
++>  select --c_preferred_cust_flag,
++>         count(*) 
++>  from customer_bp 
++>  --group by 1 
++>  --order by 1
++>  ;
+
+--- SQL command prepared.
+>>execute s1;
+
+--- 0 row(s) selected.
+>>-- because we don't invalidate in the executor,
+>>-- this should still return 0 rows
+>>
+>>execute s2;
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+N                                          9789
+Y                                          9525
+?                                           685
+
+--- 3 row(s) selected.
+>>-- should get an NATable cache
+>>-- hit, we should notice the change in the table
+>>-- and return the correct result
+>>
+>>execute s1part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>-- because we don't invalidate in the executor,
+>>-- this should still return 0 rows
+>>
+>>execute s2part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>-- although this should get an NATable cache
+>>-- hit, we should notice the change in the table
+>>-- and return the correct result
+>>
+>>insert into customer_temp 
++>select * from customer 
++>where c_customer_sk between 20000 and 39999;
+
+*** WARNING[6008] Statistics for column (C_CUSTOMER_SK) from table HIVE.HIVE.CUSTOMER were not available. As a result, the access path chosen might not be the best possible.
+
+--- 20000 row(s) inserted.
+>>
+>>select * from newtable;
+
+--- 0 row(s) selected.
+>>-- no rows, but should know the new table
+>>insert into newtable values ('abc');
+
+--- 1 row(s) inserted.
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>select * from newtable;
+
+A                        
+-------------------------
+
+abc                      
+
+--- 1 row(s) selected.
+>>-- expect to see the row, but only because query cache is off
+>>cqd query_cache reset;
+
+--- SQL operation complete.
+>>
+>>insert into hiveregr5.newtable2 values ('xyz');
+
+--- 1 row(s) inserted.
+>>select * from hiveregr5.newtable2;
+
+A                        
+-------------------------
+
+xyz                      
+
+--- 1 row(s) selected.
+>>
+>>-- add a second partition to customer_bp
+>>sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_c.hive.sql;
+>>-- add more files to customer_ddl
+>>sh regrhadoop.ksh dfs -cp /user/hive/exttables/customer_temp/* /user/hive/exttables/customer_ddl;
+>>
+>>-- no query cache hit, but NATable cache hit
+>>prepare s3 from 
++>  select count(*) 
++>  from customer_ddl 
++>  ;
+
+--- SQL command prepared.
+>>
+>>-- no query cache hit, but NATable cache hit
+>>prepare s3part from
++>  -- selecting part col not supported right now
++>  select --c_preferred_cust_flag,
++>         count(c_customer_id) 
++>  from customer_bp 
++>  --group by 1 
++>  --order by 1
++>  ;
+
+--- SQL command prepared.
+>>execute s1;
+
+--- 0 row(s) selected.
+>>-- s1 should still return 0 rows - for now
+>>execute s2;
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+N                                          9789
+Y                                          9525
+?                                           685
+
+--- 3 row(s) selected.
+>>execute s3;
+
+(EXPR)              
+--------------------
+
+               39999
+
+--- 1 row(s) selected.
+>>execute s1part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>-- s1 should still return 0 rows - for now
+>>execute s2part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>execute s3part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>select a,b from newtable;
+
+--- 0 row(s) selected.
+>>-- should return 0 rows
+>>
+>>insert into newtable values (1, 'def');
+
+--- 1 row(s) inserted.
+>>select a,b from newtable;
+
+A            B                        
+-----------  -------------------------
+
+          1  def                      
+
+--- 1 row(s) selected.
+>>
+>>-- overwrite the table with auto-generated partitions
+>>sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_d.hive.sql;
+>>
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>prepare s4 from 
++>  select c_preferred_cust_flag,
++>         count(*) 
++>  from customer_ddl 
++>  group by 1 
++>  order by 1
++>  ;
+
+--- SQL command prepared.
+>>prepare s4part from
++>  -- selecting part col not supported right now
++>  select --c_preferred_cust_flag,
++>         count(*) 
++>  from customer_bp 
++>  --group by 1 
++>  --order by 1
++>  ;
+
+--- SQL command prepared.
+>>execute s2;
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+N                                          9789
+Y                                          9525
+?                                           685
+
+--- 3 row(s) selected.
+>>execute s4;
+
+C_PREFERRED_CUST_FLAG      (EXPR)              
+-------------------------  --------------------
+
+N                                         19631
+Y                                         18984
+?                                          1384
+
+--- 3 row(s) selected.
+>>execute s2part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>execute s4part;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>select count(*) from tbl_utf8;
+
+(EXPR)              
+--------------------
+
+                  75
+
+--- 1 row(s) selected.
+>>select * from tbl_utf8 where id between 8 and 12;
+
+ID           CHAPTER                    ENGLISH                    TRANSLATOR
+-----------  -------------------------  -------------------------  -------------------------
+
+          8  Shin fukatoku 心不可  The Mind Cannot Be Got     (Bielefeldt)             
+          9  Kobutsushin 古佛心      The Old Buddha Mind        (Bielefeldt)             
+         10  Daigo 大悟               Great Awakening            (Bielefeldt)             
+         11  Zazen gi 坐禪儀         Principles of Zazen        (Bielefeldt)             
+         12  Zazen shin 坐禪箴       Lancet of Zazen            (Bielefeldt)             
+
+--- 5 row(s) selected.
+>>select * from tbl_utf8 where chapter like '%三%';
+
+ID           CHAPTER                    ENGLISH                    TRANSLATOR
+-----------  -------------------------  -------------------------  -------------------------
+
+         13  Kaiin zanmai 海印三昧  The Ocean Seal Samadhi     (Bielefeldt & Radich)    
+         41  Sangai yuishin 三界唯  The Three Realms Are Only  (Weinstein)              
+         66  Zanmai ō zanmai 三昧  The King of Samadhis Sama  (Bielefeldt)             
+         69  Jishō zanmai 自證三  The Samadhi of Self Verif  (Bielefeldt)             
+
+--- 4 row(s) selected.
+>>select * from tbl_utf8 where chapter like '%海印_昧%';
+
+ID           CHAPTER                    ENGLISH                    TRANSLATOR
+-----------  -------------------------  -------------------------  -------------------------
+
+         13  Kaiin zanmai 海印三昧  The Ocean Seal Samadhi     (Bielefeldt & Radich)    
+
+--- 1 row(s) selected.
+>>
+>>insert into tbl_utf8_temp 
++>select * from tbl_utf8;
+
+--- 75 row(s) inserted.
+>>
+>>select count(*) from tbl_utf8_temp;
+
+(EXPR)              
+--------------------
+
+                  75
+
+--- 1 row(s) selected.
+>>select * from tbl_utf8_temp where id between 8 and 12;
+
+ID           CHAPTER                    ENGLISH                    TRANSLATOR
+-----------  -------------------------  -------------------------  -------------------------
+
+          8  Shin fukatoku 心不可  The Mind Cannot Be Got     (Bielefeldt)             
+          9  Kobutsushin 古佛心      The Old Buddha Mind        (Bielefeldt)             
+         10  Daigo 大悟               Great Awakening            (Bielefeldt)             
+         11  Zazen gi 坐禪儀         Principles of Zazen        (Bielefeldt)             
+         12  Zazen shin 坐禪箴       Lancet of Zazen            (Bielefeldt)             
+
+--- 5 row(s) selected.
+>>select * from tbl_utf8_temp where chapter like '%海印_昧%';
+
+ID           CHAPTER                    ENGLISH                    TRANSLATOR
+-----------  -------------------------  -------------------------  -------------------------
+
+         13  Kaiin zanmai 海印三昧  The Ocean Seal Samadhi     (Bielefeldt & Radich)    
+
+--- 1 row(s) selected.
+>>
+>>select count(*) from tbl_utf8p;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>select * from tbl_utf8p where id between 8 and 12;
+
+--- 0 row(s) selected.
+>>select * from tbl_utf8p where chapter like '%海印_昧%';
+
+--- 0 row(s) selected.
+>>
+>>select * from tbl_type;
+
+TINT    SM      I            BIG                   STR                        F                D                          T
+------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------
+
+   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222
+
+--- 1 row(s) selected.
+>>insert into tbl_type_temp select * from tbl_type;
+
+--- 1 row(s) inserted.
+>>select * from tbl_type_temp;
+
+TINT    SM      I            BIG                   STR                        F                D                          T
+------  ------  -----------  --------------------  -------------------------  ---------------  -------------------------  --------------------------
+
+   201     202          203                   204  two hundred                 2.0000000E+002   2.00000000000000000E+002  2022-02-02 22:22:22.222222
+
+--- 1 row(s) selected.
+>>
+>>log;

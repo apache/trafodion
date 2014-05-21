@@ -1,0 +1,181 @@
+-- Tests for SQL on Hadoop PoC
+-- Added April 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- NEED to run TEST003 first
+
+log LOG004 clear;
+
+set schema hive.hive;
+cqd attempt_esp_parallelism 'off';
+
+cqd hive_max_esps  '1';
+cqd PARALLEL_NUM_ESPS '1';
+cqd parallel_num_esps '1';
+
+cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd mode_seahive 'ON';
+
+select [first 100] * from hive.ins_customer order by c_customer_sk;
+select * from hive.ins_promotion order by P_PROMO_SK;
+select [first 100] * from hive.ins_customer_address order by CA_ADDRESS_SK;
+select * from hive.ins_store order by S_STORE_SK;
+log;
+
+----------customer has 100000 rows
+log LOG004_ins_customer.dat clear;
+select [first 1000] * from hive.ins_customer order by c_customer_sk;
+log;
+log LOG004_orig_customer.dat clear;
+select [first 1000] * from hive.customer order by c_customer_sk;
+log;
+sh  diff  LOG004_ORIG_CUSTOMER.DAT LOG004_INS_CUSTOMER.DAT 2>&1 >> LOG004;
+----promotion has 300 rows
+
+log LOG004_orig_promotion.dat clear;
+select * from hive.promotion order by P_PROMO_SK;
+log;
+log LOG004_ins_promotion.dat clear;
+select * from hive.ins_promotion order by P_PROMO_SK;
+log;
+sh  diff  LOG004_ORIG_PROMOTION.DAT LOG004_INS_PROMOTION.DAT 2>&1  >> LOG004;
+
+---------customer_address has 50000 rows
+log LOG004_orig_customer_address.dat clear;
+select [first 1000] * from hive.customer_address order by CA_ADDRESS_SK;
+log;
+log LOG004_ins_customer_address.dat clear;
+select [first 1000] * from hive.ins_customer_address order by CA_ADDRESS_SK;
+log;
+sh  diff -s LOG004_ORIG_CUSTOMER_ADDRESS.DAT LOG004_INS_CUSTOMER_ADDRESS.DAT 2>&1 >> LOG004;
+
+----store has 12 rows
+log LOG004_orig_store.dat clear;
+select * from hive.store order by S_STORE_SK;
+log;
+log LOG004_ins_store.dat clear;
+select * from hive.ins_store order by S_STORE_SK;
+log;
+sh  diff -s LOG004_ORIG_STORE.DAT LOG004_INS_STORE.DAT 2>&1 >>LOG004;
+
+--THERE SEEMS TO BE AN ISSUE WITH FLOATING POINT TYPES --maybe coversion issue
+-- using ceiling function to overcome this issue for now
+----store_sales has xxxrows
+log LOG004_orig_store_sales.dat clear;
+select [first 500]
+ss_sold_date_sk,ss_sold_time_sk, ss_item_sk, ss_customer_sk, 
+ss_cdemo_sk, ss_hdemo_sk,ss_addr_sk,ss_store_sk, ss_promo_sk,
+ss_ticket_number,ss_quantity, 
+ceiling(ss_wholesale_cost) , 
+ceiling(ss_list_price),
+ceiling(ss_sales_price),
+ceiling(ss_ext_discount_amt), 
+ceiling(ss_ext_sales_price),
+ceiling(ss_ext_wholesale_cost), 
+ceiling(ss_ext_list_price),
+ceiling(ss_ext_tax),
+ceiling(ss_coupon_amt),
+ceiling(ss_net_paid), 
+ceiling(ss_net_paid_inc_tax),
+ceiling(ss_net_profit)
+from hive.store_sales order by  ss_sold_date_sk,ss_sold_time_sk, ss_item_sk, ss_customer_sk, ss_cdemo_sk,ss_hdemo_sk,ss_addr_sk ,ss_store_sk, ss_promo_sk;
+log;
+log LOG004_ins_store_sales.dat clear;
+select [first 500]
+ss_sold_date_sk,ss_sold_time_sk, ss_item_sk, ss_customer_sk, 
+ss_cdemo_sk, ss_hdemo_sk,ss_addr_sk,ss_store_sk, ss_promo_sk,
+ss_ticket_number,ss_quantity, 
+ceiling(ss_wholesale_cost) , 
+ceiling(ss_list_price),
+ceiling(ss_sales_price),
+ceiling(ss_ext_discount_amt), 
+ceiling(ss_ext_sales_price),
+ceiling(ss_ext_wholesale_cost), 
+ceiling(ss_ext_list_price),
+ceiling(ss_ext_tax),
+ceiling(ss_coupon_amt),
+ceiling(ss_net_paid), 
+ceiling(ss_net_paid_inc_tax),
+ceiling(ss_net_profit)
+from hive.ins_store_sales  order by  ss_sold_date_sk,ss_sold_time_sk, ss_item_sk, ss_customer_sk, ss_cdemo_sk,ss_hdemo_sk,ss_addr_sk ,ss_store_sk, ss_promo_sk;
+log;
+sh diff  LOG004_ORIG_STORE_SALES.DAT LOG004_INS_STORE_SALES.DAT 2>&1 >>LOG004;
+
+
+----customer_demographics has xxxrows
+log LOG004_orig_customer_demographics.dat clear;
+select  [first 500] * from hive.customer_demographics order by cd_demo_sk ;
+log;
+log LOG004_ins_customer_demographics.dat clear;
+select  [first 500] * from hive.ins_customer_demographics  order by cd_demo_sk;
+log;
+sh diff  LOG004_ORIG_CUSTOMER_DEMOGRAPHICS.DAT LOG004_INS_CUSTOMER_DEMOGRAPHICS.DAT 2>&1 >>LOG004;
+
+
+
+----date_dim has xxxrows
+log LOG004_orig_date_dim.dat clear;
+select  [first 500] * from hive.date_dim ;
+log;
+log LOG004_ins_date_dim.dat clear;
+select  [first 500] * from hive.ins_date_dim;
+log;
+sh diff  LOG004_ORIG_DATE_DIM.DAT LOG004_INS_DATE_DIM.DAT 2>&1 >>LOG004;
+
+----time_dim has xxxrows
+log LOG004_orig_time_dim.dat clear;
+select  [first 500] * from hive.time_dim ;
+log;
+log LOG004_ins_time_dim.dat clear;
+select  [first 500] * from hive.ins_time_dim;
+log;
+sh diff  LOG004_ORIG_TIME_DIM.DAT LOG004_INS_TIME_DIM.DAT 2>&1 >>LOG004;
+
+
+----item has xxxrows
+log LOG004_orig_item.dat clear;
+select  [first 500] i_item_sk,i_item_id,i_rec_start_date, i_rec_end_date  i_item_desc,ceiling(i_current_price),ceiling(i_wholesale_cost), i_brand_id,i_brand, i_class_id, i_class, i_category_id, i_category,i_manufact_id,i_manufact,i_size,i_formulation, i_color, i_units, i_container, i_manager_id, i_product_name
+from hive.item order by i_item_sk, i_item_id ;
+log;
+log LOG004_ins_item.dat clear;
+select  [first 500] i_item_sk,i_item_id,i_rec_start_date, i_rec_end_date  i_item_desc,ceiling(i_current_price),ceiling(i_wholesale_cost), i_brand_id,i_brand, i_class_id, i_class, i_category_id, i_category,i_manufact_id,i_manufact,i_size,i_formulation, i_color, i_units, i_container, i_manager_id, i_product_name
+from hive.ins_item  order by i_item_sk, i_item_id;
+log;
+sh diff  LOG004_ORIG_ITEM.DAT LOG004_INS_ITEM.DAT 2>&1 >>LOG004;
+
+
+----household_demographics_dim has xxxrows
+log LOG004_orig_household_demographics.dat clear;
+select  [first 500] * from hive.household_demographics order by hd_demo_sk ;
+log;
+log LOG004_ins_household_demographics.dat clear;
+select  [first 500] * from hive.ins_household_demographics order by hd_demo_sk;
+log;
+sh diff  LOG004_ORIG_HOUSEHOLD_DEMOGRAPHICS.DAT LOG004_INS_HOUSEHOLD_DEMOGRAPHICS.DAT 2>&1 >>LOG004;
+
+
+
+--insert into ins_customerNaddress select c_customer_id, c_salutation, c_first_name, c_last_name, ca_address_id, ca_street_number, ca_street_name, ca_street_type, ca_suite_number,ca_city,  ca_county, ca_state, ca_zip, ca_country  from customer a join customer_address b on a.c_current_addr_sk=b.ca_address_sk where a.c_customer_sk <=1000;
+
+
+
+--insert into ins_store_sales_summary select ss_sold_date_sk ,s_store_id, s_store_name,ss_store_sk, sum (ss_quantity) , sum(ss_wholesale_cost) from store a join store_sales b on a.s_store_sk=b.ss_store_sk group by  ss_sold_date_sk ,s_store_id, s_store_name,ss_store_sk; 
+
+

@@ -1,0 +1,1868 @@
+>>obey TEST100(make_patterns);
+>>---------------------------------------------------------------------
+>>set pattern $$QUOTE$$ '''';
+>>set pattern $$JARF$$ t100.jar;
+>>log;
+>>
+>>obey TEST100(java_compile);
+>>--------------------------------------------------------------------------
+>>-- To compile Java code we invoke a script from regress/tools that uses
+>>-- environment variables to determine the source and target directories
+>>--------------------------------------------------------------------------
+>>log;
+------------------------------------------------------------------------------
+-- Compiling Java source files: t100.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/t100.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Archiving Java class files:
+--    t100.class
+-- Archive will be written to: t100.jar
+-- Executing: $jar cMf t100.jar t100.class
+-- $jar returned 0
+------------------------------------------------------------------------------
+>>
+>>
+>>obey TEST100(set_up);
+>>
+>>create library T100 FILE $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_nn(IN IN1 numeric(9,3), OUT OUT2 numeric(9,3))
++>external name 't100.T100_io_nn' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_bb(IN IN1 numeric(128,5), OUT OUT2 numeric(128,5))
++>external name 't100.T100_io_nn' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_bb_2(IN IN1 numeric(128,5), OUT OUT2 numeric(50,5))
++>external name 't100.T100_io_nn' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_ee(IN IN1 decimal(9,3), OUT OUT2 decimal(9,3))
++>external name 't100.T100_io_ee' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_ss(IN IN1 smallint, OUT OUT2 smallint)
++>external name 't100.T100_io_ss' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_ii(IN IN1 int, OUT OUT2 int)
++>external name 't100.T100_io_ii' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_ll(IN IN1 largeint, OUT OUT2 largeint)
++>external name 't100.T100_io_ll' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_ff(IN IN1 float(22), OUT OUT2 float(22))
++>external name 't100.T100_io_ff' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_ff_2(IN IN1 float(22), OUT OUT2 float(22))
++>external name 't100.T100_io_ff_2(java.lang.Double, java.lang.Double[])'
++>language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_gg(IN IN1 float(54), OUT OUT2 float(54))
++>external name 't100.T100_io_pp' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_rr(IN IN1 real, OUT OUT2 real)
++>external name 't100.T100_io_rr' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_pp(IN IN1 double precision, OUT OUT2 double precision)
++>external name 't100.T100_io_pp' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_pp_2
++>  (IN IN1 double precision, OUT OUT2 double precision)
++>external name 't100.T100_io_pp_2(java.lang.Double, java.lang.Double[])'
++>language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_ix_ir(IN IN1 int, INOUT OUT2 real)
++>external name 't100.T100_ix_if' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_cc(IN IN1 char(20), OUT OUT2 char(20))
++>external name 't100.T100_io_cc' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_vv(IN IN1 varchar(20), OUT OUT2 varchar(20))
++>external name 't100.T100_io_cc' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_dd(IN IN1 date, OUT OUT2 date)
++>external name 't100.T100_io_dd' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_tt(IN IN1 time(0), OUT OUT2 time(0))
++>external name 't100.T100_io_tt' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_io_mm(IN IN1 timestamp(0), OUT OUT2 timestamp(0))
++>external name 't100.T100_io_mm' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_iii_iii(IN IN1 int, IN IN2 int, IN IN3 int)
++>external name 't100.T100_iii_iii' language java parameter style java
++>library T100 no sql;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_xxx_iii
++>  (INOUT INOUT1 int, INOUT INOUT2 int, INOUT INOUT3 int)
++>external name 't100.T100_xxx_iii' language java parameter style java
++>library T100 no sql;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_ooo_iii(OUT OUT1 int, OUT OUT2 int, OUT OUT3 int)
++>external name 't100.T100_ooo_iii' language java parameter style java
++>library T100 no sql;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_iiiiio_vinrdv(IN IN1 varchar(10), IN IN2 int,
++>                                    IN IN3 numeric(8,2), IN IN4 real,
++>                                    IN IN5 date, OUT OUT6 char(78))
++>external name 't100.T100_iiiiio_vinrdv' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>-- Try _ in the procedure name
+>>create procedure T100_NAME_ixo_c(IN IN1 char(10), INOUT INOUT2 char(10), OUT OUT3 char(10))
++>external name 't100.T100_ixo_ccc' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>-- Use schema name
+>>create procedure $$TEST_SCHEMA_NAME$$.T100_NAME_sch_ixo_c(IN IN1 char(10), INOUT INOUT2 char(10), OUT OUT3 char(10))
++>external name 't100.T100_ixo_ccc' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>-- Use catalog and schema
+>>create procedure $$TEST_SCHEMA$$.T100_NAME_catsch_ixo_c(IN IN1 char(10), INOUT INOUT2 char(10), OUT OUT3 char(10))
++>external name 't100.T100_ixo_ccc' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_NAME_ixo_vc(IN IN1 varchar(10), INOUT INOUT2 varchar(10), OUT OUT3 varchar(10))
++>external name 't100.T100_ixo_vvv' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>-- 128 character procedure name
+>>create procedure T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(IN IN1 int, INOUT INOUT2 int, OUT OUT3 int)
++>external name 't100.T100_NAME_This_name_is_128_chars_long'
++>language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_PARAM_none()
++>external name 't100.T100_none' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_PARAM_i_one(IN IN1 int)
++>external name 't100.T100_one' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_writeIntToFile(
++> IN fileName char(1024), IN i int, OUT status char(60))
++>external name 't100.T100_writeIntToFile' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_readIntFromFile(
++> IN fileName char(1024), OUT data int, OUT status char(60))
++>external name 't100.T100_readIntFromFile' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure T100_allTypes (
++>  IN IN1 varchar(20), IN IN2 integer, IN IN3 char(15),
++>  IN IN4 varchar(20), IN IN5 numeric(11,2), IN IN6 smallint,
++>  IN IN7 date, IN IN8 time, IN IN9 timestamp, IN IN10 largeint,
++>  IN IN11 float, IN IN12 real, IN IN13 double precision,
++>  IN IN14 numeric(12,5), IN IN15 decimal(12,5),
++>  IN IN16 numeric(9,0), IN IN17 decimal(9,0),
++>  OUT OUT1 varchar(20), OUT OUT2 integer, OUT OUT3 char(15),
++>  OUT OUT4 varchar(20), OUT OUT5 numeric(11,2), OUT OUT6 smallint,
++>  OUT OUT7 date, OUT OUT8 time, OUT OUT9 timestamp, OUT OUT10 largeint,
++>  OUT OUT11 float, OUT OUT12 real, OUT OUT13 double precision,
++>  OUT OUT14 numeric(12,5), OUT OUT15 decimal(12,5),
++>  OUT OUT16 numeric, OUT OUT17 decimal
++>)
++>external name 't100.alldtypes2' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>create procedure t100_divide(in int, in int, out int)
++>external name 't100.divide' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>
+>>-- Create a table for SUBQUERY operations
+>>create table  t100sq (A int);
+
+--- SQL operation complete.
+>>
+>>-- Populate the table
+>>insert into $$TEST_SCHEMA$$.t100sq values(1);
+
+--- 1 row(s) inserted.
+>>insert into $$TEST_SCHEMA$$.t100sq values(2);
+
+--- 1 row(s) inserted.
+>>insert into $$TEST_SCHEMA$$.t100sq values(3);
+
+--- 1 row(s) inserted.
+>>insert into $$TEST_SCHEMA$$.t100sq values(4);
+
+--- 1 row(s) inserted.
+>>insert into $$TEST_SCHEMA$$.t100sq values(5);
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST100(tests);
+>>set param ?x 1;
+>>obey TEST100(all_datatypes1);
+>>--------------------------------------------------------------------------
+>>-- The DDL ES list the following as valid types for CREATE PROC
+>>--  Exact numeric
+>>--    NUMERIC
+>>--    DECIMAL
+>>--    SMALLINT
+>>--    INTEGER
+>>--    LARGEINT
+>>--  Approximate numeric
+>>--    REAL
+>>--    FLOAT
+>>--    DOUBLE PRECISION
+>>--  Character
+>>--    CHARACTER
+>>--    VARCHAR
+>>--  Date/Time
+>>--    DATE
+>>--    TIME
+>>--    TIMESTAMP
+>>--
+>>-- And the MX reference manual lists the following type parameters
+>>--
+>>--  SMALLINT [SIGNED|UNSIGNED]
+>>--  INT[EGER] [SIGNED|UNSIGNED]
+>>--
+>>--  FLOAT [(precision)]
+>>--
+>>--  NUMERIC   [(precision [,scale])] [SIGNED|UNSIGNED]
+>>--  DEC[IMAL] [(precision [,scale])] [SIGNED|UNSIGNED]
+>>--
+>>--  CHAR[ACTER] [(length)] [UPSHIFT]
+>>--  VARCHAR (length) [UPSHIFT]
+>>--
+>>--  TIME [(time-precision)]
+>>--  TIMESTAMP [(timestamp-precision)]
+>>--------------------------------------------------------------------------
+>>
+>>--------------------------------------------------------------------------
+>>-- Exact numeric types as input
+>>--  NUMERIC, DECIMAL, SMALLINT, INT, LARGEINT
+>>--------------------------------------------------------------------------
+>>-- negative test
+>>select * from T100_io_nn;
+
+*** ERROR[1389] Object T100_IO_NN does not exist in Trafodion.
+
+*** ERROR[4082] Object TRAFODION.SCH.T100_IO_NN does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>call T100_io_nn(cast(-9 as numeric), ?x);
+
+OUT2        
+------------
+
+      -8.000
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(9 as numeric), ?x);
+
+OUT2        
+------------
+
+      10.000
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(9 as numeric(1)), ?x);
+
+OUT2        
+------------
+
+      10.000
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(9 as numeric(9,3)), ?x);
+
+OUT2        
+------------
+
+      10.000
+
+--- SQL operation complete.
+>>call T100_io_nn(123456.789, ?x);
+
+OUT2        
+------------
+
+  123457.789
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(555666.777 as numeric(9,3) SIGNED), ?x);
+
+OUT2        
+------------
+
+  555667.777
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(-999 as numeric(3) SIGNED), ?x);
+
+OUT2        
+------------
+
+    -998.000
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(99999 as numeric(5) UNSIGNED), ?x);
+
+OUT2        
+------------
+
+  100000.000
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(-9.9 as numeric(2,1)), ?x);
+
+OUT2        
+------------
+
+      -8.900
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(99.99 as numeric(5,3)), ?x);
+
+OUT2        
+------------
+
+     100.990
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(-999999.9 as numeric(7,1) SIGNED), ?x);
+
+OUT2        
+------------
+
+ -999998.900
+
+--- SQL operation complete.
+>>call T100_io_nn(cast(9999.999 as numeric(8,4) UNSIGNED), ?x);
+
+OUT2        
+------------
+
+   10000.999
+
+--- SQL operation complete.
+>>
+>>
+>>call T100_io_bb(123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890123, ?x);
+
+OUT2
+----------------------------------------------------------------------------------------------------------------------------------
+
+ 123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890124.00000
+
+--- SQL operation complete.
+>>call T100_io_bb(123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890123.45678, ?x);
+
+OUT2
+----------------------------------------------------------------------------------------------------------------------------------
+
+ 123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890124.45678
+
+--- SQL operation complete.
+>>call T100_io_bb(-123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890123.45678, ?x);
+
+OUT2
+----------------------------------------------------------------------------------------------------------------------------------
+
+-123456789797477427402424035458058352084284283085883538385385385385454545454545454545385385385385385385385353531234567890122.45678
+
+--- SQL operation complete.
+>>-- Expecting error 11216
+>>call T100_io_bb_2(1234567897974774274024240354580583520842842830858835383853853853854545454545454545453853853853853878, ?x);
+
+*** ERROR[11216] Java execution: Data overflow occurred while retrieving data at parameter position 2.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>call T100_io_ee(cast(-9 as decimal), ?x);
+
+OUT2       
+-----------
+
+     -4.500
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(9 as decimal), ?x);
+
+OUT2       
+-----------
+
+      4.500
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(9 as decimal(1)), ?x);
+
+OUT2       
+-----------
+
+      4.500
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(9 as decimal(9,3)), ?x);
+
+OUT2       
+-----------
+
+      4.500
+
+--- SQL operation complete.
+>>call T100_io_ee(202020.20, ?x);
+
+OUT2       
+-----------
+
+ 101010.100
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(404040.404 as decimal(9,3) SIGNED), ?x);
+
+OUT2       
+-----------
+
+ 202020.202
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(-888 as decimal(3) SIGNED), ?x);
+
+OUT2       
+-----------
+
+   -444.000
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(88888 as decimal(5) UNSIGNED), ?x);
+
+OUT2       
+-----------
+
+  44444.000
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(-8.8 as decimal(2,1)), ?x);
+
+OUT2       
+-----------
+
+     -4.400
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(100 as decimal(6,3)), ?x);
+
+OUT2       
+-----------
+
+     50.000
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(-222222.2 as decimal(7,1) SIGNED), ?x);
+
+OUT2       
+-----------
+
+-111111.100
+
+--- SQL operation complete.
+>>call T100_io_ee(cast(4444.444 as decimal(8,4) UNSIGNED), ?x);
+
+OUT2       
+-----------
+
+   2222.222
+
+--- SQL operation complete.
+>>
+>>call T100_io_ss(cast(-9 as smallint), ?x);
+
+OUT2  
+------
+
+    -9
+
+--- SQL operation complete.
+>>call T100_io_ss(cast(9 as smallint), ?x);
+
+OUT2  
+------
+
+     9
+
+--- SQL operation complete.
+>>call T100_io_ss(cast(-32768 as smallint), ?x);
+
+OUT2  
+------
+
+-32768
+
+--- SQL operation complete.
+>>call T100_io_ss(cast(32767 as smallint), ?x);
+
+OUT2  
+------
+
+ 32767
+
+--- SQL operation complete.
+>>
+>>call T100_io_ii(cast(-9 as int), ?x);
+
+OUT2       
+-----------
+
+         -9
+
+--- SQL operation complete.
+>>call T100_io_ii(cast(9 as int), ?x);
+
+OUT2       
+-----------
+
+          9
+
+--- SQL operation complete.
+>>call T100_io_ii(cast(-2147483648 as int), ?x);
+
+OUT2       
+-----------
+
+-2147483648
+
+--- SQL operation complete.
+>>call T100_io_ii(cast(2147483647 as int), ?x);
+
+OUT2       
+-----------
+
+ 2147483647
+
+--- SQL operation complete.
+>>
+>>call T100_io_ll(cast(-9 as largeint), ?x);
+
+OUT2                
+--------------------
+
+                  -9
+
+--- SQL operation complete.
+>>call T100_io_ll(cast(9 as largeint), ?x);
+
+OUT2                
+--------------------
+
+                   9
+
+--- SQL operation complete.
+>>call T100_io_ll(cast(9223372036854775807 as largeint), ?x);
+
+OUT2                
+--------------------
+
+ 9223372036854775807
+
+--- SQL operation complete.
+>>call T100_io_ll(cast(-9223372036854775808 as largeint), ?x);
+
+OUT2                
+--------------------
+
+-9223372036854775808
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------------------------------------
+>>-- Approximate numeric types as input
+>>--  FLOAT, REAL, DOUBLE PRECISION
+>>--  REAL is equivalent to FLOAT(22)
+>>--  DOUBLE PRECISION is equivalent to FLOAT(54)
+>>--------------------------------------------------------------------------
+>>call T100_io_ff(cast(1 as float(1)), ?x);
+
+OUT2                     
+-------------------------
+
+ 1.00000000000000000E-001
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(-1 as float(1)), ?x);
+
+OUT2                     
+-------------------------
+
+-1.00000000000000000E-001
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(10 as float(2)), ?x);
+
+OUT2                     
+-------------------------
+
+ 1.00000000000000000E+000
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(-10 as float(2)), ?x);
+
+OUT2                     
+-------------------------
+
+-1.00000000000000000E+000
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(123456789.123456789 as float(20)), ?x);
+
+OUT2                     
+-------------------------
+
+ 1.23456789123456784E+007
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(-123456789.123456 as float(20)), ?x);
+
+OUT2                     
+-------------------------
+
+-1.23456789123455984E+007
+
+--- SQL operation complete.
+>>call T100_io_gg(cast(123456789.123456789 as float(52)), ?x);
+
+OUT2                     
+-------------------------
+
+ 1.23456789123456784E+007
+
+--- SQL operation complete.
+>>call T100_io_gg(cast(-123456789.123456 as float(52)), ?x);
+
+OUT2                     
+-------------------------
+
+-1.23456789123455984E+007
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(2**22 as float(22)), ?x);
+
+OUT2                     
+-------------------------
+
+ 4.19430400000000064E+005
+
+--- SQL operation complete.
+>>call T100_io_ff(cast(-2**22 as float(22)), ?x);
+
+OUT2                     
+-------------------------
+
+ 4.19430400000000064E+005
+
+--- SQL operation complete.
+>>call T100_io_rr(cast(2**22 as real), ?x);
+
+OUT2           
+---------------
+
+ 4.1943040E+005
+
+--- SQL operation complete.
+>>call T100_io_rr(cast(-2**22 as real), ?x);
+
+OUT2           
+---------------
+
+ 4.1943040E+005
+
+--- SQL operation complete.
+>>call T100_io_pp(cast(123456789.123456789 as double precision), ?x);
+
+OUT2                     
+-------------------------
+
+ 1.23456789123456784E+007
+
+--- SQL operation complete.
+>>call T100_io_pp(cast(-123456789.123456 as double precision), ?x);
+
+OUT2                     
+-------------------------
+
+-1.23456789123455984E+007
+
+--- SQL operation complete.
+>>call T100_io_ff_2(cast(3.1415926 as float(22)), ?x);
+
+OUT2                     
+-------------------------
+
+ 3.14159260000000000E-001
+
+--- SQL operation complete.
+>>call T100_io_pp_2(cast(3.1415926535897932384 as double precision), ?x);
+
+OUT2                     
+-------------------------
+
+ 3.14159265358979264E-001
+
+--- SQL operation complete.
+>>--------------------------------------------------------------------------
+>>-- Character types as input
+>>--   CHAR, VARCHAR, CHAR VARYING
+>>--   VARCHAR is equivalent to CHAR VARYING
+>>--------------------------------------------------------------------------
+>>call T100_io_cc('Hello, world!', ?x);
+
+OUT2                
+--------------------
+
+       !dlrow ,olleH
+
+--- SQL operation complete.
+>>call T100_io_cc(cast('Hello, world!' as char(13)), ?x);
+
+OUT2                
+--------------------
+
+       !dlrow ,olleH
+
+--- SQL operation complete.
+>>call T100_io_cc(cast('Hello, world!' as char(13) upshift), ?x);
+
+OUT2                
+--------------------
+
+       !DLROW ,OLLEH
+
+--- SQL operation complete.
+>>call T100_io_vv(cast('Hello, world!' as varchar(13)), ?x);
+
+OUT2                
+--------------------
+
+!dlrow ,olleH       
+
+--- SQL operation complete.
+>>call T100_io_vv(cast('Hello, world!' as varchar(13) upshift), ?x);
+
+OUT2                
+--------------------
+
+!DLROW ,OLLEH       
+
+--- SQL operation complete.
+>>call T100_io_cc(cast(cast('Hello        ' as char(13)) as char(5)), ?x);
+
+OUT2                
+--------------------
+
+               olleH
+
+--- SQL operation complete.
+>>call T100_io_vv(cast(cast('Hello        ' as char(13)) as varchar(5)), ?x);
+
+OUT2                
+--------------------
+
+olleH               
+
+--- SQL operation complete.
+>>call T100_io_cc(cast(cast('Hello        ' as varchar(13)) as char(5)), ?x);
+
+OUT2                
+--------------------
+
+               olleH
+
+--- SQL operation complete.
+>>call T100_io_vv(cast(cast('Hello        ' as varchar(13)) as varchar(5)), ?x);
+
+OUT2                
+--------------------
+
+olleH               
+
+--- SQL operation complete.
+>>call T100_io_vv(cast('Hello, world!' as char varying(13)), ?x);
+
+OUT2                
+--------------------
+
+!dlrow ,olleH       
+
+--- SQL operation complete.
+>>call T100_io_vv(cast('Hello, world!' as char varying(13) upshift), ?x);
+
+OUT2                
+--------------------
+
+!DLROW ,OLLEH       
+
+--- SQL operation complete.
+>>
+>>--------------------------------------------------------------------------
+>>-- Date/Time types as input
+>>--  DATE
+>>--  TIME [(time-precision)]
+>>--  TIMESTAMP [(timestamp-precision)]
+>>--------------------------------------------------------------------------
+>>call T100_io_dd(date'12/31/1999', ?x);
+
+OUT2      
+----------
+
+1999-12-31
+
+--- SQL operation complete.
+>>call T100_io_dd(date'12/31/1999' +interval'1' day, ?x);
+
+OUT2      
+----------
+
+2000-01-01
+
+--- SQL operation complete.
+>>call T100_io_tt(time'11:59:59 pm', ?x);
+
+OUT2    
+--------
+
+23:59:59
+
+--- SQL operation complete.
+>>call T100_io_tt(time'11:59:59 pm' + interval'1' second, ?x);
+
+OUT2    
+--------
+
+00:00:00
+
+--- SQL operation complete.
+>>call T100_io_tt(cast(time'11:59:59.50 pm' as TIME), ?x);
+
+OUT2    
+--------
+
+23:59:59
+
+--- SQL operation complete.
+>>call T100_io_tt(cast(time'11:59:59.50 pm' as TIME(0)), ?x);
+
+OUT2    
+--------
+
+23:59:59
+
+--- SQL operation complete.
+>>call T100_io_tt(cast(time'11:59:59.50 pm' as TIME(2)), ?x);
+
+OUT2    
+--------
+
+23:59:59
+
+--- SQL operation complete.
+>>call T100_io_tt(cast(time'11:59:59.50 pm' as TIME(6)), ?x);
+
+OUT2    
+--------
+
+23:59:59
+
+--- SQL operation complete.
+>>
+>>call T100_io_mm(timestamp'12/31/1999 11:59:59 pm', ?x);
+
+OUT2               
+-------------------
+
+1999-12-31 23:59:59
+
+--- SQL operation complete.
+>>call T100_io_mm(timestamp'12/31/1999 11:59:59 pm' + interval'1' second, ?x);
+
+OUT2               
+-------------------
+
+2000-01-01 00:00:00
+
+--- SQL operation complete.
+>>call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP), ?x);
+
+OUT2               
+-------------------
+
+1999-12-31 23:59:59
+
+--- SQL operation complete.
+>>call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(0)), ?x);
+
+OUT2               
+-------------------
+
+1999-12-31 23:59:59
+
+--- SQL operation complete.
+>>call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(2)), ?x);
+
+OUT2               
+-------------------
+
+1999-12-31 23:59:59
+
+--- SQL operation complete.
+>>call T100_io_mm(cast(timestamp'12/31/1999 11:59:59 pm' as TIMESTAMP(6)), ?x);
+
+OUT2               
+-------------------
+
+1999-12-31 23:59:59
+
+--- SQL operation complete.
+>>
+>>obey TEST100(all_datatypes2);
+>>--
+>>-- The T100_allTypes procedure serves two purposes
+>>--  1. It contains all supported types in the input row and the output row
+>>--  2. It tests that input and output rows containing alignment padding are
+>>--     handled correctly.
+>>--
+>>call T100_allTypes (
++>  'aaa', 222, 'ccc',
++>  'ddd', 555, 666,
++>  date'07/07/1999', time'08:08:08 pm',
++>  timestamp'09/09/1999 09:09:09 pm', 1010,
++>  11.11, 12.12, 13.13,
++>  14.14, 15.15,
++>  1616, 1717,
++>  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
++>);
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+aaa                           222  ccc              ddd                                  555.00     666  1999-07-07  20:08:08  1999-09-09 21:09:09.000000                  1010   1.11100000000000000E+001   1.2119999E+001   1.31300000000000016E+001               14.14000        15.15000         1616        1717
+
+--- SQL operation complete.
+>>
+>>prepare ALLTYPES from call T100_allTypes (
++>  ?, 222, ?,
++>  'ddd', ?, 666,
++>  cast(? as date), time'08:08:08 pm',
++>  cast(? as timestamp), 1010,
++>  ?, 12.12, ?,
++>  14.14, ?,
++>  1616, ?,
++>  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
++>);
+
+--- SQL command prepared.
+>>
+>>execute ALLTYPES using
++>  'a01', 'c01', 501, '07/01/1999', '09/01/1999 09:01:00 pm',
++>  11.01, 13.01, 15.01, 1701
++>;
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+a01                           222  c01              ddd                                  501.00     666  1999-07-01  20:08:08  1999-09-01 21:01:00.000000                  1010   1.10100000000000000E+001   1.2119999E+001   1.30100000000000016E+001               14.14000        15.01000         1616        1701
+
+--- SQL operation complete.
+>>
+>>execute ALLTYPES using
++>  'a02', 'c02', 502, '07/02/1999', '09/02/1999 09:02:00 pm',
++>  11.02, 13.02, 15.02, 1702
++>;
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+a02                           222  c02              ddd                                  502.00     666  1999-07-02  20:08:08  1999-09-02 21:02:00.000000                  1010   1.10200000000000016E+001   1.2119999E+001   1.30200000000000000E+001               14.14000        15.02000         1616        1702
+
+--- SQL operation complete.
+>>
+>>execute ALLTYPES using
++>  'a03', 'c03', 503, '07/03/1999', '09/03/1999 09:03:00 pm',
++>  11.03, 13.03, 15.03, 1703
++>;
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+a03                           222  c03              ddd                                  503.00     666  1999-07-03  20:08:08  1999-09-03 21:03:00.000000                  1010   1.10300000000000000E+001   1.2119999E+001   1.30300000000000000E+001               14.14000        15.03000         1616        1703
+
+--- SQL operation complete.
+>>
+>>obey TEST100(overflow);
+>>--------------------------------------------------------------------------
+>>-- Arithmetic and string overflow errors and warnings
+>>--------------------------------------------------------------------------
+>>call T100_io_cc(cast(timestamp'12/07/1961 03:04:55.123456' as char(18)), ?x);
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- SQL operation failed with errors.
+>>call T100_io_cc(cast(cast('Hello, world!' as char(13)) as char(5)), ?x);
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+OUT2                
+--------------------
+
+               olleH
+
+--- SQL operation completed with warnings.
+>>call T100_io_ee(cast('123.456' as decimal(6)), ?x);
+
+*** WARNING[8411] A numeric overflow occurred during an arithmetic computation or data conversion.
+
+OUT2       
+-----------
+
+     61.500
+
+--- SQL operation completed with warnings.
+>>call T100_io_cc('abc' COLLATE a, ?x);
+
+*** WARNING[3169] A is not a known collation.
+
+OUT2                
+--------------------
+
+                 cba
+
+--- SQL operation completed with warnings.
+>>call T100_io_nn(cast(-10 as numeric(1)), ?x);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
+
+--- SQL operation failed with errors.
+>>call T100_io_ss(cast(32768 as smallint), ?x);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:32768 Target Type:LARGEINT(IBIN64S) Max Target Value:32767. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+
+--- SQL operation failed with errors.
+>>call T100_io_ss(cast(-32769 as smallint), ?x);
+
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:-32769 Target Type:LARGEINT(IBIN64S) Min Target Value:-32768. Instruction:RANGE_LOW_S32S64 Operation:RANGE_LOW.
+
+--- SQL operation failed with errors.
+>>call T100_io_ii(1 + 1 / 0, ?x);
+
+*** ERROR[8419] An arithmetic expression attempted a division by zero.
+
+--- SQL operation failed with errors.
+>>call T100_io_mm(interval'0.1'second + timestamp'12/31/9999 11:59:59.9 pm', ?x);
+
+*** ERROR[8416] A datetime expression evaluated to an invalid datetime value.
+
+--- SQL operation failed with errors.
+>>
+>>obey TEST100(prepexec);
+>>--------------------------------------------------------------------------
+>>-- Prepare, explain, and execute
+>>--------------------------------------------------------------------------
+>>prepare S1 from call T100_iiiiio_vinrdv (
++>  '1-1-1',
++>  1 + 1 + 20,
++>  10.0 / 3.0,
++>  88.88 / 2,
++>  date'05/05/5555',
++>  ?x
++>);
+
+--- SQL command prepared.
+>>prepare S2 from call T100_iiiiio_vinrdv(?, ?, ?, ?, cast(? as date), ?x);
+
+--- SQL command prepared.
+>>
+>>select seq_num, operator, left_child_seq_num l, right_child_seq_num r
++>from table (explain(NULL, 'S1'));
+
+SEQ_NUM      OPERATOR                        L            R          
+-----------  ------------------------------  -----------  -----------
+
+          1  CALL                                      ?            ?
+          2  ROOT                                      1            ?
+
+--- 2 row(s) selected.
+>>
+>>select seq_num, operator, left_child_seq_num l, right_child_seq_num r
++>from table (explain(NULL, 'S2'));
+
+SEQ_NUM      OPERATOR                        L            R          
+-----------  ------------------------------  -----------  -----------
+
+          1  CALL                                      ?            ?
+          2  ROOT                                      1            ?
+
+--- 2 row(s) selected.
+>>
+>>execute S1;
+
+OUT6
+------------------------------------------------------------------------------
+
+[1-1-1][22][3.33][44.44][5555-05-05]                                          
+
+--- SQL operation complete.
+>>execute S2 using '2', 4, 6.66, 88.888, '10/10/1010';
+
+OUT6
+------------------------------------------------------------------------------
+
+[2][4][6.66][88.888][1010-10-10]                                              
+
+--- SQL operation complete.
+>>execute S1;
+
+OUT6
+------------------------------------------------------------------------------
+
+[1-1-1][22][3.33][44.44][5555-05-05]                                          
+
+--- SQL operation complete.
+>>execute S2 using '22', 44, 6.66, 88.888, '10/10/1010';
+
+OUT6
+------------------------------------------------------------------------------
+
+[22][44][6.66][88.888][1010-10-10]                                            
+
+--- SQL operation complete.
+>>execute S1;
+
+OUT6
+------------------------------------------------------------------------------
+
+[1-1-1][22][3.33][44.44][5555-05-05]                                          
+
+--- SQL operation complete.
+>>execute S2 using '222', 444, 6.66, 88.888, '10/10/1010';
+
+OUT6
+------------------------------------------------------------------------------
+
+[222][444][6.66][88.888][1010-10-10]                                          
+
+--- SQL operation complete.
+>>
+>>obey TEST100(show_plan);
+>>--------------------------------------------------------------------------
+>>-- show plan for CALL statement
+>>--------------------------------------------------------------------------
+>>log;
+Showplan output for call statement
+Contents of EX_UDR [1]:
+routineName = TRAFODION.SCH.T100_IIIIIO_VINRDV
+externalName = T100_iiiiio_vinrdv
+>>
+>>obey TEST100(dyn_params);
+>>--------------------------------------------------------------------------
+>>-- Test anything quirky or unusual about dynamic parameters. Right now
+>>-- this section is not very interesting because we use dynamic params
+>>-- in so many other places.
+>>--------------------------------------------------------------------------
+>>set param ?x 0;
+>>set param ?y 1;
+>>set param ?z 'abc';
+>>call T100_io_nn(?x + 100, ?x);
+
+OUT2        
+------------
+
+     101.000
+
+--- SQL operation complete.
+>>call T100_io_rr(?y / 100, ?x);
+
+OUT2           
+---------------
+
+ 9.9999993E-004
+
+--- SQL operation complete.
+>>call T100_io_cc(cast(?z as char(3)), ?x);
+
+OUT2                
+--------------------
+
+                 cba
+
+--- SQL operation complete.
+>>set param ?x 10;
+>>call T100_ix_ir(?x, ?x);
+
+OUT2           
+---------------
+
+ 2.0000000E+001
+
+--- SQL operation complete.
+>>call T100_ix_ir(?x + ?x, ?x);
+
+OUT2           
+---------------
+
+ 3.0000000E+001
+
+--- SQL operation complete.
+>>set param ?x 123;
+>>set param ?y 45.6;
+>>set param ?z 'abc';
+>>set param ?dt '3210-01-23';
+>>call T100_iiiiio_vinrdv(
++>  'x' || cast(?z as char(3)) || 'y',
++>  char_length(?z),
++>  ?x,
++>  ?y / ?x,
++>  cast(?dt as date),
++>  ?x
++>);
+
+OUT6
+------------------------------------------------------------------------------
+
+[xabcy][3][123.00][0.3707317][3210-01-23]                                     
+
+--- SQL operation complete.
+>>
+>>obey TEST100(scalar_functions);
+>>--------------------------------------------------------------------------
+>>-- Test scalar functions as input values
+>>--------------------------------------------------------------------------
+>>set param ?x 2.5;
+>>set param ?y 1;
+>>set param ?z 'abc';
+>>
+>>call T100_iiiiio_vinrdv(
++>  insert('abcdef', 4, 3, '123'),
++>  ceiling(?x),
++>  power(?x, 3),
++>  pi(),
++>  DATE '2000-01-15' + INTERVAL '1' MONTH + INTERVAL '7' DAY,
++>  ?x
++>);
+
+OUT6
+------------------------------------------------------------------------------
+
+[abc123][3][15.62][3.1415925][2000-02-22]                                     
+
+--- SQL operation complete.
+>>
+>>call T100_iiiiio_vinrdv(
++>  trim('a' from ?z),
++>  sign(?x * -1),
++>  extract(year from date'1996-09-28'),
++>  sin(radians(90)),
++>  DATE '2000-01-15' - INTERVAL '1' MONTH - INTERVAL '7' DAY,
++>  ?x
++>);
+
+OUT6
+------------------------------------------------------------------------------
+
+[bc][-1][1996.00][1.0][1999-12-08]                                            
+
+--- SQL operation complete.
+>>
+>>set param ?x 2.5;
+>>set param ?y 1;
+>>call T100_io_rr(sqrt(floor(?x)), ?x);
+
+OUT2           
+---------------
+
+ 1.4142134E-001
+
+--- SQL operation complete.
+>>call T100_io_rr(sqrt(mod(11, cast(ceiling(?x) as int))), ?x);
+
+OUT2           
+---------------
+
+ 1.4142134E-001
+
+--- SQL operation complete.
+>>call T100_io_rr(exp(log(?y + ?y)), ?x);
+
+OUT2           
+---------------
+
+ 2.0000000E-001
+
+--- SQL operation complete.
+>>
+>>call T100_iiiiio_vinrdv(
++>  substring(dateformat(timestamp'1996-06-20 14:20:20.00', european), 1, 10),
++>  ascii(?z),
++>  case when ?x = 1 then 100 when ?y = 1 then 200 else null end,
++>  case when ?x = 2.5 then ?x / 2 when ?y = 2.5 then ?y / 2 else null end,
++>  date '2000-12-12' + interval '1' day,
++>  ?x
++>);
+
+OUT6
+------------------------------------------------------------------------------
+
+[20.06.1996][97][200.00][1.25][2000-12-13]                                    
+
+--- SQL operation complete.
+>>
+>>call T100_io_cc(char(65) || char(66) || char(67), ?x);
+
+OUT2                
+--------------------
+
+                 CBA
+
+--- SQL operation complete.
+>>
+>>obey TEST100(test_names);
+>>set param ?a '0123456789';
+>>set param ?b '9876543210';
+>>set param ?c 'abcdefghij';
+>>set param ?x 123;
+>>set param ?y 456;
+>>set param ?z 789;
+>>
+>>--------------------------------------------------------------------------
+>>-- Positive tests
+>>-- Use valid procedure names
+>>--------------------------------------------------------------------------
+>>call $$TEST_SCHEMA_NAME$$.T100_NAME_ixo_c( ?a, ?b, ?c );
+
+INOUT2      OUT3      
+----------  ----------
+
+0123456789  9876543210
+
+--- SQL operation complete.
+>>call $$TEST_SCHEMA$$.T100_NAME_ixo_c( ?a, ?b, ?c );
+
+INOUT2      OUT3      
+----------  ----------
+
+0123456789  9876543210
+
+--- SQL operation complete.
+>>call $$TEST_SCHEMA_NAME$$.T100_NAME_ixo_vc( ?a, ?b, ?c );
+
+INOUT2      OUT3      
+----------  ----------
+
+0123456789  9876543210
+
+--- SQL operation complete.
+>>call T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(5, ?x, ?y);
+
+INOUT2       OUT3       
+-----------  -----------
+
+          5          123
+
+--- SQL operation complete.
+>> -- Should return 5, 123
+>>call T100_NAME_This_name_is_128_chars_long_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx(?x, ?y, ?z);
+
+INOUT2       OUT3       
+-----------  -----------
+
+        123          456
+
+--- SQL operation complete.
+>> -- Should return 123, 456
+>>
+>>--------------------------------------------------------------------------
+>>-- Negative Tests
+>>-- Use Invalid PROCEDURE names
+>>--------------------------------------------------------------------------
+>>CALL 1SPJPROC();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CALL 1SPJPROC();
+     ^ (6 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>CALL 1spjproc();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CALL 1spjproc();
+     ^ (6 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>CALL SPJPROC#();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+CALL SPJPROC#();
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>call spjproc@!$();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+call spjproc@!$();
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>call %spjproc();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+call %spjproc();
+     ^ (6 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>call _spjproc();
+
+*** ERROR[3127] An invalid character was found in identifier _spjproc.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+call _spjproc();
+     ^ (6 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>call SELECT();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+call SELECT();
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>call call();
+
+*** ERROR[15001] A syntax error occurred at or before: 
+call call();
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>call This_name_is_129_chars_long__xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
++>();
+
+*** ERROR[3118] Specified identifier is too long.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- Identifier too long
+>>call
++>WhatIsTheLongestCatalogNameThatYouCanThinkOfAndToHeckWithTheGrammarCatalog.
++>WhatIsTheLongestSchemaNameThatYouCanThinkOfAndToHeckWithTheGrammarAgainSchema.
++>WhatIsTheLongestNameThatYouCanEverThinkOfInThisWholeWideWorldAndToHWTGAName
++>();
+
+*** ERROR[1002] Catalog WHATISTHELONGESTCATALOGNAMETHATYOUCANTHINKOFANDTOHECKWITHTHEGRAMMARCATALOG does not exist or has not been registered on node .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- Routine not found
+>>
+>>--------------------------------------------------------------------------
+>>-- This test creates an SPJ, then drops it and creates another with the
+>>-- same name but different signature, to make sure the old definition
+>>-- gets discarded.
+>>--
+>>--  Old sig: IN, INOUT, OUT
+>>--  New sig: IN, IN, OUT
+>>--
+>>--------------------------------------------------------------------------
+>>set param ?a 'AAA';
+>>set param ?b 'BBB';
+>>set param ?c 'CCC';
+>>call T100_NAME_ixo_vc(?a, ?b, ?c);
+
+INOUT2      OUT3      
+----------  ----------
+
+AAA         BBB       
+
+--- SQL operation complete.
+>> -- Should return AAA, BBB
+>>drop procedure T100_NAME_ixo_vc;
+
+--- SQL operation complete.
+>>create procedure T100_NAME_ixo_vc (
++>  IN IN1 varchar(5), IN IN2 varchar(5), OUT OUT3 varchar(10)
++>)
++>external name 't100.T100_iio_vvv' language java parameter style java no sql
++>library T100;
+
+--- SQL operation complete.
+>>call T100_NAME_ixo_vc(?a, ?b, ?c);
+
+OUT3      
+----------
+
+OK        
+
+--- SQL operation complete.
+>> -- Should return "OK"
+>>
+>>obey TEST100(prms);
+>>call t100_param_none();
+
+--- SQL operation complete.
+>>set param ?x 5;
+>>set param ?y 50;
+>>set param ?z 500;
+>>call T100_PARAM_i_one( ?x );
+
+--- SQL operation complete.
+>>call t100_iii_iii(1, 2, 3);
+
+--- SQL operation complete.
+>>call t100_xxx_iii(?x, ?y, ?z);
+
+INOUT1       INOUT2       INOUT3     
+-----------  -----------  -----------
+
+         -5          -50         -500
+
+--- SQL operation complete.
+>>call t100_ooo_iii(?, ?, ?);
+
+OUT1         OUT2         OUT3       
+-----------  -----------  -----------
+
+          2            4            8
+
+--- SQL operation complete.
+>>
+>>obey TEST100(io);
+>>--------------------------------------------------------------------------
+>>-- Here we invoke on SPJ that writes data to a file and another that
+>>-- reads the data from the file
+>>--------------------------------------------------------------------------
+>>set param ?x 123;
+>>set param ?s '--';
+>>call T100_writeIntToFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x, ?s);
+
+STATUS                                                      
+------------------------------------------------------------
+
+OK                                                          
+
+--- SQL operation complete.
+>>call T100_readIntFromFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x, ?s);
+
+DATA         STATUS
+-----------  ------------------------------------------------------------
+
+        123  OK                                                          
+
+--- SQL operation complete.
+>>call T100_writeIntToFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x * 2, ?s);
+
+STATUS                                                      
+------------------------------------------------------------
+
+OK                                                          
+
+--- SQL operation complete.
+>>call T100_readIntFromFile($$REGRRUNDIR_Q$$ || '/t100.data', ?x, ?s);
+
+DATA         STATUS
+-----------  ------------------------------------------------------------
+
+        246  OK                                                          
+
+--- SQL operation complete.
+>>
+>>obey TEST100(subquery);
+>>set param ?x;
+>>call t100_io_nn((select count(*) from $$TEST_SCHEMA$$.t100sq), ?x);
+
+OUT2        
+------------
+
+       6.000
+
+--- SQL operation complete.
+>>call t100_io_nn((select count(*) from $$TEST_SCHEMA$$.t100sq
++>                 where A > 3), ?x);
+
+OUT2        
+------------
+
+       3.000
+
+--- SQL operation complete.
+>>
+>>obey TEST100(udrtrace);
+>>log;
+Trafodion Conversational Interface 0.7.0
+(c) Copyright 2014 Hewlett-Packard Development Company, LP.
+>>?section udrtrace2
+>>--
+>>-- This section will be executed by the mxci fired off while executing
+>>-- the udrtrace section above.
+>>--
+>>set nametype ansi;
+
+--- SQL operation complete.
+>>set schema $$TEST_SCHEMA$$;
+
+--- SQL operation complete.
+>>
+>>-- Execute some CALLs with many different parameter types
+>>obey TEST100(all_datatypes2);
+>>?section all_datatypes2
+>>--
+>>-- The T100_allTypes procedure serves two purposes
+>>--  1. It contains all supported types in the input row and the output row
+>>--  2. It tests that input and output rows containing alignment padding are
+>>--     handled correctly.
+>>--
+>>call T100_allTypes (
++>  'aaa', 222, 'ccc',
++>  'ddd', 555, 666,
++>  date'07/07/1999', time'08:08:08 pm',
++>  timestamp'09/09/1999 09:09:09 pm', 1010,
++>  11.11, 12.12, 13.13,
++>  14.14, 15.15,
++>  1616, 1717,
++>  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
++>);
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+aaa                           222  ccc              ddd                                  555.00     666  1999-07-07  20:08:08  1999-09-09 21:09:09.000000                  1010   1.11100000000000000E+001   1.2119999E+001   1.31300000000000016E+001               14.14000        15.15000         1616        1717
+
+--- SQL operation complete.
+>>
+>>prepare ALLTYPES from call T100_allTypes (
++>  ?, 222, ?,
++>  'ddd', ?, 666,
++>  cast(? as date), time'08:08:08 pm',
++>  cast(? as timestamp), 1010,
++>  ?, 12.12, ?,
++>  14.14, ?,
++>  1616, ?,
++>  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
++>);
+
+--- SQL command prepared.
+>>
+>>execute ALLTYPES using
++>  'a01', 'c01', 501, '07/01/1999', '09/01/1999 09:01:00 pm',
++>  11.01, 13.01, 15.01, 1701
++>;
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+a01                           222  c01              ddd                                  501.00     666  1999-07-01  20:08:08  1999-09-01 21:01:00.000000                  1010   1.10100000000000000E+001   1.2119999E+001   1.30100000000000016E+001               14.14000        15.01000         1616        1701
+
+--- SQL operation complete.
+>>
+>>execute ALLTYPES using
++>  'a02', 'c02', 502, '07/02/1999', '09/02/1999 09:02:00 pm',
++>  11.02, 13.02, 15.02, 1702
++>;
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+a02                           222  c02              ddd                                  502.00     666  1999-07-02  20:08:08  1999-09-02 21:02:00.000000                  1010   1.10200000000000016E+001   1.2119999E+001   1.30200000000000000E+001               14.14000        15.02000         1616        1702
+
+--- SQL operation complete.
+>>
+>>execute ALLTYPES using
++>  'a03', 'c03', 503, '07/03/1999', '09/03/1999 09:03:00 pm',
++>  11.03, 13.03, 15.03, 1703
++>;
+
+OUT1                  OUT2         OUT3             OUT4                  OUT5                   OUT6    OUT7        OUT8      OUT9                        OUT10                 OUT11                      OUT12            OUT13                      OUT14                  OUT15           OUT16        OUT17
+--------------------  -----------  ---------------  --------------------  ---------------------  ------  ----------  --------  --------------------------  --------------------  -------------------------  ---------------  -------------------------  ---------------------  --------------  -----------  ----------
+
+a03                           222  c03              ddd                                  503.00     666  1999-07-03  20:08:08  1999-09-03 21:03:00.000000                  1010   1.10300000000000000E+001   1.2119999E+001   1.30300000000000000E+001               14.14000        15.03000         1616        1703
+
+--- SQL operation complete.
+>>
+>>
+>>-- This CALL will return a warning condition from the UDR server
+>>call T100_io_mm(timestamp'12/31/1999 11:59:59 pm', ?x);
+
+OUT2               
+-------------------
+
+1999-12-31 23:59:59
+
+--- SQL operation complete.
+>>
+>>-- This CALL will throw a Java exception in the UDR server
+>>call t100_divide(1, 0, ?);
+
+*** ERROR[11218] A Java method completed with an uncaught Java exception. Details: java.lang.ArithmeticException: / by zero
+
+--- SQL operation failed with errors.
+>>
+>>-- This is a simple CALL that should return without errors
+>>call t100_io_ii(123, ?);
+
+OUT2       
+-----------
+
+        123
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+[SUCCESS] TRACE FILE EXISTS AND ITS SIZE IS NON-ZERO
+1
+>>
+>>obey TEST100(unload_without_tx);
+>>--
+>>-- We will have the master executor send an UNLOAD message to the UDR
+>>-- server without a transaction. All UDR messages require a transaction
+>>-- except UNLOAD. The PREPARE after the CALL will cause the CALL to be
+>>-- deallocated when there is no active transaction. This will trigger
+>>-- an UNLOAD message being sent without a transaction.
+>>--
+>>prepare S from call T100_io_nn(-9, ?);
+
+--- SQL command prepared.
+>>set transaction autocommit off;
+
+--- SQL operation complete.
+>>execute S;
+
+OUT2        
+------------
+
+      -8.000
+
+--- SQL operation complete.
+>>commit;
+
+--- SQL operation complete.
+>>set transaction autocommit on;
+
+--- SQL operation complete.
+>>prepare S from values(1);
+
+--- SQL command prepared.
+>>
+>>obey TEST100(udr_command_line);
+>>--
+>>-- This section will test various MXUDR command-line options
+>>--
+>>
+>>-- Grant privileges to the SPJ user. In the runregr environment all SPJs
+>>-- run with the sql_user1 database identity.
+>>--grant all privileges on t100sq to sql_user1;
+>>
+>>delete from t100sq;
+
+--- 5 row(s) deleted.
+>>
+>>log;
+MXUDR Status: OK!
+>>
+>>select * from t100sq;
+
+--- 0 row(s) selected.
+>>
+>>log;

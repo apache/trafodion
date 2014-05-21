@@ -1,0 +1,12 @@
+107,108c107
+< A A C A A
+< ----------
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+110,111c109
+< abc abc 1 abc abc
+< def def 2 def def
+---
+> *** ERROR[8822] The statement was not prepared.
+113d110
+< --- 2 row(s) selected.

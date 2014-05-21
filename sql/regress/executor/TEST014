@@ -1,0 +1,145 @@
+-- Test: TEST014 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Create Table As <query> support
+-- Expected files: EXPECTED014
+-- Table created:
+-- Limitations:
+-- To do:
+-- Revision history:
+
+drop table t014t1s cascade;
+drop table t014t2s cascade;
+drop table t014t1t cascade;
+drop table t014t2t cascade;
+
+control query default POS 'OFF';
+control query default COMP_BOOL_207 'ON';
+
+log log014 clear;
+
+create table t014t1s (a int, b int not null);
+insert into t014t1s values (1,1), (2,2);
+
+create table t014t1t as select * from t014t1s;
+log;
+showplan create table t014t1t as select * from t014t1s;
+log log014;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(a,b) as select * from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(a,b) as select a*a*a*a, b ** b from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(c,d) as select * from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t as select a c, b d from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t as select a+1 c, b+1 d from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(c,d) as select a+1, b+1 from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(a int, b int not null) as select a+1, b+1 from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+#ifndef SEABASE_REGRESS
+begin work;
+#endif
+create table t014t1t(a int, b int not null) as select a+1, b+1 from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+#ifndef SEABASE_REGRESS
+commit work;
+#endif
+
+#ifndef SEABASE_REGRESS
+drop table t014t1t;
+create volatile table t014t1t(a int, b int not null) as select a+1, b+1 from t014t1s;
+invoke t014t1t;
+select * from t014t1t;
+#endif
+
+-- tests with table attributes
+drop table t014t1t;
+create table t014t1t store by (b) as select a,b from t014t1s;
+showddl t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(c,d) store by (d) as select a,b from t014t1s;
+showddl t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t(c int,d int not null) store by (d) as select a,b from t014t1s;
+showddl t014t1t;
+select * from t014t1t;
+
+drop table t014t1t;
+create table t014t1t (a, b int not null) as select * from t014t1s;
+showddl t014t1t;
+select * from t014t1t;
+
+-- negative tests
+
+drop table t014t1t;
+
+-- number of columns mismatch
+create table t014t1t (a) as select * from t014t1s;
+
+-- expressions in AS query must be renamed
+create table t014t1t as select a+1, b+1 from t014t1s;
+
+-- datatype of AS query columns and target tables must match
+create table t014t1t (a char(10), b date) as select * from t014t1s;
+
+-- cannot use CTAS in a compound Create Schema Stmt
+create schema tempsch create table t014t1 as select * from t014t1s;
+
+log;
+
+
+
+
+
+
+
+

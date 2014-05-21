@@ -1,0 +1,687 @@
+LOG aqatdml02 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--    This test unit is a positive local test for the select statement.
+-- It tests only normal (non-join and non-subquery) select statements
+-- in simple form (no clauses other than SELECT-FROM). In particular,
+-- the select statements in this test unit have no where, group by,
+-- or order by clauses.
+--    This test unit uses the select global data base.
+-- Each test case in this test unit tests a particular feature of
+-- simple normal select statements. For each test case, each base table
+-- (tables 01 - 11) and at least one protection view and one shorthand
+-- view have at least one select stmt. executed against them. This is
+-- to assure that the particular feature that the test case is testing
+-- works on all types of objects.
+--    The test cases in this test unit are as follows:
+--       testcase A0: select one column from base tables, shorthand
+--                    views, protection views
+--       testcase A1: select distinct , select all
+--       testcase A2: select syskey
+--       testcase A3: select *
+--       testcase A4: select an expression of a column
+--       testcase A5: use of browse access,
+--         stable access and repeatable access
+--       testcase A6: select aggregate functions
+
+-- All testcases are documented further below.
+
+-- *******************   end test unit comments        ************************
+
+-- <testunit-summary>
+-- select #1 pos/loc ufi norm simple
+
+-- <testunit-specs>
+
+-- mode-type ufi
+-- test-type functional
+-- form-type pos/loc
+-- select-test
+
+-- <testcase A0>
+
+--    <testcase-summary>
+--       Select a column from base tables,
+--       protection views, shorthand views.
+
+--    <detail>
+--        normal simple select test - select a column from base
+--        tables, protection views, shorthand views.
+
+--        This testcase selects a random column from base tables
+--        1-11, protection views 1-4 and shorthand views 11-15. base
+--        tables 1 and 6 have all their column types selected to
+--        check that select works on all column types.
+
+--    <templates>
+--       US00
+
+
+      select char_1 from btsel01;
+
+      select btsel01.pic_x_1 from btsel01;
+
+      select pic_x_1,pic_x_7 from btsel01;
+
+      select pic_x_7,pic_x_7 from btsel01;
+
+      select pic_x_7,binary_64_s,decimal_1
+      from btsel01;
+
+      select pic_x_long from btsel01;
+
+      select var_char from btsel01;
+
+      select binary_signed from btsel01;
+
+      select binary_32_u from btsel01;
+
+      select binary_64_s from btsel01;
+
+      select pic_comp_1 from btsel01;
+
+      select pic_comp_2 from btsel01;
+
+      select pic_comp_3 from btsel01;
+
+      select small_int from btsel01;
+
+      select medium_int from btsel01;
+
+      select large_int from btsel01;
+
+      select decimal_1 from btsel01;
+
+      select decimal_2_signed from btsel01;
+
+      select decimal_3_unsigned from btsel01;
+
+      select pic_decimal_1 from btsel01;
+
+      select pic_decimal_2 from btsel01;
+
+      select pic_decimal_3 from btsel01;
+
+      select pic_x_a from btsel06;
+
+      select pic_x_b from btsel06;
+
+      select pic_x_c from btsel06;
+
+      select col_1 from btsel06;
+
+      select col_3 from btsel06;
+
+      select col_5 from btsel06;
+
+      select col_7 from btsel06;
+
+      select col_21 from btsel06;
+
+      select col_23 from btsel06;
+
+      select col_25 from btsel06;
+
+      select col_27 from btsel06;
+
+      select col_29 from btsel06;
+
+      select col_41 from btsel06;
+
+      select col_43 from btsel06;
+
+      select col_45 from btsel06;
+
+      select col_47 from btsel06;
+
+      select col_61 from btsel06;
+
+      select col_63 from btsel06;
+
+      select col_65 from btsel06;
+
+      select col_67 from btsel06;
+
+      select col_69 from btsel06;
+
+      select pic_x_1 from btsel02;
+
+      select binary_32_u from btsel03;
+
+      select var_char from btsel04;
+
+      select col_4 from btsel05;
+
+      select pic_x_c from btsel07;
+
+      select pic_252 from btsel08;
+
+      select pic_x_7 from btsel09;
+
+      select binary_32_signed from btsel10;
+
+      select char_10 from btsel11;
+
+      select medium_int from pvsel01;
+
+      select pic_x_1 from pvsel02;
+
+      select new_name_2 from pvsel03;
+
+      select pic_comp_1 from pvsel04;
+
+      select col_4 from svsel11 ;
+
+      select new_name_3 from svsel13;
+
+      select new_name_3 from svsel14;
+-- <end-input>
+
+
+-- <testcase A1>
+
+--  <detail>
+--    select normal simple testcase - this testcase tests the use
+--    of SELECT DISTINCT and SELECT ALL statements.
+
+
+-- <template>
+--    US00
+
+
+      select distinct char_1 from btsel01;
+
+      select all char_1 from btsel01;
+
+      select distinct medium_int from btsel01;
+
+      select all medium_int from btsel01;
+
+      select distinct pic_x_1 from btsel02;
+
+      select all pic_x_1 from btsel02;
+
+      select distinct * from btsel02;
+
+      select all * from btsel02;
+
+      select distinct binary_32_u from btsel03;
+
+      select all binary_32_u from btsel03;
+
+      select distinct * from btsel03;
+
+      select all * from btsel03;
+
+      select distinct medium_int from btsel04;
+
+      select all medium_int from btsel04;
+
+      select distinct col_1 from btsel05;
+
+      select all col_1 from btsel05;
+
+      select distinct col_6 from btsel06;
+
+      select all col_6 from btsel06;
+
+      select distinct pic_x_a from btsel07;
+
+      select all pic_x_a from btsel07;
+
+      select distinct large_int from btsel08;
+
+      select all large_int from btsel08;
+
+      select distinct pic_x_6 from btsel09;
+
+      select all pic_x_6 from btsel09;
+
+      select distinct binary_unsigned,binary_32_signed from
+      btsel10;
+
+      select all binary_unsigned,binary_32_signed from
+      btsel10;
+
+      select distinct decimal_10,binary_unsigned,binary_32_signed
+      from btsel11;
+
+      select all decimal_10,binary_unsigned,binary_32_signed
+      from btsel11;
+
+      select distinct medium_int from pvsel01;
+
+      select all medium_int from pvsel01;
+
+      select distinct pic_x_1 from pvsel02;
+
+      select all pic_x_1 from pvsel02;
+
+      select distinct new_name_2 from pvsel03;
+
+      select all new_name_2 from pvsel03;
+
+      select distinct medium_int from pvsel04;
+
+      select all medium_int from pvsel04;
+
+      select distinct col_3 from svsel11;
+
+      select all col_3 from svsel11;
+
+      select distinct pic_comp_1 from svsel13;
+
+      select all pic_comp_1 from svsel13;
+
+      select distinct new_name_1 from svsel14;
+
+      select all new_name_1 from svsel14;
+-- <end-input>
+
+-- <testcase A2>
+
+-- <detail>
+--     select normal simple test case - this test case tests the
+--     selection of SYSKEY.
+
+-- <template>
+--    US00
+
+
+       select SYSKEY from btsel02;
+
+       select btsel02.*,SYSKEY from btsel02;
+
+       select SYSKEY from btsel03;
+
+       select btsel03.*,SYSKEY from btsel03;
+
+       select SYSKEY from btsel04;
+
+       select btsel04.*,SYSKEY from btsel04;
+
+       select SYSKEY, 'anchor literal for SYSKEY'
+       from btsel05;
+
+       select btsel05.*,SYSKEY, 'anchor literal for SYSKEY'
+       from btsel05;
+
+         select new_name_4 from pvsel03;
+
+         select pvsel03.*,new_name_4 from pvsel03;
+
+         select new_name_4 from svsel13;
+
+         select svsel13.*,new_name_4 from svsel13;
+
+         select new_name_1,new_name_4 from pvsel03;
+
+         select new_name_1,new_name_4 from svsel13;
+
+         select new_name_1,(new_name_4 + 100) from svsel13;
+--  <end-input>
+
+-- <testcase A3>
+
+--  <detail>
+--      select normal simple test case - this tests the use of
+--      SELECT *.
+
+--   <template>
+--      US00
+
+
+        select * from btsel01;
+
+        select * from btsel02;
+
+        select * from btsel03;
+
+        select btsel04.*
+        from btsel04;
+
+        select * from btsel05;
+
+        select * from btsel06;
+
+        select * from btsel07;
+
+        select * from btsel08;
+
+        select * from btsel09;
+
+        select * from btsel10;
+
+        select * from btsel11;
+
+        select * from pvsel01;
+
+        select * from pvsel02;
+
+          select * from pvsel03;
+
+        select * from pvsel04;
+
+        select * from svsel11;
+
+        select * from svsel12;
+
+          select * from svsel13;
+
+          select * from svsel14;
+--   <end-input>
+
+--  <testcase A4>
+
+-- <detail>
+--     select normal simple test case - tests the selection of
+--     an expression of a column, and selection of a constant.
+
+-- <template>
+--    US00
+
+
+      select distinct (medium_int * medium_int)
+      from btsel01;
+
+      select all (medium_int * medium_int)
+      from btsel01;
+
+      select +large_int from btsel01;
+
+      select (+large_int) from btsel01;
+
+      select -large_int from btsel01;
+
+      select (-large_int) from btsel01;
+
+      select (binary_32_u*2) from btsel01;
+
+      select pic_9_7+binary_64_s from btsel03;
+
+      select medium_int - 100,pic_comp_1 - 100 from
+      btsel04;
+
+      select (pic_x_5 / 2),pic_x_6 from btsel09;
+
+      select (decimal_10 + binary_unsigned),(binary_unsigned +
+      binary_32_signed) from btsel10;
+
+      select (decimal_10 + 100) from btsel11;
+
+        select (new_name_1 - 1000),(new_name_2 + 1000)
+        from svsel13;
+
+      select (medium_int * pic_comp_1) from pvsel04;
+
+      select 'large_int = ',large_int
+      from btsel01;
+
+      select medium_int,'char_1 = ',char_1
+      from btsel01;
+
+      select '100 =',100,'small_int =',small_int
+      from btsel01;
+
+      select '100 * 10 =',100 * 10,'small_int =',small_int
+      from btsel01;
+
+      select 'only a constant'
+      from btsel01;
+
+--  select a string constant with a single quote in it
+
+      select 'test of single quote ('') '
+      from btsel01;
+
+--  select a string constant with a double quote in it
+
+-- <end-input>
+-- <testcase A5>
+
+--    <detail>
+--       select normal simple test case - this tests the use of
+--       the for browse access, for stable access,
+--       and for repeatable access clauses. No actual
+--       tests of the functionality of these clauses is done - this
+--       is a test of syntax only. Each of these clauses is checked
+--       for audited tables, non-audited tables, protection views,
+--       and shorthand views.
+
+--    <template>
+--       US00
+
+--    <comment> *** audited tables ***
+
+      select * from btsel01
+         for browse access;
+
+      select * from btsel02
+         for stable access;
+
+      select * from btsel03
+         for repeatable access;
+
+-- <comment>  *** non-audited table ***
+
+
+      select * from btsel05
+         for browse access;
+
+      select * from btsel05
+         for stable access;
+
+      select * from btsel05
+         for repeatable access;
+
+-- <comment>  *** views ***
+
+
+      select * from pvsel01
+         for browse access;
+
+      select * from pvsel01
+         for stable access;
+
+      select * from pvsel01
+         for repeatable access;
+
+-- <comment> svsel15 must be accessed for browse access (mixed view)
+
+      select * from svsel15
+         for browse access;
+
+      select * from svsel14
+      for browse access;
+
+      select * from svsel13
+      for browse access;
+
+-- <end-input>
+
+-- <testcase A6>
+
+--    <detail>
+--       select normal simple test case - this tests the selection
+--       of aggregate functions (COUNT, AVG, MAX, MIN, SUM). The
+--       following attributes of aggregates are tested:
+--           SELECT all set function (function argument a value expression,
+--                                    optionally preceded by ALL, value
+--                                    expression a simple column spec)
+--           SELECT distinct set function (function argument a column spec,
+--                                         preceded by DISTINCT)
+--           SELECT the average, max, min, sum of expressions
+--           SELECT an aggregate expression involving SYSKEY
+--           SELECT an expression with aggregates in it
+--           SELECT more than one aggregate
+
+
+--    <template>
+--       US00
+
+--    <comment> select ALL
+
+      select count(*)
+      from btsel01;
+
+      select avg(medium_int)
+      from pvsel01;
+
+-- <comment> test use of white space inside aggregate
+
+     select avg (ALL pic_comp_1)
+         from svsel13;
+
+      select max(
+      binary_64_s)
+      from btsel01;
+
+      select max(ALL
+       large_int)
+      from pvsel01;
+
+      select min(col_2
+      )
+      from svsel11;
+
+      select min
+      (ALL decimal_2_signed)
+      from btsel01;
+
+
+      select sum(new_name_2)
+      from pvsel03;
+
+      select sum(ALL col_4)
+      from svsel11;
+
+      select max(pic_x_1)
+      from btsel02;
+
+      select max(ALL new_name_3)
+      from pvsel03;
+
+      select min(var_char)
+      from svsel13;
+
+      select min(ALL pic_x_a)
+      from btsel05;
+
+-- <comment> select DISTINCT
+
+      select AVG(distinct binary_32_u)
+      from btsel01;
+
+      select MAX(distinct medium_int)
+      from pvsel01;
+
+      select MIN(distinct new_name_1)
+      from svsel13;
+
+      select SUM(distinct binary_64_s)
+      from btsel01;
+
+      select count(distinct medium_int)
+      from pvsel01;
+
+
+        select count(distinct var_char)
+        from svsel13;
+
+      select max(distinct pic_x_long)
+      from btsel01;
+
+      select min(distinct var_char)
+      from btsel01;
+
+-- <comment> select an expression inside an aggregate
+
+      select avg(binary_32_u * 2)
+      from btsel01;
+
+      select avg(ALL binary_32_u + pic_comp_1)
+      from btsel01;
+
+        select max(new_name_1 * new_name_1)
+        from pvsel03;
+
+        select max(ALL new_name_1 / new_name_2)
+        from svsel13;
+
+      select min((-binary_signed) - decimal_3_unsigned)
+      from btsel01;
+
+      select min(ALL large_int * small_int)
+      from pvsel01;
+
+      select sum ((col_1 + col_4) + 1000)
+      from svsel11;
+
+      select sum(ALL -1000 + small_int)
+      from btsel01;
+
+--    <comment> select an expression with SYSKEY in an aggregate
+
+?ignore
+      select avg(SYSKEY + binary_64_s)
+      from btsel03;
+
+      select max(SYSKEY / 3 + medium_int)
+      from btsel04;
+
+        select min(new_name_4 * 2 + 1000)
+        from pvsel03;
+
+        select sum(new_name_4 + new_name_4)
+        from svsel13;
+
+      select COUNT(DISTINCT SYSKEY)
+      from btsel04;
+
+      select AVG(DISTINCT SYSKEY)
+      from btsel04;
+?ignore
+
+--    <comment> select expression of aggregates
+
+      select AVG(pic_decimal_1)
+      from btsel01;
+
+      select (sum(pic_decimal_1) / count(*))
+      from btsel01;
+
+      select max(binary_32_u) + min(binary_32_u)
+      from btsel01;
+
+      select (sum(pic_decimal_3) + sum(small_int)) / 100
+      from pvsel01;
+
+        select avg(pic_comp_1 ) + sum(pic_comp_1)
+        from svsel13;
+
+      select sum(decimal_1) + sum(decimal_1)
+      from btsel01;
+
+--    <comment> select multiple aggregates
+
+      select avg(decimal_3_unsigned),avg(decimal_1)
+      from btsel01;
+
+      select sum(pic_decimal_3),avg(pic_decimal_3),max(pic_decimal_3),
+             min(pic_decimal_3),count(distinct pic_decimal_3),count(*)
+      from pvsel01;
+
+        select sum(new_name_1), avg(new_name_2), max(new_name_3)
+        from svsel13;
+
+      select sum(binary_32_u), sum(distinct binary_32_u)
+      from btsel01;
+
+      select avg(binary_32_u), max(distinct binary_32_u)
+      from btsel01;
+--    <end-input>
+
+-- <end-test>
+LOG;
+

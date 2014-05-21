@@ -1,0 +1,9 @@
+! General tests for monitor functionality. This includes
+!  Open, Close, NewProcess, ProcessInfo and sync node state
+!  between nodes.
+node
+! To enable tracing add "-t" argument to the end of the "exec" line
+exec {nowait,name $SERV0,nid 0} server
+exec {nowait,pri 5,name $SERV1} server
+ps
+exec {pri 10,name $CLIENT,nid 0} client

@@ -1,0 +1,842 @@
+LOG aqatdml03 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--    This test unit is a positive local test for the select statement.
+-- It tests only normal (non-join and non-subquery) select statements
+-- with where clauses (SELECT - FROM - WHERE).
+--    This test unit uses the select global data base (<subvol>).
+-- Each test case in this test unit tests a particular feature of
+-- select statements with where clauses.  For each test case, each base
+-- table (tables 01 - 11) and at least one protection view and one
+-- shorthand view have at least one select statement executed against
+-- them.  This is to assure that the particular feature that the test
+-- case is testing works on all types of objects.
+--    The test cases in this test unit are as follows:
+--       testcase A0: SELECT WHERE columns are compared against a
+--                    constant.
+--       testcase A1: SELECT WHERE columns are compared with other
+--                    columns or with expressions.
+--       testcase A2: SELECT WHERE column or expression is BETWEEN
+--                    other columns or values or expressions.
+--       testcase A3: SELECT WHERE column or expression is IN an
+--                    expression list
+--       testcase A4: SELECT WHERE column is LIKE a constant
+--       testcase A5: SELECT WHERE column is LIKE a constant,
+--                    using an ESCAPE character
+--       testcase A6: use of for browse access, for stable access
+--         and for repeatable access
+--       testcase A7: SELECT aggregate functions with where predicate
+
+-- All testcases are documented further below.
+
+-- ***********************  end test unit comments     ***********************
+
+-- <testunit-summary>
+-- select #2 pos/loc ufi norm where clause
+
+
+-- <testunit-specs>
+
+-- mode-type ufi
+-- test-type functional
+-- form-type pos/loc
+-- select-test
+
+-- <testcase A0>
+
+--    <detail>
+--       normal where clause select statement test case - this tests
+--       the use of a where predicate that compares a column with
+--       a constant.
+
+--    <switches>
+--       pat-file uoutpat <mypat>
+
+--    <templates>
+--       US00
+
+--    <ufi-input>
+      select * from btsel01
+      where char_1 = 'A';
+--    <ufi-input>
+      select * from btsel01
+      where 'A' <> var_char;
+--    <ufi-input>
+      select * from btsel01
+      where not ('A' = var_char);
+--    <ufi-input>
+      select * from btsel01
+      where binary_32_u < 100;
+--    <ufi-input>
+      select * from btsel01
+      where decimal_3_unsigned <= 100;
+--    <ufi-input>
+      select * from btsel02
+      where pic_x_1 > 'A';
+--    <ufi-input>
+      select * from btsel03
+      where binary_32_u >= 5.0;
+--    <ufi-input>
+      select * from btsel03
+      where pic_9_7 = 80;
+--    <ufi-input>
+      select * from btsel03
+      where pic_x_7 <> '8';
+--    <ufi-input>
+      select * from btsel04
+      where var_char < 'pam';
+--    <ufi-input>
+      select * from btsel04
+      where medium_int <= 1000;
+--    <ufi-input>
+      select * from btsel04
+      where pic_x_7 <= '8';
+--    <ufi-input>
+      select * from btsel05
+      where pic_x_a > 'abe';
+--    <ufi-input>
+      select * from btsel05
+      where col_9 > 'abe';
+--    <ufi-input>
+      select * from btsel06
+      where col_1 >= 100;
+--    <ufi-input>
+      select * from btsel06
+      where 100 = col_7;
+--    <ufi-input>
+      select * from btsel06
+      where 'joe' <> pic_x_a;
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_b < 'Q';
+--    <ufi-input>
+      select * from btsel08
+      where large_int <= 1000;
+--    <ufi-input>
+      select * from btsel08
+      where pic_1 > 'C';
+--    <ufi-input>
+      select * from btsel09
+      where pic_x_4 >= 'JOE';
+--    <ufi-input>
+      select * from btsel09
+      where pic_x_6 = 10;
+--    <ufi-input>
+      select * from btsel10
+      where pic_x_a <> 'tom';
+--    <ufi-input>
+      select * from btsel10
+      where binary_32_signed < 0;
+--    <ufi-input>
+      select * from btsel10
+      where decimal_10 <= 100;
+--    <ufi-input>
+      select * from btsel11
+      where pic_x_a > 'bob';
+--    <ufi-input>
+      select * from btsel11
+      where binary_unsigned >= 100;
+--    <ufi-input>
+      select * from btsel11
+      where pic_9_7 = 100;
+--    <ufi-input>
+      select * from pvsel01
+      where binary_signed > 50;
+--    <ufi-input>
+      select * from svsel11
+      where col_1 > 50;
+
+
+--    <comment> *** test use of SYSKEY in the where clause ***
+--    <ufi-input>
+      select * from btsel02
+      where SYSKEY <> 0;
+
+--    <comment> *** new_name_4 is SYSKEY in these views ***
+--    <ufi-input>
+      select * from pvsel03
+      where new_name_4 <> 0;
+
+--    <ufi-input>
+      select * from svsel13
+      where new_name_4 <> 0;
+--    <end-input>
+
+-- <testcase A1>
+
+--    <detail>
+--    normal where clause select statement - this tests the use
+--    of a where predicate where columns are compared.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select * from btsel01
+      where binary_32_u = pic_comp_1;
+--    <ufi-input>
+      select * from btsel01
+      where decimal_1 <> decimal_3_unsigned;
+--    <ufi-input>
+      select * from btsel01
+      where not (decimal_1 = decimal_3_unsigned);
+--    <ufi-input>
+      select * from btsel01
+      where decimal_3_unsigned < binary_64_s;
+--    <ufi-input>
+      select * from btsel01
+      where char_10 <= pic_x_7;
+--    <ufi-input>
+      select * from btsel01
+      where var_char > char_1;
+--    <ufi-input>
+      select * from btsel03
+      where binary_64_s >= binary_32_u;
+--    <ufi-input>
+      select * from btsel03
+      where pic_9_7 = (binary_64_s - 1120);
+--    <ufi-input>
+      select * from btsel03
+      where not (pic_x_7 <> pic_x4_a);
+--    <ufi-input>
+      select * from btsel04
+      where (pic_comp_1 < medium_int) and
+      (var_char <= pic_x_7);
+--    <ufi-input>
+      select * from btsel05
+      where (col_1 > col_2) and
+            (col_3 >= col_4) and
+            (col_5 = col_6) and
+            (col_9 <> col_10);
+--    <ufi-input>
+      select * from btsel05
+      where (col_3 < col_2) and
+            (col_4 <= col_5) and
+            (col_7 > col_6);
+--    <ufi-input>
+      select * from btsel05
+      where ((col_8 >= col_9) or
+            (col_9 = pic_x_a)) and
+            (col_7 = col_7);
+--    <ufi-input>
+      select * from btsel06
+      where (col_1 < col_2) and
+            (col_3 <= col_4) and
+            (col_5 > col_6) and
+            (col_7 >= col_8) and
+            ((col_9 * 2) = col_10);
+--    <ufi-input>
+      select * from btsel06
+      where (col_2 < col_22) and
+            (col_23 <= col_24) and
+            (col_25 > col_26) and
+            (col_27 >= col_28) and
+            ((col_29 * 2) = col_30);
+--    <ufi-input>
+      select * from btsel06
+      where (col_22 <> col_23) and
+            (col_24 <= col_25) and
+            ((col_26 * 2) = (col_27 + 100)) and
+            ((col_28>col_29) or (col_29 > col_28));
+--    <ufi-input>
+      select * from btsel06
+      where (col_41 < col_42) and
+            (col_43 <= col_44) and
+            (col_45 > col_46) and
+            (col_47 >= col_48) ;
+--    <ufi-input>
+      select * from btsel06
+      where (col_42 <> col_43) and
+            (col_44 <= col_45) and
+            ((col_46 * 2) = (col_47 + 100));
+--    <ufi-input>
+      select * from btsel06
+      where (col_61 < col_62) and
+            (col_63 <= col_64) and
+            (col_65 > col_66) and
+            (col_67 >= col_68) and
+            ((col_69 * 2) = col_70);
+--    <ufi-input>
+      select * from btsel06
+      where (col_62 <> col_63) and
+            (col_64 <= col_65) and
+            ((col_66 * 2) = (col_67 + 100)) and
+            ((col_68 > col_69) or (col_69 > col_68));
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a = pic_x_c;
+--    <ufi-input>
+      select * from btsel08
+      where (pic_252 > pic_1) or
+            (not (pic_252 > pic_1));
+--    <ufi-input>
+      select * from btsel09
+      where (pic_x_2 = pic_x_4) or
+            (pic_x_6 = pic_x_7);
+--    <ufi-input>
+      select * from btsel10
+      where (pic_x_a = pic_x_7) and
+            (decimal_10 > binary_32_signed) and
+            (binary_unsigned > binary_32_signed);
+--    <ufi-input>
+      select * from btsel11
+      where (pic_x_a = pic_x_7) or
+            (decimal_10 = binary_unsigned) or
+            (binary_unsigned = binary_32_signed);
+--    <ufi-input>
+      select * from pvsel02
+      where pic_x_1 = 'B';
+--    <ufi-input>
+      select * from svsel13
+      where medium_int = 1000;
+--    <end-input>
+
+
+-- <testcase A2>
+
+--    <detail>
+--    select normal where clause test case - this tests the use of
+--    a BETWEEN predicate in a where clause.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+
+--    <ufi-input>
+      SELECT * from btsel01
+      where binary_32_u between pic_comp_1 and binary_64_s;
+--    <ufi-input>
+      select * from btsel02
+      where pic_x_1 between 'A' and 'D';
+--    <ufi-input>
+      select * from btsel03
+      where binary_64_s between pic_9_7 and 1201;
+--    <ufi-input>
+      select * from btsel04
+      where 150 between 100 and pic_comp_1;
+--    <ufi-input>
+      select * from btsel05
+      where 'mike' between col_9 and col_10;
+--    <ufi-input>
+      select * from btsel06
+      where (col_1 * 2) between col_3 and col_2;
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_b NOT between pic_x_a and pic_x_c;
+--    <ufi-input>
+      select * from btsel08
+      where pic_252 between 'A' and pic_1;
+--    <ufi-input>
+      select * from btsel09
+      where pic_x_6 between (pic_x_5 + 5) and pic_x_7;
+--    <ufi-input>
+      select * from btsel10
+      where decimal_10 between binary_unsigned and
+            (binary_32_signed + 100);
+--    <ufi-input>
+      select * from btsel10
+      where (decimal_10 * 2) not between binary_32_signed
+            and binary_unsigned;
+--    <ufi-input>
+      select * from btsel10
+      where not ((decimal_10 * 2) between binary_32_signed
+            and binary_unsigned);
+--    <ufi-input>
+      select * from btsel11
+      where decimal_10 between binary_unsigned - 50
+            and binary_32_signed + 50;
+--    <ufi-input>
+      select * from pvsel03
+      where new_name_2 between 5 and 7;
+--    <ufi-input>
+      select * from pvsel03
+      where new_name_2 between 7 and 5;
+--    <ufi-input>
+      select * from svsel13
+      where medium_int between pic_comp_1 and 1000;
+--    <end-input>
+
+
+-- <testcase A3>
+
+--    <detail>
+--    select normal where clause test case - this tests the use of
+--    an IN predicate in the where clause.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+
+--    <ufi-input>
+      select * from btsel01
+      where binary_signed in (binary_32_u,pic_comp_1,
+                              decimal_2_signed);
+--    <ufi-input>
+      select * from btsel02
+      where pic_x_1 in ('B','C');
+--    <ufi-input>
+      select * from btsel03 where
+      ((pic_9_7 + 1120) in (binary_64_s,120)) or
+      (((pic_9_7 * 2) + 20) in (binary_64_s, 120));
+-- <ufi-input>
+       select * from btsel04
+       where (medium_int / 2) not in (pic_comp_1,500);
+--    <ufi-input>
+      select * from btsel05
+      where 'mary' in (col_2,col_5,col_6);
+--    <ufi-input>
+      select * from btsel06
+      where col_1 in (col_2,col_3,col_21,col_9 * 2);
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a not in ('jo','al');
+--    <ufi-input>
+      select * from btsel07
+      where not (pic_x_a in ('jo','al'));
+--    <ufi-input>
+      select * from btsel08
+      where 1000 in (large_int,500);
+--    <ufi-input>
+      select * from btsel09
+      where pic_x_7 in ((pic_x_6 * 2),30);
+--    <ufi-input>
+      select * from btsel10
+      where decimal_10 in (binary_unsigned,110,25);
+--    <ufi-input>
+      select * from btsel11
+      where pic_9_7 not in (decimal_10,binary_unsigned,
+                            binary_32_signed);
+--    <ufi-input>
+      select * from pvsel04
+      where pic_comp_1 in (200,300);
+--    <end-input>
+
+
+-- <testcase A4>
+
+--    <detail>
+--    select normal test case with where clause - this tests
+--    the use of a LIKE predicate in the where clause.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select * from btsel01
+      where char_10 like 'steven' or
+            pic_x_7 like 'bob%' or
+            var_char like 'jim_y';
+--    <ufi-input>
+      select * from btsel01
+      where char_10 like 'steven    ';
+--    <ufi-input>
+      select * from btsel02
+      where pic_x_1 like '_';
+--    <ufi-input>
+      select * from btsel03
+      where pic_x4_a not like 'joe ';
+--    <ufi-input>
+      select * from btsel03
+      where not (pic_x4_a like 'joe ');
+--    <ufi-input>
+      select * from btsel04
+      where var_char like 'b%';
+--    <ufi-input>
+      select * from btsel05
+      where col_9 not like '__e';
+--    <ufi-input>
+      select * from btsel06
+      where pic_x_a like '%';
+--    <ufi-input>
+      select * from btsel06
+      where pic_x_a like '%%';
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a like '%_';
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a like '_%_';
+
+--     test matching when some column values contain blanks
+
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a like 'al';
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a like '_al';
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a like 'al_';
+
+--     test matching when LIKE string contains a blank
+
+--    <ufi-input>
+      select * from btsel07
+      where pic_x_a like 'al ';
+
+--    <ufi-input>
+      select * from btsel08
+      where pic_252 like '__r%s%';
+--    <ufi-input>
+      select * from btsel09
+      where pic_x_4 like '___  ';
+--    <ufi-input>
+      select * from btsel10
+      where char_10 like '_b_d_f%h%';
+--    <ufi-input>
+      select * from btsel11
+      where char_10 not like '_b_d_f%h%';
+--    <ufi-input>
+      select * from pvsel01
+      where pic_x_7 like 'walter ';
+--    <ufi-input>
+      select * from svsel11
+      where col_6 like 'walter ';
+--    <end-input>
+
+-- <testcase A5>
+
+--    <detail>
+--    select normal test case with where clause - this tests
+--    the use of an ESCAPE character in a LIKE predicate of
+--    a where clause.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+--     using '\' as the escape character
+
+--     turn of '_' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_2 like 't\_go' escape '\';
+
+--     turn of '%' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like 'to\%go' escape '\';
+
+--     turn of '\' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_a like '\\ts' escape '\';
+
+--     turn of '_' as a special character, then try using
+--     it again
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_2 like 't\__o' escape '\' ;
+
+--     turn of '%' as a special character, then try using
+--     it again
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like 'to\%%' escape '\';
+
+--     turn of '\' as a special character, then try using
+--     it again, with an intervening character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_a like '\\t\_' escape '\';
+
+--     turn of '\' as a special character, then try using
+--     it again, with no intervening character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like '\\\%   ' escape '\' ;
+
+--     specifying a space (' ') as the escape character
+
+--    <ufi-input>
+      select *
+      from btsel07
+      where pic_x_a like 'al' escape ' ';
+
+--     specifying the blank ('') as the escape character
+
+--    <ufi-input>
+      select *
+      from btsel07
+      where pic_x_a like '  al' escape ' ';
+
+--     using '_' as the escape character
+
+--     turn of '_' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_2 like 't__go' escape '_' ;
+
+--     turn of '%' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like 'to_%go' escape '_' ;
+
+--     turn of '%' as a special character, then try
+--     using it again
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like 'to_%%' escape '_' ;
+
+--     turn of '_' as a special character, then try
+--     using it again, with an intervening character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_a like '__t_%' escape '_' ;
+
+--     turn of '_' as a special character, then try
+--     using it again, no intervening character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like '___%   ' escape '_' ;
+
+--     using '%' as escape character
+
+--     turn of '_' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_2 like 't%_go' escape '%' ;
+
+--     turn of '%' as a special character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like 'to%%go' escape '%' ;
+
+--     turn of '_' as a special character, then try
+--     using it again
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_2 like 't%__o' escape '%' ;
+
+--     turn of '%' as a special character, then try
+--     using it again, with an intervening character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_a like '%%t%_' escape '%' ;
+
+--     turn of '%' as a special character, then try
+--     using it again, no intervening character
+--    <ufi-input>
+      select *
+      from btsel09
+      where pic_x_4 like '%%%_   ' escape '%' ;
+
+--    <end-input>
+
+
+
+-- <testcase A6>
+
+--    <detail>
+--     select normal test case with where clause - this tests the use
+--     of the for browse access, for stable access, and for repeatable access
+--     clauses. Only syntax is checked here.
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+
+--    <comment>  **** check for locking on audited tables ****
+--    <ufi-input>
+       select * from btsel06
+       where col_7 = 100
+       for stable access;
+--    <ufi-input>
+       select * from btsel04
+       where medium_int <= 1000
+       for browse access;
+--    <ufi-input>
+       select * from btsel07
+       where pic_x_b < 'Q'
+       for repeatable access;
+
+--    <comment> **** check for locking on non-audited tables ****
+--    <ufi-input>
+       select * from btsel05
+       where pic_x_a > 'abe'
+       for browse access;
+--    <ufi-input>
+       select * from btsel05
+       where pic_x_a > 'abe'
+       for stable access;
+--    <ufi-input>
+       select * from btsel05
+       where pic_x_a > 'abe'
+       for repeatable access;
+
+--    <comment> **** check for locking on views ****
+--    <ufi-input>
+       select * from pvsel04
+       where pic_comp_1 in (200,300)
+       for browse access;
+
+--    <ufi-input>
+       select * from pvsel01
+       where binary_signed > 50
+       for stable access;
+--    <ufi-input>
+       select * from svsel11
+       where col_1 > 50
+       for stable access;
+--    <ufi-input>
+       select * from pvsel02
+       where pic_x_1 = 'B'
+       for repeatable access;
+--    <ufi-input>
+       select * from svsel13
+       where medium_int = 1000
+       for repeatable access;
+--    <end-input>
+
+
+-- <testcase A7>
+
+--    <detail>
+--       select normal where clause test case - this tests the selection
+--       of aggregate functions (COUNT, AVG, MAX, MIN, SUM). The
+--       following attributes of aggregates are tested:
+--           SELECT all set function (function argument a value expression,
+--                                    optionally preceded by ALL, value
+--                                    expression a simple column spec)
+--           SELECT distinct set function (function argument a column spec,
+--                                         preceded by DISTINCT)
+--           SELECT the average, max, min, sum of expressions
+--           SELECT an aggregate expression involving SYSKEY
+--           SELECT an expression with aggregates in it
+--           SELECT more than one aggregate
+
+--    <switches>
+--    pat-file uoutpat <mypat>
+
+--    <templates>
+--    US00
+
+--    <comment> select ALL
+--    <ufi-input>
+      select count(*)
+      from btsel01
+      where var_char = 'thomas';
+--    <ufi-input>
+      select avg(medium_int)
+      from pvsel01
+      where medium_int <> 8000;
+--    <ufi-input>
+      select max(ALL new_name_3)
+      from pvsel03
+      where new_name_1 = 80;
+
+--    <comment> select aggregates on 0 records
+--    <ufi-input>
+      select count(*)
+      from btsel03
+      where binary_32_u < 0;
+--    <ufi-input>
+      select avg(binary_64_s)
+      from btsel03
+      where binary_32_u < 0;
+--    <ufi-input>
+      select count(*), avg(binary_64_s)
+      from btsel03
+      where binary_32_u < 0;
+--    <ufi-input>
+      select count(*), avg(binary_64_s), avg(binary_32_u)
+      from btsel03
+      where binary_32_u < 0;
+
+--    <comment> select DISTINCT
+--    <ufi-input>
+      select SUM(distinct binary_64_s)
+      from btsel01
+      where binary_32_u > 50;
+--    <ufi-input>
+      select count(distinct medium_int)
+      from pvsel01
+      where medium_int not in (1000,10000);
+--    <ufi-input>
+      select count(distinct var_char)
+      from svsel13
+      where (new_name_1 = 80) or (new_name_2 = 5);
+
+--    <comment> select an expression inside an aggregate
+--    <ufi-input>
+      select avg(ALL binary_32_u + pic_comp_1)
+      from btsel01
+      where (pic_comp_1 <> 60);
+-- <ufi-input>
+       select max(ALL new_name_1 / new_name_2)
+       from svsel13
+       where ((new_name_1 = 80) or (new_name_1 = 90)) and
+             ((new_name_2 = 5) or (new_name_2 = 6));
+--    <ufi-input>
+      select sum ((col_1 + col_4) + 1000)
+      from svsel11
+      where col_6 like '*';
+
+--    <comment> select expression of aggregates
+-- <ufi-input>
+       select (sum(pic_decimal_1) / count(*))
+       from btsel01
+       where pic_comp_3 > 100.6;
+--    <ufi-input>
+      select avg(pic_comp_1 ) + sum(pic_comp_1)
+      from svsel13
+      where pic_comp_1 > 100;
+--    <ufi-input>
+      select sum(decimal_1) + sum(decimal_1)
+      from btsel01
+      where decimal_3_unsigned <> 110;
+
+--    <comment> select multiple aggregates
+--    <ufi-input>
+      select sum(pic_decimal_3),avg(pic_decimal_3),max(pic_decimal_3),
+             min(pic_decimal_3),count(distinct pic_decimal_3),count(*)
+      from pvsel01
+      where pic_decimal_3 < 8;
+
+--    <ufi-input>
+      select sum(new_name_1), avg(new_name_2), max(new_name_3)
+      from svsel13
+      where pic_comp_1 > 100;
+
+--    <end-input>
+
+
+
+-- <end-test>
+LOG;
+

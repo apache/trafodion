@@ -1,0 +1,108 @@
+.TH SQSTATE 1 "04 October 2012" "SQ bin" "SQ-BIN Reference Pages"
+.SH NAME
+sqstate \- Display SQ state
+.LP
+.SH SYNOPSIS
+.B sqstate
+[
+OPTION
+]\&.\.\.
+<fully-qualified-plugin>...
+.SH DESCRIPTION
+.LP
+.B sqstate
+displays the SQ state using the specified SQ-state-plugins.
+.SH USAGE
+.TP 15
+.BI -h
+Displays help.
+.TP
+.BI
+.BI -icarg " <icarg>]..."
+Specify interceptor argument.
+.TP
+.BI -l
+Display plugins.
+.TP
+.BI -la
+Display ALL plugins.
+.TP
+.BI -pstree
+Display process tree.
+.TP
+.BI -pstreegraph
+Display process tree graph.
+.TP
+.BI -selchild
+Select children enabled.
+.TP
+.BI -selchildnid " <nid>[-<nid>][,<nid>[-<nid>]]...]..."
+Select children with specified process-nid(s).
+.TP
+.BI -selchildproc " <proc>[,<proc>]...]..."
+Select children with specified process-name(s).
+.TP
+.BI -selchildprog " <prog>[,<prog>]...]..."
+Select children with specified program-name(s).
+.TP
+.BI -selchildtype " <type>[,<type>]...]..."
+Select children with specified program-type(s).
+.TP
+.BI -self
+Select self.
+.TP
+.BI -selnid " <nid>[-<nid>][,<nid>[-<nid>]]...]...
+Select process with specified process-nid(s).
+.TP
+.BI -selopen
+Select if open.
+.TP
+.BI -selproc " <proc>[,<proc>]...]..."
+Select process with specified process-name(s).
+.TP
+.BI -selprog " <prog>[,<prog>]...]..."
+Select process with specified program-name(s).
+.TP
+.BI -seltype " <type>[,<type>]...]..."
+Select process with specified program-type(s).
+.TP
+.BI -unload
+Unload plugin.
+.TP
+.BI -v
+Set verbose output.
+.TP
+.BI -vv
+Set more verbose output.
+.TP
+<fully-qualified-plugin> ::= <module>-<plugin>
+.br
+<icarg>                  ::= <string>
+.br
+<nid>                    ::= <integer>      # e.g. 3
+.br
+<proc>                   ::= <process-name> # e.g. $tm0
+.br
+<prog>                   ::= <program-name> # e.g. tm
+.br
+<type>                   ::= { amp            |
+.br
+                               backout        |
+.br
+                               dtm            |
+.br
+                               executor       |
+.br
+                               generic        |
+.br
+                               mxosrvr        |
+.br
+                               spx            |
+.br
+                               ssmp           |
+.br
+                               tse            |
+.br
+                               volumerecovery |
+.br
+                               watchdog }

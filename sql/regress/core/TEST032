@@ -1,0 +1,1222 @@
+-- Test: TEST032 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Key-building data conversions
+-- Expected files: EXPECTED032, EXPECTED032.MX, EXPECTED032.MP
+-- Table created: t032t01 to t032t18
+-- Limitations:
+-- Revision history:
+--     (1/28/02) - Copied from fullstack/TEST032
+
+drop table t032t01;
+drop table t032t02;
+drop table t032t03;
+drop table t032t04;
+drop table t032t05;
+drop table t032t06;
+drop table t032t07;
+drop table t032t08;
+drop table t032t09;
+drop table t032t10;
+drop table t032t11;
+drop table t032t12;
+drop table t032t13;
+drop table t032t14;
+drop table t032t15;
+drop table t032t16;
+drop table t032t17;
+drop table t032t18;
+
+?section setup
+control query default POS 'OFF';
+set envvar NO_KEY_KLUDGE;
+
+-- This file contains key-building data conversion tests.
+-- The tests are intended to provide path coverage for the key-building
+-- logic in cases in convDoIt().  Tests for non key-building logic can
+-- be found in TEST022.  
+
+
+log LOG032 clear;
+
+?section BIN16S
+-- Conversions to BIN16S. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t01.
+    create table t032t01 (a numeric(2) signed not null , primary key (a) );
+    insert into t032t01 values (-99),(-1),(0),(1),(99);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select * from t032t01;
+
+    -- Create and load t032t02.
+    create table t032t02 (a smallint signed not null , primary key (a) );
+    insert into t032t02 values (-32768),(-1),(0),(1),(32767);
+
+    -- Result should be 5 rows: -32768, -1, 0, 1, 32767.
+    select * from t032t02;
+
+  -- Case: CONV_BIN16S_BIN16S.
+
+    -- Result should be 0 rows and no errors.
+    select a from t032t01 where a <= cast(-500 as smallint signed);
+
+    -- Result should be 0 rows and no errors.
+    select a from t032t01 where a = cast(4 as smallint signed);  
+
+    -- Result should be 1 row: 1.
+    select a from t032t01 where a = cast(1 as smallint signed);
+
+    -- Result should be 1 row: 32767.
+    select a from t032t02 where a >= cast(32767 as smallint signed);
+
+    -- Result should be 3 rows: -32768, -1, 0.
+    select a from t032t02 where a < cast(1 as smallint signed);
+
+  -- Case: CONV_BIN16U_BIN16S.
+
+    -- Result should be 5 rows: -32768, -1, 0, 1, 32767.
+    select a from t032t02 where a <= cast(65535 as smallint unsigned);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t02 where a >= cast(0 as smallint unsigned)
+                            and a < cast(32767 as smallint unsigned);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select a from t032t01 where a < cast(100 as smallint unsigned);
+
+  -- Case: CONV_BIN32S_BIN16S.
+
+    -- Result should be 4 rows: -1, 0, 1, 32767.
+    select a from t032t02 where a > cast(-2 as integer signed)
+                            and a <= cast(2147483647 as integer signed);
+
+    -- Result should be 3 rows: -32768, -1, 0.
+    select a from t032t02 where a > cast(-2147483648 as integer signed)
+                            and a <= cast(0 as integer signed);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select a from t032t01 where a > cast(-500 as integer signed);
+
+  -- Case: CONV_BIN32U_BIN16S.
+
+    -- Result should be 3 rows: 0, 1, 32767.
+    select a from t032t02 where a >= cast(0 as integer unsigned)
+                            and a < cast(4294967295 as integer unsigned);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select a from t032t01 where a <= cast(500 as integer unsigned);
+
+  -- Case: CONV_BIN64S_BIN16S.
+
+    -- Result should be 4 rows: -1, 0, 1, 32767.
+    select a from t032t02 where a <= cast(9.22e18 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 4 rows: -32768, -1, 0, 1.
+    select a from t032t02 where a > cast(-9.22e18 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select a from t032t01 where a <= cast(10000 as largeint signed);
+
+  -- Case: CONV_DECS_BIN16S.  (Handled by CONV_DECS_BIN32S.)
+
+    -- Result should be 4 rows: -32768, -1, 0, 1.
+    select a from t032t02 where a > cast(-99999 as decimal(5) signed)
+                            and a <= cast(28 as decimal(5) signed);
+
+    -- Result should be 1 row: 32767.
+    select a from t032t02 where a = cast(32767 as decimal(5) signed);
+
+    -- Result should be 4 rows: -1, 0, 1, 99.
+    select a from t032t01 where a >= cast(-50 as decimal(3) signed)
+                            and a < cast(100 as decimal(3) signed);
+
+  -- Case: CONV_DECU_BIN16S.  (Handled by CONV_DECS_BIN32S.)
+
+    -- Result should be 2 rows: 1, 32767.
+    select a from t032t02 where a >= cast(1 as decimal(9) unsigned)
+                            and a < cast(99999999 as decimal(8) unsigned);
+
+    -- Result should be 1 row: 1.
+    select a from t032t02 where a = cast(1 as decimal(1) unsigned);
+
+    -- Result should be 2 rows: 1, 99.
+    select a from t032t01 where a >= cast(1 as decimal(7) unsigned)
+                            and a < cast(100 as decimal(3) unsigned);
+
+  -- Case: CONV_FLOAT32_BIN16S.
+
+    -- Result should be 4 rows: -1, 0, 1, 32767.
+    select a from t032t02 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+    -- Result should be 4 rows: -32768, -1, 0, 1.
+    select a from t032t02 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select a from t032t01 where a <= cast(3e38 as real);
+
+    -- Result should be 0 rows.  Case #10-981208-4368.
+    select a from t032t01 where a = cast(1.1e0 as real);
+
+    -- Result should be 4 rows: -32768, -1, 0, 1.  Case #10-981208-4368.
+    select a from t032t02 where a < cast(1.1e0 as real);
+
+    -- Result should be 4 rows: -1, 0, 1, 32767.  Case #10-981208-4368.
+    select a from t032t02 where a > cast(-1.1e0 as real);
+
+    -- Result should be 1 rows: 1.  Case #10-981208-4368.
+    select a from t032t02 where a = cast(1e0 as real);
+
+  -- Case: CONV_FLOAT64_BIN16S.
+
+    -- Result should be 4 rows: -1, 0, 1, 32767.
+    select a from t032t02 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 4 rows: -32768, -1, 0, 1.
+    select a from t032t02 where a > cast(-4e70 as double precision)
+                            and a <= cast(1 as double precision);
+
+    -- Result should be 5 rows: -99, -1, 0, 1, 99.
+    select a from t032t01 where a <= cast(1e50 as double precision);
+
+    -- Result should be 4 rows: -99, -1, 0, 1.  Case #10-981208-4368.
+    select a from t032t01 where a < cast(1.1e0 as double precision);
+
+  -- Case: CONV_LARGEDEC_BIN16S.
+
+    -- Result should be 4 rows: -1, 0, 1, 32767.
+    select a from t032t02 where a <= 33000.0000001 * 1.000000000001
+                            and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 4 rows: -32768, -1, 0, 1.
+    select a from t032t02 where a > -33000.0000001 * 1.000000000001
+                            and a < 1.000000000001 * 1.000000000001;
+
+
+  -- Drop tables.
+    drop table t032t01;
+    drop table t032t02;
+
+?section BIN16U
+-- Conversions to BIN16U. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t03.
+    create table t032t03 (a numeric(3) unsigned not null , primary key (a) );
+    insert into t032t03 values (0),(1),(50),(999);
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select * from t032t03;
+
+    -- Create and load t032t04.
+    create table t032t04 (a smallint unsigned not null , primary key (a) );
+    insert into t032t04 values (0),(1),(50),(32767),(65535);
+
+    -- Result should be 5 rows: 0, 1, 50, 32767, 65535
+    select * from t032t04;
+
+  -- Case: CONV_BIN16S_BIN16U.
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t03 where a < (-cast(-100 as smallint signed));
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a >= cast(0 as smallint signed);
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a >= cast(-32768 as smallint signed);
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t03 where a >= cast(-1 as smallint signed)
+                            and a < cast(75 as smallint signed);
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= cast(32767 as smallint signed);
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t04 where a >= cast(1 as smallint signed)
+                            and a <= cast(100 as smallint signed);
+
+  -- Case: CONV_BIN16U_BIN16U.
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= cast(65535 as smallint unsigned);
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t04 where a >= cast(1 as smallint unsigned)
+                            and a < cast(32767 as smallint unsigned);
+
+  -- Case: CONV_BIN32S_BIN16U.
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a > cast(-2 as integer signed)
+                            and a <= cast(2147483647 as integer signed);
+
+    -- Result should be 1 row: 0.
+    select a from t032t04 where a > cast(-2147483648 as integer signed)
+                            and a <= cast(0 as integer signed);
+
+    -- Result should be 5 rows: 0, 1, 50, 32767, 65535
+    select a from t032t04 where a > cast(-500 as integer signed);
+
+  -- Case: CONV_BIN32U_BIN16U.
+
+    -- Result should be 3 rows: 1, 50, 999.
+    select a from t032t03 where a >= cast(1 as integer unsigned)
+                            and a < cast(4294967295 as integer unsigned);
+
+    -- Result should be 2 rows: 50, 32767
+    select a from t032t04 where a > cast(1 as integer unsigned)
+                            and a < cast(32800 as integer unsigned);
+
+  -- Case: CONV_BIN64S_BIN16U.
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= cast(9.22e18 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t04 where a > cast(-9.22e18 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t03 where a <= cast(50 as largeint signed);
+
+    -- Result should be 3 rows: 50, 32767, 65535.
+    select a from t032t04 where a > cast(10 as largeint signed);
+
+  -- Case: CONV_DECS_BIN16U.  (Handled by CONV_DECS_BIN32U.)
+
+    -- Result should be 5 rows: 0, 1, 50, 32767, 65535.
+    select a from t032t04 where a > cast(-9 as decimal(1) signed)
+                            and a <= cast(999999 as decimal(6) signed);
+
+    -- Result should be 2 rows: 50, 32767.
+    select a from t032t04 where a >= cast(12 as decimal(2) signed)
+                            and a < cast(65535 as decimal(6) signed);
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= cast(12345 as decimal(5) signed);
+
+  -- Case: CONV_DECU_BIN16U.  (Handled by CONV_DECS_BIN32U.)
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a >= cast(0 as decimal(9) unsigned)
+                            and a < cast(9999999 as decimal(7) unsigned);
+
+    -- Result should be 1 row: 50.
+    select a from t032t04 where a = cast(50 as decimal(3) unsigned);
+
+  -- Case: CONV_FLOAT32_BIN16U.
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t04 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 5 rows: 0, 1, 50, 32767, 65535.
+    select a from t032t04 where a < cast(3e38 as real);
+
+    -- Result should be 2 rows: 32767, 65535.  Case #10-981208-4368.
+    select a from t032t04 where a >= cast(50.9e0 as real);
+
+  -- Case: CONV_FLOAT64_BIN16U.
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t04 where a > cast(-4e70 as double precision)
+                            and a <= cast(51 as double precision);
+
+    -- Result should be 3 rows: 0, 1, 50.  Case #10-981208-4368.
+    select a from t032t04 where a >= cast(-1.7e0 as double precision)
+                            and a < cast(51.2e0 as double precision);
+
+  -- Case: CONV_LARGEDEC_BIN16U.
+
+    -- Result should be 4 rows: 0, 1, 50, 999.
+    select a from t032t03 where a <= 33000.0000001 * 1.000000000001
+                            and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t04 where a >= -33000.0000001 * 1.000000000001
+                            and a < 1.000000000001 * 1.000000000001;
+
+  -- Drop tables.
+    drop table t032t03;
+    drop table t032t04;
+
+?section BIN32S
+-- Conversions to BIN32S. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t05.
+    create table t032t05 (a integer signed not null , primary key (a) );
+    insert into t032t05 values (-2147483648),(-1),(0),(1),(6),(2147483647);
+
+    -- Result should be 6 rows: -2147483648, -1, 0, 1, 6, 2147483647.
+    select * from t032t05;
+
+    -- Create and load t032t06.
+    create table t032t06 (a numeric(7) signed not null , primary key (a) );
+    insert into t032t06 values (-9999999),(-1),(0),(1),(6),(9999999);
+
+    -- Result should be 6 rows: -9999999, -1, 0, 1, 6, 9999999.
+    select * from t032t06;
+
+  -- Case: CONV_BIN32S_BIN32S.
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 2147483647.
+    select a from t032t05 where a >= cast(-2 as integer signed)
+                            and a <= cast(2147483647 as integer signed);
+
+    -- Result should be 3 rows: -9999999, -1, 0.
+    select a from t032t06 where a > cast(-2147483648 as integer signed)
+                            and a <= cast(0 as integer signed);
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 9999999.
+    select a from t032t06 where a < cast(10000000 as integer signed)
+                            and a > cast(-9999999 as integer signed);
+
+  -- Case: CONV_BIN32U_BIN32S.
+
+    -- Result should be 3 rows: 1, 6, 2147483647.
+    select a from t032t05 where a >= cast(1 as integer unsigned)
+                            and a < cast(4294967295 as integer unsigned);
+
+    -- Result should be 3 rows: 1, 6, 9999999.
+    select a from t032t06 where a >= cast(1 as integer unsigned)
+                            and a < cast(10000000 as integer unsigned);
+
+  -- Case: CONV_BIN64S_BIN32S.
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 2147483647.
+    select a from t032t05 where a <= cast(9.22e18 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 4 rows: -2147483648, -1, 0, 1.
+    select a from t032t05 where a > cast(-9.22e18 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+    -- Result should be 1 row: 6.
+    select a from t032t06 where a = cast(6 as largeint signed);
+
+  -- Case: CONV_DECS_BIN32S.
+
+    -- Result should be 5 rows: -2147483648, -1, 0, 1, 6.
+    select a from t032t05 where a > cast(-999999999999 as decimal(12) signed)
+                            and a <= cast(100 as decimal(4) signed);
+
+    -- Result should be 2 rows: 6, 9999999.
+    select a from t032t06 where a >= cast(4 as decimal(2) signed)
+                            and a <= cast(9999999 as decimal(8) signed);
+
+    -- Result should be 1 row: -1.
+    select a from t032t06 where a = cast(-1 as decimal(5) signed);
+
+  -- Case: CONV_DECU_BIN32S.  (Handled by CONV_DECS_BIN32S.)
+
+    -- Result should be 2 rows: 1, 6.
+    select a from t032t05 where a > cast(0 as decimal(9) unsigned)
+                            and a <= cast(99999999 as decimal(8) unsigned);
+
+    -- Result should be 5 rows: -2147483648, -1, 0, 1, 6.
+    select a from t032t05 where a < cast(7 as decimal(9) unsigned);
+
+   -- Result should be 4 rows: 0, 1, 6, 9999999.
+    select a from t032t06 where a >= cast(0 as decimal(1) unsigned)
+                            and a < cast(10000000 as decimal(8) unsigned);
+
+  -- Case: CONV_FLOAT32_BIN32S.
+
+   -- Result should be 5 rows: -1, 0, 1, 6, 2147483647.
+    select a from t032t05 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+   -- Result should be 4 rows: -2147483648, -1, 0, 1.
+    select a from t032t05 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 1 row: -9999999.
+    select a from t032t06 where a = cast(-9999999 as real);
+
+    -- Result should be 2 rows: 6, 2147483647.  Case #10-981208-4368.
+    select a from t032t05 where a > cast(4.00001e0 as real);
+
+  -- Case: CONV_FLOAT64_BIN32S.
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 2147483647.
+    select a from t032t05 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 4 rows: -2147483648, -1, 0, 1.
+    select a from t032t05 where a > cast(-4e70 as double precision)
+                            and a <= cast(1 as double precision);
+
+    -- Result should be 6 rows: -9999999, -1, 0, 1, 6, 9999999.
+    select a from t032t06 where a <= cast(1e50 as double precision);
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 9999999.  Case #10-981208-4368.
+    select a from t032t06 where a > cast(-1.0002e0 as double precision);
+
+  -- Case: CONV_LARGEDEC_BIN32S.
+
+    -- Result should be 4 rows: -1, 0, 1, 6.
+    select a from t032t05 where a <= 33000.0000001 * 1.000000000001
+                            and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 3 rows: -1, 0, 1.
+    select a from t032t05 where a > -33000.0000001 * 1.000000000001
+                            and a < 1.000000000001 * 1.000000000001;
+
+    -- Result should be 4 rows: -9999999, -1, 0, 1.
+    select a from t032t06 where a <= 1.000000000001 * 1.000000000001;
+
+  -- Drop tables.
+    drop table t032t05;
+    drop table t032t06;
+
+
+?section BIN32U
+-- Conversions to BIN32U. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t07.
+    create table t032t07 (a integer unsigned not null , primary key (a) );
+    insert into t032t07 values (0),(1),(50),(4294967295);
+
+    -- Result should be 4 rows: 0, 1, 50, 4294967295.
+    select * from t032t07;
+
+    -- Create and load t032t08.
+    create table t032t08 (a numeric(7) unsigned not null , primary key (a) );
+    insert into t032t08 values (0),(1),(50),(9999999);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select * from t032t08;
+
+  -- Case: CONV_BIN16S_BIN32U.
+
+    -- Result should be 4 rows: 0, 1, 50, 4294967295.
+    select a from t032t07 where a > cast(-32768 as smallint signed);
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t07 where a >= cast(1 as smallint signed)
+                            and a <= cast(75 as smallint signed);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a > -(cast(1 as smallint signed));
+
+    -- Result should be 2 rows: 50, 9999999.
+    select a from t032t08 where a > cast(1 as smallint signed);
+
+  -- Case: CONV_BIN32S_BIN32U.
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t07 where a > cast(-2 as integer signed)
+                            and a < cast(2147483647 as integer signed);
+
+    -- Result should be 1 rows: 0.
+    select a from t032t07 where a > cast(-2147483648 as integer signed)
+                            and a <= cast(0 as integer signed);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a > cast(-500 as integer signed);
+
+  -- Case: CONV_BIN32U_BIN32U.
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t07 where a >= cast(1 as integer unsigned)
+                            and a < cast(4294967295 as integer unsigned);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a <= cast(999999999 as integer unsigned);
+
+  -- Case: CONV_BIN64S_BIN32U.
+
+    -- Result should be 4 rows: 0, 1, 50, 4294967295.
+    select a from t032t07 where a <= cast(9.22e18 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t07 where a > cast(-9.22e18 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+     -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a < cast(10000000 as largeint signed);
+
+  -- Case: CONV_DECS_BIN32U.
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t07 where a > cast(-999999 as decimal(6) signed)
+                            and a <= cast(100 as decimal(3) signed);
+
+    -- Result should be 2 rows: 50, 4294967295.
+    select a from t032t07 where a <= cast(4294967295 as decimal(10) signed)
+                            and a > cast(5 as decimal(10) signed);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a >= cast(-50 as decimal(3) signed)
+                            and a < cast(10000000 as decimal(8) signed);
+
+  -- Case: CONV_DECU_BIN32U. (Handled by CONV_DECS_BIN32U)
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t07 where a >= cast(1 as decimal(1) unsigned)
+                            and a < cast(999999999 as decimal(9) unsigned);
+
+    -- Result should be 1 rows: 1.
+    select a from t032t07 where a = cast(1 as decimal(1) unsigned);
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t08 where a >= cast(1 as decimal(7) unsigned)
+                            and a < cast(100 as decimal(3) unsigned);
+
+  -- Case: CONV_FLOAT32_BIN32U.
+
+    -- Result should be 4 rows: 0, 1, 50, 4294967295.
+    select a from t032t07 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t07 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a <= cast(3e38 as real);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.  Case #10-981208-4368.
+    select a from t032t08 where a <= cast(9999999.99 as real);
+
+    -- Result should be 0 rows.  Case #10-981208-4368.
+    select a from t032t08 where a = cast(50.0001 as real);
+
+  -- Case: CONV_FLOAT64_BIN32U.
+
+    -- Result should be 4 rows: 0, 1, 50, 4294967295.
+    select a from t032t07 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t07 where a > cast(-4e70 as double precision)
+                            and a <= cast(1 as double precision);
+
+    -- Result should be 4 rows: 0, 1, 50, 9999999.
+    select a from t032t08 where a <= cast(1e50 as double precision);
+
+    -- Result should be 2 rows: 0, 1,.  Case #10-981208-4368.
+    select a from t032t07 where a < cast(1.01 as double precision);
+
+  -- Case: CONV_LARGEDEC_BIN32U.
+
+    -- Result should be 4 rows: 0, 1, 50, 4294967295.
+    select a from t032t07 where a <= 4294967295.0000001 * 1.000000000001
+                            and a > -(4294967295.0000001 * 1.000000000001);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t07 where a > -33000.0000001 * 1.000000000001
+                            and a < 1.000000000001 * 1.000000000001;
+
+   -- Result should be 2 rows: 50, 9999999.
+    select a from t032t08 where a <= 9999999.0000000001 * 1.000000000001
+                            and a > 49.999999999999999 / 1.00000000000001;
+
+  -- Drop tables.
+    drop table t032t07;
+    drop table t032t08;
+
+
+?section BIN64S
+-- Conversions to BIN64S. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t09.
+    create table t032t09 (a largeint signed not null , primary key (a) );
+    insert into t032t09 values (-9223372036854775808),(-1),(0),(1),(6),(9223372036854775807);
+
+    -- Result should be 6 rows: -9223372036854775808, -1, 0, 1, 6, 9223372036854775807.
+    select * from t032t09;
+
+    -- Create and load t032t10.
+    create table t032t10 (a numeric(15) signed not null , primary key (a) );
+    insert into t032t10 values (-999999999999999),(-1),(0),(1),(6),(999999999999999);
+
+    -- Result should be 6 rows: -999999999999999, -1, 0, 1, 6, 999999999999999.
+    select * from t032t10;
+
+  -- Case: CONV_BIN64S_BIN64S.
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 9223372036854775807.
+    select a from t032t09 where a <= cast(9223372036854775807 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 3 rows: -1, 0, 1.
+    select a from t032t09 where a > cast(-9223372036854775808 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+    -- Result should be 6 rows: -999999999999999, -1, 0, 1, 6, 999999999999999.
+    select a from t032t10 where a < cast((999999999999999+1) as largeint signed)
+                            and a > cast((-999999999999999-1) as largeint signed);
+
+  -- Case: CONV_DECS_BIN64S.
+
+    -- Result should be 4 rows: -1, 0, 1, 6.
+    select a from t032t09 where a > cast(-999999999999 as decimal(12) signed)
+                            and a <= cast(100 as decimal(4) signed);
+
+    -- Result should be 1 row: 6.
+    select a from t032t09 where a >= cast(4 as decimal(2) signed)
+                            and a <= cast(9999999 as decimal(8) signed);
+
+    -- Result should be 1 rows: -1.
+    select a from t032t10 where a = cast(-1 as decimal(5) signed);
+
+  -- Case: CONV_DECU_BIN64S.
+
+    -- Result should be 2 rows: 1, 6.
+    select a from t032t09 where a > cast(0 as decimal(9) unsigned)
+                            and a <= cast(99999999 as decimal(8) unsigned);
+
+    -- Result should be 5 rows: -9223372036854775808, -1, 0, 1, 6.
+    select a from t032t09 where a < cast(7 as decimal(9) unsigned);
+
+    -- Result should be 3 rows: 0, 1, 6.
+    select a from t032t10 where a >= cast(0 as decimal(1) unsigned)
+                            and a < cast(10000000 as decimal(8) unsigned);
+
+  -- Case: CONV_FLOAT32_BIN64S.
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 9223372036854775807.
+    select a from t032t09 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+    -- Result should be 4 rows: -9223372036854775808, -1, 0, 1.
+    select a from t032t09 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 3 rows: 0, 1, 6.  Case #10-981208-4368.
+    select a from t032t09 where a >= cast(-.999999 as real)
+                            and a < cast(6.1 as real);
+
+  -- Case: CONV_FLOAT64_BIN64S.
+
+    -- Result should be 5 rows: -1, 0, 1, 6, 9223372036854775807.
+    select a from t032t09 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 4 rows: -9223372036854775808, -1, 0, 1.
+    select a from t032t09 where a > cast(-4e70 as double precision)
+                            and a <= cast(1 as double precision);
+
+     -- Result should be 6 rows: -9999999, -1, 0, 1, 6, 9999999.
+    select a from t032t10 where a <= cast(1e50 as double precision);
+
+    -- Result should be 3 rows: -999999999999999, -1, 0.  Case #10-981208-4368.
+    select a from t032t10 where a <= cast(.00001 as double precision);
+
+  -- Case: CONV_LARGEDEC_BIN64S.
+
+    -- Result should be 4 rows: -1, 0, 1, 6.
+    select a from t032t09 where a <= 33000.0000001 * 1.000000000001
+                            and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 4 rows: -999999999999999, -1, 0, 1.
+    select a from t032t10 where a <= 1.000000000001 * 1.000000000001;
+
+
+  -- Drop tables.
+    drop table t032t09;
+    drop table t032t10;
+
+
+?section DECU
+-- Conversions to DECU. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t11.
+    create table t032t11 (a decimal(9) unsigned not null , primary key (a) );
+    insert into t032t11 values (0),(1),(50),(999999999);
+
+    -- Result should be 4 rows: 0, 1, 50, 999999999.
+    select * from t032t11;
+
+    -- Create and load t032t12.
+    create table t032t12 (a decimal(1) unsigned not null , primary key (a) );
+    insert into t032t12 values (0),(1),(5),(9);
+
+    -- Result should be 4 rows: 0, 1, 5, 9.
+    select * from t032t12;
+
+  -- Case: CONV_BIN16S_DECU.
+
+    -- Result should be 2 rows: 50, 999999999.
+    select a from t032t11 where a >= cast(50 as smallint signed);
+
+    -- Result should be 0 rows.
+    select a from t032t11 where a < cast(0 as smallint signed);
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t11 where a >= cast(-1 as smallint signed)
+                            and a < cast(75 as smallint signed);
+
+    -- Result should be 3 rows: 0, 1, 5.
+    select a from t032t12 where a > cast(-10 as smallint signed)
+                            and a <= cast(7 as smallint signed);
+
+    -- Result should be 0 rows.
+    select a from t032t12 where a > cast(11 as smallint signed);
+
+  -- Case: CONV_BIN16U_DECU.  (Handled by CONV_BIN16U_DECS.)
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t11 where a <= cast(65535 as smallint unsigned);
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t11 where a >= cast(1 as smallint unsigned)
+                            and a < cast(100 as smallint unsigned);
+
+    -- Result should be 4 rows: 0, 1, 5, 9.
+    select a from t032t12 where a < cast(10 as smallint unsigned);
+
+  -- Case: CONV_BIN32S_DECU.
+
+    -- Result should be 4 rows: 0, 1, 50, 999999999.
+    select a from t032t11 where a > cast(-2 as integer signed)
+                            and a <= cast(2147483647 as integer signed);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t11 where a > cast(-2147483648 as integer signed)
+                            and a <= cast(1 as integer signed);
+
+    -- Result should be 3 rows: 0, 1, 5.
+    select a from t032t12 where a > cast(-500 as integer signed)
+                            and a <= cast(5 as integer signed);
+
+  -- Case: CONV_BIN32U_DECU.  (Handled by CONV_BIN32U_DECS.)
+
+    -- Result should be 4 rows: 0, 1, 50, 999999999.
+    select a from t032t11 where a >= cast(0 as integer unsigned)
+                            and a < cast(4294967295 as integer unsigned);
+
+    -- Result should be 3 rows: 1, 50, 999999999.
+    select a from t032t11 where a <= cast(999999999 as integer unsigned)
+                            and a > cast(0 as integer unsigned);
+
+  -- Case: CONV_BIN64S_DECU.
+
+    -- Result should be 4 rows: 0, 1, 50, 999999999.
+    select a from t032t11 where a <= cast(9.22e18 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t11 where a > cast(-9.22e18 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+    -- Result should be 1 row: 50.
+    select a from t032t11 where a <= cast(50 as largeint signed)
+                            and a > cast(1 as largeint signed);
+
+  -- Case: CONV_DECS_DECU.
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t11 where a > cast(-99999 as decimal(5) signed)
+                            and a <= cast(28 as decimal(5) signed);
+
+    -- Result should be 1 row: 50.
+    select a from t032t11 where a = cast(50 as decimal(5) signed);
+
+    -- Result should be 3 rows: 0, 1, 5.
+    select a from t032t12 where a >= cast(-50 as decimal(3) signed)
+                            and a < cast(6 as decimal(3) signed);
+
+  -- Case: CONV_DECU_DECU.  (Handled by CONV_DECS_DECU.)
+
+    -- Result should be 2 rows: 1, 50.
+    select a from t032t11 where a >= cast(1 as decimal(9) unsigned)
+                            and a < cast(99999999 as decimal(8) unsigned);
+
+    -- Result should be 1 rows: 1.
+    select a from t032t11 where a = cast(1 as decimal(1) unsigned);
+
+    -- Result should be 3 rows: 1, 5, 9.
+    select a from t032t12 where a >= cast(1 as decimal(7) unsigned)
+                            and a < cast(100 as decimal(3) unsigned);
+
+  -- Case: CONV_FLOAT32_DECU.
+
+    -- Result should be 4 rows: 0, 1, 50, 999999999.
+    select a from t032t11 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t11 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 2 rows: 5, 9.
+    select a from t032t12 where a <= cast(3e38 as real)
+                            and a > cast(1 as real);
+
+    -- Result should be 3 rows: 0, 1, 50.  Case #10-981208-4368.
+    select a from t032t11 where a < cast(50.1e0 as real);
+
+  -- Case: CONV_FLOAT64_DECU.
+
+    -- Result should be 4 rows: 0, 1, 50, 999999999.
+    select a from t032t11 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t11 where a > cast(-4e70 as double precision)
+                            and a <= cast(1 as double precision);
+
+    -- Result should be 2 rows: 5, 9.
+    select a from t032t12 where a <= cast(1e50 as double precision)
+                            and a > cast(1 as double precision);
+
+    -- Result should be 3 rows: 1, 50, 999999999.
+    select a from t032t11 where a > cast(.5e0 as double precision);
+
+  -- Case: CONV_LARGEDEC_DECU.
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t11 where a <= 33000.0000001 * 1.000000000001
+                            and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 2 rows: 0, 1.
+    select a from t032t11 where a > -33000.0000001 * 1.000000000001
+                            and a < 1.000000000001 * 1.000000000001;
+
+  -- Drop tables.
+  drop table t032t11;
+  drop table t032t12;
+
+
+?section DECS
+-- Conversions to DECS. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t13.
+    create table t032t13 (a decimal(18) signed not null , primary key (a) );
+    insert into t032t13 values (-999999999999999999),(-100),(-1),(0),(1),(50),(999999999999999999);
+
+    -- Result should be 7 rows: -999999999999999999, -100, -1, 0, 1, 50, 999999999999999999.
+    select * from t032t13;
+
+    -- Create and load t032t14.
+    create table t032t14 (a decimal(1) signed not null , primary key (a) );
+    insert into t032t14 values (-9),(-1),(0),(1),(5),(9);
+
+    -- Result should be 6 rows: -9, -1, 0, 1, 5, 9.
+    select * from t032t14;
+
+
+  -- Case: CONV_BIN16S_DECS.
+
+    -- Result should be 4 rows: -1, 0, 1, 50.
+    select a from t032t13 where a > cast(-4 as smallint signed)
+                            and a <= cast(50 as smallint signed);
+
+    -- Result should be 5 rows: -100, -1, 0, 1, 50.
+    select a from t032t13 where a >= cast(-32768 as smallint signed)
+                            and a < cast(32767 as smallint signed);
+
+    -- Result should be 1 row: 50.
+    select a from t032t13 where a = cast(50 as smallint signed);
+
+  -- Case: CONV_BIN16U_DECS.
+
+    -- Result should be 6 rows: -999999999999999999, -100, -1, 0, 1, 50.
+    select a from t032t13 where a <= cast(65535 as smallint unsigned);
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t13 where a >= cast(0 as smallint unsigned)
+                            and a < cast(32767 as smallint unsigned);
+
+    -- Result should be 3 rows: 1, 5, 9.
+    select a from t032t14 where a < cast(10 as smallint unsigned)
+                           and a > cast(0 as smallint unsigned);
+
+  -- Case: CONV_BIN32S_DECS.
+
+    -- Result should be 4 rows: -1, 0, 1, 50.
+    select a from t032t13 where a > cast(-2 as integer signed)
+                            and a <= cast(2147483647 as integer signed);
+
+    -- Result should be 3 rows: -100, -1, 0.
+    select a from t032t13 where a > cast(-2147483648 as integer signed)
+                            and a <= cast(0 as integer signed);
+
+    -- Result should be 4 rows: -1, 0, 1, 5.
+    select a from t032t14 where a > cast(-9 as integer signed)
+                            and a <= cast(5 as integer signed);
+
+  -- Case: CONV_BIN32U_DECS.
+
+    -- Result should be 3 rows: 0, 1, 50.
+    select a from t032t13 where a >= cast(0 as integer unsigned)
+                            and a < cast(4294967295 as integer unsigned);
+
+    -- Result should be 6 rows: -999999999999999999, -100, -1, 0, 1, 50.
+    select a from t032t13 where a <= cast(500 as integer unsigned);
+
+    -- Result should be 3 rows: 1, 5, 9.
+    select a from t032t14 where a <= cast(500 as integer unsigned)
+                            and a > cast(0 as integer unsigned);
+
+  -- Case: CONV_BIN64S_DECS.
+
+    -- Result should be 5 rows: -1, 0, 1, 50, 999999999999999999.
+    select a from t032t13 where a <= cast(9.22e18 as largeint signed)
+                            and a > cast(-50 as largeint signed);
+
+    -- Result should be 5 rows: -999999999999999999, -100, -1, 0, 1.
+    select a from t032t13 where a > cast(-9.22e18 as largeint signed)
+                            and a <= cast(1 as largeint signed);
+
+    -- Result should be 5 rows: -1, 0, 1, 5, 9.
+    select a from t032t14 where a < cast(10 as largeint signed)
+                            and a >= cast(-1 as largeint signed);
+
+  -- Case: CONV_DECS_DECS.
+
+    -- Result should be 4 rows: -100, -1, 0, 1.
+    select a from t032t13 where a > cast(-99999 as decimal(5) signed)
+                            and a <= cast(28 as decimal(5) signed);
+
+    -- Result should be 1 rows: -100.
+    select a from t032t13 where a = cast(-100 as decimal(5) signed);
+
+    -- Result should be 6 rows: -9, -1, 0, 1, 5, 9.
+    select a from t032t14 where a >= cast(-50 as decimal(3) signed)
+                            and a < cast(100 as decimal(3) signed);
+
+  -- Case: CONV_DECU_DECS.  (Handled by ??.)
+
+    -- Result should be 3 rows: 1, 50, 999999999999999999.
+    select a from t032t13 where a >= cast(1 as decimal(9) unsigned);
+
+    -- Result should be 6 rows: -999999999999999999, -100, -1, 0, 1, 50.
+    select a from t032t13 where a <= cast(75 as decimal(3) unsigned);
+
+    -- Result should be 3 rows: 1, 5, 9.
+    select a from t032t14 where a >= cast(1 as decimal(7) unsigned)
+                            and a < cast(10 as decimal(3) unsigned);
+
+  -- Case: CONV_FLOAT32_DECS.
+
+    -- Result should be 5 rows: -1, 0, 1, 50, 999999999999999999.
+    select a from t032t13 where a <= cast(3e38 as real)
+                            and a > cast(-50 as real);
+
+    -- Result should be 5 rows: -999999999999999999, -100, -1, 0, 1.
+    select a from t032t13 where a > cast(-3e38 as real)
+                            and a <= cast(1 as real);
+
+    -- Result should be 5 rows: -9, -1, 0, 1, 5.
+    select a from t032t14 where a <= cast(6 as real);
+
+    -- Result should be 5 rows: -1, 0, 1, 5, 9.  Case #10-981208-4368.
+    select a from t032t14 where a > cast(-1.002 as real);
+
+  -- Case: CONV_FLOAT64_DECS.
+
+    -- Result should be 5 rows: -1, 0, 1, 50, 999999999999999999.
+    select a from t032t13 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+    -- Result should be 5 rows: -999999999999999999, -100, -1, 0, 1.
+    select a from t032t13 where a > cast(-4e70 as double precision)
+                            and a <= cast(25 as double precision);
+
+    -- Result should be 6 rows: -100, -1, 0, 1, 50, 999999999999999999. 
+    -- Case #10-981208-4368.
+    select a from t032t13 where a > cast(-100.01 as double precision);
+
+  -- Case: CONV_LARGEDEC_DECS.
+
+    -- Result should be 5 rows: -100, -1, 0, 1, 50.
+    select a from t032t13 where a <= 33000.0000001 * 1.000000000001
+                            and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 4 rows: -100, -1, 0, 1.
+    select a from t032t13 where a > -33000.0000001 * 1.000000000001
+                            and a < 1.000000000001 * 1.000000000001;
+
+    -- Result should be 5 rows: -9, -1, 0, 1, 5.
+    select a from t032t14 where a > -33000.0000001 * 1.000000000001
+                            and a < 5.000000000001 * 1.000000000001;
+
+  -- Drop tables.
+    drop table t032t13;
+    drop table t032t14;
+
+?section FLOAT32
+-- Conversions to FLOAT32. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t15.
+    create table t032t15 (a real not null , primary key (a) );
+    insert into t032t15 values (-3e38),(-100),(-1),(0),(1),(50),(3e38);
+
+    -- Result should be 7 rows: -3e38, -100, -1, 0, 1, 50, 3e38.
+    select * from t032t15;
+
+  -- Case: CONV_FLOAT64_FLOAT32.
+
+    -- Result should be 5 rows: -1, 0, 1, 50, 3e38.
+    select a from t032t15 where a <= cast(4e70 as double precision)
+                            and a > cast(-50 as double precision);
+
+     -- Result should be 5 rows: -3e38, -100, -1, 0, 1.
+    select a from t032t15 where a > cast(-4e70 as double precision)
+                            and a <= cast(25 as double precision);
+
+  -- Case: CONV_LARGEDEC_FLOAT32.
+
+    -- Result should be 5 rows: -100, -1, 0, 1, 50.
+    -- Test commented out because of runtime problem. 9/7/97 -Fred  TBD
+    -- select a from t032t15 where a <= 33000.0000001 * 1.000000000001
+    --                         and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 4 rows: -100, -1, 0, 1.
+    -- Test commented out because of possible runtime problem. 9/7/97 -Fred  TBD
+    -- select a from t032t15 where a > -33000.0000001 * 1.000000000001
+    --                         and a < 1.000000000001 * 1.000000000001;
+
+  -- Case #10-990106-2044
+
+    set envvar MDAM ON;
+
+
+    -- When IEEE floating support is added in R2, you may want to replace
+    -- the next two select statements with these (RSM)
+    -- select * from t032t15 where a <= cast(1e-300 as double precision);
+    -- select * from t032t15 where a >= cast(-1e-300 as double precision);
+
+    -- Result should be 4 rows: -3e38, -100, -1, 0.
+    select * from t032t15 where a <= cast(1e-76 as double precision);
+
+    -- Result should be 4 rows: 0, 1, 50, 3e38.
+    select * from t032t15 where a >= cast(-1e-76 as double precision);
+
+    reset envvar MDAM;
+
+  -- Drop tables.
+    drop table t032t15;
+
+?section FLOAT64
+-- Conversions to FLOAT64. =========================================================
+
+  -- Create tables.
+
+    -- Create and load t032t16.
+    create table t032t16 (a double precision not null , primary key (a) );
+    insert into t032t16 values (-4e70),(-100),(-1),(0),(1),(50),(4e70);
+
+    -- Result should be 7 rows: -4e70, -100, -1, 0, 1, 50, 4e70.
+    select * from t032t16;
+
+  -- Case: CONV_LARGEDEC_FLOAT64.
+
+    -- Result should be 5 rows: -100, -1, 0, 1, 50.
+    -- Test commented out because of possible runtime problem. 9/7/97 -Fred  TBD
+    -- select a from t032t16 where a <= 33000.0000001 * 1.000000000001
+    --                         and a > -(15000.0000001 * 1.000000000001);
+
+    -- Result should be 4 rows: -100, -1, 0, 1.
+    -- Test commented out because of possible runtime problem. 9/7/97 -Fred  TBD
+    -- select a from t032t16 where a > -33000.0000001 * 1.000000000001
+    --                         and a < 1.000000000001 * 1.000000000001;
+
+  -- Drop tables.
+    drop table t032t16;
+
+?section BPINTU
+-- Conversions to BPINTU. =========================================================
+#ifMX
+  -- Create tables.
+
+    -- Create and load t032t17.
+    create table t032t17 (a bit precision integer (3) unsigned not null ,
+                          primary key (a) );
+    insert into t032t17 values (0),(1),(2),(3),(7);
+
+    -- Result should be 5 rows: 0, 1, 2, 3, 7.
+    select * from t032t17;
+
+  -- Case: CONV_FLOAT32_BPINTU.
+
+    -- Result should be 3 rows: 0, 1, 2.  Case #10-981208-4368.
+    select a from t032t17 where a < cast(2.1e0 as real);
+
+  -- Case: CONV_FLOAT64_BPINTU.
+
+    -- Result should be 0 rows.  Case #10-981208-4368.
+    select a from t032t17 where a = cast(2.1e0 as double precision);
+
+    -- Result should be 4 rows: 0, 1, 2, 3.  Case #10-981208-4368.
+    select a from t032t17 where a < cast(6.99999e0 as double precision);
+
+  -- Drop tables.
+    drop table t032t17;
+#ifMX
+
+?section bugfix1
+-- Case #10-981217-9077.
+
+  -- Create tables.
+
+    -- Create and load t032t18.
+    create table t032t18 (a numeric(9,3) not null , primary key (a) );
+    insert into t032t18 values (-1),(0.1),(1),(2.001),(3);
+
+    -- Result should be 5 rows: -1, .1, 1, 2.001, 3.
+    select * from t032t18;
+
+    -- Result should be 3 rows: -1, .1, 1.
+    select a from t032t18 where a < cast(1.1e0 as real);
+
+    -- Result should be 4 rows: -1, .1, 1, 2.001.
+    select a from t032t18 where a < cast(2.5e0 as double precision);
+
+  -- Drop tables.
+    drop table t032t18;
+
+?section terminate
+
+reset envvar NO_KEY_KLUDGE;

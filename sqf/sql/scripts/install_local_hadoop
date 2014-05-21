@@ -1,0 +1,1731 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+##############################################################################
+##
+## This sets up a Hadoop/Hive environment to be used with a SeaQuest
+## workstation development environment.
+## Note that you can't have two users on the same workstation running Hadoop.
+##
+## Version 0.36  Small logging enhancements, using only a single HBase jar,
+##               hbase-<vers>-security.jar, which is the one that is built
+##               against Hadoop 2.0 and includes security features.
+## Version 0.35  Configuring ssh to suppress the host key check for localhost,
+##               this allows running multiple hadoop instances on different
+##               machines that have a shared home directory. Alternatively,
+##               using DNS name of local host instead of "localhost".
+##               Fixed a port conflict on the HBase thrift server http port.
+## Version 0.34: HBase is now supported when installing with custom ports.
+##               Output of install is less chatty, creating a log file
+##               sqf/sql/local_hadoop/log/install_local_hadoop_<time>.log
+## Version 0.33: Support for starting thrift server.
+##               Added HBASE_MD_TABLES as a table in hbase.
+## Version 0.32: Support for installing with non-default ports, allowing
+##               multiple users to run a local Hadoop instance on the
+##               same workstation. Recommended options:
+##                 * if default ports are available:
+##                       install_local_hadoop
+##                 * if you are running on a VNC session:
+##                       install_local_hadoop -p fromDisplay
+##                 * for EC builds and similar environments (once supported):
+##                       install_local_hadoop -p rand
+##                 * custom cases:
+##                       install_local_hadoop -p <your start port #>
+## Version 0.31: Basic check for conflicting Hadoop processes.
+## Version 0.30: Convert local Hadoop installation to CDH4.
+##               Don't install  MySQL C++ connector anymore,
+##               SQL build is no longer dependent on this script.
+##               Move script to $MY_SQROOT/sql/scripts/install_local_hadoop.
+##               Move convenience scripts to $MY_SQROOT/sql/scripts
+## Version 0.28: Fixes for CDH4 distribution, missing sym link
+## Version 0.27: Added libraries for CDH4, to be able to reconfigure the SQ
+##               build to use a remote CDH4 cluster. Run bin/swmakesymlinks-cdh4
+##               to use this option.
+## Version 0.26: Fixed two issues commonly encountered: dfs -ls -R is incorrect
+##               and Hive complains about missing HADOOP_HOME in some cases.
+## Version 0.25: Added a convenience script swmakesymlinks to create symbolic
+##               links in the sql directory, require for building.
+## Version 0.24: Fixed a bug with deriving JAVA_HOME from the java executable
+##               in the path. Added a code patch for libhdfs where sourcing
+##               the header file hdfs.h caused a name conflict for "INPUT".
+## Version 0.23: Only ask user for ssh setup if ssh localhost fails.
+##               Get JAVA_HOME from java executable in the path, if possible.
+##               Include Hadoop source distribution to get libhdfs header files.
+## Version 0.22: Set JAVA_HOME automatically and don't require it to
+##               be set in .bashrc anymore.
+## Version 0.21: Add MySQL C++ connector to installation.
+##               Change Hive log directory to a directory within this tree,
+##               also move Hive scratch directory to this tree.
+## Version 0.20: Allow JDKs 1.6 and 1.7.
+##               Fix permission issue with mysqld pid file by bypassing
+##               the MySQL config files installed on the system.
+##############################################################################
+
+function usage {
+
+cat <<EOF
+
+Usage:
+
+$MY_CMD [ -p {<start port num> | rand | fromDisplay} ]  [ -y ]
+
+  -p configures non-standard ports, and is one of:
+  -p  <start port num>    custom cases
+  -p rand                 for EC builds and similar environments (not yet supported)
+  -p fromDisplay          if you are running on a VNC session
+
+  -y answers interactive questions implicitly with yes
+
+EOF
+}
+
+function check_ssh {
+  SSH_FAILED=no
+  echo
+  echo "Check ssh ${MY_HOST_1} access without a password..."
+  # disable any options that would query the user terminal, ask for strict host key checking
+  # to force it to fail if something is not quite right with he host key
+  ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none -o StrictHostKeyChecking=yes ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}" 
+  if [ $? -ne 0 ]; then
+    # if we deal with multiple systems, don't wipe out .ssh directory
+    # try some simpler measures and give up if those don't work
+    echo "Problems encountered with ssh, trying to fix some common issues..."
+    if [ -d ~/.ssh ]; then
+      HOST_CFG_SET=`grep -q NoHostAuthenticationForLocalhost ~/.ssh/config`
+      if [ $? -ne 0 ]; then
+        # configure ssh to omit host check for localhost
+        echo "NoHostAuthenticationForLocalhost=yes" >>~/.ssh/config
+        chmod go-w ~/.ssh/config
+      fi
+
+      if [ ${MY_HOST_1} != "localhost" ]; then
+        # remove existing entries for the host from known_hosts
+        if [ -f ~/.ssh/known_hosts ]; then
+          ed ~/.ssh/known_hosts <<EOF
+g/^${MY_HOST_1}/d
+w
+EOF
+        fi
+        # add an entry for our host to known_hosts
+        echo "${MY_HOST_1}" `cat /etc/ssh/ssh_host_rsa_key.pub` >>~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+      fi
+
+      # check whether doing ssh-add will fix the problem
+      ps -aef | grep ${USER} | grep ssh-agent | grep -v grep >/dev/null
+      if [ $? -eq 0 ]; then
+        # ssh-agent is running, tell it to use the new key
+        ssh-add
+      fi
+
+      # now try once more (with regular host key checking)
+      ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}" 
+      if [ $? -ne 0 ]; then
+        SSH_FAILED=yes
+      fi
+    else
+      SSH_FAILED=yes
+    fi
+  fi
+  
+  if [ $SSH_FAILED = yes ]; then
+    # A few initial steps that are required:
+    cat <<EOF
+Please make sure you can do ssh ${MY_HOST_1} without having to enter a password
+(this is a one-time setup):
+
+cd
+rm -rf .ssh
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa 
+chmod 600 ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 644 ~/.ssh/authorized_keys
+ssh-add
+
+EOF
+
+    if [ -z "$MY_IMPLICIT_Y" ]; then
+      echo "Would you like to configure ssh to ${MY_HOST_1}? This will wipe out your existing"
+      echo "~/.ssh directory and you will lose existing private key files."
+      echo " "
+      echo -n "Enter y/n (n): "
+
+      read YN
+    else
+      # user already enabled on command line
+      YN=$MY_IMPLICIT_Y
+    fi
+
+    if [ "$YN" = "y" -o "$YN" = "Y" ]; then
+      echo "Setting up public/private key pair for connection to ${MY_HOST_1}..."
+      cd
+      rm -rf .ssh
+      # generate an RSA public/private key pair without a passphrase
+      ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa 
+
+      # copy public key to authorized_keys and set permissions correctly
+      chmod 600 ~/.ssh/id_rsa
+      cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+      chmod 644 ~/.ssh/authorized_keys
+
+      # avoid the interactive question to authenticate localhost
+      # as a valid host (this might cause problems when running
+      # this script in batch mode)
+      echo "${MY_HOST_1}" `cat /etc/ssh/ssh_host_rsa_key.pub` >~/.ssh/known_hosts
+      chmod 644 ~/.ssh/known_hosts
+
+      # disable checks for "localhost", so we can use this on multiple machines
+      echo "NoHostAuthenticationForLocalhost=yes" >>~/.ssh/config
+      chmod 644 ~/.ssh/config
+
+      ps -aef | grep ${USER} | grep ssh-agent | grep -v grep >/dev/null
+      if [ $? -eq 0 ]; then
+        # ssh-agent is running, tell it to use the new key
+        ssh-add
+      fi
+
+      # now try once more (with regular host key checking)
+      ssh -o PasswordAuthentication=no -o KbdInteractiveDevices=none ${MY_HOST_1} echo "testing ssh ${MY_HOST_1}" 
+      if [ $? -ne 0 ]; then
+        SSH_FAILED=yes
+      fi
+    else
+      echo "================================================="
+      echo "exiting, set up ssh access on your own,"
+      echo "remove ${MY_SW_ROOT} and rerun this"
+      echo "installation script, $0"
+      echo "================================================="
+      exit 1
+    fi
+  else
+    echo "Check ssh ${MY_HOST_1} access without a password succeeded."
+  fi
+  # end of ssh checking
+}
+
+# global config
+
+# directory on local disk that belongs to me
+MY_SW_PARENT=$MY_SQROOT/sql
+
+# name of subdirectory to install Hadoop/Hive/MySQL in
+MY_SW_ROOT=$MY_SW_PARENT/local_hadoop
+
+# directory where convenience scripts will be located
+MY_SW_SCRIPTS_DIR=$MY_SW_PARENT/scripts
+
+MYSQL_HOME=${MY_SW_ROOT}/mysql
+YARN_HOME=${MY_SW_ROOT}/hadoop
+HIVE_HOME=${MY_SW_ROOT}/hive
+HBASE_HOME=${MY_SW_ROOT}/hbase
+
+  # shared location on local network for tar balls for Hadoop, etc.
+  # - Hadoop
+  # - HBase
+  # - Hive
+  # - MySQL (used as Hive metastore DB)
+  # - MySQL connector for Java (used by Hive to access metastore)
+  # - TPC-DS from tpc.org (for Hive sample DB)
+  # ------------- please customize this line ----------------------
+  if [ -z "$MY_LOCAL_SW_DIST" ]; then
+    MY_LOCAL_SW_DIST=/add_your_local_shared_folder_here
+  fi
+
+  # also set http_proxy and ftp_proxy if necessary, to download
+  # files from repositories on the Internet
+ 
+
+# hosts, only localhost or the actual DNS name of the local host are supported for now
+############################################
+MY_HOST_1=localhost
+# this may get changed below to a DNS name, with -d command line option
+
+MY_LOG_FILE=${MY_SW_ROOT}/log/install_local_hadoop_$(date +%F_%T).log
+
+# multiple hosts not yet supported
+
+# locations for storing data and metadata
+##########################################
+MY_DATA_DIR=${MY_SW_ROOT}/data
+MY_SQL_DATA_DIR=${MY_DATA_DIR}/mysql
+MY_DERBY_DATA_DIR=${MY_DATA_DIR}/derby
+MY_HADOOP_DATA_DIR=${MY_DATA_DIR}/hadoop
+MY_HIVE_DATA_DIR=${MY_DATA_DIR}/hive
+MY_HBASE_DATA_DIR=${MY_DATA_DIR}/hbase
+MY_TPCDS_DATA_DIR=${MY_DATA_DIR}/tpcds
+
+# Administrator and Hive user name for MySQL installation
+MY_SQL_ADMIN=root
+MY_SQL_USER=$MY_SQL_ADMIN
+# generate a random password to use for MySQL (no spaces or special characters)
+MY_SQL_ADMIN_PASSWD=p${RANDOM}${RANDOM}
+MY_SQL_USER_PASSWD=$MY_SQL_ADMIN_PASSWD
+# database name for Hive metastore
+MY_SQL_METASTORE_DB=metastore
+
+# MySQL configuration file
+MY_SQL_CONFIG_FILE=${MYSQL_HOME}/my.cnf
+
+MY_CMD=$0
+MY_IMPLICIT_Y=
+
+# process command line arguments
+################################
+
+while [ $# -gt 0 ];
+do
+  if [ $1 = "-p" ]; then
+    shift
+    MY_START_PORT=$1
+    if [ $MY_START_PORT != "rand" -a $MY_START_PORT != "fromDisplay" ]; then
+      test $MY_START_PORT -gt 0 >/dev/null 2>&1
+      if [ $? -ne 0 ]; then
+        echo "-p option should be followed by <start port num>, rand or fromDisplay"
+        exit 1
+      fi
+    fi
+  elif [ $1 = "-y" ]; then
+    MY_IMPLICIT_Y="y"
+  elif [ $1 = "-d" ]; then
+    # use DNS name instead of "localhost" (option is not currently recommended)
+    MY_HOST_1=`uname -a | cut -f 2 -d ' '`
+  elif [ $1 = "-h" -o $1 = "-help" ]; then
+    usage
+    exit 0
+  else
+    echo "Unexpected argument $1"
+    echo
+    cat <<EOF
+Syntax: $0 [ -p [<starting port num> | rand | fromDisplay ] ]  [-y]
+EOF
+    exit 1
+  fi
+  shift
+done
+
+# port numbers used
+####################
+
+# From http://blog.cloudera.com/blog/2009/08/hadoop-default-ports-quick-reference/
+# and http://hbase.apache.org/book/config.files.html
+
+USE_DEFAULT_PORTS=no
+# To be done later, use separate ports to allow multiple
+# Hadoop instances on the same Linux node
+if [ -z "$MY_START_PORT" ]; then
+  USE_DEFAULT_PORTS=yes
+  MY_START_PORT=50000
+else
+  if [ $MY_START_PORT == "fromDisplay" ]; then
+    # display :34.0 would result in starting port 53400 (instead of default 50000 range)
+    MY_START_PORT=${DISPLAY/*:/}
+    MY_START_PORT=${MY_START_PORT/.*/}
+    MY_START_PORT=`expr 50000 + $MY_START_PORT '*' 100`
+  elif [ $MY_START_PORT == "rand" ]; then
+    # pick a random number between 9000 and 49000 that is divisible by 200
+    MY_START_PORT=`expr $RANDOM '%' 200 '*' 200 + 9000`
+  fi
+  echo "Using port range from MY_START_PORT env var: $MY_START_PORT..."
+fi
+
+# assign ports with defaults outside the range of 50000-50199
+if [ $USE_DEFAULT_PORTS == 'yes' ]; then
+  # fs.default.name
+  MY_HADOOP_HDFS_PORT_NUM=9000
+  # mapreduce.shuffle.port
+  MY_HADOOP_SHUFFLE_PORT_NUM=8080
+  # yarn.resourcemanager.address
+  MY_YARN_RESMAN_PORT_NUM=8032
+  # yarn.resourcemanager.scheduler.address
+  MY_YARN_SCHED_PORT_NUM=8030
+  # yarn.resourcemanager.webapp.address
+  MY_YARN_HTTP_PORT_NUM=8088
+  # yarn.resourcemanager.resource-tracker.address
+  MY_YARN_TRACKER_PORT_NUM=8031
+  # yarn.resourcemanager.admin.address
+  MY_YARN_ADMIN_PORT_NUM=8033
+  # yarn.nodemanager.localizer.address
+  MY_YARN_LOCALIZER_PORT_NUM=8040
+  # unique port # for MySQL (don't use default of 3306, often used already)
+  MY_SQL_PORT_NUM=3346
+  # hbase.master.port
+  MY_HBASE_MASTER_PORT_NUM=60000
+  # hbase.master.info.port
+  MY_HBASE_MASTER_INFO_PORT_NUM=60010
+  # hbase.regionserver.port
+  MY_HBASE_REGIONSERVER_PORT_NUM=60020
+  # hbase.regionserver.info.port
+  MY_HBASE_REGIONSERVER_INFO_PORT_NUM=60030
+  # hbase.zookeeper.peerport
+  MY_HBASE_ZOOKEEPER_PEERPORT_NUM=2888
+  # hbase.zookeeper.leaderport
+  MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=3888
+  # hbase.zookeeper.property.clientPort
+  MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=2181
+  # hbase.rest.port
+  MY_HBASE_REST_PORT_NUM=8080
+  # thrift server port (set via cmd line arg)
+  MY_HBASE_THRIFT_PORT_NUM=9090
+  # thrift server http port (set via cmd line arg)
+  MY_HBASE_THRIFT_INFO_PORT_NUM=9095
+else
+  # fs.default.name
+  MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
+  MY_HADOOP_SHUFFLE_PORT_NUM=`expr $MY_START_PORT + 62`
+  MY_YARN_RESMAN_PORT_NUM=`expr $MY_START_PORT + 132`
+  MY_YARN_SCHED_PORT_NUM=`expr $MY_START_PORT + 130`
+  MY_YARN_HTTP_PORT_NUM=`expr $MY_START_PORT + 188`
+  MY_YARN_TRACKER_PORT_NUM=`expr $MY_START_PORT + 131`
+  MY_YARN_ADMIN_PORT_NUM=`expr $MY_START_PORT + 133`
+  MY_YARN_LOCALIZER_PORT_NUM=`expr $MY_START_PORT + 140`
+  MY_HBASE_MASTER_PORT_NUM=`expr $MY_START_PORT + 160`
+  MY_HBASE_MASTER_INFO_PORT_NUM=`expr $MY_START_PORT + 161`
+  MY_HBASE_REGIONSERVER_PORT_NUM=`expr $MY_START_PORT + 162`
+  MY_HBASE_REGIONSERVER_INFO_PORT_NUM=`expr $MY_START_PORT + 163`
+  MY_HBASE_ZOOKEEPER_PEERPORT_NUM=`expr $MY_START_PORT + 167`
+  MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=`expr $MY_START_PORT + 168`
+  MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=`expr $MY_START_PORT + 170`
+  MY_HBASE_REST_PORT_NUM=`expr $MY_START_PORT + 171`
+  MY_HBASE_THRIFT_PORT_NUM=`expr $MY_START_PORT + 169`
+  MY_HBASE_THRIFT_INFO_PORT_NUM=`expr $MY_START_PORT + 172`
+  # unique port # for MySQL (default is 3306)
+  MY_SQL_PORT_NUM=`expr $MY_START_PORT + 46`
+fi
+
+# handle ports in the range of 50000 to 50199
+
+# in hdfs-site.xml (setting any of these to 0 means start on a free port):
+
+# dfs.http.address	        50070	 dfs namenode web ui
+MY_HADOOP_NN_HTTP_PORT_NUM=`expr $MY_START_PORT + 70`
+
+# dfs.secondary.http.address	50090	 The secondary namenode http server
+MY_HADOOP_SECONDARY_NN_PORT_NUM=`expr $MY_START_PORT + 90`
+
+# dfs.datanode.address	        50010	 datanode server
+MY_HADOOP_DN_PORT_NUM=`expr $MY_START_PORT + 10`
+
+# dfs.datanode.http.address	50075	 datanode http server
+MY_HADOOP_DN_HTTP_PORT_NUM=`expr $MY_START_PORT + 75`
+
+# dfs.datanode.ipc.address	50020	 datanode ipc server
+MY_HADOOP_DN_IPC_PORT_NUM=`expr $MY_START_PORT + 20`
+
+# in mapred-site.xml:
+
+# mapred.job.tracker.http.address (default 50030)
+MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM=`expr $MY_START_PORT + 30`
+
+# mapred.task.tracker.http.address (default 50060)
+MY_HADOOP_TASK_TRACKER_PORT_NUM=`expr $MY_START_PORT + 60`
+
+# others, left as default for now:
+
+# dfs.backup.address (50100)
+# dfs.backup.http.address (50105)
+# mapred.job.tracker (???)
+
+# Specify mirrors and versions of needed components
+#####################################################
+
+# Hadoop 1.0.4 - no longer used in this setup
+HADOOP_1_MIRROR_URL=http://www.carfab.com/apachesoftware/hadoop/common/hadoop-1.0.4
+HADOOP_1_TAR=hadoop-1.0.4-bin.tar.gz
+
+# Hive 0.9 requires Hadoop 0.20 or higher
+# HBase seems fine with Hadoop 0.20 or higher
+HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh4/cdh/4
+HADOOP_TAR=hadoop-2.0.0-cdh4.2.0.tar.gz
+
+# Alternative: Use MariaDB (not validated)
+# MARIADB_MIRROR_URL=https://downloads.mariadb.org/f/mariadb-5.5.29/kvm-bintar-hardy-amd64/mariadb-5.5.29-linux-x86_64.tar.gz/from/http:/ftp.osuosl.org/pub/mariadb
+# MARIADB_TAR=mariadb-5.5.29-linux-x86_64.tar.gz
+
+MYSQL_MIRROR_URL=http://downloads.mysql.com/archives/mysql-5.6/mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
+MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
+
+MYSQL_JDBC_URL=http://downloads.mysql.com/archives/mysql-connector-java-5.1/mysql-connector-java-5.1.23.tar.gz
+MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
+
+HIVE_MIRROR_URL=http://archive.apache.org/dist/hive/hive-0.9.0
+HIVE_TAR=hive-0.9.0-bin.tar.gz
+
+HBASE_MIRROR_URL=http://mirror.reverse.net/pub/apache/hbase/stable
+HBASE_TAR=hbase-0.94.6-cdh4.4.0.tar.gz
+
+TPCDS_MIRROR_URL=http://www.tpc.org/tpcds/dsgen/dsgen-download-files.asp?download_key=NaN
+TPCDS_ZIP=tpcds_kit.zip
+
+echo "Checking for existing Hadoop processes..."
+if [ `netstat -anl | grep ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 -o \
+     `netstat -anl | grep ${MY_HADOOP_NN_HTTP_PORT_NUM} | grep LISTEN | wc -l` -gt 0 ]; then
+  echo '**** ERROR:'
+  echo "A process is already listening to port ${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM} or ${MY_HADOOP_NN_HTTP_PORT_NUM}."
+  echo "This could be your own HDFS web interface or that of someone else."
+  echo "Please shut Hadoop down first or switch to another machine."
+  if [ -n "$DISPLAY" ]; then
+    echo "Alternatively, use non-standard ports with this option:"
+    echo "$MY_CMD -p fromDisplay"
+  fi
+  exit 1
+fi
+
+if [ -d "$MY_SW_ROOT" ]; then
+  echo "$MY_SW_ROOT already exists, skipping initial steps..."
+else
+  echo
+  echo "Creating common directory $MY_SW_ROOT..."
+  #####################################################
+
+  mkdir $MY_SW_ROOT
+  cd $MY_SW_ROOT
+  mkdir log
+
+  echo
+  echo "Checking Java version..."
+
+  # check JAVA_HOME and Java version (1.6 or 1.7)
+  if [ -n $JAVA_HOME ]; then
+    if [ `expr "${JAVA_HOME}" : ".*_32"` -gt 0 ]; then
+      echo "Using a 32 bit Java environment, JAVA_HOME=${JAVA_HOME}"
+      echo -n "This might not be optimal. Ok to switch to a 64 bit Java environment? Enter y/n (n):"
+
+      read YN
+
+      if [ "$YN" == "y" -o "$YN" == "Y" ]; then
+        unset JAVA_HOME
+      else
+        echo "Ok, continuing with 32 bit Java..."
+      fi
+    fi
+    if [ -n "$JAVA_HOME" ]; then
+      echo "Picked up JAVA_HOME=${JAVA_HOME} from the environment..."
+    fi
+  fi
+
+  if [ -z "$JAVA_HOME" ]; then
+    echo "Trying to determine JAVA_HOME..."
+
+    JAVA_HOME_CANDIDATES="\
+         /opt/home/tools/jdk1.6.*_64 \
+         /opt/home/tools/jdk1.7.*_64"
+
+    # Add the directory of the java executable in the path to the candidates
+    JAVA_EXE=`which java`
+    if [ $? -eq 0 ]; then
+      # follow symbolic links until we reach the actual file
+      while [ -L $JAVA_EXE ]; do
+        JAVA_EXE=`readlink $JAVA_EXE`
+      done
+      JAVA_DIR=`dirname $JAVA_EXE`
+      JAVA_HOME_CANDIDATES="$JAVA_HOME_CANDIDATES $JAVA_DIR"
+    fi
+    cd $MY_SW_ROOT
+
+    # loop through candidates, use the last one that has a
+    # java executable in it (preference for later versions and path)
+    for c in $JAVA_HOME_CANDIDATES
+    do
+      if [ -x $c/bin/java ]; then
+        JAVA_HOME=$c
+      fi
+    done
+
+    echo "Setting JAVA_HOME=${JAVA_HOME}"
+  fi
+
+  JAVA_EXE=$JAVA_HOME/bin/java
+  if [ -z "$JAVA_HOME" -o \( ! -x $JAVA_EXE \) ]; then
+    echo '**** ERROR:'
+    echo "JAVA_HOME environment variable $JAVA_HOME doesn't point to a java executable, exiting..."
+    exit 1
+  fi
+
+  $JAVA_EXE -version
+  (${JAVA_EXE} -version 2>&1) | grep '1.6' >/dev/null
+  if [ $? -ne 0 ]; then
+    (${JAVA_EXE} -version 2>&1) | grep '1.7' >/dev/null
+    if [ $? -ne 0 ]; then
+      echo '**** ERROR:'
+      cat <<EOF
+      Please make sure you are using the Java 1.6 or 1.7 SDK.
+      Otherwise, download it into ${MY_SW_ROOT}, extract it and
+      make a symbolic link ${MY_SW_ROOT}/java that points  to it and
+      export JAVA_HOME=${MY_SW_ROOT}/java
+EOF
+      echo exiting...
+      exit 1
+    else
+      echo "Java version 1.7 is ok"
+    fi
+  else
+    echo "Java version 1.6 is ok"
+  fi
+  # end of check Java version
+
+  echo
+  echo "Creating some convenience shell scripts in $MY_SW_SCRIPTS_DIR..."
+  if [ ! -d $MY_SW_SCRIPTS_DIR ]; then
+    mkdir $MY_SW_SCRIPTS_DIR
+  fi
+
+  # shell script to set up common environment variables
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/sw_env.sh
+# Basic environment variables for SeaQuest/Hadoop/Hive/HBase/MySQL setup
+export JAVA_HOME=${JAVA_HOME}
+export MYSQL_HOME=${MYSQL_HOME}
+export YARN_HOME=${YARN_HOME}
+export HIVE_HOME=${HIVE_HOME}
+export HBASE_HOME=${HBASE_HOME}
+export MY_HADOOP_HDFS_PORT_NUM=${MY_HADOOP_HDFS_PORT_NUM}
+export MY_HBASE_THRIFT_PORT_NUM=${MY_HBASE_THRIFT_PORT_NUM}
+export MY_HBASE_THRIFT_PORT_NUM_CQD=\'${MY_HBASE_THRIFT_PORT_NUM}\'
+EOF
+
+  # now source in this script
+  . $MY_SW_SCRIPTS_DIR/sw_env.sh
+
+  ####################################
+  # scripts to start/stop environment
+  ####################################
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartall
+#!/bin/sh
+echo "Starting Hadoop, MySQL, HBase..."
+cd ${MY_SW_SCRIPTS_DIR}
+./swstarthadoop
+./swstartmysql
+./swstarthbase
+./swstartthriftserver
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopall
+#!/bin/sh
+echo "Stopping Hadoop, MySQL, HBase..."
+cd ${MY_SW_SCRIPTS_DIR}
+./swstophadoop
+./swstopmysql
+./swstophbase
+./swstopthriftserver
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthadoop
+#!/bin/sh
+echo "Starting Hadoop..."
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+./hadoop/sbin/start-dfs.sh
+./hadoop/sbin/start-yarn.sh
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophadoop
+#!/bin/sh
+echo "Stopping Hadoop..."
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+./hadoop/sbin/stop-yarn.sh
+./hadoop/sbin/stop-dfs.sh
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartmysql
+#!/bin/sh
+echo "Starting mysqld..."
+cd ${MY_SW_ROOT}/mysql
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+./bin/mysqld_safe --defaults-file=${MY_SQL_CONFIG_FILE} --log-error=${MY_SW_ROOT}/log/mysqld_safe.\$HOSTNAME.log &
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopmysql
+#!/bin/sh
+echo "Stopping mysqld..."
+cd ${MY_SW_ROOT}/mysql
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+./bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} --password=${MY_SQL_ADMIN_PASSWD}  shutdown
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthbase
+#!/bin/sh
+echo "Starting HBase..."
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+./hbase/bin/start-hbase.sh
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstophbase
+#!/bin/sh
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+./hbase/bin/stop-hbase.sh
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartthriftserver
+#!/bin/sh
+echo "Starting ThriftServer for Hbase access..."
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+hbase/bin/hbase-daemon.sh start thrift -p ${MY_HBASE_THRIFT_PORT_NUM} --infoport ${MY_HBASE_THRIFT_INFO_PORT_NUM}
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopthriftserver
+#!/bin/sh
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+hbase/bin/hbase-daemon.sh stop thrift -p ${MY_HBASE_THRIFT_PORT_NUM}
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
+#!/bin/sh
+cd ${MY_SW_ROOT}
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+NUM_JAVA_PROCS=\`ps -aef | grep \$USER | grep java | grep -v grep | wc -l\`
+NUM_MYSQLD_PROCS=\`ps -aef | grep \$USER | grep mysqld | grep -v grep | wc -l\`
+
+if [ "\$1" == "-v" ]; then
+  ps -aef | grep \$USER | grep java | grep -v grep
+  ps -aef | grep \$USER | grep mysqld | grep -v grep
+fi
+
+echo "\$NUM_JAVA_PROCS java servers and \$NUM_MYSQLD_PROCS mysqld processes are running"
+
+jps | grep -v Jps
+
+EOF
+
+  #######################################################
+  # scripts to start command line interpreters and tools
+  #######################################################
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swhadoop
+#!/bin/sh
+# command to run hadoop
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/hadoop/bin/hadoop \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swhdfs
+#!/bin/sh
+# command to run hadoop
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/hadoop/bin/hdfs \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysql
+#!/bin/sh
+# command to run mysql
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} --password=${MY_SQL_USER_PASSWD} --database=${MY_SQL_METASTORE_DB} \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swmysqladmin
+#!/bin/sh
+# command to run mysqladmin as root user
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} --password=${MY_SQL_ADMIN_PASSWD} \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swhive
+#!/bin/sh
+# command to run hive command line interpreter
+
+# Pick up MySQL JDBC driver
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+export HADOOP_HOME=${MY_SW_ROOT}/hadoop
+${MY_SW_ROOT}/hive/bin/hive \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swhbase
+#!/bin/sh
+# command to run hbase shell
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/hbase/bin/hbase shell \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swuninstall_local_hadoop
+#!/bin/sh
+# uninstall local Hadoop instance.
+
+. $MY_SW_SCRIPTS_DIR/swstopall
+echo "Removing directory $MY_SW_ROOT"
+echo "and all of its content."
+echo "All Hadoop, HDFS, Hive, HBase content on this local instance will be lost."
+echo -n "Is this ok? (y, (n)) "
+read YN
+
+if [ "\$YN" = "y" -o "\$YN" = "Y" ]; then
+  rm -rf $MY_SW_ROOT
+  echo "Removed $MY_SW_ROOT"
+else
+  echo "Exiting without removing anything..."
+fi
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swurls.html
+<HTML>
+<HEAD>
+<title>URLs for local Hadoop Instance</title>
+</HEAD>
+<BODY>
+<pre>
+<a href="http://${MY_HOST_1}:${MY_HADOOP_NN_HTTP_PORT_NUM}">HDFS Admin</a>
+<a href="http://${MY_HOST_1}:${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM}">Job Tracker</a>
+<a href="http://${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}">Yarn</a>
+<a href="http://${MY_HOST_1}:${MY_HBASE_MASTER_INFO_PORT_NUM}">HBase Master</a>
+<a href="http://${MY_HOST_1}:${MY_HBASE_REGIONSERVER_INFO_PORT_NUM}">HBase Region Server</a>
+<a href="http://${MY_HOST_1}:${MY_HBASE_THRIFT_INFO_PORT_NUM}">HBase Thrift Server</a>
+</pre>
+</BODY>
+</HTML>
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swsetupcqds
+sqlci <<ENDOFDATA
+delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+where ATTRIBUTE in ('HBASE_PORT', 'HBASE_THRIFT_PORT',
+                    'HIVE_METADATA_CPPC_URL', 'HIVE_METADATA_PASSWORD',
+                    'MODE_SEABASE', 'MODE_SEAHIVE');
+insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
+     (ATTRIBUTE, ATTR_VALUE, ATTR_COMMENT)
+     values
+     ('HBASE_THRIFT_PORT',      '${MY_HBASE_THRIFT_PORT_NUM}',        'Added by swsetupcqds script'),
+     ('HIVE_METADATA_CPPC_URL', 'tcp://127.0.0.1:${MY_SQL_PORT_NUM}', 'Added by swsetupcqds script'),
+     ('HIVE_METADATA_PASSWORD', '${MY_SQL_ADMIN_PASSWD}',             'Added by swsetupcqds script'),
+     ('MODE_SEABASE',           'ON',                                 'Added by swsetupcqds script'),
+     ('MODE_SEAHIVE',           'ON',                                 'Added by swsetupcqds script');
+
+ENDOFDATA
+EOF
+
+  mkdir -p $MY_SQROOT/etc
+  SYSTEM_DEFAULTS_TEXT_FILE=$MY_SQROOT/etc/SQSystemDefaults.conf
+
+  # alternative method for open source build, system defaults in a text file
+  cat <<EOF >${SYSTEM_DEFAULTS_TEXT_FILE}.temp
+#+-+-+ install_local_hadoop inserted this - please do not edit this section
+HBASE_THRIFT_PORT,      ${MY_HBASE_THRIFT_PORT_NUM}
+HIVE_METADATA_CPPC_URL, tcp://127.0.0.1:${MY_SQL_PORT_NUM}
+HIVE_METADATA_PASSWORD, ${MY_SQL_ADMIN_PASSWD}
+#-+-+- install_local_hadoop end of system-inserted values, please add your own custom values below
+EOF
+
+  # preserve any other text in the system defaults text file, remove old generated text
+  if [ -r ${SYSTEM_DEFAULTS_TEXT_FILE} ]; then
+    sed '/#+-+-+ install_local_hadoop /,/#-+-+- install_local_hadoop /d' <${SYSTEM_DEFAULTS_TEXT_FILE} >>${SYSTEM_DEFAULTS_TEXT_FILE}.temp
+  fi
+  # now overwrite the system defaults text file
+  cat ${SYSTEM_DEFAULTS_TEXT_FILE}.temp >${SYSTEM_DEFAULTS_TEXT_FILE}
+
+  # secure all shell scripts to be executable
+  chmod +x $MY_SW_SCRIPTS_DIR/sw*
+
+  echo
+  echo "Checking permissions on home directory..."
+  ls -ld ~
+  ls -ld ~ | egrep 'drwx.-..-.' >/dev/null
+  if [ $? -ne 0 ]; then
+    echo '**** ERROR:'
+    cat <<EOF
+    Check permissions on your home directory. Authentication with
+    public/private keys won't work if you allow write access to
+    your home directory. You can fix this by doing something like
+    the following:
+
+    chmod 755 ~
+
+    exiting, please correct and retry this script...
+EOF
+    exit
+  fi
+
+  # check password-less login via ssh
+  check_ssh
+
+fi
+# end of general setup of sw directory
+
+cd $MY_SW_ROOT
+echo
+if [ -d hadoop/bin ]; then
+  echo "Hadoop files already exist, skipping Hadoop setup"
+else
+  echo "Setting up Hadoop..."
+  #####################################################
+
+  if [ -f $MY_LOCAL_SW_DIST/${HADOOP_TAR} ]; then
+    cp $MY_LOCAL_SW_DIST/${HADOOP_TAR} .
+  else
+    curl -O ${HADOOP_MIRROR_URL}/${HADOOP_TAR}
+  fi
+
+  echo "Unpacking Hadoop tar file..."
+  tar -xf ${HADOOP_TAR}
+  rm -rf hadoop
+  ln -s `dirname hadoop-*/lib` hadoop
+
+  H_CORE_FILE=hadoop/etc/hadoop/core-site.xml
+  H_HDFS_FILE=hadoop/etc/hadoop/hdfs-site.xml
+  H_MAPRED_FILE=hadoop/etc/hadoop/mapred-site.xml
+  H_Y_SITE_FILE=hadoop/etc/hadoop/yarn-site.xml
+  H_ENV_FILE=hadoop/etc/hadoop/hadoop-env.sh
+  H_Y_ENV_FILE=hadoop/etc/hadoop/yarn-env.sh
+
+  echo "Updating files $H_CORE_FILE, $H_HDFS_FILE and $H_MAPRED_FILE ..."
+
+  mv -f $H_CORE_FILE $H_CORE_FILE.orig
+  cat <<EOF >$H_CORE_FILE
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+     <property>
+         <name>fs.default.name</name>
+         <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}</value>
+     </property>
+     <property>
+         <name>hadoop.tmp.dir</name>
+         <value>${MY_HADOOP_DATA_DIR}/tmp</value>
+     </property>
+</configuration>
+EOF
+
+  mv -f $H_HDFS_FILE $H_HDFS_FILE.orig
+  cat <<EOF >$H_HDFS_FILE
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+     <property>
+         <name>dfs.replication</name>
+         <value>1</value>
+     </property>
+     <property>
+         <name>dfs.datanode.data.dir</name>
+         <value>${MY_HADOOP_DATA_DIR}/dfs/data</value>
+     </property>
+     <property>
+         <name>dfs.namenode.name.dir</name>
+         <value>file://${MY_HADOOP_DATA_DIR}/dfs/name</value>
+     </property> 
+
+     <property>
+         <name>dfs.http.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_NN_HTTP_PORT_NUM}</value>
+     </property> 
+     <property>
+         <name>dfs.secondary.http.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_SECONDARY_NN_PORT_NUM}</value>
+     </property> 
+     <property>
+         <name>dfs.datanode.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_DN_PORT_NUM}</value>
+     </property> 
+     <property>
+         <name>dfs.datanode.http.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_DN_HTTP_PORT_NUM}</value>
+     </property> 
+     <property>
+         <name>dfs.datanode.ipc.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_DN_IPC_PORT_NUM}</value>
+     </property> 
+
+</configuration>
+EOF
+
+  if [ -r $H_MAPRED_FILE ]; then
+    mv -f $H_MAPRED_FILE $H_MAPRED_FILE.orig
+  fi
+  cat <<EOF >$H_MAPRED_FILE
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+     <property>
+         <name>mapreduce.framework.name</name>
+         <value>yarn</value>
+     </property>
+     <property>
+         <name>mapred.job.tracker.http.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_JOB_TRACKER_HTTP_PORT_NUM}</value>
+     </property>
+     <property>
+         <name>mapred.http.tracker.http.address</name>
+         <value>${MY_HOST_1}:${MY_HADOOP_TASK_TRACKER_PORT_NUM}</value>
+     </property>
+     <property>
+         <name>mapreduce.shuffle.port</name>
+         <value>${MY_HADOOP_SHUFFLE_PORT_NUM}</value>
+     </property>
+</configuration>
+EOF
+
+  mv -f $H_Y_SITE_FILE $H_Y_SITE_FILE.orig
+  cat <<EOF >$H_Y_SITE_FILE
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce.shuffle</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>${MY_HOST_1}:${MY_YARN_RESMAN_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>${MY_HOST_1}:${MY_YARN_SCHED_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.webapp.address	</name>
+    <value>${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.resource-tracker.address	</name>
+    <value>${MY_HOST_1}:${MY_YARN_TRACKER_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.admin.address	</name>
+    <value>${MY_HOST_1}:${MY_YARN_ADMIN_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.localizer.address	</name>
+    <value>${MY_HOST_1}:${MY_YARN_LOCALIZER_PORT_NUM}</value>
+  </property>
+</configuration>
+EOF
+
+  echo "Appending local configuration to $H_ENV_FILE..."
+  cat <<EOF >>$H_ENV_FILE
+
+# SeaQuest-local configuration
+# Make sure JAVA_HOME is set
+export JAVA_HOME=${JAVA_HOME}
+# Use a local PID dir to avoid conflicts with other Hadoop instances
+export HADOOP_PID_DIR=${MY_SW_ROOT}/log
+EOF
+
+  echo "Appending local configuration to $H_Y_ENV_FILE..."
+  cat <<EOF >>$H_Y_ENV_FILE
+
+# SeaQuest-local configuration
+# Make sure JAVA_HOME is set
+export JAVA_HOME=${JAVA_HOME}
+export HADOOP_CONF_DIR=${YARN_HOME}/etc/hadoop
+export HADOOP_COMMON_HOME=${YARN_HOME}
+export HADOOP_HDFS_HOME=${YARN_HOME}
+# Use a local PID dir to avoid conflicts with other Hadoop instances
+export HADOOP_PID_DIR=${MY_SW_ROOT}/log
+EOF
+
+  #####################################################
+  echo "Initializing and starting Hadoop..." | tee ${MY_LOG_FILE}
+
+  cd $MY_SW_ROOT/hadoop
+  . $MY_SW_SCRIPTS_DIR/sw_env.sh
+
+  bin/hdfs namenode -format         >>${MY_LOG_FILE} 2>&1
+  $MY_SW_SCRIPTS_DIR/swstophadoop   >>${MY_LOG_FILE} 2>&1
+  $MY_SW_SCRIPTS_DIR/swstarthadoop  >>${MY_LOG_FILE} 2>&1
+
+  bin/hdfs dfs -mkdir /user/$USER                >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/hive                 >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/hive/warehouse       >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /tmp                       >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /tmp                   >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/hive/warehouse   >>${MY_LOG_FILE} 2>&1
+
+
+fi
+# end of Hadoop (MapReduce + HDFS) setup
+
+cd $MY_SW_ROOT
+
+if [ -d mysql/bin ]; then
+  echo "MySQL files already exist, skipping MySQL setup"
+else
+  #####################################################
+  echo "Downloading MySQL..."
+
+  if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
+    cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
+  else
+    curl ${MYSQL_MIRROR_URL} -o ${MYSQL_TAR}
+  fi
+
+  echo "Unpacking MySQL tar file ${MYSQL_TAR} ..."
+  tar -xf ${MYSQL_TAR}
+  echo "Creating symbolic link to latest MySQL distribution..."
+  rm -rf mysql
+  ln -s `dirname mysql-*-linux-*/bin` mysql
+
+  # set up MySQL configuration file
+
+  if [ -f ${MY_SQL_CONFIG_FILE} ]; then
+    echo "Using existing MySQL config file ${MY_SQL_CONFIG_FILE}"
+  else
+    echo "Setting up MySQL configuration file ${MY_SQL_CONFIG_FILE} ..."
+    mkdir ${MY_SQL_DATA_DIR}
+    cat <<EOF >${MY_SQL_CONFIG_FILE}
+[client-server]
+# Uncomment these if you want to use a nonstandard connection to MySQL
+port=${MY_SQL_PORT_NUM}
+socket=/tmp/mysql_${MY_SQL_PORT_NUM}.sock
+
+# This will be passed to all MySQL clients
+[client]
+port=${MY_SQL_PORT_NUM}
+socket=/tmp/mysql_${MY_SQL_PORT_NUM}.sock
+
+# The MySQL server
+[mysqld]
+# port to use (default is 3306)
+port=${MY_SQL_PORT_NUM}
+socket=/tmp/mysql_${MY_SQL_PORT_NUM}.sock
+# Directory where you want to put your data
+datadir=${MY_SQL_DATA_DIR}
+# File that contains the pid of the running mysqld
+pid_file=${MY_SW_ROOT}/log/mysqld.pid
+# Directory for error messages
+lc-messages-dir=${MY_SW_ROOT}/mysql/share
+# Create a file where the InnoDB/XtraDB engine stores it's data
+# innodb_data_file_path = ibdata1:20M;ibdata2:40M:autoextend
+# innodb_file_per_table
+
+# Enable logging by default to help find problems
+general-log=1
+general-log-file=${MY_SW_ROOT}/log/mysql-general.${HOSTNAME}.log
+
+EOF
+
+  fi
+
+  cd mysql
+  echo "Running MySQL installation script..." | tee -a ${MY_LOG_FILE}
+  ./scripts/mysql_install_db --defaults-file=${MY_SQL_CONFIG_FILE} >>${MY_LOG_FILE} 2>&1
+  if [ $? -ne 0 ]; then
+    echo "Problem installing MySQL, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
+  fi
+
+  # start mysql
+  echo "Starting mysqld..." | tee -a ${MY_LOG_FILE}
+  $MY_SW_SCRIPTS_DIR/swstartmysql >>${MY_LOG_FILE} 2>&1 
+  if [ $? -ne 0 ]; then
+    echo "Problem starting MySQL, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
+  fi
+fi
+# end of MySQL setup
+
+cd $MY_SW_ROOT
+
+if [ -f mysql-connector-java-*/mysql-connector-java-*.jar ]; then
+  echo "MySQL JDBC driver file already exists, skipping JDBC setup"
+else
+  #####################################################
+  echo "Downloading MySQL JDBC driver..."
+
+  if [ -f $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} ]; then
+    cp $MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR} .
+  else
+    curl -O ${MYSQL_JDBC_URL}/${MYSQL_JDBC_TAR}
+  fi
+
+  echo "Unpacking MySQL JDBC tar file ${MYSQL_JDBC_TAR} ..."
+  tar -xf ${MYSQL_JDBC_TAR}
+  ln -s `dirname mysql-connector-java-*/mysql-connector-java-*.jar` mysql-connector-java
+
+fi
+# end of MySQL JDBC setup
+
+cd $MY_SW_ROOT
+
+if [ -d hive/bin ]; then
+  echo "Hive files already exist, skipping Hive setup"
+else
+  #####################################################
+  echo "Downloading Hive..."
+
+  if [ -f $MY_LOCAL_SW_DIST/${HIVE_TAR} ]; then
+    cp $MY_LOCAL_SW_DIST/${HIVE_TAR} .
+  else
+    curl -O ${HIVE_MIRROR_URL}/${HIVE_TAR}
+  fi
+
+  echo "Unpacking Hive tar file ${HIVE_TAR} ..."
+  tar -xf ${HIVE_TAR}
+  echo "Creating symbolic link to latest Hive distribution..."
+  rm -rf hive
+  ln -s `dirname hive-*/bin` hive
+
+  HIVE_CONFIG_FILE=hive/conf/hive-site.xml
+  HIVE_LOG_CONFIG_FILE=hive/conf/hive-log4j.properties
+
+  echo "Updating file $HIVE_CONFIG_FILE ..."
+
+  if [ -r $HIVE_CONFIG_FILE ]; then
+    mv -f $HIVE_CONFIG_FILE $HIVE_CONFIG_FILE.orig
+  fi
+  cat <<EOF >$HIVE_CONFIG_FILE
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+  <property> 
+     <name>hive.exec.scratchdir</name> 
+     <value>${MY_HIVE_DATA_DIR}</value> 
+  </property> 
+
+  <property> 
+     <name>hive.metastore.local</name> 
+     <value>true</value> 
+  </property> 
+
+  <!-- Use MySQL as metastore -->
+
+  <property> 
+     <name>javax.jdo.option.ConnectionURL</name> 
+     <value>jdbc:mysql://${MY_HOST_1}:${MY_SQL_PORT_NUM}/${MY_SQL_METASTORE_DB}?createDatabaseIfNotExist=true</value> 
+     <description>JDBC connect string for a JDBC metastore (don't include white space)</description>
+  </property> 
+
+  <property> 
+     <name>javax.jdo.option.ConnectionDriverName</name> 
+     <value>com.mysql.jdbc.Driver</value> 
+     <description>Driver class name for a JDBC metastore</description>
+  </property> 
+
+  <property> 
+     <name>javax.jdo.option.ConnectionUserName</name> 
+     <value>${MY_SQL_USER}</value>
+  </property> 
+
+  <property> 
+     <name>javax.jdo.option.ConnectionPassword</name> 
+     <value>${MY_SQL_USER_PASSWD}</value>
+  </property>
+
+  <!-- end of MySQL metastore parameters -->
+
+  <!-- Alternatively, use this to set up Apache Derby as metadata store 
+
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:derby:;databaseName=${MY_DERBY_DATA_DIR}/metastore_db;create=true</value>
+    <description>JDBC connect string for a JDBC metastore</description>
+  </property>
+
+  end of alternative Derby configuration -->
+
+  <!-- other useful Hive configuration settings -->
+  <property>
+    <name>hive.cli.print.header</name>
+    <value>true</value>
+    <description>Whether to print the names of the columns in query output.</description>
+  </property>
+</configuration>
+EOF
+
+  cat <<EOF >${HIVE_LOG_CONFIG_FILE}
+hive.root.logger=WARN,DRFA
+hive.log.dir=${MY_SW_ROOT}/log/hive
+hive.log.file=hive.log
+
+EOF
+
+  echo "Copying MySQL JDBC driver to ${MY_SW_ROOT}/hive/lib"
+  cp -p ${MY_SW_ROOT}/mysql-connector-java/*.jar ${MY_SW_ROOT}/hive/lib
+
+  echo "Sleeping 10 sec to wait for MySQL to start..."
+  sleep 10
+
+  mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} password ${MY_SQL_ADMIN_PASSWD} 2>&1 | tee -a ${MY_LOG_FILE}
+  mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} --password=${MY_SQL_ADMIN_PASSWD} -h ${MY_HOST_1} password ${MY_SQL_ADMIN_PASSWD} 2>&1 | tee -a ${MY_LOG_FILE}
+
+  if [ ${MY_SQL_ADMIN} != ${MY_SQL_USER} ]; then
+    echo "Creating MySQL user ${MY_SQL_USER}"
+    ${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_ADMIN} --password=${MY_SQL_ADMIN_PASSWD} <<EOF 2>&1 | tee -a ${MY_LOG_FILE}
+CREATE USER '${MY_SQL_USER}'@'%' IDENTIFIED BY '${MY_SQL_USER_PASSWD}';
+EOF
+    mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} password ${MY_SQL_USER_PASSWD} 2>&1 | tee -a ${MY_LOG_FILE}
+    mysql/bin/mysqladmin --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} --password=${MY_SQL_USER_PASSWD} -h ${MY_HOST_1} password ${MY_SQL_USER_PASSWD} 2>&1 | tee -a ${MY_LOG_FILE}
+  fi
+
+  echo "Creating Hive database and metastore in MySQL..."
+  ${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} --password=${MY_SQL_USER_PASSWD} <<EOF 2>&1 | tee -a ${MY_LOG_FILE}
+create database ${MY_SQL_METASTORE_DB};
+use ${MY_SQL_METASTORE_DB};
+SOURCE ${MY_SW_ROOT}/hive/scripts/metastore/upgrade/mysql/hive-schema-0.9.0.mysql.sql;
+EOF
+
+fi
+# end of Hive setup
+
+cd $MY_SW_ROOT
+
+if [ -d hbase/bin ]; then
+  echo "HBase files already exist, skipping HBase setup"
+else
+  #####################################################
+  echo "Downloading HBase..."
+
+  if [ -f $MY_LOCAL_SW_DIST/${HBASE_TAR} ]; then
+    cp $MY_LOCAL_SW_DIST/${HBASE_TAR} .
+  else
+    curl -O ${HBASE_MIRROR_URL}/${HBASE_TAR}
+  fi
+
+  echo "Unpacking HBase tar file ${HBASE_TAR} ..."
+  tar -xf ${HBASE_TAR}
+  echo "Creating symbolic link to latest HBase distribution..."
+  rm -rf hbase
+  ln -s `dirname hbase-*/bin` hbase
+
+  HBASE_CONFIG_FILE=hbase/conf/hbase-site.xml
+  HBASE_ENV_FILE=hbase/conf/hbase-env.sh
+  
+  # For HBase_Trx (for now)
+  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/${HBASE_TRX_JAR}" >> ${HBASE_ENV_FILE}
+
+  echo "Updating file $HBASE_CONFIG_FILE ..."
+
+  if [ -r $HBASE_CONFIG_FILE ]; then
+    mv -f $HBASE_CONFIG_FILE $HBASE_CONFIG_FILE.orig
+  fi
+  cat <<EOF >$HBASE_CONFIG_FILE
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+  <property>
+    <name>hbase.rootdir</name>
+    <value>file://${MY_HBASE_DATA_DIR}/hbase</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>${MY_HBASE_DATA_DIR}/zookeeper</value>
+  </property>
+  <property>
+    <name>hbase.master.port</name>
+    <value>${MY_HBASE_MASTER_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.master.info.port</name>
+    <value>${MY_HBASE_MASTER_INFO_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.regionserver.port</name>
+    <value>${MY_HBASE_REGIONSERVER_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.regionserver.info.port</name>
+    <value>${MY_HBASE_REGIONSERVER_INFO_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.peerport</name>
+    <value>${MY_HBASE_ZOOKEEPER_PEERPORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.leaderport</name>
+    <value>${MY_HBASE_ZOOKEEPER_LEADERPORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.property.clientPort</name>
+    <value>${MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.rest.port</name>
+    <value>${MY_HBASE_REST_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>hbase.client.scanner.caching</name>
+	<value>100</value>
+  </property>
+  <property>
+    <name>hbase.client.scanner.timeout.period</name>
+	<value>60000</value>
+  </property>
+  <property>
+    <name>hbase.coprocessor.region.classes</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl</value>
+  </property>
+ <property>
+    <name>hbase.snapshot.enabled</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hbase.regionserver.class</name>
+    <value>org.apache.hadoop.hbase.ipc.TransactionalRegionInterface</value></property>
+  <property>
+    <name>hbase.regionserver.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer</value></property>
+  <property>
+    <name>hbase.hregion.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value></property>
+  <property>
+    <name>hbase.hlog.splitter.impl</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value></property>
+  <property>
+    <name>hbase.master.distributed.log.splitting</name>
+    <value>false</value> </property>
+</configuration>
+EOF
+
+  echo "Starting HBase..." | tee -a ${MY_LOG_FILE}
+  $MY_SW_SCRIPTS_DIR/swstarthbase >>${MY_LOG_FILE} 2>&1
+  if [ $? -ne 0 ]; then
+    echo "Problem starting HBase, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
+  fi
+  echo "Starting HBase Thrift server..." | tee -a ${MY_LOG_FILE}
+  $MY_SW_SCRIPTS_DIR/swstartthriftserver >>${MY_LOG_FILE} 2>&1
+  if [ $? -ne 0 ]; then
+    echo "Problem starting HBase Thrift server, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
+  fi
+
+fi
+# end of HBase setup
+
+cd $MY_SW_ROOT
+
+if [ -d tpcds/tools ]; then
+  echo "TPC-DS files already exist, skipping TPC-DS setup"
+else
+  #####################################################
+  echo "Downloading TPC-DS setup tools..."
+
+  mkdir tpcds
+  cd tpcds
+
+  if [ -f $MY_LOCAL_SW_DIST/${TPCDS_ZIP} ]; then
+    cp $MY_LOCAL_SW_DIST/${TPCDS_ZIP} .
+  else
+    curl --output ${TPCDS_ZIP} ${TPCDS_MIRROR_URL}
+  fi
+
+  echo "Unzipping TPC-DS kit ${TPCDS_ZIP} and making the tools..."
+  unzip tpcds_kit.zip >/dev/null
+
+  cd tools
+  echo "Making objects for TPC-DS database generator..." | tee -a ${MY_LOG_FILE}
+  make clean >>${MY_LOG_FILE} 2>&1 
+  make >>${MY_LOG_FILE} 2>&1 
+
+  echo "Generating the data..." | tee -a ${MY_LOG_FILE}
+  mkdir $MY_TPCDS_DATA_DIR
+  SCALE=1
+  FORCE=Y
+
+  export PATH=.:$PATH
+
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store_sales >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table date_dim    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table time_dim    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table item        >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table customer    >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table customer_demographics  >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table household_demographics >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table customer_address       >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table store       >>${MY_LOG_FILE} 2>&1
+  ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table promotion   >>${MY_LOG_FILE} 2>&1
+
+  echo "Copying generated data to HDFS..."
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/item                   >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/customer               >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/customer_demographics  >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/household_demographics >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/customer_address       >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -mkdir /hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
+
+  cd $MY_TPCDS_DATA_DIR
+
+  for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales
+    do
+      ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -put ${t}.dat /hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1
+    done
+
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -lsr /hive/tpcds/*/*.dat                  >>${MY_LOG_FILE} 2>&1
+
+  echo "Creating tables in Hive..." | tee -a ${MY_LOG_FILE}
+  ${MY_SW_SCRIPTS_DIR}/swhive <<EOF >>${MY_LOG_FILE} 2>&1
+-- store_sales star only
+
+create external table store_sales
+(
+    ss_sold_date_sk           int,
+    ss_sold_time_sk           int,
+    ss_item_sk                int,
+    ss_customer_sk            int,
+    ss_cdemo_sk               int,
+    ss_hdemo_sk               int,
+    ss_addr_sk                int,
+    ss_store_sk               int,
+    ss_promo_sk               int,
+    ss_ticket_number          int,
+    ss_quantity               int,
+    ss_wholesale_cost         float,
+    ss_list_price             float,
+    ss_sales_price            float,
+    ss_ext_discount_amt       float,
+    ss_ext_sales_price        float,
+    ss_ext_wholesale_cost     float,
+    ss_ext_list_price         float,
+    ss_ext_tax                float,
+    ss_coupon_amt             float,
+    ss_net_paid               float,
+    ss_net_paid_inc_tax       float,
+    ss_net_profit             float                  
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/store_sales';
+
+create external table customer_demographics
+(
+    cd_demo_sk                int,
+    cd_gender                 string,
+    cd_marital_status         string,
+    cd_education_status       string,
+    cd_purchase_estimate      int,
+    cd_credit_rating          string,
+    cd_dep_count              int,
+    cd_dep_employed_count     int,
+    cd_dep_college_count      int 
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/customer_demographics';
+
+create external table date_dim
+(
+    d_date_sk                 int,
+    d_date_id                 string,
+    d_date                    timestamp,
+    d_month_seq               int,
+    d_week_seq                int,
+    d_quarter_seq             int,
+    d_year                    int,
+    d_dow                     int,
+    d_moy                     int,
+    d_dom                     int,
+    d_qoy                     int,
+    d_fy_year                 int,
+    d_fy_quarter_seq          int,
+    d_fy_week_seq             int,
+    d_day_name                string,
+    d_quarter_name            string,
+    d_holiday                 string,
+    d_weekend                 string,
+    d_following_holiday       string,
+    d_first_dom               int,
+    d_last_dom                int,
+    d_same_day_ly             int,
+    d_same_day_lq             int,
+    d_current_day             string,
+    d_current_week            string,
+    d_current_month           string,
+    d_current_quarter         string,
+    d_current_year            string 
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/date_dim';
+
+create external table time_dim
+(
+    t_time_sk                 int,
+    t_time_id                 string,
+    t_time                    int,
+    t_hour                    int,
+    t_minute                  int,
+    t_second                  int,
+    t_am_pm                   string,
+    t_shift                   string,
+    t_sub_shift               string,
+    t_meal_time               string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/time_dim';
+
+create external table item
+(
+    i_item_sk                 int,
+    i_item_id                 string,
+    i_rec_start_date          timestamp,
+    i_rec_end_date            timestamp,
+    i_item_desc               string,
+    i_current_price           float,
+    i_wholesale_cost          float,
+    i_brand_id                int,
+    i_brand                   string,
+    i_class_id                int,
+    i_class                   string,
+    i_category_id             int,
+    i_category                string,
+    i_manufact_id             int,
+    i_manufact                string,
+    i_size                    string,
+    i_formulation             string,
+    i_color                   string,
+    i_units                   string,
+    i_container               string,
+    i_manager_id              int,
+    i_product_name            string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/item';
+
+create external table store
+(
+    s_store_sk                int,
+    s_store_id                string,
+    s_rec_start_date          timestamp,
+    s_rec_end_date            timestamp,
+    s_closed_date_sk          int,
+    s_store_name              string,
+    s_number_employees        int,
+    s_floor_space             int,
+    s_hours                   string,
+    s_manager                 string,
+    s_market_id               int,
+    s_geography_class         string,
+    s_market_desc             string,
+    s_market_manager          string,
+    s_division_id             int,
+    s_division_name           string,
+    s_company_id              int,
+    s_company_name            string,
+    s_street_number           string,
+    s_street_name             string,
+    s_street_type             string,
+    s_suite_number            string,
+    s_city                    string,
+    s_county                  string,
+    s_state                   string,
+    s_zip                     string,
+    s_country                 string,
+    s_gmt_offset              float,
+    s_tax_precentage          float                  
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/store';
+
+create external table customer
+(
+    c_customer_sk             int,
+    c_customer_id             string,
+    c_current_cdemo_sk        int,
+    c_current_hdemo_sk        int,
+    c_current_addr_sk         int,
+    c_first_shipto_date_sk    int,
+    c_first_sales_date_sk     int,
+    c_salutation              string,
+    c_first_name              string,
+    c_last_name               string,
+    c_preferred_cust_flag     string,
+    c_birth_day               int,
+    c_birth_month             int,
+    c_birth_year              int,
+    c_birth_country           string,
+    c_login                   string,
+    c_email_address           string,
+    c_last_review_date        string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/customer';
+
+create external table promotion
+(
+    p_promo_sk                int,
+    p_promo_id                string,
+    p_start_date_sk           int,
+    p_end_date_sk             int,
+    p_item_sk                 int,
+    p_cost                    float,
+    p_response_target         int,
+    p_promo_name              string,
+    p_channel_dmail           string,
+    p_channel_email           string,
+    p_channel_catalog         string,
+    p_channel_tv              string,
+    p_channel_radio           string,
+    p_channel_press           string,
+    p_channel_event           string,
+    p_channel_demo            string,
+    p_channel_details         string,
+    p_purpose                 string,
+    p_discount_active         string 
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/promotion';
+
+create external table household_demographics
+(
+    hd_demo_sk                int,
+    hd_income_band_sk         int,
+    hd_buy_potential          string,
+    hd_dep_count              int,
+    hd_vehicle_count          int
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/household_demographics';
+
+create external table customer_address
+(
+    ca_address_sk             int,
+    ca_address_id             string,
+    ca_street_number          string,
+    ca_street_name            string,
+    ca_street_type            string,
+    ca_suite_number           string,
+    ca_city                   string,
+    ca_county                 string,
+    ca_state                  string,
+    ca_zip                    string,
+    ca_country                string,
+    ca_gmt_offset             float,
+    ca_location_type          string
+)
+row format delimited fields terminated by '|' 
+location '/hive/tpcds/customer_address';
+
+quit;
+
+EOF
+
+fi
+# end of TPC-DS setup
+
+echo
+echo "Installed directory size and name = $(du -sh $MY_SW_ROOT)" | tee -a ${MY_LOG_FILE}
+echo
+echo "Setup is complete. You can use the convenience scripts starting with sw... located in $MY_SW_SCRIPTS_DIR."

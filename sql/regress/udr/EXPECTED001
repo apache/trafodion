@@ -1,0 +1,51 @@
+>>sh rm -f LOG001-SECONDARY;
+>>obey TEST001(compile_libs);
+>>--------------------------------------------------------------------------
+>>log;
+>>
+>>obey TEST001(create_tables);
+>>--------------------------------------------------------------------------
+>>create table clicks (userid char(32), ts TIME(6), ipAddr char(15)) ;
+
+--- SQL operation complete.
+>>insert into clicks values
++> ('super-user',cast(time'09:59:59.50 pm' as TIME(6)),'12.345.567.345'),
++> ('super-user',cast(time'11:59:59.50 pm' as TIME(6)),'12.345.567.345'),
++> ('super-services',cast(time'11:59:59.50 pm' as TIME(6)),'12.345.567.345');
+
+--- 3 row(s) inserted.
+>>
+>>obey TEST001(register_functions);
+>>--------------------------------------------------------------------------
+>>
+>>create library TEST001 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>create table_mapping function sessionize(colname char(10), timeintval int)
++>returns (userid char(32), ts largeint, session_id largeint)
++>external name 'SESSIONIZE'
++>library TEST001;
+
+--- SQL operation complete.
+>>
+>>obey TEST001(tests);
+>>--------------------------------------------------------------------------
+>>--cqd attempt_esp_parallelism 'off' ;
+>>
+>>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
++>FROM UDF(sessionize
++>(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
++>       FROM clicks
++>       PARTITION BY userid ORDER BY ts),
++>cast('TS' as char(2)),
++>60000000)) XO(userid,ts,session_id);
+
+(EXPR)           USERID                            SESSION_ID          
+---------------  --------------------------------  --------------------
+
+23:59:59.500000  super-services                                       1
+21:59:59.500000  super-user                                           1
+23:59:59.500000  super-user                                           2
+
+--- 3 row(s) selected.
+>>log;

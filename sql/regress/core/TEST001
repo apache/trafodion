@@ -1,0 +1,248 @@
+-- Test: TEST001 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Nulls, set params, and ifdef syntax.
+-- Expected files: EXPECTED001, EXPECTED001.MP
+-- Table created: t001t1, t001ut1
+-- Limitations:
+-- To do: - Remove known diff file when Unicode is supported on MX tables
+--          while Unicode may never be supported on MP tables
+--          (Done 5/19/02)
+-- Revision history:
+--     (2/20/02) - Created with selected test from TEST001 (Executor)
+--     (3/10/02) - Comment off Unicode test for MP tables
+--     (5/19/02) - Removed DIFF001.KNOWN.NSK as Unicode is supported now.
+
+?section ddl
+-- CREATE database
+
+obey TEST001(clnup);
+
+log LOG001 clear;
+
+create table t001t1 (a int, b char(9), c int, d char(4));
+
+#ifMX
+create table t001ut1 (a int, b char(9) character set ucs2, c int, d char(4) character set ucs2);
+#ifMX
+
+?section dml
+
+invoke t001t1;
+
+#ifMX
+invoke $$TEST_SCHEMA$$.t001ut1;
+#ifMX
+
+-- INSERT queries
+insert into t001t1 values (10, 'abc', 20, 'xy');
+insert into t001t1(b,d,a,c) values ('defg', 'wx', 10+10, 30);
+
+#ifMX
+insert into t001ut1 values (10, N'abc', 20, N'xy');
+insert into t001ut1(b,d,a,c) values (N'defg', N'wx', 10+10, 30);
+#ifMX
+
+-- Genesis 10-980112-5942 + 10-970918-1487
+select abs(a),abs(-a),abs(a-c),abs(c-a),abs(99),abs(-99),-abs(-a) from t001t1;
+
+-- Nulls
+-- Genesis 10-971028-7413
+select null from t001t1;					-- ok
+select cast(null as char) from t001t1;				-- ok
+select a from t001t1 where null is not null;			-- ok (0 rows)
+select a from t001t1 where null is null and cast(null as char) is null and cast(null as int) + 1 is null;			-- ok
+select null+1 from t001t1;
+select -null from t001t1;
+select avg(null) from t001t1;
+select count(null) from t001t1;
+select max(null) from t001t1;
+select max(null/2) from t001t1;
+select stddev(null) from t001t1;
+select a from t001t1 where b < null;
+select a from t001t1 where null > b;
+select a from t001t1 where b < 1-null;
+select a from t001t1 where (a,b) < (c,null);
+select a from t001t1 where (null,b) < (c,d);
+
+select b || NULL from t001t1;
+select NULL || b from t001t1;
+select a from t001t1 where c between 2 and null;
+select a from t001t1 where null like 'x';
+select a from t001t1 where b like null;
+select a from t001t1 where b like 'x' escape null;
+select a from t001t1 where 1 like 2;
+select a from t001t1 where 1 like b;
+select a from t001t1 where b like 2;
+
+select Abs  		(null) from t001t1;
+select Char_Length  	(null) from t001t1;
+select ConvertTimestamp (null) from t001t1;
+select DateFormat 	(null, usa) from t001t1;
+select DayOfWeek	(null) from t001t1;
+select Extract 		(hour from null) from t001t1;
+select JulianTimestamp 	(null) from t001t1;
+select left             ('a',null) from t001t1;
+select left             (null,2) from t001t1; 
+select ltrim            (null) from t001t1;
+select Lower  		(null) from t001t1;
+select Octet_Length 	(null) from t001t1;
+select Position 	(null in b) from t001t1;
+select Position 	(b in null) from t001t1;
+select rtrim            (null) from t001t1;
+select Substring	(null from 2) from t001t1;
+select Substring	(b from null) from t001t1;
+select Trim  		(null) from t001t1;
+select Upper  		(null) from t001t1;
+select Upshift  	(null) from t001t1;
+
+select a from t001t1 where c in (select cast(null as int) from t001t1);	-- ok
+select a from t001t1 where c in (select null from t001t1);
+select a from t001t1 where null in (select a from t001t1);
+select a from t001t1 where c in (1,null,2);
+select a from t001t1 where null >any (select a from t001t1);
+
+select (case null when 1 then 1 else 2 end) from t001t1;
+select (case a when null then 1 else 2 end) from t001t1;
+select (case a when 1 then 1 when null then 2 else 3 end) from t001t1;
+select (case a when 1 then 1 when 2 then 2 else null end) from t001t1;	-- ok
+
+select a from t001t1 where null is null;			-- ok
+select a from t001t1 where null is not null;			-- ok (0 rows)
+
+
+-- PARAM queries
+set param ?p 10;
+set param ?q 30;
+
+select t001t1.*, ?p from t001t1 where a = ?p;
+
+-- Genesis Case 10-03015-3953
+select a from t001t1 where ?q between ((cast (a as largeint))/1) and 50;
+
+prepare s3 from select t001t1.*, ?p from t001t1 where a = ?p or a = ?q;
+execute s3;
+
+set param ?p 20;
+set param ?u 101;
+prepare s4 from update t001t1 set a = ?u where c = ?p;
+execute s4;
+
+select * from t001t1;
+
+set param ?p 40;
+set param ?u 301;
+execute s4;
+
+select * from t001t1;
+
+prepare s from delete from t001t1;
+execute s;
+
+select * from t001t1;
+
+set param ?p 10;
+set param ?q 30;
+
+#ifMX
+prepare s3 from select t001ut1.*, ?p from t001ut1 where a = ?p or a = ?q;
+execute s3;
+
+select * from t001ut1;
+
+prepare s from delete from t001ut1;
+execute s;
+
+select * from t001ut1;
+#ifMX
+
+
+------------------------------
+
+obey TEST001(test_IFDEF);
+
+set envvar TEST001_ENVvAR_a;
+obey TEST001(test_IFDEF);
+
+set envvar TEST001_ENVvAR_B;
+set envvar TEST001_ENVvAR_D;
+obey TEST001(test_IFDEF);
+
+set envvar test001_Envvar_c;
+set envvar TEST001_ENVvAR_D 0;
+obey TEST001(test_IFDEF);
+
+obey TEST001(test_IFDEF_indented);
+
+log;
+obey TEST001(clnup);
+exit;
+
+
+?section test_ifdef
+
+#ifdef Test001_envVar_A
+  env_A;
+#ifdef  test001_ENVVAR_b 
+    env_B;
+#ifndef 	TEST001_envvar_C	
+      NOT env_C;
+#else
+      env_C;
+#endif
+#endif B
+#else
+  NOT env A;
+#endif
+
+#ifdef	Test001_envVar_d
+  env_D;
+#endif
+#else
+  foo bad else/endif!;
+#endif
+
+?section test_ifdef_INDENTED
+
+#ifdef Test001_envVar_A		  	 	 
+	    env_A;
+#  ifdef  test001_ENVVAR_b  	
+	    env_B;
+#    ifndef 	TEST001_envvar_C	
+	    NOT env_C;
+#    else	 	       C
+	    env_C;
+#    endif	C
+#  endif B
+#else not A
+	    NOT env A;
+#endif
+
+?ifdef Test001_envVar_A
+?endif
+-- both of these must be syntax errors; '?ifdef' illegal, only '#ifdef' ok!
+
+
+?section clnup
+-- CLEANUP database
+drop table t001t1;
+#ifMX
+drop table t001ut1;
+#ifMX
+

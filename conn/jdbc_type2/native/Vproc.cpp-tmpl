@@ -1,0 +1,2 @@
+const char *driverVproc = "@@@";
+extern "C" void @@@(void) { return; }

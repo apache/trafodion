@@ -1,0 +1,12 @@
+package org.trafodion.sql;
+
+class DriverInfo {
+
+	static final String driverVproc = "@@@";
+	static final String driverProductVersion = "###";
+	static final int JdbcMajorVersion = 3;
+	static final int JdbcMinorVersion = 2;
+
+	DriverInfo() {
+	}
+}

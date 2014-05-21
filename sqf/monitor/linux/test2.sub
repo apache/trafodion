@@ -1,0 +1,12 @@
+! General Client/Server testing through child shell
+pwd
+path
+exec shell test.sub
+ps
+exec shell test.sub
+ps
+exec shell test.sub
+ps
+exec shell test.sub
+ps
+exit

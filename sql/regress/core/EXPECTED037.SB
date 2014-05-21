@@ -1,0 +1,5524 @@
+>>
+>>?ifMX
+>>
+>>create table table_name
++>( ABSOLUTE int not null 
++>, ACCESS int not null 
++>, ANSIVARCHAR int not null 
++>, ASCENDING int not null 
++>, ATTRIBUTE int not null 
++>, ATTRIBUTES int not null 
++>, AUDIT int not null 
++>, AUTOCOMMIT int not null 
++>, AUDITCOMPRESS int not null 
++>, BIGINT int not null 
++>, BLOCKSIZE int not null 
++>, BUFFERED int not null 
++>, BYTES int not null 
++>, CATALOG_NAME int not null 
++>, CHARACTER_SET int not null 
++>, CHARACTER_SET_CATALOG int not null 
++>, CHARACTER_SET_NAME int not null 
++>, CHARACTER_SET_SCHEMA int not null 
++>, CLASS_ORIGIN int not null 
++>, CLEARONPURGE int not null 
++>, COLLATION_CATALOG int not null 
++>, COLLATION_NAME int not null 
++>, COLLATION_SCHEMA int not null 
++>, COLUMN_NAME int not null 
++>, COLUMN_NUMBER int not null 
++>, COMMAND_FUNCTION int not null 
++>, COMMITTED int not null 
++>, COMP  int not null 
++>, CONDITION_NUMBER int not null 
++>, CONFIG int not null 
++>, CONNECTION_NAME int not null 
++>, CONSTRAINT_CATALOG int not null 
++>, CONSTRAINT_NAME int not null 
++>, CONSTRAINT_SCHEMA int not null 
++>, CONTROL int not null 
++>, CURSOR_NAME int not null 
++>, DATA int not null 
++>--,DATETIME int not null 
++>, DATETIME_CODE int not null 
++>, DCOMPRESS int not null 
++>, DEFINITION int not null 
++>, DESCENDING int not null 
++>, DISPLAY int not null 
++>, DROPPABLE int not null 
++>, DSLACK int not null 
++>, DYNAMIC_FUNCTION int not null 
++>, ENTRY  int not null 
++>, EUROPEAN int not null 
++>, EXCLUSIVE int not null 
++>, EXIT int not null 
++>, EXPLAIN  int not null 
++>, FN int not null 
++>--,FRACTION int not null 
++>, GBYTES int not null 
++>, HASH int not null 
++>, HEADING  int not null 
++>, HEADINGS int not null 
++>, HIGH_VALUE int not null 
++>, HISTOGRAM int not null 
++>, INDEX_TABLE int not null 
++>, INDICATOR_DATA int not null 
++>, INDICATOR_POINTER int not null 
++>, INDICATOR_TYPE int not null 
++>, INITIALIZE int not null 
++>, INTERNALSP int not null 
++>, ISLACK int not null 
++>, KBYTES int not null 
++>);
+
+--- SQL operation complete.
+>>invoke table_name;
+
+-- Definition of Seabase table SEABASE.SCH.TABLE_NAME
+-- Definition current  Fri Nov 22 16:05:36 2013
+
+  (
+    ABSOLUTE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ACCESS                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ANSIVARCHAR                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ASCENDING                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ATTRIBUTE                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ATTRIBUTES                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , AUDIT                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , AUTOCOMMIT                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , AUDITCOMPRESS                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , BIGINT                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , BLOCKSIZE                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , BUFFERED                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , BYTES                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CATALOG_NAME                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CHARACTER_SET                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CHARACTER_SET_CATALOG            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CHARACTER_SET_NAME               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CHARACTER_SET_SCHEMA             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CLASS_ORIGIN                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CLEARONPURGE                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLLATION_CATALOG                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLLATION_NAME                   INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLLATION_SCHEMA                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_NUMBER                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COMMAND_FUNCTION                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COMMITTED                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COMP                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONDITION_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONFIG                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONNECTION_NAME                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONSTRAINT_CATALOG               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONSTRAINT_NAME                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONSTRAINT_SCHEMA                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CONTROL                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CURSOR_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DATA                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DATETIME_CODE                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DCOMPRESS                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DEFINITION                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DESCENDING                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DISPLAY                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DROPPABLE                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DSLACK                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DYNAMIC_FUNCTION                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ENTRY                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , EUROPEAN                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , EXCLUSIVE                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , EXIT                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , EXPLAIN                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , FN                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GBYTES                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , HASH                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , HEADING                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , HEADINGS                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , HIGH_VALUE                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , HISTOGRAM                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INDEX_TABLE                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INDICATOR_DATA                   INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INDICATOR_POINTER                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INDICATOR_TYPE                   INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INITIALIZE                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , INTERNALSP                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ISLACK                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , KBYTES                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>create table system_name
++>( LARGEINT int not null 
++>, LEADING_PRECISION int not null 
++>, LENGTH int not null 
++>, LINE_NUMBER int not null 
++>, LOAD_TABLE int not null 
++>, LOCATION int not null 
++>, LOCK int not null 
++>, LOCKLENGTH int not null 
++>, LONG int not null 
++>, LOW_VALUE int not null 
++>, MAXSIZE int not null 
++>, MBYTES int not null 
++>, MESSAGE_LEN int not null 
++>, MESSAGE_OCTET_LEN int not null 
++>, MESSAGE_TEXT int not null 
++>, MODE int not null 
++>, MORE int not null 
++>, MOVE int not null 
++>, MOVEMENT  int not null 
++>, NAME int not null 
++>, NATIVE int not null 
++>, NONDROPPABLE  int not null 
++>, NULLABLE int not null 
++>, NUMBER int not null 
++>, PARTITION int not null 
++>, PARTITION_TABLE int not null 
++>, QUERY int not null 
++>, RANGE int not null 
++>, REINITIALIZE int not null 
++>, RENAME int not null 
++>, REPEATABLE int not null 
++>, RESOURCE_FORK int not null 
++>, RETURNED_LENGTH int not null 
++>, RETURNED_OCTET_LENGTH int not null 
++>, RETURNED_SQLSTATE int not null 
++>, ROW_COUNT int not null 
++>, ROW_NUMBER int not null 
++>, SCALE int not null 
++>, SCHEMA_NAME int not null 
++>, SEPARATE int not null 
++>, SEQUENCE int not null 
++>, SERIALIZABLE int not null 
++>, SERIALWRITES int not null 
++>, SERVER_NAME int not null 
++>, SHAPE int not null 
++>, SHARE int not null 
++>, SIDEINSERTS int not null 
++>, SIGNED int not null 
++>, SOURCE_FILE int not null 
++>, SQL_WARNING int not null 
++>, SQLMP int not null 
++>, STATEMENT int not null 
++>, STATIC int not null 
++>, STATISTICS int not null 
++>, STORE int not null 
++>, SUBCLASS_ORIGIN int not null 
++>, SUBSYSTEM_ID int not null 
++>, system_name int not null 
++>, TABLE_NAME int not null 
++>, TYPE int not null 
++>, UNBOUNDED int not null 
++>, UNCOMMITTED int not null 
++>, UNLOCK int not null 
++>, UNNAMED int not null 
++>, UNSIGNED int not null 
++>, USA int not null 
++>, VARIABLE_DATA int not null 
++>, VARIABLE_POINTER int not null 
++>, VSBB int not null 
++>, WAITED int not null 
++>);
+
+--- SQL operation complete.
+>>invoke system_name;
+
+-- Definition of Seabase table SEABASE.SCH.SYSTEM_NAME
+-- Definition current  Fri Nov 22 16:05:55 2013
+
+  (
+    LARGEINT                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LEADING_PRECISION                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LENGTH                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LINE_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LOAD_TABLE                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LOCATION                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LOCK                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LOCKLENGTH                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LONG                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , LOW_VALUE                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MAXSIZE                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MBYTES                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MESSAGE_LEN                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MESSAGE_OCTET_LEN                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MESSAGE_TEXT                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MODE                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MORE                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MOVE                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , MOVEMENT                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NAME                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NATIVE                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NONDROPPABLE                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NULLABLE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , NUMBER                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PARTITION                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PARTITION_TABLE                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , QUERY                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , RANGE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REINITIALIZE                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , RENAME                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , REPEATABLE                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , RESOURCE_FORK                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , RETURNED_LENGTH                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , RETURNED_OCTET_LENGTH            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , RETURNED_SQLSTATE                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ROW_COUNT                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , ROW_NUMBER                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SCALE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SCHEMA_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SEPARATE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SEQUENCE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SERIALIZABLE                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SERIALWRITES                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SERVER_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SHAPE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SHARE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SIDEINSERTS                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SIGNED                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SOURCE_FILE                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SQL_WARNING                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SQLMP                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STATEMENT                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STATIC                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STATISTICS                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , STORE                            INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SUBCLASS_ORIGIN                  INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SUBSYSTEM_ID                     INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SYSTEM_NAME                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TABLE_NAME                       INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TYPE                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , UNBOUNDED                        INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , UNCOMMITTED                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , UNLOCK                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , UNNAMED                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , UNSIGNED                         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , USA                              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VARIABLE_DATA                    INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VARIABLE_POINTER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VSBB                             INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , WAITED                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>--
+>>-- Checks a few reserved words
+>>--
+>>create view abs  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view avg  as select usa from table_name;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create view avg  as select usa from table_name;
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view converttimestamp  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view dateformat as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view dayofweek  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view encode_key as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view invoke  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view juliantimestamp  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view sqlerror  as select usa from table_name;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create view sqlerror  as select usa from table_name;
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view sqlstate  as select usa from table_name;
+
+*** ERROR[3128] SQLSTATE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create view sqlstate  as select usa from table_name;
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view stddev  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>create view table  as select usa from table_name;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create view table  as select usa from table_name;
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view upshift  as select usa from table_name;
+
+*** ERROR[3128] UPSHIFT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create view upshift  as select usa from table_name;
+                  ^ (19 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create view variance  as select usa from table_name;
+
+*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+
+--- SQL operation failed with errors.
+>>
+>>drop table table_name;
+
+--- SQL operation complete.
+>>drop table system_name;
+
+--- SQL operation complete.
+>>?ifMX
+>>
+>>-- Check reserved and non-reserved words as identifiers.
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT AFTER AFTER from (values(0)) AFTER(AFTER);
+
+*** ERROR[3128] AFTER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AFTER AFTER from (values(0)) AFTER(AFTER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT ASYNC ASYNC from (values(0)) ASYNC(ASYNC);
+
+*** ERROR[3128] ASYNC is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ASYNC ASYNC from (values(0)) ASYNC(ASYNC);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT AT AT from (values(0)) AT(AT);
+
+*** ERROR[3128] AT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AT AT from (values(0)) AT(AT);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT BEFORE BEFORE from (values(0)) BEFORE(BEFORE);
+
+*** ERROR[3128] BEFORE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BEFORE BEFORE from (values(0)) BEFORE(BEFORE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
+
+*** ERROR[3128] BIT_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BIT_LENGTH BIT_LENGTH from (values(0)) BIT_LENGTH(BIT_LENGTH);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
+
+*** ERROR[3128] BOOLEAN is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BOOLEAN BOOLEAN from (values(0)) BOOLEAN(BOOLEAN);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT BREADTH BREADTH from (values(0)) BREADTH(BREADTH);
+
+*** ERROR[3128] BREADTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BREADTH BREADTH from (values(0)) BREADTH(BREADTH);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT COMPLETION COMPLETION from (values(0)) COMPLETION(COMPLETION);
+
+*** ERROR[3128] COMPLETION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COMPLETION COMPLETION from (values(0)) COMPLETION(COMPLETION);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
+
+*** ERROR[3128] CONNECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CONNECT CONNECT from (values(0)) CONNECT(CONNECT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT CYCLE CYCLE from (values(0)) CYCLE(CYCLE);
+
+*** ERROR[3128] CYCLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CYCLE CYCLE from (values(0)) CYCLE(CYCLE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DEFERRABLE DEFERRABLE from (values(0)) DEFERRABLE(DEFERRABLE);
+
+*** ERROR[3128] DEFERRABLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEFERRABLE DEFERRABLE from (values(0)) DEFERRABLE(DEFERRABLE);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DEFERRED DEFERRED from (values(0)) DEFERRED(DEFERRED);
+
+*** ERROR[3128] DEFERRED is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEFERRED DEFERRED from (values(0)) DEFERRED(DEFERRED);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DEPTH DEPTH from (values(0)) DEPTH(DEPTH);
+
+*** ERROR[3128] DEPTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEPTH DEPTH from (values(0)) DEPTH(DEPTH);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DICTIONARY DICTIONARY from (values(0)) DICTIONARY(DICTIONARY);
+
+*** ERROR[3128] DICTIONARY is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DICTIONARY DICTIONARY from (values(0)) DICTIONARY(DICTIONARY);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DISCONNECT DISCONNECT from (values(0)) DISCONNECT(DISCONNECT);
+
+*** ERROR[3128] DISCONNECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DISCONNECT DISCONNECT from (values(0)) DISCONNECT(DISCONNECT);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DOMAIN DOMAIN from (values(0)) DOMAIN(DOMAIN);
+
+*** ERROR[3128] DOMAIN is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DOMAIN DOMAIN from (values(0)) DOMAIN(DOMAIN);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT EACH EACH from (values(0)) EACH(EACH);
+
+*** ERROR[3128] EACH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EACH EACH from (values(0)) EACH(EACH);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT EQUALS EQUALS from (values(0)) EQUALS(EQUALS);
+
+*** ERROR[3128] EQUALS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EQUALS EQUALS from (values(0)) EQUALS(EQUALS);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT EXEC EXEC from (values(0)) EXEC(EXEC);
+
+*** ERROR[3128] EXEC is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXEC EXEC from (values(0)) EXEC(EXEC);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT GENERAL GENERAL from (values(0)) GENERAL(GENERAL);
+
+*** ERROR[3128] GENERAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GENERAL GENERAL from (values(0)) GENERAL(GENERAL);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error now that we use IDENTITY as a token
+>>prepare s1 from SELECT IDENTITY IDENTITY from (values(0)) IDENTITY(IDENTITY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT IDENTITY IDENTITY from (values(0)) IDENTITY(IDENTITY);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT INITIALLY INITIALLY from (values(0)) INITIALLY(INITIALLY);
+
+*** ERROR[3128] INITIALLY is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INITIALLY INITIALLY from (values(0)) INITIALLY(INITIALLY);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT INSENSITIVE INSENSITIVE from (values(0)) INSENSITIVE(INSENSITIVE);
+
+*** ERROR[3128] INSENSITIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INSENSITIVE INSENSITIVE from (values(0)) INSENSITIVE(INSENSITIVE);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT LEAVE LEAVE from (values(0)) LEAVE(LEAVE);
+
+*** ERROR[3128] LEAVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LEAVE LEAVE from (values(0)) LEAVE(LEAVE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT LESS LESS from (values(0)) LESS(LESS);
+
+*** ERROR[3128] LESS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LESS LESS from (values(0)) LESS(LESS);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect syntax error, LIMIT must be double quoted.
+>>prepare s1 from SELECT LIMIT LIMIT from (values(0)) LIMIT(LIMIT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LIMIT LIMIT from (values(0)) LIMIT(LIMIT);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT LOOP LOOP from (values(0)) LOOP(LOOP);
+
+*** ERROR[3128] LOOP is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LOOP LOOP from (values(0)) LOOP(LOOP);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT MODIFY MODIFY from (values(0)) MODIFY(MODIFY);
+
+*** ERROR[3128] MODIFY is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MODIFY MODIFY from (values(0)) MODIFY(MODIFY);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT NEW NEW from (values(0)) NEW(NEW);
+
+*** ERROR[3128] NEW is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NEW NEW from (values(0)) NEW(NEW);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT NEXT NEXT from (values(0)) NEXT(NEXT);
+
+*** ERROR[3128] NEXT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NEXT NEXT from (values(0)) NEXT(NEXT);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [15001]
+>>prepare s1 from SELECT NONE NONE from (values(0)) NONE(NONE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NONE NONE from (values(0)) NONE(NONE);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT OBJECT OBJECT from (values(0)) OBJECT(OBJECT);
+
+*** ERROR[3128] OBJECT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OBJECT OBJECT from (values(0)) OBJECT(OBJECT);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT OID OID from (values(0)) OID(OID);
+
+*** ERROR[3128] OID is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OID OID from (values(0)) OID(OID);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT OLD OLD from (values(0)) OLD(OLD);
+
+*** ERROR[3128] OLD is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OLD OLD from (values(0)) OLD(OLD);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT OPERATORS OPERATORS from (values(0)) OPERATORS(OPERATORS);
+
+*** ERROR[3128] OPERATORS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OPERATORS OPERATORS from (values(0)) OPERATORS(OPERATORS);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT OTHERS OTHERS from (values(0)) OTHERS(OTHERS);
+
+*** ERROR[3128] OTHERS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OTHERS OTHERS from (values(0)) OTHERS(OTHERS);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PAD PAD from (values(0)) PAD(PAD);
+
+*** ERROR[3128] PAD is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PAD PAD from (values(0)) PAD(PAD);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PARAMETERS PARAMETERS from (values(0)) PARAMETERS(PARAMETERS);
+
+*** ERROR[3128] PARAMETERS is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PARAMETERS PARAMETERS from (values(0)) PARAMETERS(PARAMETERS);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PENDANT PENDANT from (values(0)) PENDANT(PENDANT);
+
+*** ERROR[3128] PENDANT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PENDANT PENDANT from (values(0)) PENDANT(PENDANT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PREORDER PREORDER from (values(0)) PREORDER(PREORDER);
+
+*** ERROR[3128] PREORDER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PREORDER PREORDER from (values(0)) PREORDER(PREORDER);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PRESERVE PRESERVE from (values(0)) PRESERVE(PRESERVE);
+
+*** ERROR[3128] PRESERVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRESERVE PRESERVE from (values(0)) PRESERVE(PRESERVE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);
+
+*** ERROR[3128] PRIOR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRIOR PRIOR from (values(0)) PRIOR(PRIOR);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PRIVATE PRIVATE from (values(0)) PRIVATE(PRIVATE);
+
+*** ERROR[3128] PRIVATE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRIVATE PRIVATE from (values(0)) PRIVATE(PRIVATE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [15001]
+>>prepare s1 from SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PROTECTED PROTECTED from (values(0)) PROTECTED(PROTECTED);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT RECURSIVE RECURSIVE from (values(0)) RECURSIVE(RECURSIVE);
+
+*** ERROR[3128] RECURSIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RECURSIVE RECURSIVE from (values(0)) RECURSIVE(RECURSIVE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT REF REF from (values(0)) REF(REF);
+
+*** ERROR[3128] REF is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REF REF from (values(0)) REF(REF);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT REFERENCING REFERENCING from (values(0)) REFERENCING(REFERENCING);
+
+*** ERROR[3128] REFERENCING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REFERENCING REFERENCING from (values(0)) REFERENCING(REFERENCING);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT RELATIVE RELATIVE from (values(0)) RELATIVE(RELATIVE);
+
+*** ERROR[3128] RELATIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RELATIVE RELATIVE from (values(0)) RELATIVE(RELATIVE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT RESIGNAL RESIGNAL from (values(0)) RESIGNAL(RESIGNAL);
+
+*** ERROR[3128] RESIGNAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RESIGNAL RESIGNAL from (values(0)) RESIGNAL(RESIGNAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RETURNS RETURNS from (values(0)) RETURNS(RETURNS);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);
+
+*** ERROR[3128] ROUTINE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ROUTINE ROUTINE from (values(0)) ROUTINE(ROUTINE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT ROW ROW from (values(0)) ROW(ROW);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ROW ROW from (values(0)) ROW(ROW);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SAVEPOINT SAVEPOINT from (values(0)) SAVEPOINT(SAVEPOINT);
+
+*** ERROR[3128] SAVEPOINT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SAVEPOINT SAVEPOINT from (values(0)) SAVEPOINT(SAVEPOINT);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SCROLL SCROLL from (values(0)) SCROLL(SCROLL);
+
+*** ERROR[3128] SCROLL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SCROLL SCROLL from (values(0)) SCROLL(SCROLL);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SEARCH SEARCH from (values(0)) SEARCH(SEARCH);
+
+*** ERROR[3128] SEARCH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SEARCH SEARCH from (values(0)) SEARCH(SEARCH);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SENSITIVE SENSITIVE from (values(0)) SENSITIVE(SENSITIVE);
+
+*** ERROR[3128] SENSITIVE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SENSITIVE SENSITIVE from (values(0)) SENSITIVE(SENSITIVE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SIGNAL SIGNAL from (values(0)) SIGNAL(SIGNAL);
+
+*** ERROR[3128] SIGNAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SIGNAL SIGNAL from (values(0)) SIGNAL(SIGNAL);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SIMILAR SIMILAR from (values(0)) SIMILAR(SIMILAR);
+
+*** ERROR[3128] SIMILAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SIMILAR SIMILAR from (values(0)) SIMILAR(SIMILAR);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SQLEXCEPTION SQLEXCEPTION from (values(0)) SQLEXCEPTION(SQLEXCEPTION);
+
+*** ERROR[3128] SQLEXCEPTION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLEXCEPTION SQLEXCEPTION from (values(0)) SQLEXCEPTION(SQLEXCEPTION);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SQLSTATE SQLSTATE from (values(0)) SQLSTATE(SQLSTATE);
+
+*** ERROR[3128] SQLSTATE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLSTATE SQLSTATE from (values(0)) SQLSTATE(SQLSTATE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SQLWARNING SQLWARNING from (values(0)) SQLWARNING(SQLWARNING);
+
+*** ERROR[3128] SQLWARNING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLWARNING SQLWARNING from (values(0)) SQLWARNING(SQLWARNING);
+                           ^ (28 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT STRUCTURE STRUCTURE from (values(0)) STRUCTURE(STRUCTURE);
+
+*** ERROR[3128] STRUCTURE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT STRUCTURE STRUCTURE from (values(0)) STRUCTURE(STRUCTURE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SYSTEM_USER SYSTEM_USER from (values(0)) SYSTEM_USER(SYSTEM_USER);
+
+*** ERROR[3128] SYSTEM_USER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SYSTEM_USER SYSTEM_USER from (values(0)) SYSTEM_USER(SYSTEM_USER);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TEMPORARY TEMPORARY from (values(0)) TEMPORARY(TEMPORARY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TEMPORARY TEMPORARY from (values(0)) TEMPORARY(TEMPORARY);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TEST TEST from (values(0)) TEST(TEST);
+
+*** ERROR[3128] TEST is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TEST TEST from (values(0)) TEST(TEST);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT THERE THERE from (values(0)) THERE(THERE);
+
+*** ERROR[3128] THERE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT THERE THERE from (values(0)) THERE(THERE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TIMEZONE_HOUR TIMEZONE_HOUR from (values(0)) TIMEZONE_HOUR(TIMEZONE_HOUR);
+
+*** ERROR[3128] TIMEZONE_HOUR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TIMEZONE_HOUR TIMEZONE_HOUR from (values(0)) TIMEZONE_HOUR(TIMEZONE_HOUR
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TIMEZONE_MINUTE TIMEZONE_MINUTE from (values(0)) TIMEZONE_MINUTE(TIMEZONE_MINUTE);
+
+*** ERROR[3128] TIMEZONE_MINUTE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TIMEZONE_MINUTE TIMEZONE_MINUTE from (values(0)) TIMEZONE_MINUTE(TIMEZON
+                                     ^ (38 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TRANSLATION TRANSLATION from (values(0)) TRANSLATION(TRANSLATION);
+
+*** ERROR[3128] TRANSLATION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRANSLATION TRANSLATION from (values(0)) TRANSLATION(TRANSLATION);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TRIGGER TRIGGER from (values(0)) TRIGGER(TRIGGER);
+
+*** ERROR[3128] TRIGGER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRIGGER TRIGGER from (values(0)) TRIGGER(TRIGGER);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT UNDER UNDER from (values(0)) UNDER(UNDER);
+
+*** ERROR[3128] UNDER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UNDER UNDER from (values(0)) UNDER(UNDER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT USAGE USAGE from (values(0)) USAGE(USAGE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT USAGE USAGE from (values(0)) USAGE(USAGE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT VARIABLE VARIABLE from (values(0)) VARIABLE(VARIABLE);
+
+*** ERROR[3128] VARIABLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VARIABLE VARIABLE from (values(0)) VARIABLE(VARIABLE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT VIRTUAL VIRTUAL from (values(0)) VIRTUAL(VIRTUAL);
+
+*** ERROR[3128] VIRTUAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VIRTUAL VIRTUAL from (values(0)) VIRTUAL(VIRTUAL);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT VISIBLE VISIBLE from (values(0)) VISIBLE(VISIBLE);
+
+*** ERROR[3128] VISIBLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VISIBLE VISIBLE from (values(0)) VISIBLE(VISIBLE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT WAIT WAIT from (values(0)) WAIT(WAIT);
+
+*** ERROR[3128] WAIT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WAIT WAIT from (values(0)) WAIT(WAIT);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT WHILE WHILE from (values(0)) WHILE(WHILE);
+
+*** ERROR[3128] WHILE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WHILE WHILE from (values(0)) WHILE(WHILE);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT ZONE ZONE from (values(0)) ZONE(ZONE);
+
+*** ERROR[3128] ZONE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ZONE ZONE from (values(0)) ZONE(ZONE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT CAST CAST from (values(0)) CAST(CAST);
+
+*** ERROR[3128] CAST is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CAST CAST from (values(0)) CAST(CAST);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT CHARACTER_LENGTH CHARACTER_LENGTH from (values(0)) CHARACTER_LENGTH(CHARACTER_LENGTH);
+
+*** ERROR[3128] CHARACTER_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHARACTER_LENGTH CHARACTER_LENGTH from (values(0)) CHARACTER_LENGTH(CHAR
+                                       ^ (40 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT CHAR_LENGTH CHAR_LENGTH from (values(0)) CHAR_LENGTH(CHAR_LENGTH);
+
+*** ERROR[3128] CHAR_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHAR_LENGTH CHAR_LENGTH from (values(0)) CHAR_LENGTH(CHAR_LENGTH);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT DOUBLE DOUBLE from (values(0)) DOUBLE(DOUBLE);
+
+*** ERROR[3128] DOUBLE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DOUBLE DOUBLE from (values(0)) DOUBLE(DOUBLE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT ELSE ELSE from (values(0)) ELSE(ELSE);
+
+*** ERROR[3128] ELSE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ELSE ELSE from (values(0)) ELSE(ELSE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT END END from (values(0)) END(END);
+
+*** ERROR[3128] END is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT END END from (values(0)) END(END);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT FLOAT FLOAT from (values(0)) FLOAT(FLOAT);
+
+*** ERROR[3128] FLOAT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FLOAT FLOAT from (values(0)) FLOAT(FLOAT);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT LOWER LOWER from (values(0)) LOWER(LOWER);
+
+*** ERROR[3128] LOWER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LOWER LOWER from (values(0)) LOWER(LOWER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT MIN MIN from (values(0)) MIN(MIN);
+
+*** ERROR[3128] MIN is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MIN MIN from (values(0)) MIN(MIN);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT NATIONAL NATIONAL from (values(0)) NATIONAL(NATIONAL);
+
+*** ERROR[3128] NATIONAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NATIONAL NATIONAL from (values(0)) NATIONAL(NATIONAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT NCHAR NCHAR from (values(0)) NCHAR(NCHAR);
+
+*** ERROR[3128] NCHAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NCHAR NCHAR from (values(0)) NCHAR(NCHAR);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT OCTET_LENGTH OCTET_LENGTH from (values(0)) OCTET_LENGTH(OCTET_LENGTH);
+
+*** ERROR[3128] OCTET_LENGTH is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OCTET_LENGTH OCTET_LENGTH from (values(0)) OCTET_LENGTH(OCTET_LENGTH);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT POSITION POSITION from (values(0)) POSITION(POSITION);
+
+*** ERROR[3128] POSITION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT POSITION POSITION from (values(0)) POSITION(POSITION);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT PRECISION PRECISION from (values(0)) PRECISION(PRECISION);
+
+*** ERROR[3128] PRECISION is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRECISION PRECISION from (values(0)) PRECISION(PRECISION);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT REAL REAL from (values(0)) REAL(REAL);
+
+*** ERROR[3128] REAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REAL REAL from (values(0)) REAL(REAL);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SUBSTRING SUBSTRING from (values(0)) SUBSTRING(SUBSTRING);
+
+*** ERROR[3128] SUBSTRING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SUBSTRING SUBSTRING from (values(0)) SUBSTRING(SUBSTRING);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SQL_FLOAT SQL_FLOAT from (values(0)) SQL_FLOAT(SQL_FLOAT);
+
+*** ERROR[3128] SQL_FLOAT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_FLOAT SQL_FLOAT from (values(0)) SQL_FLOAT(SQL_FLOAT);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SQL_REAL SQL_REAL from (values(0)) SQL_REAL(SQL_REAL);
+
+*** ERROR[3128] SQL_REAL is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_REAL SQL_REAL from (values(0)) SQL_REAL(SQL_REAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT SQL_VARCHAR SQL_VARCHAR from (values(0)) SQL_VARCHAR(SQL_VARCHAR);
+
+*** ERROR[3128] SQL_VARCHAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_VARCHAR SQL_VARCHAR from (values(0)) SQL_VARCHAR(SQL_VARCHAR);
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT TRIM TRIM from (values(0)) TRIM(TRIM);
+
+*** ERROR[3128] TRIM is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRIM TRIM from (values(0)) TRIM(TRIM);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT UPPER UPPER from (values(0)) UPPER(UPPER);
+
+*** ERROR[3128] UPPER is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UPPER UPPER from (values(0)) UPPER(UPPER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT UPSHIFT UPSHIFT from (values(0)) UPSHIFT(UPSHIFT);
+
+*** ERROR[3128] UPSHIFT is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UPSHIFT UPSHIFT from (values(0)) UPSHIFT(UPSHIFT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT VARCHAR VARCHAR from (values(0)) VARCHAR(VARCHAR);
+
+*** ERROR[3128] VARCHAR is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VARCHAR VARCHAR from (values(0)) VARCHAR(VARCHAR);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect error [3128]
+>>prepare s1 from SELECT VARYING VARYING from (values(0)) VARYING(VARYING);
+
+*** ERROR[3128] VARYING is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VARYING VARYING from (values(0)) VARYING(VARYING);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT COLLATE COLLATE from (values(0)) COLLATE(COLLATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COLLATE COLLATE from (values(0)) COLLATE(COLLATE);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DATE DATE from (values(0)) DATE(DATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DATE DATE from (values(0)) DATE(DATE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DAY DAY from (values(0)) DAY(DAY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DAY DAY from (values(0)) DAY(DAY);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DEFAULT DEFAULT from (values(0)) DEFAULT(DEFAULT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEFAULT DEFAULT from (values(0)) DEFAULT(DEFAULT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT HOUR HOUR from (values(0)) HOUR(HOUR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT HOUR HOUR from (values(0)) HOUR(HOUR);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INTERVAL INTERVAL from (values(0)) INTERVAL(INTERVAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INTERVAL INTERVAL from (values(0)) INTERVAL(INTERVAL);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT MINUTE MINUTE from (values(0)) MINUTE(MINUTE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MINUTE MINUTE from (values(0)) MINUTE(MINUTE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT MONTH MONTH from (values(0)) MONTH(MONTH);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MONTH MONTH from (values(0)) MONTH(MONTH);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT RIGHT RIGHT from (values(0)) RIGHT(RIGHT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RIGHT RIGHT from (values(0)) RIGHT(RIGHT);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SECOND SECOND from (values(0)) SECOND(SECOND);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SECOND SECOND from (values(0)) SECOND(SECOND);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT THEN THEN from (values(0)) THEN(THEN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT THEN THEN from (values(0)) THEN(THEN);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TIME TIME from (values(0)) TIME(TIME);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TIME TIME from (values(0)) TIME(TIME);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TIMESTAMP TIMESTAMP from (values(0)) TIMESTAMP(TIMESTAMP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TIMESTAMP TIMESTAMP from (values(0)) TIMESTAMP(TIMESTAMP);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT UNION UNION from (values(0)) UNION(UNION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UNION UNION from (values(0)) UNION(UNION);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT YEAR YEAR from (values(0)) YEAR(YEAR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT YEAR YEAR from (values(0)) YEAR(YEAR);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ACTION ACTION from (values(0)) ACTION(ACTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ACTION ACTION from (values(0)) ACTION(ACTION);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ADD ADD from (values(0)) ADD(ADD);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ADD ADD from (values(0)) ADD(ADD);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ALIAS ALIAS from (values(0)) ALIAS(ALIAS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ALIAS ALIAS from (values(0)) ALIAS(ALIAS);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ALLOCATE ALLOCATE from (values(0)) ALLOCATE(ALLOCATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ALLOCATE ALLOCATE from (values(0)) ALLOCATE(ALLOCATE);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ALTER ALTER from (values(0)) ALTER(ALTER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ALTER ALTER from (values(0)) ALTER(ALTER);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ARE ARE from (values(0)) ARE(ARE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ARE ARE from (values(0)) ARE(ARE);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ASSERTION ASSERTION from (values(0)) ASSERTION(ASSERTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ASSERTION ASSERTION from (values(0)) ASSERTION(ASSERTION);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT AUTHORIZATION AUTHORIZATION from (values(0)) AUTHORIZATION(AUTHORIZATION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AUTHORIZATION AUTHORIZATION from (values(0)) AUTHORIZATION(AUTHORIZATION
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT BIT BIT from (values(0)) BIT(BIT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BIT BIT from (values(0)) BIT(BIT);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CALL CALL from (values(0)) CALL(CALL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CALL CALL from (values(0)) CALL(CALL);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CASCADE CASCADE from (values(0)) CASCADE(CASCADE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CASCADE CASCADE from (values(0)) CASCADE(CASCADE);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CASCADED CASCADED from (values(0)) CASCADED(CASCADED);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CASCADED CASCADED from (values(0)) CASCADED(CASCADED);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT COALESCE COALESCE from (values(0)) COALESCE(COALESCE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COALESCE COALESCE from (values(0)) COALESCE(COALESCE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT COLLATION COLLATION from (values(0)) COLLATION(COLLATION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COLLATION COLLATION from (values(0)) COLLATION(COLLATION);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT COLUMN COLUMN from (values(0)) COLUMN(COLUMN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COLUMN COLUMN from (values(0)) COLUMN(COLUMN);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CONSTRAINT CONSTRAINT from (values(0)) CONSTRAINT(CONSTRAINT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CONSTRAINT CONSTRAINT from (values(0)) CONSTRAINT(CONSTRAINT);
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CONSTRAINTS CONSTRAINTS from (values(0)) CONSTRAINTS(CONSTRAINTS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CONSTRAINTS CONSTRAINTS from (values(0)) CONSTRAINTS(CONSTRAINTS);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CONTINUE CONTINUE from (values(0)) CONTINUE(CONTINUE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CONTINUE CONTINUE from (values(0)) CONTINUE(CONTINUE);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CONVERT CONVERT from (values(0)) CONVERT(CONVERT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CONVERT CONVERT from (values(0)) CONVERT(CONVERT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CORRESPONDING CORRESPONDING from (values(0)) CORRESPONDING(CORRESPONDING);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CORRESPONDING CORRESPONDING from (values(0)) CORRESPONDING(CORRESPONDING
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CREATE CREATE from (values(0)) CREATE(CREATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CREATE CREATE from (values(0)) CREATE(CREATE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CROSS CROSS from (values(0)) CROSS(CROSS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CROSS CROSS from (values(0)) CROSS(CROSS);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DEALLOCATE DEALLOCATE from (values(0)) DEALLOCATE(DEALLOCATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEALLOCATE DEALLOCATE from (values(0)) DEALLOCATE(DEALLOCATE);
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DESCRIBE DESCRIBE from (values(0)) DESCRIBE(DESCRIBE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DESCRIBE DESCRIBE from (values(0)) DESCRIBE(DESCRIBE);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DESCRIPTOR DESCRIPTOR from (values(0)) DESCRIPTOR(DESCRIPTOR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DESCRIPTOR DESCRIPTOR from (values(0)) DESCRIPTOR(DESCRIPTOR);
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DIAGNOSTICS DIAGNOSTICS from (values(0)) DIAGNOSTICS(DIAGNOSTICS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DIAGNOSTICS DIAGNOSTICS from (values(0)) DIAGNOSTICS(DIAGNOSTICS);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DROP DROP from (values(0)) DROP(DROP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DROP DROP from (values(0)) DROP(DROP);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ELSEIF ELSEIF from (values(0)) ELSEIF(ELSEIF);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ELSEIF ELSEIF from (values(0)) ELSEIF(ELSEIF);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT EXCEPT EXCEPT from (values(0)) EXCEPT(EXCEPT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXCEPT EXCEPT from (values(0)) EXCEPT(EXCEPT);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT EXCEPTION EXCEPTION from (values(0)) EXCEPTION(EXCEPTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXCEPTION EXCEPTION from (values(0)) EXCEPTION(EXCEPTION);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT EXECUTE EXECUTE from (values(0)) EXECUTE(EXECUTE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXECUTE EXECUTE from (values(0)) EXECUTE(EXECUTE);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT EXTERNAL EXTERNAL from (values(0)) EXTERNAL(EXTERNAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXTERNAL EXTERNAL from (values(0)) EXTERNAL(EXTERNAL);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT EXTRACT EXTRACT from (values(0)) EXTRACT(EXTRACT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXTRACT EXTRACT from (values(0)) EXTRACT(EXTRACT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FALSE FALSE from (values(0)) FALSE(FALSE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FALSE FALSE from (values(0)) FALSE(FALSE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FIRST FIRST from (values(0)) FIRST(FIRST);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FIRST FIRST from (values(0)) FIRST(FIRST);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FOREIGN FOREIGN from (values(0)) FOREIGN(FOREIGN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FOREIGN FOREIGN from (values(0)) FOREIGN(FOREIGN);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FOUND FOUND from (values(0)) FOUND(FOUND);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FOUND FOUND from (values(0)) FOUND(FOUND);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FULL FULL from (values(0)) FULL(FULL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FULL FULL from (values(0)) FULL(FULL);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT GET GET from (values(0)) GET(GET);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GET GET from (values(0)) GET(GET);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT GLOBAL GLOBAL from (values(0)) GLOBAL(GLOBAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GLOBAL GLOBAL from (values(0)) GLOBAL(GLOBAL);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT GO GO from (values(0)) GO(GO);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GO GO from (values(0)) GO(GO);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT GOTO GOTO from (values(0)) GOTO(GOTO);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GOTO GOTO from (values(0)) GOTO(GOTO);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT GRANT GRANT from (values(0)) GRANT(GRANT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GRANT GRANT from (values(0)) GRANT(GRANT);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT IF IF from (values(0)) IF(IF);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT IF IF from (values(0)) IF(IF);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT IGNORE IGNORE from (values(0)) IGNORE(IGNORE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT IGNORE IGNORE from (values(0)) IGNORE(IGNORE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT IMMEDIATE IMMEDIATE from (values(0)) IMMEDIATE(IMMEDIATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT IMMEDIATE IMMEDIATE from (values(0)) IMMEDIATE(IMMEDIATE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INDICATOR INDICATOR from (values(0)) INDICATOR(INDICATOR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INDICATOR INDICATOR from (values(0)) INDICATOR(INDICATOR);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INTERSECT INTERSECT from (values(0)) INTERSECT(INTERSECT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INTERSECT INTERSECT from (values(0)) INTERSECT(INTERSECT);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ISOLATION ISOLATION from (values(0)) ISOLATION(ISOLATION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ISOLATION ISOLATION from (values(0)) ISOLATION(ISOLATION);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LAST LAST from (values(0)) LAST(LAST);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LAST LAST from (values(0)) LAST(LAST);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LEVEL LEVEL from (values(0)) LEVEL(LEVEL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LEVEL LEVEL from (values(0)) LEVEL(LEVEL);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LOCAL LOCAL from (values(0)) LOCAL(LOCAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LOCAL LOCAL from (values(0)) LOCAL(LOCAL);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT MATCH MATCH from (values(0)) MATCH(MATCH);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MATCH MATCH from (values(0)) MATCH(MATCH);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT MODULE MODULE from (values(0)) MODULE(MODULE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MODULE MODULE from (values(0)) MODULE(MODULE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NAMES NAMES from (values(0)) NAMES(NAMES);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NAMES NAMES from (values(0)) NAMES(NAMES);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NATURAL NATURAL from (values(0)) NATURAL(NATURAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NATURAL NATURAL from (values(0)) NATURAL(NATURAL);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NO NO from (values(0)) NO(NO);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NO NO from (values(0)) NO(NO);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NULLIF NULLIF from (values(0)) NULLIF(NULLIF);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NULLIF NULLIF from (values(0)) NULLIF(NULLIF);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OFF OFF from (values(0)) OFF(OFF);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OFF OFF from (values(0)) OFF(OFF);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ONLY ONLY from (values(0)) ONLY(ONLY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ONLY ONLY from (values(0)) ONLY(ONLY);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OUTER OUTER from (values(0)) OUTER(OUTER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OUTER OUTER from (values(0)) OUTER(OUTER);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OUTPUT OUTPUT from (values(0)) OUTPUT(OUTPUT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OUTPUT OUTPUT from (values(0)) OUTPUT(OUTPUT);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OVERLAPS OVERLAPS from (values(0)) OVERLAPS(OVERLAPS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OVERLAPS OVERLAPS from (values(0)) OVERLAPS(OVERLAPS);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PARTIAL PARTIAL from (values(0)) PARTIAL(PARTIAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PARTIAL PARTIAL from (values(0)) PARTIAL(PARTIAL);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PREPARE PREPARE from (values(0)) PREPARE(PREPARE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PREPARE PREPARE from (values(0)) PREPARE(PREPARE);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PRIMARY PRIMARY from (values(0)) PRIMARY(PRIMARY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRIMARY PRIMARY from (values(0)) PRIMARY(PRIMARY);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PRIVILEGES PRIVILEGES from (values(0)) PRIVILEGES(PRIVILEGES);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PRIVILEGES PRIVILEGES from (values(0)) PRIVILEGES(PRIVILEGES);
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PROCEDURE PROCEDURE from (values(0)) PROCEDURE(PROCEDURE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PROCEDURE PROCEDURE from (values(0)) PROCEDURE(PROCEDURE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PROTOTYPE PROTOTYPE from (values(0)) PROTOTYPE(PROTOTYPE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PROTOTYPE PROTOTYPE from (values(0)) PROTOTYPE(PROTOTYPE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT PUBLIC PUBLIC from (values(0)) PUBLIC(PUBLIC);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT PUBLIC PUBLIC from (values(0)) PUBLIC(PUBLIC);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT READ READ from (values(0)) READ(READ);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT READ READ from (values(0)) READ(READ);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT REFERENCES REFERENCES from (values(0)) REFERENCES(REFERENCES);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REFERENCES REFERENCES from (values(0)) REFERENCES(REFERENCES);
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT REPLACE REPLACE from (values(0)) REPLACE(REPLACE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REPLACE REPLACE from (values(0)) REPLACE(REPLACE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT RESTRICT RESTRICT from (values(0)) RESTRICT(RESTRICT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RESTRICT RESTRICT from (values(0)) RESTRICT(RESTRICT);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT RETURN RETURN from (values(0)) RETURN(RETURN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT RETURN RETURN from (values(0)) RETURN(RETURN);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT REVOKE REVOKE from (values(0)) REVOKE(REVOKE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REVOKE REVOKE from (values(0)) REVOKE(REVOKE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ROWS ROWS from (values(0)) ROWS(ROWS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ROWS ROWS from (values(0)) ROWS(ROWS);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SCHEMA SCHEMA from (values(0)) SCHEMA(SCHEMA);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SCHEMA SCHEMA from (values(0)) SCHEMA(SCHEMA);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SECTION SECTION from (values(0)) SECTION(SECTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SECTION SECTION from (values(0)) SECTION(SECTION);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SESSION SESSION from (values(0)) SESSION(SESSION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SESSION SESSION from (values(0)) SESSION(SESSION);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SESSION_USER SESSION_USER from (values(0)) SESSION_USER(SESSION_USER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SESSION_USER SESSION_USER from (values(0)) SESSION_USER(SESSION_USER);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SIZE SIZE from (values(0)) SIZE(SIZE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SIZE SIZE from (values(0)) SIZE(SIZE);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SPACE SPACE from (values(0)) SPACE(SPACE);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL SQL from (values(0)) SQL(SQL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL SQL from (values(0)) SQL(SQL);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQLCODE SQLCODE from (values(0)) SQLCODE(SQLCODE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLCODE SQLCODE from (values(0)) SQLCODE(SQLCODE);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQLERROR SQLERROR from (values(0)) SQLERROR(SQLERROR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQLERROR SQLERROR from (values(0)) SQLERROR(SQLERROR);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_CHAR SQL_CHAR from (values(0)) SQL_CHAR(SQL_CHAR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_CHAR SQL_CHAR from (values(0)) SQL_CHAR(SQL_CHAR);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_DATE SQL_DATE from (values(0)) SQL_DATE(SQL_DATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_DATE SQL_DATE from (values(0)) SQL_DATE(SQL_DATE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_DECIMAL SQL_DECIMAL from (values(0)) SQL_DECIMAL(SQL_DECIMAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_DECIMAL SQL_DECIMAL from (values(0)) SQL_DECIMAL(SQL_DECIMAL);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_DOUBLE SQL_DOUBLE from (values(0)) SQL_DOUBLE(SQL_DOUBLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_DOUBLE SQL_DOUBLE from (values(0)) SQL_DOUBLE(SQL_DOUBLE);
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_INT SQL_INT from (values(0)) SQL_INT(SQL_INT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_INT SQL_INT from (values(0)) SQL_INT(SQL_INT);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_INTEGER SQL_INTEGER from (values(0)) SQL_INTEGER(SQL_INTEGER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_INTEGER SQL_INTEGER from (values(0)) SQL_INTEGER(SQL_INTEGER);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_SMALLINT SQL_SMALLINT from (values(0)) SQL_SMALLINT(SQL_SMALLINT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_SMALLINT SQL_SMALLINT from (values(0)) SQL_SMALLINT(SQL_SMALLINT);
+                  ^ (19 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_TIME SQL_TIME from (values(0)) SQL_TIME(SQL_TIME);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_TIME SQL_TIME from (values(0)) SQL_TIME(SQL_TIME);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SQL_TIMESTAMP SQL_TIMESTAMP from (values(0)) SQL_TIMESTAMP(SQL_TIMESTAMP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SQL_TIMESTAMP SQL_TIMESTAMP from (values(0)) SQL_TIMESTAMP(SQL_TIMESTAMP
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TRANSACTION TRANSACTION from (values(0)) TRANSACTION(TRANSACTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRANSACTION TRANSACTION from (values(0)) TRANSACTION(TRANSACTION);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TRANSLATE TRANSLATE from (values(0)) TRANSLATE(TRANSLATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRANSLATE TRANSLATE from (values(0)) TRANSLATE(TRANSLATE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TRANSPOSE TRANSPOSE from (values(0)) TRANSPOSE(TRANSPOSE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRANSPOSE TRANSPOSE from (values(0)) TRANSPOSE(TRANSPOSE);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TRUE TRUE from (values(0)) TRUE(TRUE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRUE TRUE from (values(0)) TRUE(TRUE);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT UNKNOWN UNKNOWN from (values(0)) UNKNOWN(UNKNOWN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UNKNOWN UNKNOWN from (values(0)) UNKNOWN(UNKNOWN);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT USER USER from (values(0)) USER(USER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT USER USER from (values(0)) USER(USER);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT USING USING from (values(0)) USING(USING);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT USING USING from (values(0)) USING(USING);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT VALUE VALUE from (values(0)) VALUE(VALUE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VALUE VALUE from (values(0)) VALUE(VALUE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WHENEVER WHENEVER from (values(0)) WHENEVER(WHENEVER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WHENEVER WHENEVER from (values(0)) WHENEVER(WHENEVER);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WITHOUT WITHOUT from (values(0)) WITHOUT(WITHOUT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WITHOUT WITHOUT from (values(0)) WITHOUT(WITHOUT);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WRITE WRITE from (values(0)) WRITE(WRITE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WRITE WRITE from (values(0)) WRITE(WRITE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ALL ALL from (values(0)) ALL(ALL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ALL ALL from (values(0)) ALL(ALL);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT AND AND from (values(0)) AND(AND);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AND AND from (values(0)) AND(AND);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ANY ANY from (values(0)) ANY(ANY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ANY ANY from (values(0)) ANY(ANY);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT AS AS from (values(0)) AS(AS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AS AS from (values(0)) AS(AS);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ASC ASC from (values(0)) ASC(ASC);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ASC ASC from (values(0)) ASC(ASC);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT AVG AVG from (values(0)) AVG(AVG);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT AVG AVG from (values(0)) AVG(AVG);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT BEGIN BEGIN from (values(0)) BEGIN(BEGIN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BEGIN BEGIN from (values(0)) BEGIN(BEGIN);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT BETWEEN BETWEEN from (values(0)) BETWEEN(BETWEEN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BETWEEN BETWEEN from (values(0)) BETWEEN(BETWEEN);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT BOTH BOTH from (values(0)) BOTH(BOTH);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BOTH BOTH from (values(0)) BOTH(BOTH);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT BY BY from (values(0)) BY(BY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BY BY from (values(0)) BY(BY);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CASE CASE from (values(0)) CASE(CASE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CASE CASE from (values(0)) CASE(CASE);
+                    ^ (21 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CATALOG CATALOG from (values(0)) CATALOG(CATALOG);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CATALOG CATALOG from (values(0)) CATALOG(CATALOG);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CHAR CHAR from (values(0)) CHAR(CHAR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHAR CHAR from (values(0)) CHAR(CHAR);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CHARACTER CHARACTER from (values(0)) CHARACTER(CHARACTER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHARACTER CHARACTER from (values(0)) CHARACTER(CHARACTER);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CHECK CHECK from (values(0)) CHECK(CHECK);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CHECK CHECK from (values(0)) CHECK(CHECK);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CLOSE CLOSE from (values(0)) CLOSE(CLOSE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CLOSE CLOSE from (values(0)) CLOSE(CLOSE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT COMMIT COMMIT from (values(0)) COMMIT(COMMIT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COMMIT COMMIT from (values(0)) COMMIT(COMMIT);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT COUNT COUNT from (values(0)) COUNT(COUNT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT COUNT COUNT from (values(0)) COUNT(COUNT);
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CURRENT CURRENT from (values(0)) CURRENT(CURRENT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CURRENT CURRENT from (values(0)) CURRENT(CURRENT);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CURRENT_DATE CURRENT_DATE from (values(0)) CURRENT_DATE(CURRENT_DATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CURRENT_DATE CURRENT_DATE from (values(0)) CURRENT_DATE(CURRENT_DATE);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CURRENT_TIME CURRENT_TIME from (values(0)) CURRENT_TIME(CURRENT_TIME);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CURRENT_TIME CURRENT_TIME from (values(0)) CURRENT_TIME(CURRENT_TIME);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CURRENT_TIMESTAMP CURRENT_TIMESTAMP from (values(0)) CURRENT_TIMESTAMP(CURRENT_TIMESTAMP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CURRENT_TIMESTAMP CURRENT_TIMESTAMP from (values(0)) CURRENT_TIMESTAMP(C
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CURRENT_USER CURRENT_USER from (values(0)) CURRENT_USER(CURRENT_USER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CURRENT_USER CURRENT_USER from (values(0)) CURRENT_USER(CURRENT_USER);
+                               ^ (32 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT CURSOR CURSOR from (values(0)) CURSOR(CURSOR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT CURSOR CURSOR from (values(0)) CURSOR(CURSOR);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DATETIME DATETIME from (values(0)) DATETIME(DATETIME);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DATETIME DATETIME from (values(0)) DATETIME(DATETIME);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DEC DEC from (values(0)) DEC(DEC);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DEC DEC from (values(0)) DEC(DEC);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DECIMAL DECIMAL from (values(0)) DECIMAL(DECIMAL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DECIMAL DECIMAL from (values(0)) DECIMAL(DECIMAL);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DECLARE DECLARE from (values(0)) DECLARE(DECLARE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DECLARE DECLARE from (values(0)) DECLARE(DECLARE);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DELETE DELETE from (values(0)) DELETE(DELETE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DELETE DELETE from (values(0)) DELETE(DELETE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DESC DESC from (values(0)) DESC(DESC);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DESC DESC from (values(0)) DESC(DESC);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT DISTINCT DISTINCT from (values(0)) DISTINCT(DISTINCT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DISTINCT DISTINCT from (values(0)) DISTINCT(DISTINCT);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ESCAPE ESCAPE from (values(0)) ESCAPE(ESCAPE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ESCAPE ESCAPE from (values(0)) ESCAPE(ESCAPE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT EXISTS EXISTS from (values(0)) EXISTS(EXISTS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT EXISTS EXISTS from (values(0)) EXISTS(EXISTS);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FETCH FETCH from (values(0)) FETCH(FETCH);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FETCH FETCH from (values(0)) FETCH(FETCH);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FOR FOR from (values(0)) FOR(FOR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FOR FOR from (values(0)) FOR(FOR);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FRACTION FRACTION from (values(0)) FRACTION(FRACTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FRACTION FRACTION from (values(0)) FRACTION(FRACTION);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT FROM FROM from (values(0)) FROM(FROM);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT FROM FROM from (values(0)) FROM(FROM);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT GROUP GROUP from (values(0)) GROUP(GROUP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT GROUP GROUP from (values(0)) GROUP(GROUP);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT HAVING HAVING from (values(0)) HAVING(HAVING);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT HAVING HAVING from (values(0)) HAVING(HAVING);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT IN IN from (values(0)) IN(IN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT IN IN from (values(0)) IN(IN);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INNER INNER from (values(0)) INNER(INNER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INNER INNER from (values(0)) INNER(INNER);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INPUT INPUT from (values(0)) INPUT(INPUT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INPUT INPUT from (values(0)) INPUT(INPUT);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INSERT INSERT from (values(0)) INSERT(INSERT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INSERT INSERT from (values(0)) INSERT(INSERT);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INT INT from (values(0)) INT(INT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INT INT from (values(0)) INT(INT);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INTEGER INTEGER from (values(0)) INTEGER(INTEGER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INTEGER INTEGER from (values(0)) INTEGER(INTEGER);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT INTO INTO from (values(0)) INTO(INTO);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT INTO INTO from (values(0)) INTO(INTO);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT IS IS from (values(0)) IS(IS);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT IS IS from (values(0)) IS(IS);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT JOIN JOIN from (values(0)) JOIN(JOIN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT JOIN JOIN from (values(0)) JOIN(JOIN);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT KEY KEY from (values(0)) KEY(KEY);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT KEY KEY from (values(0)) KEY(KEY);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LEADING LEADING from (values(0)) LEADING(LEADING);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LEADING LEADING from (values(0)) LEADING(LEADING);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LEFT LEFT from (values(0)) LEFT(LEFT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LEFT LEFT from (values(0)) LEFT(LEFT);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT LIKE LIKE from (values(0)) LIKE(LIKE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT LIKE LIKE from (values(0)) LIKE(LIKE);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT MAX MAX from (values(0)) MAX(MAX);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT MAX MAX from (values(0)) MAX(MAX);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NOT NOT from (values(0)) NOT(NOT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NOT NOT from (values(0)) NOT(NOT);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NULL NULL from (values(0)) NULL(NULL);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NULL NULL from (values(0)) NULL(NULL);
+               ^ (16 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT NUMERIC NUMERIC from (values(0)) NUMERIC(NUMERIC);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT NUMERIC NUMERIC from (values(0)) NUMERIC(NUMERIC);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OF OF from (values(0)) OF(OF);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OF OF from (values(0)) OF(OF);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ON ON from (values(0)) ON(ON);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ON ON from (values(0)) ON(ON);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OPEN OPEN from (values(0)) OPEN(OPEN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OPEN OPEN from (values(0)) OPEN(OPEN);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OPTION OPTION from (values(0)) OPTION(OPTION);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OPTION OPTION from (values(0)) OPTION(OPTION);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT OR OR from (values(0)) OR(OR);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT OR OR from (values(0)) OR(OR);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ORDER ORDER from (values(0)) ORDER(ORDER);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ORDER ORDER from (values(0)) ORDER(ORDER);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT ROLLBACK ROLLBACK from (values(0)) ROLLBACK(ROLLBACK);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT ROLLBACK ROLLBACK from (values(0)) ROLLBACK(ROLLBACK);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SELECT SELECT from (values(0)) SELECT(SELECT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SELECT SELECT from (values(0)) SELECT(SELECT);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SET SET from (values(0)) SET(SET);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SET SET from (values(0)) SET(SET);
+         ^ (10 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SMALLINT SMALLINT from (values(0)) SMALLINT(SMALLINT);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SMALLINT SMALLINT from (values(0)) SMALLINT(SMALLINT);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SOME SOME from (values(0)) SOME(SOME);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SOME SOME from (values(0)) SOME(SOME);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT SUM SUM from (values(0)) SUM(SUM);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SUM SUM from (values(0)) SUM(SUM);
+             ^ (14 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TABLE TABLE from (values(0)) TABLE(TABLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TABLE TABLE from (values(0)) TABLE(TABLE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TO TO from (values(0)) TO(TO);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TO TO from (values(0)) TO(TO);
+        ^ (9 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT TRAILING TRAILING from (values(0)) TRAILING(TRAILING);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT TRAILING TRAILING from (values(0)) TRAILING(TRAILING);
+              ^ (15 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT UNIQUE UNIQUE from (values(0)) UNIQUE(UNIQUE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UNIQUE UNIQUE from (values(0)) UNIQUE(UNIQUE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT UPDATE UPDATE from (values(0)) UPDATE(UPDATE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT UPDATE UPDATE from (values(0)) UPDATE(UPDATE);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT VALUES VALUES from (values(0)) VALUES(VALUES);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VALUES VALUES from (values(0)) VALUES(VALUES);
+            ^ (13 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT VIEW VIEW from (values(0)) VIEW(VIEW);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT VIEW VIEW from (values(0)) VIEW(VIEW);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WHEN WHEN from (values(0)) WHEN(WHEN);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WHEN WHEN from (values(0)) WHEN(WHEN);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WHERE WHERE from (values(0)) WHERE(WHERE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WHERE WHERE from (values(0)) WHERE(WHERE);
+           ^ (12 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WITH WITH from (values(0)) WITH(WITH);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WITH WITH from (values(0)) WITH(WITH);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error
+>>prepare s1 from SELECT WORK WORK from (values(0)) WORK(WORK);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT WORK WORK from (values(0)) WORK(WORK);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ABS ABS from (values(0)) ABS(ABS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ACCESS ACCESS from (values(0)) ACCESS(ACCESS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ACOS ACOS from (values(0)) ACOS(ACOS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ANSIVARCHAR ANSIVARCHAR from (values(0)) ANSIVARCHAR(ANSIVARCHAR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ASCENDING ASCENDING from (values(0)) ASCENDING(ASCENDING);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ASCII ASCII from (values(0)) ASCII(ASCII);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ASIN ASIN from (values(0)) ASIN(ASIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ATAN ATAN from (values(0)) ATAN(ATAN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ATAN2 ATAN2 from (values(0)) ATAN2(ATAN2);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ATOMIC ATOMIC from (values(0)) ATOMIC(ATOMIC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ATTRIBUTE ATTRIBUTE from (values(0)) ATTRIBUTE(ATTRIBUTE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ATTRIBUTES ATTRIBUTES from (values(0)) ATTRIBUTES(ATTRIBUTES);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT AUDIT AUDIT from (values(0)) AUDIT(AUDIT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT AUDITCOMPRESS AUDITCOMPRESS from (values(0)) AUDITCOMPRESS(AUDITCOMPRESS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT AUTOCOMMIT AUTOCOMMIT from (values(0)) AUTOCOMMIT(AUTOCOMMIT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT AVERAGE_STREAM_WAIT AVERAGE_STREAM_WAIT from (values(0)) AVERAGE_STREAM_WAIT(AVERAGE_STREAM_WAIT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BALANCE BALANCE from (values(0)) BALANCE(BALANCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BIGINT BIGINT from (values(0)) BIGINT(BIGINT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BLOCKS BLOCKS from (values(0)) BLOCKS(BLOCKS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BLOCKSIZE BLOCKSIZE from (values(0)) BLOCKSIZE(BLOCKSIZE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE BROWSE from (values(0)) BROWSE(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BUFFERED BUFFERED from (values(0)) BUFFERED(BUFFERED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BYTE BYTE from (values(0)) BYTE(BYTE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BYTEINT BYTEINT from (values(0)) BYTEINT(BYTEINT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BYTES BYTES from (values(0)) BYTES(BYTES);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CASESPECIFIC CASESPECIFIC from (values(0)) CASESPECIFIC(CASESPECIFIC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CATALOG_NAME CATALOG_NAME from (values(0)) CATALOG_NAME(CATALOG_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CEILING CEILING from (values(0)) CEILING(CEILING);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CHARACTER_SET_CATALOG CHARACTER_SET_CATALOG from (values(0)) CHARACTER_SET_CATALOG(CHARACTER_SET_CATALOG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CHARACTER_SET_NAME CHARACTER_SET_NAME from (values(0)) CHARACTER_SET_NAME(CHARACTER_SET_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CHARACTER_SET_SCHEMA CHARACTER_SET_SCHEMA from (values(0)) CHARACTER_SET_SCHEMA(CHARACTER_SET_SCHEMA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CHECKSUM CHECKSUM from (values(0)) CHECKSUM(CHECKSUM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CLASS_ORIGIN CLASS_ORIGIN from (values(0)) CLASS_ORIGIN(CLASS_ORIGIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CLEAR CLEAR from (values(0)) CLEAR(CLEAR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CLEARONPURGE CLEARONPURGE from (values(0)) CLEARONPURGE(CLEARONPURGE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CLUSTERS CLUSTERS from (values(0)) CLUSTERS(CLUSTERS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CMP CMP from (values(0)) CMP(CMP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COLLATION_CATALOG COLLATION_CATALOG from (values(0)) COLLATION_CATALOG(COLLATION_CATALOG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COLLATION_NAME COLLATION_NAME from (values(0)) COLLATION_NAME(COLLATION_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COLLATION_SCHEMA COLLATION_SCHEMA from (values(0)) COLLATION_SCHEMA(COLLATION_SCHEMA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COLUMN_NAME COLUMN_NAME from (values(0)) COLUMN_NAME(COLUMN_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COLUMN_NUMBER COLUMN_NUMBER from (values(0)) COLUMN_NUMBER(COLUMN_NUMBER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COMMAND_FUNCTION COMMAND_FUNCTION from (values(0)) COMMAND_FUNCTION(COMMAND_FUNCTION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COMMITTED COMMITTED from (values(0)) COMMITTED(COMMITTED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COMP COMP from (values(0)) COMP(COMP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COMPRESS COMPRESS from (values(0)) COMPRESS(COMPRESS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONCAT CONCAT from (values(0)) CONCAT(CONCAT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONDITION_NUMBER CONDITION_NUMBER from (values(0)) CONDITION_NUMBER(CONDITION_NUMBER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONFIG CONFIG from (values(0)) CONFIG(CONFIG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONFLICT CONFLICT from (values(0)) CONFLICT(CONFLICT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONNECTION_NAME CONNECTION_NAME from (values(0)) CONNECTION_NAME(CONNECTION_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONSTRAINT_CATALOG CONSTRAINT_CATALOG from (values(0)) CONSTRAINT_CATALOG(CONSTRAINT_CATALOG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONSTRAINT_NAME CONSTRAINT_NAME from (values(0)) CONSTRAINT_NAME(CONSTRAINT_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONSTRAINT_SCHEMA CONSTRAINT_SCHEMA from (values(0)) CONSTRAINT_SCHEMA(CONSTRAINT_SCHEMA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONTROL CONTROL from (values(0)) CONTROL(CONTROL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONVERTFROMHEX CONVERTFROMHEX from (values(0)) CONVERTFROMHEX(CONVERTFROMHEX);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONVERTTIMESTAMP CONVERTTIMESTAMP from (values(0)) CONVERTTIMESTAMP(CONVERTTIMESTAMP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CONVERTTOHEX CONVERTTOHEX from (values(0)) CONVERTTOHEX(CONVERTTOHEX);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COS COS from (values(0)) COS(COS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COSH COSH from (values(0)) COSH(COSH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT COST COST from (values(0)) COST(COST);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CURDATE CURDATE from (values(0)) CURDATE(CURDATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CURSOR_NAME CURSOR_NAME from (values(0)) CURSOR_NAME(CURSOR_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT CURTIME CURTIME from (values(0)) CURTIME(CURTIME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT D D from (values(0)) D(D);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DATA DATA from (values(0)) DATA(DATA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DATEFORMAT DATEFORMAT from (values(0)) DATEFORMAT(DATEFORMAT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DATETIME_CODE DATETIME_CODE from (values(0)) DATETIME_CODE(DATETIME_CODE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DAYNAME DAYNAME from (values(0)) DAYNAME(DAYNAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DAYOFMONTH DAYOFMONTH from (values(0)) DAYOFMONTH(DAYOFMONTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DAYOFWEEK DAYOFWEEK from (values(0)) DAYOFWEEK(DAYOFWEEK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DAYOFYEAR DAYOFYEAR from (values(0)) DAYOFYEAR(DAYOFYEAR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DCOMPRESS DCOMPRESS from (values(0)) DCOMPRESS(DCOMPRESS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DEFAULTS DEFAULTS from (values(0)) DEFAULTS(DEFAULTS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DEFINITION DEFINITION from (values(0)) DEFINITION(DEFINITION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DEGREES DEGREES from (values(0)) DEGREES(DEGREES);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DESCENDING DESCENDING from (values(0)) DESCENDING(DESCENDING);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DETAIL DETAIL from (values(0)) DETAIL(DETAIL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DIFF1 DIFF1 from (values(0)) DIFF1(DIFF1);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DIFF2 DIFF2 from (values(0)) DIFF2(DIFF2);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DISPLAY DISPLAY from (values(0)) DISPLAY(DISPLAY);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DO DO from (values(0)) DO(DO);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DROPPABLE DROPPABLE from (values(0)) DROPPABLE(DROPPABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DSLACK DSLACK from (values(0)) DSLACK(DSLACK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT DYNAMIC_FUNCTION DYNAMIC_FUNCTION from (values(0)) DYNAMIC_FUNCTION(DYNAMIC_FUNCTION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ENCODE_KEY ENCODE_KEY from (values(0)) ENCODE_KEY(ENCODE_KEY);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ENTRY ENTRY from (values(0)) ENTRY(ENTRY);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EUROPEAN EUROPEAN from (values(0)) EUROPEAN(EUROPEAN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EVERY EVERY from (values(0)) EVERY(EVERY);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EXCLUSIVE EXCLUSIVE from (values(0)) EXCLUSIVE(EXCLUSIVE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EXECUTION EXECUTION from (values(0)) EXECUTION(EXECUTION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EXIT EXIT from (values(0)) EXIT(EXIT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EXP EXP from (values(0)) EXP(EXP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT EXPLAIN EXPLAIN from (values(0)) EXPLAIN(EXPLAIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FALLBACK FALLBACK from (values(0)) FALLBACK(FALLBACK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FIRSTDAYOFYEAR FIRSTDAYOFYEAR from (values(0)) FIRSTDAYOFYEAR(FIRSTDAYOFYEAR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FIRST_FSCODE FIRST_FSCODE from (values(0)) FIRST_FSCODE(FIRST_FSCODE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FLOOR FLOOR from (values(0)) FLOOR(FLOOR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FN FN from (values(0)) FN(FN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FORMAT FORMAT from (values(0)) FORMAT(FORMAT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT FREESPACE FREESPACE from (values(0)) FREESPACE(FREESPACE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT G G from (values(0)) G(G);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT GENERATE GENERATE from (values(0)) GENERATE(GENERATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HASH HASH from (values(0)) HASH(HASH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HASHPARTFUNC HASHPARTFUNC from (values(0)) HASHPARTFUNC(HASHPARTFUNC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HEADING HEADING from (values(0)) HEADING(HEADING);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HEADINGS HEADINGS from (values(0)) HEADINGS(HEADINGS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HIGH_VALUE HIGH_VALUE from (values(0)) HIGH_VALUE(HIGH_VALUE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HOLD HOLD from (values(0)) HOLD(HOLD);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT HORIZONTAL HORIZONTAL from (values(0)) HORIZONTAL(HORIZONTAL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ICOMPRESS ICOMPRESS from (values(0)) ICOMPRESS(ICOMPRESS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INCLUSIVE INCLUSIVE from (values(0)) INCLUSIVE(INCLUSIVE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INDEX INDEX from (values(0)) INDEX(INDEX);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INDEX_TABLE INDEX_TABLE from (values(0)) INDEX_TABLE(INDEX_TABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INDICATOR_DATA INDICATOR_DATA from (values(0)) INDICATOR_DATA(INDICATOR_DATA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INDICATOR_POINTER INDICATOR_POINTER from (values(0)) INDICATOR_POINTER(INDICATOR_POINTER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INDICATOR_TYPE INDICATOR_TYPE from (values(0)) INDICATOR_TYPE(INDICATOR_TYPE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INITIALIZE INITIALIZE from (values(0)) INITIALIZE(INITIALIZE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INTERVALS INTERVALS from (values(0)) INTERVALS(INTERVALS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT INVOKE INVOKE from (values(0)) INVOKE(INVOKE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ISLACK ISLACK from (values(0)) ISLACK(ISLACK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT JOURNAL JOURNAL from (values(0)) JOURNAL(JOURNAL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT JULIANTIMESTAMP JULIANTIMESTAMP from (values(0)) JULIANTIMESTAMP(JULIANTIMESTAMP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT K K from (values(0)) K(K);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LARGEINT LARGEINT from (values(0)) LARGEINT(LARGEINT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LASTNOTNULL LASTNOTNULL from (values(0)) LASTNOTNULL(LASTNOTNULL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LAST_FSCODE LAST_FSCODE from (values(0)) LAST_FSCODE(LAST_FSCODE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LAST_SYSKEY LAST_SYSKEY from (values(0)) LAST_SYSKEY(LAST_SYSKEY);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LCASE LCASE from (values(0)) LCASE(LCASE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LEADING_PRECISION LEADING_PRECISION from (values(0)) LEADING_PRECISION(LEADING_PRECISION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LENGTH LENGTH from (values(0)) LENGTH(LENGTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LINE_NUMBER LINE_NUMBER from (values(0)) LINE_NUMBER(LINE_NUMBER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOCATE LOCATE from (values(0)) LOCATE(LOCATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOCATION LOCATION from (values(0)) LOCATION(LOCATION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOCK LOCK from (values(0)) LOCK(LOCK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOCKING LOCKING from (values(0)) LOCKING(LOCKING);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOCKLENGTH LOCKLENGTH from (values(0)) LOCKLENGTH(LOCKLENGTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOG LOG from (values(0)) LOG(LOG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOG10 LOG10 from (values(0)) LOG10(LOG10);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LONG LONG from (values(0)) LONG(LONG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LOW_VALUE LOW_VALUE from (values(0)) LOW_VALUE(LOW_VALUE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LPAD LPAD from (values(0)) LPAD(LPAD);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LSDEC LSDEC from (values(0)) LSDEC(LSDEC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LSDECIMAL LSDECIMAL from (values(0)) LSDECIMAL(LSDECIMAL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT LTRIM LTRIM from (values(0)) LTRIM(LTRIM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT M M from (values(0)) M(M);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MAXSIZE MAXSIZE from (values(0)) MAXSIZE(MAXSIZE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MESSAGE_LENGTH MESSAGE_LENGTH from (values(0)) MESSAGE_LENGTH(MESSAGE_LENGTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MESSAGE_OCTET_LENGTH MESSAGE_OCTET_LENGTH from (values(0)) MESSAGE_OCTET_LENGTH(MESSAGE_OCTET_LENGTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MESSAGE_TEXT MESSAGE_TEXT from (values(0)) MESSAGE_TEXT(MESSAGE_TEXT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOD MOD from (values(0)) MOD(MOD);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MODE MODE from (values(0)) MODE(MODE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MONTHNAME MONTHNAME from (values(0)) MONTHNAME(MONTHNAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MORE MORE from (values(0)) MORE(MORE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVE MOVE from (values(0)) MOVE(MOVE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVEMENT MOVEMENT from (values(0)) MOVEMENT(MOVEMENT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGAVG MOVINGAVG from (values(0)) MOVINGAVG(MOVINGAVG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGCOUNT MOVINGCOUNT from (values(0)) MOVINGCOUNT(MOVINGCOUNT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGMAX MOVINGMAX from (values(0)) MOVINGMAX(MOVINGMAX);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGMIN MOVINGMIN from (values(0)) MOVINGMIN(MOVINGMIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGSTDDEV MOVINGSTDDEV from (values(0)) MOVINGSTDDEV(MOVINGSTDDEV);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGSUM MOVINGSUM from (values(0)) MOVINGSUM(MOVINGSUM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MOVINGVARIANCE MOVINGVARIANCE from (values(0)) MOVINGVARIANCE(MOVINGVARIANCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MPLOC MPLOC from (values(0)) MPLOC(MPLOC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT MULTISET MULTISET from (values(0)) MULTISET(MULTISET);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NAME NAME from (values(0)) NAME(NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NAMETYPE NAMETYPE from (values(0)) NAMETYPE(NAMETYPE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NATIVE NATIVE from (values(0)) NATIVE(NATIVE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NOW NOW from (values(0)) NOW(NOW);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NULLABLE NULLABLE from (values(0)) NULLABLE(NULLABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NUMBER NUMBER from (values(0)) NUMBER(NUMBER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT OFFSET OFFSET from (values(0)) OFFSET(OFFSET);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT OJ OJ from (values(0)) OJ(OJ);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT OS_USERID OS_USERID from (values(0)) OS_USERID(OS_USERID);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PARALLEL PARALLEL from (values(0)) PARALLEL(PARALLEL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PARTITION PARTITION from (values(0)) PARTITION(PARTITION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PARTITIONS PARTITIONS from (values(0)) PARTITIONS(PARTITIONS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERCENT PERCENT from (values(0)) PERCENT(PERCENT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM PERFORM from (values(0)) PERFORM(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERIODIC PERIODIC from (values(0)) PERIODIC(PERIODIC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PI PI from (values(0)) PI(PI);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PIC PIC from (values(0)) PIC(PIC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PICTURE PICTURE from (values(0)) PICTURE(PICTURE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT POPULATE POPULATE from (values(0)) POPULATE(POPULATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT POWER POWER from (values(0)) POWER(POWER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PROMPT PROMPT from (values(0)) PROMPT(PROMPT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PROTECTION PROTECTION from (values(0)) PROTECTION(PROTECTION);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT QUARTER QUARTER from (values(0)) QUARTER(QUARTER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT QUERY QUERY from (values(0)) QUERY(QUERY);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RADIANS RADIANS from (values(0)) RADIANS(RADIANS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RAND RAND from (values(0)) RAND(RAND);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RANDOM RANDOM from (values(0)) RANDOM(RANDOM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RANGE RANGE from (values(0)) RANGE(RANGE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RANGE_N RANGE_N from (values(0)) RANGE_N(RANGE_N);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REINITIALIZE REINITIALIZE from (values(0)) REINITIALIZE(REINITIALIZE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RENAME RENAME from (values(0)) RENAME(RENAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEAT REPEAT from (values(0)) REPEAT(REPEAT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE REPEATABLE from (values(0)) REPEATABLE(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RESET RESET from (values(0)) RESET(RESET);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RESOURCE_FORK RESOURCE_FORK from (values(0)) RESOURCE_FORK(RESOURCE_FORK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RETURNED_LENGTH RETURNED_LENGTH from (values(0)) RETURNED_LENGTH(RETURNED_LENGTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RETURNED_OCTET_LENGTH RETURNED_OCTET_LENGTH from (values(0)) RETURNED_OCTET_LENGTH(RETURNED_OCTET_LENGTH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RETURNED_SQLSTATE RETURNED_SQLSTATE from (values(0)) RETURNED_SQLSTATE(RETURNED_SQLSTATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ROLE ROLE from (values(0)) ROLE(ROLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ROUND ROUND from (values(0)) ROUND(ROUND);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ROUNDROBINPARTFUNC ROUNDROBINPARTFUNC from (values(0)) ROUNDROBINPARTFUNC(ROUNDROBINPARTFUNC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ROWSET ROWSET from (values(0)) ROWSET(ROWSET);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ROW_COUNT ROW_COUNT from (values(0)) ROW_COUNT(ROW_COUNT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ROW_NUMBER ROW_NUMBER from (values(0)) ROW_NUMBER(ROW_NUMBER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RPAD RPAD from (values(0)) RPAD(RPAD);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RTRIM RTRIM from (values(0)) RTRIM(RTRIM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGAVG RUNNINGAVG from (values(0)) RUNNINGAVG(RUNNINGAVG);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGCOUNT RUNNINGCOUNT from (values(0)) RUNNINGCOUNT(RUNNINGCOUNT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGMAX RUNNINGMAX from (values(0)) RUNNINGMAX(RUNNINGMAX);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGMIN RUNNINGMIN from (values(0)) RUNNINGMIN(RUNNINGMIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGSTDDEV RUNNINGSTDDEV from (values(0)) RUNNINGSTDDEV(RUNNINGSTDDEV);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGSUM RUNNINGSUM from (values(0)) RUNNINGSUM(RUNNINGSUM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT RUNNINGVARIANCE RUNNINGVARIANCE from (values(0)) RUNNINGVARIANCE(RUNNINGVARIANCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE SAMPLE from (values(0)) SAMPLE(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SCALE SCALE from (values(0)) SCALE(SCALE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SCHEMA_NAME SCHEMA_NAME from (values(0)) SCHEMA_NAME(SCHEMA_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEPARATE SEPARATE from (values(0)) SEPARATE(SEPARATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE SEQUENCE from (values(0)) SEQUENCE(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE SERIALIZABLE from (values(0)) SERIALIZABLE(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALWRITES SERIALWRITES from (values(0)) SERIALWRITES(SERIALWRITES);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERVER_NAME SERVER_NAME from (values(0)) SERVER_NAME(SERVER_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHAPE SHAPE from (values(0)) SHAPE(SHAPE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHARE SHARE from (values(0)) SHARE(SHARE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHOWCONTROL SHOWCONTROL from (values(0)) SHOWCONTROL(SHOWCONTROL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHOWDDL SHOWDDL from (values(0)) SHOWDDL(SHOWDDL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHOWLABEL SHOWLABEL from (values(0)) SHOWLABEL(SHOWLABEL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHOWLEAKS SHOWLEAKS from (values(0)) SHOWLEAKS(SHOWLEAKS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHOWPLAN SHOWPLAN from (values(0)) SHOWPLAN(SHOWPLAN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SHOWSHAPE SHOWSHAPE from (values(0)) SHOWSHAPE(SHOWSHAPE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SIDEINSERTS SIDEINSERTS from (values(0)) SIDEINSERTS(SIDEINSERTS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SIGN SIGN from (values(0)) SIGN(SIGN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SIGNED SIGNED from (values(0)) SIGNED(SIGNED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SIN SIN from (values(0)) SIN(SIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SINCE SINCE from (values(0)) SINCE(SINCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SINH SINH from (values(0)) SINH(SINH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP SKIP from (values(0)) SKIP(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SORT SORT from (values(0)) SORT(SORT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SOURCE_FILE SOURCE_FILE from (values(0)) SOURCE_FILE(SOURCE_FILE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SQLMP SQLMP from (values(0)) SQLMP(SQLMP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SQL_BIGINT SQL_BIGINT from (values(0)) SQL_BIGINT(SQL_BIGINT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SQL_WARNING SQL_WARNING from (values(0)) SQL_WARNING(SQL_WARNING);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SQRT SQRT from (values(0)) SQRT(SQRT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE STABLE from (values(0)) STABLE(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STATEMENT STATEMENT from (values(0)) STATEMENT(STATEMENT);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STATIC STATIC from (values(0)) STATIC(STATIC);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STATISTICS STATISTICS from (values(0)) STATISTICS(STATISTICS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STDDEV STDDEV from (values(0)) STDDEV(STDDEV);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STORE STORE from (values(0)) STORE(STORE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STREAM STREAM from (values(0)) STREAM(STREAM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SUBCLASS_ORIGIN SUBCLASS_ORIGIN from (values(0)) SUBCLASS_ORIGIN(SUBCLASS_ORIGIN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SUBSYSTEM_ID SUBSYSTEM_ID from (values(0)) SUBSYSTEM_ID(SUBSYSTEM_ID);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT T T from (values(0)) T(T);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TABLE_NAME TABLE_NAME from (values(0)) TABLE_NAME(TABLE_NAME);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TAN TAN from (values(0)) TAN(TAN);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TANH TANH from (values(0)) TANH(TANH);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TDMISP TDMISP from (values(0)) TDMISP(TDMISP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT THIS THIS from (values(0)) THIS(THIS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TRUNCATE TRUNCATE from (values(0)) TRUNCATE(TRUNCATE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TS TS from (values(0)) TS(TS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TYPE TYPE from (values(0)) TYPE(TYPE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TYPE_ANSI TYPE_ANSI from (values(0)) TYPE_ANSI(TYPE_ANSI);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT TYPE_FS TYPE_FS from (values(0)) TYPE_FS(TYPE_FS);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UCASE UCASE from (values(0)) UCASE(UCASE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNBOUNDED UNBOUNDED from (values(0)) UNBOUNDED(UNBOUNDED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNCOMMITTED UNCOMMITTED from (values(0)) UNCOMMITTED(UNCOMMITTED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNICODE_CHAR UNICODE_CHAR from (values(0)) UNICODE_CHAR(UNICODE_CHAR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNICODE_VALUE UNICODE_VALUE from (values(0)) UNICODE_VALUE(UNICODE_VALUE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNLOCK UNLOCK from (values(0)) UNLOCK(UNLOCK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNNAMED UNNAMED from (values(0)) UNNAMED(UNNAMED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UNSIGNED UNSIGNED from (values(0)) UNSIGNED(UNSIGNED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT UPPERCASE UPPERCASE from (values(0)) UPPERCASE(UPPERCASE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT USA USA from (values(0)) USA(USA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT VARIABLE_DATA VARIABLE_DATA from (values(0)) VARIABLE_DATA(VARIABLE_DATA);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT VARIABLE_POINTER VARIABLE_POINTER from (values(0)) VARIABLE_POINTER(VARIABLE_POINTER);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT VARIANCE VARIANCE from (values(0)) VARIANCE(VARIANCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT VARNCHAR VARNCHAR from (values(0)) VARNCHAR(VARNCHAR);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT VERTICAL VERTICAL from (values(0)) VERTICAL(VERTICAL);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT VSBB VSBB from (values(0)) VSBB(VSBB);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT WAITED WAITED from (values(0)) WAITED(WAITED);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT WEEK WEEK from (values(0)) WEEK(WEEK);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT ABSOLUTE ABSOLUTE from (values(0)) ABSOLUTE(ABSOLUTE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT OPERATION OPERATION from (values(0)) OPERATION(OPERATION);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT BROWSE ACCESS from (values(0)) ACCESS(BROWSE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT BROWSE ACCESS from (values(0)) ACCESS(BROWSE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE BROWSE from (values(0)) BROWSE(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE CONFLICT from (values(0)) CONFLICT(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE DROPPABLE from (values(0)) DROPPABLE(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE PERIODIC from (values(0)) PERIODIC(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE RANDOM from (values(0)) RANDOM(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE REPEATABLE from (values(0)) REPEATABLE(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE SERIALIZABLE from (values(0)) SERIALIZABLE(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE SKIP from (values(0)) SKIP(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT BROWSE STABLE from (values(0)) STABLE(BROWSE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM ACCESS from (values(0)) ACCESS(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM BROWSE from (values(0)) BROWSE(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM CONFLICT from (values(0)) CONFLICT(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM DROPPABLE from (values(0)) DROPPABLE(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM PERIODIC from (values(0)) PERIODIC(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM RANDOM from (values(0)) RANDOM(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM REPEATABLE from (values(0)) REPEATABLE(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM SERIALIZABLE from (values(0)) SERIALIZABLE(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM SKIP from (values(0)) SKIP(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT PERFORM STABLE from (values(0)) STABLE(PERFORM);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT REPEATABLE ACCESS from (values(0)) ACCESS(REPEATABLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT REPEATABLE ACCESS from (values(0)) ACCESS(REPEATABLE);
+                       ^ (24 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE BROWSE from (values(0)) BROWSE(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE CONFLICT from (values(0)) CONFLICT(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE DROPPABLE from (values(0)) DROPPABLE(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE PERIODIC from (values(0)) PERIODIC(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE RANDOM from (values(0)) RANDOM(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE REPEATABLE from (values(0)) REPEATABLE(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE SERIALIZABLE from (values(0)) SERIALIZABLE(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE SKIP from (values(0)) SKIP(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT REPEATABLE STABLE from (values(0)) STABLE(REPEATABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE ACCESS from (values(0)) ACCESS(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE BROWSE from (values(0)) BROWSE(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE CONFLICT from (values(0)) CONFLICT(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE DROPPABLE from (values(0)) DROPPABLE(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT SAMPLE PERIODIC from (values(0)) PERIODIC(SAMPLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SAMPLE PERIODIC from (values(0)) PERIODIC(SAMPLE);
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT SAMPLE RANDOM from (values(0)) RANDOM(SAMPLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SAMPLE RANDOM from (values(0)) RANDOM(SAMPLE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE REPEATABLE from (values(0)) REPEATABLE(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE SERIALIZABLE from (values(0)) SERIALIZABLE(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE SKIP from (values(0)) SKIP(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SAMPLE STABLE from (values(0)) STABLE(SAMPLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE ACCESS from (values(0)) ACCESS(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE BROWSE from (values(0)) BROWSE(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE CONFLICT from (values(0)) CONFLICT(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE DROPPABLE from (values(0)) DROPPABLE(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE PERIODIC from (values(0)) PERIODIC(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE RANDOM from (values(0)) RANDOM(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE REPEATABLE from (values(0)) REPEATABLE(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE SERIALIZABLE from (values(0)) SERIALIZABLE(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE SKIP from (values(0)) SKIP(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SEQUENCE STABLE from (values(0)) STABLE(SEQUENCE);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT SERIALIZABLE ACCESS from (values(0)) ACCESS(SERIALIZABLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SERIALIZABLE ACCESS from (values(0)) ACCESS(SERIALIZABLE);
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE BROWSE from (values(0)) BROWSE(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE CONFLICT from (values(0)) CONFLICT(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE DROPPABLE from (values(0)) DROPPABLE(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE PERIODIC from (values(0)) PERIODIC(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE RANDOM from (values(0)) RANDOM(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE REPEATABLE from (values(0)) REPEATABLE(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE SERIALIZABLE from (values(0)) SERIALIZABLE(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE SKIP from (values(0)) SKIP(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SERIALIZABLE STABLE from (values(0)) STABLE(SERIALIZABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP ACCESS from (values(0)) ACCESS(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP BROWSE from (values(0)) BROWSE(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT SKIP CONFLICT from (values(0)) CONFLICT(SKIP);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT SKIP CONFLICT from (values(0)) CONFLICT(SKIP);
+                    ^ (21 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP DROPPABLE from (values(0)) DROPPABLE(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP PERIODIC from (values(0)) PERIODIC(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP RANDOM from (values(0)) RANDOM(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP REPEATABLE from (values(0)) REPEATABLE(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP SERIALIZABLE from (values(0)) SERIALIZABLE(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP SKIP from (values(0)) SKIP(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT SKIP STABLE from (values(0)) STABLE(SKIP);
+
+--- SQL command prepared.
+>>
+>>-- Expect SYNTAX error - A matching pair
+>>prepare s1 from SELECT STABLE ACCESS from (values(0)) ACCESS(STABLE);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT STABLE ACCESS from (values(0)) ACCESS(STABLE);
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE BROWSE from (values(0)) BROWSE(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE CONFLICT from (values(0)) CONFLICT(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE DROPPABLE from (values(0)) DROPPABLE(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE PERIODIC from (values(0)) PERIODIC(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE RANDOM from (values(0)) RANDOM(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE REPEATABLE from (values(0)) REPEATABLE(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE SERIALIZABLE from (values(0)) SERIALIZABLE(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE SKIP from (values(0)) SKIP(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT STABLE STABLE from (values(0)) STABLE(STABLE);
+
+--- SQL command prepared.
+>>
+>>-- Check various flavors of string literals.
+>>--
+>>-- Expect success
+>>prepare s1 from SELECT 'abcd', 'a"cd', 'ab''d',
++>                       _ISO88591'abcd', _ISO88591'a"cd', _ISO88591'ab''d',
++>                       N'abcd', N'a"cd', N'ab''d'
++>                FROM (VALUES(0)) T;
+
+--- SQL command prepared.
+>>
+>>-- Check in the context of special parser flags.
+>>--
+>>-- Set PARSER FLAG ALLOW_OLD_AND_NEW_KEYWORD
+>>set parserflags 16;
+
+--- SQL operation complete.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT OLD OLD from (values(0)) OLD(OLD);
+
+--- SQL command prepared.
+>>
+>>-- Expect success
+>>prepare s1 from SELECT NEW NEW from (values(0)) NEW(NEW);
+
+--- SQL command prepared.
+>>
+>>exit;
+
+End of MXCI Session
+

@@ -1,0 +1,370 @@
+>>
+>>
+>>obey TEST015(setup);
+>>--------------------------------------------------------------------------
+>>create table customer_demographics
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>);
+
+--- SQL operation complete.
+>>
+>>create table customer_demographics_salt
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>)
++>salt using 4 partitions on (cd_demo_sk);
+
+--- SQL operation complete.
+>>
+>>
+>>create table customer_address
++>(
++>  ca_address_sk        int not null,
++>  ca_address_id        char(16),
++>  ca_street_number     char(10),
++>  ca_street_name       varchar(60),
++>  ca_street_type       char(15),
++>  ca_suite_number      char(10),
++>  ca_city              varchar(60),
++>  ca_county            varchar(30),
++>  ca_state             char(2),
++>  ca_zip               char(10),
++>  ca_country           varchar(30),
++>  ca_gmt_offset        decimal(5,2),
++>  ca_location_type     char(20),
++>  primary key (ca_address_sk)
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>cqd COMPRESSED_INTERNAL_FORMAT 'ON';
+
+--- SQL operation complete.
+>>cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+
+--- SQL operation complete.
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>CQD ATTEMPT_ESP_PARALLELISM 'On';
+
+--- SQL operation complete.
+>>cqd HIVE_NUM_ESPS_PER_DATANODE '3';
+
+--- SQL operation complete.
+>>cqd MAX_ESPS_PER_CPU_PER_OP '2';
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>obey TEST015(test_bulk_load_simple);
+>>--------------------------------------------------------------------------
+>>
+>>select count(*) from hive.hive.customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_address;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>prepare s from 
++>load into customer_address 
++>select * from hive.hive.customer_address;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  5.19E+004
+6    7    8    blocked_union                                         5.19E+004
+.    .    7    hbase_load                                            1.00E+000
+5    .    6    esp_exchange                    1:4(hash2)            5.19E+004
+3    4    5    tuple_flow                                            5.19E+004
+.    .    4    trafodion_load_prepa            CUSTOMER_ADDRESS      1.00E+000
+2    .    3    sort                                                  5.19E+004
+1    .    2    esp_exchange                    4(hash2):1            5.19E+004
+.    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
+
+--- SQL operation complete.
+>>
+>>execute s;
+
+--- 50000 row(s) inserted.
+>>
+>>select count(*) from customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>select [first 20] * from customer_address order by ca_address_sk ;
+
+CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
+-------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
+
+            1  AAAAAAAABAAAAAAA  18                Jackson                                                       Parkway          Suite 280        Fairfield                                                     Maricopa County                 AZ        86192       United States                           -7.00  condo               
+            2  AAAAAAAACAAAAAAA  362               Washington 6th                                                RD               Suite 80         Fairview                                                      Taos County                     NM        85709       United States                           -7.00  condo               
+            3  AAAAAAAADAAAAAAA  585               Dogwood Washington                                            Circle           Suite Q          Pleasant Valley                                               York County                     PA        12477       United States                           -5.00  single family       
+            4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
+            5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
+            6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
+            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
+            9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
+           10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
+           11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
+           12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
+           13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+           15  AAAAAAAAPAAAAAAA  314               Spring                                                        Ct.              Suite B          Oakland                                                       Washington County               OH        49843       United States                           -5.00  apartment           
+           16  AAAAAAAAABAAAAAA  576               Adams Center                                                  Street           Suite J          Valley View                                                   Oldham County                   TX        75124       United States                           -6.00  condo               
+           17  AAAAAAAABBAAAAAA  801               Green                                                         Dr.              Suite 0          Montpelier                                                    Richland County                 OH        48930       United States                           -5.00  single family       
+           18  AAAAAAAACBAAAAAA  460               Maple Spruce                                                  Court            Suite 480        Somerville                                                    Potter County                   SD        57783       United States                           -7.00  condo               
+           19  AAAAAAAADBAAAAAA  611               Wilson                                                        Way              Suite O          Oakdale                                                       Tangipahoa Parish               LA        79584       United States                           -6.00  apartment           
+           20  AAAAAAAAEBAAAAAA  675               Elm Wilson                                                    Street           Suite I          Hopewell                                                      Williams County                 OH        40587       United States                           -5.00  condo               
+
+--- 20 row(s) selected.
+>>
+>>---------------------
+>>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+
+*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
+
+(EXPR)              
+--------------------
+
+              500000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_demographics;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>prepare s from 
++>load into customer_demographics 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+
+*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  8.96E+005
+6    7    8    blocked_union                                         8.96E+005
+.    .    7    hbase_load                                            1.00E+000
+5    .    6    esp_exchange                    1:4(hash2)            8.96E+005
+3    4    5    tuple_flow                                            8.96E+005
+.    .    4    trafodion_load_prepa            CUSTOMER_DEMOGRAPHIC  1.00E+000
+2    .    3    sort                                                  8.96E+005
+1    .    2    esp_exchange                    4(hash2):2(hash2)     8.96E+005
+.    .    1    hive_scan                       CUSTOMER_DEMOGRAPHIC  8.96E+005
+
+--- SQL operation complete.
+>>
+>>execute s;
+
+--- 500000 row(s) inserted.
+>>
+>>select count(*) from customer_demographics;
+
+(EXPR)              
+--------------------
+
+              500000
+
+--- 1 row(s) selected.
+>>
+>>select [first 20] * from customer_demographics order by cd_demo_sk  ;
+
+CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING  CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
+-----------  ---------  -----------------  --------------------  --------------------  ----------------  ------------  ---------------------  --------------------
+
+          1  M          M                  Primary                                500  Good                         0                      0                     0
+          2  F          M                  Primary                                500  Good                         0                      0                     0
+          3  M          S                  Primary                                500  Good                         0                      0                     0
+          4  F          S                  Primary                                500  Good                         0                      0                     0
+          5  M          D                  Primary                                500  Good                         0                      0                     0
+          6  F          D                  Primary                                500  Good                         0                      0                     0
+          7  M          W                  Primary                                500  Good                         0                      0                     0
+          8  F          W                  Primary                                500  Good                         0                      0                     0
+          9  M          U                  Primary                                500  Good                         0                      0                     0
+         10  F          U                  Primary                                500  Good                         0                      0                     0
+         11  M          M                  Secondary                              500  Good                         0                      0                     0
+         12  F          M                  Secondary                              500  Good                         0                      0                     0
+         13  M          S                  Secondary                              500  Good                         0                      0                     0
+         14  F          S                  Secondary                              500  Good                         0                      0                     0
+         15  M          D                  Secondary                              500  Good                         0                      0                     0
+         16  F          D                  Secondary                              500  Good                         0                      0                     0
+         17  M          W                  Secondary                              500  Good                         0                      0                     0
+         18  F          W                  Secondary                              500  Good                         0                      0                     0
+         19  M          U                  Secondary                              500  Good                         0                      0                     0
+         20  F          U                  Secondary                              500  Good                         0                      0                     0
+
+--- 20 row(s) selected.
+>>
+>>
+>>---------------------
+>>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+
+*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
+
+(EXPR)              
+--------------------
+
+              500000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_demographics_salt;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>cqd MAX_ESPS_PER_CPU_PER_OP reset;
+
+--- SQL operation complete.
+>>CQD ATTEMPT_ESP_PARALLELISM reset;
+
+--- SQL operation complete.
+>>prepare s from 
++>load into customer_demographics_salt 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+
+*** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  8.96E+005
+6    7    8    blocked_union                                         8.96E+005
+.    .    7    hbase_load                                            1.00E+000
+5    .    6    esp_exchange                    1:4(range)            8.96E+005
+3    4    5    tuple_flow                                            8.96E+005
+.    .    4    trafodion_load_prepa            CUSTOMER_DEMOGRAPHIC  1.00E+000
+2    .    3    sort                                                  8.96E+005
+1    .    2    esp_exchange                    4(range):2(hash2)     8.96E+005
+.    .    1    hive_scan                       CUSTOMER_DEMOGRAPHIC  8.96E+005
+
+--- SQL operation complete.
+>>
+>>execute s;
+
+--- 500000 row(s) inserted.
+>>
+>>select count(*) from customer_demographics_salt;
+
+(EXPR)              
+--------------------
+
+              500000
+
+--- 1 row(s) selected.
+>>
+>>select [first 20] * from customer_demographics_salt order by cd_demo_sk  ;
+
+CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING  CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
+-----------  ---------  -----------------  --------------------  --------------------  ----------------  ------------  ---------------------  --------------------
+
+          1  M          M                  Primary                                500  Good                         0                      0                     0
+          2  F          M                  Primary                                500  Good                         0                      0                     0
+          3  M          S                  Primary                                500  Good                         0                      0                     0
+          4  F          S                  Primary                                500  Good                         0                      0                     0
+          5  M          D                  Primary                                500  Good                         0                      0                     0
+          6  F          D                  Primary                                500  Good                         0                      0                     0
+          7  M          W                  Primary                                500  Good                         0                      0                     0
+          8  F          W                  Primary                                500  Good                         0                      0                     0
+          9  M          U                  Primary                                500  Good                         0                      0                     0
+         10  F          U                  Primary                                500  Good                         0                      0                     0
+         11  M          M                  Secondary                              500  Good                         0                      0                     0
+         12  F          M                  Secondary                              500  Good                         0                      0                     0
+         13  M          S                  Secondary                              500  Good                         0                      0                     0
+         14  F          S                  Secondary                              500  Good                         0                      0                     0
+         15  M          D                  Secondary                              500  Good                         0                      0                     0
+         16  F          D                  Secondary                              500  Good                         0                      0                     0
+         17  M          W                  Secondary                              500  Good                         0                      0                     0
+         18  F          W                  Secondary                              500  Good                         0                      0                     0
+         19  M          U                  Secondary                              500  Good                         0                      0                     0
+         20  F          U                  Secondary                              500  Good                         0                      0                     0
+
+--- 20 row(s) selected.
+>>
+>>----------------
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>log;

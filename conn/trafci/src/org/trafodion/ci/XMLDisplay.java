@@ -1,0 +1,72 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
+package org.trafodion.ci;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+public class XMLDisplay implements IDisplay {
+	
+	private Query qryObj;
+	private Writer writer=null;
+	private Session sessObj=null;
+	
+	public XMLDisplay(Session sessObj)
+	{
+		if(sessObj!=null)
+		{
+			this.sessObj = sessObj;
+			this.writer=sessObj.getWriter();
+			this.qryObj=sessObj.getQuery();
+		}
+	}
+
+	public void output(OutputContents contents) throws IOException {
+		// TODO Auto-generated method stub
+		if(contents!=null)
+		{
+			this.writer=sessObj.getWriter();
+			this.qryObj=sessObj.getQuery();
+			//display header
+			ArrayList<OutputColumnAttribute> columns = contents.getColumns();
+			qryObj.setColCount(String.valueOf(columns.size()));
+			
+			ArrayList<ArrayList<String>> alRows = contents.getRows();
+			if(alRows!=null && alRows.size()>0)
+			{
+				for(int i=0;i<alRows.size();i++)
+				{
+					ArrayList<String> alRow = alRows.get(i);
+					if(alRow!=null && alRow.size()>0)
+					{
+						for(int j=0;j<alRow.size();j++)
+						{
+							OutputColumnAttribute columnAttr = columns.get(j);
+				            sessObj.getXmlObj().processXml(columnAttr.name,alRow.get(j));
+				            writer.writeln();
+						}
+					}
+					
+				}
+			}
+			
+		}
+	}
+
+}

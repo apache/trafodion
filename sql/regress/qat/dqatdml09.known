@@ -1,0 +1,205 @@
+337,338c337
+< SUPPNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+340,343c339
+<       1
+<       2
+<       3
+<      10
+---
+> *** ERROR[8822] Unable to prepare the statement.
+345d340
+< --- 4 row(s) selected.
+357,358c352
+< SUPPNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+360,363c354
+<       1
+<       2
+<       3
+<      10
+---
+> *** ERROR[8822] Unable to prepare the statement.
+365d355
+< --- 4 row(s) selected.
+380,381c370
+< PARTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+383c372
+<    4101
+---
+> *** ERROR[8822] Unable to prepare the statement.
+385d373
+< --- 1 row(s) selected.
+399,400c387
+< CUSTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (FALSE) in file ../optimizer/cascadesbasic.cpp at line #nnn.
+402,412c389
+<      21
+<     123
+<     143
+<     324
+<     543
+<     926
+<    1234
+<    3333
+<    5635
+<    7654
+<    7777
+---
+> *** ERROR[8822] Unable to prepare the statement.
+414d390
+< --- 11 row(s) selected.
+428,429c404
+< CUSTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+431,441c406
+<      21
+<     123
+<     143
+<     324
+<     543
+<     926
+<    1234
+<    3333
+<    5635
+<    7654
+<    7777
+---
+> *** ERROR[8822] Unable to prepare the statement.
+443d407
+< --- 11 row(s) selected.
+457,458c421
+< CUSTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (FALSE) in file ../optimizer/cascadesbasic.cpp at line #nnn.
+460,470c423
+<      21
+<     123
+<     143
+<     324
+<     543
+<     926
+<    1234
+<    3333
+<    5635
+<    7654
+<    7777
+---
+> *** ERROR[8822] Unable to prepare the statement.
+472d424
+< --- 11 row(s) selected.
+485,486c437
+< CUSTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+488,498c439
+<      21
+<     123
+<     143
+<     324
+<     543
+<     926
+<    1234
+<    3333
+<    5635
+<    7654
+<    7777
+---
+> *** ERROR[8822] Unable to prepare the statement.
+500d440
+< --- 11 row(s) selected.
+515,516c455
+< SUPPNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+518,520c457
+<       6
+<       8
+<      15
+---
+> *** ERROR[8822] Unable to prepare the statement.
+522d458
+< --- 3 row(s) selected.
+536,537c472
+< SUPPNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+539,541c474
+<       6
+<       8
+<      15
+---
+> *** ERROR[8822] Unable to prepare the statement.
+543d475
+< --- 3 row(s) selected.
+2033,2034c1965
+< SUPPNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+2036,2039c1967
+<       1
+<       2
+<       3
+<      10
+---
+> *** ERROR[8822] Unable to prepare the statement.
+2041d1968
+< --- 4 row(s) selected.
+2056,2057c1983
+< CUSTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (FALSE) in file ../optimizer/cascadesbasic.cpp at line #nnn.
+2059,2069c1985
+<      21
+<     123
+<     143
+<     324
+<     543
+<     926
+<    1234
+<    3333
+<    5635
+<    7654
+<    7777
+---
+> *** ERROR[8822] Unable to prepare the statement.
+2071d1986
+< --- 11 row(s) selected.
+2087,2088c2002
+< CUSTNUM
+< -------
+---
+> *** ERROR[2006] Internal error: assertion failure (getNodeAnalysis() == othersNodeAnalysis) in file ../optimizer/analyzer.cpp at line #nnn.
+2090,2100c2004
+<      21
+<     123
+<     143
+<     324
+<     543
+<     926
+<    1234
+<    3333
+<    5635
+<    7654
+<    7777
+---
+> *** ERROR[8822] Unable to prepare the statement.
+2102d2005
+< --- 11 row(s) selected.

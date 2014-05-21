@@ -1,0 +1,86 @@
+-- Tests for SeaBase
+-- Tests coprocessors, serialization, hbase filter preds pushdown
+-- Added November 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+log LOG012 clear;
+set schema trafodion.seabase;
+
+cqd hbase_serialization 'ON';
+cqd hbase_coprocessors 'ON';
+cqd hbase_filter_preds 'ON';
+
+obey TEST012(clnup);
+obey TEST012(ddl);
+obey TEST012(tests);
+obey TEST012(negtests);
+log;
+exit;
+
+
+?section clnup
+drop table if exists T012T1 cascade;
+drop table if exists T012T2 cascade;
+drop table if exists t012tT3 cascade;
+drop table if exists t012t11 cascade;
+
+?section ddl
+create table if not exists t012t1(a smallint not null serialized, b int serialized, 
+       	     	    	       c largeint serialized,
+       	     	              aa smallint unsigned default 10 not null serialized, 
+                              d char(4) serialized, e varchar(5) serialized,
+                              g numeric(5,2) serialized,
+			      primary key(a desc));
+create index t012t1i1 on t012t1(b);
+create index t012t1i2 on t012t1(g desc);
+invoke t012t1;
+
+create view t012v1 as select a,b,c from t012t1 where c < 0 with check option;
+invoke t012v1;
+
+?section tests
+insert into t012t1 values (1,2,3, 1, 'a', 'b', 5.2);
+insert into t012t1 values (2, null, null, 2, null, null, null);
+select * from t012t1;
+
+select * from t012t1 where a = 1;
+select * from t012t1 where b = 2;
+select * from t012t1 where b < 3;
+select * from t012t1 where d >= 'a';
+
+update t012t1 set g = g+10;
+select * from t012t1;
+
+delete from t012t1 where (b,g) > (2,5);
+select * from t012t1;
+
+insert into t012v1 values (3,3,-1);
+select * from t012v1;
+
+?section negtests
+create table t012t10(f real not null serialized,
+                              h decimal(4,3) serialized,
+                              i date not null serialized,
+                              j interval year to month serialized);
+
+insert into t012v1 values (3,3,3);
+
+create table t012t11(a int not null);
+

@@ -1,0 +1,92 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+**********************************************************************/
+#ifndef SQLCINODE_H
+#define SQLCINODE_H
+
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         SqlciNode.h
+ * RCS:          $Id: SqlciNode.h,v 1.9 1998/07/20 07:27:48  Exp $
+ * Description:  
+ * Created:      4/15/95
+ * Modified:     $ $Date: 1998/07/20 07:27:48 $ (GMT)
+ * Modified:	 Krithika Swaminathan 6/15/03
+ * Language:     C++
+ * Status:       $State: Exp $
+ *
+ *
+ *
+ *
+ *****************************************************************************
+ */
+
+#include "Platform.h"
+#include "SqlCliDllDefines.h"
+#include "NABoolean.h"
+#include <string.h>
+
+class SqlciEnv;
+
+class SqlciNode {
+public:
+enum sqlci_node_type {
+  SQLCI_CMD_TYPE, SQL_CMD_TYPE, UTIL_CMD_TYPE, SHELL_CMD_TYPE, SQLCLI_CMD_TYPE, REPORT_CMD_TYPE, 
+  MXCS_CMD_TYPE
+};
+
+private:
+  char eye_catcher[4];
+  sqlci_node_type node_type;
+  SqlciNode * next;
+  Lng32 errcode;
+
+public:
+  SqlciNode(const sqlci_node_type);
+  virtual ~SqlciNode();
+  virtual short process(SqlciEnv * sqlci_env);
+
+  // These are new functions to allow certain
+  // commands to be accepted in the Report Writer 
+  // mode and in the SelectInProgress mode.  These 
+  // functions are virtual functions which has 
+  // to be implemented by all classes that derive
+  // from SqlciNode.
+  virtual NABoolean isAllowedInSIP();
+  virtual NABoolean isAllowedInRWMode();
+  virtual NABoolean isAllowedInCSMode();
+
+  void set_next(SqlciNode * next_)	{next = next_;}
+  SqlciNode * get_next() const		{return next;}
+
+  Lng32 errorCode() const		{return errcode;}
+  void setErrorCode(Lng32 e)		{errcode = e;}
+
+  bool isSqlciNode() const              {return strncmp(eye_catcher, "CI  ", 4) == 0;}
+
+  sqlci_node_type getType()             {return node_type;}
+
+};
+
+#endif
+
+
+

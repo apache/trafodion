@@ -1,0 +1,907 @@
+#! /bin/bash
+# =============================================================================
+# This file contain functions to backup SQL system and user metadata tables
+#
+# Description: see printHelp function below 
+#
+# script returns:
+#  0 successful operations
+#  1 unexpected error
+#  2 syntax error
+#  3 disks are down, no backup performed
+#
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+# =============================================================================
+
+
+# **************************************************************************
+# FUNCTION: printHelp
+# prints out help text
+function printHelp {
+  echo ""
+  echo "Description: performs a backup of metadata objects"
+  echo "  Usage: "
+  echo "    sqbkupmd [<opts>] " 
+  echo ""
+  echo "     <opts> ::= <opt> [, <opt> ...] "
+  echo "     <opt> ::= "
+  echo "       -c <num>          Count (number) of backup runs to retain"
+  echo "       -d                Run in debug mode "
+  echo "       -h | --help       Display help "
+  echo "       -s                Backup system metadata objects"
+  echo "       -u                Backup user metadata objects"
+  echo ""
+  echo "Example: "
+  echo "    sqbkupmd -c 3 -s"
+  echo " " 
+}
+
+# **************************************************************************
+# FUNCTION: chkInstance
+# check to see if the SeaQuest environment is up
+function chkInstance
+{
+  if [ -z $MY_SQROOT ]; then
+     echo "ERROR: You need to set up the MY_SQROOT environment variable "
+     echo "to continue using this script."
+     echo
+     echo "Exiting the sqbkupmd script." 
+     exit 1;
+  fi
+
+  $MY_SQROOT/sql/scripts/sqcheck -i 1 -d 1 > /dev/null 2>&1
+  sqcheck_result=$?
+
+  if   [ $sqcheck_result -eq 0 ]; then
+    echo "The SeaQuest environment is up."
+  elif [ $sqcheck_result -eq 1 ]; then
+    echo "ERROR:  The SeaQuest environment is only partially up."
+    echo
+    echo "Exiting the sqbkupmd script." 
+    exit 1;
+  elif [ $sqcheck_result -eq 2 ]; then
+    echo "ERROR:  The SeaQuest environment is not up."
+    echo
+    echo "Exiting the sqbkupmd script." 
+    exit 1;
+  else
+    echo "ERROR:  The SeaQuest environment is unknown."
+    echo
+    echo "Exiting the sqbkupmd script." 
+    exit 1;
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: cleanUp
+# remove temporary tables.  
+function cleanUp 
+{
+  # these are inventory files copied from other nodes through rpdcp 
+  rm $scriptAndLogLoc/metadata_backup_files_index_n*.n* > /dev/null 2>&1
+
+  # remove temporary files beginning with sqbkupmd_
+  if [ $isCluster -eq 0 ]; then
+    rm  $scriptAndLogLoc/sqbkupmd_* > /dev/null 2>&1
+  else
+    pdsh $MY_NODES 'rm  $MY_SQROOT/logs/sqbkupmd_logs/sqbkupmd_*' > /dev/null 2>&1
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: completeBkup
+# This function is called on each node to complete the backup operation
+function completeBkup
+{
+  # set up 
+  myNode="_n001"
+  if [ $isCluster -eq 1 ]; then
+    myNode="_"`uname -n`
+  fi
+
+  # get node-id from node name 
+  nodeName=
+  if [ $isCluster -eq 1 ]; then
+    nodeName=`uname -n`
+    nodeId=`$MY_SQROOT/sql/scripts/sqshell -c 'zone' | /bin/grep $nodeName | awk '{print $3}' | tail -1  | /bin/sed -e 's/^0*//g'`
+  else
+    nodeId=0
+    nodeName="n001"
+  fi
+
+  scriptAndLogLoc=$MY_SQROOT/logs/sqbkupmd_logs
+  resultsFile="metadata_backup"$myNode"_details_"$bkupStartTime.log
+  bkupFile=$archiveLoc/metadata_backup_$bkupStartTime/metadata_backup_files$myNode.tar.gz
+  fileInventory=$scriptAndLogLoc/metadata_backup_files_index$myNode
+  filesToBkup=$scriptAndLogLoc/metadata_backup_files$myNode
+
+  printInfo "Backup portion has started, see: $resultsFile on every node for details" 1
+
+  # At this time, the raw output from the mxtool info commands exist
+  # in a set of files on the nodes where the disks reside called:
+  #   sqbkupmd_out{nodeId}{diskId} 
+  printInfo "Gathering results from parallel runs: $(date)" 0
+  gatherResults
+  printInfo "Completed step:  gathering results from parallel runs: $(date)" 1
+
+  # If there are no files to inventory then we are done
+  numFiles=`/bin/cat $scriptAndLogLoc/metadata_backup_files_index* | wc -l`
+  if [ $numFiles -eq 0 ]; then
+    printInfo "No files were found to backup" 0
+  else
+    # Create a zipped and tar file
+    printInfo "Backing up files using tar: $(date)" 0
+    createTarFile
+    printInfo "Completed step:  backing up files using tar: $(date)" 1
+  fi
+
+  # adjust bkup log files
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Looking for extra bkup log files to remove" 0
+  fi
+  numBkupFiles=`ls $scriptAndLogLoc/metadata_backup_n*.log | wc -l`
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Found $numBkupFiles files in the $scriptAndLogLoc directory containing past logs" 0
+  fi
+  fileToRemove=""
+  while [ $numBkupFiles -gt $archiveCount ]; 
+  do
+    fileToRemove=`/bin/ls -tr $scriptAndLogLoc/metadata_backup_n*.log | head -1`
+
+    #   Remove old files
+    if [ "$fileToRemove" != "" ]; then
+       printInfo "Removing file $fileToRemove" 0
+       rm $fileToRemove
+    fi
+    let numBkupFiles=numBkupFiles-1
+  done
+}
+
+
+# ****************************************************************************
+# Function: createClusterInventoryList
+# This function gathers all the node specific inventories and puts them into
+# a single file, it calls TAR to generate the cluster specific information
+function createClusterInventoryList
+{
+  nodeFileInventory=$scriptAndLogLoc/metadata_backup_files_index
+  clusterFileInventory=$archiveLoc/metadata_backup_$scriptStartTime/metadata_backup_files_index
+  rpdcpFile=$scriptAndLogLoc/sqbkupmd_rpdcpFile
+
+  # gather all the inventory lists from each node
+  # probably can change this into a single rpdcp call
+  printInfo "Generating cluster inventory list: $clusterFileInventory" 0
+  # put the rpdcp statements into a file and execute them in parallel
+  if [ $isCluster -eq 1 ]; then
+    lv_nodes=`echo $MY_NODES`
+    echo "# rpdcp commands to obtain file inventory lists from each node" > $rpdcpFile
+    for lv_node in $lv_nodes; do
+      if [ ${lv_node} != "-w" ]; then
+        if [ $lv_node != `uname -n` ]; then
+          fileName=$nodeFileInventory"_"$lv_node
+          echo "rpdcp -p -w ${lv_node} $fileName $scriptAndLogLoc > /dev/null 2>&1 &" >> $rpdcpFile
+        fi
+      fi
+    done
+    echo "wait" >> $rpdcpFile
+    chmod +x $rpdcpFile
+    $rpdcpFile
+  fi
+
+  # concatenate the results
+  firstLine="?Partition Name, ?Redef Time, ?Modify Time, ?File Code, ?Row Count, ?EOF, ?NS, ?Catalog UID, ?Schema UID, ?Object UID, ?Object Name, ?File Location"
+  echo $firstLine > $clusterFileInventory
+  /bin/cat $nodeFileInventory"_n"* 2> /dev/null | /bin/sort >> $clusterFileInventory
+  printInfo "Completed step:  generating inventory list" 1
+
+  # tar the cluster directory
+  if [ $omitClusterTarCreation -eq 0 ]; then
+    $MY_SQROOT/sql/scripts/osimtargen -cr metadata_backup_$scriptStartTime
+  fi
+}
+
+# **************************************************************************
+# Function: createTarFile
+# This function creates the node specific tar file
+function createTarFile
+{
+  # Expand the file list and put into correct format
+  tarFile=$scriptAndLogLoc/sqbkupmd_tar$myNode
+  echo "# Command to TAR files on $myNode" > $tarFile
+  echo "tar -czf $bkupFile \\" >> $tarFile
+  echo " $fileInventory \\" >> $tarFile
+
+  let count=0
+  currentLine=
+  /bin/cat $filesToBkup | while read -r currentLine
+  do
+     echo " $currentLine.DP2 \\" >> $tarFile
+     echo " $currentLine.DP2:00-label \\" >> $tarFile
+     echo " $currentLine.DP2:01 \\" >> $tarFile
+     echo " $currentLine.DP2:01-label \\" >> $tarFile
+     let line_count=line_count+1
+  done
+  echo "  > /dev/null 2>&1 " >> $tarFile
+  chmod +x $tarFile
+  $tarFile
+}
+
+# **************************************************************************
+# FUNCTION: doWork
+# Main code for scanning volumes for metadata tables.
+function doWork
+{
+  # define temporary files
+  scriptMxtoolCmd=$scriptAndLogLoc/sqbkupmd_mxtool
+  scriptRawOutput=$scriptAndLogLoc/sqbkupmd_out
+  parallelScript=$scriptAndLogLoc/sqbkupmd_parallel_script
+  scriptErrorOutput=$scriptAndLogLoc/sqbkupmd_error
+  numberOfConcurrentOps=1
+
+  printInfo "Generating node and cluster level scripts - start time: $(date)" 0
+  if [ $debugOn -eq 1 ]; then
+    if [ $doSystemMetadata -eq 1 ]; then
+      printInfo "Backing up system metadata" 0
+    fi
+    if [ $doUserMetadata -eq 1 ]; then
+      printInfo "Backing up user metadata" 0
+    fi
+  fi
+
+  # create node level scripts that scan disks for metadata tables and backs 
+  # them up in tar files
+  generateMxtoolCmd
+
+  # generate the script that executes the node level scripts
+  generateParallelRunScript
+  printInfo "Completed step: generating node and cluster level scripts - start time: $(date)" 1
+
+  # Call SQL to stop DDL activity during the backup
+  printInfo "Disabling DDL operations in the database: $(date)" 0
+  #stopDDL
+  printInfo "Completed step:  disabling DDL operations in the database: $(date)" 1
+  if [ $errorRows -ne 0 ]; then
+    #startDDL
+    printInfo "Unable to stop DDL activity, see $scriptAndLogLoc/sqbkupmd_alterStmts on node $nodeName for details" 0
+    printInfo "Exiting script" 0
+    exit 1
+  fi
+
+  # execute all the node level scripts and wait until they are completed
+  printInfo "Running $parallelScript across $numberOfConcurrentOps nodes: $(date)" 0
+  $parallelScript
+  printInfo "Completed step:  running $parallelScript: $(date)" 1
+
+  # Call SQL to turn on DDL activities
+  printInfo "Enabling DDL operations in the database: $(date)" 0
+  #startDDL
+  printInfo "Completed step:  enabling DDL operations in the database: $(date)" 1
+  if [ $errorRows -ne 0 ]; then
+    printInfo "Unable to start DDL activity, see $scriptAndLogLoc/sqbkupmd_alterStmts for details" 0
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: gatherResults
+# copies output files from parallel jobs on the node to a master list
+# the files exist in $scriptAndLogLoc/sqbkupmd_out{nodeId}{diskId}
+function gatherResults
+{
+  scriptRawOutput=$scriptAndLogLoc/sqbkupmd_out
+  scriptErrorOutput=$scriptAndLogLoc/sqbkupmd_error
+  workFile=$scriptAndLogLoc/sqbkupmd_temp
+
+  # get number of files to combine
+  numFiles=`/bin/ls $scriptRawOutput$nodeId* | wc -l`
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Combining $numFiles files" 0
+  fi
+
+  # generate list of files to backup
+  # user metadata tables have a file code of 563, system metadata tables 564
+  # use the file code attribute to filter out desired results
+  filter="/bin/grep"
+  if [ $doSystemMetadata -eq 1 ]; then
+    # backup system metadata (file code 564)
+    filter=$filter" -e \", 564,\""
+  fi
+  if [ $doUserMetadata -eq 1 ]; then
+    # backup user metadata (file code 563)
+    filter=$filter" -e \", 563, \""
+  fi
+
+  # generate the file inventory for the node
+  echo "/bin/cat $scriptRawOutput$nodeId* | $filter | /bin/sort | uniq > $fileInventory " >> $workFile
+  chmod +x $workFile
+  $workFile
+  rm $workFile
+
+  # see if there are any files to inventory
+  inventorySize=`/bin/cat $fileInventory | wc -l`
+  if [ $inventorySize -eq 0 ]; then
+    printInfo "No metadata objects found on node: $nodeName" 0
+  else
+    # generate the list of Linux file locations for the node
+    /bin/cat $fileInventory | cut -d',' -f12 >> $filesToBkup
+  fi
+
+  # generate the error list for the node
+  listOfErrorFiles=`/bin/ls $scriptRawOutput$nodeId*`
+  for errorFile in $listOfErrorFiles; do
+    errorsFound=`/bin/cat $errorFile | /bin/grep -i "\*\*\* ERROR" | wc -l`
+    if [ $errorsFound -gt 0 ]; then
+      diskName=`echo $errorFile | tail -c 7`
+      echo "# Errors found on node $nodeName while running mxtool info for disk $diskName: " >> $scriptErrorOutput
+      /bin/cat $errorFile | /bin/grep -i "\*\*\* ERROR" >> $scriptErrorOutput
+    fi
+  done
+
+  if [ $debugOn -eq 1 ]; then
+    echo "Completed step:  combining files"
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: generateMxtoolCmd
+# Create files (one per node) containing mxtool info commands and the
+# request to complete the backup
+function generateMxtoolCmd
+{
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Creating scripts to scan disks in parallel (using mxtool info)" 0
+    printInfo "Getting the names of all the disks to iterate over" 0
+  fi
+  getVols
+
+  # calculate number of concurrent ops which is the same as the number of nodes
+  # MY_NODES has a -w in front of each node, so divide by 2 to get the real number
+  numberOfConcurrentOps=1
+  if [ $isCluster -eq 1 ]; then
+    numberOfConcurrentOps=`echo $MY_NODES | wc -w`
+    let numberOfConcurrentOps=`expr ${numberOfConcurrentOps}'/'2`
+  fi
+
+  # The script generates an mxtool command for each disk on the node.  The format 
+  # of these commands is "mxtool info \$disk.ZSD*.*00 --bkupmd"
+  # The variables:  mxtoolPrefix and mxtoolPostfix exist to help in command generation
+  # the disk name needs to be inserted between mxtoolPrefix and mxtoolPostfix
+  mxtoolPrefix="mxtool info \\"
+  mxtoolPostfix=".ZSD*.*00 --bkupmd "
+
+  # generate the node level backup scripts
+  let nodeId=0
+  for disk in $listOfVols; do
+    diskId=`echo $disk | /bin/sed -e 's/\\$/_/g'`
+
+    # get the nodeId where the disk resides, mxtool commands will be executed
+    # on the node where the disk is located
+    if [ $isCluster -eq 0 ]; then
+      nodeId=0
+    else
+
+      # This command gets the disk <-> nodeId mapping from the registry
+      #   sqshell -c show {process \$DB00??} 
+      $MY_SQROOT/sql/scripts/sqshell -c show {process $disk} | /bin/grep "ZONE " | awk '{print $6}' > $MY_SQROOT/logs/sqbkupmd_logs/sqbkupmd_deviceInfo
+      nodeId=`/bin/cat $MY_SQROOT/logs/sqbkupmd_logs/sqbkupmd_deviceInfo`
+      if [ "$nodeId" == "" ]; then
+        printInfo "ERROR:  invalid disk volume specified: $disk" 0
+        printInfo "Exiting script" 0
+        exit 3
+      fi
+    fi
+
+    # generate mxtool info commands as follows and put results in the node 
+    # level backup script (fileName):
+    #   mxtool info <details> > scriptRawOutput{nodeId}{diskId}
+    fileName="$scriptMxtoolCmd$nodeId"
+    echo "$mxtoolPrefix$disk$mxtoolPostfix > $scriptRawOutput$nodeId$diskId &" >> $fileName
+  done
+
+  # set up variables that will be sent back to sqbkupmd script 
+  dOpt=""
+  if [ $debugOn -eq 1 ]; then
+    dOpt=" -d"
+  fi
+  sOpt=""
+  if [ $doSystemMetadata -eq 1 ]; then
+   sOpt=" -s"
+  fi
+  uOpt=""
+  if [ $doUserMetadata -eq 1 ]; then
+   uOpt=" -u"
+  fi
+
+ # All the parallel mxtool commands have been generated to run in the 
+  # background and placed in node level scripts 
+  # Add a wait and a call to sqbkupmd to complete the node level operation 
+  let fileCount=0
+  while [ $fileCount -lt $numberOfConcurrentOps ]; do
+    fileName="$scriptMxtoolCmd$fileCount"
+    if [ -e $filename ]; then
+      echo "# wait until all the mxtool jobs complete" >> $fileName
+      echo "wait" >> $fileName
+      echo "# Now complete the backup by calling sqbkupmd again with the -b option" >> $fileName
+      echo "$MY_SQROOT/sql/scripts/sqbkupmd -b $scriptStartTime $dOpt $sOpt $uOpt -c $archiveCount -a $archiveLoc" >> $fileName
+      echo "wait" >> $fileName
+
+      # make sure generated script is executable
+      chmod +x $fileName
+    fi
+    let fileCount=$fileCount+1
+  done
+
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Completed step:  creating scripts to scan disks in parallel" 1
+  fi
+}
+
+
+# **************************************************************************
+# FUNCTION: generateParallelRunScript
+# Create a script that runs all the scripts in parallel across all nodes
+function generateParallelRunScript
+{
+   if [ $debugOn -eq 1 ]; then
+     printInfo "Creating script to run backup operation in parallel" 0
+   fi
+   typeset -i count=0
+
+   if [ $isCluster -eq 0 ]; then
+      # for workstations, just execute the node specific script
+      echo "$scriptMxtoolCmd$count" >> $parallelScript
+   else
+      # For clusters, make sure the logs directory exists, copy over the node
+      # specific script, and execute the node specific script.
+      while [ ${count} -lt $numberOfConcurrentOps ]
+      do
+         # map the nodeId to the nodeName - count is the nodeId  
+         echo "$MY_SQROOT/sql/scripts/sqshell -c 'zone nid $count' | /bin/grep 'Up' | awk '{print \$5}'" > $scriptAndLogLoc/sqbkupmd_nodeName
+         chmod +x $scriptAndLogLoc/sqbkupmd_nodeName
+         currentNodeName=`$scriptAndLogLoc/sqbkupmd_nodeName`
+         if [ "$currentNodeName" == "" ]; then
+            printInfo "ERROR: unable to convert nodeId to nodeName for nodeId: $nodeId" 0
+            echo "exiting script"
+            exit 1
+         fi
+
+         if [ $nodeName != $currentNodeName ]; then
+            echo "pdsh -w ${currentNodeName} 'mkdir -p $scriptAndLogLoc ' > /dev/null 2>&1" >> $parallelScript
+            echo "pdcp -p -w ${currentNodeName} $scriptMxtoolCmd${count} $scriptAndLogLoc" >> $parallelScript
+         fi
+         echo "pdsh -w ${currentNodeName} '$scriptMxtoolCmd${count} ' > /dev/null 2>&1 &" >> $parallelScript
+         count=$count+1
+      done
+   fi
+
+    echo "wait" >> $parallelScript
+   chmod ugo+rwx $parallelScript 2>/dev/null
+   if [ $debugOn -eq 1 ]; then
+     printInfo "Completed step:  creating script to run backup operation in parallel" 1
+   fi
+}
+
+# **************************************************************************
+# FUNCTION: getVols
+# sets up variable listOfVols with the list of all disks in instance
+# The ES states that we will not continue with the backup if any disks
+# are down.  This function just reports an error and continues
+function getVols
+{
+  if [ "$vol" != "" ]; then
+    listOfVols=$vol
+  else
+    # $SQ_MBYTE is only setup for 64bit software, if not exists, assume 32bit
+    bitType=`echo $SQ_MBTYPE`
+    if [[ "$bitType" == "" ]]; then
+     SQ_MBTYPE=32
+    fi
+
+    # look for downed disks
+    downDisks=`$MY_SQROOT/export/bin$SQ_MBTYPE/sediskstatus | /bin/grep "DOWN" | cut -d" " -f1`
+    if [ "$downDisks" != "" ]; then
+      printInfo "ERROR: Results may be incomplete or incorrect, primary and/or mirrored disks are unavailable: " 0
+      printInfo "Disks having issues (from sediskstatus): $downDisks" 0
+      echo "Exiting script." 
+      exit 3
+    fi
+
+    # look for all "UP" disks that are not transaction or audit vols
+    $MY_SQROOT/export/bin$SQ_MBTYPE/sediskstatus | /bin/grep "UP" | cut -d" " -f1 >> $scriptAndLogLoc/disks.txt
+    /bin/sed -i /"\$TLOG"/d $scriptAndLogLoc/disks.txt
+    /bin/sed -i /"\$AU*"/d $scriptAndLogLoc/disks.txt
+
+    # save adjusted list of disks
+    listOfVols=`/bin/cat $scriptAndLogLoc/disks.txt`
+    rm $scriptAndLogLoc/disks.txt
+  fi
+}
+
+
+# **************************************************************************
+# FUNCTION: parseRequest
+# parses the request
+function parseRequest
+{
+  systemMetadataSpecified=0
+  userMetadataSpecified=0
+  while [ $# -gt 0 ]; do
+
+    case $1 in
+
+      # undocumented option that specifies an alternative archive location
+      #  option: -a <dir>
+      -a)
+        if [ $# -eq 1 ]; then
+          echo "ERROR: Syntax error expecting archive directory: $1 "
+          printHelp
+          exit 2
+        fi
+        nextValue=`echo $2 | head -c 1`
+        if [ "$nextValue" = "-" ]; then
+          echo "ERROR: Syntax error expecting archive directory: $1 "
+          printHelp
+          exit 2
+        fi
+        shift
+        archiveLoc=$1
+        ;;
+
+      # undocumented option called during the bkup operation
+      #  option: -b <time>
+      -b)
+        if [ $# -eq 1 ]; then
+          echo "ERROR: Syntax error expecting time of backup: $1 "
+          printHelp
+          exit 2
+        fi
+        nextValue=`echo $2 | head -c 1`
+        if [ "$nextValue" = "-" ]; then
+          echo "ERROR: Syntax error expecting time of backup: $1 "
+          printHelp
+          exit 2
+        fi
+        completeBkup=1
+        bkupStartTime=$2
+        shift
+        ;;
+
+      # gets number of files to retain, defaults to 5
+      -c)
+       if [ $# -eq 1 ]; then
+          echo "ERROR: Syntax error expecting number of runs to retain: $1 "
+          printHelp
+          exit 2
+        fi
+        nextValue=`echo $2 | head -c 1`
+        if [ "$nextValue" = "-" ]; then
+          echo "ERROR: Syntax error expecting number of runs to retain: $1 "
+          printHelp
+          exit 2
+        fi
+
+        # Make sure archiveCount is a number between 1 and 10
+        archiveCount=$2
+        if [ $archiveCount -lt 1 ] || [ $archiveCount -gt 10 ]; then
+          echo "ERROR: Syntax error expecting number of runs to retain to be between 1 and 10, value found: $2 "
+          exit 2
+        fi
+        shift
+        ;;
+
+      -d)
+        debugOn=1
+        ;;
+
+      -h | --help)
+        printHelp
+        exit 0
+        ;;
+
+      # undocumented option, if set, omits creating cluster tar file
+      -o)
+        omitClusterTarCreation=1
+        ;;
+
+      -s)
+        systemMetadataSpecified=1
+        ;;
+
+      -u)
+        userMetadataSpecified=1
+        ;;
+
+      # undocumented option used for testing
+      --vol)
+        if [ $# -eq 1 ]; then
+          echo "ERROR: Syntax error expecting disk volume name: $1 "
+          printHelp
+          exit 2
+        fi
+
+       loopDone=0
+        while [ $loopDone -eq 0 ]; do
+          nextValue=`echo $2 | head -c 1`
+          if [ "$nextValue" = "-" ]; then
+            loopDone=1
+          else
+            vol=$vol$2" "
+            shift
+          fi
+          if [ $# -eq 1 ]; then
+            loopDone=1
+          fi
+        done
+
+        if [ "$vol" == "" ]; then
+         echo "ERROR: Syntax error expecting disk volume name: $1 "
+          printHelp
+          exit 2
+        fi
+        ;;
+
+      **)
+        echo "ERROR: Syntax error: Invalid option: $1 "
+        printHelp
+        echo
+        echo "Exiting the sqbkupmd script." 
+        exit 2
+        ;;
+    esac
+    shift
+  done
+
+  # setup system and user metadata attributes
+  # both $doUserMetadata and $doSystemMetadata is set to 1 by default
+  # this check turns off one of these attributes if requested
+  if [ $systemMetadataSpecified -eq 1 ]; then
+    doUserMetadata=$userMetadataSpecified
+  fi
+
+  if [ $userMetadataSpecified -eq 1 ]; then
+    doSystemMetadata=$systemMetadataSpecified
+  fi
+
+}
+
+# **************************************************************************
+# FUNCTION:  printInfo
+# prints out messages to standard out and log
+#   Parameter 1 - message to print
+#   Parameter 2 - if 1, then add an extra line
+function printInfo
+{
+  echo $1
+  echo $1 >> $scriptAndLogLoc/$resultsFile
+  if [ $2 -eq 1 ]; then
+   echo ""
+   echo "" >> $scriptAndLogLoc/$resultsFile
+  fi
+}
+
+# ****************************************************************************
+# Function: processErrors
+# This function gathers errors from the nodes and puts them in a single file
+function processErrors
+{
+  rpdcpFile=$scriptAndLogLoc/sqbkupmd_rpdcpFile
+
+  # gather error results from the nodes
+  printInfo "Checking for errors" 0
+  # put the rpdcp statements into a file and execute them in parallel
+  if [ $isCluster -eq 1 ]; then
+    echo "# rpdcp commands to obtain error information from each node" > $rpdcpFile
+    lv_nodes=`echo $MY_NODES`
+    for lv_node in $lv_nodes; do
+      if [ ${lv_node} != "-w" ]; then
+        if [ $lv_node != `uname -n` ]; then
+          echo "rpdcp -p -w ${lv_node} $scriptErrorOutput $scriptAndLogLoc > /dev/null 2>&1  &" >> $rpdcpFile 
+        fi
+      fi
+    done
+    echo "wait" >> $rpdcpFile
+    chmod +x $rpdcpFile
+    $rpdcpFile
+  fi
+
+  # Scan all the error files looking for errors
+  # Store concatenated results in metadata_backup_errors
+  errorFilesExist=`/bin/ls $scriptErrorOutput* > /dev/null 2>&1 | wc -l`
+  if [ $errorFilesExist -gt 0 ]; then
+    errorRows=`/bin/cat $scriptErrorOutput* 2> /dev/null | /bin/grep -e "\*\*\* ERROR" | wc -l`
+  else
+    errorRows=0
+  fi
+  if [ $errorRows -ne 0 ]; then
+    /bin/cat $scriptErrorOutput* 2> /dev/null > $archiveLoc/metadata_backup_$scriptStartTime/metadata_backup_errors
+    printInfo "Errors found, see $archiveLoc/metadata_backup_$scriptStartTime/metadata_backup_errors for details" 1
+  else
+    printInfo "No errors found" 1
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: startDDL
+# Makes calls to SQL to prevent DDL operations
+function startDDL
+{
+  # Call SQL to stop create operations
+sqlci >> "$scriptAndLogLoc/sqbkupmd_alterStmts" 2>&1 <<eof
+   alter all catalog enable create;
+   alter database enable authorization changes;
+   exit;
+eof
+  errorRows=`/bin/cat $scriptAndLogLoc/sqbkupmd_alterStmts | /bin/grep "\*\*\* ERROR" | wc -l`
+}
+
+# **************************************************************************
+# FUNCTION: stopDDL
+# Makes calls to SQL to prevent DDL operations
+function stopDDL
+{
+  # Call SQL to stop create operations
+sqlci >> "$scriptAndLogLoc/sqbkupmd_alterStmts" 2>&1 <<eof
+   alter all catalog disable create;
+   alter database disable authorization changes;
+   exit;
+eof
+  errorRows=`/bin/cat $scriptAndLogLoc/sqbkupmd_alterStmts | /bin/grep "\*\*\* ERROR" | wc -l` 
+}
+
+##############################################################################
+#Main body of sqbkupmd script
+##############################################################################
+
+# Initialize variables
+debugOn=0
+scriptAndLogLoc=$MY_SQROOT/logs/sqbkupmd_logs
+archiveCount=5
+vol=
+archiveLoc=$TAR_DOWNLOAD_ROOT
+completeBkup=0
+errorRows=0
+omitClusterTarCreation=0
+doSystemMetadata=1
+doUserMetadata=1
+
+scriptStartTime=$(date +"%Y%m%d_%H%M%S")
+
+# Parse the input request
+parseRequest $* 
+
+# determine if running on workstation or cluster
+lv_nodes=`echo $MY_NODES`
+isCluster=1
+if [ "$lv_nodes" == "" ]; then
+  isCluster=0
+fi
+
+
+# if this script is being called to generate node specific tar files,
+# (-b option) complete the backup and exit
+if [ $completeBkup -eq 1 ]; then
+  completeBkup
+  exit 0
+fi
+
+# set up script location and create directory if needed
+if [ ! -d $scriptAndLogLoc ]; then
+   if [ $debugOn -eq 1 ]; then
+     echo "Creating directory $scriptAndLogLoc to store results"
+   fi
+   mkdir -p $scriptAndLogLoc
+   if [[ $? != 0 ]]; then
+      echo "ERROR: Problem creating directory: $scriptAndLogLoc." 
+      echo "Exiting script." 
+      exit 1;
+   fi
+fi
+resultsFile=metadata_backup_details_$scriptStartTime.log
+
+# display introductory messages
+nodeName=`uname -n`
+printInfo "Script start time: $(date)." 1
+printInfo "For operation details see $resultsFile on node $nodeName" 1
+
+# make sure instance is running
+chkInstance
+
+
+# Report an error if the archive directory does not exist
+if [ ! -d $archiveLoc ]; then
+  printInfo "ERROR: Directory does not exist: $archiveLoc." 0
+  printInfo "Exiting script." 0
+  exit 1;
+fi
+
+# cleanup files from previous runs
+cleanUp
+if [ $isCluster -eq 0 ]; then
+  rm  $scriptAndLogLoc/metadata_backup_files_* > /dev/null 2>&1
+else
+  pdsh $MY_NODES 'rm  $MY_SQROOT/logs/sqbkupmd_logs/metadata_backup_files_*' > /dev/null 2>&1
+fi
+
+# create backup directory 
+mkdir -p $archiveLoc/metadata_backup_$scriptStartTime > /dev/null 2>&1
+
+# perform the operation
+doWork
+
+# gather error information
+processErrors
+
+# create cluster inventory list
+createClusterInventoryList
+
+# Done with operation, cleanup and exit
+if [ $debugOn -eq 0 ]; then
+  cleanUp
+fi
+
+# remove extra detail logs
+printInfo "Looking for log files to remove" 0
+numLogFiles=`/bin/ls $scriptAndLogLoc/metadata_backup_detail*.log | wc -l`
+if [ $debugOn -eq 1 ]; then
+  printInfo "Found $numLogFiles files in the $scriptAndLogLoc directory on node $nodeName" 0
+fi
+while [ $numLogFiles -gt $archiveCount ]; 
+do
+  fileToRemove=`/bin/ls -tr $scriptAndLogLoc/metadata_backup_detail*.log | head -1`
+
+  #   Remove old files
+  if [ "$fileToRemove" != "" ]; then
+     printInfo "Removing file $fileToRemove" 0
+     rm $fileToRemove
+  fi
+  let numLogFiles=numLogFiles-1
+done
+
+printInfo "" 0
+
+# Remove old bkup directories
+printInfo "Looking for $archiveLoc/metadata_backup_ (*) directories to remove" 0
+
+dirToRemove=""
+numDirs=`/bin/ls -d $archiveLoc/metadata_backup_* | /bin/grep -v "tar.gz" | wc -l`
+if [ $debugOn -eq 1 ]; then
+  printInfo "Found $numDirs directories in $archiveLoc" 0
+fi
+
+while [ $numDirs -gt $archiveCount ]; do
+  dirToRemove=`/bin/ls -d -tr $archiveLoc/metadata_backup_* | head -1`
+  dirToRemove=`echo $dirToRemove | /bin/sed -e 's/.tar.gz//g'` 
+
+  # remove old directories
+  if [ "$dirToRemove" != "" ]; then
+    printInfo "Removing directory $dirToRemove" 0
+    rm -rf $dirToRemove
+    printInfo "Removing associated tar file" 0
+    rm $dirToRemove.tar.gz > /dev/null 2>&1
+  fi
+  let numDirs=numDirs-1
+done
+
+# recheck to see if volumes are down
+# just in case something happened since we checked originally
+getVols
+
+printInfo "" 0
+printInfo "Script end time: $(date)." 0
+exit 0; 

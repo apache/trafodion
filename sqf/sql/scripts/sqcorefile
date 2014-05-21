@@ -1,0 +1,180 @@
+#!/bin/sh
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+function usage {
+	b=`basename $0`
+	echo "usage: $b [-e] [-l] [-p] [ <core>... ]"
+	exit 0
+}
+
+#
+# the easy way is to use gdb to display environ
+#
+function chk_core_easy {
+	prog=`file -L $core | sed "-e s|^.*from '||" "-e s|'||"`
+	TMP=/tmp/coreinfo$$
+	gdb $prog $core 2>/dev/null > $TMP <<eof
+define coreinfo_environ
+	set \$inx = 0
+	while *((char **) environ+\$inx)
+		printf "%s\n", *((char **) environ+\$inx)
+		set \$inx++
+	end
+end
+coreinfo_environ
+eof
+	rc=$?
+	if [ $rc = 0 ]; then
+		croot=`grep '^MY_SQROOT=' $TMP`
+		if [ -z "$croot" ]; then
+			rc=1
+		fi
+		if [ $rc = 0 ]; then
+			if [ $path = 1 ]; then
+				cpath=`grep '^PATH=' $TMP`
+				if [ -z "$cpath" ]; then
+					rc=1
+				fi
+			fi
+		fi
+		if [ $rc = 0 ]; then
+			if [ $ldpath = 1 ]; then
+				cldpath=`grep '^LD_LIBRARY_PATH=' $TMP`
+				if [ -z "$cldpath" ]; then
+					rc=1
+				fi
+			fi
+		fi
+		if [ $rc = 0 ]; then
+			echo "$core from $prog, $croot"
+			if [ $ldpath = 1 ]; then
+				echo $cpath
+			fi
+			if [ $ldpath = 1 ]; then
+				echo $cldpath
+			fi
+			if [ $env = 1 ]; then
+				cat $TMP
+			fi
+		fi
+	fi
+	rm -f $TMP
+	return $rc
+}
+
+#
+# the hard way is to use search the core-file for strings
+#
+function chk_core_hard {
+	from=`file -L $core | sed "s|^.*from '|'|"`
+	args="-s MY_SQROOT="
+	if [ $ldpath = 1 ]; then
+		args="$args -s LD_LIBRARY_PATH="
+	fi
+	if [ $path = 1 ]; then
+		args="$args -s PATH="
+	fi
+	cdata=`tsearch $args $core`
+	for cd in $cdata; do
+		case "$cd" in
+	    	LD_LIBRARY_PATH=*)
+			cldpath=$cd
+			;;
+	    	MY_SQROOT=*)
+			croot=$cd
+			;;
+	    	PATH=*)
+			cpath=$cd
+			;;
+	    	esac
+	done
+	echo "$core from $from, $croot"
+	if [ $path = 1 ]; then
+		echo $cpath
+	fi
+	if [ $ldpath = 1 ]; then
+		echo $cldpath
+	fi
+}
+
+#
+# check core - try easy-way then hard-way
+#
+function chk_core {
+	chk_core_easy
+	if [ $? != 0 ]; then
+		chk_core_hard
+	fi
+}
+
+# main starts here
+env=0
+ldpath=0
+path=0
+cnt=$#
+filecnt=$cnt
+while getopts "elp" arg; do
+	case $arg in
+	e) env=1
+		;;
+	l) ldpath=1
+		;;
+	p) path=1
+		;;
+	*) usage
+		;;
+	esac
+	filecnt=`expr $filecnt - 1`
+done
+
+if [ $filecnt -eq 0 ]; then
+	files=`ls core.*`
+	for f in $files; do
+		cnt=`expr $cnt + 1`
+	done
+fi
+
+if [ $cnt -lt 1 ]; then
+	usage
+fi
+
+if [ -z "$files" ]; then
+	while [ $cnt -gt 0 ]; do
+		core=$1
+		if [ "$core" = "-e" ]; then
+			x=1
+		elif [ "$core" = "-l" ]; then
+			x=1
+		elif [ "$core" = "-p" ]; then
+			x=1
+		elif [ -e "$core" ]; then
+			chk_core
+		else
+			echo "cannot open $core"
+		fi
+		shift
+		cnt=`expr $cnt - 1`
+	done
+else
+	for core in $files; do
+		chk_core
+	done
+fi

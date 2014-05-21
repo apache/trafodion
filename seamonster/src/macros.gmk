@@ -1,0 +1,41 @@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+# @@@ END COPYRIGHT @@@
+
+ifndef SQ_MTYPE
+SQ_MTYPE	= 32
+endif
+
+# tools
+ifeq ($(SQ_MTYPE),32)
+CFLAGS		= $(C32FLAGS)
+CXXFLAGS	= $(CXX32FLAGS)
+MPILIB		= -L$(MPI_ROOT)/lib/linux_ia32 -lmtmpi -lpthread
+else
+CFLAGS		= $(C64FLAGS)
+CXXFLAGS	= $(CXX64FLAGS)
+MPILIB		= -L$(MPI_ROOT)/lib/linux_amd64 -lmtmpi -lpthread
+endif
+
+CC		= $(GCC_TOOL_ROOT)/bin/gcc
+CXX		= $(GCC_TOOL_ROOT)/bin/g++
+MPICC		= $(MPI_ROOT)/bin/mpicc
+MPICXX		= $(MPI_ROOT)/bin/mpiCC
+
+# export
+EXPROOT		= $(MY_SQROOT)/export
+INCMONDIR	= $(MY_SQROOT)/monitor/linux
+BINEXPDIR	= $(EXPROOT)/bin$(SQ_MBTYPE)
+INCEXPDIR	= $(EXPROOT)/include
+LIBEXPDIR	= $(EXPROOT)/lib$(SQ_MBTYPE)
+KMEXPDIR	= $(EXPROOT)/km
+
+ifeq ($(SQ_MTYPE),32)
+MPICC		+= -mpi32
+MPICXX		+= -mpi32
+endif
+
+# sm libs
+LIBMPI		= $(LIBEXPDIR)/libmtmpi.so
+LIBMPIX		= -L$(LIBEXPDIR) -lmtmpi

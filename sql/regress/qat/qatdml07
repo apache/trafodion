@@ -1,0 +1,695 @@
+#ifNT
+control query default attempt_esp_parallelism 'off';
+#ifNT
+LOG aqatdml07 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--    This test unit is a positive local test for the select statement.
+-- It tests join form select statements (selects on more than one table),
+-- with GROUP BY, HAVING, and ORDER BY clauses, and also tests some
+-- complex queries that use all the clauses together.
+--    This test unit uses the select global data base (sqldd01d).
+-- Each test case in this test unit tests a particular feature of complex
+-- join select statements.  For each test case , the following combinations
+-- of objects are tested:
+--           base table - base table
+--           base table - protection view
+--           base table - shorthand view
+--           protection view - protection view
+--           protection view - shorthand view
+--           shorthand view - shorthand view
+--           base table with itself
+--           protection view with itself
+--           shorthand view with itself
+--           3 or more base tables
+
+--    The test cases in this test unit are as follows:
+--       A0: use of the GROUP BY clause
+--       A1: HAVING
+--       A2: ORDER BY
+--       A3: complex queries - combinations of all features
+--       A4: use of locking clauses (for stable access, for browse access,
+--           for repeatable access) with above clauses
+--       A5: SELECT aggregate functions with GROUP BY
+--       A6: SELECT aggregate functions with aggregates in HAVING clause
+--           and complex queries with aggregates
+
+-- All testcases are documented further below.
+
+-- *******************  end test unit comments  *************************
+
+-- <testunit-summary>
+-- select #6 pos/loc ufi joins complex
+
+
+-- <testunit-specs>
+
+-- mode-type ufi
+-- test-type functional
+-- form-type pos/loc
+-- select-test
+
+-- <testcase A0>
+
+--    <detail>
+--       join select test - this tests the use of a GROUP BY clause
+--       in a select statement on more than one table.
+
+--    <templates>
+--       US00
+
+-- <ufi-input>
+      select pic_9_7
+      from btsel03,btsel04
+      group by pic_9_7;
+
+-- <ufi-input>
+      select medium_int
+      from btsel03,btsel04
+      group by medium_int;
+
+-- <comment> similar to above, without reference to btsel03
+-- <comment> (compare output - should be the same)
+-- <ufi-input>
+      select medium_int
+      from btsel04
+      group by medium_int;
+
+-- <ufi-input>
+      select pic_9_7, btsel03.pic_x_7
+      from btsel03,btsel04
+      group by pic_9_7, btsel03.pic_x_7;
+-- <ufi-input>
+      select pic_9_7,medium_int
+      from btsel03,btsel04
+      group by pic_9_7,medium_int;
+-- <ufi-input>
+      select pic_x_1,pic_9_7,medium_int
+      from btsel02,btsel03,btsel04
+      group by pic_x_1,pic_9_7,medium_int;
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,pvsel03
+      group by decimal_1,new_name_1;
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,svsel13
+      group by decimal_1,new_name_1;
+-- <ufi-input>
+      select  pvsel01.medium_int, pvsel04.medium_int
+      from pvsel01,pvsel04
+      group by  pvsel01.medium_int, pvsel04.medium_int;
+-- <ufi-input>
+      select  pvsel01.medium_int
+      from pvsel01,svsel13
+      group by  pvsel01.medium_int;
+-- <ufi-input>
+      select new_name_3,col_3
+      from svsel13,svsel11
+      group by new_name_3,col_3;
+-- <ufi-input>
+      select secondd.char_1, firstt.medium_int
+      from  btsel01 firstt,  btsel01 secondd
+      group by secondd.char_1,firstt.medium_int;
+-- <ufi-input>
+      select secondd.medium_int
+      from pvsel01 firstt, pvsel01 secondd
+      group by secondd.medium_int;
+-- <ufi-input>
+      select firstt.new_name_1,firstt.new_name_3
+     from svsel13 firstt,svsel13 secondd
+      group by firstt.new_name_1,firstt.new_name_3;
+-- <end-input>
+
+
+
+-- <testcase A1>
+
+-- <detail>
+--    select join test case - this tests the use of a HAVING clause,
+--    in conjunction with a GROUP BY clause .
+
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select pic_9_7
+      from btsel03,btsel04
+      group by pic_9_7
+      having pic_9_7 < 100;
+-- <ufi-input>
+      select medium_int
+      from btsel03,btsel04
+      group by medium_int
+      having medium_int between 500 and 3000;
+-- <ufi-input>
+      select pic_9_7, btsel03.pic_x_7
+      from btsel03,btsel04
+      group by pic_9_7, btsel03.pic_x_7
+      having pic_9_7 in (50,80,100);
+-- <ufi-input>
+      select pic_9_7,medium_int
+      from btsel03,btsel04
+      group by pic_9_7,medium_int
+      having (pic_9_7 * 2) <> medium_int;
+-- <ufi-input>
+      select pic_x_1,pic_9_7,medium_int
+      from btsel02,btsel03,btsel04
+      group by pic_x_1,pic_9_7,medium_int
+      having pic_x_1 like 'Q';
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,pvsel03
+      group by decimal_1,new_name_1
+      having new_name_1 in (80,100);
+
+-- <comment> test select from 0 groups
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,pvsel03
+      group by decimal_1,new_name_1
+      having new_name_1 in (872,100);
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,svsel13
+      group by decimal_1,new_name_1
+      having new_name_1 <> 80;
+-- <ufi-input>
+      select  pvsel01.medium_int, pvsel04.medium_int
+      from pvsel01,pvsel04
+      group by  pvsel01.medium_int, pvsel04.medium_int
+      having  pvsel01.medium_int =  pvsel04.medium_int;
+-- <ufi-input>
+      select  pvsel01.medium_int
+      from pvsel01,svsel13
+      group by  pvsel01.medium_int
+      having  pvsel01.medium_int between 2000 and 10000;
+-- <ufi-input>
+      select new_name_3,col_3
+      from svsel13,svsel11
+      group by new_name_3,col_3
+      having new_name_3 like 'A' or new_name_3 like '7';
+-- <ufi-input>
+      select secondd.char_1, firstt.medium_int
+      from btsel01 firstt, btsel01 secondd
+      group by secondd.char_1,firstt.medium_int
+      having firstt.medium_int <> 5000;
+-- <ufi-input>
+      select secondd.medium_int
+      from pvsel01 firstt, pvsel01 secondd
+      group by secondd.medium_int
+      having secondd.medium_int <> 5000;
+-- <ufi-input>
+      select firstt.new_name_1,firstt.new_name_3
+      from svsel13 firstt,svsel13 secondd
+      group by firstt.new_name_1,firstt.new_name_3
+      having firstt.new_name_1 <> 90;
+-- <end-input>
+
+
+
+-- <testcase A2>
+
+-- <detail>
+--    select join test case - this tests the use of an ORDER BY
+--    clause in a select statement.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select *
+      from btsel03,btsel04
+      order by pic_9_7 ASC;
+-- <ufi-input>
+      select *
+      from btsel03,btsel04
+      order by 6 DESC;
+-- <ufi-input>
+      select *
+      from btsel03,btsel04
+      order by pic_9_7, btsel03.pic_9_7;
+-- <ufi-input>
+      select *
+      from btsel03,btsel04
+      order by 4,6 ;
+-- <ufi-input>
+      select *
+      from btsel02,btsel03,btsel04
+      order by pic_x_1,pic_9_7,medium_int ASC;
+-- <ufi-input>
+      select *
+      from btsel01,pvsel03
+      order by decimal_1,new_name_1 DESC;
+-- <ufi-input>
+      select *
+      from btsel01,svsel13
+      order by decimal_1,new_name_1;
+-- <ufi-input>
+      select *
+      from pvsel01,pvsel04
+      order by  pvsel01.medium_int DESC,
+                pvsel04.medium_int DESC;
+-- <ufi-input>
+      select *
+      from pvsel01,svsel13
+      order by  pvsel01.medium_int;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      order by new_name_3,col_3;
+-- <ufi-input>
+      select *
+      from btsel01 firstt,btsel01 secondd
+      order by secondd.char_1 DESC, firstt.medium_int ASC;
+-- <ufi-input>
+      select *
+      from pvsel01 firstt,pvsel01 secondd
+      order by secondd.medium_int;
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      order by firstt.new_name_1,firstt.new_name_3;
+-- <end-input>
+
+
+-- <testcase A3>
+
+-- <detail>
+--    select join test case - this tests some complex queries that
+--    use all the SELECT clauses together.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select pic_9_7,medium_int
+      from btsel03,btsel04
+      where (pic_9_7 <= pic_comp_1) and
+            (binary_32_u between 0 and medium_int) and
+            (pic_comp_1 in (medium_int,binary_64_s,100,300,500))
+      group by pic_9_7,medium_int
+      having (pic_9_7 * 2) <> medium_int
+      order by pic_9_7,2 DESC
+      for browse access;
+-- <ufi-input>
+      select pic_x_1,pic_9_7,medium_int
+      from btsel02,btsel03,btsel04
+      where (pic_x_1 <>  btsel04.pic_x_7) and
+            (pic_x_1 not in ( btsel03.pic_x_7,
+                              btsel04.pic_x_7)) and
+            (binary_32_u between 0 and medium_int)
+      group by pic_x_1,pic_9_7,medium_int
+      having pic_x_1 like 'Q'
+      order by pic_x_1,pic_9_7,medium_int ASC
+      for stable access;
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,pvsel03
+      where (btsel01.var_char like '_%') and
+      (new_name_1 < binary_64_s)
+      group by decimal_1,new_name_1
+      having new_name_1 in (80,100)
+      order by decimal_1,new_name_1 DESC
+      for repeatable access;
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,svsel13
+      where (btsel01.var_char like '_%') and
+            (new_name_1 < binary_64_s)
+      group by decimal_1,new_name_1
+      having new_name_1 <> 80
+      order by decimal_1,new_name_1;
+-- <ufi-input>
+      select  pvsel01.medium_int, pvsel04.medium_int
+      from  pvsel01,pvsel04
+      where  pvsel01.medium_int >=  pvsel04.medium_int
+      group by  pvsel01.medium_int, pvsel04.medium_int
+      having  pvsel01.medium_int =  pvsel04.medium_int
+      order by  pvsel01.medium_int, pvsel04.medium_int;
+-- <ufi-input>
+      select  pvsel01.medium_int
+      from pvsel01,svsel13
+      where small_int <> new_name_1
+      group by  pvsel01.medium_int
+      having  pvsel01.medium_int between 2000 and 10000
+      order by  pvsel01.medium_int;
+-- <ufi-input>
+      select new_name_3,col_3
+      from svsel13,svsel11
+      where  svsel13.medium_int in (999,1000,2000)
+      group by new_name_3,col_3
+      having new_name_3 like 'A' or new_name_3 like '7'
+      order by new_name_3;
+-- <ufi-input>
+      select secondd.char_1,firstt.medium_int
+      from btsel01 firstt,btsel01 secondd
+      where firstt.small_int = secondd.small_int
+      group by secondd.char_1,firstt.medium_int
+      having firstt.medium_int <> 5000
+      order by secondd.char_1;
+-- <end-input>
+
+
+-- <testcase A4>
+
+-- <detail>
+--    select join test case - this tests the use of the for browse access,
+--    for stable access, and for repeatable access clauses with GROUP BY,
+--    HAVING, and ORDER BY clauses. This is a test of syntax only - no actual
+--    checking of the locks obtained is done.
+
+-- <templates>
+--    US00
+
+-- <ufi-input>
+      select pic_9_7
+      from btsel03,btsel04
+      group by pic_9_7
+      for browse access;
+-- <ufi-input>
+      select decimal_1,new_name_1
+      from btsel01,pvsel03
+      group by decimal_1,new_name_1
+      having new_name_1 in (80,100)
+      for stable access;
+-- <ufi-input>
+      select *
+      from btsel01,svsel13
+      order by decimal_1,new_name_1
+      for repeatable access;
+-- <ufi-input>
+      select pic_x_1,pic_9_7,medium_int
+      from btsel02,btsel03,btsel04
+      group by pic_x_1,pic_9_7,medium_int
+      for repeatable access;
+-- <ufi-input>
+      select  pvsel01.medium_int
+      from pvsel01,svsel13
+      group by  pvsel01.medium_int
+      having  pvsel01.medium_int between 2000 and 10000
+      for browse access;
+-- <ufi-input>
+      select *
+      from svsel13,svsel11
+      order by new_name_3,col_3
+      for stable access;
+-- <ufi-input>
+      select  pvsel01.medium_int, pvsel04.medium_int
+      from pvsel01,pvsel04
+      group by  pvsel01.medium_int, pvsel04.medium_int
+      for stable access;
+-- <ufi-input>
+      select secondd.medium_int
+      from pvsel01 firstt,pvsel01 secondd
+      group by secondd.medium_int
+      having secondd.medium_int <> 5000
+      for repeatable access;
+-- <ufi-input>
+      select *
+      from svsel13 firstt,svsel13 secondd
+      order by firstt.new_name_1,firstt.new_name_3
+      for browse access;
+-- <ufi-input>
+      select secondd.char_1,firstt.medium_int
+      from btsel01 firstt, btsel01 secondd
+      group by secondd.char_1,firstt.medium_int
+      for repeatable access;
+-- <end-input>
+
+
+-- <testcase A5>
+
+-- <detail>
+--    join select test - this tests the selection of aggregate functions
+--    (COUNT, AVG, MAX, MIN, SUM).  Aggregates are tested in the SELECT
+--    clause in conjunction with GROUP BY clauses.
+
+
+-- <templates>
+--    US00
+
+-- <comment> this query is similar to the secondd query in testcase A0 -
+-- <comment> only 'count(*)' is also selected to determine if the join
+-- <comment> is executing properly
+-- <ufi-input>
+      select medium_int, count(*)
+      from btsel03,btsel04
+      group by medium_int;
+
+-- <comment> similar to query above, without reference to btsel03 -
+-- <comment> compare value returned for count(*) here to value
+-- <comment> returned for count(*), above
+-- <ufi-input>
+      select medium_int, count(*)
+      from btsel04
+      group by medium_int;
+
+
+-- <ufi-input>
+      select firstt.binary_64_s, count(*)
+      from btsel01 firstt, btsel01 secondd
+      group by firstt.binary_64_s;
+-- <ufi-input>
+      select avg(firstt.large_int)
+      from pvsel01 firstt, pvsel01 secondd
+      group by firstt.medium_int;
+-- <ufi-input>
+      select avg(secondd.large_int)
+      from pvsel01 firstt, pvsel01 secondd
+      group by firstt.medium_int;
+-- <ufi-input>
+      select binary_64_s, pvsel04.pic_comp_1,min(ALL decimal_2_signed)
+      from btsel01, pvsel04
+      group by binary_64_s,  pvsel04.pic_comp_1;
+-- <ufi-input>
+      select  pvsel03.new_name_2, sum( pvsel03.new_name_2)
+      from pvsel03, svsel13
+      group by  pvsel03.new_name_2;
+-- <ufi-input>
+      select  pvsel03.new_name_2, sum( svsel13.new_name_2)
+      from pvsel03, svsel13
+      group by  pvsel03.new_name_2;
+-- <ufi-input>
+      select svsel13.pic_comp_1, count(distinct  svsel13.var_char)
+      from svsel13, btsel01
+      group by  svsel13.pic_comp_1;
+-- <ufi-input>
+      select svsel13.pic_comp_1, count(distinct  btsel01.var_char)
+      from svsel13, btsel01
+      group by  svsel13.pic_comp_1;
+-- <ufi-input>
+      select binary_64_s, avg(ALL binary_32_u +  btsel04.pic_comp_1)
+      from btsel01, btsel04
+      group by  btsel01.binary_64_s;
+-- <ufi-input>
+      select  btsel01.medium_int,
+              min(ALL  pvsel01.large_int *  btsel01.medium_int)
+      from pvsel01, btsel01
+      group by  btsel01.medium_int;
+-- <ufi-input>
+      select firstt.pic_comp_1, avg(firstt.pic_comp_1) + sum(secondd.pic_comp_1)
+      from svsel13 firstt, svsel13 secondd
+      group by firstt.pic_comp_1;
+
+-- <comment> queries with predicates
+-- <ufi-input>
+      select firstt.binary_64_s, count(*)
+      from btsel01 firstt, btsel01 secondd
+      where firstt.var_char = 'thomas'
+      group by firstt.binary_64_s;
+-- <ufi-input>
+      select large_int, count(*)
+      from btsel01, pvsel04
+      where  btsel01.large_int =  pvsel04.medium_int
+      group by large_int;
+-- <ufi-input>
+      select  svsel13.pic_comp_1, avg(decimal_1)
+      from svsel13, btsel01
+      where decimal_3_unsigned = new_name_1
+      group by  svsel13.pic_comp_1;
+-- <ufi-input>
+      select  pvsel01.medium_int,
+             avg(distinct  pvsel04.medium_int)
+      from pvsel01, pvsel04
+      where  pvsel01.medium_int >  pvsel04.medium_int
+      group by  pvsel01.medium_int;
+-- <ufi-input>
+      select pic_9_7, sum(binary_32_u + pic_comp_1)
+      from btsel03, btsel04
+      where pic_comp_1 in (medium_int, binary_64_s)
+      group by pic_9_7;
+-- <ufi-input>
+      select pic_comp_1, avg(col_7) * sum(pic_comp_1)
+      from svsel13, svsel11
+      where new_name_3 = col_8
+      group by pic_comp_1;
+-- <end-input>
+
+
+-- <testcase A6>
+
+-- <detail>
+--    select joins test case - this tests the selection of aggregate
+--    functions in HAVING clauses in conjunction with GROUP BY from
+--    multiple tables.  Aggregates are also tested in some select
+--    statements with all clauses and locking clauses.
+
+-- <templates>
+--    US00
+
+-- <comment> test use of HAVING clause with no GROUP BY clause
+-- <ufi-input>
+      select sum(pic_decimal_2), max( pvsel04.var_char)
+      from btsel01,pvsel04
+      having avg( btsel01.pic_comp_1) > 500 and
+             avg( pvsel04.pic_comp_1) > 1000;
+
+-- <ufi-input>
+      select firstt.binary_64_s, count(*)
+      from btsel01 firstt, btsel01 secondd
+      group by firstt.binary_64_s
+      having sum(distinct firstt.pic_comp_1) < 1000;
+-- <ufi-input>
+      select avg(firstt.large_int)
+      from pvsel01 firstt, pvsel01 secondd
+      group by firstt.medium_int
+      having sum(firstt.large_int) > 0;
+-- <ufi-input>
+      select avg(secondd.large_int)
+      from pvsel01 firstt, pvsel01 secondd
+      group by firstt.medium_int
+      having sum(ALL firstt.large_int) > 0;
+-- <ufi-input>
+      select binary_64_s, pvsel04.pic_comp_1,min(ALL decimal_2_signed)
+      from btsel01, pvsel04
+      group by binary_64_s,  pvsel04.pic_comp_1
+      having max(binary_32_u) >= 50;
+-- <ufi-input>
+      select  pvsel03.new_name_2, sum( pvsel03.new_name_2)
+      from pvsel03, svsel13
+      group by  pvsel03.new_name_2
+      having sum( svsel13.new_name_1) > 500;
+-- <ufi-input>
+      select  pvsel03.new_name_2, sum( svsel13.new_name_2)
+      from pvsel03, svsel13
+      group by  pvsel03.new_name_2
+      having sum(distinct  svsel13.new_name_1) > 100;
+-- <ufi-input>
+      select svsel13.pic_comp_1, count(distinct  svsel13.var_char)
+      from svsel13, btsel01
+      group by  svsel13.pic_comp_1
+      having avg((new_name_1 * new_name_2) / 2) <> 240;
+-- <ufi-input>
+      select svsel13.pic_comp_1, count(distinct btsel01.var_char)
+      from svsel13, btsel01
+      group by  svsel13.pic_comp_1
+      having min( svsel13.medium_int +  btsel01.medium_int)
+    < 2000;
+-- <ufi-input>
+      select binary_64_s, avg(ALL binary_32_u +  btsel04.pic_comp_1)
+      from btsel01, btsel04
+      group by  btsel01.binary_64_s
+      having sum( btsel04.medium_int) +
+             sum( btsel04.pic_comp_1) > 20000;
+-- <ufi-input>
+      select  btsel01.medium_int,
+             min(ALL  pvsel01.large_int *  btsel01.medium_int)
+      from pvsel01, btsel01
+      group by  btsel01.medium_int
+      having avg( btsel01.medium_int) >
+             avg( pvsel01.medium_int);
+-- <ufi-input>
+      select  btsel01.medium_int,
+             min(ALL  pvsel01.large_int *  btsel01.medium_int)
+      from pvsel01, btsel01
+      group by  btsel01.medium_int
+      having count(*) <> 16;
+
+
+-- <comment> queries with predicates
+-- <ufi-input>
+      select large_int, count(*)
+      from btsel01, pvsel04
+      where  btsel01.large_int =  pvsel04.medium_int
+      group by large_int
+      having sum( btsel01.small_int) >
+             sum(decimal_2_signed * 100);
+-- <ufi-input>
+      select  svsel13.pic_comp_1, avg(decimal_1)
+      from svsel13, btsel01
+      where decimal_3_unsigned = new_name_1
+      group by  svsel13.pic_comp_1
+      having min(ALL pic_decimal_3) < 5;
+-- <ufi-input>
+      select  pvsel01.medium_int,
+             avg(distinct  pvsel04.medium_int)
+      from pvsel01, pvsel04
+      where  pvsel01.medium_int >  pvsel04.medium_int
+      group by  pvsel01.medium_int
+      having avg(pic_decimal_3 *  pvsel04.medium_int) < 7500;
+-- <ufi-input>
+      select pic_9_7, sum(binary_32_u + pic_comp_1)
+      from btsel03, btsel04
+      where pic_comp_1 in (medium_int, binary_64_s)
+      group by pic_9_7
+      having sum(distinct binary_32_u) <> 5;
+-- <ufi-input>
+      select pic_comp_1, avg(col_7) * sum(pic_comp_1)
+      from svsel13, svsel11
+      where new_name_3 = col_8
+      group by pic_comp_1
+      having sum(col_4 * col_7) < 5000;
+
+
+-- <comment> complex queries
+-- <ufi-input>
+      select large_int, count(*)
+      from btsel01, pvsel04
+      where  btsel01.large_int =  pvsel04.medium_int
+      group by large_int
+      having sum( btsel01.small_int) >
+             sum(decimal_2_signed * 100)
+      order by large_int
+      for repeatable access;
+-- <ufi-input>
+      select  svsel13.pic_comp_1, avg(decimal_1)
+      from  svsel13, btsel01
+      where decimal_3_unsigned = new_name_1
+      group by  svsel13.pic_comp_1
+      having min(ALL pic_decimal_3) < 5
+      order by 1 DESC  ,2 DESC
+      for stable access;
+-- <ufi-input>
+      select  pvsel01.medium_int,
+             avg(distinct  pvsel04.medium_int)
+      from  pvsel01, pvsel04
+      where  pvsel01.medium_int >  pvsel04.medium_int
+      group by  pvsel01.medium_int
+      having avg(pic_decimal_3 *  pvsel04.medium_int) < 7500
+      order by 2
+      for browse access;
+-- <ufi-input>
+      select pic_9_7, sum(binary_32_u + pic_comp_1)
+      from btsel03, btsel04
+      where pic_comp_1 in (medium_int, binary_64_s)
+      group by pic_9_7
+      having sum(distinct binary_32_u) <> 5
+      order by pic_9_7 ASC
+      for repeatable access;
+-- <ufi-input>
+      select pic_comp_1, avg(col_7) * sum(pic_comp_1)
+      from svsel13, svsel11
+      where new_name_3 = col_8
+      group by pic_comp_1
+      having sum(col_4 * col_7) < 5000
+      order by 1;
+-- <end-input>
+
+
+
+-- <end-test>
+LOG;
+

@@ -1,0 +1,116 @@
+#!/usr/bin/perl
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# This script will run the specified checks in the @checks variable.
+# The MY_SQROOT environment variable must be set and the checks are 
+# expected to be in the MY_SQROOT/sql/scripts directory. 
+#
+# $id$
+#
+
+use warnings;
+use strict;
+use File::Basename;
+use Term::ANSIColor;
+
+my $progname   = basename($0);
+
+# Add new checks here...
+my @checks = ("sqcheck",
+		"wmscheck",
+		"ndcscheck -p",
+		"sp_check"
+		);
+
+my $date = `date`;
+if (!defined($date)) {
+	$date = "";
+}
+
+sub checkMYSQROOT() {
+	my $pathvar=$ENV{'MY_SQROOT'};
+	if (!defined($pathvar)) {
+		print color 'bold red';
+		print "*** ERROR *** ";
+		print color 'reset';
+		print "MY_SQROOT environment variable not set\n";
+		print "Please setup SeaQuest environment and re-run\n";
+		exit 1;
+	}
+	return $pathvar;
+}	
+
+sub fileExists($) {
+	my $filename = shift;
+	if( ! -e "$filename" ) {
+		return 0;
+	}
+
+	return 1;
+}
+
+sub commandExists($) {
+	my $commandName = shift;
+	my $cmdOutput   = `which $commandName >/dev/null 2>&1`;
+	if($? != 0) {
+		return 0;
+	}
+	return 1;
+}
+
+sub runCheck($) {
+	my $check = shift;
+	my $bn    = basename($check);
+	print "$bn";
+        print "\n----------\n";
+	my $value = system("$check");
+	my $exitCode = $value >> 8;
+        print "\n$bn exit code: $exitCode\n";
+        print "-----------------------------\n\n";
+}
+	
+	
+
+sub main() {
+	my $MY_SQROOT=checkMYSQROOT();
+	my $scriptsdir="$MY_SQROOT/sql/scripts";
+	
+	print "\nRunning $progname\n";
+	print "----------------------------\n";
+	print "$date\n\n";
+	
+	foreach my $checks (@checks) {
+		if (fileExists("$scriptsdir/$checks")) {
+			runCheck("$scriptsdir/$checks");
+		}
+		elsif (commandExists($checks)) {
+			runCheck($checks);
+		}
+		else {
+			print color 'bold red';
+			print "*** WARNING *** ";
+			print color 'reset';
+			print "$checks not found, skipping check\n\n";
+		}
+			
+	}
+}
+
+main();

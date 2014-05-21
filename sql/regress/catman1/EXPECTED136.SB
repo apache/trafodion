@@ -1,0 +1,725 @@
+>>obey TEST136(create_db);
+>>create schema $$TEST_CATALOG$$.t136sch;
+
+--- SQL operation complete.
+>>set schema $$TEST_CATALOG$$.t136sch;
+
+--- SQL operation complete.
+>>
+>>create role football_players;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>grant role football_players to public;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create role baseball_players;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>create schema "delimited_sch136";
+
+--- SQL operation complete.
+>>create table "delimited_sch136".t1 (a int not null not droppable primary key, b int);
+
+--- SQL operation complete.
+>>
+>>obey TEST136(register_tests);
+>>-- =================================================================
+>>-- this set of tests run basic register tests
+>>-- =================================================================
+>>
+>>#ifdef SEABASE_REGRESS
+>>obey TEST136(set_up_sb);
+>>-- turn off LDAP checking
+>>-- set parserflags 64;
+>>-- Query to return currently registered users
+>>prepare get_users from
++>select distinct
++>   substring (auth_db_name,1,20) as db_user_name,
++>   case
++>     when (auth_db_name = 'DB__ROOT') then 'ROOT'
++>     when (auth_db_name = 'DB__USERADMINUSER') then 'USERADMIN'
++>     else substring (auth_ext_name,1,20)
++>   end as auth_ext_name,
++>   case
++>    when (auth_id > 33333) then 'NORMAL'
++>    else 'SYSTEM'
++>   end as auth_id,
++>   auth_is_valid as valid,
++>   case
++>     when (auth_type = 'U') then 'USER'
++>     when (auth_type = 'R') then 'ROLE'
++>     else auth_type
++>   end as auth_type
++>from trafodion."_MD_".auths u
++>  where
++>    (u.auth_db_name like 'TEST136%' or
++>     u.auth_db_name like 'CMU_T%' or
++>     u.auth_db_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return table space owner information
+>>prepare get_owners from
++>select
++>  substring (object_name,1,20) as object_name,
++>  object_owner
++>  from trafodion."_MD_".objects
++>  where
++>     object_type = 'BT'
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return schema owner information
+>>--prepare get_sch_owners from
+>>--select
+>>--  trim(substring (cat_name,1,20)) || '.' ||
+>>--  trim(substring (schema_name,1,20)) as schema_name,
+>>--  schema_owner
+>>--from hp_system_catalog.system_schema.catsys c,
+>>--     hp_system_catalog.system_schema.schemata s
+>>--where
+>>--  c.cat_uid = s.cat_uid and
+>>--  s.current_operation = '  ' and
+>>--  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
+>>--order by 1, 2
+>>--for read uncommitted access;
+>>
+>>
+>>#else
+>>obey TEST136(set_up);
+>>#endif
+>>
+>>log LOG136;
+>>-- succeed: register users -> no clauses
+>>register user test136_user1;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS clause
+>>register user test136_user2 
++>   as test136_u2;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> IMMUTABLE
+>>register user test136_user3 
++>   IMMUTABLE;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS and IMMUTABLE
+>>register user test136_user4 
++>   as test136_u4 IMMUTABLE;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>-- succeed: register user -> BY clause
+>>register user test136_user5
++>  by DB__UserAdminUser;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS and BY clause
+>>register user test136_user6
++>  as test136_u6
++>  by DB__UserAdminUser;
+
+--- SQL operation complete.
+>>reset parserflags 1;
+
+--- SQL operation complete.
+>>
+>>-- 7 users should be returned
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+TEST136_U2                                                                        TEST136_USER2                                                                     NORMAL   Y      USER     
+TEST136_U4                                                                        TEST136_USER4                                                                     NORMAL   Y      USER     
+TEST136_U6                                                                        TEST136_USER6                                                                     NORMAL   Y      USER     
+TEST136_USER1                                                                     TEST136_USER1                                                                     NORMAL   Y      USER     
+TEST136_USER3                                                                     TEST136_USER3                                                                     NORMAL   Y      USER     
+TEST136_USER5                                                                     TEST136_USER5                                                                     NORMAL   Y      USER     
+
+--- 7 row(s) selected.
+>>
+>>-- cleanup
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>unregister user test136_u2;
+
+--- SQL operation complete.
+>>unregister user test136_user3;
+
+--- SQL operation complete.
+>>unregister user test136_u4;
+
+--- SQL operation complete.
+>>unregister user test136_user5;
+
+--- SQL operation complete.
+>>unregister user test136_u6;
+
+--- SQL operation complete.
+>>
+>>-- should be 1 rows
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+
+--- 1 row(s) selected.
+>>
+>>-- succeed: special cases
+>>register user x;
+
+--- SQL operation complete.
+>>showddl user x;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user x;
+
+--- SQL operation complete.
+>>register user test136_user1 as y;
+
+--- SQL operation complete.
+>>showddl user y;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user y;
+
+--- SQL operation complete.
+>>-- this test is failing with an error 15005
+>>--register user test136_user2 as "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
+>>register user test136_user3 as
++>  TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
+
+--- SQL operation complete.
+>>register user test136_user4 as test136_user4;
+
+--- SQL operation complete.
+>>register user test136_user5 as test136_user6;
+
+--- SQL operation complete.
+>>register user "/forward" as test136_user7;
+
+--- SQL operation complete.
+>>
+>>-- should be 5 rows
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+TEST136_901234567890                                                              TEST136_USER3                                                                     NORMAL   Y      USER     
+TEST136_USER4                                                                     TEST136_USER4                                                                     NORMAL   Y      USER     
+TEST136_USER6                                                                     TEST136_USER5                                                                     NORMAL   Y      USER     
+TEST136_USER7                                                                     /FORWARD                                                                          NORMAL   Y      USER     
+
+--- 5 row(s) selected.
+>>
+>>-- cleanup
+>>-- unregister user "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
+>>unregister user 
++>  TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
+
+--- SQL operation complete.
+>>unregister user test136_user4;
+
+--- SQL operation complete.
+>>unregister user test136_user6;
+
+--- SQL operation complete.
+>>unregister user test136_user7;
+
+--- SQL operation complete.
+>>get users;
+
+Users
+=====
+
+DB__ROOT
+SQL_USER1
+SQL_USER10
+SQL_USER2
+SQL_USER3
+SQL_USER4
+SQL_USER5
+SQL_USER6
+SQL_USER7
+SQL_USER8
+SQL_USER9
+
+--- SQL operation complete.
+>>
+>>-- succeed:  test unreserved words
+>>register user register as user1;
+
+--- SQL operation complete.
+>>showddl user user1;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user user1;
+
+--- SQL operation complete.
+>>register user unregister as register;
+
+--- SQL operation complete.
+>>showddl user register;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user register;
+
+--- SQL operation complete.
+>>register user user1 as unregister;
+
+--- SQL operation complete.
+>>showddl user unregister;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user unregister;
+
+--- SQL operation complete.
+>>register user logon as test136_u2;
+
+--- SQL operation complete.
+>>showddl user test136_u2;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user test136_u2;
+
+--- SQL operation complete.
+>>register user test136_u2 as logon;
+
+--- SQL operation complete.
+>>showddl user logon;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user logon;
+
+--- SQL operation complete.
+>>register user "none" as user3;
+
+--- SQL operation complete.
+>>showddl user user3;
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user user3;
+
+--- SQL operation complete.
+>>register user user3 as "/forward";
+
+--- SQL operation complete.
+>>showddl user "/forward";
+
+*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user "/forward";
+
+--- SQL operation complete.
+>>
+>>-- fail: register a user that is not defined in the external directory service
+>>-- turn on LDAP checking
+>>--reset parserflags 64;
+>>--register user invalid_user1;
+>>--register user invalid_user1 as janedoe;
+>>-- turn LDAP checking back off
+>>--set parserflags 64;
+>>
+>>-- fail: register an already defined user
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+
+--- 1 row(s) selected.
+>>register user test136_user1;
+
+--- SQL operation complete.
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+TEST136_USER1                                                                     TEST136_USER1                                                                     NORMAL   Y      USER     
+
+--- 2 row(s) selected.
+>>register user test136_user1 as user1;
+
+*** ERROR[1335] Directory service user TEST136_USER1 already defined in the database.
+
+--- SQL operation failed with errors.
+>>register user test136_user1 as test136_user1;
+
+*** ERROR[1334] User or role TEST136_USER1 already exists.
+
+--- SQL operation failed with errors.
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>
+>>--- test for delimited catalog and unregister
+>>register user user136_delim;
+
+--- SQL operation complete.
+>>-- grant select on "delimited_sch136".t1 to user136_delim;
+>>unregister user user136_delim;
+
+--- SQL operation complete.
+>>drop table "delimited_sch136".t1;
+
+--- SQL operation complete.
+>>unregister user user136_delim;
+
+*** ERROR[1333] User USER136_DELIM does not exist.
+
+--- SQL operation failed with errors.
+>>drop schema "delimited_sch136";
+
+--- SQL operation complete.
+>>
+>>-- fail:  register a user with the DB__ prefix
+>>register user test136_user2 as DB__User1;
+
+*** ERROR[1337] DB__USER1 is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user with just the DB__ prefix
+>>register user test136_user2 as DB__;
+
+*** ERROR[1337] DB__ is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user as PUBLIC
+>>register user test136_user2 as "PUBLIC";
+
+*** ERROR[1337] PUBLIC is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user as _SYSTEM
+>>register user test136_user2 as "_SYSTEM";
+
+*** ERROR[1337] _SYSTEM is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user with too long of a name
+>>register user test136_user2 as
++>  TEST136_9012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789;
+
+*** ERROR[3118] Specified identifier is too long.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- fail: bad SQL identifier
+>>register user "\userx";
+
+*** ERROR[3127] An invalid character was found in identifier "\userx".
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user "\userx";
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>register user user1 as "\user1";
+
+*** ERROR[3127] An invalid character was found in identifier "\user1".
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user user1 as "\user1";
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- fail: case insensitive delimited identifier
+>>register user test136_u2;
+
+--- SQL operation complete.
+>>register user "test136_u2";
+
+*** ERROR[1334] User or role TEST136_U2 already exists.
+
+--- SQL operation failed with errors.
+>>register user "USER2";
+
+--- SQL operation complete.
+>>register user abc as "test136_u2";
+
+*** ERROR[1334] User or role TEST136_U2 already exists.
+
+--- SQL operation failed with errors.
+>>register user abd as "USER2";
+
+*** ERROR[1334] User or role USER2 already exists.
+
+--- SQL operation failed with errors.
+>>unregister user test136_u2;
+
+--- SQL operation complete.
+>>unregister user "USER2";
+
+--- SQL operation complete.
+>>
+>>-- fail:  specify a role where the user does not belong
+>>-- register user test136_user2 logon role baseball_players;
+>>
+>>-- fail: usage of reserved word
+>>register user none;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user none;
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>register user user1 as none;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user user1 as none;
+                          ^ (27 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>obey TEST136(unregister_tests);
+>>#ifdef SEABASE_REGRESS
+>>obey TEST136(set_up_sb);
+>>-- turn off LDAP checking
+>>-- set parserflags 64;
+>>-- Query to return currently registered users
+>>prepare get_users from
++>select distinct
++>   substring (auth_db_name,1,20) as db_user_name,
++>   case
++>     when (auth_db_name = 'DB__ROOT') then 'ROOT'
++>     when (auth_db_name = 'DB__USERADMINUSER') then 'USERADMIN'
++>     else substring (auth_ext_name,1,20)
++>   end as auth_ext_name,
++>   case
++>    when (auth_id > 33333) then 'NORMAL'
++>    else 'SYSTEM'
++>   end as auth_id,
++>   auth_is_valid as valid,
++>   case
++>     when (auth_type = 'U') then 'USER'
++>     when (auth_type = 'R') then 'ROLE'
++>     else auth_type
++>   end as auth_type
++>from trafodion."_MD_".auths u
++>  where
++>    (u.auth_db_name like 'TEST136%' or
++>     u.auth_db_name like 'CMU_T%' or
++>     u.auth_db_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return table space owner information
+>>prepare get_owners from
++>select
++>  substring (object_name,1,20) as object_name,
++>  object_owner
++>  from trafodion."_MD_".objects
++>  where
++>     object_type = 'BT'
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return schema owner information
+>>--prepare get_sch_owners from
+>>--select
+>>--  trim(substring (cat_name,1,20)) || '.' ||
+>>--  trim(substring (schema_name,1,20)) as schema_name,
+>>--  schema_owner
+>>--from hp_system_catalog.system_schema.catsys c,
+>>--     hp_system_catalog.system_schema.schemata s
+>>--where
+>>--  c.cat_uid = s.cat_uid and
+>>--  s.current_operation = '  ' and
+>>--  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
+>>--order by 1, 2
+>>--for read uncommitted access;
+>>
+>>
+>>#else
+>>obey TEST136(set_up);
+>>#endif
+>>log LOG136;
+>>-- =================================================================
+>>-- this set of tests run basic unregister tests
+>>-- =================================================================
+>>
+>>-- succeed:  
+>>register user user1 as test136_user1;
+
+--- SQL operation complete.
+>>-- should be 2 users
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+TEST136_USER1                                                                     USER1                                                                             NORMAL   Y      USER     
+
+--- 2 row(s) selected.
+>>
+>>grant create on schema $$TEST_CATALOG$$.t136sch to test136_user1;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create table $$TEST_CATALOG$$.t136sch.t136t1 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>-- grant select on $$TEST_CATALOG$$.t136sch.t136t1 to test136_user1;
+>>-- run as test136_user1 and create some objects
+>>-- sh sh runmxci.ksh -i "TEST136(create_user1_objects)" -u test136_user1;
+>>
+>>-- fail:  user1 owns objects, cannot unregister
+>>-- unregister user test136_user1;
+>>-- unregister user test136_user1 restrict;
+>>
+>>-- fail:  user1 still has privileges
+>>-- drop table $$TEST_CATALOG$$.t136sch.t136t2 cascade;
+>>-- unregister user test136_user1;
+>>
+>>-- fail:  try to unregister a predefined user
+>>unregister user DB__ROOT;
+
+*** ERROR[1337] DB__ROOT is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  try to unregister a user that has not been registered in the db
+>>unregister user non_Existent_User;
+
+*** ERROR[1333] User NON_EXISTENT_USER does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- succeed:  remove other relationships
+>>showddl $$TEST_CATALOG$$.t136sch.t136t1, privileges;
+
+CREATE TABLE TRAFODION.T136SCH.T136T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+--- SQL operation complete.
+>>-- revoke select on $$TEST_CATALOG$$.t136sch.t136t1 from test136_user1;
+>>showddl $$TEST_CATALOG$$.t136sch.t136t1, privileges;
+
+CREATE TABLE TRAFODION.T136SCH.T136T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+--- SQL operation complete.
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>grant create on schema $$TEST_CATALOG$$.t136sch to test136_user1;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>showddl schema $$TEST_CATALOG$$.t136sch, privileges;
+
+*** ERROR[4222] The DESCRIBE SCHEMA feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>revoke create on schema $$TEST_CATALOG$$.t136sch from test136_user1;
+
+*** ERROR[4222] The DDL feature is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>showddl schema $$TEST_CATALOG$$.t136sch, privileges;
+
+*** ERROR[4222] The DESCRIBE SCHEMA feature is not supported in this software version.
+
+--- SQL operation failed with errors.
+>>unregister user test136_user1;
+
+*** ERROR[1333] User TEST136_USER1 does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- Add more complex relationships
+>>-- Add cascade tests later
+>>
+>>-- s/b 1 rows returned
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+
+--- 1 row(s) selected.
+>>log;

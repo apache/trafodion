@@ -1,0 +1,33 @@
+.TH SQCORE 1 "05 May 2010" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+sqcore \- Move core files to the head node
+.LP
+.SH SYNOPSIS
+.B sqcore
+[
+.B \-d |
+.B \-h |
+.B \-q |
+.B \-r
+]
+.SH DESCRIPTION
+.LP
+.B sqcore
+will collect any user core files generated in /database or $MY_SQROOT
+across the cluster, and move them to the head node. 
+.SH USAGE
+.TP 7
+.BI -d
+Head node directory where the core files are to be moved. (Default $MY_SQROOT/logs)
+.TP
+.BI -h
+will display help.
+.TP
+.BI -q
+Quiet Mode (no prompts)
+.TP
+.BI -r
+Remove the user's core files after it has been moved.
+.SH ASSUMPTIONS
+The script assumes that it is run on the head node.
+It also assumes that the user will take care of space limitations.

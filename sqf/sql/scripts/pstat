@@ -1,0 +1,77 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# Produce process status for SeaQuest processes.
+# The output goes to stdout and may be displayed to the user or used
+# by other scripts that need to obtain a list of all Seaquest
+# processes.
+#
+# The list of Seaquest programs in variable PROGS below must include
+# all Seaquest programs.   Addition of a new Seaquest program requires
+# a corresponding addition to PROGS.
+#
+
+SUPPRESS_HEADER=0
+LIST=0
+while getopts ":hls" Option
+do
+  case $Option in
+    h) SUPPRESS_HEADER=1 ;;
+    l) LIST=1 ;;
+    s) SAFE=1
+  esac
+done
+shift $(($OPTIND - 1))
+
+# Distinguished program commands for benefit of pkillall
+SAFEPROGS=monitor,sqwatchdog
+
+# Seaquest program and script command names.
+# Add new Seaquest programs and scripts to this list.
+PROGS=amp,backout,dp2,dtmci,gomon.cold,import,lc_core_metrics_sh,\
+lc_disk_metrics_sh,lc_filesystem_metrics_sh,lc_loadavg_metrics_sh,\
+lc_memory_metrics_sh,lc_network_metrics_sh,lc_virtualmem_metrics_sh,snmp_protocol_adapter,\
+lunmgr,lx_disk_metrics,lx_loadavg_metrics,lx_physnode_metrics,se_metrics_aaa_delta,UNA,\
+ntp_peer_check,ntp_peer_flow,check_ntp_peer,\
+mpid,mpirun,mxbdrsrv,mxbdrdrc,mxoas,mxocfg,mxosrvr,mxsscp,mxssmp,\
+measurestats,monitor_check_status_m5,problem_management,\
+qpidd,qssend,qsrecev,qscom,qsmgr,qsmgr2,qsoffndr,qsrule,qsstats,qssync,\
+serevive,shell,sp_proxy,sp_wrapper,spqpid_p,sqcheck,sqlci,sqregck,sqstart,\
+timer_pop_generator,tdm_arkcmp,tdm_arkesp,tdm_sqlc,tdm_udrserv,tm,universal_consumer,volrcov,\
+cpu_metrics,filesystem_metrics,memory_metrics,network_metrics,process_metrics,\
+ssd_lun_state_publish,ssd_lun_metric_publish,ssd_state_publish,ssd_metric_publish,\
+textprotocoladapter,tmshutdown,TPA_Publish,universal_action_agent,nsa,harness.pl,compression_publish,pstartd,mxlobsrvr \
+
+
+if (( LIST == 1 )); then
+  echo "$PROGS,$SAFEPROGS"
+  exit 0
+fi
+
+if (( SUPPRESS_HEADER == 0 )); then
+  echo "uid          pid   ppid  wchan   rss   vsz   time     stat cmd"
+  echo "---          ---   ----  -----   ---   ---   ----     ---- ---"
+fi
+
+
+if [[ -z $SAFE ]]; then
+  PROGS="$PROGS,$SAFEPROGS"
+fi
+
+ps --sort=cmd,pid -C $PROGS -o user:12,pid,ppid,wchan,rss,vsz,time,stat,cmd | grep -w ^$USER

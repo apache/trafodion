@@ -1,0 +1,15 @@
+;*************************************************************************
+;*
+;// @@@ START COPYRIGHT @@@
+;//
+;// (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+;//
+;// @@@ END COPYRIGHT @@@
+;**************************************************************************/
+; Drvr.def : Declares the module parameters for the DLL.
+
+LIBRARY      "tdm_ODBCEvent.DLL"
+DESCRIPTION  'tdm_ODBC Messages Dynamic Link Library'
+
+EXPORTS
+SendODBCEventMsg @1 

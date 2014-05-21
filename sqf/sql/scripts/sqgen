@@ -1,0 +1,296 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# sqgen script - generates various files
+
+function Usage {
+    script_name=`/bin/basename $0`
+    echo
+    echo $script_name generates various SeaQuest files in the $MY_SQROOT/sql/scripts directory.
+    echo
+    echo "Usage: $script_name {-ft | -perf | [sqconfig_filename] | -h}"
+    echo "  -h    Help"
+    echo "  [sqconfig_filename] Name of the SQ config file (in $MY_SQROOT/sql/scripts directory)(defaults to 'sqconfig')"
+    echo
+    exit 1;
+}
+
+
+
+function GetSQcnfg {
+# Get SQ Node configuration
+ TempList=`grep -o 'node-name=.[A-Za-z0-9\-]*' $MY_SQROOT/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
+
+ i=0
+ for NODE in $TempList
+   do
+     SQNodeNames[$i]=$NODE
+     ((i=i+1))
+
+     done
+
+ # Check that the Node names were corretly added
+ NumberOfSQnodes=${#SQNodeNames[*]}
+ ExNodeList="$(echo ${SQNodeNames[@]} | tr ' ' ',')"
+
+
+ if [ ! -z ${ExNodeList[@]} ]; then   
+     echo "${ExNodeList[@]}"
+ 
+ else
+     echo
+     echo "Could not parse $MY_SQROOT/sql/scripts/sqconfig file."
+     echo "Please ensure sqenv.sh has been sourced and the sqconfig file is valid.  Then, re-run sqgen."
+     echo
+     exit 1;
+ fi
+
+ }
+
+###########################################################
+# MAIN portion of sqgen begins
+###########################################################
+
+FT_FLAG=1
+PERF_FLAG=0
+SQCONFIG_FILE=sqconfig
+
+if [ -z $MY_SQROOT ]; then
+    echo
+    echo "The MY_SQROOT environment variable does not exist."
+    echo "Please ensure sqenv.sh has been sourced."
+    echo
+    exit 1;
+fi
+
+
+# Check whether the SQ environment is already up.
+sqcheck -i 1 -d 1 > /dev/null 2>&1
+sq_stat=$?
+if [[ $sq_stat == 0 ]]; then
+   echo "SQ environment is up. sqgen not executed. Exiting..."
+   exit 1
+elif [[ $sq_stat == 1 ]]; then
+   echo "SQ environment is partially up. sqgen not executed. Exiting..."
+   exit 1
+fi
+
+cd $MY_SQROOT/sql/scripts
+
+# Check to make sure this is a real cluster
+if [ -f $SQ_PDSH ]; then
+
+    GetSQcnfg
+
+else
+   echo "Workstation environment - Not a clustered environment"
+fi
+
+# -ft command line option indicates fault tolerance,
+# otherwise we assume option is SQCONFIG_FILE
+while [ $# != 0 ]
+  do
+    flag="$1"
+    case "$flag" in
+        -h)  Usage ;;
+        -?)  Usage ;;
+        *)   SQCONFIG_FILE=$1 ;;
+    esac
+    shift
+  done
+
+export SQETC_DIR=$MY_SQROOT/etc
+export SQLOG_DIR=$MY_SQROOT/logs
+mkdir -p $SQETC_DIR
+mkdir -p $SQLOG_DIR
+mkdir -p $MPI_TMPDIR
+# mkdir a dir for CBF data used by SQL IUS feature
+mkdir -p $HOME/cbfs
+
+if [ -e $SQ_PDSH ]; then
+    echo
+    echo "Creating directories on cluster nodes"
+
+    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQETC_DIR "
+    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQETC_DIR
+    
+    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQLOG_DIR "
+    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $SQLOG_DIR
+
+    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $MPI_TMPDIR "
+    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $MPI_TMPDIR
+
+    echo "$SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $PWD "
+    $SQ_PDSH -w ${ExNodeList[@]} -x `uname -n` mkdir -p $PWD
+
+fi
+
+SQSCRIPT_FILE=./gomon
+SQCLUSTERCONF_FILE=$MPI_TMPDIR/cluster.conf
+SQESPENV_FILE=$MY_SQROOT/sql/scripts/tdm_arkesp.env
+
+echo
+if [ -f $SQETC_DIR/ms.env ]; then
+    echo "The SQ environment variable file $SQETC_DIR/ms.env exists."
+    echo "The file will not be re-generated."
+    echo
+else
+    echo "Generating SQ environment variable file: $SQETC_DIR/ms.env"
+    echo
+    ./genms > $SQETC_DIR/ms.env
+    lv_retcode=$?
+    if [[ $lv_retcode != 0 ]]; then 
+	echo "Error $lv_retcode while executing genms. Exiting..."
+	exit $lv_retcode
+    fi
+fi
+
+./gensqstatem2lenv > $SQETC_DIR/sqstatem2l.env
+
+
+
+if [[ -f $MY_SQROOT/seapilot/spenv.sh ]]; then
+  pushd $MY_SQROOT/seapilot >/dev/null
+  source spenv.sh
+  popd >/dev/null
+else
+  echo "$MY_SQROOT/seapilot/spenv.sh not found. Exiting."
+  exit 1
+fi
+
+
+# Create configuration database tables
+rm -f sqconfig.db
+sqlite3 -init createConfigDb sqconfig.db <<eof 
+.quit
+eof
+
+./gensq.pl $SQCONFIG_FILE $SQSCRIPT_FILE $SQCLUSTERCONF_FILE `hostname` $FT_FLAG $PERF_FLAG
+sq_stat=$?
+if [[ $sq_stat != 0 ]]; then 
+    exit $sq_stat;
+fi
+
+sq_seamonster=$SQ_SEAMONSTER
+if [ -f $SQESPENV_FILE ]; then
+    if [[ $sq_seamonster == 1 ]]; then 
+        echo
+        echo "Enabling tdm_arkesp.env file in $MY_SQROOT/etc/ms.env"
+        echo "cat $MY_SQROOT/etc/ms.env | sed -e "s@^# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP"
+        if [ -f $MY_SQROOT/etc/ms.env.TEMP ]; then
+            rm $MY_SQROOT/etc/ms.env.TEMP
+        fi
+        cat $MY_SQROOT/etc/ms.env | sed -e "s@^# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP
+        cp $MY_SQROOT/etc/ms.env.TEMP $MY_SQROOT/etc/ms.env
+        rm $MY_SQROOT/etc/ms.env.TEMP
+    else
+        echo
+        echo "Disabling tdm_arkesp.env file in $MY_SQROOT/etc/ms.env"
+        echo "cat $MY_SQROOT/etc/ms.env | sed -e "s@^SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP"
+        if [ -f $MY_SQROOT/etc/ms.env.TEMP ]; then
+            rm $MY_SQROOT/etc/ms.env.TEMP
+        fi
+        cat $MY_SQROOT/etc/ms.env | sed -e "s@^SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP
+        cp $MY_SQROOT/etc/ms.env.TEMP $MY_SQROOT/etc/ms.env
+        rm $MY_SQROOT/etc/ms.env.TEMP
+    fi
+fi
+
+if [ -e $SQ_PDCP ]; then
+    echo
+    echo "Copying the generated files to all the nodes in the cluster"
+    echo
+    echo "Copying $SQCLUSTERCONF_FILE to $MPI_TMPDIR of all the nodes"
+    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR"
+    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR
+
+
+    echo
+    echo "Copying $SQETC_DIR/ms.env to $SQETC_DIR of all the nodes"
+    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR "
+    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR
+
+    echo
+    echo "Copying $SQETC_DIR/seamonster.env to $SQETC_DIR of all the nodes"
+    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR "
+    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/seamonster.env   $SQETC_DIR
+
+    if [[ $sq_seamonster == 1 ]]; then 
+        if [ -f $SQESPENV_FILE ]; then
+            echo
+            echo "Copying $SQESPENV_FILE to $MY_SQROOT/sql/scripts of all the nodes"
+            echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts "
+            $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts
+        fi
+    fi
+
+    echo
+    echo "Copying rest of the generated files to $PWD"
+
+    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD "
+    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm shell.env mon.env $PWD
+
+
+    echo "$SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "
+    $SQ_PDCP -p -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD
+
+
+    echo
+fi
+
+# mkdir a dir for CBF data used by SQL IUS feature
+mkdir -p $HOME/cbfs
+
+echo
+echo "******* Generate public/private certificates *******"
+echo
+# Generate certificates for ODBC, ...
+if (test -f $MY_SQROOT/sql/scripts/sqcertgen); then
+   $MY_SQROOT/sql/scripts/sqcertgen 2>/dev/null
+   echo
+else
+   echo
+   echo "ERROR: Certificate generation script (sqcertgen) does not exist in $MY_SQROOT/sql/scripts folder"
+   echo
+   exit 1
+fi
+
+
+# Copy log4cpp and log4j configuration files to sqf/logs
+# For debugging, edit them there.
+echo "Copying the log4j and log4cpp configuration files"
+cp $MY_SQROOT/orig_config/log4j.hdfs.config $MY_SQROOT/logs
+cp $MY_SQROOT/orig_config/log4j.dtm.config   $MY_SQROOT/logs
+cp $MY_SQROOT/orig_config/log4cpp.hdfs.config $MY_SQROOT/logs
+cp $MY_SQROOT/orig_config/log4cpp.mvqr.config $MY_SQROOT/logs
+cp $MY_SQROOT/orig_config/log4cpp.qms.config $MY_SQROOT/logs
+cp $MY_SQROOT/orig_config/log4cpp.qmm.config $MY_SQROOT/logs
+cp $MY_SQROOT/orig_config/log4cpp.qmp.config $MY_SQROOT/logs
+if [ -e $SQ_PDCP ]; then
+    echo "Copying the log4j and log4cpp configuration files"
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4j.hdfs.config $MY_SQROOT/logs
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4j.dtm.config   $MY_SQROOT/logs
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.hdfs.config $MY_SQROOT/logs
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.mvqr.config $MY_SQROOT/logs
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.qms.config $MY_SQROOT/logs
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.qmm.config $MY_SQROOT/logs
+    $SQ_PDCP -w ${ExNodeList[@]} -x `uname -n`  $MY_SQROOT/orig_config/log4cpp.qmp.config $MY_SQROOT/logs
+fi
+

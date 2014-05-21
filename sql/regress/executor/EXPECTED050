@@ -1,0 +1,571 @@
+>>obey TEST050(cdb);
+>>create table T050a(a char(5) default 'Low',
++>		   b char(5) upshift default 'Upp',
++>		   c char(5) upshift default null,
++>		   d int default 0,
++>		   e int default 0,
++>		   "f" int default 0);
+
+--- SQL operation complete.
+>>insert into T050a values('aa','BB','cc', 1, 1, 1);
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST050(tests);
+>>obey TEST050 (	test_sqlci_section 	)	;
+>> 	-- this should be ok even with the funny spacing
+>>	error 0;
+
+*** SQLSTATE (Err): 00000 SQLSTATE (Warn): 00000
+*** INFO[0] Successful completion.
+
+>>	-- INFO/success
+>>	error 100;
+
+*** SQLSTATE (Err): XW02S SQLSTATE (Warn): 02000
+*** ERROR[100] The "no data" completion condition (SQLCODE = +100).
+
+>>	-- WARN/no data
+>>	error 123;
+
+*** WARNING[123] 
+*** ERROR[16001] The error number 123 is not used in SQL.
+
+>>	-- ERR/msg-not-fnd
+>>	error 3000;
+
+*** SQLSTATE (Err): X0300 SQLSTATE (Warn): 01700
+*** ERROR[3000] An internal error occurred in module $0~string0 on line $1~Int0.  DETAILS($2~String1).
+
+>>	-- ERR/state fabricated from ZZZZZ
+>>	error 4001;
+
+*** SQLSTATE (Err): 42000 SQLSTATE (Warn): 01801
+*** ERROR[4001] Column $0~ColumnName is not found.  Tables in scope: $2~string0.  Default schema: $3~string1.
+
+>>	-- ERR/42000
+>>	error 6007;
+
+*** SQLSTATE (Err): XW607 SQLSTATE (Warn): 01000
+*** ERROR[6007] Multi-column statistics for columns $0~String0 from table $1~String1 were not available. The columns were being used by $2~String2 operator. As a result, the access path chosen might not be the best possible.
+
+>>	-- WARN/01000
+>>	error 8402;
+
+*** SQLSTATE (Err): 22001 SQLSTATE (Warn): 01004
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression.$0~string0
+
+>>	-- ERR *and* WARN states (yes, both are valid)
+>>	error 15015;
+
+*** SQLSTATE (Err): 07001 SQLSTATE (Warn): 01R0F
+*** ERROR[15015] PARAM $0~string0 (value $1~string1) cannot be converted to type $2~string2.
+
+>>	-- ERR/07001
+>>
+>>	error 0, get;
+
+*** SQLSTATE (Err): 00000 SQLSTATE (Warn): 00000
+*** INFO[0] Successful completion.
+
+
+--- SQL operation complete.
+>>	-- INFO/success
+>>	error 100, get;
+
+*** SQLSTATE (Err): XW02S SQLSTATE (Warn): 02000
+*** ERROR[100] The "no data" completion condition (SQLCODE = +100).
+
+--- SQL operation complete.
+>>	-- WARN/no data
+>>	error 123, get;
+
+*** WARNING[123]
+*** ERROR[16001] The error number 123 is not used in SQL.
+
+--- SQL operation complete.
+>>	-- ERR/msg-not-fnd
+>>	error 3000, get;
+
+*** SQLSTATE (Err): X0300 SQLSTATE (Warn): 01700
+*** ERROR[3000] An internal error occurred in module $0~string0 on line $1~Int0.  DETAILS($2~String1).
+
+--- SQL operation complete.
+>>	-- ERR/state fabricated from ZZZZZ
+>>	error 4001, get;
+
+*** SQLSTATE (Err): 42000 SQLSTATE (Warn): 01801
+*** ERROR[4001] Column $0~ColumnName is not found.  Tables in scope: $2~string0.  Default schema: $3~string1.
+
+--- SQL operation complete.
+>>	-- ERR/42000
+>>	error 6007, get;
+
+*** SQLSTATE (Err): XW607 SQLSTATE (Warn): 01000
+*** ERROR[6007] Multi-column statistics for columns $0~String0 from table $1~String1 were not available. The columns were being used by $2~String2 operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL operation complete.
+>>	-- WARN/01000
+>>	error 8402, get;
+
+*** SQLSTATE (Err): 22001 SQLSTATE (Warn): 01004
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression.$0~string0
+
+--- SQL operation complete.
+>>	-- ERR *and* WARN states (yes, both are valid)
+>>	error 15015, get;
+
+*** SQLSTATE (Err): 07001 SQLSTATE (Warn): 01R0F
+*** ERROR[15015] PARAM $0~string0 (value $1~string1) cannot be converted to type $2~string2.
+
+--- SQL operation complete.
+>>	-- ERR/07001
+>>
+>>
+>>obey TEST050(test_sqlci_errmsgs);
+>>
+>>set list_count 1;
+>>
+>>select * from T050a where d=?ee;
+
+*** ERROR[15016] PARAM ?ee was not found.
+
+--- 0 row(s) selected.
+>>		-- 15016
+>>set param ?ee e;
+>>select * from T050a where d=?ee;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted.
+
+*** ERROR[15015] PARAM ?ee (value e) cannot be converted to type NUMERIC(18, 6).
+
+--- 0 row(s) selected.
+>>		-- 15015
+>>set param ?ee 1;
+>>select * from T050a where d=?ee;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+aa     BB     CC               1            1            1
+
+--- 1 row(s) selected.  LIST_COUNT was reached.
+>>		-- 1 row, LIST_COUNT reached
+>>
+>>set param ?c=c;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+set param ?c=c;
+             ^ (14 characters from start of SQL statement)
+
+>>					-- 15001
+>>set param ?c c;
+>>select * from T050a where b=?c;
+
+--- 0 row(s) selected.
+>>			-- 0 rows
+>>select * from T050a where c=?c;
+
+--- 0 row(s) selected.
+>>			-- 0 rows
+>>set param ?c 'aa';
+>>select * from T050a where ?c=a;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+aa     BB     CC               1            1            1
+
+--- 1 row(s) selected.  LIST_COUNT was reached.
+>>			-- 1 rows, LIST_COUNT reached
+>>
+>>set list_count;
+>>
+>>select a,?x from T050a where b=?y;
+
+*** ERROR[15016] PARAM ?x was not found.
+
+*** ERROR[15016] PARAM ?y was not found.
+
+--- 0 row(s) selected.
+>>		-- 15016 (twice)
+>>select a,? from T050a where b=?;
+
+*** ERROR[15016] PARAM ?(UNNAMED_1) was not found.
+
+*** ERROR[15016] PARAM ?(UNNAMED_2) was not found.
+
+--- 0 row(s) selected.
+>>		-- 15016 (twice)
+>>
+>>execute aBc using 1,'a';
+
+*** ERROR[15017] Statement ABC was not found.
+
+>>			-- 15017
+>>prepare x from select a,? from T050a where d=?d;
+
+--- SQL command prepared.
+>>execute x;
+
+*** ERROR[15016] PARAM ?(UNNAMED_1) was not found.
+
+*** ERROR[15016] PARAM ?d was not found.
+
+--- 0 row(s) selected.
+>>					-- 15016 (twice)
+>>execute x using 77;
+
+*** ERROR[15016] PARAM ?d was not found.
+
+--- 0 row(s) selected.
+>>				-- 15016
+>>execute x using 77,1;
+
+*** ERROR[15016] PARAM ?d was not found.
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+--- 0 row(s) selected.
+>>				-- 15016 15019
+>>set param ?d foo;
+>>show param;
+PARAM ?ee 1
+PARAM ?c aa
+PARAM ?d foo
+>>execute x using 77;
+
+*** ERROR[8413] The string argument contains characters that cannot be converted.
+
+*** ERROR[15015] PARAM ?d (value foo) cannot be converted to type NUMERIC(18, 6).
+
+--- 0 row(s) selected.
+>>				-- 15015
+>>set param ?d 1;
+>>execute x using 77;
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     77                                                                                                                                                                                                                                                             
+
+--- 1 row(s) selected.
+>>				-- 1 row
+>>set param ?d '1';
+>>execute x using b;
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     b                                                                                                                                                                                                                                                              
+
+--- 1 row(s) selected.
+>>				-- 1 row
+>>execute x using 'b';
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     b                                                                                                                                                                                                                                                              
+
+--- 1 row(s) selected.
+>>				-- 1 row
+>>execute x using ' b o''bab +()       x';
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa      b o'bab +()       x                                                                                                                                                                                                                                           
+
+--- 1 row(s) selected.
+>>	-- 1 row
+>>execute x using ' b o''bab +()                                 x';
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa      b o'bab +()                                 x                                                                                                                                                                                                                 
+
+--- 1 row(s) selected.
+>>	-- 15023
+>>execute x using 'b o''bab' , z;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     b o'bab                                                                                                                                                                                                                                                        
+
+--- 1 row(s) selected.
+>>			-- 15019, 1 row
+>>execute x using 'b o''bab'   z;
+
+*** ERROR[15024] The USING list quoted literal 'b o''bab' must be followed by either a comma or a semicolon.
+
+>>			-- 15024
+>>execute x using.;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+execute x using.;
+                ^ (18 characters from start of SQL statement)
+
+>>				-- 15001
+>>execute x using;
+
+*** ERROR[15020] The USING list must contain at least one parameter value.
+
+>>				-- 15020
+>>execute x using ;
+
+*** ERROR[15020] The USING list must contain at least one parameter value.
+
+>>				-- 15020
+>>execute x using,;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa                                                                                                                                                                                                                                                                    
+
+--- 1 row(s) selected.
+>>				-- 15019, 1 row (yucky syntax)
+>>execute x using ,;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa                                                                                                                                                                                                                                                                    
+
+--- 1 row(s) selected.
+>>				-- 15019, 1 row (yucky syntax)
+>>execute x using , ;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa                                                                                                                                                                                                                                                                    
+
+--- 1 row(s) selected.
+>>				-- 15019, 1 row (yucky syntax)
+>>execute x using a, ;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     a                                                                                                                                                                                                                                                              
+
+--- 1 row(s) selected.
+>>				-- 15019, 1 row (yucky syntax)
+>>execute x using 77,99;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     77                                                                                                                                                                                                                                                             
+
+--- 1 row(s) selected.
+>>				-- 15019, 1 row
+>>execute x using 77,99,foo;
+
+*** WARNING[15019] 3 values were supplied in the USING list while the statement contains 1 unnamed parameters.
+
+A      (EXPR)
+-----  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+aa     77                                                                                                                                                                                                                                                             
+
+--- 1 row(s) selected.
+>>			-- 15019, 1 row
+>>prepare A from table T050a;
+
+--- SQL command prepared.
+>>execute a using p,q;
+
+*** WARNING[15019] 2 values were supplied in the USING list while the statement contains 0 unnamed parameters.
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+aa     BB     CC               1            1            1
+
+--- 1 row(s) selected.
+>>				-- 15019, 1 row
+>>
+>>obey TEST050(test_binder_upper);
+>>
+>>-- Genesis 10-970902-0878
+>>select * from T050a where a="Lower";
+
+*** ERROR[4001] Column "Lower" is not found.  Tables in scope: CAT.SCH.T050A.  Default schema: CAT.SCH.
+
+*** WARNING[4104] If a character literal was intended, you must use the single quote delimiter: 'Lower'. The use of double quotes causes SQL to interpret "Lower" as a delimited identifier column name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>		-- 4001, 4104
+>>select * from T050a where e="Lower";
+
+*** ERROR[4001] Column "Lower" is not found.  Tables in scope: CAT.SCH.T050A.  Default schema: CAT.SCH.
+
+*** WARNING[4104] If a character literal was intended, you must use the single quote delimiter: 'Lower'. The use of double quotes causes SQL to interpret "Lower" as a delimited identifier column name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>		-- 4001, 4104
+>>select * from T050a where a=T050a."Lower";
+
+*** ERROR[4003] Column T050A."Lower" is not a column in table T050A, or, after a NATURAL JOIN or JOIN USING, is no longer allowed to be specified with a table correlation name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- 4003
+>>select * from T050a,T050a x where x.e="f";
+
+*** ERROR[4004] Column name "f" is ambiguous.  Tables in scope: CAT.SCH.T050A, X.  Default schema: CAT.SCH.
+
+*** WARNING[4104] If a character literal was intended, you must use the single quote delimiter: 'f'. The use of double quotes causes SQL to interpret "f" as a delimited identifier column name.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- 4004, 4104
+>>select * from T050a,T050a x where x.e='f';
+
+*** ERROR[4041] Type INTEGER cannot be compared with type CHAR(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	-- 4034 or 4041 or like that
+>>
+>>-- Genesis 10-980402-1556 + OLT add'l fix
+>>insert into T050a default values;
+
+--- 1 row(s) inserted.
+>>insert into T050a values('zz','zz','zz', 1, 1, 1);
+
+--- 1 row(s) inserted.
+>>execute a;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+aa     BB     CC               1            1            1
+Low    UPP    ?                0            0            0
+zz     ZZ     ZZ               1            1            1
+
+--- 3 row(s) selected.
+>>		-- aa,BB,CC; Low,UPP,?; zz,ZZ,ZZ
+>>
+>>-- Ansi 6.13 GR 2:  char and varchar concats are different vis-a-vis length
+>>#ifndef SEABASE_REGRESS
+>>-- skip this update until transaction support is in
+>>update T050a set b=a, c=trim(lower(b))||trim(a);
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII) Source Value:UPPLOW to Target Type:CHAR(REC_BYTE_F_ASCII).
+
+--- 0 row(s) updated.
+>>		-- 1 warn 8402
+>>#endif
+>>execute a;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+aa     BB     CC               1            1            1
+Low    UPP    ?                0            0            0
+zz     ZZ     ZZ               1            1            1
+
+--- 3 row(s) selected.
+>>		-- aa,AA,BBAA; Low,LOW,UPPLO; zz,ZZ,ZZZZ
+>>update T050a set b=a, c=lower(b)||a;
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:BB   AA    to Target Type:CHAR(REC_BYTE_F_ASCII).
+
+--- 0 row(s) updated.
+>>				-- 3 ERROR 8402
+>>execute a;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+aa     BB     CC               1            1            1
+Low    UPP    ?                0            0            0
+zz     ZZ     ZZ               1            1            1
+
+--- 3 row(s) selected.
+>>		-- aa,AA,AA; Low,LOW,LOW; zz,ZZ,ZZ
+>>update T050a set a='xx'||'yy';
+
+--- 3 row(s) updated.
+>>execute a;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+xxyy   BB     CC               1            1            1
+xxyy   UPP    ?                0            0            0
+xxyy   ZZ     ZZ               1            1            1
+
+--- 3 row(s) selected.
+>>		-- xxyy,AA,AA; xxyy,LOW,LOW; xxyy,ZZ,ZZ
+>>
+>>-- Genesis 10-980611-7115
+>>select cast('Are you up for a party? Now?' as char(30) upshift) lit,
++>       cast(a as char(6) upshift) lu,
++>       cast(c as varchar(6) upshift) uu,
++>       cast(e as char(6) upshift)i1,
++>       cast("f" as char(6) upshift)i2
++>       from T050a;
+
+LIT                             LU      UU      I1      I2    
+------------------------------  ------  ------  ------  ------
+
+ARE YOU UP FOR A PARTY? NOW?    XXYY    CC      1       1     
+ARE YOU UP FOR A PARTY? NOW?    XXYY    ?       0       0     
+ARE YOU UP FOR A PARTY? NOW?    XXYY    ZZ      1       1     
+
+--- 3 row(s) selected.
+>>
+>>insert into T050a(b,c,"f")values(cast('bLoop' as char(6)upshift),
++>				 cast(129 as char(4)upshift),
++>				 12900);
+
+--- 1 row(s) inserted.
+>>select * from T050a where "f">100;
+
+A      B      C      D            E            f          
+-----  -----  -----  -----------  -----------  -----------
+
+Low    BLOOP  129              0            0        12900
+
+--- 1 row(s) selected.
+>>
+>>obey TEST050(test_olt_warnings);
+>>-- Genesis 10-090626-2647 - warning diags in proj expr in UniqueOLT
+>>create table T050b (a int not null, b varchar(100), primary key(a));
+
+--- SQL operation complete.
+>>insert into T050b values (1,'abc');
+
+--- 1 row(s) inserted.
+>>select cast(rtrim(b) as char(1)) from T050b where a = 1;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)
+------
+
+a     
+
+--- 1 row(s) selected.
+>>log;

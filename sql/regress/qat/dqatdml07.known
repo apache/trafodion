@@ -1,0 +1,11 @@
+2960,2961c2960
+< PIC_COMP_1            (EXPR)
+< --------------------  ----------------------------------------
+---
+> *** ERROR[7000] Internal error in the code generator in file ../generator/GenPreCode.cpp at line 849: valuesToBeBound.isEmpty().
+2963c2962
+<                  300                     4.0000000000000000000
+---
+> *** ERROR[8822] Unable to prepare the statement.
+2965d2963
+< --- 1 row(s) selected.

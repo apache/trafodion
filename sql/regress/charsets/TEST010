@@ -1,0 +1,176 @@
+-- Test: TEST010
+-- Functionality: This tests sqlci params with character values
+-- Expected files:   EXPECTED010
+-- Tables created:   iso, ucs2
+-- Limitations: None
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop table iso;
+drop table ucs2;
+
+log LOG010 clear;
+
+create table iso(c char(10) character set ISO88591);
+create table ucs2(c char(10) character set UCS2);
+
+--positive
+
+set param ?p _ucs2'ab';
+set param ?q _ucs2'xb';
+select ?q || ?p from (values(1))x;
+
+-- reset ?p
+set param ?p 'ascii';
+
+--ascii param can be used in any place
+set param ?ascii _iso88591'12';
+select 1 from (values(1))x where 12 = ?ascii; --implicit conversion
+select 1 from (values(1))x where '12' = ?ascii; 
+
+--ucs2 param can be used in any place
+set param ?ucs2 _ucs2'12';
+select 1 from (values(1))x where 12 = ?ucs2; --implicit conversion
+select 1 from (values(1))x where '12' = ?ucs2; 
+
+--insert an ucs2 param into an ucs2 table 
+set param ?p _ucs2'ab';
+insert into ucs2 values(?p);
+select * from ucs2;
+
+--insert an iso88591 param into an iso88591 table 
+set param ?p 'ab';
+set param ?q _iso88591'ab';
+insert into iso values(?p);
+insert into iso values(?q);
+select * from iso;
+
+--use named param inside various string functions
+set param ?hv _ucs2'w';
+select REPLACE(_ucs2'abw', ?hv, _ucs2'z') from (values(1))t;
+select REPLACE(_ucs2'abx', _ucs2'x', ?hv) from (values(1))t;
+set param ?hv _ucs2'dfg';
+select REPLACE(?hv, _ucs2'fg', _ucs2'hi') from (values(1))t;
+set param ?hv2 _ucs2'fg';
+select REPLACE(?hv, ?hv2, _ucs2'jk') from (values(1))t;
+set param ?hv _ucs2'cd';
+select REPLACE(_ucs2'xycdcdzw', ?hv, _ucs2'abcdefghijklmnopqrstuvwxyz') from (values(1))t;
+---
+set param ?hv 'w';
+select REPLACE('abw', ?hv,'z') from (values(1))t;
+select REPLACE('abx', 'x', ?hv) from (values(1))t;
+set param ?hv 'dfg';
+select REPLACE(?hv, 'fg', 'hi') from (values(1))t;
+set param ?hv2 'fg';
+select REPLACE(?hv, ?hv2, 'jk') from (values(1))t;
+set param ?hv 'cd';
+select REPLACE('xycdcdzw', ?hv, 'abcdefghijklmnopqrstuvwxyz') from (values(1))t;
+---
+set param ?hv _ucs2'w';
+select TRIM(?hv  FROM  _ucs2'wwwabcww') from (values(1))t;
+set param ?hv _ucs2'wwwdfgww';
+select TRIM(_ucs2'w'  FROM  ?hv) from (values(1))t;
+---
+set param ?hv 'w';
+select TRIM(?hv  FROM  'wwwabcww') from (values(1))t;
+set param ?hv 'wwwdfgww';
+select TRIM('w' FROM  ?hv) from (values(1))t;
+---
+set param ?hv _ucs2'b';
+select LOCATE(?hv, _ucs2'wwwabcww') from (values(1))t;
+set param ?hv _ucs2'wwwdfgww';
+select LOCATE(_ucs2'f', ?hv) from (values(1))t;
+---
+set param ?hv 'a';
+select LOCATE(?hv, 'wwwabcww') from (values(1))t;
+set param ?hv 'wwwdfgww';
+select LOCATE('g', ?hv) from (values(1))t;
+---
+reset param ?hv;
+reset param ?hv2;
+
+--hexdecimal params
+set param ?h1 _ucs2 x'ffab 0064 0069';
+show params;
+
+set param ?x _kanji x'abf0 6365';
+show params;
+
+--negative tests
+
+-- can not set pattern with a string with charset prefix
+set pattern $$vol$$ _iso88591'$data08';
+
+-- can not use a kanji param in a place where ucs2/iso88591 is expected
+set param ?x _kanji'12';
+select 1 from (values(1))x where _ucs2'ab' = ?x;
+select 1 from (values(1))x where 'ab' = ?x;
+
+-- can not use an ascii param in a place where ucs2/kanji is expected
+set param ?ascii '12';
+select 1 from (values(1))x where _ucs2'ab' = ?ascii;
+select 1 from (values(1))x where _kanji'ab' = ?ascii;
+
+-- can not use a ucs2 param in a place where kanji is expected
+set param ?u _ucs2'12';
+select 1 from (values(1))x where _kanji'ab' = ?u;
+
+--kanji param in odd length
+set param ?k kanji'123';
+set param ?k kanji'a';
+
+--unnamed params
+
+delete from iso;
+delete from ucs2;
+
+prepare iso from insert into iso values(?);
+prepare ucs2 from insert into ucs2 values(?);
+
+--OK
+execute iso using _iso88591'a'; -- OK
+
+-- OK because it is not required that a string be in ANSI format
+execute iso using abb'a'; 
+
+-- OK because of relaxation
+execute iso using _ucs2'a'; 
+
+--OK
+execute ucs2 using _ucs2'a'; 
+
+-- not OK because of incompatibility
+execute ucs2 using _ISO88591'a'; 
+
+-- not OK because of incompatibility
+execute ucs2 using 'a'; 
+
+-- not OK because of incompatibility
+execute ucs2 using _kanji'ab'; 
+
+-- should get a syntax error because the length is odd.
+execute ucs2 using _kanji'a'; 
+
+select c, converttohex(c) from iso;
+select c, converttohex(c) from ucs2;
+
+drop table iso;
+drop table ucs2;
+
+log;

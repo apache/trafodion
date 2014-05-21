@@ -1,0 +1,1056 @@
+>>
+>>?section create_tables
+>>create table t005t01(eno int not null ,
++>                 dno largeint,
++>                 primary key(eno) );
+
+--- SQL operation complete.
+>>
+>>create table t005t02(dno largeint not null ,
++>                 dname char(20) not null,
++>                 primary key (dno) );
+
+--- SQL operation complete.
+>>
+>>
+>>create table t005t03
++>(
++> seqno integer  not null not droppable,
++> smin1 smallint  default null,
++> pict1 pic s9(13)v9(5)  default null,
++> primary key (seqno)
++>) ;
+
+--- SQL operation complete.
+>>
+>>create table t005t04
++>(
++> seqno integer  not null not droppable,
++> smin1 smallint  default null,
++> pict1 pic s9(13)v9(5)  default null,
++> primary key (seqno)
++>) ;
+
+--- SQL operation complete.
+>>
+>>
+>>create table t005t05(seqno integer not null primary key  ) ;
+
+--- SQL operation complete.
+>>
+>>create table t005_ex (
++>           e1 decimal(10,0) not null,
++>           e2 decimal(10,0) not null,
++>           e3 decimal(10,0) not null
++>        ) no partition;
+
+--- SQL operation complete.
+>>
+>>
+>>create table t005_fx (
++>    f1 decimal(10,0) not null,
++>    f2 decimal(10,0) not null,
++>    f3 decimal(10,0) not null
++>) no partition;
+
+--- SQL operation complete.
+>>
+>>
+>>create table t005_gx (
++>    g1 decimal(10,0) default null,
++>    g2 decimal(10,0) default null
++>) no partition;
+
+--- SQL operation complete.
+>>
+>>create table t005_hx (
++>	h1 decimal(10,0) not null,
++>	h2 decimal(10,0) not null,
++>	h3 decimal(10,0) not null
++>) no partition;
+
+--- SQL operation complete.
+>>
+>>?section populate_tables 
+>>-- Populate t005t01
+>>insert into t005t01 values (30, 33);
+
+--- 1 row(s) inserted.
+>>insert into t005t01 values (3, 33);
+
+--- 1 row(s) inserted.
+>>insert into t005t01 values (4, 44);
+
+--- 1 row(s) inserted.
+>>insert into t005t01 values (5, 55);
+
+--- 1 row(s) inserted.
+>>insert into t005t01 values (6, 66);
+
+--- 1 row(s) inserted.
+>>
+>>-- Populate t005t02
+>>insert into t005t02 values (33, 'Sales'),
++>                       (44, 'Marketing'),
++>                       (55, 'Production'),
++>		       (77, 'R&D');
+
+--- 4 row(s) inserted.
+>>
+>>insert into t005_ex (e1, e2, e3) values(1,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,1,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,1,3);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,2,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,2,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,2,4);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,3,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,3,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_ex (e1, e2, e3) values(1,3,3);
+
+--- 1 row(s) inserted.
+>>
+>>insert into t005_fx select * from t005_ex;
+
+--- 9 row(s) inserted.
+>>
+>>insert into t005_gx values(1,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_gx values(2,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_gx values(3,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_gx values(4,1);
+
+--- 1 row(s) inserted.
+>>
+>>insert into t005_hx values(1,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,1,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,1,3);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,1,4);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,2,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,2,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,2,3);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,3,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,3,3);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(1,3,4);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,1,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,1,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,1,3);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,1,4);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,2,1);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,2,2);
+
+--- 1 row(s) inserted.
+>>insert into t005_hx values(2,2,3);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>
+>>?section prep
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default comp_bool_199 'on';
+
+--- SQL operation complete.
+>>
+>>?section positive_tests
+>>
+>>-- FOJ1 - Natural Full Outer Join 
+>>-- t005t01 FOJ t005t02
+>>select * from t005t01 natural full outer join t005t02 order by 1,2 DESC;
+
+DNO                   ENO          DNAME               
+--------------------  -----------  --------------------
+
+                  33           30  Sales               
+                  33            3  Sales               
+                  44            4  Marketing           
+                  55            5  Production          
+                  66            6  ?                   
+                  77            ?  R&D                 
+
+--- 6 row(s) selected.
+>>
+>>-- FOJ2 - Natural Full Outer Join 
+>>-- t005t02 FOJ t005t01
+>>select * from t005t02 natural full outer join t005t01 order by 1,3;
+
+DNO                   DNAME                 ENO        
+--------------------  --------------------  -----------
+
+                  33  Sales                           3
+                  33  Sales                          30
+                  44  Marketing                       4
+                  55  Production                      5
+                  66  ?                               6
+                  77  R&D                             ?
+
+--- 6 row(s) selected.
+>>
+>>-- FOJ3 - Use ON clause - non equijoin predicate
+>>-- t005t02 FOJ t005t01 
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = 33 order by 1,3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+                  44  Marketing                       3                    33
+                  44  Marketing                      30                    33
+                  55  Production                      3                    33
+                  55  Production                     30                    33
+                  77  R&D                             3                    33
+                  77  R&D                            30                    33
+                   ?  ?                               4                    44
+                   ?  ?                               5                    55
+                   ?  ?                               6                    66
+
+--- 11 row(s) selected.
+>>
+>>-- FOJ4 - Use ON clause - non equijoin predicate
+>>-- t005t01 FOJ t005t02
+>>select * from t005t01 full outer join t005t02 on t005t02.dno = 33 order by 1,4;
+
+ENO          DNO                   DNO                   DNAME
+-----------  --------------------  --------------------  --------------------
+
+          3                    33                    33  Sales               
+          4                    44                    33  Sales               
+          5                    55                    33  Sales               
+          6                    66                    33  Sales               
+         30                    33                    33  Sales               
+          ?                     ?                    44  Marketing           
+          ?                     ?                    55  Production          
+          ?                     ?                    77  R&D                 
+
+--- 8 row(s) selected.
+>>
+>>
+>>-- FOJ5 - Use ON clause - equijoin predicate
+>>-- t005t02 FOJ t005t01 
+>>select * from t005t02 full outer join t005t01 on t005t02.dno = t005t01.dno order by 1,3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+                  44  Marketing                       4                    44
+                  55  Production                      5                    55
+                  77  R&D                             ?                     ?
+                   ?  ?                               6                    66
+
+--- 6 row(s) selected.
+>>
+>>-- FOJ6 - Use ON clause - equijoin predicate
+>>-- t005t01 FOJ t005t02
+>>select * from t005t01 full outer join t005t02 on t005t01.dno = t005t02.dno order by 1;
+
+ENO          DNO                   DNO                   DNAME
+-----------  --------------------  --------------------  --------------------
+
+          3                    33                    33  Sales               
+          4                    44                    44  Marketing           
+          5                    55                    55  Production          
+          6                    66                     ?  ?                   
+         30                    33                    33  Sales               
+          ?                     ?                    77  R&D                 
+
+--- 6 row(s) selected.
+>>
+>>-- FOJ7 - Use WHERE clause on Full Outer 
+>>-- Join t005t02 FOJ t005t01
+>>-- WHERE clause on t005t02 and the column is part of a join column
+>>-- Must Convert FOJ to LJ - TBD - Hema
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
++>		where t005t02.dno = 33 order by 3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+
+--- 2 row(s) selected.
+>>
+>>-- FOJ8 - Use WHERE clause on Full Outer 
+>>-- Join t005t02 FOJ t005t01
+>>-- WHERE clause on t005t01 and the column is part of a join column
+>>-- Must Convert FOJ to RJ - TBD - Hema
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
++>		where t005t01.dno = 33 order by 3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+
+--- 2 row(s) selected.
+>>
+>>
+>>-- FOJ9 - Use AND in ON clause on Full Outer 
+>>-- Join t005t02 FOJ t005t01
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
++>		AND t005t01.dno = 33 order by 1,3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+                  44  Marketing                       ?                     ?
+                  55  Production                      ?                     ?
+                  77  R&D                             ?                     ?
+                   ?  ?                               4                    44
+                   ?  ?                               5                    55
+                   ?  ?                               6                    66
+
+--- 8 row(s) selected.
+>>
+>>-- FOJ10 - Use AND in ON clause on Full Outer 
+>>-- Join t005t01 FOJ t005t02
+>>select * from t005t01 full outer join t005t02 on t005t01.dno = t005t02.dno 
++>		AND t005t01.dno = 33 order by 1,4;
+
+ENO          DNO                   DNO                   DNAME
+-----------  --------------------  --------------------  --------------------
+
+          3                    33                    33  Sales               
+          4                    44                     ?  ?                   
+          5                    55                     ?  ?                   
+          6                    66                     ?  ?                   
+         30                    33                    33  Sales               
+          ?                     ?                    44  Marketing           
+          ?                     ?                    55  Production          
+          ?                     ?                    77  R&D                 
+
+--- 8 row(s) selected.
+>>
+>>
+>>-- FOJ11 - Use OR in ON clause on Full Outer 
+>>-- Join t005t02 FOJ t005t01
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
++>		OR t005t01.dno = 33 order by 1,3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+                  44  Marketing                       3                    33
+                  44  Marketing                       4                    44
+                  44  Marketing                      30                    33
+                  55  Production                      3                    33
+                  55  Production                      5                    55
+                  55  Production                     30                    33
+                  77  R&D                             3                    33
+                  77  R&D                            30                    33
+                   ?  ?                               6                    66
+
+--- 11 row(s) selected.
+>>
+>>-- FOJ12 - Use OR in ON clause on Full Outer 
+>>-- Join t005t01 FOJ t005t02
+>>select * from t005t01 full outer join t005t02 on t005t01.dno = t005t02.dno 
++>		OR t005t01.dno = 33 order by 1, 3;
+
+ENO          DNO                   DNO                   DNAME
+-----------  --------------------  --------------------  --------------------
+
+          3                    33                    33  Sales               
+          3                    33                    44  Marketing           
+          3                    33                    55  Production          
+          3                    33                    77  R&D                 
+          4                    44                    44  Marketing           
+          5                    55                    55  Production          
+          6                    66                     ?  ?                   
+         30                    33                    33  Sales               
+         30                    33                    44  Marketing           
+         30                    33                    55  Production          
+         30                    33                    77  R&D                 
+
+--- 11 row(s) selected.
+>>
+>>
+>>?section DERIVED_TABLE
+>>-- FOJ13 - use derived table syntax
+>>-- Join t005t02 FOJ t005t01
+>>-- WHERE clause
+>>select * from (select * from t005t02 full outer join t005t01 
++>	on t005t01.dno = t005t02.dno) as T(a,b,c,d) where T.a = 33 order by 3;
+
+A                     B                     C            D
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  33  Sales                          30                    33
+
+--- 2 row(s) selected.
+>>
+>>-- FOJ13 - use derived table syntax
+>>-- Join t005t02 FOJ t005t01
+>>select * from (select * from t005t02 full outer join 
++>     t005t01 on t005t01.dno = t005t02.dno) as T(a,b,c,d) order by 3;
+
+A                     B                     C            D
+--------------------  --------------------  -----------  --------------------
+
+                  33  Sales                           3                    33
+                  44  Marketing                       4                    44
+                  55  Production                      5                    55
+                   ?  ?                               6                    66
+                  33  Sales                          30                    33
+                  77  R&D                             ?                     ?
+
+--- 6 row(s) selected.
+>>
+>>
+>>?section predicates
+>>delete from t005t03;
+
+--- 0 row(s) deleted.
+>>delete from t005t04;
+
+--- 0 row(s) deleted.
+>>
+>>insert INTO t005t03 values (1, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (2, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 (seqno) values (3);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (4,-32768,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (5, 32767,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (6,7892,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (7,2834,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (8,123,1);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>insert INTO t005t04 values (1, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (2, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (3,24923,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (4,-32768,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (5,25065,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (6,7892,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (12,9374,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- FOJ14 - selection predicate on left table columns
+>>-- Join t005t03 FOJ t005t04
+>>select a.seqno, a.smin1, b.seqno, b.smin1 FROM 
++>	t005t03 a 
++>	FULL OUTER JOIN                                                   
++>       t005t04 b ON a.seqno = b.seqno 
++>       where (a.seqno > 3 and a.smin1 < 123) or a.seqno < 5                
++>ORDER BY a.seqno, b.seqno, a.smin1, b.smin1 ;
+
+SEQNO        SMIN1   SEQNO        SMIN1 
+-----------  ------  -----------  ------
+
+          1       1            1       1
+          2       1            2       1
+          3       ?            3   24923
+          4  -32768            4  -32768
+
+--- 4 row(s) selected.
+>>
+>>-- FOJ15 - selection predicate on right table columns
+>>-- Join t005t03 FOJ t005t04
+>>select a.seqno, a.smin1, b.seqno, b.smin1 FROM t005t03 a 
++>	FULL OUTER JOIN 
++>t005t04 b ON a.seqno = b.seqno 
++>where (b.seqno > 3 and b.smin1 < 123) or b.seqno = 2 order by a.seqno;
+
+SEQNO        SMIN1   SEQNO        SMIN1 
+-----------  ------  -----------  ------
+
+          2       1            2       1
+          4  -32768            4  -32768
+
+--- 2 row(s) selected.
+>>
+>>
+>>delete from t005t03;
+
+--- 8 row(s) deleted.
+>>delete from t005t04;
+
+--- 7 row(s) deleted.
+>>
+>>insert INTO t005t04 values(0, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(1,1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 (seqno) values (3);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(-2147483648, -32768,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(2147483647, 32767,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(293847923, 7892,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(450,2834,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(789,123,1);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>insert INTO  t005t04 values(2,1,1);
+
+--- 1 row(s) inserted.
+>>
+>>-- FOJ15 - selection predicate on left and right table columns
+>>-- Join t005t03 FOJ t005t04
+>>select a.seqno, a.smin1, b.seqno, b.smin1 FROM t005t03 a 
++>	FULL OUTER JOIN 
++>t005t04 b ON a.seqno = b.seqno 
++>where (a.seqno > 3 and a.seqno < 123) or b.seqno = 2 order by a.seqno;
+
+SEQNO        SMIN1   SEQNO        SMIN1 
+-----------  ------  -----------  ------
+
+          ?       ?            2       1
+
+--- 1 row(s) selected.
+>>
+>>?section PIC_Datatype
+>>delete from t005t03;
+
+--- 0 row(s) deleted.
+>>delete from t005t04;
+
+--- 9 row(s) deleted.
+>>
+>>insert INTO t005t03 values(0,1, 0);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values(0,1, 2);
+
+--- 1 row(s) inserted.
+>>
+>>select a.pict1, b.pict1 FROM t005t03 a 
++>	FULL OUTER JOIN t005t04 b 
++>ON a.pict1 = b.pict1 where  ( b.pict1  > 1 or a.pict1  < 1 ) order by 1;
+
+PICT1                 PICT1               
+--------------------  --------------------
+
+              .00000                     ?
+                   ?               2.00000
+
+--- 2 row(s) selected.
+>>
+>>?section 3-way FOJ
+>>delete from t005t03;
+
+--- 1 row(s) deleted.
+>>delete from t005t04;
+
+--- 1 row(s) deleted.
+>>delete from t005t05;
+
+--- 0 row(s) deleted.
+>>
+>>insert INTO t005t03 values (1, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (2, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 (seqno) values (3);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (4,-32768,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (5, 32767,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (6,7892,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (7,2834,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (8,123,1);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>insert INTO t005t04 values (1, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (2, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (3,24923,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (4,-32768,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (5,25065,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (6,7892,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (12,9374,1);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>insert into t005t05 values (7);
+
+--- 1 row(s) inserted.
+>>
+>>-- FOJ16 - columns projected from the left table only.
+>>-- Join t005t03 FOJ t005t04 FOJ t005t05
+>>SELECT a.seqno, b.seqno FROM t005t03 a       
++>  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno      
++>       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno order by 1,2;
+
+SEQNO        SEQNO      
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
+          6            6
+          7            ?
+          8            ?
+          ?           12
+          ?            ?
+
+--- 10 row(s) selected.
+>>
+>>-- FOJ17 - columns projected from the left table only, with a WHERE clasue
+>>-- on the right column.
+>>-- Join t005t03 FOJ t005t04 FOJ t005t05
+>>SELECT a.seqno, e.seqno FROM t005t03 a       
++>  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno      
++>       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno where e.seqno = 7;
+
+SEQNO        SEQNO      
+-----------  -----------
+
+          ?            7
+
+--- 1 row(s) selected.
+>>
+>>
+>>-- FOJ18 - columns projected from the right table only.
+>>-- Join t005t03 FOJ t005t04 FOJ t005t05
+>>SELECT e.seqno FROM t005t03 a       
++>  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno 
++>       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno order by 1;
+
+SEQNO      
+-----------
+
+          7
+          ?
+          ?
+          ?
+          ?
+          ?
+          ?
+          ?
+          ?
+          ?
+
+--- 10 row(s) selected.
+>>
+>>
+>>-- FOJ19 - columns projected from the right table only with a WHERE clause
+>>-- on the right table column.
+>>-- Join t005t03 FOJ t005t04 FOJ t005t05
+>>SELECT e.seqno FROM t005t03 a       
++>  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno 
++>       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno where e.seqno = 7;
+
+SEQNO      
+-----------
+
+          7
+
+--- 1 row(s) selected.
+>>
+>>
+>>?section FOJ_other_join_combination
+>>delete from t005t03;
+
+--- 8 row(s) deleted.
+>>delete from t005t04;
+
+--- 7 row(s) deleted.
+>>delete from t005t05;
+
+--- 1 row(s) deleted.
+>>
+>>insert INTO t005t03 values (0, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (1, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 (seqno) values (3);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t03 values (4,-32768,1);
+
+--- 1 row(s) inserted.
+>>
+>>
+>>insert INTO t005t04 values (0, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (1, 1,1);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 (seqno) values (3);
+
+--- 1 row(s) inserted.
+>>insert INTO t005t04 values (4,-32768,1);
+
+--- 1 row(s) inserted.
+>>
+>>insert into t005t05 values (1);
+
+--- 1 row(s) inserted.
+>>insert into t005t05 values (2);
+
+--- 1 row(s) inserted.
+>>insert into t005t05 values (3);
+
+--- 1 row(s) inserted.
+>>
+>>-- FOJ20 - FOJ-INNER with ON clause
+>>-- Join t005t03 FOJ t005t04 INNER t005t05
+>>SELECT seqno, smin1     
++>        FROM                                                             
++>     t005t03                                                        
++>   FULL OUTER JOIN                                                   
++>        (select t005t04.seqno  as b                                            
++>              from t005t04 INNER JOIN t005t05                         
++>              ON t005t04.seqno = t005t05.seqno                      
++>         ) as t2                                                      
++>on t005t03.seqno = t2.b 
++>order by 1,2;
+
+SEQNO        SMIN1 
+-----------  ------
+
+          0       1
+          1       1
+          3       ?
+          4  -32768
+
+--- 4 row(s) selected.
+>>
+>>-- FOJ21 - FOJ-INNER with ON clause
+>>-- and WHERE clause on left table
+>>-- Join t005t03 FOJ t005t04 INNER t005t05
+>>SELECT seqno, smin1     
++>        FROM                                                             
++>     t005t03 t1                                                    
++>   FULL OUTER JOIN                                                   
++>        (select t005t04.seqno  as b                                            
++>              from t005t04 INNER JOIN  t005t05
++>              ON t005t04.seqno = t005t05.seqno                      
++>         ) as t2 
++>on t1.seqno = t2.b                                                     
++>where  t1.seqno < 4 order by 1;
+
+SEQNO        SMIN1 
+-----------  ------
+
+          0       1
+          1       1
+          3       ?
+
+--- 3 row(s) selected.
+>>
+>>
+>>-- FOJ22 - FOJ-INNER with ON clause
+>>-- and WHERE clause on right table
+>>-- Join t005t03 FOJ t005t04 INNER t005t05
+>>SELECT seqno, smin1     
++>        FROM                                                             
++>     t005t03 t1                                                    
++>   FULL OUTER JOIN                                                   
++>        (select t005t04.seqno  as b                                            
++>              from t005t04 INNER JOIN  t005t05                         
++>              ON t005t04.seqno = t005t05.seqno                      
++>         ) as t2 
++>on t1.seqno = t2.b                                                     
++>where  t2.b < 4 order by 1;
+
+SEQNO        SMIN1 
+-----------  ------
+
+          1       1
+          3       ?
+
+--- 2 row(s) selected.
+>>
+>>-- FOJ23, FOJ, INNER and LOJ.
+>>-- Soln 10-081027-6839 
+>>-- predicate was lost because a column was incorrectly flagged as NOT outerrerfernce
+>>
+>>select * from t005_ex left outer join t005_fx
++>on (t005_ex.e3 = t005_fx.f3 and t005_ex.e2 = t005_fx.f2 and t005_ex.e1 = t005_fx.f1)
++>join t005_gx on (t005_ex.e1 = t005_gx.g1)
++>full outer join t005_hx on (t005_gx.g2 = t005_hx.h1 and t005_ex.e3 = t005_hx.h3 and t005_ex.e2 = t005_hx.h2)
++>order by t005_ex.e1 asc, t005_ex.e2 asc, t005_ex.e3 asc, t005_hx.h1, t005_hx.h2, t005_hx.h3;
+
+E1           E2           E3           F1           F2           F3           G1           G2           H1           H2           H3
+-----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1            1            1            2            2            1            1
+          1            1            2            1            1            2            1            2            2            1            2
+          1            1            3            1            1            3            1            2            2            1            3
+          1            2            1            1            2            1            1            2            2            2            1
+          1            2            2            1            2            2            1            2            2            2            2
+          1            2            4            1            2            4            1            2            ?            ?            ?
+          1            3            1            1            3            1            1            2            ?            ?            ?
+          1            3            2            1            3            2            1            2            ?            ?            ?
+          1            3            3            1            3            3            1            2            ?            ?            ?
+          ?            ?            ?            ?            ?            ?            ?            ?            1            1            1
+          ?            ?            ?            ?            ?            ?            ?            ?            1            1            2
+          ?            ?            ?            ?            ?            ?            ?            ?            1            1            3
+          ?            ?            ?            ?            ?            ?            ?            ?            1            1            4
+          ?            ?            ?            ?            ?            ?            ?            ?            1            2            1
+          ?            ?            ?            ?            ?            ?            ?            ?            1            2            2
+          ?            ?            ?            ?            ?            ?            ?            ?            1            2            3
+          ?            ?            ?            ?            ?            ?            ?            ?            1            3            2
+          ?            ?            ?            ?            ?            ?            ?            ?            1            3            3
+          ?            ?            ?            ?            ?            ?            ?            ?            1            3            4
+          ?            ?            ?            ?            ?            ?            ?            ?            2            1            4
+          ?            ?            ?            ?            ?            ?            ?            ?            2            2            3
+
+--- 21 row(s) selected.
+>>
+>>-- FOJ24
+>>-- actual query from previous solution. Order of FOJ is different
+>>
+>>select * from t005_ex full outer join t005_fx
++>on (t005_ex.e3 = t005_fx.f3 and t005_ex.e2 = t005_fx.f2 and t005_ex.e1 = t005_fx.f1)
++>join t005_gx on (t005_ex.e1 = t005_gx.g1)
++>left outer join t005_hx on (t005_gx.g2 = t005_hx.h1 and t005_ex.e3 = t005_hx.h3 and t005_ex.e2 = t005_hx.h2)
++>order by t005_ex.e1 asc, t005_ex.e2 asc, t005_ex.e3 asc;
+
+E1           E2           E3           F1           F2           F3           G1           G2           H1           H2           H3
+-----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------
+
+          1            1            1            1            1            1            1            2            2            1            1
+          1            1            2            1            1            2            1            2            2            1            2
+          1            1            3            1            1            3            1            2            2            1            3
+          1            2            1            1            2            1            1            2            2            2            1
+          1            2            2            1            2            2            1            2            2            2            2
+          1            2            4            1            2            4            1            2            ?            ?            ?
+          1            3            1            1            3            1            1            2            ?            ?            ?
+          1            3            2            1            3            2            1            2            ?            ?            ?
+          1            3            3            1            3            3            1            2            ?            ?            ?
+
+--- 9 row(s) selected.
+>>
+>>
+>>?section NEGATIVE_VALUES
+>>
+>>insert into t005t01 values (-1, -5);
+
+--- 1 row(s) inserted.
+>>insert into t005t02 values (-5, 'REWS');
+
+--- 1 row(s) inserted.
+>>
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno order by 3;
+
+DNO                   DNAME                 ENO          DNO
+--------------------  --------------------  -----------  --------------------
+
+                  -5  REWS                           -1                    -5
+                  33  Sales                           3                    33
+                  44  Marketing                       4                    44
+                  55  Production                      5                    55
+                   ?  ?                               6                    66
+                  33  Sales                          30                    33
+                  77  R&D                             ?                     ?
+
+--- 7 row(s) selected.
+>>
+>>delete from t005t01 where dno = -5;
+
+--- 1 row(s) deleted.
+>>delete from t005t02 where dno = -5;
+
+--- 1 row(s) deleted.
+>>
+>>?section 3-Way Join
+>>
+>>?section FOJ_restrictions
+>>-- FOJ50 - Must raise an error? FOJ is only supported for Hash Joins.
+>>-- control query default hash_joins 'off';
+>>
+>>-- FOJ51 - Subquery in the join predicate of FOJ is not supported.
+>>select * from t005t02 full outer join t005t01 on t005t01.dno = (select min(dno
++>) from t005t01);
+
+*** ERROR[4339] Subqueries are not supported in the join predicate of a Full Outer Join.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- FOJ52 - Broadcast join is not supported for FOJ.
+>>
+>>-- FOJ503 - MV not supported
+>>create materialized view T_MV1
++>        Refresh on request
++>        initialize on create
++>        AS
++>        select A.dno,B.eno
++>        from t005t02 A full outer join t005t01 B on A.dno = B.dno;
+
+*** ERROR[12001] Creation failed. The materialized view cannot be maintained incrementally.
+
+--- SQL operation failed with errors.
+>>
+>>create materialized view T_MV1
++>        Refresh on statement
++>        initialize on create
++>        AS
++>        select A.dno,B.eno
++>        from t005t02 A full outer join t005t01 B on A.dno = B.dno;
+
+*** ERROR[12001] Creation failed. The materialized view cannot be maintained incrementally.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>?section cleanup
+>>
+>>-- Clean up test
+>>drop table t005t01;
+
+--- SQL operation complete.
+>>drop table t005t02;
+
+--- SQL operation complete.
+>>
+>>drop table t005t03;
+
+--- SQL operation complete.
+>>drop table t005t04;
+
+--- SQL operation complete.
+>>drop table t005t05;
+
+--- SQL operation complete.
+>>
+>>drop table t005_ex;
+
+--- SQL operation complete.
+>>drop table t005_gx;
+
+--- SQL operation complete.
+>>drop table t005_hx;
+
+--- SQL operation complete.
+>>drop table t005_fx;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

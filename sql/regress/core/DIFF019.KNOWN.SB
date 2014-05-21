@@ -1,0 +1,113 @@
+150c150,153
+< --- SQL command prepared.
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+154,157c157
+< (EXPR) (EXPR)
+< ----------
+< 
+<  9999 this is row 4 of table t019t1
+---
+> *** ERROR[15017] Statement STMT was not found.
+159d158
+< --- 1 row(s) selected.
+175c174
+<  1
+---
+>  0
+182,193c181
+< (EXPR) (EXPR)
+< ----------
+< 
+<  9993 this is row 14 of table t019t1
+<  9993 this is row 30 of table t019t1
+<  9993 this is row 42 of table t019t1
+<  9993 this is row 45 of table t019t1
+<  9993 this is row 50 of table t019t1
+<  9993 this is row 57 of table t019t1
+<  9993 this is row 61 of table t019t1
+<  9993 this is row 93 of table t019t1
+<  9999 this is row 4 of table t019t1
+---
+> *** ERROR[15017] Statement STMT was not found.
+195d182
+< --- 9 row(s) selected.
+206c193
+<  1
+---
+>  0
+341c328,331
+< --- SQL command prepared.
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+349c339,340
+< --- 100 row(s) inserted.
+---
+> *** ERROR[15017] Statement STMT was not found.
+> 
+363,367c354
+< VARIABLE_INFO
+< 
+<  There were Cluster Splits, There were Hash Loops, There was an Overflow, 
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.
+415c402,405
+< --- SQL command prepared.
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+420c410,411
+< --- 100000 row(s) inserted.
+---
+> *** ERROR[15017] Statement STMT was not found.
+> 
+435c426
+<  1
+---
+>  0
+451c442,445
+< --- SQL command prepared.
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+456c450,451
+< --- 100000 row(s) inserted.
+---
+> *** ERROR[15017] Statement STMT was not found.
+> 
+471c466
+<  1
+---
+>  0
+487c482
+< --- 100000 row(s) deleted.
+---
+> --- 0 row(s) deleted.
+499c494,497
+< --- SQL command prepared.
+---
+> *** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 
+504c502,503
+< --- 90002 row(s) inserted.
+---
+> *** ERROR[15017] Statement STMT was not found.
+> 
+519c518
+<  1
+---
+>  0

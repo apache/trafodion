@@ -1,0 +1,195 @@
+#ifndef PARDDLLIKEOPTSCREATETABLE_H
+#define PARDDLLIKEOPTSCREATETABLE_H
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         ParDDLLikeOptsCreateTable.h
+ * Description:  class to contain all legal options associating with the
+ *               LIKE clause in DDL Create Table statements -- The
+ *               parser constructs a parse node for each option
+ *               specified in the LIKE clause in DDL statements.  Collecting
+ *               all Like options to a single object (node) helps the
+ *               user to access the Like option information easier.  The
+ *               user does not need to traverse the parse sub-tree to
+ *               look for each Like option parse node associating with
+ *               the DDL statement.  Default values will be assigned to
+ *               Like options that are not specified in the DDL statement.
+ *
+ *               Class ParDDLLikeOptsCreateTable does not represent a
+ *               parse node.  Classes StmtDDLCreateTable (representing
+ *               Create Table parse nodes) and ElemDDLLikeCreateTable
+ *               contain the class ParDDLLikeOptsCreateTable.
+ *
+ *               
+ * Created:      5/25/95
+ * Language:     C++
+ *
+ *
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+ *
+ *
+ *****************************************************************************
+ */
+
+
+#include "ParDDLLikeOpts.h"
+
+// -----------------------------------------------------------------------
+// contents of this file
+// -----------------------------------------------------------------------
+class ParDDLLikeOptsCreateTable;
+
+// -----------------------------------------------------------------------
+// forward references
+// -----------------------------------------------------------------------
+// None
+
+// -----------------------------------------------------------------------
+// definition of class ParDDLLikeOptsCreateTable
+// -----------------------------------------------------------------------
+class ParDDLLikeOptsCreateTable : public ParDDLLikeOpts
+{
+
+public:
+
+  // constructor
+  ParDDLLikeOptsCreateTable();
+
+  // virtual destructor
+  virtual ~ParDDLLikeOptsCreateTable();
+
+  // assignment
+  ParDDLLikeOptsCreateTable & operator=(
+       const ParDDLLikeOptsCreateTable & likeOptions);
+
+  // accessors
+
+  const NABoolean
+  getIsWithComments() const
+  {
+    return isLikeOptWithComments_;
+  }
+
+  const NABoolean
+  getIsWithConstraints() const
+  {
+    return isLikeOptWithConstraints_;
+  }
+
+  const NABoolean
+  getIsWithHeadings() const
+  {
+    return isLikeOptWithHeadings_;
+  }
+
+  const NABoolean
+  getIsWithHelpText() const
+  {
+    return isLikeOptWithHelpText_;
+  }
+
+  const NABoolean
+  getIsWithHorizontalPartitions() const
+  {
+    return isLikeOptWithHorizontalPartitions_;
+  }
+
+  const NABoolean
+  getIsWithDivision() const
+  {
+    return isLikeOptWithDivision_;
+  }
+
+  // mutators
+
+  void setLikeOption(ElemDDLLikeOpt * pLikeOptParseNode);
+
+  void
+  setIsWithComments(const NABoolean setting)
+  {
+    isLikeOptWithComments_ = setting;
+  }
+
+  void
+  setIsWithConstraints(const NABoolean setting)
+  {
+    isLikeOptWithConstraints_ = setting;
+  }
+
+  void
+  setIsWithHeadings(const NABoolean setting)
+  {
+    isLikeOptWithHeadings_ = setting;
+  }
+
+  void
+  setIsWithHelpText(const NABoolean setting)
+  {
+    isLikeOptWithHelpText_ = setting;
+  }
+
+  void
+  setIsWithHorizontalPartitions(const NABoolean setting)
+  {
+    isLikeOptWithHorizontalPartitions_ = setting;
+  }
+
+  void
+  setIsWithDivision(const NABoolean setting)
+  {
+    isLikeOptWithDivision_ = setting;
+  }
+
+
+
+private:
+
+  // ---------------------------------------------------------------------
+  // private methods
+  // ---------------------------------------------------------------------
+
+  void initializeDataMembers();
+
+  // ---------------------------------------------------------------------
+  // private data members
+  // ---------------------------------------------------------------------
+
+  // The flags is...Spec_ shows whether the corresponding Like
+  // options were specified in the DDL statement or not.  They
+  // are used by the parser to look for duplicate options.
+
+  NABoolean isLikeOptWithCommentsSpec_;
+  NABoolean isLikeOptWithConstraintsSpec_;
+  NABoolean isLikeOptWithHeadingsSpec_;
+  NABoolean isLikeOptWithHelpTextSpec_;
+  NABoolean isLikeOptWithHorizontalPartitionsSpec_;
+  NABoolean isLikeOptWithDivisionSpec_;
+
+  // legal Like options in DDL Create Table statements
+
+  NABoolean isLikeOptWithComments_;
+  NABoolean isLikeOptWithConstraints_;
+  NABoolean isLikeOptWithHeadings_;
+  NABoolean isLikeOptWithHelpText_;
+  NABoolean isLikeOptWithHorizontalPartitions_;
+  NABoolean isLikeOptWithDivision_;
+
+}; // class ParDDLLikeOptsCreateTable
+
+#endif /* PARDDLLIKEOPTSCREATETABLE_H */

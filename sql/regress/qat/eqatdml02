@@ -1,0 +1,3157 @@
+>>---------------------------------------------------------------------
+>>-- Component: NonStop SQL Regression Test Suite
+>>-- Description:
+>>--    This test unit is a positive local test for the select statement.
+>>-- It tests only normal (non-join and non-subquery) select statements
+>>-- in simple form (no clauses other than SELECT-FROM). In particular,
+>>-- the select statements in this test unit have no where, group by,
+>>-- or order by clauses.
+>>--    This test unit uses the select global data base.
+>>-- Each test case in this test unit tests a particular feature of
+>>-- simple normal select statements. For each test case, each base table
+>>-- (tables 01 - 11) and at least one protection view and one shorthand
+>>-- view have at least one select stmt. executed against them. This is
+>>-- to assure that the particular feature that the test case is testing
+>>-- works on all types of objects.
+>>--    The test cases in this test unit are as follows:
+>>--       testcase A0: select one column from base tables, shorthand
+>>--                    views, protection views
+>>--       testcase A1: select distinct , select all
+>>--       testcase A2: select syskey
+>>--       testcase A3: select *
+>>--       testcase A4: select an expression of a column
+>>--       testcase A5: use of browse access,
+>>--         stable access and repeatable access
+>>--       testcase A6: select aggregate functions
+>>
+>>-- All testcases are documented further below.
+>>
+>>-- *******************   end test unit comments        ************************
+>>
+>>-- <testunit-summary>
+>>-- select #1 pos/loc ufi norm simple
+>>
+>>-- <testunit-specs>
+>>
+>>-- mode-type ufi
+>>-- test-type functional
+>>-- form-type pos/loc
+>>-- select-test
+>>
+>>-- <testcase A0>
+>>
+>>--    <testcase-summary>
+>>--       Select a column from base tables,
+>>--       protection views, shorthand views.
+>>
+>>--    <detail>
+>>--        normal simple select test - select a column from base
+>>--        tables, protection views, shorthand views.
+>>
+>>--        This testcase selects a random column from base tables
+>>--        1-11, protection views 1-4 and shorthand views 11-15. base
+>>--        tables 1 and 6 have all their column types selected to
+>>--        check that select works on all column types.
+>>
+>>--    <templates>
+>>--       US00
+>>
+>>
+>>      select char_1 from btsel01;
+
+CHAR_1
+------
+
+D     
+A     
+A     
+D     
+E     
+C     
+C     
+D     
+
+--- 8 row(s) selected.
+>>
+>>      select btsel01.pic_x_1 from btsel01;
+
+PIC_X_1
+-------
+
+A      
+B      
+C      
+C      
+D      
+E      
+Q      
+Z      
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_1,pic_x_7 from btsel01;
+
+PIC_X_1  PIC_X_7
+-------  -------
+
+D        michael
+C        walter 
+A        bobby  
+C        7      
+Q        sue    
+E        jimmy  
+Z        johnny 
+B        9      
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_7,pic_x_7 from btsel01;
+
+PIC_X_7  PIC_X_7
+-------  -------
+
+michael  michael
+walter   walter 
+bobby    bobby  
+7        7      
+sue      sue    
+jimmy    jimmy  
+johnny   johnny 
+9        9      
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_7,binary_64_s,decimal_1
++>      from btsel01;
+
+PIC_X_7  BINARY_64_S            DECIMAL_1
+-------  ---------------------  ---------
+
+michael               2000.000          7
+walter                 200.000          4
+bobby                 1200.000          5
+7                     1500.000          5
+sue                   1200.000          1
+jimmy                 2000.000          8
+johnny                2000.000          9
+9                     2000.000          7
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_long from btsel01;
+
+PIC_X_LONG
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bat                                                                                                                                                                                                     
+bob                                                                                                                                                                                                     
+bop                                                                                                                                                                                                     
+dum                                                                                                                                                                                                     
+pat                                                                                                                                                                                                     
+pop                                                                                                                                                                                                     
+rat                                                                                                                                                                                                     
+rum                                                                                                                                                                                                     
+
+--- 8 row(s) selected.
+>>
+>>      select var_char from btsel01;
+
+VAR_CHAR
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+thomas                                                                                                                                                                                                                                                       
+B                                                                                                                                                                                                                                                            
+B                                                                                                                                                                                                                                                            
+jimmy                                                                                                                                                                                                                                                        
+christopher                                                                                                                                                                                                                                                  
+marilyn                                                                                                                                                                                                                                                      
+thomas                                                                                                                                                                                                                                                       
+thomas                                                                                                                                                                                                                                                       
+
+--- 8 row(s) selected.
+>>
+>>      select binary_signed from btsel01;
+
+BINARY_SIGNED
+-------------
+
+           60
+         8000
+           50
+         1000
+        -5000
+         3000
+         2000
+         4000
+
+--- 8 row(s) selected.
+>>
+>>      select binary_32_u from btsel01;
+
+BINARY_32_U
+-----------
+
+      90.00
+      50.00
+      60.00
+      80.00
+      90.00
+      80.00
+      40.00
+      70.00
+
+--- 8 row(s) selected.
+>>
+>>      select binary_64_s from btsel01;
+
+BINARY_64_S          
+---------------------
+
+             2000.000
+              200.000
+             1200.000
+             1500.000
+             1200.000
+             2000.000
+             2000.000
+             2000.000
+
+--- 8 row(s) selected.
+>>
+>>      select pic_comp_1 from btsel01;
+
+PIC_COMP_1          
+--------------------
+
+                 500
+                  50
+                  60
+                 500
+                3000
+                 500
+                  50
+                 500
+
+--- 8 row(s) selected.
+>>
+>>      select pic_comp_2 from btsel01;
+
+PIC_COMP_2
+----------
+
+       .40
+       .12
+       .79
+       .20
+       .30
+       .50
+       .60
+       .10
+
+--- 8 row(s) selected.
+>>
+>>      select pic_comp_3 from btsel01;
+
+PIC_COMP_3  
+------------
+
+   100.60000
+   100.70000
+   100.80000
+   100.90000
+   100.99000
+   100.99900
+   100.99990
+   100.99999
+
+--- 8 row(s) selected.
+>>
+>>      select small_int from btsel01;
+
+SMALL_INT
+---------
+
+       90
+       10
+     1000
+       80
+     2000
+     9000
+     8000
+       90
+
+--- 8 row(s) selected.
+>>
+>>      select medium_int from btsel01;
+
+MEDIUM_INT
+----------
+
+      8000
+     10000
+      8000
+      9000
+      8000
+      1000
+      5000
+     10000
+
+--- 8 row(s) selected.
+>>
+>>      select large_int from btsel01;
+
+LARGE_INT           
+--------------------
+
+                 200
+          1000000000
+               -1000
+                 999
+            -1000000
+                2000
+                   0
+                1000
+
+--- 8 row(s) selected.
+>>
+>>      select decimal_1 from btsel01;
+
+DECIMAL_1
+---------
+
+        7
+        4
+        5
+        5
+        1
+        8
+        9
+        7
+
+--- 8 row(s) selected.
+>>
+>>      select decimal_2_signed from btsel01;
+
+DECIMAL_2_SIGNED
+----------------
+
+             .50
+             .60
+             .70
+             .80
+             .90
+             .93
+             .97
+             .99
+
+--- 8 row(s) selected.
+>>
+>>      select decimal_3_unsigned from btsel01;
+
+DECIMAL_3_UNSIGNED
+------------------
+
+               140
+                90
+               100
+               120
+                80
+               150
+               110
+               110
+
+--- 8 row(s) selected.
+>>
+>>      select pic_decimal_1 from btsel01;
+
+PIC_DECIMAL_1
+-------------
+
+          6.1
+          1.1
+          2.1
+          4.1
+          5.1
+          7.1
+          8.1
+          3.1
+
+--- 8 row(s) selected.
+>>
+>>      select pic_decimal_2 from btsel01;
+
+PIC_DECIMAL_2
+-------------
+
+         .600
+         .100
+         .200
+         .400
+         .500
+         .700
+         .800
+         .300
+
+--- 8 row(s) selected.
+>>
+>>      select pic_decimal_3 from btsel01;
+
+PIC_DECIMAL_3
+-------------
+
+            6
+            1
+            2
+            4
+            5
+            7
+            8
+            3
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_a from btsel06;
+
+PIC_X_A
+-------
+
+joe    
+joe    
+joe    
+joe    
+pam    
+sue    
+sue    
+sue    
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_b from btsel06;
+
+PIC_X_B
+-------
+
+A      
+B      
+C      
+Z      
+D      
+C      
+D      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_c from btsel06;
+
+PIC_X_C
+-------
+
+jo     
+to     
+go     
+in     
+al     
+by     
+so     
+on     
+
+--- 8 row(s) selected.
+>>
+>>      select col_1 from btsel06;
+
+COL_1
+-----
+
+  100
+  300
+  100
+  100
+  900
+  300
+  200
+  200
+
+--- 8 row(s) selected.
+>>
+>>      select col_3 from btsel06;
+
+COL_3
+-----
+
+  200
+  400
+  200
+  100
+  900
+  500
+  300
+  100
+
+--- 8 row(s) selected.
+>>
+>>      select col_5 from btsel06;
+
+COL_5
+-----
+
+ 1000
+ 1000
+ 1000
+  200
+ 1000
+ 1000
+ 1000
+  400
+
+--- 8 row(s) selected.
+>>
+>>      select col_7 from btsel06;
+
+COL_7
+-----
+
+ 1000
+ 1000
+ 1000
+  100
+ 1000
+ 1000
+ 1000
+  100
+
+--- 8 row(s) selected.
+>>
+>>      select col_21 from btsel06;
+
+COL_21     
+-----------
+
+       1000
+       1000
+       1000
+        100
+       1000
+       1000
+       1000
+        200
+
+--- 8 row(s) selected.
+>>
+>>      select col_23 from btsel06;
+
+COL_23     
+-----------
+
+       1000
+       1000
+       1000
+        100
+       1000
+       1000
+       1000
+        100
+
+--- 8 row(s) selected.
+>>
+>>      select col_25 from btsel06;
+
+COL_25     
+-----------
+
+       1000
+       1000
+       1000
+        200
+       1000
+       1000
+       1000
+        400
+
+--- 8 row(s) selected.
+>>
+>>      select col_27 from btsel06;
+
+COL_27    
+----------
+
+      1000
+      1000
+      1000
+       100
+      1000
+      1000
+      1000
+       100
+
+--- 8 row(s) selected.
+>>
+>>      select col_29 from btsel06;
+
+COL_29    
+----------
+
+      1000
+      1000
+      1000
+        50
+      1000
+      1000
+      1000
+       100
+
+--- 8 row(s) selected.
+>>
+>>      select col_41 from btsel06;
+
+COL_41     
+-----------
+
+    1000.00
+    1000.00
+    1000.00
+     100.00
+    1000.00
+    1000.00
+    1000.00
+     200.00
+
+--- 8 row(s) selected.
+>>
+>>      select col_43 from btsel06;
+
+COL_43     
+-----------
+
+    1000.00
+    1000.00
+    1000.00
+     100.00
+    1000.00
+    1000.00
+    1000.00
+     100.00
+
+--- 8 row(s) selected.
+>>
+>>      select col_45 from btsel06;
+
+COL_45    
+----------
+
+   1000.00
+   1000.00
+   1000.00
+    200.00
+   1000.00
+   1000.00
+   1000.00
+    400.00
+
+--- 8 row(s) selected.
+>>
+>>      select col_47 from btsel06;
+
+COL_47    
+----------
+
+   1000.00
+   1000.00
+   1000.00
+    100.00
+   1000.00
+   1000.00
+   1000.00
+    100.00
+
+--- 8 row(s) selected.
+>>
+>>      select col_61 from btsel06;
+
+COL_61              
+--------------------
+
+                1000
+                1000
+                1000
+                 100
+                1000
+                1000
+                1000
+                 200
+
+--- 8 row(s) selected.
+>>
+>>      select col_63 from btsel06;
+
+COL_63              
+--------------------
+
+                1000
+                1000
+                1000
+                 100
+                1000
+                1000
+                1000
+                 100
+
+--- 8 row(s) selected.
+>>
+>>      select col_65 from btsel06;
+
+COL_65              
+--------------------
+
+                1000
+                1000
+                1000
+                 200
+                1000
+                1000
+                1000
+                 400
+
+--- 8 row(s) selected.
+>>
+>>      select col_67 from btsel06;
+
+COL_67             
+-------------------
+
+               1000
+               1000
+               1000
+                100
+               1000
+               1000
+               1000
+                100
+
+--- 8 row(s) selected.
+>>
+>>      select col_69 from btsel06;
+
+COL_69             
+-------------------
+
+               1000
+               1000
+               1000
+                 50
+               1000
+               1000
+               1000
+                100
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_1 from btsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select binary_32_u from btsel03;
+
+BINARY_32_U
+-----------
+
+       5.00
+       6.00
+       6.00
+    1000.00
+      50.00
+       6.00
+       6.00
+      70.00
+
+--- 8 row(s) selected.
+>>
+>>      select var_char from btsel04;
+
+VAR_CHAR
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bill                                                                                                                                                                                                                                                       
+bob                                                                                                                                                                                                                                                        
+bobby                                                                                                                                                                                                                                                      
+christopher                                                                                                                                                                                                                                                
+marilyn                                                                                                                                                                                                                                                    
+sue                                                                                                                                                                                                                                                        
+tom                                                                                                                                                                                                                                                        
+william                                                                                                                                                                                                                                                    
+
+--- 8 row(s) selected.
+>>
+>>      select col_4 from btsel05;
+
+COL_4
+-----
+
+amy  
+cathy
+debra
+debby
+debbi
+cammy
+tammy
+pammy
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_c from btsel07;
+
+PIC_X_C
+-------
+
+P      
+al     
+al     
+al     
+bo     
+di     
+ed     
+ek     
+em     
+jo     
+
+--- 10 row(s) selected.
+>>
+>>      select pic_252 from btsel08;
+
+PIC_252
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+valley                                                                                                                                                                                                                                                      
+george                                                                                                                                                                                                                                                      
+alexander                                                                                                                                                                                                                                                   
+harveys                                                                                                                                                                                                                                                     
+joseph                                                                                                                                                                                                                                                      
+Q                                                                                                                                                                                                                                                           
+squaw                                                                                                                                                                                                                                                       
+carltons                                                                                                                                                                                                                                                    
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_7 from btsel09;
+
+PIC_X_7
+-------
+
+     30
+     20
+     70
+     40
+    100
+     30
+     77
+     50
+      0
+      0
+      0
+      0
+
+--- 12 row(s) selected.
+>>
+>>      select binary_32_signed from btsel10;
+
+BINARY_32_SIGNED
+----------------
+
+             100
+           -1000
+           -1000
+            -100
+            -100
+               0
+             100
+            -100
+
+--- 8 row(s) selected.
+>>
+>>      select char_10 from btsel11;
+
+CHAR_10   
+----------
+
+gone      
+ebedafiih 
+abadefih  
+done      
+inside    
+ebediih   
+none      
+house     
+
+--- 8 row(s) selected.
+>>
+>>      select medium_int from pvsel01;
+
+MEDIUM_INT
+----------
+
+      8000
+     10000
+      8000
+      9000
+      8000
+      1000
+      5000
+     10000
+
+--- 8 row(s) selected.
+>>
+>>      select pic_x_1 from pvsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select new_name_2 from pvsel03;
+
+NEW_NAME_2 
+-----------
+
+       5.00
+       6.00
+       6.00
+       6.00
+
+--- 4 row(s) selected.
+>>
+>>      select pic_comp_1 from pvsel04;
+
+PIC_COMP_1          
+--------------------
+
+                 200
+                 300
+                 500
+                1000
+                2000
+                3000
+
+--- 6 row(s) selected.
+>>
+>>      select col_4 from svsel11 ;
+
+COL_4
+-----
+
+    6
+    1
+    2
+    2
+    4
+    5
+    5
+    7
+    8
+    3
+
+--- 10 row(s) selected.
+>>
+>>      select new_name_3 from svsel13;
+
+NEW_NAME_3
+----------
+
+A         
+7         
+7         
+B         
+
+--- 4 row(s) selected.
+>>
+>>      select new_name_3 from svsel14;
+
+NEW_NAME_3
+----------
+
+7         
+A         
+B         
+
+--- 3 row(s) selected.
+>>-- <end-input>
+>>
+>>
+>>-- <testcase A1>
+>>
+>>--  <detail>
+>>--    select normal simple testcase - this testcase tests the use
+>>--    of SELECT DISTINCT and SELECT ALL statements.
+>>
+>>
+>>-- <template>
+>>--    US00
+>>
+>>
+>>      select distinct char_1 from btsel01;
+
+CHAR_1
+------
+
+D     
+A     
+E     
+C     
+
+--- 4 row(s) selected.
+>>
+>>      select all char_1 from btsel01;
+
+CHAR_1
+------
+
+D     
+A     
+A     
+D     
+E     
+C     
+C     
+D     
+
+--- 8 row(s) selected.
+>>
+>>      select distinct medium_int from btsel01;
+
+MEDIUM_INT
+----------
+
+      8000
+     10000
+      9000
+      1000
+      5000
+
+--- 5 row(s) selected.
+>>
+>>      select all medium_int from btsel01;
+
+MEDIUM_INT
+----------
+
+      8000
+     10000
+      8000
+      9000
+      8000
+      1000
+      5000
+     10000
+
+--- 8 row(s) selected.
+>>
+>>      select distinct pic_x_1 from btsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+Q      
+
+--- 3 row(s) selected.
+>>
+>>      select all pic_x_1 from btsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select distinct * from btsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+Q      
+
+--- 3 row(s) selected.
+>>
+>>      select all * from btsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select distinct binary_32_u from btsel03;
+
+BINARY_32_U
+-----------
+
+       5.00
+       6.00
+    1000.00
+      50.00
+      70.00
+
+--- 5 row(s) selected.
+>>
+>>      select all binary_32_u from btsel03;
+
+BINARY_32_U
+-----------
+
+       5.00
+       6.00
+       6.00
+    1000.00
+      50.00
+       6.00
+       6.00
+      70.00
+
+--- 8 row(s) selected.
+>>
+>>      select distinct * from btsel03;
+
+PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S          
+-------  -----------  --------  -------  ---------------------
+
+A               5.00  make           90                 200.00
+7               6.00  joe            80                1200.00
+8               6.00  joe            80                1200.00
+5            1000.00  5             100                1000.00
+michael        50.00  dave           50                1500.00
+7               6.00  john           80                2000.00
+B               6.00  mark           80                3000.00
+michael        70.00  joan           50                4000.00
+
+--- 8 row(s) selected.
+>>
+>>      select all * from btsel03;
+
+PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S          
+-------  -----------  --------  -------  ---------------------
+
+A               5.00  make           90                 200.00
+7               6.00  joe            80                1200.00
+8               6.00  joe            80                1200.00
+5            1000.00  5             100                1000.00
+michael        50.00  dave           50                1500.00
+7               6.00  john           80                2000.00
+B               6.00  mark           80                3000.00
+michael        70.00  joan           50                4000.00
+
+--- 8 row(s) selected.
+>>
+>>      select distinct medium_int from btsel04;
+
+MEDIUM_INT 
+-----------
+
+       1000
+        999
+        200
+       2000
+
+--- 4 row(s) selected.
+>>
+>>      select all medium_int from btsel04;
+
+MEDIUM_INT 
+-----------
+
+       1000
+        999
+        200
+        200
+       2000
+       1000
+       1000
+       2000
+
+--- 8 row(s) selected.
+>>
+>>      select distinct col_1 from btsel05;
+
+COL_1
+-----
+
+pablo
+peggy
+lowry
+howie
+
+--- 4 row(s) selected.
+>>
+>>      select all col_1 from btsel05;
+
+COL_1
+-----
+
+pablo
+peggy
+lowry
+lowry
+howie
+lowry
+lowry
+lowry
+
+--- 8 row(s) selected.
+>>
+>>      select distinct col_6 from btsel06;
+
+COL_6
+-----
+
+   50
+  100
+
+--- 2 row(s) selected.
+>>
+>>      select all col_6 from btsel06;
+
+COL_6
+-----
+
+   50
+   50
+   50
+  100
+   50
+   50
+   50
+  100
+
+--- 8 row(s) selected.
+>>
+>>      select distinct pic_x_a from btsel07;
+
+PIC_X_A
+-------
+
+ al    
+B      
+JO     
+P      
+al     
+jo     
+
+--- 6 row(s) selected.
+>>
+>>      select all pic_x_a from btsel07;
+
+PIC_X_A
+-------
+
+P      
+ al    
+al     
+al     
+al     
+ al    
+B      
+jo     
+JO     
+jo     
+
+--- 10 row(s) selected.
+>>
+>>      select distinct large_int from btsel08;
+
+LARGE_INT           
+--------------------
+
+                4000
+                3000
+                2000
+                1000
+                 400
+                 300
+                 200
+                 100
+
+--- 8 row(s) selected.
+>>
+>>      select all large_int from btsel08;
+
+LARGE_INT           
+--------------------
+
+                4000
+                3000
+                2000
+                1000
+                 400
+                 300
+                 200
+                 100
+
+--- 8 row(s) selected.
+>>
+>>      select distinct pic_x_6 from btsel09;
+
+PIC_X_6
+-------
+
+      0
+     11
+     77
+     10
+     90
+     20
+     15
+
+--- 7 row(s) selected.
+>>
+>>      select all pic_x_6 from btsel09;
+
+PIC_X_6
+-------
+
+      0
+      0
+      0
+      0
+     11
+     77
+     10
+     90
+     20
+     15
+     10
+     15
+
+--- 12 row(s) selected.
+>>
+>>      select distinct binary_unsigned,binary_32_signed from
++>      btsel10;
+
+BINARY_UNSIGNED  BINARY_32_SIGNED
+---------------  ----------------
+
+             80               100
+            100             -1000
+            100              -100
+             60                 0
+            500               100
+
+--- 5 row(s) selected.
+>>
+>>      select all binary_unsigned,binary_32_signed from
++>      btsel10;
+
+BINARY_UNSIGNED  BINARY_32_SIGNED
+---------------  ----------------
+
+             80               100
+            100             -1000
+            100             -1000
+            100              -100
+            100              -100
+             60                 0
+            500               100
+            100              -100
+
+--- 8 row(s) selected.
+>>
+>>      select distinct decimal_10,binary_unsigned,binary_32_signed
++>      from btsel11;
+
+DECIMAL_10   BINARY_UNSIGNED  BINARY_32_SIGNED
+-----------  ---------------  ----------------
+
+        200             9999              -100
+        200               50                50
+        160              200               200
+        160              500               500
+        100              100                60
+        100             8888                 0
+         50             7777                 0
+
+--- 7 row(s) selected.
+>>
+>>      select all decimal_10,binary_unsigned,binary_32_signed
++>      from btsel11;
+
+DECIMAL_10   BINARY_UNSIGNED  BINARY_32_SIGNED
+-----------  ---------------  ----------------
+
+        200             9999              -100
+        200               50                50
+        160              200               200
+        160              500               500
+        160              500               500
+        100              100                60
+        100             8888                 0
+         50             7777                 0
+
+--- 8 row(s) selected.
+>>
+>>      select distinct medium_int from pvsel01;
+
+MEDIUM_INT
+----------
+
+      8000
+     10000
+      9000
+      1000
+      5000
+
+--- 5 row(s) selected.
+>>
+>>      select all medium_int from pvsel01;
+
+MEDIUM_INT
+----------
+
+      8000
+     10000
+      8000
+      9000
+      8000
+      1000
+      5000
+     10000
+
+--- 8 row(s) selected.
+>>
+>>      select distinct pic_x_1 from pvsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+Q      
+
+--- 3 row(s) selected.
+>>
+>>      select all pic_x_1 from pvsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select distinct new_name_2 from pvsel03;
+
+NEW_NAME_2 
+-----------
+
+       5.00
+       6.00
+
+--- 2 row(s) selected.
+>>
+>>      select all new_name_2 from pvsel03;
+
+NEW_NAME_2 
+-----------
+
+       5.00
+       6.00
+       6.00
+       6.00
+
+--- 4 row(s) selected.
+>>
+>>      select distinct medium_int from pvsel04;
+
+MEDIUM_INT 
+-----------
+
+       1000
+        999
+       2000
+
+--- 3 row(s) selected.
+>>
+>>      select all medium_int from pvsel04;
+
+MEDIUM_INT 
+-----------
+
+       1000
+        999
+       2000
+       1000
+       1000
+       2000
+
+--- 6 row(s) selected.
+>>
+>>      select distinct col_3 from svsel11;
+
+COL_3     
+----------
+
+      8000
+     10000
+      9000
+      1000
+      5000
+
+--- 5 row(s) selected.
+>>
+>>      select all col_3 from svsel11;
+
+COL_3     
+----------
+
+      8000
+     10000
+      8000
+      8000
+      9000
+      8000
+      8000
+      1000
+      5000
+     10000
+
+--- 10 row(s) selected.
+>>
+>>      select distinct pic_comp_1 from svsel13;
+
+PIC_COMP_1          
+--------------------
+
+                 200
+                 300
+                 500
+
+--- 3 row(s) selected.
+>>
+>>      select all pic_comp_1 from svsel13;
+
+PIC_COMP_1          
+--------------------
+
+                 300
+                 200
+                 200
+                 500
+
+--- 4 row(s) selected.
+>>
+>>      select distinct new_name_1 from svsel14;
+
+NEW_NAME_1
+----------
+
+        80
+        90
+
+--- 2 row(s) selected.
+>>
+>>      select all new_name_1 from svsel14;
+
+NEW_NAME_1
+----------
+
+        80
+        90
+        80
+
+--- 3 row(s) selected.
+>>-- <end-input>
+>>
+>>-- <testcase A2>
+>>
+>>-- <detail>
+>>--     select normal simple test case - this test case tests the
+>>--     selection of SYSKEY.
+>>
+>>-- <template>
+>>--    US00
+>>
+>>
+>>       select SYSKEY from btsel02;
+
+SYSKEY              
+--------------------
+
+  216172782170180609
+  216172782170180610
+  216172782170180611
+  216172782170180612
+  216172782170180613
+  216172782170180614
+  216172782170180615
+  216172782170180616
+
+--- 8 row(s) selected.
+>>
+>>       select btsel02.*,SYSKEY from btsel02;
+
+PIC_X_1  SYSKEY              
+-------  --------------------
+
+B          216172782170180609
+C          216172782170180610
+B          216172782170180611
+Q          216172782170180612
+B          216172782170180613
+C          216172782170180614
+Q          216172782170180615
+Q          216172782170180616
+
+--- 8 row(s) selected.
+>>
+>>       select SYSKEY from btsel03;
+
+SYSKEY              
+--------------------
+
+  216172782159534337
+  216172782159534338
+  216172782159534339
+  216172782159534340
+  216172782159534341
+  216172782159534342
+  216172782159534343
+  216172782159534344
+
+--- 8 row(s) selected.
+>>
+>>       select btsel03.*,SYSKEY from btsel03;
+
+PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S            SYSKEY
+-------  -----------  --------  -------  ---------------------  --------------------
+
+A               5.00  make           90                 200.00    216172782159534337
+7               6.00  joe            80                1200.00    216172782159534338
+8               6.00  joe            80                1200.00    216172782159534339
+5            1000.00  5             100                1000.00    216172782159534340
+michael        50.00  dave           50                1500.00    216172782159534341
+7               6.00  john           80                2000.00    216172782159534342
+B               6.00  mark           80                3000.00    216172782159534343
+michael        70.00  joan           50                4000.00    216172782159534344
+
+--- 8 row(s) selected.
+>>
+>>       select SYSKEY from btsel04;
+
+SYSKEY              
+--------------------
+
+  216172782152933121
+  216172782152933122
+  216172782152933125
+  216172782152933127
+  216172782152933128
+  216172782152933123
+  216172782152933124
+  216172782152933126
+
+--- 8 row(s) selected.
+>>
+>>       select btsel04.*,SYSKEY from btsel04;
+
+VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1            SYSKEY
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------  --------------------
+
+tom                                                                                                                                                                                                                                                                 1000  7                         200    216172782152933121
+bob                                                                                                                                                                                                                                                                  999  A                         300    216172782152933122
+sue                                                                                                                                                                                                                                                                  200  sue                       100    216172782152933123
+bobby                                                                                                                                                                                                                                                                200  sue                       100    216172782152933124
+bill                                                                                                                                                                                                                                                                2000  B                         500    216172782152933125
+christopher                                                                                                                                                                                                                                                         1000  white                    1000    216172782152933126
+william                                                                                                                                                                                                                                                             1000  black                    2000    216172782152933127
+marilyn                                                                                                                                                                                                                                                             2000  green                    3000    216172782152933128
+
+--- 8 row(s) selected.
+>>
+>>       select SYSKEY, 'anchor literal for SYSKEY'
++>       from btsel05;
+
+SYSKEY                (EXPR)                   
+--------------------  -------------------------
+
+  216172782167689985  anchor literal for SYSKEY
+  216172782167689988  anchor literal for SYSKEY
+  216172782167689990  anchor literal for SYSKEY
+  216172782167689986  anchor literal for SYSKEY
+  216172782167689987  anchor literal for SYSKEY
+  216172782167689992  anchor literal for SYSKEY
+  216172782167689991  anchor literal for SYSKEY
+  216172782167689989  anchor literal for SYSKEY
+
+--- 8 row(s) selected.
+>>
+>>       select btsel05.*,SYSKEY, 'anchor literal for SYSKEY'
++>       from btsel05;
+
+PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10  SYSKEY                (EXPR)
+-------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------  --------------------  -------------------------
+
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy     216172782167689985  anchor literal for SYSKEY
+sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge     216172782167689986  anchor literal for SYSKEY
+deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk      216172782167689987  anchor literal for SYSKEY
+can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk      216172782167689988  anchor literal for SYSKEY
+box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk      216172782167689989  anchor literal for SYSKEY
+red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk      216172782167689990  anchor literal for SYSKEY
+why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk      216172782167689991  anchor literal for SYSKEY
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk      216172782167689992  anchor literal for SYSKEY
+
+--- 8 row(s) selected.
+>>
+>>         select new_name_4 from pvsel03;
+
+NEW_NAME_4          
+--------------------
+
+  216172782159534337
+  216172782159534338
+  216172782159534342
+  216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>         select pvsel03.*,new_name_4 from pvsel03;
+
+NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            NEW_NAME_4
+----------  -----------  ----------  --------------------  --------------------
+
+        90         5.00  A             216172782159534337    216172782159534337
+        80         6.00  7             216172782159534338    216172782159534338
+        80         6.00  7             216172782159534342    216172782159534342
+        80         6.00  B             216172782159534343    216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>         select new_name_4 from svsel13;
+
+NEW_NAME_4          
+--------------------
+
+  216172782159534337
+  216172782159534338
+  216172782159534342
+  216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>         select svsel13.*,new_name_4 from svsel13;
+
+NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1            NEW_NAME_4
+----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------  --------------------
+
+        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300    216172782159534337
+        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200    216172782159534338
+        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200    216172782159534342
+        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500    216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>         select new_name_1,new_name_4 from pvsel03;
+
+NEW_NAME_1  NEW_NAME_4          
+----------  --------------------
+
+        90    216172782159534337
+        80    216172782159534338
+        80    216172782159534342
+        80    216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>         select new_name_1,new_name_4 from svsel13;
+
+NEW_NAME_1  NEW_NAME_4          
+----------  --------------------
+
+        90    216172782159534337
+        80    216172782159534338
+        80    216172782159534342
+        80    216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>         select new_name_1,(new_name_4 + 100) from svsel13;
+
+NEW_NAME_1  (EXPR)              
+----------  --------------------
+
+        90    216172782159534437
+        80    216172782159534438
+        80    216172782159534442
+        80    216172782159534443
+
+--- 4 row(s) selected.
+>>--  <end-input>
+>>
+>>-- <testcase A3>
+>>
+>>--  <detail>
+>>--      select normal simple test case - this tests the use of
+>>--      SELECT *.
+>>
+>>--   <template>
+>>--      US00
+>>
+>>
+>>        select * from btsel01;
+
+CHAR_1  CHAR_10     PIC_X_1  PIC_X_7  PIC_X_LONG                                                                                                                                                                                                VAR_CHAR                                                                                                                                                                                                                                                       BINARY_SIGNED  BINARY_32_U  BINARY_64_S            PIC_COMP_1            PIC_COMP_2  PIC_COMP_3    SMALL_INT  MEDIUM_INT  LARGE_INT             DECIMAL_1  DECIMAL_2_SIGNED  DECIMAL_3_UNSIGNED  PIC_DECIMAL_1  PIC_DECIMAL_2  PIC_DECIMAL_3
+------  ----------  -------  -------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------------  -----------  ---------------------  --------------------  ----------  ------------  ---------  ----------  --------------------  ---------  ----------------  ------------------  -------------  -------------  -------------
+
+D       michelle    D        michael  rat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                 -5000        90.00               2000.000                   500         .40     100.80000         90        8000                   200          7               .93                 140            6.1           .600              6
+A       steven      C        walter   bob                                                                                                                                                                                                       B                                                                                                                                                                                                                                                                         50        50.00                200.000                    50         .12     100.90000         10       10000            1000000000          4               .50                  90            1.1           .100              1
+A       bobby       A        bobby    bop                                                                                                                                                                                                       B                                                                                                                                                                                                                                                                         60        60.00               1200.000                    60         .79     100.99000       1000        8000                 -1000          5               .60                 100            2.1           .200              2
+D       melissa     C        7        pop                                                                                                                                                                                                       jimmy                                                                                                                                                                                                                                                                   1000        80.00               1500.000                   500         .20     100.99990         80        9000                   999          5               .80                 120            4.1           .400              4
+E       monica      Q        sue      pat                                                                                                                                                                                                       christopher                                                                                                                                                                                                                                                             2000        90.00               1200.000                  3000         .30     100.99999       2000        8000              -1000000          1               .90                  80            5.1           .500              5
+C       maureen     E        jimmy    rum                                                                                                                                                                                                       marilyn                                                                                                                                                                                                                                                                 3000        80.00               2000.000                   500         .50     100.70000       9000        1000                  2000          8               .97                 150            7.1           .700              7
+C       marcia      Z        johnny   dum                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                  4000        40.00               2000.000                    50         .60     100.60000       8000        5000                     0          9               .99                 110            8.1           .800              8
+D       steven      B        9        bat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                  8000        70.00               2000.000                   500         .10     100.99900         90       10000                  1000          7               .70                 110            3.1           .300              3
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel03;
+
+PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S          
+-------  -----------  --------  -------  ---------------------
+
+A               5.00  make           90                 200.00
+7               6.00  joe            80                1200.00
+8               6.00  joe            80                1200.00
+5            1000.00  5             100                1000.00
+michael        50.00  dave           50                1500.00
+7               6.00  john           80                2000.00
+B               6.00  mark           80                3000.00
+michael        70.00  joan           50                4000.00
+
+--- 8 row(s) selected.
+>>
+>>        select btsel04.*
++>        from btsel04;
+
+VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
+
+tom                                                                                                                                                                                                                                                                 1000  7                         200
+bob                                                                                                                                                                                                                                                                  999  A                         300
+sue                                                                                                                                                                                                                                                                  200  sue                       100
+bobby                                                                                                                                                                                                                                                                200  sue                       100
+bill                                                                                                                                                                                                                                                                2000  B                         500
+christopher                                                                                                                                                                                                                                                         1000  white                    1000
+william                                                                                                                                                                                                                                                             1000  black                    2000
+marilyn                                                                                                                                                                                                                                                             2000  green                    3000
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel05;
+
+PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
+-------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
+
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
+sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge 
+deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk  
+can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk  
+box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk  
+red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk  
+why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk  
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel06;
+
+PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10  COL_21       COL_22       COL_23       COL_24       COL_25       COL_26       COL_27      COL_28      COL_29      COL_30      COL_41       COL_42       COL_43       COL_44       COL_45      COL_46      COL_47      COL_48      COL_61                COL_62                COL_63                COL_64                COL_65                COL_66                COL_67               COL_68               COL_69               COL_70
+-------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------  -----------  -----------  -----------  -----------  -----------  -----------  ----------  ----------  ----------  ----------  -----------  -----------  -----------  -----------  ----------  ----------  ----------  ----------  --------------------  --------------------  --------------------  --------------------  --------------------  --------------------  -------------------  -------------------  -------------------  -------------------
+
+joe      A        jo         100   1000    200   1000   1000     50   1000   1000   1000    1000         1000         1000         1000         1000         1000         1000        1000        1000        1000        1000      1000.00      1000.00      1000.00      1000.00     1000.00     1000.00     1000.00     1000.00                  1000                  1000                  1000                  1000                  1000                  1000                 1000                 1000                 1000                 1000
+joe      B        to         300   1000    400   1000   1000     50   1000   1000   1000    1000         1000         1000         1000         1000         1000         1000        1000        1000        1000        1000      1000.00      1000.00      1000.00      1000.00     1000.00     1000.00     1000.00     1000.00                  1000                  1000                  1000                  1000                  1000                  1000                 1000                 1000                 1000                 1000
+joe      C        go         100   1000    200   1000   1000     50   1000   1000   1000    1000         1000         1000         1000         1000         1000         1000        1000        1000        1000        1000      1000.00      1000.00      1000.00      1000.00     1000.00     1000.00     1000.00     1000.00                  1000                  1000                  1000                  1000                  1000                  1000                 1000                 1000                 1000                 1000
+joe      Z        in         100    200    100    200    200    100    100    100     50     100          100          200          100          200          200          100         100         100          50         100       100.00       200.00       100.00       200.00      200.00      100.00      100.00      100.00                   100                   200                   100                   200                   200                   100                  100                  100                   50                  100
+pam      D        al         900   1000    900   1000   1000     50   1000   1000   1000    1000         1000         1000         1000         1000         1000         1000        1000        1000        1000        1000      1000.00      1000.00      1000.00      1000.00     1000.00     1000.00     1000.00     1000.00                  1000                  1000                  1000                  1000                  1000                  1000                 1000                 1000                 1000                 1000
+sue      C        by         300   1000    500   1000   1000     50   1000   1000   1000    1000         1000         1000         1000         1000         1000         1000        1000        1000        1000        1000      1000.00      1000.00      1000.00      1000.00     1000.00     1000.00     1000.00     1000.00                  1000                  1000                  1000                  1000                  1000                  1000                 1000                 1000                 1000                 1000
+sue      D        so         200   1000    300   1000   1000     50   1000   1000   1000    1000         1000         1000         1000         1000         1000         1000        1000        1000        1000        1000      1000.00      1000.00      1000.00      1000.00     1000.00     1000.00     1000.00     1000.00                  1000                  1000                  1000                  1000                  1000                  1000                 1000                 1000                 1000                 1000
+sue      Q        on         200    400    100    100    400    100    100     50    100     200          200          400          100          100          400          100         100          50         100         200       200.00       400.00       100.00       100.00      400.00      100.00      100.00       50.00                   200                   400                   100                   100                   400                   100                  100                   50                  100                  200
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel07;
+
+PIC_X_A  PIC_X_B  PIC_X_C
+-------  -------  -------
+
+P        P        P      
+ al      F        al     
+al       F        al     
+al       Q        al     
+al       E        bo     
+ al      F        di     
+B        A        ed     
+jo       C        ek     
+JO       D        em     
+jo       Z        jo     
+
+--- 10 row(s) selected.
+>>
+>>        select * from btsel08;
+
+LARGE_INT             PIC_252                                                                                                                                                                                                                                                       PIC_1
+--------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----
+
+                4000  valley                                                                                                                                                                                                                                                        D    
+                3000  george                                                                                                                                                                                                                                                        D    
+                2000  alexander                                                                                                                                                                                                                                                     B    
+                1000  harveys                                                                                                                                                                                                                                                       B    
+                 400  joseph                                                                                                                                                                                                                                                        X    
+                 300  Q                                                                                                                                                                                                                                                             X    
+                 200  squaw                                                                                                                                                                                                                                                         X    
+                 100  carltons                                                                                                                                                                                                                                                      E    
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel09;
+
+PIC_X_A  PIC_X_2  PIC_X_3  PIC_X_4  PIC_X_5  PIC_X_6  PIC_X_7
+-------  -------  -------  -------  -------  -------  -------
+
+why      gone     R        billy          7       15       30
+sue      mary     Z        MARY           3       10       20
+red      long     S        tommy          5       15       70
+not      time     P        diane          7       20       40
+joe      over     W        maria          7       90      100
+deb      bill     Y        BILL           4       10       30
+can      come     X        TED            7       77       77
+box      here     R        debby          5       11       50
+_t%      junk     j        _%             0        0        0
+\ts      t_go     j        to%go          0        0        0
+\t_      junk     j        \%             0        0        0
+%t_      junk     j        %_             0        0        0
+
+--- 12 row(s) selected.
+>>
+>>        select * from btsel10;
+
+PIC_X_A  PIC_X_7  PIC_9_7  CHAR_10     DECIMAL_10   BINARY_UNSIGNED  BINARY_32_SIGNED
+-------  -------  -------  ----------  -----------  ---------------  ----------------
+
+sue      sue            1  ebedafiih           110               80               100
+bob      bobby          2  ebediih              90              100             -1000
+rob      bobby          2  ebediih              90              100             -1000
+tom      tom            3  abadefih            100              100              -100
+don      who           50  outside           10000              100              -100
+rod      for          400  inside               25               60                 0
+jon      does        1000  offsides          50000              500               100
+ron      they        2000  onsides           10000              100              -100
+
+--- 8 row(s) selected.
+>>
+>>        select * from btsel11;
+
+PIC_X_A  PIC_X_7  PIC_9_7  CHAR_10     DECIMAL_10   BINARY_UNSIGNED  BINARY_32_SIGNED
+-------  -------  -------  ----------  -----------  ---------------  ----------------
+
+bar      where        300  gone                200             9999              -100
+boe      tommy        200  ebedafiih           200               50                50
+bob      bob          100  abadefih            160              200               200
+car      who          400  done                160              500               500
+jar      how          600  inside              160              500               500
+dan      sue          100  ebediih             100              100                60
+tar      what         500  none                100             8888                 0
+mar      why           50  house                50             7777                 0
+
+--- 8 row(s) selected.
+>>
+>>        select * from pvsel01;
+
+BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
+-------------  --------------------  ----------  -------------  -------  -------  ---------
+
+        -5000                   200        8000              6  D        michael         90
+           50            1000000000       10000              1  C        walter          10
+           60                 -1000        8000              2  A        bobby         1000
+         1000                   999        9000              4  C        7               80
+         2000              -1000000        8000              5  Q        sue           2000
+         3000                  2000        1000              7  E        jimmy         9000
+         4000                     0        5000              8  Z        johnny        8000
+         8000                  1000       10000              3  B        9               90
+
+--- 8 row(s) selected.
+>>
+>>        select * from pvsel02;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>          select * from pvsel03;
+
+NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4          
+----------  -----------  ----------  --------------------
+
+        90         5.00  A             216172782159534337
+        80         6.00  7             216172782159534338
+        80         6.00  7             216172782159534342
+        80         6.00  B             216172782159534343
+
+--- 4 row(s) selected.
+>>
+>>        select * from pvsel04;
+
+VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
+
+tom                                                                                                                                                                                                                                                                 1000  7                         200
+bob                                                                                                                                                                                                                                                                  999  A                         300
+bill                                                                                                                                                                                                                                                                2000  B                         500
+christopher                                                                                                                                                                                                                                                         1000  white                    1000
+william                                                                                                                                                                                                                                                             1000  black                    2000
+marilyn                                                                                                                                                                                                                                                             2000  green                    3000
+
+--- 6 row(s) selected.
+>>
+>>        select * from svsel11;
+
+COL_1   COL_2                 COL_3       COL_4  COL_5  COL_6    COL_7   COL_8
+------  --------------------  ----------  -----  -----  -------  ------  -------
+
+ -5000                   200        8000      6  D      michael      90  7      
+    50            1000000000       10000      1  C      walter       10  A      
+    60                 -1000        8000      2  A      bobby      1000  7      
+    60                 -1000        8000      2  A      bobby      1000  8      
+  1000                   999        9000      4  C      7            80  michael
+  2000              -1000000        8000      5  Q      sue        2000  7      
+  2000              -1000000        8000      5  Q      sue        2000  8      
+  3000                  2000        1000      7  E      jimmy      9000  7      
+  4000                     0        5000      8  Z      johnny     8000  7      
+  8000                  1000       10000      3  B      9            90  7      
+
+--- 10 row(s) selected.
+>>
+>>        select * from svsel12;
+
+COL_1                 COL_3                 COL_4  COL_5  
+--------------------  --------------------  -----  -------
+
+               13060                     5  Z      7      
+
+--- 1 row(s) selected.
+>>
+>>          select * from svsel13;
+
+NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
+----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
+
+        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
+
+--- 4 row(s) selected.
+>>
+>>          select * from svsel14;
+
+NEW_NAME_1  NEW_NAME_3
+----------  ----------
+
+        80  7         
+        90  A         
+        80  B         
+
+--- 3 row(s) selected.
+>>--   <end-input>
+>>
+>>--  <testcase A4>
+>>
+>>-- <detail>
+>>--     select normal simple test case - tests the selection of
+>>--     an expression of a column, and selection of a constant.
+>>
+>>-- <template>
+>>--    US00
+>>
+>>
+>>      select distinct (medium_int * medium_int)
++>      from btsel01;
+
+(EXPR)              
+--------------------
+
+            64000000
+           100000000
+            81000000
+             1000000
+            25000000
+
+--- 5 row(s) selected.
+>>
+>>      select all (medium_int * medium_int)
++>      from btsel01;
+
+(EXPR)              
+--------------------
+
+            64000000
+           100000000
+            64000000
+            81000000
+            64000000
+             1000000
+            25000000
+           100000000
+
+--- 8 row(s) selected.
+>>
+>>      select +large_int from btsel01;
+
+LARGE_INT           
+--------------------
+
+                 200
+          1000000000
+               -1000
+                 999
+            -1000000
+                2000
+                   0
+                1000
+
+--- 8 row(s) selected.
+>>
+>>      select (+large_int) from btsel01;
+
+LARGE_INT           
+--------------------
+
+                 200
+          1000000000
+               -1000
+                 999
+            -1000000
+                2000
+                   0
+                1000
+
+--- 8 row(s) selected.
+>>
+>>      select -large_int from btsel01;
+
+(EXPR)              
+--------------------
+
+                -200
+         -1000000000
+                1000
+                -999
+             1000000
+               -2000
+                   0
+               -1000
+
+--- 8 row(s) selected.
+>>
+>>      select (-large_int) from btsel01;
+
+(EXPR)              
+--------------------
+
+                -200
+         -1000000000
+                1000
+                -999
+             1000000
+               -2000
+                   0
+               -1000
+
+--- 8 row(s) selected.
+>>
+>>      select (binary_32_u*2) from btsel01;
+
+(EXPR)               
+---------------------
+
+               180.00
+               100.00
+               120.00
+               160.00
+               180.00
+               160.00
+                80.00
+               140.00
+
+--- 8 row(s) selected.
+>>
+>>      select pic_9_7+binary_64_s from btsel03;
+
+(EXPR)               
+---------------------
+
+                290.0
+               1280.0
+               1280.0
+               1100.0
+               1550.0
+               2080.0
+               3080.0
+               4050.0
+
+--- 8 row(s) selected.
+>>
+>>      select medium_int - 100,pic_comp_1 - 100 from
++>      btsel04;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                 900                   100
+                 899                   200
+                 100                     0
+                 100                     0
+                1900                   400
+                 900                   900
+                 900                  1900
+                1900                  2900
+
+--- 8 row(s) selected.
+>>
+>>      select (pic_x_5 / 2),pic_x_6 from btsel09;
+
+(EXPR)   PIC_X_6
+-------  -------
+
+    3.5       15
+    1.5       10
+    2.5       15
+    3.5       20
+    3.5       90
+    2.0       10
+    3.5       77
+    2.5       11
+     .0        0
+     .0        0
+     .0        0
+     .0        0
+
+--- 12 row(s) selected.
+>>
+>>      select (decimal_10 + binary_unsigned),(binary_unsigned +
++>      binary_32_signed) from btsel10;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                 190                   180
+                 190                  -900
+                 190                  -900
+                 200                     0
+               10100                     0
+                  85                    60
+               50500                   600
+               10100                     0
+
+--- 8 row(s) selected.
+>>
+>>      select (decimal_10 + 100) from btsel11;
+
+(EXPR)              
+--------------------
+
+                 300
+                 300
+                 260
+                 260
+                 260
+                 200
+                 200
+                 150
+
+--- 8 row(s) selected.
+>>
+>>        select (new_name_1 - 1000),(new_name_2 + 1000)
++>        from svsel13;
+
+(EXPR)       (EXPR)               
+-----------  ---------------------
+
+       -910                1005.00
+       -920                1006.00
+       -920                1006.00
+       -920                1006.00
+
+--- 4 row(s) selected.
+>>
+>>      select (medium_int * pic_comp_1) from pvsel04;
+
+(EXPR)              
+--------------------
+
+              200000
+              299700
+             1000000
+             1000000
+             2000000
+             6000000
+
+--- 6 row(s) selected.
+>>
+>>      select 'large_int = ',large_int
++>      from btsel01;
+
+(EXPR)        LARGE_INT           
+------------  --------------------
+
+large_int =                    200
+large_int =             1000000000
+large_int =                  -1000
+large_int =                    999
+large_int =               -1000000
+large_int =                   2000
+large_int =                      0
+large_int =                   1000
+
+--- 8 row(s) selected.
+>>
+>>      select medium_int,'char_1 = ',char_1
++>      from btsel01;
+
+MEDIUM_INT  (EXPR)     CHAR_1
+----------  ---------  ------
+
+      8000  char_1 =   D     
+     10000  char_1 =   A     
+      8000  char_1 =   A     
+      9000  char_1 =   D     
+      8000  char_1 =   E     
+      1000  char_1 =   C     
+      5000  char_1 =   C     
+     10000  char_1 =   D     
+
+--- 8 row(s) selected.
+>>
+>>      select '100 =',100,'small_int =',small_int
++>      from btsel01;
+
+(EXPR)  (EXPR)  (EXPR)       SMALL_INT
+------  ------  -----------  ---------
+
+100 =      100  small_int =         90
+100 =      100  small_int =         10
+100 =      100  small_int =       1000
+100 =      100  small_int =         80
+100 =      100  small_int =       2000
+100 =      100  small_int =       9000
+100 =      100  small_int =       8000
+100 =      100  small_int =         90
+
+--- 8 row(s) selected.
+>>
+>>      select '100 * 10 =',100 * 10,'small_int =',small_int
++>      from btsel01;
+
+(EXPR)      (EXPR)       (EXPR)       SMALL_INT
+----------  -----------  -----------  ---------
+
+100 * 10 =         1000  small_int =         90
+100 * 10 =         1000  small_int =         10
+100 * 10 =         1000  small_int =       1000
+100 * 10 =         1000  small_int =         80
+100 * 10 =         1000  small_int =       2000
+100 * 10 =         1000  small_int =       9000
+100 * 10 =         1000  small_int =       8000
+100 * 10 =         1000  small_int =         90
+
+--- 8 row(s) selected.
+>>
+>>      select 'only a constant'
++>      from btsel01;
+
+(EXPR)         
+---------------
+
+only a constant
+only a constant
+only a constant
+only a constant
+only a constant
+only a constant
+only a constant
+only a constant
+
+--- 8 row(s) selected.
+>>
+>>--  select a string constant with a single quote in it
+>>
+>>      select 'test of single quote ('') '
++>      from btsel01;
+
+(EXPR)                   
+-------------------------
+
+test of single quote (') 
+test of single quote (') 
+test of single quote (') 
+test of single quote (') 
+test of single quote (') 
+test of single quote (') 
+test of single quote (') 
+test of single quote (') 
+
+--- 8 row(s) selected.
+>>
+>>--  select a string constant with a double quote in it
+>>
+>>-- <end-input>
+>>-- <testcase A5>
+>>
+>>--    <detail>
+>>--       select normal simple test case - this tests the use of
+>>--       the for browse access, for stable access,
+>>--       and for repeatable access clauses. No actual
+>>--       tests of the functionality of these clauses is done - this
+>>--       is a test of syntax only. Each of these clauses is checked
+>>--       for audited tables, non-audited tables, protection views,
+>>--       and shorthand views.
+>>
+>>--    <template>
+>>--       US00
+>>
+>>--    <comment> *** audited tables ***
+>>
+>>      select * from btsel01
++>         for browse access;
+
+CHAR_1  CHAR_10     PIC_X_1  PIC_X_7  PIC_X_LONG                                                                                                                                                                                                VAR_CHAR                                                                                                                                                                                                                                                       BINARY_SIGNED  BINARY_32_U  BINARY_64_S            PIC_COMP_1            PIC_COMP_2  PIC_COMP_3    SMALL_INT  MEDIUM_INT  LARGE_INT             DECIMAL_1  DECIMAL_2_SIGNED  DECIMAL_3_UNSIGNED  PIC_DECIMAL_1  PIC_DECIMAL_2  PIC_DECIMAL_3
+------  ----------  -------  -------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -------------  -----------  ---------------------  --------------------  ----------  ------------  ---------  ----------  --------------------  ---------  ----------------  ------------------  -------------  -------------  -------------
+
+D       michelle    D        michael  rat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                 -5000        90.00               2000.000                   500         .40     100.80000         90        8000                   200          7               .93                 140            6.1           .600              6
+A       steven      C        walter   bob                                                                                                                                                                                                       B                                                                                                                                                                                                                                                                         50        50.00                200.000                    50         .12     100.90000         10       10000            1000000000          4               .50                  90            1.1           .100              1
+A       bobby       A        bobby    bop                                                                                                                                                                                                       B                                                                                                                                                                                                                                                                         60        60.00               1200.000                    60         .79     100.99000       1000        8000                 -1000          5               .60                 100            2.1           .200              2
+D       melissa     C        7        pop                                                                                                                                                                                                       jimmy                                                                                                                                                                                                                                                                   1000        80.00               1500.000                   500         .20     100.99990         80        9000                   999          5               .80                 120            4.1           .400              4
+E       monica      Q        sue      pat                                                                                                                                                                                                       christopher                                                                                                                                                                                                                                                             2000        90.00               1200.000                  3000         .30     100.99999       2000        8000              -1000000          1               .90                  80            5.1           .500              5
+C       maureen     E        jimmy    rum                                                                                                                                                                                                       marilyn                                                                                                                                                                                                                                                                 3000        80.00               2000.000                   500         .50     100.70000       9000        1000                  2000          8               .97                 150            7.1           .700              7
+C       marcia      Z        johnny   dum                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                  4000        40.00               2000.000                    50         .60     100.60000       8000        5000                     0          9               .99                 110            8.1           .800              8
+D       steven      B        9        bat                                                                                                                                                                                                       thomas                                                                                                                                                                                                                                                                  8000        70.00               2000.000                   500         .10     100.99900         90       10000                  1000          7               .70                 110            3.1           .300              3
+
+--- 8 row(s) selected.
+>>
+>>      select * from btsel02
++>         for stable access;
+
+PIC_X_1
+-------
+
+B      
+C      
+B      
+Q      
+B      
+C      
+Q      
+Q      
+
+--- 8 row(s) selected.
+>>
+>>      select * from btsel03
++>         for repeatable access;
+
+PIC_X_7  BINARY_32_U  PIC_X4_A  PIC_9_7  BINARY_64_S          
+-------  -----------  --------  -------  ---------------------
+
+A               5.00  make           90                 200.00
+7               6.00  joe            80                1200.00
+8               6.00  joe            80                1200.00
+5            1000.00  5             100                1000.00
+michael        50.00  dave           50                1500.00
+7               6.00  john           80                2000.00
+B               6.00  mark           80                3000.00
+michael        70.00  joan           50                4000.00
+
+--- 8 row(s) selected.
+>>
+>>-- <comment>  *** non-audited table ***
+>>
+>>
+>>      select * from btsel05
++>         for browse access;
+
+PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
+-------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
+
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
+sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge 
+deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk  
+can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk  
+box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk  
+red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk  
+why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk  
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
+
+--- 8 row(s) selected.
+>>
+>>      select * from btsel05
++>         for stable access;
+
+PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
+-------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
+
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
+sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge 
+deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk  
+can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk  
+box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk  
+red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk  
+why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk  
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
+
+--- 8 row(s) selected.
+>>
+>>      select * from btsel05
++>         for repeatable access;
+
+PIC_X_A  PIC_X_B  PIC_X_C  COL_1  COL_2  COL_3  COL_4  COL_5  COL_6  COL_7  COL_8  COL_9  COL_10
+-------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----  -----  ------
+
+joe      A        al       pablo  david  amy    amy    steve  steve  walt   mojo   joe    percy 
+sue      A        in       peggy  diane  zora   cathy  mary   mary   rhoda  debra  sue    madge 
+deb      D        jo       lowry  mary   sunny  debra  junk   junk   junk   junk   junk   junk  
+can      D        by       lowry  steve  slope  debby  junk   junk   junk   junk   junk   junk  
+box      C        to       howie  debra  snow   debbi  junk   junk   junk   junk   junk   junk  
+red      B        go       lowry  sue    ski    cammy  junk   junk   junk   junk   junk   junk  
+why      B        so       lowry  amy    squaw  tammy  junk   junk   junk   junk   junk   junk  
+not      B        on       lowry  mary   mogul  pammy  junk   junk   junk   junk   junk   junk  
+
+--- 8 row(s) selected.
+>>
+>>-- <comment>  *** views ***
+>>
+>>
+>>      select * from pvsel01
++>         for browse access;
+
+BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
+-------------  --------------------  ----------  -------------  -------  -------  ---------
+
+        -5000                   200        8000              6  D        michael         90
+           50            1000000000       10000              1  C        walter          10
+           60                 -1000        8000              2  A        bobby         1000
+         1000                   999        9000              4  C        7               80
+         2000              -1000000        8000              5  Q        sue           2000
+         3000                  2000        1000              7  E        jimmy         9000
+         4000                     0        5000              8  Z        johnny        8000
+         8000                  1000       10000              3  B        9               90
+
+--- 8 row(s) selected.
+>>
+>>      select * from pvsel01
++>         for stable access;
+
+BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
+-------------  --------------------  ----------  -------------  -------  -------  ---------
+
+        -5000                   200        8000              6  D        michael         90
+           50            1000000000       10000              1  C        walter          10
+           60                 -1000        8000              2  A        bobby         1000
+         1000                   999        9000              4  C        7               80
+         2000              -1000000        8000              5  Q        sue           2000
+         3000                  2000        1000              7  E        jimmy         9000
+         4000                     0        5000              8  Z        johnny        8000
+         8000                  1000       10000              3  B        9               90
+
+--- 8 row(s) selected.
+>>
+>>      select * from pvsel01
++>         for repeatable access;
+
+BINARY_SIGNED  LARGE_INT             MEDIUM_INT  PIC_DECIMAL_3  PIC_X_1  PIC_X_7  SMALL_INT
+-------------  --------------------  ----------  -------------  -------  -------  ---------
+
+        -5000                   200        8000              6  D        michael         90
+           50            1000000000       10000              1  C        walter          10
+           60                 -1000        8000              2  A        bobby         1000
+         1000                   999        9000              4  C        7               80
+         2000              -1000000        8000              5  Q        sue           2000
+         3000                  2000        1000              7  E        jimmy         9000
+         4000                     0        5000              8  Z        johnny        8000
+         8000                  1000       10000              3  B        9               90
+
+--- 8 row(s) selected.
+>>
+>>-- <comment> svsel15 must be accessed for browse access (mixed view)
+>>
+>>      select * from svsel15
++>         for browse access;
+
+MIXED_1  MIXED_2  MIXED_3  MIXED_4  MIXED_5  MIXED_11  MIXED_12  MIXED_13  MIXED_21  MIXED_22  MIXED_23
+-------  -------  -------  -------  -------  --------  --------  --------  --------  --------  --------
+
+joe      A        al       pablo    david    joe       A         jo        B         A         ed      
+joe      A        al       pablo    david    joe       C         go        jo        C         ek      
+sue      A        in       peggy    diane    sue       C         by        jo        C         ek      
+sue      A        in       peggy    diane    sue       D         so        JO        D         em      
+sue      A        in       peggy    diane    sue       Q         on        al        Q         al      
+joe      A        al       pablo    david    joe       Z         in        jo        Z         jo      
+
+--- 6 row(s) selected.
+>>
+>>      select * from svsel14
++>      for browse access;
+
+NEW_NAME_1  NEW_NAME_3
+----------  ----------
+
+        80  7         
+        90  A         
+        80  B         
+
+--- 3 row(s) selected.
+>>
+>>      select * from svsel13
++>      for browse access;
+
+NEW_NAME_1  NEW_NAME_2   NEW_NAME_3  NEW_NAME_4            VAR_CHAR                                                                                                                                                                                                                                                     MEDIUM_INT   PIC_X_7  PIC_COMP_1
+----------  -----------  ----------  --------------------  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  -------  --------------------
+
+        90         5.00  A             216172782159534337  bob                                                                                                                                                                                                                                                                  999  A                         300
+        80         6.00  7             216172782159534338  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  7             216172782159534342  tom                                                                                                                                                                                                                                                                 1000  7                         200
+        80         6.00  B             216172782159534343  bill                                                                                                                                                                                                                                                                2000  B                         500
+
+--- 4 row(s) selected.
+>>
+>>-- <end-input>
+>>
+>>-- <testcase A6>
+>>
+>>--    <detail>
+>>--       select normal simple test case - this tests the selection
+>>--       of aggregate functions (COUNT, AVG, MAX, MIN, SUM). The
+>>--       following attributes of aggregates are tested:
+>>--           SELECT all set function (function argument a value expression,
+>>--                                    optionally preceded by ALL, value
+>>--                                    expression a simple column spec)
+>>--           SELECT distinct set function (function argument a column spec,
+>>--                                         preceded by DISTINCT)
+>>--           SELECT the average, max, min, sum of expressions
+>>--           SELECT an aggregate expression involving SYSKEY
+>>--           SELECT an expression with aggregates in it
+>>--           SELECT more than one aggregate
+>>
+>>
+>>--    <template>
+>>--       US00
+>>
+>>--    <comment> select ALL
+>>
+>>      select count(*)
++>      from btsel01;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>
+>>      select avg(medium_int)
++>      from pvsel01;
+
+(EXPR)              
+--------------------
+
+                7375
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> test use of white space inside aggregate
+>>
+>>     select avg (ALL pic_comp_1)
++>         from svsel13;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>
+>>      select max(
++>      binary_64_s)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+             2000.000
+
+--- 1 row(s) selected.
+>>
+>>      select max(ALL
++>       large_int)
++>      from pvsel01;
+
+(EXPR)              
+--------------------
+
+          1000000000
+
+--- 1 row(s) selected.
+>>
+>>      select min(col_2
++>      )
++>      from svsel11;
+
+(EXPR)              
+--------------------
+
+            -1000000
+
+--- 1 row(s) selected.
+>>
+>>      select min
++>      (ALL decimal_2_signed)
++>      from btsel01;
+
+(EXPR)
+------
+
+   .50
+
+--- 1 row(s) selected.
+>>
+>>
+>>      select sum(new_name_2)
++>      from pvsel03;
+
+(EXPR)               
+---------------------
+
+                23.00
+
+--- 1 row(s) selected.
+>>
+>>      select sum(ALL col_4)
++>      from svsel11;
+
+(EXPR)              
+--------------------
+
+                  43
+
+--- 1 row(s) selected.
+>>
+>>      select max(pic_x_1)
++>      from btsel02;
+
+(EXPR)
+------
+
+Q     
+
+--- 1 row(s) selected.
+>>
+>>      select max(ALL new_name_3)
++>      from pvsel03;
+
+(EXPR) 
+-------
+
+B      
+
+--- 1 row(s) selected.
+>>
+>>      select min(var_char)
++>      from svsel13;
+
+(EXPR)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+bill                                                                                                                                                                                                                                                       
+
+--- 1 row(s) selected.
+>>
+>>      select min(ALL pic_x_a)
++>      from btsel05;
+
+(EXPR)
+------
+
+box   
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> select DISTINCT
+>>
+>>      select AVG(distinct binary_32_u)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+                65.00
+
+--- 1 row(s) selected.
+>>
+>>      select MAX(distinct medium_int)
++>      from pvsel01;
+
+(EXPR)    
+----------
+
+     10000
+
+--- 1 row(s) selected.
+>>
+>>      select MIN(distinct new_name_1)
++>      from svsel13;
+
+(EXPR) 
+-------
+
+     80
+
+--- 1 row(s) selected.
+>>
+>>      select SUM(distinct binary_64_s)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+             4900.000
+
+--- 1 row(s) selected.
+>>
+>>      select count(distinct medium_int)
++>      from pvsel01;
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>
+>>
+>>        select count(distinct var_char)
++>        from svsel13;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>      select max(distinct pic_x_long)
++>      from btsel01;
+
+(EXPR)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+rum                                                                                                                                                                                                     
+
+--- 1 row(s) selected.
+>>
+>>      select min(distinct var_char)
++>      from btsel01;
+
+(EXPR)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+B                                                                                                                                                                                                                                                            
+
+--- 1 row(s) selected.
+>>
+>>-- <comment> select an expression inside an aggregate
+>>
+>>      select avg(binary_32_u * 2)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+               140.00
+
+--- 1 row(s) selected.
+>>
+>>      select avg(ALL binary_32_u + pic_comp_1)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+               715.00
+
+--- 1 row(s) selected.
+>>
+>>        select max(new_name_1 * new_name_1)
++>        from pvsel03;
+
+(EXPR)              
+--------------------
+
+                8100
+
+--- 1 row(s) selected.
+>>
+>>        select max(ALL new_name_1 / new_name_2)
++>        from svsel13;
+
+(EXPR)               
+---------------------
+
+           18.0000000
+
+--- 1 row(s) selected.
+>>
+>>      select min((-binary_signed) - decimal_3_unsigned)
++>      from btsel01;
+
+(EXPR)     
+-----------
+
+      -8110
+
+--- 1 row(s) selected.
+>>
+>>      select min(ALL large_int * small_int)
++>      from pvsel01;
+
+(EXPR)              
+--------------------
+
+         -2000000000
+
+--- 1 row(s) selected.
+>>
+>>      select sum ((col_1 + col_4) + 1000)
++>      from svsel11;
+
+(EXPR)              
+--------------------
+
+               25213
+
+--- 1 row(s) selected.
+>>
+>>      select sum(ALL -1000 + small_int)
++>      from btsel01;
+
+(EXPR)              
+--------------------
+
+               12270
+
+--- 1 row(s) selected.
+>>
+>>--    <comment> select an expression with SYSKEY in an aggregate
+>>
+>>?ignore
+>>      select avg(SYSKEY + binary_64_s)
++>      from btsel03;
+>>
+>>      select max(SYSKEY / 3 + medium_int)
++>      from btsel04;
+>>
+>>        select min(new_name_4 * 2 + 1000)
++>        from pvsel03;
+>>
+>>        select sum(new_name_4 + new_name_4)
++>        from svsel13;
+>>
+>>      select COUNT(DISTINCT SYSKEY)
++>      from btsel04;
+>>
+>>      select AVG(DISTINCT SYSKEY)
++>      from btsel04;
+>>?ignore
+>>
+>>--    <comment> select expression of aggregates
+>>
+>>      select AVG(pic_decimal_1)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+                  4.6
+
+--- 1 row(s) selected.
+>>
+>>      select (sum(pic_decimal_1) / count(*))
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+                  4.6
+
+--- 1 row(s) selected.
+>>
+>>      select max(binary_32_u) + min(binary_32_u)
++>      from btsel01;
+
+(EXPR)               
+---------------------
+
+               130.00
+
+--- 1 row(s) selected.
+>>
+>>      select (sum(pic_decimal_3) + sum(small_int)) / 100
++>      from pvsel01;
+
+(EXPR)              
+--------------------
+
+                 203
+
+--- 1 row(s) selected.
+>>
+>>        select avg(pic_comp_1 ) + sum(pic_comp_1)
++>        from svsel13;
+
+(EXPR)              
+--------------------
+
+                1500
+
+--- 1 row(s) selected.
+>>
+>>      select sum(decimal_1) + sum(decimal_1)
++>      from btsel01;
+
+(EXPR)              
+--------------------
+
+                  92
+
+--- 1 row(s) selected.
+>>
+>>--    <comment> select multiple aggregates
+>>
+>>      select avg(decimal_3_unsigned),avg(decimal_1)
++>      from btsel01;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                 112                     5
+
+--- 1 row(s) selected.
+>>
+>>      select sum(pic_decimal_3),avg(pic_decimal_3),max(pic_decimal_3),
++>             min(pic_decimal_3),count(distinct pic_decimal_3),count(*)
++>      from pvsel01;
+
+(EXPR)                (EXPR)                (EXPR)  (EXPR)  (EXPR)                (EXPR)
+--------------------  --------------------  ------  ------  --------------------  --------------------
+
+                  36                     4       8       1                     8                     8
+
+--- 1 row(s) selected.
+>>
+>>        select sum(new_name_1), avg(new_name_2), max(new_name_3)
++>        from svsel13;
+
+(EXPR)                (EXPR)                 (EXPR) 
+--------------------  ---------------------  -------
+
+                 330                   5.75  B      
+
+--- 1 row(s) selected.
+>>
+>>      select sum(binary_32_u), sum(distinct binary_32_u)
++>      from btsel01;
+
+(EXPR)                 (EXPR)               
+---------------------  ---------------------
+
+               560.00                 390.00
+
+--- 1 row(s) selected.
+>>
+>>      select avg(binary_32_u), max(distinct binary_32_u)
++>      from btsel01;
+
+(EXPR)                 (EXPR)     
+---------------------  -----------
+
+                70.00        90.00
+
+--- 1 row(s) selected.
+>>--    <end-input>
+>>
+>>-- <end-test>
+>>LOG;

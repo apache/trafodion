@@ -1,0 +1,5 @@
+537a538,541
+> >>--explain select * from t013t1;
+> >>--explain options 'f' select * from t013t1;
+> >>--explain insert into t013t1 values (1);
+> >>--explain options 'f' insert into t013t1 values (1);

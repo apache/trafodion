@@ -1,0 +1,1098 @@
+LOG aqatdml04 Clear;
+---------------------------------------------------------------------
+-- File: SQLQAT13                Formerly $cats.testest.qat010t
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--    This test unit is a positive local test for the select statement.
+-- It tests only normal (non-join and non-subquery) select statements,
+-- with GROUP BY, HAVING, and ORDER BY clauses, and also tests some
+-- complex queries that use all the clauses together.
+--    This test unit uses the select global data base (sqldd01d).
+-- Each test case in this test unit tests a particular feature of complex
+-- normal select statements. For each test case, each base table
+-- (tables 01 - 11) and at least one protection view and one shorthand
+-- view have at least one select statement executed against them. This
+-- is to assure that the particular feature that the test case is testing
+-- works on all types of objects.
+--    The test cases in this test unit are as follows:
+--       testcase A0: GROUP BY
+--       testcase A1: HAVING
+--       testcase A2: ORDER BY
+--       testcase A3: complex queries - combinations of all features
+--       testcase A4: use of locking clauses (for stable access, for browse access, keep
+--                    lock) with above clauses
+--       testcase A5: variation of ordering of WHERE,GROUP BY,HAVING,
+--                    ORDER ,locking clauses
+--       testcase A6: variation of amount of white space (including
+--                    blank lines) and upper/lower case
+--       testcase A7: select aggregate functions with GROUP BY
+--       testcase A8: select aggregate functions with HAVING and complex
+--                    queries
+--       testcase A9: select .. GROUP BY with ordinal numbers
+
+-- All testcases are documented further below
+
+-- *************    end test unit comments   **************
+
+
+-- <testunit-summary>
+-- select #3 pos/loc ufi norm complex
+
+
+-- <testunit-specs>
+
+-- mode-type ufi
+-- test-type functional
+-- form-type pos/loc
+-- select-test
+
+-- <testcase A0>
+
+--    <detail>
+--       normal select test - this tests the use of a GROUP BY clause
+--       in a select stmt.
+
+--    <templates>
+--       US00
+
+--    <ufi-input>
+      select char_1,decimal_1 from btsel01
+      group by char_1,decimal_1;
+--    <ufi-input>
+      select pic_x_1 from btsel02
+      group by pic_x_1;
+--    <ufi-input>
+      select pic_x_7,pic_9_7 from btsel03
+      group by pic_9_7,pic_x_7 ;
+--    <ufi-input>
+      select medium_int from btsel04
+      group by medium_int;
+--    <ufi-input>
+      select pic_x_b from btsel05
+      group by pic_x_b;
+
+--    <ufi-input>
+      select pic_x_a,col_1,col_3 from btsel06
+      group by pic_x_a,col_1,col_3;
+
+--     try grouping by same column twice, column name adjacent to itself
+--    <ufi-input>
+      select pic_x_a,col_1,col_3 from btsel06
+      group by pic_x_a, col_1,col_1, col_3;
+
+--     try grouping by same column twice, column not adjacent to itself
+--    <ufi-input>
+      select pic_x_a,col_1,col_3 from btsel06
+      group by pic_x_a,col_1,col_3, col_1;
+
+--    <ufi-input>
+      select pic_x_a from btsel07
+      group by pic_x_a;
+--    <ufi-input>
+      select pic_1,large_int from btsel08
+      group by pic_1,large_int;
+
+
+--     only select one of the group by fields
+--    <ufi-input>
+      select large_int from btsel08
+      group by pic_1,large_int;
+
+--    <ufi-input>
+      select pic_x_5 from btsel09
+      group by pic_x_5;
+--    <ufi-input>
+      select binary_32_signed from btsel10
+      group by binary_32_signed;
+--    <ufi-input>
+      select decimal_10 from btsel11
+      group by decimal_10;
+--    <ufi-input>
+      select new_name_1 from pvsel03
+      group by new_name_1;
+--    <ufi-input>
+      select new_name_1 from svsel13
+      group by new_name_1;
+--    <ufi-input>
+      select SYSKEY
+      from btsel04
+      group by SYSKEY;
+--    <ufi-input>
+      select medium_int * binary_64_s
+      from btsel01
+      group by medium_int,binary_64_s;
+--    <end-input>
+
+
+-- <testcase A1>
+
+--    <detail>
+--      select normal test case - this tests the use of a HAVING clause
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select char_1,decimal_1 from btsel01
+      group by char_1,decimal_1
+         having (decimal_1 > 1) and (decimal_1 < 9);
+--    <ufi-input>
+      select pic_x_1 from btsel02
+      group by pic_x_1
+      having pic_x_1 > 'B';
+
+-- <comment> test select from 0 groups
+--    <ufi-input>
+      select pic_x_1 from btsel02
+      group by pic_x_1
+      having pic_x_1 > 'Q';
+
+--    <ufi-input>
+      select pic_9_7,pic_x_7 from btsel03
+      group by pic_9_7, pic_x_7
+      having (pic_x_7 not like 'A') or (pic_x_7 not like 'B');
+--    <ufi-input>
+      select medium_int from btsel04
+      group by medium_int
+      having medium_int in (999,1000,2000);
+--    <ufi-input>
+      select pic_x_b from btsel05
+      group by pic_x_b
+      having pic_x_b not like 'C';
+--    <ufi-input>
+      select pic_x_a,col_1,col_3 from btsel06
+      group by pic_x_a,col_1,col_3
+      having col_1 between 100 and col_3;
+--    <ufi-input>
+      select pic_x_a from btsel07
+      group by pic_x_a
+      having pic_x_a in ('jo','al','P','JO',' al');
+--    <ufi-input>
+      select pic_1,large_int from btsel08
+      group by pic_1,large_int
+      having large_int in (100,200,1000,2000);
+--    <ufi-input>
+      select pic_x_5 from btsel09
+      group by pic_x_5
+      having pic_x_5 between 4 and 7;
+--    <ufi-input>
+      select binary_32_signed from btsel10
+      group by binary_32_signed
+      having binary_32_signed in (-100, -1000,100);
+--    <ufi-input>
+      select decimal_10 from btsel11
+      group by decimal_10
+         having decimal_10 <> 50;
+--    <ufi-input>
+      select new_name_1 from pvsel03
+      group by new_name_1
+      having new_name_1 = 80;
+--    <ufi-input>
+      select new_name_1 from svsel13
+      group by new_name_1
+      having new_name_1 = 80;
+--    <ufi-input>
+      select SYSKEY
+      from btsel04
+      group by SYSKEY
+      having SYSKEY > 0;
+--    <ufi-input>
+      select medium_int * binary_64_s
+      from btsel01
+      group by medium_int, binary_64_s
+         having medium_int + binary_64_s < 10000;
+--    <end-input>
+
+
+-- <testcase A2>
+
+--    <detail>
+--    select normal test case - this tests the use of an ORDER BY
+--    clause in a select stmt.
+
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select * from btsel01
+      order by char_1,decimal_1;
+--    <ufi-input>
+      select * from btsel02
+      order by pic_x_1 ASC;
+--    <ufi-input>
+--      select * from btsel03
+--      order by 4,1 DESC;
+--    <ufi-input>
+--      select * from btsel04
+--      order by 2;
+--    <ufi-input>
+      select * from btsel05
+      order by pic_x_b DESC;
+--    <ufi-input>
+      select * from btsel06
+      order by pic_x_a DESC,col_1,col_3 ASC;
+
+--     order by same column name, column name adjacent to itself
+--    <ufi-input>
+      select * from btsel06
+      order by pic_x_a , col_1,col_1, col_3 ;
+
+--     order by same column name, column name adjacent to itself
+--    <ufi-input>
+      select * from btsel06
+      order by pic_x_a , col_1, col_3, col_1 ;
+
+--     order by same column name, one ASC, one DESC
+--    <ufi-input>
+      select * from btsel06
+      order by pic_x_a , col_1 ASC, col_1 DESC, col_3 ;
+
+--    <ufi-input>
+      select * from btsel07
+      order by pic_x_a;
+--    <ufi-input>
+      select * from btsel08
+      order by 3  DESC, large_int ASC;
+--    <ufi-input>
+      select * from btsel09
+      order by pic_x_5;
+--    <ufi-input>
+      select * from btsel10
+      order by binary_32_signed;
+--    <ufi-input>
+      select * from btsel11
+      order by decimal_10;
+--    <ufi-input>
+      select * from pvsel03
+      order by new_name_1;
+--    <ufi-input>
+      select * from svsel13
+      order by new_name_1;
+
+--    <comment> order by SYSKEY
+--    <ufi-input>
+      select SYSKEY,*
+      from btsel03
+      order by 1;
+--    <ufi-input>
+      select btsel03.*,SYSKEY
+      from btsel03
+      order by 6;
+--    <ufi-input>
+      select btsel03.*,SYSKEY
+      from btsel03
+      order by 4,6;
+
+--     order by column not in select list
+--    <ufi-input>
+       select small_int
+       from btsel01
+       order by medium_int;
+
+--    <end-input>
+
+
+
+-- <testcase A3>
+
+--    <detail>
+--    select normal test unit - this tests some complex queries that
+--    use all the SELECT clauses together.
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select char_1, decimal_1
+      from btsel01
+      where (char_1 like '%') and
+            (var_char in ('B','jimmy','thomas','marilyn','christopher'))
+        and (binary_32_u between 50 and 100) and
+               (decimal_1 < (decimal_2_signed*100))
+      group by char_1,decimal_1
+      having decimal_1 between 2 and 8
+      order by decimal_1   DESC
+      for repeatable access;
+--    <ufi-input>
+      select distinct var_char,binary_64_s, pic_comp_1
+      from btsel01
+      where (char_1 like '%') and
+            (var_char in ('B','jimmy','thomas','marilyn','christopher'))
+        and (binary_32_u between 50 and 100) and
+               (decimal_1 < (decimal_2_signed*100))
+      group by binary_64_s,pic_comp_1, var_char
+      having binary_64_s > pic_comp_1
+      order by binary_64_s, binary_64_s DESC
+      for repeatable access;
+--    <ufi-input>
+      select (new_name_1 * new_name_1),new_name_3
+      from pvsel03
+      where (new_name_1 between new_name_2 and 100) and
+            (new_name_3 in ('A','B','7')) and
+            (new_name_3 like '_') and
+            (new_name_1 > (new_name_2 + 20))
+      group by new_name_1,new_name_3
+      having new_name_1 = 80
+      order by new_name_3 ASC
+      for stable access;
+--    <ufi-input>
+      select new_name_1,new_name_4
+      from svsel13
+      where ((var_char like 'b%') or (var_char like 'tom')) and
+            (pic_comp_1 in (200,300,400,500)) and
+            (new_name_1 between 80 and 90)
+      group by new_name_1,new_name_4
+      having new_name_1 = 80
+      order by new_name_1
+      for browse access;
+--    <ufi-input>
+      select medium_int,SYSKEY
+      from btsel04
+      where (medium_int > 200)
+      group by medium_int,SYSKEY
+      having medium_int in (999,1000,2000)
+      order by medium_int;
+--    <ufi-input>
+      select pic_x_b from btsel05
+      where col_1 = 'lowry'
+      group by pic_x_b;
+--    <ufi-input>
+      select * from btsel06
+         where col_6 < 90
+      order by pic_x_a,col_1;
+--    <ufi-input>
+      select pic_1,large_int from btsel08
+      where large_int >= 100
+      group by pic_1,large_int
+      having large_int in (100,200,1000,2000);
+--    <ufi-input>
+      select pic_x_5 from btsel09
+--       where pic_x_6 <> 11
+      group by pic_x_5
+      order by pic_x_5;
+--    <ufi-input>
+      select decimal_10 from btsel10
+      group by decimal_10
+      having decimal_10 in (90,100,110,10000,50000)
+      order by decimal_10;
+--    <end-input>
+
+
+
+-- <testcase A4>
+
+--    <detail>
+--     select normal test case - this tests the use of the for browse access,
+--     for stable access, and for repeatable access clauses with GROUP BY
+--     HAVING, and ORDER BY clauses. This is a test for syntax only - no actual
+--     checking of the locks obtained is done.
+
+--    <templates>
+--    US00
+
+--    <comment>  *****    audited tables  *****
+--    <ufi-input>
+      select large_int from btsel08
+      group by large_int
+      for browse access;
+--    <ufi-input>
+      select pic_x_5 from btsel09
+      group by pic_x_5
+      having pic_x_5 > 4
+      for stable access;
+--    <ufi-input>
+      select * from btsel10
+      order by pic_9_7
+      for repeatable access;
+
+--    <comment>  *****  non-audited tables *****
+--    <ufi-input>
+      select pic_x_b from btsel05
+      group by pic_x_b
+      for stable access;
+--    <ufi-input>
+      select pic_x_b from btsel05
+      group by pic_x_b
+      having (pic_x_b = 'D') or (pic_x_b = 'B')
+      for repeatable access;
+--    <ufi-input>
+      select * from btsel05
+      order by pic_x_b
+      for browse access;
+
+--    <comment>    **** views *****
+--    <ufi-input>
+      select new_name_1 from pvsel03
+      group by new_name_1
+      for repeatable access;
+--    <ufi-input>
+      select new_name_1 from svsel13
+      group by new_name_1
+      for repeatable access;
+--    <ufi-input>
+      select new_name_1 from pvsel03
+      group by new_name_1
+      having new_name_1 = 80
+      for browse access;
+--    <ufi-input>
+      select new_name_1 from svsel13
+      group by new_name_1
+      having new_name_1 = 80
+      for browse access;
+--    <ufi-input>
+      select * from pvsel03
+      order by new_name_1
+      for stable access;
+--    <ufi-input>
+      select * from svsel13
+      order by new_name_1
+      for stable access;
+--    <end-input>
+
+
+
+-- <testcase A5>
+
+--    <detail>
+--    select normal test unit - this test case checks that the ordering
+--    of the different SQL clauses that can appear in any order have
+--    no effect on the functionality of the statement. The select statement
+--    must have the SELECT clause first, followed by the FROM clause.
+--    All other clauses may appear in any order after that. The following
+--    tests will have the order of these clauses randomly varied from
+--    the standard order of SELECT-FROM-WHERE-GROUP BY-HAVING-ORDER BY-
+--    for browse access or for stable access or for repeatable access.
+
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select char_1, decimal_1
+      from btsel01
+      where (char_1 like '%') and
+            (var_char in ('B','jimmy','thomas','marilyn','christopher'))
+        and (binary_32_u between 50 and 100) and
+               (decimal_1 < decimal_2_signed)
+      group by char_1,decimal_1
+      having decimal_1 between 2 and 8
+      order by decimal_1   DESC
+      for repeatable access;
+
+
+
+--    <ufi-input>
+      select distinct var_char,binary_64_s, pic_comp_1
+      from btsel01
+      where (char_1 like '%') and
+            (var_char in ('B','jimmy','thomas','marilyn','christopher'))
+        and (binary_32_u between 50 and 100) and
+               (decimal_1 < decimal_2_signed)
+      group by binary_64_s,pic_comp_1, var_char
+      having binary_64_s > pic_comp_1
+      order by binary_64_s, binary_64_s DESC
+      for stable access;
+
+
+
+--    <ufi-input>
+      select new_name_1,new_name_4
+      from svsel13
+      where ((var_char like 'b%') or (var_char like 'tom')) and
+            (pic_comp_1 in (200,300,400,500)) and
+            (new_name_1 between 80 and 90)
+      group by new_name_1,new_name_4
+      having new_name_1 = 80
+      order by new_name_1;
+
+
+--    <ufi-input>
+      select medium_int,SYSKEY
+      from btsel04
+      where (medium_int > 200)
+      group by medium_int,SYSKEY
+      having medium_int in (999,1000,2000)
+      order by medium_int;
+
+--    <ufi-input>
+      select pic_x_b from btsel05
+      where col_1 = 'lowry'
+      group by pic_x_b;
+
+--    <ufi-input>
+      select * from btsel06
+      where col_6 < 90
+      order by pic_x_a,col_1;
+--    <ufi-input>
+      select pic_1,large_int from btsel08
+      where large_int >= 100
+      group by pic_1,large_int
+      having large_int in (100,200,1000,2000);
+--    <ufi-input>
+      select pic_x_5 from btsel09
+         where pic_x_6 <> 11
+      group by pic_x_5
+      order by pic_x_5;
+--    <ufi-input>
+      select decimal_10 from btsel10
+      group by decimal_10
+      having decimal_10 in (90,100,110,10000,50000)
+      order by decimal_10;
+--    <end-input>
+
+
+
+
+-- <testcase A6>
+
+--    <detail>
+--    select normal test case - this tests having the SQL statement
+--    spread over multiple lines and white space. Different variations
+--    on the number of blank lines, postioning of tokens on lines, and
+--    white space between tokens are tried. Variation of upper and lower
+--    case letters in SQL keywords and table names are tryed to assure
+--    both work equally.  These variations should not affect the
+--    functionality of the SQL statement.
+
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select
+       char_1
+       ,
+        decimal_1
+      from
+       btsel01
+      where
+       (
+       char_1
+        like
+        '%'
+        )
+        and
+            (
+            var_char
+             in
+              (
+             'B'
+             ,
+             'jimmy'
+             ,
+             'thomas'
+             ,
+             'marilyn'
+             ,
+             'christopher'
+             )
+             )
+        and
+         (
+         binary_32_u
+          between
+           50
+            and
+             100
+             )
+              and
+            (
+            decimal_1
+                <
+              decimal_2_signed
+              )
+      group
+       by
+        char_1
+        ,
+        decimal_1
+      having
+       decimal_1
+        between
+        2
+         and
+          8
+      order
+       by
+        decimal_1
+          DESC
+      repeatable
+       access
+       ;
+--    <ufi-input>
+
+
+      select distinct var_char,binary_64_s, pic_comp_1
+
+      from btsel01
+
+      where (char_1 like '%') and
+
+
+            (var_char in ('B','jimmy','thomas','marilyn','christopher'))
+
+        and (binary_32_u between 50 and 100) and
+
+               (decimal_1 < decimal_2_signed)
+
+      group by binary_64_s,pic_comp_1, var_char
+
+      having binary_64_s > pic_comp_1
+
+      order by binary_64_s, 2 DESC
+
+      for repeatable access
+
+
+      ;
+--    <ufi-input>
+      select                          (new_name_1*new_name_1),new_name_3
+      from                                                  pvsel03
+      where                    (new_name_1 between new_name_2 and 100) and
+(new_name_3 in ('A','B','7')) and
+                                               (new_name_3 like '_') and
+            (new_name_1 > (new_name_2 + 20))
+group                                                                     by
+            new_name_1,new_name_3
+      having new_name_1=80
+      order by new_name_3 ASC
+      stable                                                        access;
+--    <ufi-input>
+      SELECT new_name_1,new_name_4
+      FROM svsel13
+      WHERE ((var_char like 'b%') OR (var_char LIKE 'tom')) and
+            (pic_comp_1 IN (200,300,400,500)) AND
+            (new_name_1 BETWEEN 80 and 90)
+      group BY new_name_1,new_name_4
+      having new_name_1 = 80
+      ORDER by new_name_1
+
+
+      FOR
+
+
+                              broWSE
+
+
+
+                                                                   access;
+--    <ufi-input>
+      select medium_int,SYSKEY
+      from btsel04
+      where (medium_int > 200)
+      GROUP BY medium_int,SYSKEY
+      HAVING medium_int in (999,1000,2000)
+      order by medium_int;
+--    <ufi-input>
+      select PIC_X_B from BTSEL05
+      where COL_1 = 'lowry'
+      group by PIC_X_B;
+--    <ufi-input>
+      select * from btSeL06
+         where Col_6 < 90
+      order by pIc_X_a,cOL_1;
+
+--    <comment> test use of space between > and = in the >= sign
+--    <ufi-input>
+      select pic_1,large_int from btsel08
+where large_int >= 100 group by pic_1,large_int having large_int in
+      (100,200,1000,2000);
+--    <ufi-input>
+   select pic_x_5 from btsel09 where pic_x_6 <> 11
+      group by pic_x_5 order by pic_x_5;
+--    <ufi-input>
+select decimal_10 from btsel10
+group by decimal_10
+having decimal_10 in
+(
+90,100,110,10000,50000
+)
+order by decimal_10;
+--    <end-input>
+
+
+
+-- <testcase A7>
+
+--    <detail>
+--    select normal test case - this tests the selection
+--    of aggregate functions (COUNT, AVG, MAX, MIN, SUM). Aggregates
+--    are tested in the SELECT clause in conjunction with GROUP BY
+--    clauses.
+
+--    <templates>
+--    US00
+
+--    <comment> select ALL
+--    <ufi-input>
+      select binary_64_s,count(*)
+      from btsel01
+      group by binary_64_s;
+--    <ufi-input>
+      select avg(large_int)
+      from pvsel01
+      group by medium_int;
+--    <ufi-input>
+      select binary_64_s, pic_comp_1, min(ALL decimal_2_signed)
+      from btsel01
+      group by binary_64_s,pic_comp_1;
+--    <ufi-input>
+      select new_name_2, sum(new_name_2)
+      from pvsel03
+      group by new_name_2;
+--    <ufi-input>
+      select pic_comp_1,min(var_char)
+      from svsel13
+      group by pic_comp_1;
+
+--    <comment> select DISTINCT
+--    <ufi-input>
+      select pic_comp_1,AVG(distinct binary_32_u)
+      from btsel01
+      group by pic_comp_1;
+
+--    <ufi-input>
+      select new_name_1,count(distinct var_char)
+      from svsel13
+      group by new_name_1;
+--    <ufi-input>
+      select binary_64_s, min(distinct var_char)
+      from btsel01
+      group by binary_64_s;
+
+--    <comment> select an expression inside an aggregate
+--    <ufi-input>
+      select binary_64_s, avg(ALL binary_32_u + pic_comp_1)
+      from btsel01
+      group by binary_64_s;
+--    <ufi-input>
+      select medium_int, min(ALL large_int * small_int)
+      from pvsel01
+      group by medium_int;
+--    <ufi-input>
+      select medium_int, min(ALL large_int * medium_int)
+      from pvsel01
+      group by medium_int;
+
+--    <comment> select expression of aggregates
+--    <ufi-input>
+      select medium_int,(sum(pic_decimal_3) + sum(small_int)) / 100
+      from pvsel01
+      group by medium_int;
+--    <ufi-input>
+      select medium_int,(sum(pic_decimal_3) + sum(medium_int)) / 100
+      from pvsel01
+      group by medium_int;
+--    <ufi-input>
+      select pic_comp_1,avg(pic_comp_1 ) + sum(pic_comp_1)
+      from svsel13
+      group by pic_comp_1;
+--    <ufi-input>
+      select medium_int,sum(decimal_1) + sum(decimal_1)
+      from btsel01
+      group by medium_int;
+
+--    <ufi-input>
+      select medium_int,
+             sum(pic_decimal_3),avg(pic_decimal_3),max(pic_decimal_3),
+             min(pic_decimal_3),count(distinct pic_decimal_3),count(*)
+      from pvsel01
+      group by medium_int;
+
+--    <comment> queries with where predicates
+--    <ufi-input>
+      select binary_64_s, count(*)
+      from btsel01
+      where var_char = 'thomas'
+      group by binary_64_s;
+--    <ufi-input>
+      select pic_comp_1, SUM(distinct binary_64_s)
+      from btsel01
+      where binary_32_u > 50
+      group by pic_comp_1;
+--    <ufi-input>
+      select new_name_1, count(distinct var_char)
+      from svsel13
+      where (new_name_1 = 80) or (new_name_2 = 5)
+      group by new_name_1;
+
+--    <ufi-input>
+      select pic_comp_1, avg(ALL binary_32_u + pic_comp_1)
+      from btsel01
+         where (pic_comp_1 <> 60)
+      group by pic_comp_1;
+--    <ufi-input>
+      select binary_64_s, sum(decimal_1) + sum(decimal_1)
+      from btsel01
+         where decimal_3_unsigned <> 110
+      group by binary_64_s;
+--    <ufi-input>
+      select medium_int,avg(large_int)
+      from pvsel01
+         where small_int <> 8000
+      group by medium_int;
+
+--    <comment> select aggregate, group by SYSKEY
+--    <ufi-input>
+      select avg(pic_comp_1)
+      from btsel04
+      group by SYSKEY;
+--    <end-input>
+
+
+
+-- <testcase A8>
+
+--    <detail>
+--    select normal test case - this tests the selection of aggregate
+--    functions in HAVING clauses in conjunction with GROUP BY. Aggregates
+--    are also tested in some select statements with all clauses and locking
+--    clauses.
+
+
+
+--    <templates>
+--    US00
+
+--    <comment> test use of a HAVING clause with no GROUP BY clause
+--    <ufi-input>
+      select max(binary_32_u)
+      from btsel01
+      having sum(pic_decimal_3) > 30;
+--    <ufi-input>
+      select avg(pic_decimal_3)
+      from btsel01
+      having avg(pic_decimal_3) > 4;
+--    <ufi-input>
+      select count(*)
+      from pvsel01
+         having min(small_int) <= 10;
+--    <ufi-input>
+      select sum(col_4)
+      from svsel11
+      having count(*) = 8;
+
+--    <comment> test select from 0 groups
+--    <ufi-input>
+      select max(binary_64_s), min(binary_64_s)
+      from btsel03
+      group by pic_9_7
+      having pic_9_7 > 200;
+
+--    <ufi-input>
+      select binary_64_s,count(*)
+      from btsel01
+      group by binary_64_s
+         having sum(distinct pic_comp_1) < 1000;
+--    <ufi-input>
+      select binary_64_s,count(*)
+      from btsel01
+      group by binary_64_s
+         having binary_64_s <> 200;
+--    <ufi-input>
+      select binary_64_s,count(*)
+      from btsel01
+      group by binary_64_s
+      having sum(binary_64_s) > 2000;
+--    <ufi-input>
+      select binary_64_s
+      from btsel01
+      group by binary_64_s
+      having sum(binary_64_s) > 2000;
+--    <ufi-input>
+      select binary_64_s,count(*)
+      from btsel01
+      group by binary_64_s
+      having count(*) >= 2;
+--    <ufi-input>
+      select avg(large_int)
+      from pvsel01
+      group by medium_int
+      having sum(large_int) > 0;
+--    <ufi-input>
+      select binary_64_s, pic_comp_1, min(ALL decimal_2_signed)
+      from btsel01
+      group by binary_64_s, pic_comp_1
+      having max(binary_32_u) >= 50;
+--    <ufi-input>
+      select new_name_2, sum(new_name_2)
+      from pvsel03
+      group by new_name_2
+      having (sum(new_name_1) + min(new_name_1)) * 2 > 400;
+--    <ufi-input>
+      select pic_comp_1, min(var_char)
+      from svsel13
+      group by pic_comp_1
+         having min(new_name_1) + min(new_name_2) <> 86;
+--    <ufi-input>
+      select pic_comp_1, AVG(distinct binary_32_u)
+      from btsel01
+      group by pic_comp_1
+         having avg(pic_comp_2) < 0.5;
+--    <ufi-input>
+      select new_name_1
+      from svsel13
+      group by new_name_1
+      having sum(new_name_2) in (5,18);
+--    <ufi-input>
+      select binary_64_s, avg(ALL binary_32_u + pic_comp_1)
+      from btsel01
+      group by binary_64_s
+      having avg(ALL binary_32_u + pic_comp_1) > 100;
+--    <ufi-input>
+      select binary_64_s
+      from btsel01
+      group by binary_64_s
+      having avg(ALL binary_32_u + pic_comp_1) > 100;
+
+--    <comment> queries with where predicates
+--    <ufi-input>
+      select pic_comp_1, SUM(distinct binary_64_s)
+      from btsel01
+      where binary_32_u > 50
+      group by pic_comp_1
+      having sum(binary_signed) > 5000;
+--    <ufi-input>
+      select new_name_1, count(distinct var_char)
+      from svsel13
+      where (new_name_1 = 80) or (new_name_2 = 5)
+      group by new_name_1
+      having avg(new_name_2) in (5,6);
+--    <ufi-input>
+      select pic_comp_1, avg(ALL binary_32_u + pic_comp_1)
+      from btsel01
+         where (pic_comp_1 <> 60)
+      group by pic_comp_1
+         having min(binary_signed) < 1000;
+--    <ufi-input>
+      select binary_64_s, sum(decimal_1) + sum(decimal_1)
+      from btsel01
+         where decimal_3_unsigned <> 110
+      group by binary_64_s
+      having (max(pic_comp_2) between 0.2 and 0.99)
+            and (binary_64_s <> 1200);
+--    <ufi-input>
+      select medium_int, avg(large_int)
+      from pvsel01
+         where small_int <> 8000
+      group by medium_int
+      having max(pic_x_1) <> 'E';
+
+--    <comment> complex queries
+--    <ufi-input>
+      select pic_comp_1, SUM(distinct binary_64_s)
+      from btsel01
+      where binary_32_u > 50
+      group by pic_comp_1
+      having sum(binary_signed) > 5000
+      order by pic_comp_1, 2
+      for repeatable access;
+--    <ufi-input>
+      select new_name_1, count(distinct var_char)
+      from svsel13
+      where (new_name_1 = 80) or (new_name_2 = 5)
+      group by new_name_1
+      having avg(new_name_2) in (5,6)
+      order by 1, 2 ASC
+      for stable access;
+--    <ufi-input>
+      select pic_comp_1, avg(ALL binary_32_u + pic_comp_1)
+      from btsel01
+         where (pic_comp_1 <> 60)
+      group by pic_comp_1
+         having min(binary_signed) < 1000
+      order by pic_comp_1;
+--    <ufi-input>
+      select binary_64_s, sum(decimal_1) + sum(decimal_1)
+      from btsel01
+         where decimal_3_unsigned <> 110
+      and pic_comp_2 between 0.2 and 0.99
+      group by binary_64_s
+      order by 2;
+--    <ufi-input>
+      select medium_int, avg(large_int)
+      from pvsel01
+         where small_int <> 8000
+      group by medium_int
+      having max(pic_x_1) <> 'E'
+      order by medium_int
+      for browse access;
+
+--    <comment> select having aggregate(SYSKEY)
+--    <ufi-input>
+      select pic_comp_1
+      from btsel04
+      group by pic_comp_1
+      having avg(SYSKEY) > 0;
+
+-- <testcase A9>
+
+--    <detail>
+--    normal select test - this tests the use of ordinal numbers in
+--    a GROUP BY clause of a select statement.
+
+--    <templates>
+--    US00
+
+--    <ufi-input>
+      select char_1,decimal_1 from btsel01
+	group by char_1, decimal_1;
+
+--    <ufi-input>
+      select pic_x_1 from btsel02
+	group by pic_x_1;
+
+--    <ufi-input>
+      select pic_x_7,pic_9_7 from btsel03
+	group by pic_9_7, pic_x_7;
+
+--     try grouping by same column twice, column name adjacent to itself
+--    <ufi-input>
+      select pic_x_a,col_1,col_3 from btsel06
+	group by pic_x_a, col_1, col_1, col_3;
+
+--     try grouping by same column twice, column not adjacent to itself
+--    <ufi-input>
+      select pic_x_a,col_1,col_3 from btsel06
+	group by pic_x_a, col_1, col_3, col_1;
+
+--    <ufi-input>
+      select * from (select medium_int * 2, binary_64_s + 100
+      from btsel01)t(a,b)
+	group by a,b;
+
+--    <ufi-input>
+      select * from 
+      (select medium_int * 2, binary_64_s
+      from btsel01) t(a,b)
+      group by a,b;
+
+--    <ufi-input>
+      select medium_int, sum(pic_comp_1)
+      from btsel01
+      group by medium_int;
+
+--    <ufi-input>
+      select * from
+      (select medium_int * binary_64_s
+      from btsel01)t(a)
+      group by a;
+
+--    <ufi-input>
+      select a,sum(a) from
+      (select medium_int * binary_64_s
+      from btsel01) t(a)
+      group by a;
+
+--    <ufi-input>
+      select a,sum(b) from
+      (select medium_int * binary_64_s, medium_int
+      from btsel01) t(a,b)
+      group by a;
+
+
+--    <end-input>
+
+-- <end-test>
+LOG;

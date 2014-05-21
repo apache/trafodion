@@ -1,0 +1,593 @@
+#! /bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# =============================================================================
+# This file contain functions that:
+#
+#   - scans disk volumes and extract details about each SQL file
+#
+#  There is a one to one correspondence between a SQL partition and a 
+#  SQL file
+#
+#      Usage  - see printHelp function 
+#
+# Description:
+#
+#      To generate details via file scanning, mxtool info is called which
+#      opens each file with subvols starting with ZSD and files ending in 00.
+#      Details are extracted and saved in a temporary file.  One mxtool info job 
+#      is run per disk volume and distributed among available nodes.  Once each 
+#      job has completed information is merged, sorted, and put in a single file 
+#      called volFileList.
+#
+# =============================================================================
+
+# **************************************************************************
+# FUNCTION: printHelp
+# prints out help text
+function printHelp {
+  echo ""
+  echo "Description: monitors metadata tables"
+  echo "  Usage: "
+  echo "    sqsmdstats [<opts>] " 
+  echo ""
+  echo "     <opts> ::= <opt> [, <opt> ...] "
+  echo "     <opt> ::=  "
+  echo "         -c <retain_depth>  number of old results to retain"
+  echo "         -h | --help        display help text"
+  echo "         -n <num>           number of times to gather statistics"
+  echo "         <table list opts>"
+  echo "         -v                 run in verbose mode "
+  echo "         -w <wait interval> wait interval in minutes"
+  echo ""
+  echo "     <table list opts> ::= { -f <filename> | -t '<tables>' | -t smd }"
+  echo "     <filename> location of file containing three part names to check"
+  echo "     <tables> space separated list of tables to check "
+  echo ""
+  echo "  Example: "
+  echo "    sqsmdstats -w 30 -n 48 -t smd -v"
+  echo "      This request runs for 24 hours gathering statistics every" 
+  echo "      30 minutes for all system metadata tables"
+  echo " " 
+}
+
+# **************************************************************************
+# FUNCTION: chkInstance
+# check to see if the SeaQuest environment is up
+function chkInstance
+{
+  if [ -z $MY_SQROOT ]; then
+     echo "ERROR: You need to set up the MY_SQROOT environment variable "
+     echo "to continue using this script."
+     echo
+     echo "Exiting the sqsmdstats script." 
+     exit 1;
+  fi
+
+  $MY_SQROOT/sql/scripts/sqcheck -i 1 -d 1 > /dev/null 2>&1
+  sqcheck_result=$?
+
+  if   [ $sqcheck_result -eq 0 ]; then
+    echo "The SeaQuest environment is up."
+  elif [ $sqcheck_result -eq 1 ]; then
+    echo "ERROR:  The SeaQuest environment is only partially up."
+    echo
+    echo "Exiting the sqsmdstats script." 
+    exit 1;
+  elif [ $sqcheck_result -eq 2 ]; then
+    echo "ERROR:  The SeaQuest environment is not up."
+    echo
+    echo "Exiting the sqsmdstats script." 
+    exit 1;
+  else
+    echo "ERROR:  The SeaQuest environment is unknown."
+    echo
+    echo "Exiting the sqsmdstats script." 
+    exit 1;
+  fi
+}
+
+# **************************************************************************
+# FUNCTION:  printInfo
+# prints out messages to standard out and log
+#   Parameter 1 - message to print
+#   Parameter 2 - if 1, then add an extra line
+#
+# The generate_file_list system procedure calls this script to provide a
+# SQL interface.  All rows written to the resultsFile starting with a
+# "$", ERROR, *** ERROR, and --> are reported through the stored procedure
+# Other rows are ignored.
+function printInfo
+{
+  echo $1
+  echo $1 >> $resultsFile
+  if [ $2 -eq 1 ]; then
+   echo ""
+   echo "" >> $resultsFile
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: cleanUp
+# remove temporary tables.  
+function cleanUp {
+  rm  $sqlResultsFile > /dev/null 2>&1
+  rm  $csvResultsFile > /dev/null 2>&1
+  rm  $scriptAndLogLoc/sqsmdstats_stmts > /dev/null 2>&1
+  rm  $scriptAndLogLoc/*tar.gz > /dev/null 2>&1
+}
+
+# **************************************************************************
+# generate list of files from specified -t option
+function generateListOfTables
+{
+if [[ $listOfTablesSpecified -eq 0 ]]; then
+  return
+fi
+
+fileName=$scriptAndLogLoc/sqsmdstats_tables
+if [ "$listOfTables" == "smd" ]; then
+  printInfo "Start gathering list of tables $(date)" 0
+  sqlci > "$sqlResultsFile" 2>&1 << eof
+select 'TABLE' ||
+       'NAME:' as intro,
+       trim(substring (cat_name,1,20)) || '.' ||
+       trim(substring (schema_name,1,30)) ||  '.' ||
+       trim(substring (object_name, 1, 30) ) as table_name
+  from neo.hp_definition_schema.objects o,
+       hp_system_catalog.system_schema.catsys c,
+       hp_system_catalog.system_schema.schemata s
+  where object_security_class = 'SM'
+    and object_type = 'BT'
+    and object_name_space = 'TA'
+    and o.schema_uid = s.schema_uid
+    and s.cat_uid = c.cat_uid
+  for read uncommitted access
+union
+select 'TABLE' ||
+       'NAME:' as intro,
+       trim(substring (cat_name,1,20)) || '.' ||
+       trim(substring (schema_name,1,30)) ||  '.' ||
+       trim(substring (object_name, 1, 30) ) as table_name
+  from manageability.hp_definition_schema.objects o,
+       hp_system_catalog.system_schema.catsys c,
+       hp_system_catalog.system_schema.schemata s
+  where object_security_class = 'SM'
+    and object_type = 'BT'
+    and object_name_space = 'TA'
+    and o.schema_uid = s.schema_uid
+    and s.cat_uid = c.cat_uid
+  for read uncommitted access
+union
+select 'TABLE' ||
+       'NAME:' as intro,
+       trim(substring (cat_name,1,20)) || '.' ||
+       trim(substring (schema_name,1,30)) ||  '.' ||
+       trim(substring (object_name, 1, 30) ) as table_name
+  from hp_system_catalog.hp_definition_schema.objects o,
+       hp_system_catalog.system_schema.catsys c,
+       hp_system_catalog.system_schema.schemata s
+  where object_security_class = 'SM'
+    and object_type = 'BT'
+    and object_name_space = 'TA'
+    and o.schema_uid = s.schema_uid
+    and s.cat_uid = c.cat_uid 
+  for read uncommitted access
+  order by 2;
+eof
+    errorRows=`cat $sqlResultsFile | grep -e "\*\*\* ERROR" | wc -l`
+    if [ $errorRows -ne 0 ]; then
+      printInfo "ERROR: errors occurred while gathering smd tables" 0
+      cat $sqlResultsFile | grep -e "\*\*\* ERROR" >> $resultsFile
+      printInfo "For details, see log messages in $resultsFile" 0
+      printInfo "Exitting" 1
+      exit 3
+    fi
+    cat $sqlResultsFile | grep "TABLENAME:" | awk '{print $2}' > $fileName
+    printInfo "End gathering list of tables $(date)" 1
+  else
+    for table in $listOfTables; do
+      echo $table >> $fileName
+    done
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: gatherDiskStats
+# calls SQL with a disk label statistics command
+function gatherDiskStats
+{
+  #generateStmts
+  generateStmts
+  
+
+  # execute the requests
+  printInfo "Start gathering results $(date)" 0
+  sqlci -i $stmts > $sqlResultsFile
+  printInfo "Done gathering results $(date)" 1
+
+  # check for errors 
+  errorRows=`cat $sqlResultsFile | grep -e "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    printInfo "ERROR: errors occurred while gathering disk label statistics" 0
+    cat $sqlResultsFile | grep -e "\*\*\* ERROR" >> $resultsFile
+    printInfo "For details, see log messages in $resultsFile" 1
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: generateStmts
+# generates statements that gather disk label statistics
+# Later these statements will be executed
+function generateStmts
+{
+  # create a file containing the statements to execute
+  
+  startTime=$(date +"%Y%m%d_%H%M%S")
+  stmts=$scriptAndLogLoc/sqsmdstats_stmts
+  echo "-- List of statements to execute" > $stmts
+  cat $fileName | while read -r table 
+  do
+    ansiName=`echo $table | sed -e "s/\./ /g" | tr a-z A-Z`
+    parts=`echo $ansiName | wc -w`
+    if [ $parts -ne 3 ]; then
+      printInfo "ERROR: invalid object name found, please specify 3 parts: $objectSpecified" 0
+    fi
+
+     echo "select 'NEXT' || " >> $stmts
+     echo "       'ROW: ' as row_header, " >> $stmts 
+     echo "       '$startTime' as time_run, " >> $stmts
+     echo "       '$table' as table_name, " >> $stmts
+     echo "       sum(row_count) as row_count,  " >> $stmts
+     echo "       sum(inserted_row_count) as inserted_row_count,  " >> $stmts
+     echo "       sum(deleted_row_count) as deleted_row_count,  " >> $stmts
+     echo "       sum(updated_row_count) as updated_row_count,  " >> $stmts
+     echo "       sum(access_counter) as access_counter,  " >> $stmts
+     echo "       sum(current_eof) as current_eof " >> $stmts
+     echo "  from table (disk label statistics ($table)) " >> $stmts
+     echo "  for read uncommitted access; " >> $stmts
+  done
+}
+
+# **************************************************************************
+# FUNCTION: generateOutput
+# store results of disk label statistic query into a common separated list
+function generateOutput
+{
+  cat $sqlResultsFile | grep -e "NEXTROW:" | awk '{print $2", "$3", "$4", "$5", "$6", "$7", "$8", "$9}' >> $csvResultsFile
+}
+
+# **************************************************************************
+# FUNCTION: adjustSavedFiles
+# removes old versions of saved files, only retain $archiveCount versions
+# copies final list of files to $MY_SQROOT/logs/sqsmdstats_logs directory
+#   on all nodes
+function adjustSavedFiles
+{
+  printInfo "Start adjusting files" 0
+  numLogFiles=`ls $scriptAndLogLoc/sqsmdstats*.log | wc -l`
+  fileToRemove=""
+  while [ $numLogFiles -gt $archiveCount ]; 
+  do
+    logFile=`ls -tr $scriptAndLogLoc/*sqsmdstats*.log | head -1`
+    fileToRemove=$fileToRemove" "$logFile
+    if [ $verboseOn -eq 1 ]; then
+      printInfo "Found $numLogFiles files in the $scriptAndLogLoc directory containing past logs" 0
+    fi
+
+    #   Remove old files
+    if [ "$fileToRemove" != "" ]; then
+       printInfo "Removing file $fileToRemove" 0
+       rm $fileToRemove
+    fi
+    let numLogFiles=numLogFiles-1
+  done
+
+  # adjust log files in archive location
+  fileToRemove=""
+  numTarFiles=`ls $archiveLoc/disk_label_stats_*.tar.gz | wc -l`
+  while [ $numTarFiles -gt $archiveCount ]; 
+  do
+    tarFile=`ls -tr $archiveLoc/disk_label_stats_*.tar.gz | head -1`
+    fileToRemove=$tarFile
+    if [ $verboseOn -eq 1 ]; then
+      printInfo "Found $numTarFiles files in the $archiveLoc directory containing past tar files" 0
+    fi
+
+    #   Remove old files
+    if [ "$fileToRemove" != "" ]; then
+       printInfo "Removing file $fileToRemove" 0
+       rm $fileToRemove
+    fi
+    let numTarFiles=numTarFiles-1
+  done
+
+  printInfo "Done adjusting files" 1
+}
+
+##############################################################################
+#Main body of sqsmdstats script
+##############################################################################
+
+# Initialize variables
+verboseOn=0
+scriptAndLogLoc=
+retryInterval=1
+numberIntervals=1
+listOfTables=
+listOfTablesSpecified=0
+fileNameSpecified=0
+fileName=
+archiveCount=5
+archiveLoc=$TAR_DOWNLOAD_ROOT
+sleepTime=60
+
+scriptStartTime=$(date +"%Y%m%d_%H%M%S")
+
+# ************* parsing step
+# Parse the input request
+
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -h | --help)
+      printHelp
+      exit
+      ;;
+
+    # get number of files to retain, defaults to 5
+    -c)
+     if [ $# -eq 1 ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting files to retain: $1 "
+        printHelp
+        exit 2
+      fi
+      nextValue=`echo $2 | head -c 1`
+      if [ "$nextValue" = "-" ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting files to retain: $1 "
+        printHelp
+        exit 2
+      fi
+      shift
+      archiveCount=$1
+      ;;
+
+    # check for file containing list of tables to check
+    -f)
+      if [ $# -eq 1 ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting file name: $1 "
+        printHelp
+        exit 2
+      fi
+      nextValue=`echo $2 | head -c 1`
+      if [ "$nextValue" = "-" ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting file name: $1 "
+        printHelp
+        exit 2
+      fi
+      shift
+      fileName=$1
+      fileNameSpecified=1
+      ;;
+
+    # check for frequency interval
+    -w)
+      if [ $# -eq 1 ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting retry interval: $1 "
+        printHelp
+        exit 2
+      fi
+      nextValue=`echo $2 | head -c 1`
+      if [ "$nextValue" = "-" ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting retry interval: $1 "
+        printHelp
+        exit 2
+      fi
+      shift
+      retryInterval=$1
+      ;;
+     
+    # check for number of intervals
+    -n)
+      if [ $# -eq 1 ]; then
+        echo "ERROR: Syntax error expecting number of intervals: $1 "
+        echo ""
+        printHelp
+        exit 2
+      fi
+      nextValue=`echo $2 | head -c 1`
+      if [ "$nextValue" = "-" ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting number of intervals: $1 "
+        printHelp
+        exit 2
+      fi
+      shift
+      numberIntervals=$1
+      ;;
+
+    # internal only - sleep time
+    -s)
+      if [ $# -eq 1 ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting sleep time: $1 "
+        printHelp
+        exit 2
+      fi
+      nextValue=`echo $2 | head -c 1`
+      if [ "$nextValue" = "-" ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting sleep time: $1 "
+        printHelp
+        exit 2
+      fi
+      shift
+      sleepTime=$1
+      ;;
+
+
+    # check for list of tables
+    -t)
+      if [ $# -eq 1 ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting list of tables: $1 "
+        printHelp
+        exit 2
+      fi
+      nextValue=`echo $2 | head -c 1`
+      if [ "$nextValue" = "-" ]; then
+        echo ""
+        echo "ERROR: Syntax error expecting list of tables: $1 "
+        printHelp
+        exit 2
+      fi
+      shift
+      listOfTables=$1
+      listOfTablesSpecified=1
+      ;;
+
+     #  verbose
+    -v)
+      verboseOn=1
+      ;;
+
+    **)
+        echo ""
+      echo "ERROR: Syntax error in call to sqsmdstats: Invalid option: $1 "
+      printHelp
+      echo
+      echo "Exiting the sqsmdstats script." 
+      exit 2
+      ;;
+
+  esac
+  shift
+done
+
+if [ $fileNameSpecified -eq 1 -a $listOfTablesSpecified  -eq 1 ]; then
+  echo ""
+  echo "ERROR: Syntax error, please specify either -f or -t but not both"
+  printHelp
+  exit 2
+fi
+ 
+# set up script location, name of results file, etc.
+if [ "$scriptAndLogLoc" = "" ]; then
+   scriptAndLogLoc=$MY_SQROOT/logs/sqsmdstats_logs
+fi
+
+resultsFile=$scriptAndLogLoc/sqsmdstats_details_$scriptStartTime.log
+sqlResultsFile=$scriptAndLogLoc/sqsmdstats_temp
+csvResultsFile=$scriptAndLogLoc/sqsmdstats_output
+
+if [ ! -d $scriptAndLogLoc ]; then
+  echo "Script start time: $(date)."
+else
+  printInfo "Script start time: $(date)." 0
+fi
+
+# make sure instance is running
+chkInstance
+if [ ! -d $scriptAndLogLoc ]; then
+  echo "Results are saved: $resultsFile."
+else
+  printInfo "Results are saved: $resultsFile." 0
+fi
+
+# create directory to store results from operation if not already created
+if [ ! -d $scriptAndLogLoc ]; then
+   if [ $verboseOn -eq 1 ]; then
+     echo "Creating directory $scriptAndLogLoc to store results"
+   fi
+   mkdir -p $scriptAndLogLoc
+   if [[ $? != 0 ]]; then
+      echo "ERROR: Problem creating directory: $scriptAndLogLoc." 
+      echo "Exiting script." 
+      exit 1;
+   fi
+fi
+printInfo "Logs and temporary scripts are saved in: $scriptAndLogLoc." 0
+
+printInfo "Cleaning up old temporary files " 1
+cleanUp
+
+# parse listOfTables
+generateListOfTables
+
+# Add first row to csvResultsFile
+echo "timestamp, tablename, rows, rowsinserted, rowsdeleted, rowsupdated, rowsaccessed, currenteof" > $csvResultsFile
+
+# perform SQL requests to extract disk label details
+let currentCount=1
+gatherDiskStats
+generateOutput
+printInfo "Finished interval $currentCount" 0
+while [ $currentCount -lt $numberIntervals ]; 
+do
+  printInfo "Sleeping $retryInterval minutes before retrying" 0
+  let numberAliveMsg=0
+  while [ $numberAliveMsg -lt $retryInterval ];
+  do
+    echo "Still sleeping ... " 
+    sleep $sleepTime
+    let numberAliveMsg=numberAliveMsg+1
+  done
+  gatherDiskStats
+  generateOutput
+  let currentCount=currentCount+1
+  printInfo "Finished interval $currentCount" 0
+done
+
+if [ $verboseOn -eq 1 ]; then
+  echo "generated disk statistics: "
+  cat $csvResultsFile
+  echo
+fi
+
+if [ $listOfTablesSpecified -eq 1 ]; then
+  rm $fileName
+fi
+
+# Move result file to archive location
+printInfo "" 0
+printInfo "Archiving disk label statistics" 0
+cp $csvResultsFile $scriptAndLogLoc/disk_label_stats.csv
+osimtargen -cr $scriptAndLogLoc/disk_label_stats.csv > /dev/null 2>&1
+printInfo "Archiving file: $archiveLoc/disk_label_stats_$scriptStartTime.tar.gz" 0
+cp $scriptAndLogLoc/disk_label_stats.csv.tar.gz $archiveLoc/disk_label_stats_$scriptStartTime.tar.gz
+printInfo "Done archiving file list" 1
+
+# report results
+if [ $verboseOn -eq 0 ]; then
+  cleanUp
+fi
+
+# remove old versions of results and copy all existing files
+adjustSavedFiles
+
+printInfo "Script end time: $(date)." 0
+
+exit 0; 

@@ -1,0 +1,538 @@
+#!/bin/bash
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+#SQ Startup Driver Script. Use sqgen prior to this to generate various files required for startup.
+
+function LogIt {
+    echo  "`date`: $1" >> $MY_SQROOT/sql/scripts/startup.log
+}
+
+function Usage {
+
+    echo
+    echo "Usage: $script_name { -w | -c | -r } -x"
+    echo
+    echo "-w Perform a Warm Start"
+    echo "-c Perform a Cold Start"
+    echo "-r Perform a Cold Start with volume recovery"
+    echo "-x Perform Extra Checks (chk_dbperms) before allowing startup"
+    echo
+    exit 1;
+}
+
+
+function hms
+{
+  seconds=$elapsed_seconds
+  hours=$((seconds / 3600))
+  seconds=$((seconds % 3600))
+  minutes=$((seconds / 60))
+  seconds=$((seconds % 60))
+  echo " $hours hour(s) $minutes minute(s) $seconds second(s)"
+}
+
+
+function GetOpts {
+
+    while getopts "qvcrwhx" arg
+      do
+      case $arg in
+	  c)
+	      sq_start=c;
+	      ;;
+	  r)
+	      sq_start=r;
+	      ;;
+	  w)
+	      sq_start=w;
+	      ;;
+	  x)
+	      run_chk_dbperms=1;
+	      ;;
+	  h)
+	      Usage;
+              ;;
+          *)
+	      Usage;
+              ;;
+      esac
+    done
+}
+
+function chkReturnCode {
+    if [[ $2 != 0 ]]; then
+	LogIt "End $script_name $sq_start, exit code: $2"
+	echo "$1 returned error $2, Exiting..."
+	exit $2;
+    fi
+}
+
+function echoLog {
+
+    echo $1 | tee -a $SQMON_LOG
+}
+
+function gomonColdStart {
+    monreg=$MPI_TMPDIR/monitor.registry.*.`uname -n`
+    echoLog "Forcing a Cold Start: rm $monreg"
+    rm -f $monreg 2>&1
+    echoLog "Performing a Cold Start"
+    SQSCRIPT_FILE=$COLD_STARTFILE
+}
+
+function gomonColdRecoveryStart {
+
+    SQSCRIPT_FILE=$COLD_STARTFILE
+}
+
+function gomonWarmStart {
+    echoLog "Performing a Warm Start"
+    SQSCRIPT_FILE=$WARM_STARTFILE
+}
+
+function CheckMonitorLink {
+
+    if [ ! -e monitor ]; then
+	if [ -h monitor ]; then
+	    echoLog "The monitor link $MY_SQROOT/sql/scripts/monitor points to a non-existent target:"
+	    ls -al monitor
+	else
+	    echoLog "A soft link to 'monitor' is missing in $MY_SQROOT/sql/scripts"
+	fi
+	echoLog "Aborting startup."
+	LogIt "End $script_name $sq_start, exit code: 1"
+	exit 1
+    fi
+
+}
+
+# Sets the variable gv_job_pid with the pid of the job (passed as an argument)
+function getJobInfo {
+
+    if [ -z "$1" ]; then
+	exit 1
+    fi
+
+    lv_job=$1
+    gv_job_pid=""
+
+    lv_jobinfo=`jobs -l $lv_job`
+
+    if [ ! -z "$lv_jobinfo" ]; then
+	let lv_count=0
+	for lv_item in $lv_jobinfo; do
+	    if [ $lv_count '==' 1 ]; then
+		gv_job_pid=$lv_item
+	    fi
+	    let ++lv_count
+	done
+    fi
+
+}
+
+function SQStartProcesses {
+
+    echoLog "Starting the SQ Environment (Executing $SQSCRIPT_FILE)"
+    echoLog
+    $SQSCRIPT_FILE > $SQMON_LOG 2>&1
+
+    sqstart_stat=$?
+    echo
+    if [[ $sqstart_stat == 0 ]]; then
+	echoLog "SQ Startup script ($SQSCRIPT_FILE) ran successfully. Performing further checks..."
+	echo "0" > $SQSTART_EXIT_STATUS
+    else
+	echoLog "Error while executing the startup script!!!"
+	sqcheck -f
+	sq_stat=$?
+	if [[ $sq_stat == 0 ]]; then
+	    echoLog "Even though all the SQ processes started up, the startup did not succeed!"
+	fi
+	echoLog
+	echoLog "Please check the SQ shell log file : $SQMON_LOG"
+	echoLog
+	echoLog "SQ Startup (from $PWD) Failed"
+	echoLog
+	echo "1" > $SQSTART_EXIT_STATUS
+    fi
+
+}
+
+function SQCheckOrphanProcesses {
+
+    let lv_orphans_exist=0
+    let lv_orphan_process_count=0
+    let lv_sqcop_done=0
+    let lv_num_checks=0
+    let lv_max_checks=10
+
+    echo -n "Checking orphan processes"
+    while [ $lv_sqcop_done '==' 0 ]; do
+	echo -n "."
+	lv_orphan_process_count=`cstat -h | wc -l`
+	let lv_orphans_exist=(lv_orphan_process_count '>' 2)
+
+	if [ $lv_orphans_exist '==' 1 ]; then
+	    let lv_actual_orphan_count=(lv_orphan_process_count '-' 2)
+            echo -ne "\rChecking orphan processes: $lv_actual_orphan_count"
+	    let ++lv_num_checks
+	    let lv_sqcop_done=(lv_num_checks '>' lv_max_checks)
+	    if [ $lv_sqcop_done '==' 0 ]; then
+		sleep 5
+	    fi
+	else
+	    let lv_sqcop_done=1
+	fi
+    done
+
+    echo
+    if [ $lv_orphans_exist '==' 1 ]; then
+	lv_msg1="There are orphan processes from a previous SQ instance."
+	echo "$lv_msg1"
+	cstat
+	echo
+	lv_msg2="SQ startup has not been initiated. Exiting..."
+	echo "$lv_msg"
+	LogIt "End $script_name, exit code: 1, $lv_msg1 $lv_msg2"
+	exit 1
+    fi
+
+}
+
+#########################################################
+# MAIN portion of sqstart begins here
+#########################################################
+
+script_name=`/bin/basename $0`
+sq_start=$SQ_STARTUP;
+run_chk_dbperms=0
+
+STARTtime=$(date +%s)
+
+
+GetOpts $BASH_ARGV
+
+if [ ! -z $MY_SQROOT ]; then
+    cd $MY_SQROOT/sql/scripts
+else
+    echoLog
+    echoLog "The MY_SQROOT environment variable does not exist."
+    echoLog "Please ensure sqenv.sh has been sourced, and re-run $script_name."
+    echoLog
+    exit 1;
+fi
+
+# Check SeaMonster kernel module if SeaMonster is enabled
+if [[ $SQ_SEAMONSTER == "1" ]]; then
+    echoLog
+    echoLog "SeaMonster is enabled, checking SeaMonster Kernel Module installed version..."
+    echoLog
+    sminfo_out=`$MY_SQROOT/export/bin${SQ_MBTYPE}/sminfo 2>&1`
+    if [ $? -gt 0 ]; then
+       echoLog "$sminfo_out"
+       lv_msg="Correct SeaMonster Kernel Module in not installed; please resolve this issue and re-run $script_name!"
+       echo "$lv_msg"
+       LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+       exit 1
+    fi
+    echoLog "$sminfo_out"
+    LogIt "$sminfo_out"
+    echoLog
+fi
+
+declare -i lv_len_mysqroot
+declare -i lv_max_mysqroot_len
+lv_max_mysqroot_len=78
+lv_len_mysqroot=${#MY_SQROOT}
+if [ $lv_len_mysqroot '>' $lv_max_mysqroot_len ]; then
+    lv_msg="Length of the string \$MY_SQROOT ($MY_SQROOT) should be less than $lv_max_mysqroot_len. Exitting...";
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+    exit 1;
+fi
+
+LogIt "Begin $script_name $sq_start"
+sqcheck -i 1 -d 1 > /dev/null 2>&1
+sq_stat=$?
+if [[ $sq_stat == 0 ]]; then
+   lv_msg="SQ environment is already up."
+   echoLog "$lv_msg"
+   LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+   exit 1
+elif [[ $sq_stat == 1 ]]; then
+   lv_msg="SQ environment is partially up."
+   echoLog "$lv_msg"
+   LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+   exit 1
+fi
+
+SQCheckOrphanProcesses
+
+if [[ $run_chk_dbperms == 1 ]]; then
+  chk_dbperms=$MY_SQROOT/sql/scripts/chk_dbperms
+  if [ -x $chk_dbperms ]; then
+    echo
+    echo "Checking ownership and permissions."
+    echo -n "This will take a few minutes..."
+    $chk_dbperms --busy
+    chk_res=$?
+    echo
+    if [ $chk_res -gt 0 ]; then
+      lv_msg="Ownership and/or Permissions issues found.. aborting."
+      echoLog "$lv_msg"
+      LogIt "End $script_name $sq_start, exit code: $chk_res, $lv_msg"
+      exit 1
+    fi
+    echo
+  fi
+fi
+
+
+
+SQLOG_DIR=$MY_SQROOT/logs
+SQMON_LOG=$SQLOG_DIR/sqmon.log
+SQSTART_EXIT_STATUS=./sqstart.exit_status
+
+if [[ -z $SQSCRIPTS_DIR ]]; then
+    SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
+fi
+
+mkdir -p $SQLOG_DIR
+mkdir -p $MPI_TMPDIR
+
+if [ ! -d $MPI_TMPDIR ]; then
+    lv_msg="Error: The MPI_TMPDIR: $MPI_TMPDIR does not exist. Exiting."
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sqstart, exit code: 1, $lv_msg"
+    exit 1
+fi
+
+if [ ! -w $MPI_TMPDIR ]; then
+    lv_msg="Error: The MPI_TMPDIR: $MPI_TMPDIR is not writable by $USER. Exiting."
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sqstart, exit code: 1, $lv_msg"
+    exit 1
+fi
+
+COLD_STARTFILE=$SQSCRIPTS_DIR/gomon.cold
+WARM_STARTFILE=$SQSCRIPTS_DIR/gomon.warm
+COLD_RECOV_STARTFILE=$SQSCRIPTS_DIR/gomon.cold.recovery
+
+# If -c or -w options are set, start based on the option supplied
+if [[ $sq_start == "w" ]]; then
+    gomonWarmStart
+elif [[ $sq_start == "c" ]]; then
+    gomonColdStart
+elif [[ $sq_start == "r" ]]; then
+    gomonColdRecoveryStart
+else
+# Otherwise, start based on whether a SHUTDOWN line is found in cluster.conf
+    if [ -e $$MPI_TMPDIR/cluster.conf ]; then
+        warmstart=`grep SHUTDOWN $MPI_TMPDIR/cluster.conf`
+    else
+        warmstart=""
+    fi
+
+    # -If SHUTDOWN was found warm start, otherwise recovery start
+    if [[ $warmstart != "" ]]; then
+        gomonWarmStart
+    else
+        gomonColdRecoveryStart
+    fi
+fi
+
+echoLog "Removing old mpijob* files from $MPI_TMPDIR"
+echoLog  ""
+rm -f $MPI_TMPDIR/mpijob*
+echoLog "Removing old monitor.port* files from $MPI_TMPDIR"
+echoLog  ""
+rm -f $MPI_TMPDIR/monitor.port.*
+
+
+setup_sqpdsh
+
+# Clear unique strings
+$SQPDSHA 'cd $MY_SQROOT/sql/scripts; utilConfigDb -u'
+
+echoLog "Executing sqipcrm (output to sqipcrm.out)"
+sqipcrm > sqipcrm.out
+
+
+rm -f $SQSTART_EXIT_STATUS
+SQStartProcesses &
+getJobInfo SQStartProcesses
+
+if [ ! -z "$gv_job_pid" ]; then
+    lv_sqstartup_job_pid=$gv_job_pid
+    echoLog "Background SQ Startup job (pid: $lv_sqstartup_job_pid)"
+else
+    lv_msg="Some problem with the initiation of the job to startup SQ processes"
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sqstart, exit code: 3, $lv_msg"
+    exit 3
+fi
+
+sleep 5
+
+declare -i lv_recovery_tx_cnt
+declare -i lv_startup_status
+declare -i lv_num_checks
+declare -i lv_max_checks
+declare -i lv_done
+declare -i lv_process_count_curr
+declare -i lv_process_count_last
+declare -i lv_TM0_started
+declare -i lv_max_iterations
+declare -i lv_num_iterations
+declare -i lv_sleep_per_iteration
+
+let lv_recovery_tx_cnt=-1
+let lv_startup_status=1
+let lv_num_checks=0
+#Long recoveries on a cluster could delay TX services
+let lv_max_checks=600
+# Check if resource is a work station
+if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
+   VIRT_NODES=`awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $MY_SQROOT/etc/ms.env`
+   if [[ -n "$VIRT_NODES" ]] ; then
+      #Some utilities on workstations will timeout if we wait too long
+      lv_max_checks=360
+   fi
+fi
+let lv_done=0
+let lv_process_count_curr=0
+let lv_process_count_last=0
+let lv_TM0_started=0
+let lv_tm_svc_ready=0
+let lv_max_iterations=36
+let lv_num_iterations=0
+let lv_sleep_per_iteration=5
+let tx_srvc_ready_printed=0
+
+while [ $lv_done '==' 0 ];
+do
+
+  if [ -e $SQSTART_EXIT_STATUS ]; then
+      lv_startup_status=`cat $SQSTART_EXIT_STATUS`
+      let lv_done=1
+  else
+
+      lv_process_count_curr=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | wc -l`
+      let lv_cnt_check=(lv_process_count_curr '>' lv_process_count_last)
+
+      if [ $lv_cnt_check '==' 1 ]; then
+	  let lv_num_checks=0
+      fi
+      lv_process_count_last=lv_process_count_curr
+
+      lv_TM0_started=`cstat 2>/dev/null | grep -v "\-\-\-   \-\-\-\-" | grep -v 'pid   ppid' | grep TM0 | wc -l`
+
+      if [ $lv_TM0_started '==' 1 ]; then
+	 let lv_num_checks=0
+         lv_recovery_tx_cnt=`sqshell -c show | grep -v 'Configuration Change Notice' | grep DTM_RECOVERING_TX_COUNT | cut -d= -f2 | sed -e 's/^[[:space:]]*//'`
+         if [ "$lv_recovery_tx_cnt" -gt "0" ]; then
+            echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
+         else
+            if [ "$lv_tm_svc_ready" -eq 0 ]; then
+               echo -ne "\r# of Transactions being recovered: $lv_recovery_tx_cnt "
+               sqregck -r SQ_TXNSVC_READY -d 5 -i 5
+               lv_tm_svc_ready=$?
+            else
+               if [ $tx_srvc_ready_printed -eq 0 ]; then
+                 echo -ne "\rTransaction Services Ready          "
+                 tx_srvc_ready_printed=1
+               fi
+               let lv_tm_svc_ready=1
+            fi
+         fi
+      else
+         if [ $lv_num_checks '==' 0 ]; then
+            echo -ne "\r# of SQ processes: $lv_process_count_last "
+         else
+            echo -n "."
+         fi
+      fi
+
+      getJobInfo SQStartProcesses
+      if [ -z "$gv_job_pid" ]; then
+	  if [ ! -e $SQSTART_EXIT_STATUS ]; then
+	      echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that was starting up the SQ processes exitted abnormally."
+	      echoLog "There are still $lv_process_count_curr SQ processes that exist in the environment."
+	      echoLog "Exiting."
+	      let lv_done=1
+	      lv_startup_status=3
+	      break
+	  fi
+      fi
+
+      let ++lv_num_checks
+      if [[ $((lv_num_checks % 100)) -eq 0 ]]; then
+        date; sqcheck -f
+      fi
+      let lv_done=(lv_num_checks '>' lv_max_checks)
+      if [ $lv_done '==' 1 ]; then
+	  lv_startup_status=2
+	  echoLog ""
+	  echoLog "SQ Startup is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
+	  echoLog "The background SQ job (pid: $lv_sqstartup_job_pid) that is starting up the SQ processes is still running."
+	  echoLog "Exiting."
+      fi
+      sleep 10
+  fi
+
+done
+
+if [ $lv_startup_status '==' 0 ]; then
+#   Sleep because we need to give the qpid brokers time to start
+#   Minimize the wait time as much as possible by regularly checking,
+#   but don't wait forever either
+    let lv_done=0
+    while [[ $lv_done -eq 0 ]] && [[ $lv_num_iterations -lt $lv_max_iterations ]];
+    do
+      sleep $lv_sleep_per_iteration
+      sqcheck > /dev/null 2>&1
+      sq_stat=$?
+      if [[ $sq_stat -eq 0 ]]; then
+	      let lv_done=1
+	    else
+	      let ++lv_num_iterations
+      fi
+    done
+#   Official sqcheck that will be displayed
+    sqcheck | tee -a $SQMON_LOG
+    echoLog "`date`"
+fi
+
+# Start the DCS Service
+dcsstart
+
+echo
+echo "You can monitor the SQ shell log file : $SQMON_LOG"
+echo
+
+echo
+STOPtime=$(date +%s)
+elapsed_seconds=$(( $STOPtime - $STARTtime))
+printf "Startup time "
+hms  "$elapsed_seconds"
+
+LogIt "End $script_name $sq_start, exit code: ${lv_startup_status}"
+exit ${lv_startup_status}

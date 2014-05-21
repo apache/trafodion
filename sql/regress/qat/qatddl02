@@ -1,0 +1,48 @@
+LOG aqatddl02 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:  Create order entry database: CREATE PROTECTION VIEWs
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- Protection VIEW empone.
+-- Column subset, selecting only one column.
+---------------------------------------------------------------------
+  CREATE VIEW empone AS SELECT
+        empnum
+      FROM employee
+--      FOR PROTECTION
+--     CATALOG <subvol_for_data>
+   ;
+---------------------------------------------------------------------
+-- Protection VIEW emppub.
+-- Column subset, selecting only columns of public information.
+---------------------------------------------------------------------
+  CREATE VIEW emppub AS SELECT
+        empnum
+      , empname
+      , regnum
+      , branchnum
+      , job
+      , vacation
+      FROM employee
+--      FOR PROTECTION
+--     CATALOG <subvol_for_data>
+   ;
+---------------------------------------------------------------------
+-- Protection VIEW expfroms.
+-- Row subset, selecting only those rows where the price column
+--    has a high value.
+---------------------------------------------------------------------
+  CREATE VIEW expfroms AS SELECT
+        partnum
+      , suppnum
+      , partcost
+      FROM fromsup
+      WHERE (partcost > 10000)
+--      FOR PROTECTION
+--     CATALOG <subvol_for_data>
+--     WITH CHECK OPTION
+   ;
+---------------------------------------------------------------------
+LOG;

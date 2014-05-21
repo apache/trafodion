@@ -1,0 +1,948 @@
+>>obey TEST011(tests);
+>>
+>>create table T011T1 (a int not null, b char(10), primary key(a));
+
+--- SQL operation complete.
+>>
+>>invoke T011T1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T011T1
+-- Definition current  Sat Apr 19 10:55:24 2014
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>insert into T011T1 values (1, 'a'), (2, 'b'), (3, 'c');
+
+--- 3 row(s) inserted.
+>>
+>>select * from T011T1;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          2  b         
+          3  c         
+
+--- 3 row(s) selected.
+>>
+>>select * from T011T1 where a = 2;
+
+A            B         
+-----------  ----------
+
+          2  b         
+
+--- 1 row(s) selected.
+>>select * from t011t1 where a = 1 or a = 2;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          2  b         
+
+--- 2 row(s) selected.
+>>select * from t011t1 where a = 1 or a = 4;
+
+A            B         
+-----------  ----------
+
+          1  a         
+
+--- 1 row(s) selected.
+>>select * from t011t1 where a = 5;
+
+--- 0 row(s) selected.
+>>
+>>select * from T011T1 where a > 1;
+
+A            B         
+-----------  ----------
+
+          2  b         
+          3  c         
+
+--- 2 row(s) selected.
+>>
+>>select * from T011T1 where a >= 1;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          2  b         
+          3  c         
+
+--- 3 row(s) selected.
+>>
+>>select * from t011t1 where a < 3;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          2  b         
+
+--- 2 row(s) selected.
+>>select * from t011t1 where a <= 3;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          2  b         
+          3  c         
+
+--- 3 row(s) selected.
+>>
+>>select * from t011t1 where a > 1 and a < 3;
+
+A            B         
+-----------  ----------
+
+          2  b         
+
+--- 1 row(s) selected.
+>>select * from t011t1 where a >= 2 and a < 4;
+
+A            B         
+-----------  ----------
+
+          2  b         
+          3  c         
+
+--- 2 row(s) selected.
+>>select * from t011t1 where a >= 2 and a <= 3;
+
+A            B         
+-----------  ----------
+
+          2  b         
+          3  c         
+
+--- 2 row(s) selected.
+>>select * from t011t1 where a >= 3 and a < 5;
+
+A            B         
+-----------  ----------
+
+          3  c         
+
+--- 1 row(s) selected.
+>>
+>>select * from t011t1 where a > 4 and a < 2;
+
+--- 0 row(s) selected.
+>>
+>>delete from t011t1 where a = 1;
+
+--- 1 row(s) deleted.
+>>select * from t011t1;
+
+A            B         
+-----------  ----------
+
+          2  b         
+          3  c         
+
+--- 2 row(s) selected.
+>>
+>>delete from t011t1 where a > 2 and a <= 3;
+
+--- 1 row(s) deleted.
+>>select * from t011t1;
+
+A            B         
+-----------  ----------
+
+          2  b         
+
+--- 1 row(s) selected.
+>>
+>>delete from t011t1;
+
+--- 1 row(s) deleted.
+>>select * from t011t1;
+
+--- 0 row(s) selected.
+>>
+>>insert into T011T1 values (1, 'a'), (2, 'b'), (3, 'c');
+
+--- 3 row(s) inserted.
+>>delete from t011t1 where a >= 3 and a < 4;
+
+--- 1 row(s) deleted.
+>>select * from t011t1;
+
+A            B         
+-----------  ----------
+
+          1  a         
+          2  b         
+
+--- 2 row(s) selected.
+>>
+>>select * from (delete from t011t1 where a = 2)x;
+
+A            B         
+-----------  ----------
+
+          2  b         
+
+--- 1 row(s) selected.
+>>select * from (delete from t011t1) x;
+
+A            B         
+-----------  ----------
+
+          1  a         
+
+--- 1 row(s) selected.
+>>
+>>cqd hbase_sql_iud_semantics 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_rowset_vsbb_opt 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_updel_cursor_opt 'ON';
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_delete                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    nested_join                                           1.00E+000
+.    .    4    trafodion_vsbb_delet            T011T1                1.00E+000
+.    .    3    trafodion_vsbb_scan             T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    nested_join                                           1.00E+000
+.    .    4    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    3    trafodion_vsbb_scan             T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                            x                     1.00E+001
+2    5    6    nested_join                                           1.00E+001
+3    4    5    nested_join                                           1.00E+000
+.    .    4    trafodion_vsbb_updat            T011T1                1.00E+000
+.    .    3    trafodion_vsbb_scan             T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>
+>>cqd hbase_sql_iud_semantics 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_rowset_vsbb_opt 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_updel_cursor_opt 'OFF';
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_delete                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_vsbb_delet            T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_vsbb_updat            T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_update                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>
+>>cqd hbase_sql_iud_semantics 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_rowset_vsbb_opt 'OFF';
+
+--- SQL operation complete.
+>>cqd hbase_updel_cursor_opt 'OFF';
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_delete                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_delete                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_update                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_update                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>
+>>drop table if exists t011t3;
+
+--- SQL operation complete.
+>>create table if not exists t011t3 (a int not null, b int not null, c char(500), 
++>                                            primary key(a,b));
+
+--- SQL operation complete.
+>>
+>>-- should return error 4246
+>>prepare s from 
++>upsert using load into t011t3 (a,b) values (1,2);
+
+*** ERROR[4246] All column values must be specified when loading data by UPSERT USING LOAD syntax.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>prepare s from
++>upsert with no rollback into t011t3
++>  select
++>    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
++>    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
++>    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
++>  from (values(1)) as starter
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  1.00E+004
+5    6    7    tuple_flow                                            1.00E+004
+.    .    6    trafodion_vsbb_upser            T011T3                1.00E+000
+4    .    5    transpose                                             1.00E+004
+3    .    4    transpose                                             1.00E+003
+2    .    3    transpose                                             1.00E+002
+1    .    2    transpose                                             1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 10000 row(s) inserted.
+>>
+>>delete from t011t3;
+
+--- 10000 row(s) deleted.
+>>
+>>prepare s from
++>upsert using load into t011t3
++>  select
++>    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
++>    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
++>    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
++>  from (values(1)) as starter
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x100
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
++>    transpose 0,1,2,3,4,5,6,7,8,9 as x1
++>  ;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  1.00E+004
+5    6    7    tuple_flow                                            1.00E+004
+.    .    6    trafodion_load                  T011T3                1.00E+000
+4    .    5    transpose                                             1.00E+004
+3    .    4    transpose                                             1.00E+003
+2    .    3    transpose                                             1.00E+002
+1    .    2    transpose                                             1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 10000 row(s) inserted.
+>>
+>>-- transaction optimization tests
+>>delete from t011t1;
+
+--- 0 row(s) deleted.
+>>
+>>-- next 4 explains should not choose external transaction
+>>explain options 'f' insert into t011t1 values (1,'a');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_insert                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'b' where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' select * from t011t1 where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               1.00E+000
+.    .    1    trafodion_scan                  T011T1                1.00E+000
+
+--- SQL operation complete.
+>>
+>>-- next 2 explains should not choose external transaction
+>>explain options 'f' upsert using load into t011t1 values (1,'a'), (2,'b');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_load                  T011T1                1.00E+000
+.    .    1    tuplelist                                             2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' upsert with no rollback into t011t1 values (1,'a'), (2,'b');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_vsbb_upser            T011T1                1.00E+000
+.    .    1    tuplelist                                             2.00E+000
+
+--- SQL operation complete.
+>>
+>>-- next 3 explains should choose external transaction with 'return' on error
+>>begin work;
+
+--- SQL operation complete.
+>>explain options 'f' insert into t011t1 values (1,'a');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         r                     1.00E+000
+.    .    1    trafodion_insert                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         r                     1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'b' where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         r                     1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>commit work;
+
+--- SQL operation complete.
+>>
+>>-- next 3 explains should choose external transaction with 'return' on error
+>>set transaction autocommit off;
+
+--- SQL operation complete.
+>>explain options 'f' insert into t011t1 values (1,'a');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         r                     1.00E+000
+.    .    1    trafodion_insert                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         r                     1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'b' where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         r                     1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>
+>>set transaction autocommit on;
+
+--- SQL operation complete.
+>>
+>>-- next 3 explains should choose external transaction with abort on error
+>>explain options 'f' insert into t011t1 values (?[10], ?[10]);
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    tuple_flow                                            1.00E+001
+.    .    3    trafodion_insert                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_delete                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                            x                     1.00E+001
+2    3    4    nested_join                                           1.00E+001
+.    .    3    trafodion_update                T011T1                1.00E+000
+1    .    2    unpack                                                1.00E+001
+.    .    1    values                                                1.00E+000
+
+--- SQL operation complete.
+>>
+>>-- next 3 explains should choose external transaction with abort on error
+>>create index t011t1i1 on t011t1(b);
+
+--- SQL operation complete.
+>>explain options 'f' insert into t011t1 values (1,'a');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                  o         x                     1.00E+000
+1    2    3    nested_join                                           1.00E+000
+.    .    2    trafodion_insert                T011T1I1              1.00E+000
+.    .    1    trafodion_insert                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                  o         x                     1.00E+000
+1    2    3    nested_join                                           1.00E+000
+.    .    2    trafodion_delete                T011T1I1              1.00E+000
+.    .    1    trafodion_delete                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'b' where a = 1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                  o         x                     2.00E+000
+1    4    5    nested_join                                           2.00E+000
+2    3    4    blocked_union                                         2.00E+000
+.    .    3    trafodion_insert                T011T1I1              1.00E+000
+.    .    2    trafodion_delete                T011T1I1              1.00E+000
+.    .    1    trafodion_update                T011T1                1.00E+000
+
+--- SQL operation complete.
+>>drop index t011t1i1;
+
+--- SQL operation complete.
+>>
+>>-- next 4 explain should choose external transaction with abort on error
+>>explain options 'f' insert into t011t1 values (1,'a'), (2,'b');
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                            x                     2.00E+000
+1    2    3    tuple_flow                                            2.00E+000
+.    .    2    trafodion_insert                T011T1                1.00E+000
+.    .    1    tuplelist                                             2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' delete from t011t1 where a = 1 or a = 2;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_delete                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' update t011t1 set b = 'b' where a = 1 or a = 2;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o         x                     2.00E+000
+.    .    1    trafodion_update                T011T1                2.00E+000
+
+--- SQL operation complete.
+>>explain options 'f' insert into t011t1 select a,c from t011t3;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                            x                     1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_insert                T011T1                1.00E+000
+.    .    1    trafodion_scan                  T011T3                1.00E+002
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
+>>
+>>log;

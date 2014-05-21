@@ -1,0 +1,137 @@
+#!/usr/bin/perl
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+
+my $help = 0;
+my $res;
+my $verbose = 0;
+
+$res = GetOptions(
+        'h' => \$help,
+        'v' => \$verbose,
+	);
+exit(1) if (!$res);
+if ($help) {
+	printf "usage: sqid [-h] [-v]\n";
+	exit(0);
+}
+
+my $sq_pdsh = defined $ENV{'SQ_PDSH'} ? $ENV{'SQ_PDSH'} : '';
+my $my_sqroot = defined $ENV{'MY_SQROOT'} ? $ENV{'MY_SQROOT'} : '';
+my $java_home = defined $ENV{'JAVA_HOME'} ? $ENV{'JAVA_HOME'} : '';
+my $host;
+gethost();
+
+if ($verbose) {
+	printf "v: cmd:whoami\n";
+}
+my $w = `whoami`;
+$w =~ s/\s+$//;
+my $lr = `uname -r`;
+$lr =~ s/\s+$//;
+my $rhrel = `cat /etc/redhat-release`;
+my $rr = "?.?";
+if ($rhrel =~ /^.*release ([0-9][0-9]*)\.([0-9][0-9]*)/) {
+	$rr=$1 . "." . $2
+}
+
+print "MY_SQROOT=$my_sqroot\n";
+print "who\@host=$w\@$host\n";
+print "JAVA_HOME=$java_home\n";
+print "linux=$lr\n";
+print "redhat=$rr\n";
+# can't do much if this env variables is not setup
+if (!defined $ENV{'MY_SQROOT'}) {
+	die "MY_SQROOT is not set!";
+}
+
+my $sq_mbtype = defined $ENV{'SQ_MBTYPE'} ? $ENV{'SQ_MBTYPE'} : '?';
+my $dir = "$my_sqroot/export/lib" . $sq_mbtype;
+chdir($dir) or die "can't chdir to $dir $!";
+my $file = "$dir'/libsbms.so'";
+version($file);
+
+#
+# gethost
+#   default to hostname
+#   search /etc/pdsh/machines | /opt/hptc/pdsh/nodes for non 'n[0-9][0-9]*'
+#
+sub gethost {
+	if ($verbose) {
+		printf "v: cmd:hostname\n";
+	}
+	$host = `hostname`;
+	$host =~ s/\s+$//;
+	if (-x ($sq_pdsh)) {
+		# find head node
+		if ($verbose) {
+			printf "v: cmd:cat /etc/pdsh/machines\n";
+		}
+		my $mach;
+		if (-r "/etc/pdsh/machines") {
+			$mach = `cat /etc/pdsh/machines`;
+                } elsif (-r "/etc/machines") {
+                        $mach = `cat /etc/machines`;
+                } else {
+			$mach = `cat /opt/hptc/pdsh/nodes`;
+		}
+		my @nstrs = split(/\n/, $mach);
+		my $nstr;
+		foreach $nstr (@nstrs) {
+			my $hno = $nstr;
+			$hno =~ s/\s+$//;
+			if ($verbose) {
+				print "v: /etc/pdsh/machines, rec=$hno\n";
+			}
+			if ($hno !~ /^n[0-9][0-9]*/) {
+				$host = $hno;
+				last;
+			}
+		}
+	}
+	if ($verbose) {
+		print "v: *host=$host\n";
+	}
+	$host =~ s/\s+$//;
+}
+
+sub version {
+	my ($elf) = @_;
+
+	if ($verbose) {
+		printf "v: cmd:nm $elf\n";
+	}
+	my $nm = `nm $elf | grep " VERS_"`;
+	my @strs = split(/\n/, $nm);
+	my $str;
+	foreach $str (@strs) {
+		my $ver = $str;
+		$ver =~ s/^.*?VERS_//;
+		$ver =~ s/_sl_/\//g;
+		$ver =~ s/_dt_/\./g;
+		$ver =~ s/_dh_/-/g;
+		if ($ver =~ /([a-zA-Z0-9_]*)_CV(\d*)_(\d*)_(\d*)_PV(\d*)_(\d*)_(\d*)_BV(\w*)_BR([a-zA-Z0-9\/_-]*)_DT(\d*)([a-zA-Z]*)(\d*)_SV(.*)/) {
+			print "Release $5.$6.$7 (Build $8 [$13], branch $9, date $10$11$12)\n";
+		}
+	}
+}

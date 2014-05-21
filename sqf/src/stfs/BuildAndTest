@@ -1,0 +1,152 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+###############################################################################
+#
+# Builds STFS code and runs tests in three flavors.
+#
+# 1) SQ_PACK=0; SQ_STFSD=0  - Single process - direct access to STFSd code
+#
+# 2) SQ_PACK=1; SQ_STFSD=0  - Single process - access to STFSd via STFS Message 
+#                                              (Pack/Unpack operations)
+#
+# 3) SQ_PACK=1; SQ_STFSD=1  - STFS client & STFSd in separate processes
+#                             Need to have the monitor/seabed built with
+#                             export SQ_STFSD=1
+#
+# Syntax:
+#
+# BuildAndTest [Which_Build_Flavor] [?Build_The_Tests]
+# where
+#     Which_Build_Flavor: 1|2|3|all  - default is both 1 and 2
+#
+#     ?Build_The_Tests  : 0|1   - where 0 means don't build the tests, default is 1
+#
+# E.g:
+#       BuildAndTest        - the first two flavors
+#       BuildAndTest all    - all the three flavors
+#       BuildAndTest 1      - just the first flavor
+#
+###############################################################################
+
+function checkReturnCode {
+
+  if [[ $2 != 0 ]]; then 
+    echo "$1 returned error $2, Exitting..."
+    exit $2;
+  fi
+
+}
+
+function echoBannerContent {
+
+  echo "---- $1: SQ_USE_INTC=$SQ_USE_INTC SQ_PACK=$SQ_PACK SQ_STFSD=$SQ_STFSD ----"
+
+}
+
+function runTests {
+
+  cd test;
+  
+  if ( [ $BuildTests == "1" ] && [ $testsBuilt == 0 ] ); then
+    echoBannerContent "Building Tests"
+    make cleaner; make; 
+    checkReturnCode make $?;
+  fi
+  testsBuilt=1
+
+  echoBannerContent "Executing Tests"
+  ./runtests2.sh
+  retcode=$?
+  cd ..
+  checkReturnCode runtests3 $retcode;
+
+}
+
+function buildSTFS {
+
+  echoBannerContent "Building STFS"
+
+  make clean;
+  make cleaner;
+  make depend;
+  make
+
+  checkReturnCode make $?;
+
+}
+
+function displayStartupBanner {
+
+  echo 
+  echoBannerContent "Begin"
+  echo 
+
+}
+
+function displayExitBanner {
+
+  echo 
+  echoBannerContent "End"
+  echo 
+
+}
+
+function runCommands {
+
+  displayStartupBanner; 
+
+  buildSTFS;
+
+  runTests;
+
+  displayExitBanner;
+
+}
+
+function runAllCommands {
+  
+  wcmd=$1
+  if ([ $wcmd == "1" ] || [ $wcmd == "first2" ] || [ $wcmd == "all" ]); then
+     export SQ_PACK=0; export SQ_STFSD=0; runCommands;
+  fi
+
+  if ([ $wcmd == "2" ] || [ $wcmd == "first2" ] || [ $wcmd == "all" ]); then
+    export SQ_PACK=1; export SQ_STFSD=0; runCommands;
+  fi
+
+  if ([ $wcmd == "3" ] || [ $wcmd == "all" ]); then
+    export SQ_PACK=1; export SQ_STFSD=1; runCommands;
+  fi
+
+}
+
+## Main
+whichCommands="first2"
+if [ $# -ge 1 ]; then
+  whichCommands=$1
+fi
+
+testsBuilt=0
+BuildTests="1"
+if [ $# -ge 2 ]; then
+  BuildTests=$2
+fi
+
+runAllCommands $whichCommands;

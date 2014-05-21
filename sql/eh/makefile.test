@@ -1,0 +1,192 @@
+# ****************************************************************************
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# File:         makefile.test
+# Description:  Makefile for building tests to test the Exception
+#               Handling package in this directory
+#               
+#               
+# Created:      5/22/95
+# Language:     make
+# Status:       Development
+#
+# ****************************************************************************
+
+# ****************************************************************************
+#
+# Change Log: $Log: makefile.test,v $
+# Change Log: These are the source files from Source Safe.
+# Change Log:
+# Change Log: Initial revision
+# Change Log:
+#
+# ****************************************************************************
+
+
+# ****************************************************************************
+# the name of the C++ compiler (should be in search path or a qualified name)
+# ****************************************************************************
+CPLUS=		nice CC
+
+# ****************************************************************************
+# name for the location that contains my current development version
+# ****************************************************************************
+MYDEV=		..
+ARK=		/designs/newarc/ark
+ARK_STABLE=	$(ARK)/main-thread
+EH=		$(ARK_STABLE)/eh
+
+# ****************************************************************************
+# Set up search paths for include files
+# ****************************************************************************
+INCLUDE=	-I$(EH)
+
+# ****************************************************************************
+# add the names of needed libraries for the final link step here
+# ****************************************************************************
+LIBDIR=		-L$(EH)
+
+LIBS=		-lehtool
+
+# ****************************************************************************
+# add defines for special symbols (e.g. for debugging) here
+# ****************************************************************************
+DEFS=
+
+# ****************************************************************************
+# add the paths that the compiler uses by default to find its compiler-
+# specific include files and libraries
+# ****************************************************************************
+SYSINCLUDE=	-I/usr/vendor/CenterLine/clc++/sparc-sunos4/incl
+SYSLIB=		-L/usr/vendor/CenterLine/sparc-sunos4/lib
+
+# ****************************************************************************
+# compiler flags for regular compilation (.C to .o)
+# the flags assume we're using the CenterLine C++ compiler
+# (+d disables inline functions, +k uses precompiled headers)
+# the -ec -Xa flag forces the ANSI C preprocessor to be used, since the
+# traditional cpp can't handle the code produced by CC.
+# ****************************************************************************
+CPLUSOPT=	+d -g -ec -Xa $(INCLUDE) $(DEFS) 
+
+# ****************************************************************************
+# compiler flags for creating a file with all its templates instantiated
+# ****************************************************************************
+CPLUSOPT_TEMPL=	$(CPLUSOPT) -pta -ptf -ptmptlinkmap 
+
+# ****************************************************************************
+# add all the implementation files here
+# ****************************************************************************
+SRC=		test1.C \
+		test2.C
+
+# ****************************************************************************
+# object files are the same as the source files with suffix .o
+# ****************************************************************************
+OBJ=		${SRC:.C=.o}
+OBJ_EXECUTABLE=	${SRC:.C=}
+
+.SUFFIXES: .C .o
+
+# ****************************************************************************
+# build an object file (.o) from a C++ source file (.C)
+# ****************************************************************************
+.C.o:
+		@ rm -f $@
+		$(CPLUS) $(CPLUSOPT) -c $< -o obj/$@
+		ln -s obj/$@ $@
+		@ echo "---------------------"
+
+# ****************************************************************************
+# now the real dependencies (only those that are not covered by rules)
+# ****************************************************************************
+objects:	$(OBJ_EXECUTABLE) $(OBJ)
+
+# ****************************************************************************
+# Make a standalone test driver
+# ****************************************************************************
+#
+test1:		test1.o
+		$(CPLUS) $(CPLUSOPT) \
+			 test1.o \
+			 $(LIBDIR) \
+			 $(LIBS) \
+			 -pti \
+			 -o $@
+
+test2:		test2.o
+		$(CPLUS) $(CPLUSOPT) \
+			 test2.o \
+			 $(LIBDIR) \
+			 $(LIBS) \
+			 -pti \
+			 -o $@
+
+# ****************************************************************************
+# load the code into ObjectCenter
+# ****************************************************************************
+octest1:		
+		#setopt ansi
+		#setopt program_name test1.exe
+		#setopt load_flags $(CPLUSOPT)
+		#unsetopt check_hfiles
+		#setopt instrument_all
+		#setopt instrument_byte
+		#setopt instrument_space 4
+		#load test1.C
+		#load -G $(LIBDIR) $(LIBS)
+		#link
+
+octest2:		
+		#setopt ansi
+		#setopt program_name test2.exe
+		#setopt load_flags $(CPLUSOPT)
+		#unsetopt check_hfiles
+		#setopt instrument_all
+		#setopt instrument_byte
+		#setopt instrument_space 4
+		#load test2.C
+		#load -G $(LIBDIR) $(LIBS)
+		#link
+
+install:
+		mkdir obj
+
+# ****************************************************************************
+# use makedepend to create the dependencies for included files
+# --------> do not change the text below, since it is recreated <----------
+# --------> each time make depend is run <---------------------------------
+# if we use the modified makedepend that understands the -l option,
+# then don't generate dependencies for system includes (#include <...>)
+# ****************************************************************************
+depend:
+		makedepend $(DEFS) $(INCLUDE) $(SYSINCLUDE) -- -l -- $(SRC)
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+test1.o: /designs/newarc/ark/main-thread/eh/EHBaseTypes.h
+test1.o: /designs/newarc/ark/main-thread/eh/EHException.h
+test1.o: /designs/newarc/ark/main-thread/eh/EHExceptionTypeEnum.h
+test1.o: /designs/newarc/ark/main-thread/eh/EHJmpBufNode.h
+test1.o: /designs/newarc/ark/main-thread/eh/EHJmpBufStack.h
+test2.o: /designs/newarc/ark/main-thread/eh/EHBaseTypes.h
+test2.o: /designs/newarc/ark/main-thread/eh/EHException.h
+test2.o: /designs/newarc/ark/main-thread/eh/EHExceptionTypeEnum.h
+test2.o: /designs/newarc/ark/main-thread/eh/EHJmpBufNode.h
+test2.o: /designs/newarc/ark/main-thread/eh/EHJmpBufStack.h

@@ -1,0 +1,334 @@
+-- Test: TEST010 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: ORDER BY clause on table and view, plus VSBB insert
+-- Expected files: EXPECTED010, EXPECTED010.MP
+-- Other files: DIFF010.KNOWN - VSBB insert disabled for small tables
+-- Table created: t010ta, t010tx, t010t1, t010tmp1, t010uta, t010utx,
+--                t010ut1
+-- View created: t010va, t010uva
+-- To do: - Add VSBB insert test in the insert-select stmt. (Done.)
+--        - Remove DIFF010.KNOWN.NSK file when Unicode is supported on
+--          MX tables, while Unicode may never be supported on MP tables
+--          (Done 5/19/02)
+--        - Enable VSBB insert for small tables
+-- Limitations:
+-- Revision history:
+--     (1/28/02) - Copied from fullstack/TEST010
+--     (2/15/02) - Merged with fullstack/TEST010U
+--     (2/18/02) - Added VSBB insert verification via statistics SP.
+--     (3/01/02) - Comment off Unicode test if running on MP tables.
+--     (5/19/02) - Removed DIFF010.KNOWN.NSK as unicode is supported.
+--     (6/13/02) - Added DIFF010.KNOWN as VSBB insert disabled for small
+--                 tables (<100 rows)
+
+-- Tests ORDER BY clause:  binder and executor.
+-- Ordering is done using BTREE implementation.
+
+?section ddl
+drop view t010va;
+drop table t010ta;
+drop table t010tx;
+drop table t010t1;
+drop table t010tmp1;
+
+#ifMX
+drop view t010uva;
+drop table t010uta;
+drop table t010utx;
+drop table t010ut1;
+#ifMX
+
+cqd attempt_esp_parallelism 'OFF';
+
+?section crdb
+log LOG010 clear;
+
+create table t010ta (a varchar(4) not null, b varchar(3) not null, c int);
+create table t010tx (aaa varchar(4) not null, bbb varchar(3) not null, ccc int);
+create table t010t1 (a int not null, b int, c char(7) not null, d char(8), ee varchar(9));
+create table t010tmp1 (a int not null, b int, c char(7) not null, d char(8), ee varchar(9));
+
+create view  t010va (va, vb, vc) as select a,b,c from t010ta;
+
+#ifMX
+create table t010uta (a char varying (4) character set ucs2 not null, b char varying (3) character set ucs2 not null, c int);
+
+create table t010utx (aaa national char varying (4) not null, bbb char varying (3) character set ucs2 not null, ccc int);
+create table t010ut1 (a int not null, b int, c char(7) character set ucs2 not null, d char(8) character set ucs2, ee char varying (9) character set ucs2);
+
+create view  t010uva (va, vb, vc) as select a,b,c from t010uta;
+#ifMX
+
+?section dml
+insert into t010ta values 	('a','b',3),
+			('m','z',1),
+			('r','q',15),
+			('z','y',25);
+
+-- Test for VSBB insert via statisitcs SP
+control query default detailed_statistics 'ALL';
+prepare IS from
+insert into t010tx select * from t010ta order by b;
+execute IS;
+select seq_num, tdb_name from table (statistics (NULL, 'IS')) order by 1,2;
+
+-- Back to default value
+control query default detailed_statistics 'OPERATOR';
+
+#ifMX
+insert into t010uta values 	(N'a',N'b',3),
+			(N'm',N'z',1),
+			(N'r',N'q',15),
+			(N'z',N'y',25);
+
+-- Another VSBB insert
+control query default detailed_statistics 'ALL';
+prepare ISU from
+insert into t010utx select * from t010uta order by c;
+
+execute ISU;
+select seq_num, tdb_name from table (statistics (NULL, 'ISU')) order by 1,2;
+#ifMX
+
+-- Back to default value
+control query default detailed_statistics 'OPERATOR';
+
+
+?section general_tests
+
+-- empty table
+select * from t010t1 order by a;
+
+insert into t010t1 values (10,10, 'q','q','q');
+insert into t010t1 values (10,5, 'q','q','q');
+insert into t010t1 values (10,10, 'a', 'a', 'a');
+
+insert into t010t1 values (5,5,'d','d','d');
+insert into t010t1 values (20,null,'b','e','f');
+insert into t010t1 values (20,null,'b','e','f');
+insert into t010t1 values (25, null, 'w', null, 'w');
+
+select * from t010t1;
+
+#ifMX
+insert into t010ut1 values (10,10, N'q',N'q',N'q');
+insert into t010ut1 values (10,5, N'q',N'q',N'q');
+insert into t010ut1 values (10,10, N'a', N'a', N'a');
+
+insert into t010ut1 values (5,5,N'd',N'd',N'd');
+insert into t010ut1 values (20,null,N'b',N'e',N'f');
+insert into t010ut1 values (20,null,N'b',N'e',N'f');
+insert into t010ut1 values (25, null, N'w', null, N'w');
+
+select * from t010ut1;
+#ifMX
+
+-- Ascending ordering
+select * from t010t1 order by a,b,c;
+select * from t010t1 order by b,a,c;
+select * from t010t1 order by c,b;
+select * from t010t1 order by d,b;
+select * from t010t1 order by ee,b;
+
+select * from t010t1 order by a,c;
+select * from t010t1 order by a,b,c,d,ee;
+select * from t010t1 order by ee,d,c,b,a;
+
+#ifMX
+select * from t010ut1 order by c,b;
+select * from t010ut1 order by d,b;
+select * from t010ut1 order by ee,b;
+
+select * from t010ut1 order by a,c;
+select * from t010ut1 order by a,b,c,d,ee;
+select * from t010ut1 order by ee,d,c,b,a;
+#ifMX
+
+-- Descending ordering
+select * from t010t1 order by a desc,b desc,c desc;
+select * from t010t1 order by b desc,ee desc;
+select * from t010t1 order by c desc,b desc;
+select * from t010t1 order by d desc,b desc;
+select * from t010t1 order by ee desc,b desc;
+
+select * from t010t1 order by a desc,c desc,b desc;
+select * from t010t1 order by a desc,b desc,c desc,d desc,ee desc;
+select * from t010t1 order by ee desc,d desc,c desc,b desc,a desc;
+
+#ifMX
+select * from t010ut1 order by c desc,b desc;
+select * from t010ut1 order by d desc,b desc;
+select * from t010ut1 order by ee desc,b desc;
+
+select * from t010ut1 order by a desc,c desc,b desc;
+select * from t010ut1 order by a desc,b desc,c desc,d desc,ee desc;
+select * from t010ut1 order by ee desc,d desc,c desc,b desc,a desc;
+#ifMX
+
+-- mix of ascending and descending ordering
+select * from t010t1 order by a, b desc, c asc;
+select * from t010t1 order by a desc, b asc, c asc;
+
+-- expression in select list
+select a+1 from t010t1 order by a;
+
+#ifMX
+select a+1 from t010ut1 order by a;
+#ifMX
+
+-- select list contains a columns not in the order by list.
+select a from t010t1 order by b,c;
+
+#ifMX
+select a from t010ut1 order by c;
+#ifMX
+
+-- GROUP BY and ORDER BY
+-- gives syntax error
+-- select a from t010t1 order by a group by a;
+
+-- INSERT...SELECT with ORDER BY
+-- gives syntax error
+insert into t010tmp1 select * from t010t1 order by a;
+
+?section negative_tests
+
+-- nonex. column
+select tl.b from t010ta tl, t010ta tr order by tl.x;	
+-- nonex. column
+select tl.b from t010ta tl, t010ta tr order by tr.x;	
+-- nonex. column
+select tl.b from t010ta tl, t010ta tr order by x;	
+-- nonex. table
+select tl.b from t010ta tl, t010ta tr order by tt.x;	
+
+-- illeg. syntax
+select tl.b from t010ta tl, t010ta tr order by *;	
+
+-- list index out of range
+select tl.b from t010ta tl, t010ta tr order by 0;	
+-- list index out of range
+select tl.b from t010ta tl, t010ta tr order by 2;	
+
+-- ambig. column
+select b, b from t010ta order by b;
+
+-- ambig. column
+select tl.b from t010ta tl, t010ta tr order by a;	
+-- ambig. column
+select tl.b from t010ta tl, t010ta tr order by c;	
+-- ambig. column
+select * from t010ta tl, t010ta tr order by b;	
+-- ambig. column
+select tl.b,* from t010ta tl, t010ta tr order by b;	
+-- ambig. column
+select * from (select a,b as a from t010ta) as aa order by aa.a;
+
+?section positive_tests
+
+-- b q y z
+select b from t010ta order by b;
+
+-- b z q y
+select tl.b from t010ta tl, t010ta tr;			
+-- b q y z
+select tl.b from t010ta tl, t010ta tr order by tl.b;	
+-- (bzqy)*4
+select tl.b from t010ta tl, t010ta tr order by tr.b, tl.b;	
+-- b q y z
+select tl.b from t010ta tl, t010ta tr order by b;	
+-- b q y z
+select tl.b from t010ta tl, t010ta tr order by 1;	
+-- b z q y
+select tl.b from t010ta tl, t010ta tr order by tl.a, tl.b;	
+-- (bzqy)*4
+select tl.b from t010ta tl, t010ta tr order by tr.a, tl.b;	
+-- z b q y
+select tl.b from t010ta tl, t010ta tr order by tl.c, tl.b;	
+-- (bzqy)*4
+select tl.b from t010ta tl, t010ta tr order by tr.c, tl.b;	
+
+-- (bzqy)*4
+select tl.b xx,* from t010ta tl, t010ta tr order by tr.c, xx;
+
+-- (bzqy)*4
+select b from t010ta, t010tx order by ccc, b;
+
+-- (bqyz)*4
+select b from t010ta, t010tx order by ccc desc, b;
+
+
+-- 3 1 15 25 (original bug from JoanZ)
+select tr.vc from t010va tl, t010va tr order by tr.va, tr.vc;
+
+
+-- b q y z
+#ifMX
+select b from t010uta order by b;
+
+-- b z q y
+select tl.b from t010uta tl, t010uta tr;			
+-- b q y z
+select tl.b from t010uta tl, t010uta tr order by tl.b;	
+-- (bzqy)*4
+select tl.b from t010uta tl, t010uta tr order by tr.b, tl.b;	
+-- b q y z
+select tl.b from t010uta tl, t010uta tr order by b;	
+-- b q y z
+select tl.b from t010uta tl, t010uta tr order by 1;	
+-- b z q y
+select tl.b from t010uta tl, t010uta tr order by tl.a, tl.b;	
+-- (bzqy)*4
+select tl.b from t010uta tl, t010uta tr order by tr.a, tl.b;	
+-- z b q y
+select tl.b from t010uta tl, t010uta tr order by tl.c, tl.b;	
+-- (bzqy)*4
+select tl.b from t010uta tl, t010uta tr order by tr.c, tl.b;	
+
+-- (bzqy)*4
+select tl.b as D,* from t010uta tl, t010uta tr order by tr.c, D;
+
+-- (bzqy)*4
+select b from t010uta, t010utx order by ccc, b;
+
+-- (bqyz)*4
+select b from t010uta, t010utx order by ccc desc, b;
+
+
+-- 3 1 15 25 (original bug from JoanZ)
+select tr.vc from t010uva tl, t010uva tr order by tr.va, tr.vc;
+#ifMX
+
+?section clnup
+
+drop view t010va;
+drop table t010ta;
+drop table t010tx;
+drop table t010t1;
+drop table t010tmp1;
+
+#ifMX
+drop view t010uva;
+drop table t010uta;
+drop table t010utx;
+drop table t010ut1;
+#ifMX
+
+log;

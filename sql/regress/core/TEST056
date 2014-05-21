@@ -1,0 +1,1042 @@
+-- TEST056      6/2/98
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 1998-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Tests of the ALTER TABLE ADD COLUMN statement.
+
+obey TEST056(clnup);
+obey TEST056(ddl);
+log LOG056 clear;
+obey TEST056(tests1);
+obey TEST056(tests2);
+obey TEST056(tests3);
+obey TEST056(tests4);
+obey TEST056(tests5);
+obey TEST056(testbugfix);
+obey TEST056(tests6);
+log;
+obey TEST056(clnup);
+exit;
+
+?section clnup
+drop view T056vw12;
+drop table T056t11;
+drop table T056t10;
+drop table T056t27;
+drop table T056t28;
+drop table T056t127;
+drop table T056t128;
+
+drop table T056t30;
+drop table T056t31;
+drop table T056t32;
+drop table T056t33;
+drop table T056t34;
+
+drop table T056t50;
+drop table T056t51;
+drop table T056t52;
+drop table T056t53;
+drop table T056t54;
+drop table T056t55;
+drop table T056t56;
+drop table T056t57;
+drop table T056t58;
+drop table T056t59;
+drop table T056t60;
+drop table T056t61;
+drop table T056t62;
+drop table T056t63;
+
+drop table T056t5;
+drop table t056syskey;
+drop table t056pc4to2;
+
+drop table T056t64;
+
+?section ddl
+control query default ATTEMPT_ESP_PARALLELISM 'OFF';
+create table T056t10 (swallow int default 121 not null ,
+                      barnowl int default 1000 not null);
+
+create unique index T056in5 on T056t10 (barnowl) 
+#ifMX
+       location $$partition$$ 
+       range partition (
+        add first key 150 location $$partition$$,
+        add first key 180 location $$partition$$)
+#ifMX
+; 
+
+create table T056t11 (wren int not null , 
+  junco int not null ,
+  blackbird int
+#ifMP
+not null
+#ifMP
+,
+  primary key(wren,junco) )
+#ifMX
+      location $$partition2$$
+      range partition (
+        add first key (30)  location $$partition2$$,
+        add first key (170) location $$partition2$$,
+        add first key (190) location $$partition2$$,
+        add first key (300) location $$partition2$$)
+#ifMX
+;
+
+insert into T056t11 values (1,11,111),(3,13,113),(5,15,115)
+  ,(171,71,1),(173,73,3),(175,75,5),(191,91,4),(193,83,8)
+  ,(195,77,7),(301,37,6),(403,43,14),(505,50,15);
+
+create unique index T056in6 on T056t11 (blackbird) 
+#ifMX
+       location $$partition2$$ 
+       range partition (
+        add first key 150 location $$partition2$$,
+        add first key 180 location $$partition2$$)
+#ifMX
+;
+
+create table T056t27 (C1 CHAR(2) default 'kk');
+create table T056t28 (C1 CHAR(2) default 'pp');
+create table T056t127 (C1 CHAR(2) default 'kk');
+insert into T056t127 values ('qq'), ('rr'), ('ss');
+create table T056t128 (C1 CHAR(2) default 'pp');
+insert into T056t128 values ('qq'), ('rr'), ('ss');
+
+create  table T056t30 (C1 varchar(8) not null,
+                       primary key (C1) );
+insert into   T056t30 values ('aa'), ('bbb'), ('cccc'), ('dddddd');
+
+create  table T056t31 (C1 varchar(10) not null, C2 int not null,
+                       primary key(C1, C2));
+insert into   T056t31
+  values ('Rolling', 2), ('Stones', 5), ('are', 7), ('back', 9);
+
+create  table T056t32 (C1 int, C2 int);
+insert into   T056t32 values (1, 10), (3, 30), (5, 50), (7, 70), (9, 90);
+
+create  table T056t33 ( a smallint no default not null ,
+                        b smallint no default not null ,
+                        c smallint no default not null,
+                        d smallint no default not null,
+                        primary key (a,b) );
+insert into    T056t33  values
+  (0,0,0,0), (1,0,0,0), (2,0,0,0), (3,0,0,0), (4,0,0,0), (5,0,0,0), (6,0,0,0),
+  (7,0,0,0), (8,0,0,0), (9,0,0,0);
+
+create table T056t34 ( orders int no default not null,
+                       ch1 varchar(1),
+                       primary key (orders) );
+
+insert into T056t34 values (1,'a'), (2,'b'), (3, 'c');
+
+?section tests1
+showddl T056t10;
+-- For debugging, the showlabel command can be use to view
+-- the contents of the label before and after adding columns.
+-- For example,
+--showlabel table T056t10,detail;
+--showlabel index T056in5,detail;
+showddl T056t11;
+
+alter table T056t10 add column duck int default 20 
+  not null no heading 
+constraint duck_PK PRIMARY KEY desc
+;
+
+insert into T056t10 (swallow,barnowl,duck) values (10,1,201);
+alter table T056t10 add column gosling int default 700 
+  heading 'goose';
+insert into T056t10 (swallow,barnowl,duck) values (11,2,203);
+alter table T056t11 add column bluejay int default 203
+#ifMX
+  constraint T056t11_nn not null not droppable constraint T056t11_ck check (bluejay >0)
+  constraint T056t11_rf references T056t10 (duck)
+  constraint bluejay_cons2 check (bluejay < 5000)
+#ifMX
+;
+
+insert into T056t11 (wren,junco,blackbird,bluejay) values (179,579,555,203);
+alter table T056t11 add column raven int default null;
+insert into T056t11 (wren,junco,blackbird,bluejay) values (12,112,222,203);
+alter table T056t11 add column seagull int default 400
+  not null ;
+insert into T056t11 (wren,junco,blackbird,bluejay) values (9,59,333,203);
+alter table T056t11 add column robin int default 410
+  not null 
+#ifMX
+droppable
+#ifMX
+;
+
+insert into T056t11 (wren,junco,blackbird,bluejay) values (39,539,444,203);
+create view T056vw12 as
+select duck,raven,swallow,wren
+from T056t10,T056t11;
+
+showddl T056t10;
+showddl T056t11;
+
+#ifMX
+showddl T056vw12;
+#ifMX
+#ifMP
+invoke t056vw12;
+#ifMP
+
+select count (*) from T056vw12;
+drop index T056in5;
+drop index T056in6;
+
+-- Add columns to an empty table.
+alter table T056t27 add column N10 NUMERIC(10,5) default 21;
+alter table T056t27 add column N2 NUMERIC(2) default 22;
+insert into T056t27 (N2) values (-99),(-1),(0),(1),(99);
+alter table T056t27 add column N3 NUMERIC(3) default 23;
+insert into T056t27 (N3) values (0),(1),(50),(999);
+alter table T056t27 add column N7 NUMERIC(7) default 24;
+insert into T056t27 (N7) values (-9999999),(-1),(0),(1),(6),(9999999);
+alter table T056t27 add column N7U NUMERIC(7) UNSIGNED default 25;
+insert into T056t27 (N7U) values (0),(1),(50),(9999999);
+alter table T056t27 add column N2S NUMERIC(2) SIGNED default 26;
+alter table T056t27 add column N15S NUMERIC(15) SIGNED default 27;
+insert into T056t27 (N15S) values (-999999999999999),(-1),(0),(1),(6),(999999999999999);
+alter table T056t27 add column N3U NUMERIC(3) UNSIGNED default 28;
+insert into T056t27 (C1) values ('jk');
+insert into T056t27 default values;
+select * from T056t27;
+
+-- Add columns to an empty table.
+alter table T056t28 add column RL REAL default 31;
+insert into T056t28 (RL) values (-3e38),(-100),(-1),(0),(1),(50),(3e38);
+alter table T056t28 add column FLT FLOAT default 32;
+alter table T056t28 add column F30 FLOAT(30) default 33;
+alter table T056t28 add column DBLP DOUBLE PRECISION default 34;
+insert into T056t28 (DBLP) values (-4e70),(-100),(-1),(0),(1),(50),(4e70);
+insert into T056t28 (C1) values ('jk');
+insert into T056t28 default values;
+select * from T056t28;
+
+-- Add columns to a table that already has rows.
+alter table T056t127 add column N10 NUMERIC(10,5) default 21;
+alter table T056t127 add column N2 NUMERIC(2) default 22;
+insert into T056t127 (N2) values (-99),(-1),(0),(1),(99);
+alter table T056t127 add column N3 NUMERIC(3) default 23;
+insert into T056t127 (N3) values (0),(1),(50),(999);
+alter table T056t127 add column N7 NUMERIC(7) default 24;
+insert into T056t127 (N7) values (-9999999),(-1),(0),(1),(6),(9999999);
+alter table T056t127 add column N7U NUMERIC(7) UNSIGNED default 25;
+insert into T056t127 (N7U) values (0),(1),(50),(9999999);
+alter table T056t127 add column N2S NUMERIC(2) SIGNED default 26;
+alter table T056t127 add column N15S NUMERIC(15) SIGNED default 27;
+insert into T056t127 (N15S) values (-999999999999999),(-1),(0),(1),(6),(999999999999999);
+alter table T056t127 add column N3U NUMERIC(3) UNSIGNED default 28;
+insert into T056t127 (C1) values ('jk');
+insert into T056t127 default values;
+select * from T056t127;
+
+-- Add columns to a table that already has rows.
+alter table T056t128 add column RL REAL default 31;
+insert into T056t128 (RL) values (-3e38),(-100),(-1),(0),(1),(50),(3e38);
+alter table T056t128 add column FLT FLOAT default 32;
+alter table T056t128 add column F30 FLOAT(30) default 33;
+alter table T056t128 add column DBLP DOUBLE PRECISION default 34;
+insert into T056t128 (DBLP) values (-4e70),(-100),(-1),(0),(1),(50),(4e70);
+insert into T056t128 (C1) values ('jk');
+insert into T056t128 default values;
+select * from T056t128;
+
+?section tests2
+-- T056T30 tests   C1 varchar(8)
+--                 add a fixed field C2 int
+--    key C1 gets shifted from offset 8 to offset 14
+select * from T056t30;
+
+alter table T056t30 add column C2 int default 0;
+insert into T056t30 values ('eeeeeeee', 10), ('f', 30), ('gg', NULL);
+
+select C2 from T056t30 where C2 is not NULL;
+select C2, C1 from T056t30 where C1 like 'cc%';
+select * from T056t30 where C1 = 'gg';
+
+-- T056t31 tests   C1 Varchar(10), C2 int
+--                 add another varchar field
+--   key gets shifted over due to another VOA
+select * from T056t31;
+alter table T056t31 add column C3 varchar(15) default 'BAZ' ;
+select * from T056t31;
+select C2, C1 from T056t31 where C2 > 4;
+select C2, C1 from T056t31 where C2 > 3 and C2 < 6;
+
+insert into T056t31 values ('foo', 8, 'bar');
+
+select C2 from T056t31 where C2 < 5;
+select C2 from T056t31 where C2 > 4;
+select C3, C2 from T056t31 where C3 is not NULL;
+select C3, C2 from T056t31 where C3 is NULL;
+
+-- T056t32 tests   C1 int, C2 int
+--                 add a varchar field
+--   key gets shifted over due to the new VOA
+select * from T056t32;
+alter table T056t32 add column C3 varchar(10) default NULL;
+select * from T056t32;
+select C2, C1, C3 from T056t32 where C2 > 20 and C2 < 60;
+select * from T056t32 where C1 > 4 and C1 < 9;
+select C2, C1 from T056t32 where C3 is null;
+
+insert into T056t32 values (11, 110, 'ali'), (13, 130, 'babba');
+
+select * from T056t32 where C3 is not null;
+select C2, C1, C3 from T056t32 where C2 > 20 and C2 < 60;
+select * from T056t32 where C1 > 4 and C1 < 9;
+
+-- T056t33 tests   4 fixed fields with key C1, C2
+--                 add a varchar field
+--   key gets shifted over due to the new VOA
+--   Run some MDAM type queries
+select * from T056t33;
+alter table T056t33 add column e varchar(8) default NULL;
+
+insert into T056t33 values (-6,-8,0,0, 'the'),
+                         (11,12,0,0, 'FCS'),
+                         (-30,40,0,0, 'date is'),
+                         (25,-6,0,0,  'drawing'),
+                         (50,-26,0,0, 'near');
+
+--------------------------------------------------------------------
+--   2 disjuncts, one interval in each, 1st precedes 2nd
+-- expect rows (1,0),(2,0),(3,0),(5,1),(6,1),(7,1),(8,1)  (7 rows)
+--------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a > 0 and a < 4)
+         or
+        (b = 1 and a >= 5 and a <= 8);
+
+--------------------------------------------------------------------
+--   2 disjuncts, one interval in each, 1st follows 2nd
+-- expect rows (1,1),(2,1),(3,1),(5,0),(6,0),(7,0),(8,0)  (7 rows)
+--------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a >= 5 and a <= 8)
+         or
+        (b = 1 and a > 0 and a < 4);
+
+--------------------------------------------------------------------
+--   2 disjuncts, two intervals in each, 1st precedes 2nd
+-- expect rows (0,0),(4,0),(9,1),(12,1)  (4 rows)
+--------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (0,4))
+         or
+        (b = 1 and a in (9,12));
+
+--------------------------------------------------------------------
+--   2 disjuncts, two intervals in each, 1st follows 2nd
+-- expect rows (0,1),(4,1),(9,0),(12,0)  (4 rows)
+--------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (9,12))
+         or
+        (b = 1 and a in (0,4));
+
+------------------------------------------------------------------------
+--   2 disjuncts, two intervals in each, lists interleave thus: 0 1 0 1
+-- expect rows (0,0),(4,1),(9,0),(12,1)  (4 rows)
+------------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (0,9))
+         or
+        (b = 1 and a in (4,12));
+
+------------------------------------------------------------------------
+--   2 disjuncts, two intervals in each, lists interleave thus: 1 0 1 0
+-- expect rows (0,1),(4,0),(9,1),(12,0)  (4 rows)
+------------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (4,12))
+         or
+        (b = 1 and a in (0,9));
+
+------------------------------------------------------------------------
+--   2 disjuncts, two intervals in each, lists interleave thus: 0 1 1 0
+-- expect rows (0,0),(4,1),(9,1),(12,0)  (4 rows)
+------------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (0,12))
+         or
+        (b = 1 and a in (4,9));
+
+------------------------------------------------------------------------
+--   2 disjuncts, two intervals in each, lists interleave thus: 1 0 0 1
+-- expect rows (0,1),(4,0),(9,0),(12,1)  (4 rows)
+------------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (4,9))
+         or
+        (b = 1 and a in (0,12));
+
+------------------------------------------------------------------------
+--   2 disjuncts, long lists just for fun, lists interleave thus:
+--   1 1 0 0 1 0 1 0 1 1 1 0
+-- expect rows (0,1),(2,1),(4,0),(6,0),(8,1),(10,0),
+--             (12,1),(14,0),(16,1),(18,1),(20,1),(22,0)  (12 rows)
+------------------------------------------------------------------------
+select * from T056t33
+  where (b = 0 and a in (4,6,10,14,22))
+     or
+        (b = 1 and a in (0,2,8,12,16,18,20));
+
+update T056t33 set c = 10
+  where (b = 0 and a in (4,6,10,14,22))
+     or
+        (b = 1 and a in (0,2,8,12,16,18,20));
+
+select * from T056t33
+  where (b = 0 and a in (4,6,10,14,22))
+     or
+        (b = 1 and a in (0,2,8,12,16,18,20));
+
+begin work;
+update T056t33 set c = 99
+  where (b = 0 and a > 0 and a < 4)
+         or
+        (b = 1 and a >= 5 and a <= 8);
+select * from T056t33;
+rollback work;
+
+select * from T056t33;
+
+select * from T056t33
+  where (b = 0 and a > 0 and a < 4)
+         or
+        (b = 1 and a >= 5 and a <= 8);
+
+#ifMX
+------------------------------------------------------------------------
+-- Vary random insert, update, deletes with rollback and 
+-- many 'alter table add column' statements (17 total)
+-- with some within the begin work  and rollback.
+------------------------------------------------------------------------
+alter table T056t34 add column num1 NUMERIC (9,2) UNSIGNED 
+  default null no heading;
+
+insert into T056t34 values (11,'k',1.01);
+insert into T056t34 (orders, ch1) values (12,'l');
+
+select * from T056t34;
+
+alter table T056t34 add vch1 char varying(1) heading '';
+
+insert into T056t34 (orders, ch1) values (16,'p');
+insert into T056t34 (orders, ch1, num1) values (17,'p',4.04);
+insert into T056t34 (orders) values (18);
+
+insert into T056t34 values (20,'r',6.00,'C');
+
+select orders, num1 from T056t34;
+
+begin work;
+
+update T056t34 set vch1 = '6' where num1 = 6;
+
+update T056t34 set num1 = num1 * num1 where vch1 is null;
+
+commit work;
+
+alter table T056t34 add column sma1 SMALLINT UNSIGNED DEFAULT NULL
+  heading 'SmallInt';
+
+insert into T056t34 (orders, sma1) values (51,21);
+
+insert into T056t34 values (52,'S',5.01,'D',22);
+
+alter table T056t34 add vch2 CHARACTER VARYING(255);
+
+insert into T056t34 (orders, vch2) values (61,'character varying(255)');
+
+insert into T056t34 values (62,'V',5.02,'E',23,'variable length column');
+
+insert into T056t34 (orders, num1, sma1, vch2)
+   values (63, 5.03, 24, 'variable length column vch2');
+
+update T056t34 set sma1 = 99 where vch2 like '%vch2';
+
+select orders, sma1, vch1, vch2 from T056t34;
+
+--#ifndef SEABASE_REGRESS
+begin work;
+
+update T056t34 set vch1 = 'v' where num1 > 10;
+
+update T056t34 set num1 = num1 + 10 where vch2 is null;
+
+update T056t34 set sma1 = 100,
+                   vch1 = 'a',
+                   vch2 = 'Z'
+               where orders < 10;
+
+alter table T056t34 add vch3 varchar(3) default 'neo';
+
+update T056t34 set vch3 = 'new' where vch1 = 'v';
+
+rollback;
+--#endif
+
+delete from T056t34 where orders > 2 and orders < 12
+                       or orders = 51;
+
+select orders, sma1, vch1, vch2 from T056t34;
+
+alter table T056t34 add column int1 int unsigned 
+  constraint int_uniq check (int1 < 10000);
+
+insert into T056t34 values 
+  (71, 'I', 7.02, 'F', 700, 'VARCHAR', 100); 
+
+insert into T056t34 (orders, int1) values (72,200);
+
+insert into T056t34 (orders, vch2, int1) values (73,'VCH2', 300);
+
+insert into T056t34 (orders, vch1, sma1, int1) values (74, '2', 72, 400);
+
+alter table T056t34 add vch3 CHARACTER VARYING(2) heading 'VARYING(2)';
+
+insert into T056t34 (orders, num1, sma1, int1) 
+  values (81,8.08,81,81);
+
+insert into T056t34 (orders, vch3) values (82,'AB');
+
+insert into T056t34 (orders, ch1, vch1, vch2, vch3) 
+   values (83,'8','8','vch2_83','83');
+
+update T056t34 set vch3 = 'CD' where ch1 = 'k';
+
+insert into T056t34 values
+   (84,'8', 8.234, '8', 84, 
+   'Bill and Joe ran softly near one of the hill. Some birds sprinted over Madelyn! Racoons and cats and blue birds. Oh My! Violet and Fred rushed sadly towards some door! Genelle and Janine split steadily across one of the string???',
+    84, '83');
+
+-- expected 25 rows
+select orders, num1, vch3, int1 from T056t34;
+
+alter table T056t34 add column dec1 DEC(9,2) UNSIGNED;
+
+insert into T056t34 values 
+  (91,'9',9.1,'9',91,
+  'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE007P6RRT Mom sprinted beneath those worms??? A few horses got out beside Derek??? Those dogs ambled across dad??? An American and Ben leaped neatly over those string??? ',
+  91, '91', 9.1);
+
+insert into T056t34 (orders, dec1) values (92,9.20);
+
+select count(*) from T056t34;
+
+select orders, vch2, int1 from T056t34 where ch1 is NULL and int1 > 300;
+
+select orders, vch2, int1 from T056t34 where dec1 is NOT NULL;
+
+select orders, vch3 from T056t34 where dec1 < 10;
+
+select orders, int1, sma1, vch1, vch2, vch3 from T056t34 where vch3 = 'AB';
+
+update T056t34 set vch2 = 'VVCCHH2',
+               vch3 = 'VV',
+               sma1 = 65535,
+               dec1 = 1234567.89
+       where orders < 20 ; 
+
+select avg(num1), sum(sma1), max(dec1) from T056t34;
+
+delete from T056t34 where num1 = 7.02 and ch1 = 'I';
+
+select orders, sma1, vch2, vch3 from T056t34 where orders < 20;
+
+alter table T056t34 add num10 NUMERIC (9,2) SIGNED default 7.2 
+  heading 'num_10';
+
+insert into T056t34 (orders,num1) values (101,1.01);
+
+insert into T056t34 (orders,ch1,vch2,num10) 
+  values (102,'A','VCH6',1.02);
+
+#ifndef SEABASE_REGRESS
+begin work;
+
+alter table T056t34 add vch11 char varying(1) default 'a' heading 'vch11';
+
+insert into T056t34 (orders,ch1,num1,vch1,sma1,vch2,int1,vch3,dec1,num10)
+  values (103,'A',3.03,'A',303,'VCHAR_6',3030,'EE',33.03, 333.33);
+insert into T056t34 (orders, num10, vch11) values (104,1.04,'4');
+insert into T056t34 values 
+  (106,'A',1.06,'A',106,'VVV_VVV',1060,'66',10.06, 106.00,'a');
+
+rollback;
+#endif
+
+select orders, vch2, vch3, num10 from T056t34;
+
+select orders, vch3, num10 from T056t34 where vch3 = 'EE';
+
+select orders, vch2, vch3, num10 from T056t34 where num10 < 2.00;
+
+update T056t34 set num10 = num10 + 10.10,
+                    vch3 = 'NN' where dec1 is NOT NULL;
+
+select orders, num10, vch3, dec1 from T056t34;
+
+alter table T056t34 add vch11 char varying(1) heading 'col11';
+
+set param ?a02 '0';
+set param ?i02 0;
+
+update T056t34 set vch11 = ?a02,
+  num1 = ?i02, sma1 = ?i02, int1 = ?i02, dec1 = ?i02 where orders = 1;
+
+select orders, vch11, num1, sma1, int1, dec1 from T056t34 where orders < 3;
+
+select orders, vch3, num10, vch11, dec1 from T056t34;
+
+alter table T056t34 add column sma12 SMALLINT SIGNED default -1
+  check (sma12 < 65535 and sma12 > -100);
+
+insert into T056t34 (orders, sma1, vch3) values (112,12,'12');
+
+insert into T056t34 (orders, sma12) values (113, 113);
+
+#ifndef SEABASE_REGRESS
+begin work;
+#endif
+
+alter table T056t34 add column vch13 CHARACTER VARYING(255) 
+  default 'xxx';
+
+#ifndef SEABASE_REGRESS
+-- this insert should return a uniq constraint violation. Not supported on Seabase yet.
+insert into T056t34 (orders, vch1, int1, sma12) values (114,'A',11400, 2000);
+#endif
+
+update T056t34 set vch13 = vch2 where orders = 61;
+
+#ifndef SEABASE_REGRESS
+commit work;
+#endif
+
+select orders, substring(vch13,1,10), substring(vch2,1,20) 
+  from T056t34 where orders = 61 or orders <= 115 and orders >= 110;
+
+alter table T056t34 add column int14 int signed default -100 
+  constraint int14_c check (int14 < 1234567890);
+
+insert into T056t34 values 
+  (115, 'A', 7.02, 'A', 700, 'VARCHAR', 100,'VV',9.02,
+   9.02,'Y', 1, 'COL_14_VCH13', 100); 
+
+insert into T056t34 (orders, int1, vch11) values (116,116,'Z');
+
+update T056t34 set int14 = int14 - 1, sma12 = sma12 + 100 
+  where orders < 50 or orders > 100;
+
+select orders, int14, sma12 from T056t34 where orders between 50 and 100;
+
+alter table T056t34 add column vch15 CHARACTER VARYING(2) default 'zz';
+
+insert into T056t34 (orders, num10, vch3, int14, ch1) 
+  values (120,1.20,'V8',120, 'y');
+
+insert into T056t34 (orders, ch1, vch1, vch2, vch3, vch11) 
+   values (121,'X','x','vch2_varchar255','xx','x');
+
+insert into T056t34 (orders,vch13) values (123,'the following are eligible for membership: non-profit organizations, educational institutions, market researchers, publishers, consultants, governments, and organizations and businesses who do not create, market or sell computer products or services.');
+
+update T056t34 set vch15 = 'CD' where ch1 in ('8','A','y');
+
+select orders, vch15, ch1 from T056t34;
+
+alter table T056t34 add column dec16 DEC(9,7) SIGNED default -9.99;
+
+delete from T056t34
+   where orders > 80 and orders < 100 and vch15 = 'zz'
+      or orders < 65 and ch1 is null;
+
+insert into T056t34 values 
+  (124,'B',12.4,'b',124,'VCH6_COL16',1240,'Bb',1.24,
+   11.24,'b',1124,'VCH13_COL16',11240,'bB',12.1234567);
+
+insert into T056t34 (orders, dec16) values (125,-1.00001);
+
+select orders, num1, vch3, sma12, vch15 from T056t34 where ch1 = '8';
+
+select orders, int1, sma1, vch11, vch13, vch15 from T056t34 where vch1 = 'x';
+
+update T056t34 set 
+    ch1   = 'q',
+    num1  = 1.23,
+    vch1  = 'Q',
+    vch2  = 'Such book shall be kept at the principal office of the Corporation and shall be subject to the rights of inspection required by law as set forth in Section 2.9 of these Bylaws. The Administrator shall be responsible for maintaining such book.',
+    vch11 = 'q',
+    sma1  = 123,
+    vch13 = 'Such book shall be kept at the principal office of the Corporation and shall be subject to the rights of inspection required by law as set forth in Section 2.9 of these Bylaws. The Administrator shall be responsible for maintaining such book.',
+    int14 = 123456789
+  where orders = 123; 
+
+select vch1, vch11, sma1, int14 from T056t34 where orders = 123;
+
+alter table T056t34 add column vch17 varchar(80) upshift default 'vch17'; 
+
+#ifndef SEABASE_REGRESS
+begin work;
+
+insert into T056t34 (orders, ch1, vch15, vch17) 
+  values (128, 'J', 'jj', '12345678901234567890123456789012345678901234567890123456789012345678901234567890'); 
+  ;
+
+update T056t34 set vch17 = 'vahalla' where orders < 110;
+
+rollback;
+#endif
+
+select orders, dec1, ch1, int1, vch15 from T056t34 where orders > 123;
+
+#ifndef SEABASE_REGRESS
+begin work;
+
+delete from T056t34 where num1 is NULL
+   and sma12 = -1 and int14 = -100 and orders > 100;
+
+update T056t34 set vch17 = 'denali' where orders > 100;
+
+rollback;
+
+begin work;
+
+delete from T056t34 where orders < 100 and vch17 = 'VCH17';
+
+insert into T056t34 (orders, vch17) values (1, 'row_1');
+insert into T056t34 (orders, vch15) values (3, 'XP');
+
+select orders, vch15, vch17 from T056t34 where orders < 5;
+
+rollback;
+
+select orders, vch15, vch17 from T056t34;
+
+begin work;
+
+delete from T056t34 where vch15 = 'zz';
+select vch15, vch17, vch1 from T056t34;
+
+rollback work;
+#endif
+
+select orders, vch15 from T056t34 where vch15 like 'z%';
+delete from T056t34 where vch15 = 'zz';
+select orders, vch15, vch17 from T056t34 where vch15 = 'zz';
+
+#ifMX
+
+?section tests3
+------------------------------------------------
+-- Test cases for Genesis case 10-021115-6165 --
+------------------------------------------------
+
+-- Expecting an error message; number of significant digits (to the left of the
+-- decimal point) is greater than 3 (7 - 4 = 3).
+create table t056t50 (t056t50_col1 decimal (7,4) default 12345.67 not null primary key);
+
+create table t056t51 (t056t51_col1 decimal (7,4) default 123.67 not null primary key);
+insert into t056t51 default values;
+
+select * from t056t51;
+
+alter table t056t51 add column t056t51_col2 decimal(8,5) unsigned default + 00321.123456;
+alter table t056t51 add column t056t51_col3 numeric(4,4) default - 0.123456;
+alter table t056t51 add column t056t51_col4 numeric(7,4) unsigned default 123.12;
+alter table t056t51 add column t056t51_col5 decimal(2,2) unsigned default 0.67;
+
+select * from t056t51;
+
+-- Expecting an error message
+alter table t056t51 add column t056t51_bad_col numeric (5,4) default 12345.67;
+alter table t056t51 add column t056t51_bad_col smallint unsigned default 999999.12;
+-- The following test case got an internal error message which is not desirable...
+alter table t056t51 add column t056t51_bad_col decimal(8,5) unsigned default -123.456789;
+
+create table t056t52 (t056t52_col int not null primary key);
+insert into t056t52 values (10), (2);
+alter table t056t52 add column t056t52_col2 pic 999v999 default 123.67;
+select * from t056t52;
+insert into t056t52 values (1, default), (20, 222);
+select * from t056t52;
+
+create table t056t53 (t056t53_col decimal (7,4) default 00345.67 not null primary key);
+insert into t056t53 default values;
+select * from t056t53;
+alter table t056t53 add column t056t53_col2 int unsigned default 123.456789;
+alter table t056t53 add column t056t53_col3 bigint default -123.;
+select * from t056t53;
+
+create table t056t54 (t056t54_col pic s9(3)v9(4) default - 00000123.456
+                      not null primary key);
+insert into t056t54 default values;
+select * from t056t54;
+
+create table t056t55 (t056t55_col pic 9(0)v9(4) default 0.67 not null primary key);
+insert into t056t55 default values;
+select * from t056t55;
+
+create table t056t56 (t056t56_col numeric(10,2)
+                      default - 00000000 not null primary key);
+insert into t056t56 default values;
+select * from t056t56;
+alter table t056t56 add column t056t56_col2 int default 0.0;
+alter table t056t56 add column t056t56_col3 pic 9 default +00;
+alter table t056t56 add column t056t56_col4 decimal default 0;
+select * from t056t56;
+
+create table t056t57 (a1 numeric(2,2) signed default 0 not null);
+showddl t056t57;
+insert into t056t57 default values;
+select * from t056t57;
+
+create table t056t58 (a1 decimal(4,4) signed default -0.0000 not null);
+showddl t056t58;
+insert into t056t58 default values;
+select * from t056t58;
+
+create table t056t59 (a1 decimal(3,3) signed default - 0000.12 not null);
+showddl t056t59;
+insert into t056t59 default values;
+select * from t056t59;
+
+create table t056t60 (a1 numeric(2,2) unsigned default 0.00 not null);
+showddl t056t60;
+insert into t056t60 default values;
+select * from t056t60;
+
+create table t056t61 (a1 numeric(2,2) default -0.0 not null);
+showddl t056t61;
+insert into t056t61 default values;
+select * from t056t61;
+
+?section test4ddl
+------------------------------------------------
+-- Test cases for Genesis case 10-081121-3272 --
+-- Add column + OLT fetch/update/delete tests --
+------------------------------------------------
+create table t056t62 (i1 numeric(18) default 71 not null,
+                      i2 numeric(18,7) default 69, 
+                      i3 largeint default 39 
+                        primary key desc not null)
+                      location $$partition$$;
+					  
+create table t056t63 (i2 numeric (7,0)
+                        primary key desc not null,
+                      i3 double precision default 16 not null,
+                      s0Integer PIC S9(4) default 85 not null,
+                      i1 decimal(18) default 12734 not null)
+                      store by primary key
+                      location $$partition2$$;
+					  
+?section test4data	
+insert into t056t62 values (204, 1.3815032111910257E9, 33);
+insert into t056t62 values (207, 3.019297491424696E8,  39);
+insert into t056t62 values (216, 1.5142273252355876E9, 38);
+alter table t056t62 add column s0Integer decimal (4,0) default -421;
+insert into t056t62 values (188, null, 59, 250);
+insert into t056t62 values (216, null, 68, 147);
+
+insert into t056t63 values (16, 4714.74, 14, 12734);
+
+?section test4OLTfetch
+-- expect 5 rows
+select * from t056t62; 
+prepare x from select count(*) from t056t62 where i3 = ?p and i1 > 100;
+set param ?p 59;
+execute x;
+set param ?p 39;
+execute x;
+-- expect the same 5 rows
+select * from t056t62;
+
+?section test4OLTupdate
+-- expect 5 rows
+select * from t056t62; 
+prepare x from update t056t62 set i2 = 0 where i3 = ?p and i1 > 100;
+set param ?p 59;
+execute x;
+set param ?p 39;
+execute x;
+-- expect 5 rows with only I2 col updated for 2 rows
+select * from t056t62;
+
+?section test4OLTdelete
+-- expect 5 rows
+select count(*) from t056t62; 
+delete from t056t62 where ( not (i1) in
+                             (select count(*) from t056t63 t2
+                             where ( 6 < 3 ) group by t2.i2) );
+-- expect 0 rows							 
+select count(*) from t056t62; 
+
+?section test4cleanup
+drop table t056t62;
+drop table t056t63;
+
+?section test4OLTops  
+obey test056(test4ddl);
+obey test056(test4data);
+obey test056(test4OLTfetch);
+obey test056(test4cleanup);
+
+obey test056(test4ddl);
+obey test056(test4data);
+obey test056(test4OLTupdate);
+obey test056(test4cleanup);
+
+obey test056(test4ddl);
+obey test056(test4data);
+obey test056(test4OLTdelete);
+obey test056(test4cleanup);
+
+?section tests4
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
+obey test056(test4OLTops);
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
+obey test056(test4OLTops);
+
+?section test5SyskeyOneVarchar
+-- test for syskey + only varchar fields + pad bytes before syskey
+create table t056t5 (i1 varchar(8) not null not droppable) store by (i1);
+insert into t056t5 values ('a');
+alter table t056t5 add column i2 varchar(4) default '1234' not null;
+insert into t056t5 values ('b','1234');
+select i2 from t056t5;
+drop table t056t5;
+
+?section test5SyskeyAllFixed
+-- test for syskey + all fixed fields + padding bytes
+create table t056t5 ( 
+    a1 decimal (18) not null not droppable,
+    a2 numeric (9, 2) default 49,
+    a4 decimal (9,0) ) 
+    location $$partition2$$
+    store by (a1 asc);
+insert into t056t5 values ( 1, 66.22, null); 
+alter table t056t5 add column b1 decimal (18) default 1580 not null not droppable;
+insert into t056t5 values ( 2, 66.22, 12123, 34343);
+select b1 from t056t5;
+drop table t056t5;  
+
+?section test5NoExpandShortRow
+obey test056(test5SyskeyOneVarchar);
+obey test056(test5SyskeyAllFixed);
+
+?section tests5
+------------------------------------------------
+-- Test cases for add column with no
+-- expandShortRow() called on them. 
+------------------------------------------------
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
+obey test056(test5NoExpandShortRow);
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
+obey test056(test5NoExpandShortRow);
+
+?section testExpandShortRowSyskey
+-- case 10-090423-0104 
+
+create table t056syskey
+  (
+    vch1 varchar(3)
+  , vch2 varchar(1) 
+  ) no partition;
+
+insert into t056syskey (vch2) values ('a');
+alter table t056syskey add column ch4 char(3);
+select vch1,vch2 from t056syskey;
+
+-- In the above test, there are two nullable varchars and the added column
+-- is a nullable fixed column. This added column causes 1 bit shift in how
+-- null bits will be interpreted in a short row. evalClauses() does not 
+-- handle shifts in null bits due to added columns. The fix is to expand the
+-- short row in syskey case too.
+
+?section testPaddingChar4to2
+-- case 10-090505-4165 
+-- Table with 4 bytes padding characters after bitmap
+
+create table t056pc4to2
+ (
+    i largeint not null not droppable primary key,
+    vch1 varchar(3)
+  , vch2 varchar(1)
+  ) no partition;
+
+insert into t056pc4to2 values (1,'000','a');
+
+alter table t056pc4to2 add column vch3 varchar(8) default 'Z';
+
+-- After alter table, one VO3 has been inserted before bitmap, padding
+-- characters after bitmap should be changed from 4 bytes to 2 bytes.
+
+select * from t056pc4to2;
+
+?section testbugfix
+
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
+obey test056(testExpandShortRowSyskey);
+obey test056(testPaddingChar4to2);
+
+?section test6NullVarchar
+drop table t056t64;
+create table t056t64
+  (
+     a int not null not droppable primary key,
+     b varchar(10),
+     c varchar(20)
+  ) no partitions;
+  
+insert into t056t64 values (1, 'abc', null);
+insert into t056t64 values (2, null, 'abc');
+insert into t056t64 values (3, null, null);
+insert into t056t64 values (4, 'abc', 'abc');
+insert into t056t64 (c, b, a) values (null, null, 5);
+
+select * from t056t64;
+alter table t056t64 add column d varchar(30) default 'pqr';
+insert into t056t64 (d, c, b, a) values (null, null, null, 6);
+select * from t056t64;
+alter table t056t64 add column e varchar(30) default null;
+insert into t056t64 (d, c, e, b, a) values (null, null, 'foo', null, 7);
+select * from t056t64;
+update t056t64 set b = null;
+update t056t64 set c = null;
+update t056t64 set d = '';
+select * from t056t64;
+
+?section tests6
+-- insert tests with nullable indirect varchars
+-- for aligned and packed format.
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'ON';
+obey test056(test6NullVarchar);
+CONTROL QUERY DEFAULT ALIGNED_ROW_FORMAT 'OFF';
+obey test056(test6NullVarchar);
+
+?section end_TEST056

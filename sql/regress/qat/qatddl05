@@ -1,0 +1,30 @@
+LOG aqatddl05 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description: SELECT * against populated database to check that
+--              correct values were stored.
+---------------------------------------------------------------------
+
+---------------------------------------------------------------------
+-- ENFORM class/manuals order-entry/personnel database.
+---------------------------------------------------------------------
+  SELECT * FROM orders ;
+  SELECT * FROM customer ;
+  SELECT * FROM fromsup ;
+  SELECT * FROM odetail ;
+  SELECT * FROM parts ;
+  SELECT * FROM supplier ;
+  SELECT * FROM region ;
+  SELECT * FROM branch ;
+  SELECT * FROM employee ;
+---------------------------------------------------------------------
+  SELECT * FROM empone ;
+  SELECT * FROM emppub ;
+  SELECT * FROM expfroms ;
+---------------------------------------------------------------------
+  SELECT * FROM partsfor ;
+  SELECT * FROM salecust ;
+  SELECT * FROM salecub  ;
+  SELECT * FROM fsdetail ;
+---------------------------------------------------------------------
+LOG;

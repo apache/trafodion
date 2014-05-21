@@ -1,0 +1,29 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+-- control query default HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION  'ON';
+-- control query default HIST_ON_DEMAND_STATS_SIZE '10000';
+-- This CQD is added for creating a table with no
+-- partition or primary key when the POS is enabled.
+control query default POS_ALLOW_NON_PK_TABLES 'ON';
+
+#ifNT
+-- This CQD is added to prevent random crashes in ESPs on NT with
+-- getRefCount() == 1 assert failure in Ipc.cpp
+control query default  RISK_PREMIUM_SERIAL '1.0';
+#ifNT

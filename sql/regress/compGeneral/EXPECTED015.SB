@@ -1,0 +1,3234 @@
+>>
+>>create table T015TA
++>  (
++>      A VARCHAR(4) NOT NULL
++>     ,B VARCHAR(3) NOT NULL
++>     ,C INT
++>  );
+
+--- SQL operation complete.
+>>
+>>create table T015TX
++>  (
++>      AAA VARCHAR(4) NOT NULL
++>     ,BBB VARCHAR(3) NOT NULL
++>     ,CCC INT
++>  );
+
+--- SQL operation complete.
+>>
+>>
+>>?section dml
+>>-- 4 rows
+>>insert into T015TA values('a', 'b', 3);
+
+--- 1 row(s) inserted.
+>>insert into T015TA values('m', 'z', 1);
+
+--- 1 row(s) inserted.
+>>insert into T015TA values('r', 'q', 15);
+
+--- 1 row(s) inserted.
+>>insert into T015TA values('z', 'y', 25);
+
+--- 1 row(s) inserted.
+>>
+>>-- 4 rows plus 4 more
+>>insert into T015TX values('a', 'b', 3);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('a', 'B', 33);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('m', 'z', 1);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('M', 'Z', 1);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('r', 'q', 15);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('R', 'Q', 15);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('z', 'y', 25);
+
+--- 1 row(s) inserted.
+>>insert into T015TX values('z', 'Y', 225);
+
+--- 1 row(s) inserted.
+>>
+>>?section test
+>>
+>>-- 16 rows
+>>select x.a from t015ta x join t015ta y on 1=1 order by 1;
+
+A   
+----
+
+a   
+a   
+a   
+a   
+m   
+m   
+m   
+m   
+r   
+r   
+r   
+r   
+z   
+z   
+z   
+z   
+
+--- 16 row(s) selected.
+>>
+>>-- Ambiguous col ref A
+>>select a from t015ta x join t015ta y on 1=1;
+
+*** ERROR[4004] Column name A is ambiguous.  Tables in scope: X, Y.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- 16 rows
+>>select * from t015ta x join t015ta y on 1=1
++>order by 1,2,3,4,5,6;
+
+A     B    C            A     B    C          
+----  ---  -----------  ----  ---  -----------
+
+a     b              3  a     b              3
+a     b              3  m     z              1
+a     b              3  r     q             15
+a     b              3  z     y             25
+m     z              1  a     b              3
+m     z              1  m     z              1
+m     z              1  r     q             15
+m     z              1  z     y             25
+r     q             15  a     b              3
+r     q             15  m     z              1
+r     q             15  r     q             15
+r     q             15  z     y             25
+z     y             25  a     b              3
+z     y             25  m     z              1
+z     y             25  r     q             15
+z     y             25  z     y             25
+
+--- 16 row(s) selected.
+>>
+>>-- 12 rows
+>>select count(*) from (  select * from t015ta join t015tx on c=ccc union all
++>			select * from t015ta join t015tx on c=ccc) x;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>
+>>-- 4 rows
+>>select * from 
++>  t015ta aa natural join t015ta bb
++>order by 1,2,3;
+
+A     B    C          
+----  ---  -----------
+
+a     b              3
+m     z              1
+r     q             15
+z     y             25
+
+--- 4 row(s) selected.
+>>
+>>-- 4 rows
+>>select a from 
++>  t015ta aa natural join t015ta bb
++>order by 1;
+
+A   
+----
+
+a   
+m   
+r   
+z   
+
+--- 4 row(s) selected.
+>>
+>>-- 16 rows
+>>select * from 
++>  (t015ta aa natural join t015ta bb)
++>  join
++>  (t015ta cc natural join t015ta dd)
++>  on 1=1
++>order by 1,2,3,4,5,6;
+
+A     B    C            A     B    C          
+----  ---  -----------  ----  ---  -----------
+
+a     b              3  a     b              3
+a     b              3  m     z              1
+a     b              3  r     q             15
+a     b              3  z     y             25
+m     z              1  a     b              3
+m     z              1  m     z              1
+m     z              1  r     q             15
+m     z              1  z     y             25
+r     q             15  a     b              3
+r     q             15  m     z              1
+r     q             15  r     q             15
+r     q             15  z     y             25
+z     y             25  a     b              3
+z     y             25  m     z              1
+z     y             25  r     q             15
+z     y             25  z     y             25
+
+--- 16 row(s) selected.
+>>
+>>-- ambig col ref A
+>>select a from 
++>  (t015ta aa natural join t015ta bb)
++>  join
++>  (t015ta cc natural join t015ta dd)
++>  on 1=1;
+
+*** ERROR[4004] Column name A is ambiguous.  Tables in scope: AA, BB, CC, DD.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- 4 rows
+>>select * from 
++>  (t015ta aa natural join t015ta bb)
++>  natural join
++>  (t015ta cc natural join t015ta dd)
++>order by 1,2,3 ;
+
+A     B    C          
+----  ---  -----------
+
+a     b              3
+m     z              1
+r     q             15
+z     y             25
+
+--- 4 row(s) selected.
+>>
+>>-- 4 rows
+>>select a from 
++>  (t015ta aa natural join t015ta bb)
++>  natural join
++>  (t015ta cc natural join t015ta dd)
++>order by 1 ;
+
+A   
+----
+
+a   
+m   
+r   
+z   
+
+--- 4 row(s) selected.
+>>
+>>-- 4 rows
+>>select * from
++>  (select * from t015ta a natural join t015ta b) as x
++>  join 
++>  (select * from t015ta a natural join t015ta b) as y
++>  on x.a=y.a
++>order by 1,2,3,4,5,6 ;
+
+A     B    C            A     B    C          
+----  ---  -----------  ----  ---  -----------
+
+a     b              3  a     b              3
+m     z              1  m     z              1
+r     q             15  r     q             15
+z     y             25  z     y             25
+
+--- 4 row(s) selected.
+>>
+>>-- parse error expected
+>>select * from (
++>  (select * from t015ta a natural join t015ta b) as x
++>  join 
++>  (select * from t015ta a natural join t015ta b) as y
++>  on x.a=y.a) q
++>  ;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from (   (select * from t015ta a natural join t015ta b) as x   join   
+ (select * from t015ta a natural join t015ta b) as y   on x.a=y.a) q   ;
+                                                                   ^ (147 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- these next 3 queries should all return the same 4 rows
+>>select * from t015ta where exists(select 1 from (select a,a from t015ta) x)
++>order by 1,2,3;
+
+A     B    C          
+----  ---  -----------
+
+a     b              3
+m     z              1
+r     q             15
+z     y             25
+
+--- 4 row(s) selected.
+>>select * from t015ta where exists(select * from (select a,a from t015ta) x)
++>order by 1,2,3;
+
+A     B    C          
+----  ---  -----------
+
+a     b              3
+m     z              1
+r     q             15
+z     y             25
+
+--- 4 row(s) selected.
+>>select * from t015ta where exists(select * from (select a,a from t015ta) x
++>group by b)
++>order by 1,2,3;
+
+A     B    C          
+----  ---  -----------
+
+a     b              3
+m     z              1
+r     q             15
+z     y             25
+
+--- 4 row(s) selected.
+>>
+>>-- ambig col ref A
+>>select * from t015ta where exists(select * from (select a,a from t015ta) x group by a);
+
+*** ERROR[4004] Column name A is ambiguous.  Tables in scope: X.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- col X not found
+>>select * from t015ta where exists(select * from (select a,a from t015ta) x group by x);
+
+*** ERROR[4001] Column X is not found.  Tables in scope: SEABASE.SCH.T015TA, X.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- col B not found
+>>select * from (select a,a from t015ta) x group by b;
+
+*** ERROR[4001] Column B is not found.  Tables in scope: X.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ambig col ref A
+>>select * from (select a,a from t015ta) x group by a;
+
+*** ERROR[4004] Column name A is ambiguous.  Tables in scope: X.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ambig star colref
+>>select * from (select a,a from t015ta) x;
+
+*** ERROR[4011] Reference made to column X.A via star (*) is ambiguous.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ambig col ref A
+>>select * from t015ta where exists(select a from (select a,a from t015ta) x group by b);
+
+*** ERROR[4004] Column name A is ambiguous.  Tables in scope: X.  Default schema: SEABASE.SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ambig star colref
+>>select x.* from (select a,a from t015ta) x;
+
+*** ERROR[4011] Reference made to column X.A via star (*) is ambiguous.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- select list contains a non-grouping column
+>>select * from (select a,b from t015ta) x group by a;
+
+*** ERROR[4012] Column reference X.B must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>?section test_9737
+>>prepare xx from
++>  update t015ta set c =
++>    (select seq
++>     from (select runningsum(1) as seq, a
++>           from t015ta i
++>           sequence by i.b
++>          ) u
++>     where u.a = t015ta.a
++>    );
+
+--- SQL command prepared.
+>>-- should compile cleanly (it used to get "optimizer pass two assertion failure
+>>-- ((partReqForChild != NULL) AND (reqdOrderForChild != NULL)) in file ...
+>>-- OptPhysRelExpr.cpp at line 4805. Attempting to recover and produce a plan.")
+>>
+>>#ifNSK
+>>?section verify_10_080701_4240
+>>--verify that single replicate broadcast ESPs float
+>>set schema $$TEST_CATALOG$$.myhcube;
+>>
+>>-- seed random number generator
+>>control query default float_esp_random_num_seed '7';
+>>
+>>-- first test has a 6.25% probability of raising a false alarm
+>>prepare xx from select * from t10 a, t9, t8, t10 b
++>where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+>>execute countESPdistinctCPUs;
+>> -- remember result of 1st test
+>>
+>>-- repeat test 3 times
+>>control query default query_template_cache 'OFF';
+>>prepare xx from select * from t10 a, t9, t8, t10 b
++>where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+>>execute countESPdistinctCPUs;
+>> -- remember result of 2nd test
+>>
+>>prepare xx from select * from t10 a, t9, t8, t10 b
++>where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+>>execute countESPdistinctCPUs;
+>> -- remember result of 3rd test
+>>
+>>prepare xx from select * from t10 a, t9, t8, t10 b
++>where a.c = t9.c and a.b = t8.b and b.c = t8.c;
+>>execute countESPdistinctCPUs;
+>> -- remember result of 4th test
+>>control query default query_template_cache reset;
+>>
+>>-- probablity of all 4 tests raising false alarm is 0.0015%
+>>execute checkPASSorFAIL;
+>>#ifNSK
+>>
+>>?section maxCardEst_setup
+>>prepare showMaxCardEst from
++>select distinct operator, tab_name, cardinality, max_cardinality
++>  from (select
++>         substring(cast(SEQ_NUM+100 as char(3)),2,2),
++>         substring(operator,1,16) operator,        
++>         substring
++>         (substring(tname from (1+locate('.',tname))),
++>         (1+locate('.',substring(tname from (1+locate('.',tname))))),
++>          10),        
++>         cast(cardinality as char(11)),        
++>         cast(substring(description from 
++>             position('max_card_est' in description)+14
++>             for position('fragment_id' in description)
++>                -position('max_card_est' in description)) as char(12)) 
++>        from table (explain(NULL,'XX'))
++>       ) as t(s, operator, tab_name, cardinality, max_cardinality)
++>  where operator not in ('ESP_EXCHANGE','PARTITION_ACCESS','SPLIT_TOP')
++>  order by 1,2,3,4 desc;
+
+--- SQL command prepared.
+>>
+>>?section maxCard_tests1
+>>-- test max cardinality for single table scans
+>>control query default dynamic_histogram_compression 'off';
+
+--- SQL operation complete.
+>>set schema $$TEST_CATALOG$$.myhcube;
+
+--- SQL operation complete.
+>>prepare xx from
++>SELECT * FROM t0;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN         T0          1.000E+001   10 fragment_   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t6;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+002   100 fragment   
+TRAFODION_SCAN         T6          1.000E+002   100 fragment   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t8;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+003   1000 fragmen   
+TRAFODION_SCAN         T8          1.000E+003   1000 fragmen   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t9;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN         T9          1.000E+004   10000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d like 'one%';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.250E+004   100000 fragm   
+TRAFODION_SCAN         T10         1.250E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>select count(*) from (SELECT * FROM t10 WHERE d like 'one%') as t;
+
+(EXPR)              
+--------------------
+
+               10000
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d not like 'one%';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          8.750E+004   100000 fragm   
+TRAFODION_SCAN         T10         8.750E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>select count(*) from (SELECT * FROM t10 WHERE d not like 'one%') as t;
+
+(EXPR)              
+--------------------
+
+               90000
+
+--- 1 row(s) selected.
+>>
+>>-- keyColumn = constant
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>select count(*) from (SELECT * FROM t10 WHERE a = 1) as t;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>
+>>-- keyColumn = ?
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>-- nonKeyColumn = constant
+>>prepare xx from
++>SELECT * FROM t10 WHERE d = 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN         T10         1.000E+004   10000 fragme   
+
+--- 2 row(s) selected.
+>>select count(*) from (SELECT * FROM t10 WHERE d = 'one') as t;
+
+(EXPR)              
+--------------------
+
+               10000
+
+--- 1 row(s) selected.
+>>
+>>-- nonKeyColumn = ?
+>>prepare xx from
++>SELECT * FROM t10 WHERE d = ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN         T10         1.000E+004   10000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>-- keyColumn non-equality predicates
+>>prepare xx from
++>SELECT * FROM t10 WHERE a > 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          9.999E+004   99999 fragme   
+TRAFODION_SCAN         T10         9.999E+004   99999 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a >= 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          9.999E+004   99999 fragme   
+TRAFODION_SCAN         T10         9.999E+004   99999 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a < 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a <= 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          2.000E+000   2 fragment_i   
+TRAFODION_SCAN         T10         2.000E+000   2 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a <> 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>-- nonKeyColumn non-equality predicates
+>>prepare xx from
++>SELECT * FROM t10 WHERE d > 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          5.000E+004   50000 fragme   
+TRAFODION_SCAN         T10         5.000E+004   50000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d >= 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          6.000E+004   60000 fragme   
+TRAFODION_SCAN         T10         6.000E+004   60000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d < 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          4.000E+004   40000 fragme   
+TRAFODION_SCAN         T10         4.000E+004   40000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d <= 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          5.000E+004   50000 fragme   
+TRAFODION_SCAN         T10         5.000E+004   50000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d <> 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          9.000E+004   90000 fragme   
+TRAFODION_SCAN         T10         9.000E+004   90000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a > ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a >= ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a < ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a <= ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a <> ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          9.999E+004   100000 fragm   
+TRAFODION_SCAN         T10         9.999E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d > ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d >= ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d < ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d <= ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d <> ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          9.000E+004   100000 fragm   
+TRAFODION_SCAN         T10         9.000E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a is null;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a is not null;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d is null;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d is not null;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          5.000E+004   100000 fragm   
+TRAFODION_SCAN         T10         5.000E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a > b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a >= b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a < b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a <= b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN         T10         3.333E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a <> b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          5.000E+004   100000 fragm   
+TRAFODION_SCAN         T10         5.000E+004   100000 fragm   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a BETWEEN 1 and 2;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          3.000E+000   3 fragment_i   
+TRAFODION_SCAN         T10         3.000E+000   3 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE d BETWEEN 'one' and 'two';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          5.000E+004   50000 fragme   
+TRAFODION_SCAN         T10         5.000E+004   50000 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = 1 and d = 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = ? and d = ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = 1 or d = 'one';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+004   10001 fragme   
+TRAFODION_SCAN         T10         1.000E+004   10001 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t10 WHERE a = ? or d = ?;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+004   10001 fragme   
+TRAFODION_SCAN         T10         1.000E+004   10001 fragme   
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from SELECT * FROM t10 WHERE a = ? and d like 'one%';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>> -- min(1e5, 1) should = 1
+>>
+>>prepare xx from SELECT * FROM t10 WHERE d = ? and d like 'one%';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.250E+004   12500 fragme   
+TRAFODION_SCAN         T10         1.250E+004   12500 fragme   
+
+--- 2 row(s) selected.
+>> -- min(1e5, 1e4) should = 1e4
+>>
+>>prepare xx from SELECT * FROM t10 WHERE a = 1 and d like 'one%';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   1 fragment_i   
+
+--- 2 row(s) selected.
+>> -- min(1e5, 1) should = 1
+>>
+>>prepare xx from SELECT * FROM t10 WHERE d = 'one' and d not like 'one%';
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   10000 fragme   
+TRAFODION_SCAN         T10         1.000E+000   10000 fragme   
+
+--- 2 row(s) selected.
+>> -- min(1e4, 1e5) should = 1e4
+>>
+>>-- we want to test an in list but sqlparseraux.cpp's processINlist
+>>-- transforms "col IN (list)" into:
+>>--   1) an OR predicate if |list| < 100 elements, or
+>>--   2) a VALUES subquery if |list| > 100 elements
+>>prepare xx from SELECT * FROM t10 WHERE b in (1,2);
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          2.000E+002   200 fragment   
+TRAFODION_SCAN         T10         2.000E+002   200 fragment   
+
+--- 2 row(s) selected.
+>>-- maxSel("b in (1,2)") is min(maxSel("b=1")+maxSel("b=2"),1.)
+>>
+>>prepare xx from SELECT * FROM t10 WHERE b in (1,2) and a between 1 and 2;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          2.000E+000   3 fragment_i   
+TRAFODION_SCAN         T10         2.000E+000   3 fragment_i   
+
+--- 2 row(s) selected.
+>> -- maxSel(p1 and p2) is min(maxSel(p1), maxSel(p2))
+>>
+>>prepare xx from SELECT * FROM t10 WHERE b in (1,2) or a between 1 and 2;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          2.030E+002   203 fragment   
+TRAFODION_SCAN         T10         2.030E+002   203 fragment   
+
+--- 2 row(s) selected.
+>> -- maxSel(p1 or p2) is min(maxSel(p1)+maxSel(p2),1)
+>>
+>>?section maxCard_tests2
+>>-- test max cardinality for equi-joins
+>>prepare xx from
++>SELECT * FROM t1, t10 WHERE t1.a = t10.a;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+NESTED_JOIN                   1.000E+001   10 fragment_   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN         T1          1.000E+001   10 fragment_   
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   10 fragment_   
+
+--- 4 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t1, t10 WHERE t1.a = t10.b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HYBRID_HASH_JOIN              1.000E+003   1000 fragmen   
+ROOT                          1.000E+003   1000 fragmen   
+TRAFODION_SCAN         T1          1.000E+001   10 fragment_   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 4 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t1, t10 WHERE t10.a = t1.b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+TRAFODION_SCAN_UNIQUE  T10         1.000E+000   10 fragment_   
+NESTED_JOIN                   1.000E+001   10 fragment_   
+PROBE_CACHE                   1.000E+000   10 fragment_   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN         T1          1.000E+001   10 fragment_   
+
+--- 5 row(s) selected.
+>>
+>>-- test max cardinality for equi-joins where one side is complex
+>>prepare xx from
++>SELECT * FROM t8, t10 WHERE t8.a+1 = t10.a;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HYBRID_HASH_JOIN              1.000E+003   1000 fragmen   
+ROOT                          1.000E+003   1000 fragmen   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN         T8          1.000E+003   1000 fragmen   
+
+--- 4 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t9, t10 WHERE t9.a = t10.b-1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HYBRID_HASH_JOIN              1.000E+005   100000 fragm   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN         T9          1.000E+004   10000 fragme   
+
+--- 4 row(s) selected.
+>>
+>>prepare xx from
++>SELECT * FROM t9, t10 WHERE t10.a+t10.b = t9.b;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HYBRID_HASH_JOIN              1.000E+006   1e+006 fragm   
+ROOT                          1.000E+006   1e+006 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN         T9          1.000E+004   10000 fragme   
+
+--- 4 row(s) selected.
+>>
+>>?section maxCard_tests3
+>>-- test max cardinality for group by
+>>update statistics for table t10 on (a,b,c,d),(b,c,d),(c,d),(b,c);
+
+--- SQL operation complete.
+>>prepare xx from
++>SELECT a,b,c,d FROM t10 GROUP BY a,b,c,d;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 2 row(s) selected.
+>>select count(*) from (SELECT a,b,c,d FROM t10 GROUP BY a,b,c,d) as t;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from
++>SELECT b,c,d FROM t10 GROUP BY b,c,d;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HASH_GROUPBY                  1.000E+005   100000 fragm   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 3 row(s) selected.
+>>select count(*) from (SELECT b,c,d FROM t10 GROUP BY b,c,d) as t;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from
++>SELECT c,d FROM t10 GROUP BY c,d;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HASH_PARTIAL_GRO              1.000E+002   100 fragment   
+ROOT                          1.000E+002   100 fragment   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 3 row(s) selected.
+>>select count(*) from (SELECT c,d FROM t10 GROUP BY c,d) as t;
+
+(EXPR)              
+--------------------
+
+                 100
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from
++>SELECT d FROM t10 GROUP BY d;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HASH_PARTIAL_GRO              1.000E+001   10 fragment_   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+
+--- 3 row(s) selected.
+>>select count(*) from (SELECT d FROM t10 GROUP BY d) as t;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>
+>>-- verify fix to genesis cases 10-080530-0291, 10-080530-0305
+>>-- previously maxcardinality(a=1 and b=1) was incorrectly computed as
+>>--            maxcardinality(a=b and b=1)
+>>prepare xx from SELECT count(*) FROM t10 where b = 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+002   100 fragment   
+
+--- 3 row(s) selected.
+>>prepare xx from SELECT count(*) FROM t10 where c = 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+003   1000 fragmen   
+
+--- 3 row(s) selected.
+>>prepare xx from SELECT count(*) FROM t10 where b = 1 and c = 1;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+000   100 fragment   
+
+--- 3 row(s) selected.
+>>
+>>?section fixes
+>>-- fix for soln 10-080908-5708
+>>prepare xx from select count(*) from t10 where c > 999;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+003   1000 fragmen   
+
+--- 3 row(s) selected.
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from select count(*) from t10 where c < 0;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+ROOT                          1.000E+000   1 fragment_i   
+SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+003   1000 fragmen   
+
+--- 3 row(s) selected.
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>-- Fix for bugzilla case 3529
+>>CREATE TABLE NPJOB028D
++>  (
++>    C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
++>  , C2                               INT DEFAULT NULL
++>  , C3                               VARCHAR(12) CHARACTER SET ISO88591 COLLATE
++>      DEFAULT NO DEFAULT -- NOT NULL NOT DROPPABLE
++>  , C4                               INT DEFAULT NULL
++>  , C5                               CHAR(10) CHARACTER SET ISO88591 COLLATE
++>      DEFAULT DEFAULT NULL
++>  , C6                               INT DEFAULT NULL
++>  , C7                               CHAR(12) CHARACTER SET ISO88591 COLLATE
++>      DEFAULT DEFAULT NULL
++>  , CONSTRAINT NPJOB028D_117387252_7433 PRIMARY KEY (C1 ASC,
++>      C3 ASC) NOT DROPPABLE
++>  , CONSTRAINT NPJOB028D_896387252_7433 CHECK
++>      (NPJOB028D.C1 IS NOT NULL AND
++>      NPJOB028D.C3 IS NOT NULL) NOT DROPPABLE
++>  )
++>  HASH PARTITION
++>  STORE BY (C1 ASC, C3 ASC)
++>  ;
+
+--- SQL operation complete.
+>>
+>>prepare st1 from UPDATE NPJOB028D SET ("C2","C3","C4","C5","C6","C7") = (?[10],?[10],?[10],?[10],?[10],?[10]) 
++>WHERE "C1" = ?[10];
+
+--- SQL command prepared.
+>>
+>>drop table NPJOB028D;
+
+--- SQL operation complete.
+>>
+>>?section joinMaxCard
+>>-- verify fix for soln 10-090129-8763
+>>prepare xx from select count(*) from t10, t9 where t10.a = t9.a;
+
+--- SQL command prepared.
+>>execute showMaxCardESt;
+
+OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
+----------------  ----------  -----------  ---------------
+
+HYBRID_HASH_JOIN              1.000E+004   10000 fragme   
+ROOT                          1.000E+000   1 fragment_i   
+SORT_PARTIAL_AGG              1.000E+000   1 fragment_i   
+TRAFODION_SCAN         T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN         T9          1.000E+004   10000 fragme   
+
+--- 5 row(s) selected.
+>>execute xx;
+
+(EXPR)              
+--------------------
+
+               10000
+
+--- 1 row(s) selected.
+>>
+>>?section monkeydoodletest
+>>-- if any of the tests in this & the following section fail, please check
+>>-- the code in optimizer/OptItemExpr.cpp ItemExpr::isAnEquiJoinPredicate
+>>-- to make sure it still returns true for equi-join predicates else false.
+>>-- make sure the cmpassert that was reported in genesis case 10-090107-9003
+>>-- solution 10-090107-8259 does not recur
+>>control query default query_template_cache 'OFF';
+
+--- SQL operation complete.
+>>control query default COMP_BOOL_113 'ON';
+
+--- SQL operation complete.
+>>PREPARE xx FROM 
++>        SELECT T0.i3 , t0.i3 FROM T15D2 T0 CROSS JOIN T15D1 t1 
++>        WHERE EXISTS ( 
++>            SELECT T0.i2 FROM t15d1 AS t2 
++>            WHERE ( 'cC' IN ( T2.I2 ) )
++>              OR ( T2.I2 < SOME ( 
++>         SELECT t3.i2 FROM t15d2 T3, t15d1 AS T4 
++>         WHERE t1.i1 IN ( T4.I1 ) ) 
++>            )  
++>        ) ;
+
+--- SQL command prepared.
+>>
+>>control query default COMP_BOOL_113 'OFF';
+
+--- SQL operation complete.
+>>PREPARE xx FROM 
++>        SELECT T0.i3 , t0.i3 FROM T15D2 T0 CROSS JOIN T15D1 t1 
++>        WHERE EXISTS ( 
++>            SELECT T0.i2 FROM t15d1 AS t2 
++>            WHERE ( 'cC' IN ( T2.I2 ) )
++>              OR ( T2.I2 < SOME ( 
++>         SELECT t3.i2 FROM t15d2 T3, t15d1 AS T4 
++>         WHERE t1.i1 IN ( T4.I1 ) ) 
++>            )  
++>        ) ;
+
+--- SQL command prepared.
+>>control query default COMP_BOOL_113 reset;
+
+--- SQL operation complete.
+>>
+>>
+>>?section 3651_mod_equi_join_pred
+>>-- make sure the query reported in genesis solution 10-080604-3651
+>>-- continue to get an inner-join (and not a cross producct)
+>>control query default COMP_BOOL_113 'ON';
+
+--- SQL operation complete.
+>>prepare xx from select * from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+
+--- SQL command prepared.
+>>select substring(description from position('join_type:' in description) for 17)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)           
+-----------------
+
+join_type: inner 
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from select count(*) from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+
+--- SQL command prepared.
+>>select substring(description from position('join_type:' in description) for 17)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)           
+-----------------
+
+join_type: inner 
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from select * from t15t1, t15t2 where t15t1.a + ? = t15t2.a;
+
+--- SQL command prepared.
+>>select substring(description from position('join_type:' in description) for 17)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)           
+-----------------
+
+join_type: inner 
+
+--- 1 row(s) selected.
+>>
+>>control query default COMP_BOOL_113 'OFF';
+
+--- SQL operation complete.
+>>prepare xx from select * from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+
+--- SQL command prepared.
+>>select substring(description from position('join_type:' in description) for 17)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)           
+-----------------
+
+join_type: inner 
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from select count(*) from t15t1, t15t2 where ((t15t1.a-mod(t15t1.a,1000))/1000)=t15t2.a;
+
+--- SQL command prepared.
+>>select substring(description from position('join_type:' in description) for 17)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)           
+-----------------
+
+join_type: inner 
+
+--- 1 row(s) selected.
+>>
+>>prepare xx from select * from t15t1, t15t2 where t15t1.a + ? = t15t2.a;
+
+--- SQL command prepared.
+>>select substring(description from position('join_type:' in description) for 17)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)           
+-----------------
+
+join_type: inner 
+
+--- 1 row(s) selected.
+>>
+>>control query default COMP_BOOL_113 reset;
+
+--- SQL operation complete.
+>>control query default query_template_cache reset;
+
+--- SQL operation complete.
+>>
+>>
+>>?section moreEquiJoinsThatShouldNotBeCrossProducts
+>>-- test genesis solution 10-090305-9790
+>>control query default COMP_BOOL_113 'ON';
+
+--- SQL operation complete.
+>>prepare xx from select * from $$TEST_CATALOG$$.myhcube.t10 t10
++>left join $$TEST_CATALOG$$.myhcube.t9 t9 
++>on t9.d = lpad(trim(cast(t10.d as char(5))),10,'0');
+
+--- SQL command prepared.
+>>-- used to get a cross product
+>>select substring(description from position('join_method:' in description) for 33)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)                           
+---------------------------------
+
+join_method: hash (cross product)
+
+--- 1 row(s) selected.
+>>
+>>control query default COMP_BOOL_113 'OFF';
+
+--- SQL operation complete.
+>>prepare xx from select * from $$TEST_CATALOG$$.myhcube.t10 t10
++>left join $$TEST_CATALOG$$.myhcube.t9 t9 
++>on t9.d = lpad(trim(cast(t10.d as char(5))),10,'0');
+
+--- SQL command prepared.
+>>-- used to get a cross product
+>>select substring(description from position('join_method:' in description) for 33)
++>from table(explain(null, 'XX')) where operator like '%JOIN%';
+
+(EXPR)                           
+---------------------------------
+
+join_method: hash  parallel_join_
+
+--- 1 row(s) selected.
+>>
+>>control query default COMP_BOOL_113 reset;
+
+--- SQL operation complete.
+>>
+>>
+>>?section RQPcqdtests
+>>control query default showcontrol_show_all 'ON';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+1.2
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+1.2
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+1
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+0.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+1
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+1.15
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'minimum';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+MINIMUM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+0
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+0.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'system';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'maximum';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+MAXIMUM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+5.0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+2.0
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+2.0
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization reset;
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+5.0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+2.0
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+2.0
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'MINIMUM';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+MINIMUM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+0
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+0.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'HIGH';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+HIGH
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+2.5
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+1.5
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+1
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+3.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+1.5
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'MAXIMUM';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+MAXIMUM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+5.0
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+2.0
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+1.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+2
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+2.0
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization 'SYSTEM';
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>control query default robust_query_optimization reset;
+
+--- SQL operation complete.
+>>obey test015(showRQPcqds);
+>>showcontrol default robust_query_optimization, match full, no header;
+SYSTEM
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_nj, match full, no header;
+1.2
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_serial, match full, no header;
+1.2
+
+--- SQL operation complete.
+>>showcontrol default partitioning_scheme_sharing, match full, no header;
+1
+
+--- SQL operation complete.
+>>showcontrol default robust_hj_to_nj_fudge_factor, match full, no header;
+0.0
+
+--- SQL operation complete.
+>>showcontrol default robust_sortgroupby, match full, no header;
+1
+
+--- SQL operation complete.
+>>showcontrol default risk_premium_mj, match full, no header;
+1.15
+
+--- SQL operation complete.
+>>
+>> -- show RQP cqd settings
+>>
+>>?section keylessNJtest_setup
+>>prepare showSimplePlan from
++>  select [first 2] operator
++>  from (select
++>         substring(cast(SEQ_NUM+100 as char(3)),2,2),
++>         substring(operator,1,16) operator
++>         from table (explain(NULL,'XX'))
++>         where trim(operator) <> 'ESP_EXCHANGE'
++>       ) as t(s, operator)
++>  order by s desc;
+
+--- SQL command prepared.
+>>
+>>?section keylessNJtests
+>>set schema $$TEST_CATALOG$$.myhcube;
+
+--- SQL operation complete.
+>>
+>>control query default merge_joins 'OFF';
+
+--- SQL operation complete.
+>>control query default query_cache '0';
+
+--- SQL operation complete.
+>>control query default risk_premium_serial '1.0';
+
+--- SQL operation complete.
+>>
+>>-- force keyless NJ
+>>control query shape implicit exchange nested_join(cut,cut);
+
+--- SQL operation complete.
+>>
+>>prepare xx from select * from t10 f, t0 d where f.b=d.b;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from select * from t9abc f, t0 d where f.b=d.b;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>-- keyless NJ must fail
+>>control query default comp_int_71 '1';
+
+--- SQL operation complete.
+>>
+>>prepare xx from select * from t10 f, t0 d where f.b=d.b;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare xx from select * from t9abc f, t0 d where f.b=d.b;
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- must not get a NJ
+>>control query default comp_int_71 '0';
+
+--- SQL operation complete.
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>prepare xx from select * from t10 f, t0 d where f.b=d.b;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+HYBRID_HASH_JOIN
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from select * from t9abc f, t0 d where f.b=d.b;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+HYBRID_HASH_JOIN
+
+--- 2 row(s) selected.
+>>
+>>-- keyed NJ must be allowed
+>>prepare xx from select * from t10 f, t0 d where f.a=d.b;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from select * from t9abc f, t0 d where f.a=d.b;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>-- shutdown HJ iff outer has 1 row
+>>prepare xx from select * from t10 f where f.b=(select max(b) from t0);
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from select * from t10 f where f.b=some(select b from t0);
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+HYBRID_HASH_SEMI
+
+--- 2 row(s) selected.
+>>
+>>-- constant key predicate does not favor NJ over HJ
+>>prepare xx from select * from t9abc f, t6 d where f.a=d.b and d.b=1;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+HYBRID_HASH_JOIN
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from select * from t9abc f, t6 d where f.a=d.b and d.b=1
++>and f.b=d.c and d.c=2;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+HYBRID_HASH_JOIN
+
+--- 2 row(s) selected.
+>>
+>>-- must allow keyed NJ that have constant prefix key predicates
+>>control query default comp_int_71 '1';
+
+--- SQL operation complete.
+>>control query shape implicit exchange nested_join(cut,cut);
+
+--- SQL operation complete.
+>>
+>>prepare xx from select * from t9abc f, t0abc d where f.a=d.b and f.a=9 
++>and f.b=d.c;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>prepare xx from select * from t9abc f, t0abc d where f.a=d.b and f.a=9 
++>and f.b=d.c and f.b=8 and f.c=d.a;
+
+--- SQL command prepared.
+>>execute showSimplePlan;
+
+OPERATOR        
+----------------
+
+ROOT            
+NESTED_JOIN     
+
+--- 2 row(s) selected.
+>>
+>>?section insSel_test
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>prepare showSort from
++>select substring(operator,1,16) operator
++>from table (explain(NULL,'XX')) t
++>where operator = 'SORT' ;
+
+--- SQL command prepared.
+>>
+>>-- fix for bugzilla 2439, left child of tuple_flow should be sorted.
+>>prepare XX from
++>insert with no rollback into t0abcg
++>select t0.a, t1.a, t2.a, t0.a, t1.a, 
++>       cast(t0.a*t1.a*t2.a as char(10)) 
++>from t0, t1, t2;
+
+--- SQL command prepared.
+>>
+>>execute showSort;
+
+OPERATOR        
+----------------
+
+SORT            
+
+--- 1 row(s) selected.
+>>
+>>-- fix for HPIT case 10-090826-1194. 
+>>-- left child of tuple_flow should be sorted.
+>>prepare XX from
++>insert with no rollback
++>into t1abc(d,    a,    e,    c,     f,        b)
++>select     t2.a, t0.a, t1.b, t1.a,  t9abc.a,  t2.a
++>from t0, t1, t2, t9abc
++>where t2.a = t1.b;
+
+--- SQL command prepared.
+>>
+>>execute showSort;
+
+OPERATOR        
+----------------
+
+SORT            
+
+--- 1 row(s) selected.
+>>
+>>?section INList_test
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>
+>>prepare explainIt from
++>select substring(operator,1,16) operator
++>from table (explain(NULL,'XX')) t
++>where operator LIKE '%TUPLE%' ;
+
+--- SQL command prepared.
+>>
+>>set schema $$TEST_CATALOG$$.myhcube;
+
+--- SQL operation complete.
+>>
+>>-- semijoin trans in Normalizer will kick in for in list longer than 1 entry
+>>control query default or_pred_to_semijoin '1' ;
+
+--- SQL operation complete.
+>>control query default or_pred_to_jumptable '0';
+
+--- SQL operation complete.
+>>
+>>-- expect join plan with TupleList
+>>-- rangespec interferes with this
+>>cqd rangespec_transformation 'off';
+
+--- SQL operation complete.
+>>prepare XX from select b from t1 where b in (1,2,3,11) ;
+
+--- SQL command prepared.
+>>cqd rangespec_transformation reset;
+
+--- SQL operation complete.
+>>execute explainIt ;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+B          
+-----------
+
+          1
+          2
+          3
+
+--- 3 row(s) selected.
+>>
+>>-- OR is handled the same as IN List
+>>-- rangespec interferes with this
+>>cqd rangespec_transformation 'off';
+
+--- SQL operation complete.
+>>prepare XX from select b from t1 where b = 1 or b =2 or b = 3 or b = 11;
+
+--- SQL command prepared.
+>>cqd rangespec_transformation reset;
+
+--- SQL operation complete.
+>>execute explainIt ;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+B          
+-----------
+
+          1
+          2
+          3
+
+--- 3 row(s) selected.
+>>
+>>
+>>-- prameters are handled the same as literals
+>>prepare XX from select b from t1 where b in (?p1, ?p2, ?p3, ?p4) ;
+
+--- SQL command prepared.
+>>execute explainIt ;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>set param ?p1 1 ;
+>>set param ?p2 2 ;
+>>set param ?p3 3 ;
+>>set param ?p4 11;
+>>execute XX;
+
+B          
+-----------
+
+          1
+          2
+          3
+
+--- 3 row(s) selected.
+>>
+>>-- should not be transformed, two columns in OR
+>>prepare XX from select * from t1 where a in (1,2,3) or b = 1;
+
+--- SQL command prepared.
+>>execute explainIt ;
+
+--- 0 row(s) selected.
+>>
+>>-- should be transformed
+>>prepare XX from select a from t1 where a in (1,2,3,11) and b = 1;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>-- two in lists on different columns related by and
+>>-- rangespec interferes with this
+>>cqd rangespec_transformation 'off';
+
+--- SQL operation complete.
+>>prepare XX from select a,b from t1 where a in (1,2,3,11) and b in (1,2,3,11);
+
+--- SQL command prepared.
+>>cqd rangespec_transformation reset;
+
+--- SQL operation complete.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+TUPLELIST       
+
+--- 2 row(s) selected.
+>>execute XX;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+          3            3
+
+--- 3 row(s) selected.
+>>
+>>-- two in lists on different columns related by OR
+>>prepare XX from select a,b from t1 where a in (1,2,3) or b in (1,2,3);
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>
+>>-- expression outside the IN list
+>>prepare XX from select a from t1 where a+3 in (1,2,4, 11);
+
+--- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+A          
+-----------
+
+          1
+          8
+
+--- 2 row(s) selected.
+>>
+>>-- expression involving two columns outside the IN List
+>>prepare XX from select a,b from t1 where a+b in (1,2,4);
+
+--- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+A            B          
+-----------  -----------
+
+          1            1
+          2            2
+
+--- 2 row(s) selected.
+>>
+>>-- The R2.4 AMB merge changed some defaults to fix a customer
+>>-- issue. In order to keep the behavior of the following tests 
+>>-- consistent, the following CQD is being set to its old default for now.
+>>-- This can be removed when the default changes back to its old value in 
+>>-- R2.5 and the subsequent merge into Seaquest.
+>>--control query default or_pred_to_semijoin reset ;
+>>control query default or_pred_to_semijoin '25' ;
+
+--- SQL operation complete.
+>>
+>>control query default or_pred_to_jumptable reset ;
+
+--- SQL operation complete.
+>>
+>>-- missing pred on part col b, should not get transformed.
+>>prepare XX from select * from t11 where a in (1,2) ;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>
+>>-- should get transformed
+>>prepare XX from select * from t11 where a in (1,2) and b = 1;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>
+>>-- range pred on part col b, should not get transformed.
+>>prepare XX from select * from  t11 where a in (1,2) and b > 1;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>
+>>control query default or_pred_to_semijoin_table_min_size '100' ;
+
+--- SQL operation complete.
+>>
+>>-- should transform
+>>prepare XX from select * from t11 
++>where a in (1,2,3,4,5) and b = 1 order by a;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            1            0
+
+--- 1 row(s) selected.
+>>
+>>-- should transform
+>>prepare XX from select * from t11
++>where a in (1,2,3,4,5)  order by a;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            1            0
+          2            2            0
+          3            3            0
+          4            4            0
+          5            5            0
+
+--- 5 row(s) selected.
+>>
+>>-- should transform
+>>prepare XX from select * from t11
++>where b in (1,2,3,4,5) and a = 1;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
+>>execute XX;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            1            0
+
+--- 1 row(s) selected.
+>>
+>>-- no transform
+>>prepare XX from select * from t11
++>where b in (1,2,3,4,5) and a > 1;
+
+--- SQL command prepared.
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>
+>>?section mdam_under_nj_test
+>>
+>>prepare mdam_reporter from
++>select cast(tname as char(30)) tname,
++>substring(description from position('mdam_disjunct' in description) + 15 for 30) mdam_disjunct
++>from table(explain(NULL, 'XX'))
++>where operator in ('TRAFODION_SCAN') and position('mdam_disjunct' in description) > 0
++>;
+
+--- SQL command prepared.
+>>
+>>prepare plan_reporter from
++>select operator from table(explain(NULL, 'XX'))
++>where position('JOIN' in operator) > 0;
+
+--- SQL command prepared.
+>>
+>>
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>
+>>cqd MDAM_SCAN_METHOD 'ON';
+
+--- SQL operation complete.
+>>obey TEST015(mdam_under_nj_real_tests);
+>>
+>>-- positve tests
+>>
+>>-- count(*) is one value = one probe
+>>prepare xx from select c2.f from (select count(*) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = count(1 )) and ((A = 1) o
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- max(a) is one value = one probe
+>>prepare xx from select c2.f from (select max(a) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = max(CAT.MYHCUBE.T0.A)) an
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- max(b) is one value = one probe
+>>prepare xx from select c2.f from (select sum(b) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = sum(CAT.MYHCUBE.T0.B)) an
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- a is a PK column. should send one probe to cube2.
+>>prepare xx from select c2.f from (select a from t0 where a = 2) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = 2) and ((A = 1) or (A = 3
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- negative
+>>
+>>-- t0 could contain more than one row. Should not get mdam plan
+>>prepare xx from select c2.f from (select a from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          ((A = 1) or (A = 3))          
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>--t0.b is not a PK column. should not get mdam plan
+>>prepare xx from select c2.f from (select b from t0 where b = 2) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = 2) and ((A = 1) or (A = 3
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>
+>>-- set the cqd to 0 should turn off the feature
+>>cqd MDAM_UNDER_NJ_PROBES_THRESHOLD '0';
+
+--- SQL operation complete.
+>>obey TEST015(mdam_under_nj_real_tests);
+>>
+>>-- positve tests
+>>
+>>-- count(*) is one value = one probe
+>>prepare xx from select c2.f from (select count(*) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          ((A = 1) or (A = 3))          
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- max(a) is one value = one probe
+>>prepare xx from select c2.f from (select max(a) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          ((A = 1) or (A = 3))          
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- max(b) is one value = one probe
+>>prepare xx from select c2.f from (select sum(b) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          ((A = 1) or (A = 3))          
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- a is a PK column. should send one probe to cube2.
+>>prepare xx from select c2.f from (select a from t0 where a = 2) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = 2) and ((A = 1) or (A = 3
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>-- negative
+>>
+>>-- t0 could contain more than one row. Should not get mdam plan
+>>prepare xx from select c2.f from (select a from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          ((A = 1) or (A = 3))          
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>--t0.b is not a PK column. should not get mdam plan
+>>prepare xx from select c2.f from (select b from t0 where b = 2) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = 2) and ((A = 1) or (A = 3
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>
+>>cqd MDAM_SCAN_METHOD reset;
+
+--- SQL operation complete.
+>>cqd MDAM_UNDER_NJ_PROBES_THRESHOLD reset;
+
+--- SQL operation complete.
+>>
+>>?section mdam_under_nj_real_tests
+>>
+>>-- positve tests
+>>
+>>-- count(*) is one value = one probe
+>>prepare xx from select c2.f from (select count(*) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = count(1 )) and ((A = 1) o
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- max(a) is one value = one probe
+>>prepare xx from select c2.f from (select max(a) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = max(CAT.MYHCUBE.T0.A)) an
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- max(b) is one value = one probe
+>>prepare xx from select c2.f from (select sum(b) from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = sum(CAT.MYHCUBE.T0.B)) an
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- a is a PK column. should send one probe to cube2.
+>>prepare xx from select c2.f from (select a from t0 where a = 2) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = 2) and ((A = 1) or (A = 3
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+NESTED_JOIN                   
+
+--- 1 row(s) selected.
+>>
+>>-- negative
+>>
+>>-- t0 could contain more than one row. Should not get mdam plan
+>>prepare xx from select c2.f from (select a from t0) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          ((A = 1) or (A = 3))          
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>--t0.b is not a PK column. should not get mdam plan
+>>prepare xx from select c2.f from (select b from t0 where b = 2) as x(a), cube2 c2
++>where x.a = c2.b and (c2.a = 1 or c2.a = 3);
+
+--- SQL command prepared.
+>>
+>>execute mdam_reporter;
+
+TNAME                           MDAM_DISJUNCT                 
+------------------------------  ------------------------------
+
+C2 (CAT.MYHCUBE.CUBE2)          (B = 2) and ((A = 1) or (A = 3
+
+--- 1 row(s) selected.
+>>execute plan_reporter;
+
+OPERATOR                      
+------------------------------
+
+HYBRID_HASH_JOIN              
+
+--- 1 row(s) selected.
+>>
+>>
+>>
+>>?section done 
+>>log;

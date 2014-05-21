@@ -1,0 +1,52 @@
+DTM basic command line interface
+--------------------------------
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+Syntax: 
+
+    dtmci [node]
+    node - Node in Seaquest cluster in which dtmci will start.
+
+This is an interactive tool providing a line at a time interface simmilar to but much simpler than tmfcom.
+
+Commands:
+    l | list [<nid> | *] : Will list all transactions and their status for node <nid> or all nodes (* or l).
+    b | begin : Will begin a transaction and display the tag
+    disable [transactions] [, shutdown <shutdown level>] : Disable transaction processing in DTM.
+                                                         : <shutdown level> is only provided for testing and should
+                                                         : not be used.  Use sqstop instead.
+	drain <nid> [, immediate] : Drain transactions from a node.  This is similar to disable but affects only
+							  : one node.
+							  : immediate causes all active transactions in the node to be aborted.
+    e | commit : Will end the current transaction
+    enable [transactions] : Enable transaction processing in DTM.
+	quiesce <nid> [,stop] : Quiesce a node (Development use only).
+						  : stop causes the quiesce to be removed and the TM state changed back to what it 
+						  : was before the quiesce.
+    r | t | resume [<tag>]) : Will suspend the current transaction if no tag is supplied.    
+                            : if tag is specified it will resume work on the given tag    
+    s | S | stats [,reset] : Will list the current TM statistics    
+                           : If reset is specified (or S), dtmci will reset statistics after displaying them.    
+    status tm [<nid>|*] : Status of the TM in node <nid>.  * returns TM information for all nodes.
+    h | ? |help    
+    q | quit | exit
+
+Known Problems:
+None.

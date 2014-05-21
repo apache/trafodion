@@ -1,0 +1,1239 @@
+-- Test: TEST038 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Expression evaluations, including string functions,
+--                datetime and datetime literals, current, constant
+--                folding, arithmetic and logical evaluations,
+--                simplifications, aggregates. It also contains
+--                simple TPCD functionality tests (Q4, 6, 12, 14).
+-- Expected files: EXPECTED038, EXPECTED038.MP, EXPECTED038.MX
+-- Table created: T038edat, T038empl, T038sls, T038prts, T038dt1,
+--                T028tm1, T038TS1, T038tcf, T038tsf, T038empt,
+--                T038dept, T038corp, T038a, T038b, T038c, T038d,
+--                T038e, T038f, T038g, T038h, T038i, T038j, T038k,
+--                T038l, T038LI, T038part, T038sf (27)
+-- Limitations:
+-- To do: - EXPECTED038.MX need to be removed after IEEE floating data
+--          type is supported on R2.
+-- Revision history:
+--     (1/28/02) - Copied from fullstack/TEST038
+--     (1/12/02) - Merged some tests from TEST012(Executor): POSITION,
+--                 TRIM, ASCII, CHAR, INSERT, REPEAT, REPLACE.
+--     (1/13/02) - Added PAD tests
+--     (10/12/06) - Changed PAD tests for New LPAD and RPAD algorithms
+
+obey TEST038(clnup);
+
+?section tests
+log LOG038 clear;
+
+-----------------------------------------------------------------------------
+--  NOTE: This test always produces 4 mismatched lines in the DIFF038 file,
+--        because the CURDATE and CURTIME in the test script.  For example,
+--        DIFF038 might contain the followings:
+--        
+--        269c269
+--        <         200  1997-12-17    12:10:50           99
+--        ---
+--        >         200  1997-12-17    14:34:53           99
+--        271,272c271,272
+--        <         400  1997-05-12    12:10:51           99
+--        <         500  1997-12-17    12:10:51           99
+--        ---
+--        >         400  1997-05-12    14:34:55           99
+--        >         500  1997-12-17    14:34:56           99
+--        297c297
+--        <         600  1997-12-17 12:10:54.538192
+--        ---
+--        >         600  1997-12-17 14:34:59.062995
+------------------------------------------------------------------------------
+    
+-- CREATE database
+
+create TABLE T038edat (EMPNUM  int NOT NULL, first_name char(20) not null,
+                      last_name char(20) not null);
+insert into T038edat values (100, 'charu', 'bhave ');
+insert into T038edat values (200, 'linda', 'ho');
+insert into T038edat values (300, '  ARUN   ', 'Thomas');
+
+create TABLE T038empl (EMPNUM int NOT NULL, firstname char(20) not null,
+                       lastname char(20) not null, age int, salary int);
+insert into T038empl values (101,'charu','bhave', 45, 50000);
+insert into T038empl values (102,'linda','ho   ', 30, 55000);
+insert into T038empl values (103,'Selva','Ganesan', 25, 65000);
+insert into T038empl values (104,'Tom  ','Rogers', 60, 90000);
+
+-- ODBC Parser Test for CONCAT, LOCATE, UCASE, LCASE, RTRIM, LTRIM, 
+--                      LENGTH, SUBSTRING, LEFT, RIGHT
+
+select {fn concat(first_name, last_name)} from T038edat;
+
+select * from T038edat where {fn locate('lin', first_name)} > 0;
+
+select * from T038edat where {fn locate({fn ucase('aru')}, first_name)} > 0;
+
+select * from T038edat where {fn length ({fn rtrim(last_name)})} = 5;
+
+select last_name from T038edat where {fn substring(last_name, 1, 3)} = 'Tho';
+
+select * from T038edat
+ where {fn locate('ma', {fn concat(first_name, last_name)})} > 0;
+
+select * from T038empl where {fn locate('a', firstname)} > 2;
+
+select * from T038edat
+ where {fn locate('ma', {fn concat(first_name, last_name)}, 1)} > 0;
+
+select {fn lcase(first_name)} from T038edat;
+
+select {fn ucase(first_name)} from T038edat;
+
+select {fn concat({fn rtrim(first_name)}, {fn rtrim(last_name)})} from T038edat;
+
+select {fn concat({fn ltrim(first_name)}, {fn ltrim(last_name)})} from T038edat;
+
+select last_name from T038edat where {fn left(last_name, 3)} = 'Tho';
+
+select * from T038edat
+    where {fn left ({fn ltrim(first_name)}, 3)} = 'ARU';
+
+-- expect 0 rows  --
+select last_name from T038edat where {fn left(last_name, 3)} = 'ARU';
+
+-- expect 0 rows --
+select * from T038edat where {fn right(first_name, 3)} = 'aru';
+
+select * from T038edat
+    where {fn right ({fn rtrim(first_name)}, 3)} = 'aru';
+
+-- CREATE database and perform ...
+-- ODBC Parser Test for: CURDATE, CURTIME
+
+create table T038sls (order_num int, order_date date, order_time time,
+                    order_qty int);
+insert into T038sls values(100, date '1997-01-30', time '13:40:05', 1000);
+insert into T038sls values(200, {fn curdate()}, {fn curtime()}, 99);
+insert into T038sls values(300, date '1996-08-10', time '10:20:10', 6000);
+insert into T038sls values(400, date '1997-05-12', {fn curtime()}, 99);
+insert into T038sls values(500, {fn curdate()}, {fn curtime()}, 99);
+select * from T038sls;
+
+-- CREATE database and perform ...
+-- ODBC Parser Test for: NOW
+
+create table T038prts(T038part_num int, order_time timestamp);
+insert into T038prts values(600, {fn now()});
+select * from T038prts;
+ 
+-- CREATE database and perform ...
+-- ODBC Parser Test for: {d'date-literal'}
+
+CREATE TABLE T038dt1 (C1 DATE);
+INSERT INTO T038dt1 VALUES ({d '1993-12-30'});
+SELECT C1 FROM T038dt1;
+
+-- CREATE database and perform ...
+-- ODBC Parser Test for: {t'time-literal'}
+
+CREATE TABLE T028tm1 (C1 TIME);
+INSERT INTO T028tm1 VALUES ({t '10:11:12'});
+SELECT C1 FROM T028tm1;
+
+-- CREATE database and perform ...
+-- ODBC Parser Test for: {ts'timestamp-literal'}
+
+CREATE TABLE T038TS1 (C1 TIMESTAMP);
+INSERT INTO T038TS1 VALUES ({ts '1992-12-31 23:45:23.123456'});
+SELECT C1 FROM T038TS1;
+
+-- CREATE database and perform ...
+-- ODBC Parser Test for: CONVERT
+
+create table T038tcf (C1 CHAR(20),
+                           C2 VARCHAR(20),
+                           C3 DECIMAL(10,5),
+                           C4 NUMERIC(10,5),
+                           C5 SMALLINT,
+                           C6 SMALLINT UNSIGNED,
+                           C7 INTEGER,
+                           C8 INTEGER UNSIGNED,
+                           C9 REAL,
+                           C10 FLOAT,
+                           C11 DOUBLE PRECISION,
+                           C12 DATE,
+                           C13 TIME,
+                           C14 TIMESTAMP,
+#ifMX
+                           C15 LONG VARCHAR,
+#ifMX
+#ifMP
+                           C15 VARCHAR(100),
+#ifMP
+#ifMX
+                           C16 BIGINT
+#ifMX
+#ifMP
+                           C16 LARGEINT
+#ifMP
+                          )
+#ifNT
+attribute blocksize 4096
+#ifNT
+;
+insert into T038tcf values ('-0123456789','-0123456789',-1234.56789,
+                                 -5678.12345,-1234,6789,-12345,56789,
+                                 -12340.0,-12300.0,-12345670.0,{d'1993-12-30'},
+                                 {t '11:45:23'},
+                                 {ts '1992-12-31 23:45:23.123456'},
+                                 '0123456789',9876543);
+
+select {fn CONVERT(C1,CHAR)} from T038tcf;
+-- output => "-0123456789         ";
+select {fn CONVERT(C2,VARCHAR)} from T038tcf;
+-- output => "-0123456789";
+select {fn CONVERT(C3,DECIMAL)} from T038tcf;
+-- output => "-1234.56789";
+select {fn CONVERT(C4,DECIMAL)} from T038tcf;
+-- output => "-5678.12345";
+select {fn CONVERT(C5,SMALLINT)} from T038tcf;
+-- output => "-1234";
+select {fn CONVERT(C6,SMALLINT)} from T038tcf;
+-- output => "6789";
+select {fn CONVERT(C7,INTEGER)} from T038tcf;
+-- output => "-12345";
+select {fn CONVERT(C8,INTEGER)} from T038tcf;
+-- output => "56789";
+select {fn CONVERT(C9,REAL)} from T038tcf;
+-- output => "-12340.0";
+select {fn CONVERT(C10,FLOAT)} from T038tcf;
+-- output => "'-12300.0";
+select {fn CONVERT(C11,DOUBLE PRECISION)} from T038tcf;
+-- output => "-12345670.0";
+select {fn CONVERT(C12,DATE)} from T038tcf;
+-- output => "1993-12-30";
+select {fn CONVERT(C13,TIME)} from T038tcf;
+-- output => "11:45:23";
+select {fn CONVERT(C14,TIMESTAMP)} from T038tcf;
+-- output => "1992-12-31 23:45:23.123456";
+select {fn CONVERT(C15,LONG VARCHAR)} from T038tcf;
+-- output => "0123456789";
+select {fn CONVERT(C16,BIGINT)} from T038tcf;
+-- output => "9876543";
+
+-- CREATE database and perform ... 
+-- ODBC Parser Test for: LCASE, UCASE, LEFT, RIGHT, LTRIM, RTRIM
+
+create table T038tsf (c1 char(10),
+                             c2 char(10),
+                             c3 char(10),
+                             c4 char(10),
+                             c5 int
+                            );
+insert into T038tsf values ('ABCD','efgh','  1234  ','CD',65);
+select {fn LCASE(c1)} from T038tsf;
+-- output => 'abcd';
+select {fn LEFT(c1,2)} from T038tsf;
+-- output => 'AB';
+select {fn LTRIM(c3)} from T038tsf;
+-- output => '1234  ';
+select {fn RIGHT(c2,3)} from T038tsf;
+-- output => '   ';
+select {fn RTRIM(c3)} from T038tsf;
+-- output => '  1234';
+select {fn UCASE(c2)} from T038tsf;
+-- output => 'EFGH';
+
+-- CREATE database and perform ...
+-- ODBC Parser Test for: nested outer join
+
+create table T038empt (empnum INT NOT NULL,
+                     empname CHAR(20) NOT NULL,
+                     deptnum INT NOT NULL
+                    );
+insert into T038empt values (100, 'BHAVE', 6400);
+insert into T038empt values (100, 'RAO'  , 6500);
+insert into T038empt values (100, 'GANESAN', 6400);
+
+create table T038dept (deptnum INT  NOT NULL,
+                     deptname CHAR(20) NOT NULL,
+                     manager CHAR(20) NOT NULL
+                    );
+insert into T038dept values (6400, 'DEV', 'YOW');
+insert into T038dept values (6500, 'QA' , 'DENNIS');
+insert into T038dept values (6000, 'SRC', 'JUDY');
+
+create table T038corp (unitnum int not null,
+                      deptnum int not null,
+                      revenvue decimal(10,3) not null
+                     );
+insert into T038corp values (101, 6400, 10000);
+
+SELECT EMPNAME,DEPTNAME,MANAGER
+  FROM {oj T038empt T038E LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+       };
+SELECT EMPNAME,DEPTNAME,MANAGER
+  FROM T038empt T038E LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM;
+
+SELECT *
+ FROM {oj T038empt T038E
+       LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+       LEFT JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM
+      };
+SELECT *
+ FROM  T038empt T038E
+       LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+       LEFT JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM;
+
+SELECT *
+  FROM {oj T038empt T038E
+        LEFT OUTER JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+        LEFT OUTER JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM
+       };
+SELECT *
+  FROM  T038empt T038E
+        LEFT OUTER JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+        LEFT OUTER JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM;
+
+SELECT *
+  FROM {oj T038empt T038E
+        LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM}
+        WHERE T038E.DEPTNUM < 6000;
+SELECT *
+  FROM  T038empt T038E
+        LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+        WHERE T038E.DEPTNUM < 6000;
+
+SELECT *
+  FROM {oj T038empt T038E
+        LEFT OUTER JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+        LEFT OUTER JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM
+       };
+SELECT *
+  FROM  T038empt T038E
+        LEFT OUTER JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM
+        LEFT OUTER JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM;
+
+SELECT *
+  FROM {oj T038empt T038E
+        LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM AND T038E.DEPTNUM < 7000
+        LEFT JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM
+       };
+SELECT *
+  FROM  T038empt T038E
+        LEFT JOIN T038dept T038D ON T038E.DEPTNUM = T038D.DEPTNUM AND T038E.DEPTNUM < 7000
+        LEFT JOIN T038corp T038C ON T038D.DEPTNUM = T038C.DEPTNUM;
+
+
+create table T038a(a1 int);
+
+create table T038b(b1 date);
+
+create table T038c(c1 char(10));
+
+create table T038d(d1 timestamp);
+
+create table T038e(e1 time);
+
+create table T038f(f1 decimal(18,4));
+
+create table T038g(g1 numeric(18,10));
+
+create table T038h(h1 float(30));
+
+create table T038i(i1 int not null );
+
+create table T038j(j1 varchar(10));
+
+create table T038k(k1 PIC X(12));
+
+create table T038l(l1 char varying (20) upshift);
+
+create table T038m(m1 largeint);
+
+create table T038n(n1 smallint);
+
+create table T038o(o1 real);
+
+create table T038p(p1 double precision);
+
+#ifMX
+create table T038q(q1 bit precision int (5) unsigned);
+#ifMX
+#ifMP
+create table T038q(q1 smallint unsigned);
+#ifMP
+
+insert into T038a values (1);
+insert into T038a values (2);
+insert into T038a values (3);
+insert into T038a values (4);
+insert into T038a values (5);
+insert into T038a values (6);
+insert into T038a values (7);
+insert into T038a values (7);
+insert into T038a values (8);
+insert into T038a values (8);
+insert into T038a values (8);
+insert into T038a values (8);
+
+insert into T038b values (date '10/01/1996');
+insert into T038b values (date '11/01/1996');
+insert into T038b values (date '12/01/1996');
+insert into T038b values (date '01/01/1997');
+insert into T038b values (date '02/02/1997');
+insert into T038b values (date '03/03/1997');
+insert into T038b values (date '04/04/1997');
+insert into T038b values (date '05/05/1997');
+insert into T038b values (date '06/06/1997');
+insert into T038b values (date '07/07/1997');
+
+insert into T038c values ('abcd');
+insert into T038c values ('efghi');
+insert into T038c values ('jklmno');
+insert into T038c values ('pqrstuv');
+insert into T038c values ('wxyz');
+insert into T038c values ('1234567890');
+
+insert into T038d values (timestamp '01.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '02.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '03.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '04.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '05.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '06.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '07.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '08.01.1997 03.04.55.123456');
+insert into T038d values (timestamp '09.01.1997 03.04.55');
+insert into T038d values (timestamp '10.01.1997 03.04.55');
+
+insert into T038e values (time '11:58:59.236 pm' + interval '1.12' second);
+insert into T038e values (time '01:58:59.236 pm');
+insert into T038e values (time '02:58:59.236 pm');
+insert into T038e values (time '03:58:59.236 pm');
+insert into T038e values (time '04:58:59.236 pm');
+insert into T038e values (time '05:58:59.236 pm');
+insert into T038e values (time '06:58:59.236 pm');
+insert into T038e values (time '07:58:59.236 pm');
+insert into T038e values (time '08:58:59.236 pm');
+insert into T038e values (time '09:58:59.236 pm');
+
+insert into T038f values (123456789456.789 + 10000000000 * 3);
+insert into T038f values (123476789456.789);
+insert into T038f values (123477789456.789);
+insert into T038f values (123478789456.789);
+insert into T038f values (123479789456.789);
+insert into T038f values (123489789456.789);
+insert into T038f values (123496789456.789);
+insert into T038f values (123576789456.789);
+insert into T038f values (123676789456.789);
+insert into T038f values (123776789456.789);
+
+insert into T038g values (123456.789);
+insert into T038g values (123476.789);
+insert into T038g values (123477.789);
+insert into T038g values (123478.789);
+insert into T038g values (123479.789);
+insert into T038g values (123489.789);
+insert into T038g values (123496.789);
+insert into T038g values (123576.789);
+insert into T038g values (123676.789);
+insert into T038g values (123776.789);
+
+
+insert into T038h values (1234567890 - 2 + 2 * 4.0);
+insert into T038h values (1234567890 - 2 + 2 * 5.0);
+insert into T038h values (1234567890 - 2 + 2 * 6.0);
+insert into T038h values (1234567890 - 2 + 2 * 7.0);
+insert into T038h values (1234567890 - 2 + 2 * 8.0);
+insert into T038h values (1234567890 - 2 + 2 * 9.0);
+insert into T038h values (1234567890 - 2 + 2 * 10.0);
+insert into T038h values (1234567890 - 2 + 2 * 11.0);
+insert into T038h values (1234567890 - 2 + 2 * 12.0);
+insert into T038h values (1234567890 - 2 + 2 * 13.0);
+
+insert into T038i values (1);
+insert into T038i values (2);
+insert into T038i values (3);
+insert into T038i values (4);
+insert into T038i values (5);
+insert into T038i values (6);
+insert into T038i values (7);
+insert into T038i values (8);
+
+insert into T038j values ('abcd');
+insert into T038j values ('efghi');
+insert into T038j values ('jklmno');
+insert into T038j values ('pqrstuv');
+insert into T038j values ('wxyz');
+insert into T038j values ('1234567890');
+
+insert into T038k values ('abcd');
+insert into T038k values ('efghi');
+insert into T038k values ('jklmno');
+insert into T038k values ('pqrstuv');
+insert into T038k values ('wxyz');
+insert into T038k values ('1234567890');
+
+insert into T038l values ('abcd');
+insert into T038l values ('efghi');
+insert into T038l values ('jklmno');
+insert into T038l values ('pqrstuv');
+insert into T038l values ('wxyz');
+insert into T038l values ('1234567890');
+
+insert into T038m values (1234567890 - 2 + 2 * 4.0);
+insert into T038m values (1234567890 - 2 + 2 * 5.0);
+insert into T038m values (1234567890 - 2 + 2 * 6.0);
+insert into T038m values (1234567890 - 2 + 2 * 7.0);
+insert into T038m values (1234567890 - 2 + 2 * 8.0);
+insert into T038m values (1234567890 - 2 + 2 * 9.0);
+insert into T038m values (1234567890 - 2 + 2 * 10.0);
+insert into T038m values (1234567890 - 2 + 2 * 11.0);
+insert into T038m values (1234567890 - 2 + 2 * 12.0);
+insert into T038m values (1234567890 - 2 + 2 * 13.0);
+
+insert into T038n values (1);
+insert into T038n values (2);
+insert into T038n values (3);
+insert into T038n values (4);
+insert into T038n values (5);
+insert into T038n values (6);
+insert into T038n values (7);
+insert into T038n values (8);
+
+insert into T038o values (123456.789);
+insert into T038o values (123476.789);
+insert into T038o values (123477.789);
+insert into T038o values (123478.789);
+insert into T038o values (123479.789);
+insert into T038o values (123489.789);
+insert into T038o values (123496.789);
+insert into T038o values (123576.789);
+insert into T038o values (123676.789);
+insert into T038o values (123776.789);
+
+insert into T038p values (123456.789);
+insert into T038p values (123476.789);
+insert into T038p values (123477.789);
+insert into T038p values (123478.789);
+insert into T038p values (123479.789);
+insert into T038p values (123489.789);
+insert into T038p values (123496.789);
+insert into T038p values (123576.789);
+insert into T038p values (123676.789);
+insert into T038p values (123776.789);
+
+insert into T038q values(0);
+insert into T038q values(31);
+insert into T038q values(2);
+insert into T038q values(4);
+insert into T038q values(8);
+insert into T038q values(16);
+insert into T038q values(17);
+insert into T038q values(18);
+insert into T038q values(19);
+insert into T038q values(20);
+
+select * from T038a where a1 > 1 + 1 and a1 < 3.2 - 3.2 + 5; 
+select * from T038a t1, T038a t2 where t1.a1 > 1 + 1 and t2.a1 < 3.2 - 3.2 + 5; 
+
+select * from T038a where a1 < 1.0 / 2 + 3 or a1 > 3 + 3 / 1;
+select * from T038a t1, T038a t2 where t1.a1 < 1.0 / 2 + 3 or t1.a1 > 3 + 3 / 1;
+
+select * from T038a where a1 = cast(2.0 + 3.0 as int) + 3;
+select * from T038a t1, T038a t2 where t1.a1 = cast(2.0 + 3.0 as int) + 3;
+
+select * from T038a where a1 > char_length(trim('   abc ') || trim('  ef '));
+select * from T038a t1, T038a t2 where t1.a1 > char_length(trim('   abc ') || trim('  ef '));
+
+select * from T038a group by a1 having 1 + 1 > 1 - 1 + sum(a1);
+select * from T038a group by a1 having 1 + 1 + count(a1) > 1 - 1 + avg(a1);
+select * from T038a group by a1 having min(a1) > 1 + 1 - 2;
+select * from T038a group by a1 having max(a1) > 1 + 1 - 2;
+select * from T038a where 999999999999999998 + 1 > juliantimestamp(date '1997-01-01' + interval '1' day);
+select * from T038a where interval '1' day + current_date = current_date + interval '1' day;
+select * from T038a where cast(current_time as timestamp) = current_timestamp;
+
+select * from T038a where not(not(not(not(not(a1 > 10)))));
+
+select * from T038a where not(not(not(not(not(not(a1 > 10))))));
+
+select * from T038a where not(not(not(not(not(not(a1 > 10))))));
+
+select * from T038a where not(not(not(not(not(a1 > 10 or 3 < 5)))));
+select * from T038a where not(not(not(a1 > 10 or not(not(not(not(not(3 < 5))))))));
+select * from T038a where not(not(not(not(a1 > 10 or not(not(3 < 5))))));
+select * from T038a where not(not(not(not(not(a1 > 10 and not(not(3 < 5)))))));
+select * from T038a where not(not(not(not(not(a1 > 10 and not(not(not(not(not(3 < 5))))))))));
+
+select * from T038a where a1 < {fn CONVERT(a1,DECIMAL)} +
+                           {fn CONVERT(a1,SMALLINT)} +
+                           {fn CONVERT(a1,SMALLINT)} +
+                           {fn CONVERT(a1,INTEGER)} +
+                           {fn CONVERT(a1,INTEGER)} +
+                           {fn CONVERT(a1,REAL)} +
+                           {fn CONVERT(a1,FLOAT)} +
+                           {fn CONVERT(a1,DOUBLE PRECISION)};
+
+-- Genesis cases 10-980619-2242, 10-980707-3476, 10-980715-3485
+select a1 from T038a
+where 94/1 between -47 and a1 + 0;
+
+select a1 from T038a
+where 94/0 between -47 and a1 + 0;
+
+select min(t0.a1) from T038a t0 where -14.50 / 1.0 between -14.5 and t0.a1;
+
+select min(t0.a1) from T038a t0 where -14.50 / 1.0 between -14.4999999 and
+                                                                     t0.a1;
+
+select min(t0.a1) from T038a t0 where -14.50 / 1.0 between -14.5000000001 and t0.a1;
+
+prepare s from 
+  select t0.a1 
+    from T038a t0
+      where -14.50 / 1.0 between 1.88 and t0.a1;
+
+execute s;
+
+prepare s from 
+  select min(t0.a1) 
+    from T038a t0
+      where -14.50 / 0 between 1.88 and t0.a1;
+
+execute s;
+
+prepare s from 
+  select min(t0.a1) 
+    from T038a t0
+      where -14.50 / 1 between 1.88/0 and t0.a1/0;
+
+execute s;
+
+select * from T038a where (1 + 1, 2 + 0, 2 + 2, 2 + 1 + 2) = (1 + 0 + 1, 2, 4, 5);
+
+select * from T038a where (-99 - 1, 2) = (-(select a1 from T038a where a1 = 1) + 1 - 1,1 + 1);
+
+select * from T038a where (select a1 from T038a where a1 = 0 + 1) = 0 + 1;
+
+select (select * from T038a where a1 = 0 + 1) from T038a;
+
+select 12 from T038a where case when a1 = 0 + 1 or a1 = 1 + 1 then 99 + 1
+else (select a1 from T038a where a1 = 0 + 1) end = 0 + 1;
+
+select * from T038a where a1 <= 10 and 3 >= 5;
+
+select * from T038a where  3 >= 5 and a1 <= 10;
+
+select * from T038a where a1 <= 10 and 3 < 5;
+
+select * from T038a where  3 < 5 and a1 <= 10;
+
+select * from T038a where a1 > 10 and 3 >= 5;
+
+select * from T038a where  3 >= 5 and a1 > 10;
+
+select * from T038a where a1 > 10 and 3 < 5;
+
+select * from T038a where  3 < 5 and a1 > 10;
+
+
+select * from T038a where 1 <= 10 and 3 < 5;
+
+select * from T038a where 1 <= 10 and 3 >= 5;
+
+select * from T038a where 3 >= 5 and 1 <= 10;
+
+select * from T038a where 3 >= 5 and 1 > 10;
+
+
+select * from T038a where a1 <= 10 or 3 >= 5;
+
+select * from T038a where  3 >= 5 or a1 <= 10;
+
+select * from T038a where a1 <= 10 or 3 < 5;
+
+select * from T038a where  3 < 5 or a1 <= 10;
+
+select * from T038a where a1 > 10 or 3 >= 5;
+
+select * from T038a where  3 >= 5 or a1 > 10;
+
+select * from T038a where a1 > 10 or 3 < 5;
+
+select * from T038a where  3 < 5 or a1 > 10;
+
+
+select * from T038a where 1 <= 10 or 3 < 5;
+
+select * from T038a where 1 <= 10 or 3 >= 5;
+
+select * from T038a where 3 >= 5 or 1 <= 10;
+
+select * from T038a where 3 >= 5 or 1 > 10;
+
+
+
+-- Test simplifications
+
+select * from T038a where 1*(a1 + 0) = ((0 + a1) + (a1 * 0) + (0 * a1)) * 1;
+
+select * from T038a where a1 * 1 - 0 = a1 / 1 / 1 / 1 / 1 / 1 / 1 / 1 * 1 - 0-0 -0 -0 -0 -0 -0 -0 -0;
+
+select * from T038a where (1 = 1 and a1 = 0) or 1 = 2;
+
+select * from T038a where 1 = 1 or 1 + 1 = 2 + 2;
+
+select * from T038a where 1 = 1 and 1 + 1 = 2;
+
+select * from T038a where a1 - 0 = a1 / 1;
+
+select * from T038a where a1 * 1 < a1 - 0;
+
+select * from T038a where a1 <= a1;
+
+select * from T038a where a1 > a1;
+
+select * from T038a where a1 >= a1;
+
+select * from T038a where a1 <> a1;
+
+select * from T038a where a1 between a1 / 1 + 0 and a1 - 0;
+
+select * from T038a where 17.0/17 * (select a1 from T038a where a1 = 1+1) / 1 + 0                           between (select a1 from T038a where a1 = 0+1) - 0                              and  (select a1 from T038a where a1 = 2+1) / 1;
+
+SELECT SUM ( ( 78.59 )+0 ) , T0.a1 , ( AVG ( T0.a1 ) )+0 FROM T038a T0 WHERE -83 BETWEEN ( ( ( T0.a1 )/1 )*1 ) AND ( ( ( ( ( 42.88 )*1 )+0 )/1 )/1 ) GROUP BY T0.a1 HAVING MAX ( T0.a1 ) BETWEEN ( ( -30.44 )-0 ) AND ( AVG ( ( ( (T0.a1)+0 )-0 )*1 ) ) ORDER BY 1, 2, 1;
+
+SELECT DISTINCT T0.a1 , T0.a1 , T0.a1 from T038a T0 WHERE ( T0.a1 <= ( T0.a1
+)*1 ) AND ( ( NOT ( ( ( ( 56.1 )/1 )+0 BETWEEN (T0.a1 ) AND ( ( T0.a1 )-0 ) )
+OR ( ( ( T0.a1 )*1 >= T0.a1 ) OR ( NOT (( NOT ( ( NOT ( T0.a1 < ( ( 27.76 )+0
+)+0 ) ) OR ( ( ( ( ( T0.a1 )*1 BETWEEN ( T0.a1 ) AND ( T0.a1 ) ) AND ( ( 2.44
+)+0 BETWEEN ( T0.a1) AND ( T0.a1 ) ) ) AND ( ( ( T0.a1 )-0 <= ( T0.a1 )*1 ) OR
+( ( NOT (NOT ( NOT ( ( -50.2 )*1 > T0.a1 ) ) ) ) OR ( 59.75 BETWEEN ( T0.a1)
+AND ( T0.a1 ) ) ) ) ) AND ( ( ( T0.a1 <> T0.a1 ) AND ( T0.a1 >=T0.a1 ) ) AND (
+NOT ( ( NOT ( T0.a1 = ( T0.a1 )*1 ) ) OR ( T0.a1 BETWEEN ( T0.a1 ) AND ( T0.a1 ) ) ) ) ) ) ) ) OR ( NOT ( NOT ( (
+T0.a1 )*1 > T0.a1 ) ) ) ) ) ) ) ) AND ( ( ( ( ( ( ( T0.a1 )/1 )-0 )/1
+)*1 BETWEEN ( T0.a1 ) AND ( ( T0.a1 )-0 ) ) OR ( NOT ( T0.a1 IN (
+T0.a1 , T0.a1 ) ) ) ) AND ( ( NOT ( NOT ( NOT ( T0.a1 BETWEEN ( T0.a1
+) AND ( T0.a1 ) ) ) ) ) AND ( T0.a1 = T0.a1 ) ) ) );
+
+SELECT
+( MIN ( T0.a1 ) )*1 , T0.a1 , AVG ( ( T0.a1 )*1 )
+from T038a T0
+WHERE
+( NOT ( 23 BETWEEN ( ( -46.68 )-0 ) AND ( T0.a1 ) ) ) OR ( ( T0.a1 )+0
+>= T0.a1 )
+GROUP BY T0.a1, T0.a1, T0.a1
+HAVING ( NOT ( ( ( ( NOT ( ( ( ( ( ( 0 )/1 < SUM ( T0.a1 ) ) OR ( (
+NOT ( ( T0.a1 )+0 IS NOT NULL ) ) OR ( T0.a1 > MIN ( ( T0.a1 )*1 ) ) )
+) OR ( T0.a1 BETWEEN ( T0.a1 ) AND ( T0.a1 ) ) ) OR ( ( ( ( ( T0.a1
+IN ( ( T0.a1 )+0 , T0.a1 ) ) OR ( 0 BETWEEN ( T0.a1 ) AND ( T0.a1 ) )
+) AND ( NOT ( ( ( NOT ( NOT ( ( T0.a1 BETWEEN ( AVG ( ( -76.27 )+0 )
+) AND ( ( ( ( ( 16.46 )/1 )+0 )/1 )*1 ) ) AND ( T0.a1 < T0.a1 ) ) )
+) AND ( T0.a1 IN ( ( T0.a1 )+0 , SUM ( ( ( ( -44.54 )/1 )-0 )-0 ) ) )
+) OR ( NOT ( ( ( 39.53 )*1 )-0 BETWEEN ( MIN ( ( ( ( ( -96.86 )+0 )-0
+)+0 )-0 ) ) AND ( MIN ( ( a1 )*1 ) ) ) ) ) ) ) AND ( MIN ( T0.a1 ) <=
+( T0.a1 )-0 ) ) OR ( ( ( T0.a1 )+0 )*1 <= MAX ( T0.a1 ) ) ) ) AND (
+T0.a1 BETWEEN ( T0.a1 ) AND ( ( MIN ( T0.a1 ) )-0 ) ) ) ) OR ( (
+T0.a1 BETWEEN ( T0.a1 ) AND ( ( -11.50 )/1 ) ) AND ( NOT ( NOT ( (
+-35.70 BETWEEN ( ( MIN ( T0.a1 ) )*1 ) AND ( T0.a1 ) ) AND ( ( (
+T0.a1 > T0.a1 ) OR ( SUM ( ( T0.a1 )/1 ) BETWEEN ( ( ( T0.a1 )/1 )-0
+) AND ( T0.a1 ) ) ) AND ( MAX ( T0.a1 ) >= T0.a1 ) ) ) ) ) ) ) AND (
+T0.a1 >= AVG ( ( ( ( T0.a1 )/1 )-0 )+0 ) ) ) AND ( ( T0.a1 )*1 IS NOT
+NULL ) ) ) OR ( T0.a1 <> T0.a1 )
+ORDER BY 3
+ ;
+
+select * from T038a where a1 < 2 + {fn CONVERT(a1,BIGINT)};
+
+update T038a set a1 = a1 + 1 + 1 where a1 = 1 - 1 + 1 * 2;
+
+select * from T038a where case a1 when 1 + 1 then 2 + 1 when 3 + 1 then 4 + 5 else 5 end = 2 + 1;
+
+select * from T038a group by a1 having case a1 when 1 + 1 then 2 + 1 else 5 + 1 end = 2;
+
+select * from T038a where 2 + 2 + NULL = cast(char_length(trim('   abc  ')) as int) + 2;
+select * from T038a t1, T038a t2 where 2 + 2 + NULL = cast(char_length(trim('   abc  ')) as int) + 2;
+select * from T038a where a1 > dayofweek(date '1997-01-01' + interval '1' day) + 1;
+
+select * from T038a where a1 < 9  + 1 and 3 + 1 < 5 + 1 and a1 > 20 and not(4 + 1 < 3 + 1);
+
+select * from T038a where a1 = cast (-2147483648 as int) - 1;
+select * from T038a where a1 = cast(2147483647 as int) + 1;
+select * from T038a where a1 = cast (-2147483647 as int) - 1;
+select * from T038a where a1 = cast(2147483646 as int) + 1;
+select * from T038a where a1 = cast (0 as int unsigned) - 1;
+select * from T038a where a1 = cast (4294967295 as int unsigned) + 1;
+select * from T038a where a1 = cast (1 as int unsigned) - 1;
+select * from T038a where a1 = cast (4294967294 as int unsigned) + 1;
+
+select * from T038b where b1 = date '01/01/1997' + interval '1' day - interval '1' day * 2;
+select * from T038b t1, T038b t2 where t1.b1 = date '01/01/1997' + interval '1' day - interval '1' day * 2;
+
+select * from T038b where b1 = date '01/01/1997' + interval '90-02' year to month;
+select * from T038b t1, T038b t2 where t1.b1 = date '01/01/1997' + interval '90-02' year to month;
+
+select * from T038b where b1 < interval '1' day + {fn CONVERT(b1,DATE)};
+select * from T038b where b1 < cast (timestamp'12/31/9999 11:59:59.999999 pm' as date) + interval '1' day;
+select * from T038b where b1 < cast('1997-28-02' as DATE) + interval '2' day;
+
+-- Begin
+-- Test fix for Target RFE solution: 10-040426-5430
+-- This checks for implicit casting of strings to date
+-- Need to turn ON the following CQD to use the implicit casting functionality
+control query default allow_incompatible_comparison 'ON';
+-- test implicit casting of string in yyyy-mm-dd format
+select * from T038b where b1 < '1997-02-28';
+-- test implicit casting of string in mm/dd/yyyy format
+select * from T038b where b1 < '02/28/1997';
+-- turn OFF the CQD after testing
+control query default allow_incompatible_comparison 'OFF';
+-- End
+
+select * from T038c where c1 < 'abcde' || 'fghijk' || 'lmnop';
+select * from T038c t1, T038c t2 where t1.c1 > trim('   abc ') || trim(' ef ');
+
+select * from T038c where char_length(substring('abcdef' from 1 for 3) || 'cde') >
+                           position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+
+select * from T038c t1, T038c t2 where char_length(substring('abcdef' from 1 for 3) || 'cde') > position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+select * from T038c where c1 < upshift(lower('ABCDE')) || 'fg';
+select * from T038c where c1 = {fn CONVERT(C1,CHAR)} || {fn CONVERT(C1,CHAR)};
+
+select * from T038c where {fn locate('ab', c1)} + 1 > 0;
+
+select * from T038c where {fn locate({fn ucase('ab')}, c1)} + 1 > 0;
+
+select c1 from T038c where {fn substring(c1, 1, 3)} || 'm' = 'jklm';
+
+select * from T038c where {fn length ({fn rtrim(c1)})} + 1 = 5;
+
+select * from T038d where d1 < interval '1.1' second + {fn CONVERT(d1,TIMESTAMP)};
+
+select * from T038d where d1 < interval - '1.1' second + {fn now()};
+
+select * from T038d where d1 < timestamp '1997-01-01 21:11:52.145' + interval - '1.1' second;
+select * from T038d t1, T038d t2 where t1.d1 < timestamp '1997-01-01 21:11:52.145' + interval - '1.1' second;
+
+select * from T038d where d1 > cast('01.01.1997 03.04.55.123456' as timestamp) + interval '1' day - interval '1' day;
+select * from T038d t1, T038d t2 where t1.d1 > cast('01.01.1997 03.04.55.123456' as timestamp) + interval '1' day - interval '1' day;
+select * from T038d where cast(d1 as timestamp(3)) = cast (date'12/31/9999' as timestamp(3)) + interval '1' day;
+
+select * from T038e where e1 > time '11:58:59.236 pm' + interval '1.12' second;
+select * from T038e t1, T038e t2 where t1.e1 > time '11:58:59.236 pm' + interval '1.12' second;
+select * from T038e where e1 < interval '1.12' second + {fn CONVERT(e1,TIME)};
+
+select * from T038f where f1 > 1234567890123456.789 + 10000000000 * 3;
+select * from T038f t1, T038f t2 where t1.f1 > 1234567890123456.789 + 10000000000 * 3;
+
+select * from T038f where f1 = cast (-999999999999999999 as decimal(18)) - 1;
+select * from T038f where f1 = cast (999999999999999999 as decimal(18)) + 1;
+
+select * from T038g where g1 > 1234567890123456.789 + 10000000000 * 3;
+select * from T038g t1, T038g t2 where t1.g1 > 1234567890123456.789 + 10000000000 * 3;
+
+select * from T038g where cast(g1 as numeric(1)) = cast (-8 as numeric(1)) - 1;
+select * from T038g where cast(g1 as numeric(1)) = cast (-9 as numeric(1)) - 1;
+select * from T038g where cast(g1 as numeric(1)) = cast (8 as numeric(1)) + 1;
+select * from T038g where cast(g1 as numeric(1)) = cast (9 as numeric(1)) + 1;
+select * from T038g where g1 = cast (1 as numeric(1)) / cast (0 as numeric(1));
+
+-- test division by zero, with and without rows
+select * from T038g where g1 = g1 / 0;
+select * from T038g where g1 = 2 / 0;
+select * from T038g where g1 = 2 / (1 - 1);
+select * from T038g where g1 = 0 / ((1 - 1) * (2 + 3)) + g1;
+select * from T038g where g1 = g1 + 0 / ((1 - 1) * (2 + 3));
+delete from T038g;
+select * from T038g where g1 = g1 / 0;
+select * from T038g where g1 = 2 / 0;
+select * from T038g where g1 = 2 / (1 - 1);
+select * from T038g where g1 = 0 / ((1 - 1) * (2 + 3)) + g1;
+select * from T038g where g1 = g1 + 0 / ((1 - 1) * (2 + 3));
+
+select * from T038h where h1 >= 1234567890 - 2 + 2 * 4.0;
+select * from T038h t1, T038h t2 where t1.h1 >= 1234567890 - 2 + 2 * 4.0;
+
+select * from T038i where i1 > 1 + 1 and i1 < 3.2 - 3.2 + 5; 
+select * from T038i t1, T038i t2 where t1.i1 > 1 + 1 and t1.i1 < 3.2 - 3.2 + 5; 
+
+select * from T038i where i1 < 1.0 / 2 + 3 or i1 > 3 + 3 / 1;
+select * from T038i t1, T038i t2 where t1.i1 < 1.0 / 2 + 3 or t1.i1 > 3 + 3 / 1;
+
+select * from T038i where i1 = cast(2.0 + 2 as int) + 3;
+select * from T038i t1, T038i t2 where t1.i1 = cast(2.0 - 1 as int) + 3;
+
+select * from T038i where i1 > char_length(trim('   abc ') || trim('  ef '));
+select * from T038i t1, T038i t2 where t1.i1 > char_length(trim('   abc ') || trim('  ef '));
+
+select * from T038j where j1 < 'abcde' || 'fghijk' || 'lmnop';
+select * from T038j t1, T038j t2 where t1.j1 > trim('   abc ') || trim(' ef ');
+
+select * from T038j where char_length(substring('abcdef' from 1 for 3) || 'cde') >
+                           position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+select * from T038j where j1 < {fn concat('abc', {fn CONVERT(j1,LONG VARCHAR)})};
+
+select * from T038k t1, T038j t2 where char_length(substring('abcdef' from 1 for 3) || 'cde') > position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+
+select * from T038k where k1 < 'abcde' || 'fghijk' || 'lmnop';
+select * from T038k t1, T038k t2 where t1.k1 > trim('   abc ') || trim(' ef ');
+
+select * from T038k where char_length(substring('abcdef' from 1 for 3) || 'cde') >
+                           position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+select * from T038k t1, T038k t2 where char_length(substring('abcdef' from 1 for 3) || 'cde') > position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+
+select * from T038l t1, T038l t2 where char_length(substring('abcdef' from 1 for 3) || 'cde') > position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+
+select * from T038l where l1 < 'ABCDE' || 'FGHIJK' || 'LMNOP';
+select * from T038l t1, T038l t2 where t1.l1 > trim('   abc ') || trim(' ef ');
+
+select * from T038l where char_length(substring('abcdef' from 1 for 3) || 'cde') >
+                           position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+select * from T038l t1, T038l t2 where char_length(substring('abcdef' from 1 for 3) || 'cde') > position('B' in upper('abcdef')) + octet_length(lower('abcdef'));
+
+select * from T038m where m1 >= 1234567890 - 2 + 2 * 4.0;
+select * from T038m t1, T038m t2 where t1.m1 >= 1234567890 - 2 + 2 * 4.0;
+select * from T038m where m1 = cast (-9223372036854775808 as largeint) - 1;
+select * from T038m where m1 = cast (9223372036854775807 as largeint) + 1;
+
+select * from T038n where n1 > 1 + 1 and n1 < 3.2 - 3.2 + 5; 
+select * from T038n t1, T038n t2 where t1.n1 > 1 + 1 and t2.n1 < 3.2 - 3.2 + 5; 
+
+select * from T038n where n1 < 1.0 / 2 + 3 or n1 > 3 + 3 / 1;
+select * from T038n t1, T038n t2 where t1.n1 < 1.0 / 2 + 3 or t1.n1 > 3 + 3 / 1;
+
+select * from T038n where n1 = cast(2.0 + 1 as int) + 3;
+select * from T038n t1, T038n t2 where t1.n1 = cast(2.0 as int) + 3;
+
+select * from T038n where n1 > char_length(trim('   abc ') || trim('  ef '));
+select * from T038n t1, T038n t2 where t1.n1 > char_length(trim('   abc ') || trim('  ef '));
+
+select * from T038n where n1 = cast (-32767 as smallint) - 1;
+select * from T038n where n1 = cast (-32768 as smallint) - 1;
+select * from T038n where n1 = cast (32766 as smallint) + 1;
+select * from T038n where n1 = cast (32767 as smallint) + 1;
+
+select * from T038o where o1 > 1234567890123456.789 + 10000000000 * 3;
+select * from T038o t1, T038o t2 where t1.o1 > 1234567890123456.789 + 10000000000 * 3;
+select * from T038o where o1 <  cast(100 + 100 as smallint unsigned) - 100;
+select * from T038o where o1 <= cast(500 + 500 as integer unsigned) + 500;
+select * from T038o where o1 <= cast(10000 + 20000 as largeint signed) + 1000;
+select * from T038o where o1 >= cast(1 + 2 as decimal(7) unsigned) + 3
+                            and o1 < cast(100 as decimal(3) unsigned);
+select * from T038o where o1 <= cast(3e38 - 3e37 as real) + 3e36;
+select * from T038o where o1 <= cast(1e30 + 1e50 as double precision) + 1e50;
+select * from T038o where o1 <= cast (9999999998 as real) + 1;
+select * from T038o where o1 <= cast (9999999999 as real) + 1;
+
+
+select * from T038p where p1 > abs(-1234567890123456.789 - 10000000000 * 3);
+select * from T038p t1, T038p t2 where t1.p1 > 1234567890123456.789 + 10000000000 * 3;
+select * from T038p where p1 < cast (4294967296 as double precision) + 1;
+
+select * from T038q where q1 > 1 + 1 and q1 < 3.2 - 3.2 + 50; 
+select * from T038q t1, T038q t2 where t1.q1 > 1 + 1 and t2.q1 < 3.2 - 3.2 + 50; 
+
+-- some TPC-D tests
+
+CREATE TABLE T038ORD
+  (
+    o_orderpriority                  INT DEFAULT NULL
+  , o_orderdate                      DATE DEFAULT NULL
+  , o_orderkey                       INT DEFAULT NULL
+  )
+  ;
+
+CREATE TABLE T038LI
+  (
+    L_orderKEY                        INT DEFAULT NULL
+  , L_T038partKEY                         INT DEFAULT NULL
+  , L_RECEIPTDATE                     DATE DEFAULT NULL
+  , L_SHIPDATE                        DATE DEFAULT NULL
+  , L_DISCOUNT                        INT DEFAULT NULL
+  , L_QUANTITY                        INT DEFAULT NULL
+  , L_EXTENDEDPRICE                   INT DEFAULT NULL
+  , L_SHIPMODE                        CHAR
+  , L_COMMITDATE                      DATE DEFAULT NULL
+  )
+  ;
+
+create table T038part(p_T038partkey int default null,
+                   p_type    char);
+
+
+insert into T038ORD values(1,date '1994-12-01', 2);
+insert into T038ORD values(1,date '1994-12-01', 4);
+insert into T038LI values(2, 2, date '1995-01-01', date '1995-02-03', 8, 10, 15, 'A', date '1994-02-01');
+insert into T038LI values(2, 2, date '1995-01-03', date '1995-02-03', 7, 13, 13, 'B', date '1997-03-04');
+insert into T038LI values(2, 2, date '1993-01-01', date '1995-02-03', 14, 12, 4, 'C', date '1998-09-09');
+insert into T038LI values(3, 2, date '1995-01-01', date '1995-02-03', 19, 22, 23, 'D', date '1985-09-08');
+ 
+-- Q4
+select o_orderpriority, count(*) from T038ORD 
+where o_orderdate > date '1994-08-01' + interval '3' month
+      and o_orderdate < date '1995-08-01'
+      and exists (select * from T038LI
+                  where l_orderkey = o_orderkey
+                        and date '1994-08-01' - interval '3' month
+                            < l_receiptdate)
+group by o_orderpriority 
+order by o_orderpriority;
+
+-- Simplified Q6
+select l_orderkey, l_shipdate from T038LI
+where l_shipdate >= date '1994-01-01'
+      and l_shipdate < date '1994-02-04' + interval '1' year
+      and l_discount between 12.2 / 2 and 12.2 / 2 + 1
+      and l_quantity < 25;
+
+-- Simplified Q6 again
+select
+l_orderkey, l_shipdate
+from T038LI where
+l_discount between 12.2 / 2 and 12.2 / 2  / 5
+and 25 + 2 > 3 * l_quantity;
+
+-- Q12
+select
+     l_shipmode,
+     sum(case when o_orderpriority = 1
+                or o_orderpriority = 2
+              then 1
+             else 0
+         end),
+     sum(case when o_orderpriority <> 1
+               and o_orderpriority <> 2
+              then 1
+              else 0
+          end)
+  from T038ORD,T038LI
+     where o_orderkey = l_orderkey
+     and l_shipmode in ('RAIL','AIR')
+     and l_commitdate < l_receiptdate
+     and l_shipdate < l_commitdate
+     and l_receiptdate >= date '1995-01-01'
+     and l_receiptdate < date '1995-01-01' + interval '1' year
+  group by l_shipmode
+  order by l_shipmode
+  ;
+
+-- Q14
+  select
+    100.00 * sum(
+    case
+         when p_type like 'PROMO%'
+         then
+         cast((l_extendedprice*(1-l_discount)) as numeric(18,2))
+        else 0
+    end)
+    / cast(sum((l_extendedprice*(1-l_discount))) as numeric(18,2))
+  
+    from  T038LI, T038part
+    where l_T038partkey = p_T038partkey
+         and l_shipdate >= date '1994-08-01'
+         and l_shipdate < date '1994-08-01' + interval '1' month
+  ;
+
+-- String function tests from TEST012 (Executor) start here
+
+-- Create and populate table
+create table T038sf(a int, b char(10), c varchar(30));
+
+insert into T038sf values(10, 'abcdef', 'ghij');
+insert into T038sf values(20, 'ABCDEF', 'GHIJ');
+insert into T038sf values(30, '   abc   ', '   def   ');
+insert into T038sf values(40, 'test', 'trim on non-space');
+
+-- testing POSITION function
+select b, position('xy' in b) from T038sf;
+select b, position('f' in b) from T038sf;
+select c, position('hi' in c) from T038sf;
+select b, position('' in b), c, position('' in c) from T038sf;
+select b, position('' in '') from T038sf;
+select * from T038sf where position('b' in b) < 3;
+select * from T038sf where position('b' in b) <= 2;
+
+-- testing TRIM function
+select c,trim(leading from c),char_length(trim(leading from c)) from T038sf;
+select b,trim(leading ' ' from b),char_length(trim(leading ' ' from b)) from T038sf;
+select b,trim(trailing from b),char_length(trim(trailing from b)) from T038sf;
+select b,trim(both from b),char_length(trim(both from b)) from T038sf;
+select b,trim('b' from trim('a' from b)),char_length(trim('b' from trim('a' from b))) from T038sf;
+select * from T038sf where trim(c)='def';
+select * from T038sf where trim(leading from c) = 'def';
+-- The following query should raise a SQL exception.(To be implemented)  
+-- select b,trim('ab' from b),c from T038sf;
+
+-- test ASCII, CHAR functions
+select b, { fn CHAR(ASCII(b)) }, c, { fn CHAR(ASCII(c)) } from T038sf;
+select b, CHAR(ASCII(b)), c, CHAR(ASCII(c)) from T038sf;
+select 'c', CHAR(ASCII('cba')) from T038sf;
+
+select 65, { fn ASCII(CHAR(65)) } from T038sf;
+select 65, ASCII(CHAR(65)) from T038sf;
+
+-- -ve
+select { fn ASCII(1) } from T038sf;
+
+select CHAR(b) from T038sf;
+select CHAR(256) from T038sf;
+select CHAR(1.1) from T038sf;
+
+
+-- INSERT function
+select insert('abc', 2, 1, 'zz') from T038sf;
+
+-- REPEAT
+select repeat('aa', 10) from T038sf;
+
+-- test fix to genesis case: 10-981211-6071
+-- makes sure we catch and diagnose invalid repeat count
+select REPEAT(b, 9999999999999999999) from T038sf;
+select REPEAT(c, 9999999999999999999) from T038sf;
+
+-- REPLACE
+select replace('abcdabcdab', 'cd', 'abc') from T038sf;
+
+-- SPACE
+select 's' || space(10) || 'e', char_length(space(10)) from T038sf;
+
+-- VEG conversion should not change the result of string function.
+-- should return 10
+select char_length(b) from T038sf where b = 'abcdef';
+
+-- should return 'abcdef    abcdef    '
+select repeat(b, 2) from T038sf where b = 'abcdef';
+
+-- String function tests from TEST012 (Executor) end here
+
+-- LPAD and RPAD
+select LPAD ('Robert John Smith', 20) from T038sf
+  where RPAD (c, 20, 'x') like 'ghijx%';
+-- should get one row ("   Robert John Smith")
+
+select a, RPAD (c, 20, '7') from T038sf;
+-- 4 rows
+
+select RPAD (b, 12, '5'), LPAD (c, 13) from T038sf where RPAD( RPAD(b, 13, 'X'), 10, 'W') = b;
+-- 4 rows
+
+-- Test for Genesis soln: 10-071004-7982
+-- Previously this would run out of memory in the Generator.
+-- Now it compiles successfully with Query Cache off.
+-- If Query Cache is on, then this query takes a long time to compile.
+--
+control query default query_cache_max_exprs '117';
+prepare s1 from
+select case when e1 = 1 then e1 + 1
+            when e1 = 2 then e1 + 2
+            when e1 = 3 then e1 + 3
+            when e1 = 4 then e1 + 4
+            when e1 = 5 then e1 + 5
+            when e1 = 6 then e1 + 6
+            when e1 = 7 then e1 + 7
+            when e1 = 8 then e1 + 8
+            when e1 = 9 then e1 + 9
+            else e1
+       end
+from (select case when e2 = 101 then e2 + 1
+                  when e2 = 102 then e2 + 2
+                  when e2 = 103 then e2 + 3
+                  when e2 = 104 then e2 + 4
+                  when e2 = 105 then e2 + 5
+                  when e2 = 106 then e2 + 6
+                  when e2 = 107 then e2 + 7
+                  when e2 = 108 then e2 + 8
+                  when e2 = 109 then e2 + 9
+                  else e2
+             end e1
+       from (select case when e3 = 101 then 1
+                         when e3 = 102 then 2
+                         when e3 = 103 then 3
+                         when e3 = 104 then 4
+                         when e3 = 105 then 5
+                         when e3 = 106 then 6
+                         when e3 = 107 then 7
+                         when e3 = 108 then 8
+                         when e3 = 109 then 9
+                         else e3
+                   end e2
+            from (select case when empnum = 101 then 1
+                              when empnum = 102 then 2
+                              when empnum = 103 then 3
+                              when empnum = 104 then 4
+                              when empnum = 105 then 5
+                              when empnum = 106 then 6
+                              else empnum
+                         end e3
+                  from T038empl) T1
+           ) T2
+    ) T3
+;
+control query default query_cache reset;
+
+execute s1;
+
+-- nvl function test
+create table T038nvl (a int not null, b int, primary key(a));
+insert into T038nvl values (1, null), (2, 2), (3, null), (4, 4);
+select nvl(b,a) from T038nvl;
+
+log;
+
+?section clnup
+-- CLEANUP database
+drop table T038edat;
+drop table T038empl;
+drop table T038sls;
+drop table T038prts;
+DROP TABLE T038dt1;
+DROP TABLE T028tm1;
+DROP TABLE T038TS1;
+drop table T038tcf;
+drop table T038tsf;
+drop table T038empt;
+drop table T038dept;
+drop table T038corp;
+
+-- Test constant folding
+
+drop table T038a;
+drop table T038b;
+drop table T038c;
+drop table T038d;
+drop table T038e;
+drop table T038f;
+drop table T038g;
+drop table T038h;
+drop table T038i;
+drop table T038j;
+drop table T038k;
+drop table T038l;
+drop table T038m;
+drop table T038n;
+drop table T038o;
+drop table T038p;
+drop table T038q;
+
+drop table T038ORD;
+drop table T038LI;
+drop table T038part;
+drop table T038sf;
+drop table T038nvl;
+
+

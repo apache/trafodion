@@ -1,0 +1,9 @@
+###########################################################
+## This is the main index file for all other help files. ##
+###########################################################
+
+#Common Commands
+common:common = common_common_help.idx
+
+#Mode SQL
+sql:common = sql_common_help.idx

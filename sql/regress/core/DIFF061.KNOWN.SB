@@ -1,0 +1,25 @@
+234a235,236
+> >>
+> >>#ifndef SEABASE_REGRESS
+236,239d237
+< 
+< *** ERROR[1127] The specified table #CAT.#SCH.VUT4495 is not a base table. Please verify that the correct table was specified.
+< 
+< --- SQL operation failed with errors.
+241,244d238
+< 
+< *** ERROR[1127] The specified table #CAT.#SCH.VUT4495 is not a base table. Please verify that the correct table was specified.
+< 
+< --- SQL operation failed with errors.
+246,249d239
+< 
+< *** ERROR[1127] The specified table #CAT.#SCH.VUT4495 is not a base table. Please verify that the correct table was specified.
+< 
+< --- SQL operation failed with errors.
+251,254c241
+< 
+< *** ERROR[1127] The specified table #CAT.#SCH.VUT4495 is not a base table. Please verify that the correct table was specified.
+< 
+< --- SQL operation failed with errors.
+---
+> >>#endif

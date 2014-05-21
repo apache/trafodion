@@ -1,0 +1,391 @@
+>>
+>>create table hex_iso(c char(10) character set ISO88591);
+
+--- SQL operation complete.
+>>create table hex_ucs2(c char(10) character set UCS2);
+
+--- SQL operation complete.
+>>
+>>?section iso88591
+>>
+>>--positive tests
+>>--A hexadecimal represented ISO88591 string literal seperated by spaces
+>>insert into hex_iso values(_ISO88591 X'03 41 f3');
+
+--- 1 row(s) inserted.
+>>
+>>--A hexadecimal represented ISO88591 string literal seperated by spaces
+>>--with non-printable characters
+>>insert into hex_iso values(_ISO88591 X'81 01 02 41');
+
+--- 1 row(s) inserted.
+>>
+>>--Spaces between hex digits are optional 
+>>insert into hex_iso values(_ISO88591 X'454545');
+
+--- 1 row(s) inserted.
+>>insert into hex_iso values(_iso88591 X'54  e4 54');
+
+--- 1 row(s) inserted.
+>>
+>>--the charset prefix can be omitted
+>>insert into hex_iso values(X'');
+
+--- 1 row(s) inserted.
+>>
+>>--Concatenation of two strings
+>>insert into hex_iso values(_ISO88591 X'61 61 61' x'62 62 62');
+
+--- 1 row(s) inserted.
+>>
+>>select count(*) from hex_iso;
+
+(EXPR)              
+--------------------
+
+                   6
+
+--- 1 row(s) selected.
+>>
+>>--get 2 back
+>>select char_length(trim(x'00' from x'00 01 02 00')) from (values(1)) x;
+
+(EXPR)    
+----------
+
+         2
+
+--- 1 row(s) selected.
+>>
+>>--get 11 back
+>>select char_length(trim(x'00' from '00 01 02 00')) from (values(1)) x;
+
+(EXPR)    
+----------
+
+        11
+
+--- 1 row(s) selected.
+>>
+>>
+>>--negative tests
+>>
+>>--bad hexdecimal digits
+>>insert into hex_iso values(x'e00O');
+
+*** ERROR[3402] The format of the ISO88591 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_iso values(x'e00O');
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--unknown character set name
+>>insert into hex_iso values(_IS088591x'43 43 43');
+
+*** ERROR[3127] An invalid character was found in identifier _IS088591x.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_iso values(_IS088591x'43 43 43');
+                                     ^ (38 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--no space is allowed between X and the quote 
+>>insert into hex_iso values(_ISO88591 X '44 44 44');
+
+*** ERROR[3127] An invalid character was found in identifier _ISO88591.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_iso values(_ISO88591 X '44 44 44');
+                             ^ (30 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--for ISO88591, hex digits should be grouped in pairs
+>>insert into hex_iso values(_ISO88591 X'4 8 48 48');
+
+*** ERROR[3402] The format of the ISO88591 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_iso values(_ISO88591 X'4 8 48 48');
+                                                ^ (49 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--invalid hex format, odd number of digits
+>>insert into hex_iso values(_ISO88591 X'4949494');
+
+*** ERROR[3402] The format of the ISO88591 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_iso values(_ISO88591 X'4949494');
+                                              ^ (47 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--hexadecimal representation of SJIS string literals
+>>--has not been implemented
+>>insert into hex_iso values(_SJIS X'50 50 50');
+
+*** ERROR[3010] Character set SJIS is not yet supported.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_iso values(_SJIS X'50 50 50');
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- hex string literal is not allowed in any DDL
+>>create table d(a char(10) default x'00');
+
+*** ERROR[1243] The hexadecimal form of string literals is not allowed in this context.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table d(a char(10) default x'00');
+                                      ^ (39 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create table d(a char(10) heading x'4d 5f');
+
+*** ERROR[1243] The hexadecimal form of string literals is not allowed in this context.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+create table d(a char(10) heading x'4d 5f');
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>alter table hex_iso add constraint ch1 check (c < x'12');
+
+*** ERROR[1243] The hexadecimal form of string literals is not allowed in this context.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+alter table hex_iso add constraint ch1 check (c < x'12');
+                                                      ^ (55 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>?section ucs2
+>>--The following insertion tests the same feature for UCS2 
+>>--which has to be group into 4 instead of 2
+>>
+>>--positive
+>>insert into hex_ucs2 values(_UCS2 X'0041 0041 0041');
+
+--- 1 row(s) inserted.
+>>insert into hex_ucs2 values(_UCS2 X'00610494 04A2');
+
+--- 1 row(s) inserted.
+>>insert into hex_ucs2 values(_UCS2 X'  0062 eeEeE000');
+
+--- 1 row(s) inserted.
+>>insert into hex_ucs2 values(_UCS2 X'');
+
+--- 1 row(s) inserted.
+>>
+>>--string concatenation
+>>insert into hex_ucs2 values(_UCS2 X'0061 0061 0061' _UCS2 X'0062 0062 0062');
+
+--- 1 row(s) inserted.
+>>
+>>select count(*) from hex_ucs2;
+
+(EXPR)              
+--------------------
+
+                   5
+
+--- 1 row(s) selected.
+>>
+>>-- should be 3
+>>-- NSK -- select char_length(trim(c)) from hex_ucs2 where c = x'0041 0041 0041';
+>>-- Seaquest --
+>>select char_length(trim(c)) from hex_ucs2 where c = x'41 41 41';
+
+(EXPR)    
+----------
+
+         3
+
+--- 1 row(s) selected.
+>>
+>>
+>>--negative
+>>
+>>--non hex decimal
+>>insert into hex_ucs2 values(_UCS2 x'asdf');
+
+*** ERROR[3402] The format of the UCS2 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 x'asdf');
+                                        ^ (41 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--FFFF, FFFE is not legal in UCS2
+>>insert into hex_ucs2 values(_UCS2 x'0000FFFF');
+
+*** ERROR[3400] Invalid code point value for character set UCS2. 
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 x'0000FFFF');
+                                            ^ (45 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into hex_ucs2 values(_UCS2 x'0000  FFFe');
+
+*** ERROR[3400] Invalid code point value for character set UCS2. 
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 x'0000  FFFe');
+                                              ^ (47 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--space not allowed between X and the quote
+>>insert into hex_ucs2 values(_UCS2 X '0044 0044 0044');
+
+*** ERROR[3127] An invalid character was found in identifier _UCS2.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 X '0044 0044 0044');
+                              ^ (31 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--number of digits not a mutiple of 4
+>>insert into hex_ucs2 values(_UCS2 X'44 44 44');
+
+*** ERROR[3402] The format of the UCS2 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 X'44 44 44');
+                                            ^ (45 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into hex_ucs2 values(_UCS2 X'444 4a44');
+
+*** ERROR[3402] The format of the UCS2 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 X'444 4a44');
+                                            ^ (45 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into hex_ucs2 values(_UCS2 X'0123456789');
+
+*** ERROR[3402] The format of the UCS2 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+insert into hex_ucs2 values(_UCS2 X'0123456789');
+                                              ^ (47 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--charset mismatch for concatenation
+>>insert into hex_ucs2 values(_UCS2 X'006000600060' X'006000600060');
+
+*** ERROR[4034] The operation (CHAR(n) CHARACTER SET UCS2 || CHAR(n) CHARACTER SET ISO88591)  is not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>-- testing fix for bugzilla case#1843
+>>insert into charset101b values (_ucs2'test',1);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'  5168 4E16754C',2);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2'',3);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FFFD',4);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2't',5);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FC01',6);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FD00',7);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FE00',8);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FE11',9);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FEAA',10);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FEFF',11);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FF00',12);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FF11',13);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FFAA',14);
+
+--- 1 row(s) inserted.
+>>insert into charset101b values (_ucs2 X'FFFD',15);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>
+>>select c,b, converttohex(b), converttohex(sort_key(b)) from charset101b order by c;
+
+C            B                     (EXPR)                                    (EXPR)
+-----------  --------------------  ----------------------------------------  --------------------------------------------
+
+          1  test                  0074006500730074                          14000074006500730074002000200020002000200020
+          2  ???                   51684E16754C                              140051684E16754C0020002000200020002000200020
+          3                                                                  14000020002000200020002000200020002000200020
+          4  ?                     FFFD                                      1400FFFD002000200020002000200020002000200020
+          5  t                     0074                                      14000074002000200020002000200020002000200020
+          6  ?                     FC01                                      1400FC01002000200020002000200020002000200020
+          7  ?                     FD00                                      1400FD00002000200020002000200020002000200020
+          8  ?                     FE00                                      1400FE00002000200020002000200020002000200020
+          9  ?                     FE11                                      1400FE11002000200020002000200020002000200020
+         10  ?                     FEAA                                      1400FEAA002000200020002000200020002000200020
+         11  ?                     FEFF                                      1400FEFF002000200020002000200020002000200020
+         12  ?                     FF00                                      1400FF00002000200020002000200020002000200020
+         13  ?                     FF11                                      1400FF11002000200020002000200020002000200020
+         14  ?                     FFAA                                      1400FFAA002000200020002000200020002000200020
+
+--- 14 row(s) selected.
+>>drop table hex_iso;
+
+--- SQL operation complete.
+>>drop table hex_ucs2;
+
+--- SQL operation complete.
+>>drop table charset101b ;
+
+--- SQL operation complete.
+>>log;

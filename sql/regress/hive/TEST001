@@ -1,0 +1,79 @@
+-- Tests for SQL on Hadoop PoC
+-- Added April 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+log LOG001 clear;
+obey TEST001(setup);
+obey TEST001(tests);
+log;
+exit;
+
+?section setup
+--------------------------------------------------------------------------
+
+set schema hive.hive;
+cqd HIVE_MAX_STRING_LENGTH '20' ;
+cqd mode_seahive 'ON';
+
+?section tests
+--------------------------------------------------------------------------
+
+select count(*) from customer ;
+select count(*) from customer_address ;
+select count(*) from date_dim ;
+select count(*) from household_demographics ;
+select count(*) from item ;
+select count(*) from promotion ;
+select count(*) from store ;
+select count(*) from time_dim ;
+
+-- these two don't seem to work
+--select count(*) from store_sales ;
+--select count(*) from customer_demographics ;
+
+select c_customer_sk from customer where c_customer_sk < 100; 
+
+select ca_gmt_offset from customer_address where ca_gmt_offset < -8;
+
+select [first 100] hd_buy_potential from household_demographics ;
+
+select * from promotion ;
+
+select t_time from time_dim where t_time > 100 and t_time < 200 ; 
+
+select * from store ; 
+
+select d_date from date_dim where d_date > cast('2099-01-01' as timestamp);
+
+select [first 10] i_item_desc from item ;
+
+-- seems to crash in java sometimes 
+--select * from promotion ; 
+
+--incorrect row count
+--select  cd_dep_employed_count from customer_demographics ;
+
+-- getting a parallel plan
+--select ss_quantity from store_sales ; 
+
+cqd DETAILED_STATISTICS 'ALL';
+select count(C_CUSTOMER_SK) from hive.customer;
+select count(*) from table(statistics(NULL,NULL));
+cqd DETAILED_STATISTICS 'RESET';

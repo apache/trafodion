@@ -1,0 +1,150 @@
+-- Test: TEST002
+-- Functionality: This tests ISO88591-only string literal requirement.
+--                (see fullstack2/test029 for examples on constraints) 
+-- Expected files:   EXPECTED002
+-- Tables created:   t001 t002 t003 t004 t005 t006 t007 t008 t009 t010
+--                   t011 t012 t013 nt001 nt002 nt003 nt004 nt005 t006v nt007
+--                   nt008 nt009
+-- Limitations: None
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+?section ddl
+obey test002(clnup);
+
+log log002 clear;
+
+--HEADING can only be character_string_literal without Phase I work
+create table t001 (c char(10) HEADING 'MYHEADING');
+create table t002 (c char(10) HEADING _ISO88591'MYISOHEADING');
+create table t003 (c char(10) default 'asdf');
+
+--default can be UCS2
+create table t004 (c char(10) character set UCS2 default _UCS2'adf');
+
+create table t005 (c char(10) check (c > 'aaaa'));
+create table t006 (c char(10), check (c > 'aaaa'));
+create table t007 (c char(10), constraint myc1 check (c > 'qwew'));
+
+--UNIQUE constraint can be specified on UCS2 columns
+create table t008 (c char(10) character set UCS2 NOT NULL, 
+                   d char(10) character set UCS2 NOT NULL, 
+                   primary key(c), 
+                   constraint myc5 unique(c,d));
+
+--Referential Integrity on UCS2 colums
+create table t009 (x char(10) character set UCS2, y int NOT NULL NOT DROPPABLE,
+		   primary key(y),
+                   foreign key(x) references $$TEST_SCHEMA$$.t008(c));
+
+
+create table t010 (c char(10) character set UCS2);
+
+--view can be defined on a UCS2 column
+create view t010v2 as select c from t010; 
+
+--index can be created on a UCS2 column
+create table t011(c char(10) character set UCS2, d char(10) character set UCS2);
+create index t011i1 on t011(c,d);
+
+--the COLLATION clause can be specified on the UCS2 or ISO88591 column
+--and DEFAULT/BINARY is the only allowed collation
+create table t012 (a char(10) character set ISO88591 COLLATE default,
+                   b char(10) character set UCS2 COLLATE default);
+
+
+create table nt001 (c char(10) HEADING _UCS2'MYUCS2HEADING');
+create table nt002 (c char(10) character set UCS2 default 'default');
+
+--UCS2 strings are NOW allowed in a constraint
+create table nt003 (c char(10) character set UCS2 check (c > _UCS2'aaaa'));
+
+--UCS2 strings are NOW allowed in a constraint
+create table nt004 (c char(10) character set UCS2, check (c = _UCS2'aaaa'));
+
+--UCS2 strings are NOW allowed in a constraint
+create table nt005 (c char(10) character set UCS2, constraint myc2 check (c >
+_UCS2'asdf'));
+
+--no UCS2 strings in a view text
+create view nt006v1 as select * from t013 where c > _UCS2'aaaa';
+
+--no UCS2 strings in a trigger text
+create table nt007 (d char(10) character set UCS2, i int);
+
+--ok
+create table nt008 (d char(10) character set UCS2, i int);
+create trigger t013t1 after insert on nt008
+	update nt008 set i = 7 where i = 9;
+--not ok
+create trigger t013t2 after insert on nt008
+	update nt007 set d = _UCS2'qwer' where d = _UCS2'aaaa';
+
+--no UCS2 strings in a FIRST KEY clause
+create table nt009 (c char(10) character set UCS2)
+	location  $$partition$$
+	partition (add first key (_UCS2'aaa') location  $$partition1$$);
+
+--INFER_CHARSET works for default values in CREATE TABLE DDL
+control query default infer_charset 'on';
+create table t013(a char(10) character set ucs2 default 'aa');
+create table t013a(a char(10));
+invoke t013;
+
+-- test INFER_CHARSET fixes:
+-- test fix to genesis case 10-060317-2228
+select *,case when a is null then 'A' else 'B' end as test_fld from t013;
+-- select used to get error 4035
+
+-- test fix to genesis case 10-060315-0580
+select * from (values('A'),('B')) as t(c); -- used to get error 4035
+
+-- test fix to case 10-081022-6724 
+prepare xx from insert into t013 select 'a' from t013a;
+prepare xx from insert into t013 select 'a' from t013a group by 'a';
+prepare xx from insert into t013 select 'a'||'b' from t013a;
+
+control query default infer_charset 'off';
+ 
+?section dml
+
+?section clnup
+drop table t001;
+drop table t002;
+drop table t003;
+drop table t004;
+drop table t005;
+drop table t006;
+drop table t007;
+drop table t008 cascade;
+drop table t009;
+drop table t010 cascade;
+drop table t011;
+drop table t012;
+drop table t013;
+drop table t013a;
+drop table nt001;
+drop table nt002;
+drop table nt003;
+drop table nt004;
+drop table nt005;
+drop table nt007 cascade;
+drop table nt008 cascade;
+
+log;

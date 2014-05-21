@@ -1,0 +1,120 @@
+-- Table definitions for Seaquest Foundation configuration database
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+
+pragma synchronous = OFF;
+
+create table monRegProcName
+(
+procId integer primary key autoincrement,
+procName varchar(32) unique
+);
+
+create table monRegKeyName
+(
+keyId integer primary key autoincrement,
+keyname varchar(32) unique
+);
+
+create table monRegProcData
+(
+procId integer,
+keyId integer,
+dataValue varchar (4096),
+primary key (procId, keyId)
+);
+
+
+create table monRegNodeData
+(
+nodeId integer,
+keyId integer,
+dataValue varchar (4096),
+primary key (nodeId, keyId)
+);
+
+create table monRegClusterData
+(
+keyId integer primary key,
+dataValue varchar (4096)
+);
+
+create table monRegNodeName
+(
+nodeId integer primary key,
+nodeName varchar(32) unique
+);
+
+create table monRegUniqueStrings
+(
+nid integer,
+id integer,
+dataValue varchar (4096),
+primary key ( nid, id )
+);
+
+create table persist (
+procName varchar(32),
+zone integer,
+reqTm integer );
+
+create table procs
+(
+procType integer,
+name varchar(32),
+nid integer,
+program varchar(32),
+stdoutFile varchar(256),
+args varchar(4096)
+);
+
+-- For sqha, define primary/backup relationship for storage engine processes
+create table seconfig
+(
+procname varchar(32),
+pnid integer,
+bnid integer
+);
+
+create table pnode
+(
+pNid integer  primary key,
+nodeName varchar(32) unique
+-- startCore integer,
+-- endCore   integer,
+-- excluded 
+);
+
+create table lnode
+(
+lNid       integer  primary key,
+pNid       integer,  -- from monRegNodeName table
+processors integer,
+roles      integer,  -- bit map of roles
+firstCore  integer,
+lastCore   integer
+);
+
+create table spare
+(
+pNid       integer,   -- from monRegNodeName table
+spareFor   integer    -- physical node for which the nodeId can be a spare
+);
+

@@ -1,0 +1,114 @@
+#!/bin/sh
+
+# Cleanup 
+cd $MY_SQROOT/monitor/linux/Linux-x86_64/dbg
+echo $PWD
+rm -f core* *.log *.lst test*sub*
+rm -f $MPI_TMPDIR/monitor.port.*
+
+# Setup monitor test files
+cd $MY_SQROOT/monitor/linux
+echo $PWD
+echo Copying monitor test files to execution directory
+echo cp -p ./test*sub* ./Linux-x86_64/dbg
+cp -p ./test*sub* ./Linux-x86_64/dbg
+
+# Establish SQ virtual cluster parameters
+export SQ_VIRTUAL_NODES=6
+export SQ_VIRTUAL_NID=0
+
+cd $MY_SQROOT/monitor/linux/Linux-x86_64/dbg
+echo $PWD
+
+shell <<eof 
+
+startup
+set SQ_EVLOG_NONE=1
+
+echo "*** Executing monitor test1"
+exec shell test1.sub
+ps
+echo "*** Executing monitor test2"
+exec shell test2.sub
+ps
+echo "*** Executing monitor test3a"
+exec shell test3a.sub
+ps
+echo "*** Executing monitor test3b"
+exec shell test3b.sub
+ps
+echo "*** Executing monitor test4"
+exec shell test4.sub
+ps
+echo "*** Executing monitor test5"
+exec shell test5.sub
+ps
+echo "*** Executing monitor test6"
+exec shell test6.sub
+delay 10
+ps
+echo "*** Executing monitor test7"
+exec shell test7.sub
+ps
+echo "*** Skipping monitor test8"
+echo "*** Skipping monitor test9"
+echo "*** Executing monitor test12"
+exec {name \$SHELL0, nid 0, out SHELL.T12.log} shell test12.sub
+ps
+echo "*** Executing monitor test11"
+exec {nid 0} shell test11.sub.ln
+ps
+echo "*** Executing monitor test10a - (this test executes node down on nid=2)"
+exec {nid 0} shell test10a.sub.ln
+up 2
+delay 1
+node info
+!echo "*** Executing monitor test10b"
+!exec {nid 0} shell test10b.sub.ln
+!ps
+echo "*** Executing monitor test10 - (this test executes environment shutdown)"
+exec {nid 0} shell test10.sub.ln
+exit
+eof
+
+sleep 5
+pstat
+
+echo "*** Checking test3a output"
+grep 'ProcessDeath notice received' SERV0.T1.log
+echo "*** Checking test3b output"
+grep 'ProcessDeath notice received' SERV0.T2.log
+echo "*** Checking test11 output"
+grep 'Dead SPX count' SPX*.lst
+
+echo "*** Executing monitor test8"
+shell <<eof 
+
+startup
+set SQ_EVLOG_NONE=1
+exec {nid 0} shell test8.sub.ln
+node info
+shutdown
+exit
+eof
+
+shell -a <<eof 
+
+node info
+Event {DTM} 100
+exit
+eof
+
+echo "*** Check test8 output"
+grep 'Test3 - Start#' TM*.lst
+grep 'Test4 - Start#' TM*.lst
+grep 'Test5 - Start#' TM*.lst
+grep 'Test6 - Start#' TM*.lst
+grep 'Test7 - Start#' TM*.lst
+
+sleep 5
+pstat
+
+# Reset SQ virtual cluster parameters
+unset SQ_VIRTUAL_NODES
+unset SQ_VIRTUAL_NID

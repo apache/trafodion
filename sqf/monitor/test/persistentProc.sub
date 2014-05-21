@@ -1,0 +1,2 @@
+! To enable tracing add "-t" argument to the end of the "exec" line
+exec {name $PPROC, nid 0} persistentProc

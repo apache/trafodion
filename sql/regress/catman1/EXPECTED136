@@ -1,0 +1,1208 @@
+>>obey TEST136(create_db);
+>>create catalog t136cat;
+
+--- SQL operation complete.
+>>create schema t136cat.sch;
+
+--- SQL operation complete.
+>>set schema t136cat.sch;
+
+--- SQL operation complete.
+>>
+>>create role football_players;
+
+--- SQL operation complete.
+>>grant role football_players to public;
+
+*** ERROR[1355] Granting a role to PUBLIC is not allowed.
+
+--- SQL operation failed with errors.
+>>create role baseball_players;
+
+--- SQL operation complete.
+>>
+>>create catalog "delimited_cat136";
+
+--- SQL operation complete.
+>>create schema "delimited_cat136"."delimited_sch136";
+
+--- SQL operation complete.
+>>create table "delimited_cat136"."delimited_sch136".t1 (a int not null not droppable primary key, b int);
+
+--- SQL operation complete.
+>>
+>>obey TEST136(register_tests);
+>>obey TEST136(set_up);
+>>-- turn off LDAP checking
+>>set parserflags 64;
+
+--- SQL operation complete.
+>>-- Query to return currently registered users
+>>prepare get_users from
++>select distinct
++>   substring (user_name,1,20) as db_user_name,
++>   case
++>     when (user_name = 'DB__ROOT') then 'ROOT'
++>     when (user_name = 'DB__USERADMINUSER') then 'USERADMIN'
++>     else substring (external_user_name,1,20)
++>   end as external_user_name,
++>   case
++>     when (logon_role_id = 0) then 'NONE'
++>     else substring (role_name,1,15) 
++>   end as logon_role,
++>   case
++>    when (user_id > 65535) then 'NORMAL'
++>    else 'SYSTEM'
++>   end as user_id,
++>   is_valid_user as valid,
++>   case
++>     when (id_type = 'U') then 'USER'
++>     when (id_type = 'R') then 'ROLE'
++>     when (id_type = 'G') then 'GROUP'
++>     when (id_type = 'N') then 'NEOVIEW ROLE'
++>     else id_type
++>   end as id_type
++>from hp_system_catalog.hp_security_schema.users u
++>     ,hp_system_catalog.hp_security_schema.id_mapping i
++>     ,hp_system_catalog.hp_security_schema.roles r
++>  where 
++>    (u.user_name like 'TEST136%' or
++>     u.user_name like 'CMU_T%' or
++>     u.user_name like 'DB__NEOVIEW%' or
++>     u.user_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>  and i.auth_id = u.user_id
++>  and (u.logon_role_id = r.role_id or u.logon_role_id = 0)
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return table space owner information
+>>prepare get_owners from
++>select
++>  substring (object_name,1,20) as object_name,
++>  object_owner
++>  from t136cat.hp_definition_schema.objects
++>  where
++>     object_security_class = 'UT' and
++>     object_name_space = 'TA'
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return schema owner information 
+>>prepare get_sch_owners from
++>select
++>  trim(substring (cat_name,1,20)) || '.' || 
++>  trim(substring (schema_name,1,20)) as schema_name,
++>  schema_owner
++>from hp_system_catalog.system_schema.catsys c,
++>     hp_system_catalog.system_schema.schemata s
++>where 
++>  c.cat_uid = s.cat_uid and 
++>  s.current_operation = '  ' and
++>  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
++>order by 1, 2
++>for read uncommitted access;
+
+--- SQL command prepared.
+>>
+>>-- query to return catalog owner information
+>>prepare get_cat_owners from
++>select
++>  substring (cat_name,1,20) as catalog_name,
++>  cat_owner
++>from hp_system_catalog.system_schema.catsys
++>where
++>  cat_name like 'T136%'
++>order by 1
++>for read uncommitted access;
+
+--- SQL command prepared.
+>>
+>>
+>>log LOG136;
+>>-- =================================================================
+>>-- this set of tests run basic register tests
+>>-- =================================================================
+>>
+>>-- succeed: register users -> no clauses
+>>register user test136_user1;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS clause
+>>register user test136_user2 
++>   as test136_u2;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS and LOGON
+>>register user test136_user3 
++>   as test136_user3 
++>   logon role none;
+
+--- SQL operation complete.
+>>register user test136_user4 
++>   as test136_u4 logon role football_players;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS and BY clause
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>register user test136_user5
++>  as test136_u5
++>  by DB__UserAdminUser;
+
+--- SQL operation complete.
+>>reset parserflags 1;
+
+--- SQL operation complete.
+>>
+>>-- 7 users should be returned
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+TEST136_U2                                TEST136_USER2                             NONE                            NORMAL   Y      USER        
+TEST136_U4                                TEST136_USER4                             FOOTBALL_PLAYER                 NORMAL   Y      USER        
+TEST136_U5                                TEST136_USER5                             NONE                            NORMAL   Y      USER        
+TEST136_USER1                             TEST136_USER1                             NONE                            NORMAL   Y      USER        
+TEST136_USER3                             TEST136_USER3                             NONE                            NORMAL   Y      USER        
+
+--- 7 row(s) selected.
+>>
+>>-- cleanup
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>unregister user test136_u2;
+
+--- SQL operation complete.
+>>unregister user test136_user3;
+
+--- SQL operation complete.
+>>unregister user test136_u4;
+
+--- SQL operation complete.
+>>unregister user test136_u5;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> LOGON clause 
+>>register user test136_user1 
++>  logon role none;
+
+--- SQL operation complete.
+>>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>-- succeed: register user -> LOGON and BY  clause
+>>register user test136_user2 
++>  logon role football_players
++>  by DB__UserAdminUser;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> BY clause
+>>register user test136_user3
++>  by DB__UserAdminUser;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register user -> AS, LOGON, and BY clause
+>>register user test136_user4 
++>   as test136_u4 
++>   logon role football_players
++>   by DB__ROOT;
+
+--- SQL operation complete.
+>>reset parserflags 1;
+
+--- SQL operation complete.
+>>
+>>-- should be 6 rows
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+TEST136_U4                                TEST136_USER4                             FOOTBALL_PLAYER                 NORMAL   Y      USER        
+TEST136_USER1                             TEST136_USER1                             NONE                            NORMAL   Y      USER        
+TEST136_USER2                             TEST136_USER2                             FOOTBALL_PLAYER                 NORMAL   Y      USER        
+TEST136_USER3                             TEST136_USER3                             NONE                            NORMAL   Y      USER        
+
+--- 6 row(s) selected.
+>>
+>>-- cleanup
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>unregister user test136_user2;
+
+--- SQL operation complete.
+>>unregister user test136_user3;
+
+--- SQL operation complete.
+>>unregister user test136_u4;
+
+--- SQL operation complete.
+>>
+>>-- succeed: special cases
+>>register user x;
+
+--- SQL operation complete.
+>>showddl user x;
+
+REGISTER USER X AS X LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>unregister user x;
+
+--- SQL operation complete.
+>>register user test136_user1 as y;
+
+--- SQL operation complete.
+>>showddl user y;
+
+REGISTER USER TEST136_USER1 AS Y LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>unregister user y;
+
+--- SQL operation complete.
+>>register user test136_user2 as "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
+
+--- SQL operation complete.
+>>register user test136_user3 as
++>  TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
+
+--- SQL operation complete.
+>>register user test136_user4 as test136_user4;
+
+--- SQL operation complete.
+>>register user test136_user5 as test136_user6;
+
+--- SQL operation complete.
+>>register user "/forward" as test136_user7;
+
+--- SQL operation complete.
+>>register user test136_user7 as "/forward";
+
+--- SQL operation complete.
+>>showddl user "/forward";
+
+REGISTER USER TEST136_USER7 AS "/FORWARD" LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>unregister user "/forward";
+
+--- SQL operation complete.
+>>
+>>-- should be 7 rows
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+TEST136_901234567890                      TEST136_USER3                             NONE                            NORMAL   Y      USER        
+TEST136_USER4                             TEST136_USER4                             NONE                            NORMAL   Y      USER        
+TEST136_USER6                             TEST136_USER5                             NONE                            NORMAL   Y      USER        
+TEST136_USER7                             /FORWARD                                  NONE                            NORMAL   Y      USER        
+TEST136_~`!@#$%^&*()                      TEST136_USER2                             NONE                            NORMAL   Y      USER        
+
+--- 7 row(s) selected.
+>>
+>>-- cleanup
+>>unregister user "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
+
+--- SQL operation complete.
+>>unregister user 
++>  TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
+
+--- SQL operation complete.
+>>unregister user test136_user4;
+
+--- SQL operation complete.
+>>unregister user test136_user6;
+
+--- SQL operation complete.
+>>unregister user test136_user7;
+
+--- SQL operation complete.
+>>
+>>-- succeed:  test unreserved words
+>>register user register as user1;
+
+--- SQL operation complete.
+>>showddl user user1;
+
+REGISTER USER REGISTER AS USER1 LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>register user unregister as register;
+
+--- SQL operation complete.
+>>showddl user register;
+
+REGISTER USER UNREGISTER AS REGISTER LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>register user user1 as unregister;
+
+--- SQL operation complete.
+>>showddl user unregister;
+
+REGISTER USER USER1 AS UNREGISTER LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>register user logon as test136_u2;
+
+--- SQL operation complete.
+>>showddl user test136_u2;
+
+REGISTER USER LOGON AS TEST136_U2 LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>register user test136_u2 as logon;
+
+--- SQL operation complete.
+>>showddl user logon;
+
+REGISTER USER TEST136_U2 AS LOGON LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>register user "none" as user3;
+
+--- SQL operation complete.
+>>showddl user user3;
+
+REGISTER USER "NONE" AS USER3 LOGON ROLE NONE ;
+
+--- SQL operation complete.
+>>register user user3 as "NONE";
+
+*** ERROR[1337] NONE is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>showddl user "NONE";
+
+*** ERROR[1008] Authorization identifier NONE does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- cleanup;
+>>unregister user user1;
+
+--- SQL operation complete.
+>>unregister user register;
+
+--- SQL operation complete.
+>>unregister user unregister;
+
+--- SQL operation complete.
+>>unregister user logon;
+
+--- SQL operation complete.
+>>unregister user test136_u2;
+
+--- SQL operation complete.
+>>unregister user user3;
+
+--- SQL operation complete.
+>>unregister user "none";
+
+*** ERROR[1333] User NONE does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail: register a user that is not defined in the external directory service
+>>-- turn on LDAP checking
+>>reset parserflags 64;
+
+--- SQL operation complete.
+>>register user invalid_user1;
+
+*** ERROR[1331] User INVALID_USER1 does not exist in the directory service.
+
+--- SQL operation failed with errors.
+>>register user invalid_user1 as janedoe;
+
+*** ERROR[1331] User INVALID_USER1 does not exist in the directory service.
+
+--- SQL operation failed with errors.
+>>-- turn LDAP checking back off
+>>set parserflags 64;
+
+--- SQL operation complete.
+>>
+>>-- fail: register an already defined user
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 2 row(s) selected.
+>>register user test136_user1;
+
+--- SQL operation complete.
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+TEST136_USER1                             TEST136_USER1                             NONE                            NORMAL   Y      USER        
+
+--- 3 row(s) selected.
+>>register user test136_user1 as user1;
+
+*** ERROR[1335] Directory service user TEST136_USER1 already defined in the database.
+
+--- SQL operation failed with errors.
+>>register user test136_user1 as test136_user1;
+
+*** ERROR[1334] User or role TEST136_USER1 already exists.
+
+--- SQL operation failed with errors.
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>
+>>--- test for delimited catalog and unregister
+>>register user user136_delim;
+
+--- SQL operation complete.
+>>grant select on "delimited_cat136"."delimited_sch136".t1 to user136_delim;
+
+--- SQL operation complete.
+>>unregister user user136_delim;
+
+*** ERROR[1345] Cannot unregister user.  User is the grantee of one or more table privileges.
+
+--- SQL operation failed with errors.
+>>drop table "delimited_cat136"."delimited_sch136".t1;
+
+--- SQL operation complete.
+>>unregister user user136_delim;
+
+--- SQL operation complete.
+>>drop schema "delimited_cat136"."delimited_sch136";
+
+--- SQL operation complete.
+>>drop catalog "delimited_cat136";
+
+--- SQL operation complete.
+>>
+>>-- fail:  register a user with the DB__ prefix
+>>register user test136_user2 as DB__User1;
+
+*** ERROR[1337] DB__USER1 is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user with just the DB__ prefix
+>>register user test136_user2 as DB__;
+
+*** ERROR[1337] DB__ is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user as PUBLIC
+>>register user test136_user2 as "PUBLIC";
+
+*** ERROR[1334] User or role PUBLIC already exists.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user as _SYSTEM
+>>register user test136_user2 as "_SYSTEM";
+
+*** ERROR[1337] _SYSTEM is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  register a user with too long of a name
+>>register user test136_user2 as
++>  TEST136_9012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789;
+
+*** ERROR[3118] Specified identifier is too long.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- fail:  specify an invalid logon role
+>>register user test136_user2 logon role invalid;
+
+*** ERROR[1338] Role INVALID is not defined in the database.
+
+--- SQL operation failed with errors.
+>>register user test136_user2 logon role
++>  R23456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789;
+
+*** ERROR[3118] Specified identifier is too long.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- fail: bad SQL identifier
+>>register user "\userx";
+
+*** ERROR[3127] An invalid character was found in identifier "\userx".
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user "\userx";
+                ^ (17 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>register user user1 as "\user1";
+
+*** ERROR[3127] An invalid character was found in identifier "\user1".
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user user1 as "\user1";
+                         ^ (26 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- fail: case insensitive delimited identifier
+>>register user test136_u2;
+
+--- SQL operation complete.
+>>register user "test136_u2";
+
+*** ERROR[1334] User or role TEST136_U2 already exists.
+
+--- SQL operation failed with errors.
+>>register user "USER2";
+
+--- SQL operation complete.
+>>register user abc as "test136_u2";
+
+*** ERROR[1334] User or role TEST136_U2 already exists.
+
+--- SQL operation failed with errors.
+>>register user abd as "USER2";
+
+*** ERROR[1334] User or role USER2 already exists.
+
+--- SQL operation failed with errors.
+>>unregister user test136_u2;
+
+--- SQL operation complete.
+>>unregister user "USER2";
+
+--- SQL operation complete.
+>>
+>>register user test136_user2 logon role "_SYSTEM";
+
+*** ERROR[1338] Role _SYSTEM is not defined in the database.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  specify a role where the user does not belong
+>>-- register user test136_user2 logon role baseball_players;
+>>
+>>-- fail: usage of reserved word
+>>register user none;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user none;
+                 ^ (18 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>register user user1 as none;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register user user1 as none;
+                          ^ (27 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>obey TEST136(unregister_tests);
+>>obey TEST136(set_up);
+>>-- turn off LDAP checking
+>>set parserflags 64;
+
+--- SQL operation complete.
+>>-- Query to return currently registered users
+>>prepare get_users from
++>select distinct
++>   substring (user_name,1,20) as db_user_name,
++>   case
++>     when (user_name = 'DB__ROOT') then 'ROOT'
++>     when (user_name = 'DB__USERADMINUSER') then 'USERADMIN'
++>     else substring (external_user_name,1,20)
++>   end as external_user_name,
++>   case
++>     when (logon_role_id = 0) then 'NONE'
++>     else substring (role_name,1,15) 
++>   end as logon_role,
++>   case
++>    when (user_id > 65535) then 'NORMAL'
++>    else 'SYSTEM'
++>   end as user_id,
++>   is_valid_user as valid,
++>   case
++>     when (id_type = 'U') then 'USER'
++>     when (id_type = 'R') then 'ROLE'
++>     when (id_type = 'G') then 'GROUP'
++>     when (id_type = 'N') then 'NEOVIEW ROLE'
++>     else id_type
++>   end as id_type
++>from hp_system_catalog.hp_security_schema.users u
++>     ,hp_system_catalog.hp_security_schema.id_mapping i
++>     ,hp_system_catalog.hp_security_schema.roles r
++>  where 
++>    (u.user_name like 'TEST136%' or
++>     u.user_name like 'CMU_T%' or
++>     u.user_name like 'DB__NEOVIEW%' or
++>     u.user_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>  and i.auth_id = u.user_id
++>  and (u.logon_role_id = r.role_id or u.logon_role_id = 0)
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return table space owner information
+>>prepare get_owners from
++>select
++>  substring (object_name,1,20) as object_name,
++>  object_owner
++>  from t136cat.hp_definition_schema.objects
++>  where
++>     object_security_class = 'UT' and
++>     object_name_space = 'TA'
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return schema owner information 
+>>prepare get_sch_owners from
++>select
++>  trim(substring (cat_name,1,20)) || '.' || 
++>  trim(substring (schema_name,1,20)) as schema_name,
++>  schema_owner
++>from hp_system_catalog.system_schema.catsys c,
++>     hp_system_catalog.system_schema.schemata s
++>where 
++>  c.cat_uid = s.cat_uid and 
++>  s.current_operation = '  ' and
++>  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
++>order by 1, 2
++>for read uncommitted access;
+
+--- SQL command prepared.
+>>
+>>-- query to return catalog owner information
+>>prepare get_cat_owners from
++>select
++>  substring (cat_name,1,20) as catalog_name,
++>  cat_owner
++>from hp_system_catalog.system_schema.catsys
++>where
++>  cat_name like 'T136%'
++>order by 1
++>for read uncommitted access;
+
+--- SQL command prepared.
+>>
+>>
+>>log LOG136;
+>>-- =================================================================
+>>-- this set of tests run basic unregister tests
+>>-- =================================================================
+>>
+>>-- succeed:  
+>>-- should be 2 users
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 2 row(s) selected.
+>>register user user1 as test136_user1;
+
+--- SQL operation complete.
+>>
+>>grant create on schema t136cat.sch to test136_user1;
+
+--- SQL operation complete.
+>>create table t136cat.sch.t136t1 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>grant select on t136cat.sch.t136t1 to test136_user1;
+
+--- SQL operation complete.
+>>-- run as test136_user1 and create some objects
+>>sh sh runmxci.ksh -i "TEST136(create_user1_objects)" -u test136_user1;
+>>
+>>-- fail:  user1 owns objects, cannot unregister
+>>unregister user test136_user1;
+
+*** ERROR[1343] Cannot unregister user.  User owns one or more objects.
+
+--- SQL operation failed with errors.
+>>unregister user test136_user1 restrict;
+
+*** ERROR[1343] Cannot unregister user.  User owns one or more objects.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  user1 still has privileges
+>>drop table t136cat.sch.t136t2 cascade;
+
+--- SQL operation complete.
+>>unregister user test136_user1;
+
+*** ERROR[1344] Cannot unregister user.  User is the grantee of one or more schema privileges.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  try to unregister a predefined user
+>>unregister user DB__UserAdminUser;
+
+*** ERROR[1337] DB__USERADMINUSER is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- fail:  try to unregister a user that has not been registered in the db
+>>unregister user non_Existent_User;
+
+*** ERROR[1333] User NON_EXISTENT_USER does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- succeed:  remove other relationships
+>>showddl t136cat.sch.t136t1, privileges;
+
+CREATE TABLE T136CAT.SCH.T136T1
+  (
+    C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , CONSTRAINT T136CAT.SCH.T136T1_188539796_4276 PRIMARY KEY (C1 ASC) NOT
+      DROPPABLE
+  , CONSTRAINT T136CAT.SCH.T136T1_778539796_4276 CHECK (T136CAT.SCH.T136T1.C1
+      IS NOT NULL) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJG5N6.WVTP6R00
+  NAME NSK_DATA1_ZSDJG5N6_WVTP6R00
+  HASH2 PARTITION
+  (
+    ADD LOCATION \NSK.$DATA3.ZSDJG5N6.XVTP6R00
+      NAME NSK_DATA3_ZSDJG5N6_XVTP6R00
+  , ADD LOCATION \NSK.$DATA.ZSDJG5N6.ZVTP6R00
+      NAME NSK_DATA_ZSDJG5N6_ZVTP6R00
+  , ADD LOCATION \NSK.$DATA2.ZSDJG5N6.BWTP6R00
+      NAME NSK_DATA2_ZSDJG5N6_BWTP6R00
+  , ADD LOCATION \NSK.$DATA4.ZSDJG5N6.CWTP6R00
+      NAME NSK_DATA4_ZSDJG5N6_CWTP6R00
+  )
+  STORE BY (C1 ASC)
+  ;
+GRANT SELECT ON TABLE T136CAT.SCH.T136T1 TO TEST136_USER1;
+
+--- SQL operation complete.
+>>revoke select on t136cat.sch.t136t1 from test136_user1;
+
+--- SQL operation complete.
+>>showddl t136cat.sch.t136t1, privileges;
+
+CREATE TABLE T136CAT.SCH.T136T1
+  (
+    C1                               INT NO DEFAULT -- NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , CONSTRAINT T136CAT.SCH.T136T1_188539796_4276 PRIMARY KEY (C1 ASC) NOT
+      DROPPABLE
+  , CONSTRAINT T136CAT.SCH.T136T1_778539796_4276 CHECK (T136CAT.SCH.T136T1.C1
+      IS NOT NULL) NOT DROPPABLE
+  )
+  LOCATION \NSK.$DATA1.ZSDJG5N6.WVTP6R00
+  NAME NSK_DATA1_ZSDJG5N6_WVTP6R00
+  HASH2 PARTITION
+  (
+    ADD LOCATION \NSK.$DATA3.ZSDJG5N6.XVTP6R00
+      NAME NSK_DATA3_ZSDJG5N6_XVTP6R00
+  , ADD LOCATION \NSK.$DATA.ZSDJG5N6.ZVTP6R00
+      NAME NSK_DATA_ZSDJG5N6_ZVTP6R00
+  , ADD LOCATION \NSK.$DATA2.ZSDJG5N6.BWTP6R00
+      NAME NSK_DATA2_ZSDJG5N6_BWTP6R00
+  , ADD LOCATION \NSK.$DATA4.ZSDJG5N6.CWTP6R00
+      NAME NSK_DATA4_ZSDJG5N6_CWTP6R00
+  )
+  STORE BY (C1 ASC)
+  ;
+
+--- SQL operation complete.
+>>unregister user test136_user1;
+
+*** ERROR[1344] Cannot unregister user.  User is the grantee of one or more schema privileges.
+
+--- SQL operation failed with errors.
+>>grant create on schema t136cat.sch to test136_user1;
+
+--- SQL operation complete.
+>>showddl schema t136cat.sch, privileges;
+
+CREATE SCHEMA T136CAT.SCH;
+GRANT CREATE ON SCHEMA T136CAT.SCH TO TEST136_USER1;
+
+--- SQL operation complete.
+>>revoke create on schema t136cat.sch from test136_user1;
+
+*** WARNING[1015] Some of the specified privileges could not be revoked.
+
+--- SQL operation completed with warnings.
+>>showddl schema t136cat.sch, privileges;
+
+CREATE SCHEMA T136CAT.SCH;
+
+--- SQL operation complete.
+>>unregister user test136_user1;
+
+--- SQL operation complete.
+>>
+>>-- Add more complex relationships
+>>-- Add cascade tests later
+>>
+>>obey TEST136(register_neoview_role_tests);
+>>obey TEST136(set_up);
+>>-- turn off LDAP checking
+>>set parserflags 64;
+
+--- SQL operation complete.
+>>-- Query to return currently registered users
+>>prepare get_users from
++>select distinct
++>   substring (user_name,1,20) as db_user_name,
++>   case
++>     when (user_name = 'DB__ROOT') then 'ROOT'
++>     when (user_name = 'DB__USERADMINUSER') then 'USERADMIN'
++>     else substring (external_user_name,1,20)
++>   end as external_user_name,
++>   case
++>     when (logon_role_id = 0) then 'NONE'
++>     else substring (role_name,1,15) 
++>   end as logon_role,
++>   case
++>    when (user_id > 65535) then 'NORMAL'
++>    else 'SYSTEM'
++>   end as user_id,
++>   is_valid_user as valid,
++>   case
++>     when (id_type = 'U') then 'USER'
++>     when (id_type = 'R') then 'ROLE'
++>     when (id_type = 'G') then 'GROUP'
++>     when (id_type = 'N') then 'NEOVIEW ROLE'
++>     else id_type
++>   end as id_type
++>from hp_system_catalog.hp_security_schema.users u
++>     ,hp_system_catalog.hp_security_schema.id_mapping i
++>     ,hp_system_catalog.hp_security_schema.roles r
++>  where 
++>    (u.user_name like 'TEST136%' or
++>     u.user_name like 'CMU_T%' or
++>     u.user_name like 'DB__NEOVIEW%' or
++>     u.user_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>  and i.auth_id = u.user_id
++>  and (u.logon_role_id = r.role_id or u.logon_role_id = 0)
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return table space owner information
+>>prepare get_owners from
++>select
++>  substring (object_name,1,20) as object_name,
++>  object_owner
++>  from t136cat.hp_definition_schema.objects
++>  where
++>     object_security_class = 'UT' and
++>     object_name_space = 'TA'
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return schema owner information 
+>>prepare get_sch_owners from
++>select
++>  trim(substring (cat_name,1,20)) || '.' || 
++>  trim(substring (schema_name,1,20)) as schema_name,
++>  schema_owner
++>from hp_system_catalog.system_schema.catsys c,
++>     hp_system_catalog.system_schema.schemata s
++>where 
++>  c.cat_uid = s.cat_uid and 
++>  s.current_operation = '  ' and
++>  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
++>order by 1, 2
++>for read uncommitted access;
+
+--- SQL command prepared.
+>>
+>>-- query to return catalog owner information
+>>prepare get_cat_owners from
++>select
++>  substring (cat_name,1,20) as catalog_name,
++>  cat_owner
++>from hp_system_catalog.system_schema.catsys
++>where
++>  cat_name like 'T136%'
++>order by 1
++>for read uncommitted access;
+
+--- SQL command prepared.
+>>
+>>
+>>log LOG136;
+>>-- =================================================================
+>>-- this set of tests run basic register neoview role tests
+>>-- =================================================================
+>>-- should be 2 users
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 2 row(s) selected.
+>>
+>>-- succeed
+>>register user cmu_t136_usr1;
+
+--- SQL operation complete.
+>>register user cmu_t136_usr2;
+
+--- SQL operation complete.
+>>
+>>-- fail: try to register user that starts with DB__NEOVIEW reserved prefix
+>>register user DB__NEOVIEW;
+
+*** ERROR[1337] DB__NEOVIEW is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>register user DB__NEOVIEW_x;
+
+*** ERROR[1337] DB__NEOVIEW_X is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>
+>>-- succeed: register a neoview role
+>>register neoview role "cmu_tst136_nv.role" as cmu_t136_usr1;
+
+--- SQL operation complete.
+>>-- fail: try to register a neoview role that has already been registered as same db user
+>>register neoview role "cmu_tst136_nv.role" as cmu_t136_usr1;
+
+*** ERROR[1158] Object DB__NEOVIEW_CMU_T136_USR1 already exists.
+
+--- SQL operation failed with errors.
+>>-- fail: try to register a neoview role that has already been registered but use a different db user
+>>register neoview role "cmu_tst136_nv.role" as cmu_t136_usr2;
+
+*** ERROR[1158] Object CMU_TST136_NV.ROLE already exists.
+
+--- SQL operation failed with errors.
+>>-- fail: try to register a neoview role without using the AS clause
+>>register neoview role "cmu_t136_bad.role";
+
+*** ERROR[15001] A syntax error occurred at or before: 
+register neoview role "cmu_t136_bad.role";
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- fail: try to register a neoview role using a db user that is not registered
+>>register neoview role "cmu_tst136_nv.role2" as TEST136_USER_DOES_NOT_EXIST;
+
+*** ERROR[1333] User TEST136_USER_DOES_NOT_EXIST does not exist.
+
+--- SQL operation failed with errors.
+>>-- fail: try to register a neoview role using a db user with a name too long (117 chars)
+>>register user TEST136_9012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567;
+
+--- SQL operation complete.
+>>register neoview role "cmu_tst136_nv.role3" as TEST136_9012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567;
+
+*** ERROR[3118] Specified identifier is too long.
+
+--- SQL operation failed with errors.
+>>unregister user TEST136_9012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567;
+
+--- SQL operation complete.
+>>
+>>-- succeed: register a 2nd neoview role
+>>register neoview role "cmu_tst136_nv.role2" as cmu_t136_usr2;
+
+--- SQL operation complete.
+>>
+>>--succeed: register a neoview role using a db user with the max size allowed (116 chars)
+>>register user TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+--- SQL operation complete.
+>>register neoview role "cmu_tst136_nv.role3" as TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+--- SQL operation complete.
+>>
+>>-- should be 8 rows
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+CMU_T136_USR1                             CMU_T136_USR1                             NONE                            NORMAL   Y      USER        
+CMU_T136_USR2                             CMU_T136_USR2                             NONE                            NORMAL   Y      USER        
+DB__NEOVIEW_CMU_T136                      CMU_TST136_NV.ROLE                        NONE                            NORMAL   N      USER        
+DB__NEOVIEW_CMU_T136                      CMU_TST136_NV.ROLE2                       NONE                            NORMAL   N      USER        
+DB__NEOVIEW_TEST136_                      CMU_TST136_NV.ROLE3                       NONE                            NORMAL   N      USER        
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+TEST136_901234567890                      TEST136_901234567890                      NONE                            NORMAL   Y      USER        
+
+--- 8 row(s) selected.
+>>
+>>--
+>>-- Now test the unregister of Neoview roles and users associated with roles
+>>--
+>>
+>>-- succeed: unregister a Neoview role; give name in lower case (delimited) to
+>>-- make sure input gets upshifted.
+>>unregister user "db__neoview_cmu_t136_usr1";
+
+--- SQL operation complete.
+>>
+>>-- should be 7 rows
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+CMU_T136_USR1                             CMU_T136_USR1                             NONE                            NORMAL   Y      USER        
+CMU_T136_USR2                             CMU_T136_USR2                             NONE                            NORMAL   Y      USER        
+DB__NEOVIEW_CMU_T136                      CMU_TST136_NV.ROLE2                       NONE                            NORMAL   N      USER        
+DB__NEOVIEW_TEST136_                      CMU_TST136_NV.ROLE3                       NONE                            NORMAL   N      USER        
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+TEST136_901234567890                      TEST136_901234567890                      NONE                            NORMAL   Y      USER        
+
+--- 7 row(s) selected.
+>>
+>>-- succeed: unregister a user that is associated with a Neoview role
+>>-- this should get rid of the associated role too
+>>unregister user cmu_t136_usr2;
+
+--- SQL operation complete.
+>>unregister user TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456;
+
+--- SQL operation complete.
+>>
+>>-- should be 3 rows
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+CMU_T136_USR1                             CMU_T136_USR1                             NONE                            NORMAL   Y      USER        
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 3 row(s) selected.
+>>
+>>-- fail: this neoview role should have already been unregistered because its
+>>-- associated user was unregistered
+>>unregister user "db__neoview_cmu_t136_usr2";
+
+*** ERROR[1333] User DB__NEOVIEW_CMU_T136_USR2 does not exist.
+
+--- SQL operation failed with errors.
+>>-- succeed: unregister the remaining user whose role has already been unregistered
+>>unregister user cmu_t136_usr1;
+
+--- SQL operation complete.
+>>
+>>-- should be 2 rows
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 2 row(s) selected.
+>>
+>>-- Rerun tests as DB__UserAdminUser
+>>--sh sh runmxci.ksh -i "TEST136(register_tests)" -u DB__UserAdminUser;
+>>--sh sh runmxci.ksh -i "TEST136(unregister_tests)" -u DB__UserAdminUser;
+>>--sh sh runmxci.ksh -i "TEST136(register_neoview_role_tests)" -u DB__UserAdminUser;
+>>-- Try a register user without authority
+>>log;
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 2 row(s) selected.
+>>-- these commands should fail because user does not have authority
+>>register user test136_u2 as userx;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>unregister user sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>register neoview role "my.role" as sql_user1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>execute get_users;
+
+DB_USER_NAME                              EXTERNAL_USER_NAME                        LOGON_ROLE                      USER_ID  VALID  ID_TYPE
+----------------------------------------  ----------------------------------------  ------------------------------  -------  -----  ------------
+
+DB__ROOT                                  ROOT                                      NONE                            SYSTEM   Y      USER        
+DB__USERADMINUSER                         USERADMIN                                 DB__USERADMIN                   SYSTEM   Y      USER        
+
+--- 2 row(s) selected.
+>>log;

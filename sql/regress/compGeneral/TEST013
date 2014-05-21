@@ -1,0 +1,369 @@
+-- TEST011 (CompGeneral)
+-- Join Elimination
+-----------------------------------------------------------------------------
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+---------------------------------------------------------------------------
+
+control query default POS 'OFF';
+--Diasable partial Grby.
+control query default ROBUST_PAR_GRPBY_EXCHANGE_FCTR '1.0';
+control query default ROBUST_PAR_GRPBY_LEAF_FCTR '1.0';
+-- exchange nodes are not shown by the showOnlyOperators query.
+
+
+set schema $$TEST_SCHEMA$$;
+
+prepare explainIt from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
+         substring
+         (substring(tname from (1+locate('.',tname))),
+         (1+locate('.',substring(tname from (1+locate('.',tname))))),
+         10
+        ) tab_name,
+        cast(cardinality as char(11)) cardinal
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
+         
+         
+ prepare explainItNoTab from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
+        cast(cardinality as char(11)) cardinal
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
+         
+prepare showOperatorsOnly from
+select operator
+ from
+  (select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator
+         from table (explain(NULL,'XX'))
+         where operator NOT LIKE 'ESP_EXCHANGE%'
+  ) as t
+order by s desc;
+
+
+drop table t40;
+drop table t41;
+drop table t44;
+drop table orders cascade;
+drop table orders1 cascade;
+drop table orders2 cascade;
+drop table customer cascade;
+drop table lineitem ;
+drop table fk0;
+drop table ffk0;
+drop table fk1;
+drop table fk2;
+drop table fk3;
+drop table uk0;
+drop table uk1;
+drop table uk2;
+drop table uk3;
+
+---------------------------------------------------------------------------
+
+log LOG013;
+
+create table t40( a int not null, b int, c int, d int, e int, f int, g int, h int, i int, j int, primary key (a)) ;
+create table t41 like t40 ;
+create table t44( a int not null, b int, primary key (a)) ; 
+
+-- t44 is eliminated
+-- 2 table outer join query
+prepare XX from select t40.b from t40 left join t44 on t40.a = t44.a ;
+execute showOperatorsOnly ;
+
+-- t44 is eliminated
+-- 3 table outer join query
+prepare XX from select t40.b, t41.b from t40 left join t41 on t40.a = t41.a left join t44 on t40.a = t44.a ;
+execute showOperatorsOnly;
+
+
+-- NOT ENFORCED RI CONSTRAINT
+--------------------------------------------------------------------------------
+
+
+create table customer (c_custkey int not null, primary key(c_custkey));
+create table orders (o_orderkey int not null, o_custkey int, constraint cons11 foreign key(o_custkey) references customer(c_custkey) not enforced, primary key(o_orderkey)) no partitions;
+create table orders1 (o_orderkey int not null, o_custkey int, foreign key(o_custkey) references customer(c_custkey) enforced, primary key(o_orderkey)) no partitions;
+create table orders2 (o_orderkey int not null, o_custkey int, foreign key(o_custkey) references customer(c_custkey) enforced not enforced, primary key(o_orderkey)) no partitions;
+create table orders2 (o_orderkey int not null, o_custkey int, foreign key(o_custkey) references customer(c_custkey) enforced, primary key(o_orderkey) not enforced) no partitions;
+create table orders2 (o_orderkey int not null, o_custkey int, foreign key(o_custkey) references customer(c_custkey) enforced, primary key(o_orderkey) enforced) no partitions;
+
+showddl orders;
+showddl orders1;
+showddl orders2;
+
+prepare XX from insert into orders values(1,1);
+execute showOperatorsOnly ;
+
+prepare XX from insert into orders1 values(1,1);
+execute showOperatorsOnly ;
+
+prepare XX from update orders1 set o_custkey = 1 ;
+execute showOperatorsOnly ;
+
+prepare XX from delete from customer ;
+execute showOperatorsOnly ;
+
+drop table orders1;
+drop table orders2;
+prepare XX from delete from customer ;
+execute showOperatorsOnly ;
+
+
+-----------------------------------------------------------------------------------------------
+
+create table lineitem (l_linekey int not null, l_orderkey int, l_partkey int, l_quantity int,  
+foreign key(l_orderkey) references orders(o_orderkey), primary key(l_linekey));
+
+
+
+
+prepare XX from 
+Select c_custkey, l_orderkey,l_partkey, l_quantity
+From lineitem, orders, customer
+Where l_orderkey = o_orderkey
+And o_custkey = c_custkey
+And o_orderkey >= 500 ;
+
+execute showOperatorsOnly ;
+
+
+
+prepare XX from
+Select c_custkey, l_orderkey,l_partkey, l_quantity
+From customer, lineitem, orders
+Where l_orderkey = o_orderkey
+And o_custkey = c_custkey
+And o_orderkey >= 500 ;
+
+execute showOperatorsOnly ;
+
+
+
+
+create table uk0 (a int not null primary key, b int not null);
+create table uk1 (a int not null primary key, b int not null unique);
+create table uk2 (a int not null, b int not null, c int, primary key(a,b));
+create table uk3 (a int not null, b int not null, c int not null, primary key(a,b,c));
+
+create table fk0 ( a int not null primary key, b int, c int, constraint cons2 foreign key (b) references uk0(a) not enforced) ;
+create table fk1 ( a int not null primary key, b int, c int, constraint cons3 foreign key (b) references uk1(a) not enforced) ;
+create table fk2 ( a int not null primary key, b int, c int, constraint cons4 foreign key (a,b) references uk2(a,b) not enforced) ;
+create table fk3 ( a int not null primary key, b int, c int, constraint cons5 foreign key (a,b,c) references uk3(a,b,c) not enforced) ;
+
+create table ffk0 ( a int not null primary key, b int, c int, constraint cons6 foreign key (b) references fk0(a) not enforced) ;
+
+-- tables for sol: 10-100722-1962 test
+create table t_013 ( a int not null, 
+                  b char(32) not null, 
+                  c char(32) , 
+                  primary key (a,b));
+
+insert into t_013 values (1, 'abc', 'def'), (2, 'ghi', 'jkl');
+
+
+
+--- uk0 should be eliminated
+-- two table RI constraint join
+prepare XX from
+select fk0.a from fk0, uk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+
+--- uk0 should be eliminated
+-- two table RI constraint join on an indexed column
+prepare XX from
+select fk1.a from fk1, uk1 where fk1.b = uk1.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- two table RI constraint join with two colum FK
+prepare XX from
+select fk2.a from fk2, uk2 where fk2.a = uk2.a and fk2.b = uk2.b;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- two table RI constraint join with three colum FK
+prepare XX from
+select fk3.a from fk3, uk3 where fk3.a = uk3.a and fk3.b = uk3.b and fk3.c = uk3.c;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- order 1
+prepare XX from
+select fk0.a from fk0, uk0, uk2 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- order 2
+prepare XX from
+select fk0.a from fk0, uk2, uk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- order 3
+prepare XX from
+select fk0.a from uk0, fk0, uk2 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- order 4
+prepare XX from
+select fk0.a from uk0, uk2, fk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- order 5
+prepare XX from
+select fk0.a from uk2, fk0, uk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- order 6
+prepare XX from
+select fk0.a from uk2, uk0, fk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- three table RI constraint join
+-- non RI predicate on FK table and third table
+prepare XX from
+select fk0.a from uk0, uk2, fk0 where fk0.b = uk0.a and fk0.a = uk2.b;
+execute showOperatorsOnly ;
+
+-- nothing should be eliminated
+prepare XX from
+select fk1.a from fk1, uk1 where fk1.a = uk1.b ;
+execute showOperatorsOnly ;
+prepare XX from
+select fk2.a from fk2, uk2 where fk2.a = uk2.a ;
+execute showOperatorsOnly ;
+prepare XX from
+select fk3.a from fk3, uk3 where fk3.a = uk3.a and fk3.b = uk3.b and uk3.c > 100;
+execute showOperatorsOnly ;
+
+-- veg from uk table in select list
+prepare XX from
+select fk0.a, uk0.a from fk0, uk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+-- extra-hub
+prepare XX from
+select fk0.a, uk0.b from fk0, uk0 where fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+-- subquery table has UK
+-- should not be unnested
+prepare XX from
+select fk0.a from fk0 where fk0.b = (select uk0.a from uk0);
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- two table RI constraint join
+-- needs OR constant folding
+prepare XX from
+select fk0.a from fk0, uk0 where fk0.b = uk0.a AND ((uk0.b = 1) OR (2 = 2));
+execute showOperatorsOnly ;
+
+--- uk0 should be eliminated
+-- two table RI constraint join
+-- group by on top of uk0
+prepare XX from
+select fk0.a from fk0, (select uk0.a from uk0 group by uk0.a) tt
+where fk0.b = tt.a ;
+execute showOperatorsOnly ;
+
+
+--- uk0 and fk0 should be eliminated in 2 passes
+-- ffk0->fk0->uk0
+
+prepare XX from
+select ffk0.a from ffk0, fk0, uk0
+where ffk0.b = fk0.a and fk0.b = uk0.a ;
+execute showOperatorsOnly ;
+
+-- uk0 should not be eliminated. Direct parent of potentially eliminatable 
+-- join causes a column from uk0 to be essential
+prepare XX from
+select fk0.a from fk0, uk0 where fk0.b = uk0.a order by uk0.b ;
+execute showOperatorsOnly ;
+
+-- uk0 should not be eliminated. Some parent of potentially eliminatable 
+-- join causes a column from uk0 to be essential
+prepare XX from
+select fk0.a from fk0, uk0, uk1 where fk0.b = uk0.a order by uk0.b ;
+execute showOperatorsOnly ;
+
+-- uk0 can be eliminated.
+prepare XX from
+select fk0.a from fk0, uk0, uk1 where fk0.b = uk0.a order by uk0.a ;
+execute showOperatorsOnly ;
+
+-- test to verify solution 10-100722-1962..
+-- should produce a row with a valid string, not a null instantiated string.
+-- output should be 'ghi'
+cqd hash_joins 'on';
+cqd nested_joins 'off';
+cqd merge_joins 'off';
+select a16.b
+from t_013 a11
+left outer join t_013 a16
+on ( substring(a11.c,4,1) = substring(a16.c,4,1)
+and a11.c = a16.c)
+where a11.a =2;
+cqd hash_joins 'system';
+cqd nested_joins 'system';
+cqd merge_joins 'system';
+
+log ;
+
+drop table t40;
+drop table t41;
+drop table t44;
+drop table orders cascade;
+--drop table orders1 cascade;
+--drop table orders2 cascade;
+drop table customer cascade;
+drop table lineitem ;
+drop table ffk0;
+drop table fk0;
+drop table fk1;
+drop table fk2;
+drop table fk3;
+drop table uk0;
+drop table uk1;
+drop table uk2;
+drop table uk3;
+drop table t_013;
+
+

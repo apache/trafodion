@@ -1,0 +1,22 @@
+702,703c702
+< EMPNAME
+< ------------------
+---
+> *** ERROR[8413] The string argument contains characters that cannot be converted.
+705,707c704
+< JACK RAYMOND
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.
+720,721c717
+< EMPNAME
+< ------------------
+---
+> *** ERROR[8413] The string argument contains characters that cannot be converted.
+723,725c719
+< JACK RAYMOND
+< 
+< --- 1 row(s) selected.
+---
+> --- 0 row(s) selected.

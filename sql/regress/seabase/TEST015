@@ -1,0 +1,177 @@
+-- Tests for Hbase - Load/Extract
+-- Added April 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set schema trafodion.hbase;
+CQD COMP_BOOL_226 'ON';
+obey TEST015(clean_up);
+
+
+log LOG015 clear;
+
+
+obey TEST015(setup);
+
+cqd COMPRESSED_INTERNAL_FORMAT 'ON';
+cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+cqd query_cache '0';
+CQD ATTEMPT_ESP_PARALLELISM 'On';
+cqd HIVE_NUM_ESPS_PER_DATANODE '3';
+cqd MAX_ESPS_PER_CPU_PER_OP '2';
+
+
+
+obey TEST015(test_bulk_load_simple);
+
+log;
+exit;
+
+?section clean_up
+drop table customer_demographics;
+drop table customer_demographics_salt;
+drop table customer_address;
+
+?section setup
+--------------------------------------------------------------------------
+create table customer_demographics
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+); 
+
+create table customer_demographics_salt
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+)
+salt using 4 partitions on (cd_demo_sk); 
+
+
+create table customer_address
+(
+  ca_address_sk        int not null,
+  ca_address_id        char(16),
+  ca_street_number     char(10),
+  ca_street_name       varchar(60),
+  ca_street_type       char(15),
+  ca_suite_number      char(10),
+  ca_city              varchar(60),
+  ca_county            varchar(30),
+  ca_state             char(2),
+  ca_zip               char(10),
+  ca_country           varchar(30),
+  ca_gmt_offset        decimal(5,2),
+  ca_location_type     char(20),
+  primary key (ca_address_sk)
+);
+
+
+?section test_bulk_load_simple
+--------------------------------------------------------------------------
+
+select count(*) from hive.hive.customer_address;
+select count(*) from customer_address;
+
+prepare s from 
+load into customer_address 
+select * from hive.hive.customer_address;                                                                                              
+explain options 'f' s;
+
+execute s;                                                                                             
+
+select count(*) from customer_address;
+
+select [first 20] * from customer_address order by ca_address_sk ;
+
+---------------------
+select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+select count(*) from customer_demographics;
+
+prepare s from 
+load into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+explain options 'f' s;
+
+execute s;                                                                                             
+
+select count(*) from customer_demographics;
+
+select [first 20] * from customer_demographics order by cd_demo_sk  ;
+
+
+---------------------
+select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;;
+select count(*) from customer_demographics_salt;
+
+cqd MAX_ESPS_PER_CPU_PER_OP reset;
+CQD ATTEMPT_ESP_PARALLELISM reset;
+prepare s from 
+load into customer_demographics_salt 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;;                                                                                              
+explain options 'f' s;
+
+execute s;                                                                                             
+
+select count(*) from customer_demographics_salt;
+
+select [first 20] * from customer_demographics_salt order by cd_demo_sk  ;
+
+----------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,73 @@
+-- -*- mode: sql; coding: utf-8 -*-
+-- Tests for SQL on Hadoop PoC
+-- Test Sequence Files.
+-- Added June 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+--- setup Hive tables
+sh swhive -v -f $REGRTSTDIR/TEST006_a.hive.sql;
+
+log LOG006 clear;
+
+set schema hive.hive;
+set terminal_charset utf8;
+
+cqd AUTO_QUERY_RETRY 'OFF';
+cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd mode_seahive 'ON';
+
+-- Select from the sequence file version of the promotion table
+log LOG006_seq_promotion.dat clear;
+select * from hive.promotion_seq where p_promo_sk < 100 order by P_PROMO_SK;
+log;
+
+-- Select from the compressed version of the promotion table
+log LOG006_comp_promotion.dat clear;
+select * from hive.promotion_comp where p_promo_sk < 100 order by P_PROMO_SK;
+log;
+
+-- Select from the text version of the promotion table
+log LOG006_orig_promotion.dat clear;
+select * from hive.promotion where p_promo_sk < 100 order by P_PROMO_SK;
+log;
+
+log LOG006;
+-- Verify the sequence file data against the text version.
+log;
+sh  diff  LOG006_ORIG_PROMOTION.DAT LOG006_SEQ_PROMOTION.DAT 2>&1  >> LOG006;
+
+log LOG006;
+-- Verify the compressed data against the text version.
+log;
+sh  diff  LOG006_ORIG_PROMOTION.DAT LOG006_COMP_PROMOTION.DAT 2>&1  >> LOG006;
+
+log LOG006;
+
+-- Insert more data into the sequence file, this time using SQ.
+insert into hive.promotion_seq 
+  select * from promotion
+  where p_promo_sk between 100 and 199;
+
+-- Check the data
+select * from hive.promotion_seq order by P_PROMO_SK;
+
+
+exit;
+

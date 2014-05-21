@@ -1,0 +1,71 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+include $(MY_SQROOT)/macros.gmk
+
+# This builds monitor with fork suspend/resume
+#USE_FORK_SUSPEND_RESUME = 1
+
+# This enables monitor to send sequence number in certain messages
+#USE_SEQUENCE_NUM=1
+
+# Enables test point code for development testing
+USE_TESTPOINTS=1
+
+ifndef SQ_MTYPE
+SQ_MTYPE	= 32
+endif
+
+TOOLBASE	:= $(shell echo `pwd` | sed -e 's|/src\/.*||')
+DEPTOOL		:= $(TOOLBASE)/tools/make/deptool
+DEPFLAGS	= $(DEFINES) $(INCLUDES) -f $(DEPFILE)
+DEPFILE		= depend.mk
+
+ifeq ($(SQ_MTYPE),32)
+CC		:= $(CC32)
+CXX		:= $(CXX32)
+else
+CC		:= $(CC64)
+CXX		:= $(CXX64)
+endif
+MPI_CC		:= $(CC)
+MPI_CXX		:= $(CXX)
+
+CC		= mpicc
+
+CXX		= $(MPICH_ROOT)/bin/mpicxx
+
+ifeq ($(SQ_MTYPE),32)
+CC		+= -mpi32
+CXX		+= -mpi32
+ifeq ($(SQ_USE_INTC),0)
+CC		+= $(GCCMODE32)
+CXX		+= $(GCCMODE32)
+endif
+endif
+
+
+# User top-level CFLAGS and DFLAG
+# This will be changed to C32FLAGS/C64FLAGS once all errors are fixed
+
+CFLAGS		= $(CWARN) $(DBG_FLGS) $(OPTIM_FLGS)
+CXXFLAGS	= $(CXXWARN) $(DBG_FLGS) $(OPTIM_FLGS)
+
+
+CWARN		= -Wno-long-long -fmessage-length=0
+CXXWARN		= -Wno-long-long -Wno-deprecated -fmessage-length=0

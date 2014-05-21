@@ -1,0 +1,1115 @@
+-- TEST011 (CompGeneral)
+-- Subquery Unnesting
+-----------------------------------------------------------------------------
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+---------------------------------------------------------------------------
+control query default query_cache '0';
+control query default POS 'OFF';
+control query default subquery_unnesting 'debug' ;
+control query default risk_premium_serial '1.0';
+--control query default subquery_unnesting_p2 'off' ;
+--control query default attempt_esp_parallelism 'OFF' ;
+--control query default comp_int_11 '2' ;
+-- Turn off hash_groupby
+--control query default comp_int_77 '33554432' ;
+-- Turn off sort_groupby
+--control query default comp_int_77 '16777216' ;
+--
+-- Export UNNESTDBG=1
+-- or
+-- set UNNESTDBG 1
+-- to get the detail plans
+-- note that the expected file will only
+-- contain the expected output for the case when UNNESTDBG is not set
+--
+
+#ifndef UNNESTDBG
+control query default ROBUST_PAR_GRPBY_EXCHANGE_FCTR '1.0';
+control query default ROBUST_PAR_GRPBY_LEAF_FCTR '1.0';
+#endif
+
+set schema $$TEST_SCHEMA$$;
+
+#ifdef UNNESTDBG
+prepare explainIt from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
+         substring
+         (substring(tname from (1+locate('.',tname))),
+         (1+locate('.',substring(tname from (1+locate('.',tname))))),
+         10
+        ) tab_name,
+        cast(cardinality as char(11)) cardinal
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
+#else
+-- Show operators only
+prepare explainIt from
+select operator
+ from 
+  (select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator,
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
+         substring
+         (substring(tname from (1+locate('.',tname))),
+         (1+locate('.',substring(tname from (1+locate('.',tname))))),
+         10
+        ) tab_name,
+        cast(cardinality as char(11)) cardinal
+         from table (explain(NULL,'XX'))
+  ) as t
+where operator LIKE '%___SCALAR_AGG___%'
+order by s desc;
+-- The above LIKE will not find anything
+-- This is done so official test output will not depend on plan operators
+-- If you want to see plans in your test runs, remove the ___ above
+-- If you are only interested in seeing a few specific operators, otheriwse
+--   you can always get the full plan by using the explain routine above.
+#endif
+
+
+---------------------------------------------------------------------------
+
+-- Drop tables and create DDL
+
+drop table t40;
+drop table t41;
+drop table t42;
+drop table t43;
+drop table t44;
+drop table t50;
+drop table t51;
+drop table t53;
+drop table t60;
+drop table TTF;
+drop table TTFONE;
+drop table ui1;
+drop table ui2;
+drop table mxtest1;
+drop table mxtest2;
+drop table mxtest3;
+drop table mxtest4;
+drop table Tlike;
+drop table LJ1;
+drop table LJ2;
+drop table LJ3;
+drop table SQLF177;
+
+create table t40( a int not null, b int, c int, d int, e int, f int, g int, h int, i int, j int, primary key (a)) ;
+create table t41 like t40 ;
+create table t42 like t40 ;
+create table t43 like t40 ;
+create table t44( a int not null, b int, primary key (a)) ; 
+create table t50 like t40 ;
+create table t51 like t40 ;
+create table t53 like t40 ;
+create table t60 (sbin0_4 int not null, sdec5_10 Numeric(9,0) signed not null, sdec6_4 Numeric(4,0) signed not null, varchar0_uniq VarChar(8) not null, primary key (sbin0_4));
+create table TTF ( vch7 varchar(7)
+                            , nint smallint
+                            , ch3 char(3)
+                            , nnum9 numeric(9,2)
+                            , ch4 char(4)
+                            , nnum5 numeric(5,1)
+                            , vch5 varchar(5)
+                            , nsint smallint signed
+           ) ;
+create table TTFONE (vchar1 varchar(3), nint integer);
+create table ui2 (a int unsigned not null primary key) no partition;
+CREATE TABLE MXTEST1
+   (
+     A   CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+   , B   CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+   , C   CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+   ) no partition
+   ;
+ 
+CREATE TABLE MXTEST2
+   (
+     A   CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+   , B   CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL
+   ) no partition
+   ;
+   
+create table mxtest3 like mxtest1 ;
+create table mxtest4 like mxtest1 ;
+create table Tlike ( a char(8) not null primary key) no partition;
+
+Create table LJ1(A int, B  smallint);
+Create table LJ2(C int, D smallint,  E largeint);
+Create table LJ3(F int, G  smallint, H largeint , I numeric(9,3));
+
+create table SQLF177 ( c1 int no default not null,
+                        c2 int,
+                        c3 char(10),
+                        primary key(c1));
+create unique index inx1_sqlf177 on SQLF177(C2);
+
+
+
+
+
+insert into t43 values 
+(1,1,1,1,1,1,1,1,1,1),
+(2,2,2,2,2,2,2,2,2,2),
+(3,3,3,3,3,3,3,3,3,3),
+(4,4,4,4,4,4,4,4,4,4),
+(5,5,5,5,5,5,5,5,5,5),
+(6,11,11,11,11,11,11,11,11,11),
+(7,22,22,22,22,22,22,22,22,22),
+(8,33,33,33,33,33,33,33,33,33),
+(9,44,44,44,44,44,44,44,44,44),
+(0,55,55,55,55,55,55,55,55,55);
+
+insert into t44 values 
+(1,1),
+(2,2),
+(3,3),
+(4,4),
+(5,5),
+(6,1),
+(7,2),
+(8,3),
+(9,4),
+(0,5);
+
+insert into t42 select 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a 
+from t43, t44 ;
+
+insert into t41 select 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a, 
+t44.a*10 + t43.a 
+from t43, t44 ;
+
+insert into t40 select
+t41.a*100 + t42.a, t41.a*100 + t42.a, t41.a*100 + t42.a, 
+t41.a*100 + t42.a, t41.a*100 + t42.a, t41.a*100 + t42.a, 
+1, 1, 1, 1 from t41, t42 ;
+
+
+insert into t50 values 
+(11,11,11,11,11,11,1,1,1,1),
+(13,13,13,13,13,13,1,1,1,1),
+(22,22,22,22,22,22,1,1,1,1);
+
+insert into t51 values 
+(10,10,10,10,10,10,10,10,10,10),
+(11,11,11,11,11,11,11,11,11,11),
+(13,13,13,13,13,13,13,13,13,13);
+
+insert into t53 values 
+(5,5,5,5,5,5,5,5,5,5),
+(6,11,11,11,11,11,11,11,11,11),
+(7,22,22,22,22,22,22,22,22,22);
+
+insert into t60 values
+(0,-3,-2,'CJAAAAAC'),
+(-1,-0,-2,'AEAAJAAB'),
+(-2,-6,0,'CCAAFAAC'),
+(-2,-2,-1,'AIAALAAA');
+
+insert into TTF values
+                ('a',      1,'a'  ,0.9,       NULL,NULL  ,NULL,0)
+              , ('cc'     ,2,'cc' ,2.00,      'cc',2.0   ,'cc',2)
+              , ('abcdefg',3,'cc' ,0.09,    'alph',2     ,'cc',1)
+              , ('b',      4,'c'  ,1234567.89,'e' ,1234.5,'c' ,12345)
+              , ('abcdefg',5,'cc' ,0.09,      'cc',2     ,'cc',2)
+           ;
+insert into TTFONE values ('cc', 2);
+
+insert into ui2 values (1);
+
+INSERT INTO MXTEST1 VALUES  ('xx', 'yy', 'zz');
+INSERT INTO MXTEST1 VALUES ('xx', 'yy', 'zz');
+INSERT INTO MXTEST1 VALUES ('ss', 'tt', 'uu');
+INSERT INTO MXTEST2 VALUES ('1', '2');
+
+insert into Tlike values ('aaa'), ('abc'), ('abcd'), ('abcde'), ('abcedf'), ('abcdefg'), ('abcdefgh') ;
+
+insert into LJ1 values(2, 1);
+insert into LJ1 values(4, 2);
+insert into LJ1 values(6, 3);
+insert into LJ1 values(8,4);
+insert into LJ1 values(10,5);
+insert into LJ1 values(12, -32768);
+insert into LJ1(A) values (11);
+
+insert into LJ2 values(2, 1,1);
+insert into LJ2 values(4, 2,1);
+insert into LJ2 values(6, 3,1);
+insert into LJ2 values(8, 4,1);
+insert into LJ2 values(10,5,1);
+insert into LJ2 values(6, 6,1);
+insert into LJ2 values(8, -32768 , -923720368547588);
+insert into LJ2(C,D) values (4,14);
+
+
+insert into LJ3 values(2, 1,1,1);
+insert into LJ3 values(4, 2,2,1);
+insert into LJ3 values(6, 3,3,1);
+insert into LJ3 values(8, 4,4,1);
+insert into LJ3 values(10, -32768 , -923720368547588, -99999.999);
+insert into LJ3(F,G,H) values (12,5,5);
+
+
+
+update statistics for table t40 on every column ;
+update statistics for table t41 on every column ;
+update statistics for table t42 on every column ;
+update statistics for table t43 on every column ;
+update statistics for table t44 on every column ;
+update statistics for table t50 on every column ;
+update statistics for table t51 on every column ;
+update statistics for table t53 on every column ;
+update statistics for table t60 on every column ;
+update statistics for table TTF on every column ;
+update statistics for table TTFONE on every column ;
+
+
+log LOG011 clear ;
+
+----------------------------------------------------------------------
+-- Q1
+prepare XX from
+select t40.a
+from t40
+where t40.b >= (select max (t44.a)
+                      from t44
+                      where t40.c = t44.b) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Q2
+-- test with key column pred heuristic (no longer used)
+cqd comp_bool_168 'off';
+prepare XX from
+select t40.a
+from t40
+where t40.b >= (select max (t44.b)
+                      from t44
+                      where t40.c = t44.a) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- same, now without the heuristic
+cqd comp_bool_168 reset;
+prepare XX from
+select t40.a
+from t40
+where t40.b >= (select max (t44.b)
+                      from t44
+                      where t40.c = t44.a) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Q3
+prepare XX from
+select t40.a
+from t40
+where t40.b >= (select max (t44.a)
+                      from t44
+                      where t40.c = t44.b) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Q4
+prepare XX from
+Select t40.a
+From t40
+Where (select max (t41.b) 
+             From t41                 
+             Where  t40.c = t41.c) = (select max (t42.b) from t42  where t40.d = t42.d) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Q5
+prepare XX from
+select t40.a
+from t40
+where t40.b > (select max (t41.b)
+                      from t41
+                      where t40.c = t41.c
+                      and t41.d > (select avg (t42.d)
+                                        from t42
+                                        where t40.e = t42.e
+                                        AND t41.f > t42.f)) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+-- Q6
+prepare XX from
+select t40.a
+from t40
+where t40.b = 3
+and t40.c =
+     (select max(t41.c)
+      from t41
+      where t41.b = 4 and t40.d = t41.d
+      and t41.e = 
+          (select max(t42.e)
+           from t42
+           where t42.b = 5 and t41.f = t42.f and t40.g = t42.g   
+           and t42.h = 
+             (select avg(t43.h)
+             from t43
+             where t43.b = 6 and t40.i = t43.i and t41.j = t43.j and t43.a = t42.a))) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+--- has a tsj-tsj-join backbone. The last join is not a tsj because t43 does not have a 
+-- direct relation with t42. t43 and t42 appear on the bottom right and since the scan on t43 
+-- does not need anything from t42 this join is not a tsj. The scan on t43 does need inputs 
+-- t40 and t41 though. This query tests that we unnest tsj as well as joins that need inputs 
+-- from parent tsjs
+-- Q7
+prepare XX from
+select t40.a
+from t40
+where t40.b = 3
+and t40.c =
+     (select max(t41.c)
+      from t41
+      where t41.b = 4 and t40.d = t41.d
+      and t41.e = 
+          (select max(t42.e)
+           from t42
+           where t42.b = 5 and t41.f = t42.f and t40.g = t42.g   
+           and t42.h = 
+             (select avg(t43.h)
+             from t43
+             where t43.b = 6 and t40.i = t43.i and t41.j = t43.j))) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+
+-- IN with OR outside subquery, requires Join-Agg transformation
+-- Q8
+prepare XX from
+select t40.a
+from t40
+where t40.b in (select t44.a
+                      from t44
+                      where t40.c = t44.b)
+  OR
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- IN with OR outside subquery, requires Join-Agg transformation
+-- Q9
+prepare XX from 
+select t40.a
+from t40
+where t40.b in (select t44.a
+                      from t44)
+  OR
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- ANY with OR outside subquery, requires Join-Agg transformation
+-- Q10
+prepare XX from
+select t40.a
+from t40
+where t40.b = any (select t44.a
+                      from t44
+                      where t40.c = t44.b)
+  OR
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+-- EXISTS with OR outside subquery, requires Join-Agg transformation
+-- Q11
+prepare XX from
+select t40.a
+from t40
+where exists (select t44.a
+                      from t44
+                      where t40.c = t44.b)
+  OR
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+-- NOT ANY with OR outside subquery, requires Join-Agg transformation
+-- Q12
+prepare XX from
+select t40.a
+from t40
+where t40.b <> any (select t44.a
+                      from t44
+                      where t40.c = t44.b)
+  OR
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Tree Subquery with >= predicate
+-- Test sort_gb + sort working correctly - expect unnested plan with correct
+-- execution output.
+
+-- Q13
+prepare XX from 
+select *  
+from t50 as r 
+where r.b > (select max(s.b) 
+               from t51 as s 
+               where r.c >=  s.d and s.d > (select max(t.d) 
+			                      from t53 as t 
+                                              where s.e >= t.d and r.f >= t.f))
+order by r.a;
+
+execute explainIt;
+execute XX ;
+
+-- Tree Subquery with = predicate
+-- Test sort_gb + sort working correctly - expect unnested plan with correct
+-- execution output.
+
+-- Q14
+prepare XX from 
+select *  
+from t50 as r 
+where r.b = (select max(s.b) 
+               from t51 as s 
+               where r.c =  s.d and s.d > (select max(t.d) 
+			                      from t53 as t 
+                                              where s.e = t.d and r.f = t.f))
+order by r.a;
+
+execute explainIt;
+execute XX ;
+
+-- IN with AND, uses SemiJoin transformation
+-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+-- final plan shuld have only a join.
+-- Q15
+prepare XX from
+select t40.a
+from t40
+where t40.b in (select t44.a
+                      from t44
+		where t40.c = t44.b)
+  AND
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+#ifndef SEABASE_REGRESS
+execute XX ;
+#endif
+
+-- IN with AND, uses SemiJoin transformation
+-- correlation predicate on clustering key of inner table.
+-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+-- final plan shuld have only a join.
+-- Q16
+prepare XX from
+select t40.a
+from t40
+where t40.b in (select t44.b
+                      from t44
+		where t40.c = t44.a)
+  AND
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- IN with OR inside subquery, requires Semijoin transformation
+-- correlation predicate on clustering key of inner table.
+-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+-- final plan shuld have only a join.
+-- Q17
+prepare XX from
+select t40.a
+from t40
+where t40.b in (select t44.a
+                      from t44
+                      where t40.c = t44.a OR t44.b = 1)
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+-- IN with OR inside subquery, requires Semijoin transformation
+-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+-- final plan shuld have only a join.
+-- Q18
+prepare XX from
+select t40.a
+from t40
+where t40.b in (select t44.a
+                      from t44
+                      where t40.c = t44.b OR t44.b = 1)
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+-- ANY with AND, uses SemiJoin transformation
+-- Then we expect semiJoin-to-Innerjoin transformation to kick in
+-- final plan shuld have only a join.
+-- Q19
+prepare XX from
+select t40.a
+from t40
+where t40.b = any (select t44.a
+                      from t44
+		where t40.c = t44.b)
+  AND
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+#ifndef SEABASE_REGRESS
+execute XX ;
+#endif
+
+-- ANY with OR inside subquery, requires Semijoin transformation
+-- which is later transformed to inner join
+-- Q20
+prepare XX from
+select t40.a
+from t40
+where t40.b = any (select t44.a
+                      from t44
+                      where t40.c = t44.b OR t44.b = 1)
+order by t40.a;
+
+execute explainIt;
+#ifndef SEABASE_REGRESS
+execute XX ;
+#endif
+
+-- EXISTS with AND, uses SemiJoin transformation
+-- which then gets transformed to innerjoin + groupby
+control query default SEMIJOIN_TO_INNERJOIN_TRANSFORMATION 'on' ;
+
+-- Q21
+prepare XX from
+select t40.a
+from t40
+where exists (select t44.a
+                      from t44
+		where t40.c = t44.b)
+  AND
+      t40.b = 1 
+order by t40.a;
+
+execute explainIt;
+#ifndef SEABASE_REGRESS
+execute XX ;
+#endif
+
+
+control query default SEMIJOIN_TO_INNERJOIN_TRANSFORMATION reset ;
+
+control query default comp_int_22 '1' ;
+
+-- Q22
+prepare XX from
+select t40.a
+from t40
+where t40.b in (1,2,3) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+control query default comp_int_22 reset ;
+
+-- Q23
+select vch7, nint, ch3, nnum5
+              from TTF t1
+              where ( (select t1.nnum9 from TTF t2
+                    where t1.nnum9 = 0.09
+                    group by t1.nnum9
+                    ) > 0 )
+           order by 1, 2
+           ;
+
+-- Q24
+select  t1.nint
+             from TTF t1
+             where ( select t1.nnum5 from TTFONE t2 where t1.nint = 2 ) > 1
+           ORDER BY 1
+           ;
+
+-- Q25
+select vch7, nint, ch3, nnum5
+              from TTF t1
+              where ( (select t1.nnum9 from TTF t2
+                    where t1.nnum9 = 0.09) > 0 )
+order by vch7, nint;
+
+-- Q26
+select * from ( select vch7, vch5, nint from TTF
+                       where
+                     ( select ( select ( select ( select ( select
+                     ( select ( select ( select ( select ( select
+                     ( select ( select ( select ( select ( select
+                     ( select ( select ( select ( select ( select
+                     ( select  count(t2.nint) from TTF t20 )
+                       from TTF t19) from TTF t18)
+                       from TTF t17) from TTF t16)
+                       from TTF t15) from TTF t14)
+                       from TTF t13) from TTF t12)
+                       from TTF t11) from TTF t10)
+                       from TTF t9) from TTF t8)
+                       from TTF t7) from TTF t6)
+                       from TTF t5) from TTF t4)
+                       from TTF t3) from TTF t2)
+                       from TTF t1) from TTF t0)
+                     >= 1
+           ) dt 
+order by dt.vch7, dt.vch5;
+
+
+
+-- Testcase for solution 10-071128-9152
+-- 
+-- only need to prepare it, as we would get a warning or an abend with the bug
+-- during compile
+--
+
+-- Q27
+prepare XX from
+select distinct cast(?p as pic x(5))
+              from t60
+              where ( (select min(sbin0_4) from t60),?pn)
+                  = ( (select min(sdec6_4) from t60),?pn)
+           order by 1
+           ;
+
+
+----------------------------------------------------------------------
+-- Test cases for phase 2 (in addition to the ones above that now will be
+-- Unnested
+
+-- Test count(col)
+-- Q28
+prepare XX from
+select t40.a
+from t40
+where t40.b <= (select count (t44.a)
+                      from t44
+                      where t40.c = t44.b) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Test count(col) with equal 
+-- Q29
+prepare XX from
+select t40.a
+from t40
+where t40.b = (select count (t44.a)
+                      from t44
+                      where t40.c = t44.b) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+
+-- Test count(*)
+-- Q30
+prepare XX from
+select t40.a
+from t40
+where t40.b <= (select count (*)
+                      from t44
+                      where t40.c = t44.b) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Test count(*) with equal 
+-- Q31
+prepare XX from
+select t40.a
+from t40
+where t40.b = (select count (*)
+                      from t44
+                      where t40.c = t44.b) 
+order by t40.a;
+
+execute explainIt;
+execute XX ;
+
+-- Test multilevel count - Only one level should get unnested
+-- Q32
+prepare XX from
+Select count(t40.a)
+From t40
+Where (select count (t41.b) 
+             From t41                 
+             Where  t40.c = t41.c) = (select count (t42.b) from t42  where t40.d = t42.d) ;
+execute explainIt;
+execute XX ;
+
+-- Test IS NOT FALSE 
+-- Q33
+prepare XX from
+select t40.a
+from t40
+where t40.b = (select t44.a
+          from t44
+          where t40.c = t44.b) IS NOT FALSE
+order by t40.a;
+
+execute explainIt;
+execute XX;
+
+
+-- Test  NOT IN - should NOT get unnested
+-- Q34
+prepare XX from
+select count(t40.a)
+from t40
+where t40.b NOT IN 
+       (select t44.a
+          from t44
+          where t40.c = t44.b);
+
+execute explainIt;
+execute XX;
+
+-- TEST ANY 
+-- Q35
+prepare XX from
+select t40.a
+from t40
+where t40.b = any (select t44.a
+          from t44
+          where t40.c = t44.b)
+OR
+  t40.d = 1
+order by t40.a;
+
+execute explainIt;
+execute XX;
+
+-- Test OR Tree
+-- Q36
+prepare XX from
+Select t40.a
+from t40
+where t40.b < (select count (t41.b)
+                      from t41
+                      where t40.c = t41.c) OR
+                     t40.e  < (select min (t44.b)
+                      From t44
+                      Where t40.d = t44.b)
+order by t40.a;
+
+execute explainIt;
+execute XX;
+
+-- Test Exist
+-- Q37
+prepare XX from
+select t40.a  
+from t40  
+where  t40.b  > (select  t41.e  
+                 from t41  
+                 where  t41.c = t40.a  and  t41.d=5 and   exists (select t42.g
+                    from t42  
+                    where   t42.h = t41.d  and  t42.h < t40.a ))
+order by t40.a;
+
+execute explainIt;
+#ifndef SEABASE_REGRESS
+execute XX ;
+#endif
+
+-- Q38
+prepare XX from
+select count(t40.a)
+from t40 
+where not exists (select * 
+                   from t41 
+                   where t40.b = t41.b); 
+
+execute explainIt;
+execute XX;
+
+-- Q39
+prepare XX from
+select t40.a 
+from t40 
+where exists (select * 
+                from t41 where t40.b = t41.b)
+order by t40.a; 
+
+execute explainIt;
+execute XX;
+
+
+-- ALL subquery....
+-- Q40
+prepare XX from
+select count(t40.a)
+from t40
+where t40.b > all (select t41.b
+                            from t41
+                            where t40.c = t41.c);
+
+execute explainIt;
+execute XX;
+
+
+-- ALL subquery....  gets translated into != all
+-- Q41
+prepare XX from
+select count(t40.a)
+from t40 
+where t40.b not in (select t41.b from t41);
+
+execute explainIt;
+execute XX;
+
+
+
+
+-- Test Select list unnesting
+-- Q42
+prepare XX from
+select (select t40.a 
+          from t40 
+          where t40.b = t41.b) , t41.a from t41 where t41.b > 10
+order by 1,2;
+
+execute explainIt;
+execute XX;
+
+
+-- Test Having Clause
+-- Q43
+prepare XX from
+select max(t40.b), t40.c from t40
+group by t40.c,t40.d
+having t40.c = (select max(t41.a) from t41 where t41.d = t40.d) 
+order by 1,2;
+
+execute explainIt;
+execute XX;
+
+-- Test Having Clause with count in subquery
+-- Q44
+prepare XX from
+select max(t40.b), t40.c from t40
+group by t40.c,t40.d
+having t40.c = (select count(t41.a) from t41 where t41.d = t40.d) 
+order by 1,2;
+
+execute explainIt;
+execute XX;
+
+-- Test Insert-Select
+-- Q45
+create table ui1 like t40 ;
+prepare XX from
+insert into ui1 (select *
+                from t40
+                where t40.b <= (select count (*)
+                      from t44
+                      where t40.c = t44.b));
+
+execute explainIt;
+execute XX;
+
+select * from ui1 
+  order by ui1.a;
+
+-- Test Delete-Select
+-- Q46
+prepare XX from
+delete from ui1 where ui1.a in (select t40.a
+                from t40
+                where t40.b <= (select count (*)
+                      from t44
+                      where t40.c = t44.b)) ;
+
+execute explainIt;
+execute XX;
+
+select * from ui1
+  order by ui1.a;
+
+control query default subquery_unnesting reset ;
+
+-- original pblm qry.
+  select A.a,  (select b from mxtest2 where b = B.b)
+  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+-- qry suggested by Bob with convertible LOJ in select list.  LOJ is converted.
+select A.a,  
+  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
+   where mxtest4.c = 'a')
+  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+-- Same as last one but with outer reference in select list. One LOJ is converted now, results are right.
+select A.a,  
+  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
+   where mxtest4.c = B.b)
+  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+-- same as Bob's suggestion but with an expression
+select A.a,  
+  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
+   where mxtest4.c||'b' = 'a')
+  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+-- same as one of the previous one but with an expression. One LOJ gets transformed.
+select A.a,  
+  (select mxtest4.a from mxtest3 left join mxtest4 on mxtest4. b  = '1' 
+   where mxtest4.c = B.b||'b')
+  from mxtest1 A left join mxtest2 B on A.a = B.a;
+
+select A.a,
+  (select a from mxtest3 left join 
+   (select c||B.b as c from mxtest4) T on b  = '1'
+   where T.c = 'b')
+  from mxtest1 A left join mxtest2 B on A.a = B.a;
+  
+-- Genesis soln. 10-100916-3116 
+Select a from Tlike where a like
+  case when 'DOG' like '%DOG%' then 'abc%'
+       when 'CAT' like '%CAT%' then 'abcdef%' end;
+       
+select * from 
+(select *, 'abc%' p from Tlike union 
+ select *, 'abcdef%' p from Tlike) U, Tlike 
+where 'abcd' like p or Tlike.a = 'aaa';
+
+prepare show_join_oper
+from
+select OPERATOR
+from table(explain(null, 'XX')) e
+where SEQ_NUM = 5;
+
+-- Test LeftJoin to Inner Join transformation for BETWEEN
+-- Should not see a LeftJoin in the explain output
+-- Q47
+prepare XX from
+select mxtest1.a
+from mxtest1 left join mxtest2 on mxtest1.a = mxtest2.a
+where mxtest2.a between 'aa' and 'bb';
+
+execute show_join_oper;
+
+-- Test LeftJoin to Inner Join transformation for LIKE
+-- Should not see a LeftJoin in the explain output
+-- Q48
+prepare XX from
+select mxtest1.a
+from mxtest1 left join mxtest2 on mxtest1.a = mxtest2.a
+where mxtest2.a like '_B%';
+
+execute show_join_oper;
+
+-- Test LeftJoin to Inner Join transformation for NOT
+-- Should not see a LeftJoin in the explain output
+-- Q49
+prepare XX from
+select mxtest1.a
+from mxtest1 left join mxtest2 on mxtest1.a = mxtest2.a
+where NOT mxtest2.a = 'a';
+
+execute show_join_oper;
+
+-- bug no. 4138 from bugzilla
+-- abs of unsigned type used to give internal error
+-- the fix is to drop the abs in the binder if child 
+-- is unsigned. Use showplan or display to verify.
+select abs(a) from ui2 ;
+
+-- Test whether pulled up preds are retained in a LeftJoin
+-- 10-101216-5228 
+-- Q50
+prepare XX from
+SELECT A, B  FROM LJ1  WHERE  B IN
+(
+SELECT  LJ2.C  FROM LJ2  WHERE
+LJ2.E  >= 1
+
+OR    -- offending predicate
+LJ2.D =  ANY
+(SELECT LJ3.F FROM LJ3  WHERE
+(LJ3.H < LJ2. E
+AND  LJ3.H > LJ1.A)
+)
+)
+ORDER BY A
+;
+
+execute XX;
+
+-- bug #1893
+prepare c1 from UPDATE SQLF177 SET (C2,C3) = (C2 + cast( ? as INT),?)  WHERE C1 = ? ;
+
+
+log;

@@ -1,0 +1,2430 @@
+#!/usr/bin/perl
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+# @@@ END COPYRIGHT @@@
+#
+require "ctime.pl";
+use sqnodes;
+use POSIX;
+use DBI;
+
+# Process types.  Must match values defined by the monitor in msgdef.h.
+my $ProcessType_Undefined = 0;
+my $ProcessType_Generic   = 4;
+my $ProcessType_SPX       = 10;
+my $ProcessType_SSMP      = 11;
+my $ProcessType_SMS       = 13;
+
+my $gDebug = 0;
+
+my $gv_mount_entry_count=0;
+
+my $bVirtualNodes=0;
+my $g_storage_engine_dir="";
+my $g_mirror_storage_engine_dir="";
+
+$gRoleEnumStorage     = "storage";
+$gRoleEnumEdge        = "connection";
+$gRoleEnumAggregation = "aggregation";
+
+my $g_nextStorageNodeIndex = 0;
+my $g_nextStorageNode = 0;
+my $g_currentTSEIndex = 0;
+
+my @g_storageNodes = ();
+my @g_edgeNodes = ();
+my @g_AggregationNodes = ();
+my @g_ssdOverflow = ();
+my @g_hddOverflow = ();
+
+
+my $g_dbsize = "dbsize";
+
+my $gdNumNodes=0;
+my $gdNumPNodes=0;
+my $gdZoneId=0;
+
+my @g_nodelist = ();
+my @gNodeIdToNameIndex = ();
+my %gNodeNameToIdIndex;
+my @gNodeIdToZoneIdIndex = ();
+
+my @g_zonelist = ();
+my %gZoneNameToIdIndex;
+
+# This to help with getting the next AT name
+my @ase_list = ();
+my @g_alphabets = (A..Z);
+my $g_char1 = 0;
+my $g_char2 = 0;
+
+my $g_ASE_TSE_Index = 1;
+my $gNumASEProcess  = 0;
+
+my $g_TMASE_TM_Index = 0;
+my $gNumTMASEProcess = 0;
+
+my $gNumATExtents    = 0;
+my $gMinATExtents    = 0;
+if ((! -e "/etc/hptc-release") && (! -e "/etc/cm-release")){
+   $gMinATExtents    = 1550;  #NOT a CLUSTER
+}
+else{
+   $gMinATExtents    = 15500; #CLUSTER
+}
+my $gNumATFiles      = 0;
+my $gMinATFiles      = 10;
+my $gTX_Capacity     = 0;
+my $gBO_PER_TSE      = 1;
+my $gMAX_TX_Capacity = 40;
+# Must enable this code if _DISABLE_BEGINTRANS defined in the TSE
+#my $gMAX_BeginTX_Disable = 80;
+my $gMAX_BO_PER_TSE  = 3;
+
+my $BOOL_BO_PER_TSE_SET = 0;
+
+my $g_dRMID  = 1;
+
+my $gdNumCpuCores = 1;
+
+my $g_CCFormat = 2;
+
+my $gbInitialLinesPrinted = 0;
+my $gbOverflowLinesPrinted = 0;
+
+my $gbLunmgrOn; # cleandb scripts must be generated differently if true
+
+my $gShellStarted=0;
+
+my $gEncSectionProcessed = 0;
+
+my $gProxyNodePort = 0;
+
+my $gFloatingExternalIp = "";
+my $gFloatingNodeId = -1;
+my $gFloatingFailoverNodeId = -1;
+
+
+my $SQ_ROOT = $ENV{'MY_SQROOT'};
+my $HOME = $ENV{'HOME'};
+my $SEAPILOT_CONFIG = "$SQ_ROOT/seapilot/scripts/operations/config/seapilot_config.pl";
+my $MPI_TMPDIR = $ENV{'MPI_TMPDIR'};
+my $SQ_SEAMONSTER = $ENV{'SQ_SEAMONSTER'};
+my $SQ_TRANS_SOCK = $ENV{'SQ_TRANS_SOCK'};
+
+# define the error values that are being returned
+my $CONFIG_ERROR = 5;
+my $STORAGE_ERROR = 40;
+my $BACKUP_STORAGE_ERROR = 50;
+my $BACKUP_NODEID_ERROR = 60;
+my $BDR_ERROR = 70;
+my $SEAPILOT_ERROR = 80;
+
+                               
+# Database handle
+my $DBH = 0;
+
+# instance type
+my $instanceType = "";
+
+sub printScript {
+    ($dWhich, @rest) = @_;
+
+    if ($dWhich <= 1) {
+	print SQS @rest;
+    }
+
+    if ($dWhich >= 1) {
+	print SQW @rest;
+    }
+}
+
+
+
+sub printRMSScript {
+    ($dWhich, @rest) = @_;
+    if ($dWhich == 1) {
+       print SSMP @rest;
+       print SSCP @rest;
+    }
+    if ($dWhich == 2) {
+       print SSMP @rest;
+    }
+    if ($dWhich == 3) {
+       print SSCP @rest;
+    }
+    if ($dWhich == 0) {
+       print RMS @rest;
+    }
+}
+
+sub printRMSStopScript{
+    ($dWhich, @rest) = @_;
+    if ($dWhich == 1) {
+       print SSMPS @rest;
+       print SSCPS @rest;
+    }
+    if ($dWhich == 2) {
+       print SSMPS @rest;
+    }
+    if ($dWhich == 3) {
+       print SSCPS @rest;
+    }
+    if ($dWhich == 0) {
+       print RMSS @rest;
+    }
+}
+
+
+sub printRMSCheckScript{
+    ($dWhich, @rest) = @_;
+    if ($dWhich == 1) {
+       print RMSC @rest;
+    }
+}
+
+sub printCopyright{
+
+    my $file_ptr  = @_[0];
+
+    print $file_ptr "#\n";
+    print $file_ptr "# @@@ START COPYRIGHT @@@\n";
+    print $file_ptr "#\n";
+    print $file_ptr "# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.\n";
+    print $file_ptr "#\n";
+    print $file_ptr "# @@@ END COPYRIGHT @@@\n";
+    print $file_ptr "#\n";
+
+}
+
+sub printTime {
+    printScript(1, "# SQ Startup script generated @ ",&ctime(time),"\n");
+}
+
+sub validate_config_script {
+#    If we cannot find the seapilot config script then we need to exit
+	if (!-e $SEAPILOT_CONFIG) {
+  		print "The $SEAPILOT_CONFIG operation is not found on this system. There is a problem with the installation.\n";
+  		print "Exiting..\n";
+		# not sure where exit returns are defined but selected a new number
+		# to identify Seapilot processing
+  		exit $SEAPILOT_ERROR;
+  	}
+}
+
+
+sub printInitialLines {
+    
+    # So we don't re-print the initial lines
+    if ($gbInitialLinesPrinted) {
+	return;
+    }
+    
+    printScript(1, "#!/bin/sh \n");
+    printTime;
+    printCopyright (SQS);
+    printCopyright (SQW);
+
+    
+    $msenv = "$ENV{'SQETC_DIR'}/ms.env";
+    $mirroringoff_string = "TSE_MIRRORING_OFF=1\n";
+    $acttenable_string = "TSE_ACTT_ENABLE_THRESHOLDS=0\n";
+    $acttdiskio_string = "TSE_ACTT_DISKIO_THRESHOLD=20000000\n";
+    $acttcachec_string = "TSE_ACTT_CACHEC_THRESHOLD=20000000\n";
+    $acttaccessed_string = "TSE_ACTT_ACCESSED_THRESHOLD=20000000\n";
+    $acttinterval_string = "TSE_ACTT_THRESHOLD_INTERVAL=1\n";
+    $acttpublishevent_string = "TSE_ACTT_PUBLISH_EVENT=0\n";
+    $acttpublishlog_string = "TSE_ACTT_PUBLISH_LOG=0\n";
+    $acttpublishstd_string = "TSE_ACTT_PUBLISH_STDOUT=0\n";
+    $fcbenable_string = "TSE_FCB_ENABLE_THRESHOLDS=0\n";
+    $fcbdiskio_string = "TSE_FCB_DISKIO_THRESHOLD=20000000\n";
+    $fcbcachec_string = "TSE_FCB_CACHEC_THRESHOLD=20000000\n";
+    $fcbaccessed_string = "TSE_FCB_ACCESSED_THRESHOLD=20000000\n";
+    $fcbinterval_string = "TSE_FCB_THRESHOLD_INTERVAL=1\n";
+    $fcbpublishevent_string = "TSE_FCB_PUBLISH_EVENT=0\n";
+    $fcbpublishlog_string = "TSE_FCB_PUBLISH_LOG=0\n";
+    $fcbpublishstd_string = "TSE_FCB_PUBLISH_STDOUT=0\n";
+
+    printScript(1, "export SQ_START_SEAPILOT=1\n");
+    printScript(1, "export SQ_SEAPILOT_SUSPENDED=0\n");
+    printScript(1, "export SQ_SEAPILOT_PERF_SUSPENDED=0\n");
+    open (ETC,">>$msenv")
+	or die("unable to open $msenv");
+    
+    if ($SQ_TRANS_SOCK == 1) {
+	print ETC "SQ_TRANS_SOCK=1\n";
+    }
+    else {
+	print ETC "SQ_TRANS_SOCK=0\n";
+    }
+
+    if ($bVirtualNodes == 1) {
+        $virtualnode_string = "SQ_VIRTUAL_NODES=$gdNumNodes\n";
+        $virtualnid_string = "SQ_VIRTUAL_NID=0\n";
+        printScript(1, "export $virtualnode_string");
+        printScript(1, "export $virtualnid_string");
+
+        print ETC "$virtualnode_string";
+        print ETC "$virtualnid_string";
+           # Allow specific mirroring ON override for virtual node
+        print ETC "$mirroringoff_string" if (!$ENV{'TSE_MIRRORING'});
+        print ETC "MS_STREAMS_MIN=20000\n";
+        print ETC "MS_STREAMS_MAX=20000\n";
+        print ETC "$acttenable_string";
+        print ETC "$acttdiskio_string";
+        print ETC "$acttcachec_string";
+        print ETC "$acttaccessed_string";
+        print ETC "$acttinterval_string";
+        print ETC "$acttpublishevent_string";
+        print ETC "$acttpublishlog_string";
+        print ETC "$acttpublishstd_string";
+        print ETC "$fcbenable_string";
+        print ETC "$fcbdiskio_string";
+        print ETC "$fcbcachec_string";
+        print ETC "$fcbaccessed_string";
+        print ETC "$fcbinterval_string";
+        print ETC "$fcbpublishevent_string";
+        print ETC "$fcbpublishlog_string";
+        print ETC "$fcbpublishstd_string";
+
+        # As of v1.12, sqgen doesn't recreate ms.env if it already exists,
+        # so users will see issues switching between mirroring ON and mirroring
+        # OFF, because the TSE treats mirroring on as default.  The variable in
+        # ms.env is an override to turn mirroring OFF, we will remove that if
+        # the user intends to turn mirroring on now
+        if (length($ENV{'TSE_MIRRORING'}) && $ENV{'TSE_MIRRORING'} == 1)
+        {
+            @msenv_contents = <ETC>;
+
+            # This holds contents of ms.env, excluding all TSE_MIRRORING_OFF=1
+            @grep_res = grep(!/$mirroringoff_string/, @msenv_contents);
+            $grep_res_num = grep(/$mirroringoff_string/, @msenv_contents);
+
+            # Only rewrite it out if we found occurrences
+            if ($grep_res_num > 0) {
+                print ETC join("", @grep_res);
+            }
+        }
+    }
+    # Cluster
+    else {
+        print ETC "$mirroringoff_string"
+            if (length($ENV{'TSE_MIRRORING'}) && $ENV{'TSE_MIRRORING'} == 0);
+        print ETC "MS_STREAMS_MIN=20000\n";
+        print ETC "MS_STREAMS_MAX=20000\n";
+        print ETC "$acttenable_string";
+        print ETC "$acttdiskio_string";
+        print ETC "$acttcachec_string";
+        print ETC "$acttaccessed_string";
+        print ETC "$acttinterval_string";
+        print ETC "$acttpublishevent_string";
+        print ETC "$acttpublishlog_string";
+        print ETC "$acttpublishstd_string";
+        print ETC "$fcbenable_string";
+        print ETC "$fcbdiskio_string";
+        print ETC "$fcbcachec_string";
+        print ETC "$fcbaccessed_string";
+        print ETC "$fcbinterval_string";
+        print ETC "$fcbpublishevent_string";
+        print ETC "$fcbpublishlog_string";
+        print ETC "$fcbpublishstd_string";
+        $hugePages=`cat /proc/sys/vm/nr_hugepages`;
+        if ($hugePages != 0) {
+           if ($ENV{SHARED_HARDWARE} eq 'YES') {
+              print ETC "SQ_RMS_ENABLE_HUGEPAGES=0\n"; }
+           else {
+              print ETC "SQ_RMS_ENABLE_HUGEPAGES=1\n"; }
+        }
+
+        else {
+            print ETC "SQ_RMS_ENABLE_HUGEPAGES=0\n";
+        }
+    }
+
+    print ETC "CLASSPATH=$ENV{'CLASSPATH'}:\n";
+
+	print ETC "ESP_PARALLEL_STARTUP=0\n";
+    close (ETC);
+
+    if ($gbLunmgrOn == 1) {
+        printScript(1, "\n\$SQ_PDSH \$MY_NODES \"rm -rf \$MY_SQROOT/logs/lunmgr.log.LOCKDIR\"\n");
+    }
+
+    printScript(1, "\nshell <<eof \n");
+    $gShellStarted=1;
+
+    printScript(1, "\n");
+
+    printScript(1, "! Start the monitor processes across the cluster\n");
+
+    printScript(0, "startup\n");
+    printScript(2, "warmstart\n");
+
+    genSQShellExit();
+
+    printScript(1, "\nsqcheckmon\n");
+    printScript(1, "let lv_checkmon_ret=\$\?\n");
+    printScript(1, "if [ \$lv_checkmon_ret '==' 0 ]; then\n");
+    printScript(1, "   echo \"Continuing with the Startup...\"\n");
+    printScript(1, "   echo\n");
+    printScript(1, "else\n");
+    printScript(1, "   echo \"Aborting startup.\"\n");
+    printScript(1, "   more sqcheckmon.log\n");
+    printScript(1, "   exit 1\n");
+    printScript(1, "fi\n");
+
+
+    genSQShellStart();
+
+    if ($bVirtualNodes == 0) {
+	printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
+    }
+    printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
+    #printScript(0, "\nset MY_SQROOT=\$MY_SQROOT\n"); // The monitor now propagates MY_SQROOT to all processes
+    printScript(0, "\nset MY_NODES=\$MY_NODES\n");
+
+    addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
+    addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+
+    $gbInitialLinesPrinted = 1;
+}
+
+sub printOverflowLines {
+    if($gbOverflowLinesPrinted) {
+	return;
+    }
+
+    $msenv = "$ENV{'SQETC_DIR'}/ms.env";
+
+    open (ETC,">>$msenv")
+        or die("unable to open $msenv");
+    
+    if(@g_ssdOverflow) {
+	$ssdDir = join(':',@g_ssdOverflow);
+	print ETC "STFS_SSD_LOCATION=$ssdDir\n";
+    }
+
+    if(@g_hddOverflow) {
+	$hddDir = join(':',@g_hddOverflow);
+	print ETC "STFS_HDD_LOCATION=$hddDir\n";
+    }
+    close(ETC);
+
+    $gbOverflowLinesPrinted = 1;
+}
+
+sub printScriptEndLines {
+
+    printScript(1, "\n");
+    printScript(1, "exit 0\n");
+
+}
+
+sub genSQShellExit {
+
+    if ($gShellStarted == 1) {
+	printScript(1, "\n");
+	printScript(1, "exit\n");
+	printScript(1, "eof\n");
+	
+	$gShellStarted = 0;
+    }
+
+}
+
+sub genSQShellStart {
+
+    if ($gShellStarted == 0) {
+	printScript(1, "\n");
+	printScript(1, "sqshell -a <<eof\n");
+	
+	$gShellStarted = 1;
+    }
+}
+
+sub genRegWait {
+
+    my $l_registry  = @_[0];
+    my $l_svcname   = @_[1];
+    my $l_duration  = @_[2];
+    my $l_iteration = @_[3];
+
+    printScript(1, "\n");
+    printScript(1, "sqregck -r $l_registry -d $l_duration -i $l_iteration\n");
+    printScript(1, "sqr_stat=\$\?\n");
+    printScript(1, "if \[\[ \$sqr_stat == 0 \]\]; then\n");
+    printScript(1, "\techo \"The $l_svcname is Not Ready yet. Stopping further startup (if any).\"\n");
+    printScript(1, "\texit 1\n");
+    printScript(1, "else\n");
+    printScript(1, "\techo \"The $l_svcname is Ready.\"\n");
+    printScript(1, "fi\n");
+
+}
+
+sub genComponentWait {
+
+    my $l_compname  = @_[0];
+    my $l_duration  = @_[1];
+    my $l_iteration = @_[2];
+
+    printScript(1, "\n");
+    printScript(1, "sqcheck -c $l_compname -d $l_duration -i $l_iteration -r\n");
+    printScript(1, "sq_stat_$l_compname=\$\?\n");
+    printScript(1, "if \[\[ \$sq_stat_$l_compname \!= 0 \]\]; then\n");
+    printScript(1, "\techo \"The $l_compname process(es) are Not Ready yet. Stopping further startup (if any).\"\n");
+    printScript(1, "\texit 1\n");
+    printScript(1, "else\n");
+    printScript(1, "\techo \"The $l_compname process(es) are Ready.\"\n");
+    printScript(1, "fi\n");
+
+}
+
+sub getEventConfig {
+my $cmd;
+
+       # call seapilot_config operation to tell us location of event related brokers
+       # and then configure them
+       # in a virtual environment we will be passed a count of 2 nodes
+       # but we need to configure like there is only 1
+       my $numnodes = 0;
+       if ($bVirtualNodes == 1) {
+		$numnodes = 1;
+       } else {
+		$numnodes = $gdNumNodes;
+       }	
+       $cmd = "$SEAPILOT_CONFIG --nodes=$numnodes -token -event";
+       chomp(my $event_info = `$cmd 2>/dev/null`);
+       if (WIFEXITED($?) && (WEXITSTATUS($?) != 0)) {
+  		print "The $SEAPILOT_CONFIG operation returned an error: $?.\n";
+  		print "Exiting..\n";
+		# identify Seapilot processing
+  		exit $SEAPILOT_ERROR;
+       }
+       # now process the data and return the location of the brokers
+       my @conevent_nodes = ();
+       my @uncevent_nodes = ();
+       my @event_nodes = ();
+       my @event_backup_nodes = ();
+       my @conevent_backup_nodes = ();
+       my @uncevent_backup_nodes = ();
+       my @event_conmap = ();
+       my @unc_eventmap = ();
+       my $conevent_broker = ();
+       my $event_broker = ();
+       my (@datafields) = split("\t", $event_info);
+       for (my $i = 0; $i < scalar(@datafields); $i++) {
+
+	 # this is the list of con event brokers
+	 if ($datafields[$i] =~ /^Consolidating Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @conevent_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^Backup Consolidating Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @conevent_backup_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^UNC Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @uncevent_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^Backup UNC Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @uncevent_backup_nodes = split/,/;
+	 # this is the list of event brokers
+         } elsif ($datafields[$i] =~ /^Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @event_nodes = split/,/;
+         } elsif ($datafields[$i] =~ /^Backup Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @event_backup_nodes = split/,/;
+	 # this is the map of con event brokers to event brokers
+	 # this is the consolidated event broker and next will be the associated event brokers
+	 } elsif ($datafields[$i] =~ /^Consolidating Event Broker/) {
+       	     $conevent_broker = $datafields[$i + 1];
+         } elsif ($datafields[$i] =~ /^Associated Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     my @associated_event_nodes = split/,/;
+	     
+	     foreach my $node (@associated_event_nodes) {
+		for (my $j = 0; $j < scalar(@event_nodes); $j++) {
+			if ($event_nodes[$j] == $node ) {
+				$event_conmap[$j] = $conevent_broker;
+			}
+		}
+	     }
+	 # this is the map of event brokers to unc event brokers
+	 # this is the event broker and next will be the associated unc event brokers
+	 } elsif ($datafields[$i] =~ /^Event Broker/) {
+       	     $event_broker = $datafields[$i + 1];
+         } elsif ($datafields[$i] =~ /^Associated UNC Event Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     my @associated_unc_nodes = split/,/;
+	     
+	     foreach my $node (@associated_unc_nodes) {
+		for (my $j = 0; $j < scalar(@uncevent_nodes); $j++) {
+			if ($uncevent_nodes[$j] == $node ) {
+				$unc_eventmap[$j] = $event_broker;
+			}
+		}
+	     }
+         } # end of all of the conditional processing
+       } # for loop on all of the data fields
+
+       return(\@event_nodes,\@event_backup_nodes,\@conevent_nodes,\@conevent_backup_nodes,\@uncevent_nodes,\@uncevent_backup_nodes,\@event_conmap,\@unc_eventmap);
+}
+
+sub getPerfConfig {
+my $cmd;
+
+       # call seapilot_config operation to tell us location of performance related brokers
+       # and then configure them
+       # in a virtual environment we will be passed a count of 2 nodes
+       # but we need to configure like there is only 1
+       my $numnodes = 0;
+       if ($bVirtualNodes == 1) {
+		$numnodes = 1;
+       } else {
+		$numnodes = $gdNumNodes;
+       }	
+       $cmd = "$SEAPILOT_CONFIG --nodes=$numnodes -token -performance";
+       chomp(my $perf_info = `$cmd 2>/dev/null`);
+       if (WIFEXITED($?) && (WEXITSTATUS($?) != 0)) {
+  		print "The $SEAPILOT_CONFIG operation returned an error: $?.\n";
+  		print "Exiting..\n";
+		# identify Seapilot processing
+  		exit $SEAPILOT_ERROR;
+       }
+       # now process the data and return the location of the brokers
+       my @conperf_nodes = ();
+       my @uncperf_nodes = ();
+       my @perf_nodes = ();
+       my @conperf_backup_nodes = ();
+       my @uncperf_backup_nodes = ();
+       my @perf_backup_nodes = ();
+       my @perf_conmap = ();
+       my @unc_perfmap = ();
+       my $conperf_broker = ();
+       my $perf_broker = ();
+       my (@datafields) = split("\t", $perf_info);
+       for (my $i = 0; $i < scalar(@datafields); $i++) {
+
+	 # this is the list of con perf brokers 
+	 if ($datafields[$i] =~ /^Consolidating Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @conperf_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^Backup Consolidating Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @conperf_backup_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^UNC Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @uncperf_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^Backup UNC Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @uncperf_backup_nodes = split/,/;
+	 # this is the list of perf brokers 
+         } elsif ($datafields[$i] =~ /^Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @perf_nodes = split/,/;
+         } elsif ($datafields[$i] =~ /^Backup Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @perf_backup_nodes = split/,/;
+	 # this is the map of con perf brokers to perf brokers
+	 # this is the consolidated perf broker and next will be the associated perf brokers
+	 } elsif ($datafields[$i] =~ /^Consolidating Performance Broker/) {
+       	     $conperf_broker = $datafields[$i + 1];
+         } elsif ($datafields[$i] =~ /^Associated Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     my @associated_perf_nodes = split/,/;
+	     
+	     foreach my $node (@associated_perf_nodes) {
+		for (my $j = 0; $j < scalar(@perf_nodes); $j++) {
+			if ($perf_nodes[$j] == $node ) {
+				$perf_conmap[$j] = $conperf_broker;
+			}
+		}
+	     }
+	 # this is the map of perf brokers to unc perf brokers
+	 # this is the perf broker and next will be the associated unc perf brokers
+	 } elsif ($datafields[$i] =~ /^Performance Broker/) {
+       	     $perf_broker = $datafields[$i + 1];
+         } elsif ($datafields[$i] =~ /^Associated UNC Performance Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     my @associated_unc_nodes = split/,/;
+	     
+	     foreach my $node (@associated_unc_nodes) {
+		for (my $j = 0; $j < scalar(@uncperf_nodes); $j++) {
+			if ($uncperf_nodes[$j] == $node ) {
+				$unc_perfmap[$j] = $perf_broker;
+			}
+		}
+	     }
+         } # end of conditional processing
+       } # end of loop through all data fields
+
+       return(\@perf_nodes,\@perf_backup_nodes,\@conperf_nodes,\@conperf_backup_nodes,\@uncperf_nodes,\@uncperf_backup_nodes,\@perf_conmap,\@unc_perfmap);
+}
+
+sub getHealthConfig {
+my $cmd;
+
+       # call seapilot_config operation to tell us location of health related brokers
+       # and then configure them
+       # in a virtual environment we will be passed a count of 2 nodes
+       # but we need to configure like there is only 1
+       my $numnodes = 0;
+       if ($bVirtualNodes == 1) {
+		$numnodes = 1;
+       } else {
+		$numnodes = $gdNumNodes;
+       }	
+       $cmd = "$SEAPILOT_CONFIG --nodes=$numnodes -token -health";
+       chomp(my $health_info = `$cmd 2>/dev/null`);
+       if (WIFEXITED($?) && (WEXITSTATUS($?) != 0)) {
+  		print "The $SEAPILOT_CONFIG operation returned an error: $?.\n";
+  		print "Exiting..\n";
+		# identify Seapilot processing
+  		exit $SEAPILOT_ERROR;
+       }
+       # now process the data and return the location of the brokers
+       my @conhealth_nodes = ();
+       my @unchealth_nodes = ();
+       my @health_nodes = ();
+       my @conhealth_backup_nodes = ();
+       my @unchealth_backup_nodes = ();
+       my @health_backup_nodes = ();
+       my @health_conmap = ();
+       my @unc_healthmap = ();
+       my $conhealth_broker = ();
+       my $health_broker = ();
+       my (@datafields) = split("\t", $health_info);
+       for (my $i = 0; $i < scalar(@datafields); $i++) {
+
+	 if ($datafields[$i] =~ /^Consolidating Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @conhealth_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^Backup Consolidating Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @conhealth_backup_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^UNC Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @unchealth_nodes = split/,/;
+	 } elsif ($datafields[$i] =~ /^Backup UNC Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @unchealth_backup_nodes = split/,/;
+         } elsif ($datafields[$i] =~ /^Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @health_nodes = split/,/;
+         } elsif ($datafields[$i] =~ /^Backup Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     @health_backup_nodes = split/,/;
+	 # this is the map of con health brokers to health brokers
+	 # this is the consolidated health broker and next will be the associated health brokers
+	 } elsif ($datafields[$i] =~ /^Consolidating Health and State Broker/) {
+       	     $conhealth_broker = $datafields[$i + 1];
+         } elsif ($datafields[$i] =~ /^Associated Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     my @associated_health_nodes = split/,/;
+	     
+	     foreach my $node (@associated_health_nodes) {
+		for (my $j = 0; $j < scalar(@health_nodes); $j++) {
+			if ($health_nodes[$j] == $node ) {
+				$health_conmap[$j] = $conhealth_broker;
+			}
+		}
+	     }
+	 # this is the map of health brokers to unc health brokers
+	 # this is the health broker and next will be the associated unc health brokers
+	 } elsif ($datafields[$i] =~ /^Health and State Broker/) {
+       	     $health_broker = $datafields[$i + 1];
+         } elsif ($datafields[$i] =~ /^Associated UNC Health and State Brokers/) {
+	     $_ =  $datafields[$i + 1];
+
+	     # clean up the parentheses, if they exist, and get the nodes
+	     s/\(//;
+	     s/\)//;
+	     my @associated_unc_nodes = split/,/;
+	     
+	     foreach my $node (@associated_unc_nodes) {
+		for (my $j = 0; $j < scalar(@unchealth_nodes); $j++) {
+			if ($unchealth_nodes[$j] == $node ) {
+				$unc_healthmap[$j] = $health_broker;
+			}
+		}
+	     }
+         } # end of conditional processing
+       } # end of data field processing
+
+       return(\@health_nodes,\@health_backup_nodes,\@conhealth_nodes,\@conhealth_backup_nodes,\@unchealth_nodes,\@unchealth_backup_nodes,\@health_conmap,\@unc_healthmap);
+}
+
+
+sub genProxy{
+
+    genSQShellExit();
+
+    printScript(1, "\necho \"SQ_START_SEAPILOT: \" \$SQ_START_SEAPILOT \n");
+    printScript(1, "if [[ \$SQ_START_SEAPILOT == \"1\" ]]; then\n");
+    printScript(1, "echo \"Starting Proxies\"\n");
+    $gProxyNodePort = $ENV{'QPID_NODE_PORT'};
+    my $my_sq_root = $ENV{'MY_SQROOT'};
+    my $gUNCBadMessagesDir = $ENV{'UNC_BADMESSAGES_DIR'};
+    my $gUNCOverflowDir = $ENV{'UNC_OVERFLOW_DIR'};
+    my $gUNCNoPurgeOverflowDir = $ENV{'UNC_NOPURGE_OVERFLOW_DIR'};
+    my $my_cmp_poll_freq = $ENV{'CMP_POLL_FREQ'};
+    my $unch_flag=1;
+    my @user_unch_flags;
+    my $my_pm_context_dir = $ENV{'PM_CONTEXT_DIR'};
+    my $my_start_pm = $ENV{'SQ_START_PROBLEM_MANAGEMENT'};
+    my $my_start_stat = $ENV{'SQ_SONAR_SEAPILOT'};
+    my $my_start_xa=0;
+    my $my_tlog_per_tm=0;
+
+    # add support for 1 minute, 5 minute and baseline harnesses
+    my $my_hon_one_config_file = $ENV{'SP_HEALTH_HARNESS1ONECFG'};
+    my $my_hfv_one_config_file = $ENV{'SP_HEALTH_HARNESS5ONECFG'};
+    my $my_hbl_one_config_file = $ENV{'SP_HEALTH_HARNESSBLONECFG'};
+    my $my_hon_all_config_file = $ENV{'SP_HEALTH_HARNESS1ALLCFG'};
+    my $my_hfv_all_config_file = $ENV{'SP_HEALTH_HARNESS5ALLCFG'};
+    my $my_hbl_all_config_file = $ENV{'SP_HEALTH_HARNESSBLALLCFG'};
+
+    my $my_tp_num_started=0;
+
+    my $my_tp_total_num = (int($gdNumNodes/101)) + 1;
+
+    genSQShellStart();
+
+    my $my_efb_port  = 0;
+    my $my_efbt_port = 0;
+    my $my_ecb = 0;
+    my $my_ecb_port  = 0;
+    my $my_ecb_count = 0;
+    my $my_pcb = 0;
+    my $my_pcb_port  = 0;
+    my $my_pcb_count = 0;
+    my $my_hcb = 0;
+    my $my_hcb_port  = 0;
+    my $my_hcb_count = 0;
+    my $my_scb = 0;
+    my $my_scb_port  = 0;
+    my $my_cecb = 0;
+    my $my_cecb_port = 0;
+    my $my_cpcb = 0;
+    my $my_cpcb_port = 0;
+    my $my_chcb = 0;
+    my $my_chcb_port = 0;
+    my $my_ebcm_port = 0;
+
+    my $my_unc = 0;
+ 
+    # Assign ports
+    # (Production vs Development is now set at the spenv.sh level)
+    $my_efb_port  = $gProxyNodePort + 1;
+    $my_ecb_port  = $gProxyNodePort + 2;
+    $my_pcb_port  = $gProxyNodePort + 3;
+    $my_hcb_port  = $gProxyNodePort + 4;
+    $my_scb_port  = $gProxyNodePort + 5;
+    $my_cecb_port = $gProxyNodePort + 6;
+    $my_cpcb_port = $gProxyNodePort + 7;
+    $my_chcb_port = $gProxyNodePort + 8;
+    $my_efbt_port  = $gProxyNodePort + 9;
+    $my_ebcm_port  = $gProxyNodePort + 10;
+
+    # One EFB per connection node
+    my $lv_efblist;
+    my $lv_efblist_db;
+    my $lv_ConnNodesRef = 0;
+    my @lv_ConnNodesList;
+    my @lv_ConnIPList;
+    my $lv_ConnNodesIndex = 0;
+
+    # Nodes that ebcm will run on.
+
+    my $my_ebcmnode1=2;       # Default.  Will be overridden if there is a floating ip.
+    my $my_ebcmnode2;         # Not set.  Will be overridden if there is a failover floating ip.
+
+    # Set EBCM nodes to floating IP nodes - if they exist.
+    my $my_isfloatingip=`grep -i "begin floating_ip" $SQ_ROOT/sql/scripts/sqconfig | grep -v '^#'`;
+    if ($my_isfloatingip)
+    {
+      # Floating IP address exists
+      $my_ebcmnode1=`grep -i floating_ip_node_id $SQ_ROOT/sql/scripts/sqconfig | grep -v '^#' | cut -d" " -f2`;
+      #floating_ip_node_id can NOT be null
+      $my_ebcmnode2=`grep -i floating_ip_failover_node_id $SQ_ROOT/sql/scripts/sqconfig | grep -v '^#' | cut -d" " -f2`;
+    
+      $my_ebcmnode1=~ s/\015?\012?$//;
+      $my_ebcmnode2=~ s/\015?\012?$//;
+    } 
+
+    my $workstationnodename;
+    my $spcertdir;
+
+    if ($bVirtualNodes == 0)
+    { # Cluster: Get list of connection nodes
+      $lv_ConnNodesRef = sqnodes::getConnNodesList();
+      @lv_ConnNodesList = @$lv_ConnNodesRef;
+      if ($#lv_ConnNodesList == -1)
+      { # No connection node...let's start at least one EFB
+        $lv_ConnNodesList[0] = 0;
+      }
+    
+      # For Live Feed, set up node and certificate names.
+      use warnings;
+      use IO::Socket::INET;
+      my $IPaddr;
+      my $nodename;
+      my $DNSwildname;
+      $spcertdir = $HOME;
+      my $socket = IO::Socket::INET->new(
+           Proto       => 'udp',
+           PeerAddr    => '198.41.0.4', # a.root-servers.net
+           PeerPort    => '53', # DNS
+      );
+      #
+      $DNSwildname = $socket->sockhost;
+      $DNSwildname = `nslookup  $DNSwildname | grep "name = " | cut -d"=" -f2 | cut -d" " -f2 | cut -d"." -f2-`;
+      chomp($DNSwildname);  # get rid of line breaks
+      chop($DNSwildname);   # get rid of last character "."
+      $DNSwildname = "*.$DNSwildname";    # Set as wildcard
+      
+      for my $i ( 0 .. $#lv_ConnNodesList )
+      {
+        $nodename = sqnodes::getNodeName($i);
+        #Code for IP address.  No longer used.
+        #$IPaddr = `pdsh -w $nodename /sbin/ifconfig | grep "inet addr" | grep -v "inet addr:172" | grep -v \"inet addr:127" | cut -d":" -f3 | cut -d" " -f1`;
+        #$IPaddr =~ s/\015?\012?$//;  # get rid of line break
+        push(@lv_ConnIPList, $DNSwildname);
+        push(@lv_nodenames, $nodename);
+      }
+    }
+    else
+    { # Virtual node (single-node workstation)
+      $spcertdir = $SQ_ROOT;
+      $lv_ConnNodesList[0] = 0;
+      # Get workstation name for EFB certificate.
+      $workstationnodename = `uname -n`;
+      $workstationnodename =~ s/\015?\012?$//;  # get rid of line break
+      push(@lv_ConnIPList, $workstationnodename);
+      push(@lv_nodenames, $workstationnodename);
+    }
+
+
+    # get all of the various event brokers configuration 
+    my ($event_nodes_ref,$event_backup_nodes_ref,$conevent_nodes_ref,$conevent_backup_nodes_ref,$uncevent_nodes_ref,$uncevent_backup_nodes_ref,$event_conmap_ref,$unc_eventmap_ref) = getEventConfig();
+    my @event_nodes = @{$event_nodes_ref};
+    my @event_backup_nodes = @{$event_backup_nodes_ref};
+    my @conevent_nodes = @{$conevent_nodes_ref};
+    my @conevent_backup_nodes = @{$conevent_backup_nodes_ref};
+    my @uncevent_nodes = @{$uncevent_nodes_ref};
+    my @uncevent_backup_nodes = @{$uncevent_backup_nodes_ref};
+    my @event_conmap = @{$event_conmap_ref};
+    my @unc_eventmap = @{$unc_eventmap_ref};
+
+    # reinitialize the variables to the first values now that we have the actual values
+    $my_ecb = $event_nodes[0];
+    $my_cecb = $conevent_nodes[0];
+
+    # get all of the various performance brokers configuration
+    my ($perf_nodes_ref,$perf_backup_nodes_ref,$conperf_nodes_ref,$conperf_backup_nodes_ref,$uncperf_nodes_ref,$uncperf_backup_nodes_ref,$perf_conmap_ref,$unc_perfmap_ref) = getPerfConfig();
+    my @perf_nodes = @{$perf_nodes_ref};
+    my @perf_backup_nodes = @{$perf_backup_nodes_ref};
+    my @conperf_nodes = @{$conperf_nodes_ref};
+    my @conperf_backup_nodes = @{$conperf_backup_nodes_ref};
+    my @uncperf_nodes = @{$uncperf_nodes_ref};
+    my @uncperf_backup_nodes = @{$uncperf_backup_nodes_ref};
+    my @perf_conmap = @{$perf_conmap_ref};
+    my @unc_perfmap = @{$unc_perfmap_ref};
+
+    # reinitialize the variables to the first values now that we have the actual values
+    $my_pcb = $perf_nodes[0];
+    $my_cpcb = $conperf_nodes[0];
+
+    # get all of the various health and state brokers configuration
+    my ($health_nodes_ref,$health_backup_nodes_ref,$conhealth_nodes_ref,$conhealth_backup_nodes_ref,$unchealth_nodes_ref,$unchealth_backup_nodes_ref,$health_conmap_ref,$unc_healthmap_ref) = getHealthConfig();
+    my @health_nodes = @{$health_nodes_ref};
+    my @health_backup_nodes = @{$health_backup_nodes_ref};
+    my @conhealth_nodes = @{$conhealth_nodes_ref};
+    my @conhealth_backup_nodes = @{$conhealth_backup_nodes_ref};
+    my @unchealth_nodes = @{$unchealth_nodes_ref};
+    my @unchealth_backup_nodes = @{$unchealth_backup_nodes_ref};
+    my @health_conmap = @{$health_conmap_ref};
+    my @unc_healthmap = @{$unc_healthmap_ref};
+
+    # reinitialize the variables to the first values now that we have the actual values
+    $my_hcb = $health_nodes[0];
+    $my_chcb = $conhealth_nodes[0];
+
+    if($instanceType eq 'management') {
+        &processUserInstConfig;
+        for(my $i=0; $i<scalar(@userInstances); $i++) {
+            $user_unch_flags[$i] = 1;
+        }
+    }
+
+    my @backup_list = ();
+    my @backup_list_db = ();
+    my @process_full_list = ();
+    my @process_full_list_db = ();
+
+    printScript(1, "set SP_PROXIES_STARTED=0\n");
+    printScript(1, "set SP_PROXY_START_STATE=1\n");
+
+
+    printScript(1, "set SP_BADMESSAGES=$gUNCBadMessagesDir\n");
+    printScript(1, "set SP_OVERFLOW=$gUNCOverflowDir\n");
+    printScript(1, "set SP_PROTOSOURCE=$my_sq_root/seapilot/export/publications\n");
+    printScript(1, "set SP_TEXTCATALOG=$my_sq_root/seapilot/export/conf/seaquest.cat\n");
+    printScript(1, "set SP_PMCONTEXT=$my_pm_context_dir\n");
+    printScript(1, "set SP_CONFIGDIR=$my_sq_root/seapilot/export/conf\n");
+    printScript(1, "\n");
+
+    addDbClusterData( "SP_PROXY_START_STATE", "1");
+
+
+    addDbClusterData( "SP_TEXTCATALOG", "$my_sq_root/seapilot/export/conf/seaquest.cat");
+    addDbClusterData( "SP_PMCONTEXT", "$my_pm_context_dir");
+    addDbClusterData( "SP_CONFIGDIR", "$my_sq_root/seapilot/export/conf");
+    addDbClusterData( "SP_PROTOSOURCE", "$my_sq_root/seapilot/export/publications");  
+
+
+    for ($i=0; $i < $gdNumNodes; $i++) {
+       my $l_list;
+       my $l_list_db;
+       my $pmp_list;
+       my $pmp_list_db;
+
+       if (($bVirtualNodes == 0) || (($bVirtualNodes == 1) && ($i == 0)))
+       {
+         $l_list = sprintf("set {process \\\$XDN$i} PROCESSLIST=(\\\$NLB$i \\\$TPA$i");
+         $l_list_db = '$NLB'."$i ".'$TPA'."$i ";
+       }
+       else
+       {
+         $l_list = sprintf("set {process \\\$XDN$i} PROCESSLIST=(");
+         $l_list_db = "";
+       }
+     
+       # Let's add in the harnesses
+       # For now, let's just start the harnesses on the last 4 nodes
+       # we do not have plans right now for multiple harnesses
+       my $last_node = $gdNumNodes - 1;
+
+       if (($bVirtualNodes == 0 && $i == $last_node - 3) ||
+            # when there is less than 4 nodes in the cluster, we put the process on last node
+           ($bVirtualNodes == 0 && $last_node < 3 && $i == $last_node) ||
+           ($bVirtualNodes == 1 && $i == 0)) {
+
+		my $nb = $i - 1;
+		$nb = 0 if ($nb < 0);
+		my $backup = "";
+		$backup = "BACKUP:$nb" if ($nb != $i);
+
+	        # 5 minute harness running scripts on one node
+     		printScript(1, "set {process \\\$HFVO$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+       		printScript(1, "set {process \\\$HFVO$i} PROCESSPARAMS=TYPE:HARNESS OBJ:harness.pl ARGS:2\n");
+       		printScript(1, "set {process \\\$HFVO$i} ARGS1=harness.pl\n");
+       		printScript(1, "set {process \\\$HFVO$i} ARGS2=$my_hfv_one_config_file\n");
+       		printScript(1, "set {process \\\$HFVO$i} CONNECTIONINFO=NODE:$i\n\n");
+
+     		addDbProcData( '$HFVO'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+       		addDbProcData( '$HFVO'."$i", "PROCESSPARAMS", "TYPE:HARNESS OBJ:harness.pl ARGS:2");
+       		addDbProcData( '$HFVO'."$i", "ARGS1", "harness.pl");
+       		addDbProcData( '$HFVO'."$i", "ARGS2", "$my_hfv_one_config_file");
+       		addDbProcData( '$HFVO'."$i", "CONNECTIONINFO", "NODE:$i");
+
+          	$l_list = sprintf("%s \\\$HFVO$i", $l_list);
+                $l_list_db .= ' $HFVO' . "$i";
+
+		$backup_list[$nb] .= " \\\$HFVO$i" if ($backup);
+		$backup_list_db[$nb] .= ' $HFVO' . "$i" if ($backup);
+       }
+
+       if (($bVirtualNodes == 0 && $i == $last_node - 2) ||
+           ($bVirtualNodes == 0 && $last_node < 2 && $i == $last_node) ||
+           ($bVirtualNodes == 1 && $i == 0)) {
+
+		my $nb = $i - 1;
+		$nb = 0 if ($nb < 0);
+		my $backup = "";
+		$backup = "BACKUP:$nb" if ($nb != $i);
+
+	        # 5 minute harness running scripts on all nodes
+     		printScript(1, "set {process \\\$HFVA$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+       		printScript(1, "set {process \\\$HFVA$i} PROCESSPARAMS=TYPE:HARNESS OBJ:harness.pl ARGS:2\n");
+       		printScript(1, "set {process \\\$HFVA$i} ARGS1=harness.pl\n");
+       		printScript(1, "set {process \\\$HFVA$i} ARGS2=$my_hfv_all_config_file\n");
+       		printScript(1, "set {process \\\$HFVA$i} CONNECTIONINFO=NODE:$i\n\n");
+                addDbProcData('$HFVA'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+                addDbProcData('$HFVA'."$i", "PROCESSPARAMS", "TYPE:HARNESS OBJ:harness.pl ARGS:2");
+                addDbProcData('$HFVA'."$i", "ARGS1", "harness.pl");
+                addDbProcData('$HFVA'."$i", "ARGS2", "$my_hfv_all_config_file");
+                addDbProcData('$HFVA'."$i", "CONNECTIONINFO", "NODE:$i");
+
+          	$l_list = sprintf("%s \\\$HFVA$i", $l_list);
+                $l_list_db .= ' $HFVA' . "$i";
+
+		$backup_list[$nb] .= " \\\$HFVA$i" if ($backup);
+		$backup_list_db[$nb] .= ' $HFVA' . "$i" if ($backup);
+       }
+
+       if (($bVirtualNodes == 0 && $i == $last_node - 1) ||
+           ($bVirtualNodes == 0 && $last_node < 1 && $i == $last_node) ||
+           ($bVirtualNodes == 1 && $i == 0)) {
+
+		my $nb = $i - 1;
+		$nb = 0 if ($nb < 0);
+		my $backup = "";
+		$backup = "BACKUP:$nb" if ($nb != $i);
+
+	        # 1 minute harness running scripts on one node
+     		printScript(1, "set {process \\\$HONO$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+       		printScript(1, "set {process \\\$HONO$i} PROCESSPARAMS=TYPE:HARNESS OBJ:harness.pl ARGS:2\n");
+       		printScript(1, "set {process \\\$HONO$i} ARGS1=harness.pl\n");
+       		printScript(1, "set {process \\\$HONO$i} ARGS2=$my_hon_one_config_file\n");
+       		printScript(1, "set {process \\\$HONO$i} CONNECTIONINFO=NODE:$i\n\n");
+
+                addDbProcData('$HONO'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+                addDbProcData('$HONO'."$i", "PROCESSPARAMS", "TYPE:HARNESS OBJ:harness.pl ARGS:2");
+                addDbProcData('$HONO'."$i", "ARGS1", "harness.pl");
+                addDbProcData('$HONO'."$i", "ARGS2", "$my_hon_one_config_file");
+                addDbProcData('$HONO'."$i", "CONNECTIONINFO", "NODE:$i");
+
+
+	        # 1 minute harness running scripts on all nodes
+     		printScript(1, "set {process \\\$HONA$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+       		printScript(1, "set {process \\\$HONA$i} PROCESSPARAMS=TYPE:HARNESS OBJ:harness.pl ARGS:2\n");
+       		printScript(1, "set {process \\\$HONA$i} ARGS1=harness.pl\n");
+       		printScript(1, "set {process \\\$HONA$i} ARGS2=$my_hon_all_config_file\n");
+       		printScript(1, "set {process \\\$HONA$i} CONNECTIONINFO=NODE:$i\n\n");
+
+     		addDbProcData( '$HONA'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+       		addDbProcData( '$HONA'."$i", "PROCESSPARAMS", "TYPE:HARNESS OBJ:harness.pl ARGS:2");
+       		addDbProcData( '$HONA'."$i", "ARGS1", "harness.pl");
+       		addDbProcData( '$HONA'."$i", "ARGS2", "$my_hon_all_config_file");
+       		addDbProcData( '$HONA'."$i", "CONNECTIONINFO", "NODE:$i");
+
+        	$l_list = sprintf("%s \\\$HONO$i", $l_list);
+          	$l_list = sprintf("%s \\\$HONA$i", $l_list);
+
+                $l_list_db .= ' $HONO' . "$i" . ' $HONA' . "$i";
+
+	        $backup_list[$nb] .= " \\\$HONO$i" if ($backup);
+		$backup_list[$nb] .= " \\\$HONA$i" if ($backup);
+
+		$backup_list_db[$nb] .= ' $HONO' . "$i" if ($backup);
+		$backup_list_db[$nb] .= ' $HONA' . "$i" if ($backup);
+       }
+
+       if (($bVirtualNodes == 0 && $i == $last_node) || ($bVirtualNodes == 1 && $i == 0)) {
+		my $nb = $i - 1;
+		$nb = 0 if ($nb < 0);
+		my $backup = "";
+		$backup = "BACKUP:$nb" if ($nb != $i);
+
+	        # baseline harness - once a day running scripts on one node
+       		printScript(1, "set {process \\\$HBLO$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+       		printScript(1, "set {process \\\$HBLO$i} PROCESSPARAMS=TYPE:HARNESS OBJ:harness.pl ARGS:2\n");
+       		printScript(1, "set {process \\\$HBLO$i} ARGS1=harness.pl\n");
+       		printScript(1, "set {process \\\$HBLO$i} ARGS2=$my_hbl_one_config_file\n");
+       		printScript(1, "set {process \\\$HBLO$i} CONNECTIONINFO=NODE:$i\n\n");
+                addDbProcData('$HBLO'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+                addDbProcData('$HBLO'."$i", "PROCESSPARAMS", "TYPE:HARNESS OBJ:harness.pl ARGS:2");
+                addDbProcData('$HBLO'."$i", "ARGS1", "harness.pl");
+                addDbProcData('$HBLO'."$i", "ARGS2", "$my_hbl_one_config_file");
+                addDbProcData('$HBLO'."$i", "CONNECTIONINFO", "NODE:$i");
+
+	        # baseline harness - once a day running scripts on all nodes
+       		printScript(1, "set {process \\\$HBLA$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+       		printScript(1, "set {process \\\$HBLA$i} PROCESSPARAMS=TYPE:HARNESS OBJ:harness.pl ARGS:2\n");
+       		printScript(1, "set {process \\\$HBLA$i} ARGS1=harness.pl\n");
+       		printScript(1, "set {process \\\$HBLA$i} ARGS2=$my_hbl_all_config_file\n");
+       		printScript(1, "set {process \\\$HBLA$i} CONNECTIONINFO=NODE:$i\n\n");
+                addDbProcData('$HBLA'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+                addDbProcData('$HBLA'."$i", "PROCESSPARAMS", "TYPE:HARNESS OBJ:harness.pl ARGS:2");
+                addDbProcData('$HBLA'."$i", "ARGS1", "harness.pl");
+                addDbProcData('$HBLA'."$i", "ARGS2", "$my_hbl_all_config_file");
+                addDbProcData('$HBLA'."$i", "CONNECTIONINFO", "NODE:$i");
+
+          	$l_list = sprintf("%s \\\$HBLO$i", $l_list);
+          	$l_list = sprintf("%s \\\$HBLA$i", $l_list);
+
+                $l_list_db .= ' $HBLO' . "$i" . ' $HBLA' . "$i";
+
+		$backup_list[$nb] .= " \\\$HBLO$i" if ($backup);
+		$backup_list[$nb] .= " \\\$HBLA$i" if ($backup);
+
+		$backup_list_db[$nb] .= ' $HBLO' . "$i" if ($backup);
+		$backup_list_db[$nb] .= ' $HBLA' . "$i" if ($backup);
+       }
+
+
+       # lets configure the Seapilot processes
+       # Configure Event Category Broker, Consolidating Event Brokers and UNC Event Brokers
+       # when we find this node number in our list of Consolidating Event Brokers then configure it
+       for (my $j = 0; $j < scalar(@conevent_nodes); $j++) {
+         my $node = $conevent_nodes[$j];
+
+	 if ($node == $i) {
+            my $nodeb = $conevent_backup_nodes[$j];
+            my $backup = "";
+            $backup = "BACKUP:$nodeb" if (defined($nodeb) && $node != $nodeb);
+
+	    # configure a Consolidating Event Broker on this node
+       	    $my_cecb = $node; 
+            printScript(1, "set {process \\\$PTPL$my_cecb} PROCESSINFO=NODE:$my_cecb $backup START:U TRACE:N METRICS:N MODE:SQ\n");
+            printScript(1, "set {process \\\$PTPL$my_cecb} PROCESSPARAMS=TYPE:PTPA OBJ:PTPA SOURCEBROKER:\\\$CECB$my_cecb DESTBROKERS:(\\\$NLB$i) ARGS:3\n");
+            printScript(1, "set {process \\\$PTPL$my_cecb} PTPAARGS=PROTOSOURCE:Y TEXTCATALOG:Y\n");
+            printScript(1, "set {process \\\$PTPL$my_cecb} ARGS1=--config-file=$my_sq_root/seapilot/export/conf/PTPA.XML\n");
+            printScript(1, "set {process \\\$PTPL$my_cecb} ARGS2=--queue-name=ptpa.queue.local\n");
+            printScript(1, "set {process \\\$PTPL$my_cecb} ARGS3=--log-file=$my_sq_root/logs/events\n");
+            printScript(1, "set {process \\\$PTPL$my_cecb} CONNECTIONINFO=NODE:$my_cecb\n\n");
+ 
+            addDbProcData( '$PTPL'."$my_cecb", "PROCESSINFO", "NODE:$my_cecb START:U TRACE:N METRICS:N MODE:SQ");
+            addDbProcData( '$PTPL'."$my_cecb", "PROCESSPARAMS", "TYPE:PTPA OBJ:PTPA SOURCEBROKER:".'$CECB'."$my_cecb DESTBROKERS:(".'$NLB'."$i) ARGS:3");
+            addDbProcData( '$PTPL'."$my_cecb", "PTPAARGS", "PROTOSOURCE:Y TEXTCATALOG:Y");
+            addDbProcData( '$PTPL'."$my_cecb", "ARGS1", "--config-file=$my_sq_root/seapilot/export/conf/PTPA.XML");
+            addDbProcData( '$PTPL'."$my_cecb", "ARGS2", "--queue-name=ptpa.queue.local");
+            addDbProcData( '$PTPL'."$my_cecb", "ARGS3", "--log-file=$my_sq_root/logs/events");
+            addDbProcData( '$PTPL'."$my_cecb", "CONNECTIONINFO", "NODE:$my_cecb\n");
+
+            printScript(1, "set {process \\\$CECB$my_cecb} PROCESSINFO=NODE:$my_cecb $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+            printScript(1, "set {process \\\$CECB$my_cecb} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CONS-EVENT ARGS:1\n");
+            printScript(1, "set {process \\\$CECB$my_cecb} ARGS1=qpidd\n");
+            printScript(1, "set {process \\\$CECB$my_cecb} BROKERARGS=PORT:$my_cecb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+            printScript(1, "set {process \\\$CECB$my_cecb} CONNECTIONINFO=NODE:$my_cecb IP:127.0.0.1 PORT:$my_cecb_port\n\n");
+
+            addDbProcData('$CECB'."$my_cecb", "PROCESSINFO", "NODE:$my_cecb $backup START:U TRACE:N METRICS:N MODE:GEN");
+            addDbProcData('$CECB'."$my_cecb", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CONS-EVENT ARGS:1");
+            addDbProcData('$CECB'."$my_cecb", "ARGS1", "qpidd");
+            addDbProcData('$CECB'."$my_cecb", "BROKERARGS", "PORT:$my_cecb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+            addDbProcData('$CECB'."$my_cecb", "CONNECTIONINFO", "NODE:$my_cecb IP:127.0.0.1 PORT:$my_cecb_port");
+
+            if (($bVirtualNodes == 0) || ($i == 0))
+            {
+               $l_list = sprintf("%s \\\$CECB$my_cecb", $l_list);
+               $l_list_db .= ' $CECB' . "$my_cecb";
+	       $backup_list[$nodeb] .= " \\\$CECB$my_cecb" if ($backup);
+	       $backup_list_db[$nodeb] .= ' $CECB' . "$my_cecb" if ($backup);
+               $l_list = sprintf("%s \\\$PTPL$my_cecb", $l_list);
+               $l_list_db .= ' $PTPL' . "$my_cecb";
+               $backup_list[$nodeb] .= " \\\$PTPL$my_cecb" if ($backup);
+               $backup_list_db[$nodeb] .= ' $PTPL' . "$my_cecb" if ($backup);
+            }
+         }
+       }
+
+       # when we find this node number in our list of Event Brokers then configure it
+       for (my $j=0; $j < scalar(@event_nodes); $j++) { 
+         my $node = $event_nodes[$j];
+
+	 if ($node == $i) {
+	    my $nodeb = $event_backup_nodes[$j];
+	    my $backup = "";
+  	    $backup = "BACKUP:$nodeb" if (defined($nodeb) && $node != $nodeb);
+
+	    # configure an Event Brokers 
+            $my_ecb = $node;
+	    $my_ecb_count++;
+	    # get the Consolidating event broker that is mapped to this event broker
+            my $mapped_cecb = $event_conmap[$j];
+            printScript(1, "set {process \\\$ECB$my_ecb} PROCESSINFO=NODE:$my_ecb $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+            printScript(1, "set {process \\\$ECB$my_ecb} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-EVENT DESTBROKERS:(\\\$CECB$mapped_cecb) ARGS:1\n");
+            printScript(1, "set {process \\\$ECB$my_ecb} ARGS1=qpidd\n");
+            printScript(1, "set {process \\\$ECB$my_ecb} BROKERARGS=PORT:$my_ecb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+            printScript(1, "set {process \\\$ECB$my_ecb} CONNECTIONINFO=NODE:$my_ecb IP:127.0.0.1 PORT:$my_ecb_port\n\n");
+
+            addDbProcData( '$ECB'."$my_ecb", "PROCESSINFO", "NODE:$my_ecb $backup START:U TRACE:N METRICS:N MODE:GEN");
+            addDbProcData( '$ECB'."$my_ecb", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-EVENT DESTBROKERS:(\$CECB$mapped_cecb) ARGS:1");
+            addDbProcData( '$ECB'."$my_ecb", "ARGS1", "qpidd");
+            addDbProcData( '$ECB'."$my_ecb", "BROKERARGS", "PORT:$my_ecb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+            addDbProcData( '$ECB'."$my_ecb", "CONNECTIONINFO", "NODE:$my_ecb IP:127.0.0.1 PORT:$my_ecb_port");
+
+            if (($bVirtualNodes == 0) || ($i == 0))
+            {
+                $l_list = sprintf("%s \\\$ECB$my_ecb", $l_list);
+                $l_list_db .= ' $ECB' . "$my_ecb";
+                $backup_list[$nodeb] .= " \\\$ECB$my_ecb" if ($backup);
+                $backup_list_db[$nodeb] .= ' $ECB' . "$my_ecb" if ($backup);
+            }
+         }
+       }
+
+       # Configure Performance Category Broker, Consolidating Performance Brokers and UNC Performance Brokers
+       # when we find this node number in our list of Consolidating Performance Brokers then configure it
+       for (my $j=0; $j < scalar(@conperf_nodes); $j++) {
+         my $node = $conperf_nodes[$j];
+
+	 if ($node == $i) {
+	   my $nodeb = $conperf_backup_nodes[$j];
+           my $backup = "";
+           $backup = "BACKUP:$nodeb" if (defined($nodeb) && $node != $nodeb);
+
+	   # configure a Consolidating Performance Broker on this node
+       	   $my_cpcb = $node; 
+           printScript(1, "set {process \\\$CPCB$my_cpcb} PROCESSINFO=NODE:$my_cpcb $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+
+           printScript(1, "set {process \\\$CPCB$my_cpcb} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CONS-PERF ARGS:1\n");
+           printScript(1, "set {process \\\$CPCB$my_cpcb} ARGS1=qpidd\n");
+           printScript(1, "set {process \\\$CPCB$my_cpcb} BROKERARGS=PORT:$my_cpcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+           printScript(1, "set {process \\\$CPCB$my_cpcb} CONNECTIONINFO=NODE:$my_cpcb IP:127.0.0.1 PORT:$my_cpcb_port\n\n");
+
+           addDbProcData( '$CPCB'."$my_cpcb", "PROCESSINFO", "NODE:$my_cpcb $backup START:U TRACE:N METRICS:N MODE:GEN");
+
+           addDbProcData( '$CPCB'."$my_cpcb", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CONS-PERF ARGS:1");
+           addDbProcData( '$CPCB'."$my_cpcb", "ARGS1", "qpidd");
+           addDbProcData( '$CPCB'."$my_cpcb", "BROKERARGS", "PORT:$my_cpcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+           addDbProcData( '$CPCB'."$my_cpcb", "CONNECTIONINFO", "NODE:$my_cpcb IP:127.0.0.1 PORT:$my_cpcb_port");
+
+           if (($bVirtualNodes == 0) || ($i == 0))
+           {
+                 $l_list = sprintf("%s \\\$CPCB$my_cpcb", $l_list);
+                 $l_list_db .= ' $CPCB' . "$my_cpcb";
+                 $backup_list[$nodeb] .= " \\\$CPCB$my_cpcb" if ($backup);
+                 $backup_list_db[$nodeb] .= ' $CPCB'."$my_cpcb" if ($backup);
+           }
+         }
+       }
+	
+       # when we find this node number in our list of Performance Brokers then configure it
+       for (my $j=0; $j < scalar(@perf_nodes); $j++) {
+         my $node = $perf_nodes[$j];
+
+	 if ($node == $i) {
+	   my $nodeb = $perf_backup_nodes[$j];
+           my $backup = "";
+           $backup = "BACKUP:$nodeb" if (defined($nodeb) && $node != $nodeb);
+	   
+	   # configure a Performance Brokers that refers to the Consolidating Performance Broker
+       	   $my_pcb = $node; 
+	   $my_pcb_count++;
+	   # get the consolidating performance broker associated with this node
+       	   my $mapped_cpcb = $perf_conmap[$j]; 
+           printScript(1, "set {process \\\$PCB$my_pcb} PROCESSINFO=NODE:$my_pcb $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+           printScript(1, "set {process \\\$PCB$my_pcb} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-PERF DESTBROKERS:(\\\$CPCB$mapped_cpcb) ARGS:1\n");
+           printScript(1, "set {process \\\$PCB$my_pcb} ARGS1=qpidd\n");
+           printScript(1, "set {process \\\$PCB$my_pcb} BROKERARGS=PORT:$my_pcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+           printScript(1, "set {process \\\$PCB$my_pcb} CONNECTIONINFO=NODE:$my_pcb IP:127.0.0.1 PORT:$my_pcb_port\n\n");
+
+           addDbProcData( '$PCB'."$my_pcb", "PROCESSINFO", "NODE:$my_pcb $backup START:U TRACE:N METRICS:N MODE:GEN");
+           addDbProcData( '$PCB'."$my_pcb", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-PERF DESTBROKERS:(\$CPCB$mapped_cpcb) ARGS:1");
+           addDbProcData( '$PCB'."$my_pcb", "ARGS1", "qpidd");
+           addDbProcData( '$PCB'."$my_pcb", "BROKERARGS", "PORT:$my_pcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+           addDbProcData( '$PCB'."$my_pcb", "CONNECTIONINFO", "NODE:$my_pcb IP:127.0.0.1 PORT:$my_pcb_port");
+
+           if (($bVirtualNodes == 0) || ($i == 0))
+           {
+              $l_list = sprintf("%s \\\$PCB$my_pcb", $l_list);
+              $l_list_db .= ' $PCB' . "$my_pcb";
+              $backup_list[$nodeb] .= " \\\$PCB$my_pcb" if ($backup);
+              $backup_list_db[$nodeb] .= ' $PCB' . "$my_pcb" if ($backup);
+           }
+         }
+       }
+
+
+       # Configure Health and State Category Broker, Consolidating Health and State Brokers 
+       # and UNC Health and State Brokers
+       # when we find this node number in our list of Consolidating Health and State Brokers then configure it
+       for (my $j=0; $j < scalar(@conhealth_nodes); $j++) {
+         my $node = $conhealth_nodes[$j];
+
+	 if ($node == $i) {
+	   my $nodeb = $conhealth_backup_nodes[$j];
+           my $backup = "";
+           $backup = "BACKUP:$nodeb" if (defined($nodeb) && $node != $nodeb);
+	   
+	   # configure a Consolidating Health and State Broker
+       	   $my_chcb = $node;
+           printScript(1, "set {process \\\$CHCB$my_chcb} PROCESSINFO=NODE:$my_chcb $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+           printScript(1, "set {process \\\$CHCB$my_chcb} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CONS-HEALTH ARGS:1\n");
+           printScript(1, "set {process \\\$CHCB$my_chcb} ARGS1=qpidd\n");
+           printScript(1, "set {process \\\$CHCB$my_chcb} BROKERARGS=PORT:$my_chcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+           printScript(1, "set {process \\\$CHCB$my_chcb} CONNECTIONINFO=NODE:$my_chcb IP:127.0.0.1 PORT:$my_chcb_port\n\n");
+
+           addDbProcData( '$CHCB'."$my_chcb", "PROCESSINFO", "NODE:$my_chcb $backup START:U TRACE:N METRICS:N MODE:GEN");
+
+           addDbProcData( '$CHCB'."$my_chcb", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CONS-HEALTH ARGS:1");
+           addDbProcData( '$CHCB'."$my_chcb", "ARGS1", "qpidd");
+           addDbProcData( '$CHCB'."$my_chcb", "BROKERARGS", "PORT:$my_chcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+           addDbProcData( '$CHCB'."$my_chcb", "CONNECTIONINFO", "NODE:$my_chcb IP:127.0.0.1 PORT:$my_chcb_port");
+
+           if (($bVirtualNodes == 0) || ($i == 0))
+           {
+                $l_list = sprintf("%s \\\$CHCB$my_chcb", $l_list);
+                $l_list_db .= ' $CHCB' . "$my_chcb";
+                $backup_list[$nodeb] .= " \\\$CHCB$my_chcb" if ($backup);
+                $backup_list_db[$nodeb] .= ' $CHCB' . "$my_chcb" if ($backup);
+           }
+         }
+       }
+
+       # when we find this node number in our list of Health and State Brokers then configure it
+       for (my $j=0; $j < scalar(@health_nodes); $j++) {
+         my $node = $health_nodes[$j];
+
+	 if ($node == $i) {
+	   my $nodeb = $health_backup_nodes[$j];
+           my $backup = "";
+           $backup = "BACKUP:$nodeb" if (defined($nodeb) && $node != $nodeb);
+	   
+	   # configure a Health and State Broker
+           $my_hcb = $node;
+	   $my_hcb_count++;
+	   # get the consolidated health and state broker that is associated with this node
+           my $mapped_chcb = $health_conmap[$j];
+	   # configure a Health and State Broker that refers to the Consolidating Health and State Broker
+           printScript(1, "set {process \\\$HCB$my_hcb} PROCESSINFO=NODE:$my_hcb $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+           printScript(1, "set {process \\\$HCB$my_hcb} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-HEALTH DESTBROKERS:(\\\$CHCB$mapped_chcb) ARGS:1\n");
+           printScript(1, "set {process \\\$HCB$my_hcb} ARGS1=qpidd\n");
+           printScript(1, "set {process \\\$HCB$my_hcb} BROKERARGS=PORT:$my_hcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+           printScript(1, "set {process \\\$HCB$my_hcb} CONNECTIONINFO=NODE:$my_hcb IP:127.0.0.1 PORT:$my_hcb_port\n\n");
+
+           addDbProcData( '$HCB'."$my_hcb", "PROCESSINFO", "NODE:$my_hcb $backup START:U TRACE:N METRICS:N MODE:GEN");
+           addDbProcData( '$HCB'."$my_hcb", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-HEALTH DESTBROKERS:(\$CHCB$mapped_chcb) ARGS:1");
+           addDbProcData( '$HCB'."$my_hcb", "ARGS1", "qpidd");
+           addDbProcData( '$HCB'."$my_hcb", "BROKERARGS", "PORT:$my_hcb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+           addDbProcData( '$HCB'."$my_hcb", "CONNECTIONINFO", "NODE:$my_hcb IP:127.0.0.1 PORT:$my_hcb_port\n");
+
+           if (($bVirtualNodes == 0) || ($i == 0))
+           {
+              $l_list = sprintf("%s \\\$HCB$my_hcb", $l_list);
+              $l_list_db .= ' $HCB' . "$my_hcb";
+              $backup_list[$nodeb] .= " \\\$HCB$my_hcb" if ($backup);
+              $backup_list_db[$nodeb] .= ' $HCB'."$my_hcb" if ($backup);
+           }
+         }
+       }
+
+       # Security Category Broker
+       if (($i%101) == 0) {
+	    my $nb = $i + 3;
+	    $nb = $gdNumNodes - 1 if ($nb >= $gdNumNodes);
+            my $backup = "";
+            $backup = "BACKUP:$nb" if ($nb >= 0 && $i != $nb);
+
+            $my_scb = $i;
+            printScript(1, "set {process \\\$SCB$i} PROCESSINFO=NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN\n");
+            printScript(1, "set {process \\\$SCB$i} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-SECURITY ARGS:1\n");
+            printScript(1, "set {process \\\$SCB$i} ARGS1=qpidd\n");
+            printScript(1, "set {process \\\$SCB$i} BROKERARGS=PORT:$my_scb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+            printScript(1, "set {process \\\$SCB$i} CONNECTIONINFO=NODE:$i IP:127.0.0.1 PORT:$my_scb_port\n\n");
+
+            addDbProcData( '$SCB'."$i", "PROCESSINFO", "NODE:$i $backup START:U TRACE:N METRICS:N MODE:GEN");
+            addDbProcData( '$SCB'."$i", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:CAT-SECURITY ARGS:1");
+            addDbProcData( '$SCB'."$i", "ARGS1", "qpidd");
+            addDbProcData( '$SCB'."$i", "BROKERARGS", "PORT:$my_scb_port WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+            addDbProcData( '$SCB'."$i", "CONNECTIONINFO", "NODE:$i IP:127.0.0.1 PORT:$my_scb_port");
+
+            $l_list = sprintf("%s \\\$SCB$i", $l_list);
+            $l_list_db .= ' $SCB' . "$i";
+            $backup_list[$nb] .= " \\\$SCB$i" if ($backup);
+            $backup_list_db[$nb] .= ' $SCB' . "$i" if ($backup);
+       }
+
+       # Components running on every node 
+       printScript(1, "set {process \\\$TPA$i} PROCESSINFO=NODE:$i START:U TRACE:N METRICS:N MODE:SQ\n");
+       printScript(1, "set {process \\\$TPA$i} PROCESSPARAMS=TYPE:TPA OBJ:textprotocoladapter DESTBROKERS:(\\\$NLB$i) ARGS:0\n");
+       printScript(1, "set {process \\\$TPA$i} CONNECTIONINFO=NODE:$i\n\n");
+
+
+       printScript(1, "set {process \\\$NLB$i} PROCESSINFO=NODE:$i START:U TRACE:N METRICS:N MODE:GEN\n");
+       printScript(1, "set {process \\\$NLB$i} PROCESSPARAMS=TYPE:BROKER OBJ:qpidd SUBTYPE:NODE DESTBROKERS:(\\\$ECB$my_ecb \\\$PCB$my_pcb \\\$HCB$my_hcb \\\$SCB$my_scb) ARGS:1\n");
+       printScript(1, "set {process \\\$NLB$i} ARGS1=qpidd\n");
+       printScript(1, "set {process \\\$NLB$i} BROKERARGS=PORT:$gProxyNodePort WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon\n");
+       printScript(1, "set {process \\\$NLB$i} CONNECTIONINFO=NODE:$i IP:127.0.0.1 PORT:$gProxyNodePort\n\n");
+
+       addDbProcData( '$TPA'."$i", "PROCESSINFO", "NODE:$i START:U TRACE:N METRICS:N MODE:SQ");
+       addDbProcData( '$TPA'."$i", "PROCESSPARAMS", "TYPE:TPA OBJ:textprotocoladapter DESTBROKERS:(".'$NLB'."$i) ARGS:0");
+       addDbProcData( '$TPA'."$i", "CONNECTIONINFO", "NODE:$i");
+
+
+       addDbProcData( '$NLB'."$i", "PROCESSINFO", "NODE:$i START:U TRACE:N METRICS:N MODE:GEN");
+       addDbProcData( '$NLB'."$i", "PROCESSPARAMS", "TYPE:BROKER OBJ:qpidd SUBTYPE:NODE DESTBROKERS:(".'$ECB'."$my_ecb ".'$PCB'."$my_pcb ".'$HCB'."$my_hcb ".'$SCB'."$my_scb) ARGS:1");
+       addDbProcData( '$NLB'."$i", "ARGS1", "qpidd");
+       addDbProcData( '$NLB'."$i", "BROKERARGS", "PORT:$gProxyNodePort WORKERTHREADS:2 DATADIR:no-data-dir AUTH:no DAEMON:daemon");
+       addDbProcData( '$NLB'."$i", "CONNECTIONINFO", "NODE:$i IP:127.0.0.1 PORT:$gProxyNodePort");
+
+		
+        $l_list = sprintf("%s", $l_list);
+        my $my_process_list;
+        if (length($pmp_list) > 0)
+        { 
+            $my_process_list = sprintf("%s%s)", $l_list, $pmp_list);
+            addDbProcData( '$XDN'."$i", "PROCESSLIST", 
+            $l_list_db . $pmp_list_db);
+            $process_full_list_db[$i] = $l_list_db . $pmp_list_db;
+        }
+        else
+        {
+            $my_process_list = sprintf("%s)", $l_list);
+            addDbProcData( '$XDN'."$i", "PROCESSLIST", $l_list_db);
+            $process_full_list_db[$i] = $l_list_db;
+        }
+
+	$process_full_list[$i] = $my_process_list;
+	$process_full_list[$i] =~ s/ PROCESSLIST/ PROCESSFULLLIST/;
+	$process_full_list[$i] =~ s/\)$//;
+     
+        printScript(1, $my_process_list);
+        printScript(1, "\n\n");
+
+        printScript(1, "set {process \\\$XDN$i} PERSIST_RETRIES=10,60\n");
+        printScript(1, "set {process \\\$XDN$i} PERSIST_ZONES=$i\n\n");
+
+        addDbProcData( '$XDN'."$i", "PERSIST_RETRIES", "10,60");
+        addDbProcData( '$XDN'."$i", "PERSIST_ZONES", "$i");
+        addDbPersistProc( '$XDN'."$i", $i, 0 );
+
+    }   # for
+#####################################################################################################################################
+# We don't need to support HA for PTPA part. There are two HA scenarios that PTPA should support. 
+# One is that proxy should restart PTPA process when PTPA is killed. For this part, we had done it already. 
+# The other is that when one node is down, others should take charge of all the work of this node. 
+# A set of PTPAs are subscribing to the same ECB. They have same subscribe-broker-port and subscirbe-broker-ip.  
+# Use "pdsh -a ps -ef |grep PTPA" to check. 
+# As all the nodes have started their own PTPA process, it's no need to restart it on other nodes. 
+#####################################################################################################################################
+    printScript(1, "\n\n");
+    # I have to put ProcessFullList at the very end
+    for ($i=0; $i < $gdNumNodes; $i++) {
+	$process_full_list[$i] .= $backup_list[$i] . ")";
+        printScript(1, $process_full_list[$i]);
+        printScript(1, "\n\n");
+        printScript(1, "exec {type spx, nowait, name \\\$XDN$i, nid $i, out stdout_proxy_$i} sp_proxy\n\n");       
+
+        addDbProcData( '$XDN'."$i", "PROCESSFULLLIST", 
+                       $process_full_list_db[$i] . $backup_list_db[$i]);
+        addDbProcDef( $ProcessType_SPX, '$XDN'."$i", $i, 'sp_proxy',
+                      "stdout_proxy_$i", "" );
+    }
+
+    printScript(1, "delay 3\n");
+    printScript(1, "set SP_PROXIES_STARTED=1\n");
+
+    printScript(1, "delay 3\n"); 
+    printScript(1, "event {SPX} 3\n\n");    
+    genSQShellExit();
+    printScript(1, "else\n");
+    genSQShellStart();
+    printScript(1, "\nset SQ_SEAPILOT_SUSPENDED=1\n");
+    genSQShellExit();  
+    printScript(1, "fi\n");
+
+}
+
+
+sub genDTM {
+
+    genSQShellStart();
+    printScript(1, "\n! Start DTM\n");
+    printScript(1, "set DTM_RUN_MODE=2\n");
+	printScript(1, "set SQ_AUDITSVC_READY=1\n");
+	printScript(1, "set DTM_TLOG_PER_TM=1\n");
+    addDbClusterData("DTM_RUN_MODE", "2");
+    addDbClusterData("SQ_AUDITSVC_READY", "1");
+    addDbClusterData("DTM_TLOG_PER_TM", "1");
+    genSQShellExit();
+
+    for ($i=0; $i < $gdNumNodes; $i++) {
+        printScript(1, "\ntmp_node_status=`mktemp -t`\n");
+        printScript(1, "sqshell -c zone nid $i > \$tmp_node_status\n");
+        printScript(1, "let node_up_value=`grep 'Up' \$tmp_node_status | wc -l`\n");
+        printScript(1, "if [[ \$node_up_value == 1 ]]; then\n");
+
+        genSQShellStart();
+        printScript(1, "set {process \\\$tm$i} TMASE=TLOG$i\n");
+        addDbProcData('$tm'."$i", "TMASE", "TLOG$i");
+        printScript(1, "exec {type dtm, nowait, name \\\$tm$i, nid $i, out stdout_dtm_$i} tm");
+        if ($i == 0 || $i == ($gdNumNodes-1)) {
+            printScript(1, "\ndelay 5");
+        }
+        genSQShellExit();
+
+        printScript(1, "\nfi\n");
+        printScript(1, "\nrm -f \$tmp_node_status\n");
+    }
+
+    genComponentWait("dtm", 10, 60);
+    genSQShellStart();
+
+    printScript(1, "! Generate DTM Event 1\n");
+    printScript(1, "event {DTM} 1\n");
+
+    genSQShellExit();
+#    genRegWait("SQ_TXNSVC_READY", "Transaction Service", 5, 40);
+    printScript(1, "\n");
+    printScript(1, "echo \"Checking whether the transaction service is ready.\"\n");
+    printScript(1, "sqr_stat=0\n");
+    printScript(1, "while \[\[ \$sqr_stat == 0 \]\];\n");
+    printScript(1, "do\n");
+    printScript(1, "sqregck -r SQ_TXNSVC_READY -d 5 -i -1\n");
+    printScript(1, "sqr_stat=\$\?\n");
+    printScript(1, "done\n");
+    printScript(1, "echo \"The Transaction Service is Ready.\"\n");
+}
+
+sub genSSMPCommand {
+
+    my $l_nid                  = @_[0];
+    my $l_process_name_prefix  = @_[1];
+    my $l_program_name         = @_[2];
+    my $l_retries              = @_[3];
+
+    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_RETRIES=$l_retries,60\n", 
+			    $l_process_name_prefix,
+			    $l_nid);
+    printRMSScript(2, $l_string);
+
+    my $l_stopString = sprintf("kill {abort} \\\$%s%03d\n", $l_process_name_prefix, $l_nid);
+    printRMSStopScript(2, $l_stopString);
+
+    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_ZONES=$l_nid,$l_nid \n",
+			    $l_process_name_prefix,
+			    $l_nid);
+    printRMSScript(2, $l_string);
+
+    my $l_string =  sprintf("\texec {type ssmp, nowait, nid $l_nid, name \\\$%s%03d, out stdout_%s%03d } %s\n", 
+			    $l_process_name_prefix, 
+			    $l_nid, 
+			    $l_process_name_prefix, 
+			    $l_nid,
+			    $l_program_name
+			    );
+    printRMSScript(2, $l_string);
+
+    my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
+    my $l_stdout = sprintf('stdout_%s%03d', $l_process_name_prefix, $l_nid);
+    addDbPersistProc("$l_procname", $l_nid, 1);
+    addDbProcDef( $ProcessType_SSMP, $l_procname, $l_nid, $l_program_name,
+                  $l_stdout, "" );
+
+}
+
+sub genSSCPCommand {
+
+    my $l_nid                  = @_[0];
+    my $l_process_name_prefix  = @_[1];
+    my $l_program_name         = @_[2];
+    my $l_retries              = @_[3];
+
+    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_RETRIES=$l_retries,60\n", 
+			    $l_process_name_prefix,
+			    $l_nid);
+    printRMSScript(3, $l_string);
+
+    my $l_stopString = sprintf("kill {abort} \\\$%s%03d\n", $l_process_name_prefix, $l_nid);
+    printRMSStopScript(3, $l_stopString);
+
+    my $l_string =  sprintf("\tset {process \\\$%s%03d } PERSIST_ZONES=$l_nid,$l_nid \n",
+			    $l_process_name_prefix,
+			    $l_nid);
+    printRMSScript(3, $l_string);
+
+    my $l_string =  sprintf("\texec {nowait, nid $l_nid, name \\\$%s%03d, out stdout_%s%03d } %s\n", 
+			    $l_process_name_prefix, 
+			    $l_nid, 
+			    $l_process_name_prefix, 
+			    $l_nid,
+			    $l_program_name
+			    );
+    printRMSScript(3, $l_string);
+
+    my $l_procname = sprintf('$%s%03d', $l_process_name_prefix, $l_nid);
+    my $l_stdout = sprintf('stdout_%s%03d', $l_process_name_prefix, $l_nid);
+    addDbPersistProc("$l_procname", $l_nid, 1);
+    addDbProcDef( $ProcessType_Generic, $l_procname, $l_nid, $l_program_name,
+                  $l_stdout, "" );
+}
+
+
+
+
+
+sub printSQShellCommand {
+    printScript(1, substr($_,1));
+}
+
+
+
+sub processNodes {
+    my $bNodeSpecified = 0;
+
+    while (<SRC>) {
+        next if (/^#/);
+	if (/^_virtualnodes/) {
+	    @words=split(' ',$_);
+	    $gdNumNodes=@words[1];
+	    $bVirtualNodes=1;
+	    my $l_dNodeIndex = 0;
+	    for ($l_dNodeIndex = 0; $l_dNodeIndex < $gdNumNodes; $l_dNodeIndex++) {
+		print SQC "$l_dNodeIndex:$l_dNodeIndex:";
+                print SQC "$g_HostName:"; 
+		print SQC "0:0:";
+		print SQC "$gRoleEnumEdge,$gRoleEnumAggregation,$gRoleEnumStorage\n";
+		$gNodeIdToZoneIdIndex[$l_dNodeIndex] = $l_dNodeIndex;
+		
+		push(@g_EdgeNodes, $l_dNodeIndex);
+	    }
+#           open (SHELLENV, ">shell.env")
+#               or die ("unable to open shell.env");
+#
+#           print SHELLENV "MON_TRACE_ENABLE=1 \n";
+#           print SHELLENV "MON_TRACE_EVLOG_MSG=1 \n";
+#           print SHELLENV "MON_TRACE_INIT=1 \n";
+#           print SHELLENV "MON_TRACE_REQUEST=1 \n";
+#           print SHELLENV "MON_TRACE_PROCESS=1 \n";
+#           close (SHELLENV);
+#
+	}
+	elsif (/^end node/) {
+
+	    # Just for the time being - this should be an error
+	    if (($bNodeSpecified == 0) &&
+		($bVirtualNodes == 0)) {
+		$gdNumNodes = 1;
+	    }
+
+            if ($bVirtualNodes == 0)
+            {
+                if (sqnodes::validateConfig() == 0)
+                {	  # Valid configuration, generate cluster.conf
+                    $gdNumNodes = sqnodes::numNodes();
+
+                    sqnodes::genConfig( *SQC );
+                }
+
+		my $lv_numEdgeNodes = sqnodes::getNumberOfConnNodes();
+		my $lv_node_index = 0;
+		for ($i=1; $i <= $lv_numEdgeNodes; $i++) {
+		    $lv_node_index = sqnodes::getConnNode($i);
+		    push(@g_EdgeNodes, $lv_node_index);
+		}
+
+		for ($i=0; $i < $gdNumNodes; $i++) {
+		    push(@g_BackupTSENode, $i);
+		}
+
+            }
+
+	    return;
+	}
+	else {
+	    sqnodes::parseStmt;
+
+	    $bNodeSpecified = 1;
+	    $gdZoneId++;
+
+	}
+    }
+}
+
+## Process the enclosures section, which lumps node hostnames together based
+## on whether or not they are in the same physical C7000 chassis.
+sub processEnclosures
+{
+    while (<SRC>)
+    {
+        next if (/^#/);
+        next if ($bVirtualNodes); # Just read through this section and return
+        return if (/^end enclosure/);
+
+        chomp($_);
+
+        sqnodes::parseStmt;
+    }
+}
+
+sub printNodeIdToName {
+
+    if (!$gDebug) {
+	return;
+    }
+
+    my $i = 0;
+    
+    print "Number of nodes: ", $#gNodeIdToNameIndex + 1, "\n";
+    print "gdNumNodes = $gdNumNodes\n";
+
+    for ($i = 0; $i <= $#gNodeIdToNameIndex; $i++) {
+	print "gNodeIdToNameIndex[$i]=", $gNodeIdToNameIndex[$i], "\n";
+    }
+}
+
+sub printZoneList {
+
+    if (!$gDebug) {
+	return;
+    }
+
+    my $i = 0;
+    
+    print "Number of nodes: ", $#g_zonelist + 1, "\n";
+    print "Current Zone ID = $gdZoneId\n";
+
+    for ($i = 0; $i <= $#g_zonelist; $i++) {
+	print "g_zonelist[$i]=", $g_zonelist[$i], "\n";
+    }
+}
+
+sub processRoleNodeMap {
+    my $bNodeSpecified = 0;
+
+    while (<SRC>) {
+	if (/^storage/) {
+	    if ($bVirtualNodes == 1) {
+		@g_storageNodes=split(' ',$_);
+	    }
+#	    print "Edge Node IDs       : @g_EdgeNodes .. Total: ", $#g_EdgeNodes + 1, "\n";
+#	    print "Storage Node IDs    : @g_storageNodes .. Total: ", $#g_storageNodes + 1, "\n";
+#	    print "Aggregation Node IDs: @g_AggregationNodes .. Total: ", $#g_AggregationNodes + 1, "\n";
+	}
+	elsif (/^edge/) {
+	}
+	elsif (/^end role_node_map/) {
+	    return;
+	}
+    }
+}
+
+sub processOverflow {
+    while (<SRC>) {
+	if(/^ssd/) {
+	    @ssdLine = split(' ',$_);
+	    if(@ssdLine[1]) {
+   	        push(@g_ssdOverflow, @ssdLine[1]);
+	    }
+	}
+	elsif(/^hdd/) {
+	    @hddLine = split(' ',$_);
+	    if(@hddLine[1]) {
+		push(@g_hddOverflow, @hddLine[1]);
+	    }
+	}
+	elsif(/^end overflow/) {
+	    return;
+	}
+    }
+}
+
+
+sub processFloatingIp {
+    while (<SRC>) {
+        if (/^process/) {
+           @this_line = split(/;/, $_);
+	   if($#this_line >= 2) {
+             @external_ip = split(/=/,@this_line[2]);
+#            print "external_ip @external_ip\n";
+             if (($#external_ip >= 1) && (@external_ip[0] eq "external-ip")) {
+                $gFloatingExternalIp = @external_ip[1];
+                $gFloatingExternalIp =~ s/\s+$//; # remove trailing spaces, including new-line characters
+#                print "Floating External IP  $gFloatingExternalIp\n";
+             }
+           }
+        }
+	elsif(/^floating_ip_node_id/) {
+	    @this_line = split(' ',$_);
+	    if($#this_line > 0) {
+		$gFloatingNodeId=@this_line[1];
+		# Validate the node id
+		if (($gFloatingNodeId < 0) || ($gFloatingNodeId >= $gdNumNodes)) {
+		    print "Error: Invalid Floating IP Node Id provided. Please check your config file.\n";
+		    print "Exiting..\n";
+		    exit $BDR_ERROR;
+		}
+                $lv_bEdgeNodeFound = 0;
+		for ($lv_i = 0; $lv_i < $#g_EdgeNodes + 1 ; $lv_i++) {
+		    if (@g_EdgeNodes[$lv_i] == $gFloatingNodeId) {
+			$lv_bEdgeNodeFound = 1;
+#			print "$lv_i : @g_EdgeNodes[$lv_i] \n";
+			break;
+		    }
+		}
+		if ($lv_bEdgeNodeFound == 0) {
+		    print "Error: Floating IP Node Id : $gFloatingNodeId is NOT an edge node. Please check your config file.\n";
+		    print "Exiting..\n";
+		    exit $BDR_ERROR;
+		}
+	    }
+	}
+	elsif(/^floating_ip_failover_node_id/) {
+	    @this_line = split(' ',$_);
+	    if($#this_line > 0) {
+		$gFloatingFailoverNodeId=@this_line[1];
+		# print "Floating IP Failover Node Id = $gFloatingFailoverNodeId \n";
+		# Validate the node id
+		if (($gFloatingFailoverNodeId < 0) || ($gFloatingFailoverNodeId >= $gdNumNodes)) {
+		    print "Error: Invalid Floating IP Failover Node Id provided. Please check your config file.\n";
+		    print "Exiting..\n";
+		    exit $BDR_ERROR;
+		}
+                $lv_bEdgeNodeFound = 0;
+		for ($lv_i = 0; $lv_i < $#g_EdgeNodes + 1 ; $lv_i++) {
+		    if (@g_EdgeNodes[$lv_i] == $gFloatingFailoverNodeId) {
+			$lv_bEdgeNodeFound = 1;
+#			print "$lv_i : @g_EdgeNodes[$lv_i] \n";
+			break;
+	            }
+		}
+		if ($lv_bEdgeNodeFound == 0) {
+		    print "Error: Floating IP  Failover Node Id : $gFloatingFailoverNodeId is NOT an edge node. Please check your config file.\n";
+		    print "Exiting..\n";
+		    exit $BDR_ERROR;
+                }
+            }
+        }
+        elsif(/^end floating_ip/) {
+#           printf "Floating Node Id : $gFloatingNodeId \n";
+           if ($gFloatingNodeId == -1) {
+               print "Error: floating_ip_node_id not provided. Please check your config file.\n";
+               print "Exiting..\n";
+               exit $BDR_ERROR;
+           }
+           if ($gFloatingExternalIp eq "") {
+	       print "Error: bdr_ip_address is not provided, Please check your config file.\n";
+	       print "Exiting..\n";
+               exit $BDR_ERROR;
+           }
+           return;
+	}
+    }
+}
+
+sub processInstanceType {
+    while( <SRC> ) {
+        if(/^type/) {
+            chomp($_);
+            @this_line = split(' ', $_);
+            if($this_line[1]) {
+            $instanceType = $this_line[1];
+            }
+        }
+        elsif(/^end instance/) {
+            if($instanceType ne 'user' && $instanceType ne 'management') {
+            $instanceType = "";
+            }
+            return;
+        }
+    }
+}
+
+
+sub getEdgeNode1 {
+   if ($bVirtualNodes == 1) {
+      return 0;
+   }
+   else
+   {
+       sqnodes::getConnNode(1);
+   }
+}
+
+sub getEdgeNode2 {
+   if ($bVirtualNodes == 1) {
+      if ($gdNumNodes > 1) {
+         return 1;
+      }
+      else {
+         return 0;
+      }
+   }
+   else
+   {
+       sqnodes::getConnNode(2);
+   }
+}
+
+      
+
+sub printInitLinesAuxFiles {
+
+    my $file_ptr  = @_[0];
+
+    print $file_ptr "#!/bin/sh\n";
+    print $file_ptr "# SQ config/utility file generated @ ", &ctime(time), "\n";
+    printCopyright($file_ptr);
+}
+
+
+sub openFiles {
+
+    open (SRC,"<$infile")
+	or die("unable to open $infile");
+
+    open (SQS,">$coldscriptFileName")
+	or die("unable to open $coldscriptFileName");
+
+    open (SQW,">$warmscriptFileName")
+	or die("unable to open $warmscriptFileName");
+
+    open (SQC,">$clusterconfFileName")
+	or die("unable to open $clusterconfFileName");
+
+#    my $dbargs = {AutoCommit => 1,
+#                  PrintError => 1};
+    my $dbargs = {AutoCommit => 1,
+                  RaiseError => 1,
+                  PrintError => 0,
+                  ShowErrorStatement => 1};
+    $DBH = DBI->connect("dbi:SQLite:dbname=sqconfig.db","","",$dbargs);
+#   Disable database synchronization (fsync) because it slows down writes
+#   too much.
+    $DBH->do("PRAGMA synchronous = OFF");
+}
+
+sub addDbKeyName {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $key = @_[0];
+
+    my $insDbKeyStmt
+        = $DBH->prepare("insert into monRegKeyName (keyName) values ( ? );");
+
+    $insDbKeyStmt->bind_param(1, $key);
+
+#    local $insDbKeyStmt->{PrintError} = 0;
+
+#    unless ($insDbKeyStmt->execute) {
+        # Ignore error 19 "constraint violated" on monRegKeyName table
+#        if ( $insDbKeyStmt->err != 19) {
+#            print "addDbKeyName got error code: ",
+#            $insDbKeyStmt->err, ", msg: ",
+#            $insDbKeyStmt->errstr, "\n";
+#        }
+
+    eval {
+        ($insDbKeyStmt->execute)
+    };
+    if ($@) {
+#        print "In eval error handling code for addDbKeyName\n";
+        # Ignore error 19 "constraint violated" on monRegKeyName table
+        if ( $insDbKeyStmt->err != 19) {
+            print "addDbKeyName got error code: ",
+            $insDbKeyStmt->err, ", msg: ",
+            $insDbKeyStmt->errstr, "\n";
+        }
+    }
+
+}
+
+sub addDbProcName {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $name = @_[0];
+
+    my $insDbProcNameStmt
+        = $DBH->prepare("insert into monRegProcName (procName) values ( ? );");
+
+    $insDbProcNameStmt->bind_param(1, $name);
+
+    eval {
+        $insDbProcNameStmt->execute;
+    };
+    if ($@) {
+#        print "In eval error handling code for addDbProcName\n";
+        # Ignore error 19 "constraint violated" on monRegKeyName table
+        if ( $insDbProcNameStmt->err != 19) {
+            print "addDbProcName got error code: ",
+            $insDbProcNameStmt->err, ", msg: ",
+            $insDbProcNameStmt->errstr, "\n";
+        }
+    }
+
+}
+
+sub addDbClusterData {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $key = @_[0];
+    my $dataValue = @_[1];
+
+    addDbKeyName($key);
+
+    my $insDbClusterDataStmt
+        = $DBH->prepare("insert or replace into monRegClusterData (dataValue, keyId) select ?, k.keyId FROM monRegKeyName k where k.keyName = ?");
+
+    $insDbClusterDataStmt->bind_param(1, $dataValue);
+    $insDbClusterDataStmt->bind_param(2, $key);
+
+    $insDbClusterDataStmt->execute;
+}
+
+sub addDbProcData {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $procName = @_[0];
+    my $key = @_[1];
+    my $dataValue = @_[2];
+
+    addDbKeyName($key);
+    addDbProcName($procName);
+
+    my $insDbProcDataStmt
+        = $DBH->prepare("insert or replace into monRegProcData (dataValue, procId, keyId ) select ?, p.procId, (SELECT k.keyId FROM monRegKeyName k WHERE k.keyName = ?) FROM monRegProcName p WHERE p.procName = ?");
+
+    $insDbProcDataStmt->bind_param(1, $dataValue);
+    $insDbProcDataStmt->bind_param(2, $key);
+    $insDbProcDataStmt->bind_param(3, $procName);
+
+    $insDbProcDataStmt->execute;
+}
+
+sub addDbProcDef {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $procType    = @_[0];
+    my $procName    = @_[1];
+    my $procNid     = @_[2];
+    my $procProg    = @_[3];
+    my $procStdout  = @_[4];
+    my $procArgs    = @_[5];
+
+    my $insDbProcDefStmt
+        = $DBH->prepare("insert or replace into procs values ( ?, ?, ?, ?, ?, ? )");
+    $insDbProcDefStmt->bind_param(1, $procType);
+    $insDbProcDefStmt->bind_param(2, $procName);
+    $insDbProcDefStmt->bind_param(3, $procNid);
+    $insDbProcDefStmt->bind_param(4, $procProg);
+    $insDbProcDefStmt->bind_param(5, $procStdout);
+    $insDbProcDefStmt->bind_param(6, $procArgs);
+
+    $insDbProcDefStmt->execute;
+}
+
+sub addDbPersistProc {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $procName    = @_[0];
+    my $zone        = @_[1];
+    my $reqTm       = @_[2];
+
+    my $insDbPersistStmt = $DBH->prepare("insert into persist values (?, ?, ?)");
+
+    $insDbPersistStmt->bind_param(1, $procName);
+    $insDbPersistStmt->bind_param(2, $zone);
+    $insDbPersistStmt->bind_param(3, $reqTm);
+
+    $insDbPersistStmt->execute;
+}
+
+# Physical node table
+sub addDbPNode {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbPNodeStmt = $DBH->prepare("insert into pnode values (?, ?)");
+
+    my $nodeId  = @_[0];
+    my $nodeName    = @_[1];
+
+    $insDbPNodeStmt->bind_param(1, $nodeId);
+    $insDbPNodeStmt->bind_param(2, $nodeName);
+
+    $insDbPNodeStmt->execute;
+
+}
+
+# Logical node table
+sub addDbLNode {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbLNodeStmt = $DBH->prepare("insert into lnode values (?, ?, ?, ?, ? , ?)");
+
+    my $lNodeId       = @_[0];
+    my $pNodeId       = @_[1];
+    my $numProcessors = @_[2];
+    my $roleSet       = @_[3];
+    my $firstCore     = @_[4];
+    my $lastCore      = @_[5];
+
+    $insDbLNodeStmt->bind_param(1, $lNodeId);
+    $insDbLNodeStmt->bind_param(2, $pNodeId);
+    $insDbLNodeStmt->bind_param(3, $numProcessors);
+    $insDbLNodeStmt->bind_param(4, $roleSet);
+    $insDbLNodeStmt->bind_param(5, $firstCore);
+    $insDbLNodeStmt->bind_param(6, $lastCore);
+
+    $insDbLNodeStmt->execute;
+
+}
+
+
+# Logical node table
+sub addDbSpare {
+
+    if (not defined $DBH) {
+        # Database not available
+        return;
+    }
+
+    my $insDbSpareStmt = $DBH->prepare("insert into spare values (?, ?)");
+
+    my $pNodeId       = @_[0];
+    my $spareId       = @_[1];
+
+    $insDbSpareStmt->bind_param(1, $pNodeId);
+    $insDbSpareStmt->bind_param(2, $spareId);
+
+    $insDbSpareStmt->execute;
+}
+
+sub endGame {
+
+
+    open (SQSH,">$sqshell")
+	or die("unable to open $sqshell");
+    printInitLinesAuxFiles (SQSH);
+
+    if ($bVirtualNodes == 1) {
+	print SQSH "export SQ_VIRTUAL_NODES=$gdNumNodes\n";
+	print SQSH "export SQ_VIRTUAL_NID=0\n";
+    }
+    print SQSH "\nshell \$1 \$2 \$3 \$4 \$5 \$6 \$7 \$8 \$9\n";
+
+    
+    
+    print "\n";
+    print "Generated SQ startup script file: $coldscriptFileName\n";
+    print "Generated SQ startup script file: $warmscriptFileName\n";
+    print "Generated SQ cluster config file: $clusterconfFileName\n";
+    print "Generated SQ Shell          file: $sqshell\n";
+
+    close(SRC);
+    close(SQS);
+    close(SQW);
+    close(SQC);
+    close(SQSH);
+    
+    close(DBZ);
+
+    close(RMS);
+    close(RMSS);
+    close(RMSC);
+
+    close(SSMP);
+    close(SSMPS);
+
+    close(SSCP);
+    close(SSCPS);
+
+
+    close(QPIDCONF);
+    chmod 0700, $coldscriptFileName;
+    chmod 0700, $warmscriptFileName;
+
+    chmod 0700, $sqshell;
+    chmod 0700, $g_dbsize;
+
+    chmod 0700, $startRMS;
+    chmod 0700, $stopRMS;
+    chmod 0700, $checkRMS;
+   
+    chmod 0700, $startSSMP;
+    chmod 0700, $stopSSMP;
+
+    chmod 0700, $startSSCP;
+    chmod 0700, $stopSSCP;
+
+}
+
+sub doInit {
+
+    $infile=@ARGV[0];
+    $scriptFileName=@ARGV[1];
+    $clusterconfFileName=@ARGV[2];
+    $g_HostName=$ARGV[3];
+    $g_FTFlag=$ARGV[4];
+    $g_PERFFlag=$ARGV[5];
+
+
+    $startRMS="rmsstart";
+    $startSSMP="ssmpstart";
+    $startSSCP="sscpstart";
+    $stopRMS="rmsstop";
+    $stopSSMP="ssmpstop";
+    $stopSSCP="sscpstop";
+    $checkRMS="rmscheck.sql";
+
+
+    $coldscriptFileName=sprintf("%s.cold", $scriptFileName);
+    $warmscriptFileName=sprintf("%s.warm", $scriptFileName);
+
+    $sqshell = "sqshell";
+
+    $gdNumCpuCores = `cat /proc/cpuinfo | grep "processor" | wc -l`;
+#print "The number of cores is $gdNumCpuCores\n";
+
+    print "Note: Using cluster.conf format type $g_CCFormat.\n";
+
+
+}
+
+
+#
+# Main 
+#
+
+doInit();
+
+openFiles;
+
+
+while (<SRC>) {
+    if (/^begin node/) {
+	processNodes;
+	printInitialLines;
+    }
+    elsif (/^begin enclosure/) {
+        processEnclosures;
+        $gEncSectionProcessed = 1;
+    }
+    elsif (/^begin tmase/) {
+        validate_config_script();
+        genProxy();
+
+    }
+    elsif (/^begin role_node_map/) {
+	processRoleNodeMap;
+    }
+    elsif (/^begin overflow/) {
+	processOverflow;
+	printOverflowLines;
+    }
+    elsif (/^begin floating_ip/) {
+        processFloatingIp;
+    }
+    elsif (/^%/) {
+	printSQShellCommand;
+    }
+}
+
+#printZoneList;
+
+
+    genDTM();
+
+
+printScriptEndLines;
+
+endGame;

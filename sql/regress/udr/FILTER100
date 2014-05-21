@@ -1,0 +1,37 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+sed '
+s/Fragment ID: 0, Length: [0-9]*/Fragment ID: 0, Length: AnyLength/g
+s/CLAUSE_EVAL (108) -[0-9]* 0/CLAUSE_EVAL (108) -AnyNumber 0/g
+s%externalPath = [/a-zA-Z_.0-9]*/rundir/udr%externalPath = AnyPath/rundir/udr%g
+s/\\[A-Z0-9]\{1,\}\.[A-Z0-9][0-9]*,[A-Z0-9][0-9]*/@pid@/g
+s/\\[A-Z0-9]\{1,\}\.\$[A-Z0-9][0-9]*:[A-Z0-9][0-9]*/@pid@/g
+s/\\[A-Z0-9]\{1,\}\.\$:[A-Z0-9][0-9]*:[A-Z0-9][0-9]*:[A-Z0-9][0-9]*/@pid@/g
+s/\\[A-Z0-9]\{1,\}\.\$:[A-Z0-9][0-9]*:[A-Z0-9][0-9]*:[A-Z0-9][0-9]*/@pid@/g
+/\[MXUDR\] Container:/s/\(Container: \).*\(\/t100\)/\1@path@\2/
+
+# The following two rules remove JDBC debugging printouts
+# We have these lines because of the internal JDBC version.
+# These can be removed when we get official JDBC version.
+/DEBUG ACTIVE - Active Debug Levels/ d
+/VPROC: T1275H30_21APR2006_JDBCMX_IA9_0228/ d
+
+' "$1"
+

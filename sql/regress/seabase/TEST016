@@ -1,0 +1,180 @@
+-- Tests for Hbase - multi-column stats-based split of range-partitions
+-- Added May 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey TEST016(mcStatsPart_cleanup);
+
+log LOG016 clear;
+
+obey TEST016(mcStatsPart_CQDs);
+obey TEST016(mcStatsPart_Setup);
+obey TEST016(mcStatsPart_DML);
+
+log;
+
+obey TEST016(mcStatsPart_cleanup);
+
+exit;
+
+?section mcStatsPart_CQDs
+set schema Trafodion.hbase;
+cqd query_cache '0';
+cqd cache_histograms 'off';
+cqd HBASE_MIN_BYTES_PER_ESP_PARTITION '1';
+cqd USTAT_COLLECT_MC_SKEW_VALUES 'on';
+cqd PARALLEL_NUM_ESPS '8';
+
+?section mcStatsPart_cleanup
+drop table if exists mcStatPart1;
+drop table if exists mcStatPart2;
+drop table if exists mcStatPart3;
+drop table if exists mcStatPart4;
+drop table if exists mcStatPart5;
+drop table if exists mcStatPart6;
+drop table if exists mcStatPart7;
+drop table if exists mcStatPart8;
+
+?section mcStatsPart_Setup
+-- int, smallint, largeint
+create table mcStatPart7
+(a smallint not null not droppable,
+b largeint not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart7 values (1,100000,1,'xyz'),(1,200000,1,'xyz'),(1,600000,1,'xyz'),(2,300000,1,'xyz'),(2,400000,1,'xyz'),(2,500000,1,'xyz'),(2,600000,1,'xyz'),
+                           (3,100000,1,'xyz'),(3,200000,1,'xyz'),(3,600000,1,'xyz'),(4,300000,1,'xyz'),(4,400000,1,'xyz'),(4,500000,1,'xyz'),(4,600000,1,'xyz');
+update statistics for table mcStatPart7 on every column, (b,a,"_SALT_");
+
+-- decimal
+create table mcStatPart5
+(a int not null not droppable,
+b decimal(10, 2) not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart5 values (1,1.25,1,'xyz'),(1,2.25,1,'xyz'),(1,6.25,1,'xyz'),(2,3.25,1,'xyz'),(2,4.25,1,'xyz'),(2,5.25,1,'xyz'),(2,6.23,1,'xyz'),
+                           (3,1.25,1,'xyz'),(3,2.22,1,'xyz'),(3,2.25,1,'xyz'),(4,3.65,1,'xyz'),(4,3.55,1,'xyz'),(4,3.75,1,'xyz'),(4,3.50,1,'xyz');
+update statistics for table mcStatPart5 on every column, (b,a,"_SALT_");
+
+-- timestamp type
+create table mcStatPart3
+(a int not null not droppable,
+b timestamp not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart3 values (1, timestamp'1990-01-01 00:00:00',1,'xyz'),(1, timestamp'1990-02-01 00:00:00',1,'xyz'),(1, timestamp'1990-03-01 00:00:00',1,'xyz'),(2, timestamp'1990-04-01 00:00:00',1,'xyz'),
+                           (2, timestamp'1990-03-02 00:00:00',1,'xyz'),(2, timestamp'1990-04-02 00:00:00',1,'xyz'),(2, timestamp'1990-05-03 00:00:00',1,'xyz'),
+                           (3, timestamp'1990-01-01 00:00:00',1,'xyz'),(3, timestamp'1990-02-01 00:00:00',1,'xyz'),(3, timestamp'1990-03-01 00:00:00',1,'xyz'),(3, timestamp'1990-04-01 00:00:00',1,'xyz'),
+                           (4, timestamp'1990-03-01 00:00:00',1,'xyz'),(4, timestamp'1990-04-01 00:00:00',1,'xyz'),(4, timestamp'1990-05-01 00:00:00',1,'xyz');
+update statistics for table mcStatPart3 on every column, (b,a,"_SALT_");
+
+-- time, numeric
+create table mcStatPart6
+(a numeric (8, 3) not null not droppable,
+b time not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart6 values (1.25, time'10:12:23',1,'xyz'),(2.25, time'11:02:01',1,'xyz'),(6.25, time'08:08:02',1,'xyz'),(3.25, time'04:04:04',1,'xyz'),
+                           (5.25, time'08:08:02',1,'xyz'),(6.24, time'04:05:04',1,'xyz'),(1.25, time'12:12:12',1,'xyz'),
+                           (2.25, time'10:12:23',1,'xyz'),(3.65, time'11:02:01',1,'xyz'),(3.55, time'08:08:02',1,'xyz'),(3.5, time'04:04:04',1,'xyz'),
+                           (2.6, time'08:08:02',1,'xyz'),(2.25, time'04:04:04',1,'xyz'),(6.25, time'12:12:12',1,'xyz');
+update statistics for table mcStatPart6 on every column, (b,a,"_SALT_");
+
+-- date type
+create table mcStatPart2
+(a int not null not droppable,
+b date not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart2 values (1, date'1990-01-01',1,'xyz'),(1, date'1990-02-01',1,'xyz'),(1, date'1990-03-01',1,'xyz'),(2, date'1990-04-01',1,'xyz'),
+                           (2, date'1990-03-01',1,'xyz'),(2, date'1990-05-01',1,'xyz'),(2, date'1990-05-03',1,'xyz'),
+                           (3, date'1990-01-01',1,'xyz'),(3, date'1990-02-01',1,'xyz'),(3, date'1990-03-01',1,'xyz'),(3, date'1990-04-01',1,'xyz'),
+                           (4, date'1990-03-01',1,'xyz'),(4, date'1990-04-01',1,'xyz'),(4, date'1990-05-01',1,'xyz');
+update statistics for table mcStatPart2 on every column, (b,a,"_SALT_");
+
+-- char type
+create table mcStatPart1
+(a int not null not droppable,
+b char(10) not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart1 values (1,'123',1,'xyz'),(1,'133',1,'xyz'),(1,'423',1,'xyz'),(2,'111',1,'xyz'),(2,'223',1,'xyz'),(2,'323',1,'xyz'),(2,'423',1,'xyz'),
+                           (3,'123',1,'xyz'),(3,'133',1,'xyz'),(3,'423',1,'xyz'),(4,'111',1,'xyz'),(4,'223',1,'xyz'),(4,'323',1,'xyz'),(4,'423',1,'xyz');
+update statistics for table mcStatPart1 on every column, (b,a,"_SALT_");
+
+-- varchar type
+create table mcStatPart8
+(a int not null not droppable,
+b varchar(10) not null not droppable,
+f int, txt char(100),
+primary key (a,b))
+salt using 8 partitions ;
+
+insert into mcStatPart8 values (1,'123',1,'xyz'),(1,'133',1,'xyz'),(1,'423',1,'xyz'),(2,'111',1,'xyz'),(2,'223',1,'xyz'),(2,'323',1,'xyz'),(2,'423',1,'xyz'),
+                           (3,'123',1,'xyz'),(3,'133',1,'xyz'),(3,'423',1,'xyz'),(4,'111',1,'xyz'),(4,'223',1,'xyz'),(4,'323',1,'xyz'),(4,'423',1,'xyz');
+update statistics for table mcStatPart8 on every column, (b,a,"_SALT_");
+
+?section mcStatsPart_DML
+
+-- int, smallint, largeint
+prepare st1 from select f,count(f) from mcStatPart7 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;
+
+-- decimal
+prepare st1 from select f,count(f) from mcStatPart5 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;
+
+-- timestamp type
+prepare st1 from select f,count(f) from mcStatPart3 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;
+
+-- time, nemuric
+prepare st1 from select f,count(f) from mcStatPart6 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;
+
+-- date type
+prepare st1 from select f,count(f) from mcStatPart2 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;
+
+-- char type
+prepare st1 from select f,count(f) from mcStatPart1 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;
+
+-- varchar type
+prepare st1 from select f,count(f) from mcStatPart8 <<+ cardinality 10e8 >> group by f;
+explain options 'f' st1;
+explain st1;

@@ -1,0 +1,156 @@
+-- Tests for Hbase
+-- Added April 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+ 
+--This check will cover following cases:
+------When primary key columns specified------
+--1.PARTITION BY clause is not allowed for trafodion table.
+--2.STORE BY column list(if any) == primay key column list, also ordinally equal.
+------When no primary key columns specified------
+--3.PARTITION BY clause is not allowed for trafodion table.
+--[Already catched by 1195]Salt columns must be subset of clustering key, in any order.
+--[Already catched by 1195]There must be STORE BY or PRIMARY KEY columns.
+
+
+set schema trafodion.seabase;
+
+obey TEST014(clean_up);
+
+log LOG014 clear;
+
+cqd query_cache '0';
+
+obey TEST014(test_ddl_disable_partition);
+
+log;
+exit;
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table if exists t014t1;
+drop table if exists t014t2;
+drop table if exists t014t3;
+drop table if exists t014t4;
+drop table if exists t014t5;
+drop table if exists t014t6;
+drop table if exists t014t7;
+drop table if exists t014t8;
+drop table if exists t014t9;
+drop table if exists t014t10;
+drop table if exists t014t11;
+drop table if exists t014t12;
+
+
+?section test_ddl_disable_partition
+--------------------------------------------------------------------------
+--1.[With primary key columns] 
+--PARTITION BY clause is not allowed for Trafodion table.
+create table t014t1 (pc1 timestamp not null,
+   pc2 timestamp(6) not null,
+   pc3 char(10) character set ucs2 not null,
+   c4 char(20) default null,
+   primary key (pc1, pc2, pc3))
+partition by (pc1, pc2, pc3);
+
+create table t014t2 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null,
+  primary key (a, b, c)
+) salt using 4 partitions on (b, c);
+
+create table t014t3 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null,
+  primary key (a, b, c)
+) salt using 4 partitions on (b, c) 
+partition by (a, b, c);
+
+create table t014t4 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null,
+  primary key (a, b, c)
+) salt using 4 partitions 
+partition by (c);
+
+create table t014t5 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null,
+  primary key (a, b)) 
+salt using 4 partitions 
+partition by (a, b);
+
+--2.[With primary key columns]
+--STORE BY column list(if any) == primay key column list, also ordinally equal.
+create table t014t6 (a int not null, b int not null, primary key(a,b)) store by (a);
+
+--3.[No primary key columns]
+--PARTITION BY is not allowed for Trafodion table.
+create table t014t7 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null
+) store by (a, b) 
+salt using 4 partitions on (a, b)
+partition by (a, b);
+
+create table t014t8 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null
+) store by (a, b)
+partition by (a, b);
+
+
+--Already catched [1195]
+--If you create a salted table that has neither a primary key nor a store by clause.
+create table t014t9 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null
+) salt using 4 partitions;
+
+--Already catched [1195]
+--SALT USING columns must be subset of clustering key
+create table t014t10 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null
+) store by (a, b)
+salt using 4 partitions on (a, b, c);
+
+--Disallow partition catch this first.
+create table t014t11 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null
+) partition by (a, b);
+
+--Disallow partition catch this first.
+create table t014t12 (
+  a numeric(11) not null,
+  b numeric(11) not null,
+  c numeric(11) not null,
+  primary key (a)
+) salt using 4 partitions on (a, b, c)
+partition by (a, b, c);

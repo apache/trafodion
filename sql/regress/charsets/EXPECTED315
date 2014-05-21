@@ -1,0 +1,1072 @@
+>>
+>>obey test315(ddl);
+>>
+>>create schema cs315s;
+
+--- SQL operation complete.
+>>set schema cs315s;
+
+--- SQL operation complete.
+>>
+>>
+>>obey test315(Three_Byte_tests);
+>>
+>>select converttohex(cast(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(8))) from (values(0))x;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)          
+----------------
+
+E0A0A1E0A0A2E0A0
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(8 BYTES) character set utf8)) from (values(0))x;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)          
+----------------
+
+E0A0A1E0A0A22020
+
+--- 1 row(s) selected.
+>>select converttohex(cast(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(9))) from (values(0))x;
+
+(EXPR)            
+------------------
+
+E0A0A1E0A0A2E0A0A3
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(9 BYTES) character set utf8)) from (values(0))x;
+
+(EXPR)            
+------------------
+
+E0A0A1E0A0A2E0A0A3
+
+--- 1 row(s) selected.
+>>select converttohex(cast(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(12))) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3202020
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(12 BYTES) character set utf8)) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3202020
+
+--- 1 row(s) selected.
+>>--
+>>set terminal_charset gbk;
+>>select cast(_ucs2 x'515c515c515c515c' as char(11 bytes) character set utf8) from (values(1))t;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)     
+-----------
+
+教教教     
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c' as char(12 bytes) character set utf8) from (values(1))t;
+
+(EXPR)      
+------------
+
+教教教教    
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c' as char(3      ) character set utf8) from (values(1))t;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)      
+------------
+
+教教教      
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c' as char(4      ) character set utf8) from (values(1))t;
+
+(EXPR)          
+----------------
+
+教教教教        
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c0020' as char(12 bytes) character set utf8) from (values(1))t;
+
+(EXPR)      
+------------
+
+教教教教    
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c0020' as char(13 bytes) character set utf8) from (values(1))t;
+
+(EXPR)       
+-------------
+
+教教教教     
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c0020' as char(4      ) character set utf8) from (values(1))t;
+
+(EXPR)          
+----------------
+
+教教教教        
+
+--- 1 row(s) selected.
+>>select cast(_ucs2 x'515c515c515c515c0020' as char(5      ) character set utf8) from (values(1))t;
+
+(EXPR)              
+--------------------
+
+教教教教            
+
+--- 1 row(s) selected.
+>>--
+>>select octet_length(cast(_ucs2 x'515c515c515c515c' as char(11 bytes) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(11 bytes) character set utf8)) from (values(1))t;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)      (EXPR)                
+----------  ----------------------
+
+        11  E5859CE5859CE5859C2020
+
+--- 1 row(s) selected.
+>>select octet_length(cast(_ucs2 x'515c515c515c515c' as char(13 bytes) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(13 bytes) character set utf8)) from (values(1))t;
+
+(EXPR)      (EXPR)                    
+----------  --------------------------
+
+        13  E5859CE5859CE5859CE5859C20
+
+--- 1 row(s) selected.
+>>select octet_length(cast(_ucs2 x'515c515c515c515c' as char(3       ) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(3       ) character set utf8)) from (values(1))t;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)      (EXPR)                  
+----------  ------------------------
+
+         9  E5859CE5859CE5859C      
+
+--- 1 row(s) selected.
+>>select octet_length(cast(_ucs2 x'515c515c515c515c' as char(5       ) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(5       ) character set utf8)) from (values(1))t;
+
+(EXPR)      (EXPR)                                  
+----------  ----------------------------------------
+
+        13  E5859CE5859CE5859CE5859C20              
+
+--- 1 row(s) selected.
+>>set terminal_charset iso88591;
+>>--
+>>select converttohex(x'E0 A0 A1' || _utf8 x'E0 A0 A1') from (values(0))x;
+
+(EXPR)            
+------------------
+
+C3A0C2A0C2A1E0A0A1
+
+--- 1 row(s) selected.
+>>select 'BAD' from (values(0))x where x'E0 A0 A1'  = _utf8 x'E0 A0 A1';
+
+--- 0 row(s) selected.
+>>select 'OK ' from (values(0))x where x'E0 A0 A1' != _utf8 x'E0 A0 A1';
+
+(EXPR)
+------
+
+OK    
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(substr(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',1,3)) from (values(0))x;
+
+(EXPR)
+------
+
+E0A0A1
+
+--- 1 row(s) selected.
+>>select converttohex(substr(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',1,3)) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3      
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(substr(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',2,2)) from (values(0))x;
+
+(EXPR)
+------
+
+A0A1  
+
+--- 1 row(s) selected.
+>>select converttohex(substr(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',2,2)) from (values(0))x;
+
+(EXPR)          
+----------------
+
+E0A0A2E0A0A3    
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(insert(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 0, 'Z')) from (values(0))x;
+
+(EXPR)                                            
+--------------------------------------------------
+
+E05AA0A1E0A0A2E0A0A3E0A0A4                        
+
+--- 1 row(s) selected.
+>>select converttohex(insert(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 0, 'Z')) from (values(0))x;
+
+(EXPR)                                            
+--------------------------------------------------
+
+E0A0A15AE0A0A2E0A0A3E0A0A4                        
+
+--- 1 row(s) selected.
+>>select converttohex(insert(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 2, 'Z')) from (values(0))x;
+
+(EXPR)                                            
+--------------------------------------------------
+
+E05AE0A0A2E0A0A3E0A0A4                            
+
+--- 1 row(s) selected.
+>>select converttohex(insert(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 2, 'Z')) from (values(0))x;
+
+(EXPR)                                            
+--------------------------------------------------
+
+E0A0A15AE0A0A4                                    
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(replace(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',       x'E0 A0 A2',       x'E0 A3 A7')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A3A7E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select converttohex(replace(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',       x'E0 A0 A2',       x'E0 A3 A7')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select converttohex(replace(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', _utf8 x'E0 A0 A2',       x'E0 A3 A7')) from (values(0))x;
+
+(EXPR)                                          
+------------------------------------------------
+
+E0A0A1C3A0C2A3C2A7E0A0A3E0A0A4                  
+
+--- 1 row(s) selected.
+>>select converttohex(replace(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', _utf8 x'E0 A0 A2', _utf8 x'E0 A3 A7')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A3A7E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select CODE_VALUE( _utf8 x'20 20 21 E0 A0 A2 E0 A0 A3 E0 A0 A4') from (values(0))x;
+
+(EXPR)    
+----------
+
+        32
+
+--- 1 row(s) selected.
+>>select CODE_VALUE( _utf8 x'C9 A0 20 E0 A0 A2 E0 A0 A3 E0 A0 A4') from (values(0))x;
+
+(EXPR)    
+----------
+
+       608
+
+--- 1 row(s) selected.
+>>select CODE_VALUE( _utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4') from (values(0))x;
+
+(EXPR)    
+----------
+
+      2081
+
+--- 1 row(s) selected.
+>>select CODE_VALUE( _utf8 x'F7 BF BF BF 20 E0 A0 A2 E0 A0 A3'   ) from (values(0))x;
+
+(EXPR)    
+----------
+
+   2097151
+
+--- 1 row(s) selected.
+>>select case when _utf8 x'E0 A0 A1' = CHAR(CODE_VALUE(_utf8 x'E0 A0 A1'),UTF8) then 'GOOD' else 'BAD' end from (values(0))x;
+
+(EXPR)
+------
+
+GOOD  
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select converttohex(LOWER(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+
+(EXPR)                                                                  
+------------------------------------------------------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4                                                
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(_ucs2 x'1FF7 1FCC FB04'))                       from (values(0))x;
+
+(EXPR)                              
+------------------------------------
+
+03A9034203990397039900460046004C    
+
+--- 1 row(s) selected.
+>>select converttohex(UPPER(TRANSLATE(_ucs2 x'1FF7 1FCC FB04' USING UCS2toUTF8))) from (values(0))x;
+
+(EXPR)                                                
+------------------------------------------------------
+
+CEA9CD82CE99CE97CE9946464C                            
+
+--- 1 row(s) selected.
+>>select * from (values(1))x where UPPER(_ucs2 x'1FF7 1FCC FB04') = UPPER(TRANSLATE(_ucs2 x'1FF7 1FCC FB04' USING UCS2toUTF8));
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>select converttohex(LEFT(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+
+(EXPR)
+------
+
+E0A0A1
+
+--- 1 row(s) selected.
+>>select converttohex(LEFT(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A1E0A0A2E0A0A3      
+
+--- 1 row(s) selected.
+>>select converttohex(RIGHT(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A4                  
+
+--- 1 row(s) selected.
+>>select converttohex(RIGHT(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+
+(EXPR)                  
+------------------------
+
+E0A0A2E0A0A3E0A0A4      
+
+--- 1 row(s) selected.
+>>select converttohex(LPAD(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+
+(EXPR)                        
+------------------------------
+
+E1A1A1E0A0A1E0A0A2E0A0A3E0A0A4
+
+--- 1 row(s) selected.
+>>select converttohex(LPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------
+
+C3A1C2A1C2A1C3A1C2A1C2A1C3A1C2A1C2A1C3A1C2A1E0A0A1E0A0A2E0A0A3E0A0A4                                                    
+
+--- 1 row(s) selected.
+>>select converttohex(LPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15, _utf8 x'E1 A1 A1')) from (values(0))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------
+
+E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E0A0A1E0A0A2E0A0A3E0A0A4                        
+
+--- 1 row(s) selected.
+>>create table cs315t99 (c1 varchar(10) character set utf8, c2 char(10) character set utf8) no partition;
+
+--- SQL operation complete.
+>>insert into cs315t99 values(_UTF8 x'E4B8ADE59BAF', _UTF8 x'E4B8ADE59BAF');
+
+--- 1 row(s) inserted.
+>>select LPAD(c1,0,_utf8'z') from cs315t99;
+
+(EXPR)
+------
+
+      
+
+--- 1 row(s) selected.
+>>select LPAD(c2,0,_utf8'z') from cs315t99;
+
+(EXPR)
+------
+
+      
+
+--- 1 row(s) selected.
+>>select RPAD(c1,0,_utf8'z') from cs315t99;
+
+(EXPR)
+------
+
+      
+
+--- 1 row(s) selected.
+>>select RPAD(c2,0,_utf8'z') from cs315t99;
+
+(EXPR)
+------
+
+      
+
+--- 1 row(s) selected.
+>>select LPAD(c1,2,_utf8'z') from cs315t99;
+
+(EXPR)  
+--------
+
+??      
+
+--- 1 row(s) selected.
+>>select LPAD(c2,2,_utf8'z') from cs315t99;
+
+(EXPR)  
+--------
+
+??      
+
+--- 1 row(s) selected.
+>>select RPAD(c1,2,_utf8'z') from cs315t99;
+
+(EXPR)  
+--------
+
+??      
+
+--- 1 row(s) selected.
+>>select RPAD(c2,2,_utf8'z') from cs315t99;
+
+(EXPR)  
+--------
+
+??      
+
+--- 1 row(s) selected.
+>>select LPAD(c1,3,_utf8'z') from cs315t99;
+
+(EXPR)      
+------------
+
+z??         
+
+--- 1 row(s) selected.
+>>select LPAD(c2,3,_utf8'z') from cs315t99;
+
+(EXPR)      
+------------
+
+??          
+
+--- 1 row(s) selected.
+>>select RPAD(c1,3,_utf8'z') from cs315t99;
+
+(EXPR)      
+------------
+
+??z         
+
+--- 1 row(s) selected.
+>>select RPAD(c2,3,_utf8'z') from cs315t99;
+
+(EXPR)      
+------------
+
+??          
+
+--- 1 row(s) selected.
+>>select LPAD(c1,5,_utf8'ab') from cs315t99;
+
+(EXPR)              
+--------------------
+
+aba??               
+
+--- 1 row(s) selected.
+>>select LPAD(c2,5,_utf8'ab') from cs315t99;
+
+(EXPR)              
+--------------------
+
+??                  
+
+--- 1 row(s) selected.
+>>select RPAD(c1,5,_utf8'ab') from cs315t99;
+
+(EXPR)              
+--------------------
+
+??aba               
+
+--- 1 row(s) selected.
+>>select RPAD(c2,5,_utf8'ab') from cs315t99;
+
+(EXPR)              
+--------------------
+
+??                  
+
+--- 1 row(s) selected.
+>>select RPAD(c1,13,_utf8'ab') from cs315t99;
+
+(EXPR)                                              
+----------------------------------------------------
+
+??abababababa                                       
+
+--- 1 row(s) selected.
+>>select RPAD(c2,13,_utf8'ab') from cs315t99;
+
+(EXPR)                                              
+----------------------------------------------------
+
+??        aba                                       
+
+--- 1 row(s) selected.
+>>select converttohex(RPAD(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+
+(EXPR)                        
+------------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4E1A1A1
+
+--- 1 row(s) selected.
+>>select converttohex(RPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4C3A1C2A1C2A1C3A1C2A1C2A1C3A1C2A1C2A1C3A1C2A1                                                    
+
+--- 1 row(s) selected.
+>>select converttohex(RPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15, _utf8 x'E1 A1 A1')) from (values(0))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------------------
+
+E0A0A1E0A0A2E0A0A3E0A0A4E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1E1A1A1                        
+
+--- 1 row(s) selected.
+>>
+>>select DECODE(x'E0 A0 A1', _utf8 x'E0 A0 A1', 'BAD',
++>                           'E0 A0 A1', 'BAD',
++>                           substr(x'E0 A0 A2 E0 A0 A1',4,3), 'GOOD')
++>                           from (values(0))x;
+
+(EXPR)
+------
+
+GOOD  
+
+--- 1 row(s) selected.
+>>select DECODE(_utf8 x'E0 A0 A1', x'E0 A0 A1', 'BAD',
++>                                 substr(x'E0 A0 A2 E0 A0 A1',2,1), 'BAD',
++>                                 substr(_utf8 x'E0 A0 A2 E0 A0 A1',2,1), 'GOOD')
++>                                 from (values(0))x;
+
+(EXPR)
+------
+
+GOOD  
+
+--- 1 row(s) selected.
+>>
+>>select converttohex(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toUCS2)) from (values(0))x;
+
+(EXPR)                                      
+--------------------------------------------
+
+006100620063006400650066006700680820        
+
+--- 1 row(s) selected.
+>>--
+>>-- Both of the following should get error at runtime because TRANSLATION encounters non-ISO88591 char
+>>--
+>>select converttohex(TRANSLATE(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toUCS2) using UCS2toISO88591)) from (values(0))x;
+
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function.
+
+--- 0 row(s) selected.
+>>select converttohex(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toISO88591)) from (values(0))x;
+
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function.
+
+--- 0 row(s) selected.
+>>
+>>create table cs315t1 (uf8 char(8) character set utf8, uf8v varchar(8) character set utf8) no partition;
+
+--- SQL operation complete.
+>>insert into cs315t1 values(_utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
++>                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+
+--- 1 row(s) inserted.
+>>select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8)),
++>       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8)),
++>       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8)) from cs315t1 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         2           2  7A7A                                                            
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8v)),
++>       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8v)),
++>       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8v)) from cs315t1 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         2           2  7A7A                                                            
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
++>       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
++>       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)) from cs315t1 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  7A7AE0A0A0E0A0A0E0A0A0                                          
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
++>       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
++>       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)) from cs315t1 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  7A7AE0A0A0E0A0A0E0A0A0                                          
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
++>       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
++>       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)) from cs315t1 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  E0A0A0E0A0A0E0A0A07A7A                                          
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
++>       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
++>       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)) from cs315t1 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  E0A0A0E0A0A0E0A0A07A7A                                          
+
+--- 1 row(s) selected.
+>>--
+>>create table cs315t2 (uf8 char(10) character set utf8, uf8v varchar(10) character set utf8) no partition;
+
+--- SQL operation complete.
+>>insert into cs315t2 values(_utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
++>                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+
+--- 1 row(s) inserted.
+>>select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8)),
++>       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8)),
++>       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8)) from cs315t2 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  --------------------------------------------------------------------------------
+
+         7          13  7A7AE0A0A0E0A0A0E0A0A02020                                                      
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8v)),
++>       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8v)),
++>       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8v)) from cs315t2 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  --------------------------------------------------------------------------------
+
+         2           2  7A7A                                                                            
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
++>       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
++>       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)) from cs315t2 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  --------------------------------------------------------------------------------
+
+         7          13  7A7AE0A0A0E0A0A0E0A0A02020                                                      
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
++>       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
++>       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)) from cs315t2 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  --------------------------------------------------------------------------------
+
+         5          11  7A7AE0A0A0E0A0A0E0A0A0                                                          
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
++>       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
++>       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)) from cs315t2 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  --------------------------------------------------------------------------------
+
+        10          22  E0A0A0E0A0A0E0A0A07A7AE0A0A0E0A0A0E0A0A02020                                    
+
+--- 1 row(s) selected.
+>>select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
++>       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
++>       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)) from cs315t2 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  --------------------------------------------------------------------------------
+
+         5          11  E0A0A0E0A0A0E0A0A07A7A                                                          
+
+--- 1 row(s) selected.
+>>
+>>create table cs315t3 (trimc char(1) character set utf8, uf8 char(8) character set utf8, uf8v varchar(8) character set utf8) no partition;
+
+--- SQL operation complete.
+>>insert into cs315t3 values(_utf8 x'E0A0A0',
++>                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
++>                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+
+--- 1 row(s) inserted.
+>>insert into cs315t3 values(_utf8 x'E0A0A0',
++>                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0',
++>                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0');
+
+--- 1 row(s) inserted.
+>>insert into cs315t3 values(_utf8 x'E0A0A0',
++>                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020',
++>                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020');
+
+--- 1 row(s) inserted.
+>>insert into cs315t3 values(_utf8' ',
++>                           _utf8' 555555 ',
++>                           _utf8' 555555 ');
+
+--- 1 row(s) inserted.
+>>insert into cs315t3 values(_utf8 x'F7BFBFBF',
++>                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'66' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF',
++>                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'66' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF');
+
+--- 1 row(s) inserted.
+>>insert into cs315t3 values(_utf8 x'F7BFBFBF',
++>                           _utf8 x'F7BFBFBF' _utf8'  77' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20',
++>                           _utf8 x'F7BFBFBF' _utf8'  77' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20');
+
+--- 1 row(s) inserted.
+>>select char_length( TRIM( trimc from uf8 ) ),
++>       octet_length( TRIM( trimc from uf8 ) ),
++>       converttohex( TRIM( trimc from uf8 ) ) from cs315t3 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         2           2  3636                                                            
+         2           2  7A7A                                                            
+         4           4  20333333                                                        
+         6           6  353535353535                                                    
+         7           9  20343434E0A0A02020                                              
+         7          13  20203737F7BFBFBFF7BFBFBF20                                      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( trimc from uf8v ) ),
++>       octet_length( TRIM( trimc from uf8v ) ),
++>       converttohex( TRIM( trimc from uf8v ) ) from cs315t3 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         2           2  3636                                                            
+         2           2  7A7A                                                            
+         4           4  20333333                                                        
+         6           6  353535353535                                                    
+         7           9  20343434E0A0A02020                                              
+         7          13  20203737F7BFBFBFF7BFBFBF20                                      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( LEADING trimc from uf8 ) ),
++>       octet_length( TRIM( LEADING trimc from uf8 ) ),
++>       converttohex( TRIM( LEADING trimc from uf8 ) ) from cs315t3 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  7A7AE0A0A0E0A0A0E0A0A0                                          
+         5          14  3636F7BFBFBFF7BFBFBFF7BFBFBF                                    
+         7           7  35353535353520                                                  
+         7           9  20343434E0A0A02020                                              
+         7          13  20203737F7BFBFBFF7BFBFBF20                                      
+         7          13  20333333E0A0A0E0A0A0E0A0A0                                      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( LEADING trimc from uf8v ) ),
++>       octet_length( TRIM( LEADING trimc from uf8v ) ),
++>       converttohex( TRIM( LEADING trimc from uf8v ) ) from cs315t3 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  7A7AE0A0A0E0A0A0E0A0A0                                          
+         5          14  3636F7BFBFBFF7BFBFBFF7BFBFBF                                    
+         7           7  35353535353520                                                  
+         7           9  20343434E0A0A02020                                              
+         7          13  20203737F7BFBFBFF7BFBFBF20                                      
+         7          13  20333333E0A0A0E0A0A0E0A0A0                                      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( TRAILING trimc from uf8 ) ),
++>       octet_length( TRIM( TRAILING trimc from uf8 ) ),
++>       converttohex( TRIM( TRAILING trimc from uf8 ) ) from cs315t3 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5           7  E0A0A020333333                                                  
+         5          11  E0A0A0E0A0A0E0A0A07A7A                                          
+         5          14  F7BFBFBFF7BFBFBFF7BFBFBF3636                                    
+         7           7  20353535353535                                                  
+         8          12  E0A0A020343434E0A0A02020                                        
+         8          17  F7BFBFBF20203737F7BFBFBFF7BFBFBF20                              
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( TRAILING trimc from uf8v ) ),
++>       octet_length( TRIM( TRAILING trimc from uf8v ) ),
++>       converttohex( TRIM( TRAILING trimc from uf8v ) ) from cs315t3 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5           7  E0A0A020333333                                                  
+         5          11  E0A0A0E0A0A0E0A0A07A7A                                          
+         5          14  F7BFBFBFF7BFBFBFF7BFBFBF3636                                    
+         7           7  20353535353535                                                  
+         8          12  E0A0A020343434E0A0A02020                                        
+         8          17  F7BFBFBF20203737F7BFBFBFF7BFBFBF20                              
+
+--- 6 row(s) selected.
+>>--
+>>-- Now try with CHAR(32 BYTES) CHARACTER SET UTF8
+>>--
+>>create table cs315t4 (trimc char(1) character set utf8, uf8 char(32 BYTES) character set utf8, uf8v varchar(32 BYTES) character set utf8) no partition;
+
+--- SQL operation complete.
+>>insert into cs315t4 values(_utf8 x'E0A0A0',
++>                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
++>                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+
+--- 1 row(s) inserted.
+>>insert into cs315t4 values(_utf8 x'E0A0A0',
++>                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0',
++>                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0');
+
+--- 1 row(s) inserted.
+>>insert into cs315t4 values(_utf8 x'E0A0A0',
++>                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020',
++>                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020');
+
+--- 1 row(s) inserted.
+>>insert into cs315t4 values(_utf8' ',
++>                           _utf8' 777777 ',
++>                           _utf8' 777777 ');
+
+--- 1 row(s) inserted.
+>>insert into cs315t4 values(_utf8 x'F7BFBFBF',
++>                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'33' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF',
++>                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'33' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF');
+
+--- 1 row(s) inserted.
+>>insert into cs315t4 values(_utf8 x'F7BFBFBF',
++>                           _utf8 x'F7BFBFBF' _utf8'  55' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20',
++>                           _utf8 x'F7BFBFBF' _utf8'  55' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20');
+
+--- 1 row(s) inserted.
+>>select char_length( TRIM( trimc from uf8 ) ),
++>       octet_length( TRIM( trimc from uf8 ) ),
++>       converttohex( TRIM( trimc from uf8 ) ) from cs315t4 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         6           6  373737373737                                                    
+        11          20  3333F7BFBFBFF7BFBFBFF7BFBFBF202020202020                        
+        17          23  7A7AE0A0A0E0A0A0E0A0A0202020202020202020202020                  
+        22          28  20203535F7BFBFBFF7BFBFBF20202020202020202020202020202020        
+        23          29  20333333E0A0A0E0A0A0E0A0A020202020202020202020202020202020      
+        27          29  20343434E0A0A020202020202020202020202020202020202020202020      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( trimc from uf8v ) ),
++>       octet_length( TRIM( trimc from uf8v ) ),
++>       converttohex( TRIM( trimc from uf8v ) ) from cs315t4 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         2           2  3333                                                            
+         2           2  7A7A                                                            
+         4           4  20333333                                                        
+         6           6  373737373737                                                    
+         7           9  20343434E0A0A02020                                              
+         7          13  20203535F7BFBFBFF7BFBFBF20                                      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( LEADING trimc from uf8 ) ),
++>       octet_length( TRIM( LEADING trimc from uf8 ) ),
++>       converttohex( TRIM( LEADING trimc from uf8 ) ) from cs315t4 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+        11          20  3333F7BFBFBFF7BFBFBFF7BFBFBF202020202020                        
+        17          23  7A7AE0A0A0E0A0A0E0A0A0202020202020202020202020                  
+        22          28  20203535F7BFBFBFF7BFBFBF20202020202020202020202020202020        
+        23          29  20333333E0A0A0E0A0A0E0A0A020202020202020202020202020202020      
+        27          29  20343434E0A0A020202020202020202020202020202020202020202020      
+        31          31  37373737373720202020202020202020202020202020202020202020202020  
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( LEADING trimc from uf8v ) ),
++>       octet_length( TRIM( LEADING trimc from uf8v ) ),
++>       converttohex( TRIM( LEADING trimc from uf8v ) ) from cs315t4 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5          11  7A7AE0A0A0E0A0A0E0A0A0                                          
+         5          14  3333F7BFBFBFF7BFBFBFF7BFBFBF                                    
+         7           7  37373737373720                                                  
+         7           9  20343434E0A0A02020                                              
+         7          13  20203535F7BFBFBFF7BFBFBF20                                      
+         7          13  20333333E0A0A0E0A0A0E0A0A0                                      
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( TRAILING trimc from uf8 ) ),
++>       octet_length( TRIM( TRAILING trimc from uf8 ) ),
++>       converttohex( TRIM( TRAILING trimc from uf8 ) ) from cs315t4 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         7           7  20373737373737                                                  
+        14          32  F7BFBFBFF7BFBFBFF7BFBFBF3333F7BFBFBFF7BFBFBFF7BFBFBF202020202020
+        20          32  E0A0A0E0A0A0E0A0A07A7AE0A0A0E0A0A0E0A0A0202020202020202020202020
+        23          32  F7BFBFBF20203535F7BFBFBFF7BFBFBF20202020202020202020202020202020
+        24          32  E0A0A020333333E0A0A0E0A0A0E0A0A020202020202020202020202020202020
+        28          32  E0A0A020343434E0A0A020202020202020202020202020202020202020202020
+
+--- 6 row(s) selected.
+>>
+>>select char_length( TRIM( TRAILING trimc from uf8v ) ),
++>       octet_length( TRIM( TRAILING trimc from uf8v ) ),
++>       converttohex( TRIM( TRAILING trimc from uf8v ) ) from cs315t4 order by 1,2,3;
+
+(EXPR)      (EXPR)      (EXPR)
+----------  ----------  ----------------------------------------------------------------
+
+         5           7  E0A0A020333333                                                  
+         5          11  E0A0A0E0A0A0E0A0A07A7A                                          
+         5          14  F7BFBFBFF7BFBFBFF7BFBFBF3333                                    
+         7           7  20373737373737                                                  
+         8          12  E0A0A020343434E0A0A02020                                        
+         8          17  F7BFBFBF20203535F7BFBFBFF7BFBFBF20                              
+
+--- 6 row(s) selected.
+>>
+>>
+>>obey test315(clnup);
+>>
+>>drop schema cs315s cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>log;

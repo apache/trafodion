@@ -1,0 +1,759 @@
+LOG aqatdml05 Clear;
+---------------------------------------------------------------------
+-- File: SQLQAT14                Formerly $cats.testest.qat011t
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--    This test unit is a positive local test for the select statement.
+-- It tests join select statements (selects based on 2 or more tables)
+-- in simple form (no clauses other than SELECT-FROM).  In particular,
+-- the select statements in this test unit have no where, group by, or
+-- order by clauses.
+--    This test unit uses the select global data base (<subvol>). Each
+-- test case in this test unit tests a particular feature of simple
+-- join select statements.  For each test case, the following combinations
+-- of objects are tested:
+--       base table - base table
+--       base table - protection view
+--       base table - shorthand view
+--       protection view - protection view
+--       protection view - shorthand view
+--       shorthand view - shorthand view
+--       base table with itself
+--       protection view with itself
+--       shorthand view with itself
+--       3 or more base tables
+
+--    The test cases in this test unit are as follows:
+
+--       A0: select an explicit column list from the above object combinations
+--       A1: select distinct, select all
+--       A2: select SYSKEY
+--       A3: select *
+--       A4: select expressions of columns
+--       A5: use of for browse access,for stable access,for repeatable access
+--       A6: select aggregate functions
+
+-- All testcases are documented further below.
+
+-- ******************     end test unit comments     ********************
+
+-- <testunit-summary>
+-- select #4 pos/loc ufi joins simple
+
+-- <testunit-specs>
+
+-- mode-type ufi
+-- test-type functional
+-- form-type pos/loc
+
+-- <testcase A0>
+
+--    <detail>
+--        joins simple select test - select an explicit column list from
+--        the above listed combination of objects. Test the selection of
+--        qualified same named columns, unqualified different named columns,
+--        and qualified different named columns.
+
+--    <switches>
+--        pat-file uoutpat <mypat>
+
+--    <templates>
+--        US00
+
+--    <ufi-input>
+       select  btsel01.binary_32_u, btsel03.binary_32_u
+       from btsel01,btsel03;
+--    <ufi-input>
+       select  btsel01.var_char, btsel03.pic_9_7
+       from btsel01,btsel03;
+--    <ufi-input>
+       select var_char,pic_9_7
+       from btsel01,btsel03;
+--    <ufi-input>
+       select  btsel01.medium_int, btsel01.large_int,
+               pvsel01.medium_int, pvsel01.binary_signed
+       from btsel01,pvsel01;
+--    <ufi-input>
+       select  btsel01.medium_int, pvsel03.new_name_1
+       from btsel01,pvsel03;
+--    <ufi-input>
+       select btsel01.medium_int,new_name_1
+       from btsel01,pvsel03;
+--    <ufi-input>
+       select  btsel01.pic_x_7, svsel13.pic_x_7
+       from btsel01,svsel13;
+--    <ufi-input>
+       select  btsel01.decimal_1, svsel13.new_name_1
+       from btsel01,svsel13;
+--    <ufi-input>
+       select decimal_1,new_name_1
+       from btsel01,svsel13;
+--    <ufi-input>
+       select  pvsel01.medium_int, pvsel04.pic_x_7
+       from pvsel01,pvsel04;
+--    <ufi-input>
+       select  pvsel01.binary_signed, pvsel04.var_char
+       from pvsel01,pvsel04;
+--    <ufi-input>
+       select binary_signed,var_char
+       from  pvsel01,pvsel04;
+--    <ufi-input>
+       select  pvsel04.medium_int, svsel13.pic_x_7
+       from pvsel04,svsel13;
+--    <ufi-input>
+       select  svsel13.new_name_1, svsel13.new_name_2
+       from pvsel04,svsel13;
+--    <ufi-input>
+       select new_name_1,new_name_2
+       from pvsel04,svsel13;
+--    <ufi-input>
+       select col_1, svsel13.new_name_1, svsel13.new_name_2
+       from svsel11,svsel13;
+--    <ufi-input>
+       select  svsel11.col_2, svsel11.col_3,
+               svsel13.pic_comp_1
+       from svsel11,svsel13;
+--    <ufi-input>
+       select col_2,col_3,pic_comp_1
+       from svsel11,svsel13;
+--    <ufi-input>
+       select firstt.char_1,secondd.char_10,third.pic_x_7
+       from btsel01 firstt,btsel01 secondd,
+            btsel01 third;
+--    <ufi-input>
+       select firstt.var_char,secondd.var_char
+       from pvsel04 firstt,pvsel04 secondd;
+--    <ufi-input>
+       select firstt.new_name_1,secondd.medium_int
+       from svsel13 firstt,svsel13 secondd;
+--    <ufi-input>
+       select X.binary_32_u,Y.binary_32_u
+       from btsel01 X, btsel03 Y;
+--    <ufi-input>
+       select X.medium_int,Y.pic_9_7
+       from btsel01 X, btsel03 Y;
+--    <ufi-input>
+       select medium_int,pic_9_7
+       from btsel01 X,btsel03 Y;
+--    <end-input>
+
+
+
+-- <testcase A1>
+
+--    <detail>
+--     select joins simple testcase - this tests the use of SELECT
+--     DISTINCT and SELECT ALL statements on multiple tables.
+
+--    <switches>
+--     pat-file uoutpat <mypat>
+
+--    <templates>
+--     US00
+
+--    <ufi-input>
+       select distinct pic_x_1,pic_x_7
+       from btsel02,btsel03;
+--    <ufi-input>
+       select all pic_x_1,pic_x_7
+       from btsel02,btsel03;
+--    <ufi-input>
+       select distinct  btsel02.*,pic_x_7,binary_32_u
+       from btsel02,btsel03;
+--    <ufi-input>
+       select all  btsel02.*,pic_x_7,binary_32_u
+       from btsel02,btsel03;
+--    <ufi-input>
+       select distinct *
+       from btsel02,btsel10;
+--    <ufi-input>
+       select all *
+       from btsel02,btsel10;
+--    <ufi-input>
+       select distinct  btsel02.*, btsel10.*
+       from btsel02,btsel10;
+--    <ufi-input>
+       select all  btsel02.*, btsel10.*
+       from btsel02,btsel10;
+--    <ufi-input>
+       select distinct new_name_3,pic_x_7
+       from pvsel03,pvsel04;
+--    <ufi-input>
+       select all new_name_3,pic_x_7
+       from pvsel03,pvsel04;
+--    <ufi-input>
+       select distinct pic_x_b,pic_x_7
+       from btsel07,pvsel04;
+--    <ufi-input>
+       select all pic_x_b,pic_x_7
+       from btsel07,pvsel04;
+--    <ufi-input>
+       select distinct  pvsel03.new_name_3, svsel13.new_name_3
+       from pvsel03,svsel13;
+--    <ufi-input>
+       select all  pvsel03.new_name_3, svsel13.new_name_3
+       from pvsel03,svsel13;
+--    <ufi-input>
+       select distinct col_3
+       from svsel13,svsel11;
+--    <ufi-input>
+       select all col_3
+       from svsel13,svsel11;
+--    <ufi-input>
+       select distinct firstt.pic_x_1,secondd.pic_x_1
+       from btsel02 firstt,btsel02 secondd;
+--    <ufi-input>
+       select all firstt.pic_x_1,secondd.pic_x_1
+       from btsel02 firstt,btsel02 secondd;
+--    <ufi-input>
+       select distinct firstt.new_name_3,secondd.new_name_3
+       from pvsel03 firstt,pvsel03 secondd;
+--    <ufi-input>
+       select all firstt.new_name_3,secondd.new_name_3
+       from pvsel03 firstt,pvsel03 secondd;
+--    <ufi-input>
+       select distinct firstt.new_name_3,secondd.new_name_3
+       from svsel13 firstt,svsel13 secondd;
+--    <ufi-input>
+       select all firstt.new_name_3,secondd.new_name_3
+       from svsel13 firstt,svsel13 secondd;
+--    <ufi-input>
+       select distinct pic_x_1,binary_64_s,medium_int
+       from btsel02,btsel03,btsel04;
+--    <ufi-input>
+       select all pic_x_1,binary_64_s,medium_int
+       from btsel02,btsel03,btsel04;
+--    <end-input>
+
+
+
+-- <testcase A2>
+
+--    <detail>
+--    select joins simple test case - this test case tests the
+--    selection of SYSKEY.
+
+--    <switches>
+--     pat-file uoutpat <mypat>
+
+--    <templates>
+--     US00
+
+--    <ufi-input>
+      select SYSKEY
+      from btsel01,btsel02;
+--    <ufi-input>
+      select btsel01.*, btsel02.*,SYSKEY
+      from btsel01,btsel02;
+--    <ufi-input>
+      select  btsel02.SYSKEY
+      from btsel01,btsel02;
+--    <ufi-input>
+      select  btsel02.SYSKEY
+      from btsel02,btsel03;
+--    <ufi-input>
+      select btsel02.*, btsel03.*, btsel02.SYSKEY
+      from btsel02,btsel03;
+--    <ufi-input>
+      select  btsel02.SYSKEY, btsel03.SYSKEY
+      from btsel02,btsel03;
+--    <ufi-input>
+      select SYSKEY
+      from btsel02,pvsel01;
+--    <ufi-input>
+      select  btsel02.SYSKEY
+      from btsel02,pvsel01;
+--    <ufi-input>
+      select  btsel02.*, pvsel01.*, btsel02.SYSKEY
+      from btsel02,pvsel01;
+--    <ufi-input>
+      select new_name_4
+      from btsel02,pvsel03;
+--    <ufi-input>
+      select  btsel02.SYSKEY,new_name_4
+      from btsel02,pvsel03;
+--    <ufi-input>
+      select new_name_4,*
+      from btsel02,pvsel03;
+--    <ufi-input>
+      select SYSKEY
+      from btsel02,svsel11;
+--    <ufi-input>
+      select  btsel02.SYSKEY
+      from btsel02,svsel11;
+--    <ufi-input>
+      select btsel02.*, svsel11.*,SYSKEY
+      from btsel02,svsel11;
+--    <ufi-input>
+      select SYSKEY
+      from btsel02,svsel13;
+--    <ufi-input>
+      select  btsel02.SYSKEY,new_name_4
+      from btsel02,svsel13;
+--    <ufi-input>
+      select  btsel02.*, btsel02.SYSKEY,new_name_4
+      from btsel02,svsel13;
+--    <ufi-input>
+      select new_name_4
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select new_name_4
+      from svsel11,svsel13;
+--    <ufi-input>
+      select new_name_4
+      from pvsel01,svsel13;
+--    <ufi-input>
+      select firstt.SYSKEY,secondd.SYSKEY
+      from btsel02 firstt,btsel02 secondd;
+--    <ufi-input>
+      select firstt.new_name_4,secondd.new_name_4
+      from pvsel03 firstt,pvsel03 secondd;
+--    <ufi-input>
+      select secondd.new_name_4,firstt.new_name_4
+      from svsel13 firstt,svsel13 secondd;
+--    <ufi-input>
+      select btsel02.SYSKEY, btsel03.SYSKEY,
+             btsel04.syskey
+      from btsel02,btsel03,btsel04;
+--    <end-input>
+
+
+-- <testcase A3>
+
+--    <detail>
+--    select joins simple test case - this tests the use of
+--    SELECT *,table1.*, and table1.*,table2.*
+
+--    <switches>
+--     pat-file uoutpat <mypat>
+
+--    <templates>
+--     US00
+
+--    <ufi-input>
+      select *
+      from btsel01,btsel02;
+--    <ufi-input>
+      select *
+      from btsel01,btsel03;
+--    <ufi-input>
+      select *
+      from btsel03,btsel04;
+--    <ufi-input>
+      select *
+      from btsel02,btsel03;
+--    <ufi-input>
+      select *
+      from btsel02 firstt,btsel02 secondd;
+--    <ufi-input>
+      select *
+      from btsel01,pvsel01;
+--    <ufi-input>
+      select *
+      from btsel01,pvsel02;
+--    <ufi-input>
+      select *
+      from btsel01,svsel11;
+--    <ufi-input>
+      select *
+      from btsel01,svsel13;
+--    <ufi-input>
+      select *
+      from pvsel03,svsel13;
+--    <ufi-input>
+      select *
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select *
+      from pvsel01 firstt,pvsel01 secondd;
+--    <ufi-input>
+      select *
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select *
+      from svsel11 firstt,svsel11 secondd;
+--    <ufi-input>
+      select *
+      from svsel11,svsel13;
+
+--    <ufi-input>
+      select  btsel01.*, btsel02.*
+      from btsel01,btsel02;
+--    <ufi-input>
+      select  btsel01.*, btsel03.*
+      from btsel01,btsel03;
+--    <ufi-input>
+      select  btsel03.*, btsel04.*
+      from btsel03,btsel04;
+--    <ufi-input>
+      select  btsel02.*, btsel03.*
+      from btsel02,btsel03;
+--    <ufi-input>
+      select firstt.*,secondd.*
+      from btsel02 firstt,btsel02 secondd;
+--    <ufi-input>
+      select  btsel01.*, pvsel01.*
+      from btsel01,pvsel01;
+--    <ufi-input>
+      select  btsel01.*, pvsel02.*
+      from btsel01,pvsel02;
+--    <ufi-input>
+      select  btsel01.*, svsel11.*
+      from btsel01,svsel11;
+--    <ufi-input>
+      select  btsel01.*, svsel13.*
+      from btsel01,svsel13;
+--    <ufi-input>
+      select  pvsel03.*, svsel13.*
+      from pvsel03,svsel13;
+--    <ufi-input>
+      select  pvsel01.*, pvsel03.*
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select firstt.*,secondd.*
+      from pvsel01 firstt,pvsel01 secondd;
+--    <ufi-input>
+      select  pvsel01.*, pvsel03.*
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select firstt.*,secondd.*
+      from svsel11 firstt,svsel11 secondd;
+--    <ufi-input>
+      select  svsel11.*, svsel13.*
+      from svsel11,svsel13;
+
+--    <ufi-input>
+      select  btsel01.*
+      from btsel01,btsel02;
+--    <ufi-input>
+      select  btsel03.*
+      from btsel01,btsel03;
+--    <ufi-input>
+      select  btsel03.*
+      from btsel03,btsel04;
+--    <ufi-input>
+      select  btsel02.*
+      from btsel02,btsel03;
+--    <ufi-input>
+      select firstt.*
+      from btsel02 firstt,btsel02 secondd;
+--    <ufi-input>
+      select  btsel01.*
+      from btsel01,pvsel01;
+--    <ufi-input>
+      select  btsel01.*
+      from btsel01,pvsel02;
+--    <ufi-input>
+      select  svsel11.*
+      from btsel01,svsel11;
+--    <ufi-input>
+      select  svsel13.*
+      from btsel01,svsel13;
+--    <ufi-input>
+      select  pvsel03.*
+      from pvsel03,svsel13;
+--    <ufi-input>
+      select  pvsel01.*
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select secondd.*
+      from pvsel01 firstt,pvsel01 secondd;
+--    <ufi-input>
+      select  pvsel01.*
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select firstt.*
+      from svsel11 firstt,svsel11 secondd;
+--    <ufi-input>
+      select  svsel13.*
+      from svsel11,svsel13;
+--    <end-input>
+
+
+
+-- <testcase A4>
+
+--    <detail>
+--    select joins simple test case - tests the selection of
+--    an expressions of columns.
+
+--    <switches>
+--     pat-file uoutpat <mypat>
+
+--    <templates>
+--     US00
+
+--    <ufi-input>
+      select  btsel01.binary_32_u *  btsel03.binary_32_u
+      from btsel01,btsel03;
+--    <ufi-input>
+      select  btsel01.binary_32_u +  btsel03.binary_32_u +
+              btsel04.medium_int
+      from btsel01,btsel03,btsel04;
+--    <ufi-input>
+      select decimal_2_signed + pic_9_7
+      from btsel01,btsel03;
+--    <ufi-input>
+      select large_int - new_name_1
+      from pvsel01,pvsel03;
+--    <ufi-input>
+      select large_int - new_name_1
+      from btsel01,pvsel03;
+--    <ufi-input>
+      select  btsel01.medium_int *  svsel13.medium_int
+      from btsel01,svsel13;
+--    <ufi-input>
+      select  pvsel03.new_name_1 +  svsel13.new_name_1
+      from svsel13,pvsel03;
+--    <ufi-input>
+      select new_name_1 + col_1
+      from svsel13,svsel11;
+--    <ufi-input>
+      select firstt.small_int * secondd.small_int
+      from btsel01 firstt,btsel01 secondd;
+--    <ufi-input>
+      select firstt.medium_int + secondd.medium_int
+      from pvsel04 firstt, pvsel04 secondd;
+--    <ufi-input>
+      select firstt.medium_int + secondd.medium_int
+      from svsel13 firstt,svsel13 secondd;
+--    <end-input>
+
+
+-- <testcase A5>
+
+--    <detail>
+--       select joins simple test case - this tests the use
+--       of the for browse access,for stable access,
+--       for repeatable access clauses. No actual
+--       tests of the functionality of these clauses is done -- this is
+--       a test of syntax only.  Each of these clauses is checked for
+--       the following combinations:
+--            audited base table / audited base table
+--            audited base table / non-audited base table (browse access only)
+--            bt/bt
+--            bt/pv
+--            bt/sv
+--            pv/pv
+--            pv/sv
+--            sv/sv
+--            bt same
+--            pv same
+--            sv same
+
+--    <switches>
+--     pat-file uoutpat <mypat>
+
+--    <templates>
+--     US00
+
+--    <ufi-input>
+      select pic_x_1, pic_x_7
+      from btsel02,btsel03
+      for browse access;
+--    <ufi-input>
+      select pic_x_1, pic_x_7
+      from btsel02,btsel03
+      for stable access;
+--    <ufi-input>
+      select pic_x_1, pic_x_7
+      from btsel02,btsel03
+      for repeatable access;
+
+--   <comment> ****   audited table, non-audited table  ****
+--   <comment> ****   must specify for browse access for this test ****
+--    <ufi-input>
+      select pic_x_7, pic_x_a
+      from btsel03,btsel05
+      for browse access;
+
+--    <ufi-input>
+      select binary_32_u , binary_signed
+      from btsel03,pvsel01
+      for browse access;
+--    <ufi-input>
+      select binary_32_u , binary_signed
+      from btsel03,pvsel01
+      for stable access;
+--    <ufi-input>
+      select binary_32_u , binary_signed
+      from btsel03,pvsel01
+      for repeatable access;
+--    <ufi-input>
+      select new_name_1, medium_int
+      from btsel03,svsel13
+      for browse access;
+--    <ufi-input>
+      select new_name_1, medium_int
+      from btsel03,svsel13
+      for stable access;
+--    <ufi-input>
+      select new_name_1, medium_int
+      from btsel03,svsel13
+      for repeatable access;
+--    <ufi-input>
+      select binary_signed, new_name_1
+      from pvsel01,pvsel03
+      for browse access;
+--    <ufi-input>
+      select binary_signed, new_name_1
+      from pvsel01,pvsel03
+      for stable access;
+--    <ufi-input>
+      select binary_signed, new_name_1
+      from pvsel01,pvsel03
+      for repeatable access;
+--    <ufi-input>
+      select pic_comp_1
+      from pvsel01,svsel13
+      for browse access;
+--    <ufi-input>
+      select pic_comp_1
+      from pvsel01,svsel13
+      for stable access;
+--    <ufi-input>
+      select pic_comp_1
+      from pvsel01,svsel13
+      for repeatable access;
+--    <ufi-input>
+      select var_char, col_2
+      from svsel13,svsel11
+      for browse access;
+--    <ufi-input>
+      select var_char, col_2
+      from svsel13,svsel11
+      for stable access;
+--    <ufi-input>
+      select var_char, col_2
+      from svsel13,svsel11
+      for repeatable access;
+--    <ufi-input>
+      select firstt.small_int, secondd.small_int
+      from btsel01 firstt,btsel01 secondd
+      for browse access;
+--    <ufi-input>
+      select firstt.small_int, secondd.small_int
+      from btsel01 firstt,btsel01 secondd
+      for stable access;
+--    <ufi-input>
+      select firstt.small_int, secondd.small_int
+      from btsel01 firstt,btsel01 secondd
+      for repeatable access;
+--    <ufi-input>
+      select firstt.new_name_2
+      from pvsel03 firstt,pvsel03 secondd
+      for browse access;
+--    <ufi-input>
+      select firstt.new_name_2
+      from pvsel03 firstt,pvsel03 secondd
+      for stable access;
+--    <ufi-input>
+      select firstt.new_name_2
+      from pvsel03 firstt,pvsel03 secondd
+      for repeatable access;
+--    <ufi-input>
+      select firstt.new_name_1, secondd.medium_int
+      from svsel13 firstt,svsel13 secondd
+      for browse access;
+--    <ufi-input>
+      select firstt.new_name_1, secondd.medium_int
+      from svsel13 firstt,svsel13 secondd
+      for stable access;
+--    <ufi-input>
+      select firstt.new_name_1, secondd.medium_int
+      from svsel13 firstt,svsel13 secondd
+      for repeatable access;
+--    <ufi-input>
+      select firstt.col_1, secondd.col_10
+      from btsel05 firstt,btsel05 secondd
+      for browse access;
+--    <ufi-input>
+      select firstt.col_1, secondd.col_10
+      from btsel05 firstt,btsel05 secondd
+      for stable access;
+--    <ufi-input>
+      select firstt.col_1, secondd.col_10
+      from btsel05 firstt,btsel05 secondd
+      for repeatable access;
+--    <ufi-input>
+      select char_1, btsel02.pic_x_1, pic_9_7
+      from btsel01,btsel02,btsel03
+      for browse access;
+--    <ufi-input>
+      select char_1, btsel02.pic_x_1, pic_9_7
+      from btsel01,btsel02,btsel03
+      for stable access;
+--    <ufi-input>
+      select char_1, btsel02.pic_x_1, pic_9_7
+      from btsel01,btsel02,btsel03
+      for repeatable access;
+--    <end-input>
+
+
+-- <testcase A6>
+
+--    <detail>
+--    join simple select test - this tests the selection of aggregate
+--    functions (COUNT, AVG, MAX, MIN, SUM).  Aggregates are selected
+--    from multiple tables with no WHERE, GROUP BY, or HAVING clauses.
+
+--    <switches>
+--     pat-file uoutpat <mypat>
+
+--    <templates>
+--     US00
+
+--    <ufi-input>
+      select count(*)
+      from btsel01 firstt, btsel01 secondd;
+--    <ufi-input>
+      select count(*)
+      from btsel01,pvsel01;
+--    <ufi-input>
+      select count(*)
+      from svsel11,btsel01;
+--    <ufi-input>
+      select avg(firstt.medium_int)
+      from pvsel01 firstt, pvsel01 secondd;
+--    <ufi-input>
+      select avg(ALL firstt.pic_comp_1)
+      from svsel13 firstt, svsel13 secondd;
+--    <ufi-input>
+      select max(btsel01.binary_64_s)
+      from btsel01, btsel03;
+--    <ufi-input>
+      select max(ALL large_int)
+      from pvsel01;
+--    <ufi-input>
+      select AVG(distinct  pvsel01.medium_int)
+      from pvsel01, pvsel04;
+--    <ufi-input>
+      select SUM(distinct secondd.binary_64_s)
+      from btsel01 firstt, btsel01 secondd;
+--    <ufi-input>
+      select count(distinct firstt.medium_int)
+      from pvsel01 firstt, pvsel01 secondd;
+--    <ufi-input>
+      select avg(ALL firstt.binary_32_u + secondd.pic_comp_1)
+      from btsel01 firstt, btsel01 secondd;
+--    <ufi-input>
+      select max( pvsel03.new_name_1 *  svsel13.new_name_1)
+      from pvsel03, svsel13;
+-- <ufi-input>
+    select (sum( pvsel01.pic_decimal_3) +
+            sum( btsel01.small_int)) / 100
+    from pvsel01,btsel01;
+--    <ufi-input>
+      select sum( btsel01.pic_decimal_3),
+             avg( pvsel01.pic_decimal_3),
+             max( btsel01.pic_decimal_3),
+             min( pvsel01.pic_decimal_3),
+             count(distinct  btsel01.pic_decimal_3),
+             count(*)
+      from pvsel01,btsel01;
+--    <end-input>
+
+
+
+-- <end-test>
+LOG;

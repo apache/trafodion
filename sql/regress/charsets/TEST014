@@ -1,0 +1,152 @@
+-- Test: TEST014
+-- Functionality: This tests charset inference for UCS2 SQL texts.
+-- Expected files:   EXPECTED014
+-- Tables created:   taa, intv1, t014A, t014B
+-- Limitations: None
+-- Precondition: the shell variable UCS2_SQL_TEXT_DEBUG should be preset so that the
+--               charset of the query is internally marked as UCS2. The setting for
+--               running this query is done inside the script runregr_charsets.ksh. 
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey TEST014(clnup);
+
+log LOG014 clear;
+
+obey TEST014(ddl);
+
+obey TEST014(real_test);
+
+obey TEST014(clnup);
+
+log;
+exit;
+
+?section ddl
+
+create table taa(a char(10), b char(10) character set ucs2);
+
+create table intv1 (Column_IntervalYearToMonth interval year(3) to month default {interval
+ '100-10' year(3) to month}) ;
+
+
+create table t014A
+(i smallint UNSIGNED  NO DEFAULT NOT NULL,
+ c CHAR(15)                      NOT NULL,
+ PRIMARY KEY (i
+               ,c) NOT DROPPABLE
+) 
+#ifndef SEABASE_REGRESS
+HASH2 PARTITION BY (c)
+#endif
+;
+
+CREATE TABLE t014B
+       (
+        i  SMALLINT UNSIGNED       NOT NULL
+       ,c  CHAR(15)                NOT NULL
+       ,PRIMARY KEY (i
+                    ,c
+                    ) NOT DROPPABLE
+)
+#ifndef SEABASE_REGRESS
+HASH2 PARTITION BY (c)
+#endif
+;
+
+CREATE VIEW t014VA AS SELECT * FROM  t014A;
+CREATE VIEW t014VB AS SELECT * FROM  t014B;
+
+create table t014c (a char(10) not casespecific, b char(10)) no partition;
+
+
+?section real_test
+
+control query default INFER_CHARSET 'on';
+
+insert into taa values('long', 'river');
+insert into taa values('mighty', 'mountain');
+insert into taa values('socket', 'host');
+
+
+select * from taa where B = 'mountain';
+select * from taa where char_length(trim(B)) = 4;
+
+-- should infer '163-11' as _iso88591'163-11'
+insert into intv1(Column_IntervalYearToMonth) 
+    values (cast ('163-11' as interval year(3) to month));
+
+select * from intv1;
+
+-- testing for solution 10-060719-7821 
+-- (NEO ODBC/MX fails to compile query with a literal in the select-list )
+control query default odbc_process 'on';
+
+
+SELECT DISTINCT va.i, 'C007I021', 1 FROM t014va va
+LEFT JOIN t014vb vb ON va.c = vb.c ;
+
+SELECT i, 'C007I021', 1 FROM t014a;
+SELECT i, 'C007I021', 'abc' || 'cde' FROM t014a;
+SELECT i, 'C007I021', _ucs2'abc' || 'cde' FROM t014a;
+
+-- end testing solution 
+
+control query default odbc_process 'off';
+control query default INFER_CHARSET 'off';
+
+insert into taa values('long', 'river');
+
+-- teseting for solution 10-070329-3662 
+-- (R2.1:NE: SELECT behaves incorrectly when CQD Infer_CharSet is TRUE in MX)
+
+insert into t014c values ('a', 'a');
+control query default infer_charset 'on';
+
+-- expect 0 rows
+select * from t014c where a = 'A';
+
+-- expect 1 rows
+select * from t014c where a = 'A' (not casespecific);
+
+-- expect 1 rows
+select * from t014c;
+
+control query default infer_charset 'off';
+
+-- expect 0 rows
+select * from t014c where a = 'A';
+
+-- expect 1 rows
+select * from t014c where a = 'A' (not casespecific);
+
+-- expect 1 rows
+select * from t014c;
+-- end testing solution 
+
+
+?section clnup
+drop table taa;
+drop table intv1;
+
+drop table t014A cascade;
+drop table t014B cascade;
+drop table t014c ;
+
+

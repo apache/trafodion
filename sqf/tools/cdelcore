@@ -1,0 +1,68 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#  13/05/06  Now has -g option like cfindcore.sh to only delete those files that match.
+
+deleteOPT=""
+sleepTime=0
+grepPortion="core\.\*"
+
+while getopts 'ho:n:s:g:' parmOpt
+do
+    case $parmOpt in
+    h)  echo "Usage:   $0 -h -o <number of days> -n <number of mins> -s <sleep mins> -g <expr>"
+        echo " -h    displays this help"
+        echo " -o    deletes files that are older than <number of DAYS> ago"
+        echo " -n    deletes files that are newer than <number of MINS> ago"
+        echo "       -o is to clean up older files."
+        echo "       -n is to clean up very recent files.  IE: bad test that caused issues."
+        echo " -g <expr> to only delete the cores that contain <expr>."
+        echo "       Do cfindcore -g <expr> to get the list of cores that match."
+        echo " -s    to sleep for <sleep mins> and then process again."
+        exit 0
+        ;;
+    s)  sleepTime=${OPTARG};;
+    o)  if [ -n "${deleteOPT}" ] ; then
+            echo "Please specify only one of -o or -n"
+            exit 0
+        fi
+        deleteOPT="-mtime +${OPTARG}"
+        ;;
+    n)  if [ -n "${deleteOPT}" ] ; then
+            echo "Please specify only one of -o or -n"
+            exit 0
+        fi
+        deleteOPT="-mmin -${OPTARG}"
+        ;;
+    g)  grepPortion="core\.\*${OPTARG}\*";;
+    ?)  echo "Invalid option specified.   Only -h,-o,-n,-s,-g are allowed."
+        exit 0;;
+    esac
+done
+
+while [ 1 -lt 2 ] ; do
+    pdsh -a "find -L /local/cores/$UID -name ${grepPortion} ${deleteOPT} -delete" 2> /dev/null
+    if [ ${sleepTime} -gt 0 ] ; then
+        echo "Cores deleted at $(date), now sleeping for ${sleepTime} mins."
+        sleep ${sleepTime}m
+        echo "Starting delete at $(date)."
+    else
+        break
+    fi
+done

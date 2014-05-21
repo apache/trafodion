@@ -1,0 +1,355 @@
+// Persistent process test for the monitor
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "clio.h"
+#include "sqevlog/evl_sqlog_writer.h"
+#include "montestutil.h"
+
+MonTestUtil util;
+
+long trace_settings = 0;
+FILE *shell_locio_trace_file = NULL;
+bool tracing = false;
+
+const char *MyName;
+int MyRank = -1;
+int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
+
+
+// Routine for handling notices:
+//   NodeDown, NodeUp, ProcessDeath, Shutdown, TmSyncAbort, TmSyncCommit
+void recv_notice_msg(struct message_def *recv_msg, int )
+{
+    if ( recv_msg->type == MsgType_ProcessDeath )
+    {
+        if ( tracing )
+            printf("[%s] Process death notice received for %s (%d, %d),"
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
+                   MyName,
+                   recv_msg->u.request.u.death.process_name,
+                   recv_msg->u.request.u.death.nid,
+                   recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.trans_id.txid[0],
+                   recv_msg->u.request.u.death.trans_id.txid[1],
+                   recv_msg->u.request.u.death.trans_id.txid[2],
+                   recv_msg->u.request.u.death.trans_id.txid[3],
+                   recv_msg->u.request.u.death.aborted);
+
+    }
+    else if ( recv_msg->type == MsgType_NodeDown )
+    {
+        printf("[%s] Node %d (%s) is DOWN.\n", MyName, 
+               recv_msg->u.request.u.down.nid,
+               recv_msg->u.request.u.down.node_name);
+    }
+    else
+    {
+        printf("[%s] unexpected notice, type=%s\n", MyName,
+               MessageTypeString( recv_msg->type));
+    }
+}
+
+
+bool testPersistent ()
+{
+    bool testSuccess = true;
+    int procNid;
+    int procPid;
+    char procName[25];
+    char *serverArgs[1] = {(char *) "-t"};
+    enum { TEST_FAILED=0 };
+    char value[25];
+
+    // Set persistent process registry values for process $ABC
+    const int persistNode1 = 2;
+    const int persistNode2 = 4;
+    printf("[%s] For process $ABC setting PERSIST_ZONES=%d,%d\n",
+            MyName, persistNode1, persistNode2);
+
+    sprintf(value, "%d,%d", persistNode1, persistNode2);
+    if (!util.requestSet ( ConfigType_Process, "$ABC", "PERSIST_ZONES",
+                           value))
+    {
+        return TEST_FAILED;
+    }
+
+    int maxRetries = 1;
+    int retryResetTime = 10;
+    printf("[%s] For process $ABC setting PERSIST_RETRIES=%d,%d\n",
+            MyName, maxRetries, retryResetTime);
+
+    sprintf(value, "%d,%d", maxRetries, retryResetTime);
+    // Set count of times to restart and persistent "max time".
+    if (!util.requestSet ( ConfigType_Process, "$ABC", "PERSIST_RETRIES",
+                           value))
+    {
+        return TEST_FAILED;
+    }
+
+    // Start the server process
+    if (!util.requestNewProcess ( persistNode1, ProcessType_Generic, false,
+                                  "$ABC", "server", "", "",
+                                  ((tracing) ? 1: 0), serverArgs,
+                                  procNid, procPid, procName))
+    {
+        return TEST_FAILED;
+    }
+
+    // Allow time for process creation
+    sleep(1);
+
+    // Verify process is running
+    int statNid1;
+    int statPid1;
+    if (util.requestProcInfo ( "$ABC", statNid1, statPid1))
+    {
+
+        if ( statNid1 != persistNode1 )
+        {
+            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+                    "as expected.\n", MyName, statNid1, statPid1,
+                    persistNode1);
+            return TEST_FAILED;
+        }
+        else
+        {
+            printf ("[%s] Started persistent process $ABC (%d, %d)\n",
+                    MyName, statNid1, statPid1);
+        }
+    }
+    else
+    {
+        printf ("[%s] Started persisten process $ABC but unable to get "
+                "process info for it.\n", MyName);
+        return TEST_FAILED;
+    }
+
+    printf ("[%s] Killing process $ABC\n", MyName);
+
+    // Kill the server process, expect it to be restarted on the same node
+    util.requestKill ( "$ABC" );
+
+    // Allow time for process kill and after-effects
+    sleep(1);
+
+    // Verify process was restarted on original node
+    int statNid2;
+    int statPid2;
+    if (util.requestProcInfo ( "$ABC", statNid2, statPid2))
+    {
+        if ( statNid2 != persistNode1 )
+        {
+            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+                    "as expected.\n", MyName, statNid2, statPid2,
+                    persistNode1);
+            return TEST_FAILED;
+        }
+        if ( statPid2 == statPid1 )
+        {
+            printf ("[%s] process $ABC apparently not restarted, old pid is "
+                     "the same as the current pid (%d)\n", MyName, statPid2);
+            return TEST_FAILED;
+        }
+        else
+        {
+            printf ("[%s] Persistent process $ABC (%d, %d) was restarted as "
+                    "expected.\n",
+                    MyName, statNid2, statPid2);
+        }
+    }
+    else
+    {
+        printf ("[%s] Unable to get process info for $ABC\n", MyName);
+        return TEST_FAILED;
+    }
+
+    printf ("[%s] Killing process $ABC\n", MyName);
+
+    // Kill the server process again, do not expect restart since persistent
+    // retry count has been exceeded.
+    util.requestKill ( "$ABC" );
+
+    // Allow time for process kill and after-effects
+    sleep(1);
+
+    if (util.requestProcInfo ( "$ABC", statNid2, statPid2))
+    {
+        printf("[%s] Unexpectedly got $ABC (%d, %d) process status\n",
+               MyName, statNid2, statPid2);
+        return TEST_FAILED;
+    }
+    else
+    {
+        printf("[%s] Confirmed: process $ABC was not restarted.\n",
+               MyName);
+    }
+
+    // Start the server process
+    if (!util.requestNewProcess ( persistNode1, ProcessType_Generic, false,
+                                  "$ABC", "server", "", "",
+                                  ((tracing) ? 1: 0), serverArgs,
+                                  procNid, procPid, procName))
+    {
+        return TEST_FAILED;
+    }
+
+    // Allow time for process creation
+    sleep(1);
+
+    // Verify process is running
+    if (util.requestProcInfo ( "$ABC", statNid1, statPid1))
+    {
+        if ( statNid1 != persistNode1 )
+        {
+            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+                    "as expected.\n", MyName, statNid1, statPid1,
+                    persistNode1);
+            return TEST_FAILED;
+        }
+        else
+        {
+            printf ("[%s] Started persistent process $ABC (%d, %d)\n",
+                    MyName, statNid1, statPid1);
+        }
+    }
+    else
+    {
+        printf ("[%s] Unable to get process info for $ABC\n", MyName);
+        return TEST_FAILED;
+    }
+
+    printf ("[%s] Downing node %d\n", MyName, persistNode1);
+
+    // Down the node
+    util.requestNodeDown ( persistNode1 );
+
+    // Verify node is down
+    struct NodeInfo_reply_def * nodeData;
+    for (int i=0; i<30; ++i)
+    {
+        if ( util.requestNodeInfo ( -1, false, -1, -1, nodeData ) )
+        {  // Got node data
+            if ( nodeData->node[2].state == 2 )
+            {
+                printf ("[%s] Process status for node 2 is DOWN.\n",  MyName);
+                break;
+            }
+            else
+            {
+                printf ("[%s] Process status for node 2 is %d.\n",  MyName,
+                         nodeData->node[2].state);
+            }
+        }
+        else
+        {   // Failed to get node data
+            printf ("[%s] Unable to get node info\n", MyName);
+            return TEST_FAILED;
+        }
+        sleep(2);
+    }
+    if ( nodeData->node[2].state != 2 )
+    {
+        printf ("[%s] After downing node 2, node state=%d but expected "
+                "state=2\n", MyName, nodeData->node[2].state);
+        return TEST_FAILED;
+    }
+    
+
+    // Verify process was restarted on new node
+    if (util.requestProcInfo ( "$ABC", statNid1, statPid1))
+    {
+        if ( statNid1 != persistNode2 )
+        {
+            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+                    "as expected.\n", MyName, statNid1, statPid1,
+                    persistNode2);
+            testSuccess = false;
+        }
+        else
+        {
+            printf ("[%s] Persistent process $ABC (%d, %d) was restarted as "
+                    "expected.\n",
+                    MyName, statNid1, statPid1);
+        }
+    }
+    else
+    {
+        printf ("[%s] Unable to get process info for $ABC\n", MyName);
+        return TEST_FAILED;
+    }
+
+    printf ("[%s] Killing process $ABC\n", MyName);
+
+    // Kill the server process again, do not expect restart because
+    // restart count exceeded.
+    util.requestKill ( "$ABC" );
+
+    // Allow time for process kill and after-effects
+    sleep(1);
+
+    // Verify process not restarted
+    if (util.requestProcInfo ( "$ABC", statNid2, statPid2))
+    {
+        printf("[%s] Unexpectedly got $ABC (%d, %d) process status\n",
+               MyName, statNid2, statPid2);
+        testSuccess = false;
+    }
+    else
+    {
+        printf("[%s] Confirmed: process $ABC was not restarted.\n",
+               MyName);
+    }
+
+    return testSuccess;
+
+}
+
+int main (int argc, char *argv[])
+{
+
+    bool testSuccess;
+
+    // Setup HP_MPI software license
+    int key = 413675219; //413675218 to display banner
+    MPI_Initialized(&key);
+    
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
+
+    util.processArgs (argc, argv);
+    tracing = util.getTrace();
+    MyName = util.getProcName();
+
+    util.InitLocalIO( );
+    assert (gp_local_mon_io);
+
+    // Set local io callback function for "notices"
+    gp_local_mon_io->set_cb(recv_notice_msg, "notice");
+
+    // Send startup message to monitor
+    util.requestStartup ();
+
+    // Verify correct number of nodes
+    testSuccess = util.validateNodeCount(6);
+
+    if ( testSuccess )
+    {
+        testSuccess = testPersistent();
+    }
+        
+    printf("Persistent Process Test:\t%s\n", (testSuccess) ? "PASSED" : "FAILED");
+
+    // tell monitor we are exiting
+    util.requestExit ( );
+
+    MPI_Close_port (util.getPort());
+    MPI_Finalize ();
+    if ( gp_local_mon_io )
+    {
+        delete gp_local_mon_io;
+    }
+    exit ( testSuccess ? 0 : 1 );
+}

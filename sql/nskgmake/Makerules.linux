@@ -1,0 +1,527 @@
+# ****************************************************************************
+#
+# File:         Makerules.linux
+# Description:  This contains the make rules for building for a Linux target.
+#
+# Language:     GNU make
+# Date:         October 9, 2007
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+# ****************************************************************************
+
+LINUX_NON_FLAVOR_TARGETS := linuxhelp linuxdoc help all
+
+# If flavor is not equal to release or debug and the goal is not in
+# the LINUX_NON_FLAVOR_TARGETS, then give an error.
+ifdef MAKECMDGOALS
+  ifeq (,$(filter $(MAKECMDGOALS),$(LINUX_NON_FLAVOR_TARGETS)))
+    ifeq (,$(filter $(FLAVOR),release debug doc))
+      $(error Cannot determine the flavor - debug or release)
+    else
+      ifndef MY_SQROOT
+        $(error MY_SQROOT must be defined for a Linux build)
+      endif
+
+      # Pick up the top-level project definitions
+      include $(MY_SQROOT)/sql/macros.gmk
+    endif
+  endif
+endif
+
+linuxhelp help all::
+	@(echo "$(MAKE) linuxdebug           Build for Linux debug mode";\
+	echo "$(MAKE) linuxqinstalldebug   Build/install only necessary Linux debug objects";\
+	echo "$(MAKE) linuxinstalldebug    Install all Linux debug mode objects";\
+	echo "$(MAKE) linuxcleandebug      Remove Linux debug mode objects";\
+	echo ;\
+	echo "$(MAKE) linuxrelease         Build for Linux release mode";\
+	echo "$(MAKE) linuxqinstallrelease Build/install only necessary Linux release objects";\
+	echo "$(MAKE) linuxinstallrelease  Install all Linux release mode objects";\
+	echo "$(MAKE) linuxcleanrelease    Remove Linux release mode objects";\
+	echo ;\
+	echo "$(MAKE) linuxmklinksdebug    Make links to SeaQuest export directories";\
+	echo "$(MAKE) linuxmklinksrelease  Make links to SeaQuest export directories";\
+	echo "$(MAKE) linuxdoc  Make Doxygen html documentation of the sources";\
+	echo ;)
+
+# Environment variables define: (see sqf/LocalSettingsTemplate.sh)
+#  BISON, FLEX, LLVM, AR, UDIS86
+
+YACC       = $(BISON) -p $(YACC_VAR_PREFIX)
+LEX        = $(FLEX) -P$(YACC_VAR_PREFIX)
+
+AWK := gawk
+
+
+LIBPREFIX := lib
+LIBSUFFIX := a
+DLLSUFFIX := so
+OBJSUFFIX := o
+
+#######################################################################
+# Define several directories used by various parts of the Linux build
+#######################################################################
+NSK_SQ    := $(MY_SQROOT)
+NSK       := $(MY_SQROOT)/sql/nsk
+XMPIROOT        = $(NSK_SQ)/export/lib$(SQ_MBTYPE)
+NSKBIN		= $(NSK_SQ)/export/bin$(SQ_MBTYPE)
+NSKROOT         = $(NSK_SQ)/sql/nsk
+ifeq ($(SQ_BUILD_TYPE),release)
+  STUBLIBROOT     = $(NSK_SQ)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/release
+else
+  STUBLIBROOT     = $(NSK_SQ)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/debug
+endif
+LITEROOT        = $(NSK_SQ)/src
+# NSKLIB          = $(NSKROOT)/lib/$(FLAVOR)
+NSKLIB          = $(XMPIROOT)
+PGO_DIR         := $(shell /bin/pwd)/pgo_profile_data
+ifeq ($(SQ_BUILD_TYPE),release)
+  LLVM_INC_ROOT   :=$(LLVM)/release/include
+else
+  LLVM_INC_ROOT   :=$(LLVM)/debug/include
+endif
+JVMJNIINC=$(JAVA_HOME)/include
+
+# set up Hadoop include and library directives, these variables are defined in sqenvcom.sh
+DRIZZLE_INC=-I$(DRIZZLE_INC_DIR)
+DRIZZLE_LIB=-ldrizzle
+DRIZZLE_SO=libdrizzle.so
+LLVM_INC_ROOT2  :=$(LLVM_INC_ROOT)/llvm
+UDIS86_INC_ROOT :=$(UDIS86)/include
+
+# Java directories
+# The default Java on SQ systems is GCJ and it does not work for SPJ. 
+# We need to use Sun's java and until it's standard location on the 
+# system is decided, we will use the following common location.
+# JVMROOT=/designs/seaquest/tools/jdk1.6.06_32
+JVMROOT=$(JAVA_HOME)
+JVMJNIINC=$(JVMROOT)/include
+ifdef M64
+LOC_JVMLIBS=$(JVMROOT)/jre/lib/amd64/server
+else
+LOC_JVMLIBS=$(JVMROOT)/jre/lib/i386/server
+endif
+
+ifeq ($(SQ_BUILD_TYPE),debug)
+   JAVA_COMPILE_FLAGS=-g
+endif
+LIBHDFS_INC=-I$(HADOOP_INC_DIR)
+LIBHDFS_LIB=-lhdfs -ljvm
+LIBHDFS_SO=libhdfs.so
+
+THRIFT_INC=-I$(THRIFT_INC_DIR) -I$(THRIFT_INC_DIR)/thrift
+THRIFT_LIB=-lthrift
+THRIFT_SO=libthrift-*.so
+
+# for now, include these libs (copied to our local lib dir) everywhere
+GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(DRIZZLE_LIB) $(LIBHDFS_LIB) $(THRIFT_LIB)
+
+# EXECUTABLES defines the executables that are built for release and debug
+# builds.  Any flavor-specific targets can be added later in this makefile.
+EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv
+	# mxCompileUserModule mxsqlcfe mxsqlcofe sqlfe
+
+
+# LIBS defines the libraries that are built for release and debug builds.
+# These are built as archive libraries, such as liboptimizer.a
+
+# SS LIBS := anparse sqlcomp ustat sqlcat parser optimizer generator \
+	tdm_sqllangman arkcmplib qmscommon
+
+# SS eliminating static libs
+#LIBS := optimizer generator sqlcomp arkcmplib parser ustat \
+	sqlcat tdm_sqllangman qmscommon \
+        LLVMScalarOpts LLVMInstCombine LLVMTransformUtils LLVMTableGen LLVMVectorize \
+        LLVMipo LLVMipa LLVMInstrumentation LLVMBitWriter LLVMBitReader LLVMAsmParser \
+        LLVMArchive LLVMX86CodeGen LLVMX86Utils LLVMCore LLVMX86Info LLVMX86Disassembler \
+        LLVMX86Desc LLVMX86AsmPrinter LLVMX86AsmParser LLVMTarget LLVMSelectionDAG LLVMAnalysis \
+        LLVMObject LLVMMCParser LLVMLinker LLVMInterpreter LLVMDebugInfo LLVMCppBackendInfo \
+        LLVMCppBackendCodeGen LLVMAsmPrinter LLVMMCDisassembler LLVMMC LLVMMCJIT \
+        LLVMRuntimeDyld LLVMExecutionEngine LLVMJIT LLVMRuntimeDyld LLVMObject \
+	LLVMCodeGen LLVMMC LLVMScalarOpts LLVMTransformUtils LLVMAnalysis LLVMSupport profile_rt
+
+
+
+# LIBS defines the libraries that are built for release and debug builds.
+# These are all built as shared objects with names such as libtdm_sqlcli.so.
+
+DLLS := comexe common executor sort sqlmsg \
+	tdm_sqlcli tdm_sqlcli_globals tdm_sqlexp tdm_sqlexport \
+	tdm_sqlmxevents tdm_sqlshare tdm_sqlerrormsg \
+	eh lmcomp \
+	sqlcilib cli porting_layer tdm_sqlmxmsg_intl \
+	log4cpp arkcmp_dll smdio
+
+
+DLLS += sqlcomp ustat sqlcat parser optimizer generator \
+	tdm_sqllangman arkcmplib qmscommon
+
+
+# SqlCompilerDebugger should be build after other components
+GUI_CMP_DBG := SqlCompilerDebugger
+
+# For Linux, this is included, but not through the normal means.  It is
+# needed so the sqlmxmsgs.h file is build correctly.  Only Makefiles that
+# do not build libraries or executables should be specified below.
+# From R2.4 on Linux, tdm_sqlmxmsg_intl should be built.
+#SPECIAL_NON_TARGETS := tdm_sqlmxmsg_intl
+
+LIB_DIRS := $(LIBS)
+DLL_DIRS := $(DLLS) $(UTILDLLS:%=sqlutils/%)
+EXE_DIRS := $(EXECUTABLES) $(EXES_NO_EXPORT) \
+            $(UTILS_EXES:%=sqlutils/%) $(UTILS_EXES_NO_EXPORT:%=sqlutils/%)
+
+# These definitions are used for all targets when building for linux
+SYS_DEFS := -DNA_LINUX -DSQ_LINUX -DNGG -D_M_DG -D_NSKFS_ -D_FULL_BUILD \
+	-DARKFS_GENERATOR -D_DP2NT_ \
+	-D_LITTLE_ENDIAN_ -DARG_PRESENT_OMIT -DNSK_USE_MSGSYS_SHELLS \
+	-D_REENTRANT -D_GLIBCXX_DEPRECATED -D_TNS_R_TARGET \
+	-D_MSC_VER -D_X86_ -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x402 \
+	-DNA_ITOA_NOT_SUPPORTED -DMPI_ -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H -DNA_CMPDLL 
+
+
+SYS_DEFS += -DSQ_CPP_INTF
+
+ifdef SQ_NEW_PHANDLE
+SYS_DEFS += -DSQ_NEW_PHANDLE -DUSE_NEW_PHANDLE
+endif
+
+SYS_DEFS += -DSP_DIS
+
+ifdef M64
+  SYS_DEFS += -DNA_64BIT
+endif
+
+
+
+
+
+SP_INC := $(MY_SQROOT)/seapilot/export/include
+SP_INC_THIRDPARTY := /
+
+SYS_INCLUDES :=
+   SYS_INCLUDES += -I$(NSK_SQ)/inc \
+	-I$(NSK_SQ)/export/include \
+	-I$(SP_INC) \
+        -I$(PROTOBUFS_INC) \
+	$(LIBHDFS_INC) 	$(DRIZZLE_INC) $(THRIFT_INC)				   \
+	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+
+
+OTHER_INCLUDES := -I$(NSK_SQ)/winplat -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
+	-I$(LLVM_INC_ROOT) \
+	-I$(LLVM_INC_ROOT2) \
+	-I$(UDIS86_INC_ROOT) \
+	-I$(NSK_SQ)/../dbsecurity/auth/inc \
+	-I$(TOPDIR)/log4cpp/log4cpp-1.0/include
+#OTHER_INCLUDES := -I$(NSK_SQ)/winplat -include "$(NSK_SQ)/inc/seaquest/sqtypes.h"
+
+LOC_LIBS := \
+	-L$(RESULTDIR) \
+	-L$(NSKLIB) \
+	-L$(XMPIROOT)\
+	-L$(SP_EXPORT_LIB)
+
+# Define the correct compilation and linking flags depending on whether
+# this is a debug or release build.
+ifeq ($(FLAVOR),debug)
+   SYS_CXXFLAGS += -O0
+   SYS_DEFS += -D_DEBUG
+
+   # for coverage checking support
+   ifeq ($(SQ_COVERAGE),1)
+      SYS_CXXFLAGS += --coverage
+      CFLAGS += --coverage
+   endif
+else
+   SYS_DEFS += -DNDEBUG
+
+   # Release mode optimizations:
+   #  -O2                    : Provide a high level of optimization
+   # -fno-omit-frame-pointer : may allow for better debugging
+   SYS_CXXFLAGS += -O2 -fno-omit-frame-pointer
+
+     # The gcc release optimizations are shown below
+
+     ifdef PROF_GEN
+       SYS_CXXFLAGS += -fprofile-generate
+     endif
+     ifdef PROF_USE
+       SYS_CXXFLAGS += -fprofile-use
+     endif
+endif
+
+# -short-wchar: Have the compiler treat wchar_t as a 2-byte character. 
+SYS_CXXFLAGS += -fshort-wchar -std=c++0x
+SYS_CXXFLAGS += -fcheck-new
+CFLAGS += -fshort-wchar
+
+# The following section sets compiler dependent options that are common
+# for both release builds and debug builds.
+
+  # GCC options are specified below.
+  #   -fno-strict-aliasing : prevents a strict aliasing optimization because
+  #                          there are places in the code that have pointers
+  #                          of different kinds pointing to the same memory
+  #                          location.
+  #   -msse2 -mftpmath=sse : prevents wrong display of floating point numbers
+  #                          by executor and may improve performance at the
+  #                          same time.
+  #   -g3                  : Highest level of debugging
+  #   -ggdb                : Use native debugging format with gdb extensions.
+  SYS_CXXFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb
+  CFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb
+
+# Some more definitions are added when building for a 64-bit target.
+# We get a lot of warnings about unknown pragmas that we don't really care about.
+SYS_WARNING_FLAG = -Wno-unknown-pragmas -Wreturn-type
+ifeq ($(FLAVOR),release)
+SYS_WARNING_FLAG += -Wuninitialized
+endif
+
+# Take care invalide use of format
+SYS_WARNING_FLAG += -Wformat
+
+ifndef SQL_COMPILATION_WARNING_ACCEPTABLE
+# this will turn the compilation warnings to errors
+SYS_WARNING_FLAG += -Werror
+endif
+
+# For building shared libraries, add the -fPIC flags
+PIC_FLAG = $(if $(filter $(OBJDIR),$(DLL_DIRS)),-fPIC)
+
+
+# ALL_CXXFLAGS combines all of the C++ flags.
+ALL_CXXFLAGS = $(SYS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_OPT_FLAGS) $(PIC_FLAG)\
+	$(if $(findstring sqlutils/,$(obj)),\
+	    $(SQLUTILS_CXXFLAGS),\
+	    $(WARNING_FLAGS)) \
+	$(SYS_WARNING_FLAG)
+
+# BASE_SYSTEM_INCLUDES includes all of the system-wide directories when not
+# building under the sqlutils directory.
+BASE_SYSTEM_INCLUDES := $(SYS_INCLUDES) \
+	$(patsubst %,-I$(TOPDIR)/%,$(BASE_INCLUDE_DIRS) $(BASE_MISC_DIRS)) \
+	$(OTHER_INCLUDES)
+
+SQLUTILS_INCLUDE_DIRS := sqlutils/inc \
+	comexe common porting_layer catman ddl executor sqlfe exp filesystem \
+	export dml cli client parser sqlcomp optimizer eh sqlci \
+	smdio sqlshare nskcre sort sqlmxevents sqlcat sqlmsg ustat \
+	arkcmp udrserv arkfsinopen arkfsindp2 bin langman generator
+
+SQLUTILS_NSK_INCLUDES := $(NSK_SQ)/inc $(NSK)/inc $(NSK_SQ)/inc/cextdecs \
+	$(NSK_SQ)/inc/fs $(NSK)/inc/sqlcli_shadow $(NSK_SQ)/inc/fs2 \
+	$(NSK)/src $(NSK_SQ)/export/include $(NSK_SQ)/winplat
+
+# SQLUTILS_SYSTEM_INCLUDES includes all of the system-wide directories when
+# building under the sqlutils directory.
+SQLUTILS_SYSTEM_INCLUDES := $(SQLUTILS_NSK_INCLUDES:%=-I%) \
+	$(patsubst %,-I$(TOPDIR)/%,\
+          $(SQLUTILS_INCLUDE_DIRS) $(SQLUTILS_MISC_DIRS)) \
+	$(OTHER_INCLUDES)
+
+# SRC_INCLUDES includes the directory containing the source code so each
+# directory doesn't need to do the equivalent of -I.
+SRC_INCLUDES = $(patsubst %,-I$(TOPDIR)/%, $(SRCPATH))
+
+# USER_INCLUDES adds "-I" to the INCLUDE list that may be specified in a
+# lower directory makefile.  The YINC include directories are also added
+# here.
+USER_INCLUDES = $(patsubst %,-I%/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR),$(YINC)) \
+        $(patsubst %,-I$(TOPDIR)/%, $(INCLUDE_DIRS)) \
+	$(patsubst %,-I%,$(GMAKE_INC_DIRS))
+
+# ALL_INCLUDES builds the correct list of include files based on whether
+# or not the source is under the sqlutils directory.  The second line below
+# defines the include files for sqlutils.  The third line below defines the
+# base include files.
+ALL_INCLUDES = $(if $(findstring sqlutils/,$(obj)),\
+        $(USER_INCLUDES) $(SRC_INCLUDES) $(SQLUTILS_SYSTEM_INCLUDES),\
+        $(USER_INCLUDES) $(SRC_INCLUDES) $(BASE_SYSTEM_INCLUDES))
+
+# SQLUTILS_DEFS := -D_AFXDLL -D_MBCS
+
+# ALL_DEFS combines the preprocessor definitions into one.
+ALL_DEFS = $(if $(findstring sqlutils/,$(obj)),\
+	$(SYS_DEFS) $(SQLUTILS_DEFS) $(DEFS),\
+	$(SYS_DEFS) $(DEFS))
+
+link_lib_rule = $(AR) crv $@ $(OBJ_PATHS)
+link_dll_rule = $(CXX) $(SO_OPTS) $(ALL_CXXFLAGS) -shared -o $@ $(LOC_LIBS) \
+	$(OBJ_PATHS) $(EXTERN_OBJS) $(DEP_LIBS:%=-l%) $(LINK_EXTERN_LIB) $(SYS_LIBS) $(GLOBAL_SYS_LIBS)
+
+build_lib_rule = $(link_lib_rule)
+build_lib_dll_rule = $(link_lib_dll_rule) 
+build_dll_rule = $(link_dll_rule)
+
+  # The gcc compiler needs some extra options for putting the path in
+  # the dependency file.
+  dependency_option = -Wp,-MD,$(DEP_FILE) -Wp,-MT,$@
+
+compile_cpp_rule = $(CXX) $(ALL_CXXFLAGS) $(ALL_DEFS) $(ALL_INCLUDES) \
+	$(dependency_option) -c -o $@ $<
+
+compile_c_rule = $(CC) $(ALL_CXXFLAGS) $(ALL_DEFS) \
+	$(if $(C_INC_OVERRIDE),$(C_INC_OVERRIDE),$(ALL_INCLUDES)) \
+        $(dependency_option) -c -o $@ $<
+
+# This rule combines multiple smaller rules together and is what is
+# used by Makerules.build to compile and link code.
+build_cpp_rule = $(compile_cpp_rule)
+
+# We can build C the same as C++
+build_c_rule = $(compile_c_rule)
+
+
+
+
+ALL_EXE_LDFLAGS = $(ALL_CXXFLAGS) $(OPT_EXE_LDFLAGS)
+
+# link_exe defines how to links an executable for OSS
+link_exe = $(CXX) $(ALL_EXE_LDFLAGS) $(OBJ_PATHS) \
+	$(LOC_LIBS) $(SQLUTILS_LIBS) $(EXTRA_LIBS) $(DEP_DLL_NAMES:%=-l%) \
+	$(DEP_LIB_NAMES:%=-l%) $(EXTERN_OBJS) $(SYS_LIBS) $(GLOBAL_SYS_LIBS) $(LINK_EXTERN_LIB) \
+	-Wl,--rpath -Wl,$(RESULTDIR) \
+	-o $@
+
+# link_exe_rule provides the wrapper for logging the output directly when
+# linking an executable.
+link_exe_rule = $(link_exe)
+
+# Rules to determine which are .dll libs and with are regular .lib libs.
+DEP_DLL_NAMES = $(filter $(DLLS) $(UTILDLLS), $(DEP_LIBS))
+DEP_LIB_NAMES = $(filter-out $(DEP_DLL_NAMES), $(DEP_LIBS))
+DEP_DLL_PATHS = $(DEP_DLL_NAMES:%=$(RESULTDIR)/$(LIBPREFIX)%.$(DLLSUFFIX))
+DEP_LIB_PATHS = $(DEP_LIB_NAMES:%=$(RESULTDIR)/$(LIBPREFIX)%.$(LIBSUFFIX))
+
+# Convert EXTERN_LIBS to the proper link line.
+LINK_EXTERN_LIB = $(patsubst lib%,-l%,$(basename $(notdir $(EXTERN_LIBS))))
+
+# This builds the shared object (.so) files for Linux.
+define DLL_BUILD_template
+  $(FINALOBJ): $$(OBJ_PATHS) $$(EXTERN_OBJS) $$(EXTERN_LIBS) $$(DEP_LIB_PATHS) $$(DEP_DLL_PATHS)
+	@rm -f $(FINALOBJ)
+	$$(build_dll_rule)
+
+  # Instantiate DEP_LIB_PATHS here.
+  $(FINALOBJ): DEP_LIB_PATHS:=$(DEP_LIB_PATHS)
+  $(FINALOBJ): DEP_DLL_PATHS:=$(DEP_DLL_PATHS)
+  $(FINALOBJ): DEP_LIBS:=$(DEP_LIBS)
+  $(FINALOBJ): LINK_EXTERN_LIB:=$(LINK_EXTERN_LIB)
+endef
+
+# This generates the YACC files in the target object directory.
+build_yacc_rule = $(YACC) -l -v -d -o $(basename $@).cpp $<;\
+	mv $(basename $@).cpp $(basename $@).cpp.tmp; \
+	sed "s/! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED/1/g" \
+	   $(basename $@).cpp.tmp > $(basename $@).cpp; \
+	sed "s/! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED/1/g" \
+	   $(basename $@).hpp > $(basename $@).h; \
+	rm $(basename $@).hpp $(basename $@).cpp.tmp
+
+# sqlutils_lex_rule defines how to generate c++ code from lex files
+# in the sqlutils directories.  On Linux, there is a file 
+# /usr/include/FlexLexer.h.  For SQL utilities, we want to include
+# flexlexer.h instead to pick up some altered definitions.
+sqlutils_lex_rules = $(LEX) -d -B -o$(basename $@).cpp $<; \
+	sed 's/FlexLexer.h/flexlexer.h/g' $(basename $@).cpp >\
+	$(basename $@).cpp.tmp; \
+	rm $(basename $@).cpp;
+
+# Include any special Makefiles
+include $(SPECIAL_NON_TARGETS:%=%/Makefile)
+
+#doxygen - need the 1.8.0 version or above
+$(TOPDIR)/sq_doxygen.cfg : 
+	$(DOXYGEN) -g $(TOPDIR)/sq_doxygen.cfg
+
+linuxdoc : $(TOPDIR)/sq_doxygen.cfg 
+	$(DOXYGEN)  $(TOPDIR)/sq_doxygen.cfg
+
+# These things link up the top-level Makefile to things in the
+# Makerules.mk file.  There are probably better ways to do this though.
+linuxdebug linuxrelease : buildall
+linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
+	(for i in $(notdir $(FINAL_DLLS));\
+	 do \
+	   echo rm -f $(NSKLIB)/$$i ;\
+	   rm -f $(NSKLIB)/$$i ;\
+	 done;\
+	 for i in $(filter-out $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
+	            $(notdir $(FINAL_EXES)));\
+	 do \
+	   echo rm -f $(NSKBIN)/$$i ;\
+	   rm -f $(NSKBIN)/$$i ;\
+	 done;\
+	 for i in $(notdir $(FINAL_JARS));\
+	 do \
+	   echo rm -f $(NSK_SQ)/export/lib/$$i ;\
+	   rm -f $(NSK_SQ)/export/lib/$$i ;\
+	 done;\
+	 for i in $(filter $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
+	            $(notdir $(FINAL_EXES)));\
+	 do \
+	   echo rm -f ../regress/tools/$$i; \
+	   rm -f ../regress/tools/$$i; \
+	 done\
+	)
+	rm -f toolbin/mkmsghdr_linux;
+
+# copy open source libraries into export lib directory
+# Do this such that it preserves the symbolic links pointing
+# from the generic name to a specific version of a library
+# Thrift is odd naming scheme (version number in middle of file name), 
+#   need extra command to get the link (without extra libs)
+copytoolslibs:
+	mkdir -p $(NSKLIB)
+	(for i in $(DRIZZLE_LIB_DIR)/$(DRIZZLE_SO) \
+	          $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
+	          $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
+	 do\
+	   cp -Pf $$i* $(NSKLIB); \
+	 done\
+	)
+	cp -Pf $(THRIFT_LIB_DIR)/libthrift.so $(NSKLIB)
+
+linuxmklinksdebug linuxmklinksrelease: copytoolslibs
+	(OUTDIR=$(dir $(shell pwd))$(TOPLIBDIR)/$(TARGTYPE)/$(ARCHBITS)/$(FLAVOR);\
+	 for i in $(notdir $(FINAL_DLLS));\
+	 do \
+	   echo ln -sf $$OUTDIR/$$i $(NSKLIB);\
+	   ln -sf $$OUTDIR/$$i $(NSKLIB);\
+	 done;\
+	 for i in $(filter-out $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
+	            $(notdir $(FINAL_EXES)));\
+	 do \
+	   echo ln -sf $$OUTDIR/$$i $(NSKBIN);\
+	   ln -sf $$OUTDIR/$$i $(NSKBIN);\
+	 done;\
+	 for i in $(notdir $(FINAL_JARS));\
+	 do \
+	   echo ln -sf $$OUTDIR/$$i $(NSK_SQ)/export/lib/;\
+	   ln -sf $$OUTDIR/$$i $(NSK_SQ)/export/lib/;\
+	 done;\
+	 for i in $(filter $(POSSIBLE_NO_EXPORT_EXE_NAMES),\
+	            $(notdir $(FINAL_EXES)));\
+	 do \
+	   echo ln -sf $$OUTDIR/$$i ../regress/tools/$$i; \
+	   ln -sf $$OUTDIR/$$i ../regress/tools/$$i; \
+	 done\
+	)

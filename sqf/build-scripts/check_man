@@ -1,0 +1,27 @@
+#!/bin/sh
+echo "MY_SQROOT=$MY_SQROOT"
+cd $MY_SQROOT/sql/scripts
+files=`ls`
+hdr=0
+for f in $files; do
+	echo $f|grep '\.' > /dev/null
+	if [ $? = 0 ]; then
+		# skip files with a '.'
+		continue
+	fi
+	if [ -d $f ]; then
+		# skip directories
+		continue
+	fi
+	if [ ! -x $f ]; then
+		# skip non-executable
+		continue
+	fi
+	if [ ! -r $MY_SQROOT/export/share/man/man1/$f.1 ]; then
+		if [ $hdr = 0 ]; then
+			echo "The following do not have a matching man page"
+			hdr=1
+		fi
+		echo "$f"
+	fi
+done

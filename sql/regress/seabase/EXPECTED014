@@ -1,0 +1,149 @@
+>>
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>
+>>obey TEST014(test_ddl_disable_partition);
+>>--------------------------------------------------------------------------
+>>--1.[With primary key columns] 
+>>--PARTITION BY clause is not allowed for Trafodion table.
+>>create table t014t1 (pc1 timestamp not null,
++>   pc2 timestamp(6) not null,
++>   pc3 char(10) character set ucs2 not null,
++>   c4 char(20) default null,
++>   primary key (pc1, pc2, pc3))
++>partition by (pc1, pc2, pc3);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>create table t014t2 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null,
++>  primary key (a, b, c)
++>) salt using 4 partitions on (b, c);
+
+--- SQL operation complete.
+>>
+>>create table t014t3 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null,
++>  primary key (a, b, c)
++>) salt using 4 partitions on (b, c) 
++>partition by (a, b, c);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>create table t014t4 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null,
++>  primary key (a, b, c)
++>) salt using 4 partitions 
++>partition by (c);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>create table t014t5 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null,
++>  primary key (a, b)) 
++>salt using 4 partitions 
++>partition by (a, b);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>--2.[With primary key columns]
+>>--STORE BY column list(if any) == primay key column list, also ordinally equal.
+>>create table t014t6 (a int not null, b int not null, primary key(a,b)) store by (a);
+
+*** ERROR[1193] The clustering key specified in the STORE BY clause must be identical to the primary key for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>--3.[No primary key columns]
+>>--PARTITION BY is not allowed for Trafodion table.
+>>create table t014t7 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null
++>) store by (a, b) 
++>salt using 4 partitions on (a, b)
++>partition by (a, b);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>create table t014t8 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null
++>) store by (a, b)
++>partition by (a, b);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>--Already catched [1195]
+>>--If you create a salted table that has neither a primary key nor a store by clause.
+>>create table t014t9 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null
++>) salt using 4 partitions;
+
+*** ERROR[1195] Column SYSKEY is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
+
+--- SQL operation failed with errors.
+>>
+>>--Already catched [1195]
+>>--SALT USING columns must be subset of clustering key
+>>create table t014t10 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null
++>) store by (a, b)
++>salt using 4 partitions on (a, b, c);
+
+*** ERROR[1195] Column C is not allowed as a salt column. Only primary key columns or STORE BY columns are allowed.
+
+--- SQL operation failed with errors.
+>>
+>>--Disallow partition catch this first.
+>>create table t014t11 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null
++>) partition by (a, b);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>--Disallow partition catch this first.
+>>create table t014t12 (
++>  a numeric(11) not null,
++>  b numeric(11) not null,
++>  c numeric(11) not null,
++>  primary key (a)
++>) salt using 4 partitions on (a, b, c)
++>partition by (a, b, c);
+
+*** ERROR[1199] The PARTITION BY clause is not allowed for a Trafodion table.
+
+--- SQL operation failed with errors.
+>>
+>>log;

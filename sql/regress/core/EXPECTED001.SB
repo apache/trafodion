@@ -1,0 +1,824 @@
+>>
+>>create table t001t1 (a int, b char(9), c int, d char(4));
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>create table t001ut1 (a int, b char(9) character set ucs2, c int, d char(4) character set ucs2);
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>?section dml
+>>
+>>invoke t001t1;
+
+-- Definition of Seabase table SEABASE.SCH.T001T1
+-- Definition current  Wed Jul 31 14:25:27 2013
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                CHAR(9) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>invoke $$TEST_SCHEMA$$.t001ut1;
+
+-- Definition of Seabase table SEABASE.SCH.T001UT1
+-- Definition current  Wed Jul 31 14:25:27 2013
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                CHAR(9) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                CHAR(4) CHARACTER SET UCS2 COLLATE DEFAULT
+      DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>-- INSERT queries
+>>insert into t001t1 values (10, 'abc', 20, 'xy');
+
+--- 1 row(s) inserted.
+>>insert into t001t1(b,d,a,c) values ('defg', 'wx', 10+10, 30);
+
+--- 1 row(s) inserted.
+>>
+>>#ifMX
+>>insert into t001ut1 values (10, N'abc', 20, N'xy');
+
+--- 1 row(s) inserted.
+>>insert into t001ut1(b,d,a,c) values (N'defg', N'wx', 10+10, 30);
+
+--- 1 row(s) inserted.
+>>#ifMX
+>>
+>>-- Genesis 10-980112-5942 + 10-970918-1487
+>>select abs(a),abs(-a),abs(a-c),abs(c-a),abs(99),abs(-99),-abs(-a) from t001t1;
+
+(EXPR)                (EXPR)                (EXPR)                (EXPR)                (EXPR)  (EXPR)  (EXPR)
+--------------------  --------------------  --------------------  --------------------  ------  ------  --------------------
+
+                  10                    10                    10                    10      99      99                   -10
+                  20                    20                    10                    10      99      99                   -20
+
+--- 2 row(s) selected.
+>>
+>>-- Nulls
+>>-- Genesis 10-971028-7413
+>>select null from t001t1;
+
+(EXPR)               
+---------------------
+
+                    ?
+                    ?
+
+--- 2 row(s) selected.
+>>					-- ok
+>>select cast(null as char) from t001t1;
+
+(EXPR)
+------
+
+?     
+?     
+
+--- 2 row(s) selected.
+>>				-- ok
+>>select a from t001t1 where null is not null;
+
+--- 0 row(s) selected.
+>>			-- ok (0 rows)
+>>select a from t001t1 where null is null and cast(null as char) is null and cast(null as int) + 1 is null;
+
+A          
+-----------
+
+         10
+         20
+
+--- 2 row(s) selected.
+>>			-- ok
+>>select null+1 from t001t1;
+
+*** ERROR[4098] A NULL operand is not allowed in operation (NULL + 1).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select -null from t001t1;
+
+*** ERROR[4098] A NULL operand is not allowed in operation (-NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select avg(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (AVG(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (COUNT(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select max(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (MAX(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select max(null/2) from t001t1;
+
+*** ERROR[4098] A NULL operand is not allowed in operation (NULL / 2).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select stddev(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (STDDEV(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where b < null;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (B < NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where null > b;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (NULL > B).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where b < 1-null;
+
+*** ERROR[4098] A NULL operand is not allowed in operation (1 - NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where (a,b) < (c,null);
+
+*** ERROR[4099] A NULL operand is not allowed in predicate ((A, B) < (C, NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where (null,b) < (c,d);
+
+*** ERROR[4099] A NULL operand is not allowed in predicate ((NULL, B) < (C, D)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select b || NULL from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (SEABASE.SCH.T001T1.B || NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select NULL || b from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (NULL || SEABASE.SCH.T001T1.B).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where c between 2 and null;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.C BETWEEN 2 AND NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where null like 'x';
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (NULL LIKE 'x').
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where b like null;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.B LIKE NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where b like 'x' escape null;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.B like 'x' escape NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where 1 like 2;
+
+*** ERROR[4050] The operands of the LIKE predicate must be comparable character data types (that is, of the same character set and collation).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where 1 like b;
+
+*** ERROR[4041] Type NUMERIC(1) cannot be compared with type CHAR(9).
+
+*** ERROR[4050] The operands of the LIKE predicate must be comparable character data types (that is, of the same character set and collation).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where b like 2;
+
+*** ERROR[4041] Type CHAR(9) cannot be compared with type NUMERIC(1).
+
+*** ERROR[4050] The operands of the LIKE predicate must be comparable character data types (that is, of the same character set and collation).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select Abs  		(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (ABS(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Char_Length  	(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (CHAR_LENGTH(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select ConvertTimestamp (null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (CONVERTTIMESTAMP(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select DateFormat 	(null, usa) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (DATEFORMAT(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select DayOfWeek	(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (DAYOFWEEK(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Extract 		(hour from null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (HOUR(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select JulianTimestamp 	(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (JULIANTIMESTAMP(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select left             ('a',null) from t001t1;
+
+*** ERROR[4046] The operands of function LEFT must be exact numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select left             (null,2) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function SUBSTRING.
+
+*** ERROR[4062] The preceding error actually occurred in function LEFT.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select ltrim            (null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function TRIM, LTRIM or RTRIM.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Lower  		(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function LOWER or LCASE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Octet_Length 	(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function (OCTET_LENGTH(NULL)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Position 	(null in b) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function POSITION or LOCATE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Position 	(b in null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function POSITION or LOCATE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select rtrim            (null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function TRIM, LTRIM or RTRIM.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Substring	(null from 2) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function SUBSTRING.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Substring	(b from null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function SUBSTRING.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Trim  		(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function TRIM, LTRIM or RTRIM.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Upper  		(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function UPPER or UCASE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select Upshift  	(null) from t001t1;
+
+*** ERROR[4097] A NULL operand is not allowed in function UPPER or UCASE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select a from t001t1 where c in (select cast(null as int) from t001t1);
+
+--- 0 row(s) selected.
+>>	-- ok
+>>select a from t001t1 where c in (select null from t001t1);
+
+--- 0 row(s) selected.
+>>select a from t001t1 where null in (select a from t001t1);
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (NULL = ANY (_subquery_)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where c in (1,null,2);
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.C = NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a from t001t1 where null >any (select a from t001t1);
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (NULL > ANY (_subquery_)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select (case null when 1 then 1 else 2 end) from t001t1;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (NULL = 1).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select (case a when null then 1 else 2 end) from t001t1;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.A = NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select (case a when 1 then 1 when null then 2 else 3 end) from t001t1;
+
+*** ERROR[4099] A NULL operand is not allowed in predicate (SEABASE.SCH.T001T1.A = NULL).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select (case a when 1 then 1 when 2 then 2 else null end) from t001t1;
+
+(EXPR)
+------
+
+     ?
+     ?
+
+--- 2 row(s) selected.
+>>	-- ok
+>>
+>>select a from t001t1 where null is null;
+
+A          
+-----------
+
+         10
+         20
+
+--- 2 row(s) selected.
+>>			-- ok
+>>select a from t001t1 where null is not null;
+
+--- 0 row(s) selected.
+>>			-- ok (0 rows)
+>>
+>>
+>>-- PARAM queries
+>>set param ?p 10;
+>>set param ?q 30;
+>>
+>>select t001t1.*, ?p from t001t1 where a = ?p;
+
+A            B          C            D     (EXPR)               
+-----------  ---------  -----------  ----  ---------------------
+
+         10  abc                 20  xy                10.000000
+
+--- 1 row(s) selected.
+>>
+>>-- Genesis Case 10-03015-3953
+>>select a from t001t1 where ?q between ((cast (a as largeint))/1) and 50;
+
+A          
+-----------
+
+         10
+         20
+
+--- 2 row(s) selected.
+>>
+>>prepare s3 from select t001t1.*, ?p from t001t1 where a = ?p or a = ?q;
+
+--- SQL command prepared.
+>>execute s3;
+
+A            B          C            D     (EXPR)               
+-----------  ---------  -----------  ----  ---------------------
+
+         10  abc                 20  xy                10.000000
+
+--- 1 row(s) selected.
+>>
+>>set param ?p 20;
+>>set param ?u 101;
+>>prepare s4 from update t001t1 set a = ?u where c = ?p;
+
+--- SQL command prepared.
+>>execute s4;
+
+--- 1 row(s) updated.
+>>
+>>select * from t001t1;
+
+A            B          C            D   
+-----------  ---------  -----------  ----
+
+         20  defg                30  wx  
+        101  abc                 20  xy  
+
+--- 2 row(s) selected.
+>>
+>>set param ?p 40;
+>>set param ?u 301;
+>>execute s4;
+
+--- 0 row(s) updated.
+>>
+>>select * from t001t1;
+
+A            B          C            D   
+-----------  ---------  -----------  ----
+
+         20  defg                30  wx  
+        101  abc                 20  xy  
+
+--- 2 row(s) selected.
+>>
+>>prepare s from delete from t001t1;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 2 row(s) deleted.
+>>
+>>select * from t001t1;
+
+--- 0 row(s) selected.
+>>
+>>set param ?p 10;
+>>set param ?q 30;
+>>
+>>#ifMX
+>>prepare s3 from select t001ut1.*, ?p from t001ut1 where a = ?p or a = ?q;
+
+--- SQL command prepared.
+>>execute s3;
+
+A            B                   C            D         (EXPR)
+-----------  ------------------  -----------  --------  ---------------------
+
+         10  abc                          20  xy                    10.000000
+
+--- 1 row(s) selected.
+>>
+>>select * from t001ut1;
+
+A            B                   C            D       
+-----------  ------------------  -----------  --------
+
+         10  abc                          20  xy      
+         20  defg                         30  wx      
+
+--- 2 row(s) selected.
+>>
+>>prepare s from delete from t001ut1;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 2 row(s) deleted.
+>>
+>>select * from t001ut1;
+
+--- 0 row(s) selected.
+>>#ifMX
+>>
+>>
+>>------------------------------
+>>
+>>obey TEST001(test_IFDEF);
+>>
+>>#ifdef Test001_envVar_A
+>>  env_A;
+>>#ifdef  test001_ENVVAR_b 
+>>    env_B;
+>>#ifndef 	TEST001_envvar_C	
+>>      NOT env_C;
+>>#else
+>>      env_C;
+>>#endif
+>>#endif B
+>>#else
+>>  NOT env A;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+NOT env A;
+    ^ (5 characters from start of SQL statement)
+
+>>#endif
+>>
+>>#ifdef	Test001_envVar_d
+>>  env_D;
+>>#endif
+>>#else
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#else
+^ (1 characters from start of SQL statement)
+
+>>  foo bad else/endif!;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+foo bad else/endif!;
+    ^ (5 characters from start of SQL statement)
+
+>>#endif
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#endif
+^ (1 characters from start of SQL statement)
+
+>>
+>>
+>>set envvar TEST001_ENVvAR_a;
+
+--- SQL operation complete.
+>>obey TEST001(test_IFDEF);
+>>
+>>#ifdef Test001_envVar_A
+>>  env_A;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_A;
+     ^ (7 characters from start of SQL statement)
+
+>>#ifdef  test001_ENVVAR_b 
+>>    env_B;
+>>#ifndef 	TEST001_envvar_C	
+>>      NOT env_C;
+>>#else
+>>      env_C;
+>>#endif
+>>#endif B
+>>#else
+>>  NOT env A;
+>>#endif
+>>
+>>#ifdef	Test001_envVar_d
+>>  env_D;
+>>#endif
+>>#else
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#else
+^ (1 characters from start of SQL statement)
+
+>>  foo bad else/endif!;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+foo bad else/endif!;
+    ^ (5 characters from start of SQL statement)
+
+>>#endif
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#endif
+^ (1 characters from start of SQL statement)
+
+>>
+>>
+>>set envvar TEST001_ENVvAR_B;
+
+--- SQL operation complete.
+>>set envvar TEST001_ENVvAR_D;
+
+--- SQL operation complete.
+>>obey TEST001(test_IFDEF);
+>>
+>>#ifdef Test001_envVar_A
+>>  env_A;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_A;
+     ^ (7 characters from start of SQL statement)
+
+>>#ifdef  test001_ENVVAR_b 
+>>    env_B;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_B;
+     ^ (7 characters from start of SQL statement)
+
+>>#ifndef 	TEST001_envvar_C	
+>>      NOT env_C;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+NOT env_C;
+    ^ (5 characters from start of SQL statement)
+
+>>#else
+>>      env_C;
+>>#endif
+>>#endif B
+>>#else
+>>  NOT env A;
+>>#endif
+>>
+>>#ifdef	Test001_envVar_d
+>>  env_D;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_D;
+     ^ (7 characters from start of SQL statement)
+
+>>#endif
+>>#else
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#else
+^ (1 characters from start of SQL statement)
+
+>>  foo bad else/endif!;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+foo bad else/endif!;
+    ^ (5 characters from start of SQL statement)
+
+>>#endif
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#endif
+^ (1 characters from start of SQL statement)
+
+>>
+>>
+>>set envvar test001_Envvar_c;
+
+--- SQL operation complete.
+>>set envvar TEST001_ENVvAR_D 0;
+
+--- SQL operation complete.
+>>obey TEST001(test_IFDEF);
+>>
+>>#ifdef Test001_envVar_A
+>>  env_A;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_A;
+     ^ (7 characters from start of SQL statement)
+
+>>#ifdef  test001_ENVVAR_b 
+>>    env_B;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_B;
+     ^ (7 characters from start of SQL statement)
+
+>>#ifndef 	TEST001_envvar_C	
+>>      NOT env_C;
+>>#else
+>>      env_C;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_C;
+     ^ (7 characters from start of SQL statement)
+
+>>#endif
+>>#endif B
+>>#else
+>>  NOT env A;
+>>#endif
+>>
+>>#ifdef	Test001_envVar_d
+>>  env_D;
+>>#endif
+>>#else
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#else
+^ (1 characters from start of SQL statement)
+
+>>  foo bad else/endif!;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+foo bad else/endif!;
+    ^ (5 characters from start of SQL statement)
+
+>>#endif
+
+*** ERROR[15001] A syntax error occurred at or before: 
+#endif
+^ (1 characters from start of SQL statement)
+
+>>
+>>
+>>obey TEST001(test_IFDEF_indented);
+>>
+>>#ifdef Test001_envVar_A		  	 	 
+>>	    env_A;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_A;
+     ^ (7 characters from start of SQL statement)
+
+>>#  ifdef  test001_ENVVAR_b  	
+>>	    env_B;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_B;
+     ^ (7 characters from start of SQL statement)
+
+>>#    ifndef 	TEST001_envvar_C	
+>>	    NOT env_C;
+>>#    else	 	       C
+>>	    env_C;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+env_C;
+     ^ (7 characters from start of SQL statement)
+
+>>#    endif	C
+>>#  endif B
+>>#else not A
+>>	    NOT env A;
+>>#endif
+>>
+>>?ifdef Test001_envVar_A
+
+*** ERROR[15001] A syntax error occurred at or before: 
+?ifdef Test001_envVar_A
+       ^ (8 characters from start of SQL statement)
+
+>>?endif
+
+*** ERROR[15001] A syntax error occurred at or before: 
+?endif
+     ^ (7 characters from start of SQL statement)
+
+>>-- both of these must be syntax errors; '?ifdef' illegal, only '#ifdef' ok!
+>>
+>>
+>>
+>>log;

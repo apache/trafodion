@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.       -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+
+<project name="trafci" default="dist">
+
+    <!-- Set your environment here -->
+    <property name="tools.dir" value="/opt/home/tools"/>
+
+    <!-- Don't change anything below this line -->
+    <exec executable="/bin/sh">
+        <arg line="getBuildInfo"/>
+    </exec>
+    <property file="buildId"/>
+
+    <property name="source.version" value="1.7" />
+    <property id="base.dir" name="base.dir" value="."/>
+    <property name="jdbcT4" value="${base.dir}/../../sqf/export/lib/jdbcT4.jar"/>
+    <property name="platform-install.dir" value="${base.dir}/../../sqf/trafci"/>
+    <property name="temp.dir" value="${base.dir}/temp"/>
+    <property name="tempsrc.dir" value="${temp.dir}/src"/>
+    <property name="tempinstall.dir" value="${temp.dir}/install"/>
+    <property name="client.dir" value="${base.dir}/../../conn/clients"/>
+    <property name="classes.dir" value="${temp.dir}/classes"/>
+    <property name="installclasses.dir" value="${temp.dir}/install-classes"/>
+    <property name="src.dir" value="${base.dir}/src"/>
+    <property name="utils.dir" value="${base.dir}/utils"/>
+    <property name="lib.dir" value="${base.dir}/lib"/>
+    <property name="install.dir" value="${base.dir}/install"/>
+    <property name="samples.dir" value="${base.dir}/samples"/>
+    <property name="vproc.class" value="org/trafodion/ci/Vproc.java"/>
+    <property name="ciutils64dll.dll" value="WCIUtils64.dll"/>
+    <property name="ciutilsdll.src.dir" value="${base.dir}/dllsrc/WCIUtils"/>
+    <property name="ciutilsdll.dest.dir" value="${classes.dir}/org/trafodion/ci"/>
+    <property name="Install.class" value="Installer.java"/>
+    <property name="filter.class" value="filter.java"/>
+    <property name="Properties.src" value="${tempsrc.dir}/org/trafodion/ci/Properties"/>
+    <property name="Properties.dest" value="${classes.dir}/org/trafodion/ci/Properties"/>
+    <property name="help.src" value="${tempsrc.dir}/org/trafodion/ci/help"/>
+    <property name="help.dest" value="${classes.dir}/org/trafodion/ci/help"/>
+    <property name="bin.dir" value="${temp.dir}/bin" />
+    <property name="deploy.dir" value="${temp.dir}/deploy" />
+    <property name="executable.jar" value="trafci.jar" />
+    <property name="installer.file" value="trafciInstaller.jar" />
+    <property name="tar.file" value="trafci.tar" />
+    <property name="installer.zipfile" value="trafci.zip" />
+    <property name="vproc.version" value="TrafCI_Build_${bldId}"/>
+ 
+    <target name="clean">
+       <delete dir="${temp.dir}"/>
+       <delete dir="${platform-install.dir}"/>
+    </target>
+
+    <target name="init" depends="clean">
+       <mkdir dir="${temp.dir}"/>
+       <mkdir dir="${tempsrc.dir}"/>
+       <mkdir dir="${tempinstall.dir}"/>
+       <mkdir dir="${classes.dir}"/>
+       <mkdir dir="${installclasses.dir}"/>
+       <mkdir dir="${bin.dir}"/>
+       <mkdir dir="${deploy.dir}"/>
+    </target>
+
+    <target name="compile" depends="init">
+      <copy todir="${tempsrc.dir}">
+         <fileset dir="${src.dir}"/>
+      </copy>
+      <copy todir="${tempinstall.dir}">
+         <fileset dir="${install.dir}"/>
+      </copy>
+
+      <echo message="BUILD Vproc version ${vproc.version}"/>
+      <replace file="${tempsrc.dir}/${vproc.class}" token="@@@" value="${vproc.version}"/>
+      <replace file="${tempinstall.dir}/${Install.class}" token="@@@VPROC@@@" value="${vproc.version}"/>
+
+      <javac destdir="${classes.dir}" classpath="${jdbcT4}" debug="on" deprecation="no" includeAntRuntime="false" source="${source.version}">
+         <src path="${tempsrc.dir}"/>
+         <compilerarg value="-XDignore.symbol.file"/>
+      </javac>
+
+      <javac destdir="${installclasses.dir}" debug="on" includeAntRuntime="false" deprecation="yes" source="${source.version}">
+         <src path="${tempinstall.dir}"/>
+         <compilerarg value="-XDignore.symbol.file"/>
+      </javac>
+
+    </target>
+
+    <target name="build" depends="compile"> 
+      <copy todir="${Properties.dest}">
+         <fileset dir="${Properties.src}"/>
+      </copy>
+
+      <copy todir="${help.dest}">
+         <fileset dir="${help.src}"/>
+      </copy>
+
+      <java classname="org.trafodion.ci.HelpIndexer">
+         <arg value="${help.dest}"/>
+         <classpath>
+            <pathelement path="${classes.dir}"/>
+         </classpath>
+      </java>
+      <echo message="${ant.project.name}: Copying ${ciutils64dll.dll} to ${ciutilsdll.dest.dir}"/>
+      <copy todir="${ciutilsdll.dest.dir}">
+         <fileset file="${ciutilsdll.src.dir}/${ciutils64dll.dll}"/>   	
+      </copy>
+      <jar destfile="${lib.dir}/${executable.jar}" basedir="${classes.dir}">
+      <manifest>
+         <attribute name="Main-Class" value="org/trafodion/ci/Vproc"/>
+      </manifest>
+      </jar>
+    </target>
+
+    <target name="deploy" depends="build">
+       <copy todir="${deploy.dir}/bin">
+           <fileset dir="${utils.dir}" excludes="**/*.contrib*, ciencr.sh, onplatform.sh, README, trafci_install.sh"/>
+      </copy>
+      <copy todir="${deploy.dir}/lib">
+           <fileset dir="${lib.dir}" excludes="**/*.contrib*, *.db, **/*.db"/>
+      </copy>
+
+      <copy todir="${deploy.dir}/samples">
+           <fileset dir="${samples.dir}" excludes="**/*.contrib*, *.db"/>
+      </copy>
+
+      <jar destfile="${deploy.dir}/${installer.file}">
+            <fileset dir="${installclasses.dir}" />
+            <fileset dir="${deploy.dir}" excludes="ciencr.sh, onplatform.sh" />
+            <manifest>
+               <attribute name="Main-Class" value="Installer" />
+            </manifest>
+      </jar>
+
+      <copy file="${utils.dir}/README" todir="${deploy.dir}" overwrite="true" />
+
+      <tar destfile="${deploy.dir}/${tar.file}" basedir="${deploy.dir}" includes="*.jar,README">
+      </tar> 
+      <zip destfile="${client.dir}/${installer.zipfile}" basedir="${deploy.dir}" includes="*.jar,README"/>
+    </target>
+    <target name="dist" depends="deploy">
+      <exec dir="${utils.dir}" executable="sh">
+         <arg line="trafci_install.sh"/>
+      </exec> 
+    </target>
+</project>

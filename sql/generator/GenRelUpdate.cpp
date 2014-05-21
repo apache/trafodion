@@ -1,0 +1,2510 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+/* -*-C++-*-
+******************************************************************************
+*
+* File:         GenRelUpdate.C
+* Description:  update/delete/insert operators
+*               
+* Created:      5/17/94
+* Language:     C++
+*
+*
+******************************************************************************
+*/
+
+#include "Sqlcomp.h"
+#include "GroupAttr.h"
+#include "RelMisc.h"
+#include "RelUpdate.h"
+#include "RelJoin.h"
+#include "ControlDB.h"
+#include "GenExpGenerator.h"
+#include "ComTdbDp2Oper.h"
+#include "ComTdbUnion.h"
+#include "ComTdbOnlj.h"
+#include "ComTdbHbaseAccess.h"
+#include "PartFunc.h"
+#include "HashRow.h"
+#include "CmpStatement.h"
+#include "OptimizerSimulator.h"
+#include "ComTdbFastTransport.h"
+#include "CmpSeabaseDDL.h"
+#include "NAExecTrans.h"
+#include <algorithm>
+
+/////////////////////////////////////////////////////////////////////
+//
+// Contents:
+//    
+//   DeleteCursor::codeGen()
+//   DP2Delete::codeGen()
+//   Delete::codeGen()
+//
+//   DP2Insert::codeGen()
+//   Insert::codeGen()
+//
+//   UpdateCursor::codeGen()
+//   DP2Update::codeGen()
+//   Update::codeGen()
+//
+// ##IM: to be REMOVED:
+// ## the imCodeGen methods, Generator::im*, the executor imd class.
+//
+//////////////////////////////////////////////////////////////////////
+
+
+inline static NABoolean getReturnRow(const GenericUpdate *gu,
+				     const IndexDesc *index)
+{
+  return gu->producesOutputs();
+}
+
+static DP2LockFlags initLockFlags(GenericUpdate *gu, Generator * generator)
+{
+  // fix case 10-040429-7402 by checking gu's statement level access options
+  // first before declaring any error 3140/3141.
+
+  TransMode::IsolationLevel ilForUpd;
+  generator->verifyUpdatableTransMode(&gu->accessOptions(),
+				      generator->getTransMode(),
+				      &ilForUpd);
+  DP2LockFlags lf;
+  if (gu->accessOptions().userSpecified())
+    lf = gu->accessOptions().getDP2LockFlags();
+  else
+    lf = generator->getTransMode()->getDP2LockFlags();
+
+  // stable access with update/delete/insert are treated as
+  // read committed.
+  if (lf.getConsistencyLevel() == DP2LockFlags::STABLE)
+    lf.setConsistencyLevel(DP2LockFlags::READ_COMMITTED);    
+  
+  if ((ilForUpd != TransMode::IL_NOT_SPECIFIED_) &&
+      (NOT gu->accessOptions().userSpecified()))
+    {
+      TransMode t(ilForUpd);
+      lf.setConsistencyLevel(
+	   (DP2LockFlags::ConsistencyLevel)t.getDP2LockFlags().getConsistencyLevel());
+      lf.setLockState(
+	   (DP2LockFlags::LockState)t.getDP2LockFlags().getLockState());
+    }
+
+  return lf;
+}
+
+void GenericUpdate::setTransactionRequired(Generator *generator, 
+					   NABoolean  isNeededForAllFragments)
+{
+  if (!generator->isInternalRefreshStatement() ||
+       getIndexDesc()->getNAFileSet()->isAudited())
+  {
+    generator->setTransactionFlag(TRUE, isNeededForAllFragments);
+  }
+  else
+  {
+    // Internal refresh statement and table is non-audited.
+    if (!getTableDesc()->getNATable()->isAnMV()  &&
+         getTableName().getSpecialType() != ExtendedQualName::IUD_LOG_TABLE &&
+         getTableName().getSpecialType() != ExtendedQualName::GHOST_IUD_LOG_TABLE)
+    {
+      generator->setTransactionFlag(TRUE, isNeededForAllFragments);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////
+//
+// DeleteCursor::codeGen()
+//
+///////////////////////////////////////////////////////////
+short DeleteCursor::codeGen(Generator * generator)
+{
+  GenAssert(0, "DeleteCursor::codeGen:should not reach here.");
+
+  return 0;
+}
+
+static short genUpdExpr(
+        Generator * generator, 
+        TableDesc * tableDesc,           // IN
+        const IndexDesc * indexDesc,     // IN
+        ValueIdArray &recExprArray,      // IN
+        const Int32 updatedRowAtpIndex,    // IN
+        ex_expr** updateExpr,            // OUT
+        ULng32 &updateRowLen,     // OUT
+        ExpTupleDesc** ufRowTupleDesc,   // OUT fetched/updated RowTupleDesc,
+                                         // depending on updOpt (TRUE ->fetched)
+        NABoolean updOpt)                // IN
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  ExpTupleDesc::TupleDataFormat tupleFormat = 
+                   generator->getTableDataFormat( tableDesc->getNATable() );
+  NABoolean alignedFormat = tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
+
+  // Generate the update expression that will create the updated row
+  // given to DP2 at runtime.
+  ValueIdList updtRowVidList;
+  BaseColumn *updtCol       = NULL,
+             *fetchedCol    = NULL;
+  Lng32        updtColNum    = -1,
+              fetchedColNum = 0;
+  ItemExpr   *updtColVal    = NULL,
+             *castNode      = NULL;
+  CollIndex   recEntries    = recExprArray.entries(),
+              colEntries    = indexDesc->getIndexColumns().entries(),
+              j             = 0;
+  NAColumn   *col;
+  NAColumnArray colArray;
+
+  for (CollIndex i = 0; i < colEntries; i++) 
+    {
+      fetchedCol =
+        (BaseColumn *)(((indexDesc->getIndexColumns())[i]).getItemExpr());
+      fetchedColNum = fetchedCol->getColNumber();
+      
+      updtCol =
+        (updtCol != NULL
+         ? updtCol
+         : (j < recEntries
+            ? (BaseColumn *)(recExprArray[j].getItemExpr()->child(0)->castToItemExpr())
+            : NULL));
+
+      updtColNum = (updtCol ? updtCol->getColNumber() : -1);
+      
+      if (fetchedColNum == updtColNum)
+        {
+          updtColVal = recExprArray[j].getItemExpr()->child(1)->castToItemExpr();
+          j++;
+          updtCol = NULL;
+        }
+      else
+        {
+          updtColVal = fetchedCol;
+        }
+      
+      ValueId updtValId = fetchedCol->getValueId();
+
+      castNode = new(generator->wHeap()) Cast(updtColVal, &(updtValId.getType()));
+
+      castNode->bindNode(generator->getBindWA());
+
+      if (((updOpt) && (fetchedColNum == updtColNum)) ||
+	  (NOT updOpt))
+	{
+	  if (updOpt)
+	    {
+	      // assign the attributes of the fetched col to the
+	      // updated col.
+	      generator->addMapInfo(
+		   castNode->getValueId(),
+		   generator->getMapInfo(fetchedCol->getValueId())->getAttr());
+	    }
+
+          if ( alignedFormat &&
+               (col = updtValId.getNAColumn( TRUE )) &&
+               (col != NULL) )
+            colArray.insert( col );
+
+	  updtRowVidList.insert(castNode->getValueId());
+	}
+    }     // for each column
+
+  // Generate the update expression
+  //
+  if (NOT updOpt)
+    {
+      // Tell the expression generator that we're coming in for an insert
+      // or an update.  This flag will be cleared in generateContigousMoveExpr.
+      if ( tupleFormat == ExpTupleDesc::SQLMX_FORMAT ||
+           tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT )
+         expGen->setForInsertUpdate( TRUE );
+
+      expGen->generateContiguousMoveExpr
+	(updtRowVidList,
+	 // (IN) Don't add convert nodes, Cast's have already been done.
+	 0,
+	 // (IN) Destination Atp
+	 1, 
+	 // (IN) Destination Atp index
+	 updatedRowAtpIndex,
+	 // (IN) Destination data format
+	 tupleFormat,
+	 // (OUT) Destination tuple length
+	 updateRowLen,
+	 // (OUT) Generated expression
+	 updateExpr, 
+	 // (OUT) Tuple descriptor for destination tuple
+	 ufRowTupleDesc, 
+	 // (IN) Tuple descriptor format
+	 ExpTupleDesc::LONG_FORMAT,
+         NULL, NULL, 0, NULL, NULL,
+         &colArray);
+    }
+  else
+    {
+      // update opt being done. Fetched and updated row are exactly
+      // the same. Updated values will overwrite the copy of fetched row
+      // at runtime. Change the atp & atpindex for target.
+      expGen->assignAtpAndAtpIndex(updtRowVidList,
+				   1, updatedRowAtpIndex);
+
+      // No need to generate a header clause since the entire fetched row
+      // is copied to the updated row - header is in place.
+      expGen->setNoHeaderNeeded( TRUE );
+      
+      // generate the update expression
+      expGen->generateListExpr(updtRowVidList,ex_expr::exp_ARITH_EXPR,
+			       updateExpr);
+
+      // restore the header flag
+      expGen->setNoHeaderNeeded( FALSE );
+    }
+  
+  return 0;
+}
+
+static short genMergeInsertExpr(
+        Generator * generator, 
+        TableDesc * tableDesc,             // IN
+        const IndexDesc * indexDesc,       // IN
+        ValueIdArray &mergeInsertRecExprArray,  // IN
+        const Int32 mergeInsertKeyEncodeAtpIndex, // IN
+        const Int32 mergeInsertRowAtpIndex,       // IN
+        ex_expr** mergeInsertKeyEncodeExpr,     // OUT
+        ULng32 &mergeInsertKeyLen,       // OUT
+        ex_expr** mergeInsertExpr,        // OUT
+	ULng32 &mergeInsertRowLen, // OUT
+        ExpTupleDesc** mergeInsertRowTupleDesc)     // OUT fetched/updated RowTupleDesc,
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  *mergeInsertKeyEncodeExpr = NULL;
+  mergeInsertKeyLen = 0;
+  *mergeInsertExpr = NULL;
+  mergeInsertRowLen = 0;
+
+  // Generate the update expression that will create the updated row
+  // given to DP2 at runtime.
+  ValueIdList mergeInsertRowVidList;
+  BaseColumn *updtCol       = NULL,
+             *fetchedCol    = NULL;
+  Lng32        updtColNum    = -1,
+              fetchedColNum = 0;
+  ItemExpr   *updtColVal    = NULL,
+             *castNode      = NULL;
+  CollIndex   recEntries    = mergeInsertRecExprArray.entries(),
+              colEntries    = indexDesc->getIndexColumns().entries(),
+              j             = 0;
+  NAColumnArray colArray;
+  NAColumn *col;
+
+  if (recEntries == 0)
+    return 0;
+
+  ExpTupleDesc::TupleDataFormat tupleFormat = 
+                   generator->getTableDataFormat( tableDesc->getNATable() );
+
+  NABoolean alignedFormat = (tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT);
+  
+  for (CollIndex ii = 0; ii < mergeInsertRecExprArray.entries(); ii++)
+    {
+      const ItemExpr *assignExpr = mergeInsertRecExprArray[ii].getItemExpr();
+
+      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+      ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
+
+      // populate the colArray because this info is needed later to identify 
+      // the added columns. 
+      if ( alignedFormat )
+      {
+        col = tgtValueId.getNAColumn( TRUE );
+        if ( col != NULL )
+          colArray.insert( col );
+      }
+      
+      ItemExpr * ie = NULL;
+
+      ie = new(generator->wHeap())
+	    Cast(assignExpr->child(1), &tgtValueId.getType());
+     
+      ie->bindNode(generator->getBindWA());
+      mergeInsertRowVidList.insert(ie->getValueId());
+    }
+
+  // Tell the expression generator that we're coming in for an insert
+  // or an update.  This flag will be cleared in generateContigousMoveExpr.
+  if ( tupleFormat == ExpTupleDesc::SQLMX_FORMAT ||
+       tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT )
+    expGen->setForInsertUpdate( TRUE );
+
+  // Generate the insert expression
+  //
+  expGen->generateContiguousMoveExpr
+    (mergeInsertRowVidList,
+     // (IN) Don't add convert nodes, Cast's have already been done.
+     0,
+     // (IN) Destination Atp
+     1, 
+     // (IN) Destination Atp index
+     mergeInsertRowAtpIndex,
+     // (IN) Destination data format
+     tupleFormat,
+     // (OUT) Destination tuple length
+     mergeInsertRowLen,
+     // (OUT) Generated expression
+     mergeInsertExpr, 
+     // (OUT) Tuple descriptor for destination tuple
+     mergeInsertRowTupleDesc, 
+     // (IN) Tuple descriptor format
+     ExpTupleDesc::LONG_FORMAT,
+     NULL, NULL, 0, NULL, NULL,
+     &colArray); // colArray is needed to identify any added cols.
+  
+  // Assign attributes to the ASSIGN nodes of the newRecExpArray()
+  // This is not the same as the generateContiguousMoveExpr() call
+  // above since different valueId's are added to the mapTable.
+  // 
+  expGen->processValIdList(mergeInsertRecExprArray,
+			   tupleFormat,
+			   mergeInsertRowLen,
+			   1, 
+			   mergeInsertRowAtpIndex,
+			   mergeInsertRowTupleDesc,
+			   ExpTupleDesc::LONG_FORMAT,
+                           0,NULL,&colArray,
+                           !indexDesc->isClusteringIndex());
+
+
+  for (CollIndex i = 0; i < indexDesc->getIndexColumns().entries();
+       i++) 
+    {
+      generator->addMapInfo(
+	   (indexDesc->getIndexColumns())[i],
+	   generator->getMapInfo(mergeInsertRecExprArray[i])->getAttr()
+	   )->getAttr()->setAtp(0);
+    }
+  
+    ULng32 f;
+    expGen->generateKeyEncodeExpr(
+	 indexDesc,                              // describes the columns
+	 0,                                      // work Atp
+	 mergeInsertKeyEncodeAtpIndex,                // work Atp entry #3
+	 ExpTupleDesc::SQLMX_KEY_FORMAT,         // Tuple format
+	 mergeInsertKeyLen,                           // Key length
+	 mergeInsertKeyEncodeExpr,                    // Encode expression
+	 FALSE,                                  // don't optimize key encoding
+	 f);
+
+  return 0;
+}
+
+static short genHbaseUpdOrInsertExpr(
+			     Generator * generator,
+			     NABoolean isInsert,
+			     ValueIdArray &updRecExprArray,  // IN
+			     const Int32 updateTuppIndex,       // IN
+			     ex_expr** updateExpr,        // OUT
+			     ULng32 &updateRowLen, // OUT
+			     ExpTupleDesc** updateTupleDesc,   // OUT updated RowTupleDesc,
+			     Queue* &listOfUpdatedColNames, // OUT
+			     ex_expr** mergeInsertRowIdExpr, // out
+			     ULng32 &mergeInsertRowIdLen, // OUT
+			     const Int32 mergeInsertRowIdTuppIndex, // IN
+			     const IndexDesc * indexDesc) // IN
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space          = generator->getSpace();
+ 
+  *updateExpr = NULL;
+  updateRowLen = 0;
+
+  // Generate the update expression that will create the updated row
+  ValueIdList updRowVidList;
+
+  ExpTupleDesc::TupleDataFormat tupleFormat = 
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  
+  listOfUpdatedColNames = NULL;
+  if (updRecExprArray.entries() > 0)
+    listOfUpdatedColNames = new(space) Queue(space);
+ 
+  for (CollIndex ii = 0; ii < updRecExprArray.entries(); ii++)
+    {
+      const ItemExpr *assignExpr = updRecExprArray[ii].getItemExpr();
+      ValueId assignExprValueId = assignExpr->getValueId();
+
+      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+      ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
+
+      ItemExpr * ie = NULL;
+
+      ie = new(generator->wHeap())
+	    Cast(assignExpr->child(1), &tgtValueId.getType());
+
+      BaseColumn * bc = 
+	(BaseColumn*)(updRecExprArray[ii].getItemExpr()->child(0)->castToItemExpr());
+      
+      GenAssert(bc->getOperatorType() == ITM_BASECOLUMN,
+		"unexpected type of base table column");
+      
+      const NAColumn *nac = bc->getNAColumn();
+      if (HbaseAccess::isEncodingNeededForSerialization(bc))
+	{
+	  ie = new(generator->wHeap()) CompEncode
+	    (ie, FALSE, -1, CollationInfo::Sort, TRUE);
+	}
+
+      ie->bindNode(generator->getBindWA());
+      updRowVidList.insert(ie->getValueId());
+
+      NAString cnInList;
+      HbaseAccess::createHbaseColId(nac, cnInList);
+      
+      char * colNameInList = 
+	space->AllocateAndCopyToAlignedSpace(cnInList, 0);
+
+      listOfUpdatedColNames->insert(colNameInList);
+    }
+
+  // Generate the update expression
+  //
+  expGen->generateContiguousMoveExpr
+    (updRowVidList,
+     0, // (IN) Don't add convert nodes, Cast's have already been done.
+     1, // (IN) Destination Atp
+     updateTuppIndex, // (IN) Destination Atp index
+     tupleFormat,
+     updateRowLen,      // (OUT) Destination tuple length
+     updateExpr,  // (OUT) Generated expression
+     updateTupleDesc, // (OUT) Tuple descriptor for destination tuple
+     ExpTupleDesc::LONG_FORMAT);
+  
+  // Assign attributes to the ASSIGN nodes of the newRecExpArray()
+  // This is not the same as the generateContiguousMoveExpr() call
+  // above since different valueId's are added to the mapTable.
+  // 
+
+  // Assign attributes to the ASSIGN nodes of the updRecExpArray()
+  // This is not the same as the generateContiguousMoveExpr() call
+  // above since different valueId's are added to the mapTable.
+  // 
+  for (CollIndex ii = 0; ii < updRecExprArray.entries(); ii++)
+    {
+      const ItemExpr *assignExpr = updRecExprArray[ii].getItemExpr();
+      ValueId assignExprValueId = assignExpr->getValueId();
+      Attributes * assignAttr = (generator->addMapInfo(assignExprValueId, 0))->getAttr();
+
+      ValueId updValId = updRowVidList[ii];
+      Attributes * updValAttr = (generator->getMapInfo(updValId, 0))->getAttr();      
+      assignAttr->copyLocationAttrs(updValAttr);
+    }
+
+  for (CollIndex ii = 0; ii < updRecExprArray.entries(); ii++)
+    {
+      const ItemExpr *assignExpr = updRecExprArray[ii].getItemExpr();
+      ValueId assignExprValueId = assignExpr->getValueId();
+
+      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+      
+      Attributes * colAttr = (generator->addMapInfo(tgtValueId, 0))->getAttr();
+      Attributes * assignAttr = (generator->getMapInfo(assignExprValueId, 0))->getAttr();
+      
+      colAttr->copyLocationAttrs(assignAttr);
+
+      BaseColumn * bc = (BaseColumn *)assignExpr->child(0)->castToItemExpr();
+      const NAColumn *nac = bc->getNAColumn();
+      if (nac->isAddedColumn())
+	{
+	  colAttr->setSpecialField(); 
+
+	  Attributes::DefaultClass dc = expGen->getDefaultClass(nac);
+	  colAttr->setDefaultClass(dc);
+
+	  Attributes * attr = (*updateTupleDesc)->getAttr(ii);
+	  attr->setSpecialField(); 
+	  attr->setDefaultClass(dc);
+	}
+
+    }
+
+  if ((isInsert) &&
+      (updRowVidList.entries() > 0))
+    {
+      ULng32 firstKeyColumnOffset = 0;
+      expGen->generateKeyEncodeExpr(indexDesc,
+				    1, // (IN) Destination Atp
+				    mergeInsertRowIdTuppIndex,
+				    ExpTupleDesc::SQLMX_KEY_FORMAT,
+				    mergeInsertRowIdLen,
+				    mergeInsertRowIdExpr,
+				    FALSE,
+				    firstKeyColumnOffset,
+				    &updRowVidList,
+				    TRUE);
+    }
+
+  return 0;
+}
+
+///////////////////////////////////////////////////////////
+//
+// DP2Delete::codeGen()
+//
+// Returned Atp Layout
+//
+// +-------------+----------------+
+// | input data  |  sql table row |
+// | ( I tupps)  |   (1 tupp)     |
+// +-------------+----------------+
+//
+// Input Data -- Atp input to the node from its parent.
+// Output Data -- Row deleted from table (for base tables only).
+//
+//
+///////////////////////////////////////////////////////////
+short DP2Delete::codeGen(Generator * generator)
+{
+  GenAssert(FALSE, "DP2 delete not supported");
+  return 0;
+}
+
+//
+// Create and bind an assign node for each vertical-partition column
+// (i.e., a column in a partition of a VP table).  The assign node
+// assigns the base table column to the VP column.
+//
+static void bindVPCols(Generator *generator, 
+		       const ValueIdList & vpCols,
+		       ValueIdList & resList)
+{
+  BindWA *bindWA = generator->getBindWA();
+
+  for (CollIndex colNo=0; colNo<vpCols.entries(); colNo++) 
+    {
+      // Get the VP column -- must be ITM_INDEXCOLUMN
+      IndexColumn *vpColItem = (IndexColumn*)vpCols[colNo].getItemExpr();
+      GenAssert(vpColItem->getOperatorType() == ITM_INDEXCOLUMN,
+      		"unexpected type of vp column");
+      
+      // Get the corresponding base table column -- must be ITM_BASECOLUMN
+      ItemExpr *tblColItem = vpColItem->getDefinition().getItemExpr();
+      GenAssert(tblColItem->getOperatorType() == ITM_BASECOLUMN,
+		"unexpected type of base table column");
+      
+      Assign *assign = new (bindWA->wHeap()) Assign(vpColItem, tblColItem, FALSE);
+      
+      assign->bindNode(bindWA);
+      if (bindWA->errStatus()) 
+	{ 
+	  GenAssert(0,"bindNode of vpCol failed");
+	}
+      
+      resList.insertAt(colNo, assign->getValueId()); 
+    }
+}
+  
+
+///////////////////////////////////////////////////////////
+//
+// DP2Insert::codeGen()
+//
+//
+// Returned Atp Layout
+//
+// +-------------+----------------+
+// | input data  |  sql table row |
+// | ( I tupps)  |   (1 tupp)     |
+// +-------------+----------------+
+//
+// input data -- the atp input to the node from its parent.
+// sql table row -- tupp for row read from sql table.
+//
+///////////////////////////////////////////////////////////
+short DP2Insert::codeGen(Generator * generator)
+{
+  GenAssert(FALSE, "DP2 insert not supported");
+  return 0;
+}
+
+short HiveInsert::codeGen(Generator *generator)
+{
+  if(!generator->explainDisabled()) {
+
+    Space * space = generator->getSpace();
+
+    // a dummy tdb
+    ComTdbFastExtract* fe_tdb = new (space) ComTdbFastExtract();
+
+    generator->setExplainTuple( addExplainInfo(fe_tdb, 0, 0, generator));
+  }
+
+  return 0;
+}
+
+
+///////////////////////////////////////////////////////////
+//
+// UpdateCursor::codeGen()
+//
+///////////////////////////////////////////////////////////
+short UpdateCursor::codeGen(Generator * generator)
+{
+  GenAssert(0, "UpdateCursor::codeGen:should not reach here.");
+			
+  return 0;
+}
+
+//
+// This function is for aligned row format only.
+// This will order all the fixed fields by their alignment size,
+// followed by any added fixed fields,
+// followed by all variable fields (original or added).
+static void orderColumnsByAlignment(NAArray<BaseColumn *>   columns,
+                                    UInt32                  numColumns,
+                                    NAArray<BaseColumn *> * orderedCols )
+{
+  Int16  rc = 0;
+  NAList<BaseColumn *> varCols(5);
+  NAList<BaseColumn *> addedCols(5);
+  NAList<BaseColumn *> align4(5);
+  NAList<BaseColumn *> align2(5);
+  NAList<BaseColumn *> align1(5);
+  BaseColumn *currColumn;
+  CollIndex i, k;
+  Int32 alignmentSize;
+
+  for( i = 0, k = 0; i <  numColumns; i++ )
+  {
+    if ( columns.used(i) )
+    {
+      currColumn = columns[ i ];
+
+      if ( currColumn->getType().isVaryingLen() )
+      {
+        varCols.insert( currColumn );
+      }
+      else
+      {
+        if ( currColumn->getNAColumn()->isAddedColumn() )
+        {
+          addedCols.insert( currColumn );
+          continue;
+        }
+
+        alignmentSize = currColumn->getType().getDataAlignment();
+
+        if (8 == alignmentSize)
+          orderedCols->insertAt(k++, currColumn );
+        else if ( 4 == alignmentSize )
+          align4.insert( currColumn );
+        else if ( 2 == alignmentSize )
+          align2.insert( currColumn );
+        else
+          align1.insert( currColumn );
+      }
+    }
+  }
+
+  if (align4.entries() > 0)
+    for( i = 0; i < align4.entries(); i++ )
+      orderedCols->insertAt( k++, align4[ i ] );
+
+  if (align2.entries() > 0)
+    for( i = 0; i < align2.entries(); i++ )
+      orderedCols->insertAt( k++, align2[ i ] );
+
+  if (align1.entries() > 0)
+    for( i = 0; i < align1.entries(); i++ )
+      orderedCols->insertAt( k++, align1[ i ] );
+
+  if (addedCols.entries() > 0)
+    for( i = 0; i < addedCols.entries(); i++ )
+      orderedCols->insertAt( k++, addedCols[ i ] );
+
+  if (varCols.entries() > 0)
+    for( i = 0; i < varCols.entries(); i++ )
+      orderedCols->insertAt( k++, varCols[ i ] );
+}
+
+ModifiedFieldMap * DP2Update::createMFMap(Generator * generator,
+					  NABoolean addedColumnPresent)
+{
+  GenAssert(FALSE, "Modified field map not supported");
+  return NULL;
+}
+
+///////////////////////////////////////////////////////////
+//
+// DP2Update::codeGen()
+//
+///////////////////////////////////////////////////////////
+#pragma nowarn(770)  // warning elimination 
+short DP2Update::codeGen(Generator * generator)
+{
+  GenAssert(FALSE, "DP2 update not supported");
+  return 0;
+}
+#pragma warn(770)  // warning elimination 
+
+short Delete::codeGen(Generator * /*generator*/)
+{
+  return -1;
+}
+
+short Insert::codeGen(Generator * /*generator*/)
+{
+  return -1;
+}
+
+short Update::codeGen(Generator * /*generator*/)
+{
+  return -1;
+}
+
+short MergeUpdate::codeGen(Generator * /*generator*/)
+{
+  return -1;
+}
+
+short MergeDelete::codeGen(Generator * /*generator*/)
+{
+  return -1;
+}
+
+short HbaseDelete::codeGen(Generator * generator)
+{
+  Space * space          = generator->getSpace();
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  // allocate a map table for the retrieved columns
+  //  generator->appendAtEnd();
+  MapTable * last_map_table = generator->getLastMapTable();
+ 
+  ex_expr *scanExpr = 0;
+  ex_expr *proj_expr = 0;
+  ex_expr *convert_expr = NULL;
+  ex_expr * keyColValExpr = NULL;
+
+  ex_cri_desc * givenDesc 
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc = NULL;
+
+  const Int32 work_atp = 1;
+  const Int32 convertTuppIndex = 2;
+  const Int32 rowIdTuppIndex = 3;
+  const Int32 asciiTuppIndex = 4;
+  const Int32 rowIdAsciiTuppIndex = 5;
+  const Int32 keyColValTuppIndex = 6;
+
+  ULng32 asciiRowLen = 0; 
+  ExpTupleDesc * asciiTupleDesc = 0;
+
+  ex_cri_desc * work_cri_desc = NULL;
+  work_cri_desc = new(space) ex_cri_desc(7, space);
+
+  returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  NABoolean returnRow = getReturnRow(this, getIndexDesc());
+
+  ExpTupleDesc::TupleDataFormat asciiRowFormat = 
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
+    ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
+  ValueIdList asciiVids;
+  ValueIdList executorPredCastVids;
+  ValueIdList convertExprCastVids;
+
+  NABoolean addDefaultValues = TRUE;
+  NABoolean hasAddedColumns = FALSE;
+  if (getTableDesc()->getNATable()->hasAddedColumn())
+    hasAddedColumns = TRUE;
+
+  ValueIdList columnList;
+  HbaseAccess::sortValues(retColRefSet_, columnList,
+			  (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE));
+
+  const CollIndex numColumns = columnList.entries();
+
+  // build key information
+  keyRangeGen * keyInfo = 0;
+  expGen->buildKeyInfo(&keyInfo, // out
+		       generator,
+		       getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
+		       getIndexDesc()->getIndexKey(),
+		       getBeginKeyPred(),
+		       (getSearchKey() && getSearchKey()->isUnique() ? NULL : getEndKeyPred()),
+		       getSearchKey(),
+		       NULL, //getMdamKeyPtr(),
+		       FALSE,
+		       0,
+		       ExpTupleDesc::SQLMX_KEY_FORMAT);
+
+  UInt32 keyColValLen = 0;
+  char * keyColName = NULL;
+  if ((canDoCheckAndUpdel()) &&
+      (getSearchKey() && getSearchKey()->isUnique()) &&
+      (getBeginKeyPred().entries() > 0))
+    {
+      expGen->generateKeyColValueExpr(
+				      getBeginKeyPred()[0],
+				      work_atp, keyColValTuppIndex,
+				      keyColValLen,
+				      &keyColValExpr);
+
+      if (! keyColValExpr)
+	canDoCheckAndUpdel() = FALSE;
+      else
+	{
+	  ItemExpr * col_node = getBeginKeyPred()[0].getItemExpr()->child(0);
+	  HbaseAccess::genColName(generator, col_node, keyColName);
+	}
+    }
+
+  Queue * tdbListOfUniqueRows = NULL;
+  Queue * tdbListOfRangeRows = NULL;
+
+  HbaseAccess::genListsOfRows(generator,
+			      listOfDelSubsetRows_,
+			      listOfDelUniqueRows_,
+			      tdbListOfRangeRows,
+			      tdbListOfUniqueRows);
+
+  ULng32 convertRowLen = 0;
+
+  for (CollIndex ii = 0; ii < numColumns; ii++)
+    {
+      ItemExpr * col_node = ((columnList[ii]).getValueDesc())->getItemExpr();
+      
+      const NAType &givenType = col_node->getValueId().getType();
+      int res;    
+      ItemExpr *asciiValue = NULL;
+      ItemExpr *castValue = NULL;
+      
+      res = HbaseAccess::createAsciiColAndCastExpr2(
+						    generator,        // for heap
+						    col_node,
+						    givenType,         // [IN] Actual type of HDFS column
+						    asciiValue,         // [OUT] Returned expression for ascii rep.
+						    castValue        // [OUT] Returned expression for binary rep.
+						    );
+      
+      GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
+		"Error building expression tree for cast output value");
+      asciiValue->synthTypeAndValueId();
+      asciiValue->bindNode(generator->getBindWA());
+      asciiVids.insert(asciiValue->getValueId());
+      
+      castValue->bindNode(generator->getBindWA());
+      convertExprCastVids.insert(castValue->getValueId());
+    } // for (ii = 0; ii < numCols; ii++)
+  
+      // Add ascii columns to the MapTable. After this call the MapTable
+      // has ascii values in the work ATP at index asciiTuppIndex.
+  expGen->processValIdList(
+			   asciiVids,                             // [IN] ValueIdList
+			   asciiRowFormat,                        // [IN] tuple data format
+			   asciiRowLen,                           // [OUT] tuple length 
+			   work_atp,                              // [IN] atp number
+			   asciiTuppIndex,                        // [IN] index into atp
+			   &asciiTupleDesc,                       // [optional OUT] tuple desc
+			   ExpTupleDesc::LONG_FORMAT);             // [optional IN] desc format
+  
+  work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
+  
+  ExpTupleDesc * tuple_desc = 0;
+  
+  expGen->generateContiguousMoveExpr(
+				     convertExprCastVids,              // [IN] source ValueIds
+				     FALSE,                                // [IN] add convert nodes?
+				     work_atp,                             // [IN] target atp number
+				     convertTuppIndex,                 // [IN] target tupp index
+				     hbaseRowFormat,                        // [IN] target tuple format
+				     convertRowLen,             // [OUT] target tuple length
+				     &convert_expr,                // [OUT] move expression
+				     &tuple_desc,                     // [optional OUT] target tuple desc
+				     ExpTupleDesc::LONG_FORMAT,       // [optional IN] target desc format
+				     NULL,
+				     NULL,
+				     0,
+				     NULL,
+				     FALSE,
+				     NULL,
+				     FALSE /* doBulkMove */);
+  
+  for (CollIndex i = 0; i < columnList.entries(); i++) 
+    {
+      ValueId colValId = columnList[i];
+      ValueId castValId = convertExprCastVids[i];
+      
+      Attributes * colAttr = (generator->addMapInfo(colValId, 0))->getAttr();
+      Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
+      
+      colAttr->copyLocationAttrs(castAttr);
+    } // for
+
+  if (getScanIndexDesc() != NULL) 
+    {
+      for (CollIndex i = 0; i < getScanIndexDesc()->getIndexColumns().entries(); i++)
+	{
+	  ValueId scanIndexDescVID = getScanIndexDesc()->getIndexColumns()[i];
+	  const ValueId indexDescVID = getIndexDesc()->getIndexColumns()[i];
+	  
+	  CollIndex pos = 0;
+
+	  pos = columnList.index(indexDescVID);
+	  if (pos != NULL_COLL_INDEX)
+	    {
+	      Attributes * colAttr = (generator->addMapInfo(scanIndexDescVID, 0))->getAttr();
+	      
+	      ValueId castValId = convertExprCastVids[pos];
+	      Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
+	      
+	      colAttr->copyLocationAttrs(castAttr);
+	    } // if
+	  else
+	    {
+	      pos = columnList.index(scanIndexDescVID);
+	      if (pos != NULL_COLL_INDEX)
+		{
+		  Attributes * colAttr = (generator->addMapInfo(indexDescVID, 0))->getAttr();
+		  
+		  ValueId castValId = convertExprCastVids[pos];
+		  Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
+		  
+		  colAttr->copyLocationAttrs(castAttr);
+		} // if
+	    } // else
+	  
+	} // for
+    } // getScanIndexDesc != NULL
+
+  if (addDefaultValues) //hasAddedColumns)
+    {
+      expGen->addDefaultValues(columnList,
+			       getIndexDesc()->getAllColumns(),
+			       tuple_desc,
+			       TRUE);
+
+      // copy default values from convertTupleDesc to asciiTupleDesc
+      expGen->copyDefaultValues(asciiTupleDesc, tuple_desc);
+    }
+
+  // generate explain selection expression, if present
+  if ((NOT (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
+      (! executorPred().isEmpty()))
+    // if (! executorPred().isEmpty())
+    {
+      ItemExpr * newPredTree = executorPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(newPredTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			   &scanExpr);
+    }
+  
+  ULng32 rowIdAsciiRowLen = 0; 
+  ExpTupleDesc * rowIdAsciiTupleDesc = 0;
+  ex_expr * rowIdExpr = NULL;
+  ULng32 rowIdLength = 0;
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      HbaseAccess::genRowIdExpr(generator,
+				getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
+				getHbaseSearchKeys(), 
+				work_cri_desc, work_atp,
+				rowIdAsciiTuppIndex, rowIdTuppIndex,
+				rowIdAsciiRowLen, rowIdAsciiTupleDesc,
+				rowIdLength, 
+				rowIdExpr);
+    }
+  else
+    {
+      HbaseAccess::genRowIdExprForNonSQ(generator,
+					getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
+					getHbaseSearchKeys(), 
+					work_cri_desc, work_atp,
+					rowIdAsciiTuppIndex, rowIdTuppIndex,
+					rowIdAsciiRowLen, rowIdAsciiTupleDesc,
+					rowIdLength, 
+					rowIdExpr);
+    }
+  
+  Queue * listOfFetchedColNames = NULL;
+  if (NOT getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      // for hbase cell/row tables, the listoffetchedcols is not the columns that are
+      // part of the virtual cell/row tables.
+      // This list will come from the predicate and selected items used. TBD.
+      // For now, do not create a list.
+    }
+  else
+    {
+      HbaseAccess::genListOfColNames(generator,
+				     getIndexDesc(),
+				     columnList,
+				     listOfFetchedColNames);
+    }
+
+  Queue * listOfDeletedColNames = NULL;
+  if (csl())
+    {
+      listOfDeletedColNames = new(space) Queue(space);
+      for (Lng32 i = 0; i < csl()->entries(); i++)
+	{
+	  NAString * nas = (NAString*)(*csl())[i];
+	  char * colNameInList = NULL;
+	  
+	  short len = nas->length();
+	  nas->prepend((char*)&len, sizeof(short));
+
+	  colNameInList = 
+	    space->AllocateAndCopyToAlignedSpace(*nas, 0);
+	  
+	  listOfDeletedColNames->insert(colNameInList);
+	}
+    }
+
+  if (returnRow)
+    {
+      // The hbase row will be returned as the last entry of the returned atp.
+      // Change the atp and atpindex of the returned values to indicate that.
+      expGen->assignAtpAndAtpIndex(getIndexDesc()->getIndexColumns(),
+				   0, returnedDesc->noTuples()-1);
+
+      expGen->assignAtpAndAtpIndex(getScanIndexDesc()->getIndexColumns(),
+				   0, returnedDesc->noTuples()-1);
+    }
+
+  ULng32 buffersize = getDefault(GEN_DPSO_BUFFER_SIZE);
+  buffersize = MAXOF(3*convertRowLen, buffersize);
+  queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
+  queue_index downqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_DOWN);
+  Int32 numBuffers = getDefault(GEN_DPUO_NUM_BUFFERS);
+
+  char * tablename = NULL;
+  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
+    {
+      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
+    }
+  else
+    {
+      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+    }
+
+  if (! tablename)
+    tablename = 
+      space->AllocateAndCopyToAlignedSpace(
+					   GenGetQualifiedName(getTableName()), 0);
+
+  NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
+  NAString portNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_THRIFT_PORT);
+  NAString interfaceNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
+  NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
+  char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
+  strcpy(server, serverNAS.data());
+  char * port = space->allocateAlignedSpace(portNAS.length() + 1);
+  strcpy(port, portNAS.data());
+  char * interface = space->allocateAlignedSpace(interfaceNAS.length() + 1);
+  strcpy(interface, interfaceNAS.data());
+  char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
+  strcpy(zkPort, zkPortNAS.data());
+
+  ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
+    new(space) ComTdbHbaseAccess::HbasePerfAttributes();
+  if (CmpCommon::getDefault(HBASE_SCAN_CACHE_BLOCKS) == DF_ON)
+    hbpa->setCacheBlocks(TRUE);
+  hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_SCAN_NUM_CACHE_ROWS));
+
+  // create hdfsscan_tdb
+  ComTdbHbaseAccess *hbasescan_tdb = new(space) 
+    ComTdbHbaseAccess(
+		      ComTdbHbaseAccess::DELETE_,
+		      tablename,
+
+		      convert_expr,
+		      scanExpr,
+		      rowIdExpr,
+		      NULL, // updateExpr
+		      NULL, // mergeInsertExpr
+		      NULL, // mergeInsertRowIdExpr
+		      NULL, // mergeUpdScanExpr
+		      NULL, // projExpr
+		      NULL, // returnedUpdatedExpr
+		      NULL, // returnMergeUpdateExpr
+		      NULL, // encodedKeyExpr
+		      keyColValExpr,
+		      NULL, // hbaseFilterValExpr
+
+		      asciiRowLen,
+		      convertRowLen,
+		      0, // updateRowLen
+		      0, // mergeInsertRowLen
+		      0, // fetchedRowLen
+		      0, // returnedRowLen
+
+		      rowIdLength,
+		      convertRowLen,
+		      rowIdAsciiRowLen,
+		      (keyInfo ? keyInfo->getKeyLength() : 0),
+		      keyColValLen,
+		      0, // hbaseFilterValRowLen
+
+		      asciiTuppIndex,
+		      convertTuppIndex,
+		      0, // updateTuppIndex
+		      0, // mergeInsertTuppIndex
+		      0, // mergeInsertRowIdTuppIndex
+		      0, // returnedFetchedTuppIndex
+		      0, // returnedUpdatedTuppIndex
+
+		      rowIdTuppIndex,
+		      returnedDesc->noTuples()-1,
+		      rowIdAsciiTuppIndex,
+		      0, // keyTuppIndex,
+		      keyColValTuppIndex,
+		      0, // hbaseFilterValTuppIndex
+
+		      tdbListOfRangeRows,
+		      tdbListOfUniqueRows,
+		      listOfFetchedColNames,
+		      listOfDeletedColNames,
+		      NULL,
+
+		      keyInfo,
+		      keyColName,
+
+		      work_cri_desc,
+		      givenDesc,
+		      returnedDesc,
+		      downqueuelength,
+		      upqueuelength,
+		      numBuffers,
+		      buffersize,
+
+		      server,
+		      port,
+		      interface,
+                      zkPort,
+		      hbpa
+		      );
+
+  generator->initTdbFields(hbasescan_tdb);
+
+  if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
+    hbasescan_tdb->setRowwiseFormat(TRUE);
+
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      hbasescan_tdb->setSQHbaseTable(TRUE);
+
+      if ((CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
+	  (NOT noCheck()))
+	hbasescan_tdb->setHbaseSqlIUD(TRUE);
+    }
+
+  if (keyInfo && getSearchKey() && getSearchKey()->isUnique())
+    hbasescan_tdb->setUniqueKeyInfo(TRUE);
+
+  if (returnRow)
+    hbasescan_tdb->setReturnRow(TRUE);
+
+  if (rowsAffected() != GenericUpdate::DO_NOT_COMPUTE_ROWSAFFECTED)
+    hbasescan_tdb->setComputeRowsAffected(TRUE);
+
+  if (! tdbListOfUniqueRows)
+    {
+      hbasescan_tdb->setSubsetOper(TRUE);
+    }
+
+  if (canDoCheckAndUpdel())
+    hbasescan_tdb->setCanDoCheckAndUpdel(TRUE);
+  
+  if (uniqueRowsetHbaseOper())
+    hbasescan_tdb->setRowsetOper(TRUE);
+
+  if (csl())
+    hbasescan_tdb->setUpdelColnameIsStr(TRUE);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(hbasescan_tdb, 0, 0, generator));
+  }
+
+  if ((generator->computeStats()) && 
+      (generator->collectStatsType() == ComTdb::PERTABLE_STATS
+      || generator->collectStatsType() == ComTdb::OPERATOR_STATS))
+    {
+      hbasescan_tdb->setPertableStatsTdbId((UInt16)generator->
+					   getPertableStatsTdbId());
+    }
+
+  if (generator->isTransactionNeeded())
+    setTransactionRequired(generator);
+
+  generator->setFoundAnUpdate(TRUE);
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, hbasescan_tdb);
+
+ return 0;
+}
+
+short HbaseUpdate::codeGen(Generator * generator)
+{
+  Space * space          = generator->getSpace();
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  // allocate a map table for the retrieved columns
+  //  generator->appendAtEnd();
+  MapTable * last_map_table = generator->getLastMapTable();
+ 
+  // Append a new map table for holding attributes that are only used
+  // in local expressions. This map table will be removed after all
+  // the local expressions are generated.
+  //
+  MapTable *localMapTable = generator->appendAtEnd();
+
+  ex_expr *scanExpr = 0;
+  ex_expr *projExpr = 0;
+  ex_expr *convert_expr = NULL;
+  ex_expr *updateExpr = NULL;
+  ex_expr *mergeInsertExpr = NULL;
+  ex_expr *returnUpdateExpr = NULL;
+  ex_expr * keyColValExpr = NULL;
+
+  ex_cri_desc * givenDesc 
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc = NULL;
+
+  const Int32 work_atp = 1;
+  const Int32 convertTuppIndex = 2;
+  const Int32 rowIdTuppIndex = 3;
+  const Int32 asciiTuppIndex = 4;
+  const Int32 rowIdAsciiTuppIndex = 5;
+  //  const Int32 keyTuppIndex = 6;
+  const Int32 updateTuppIndex = 6;
+  const Int32 mergeInsertTuppIndex = 7;
+  const Int32 mergeInsertRowIdTuppIndex = 8;
+  const Int32 keyColValTuppIndex = 9;
+
+  ULng32 asciiRowLen = 0; 
+  ExpTupleDesc * asciiTupleDesc = 0;
+
+  ex_cri_desc * work_cri_desc = NULL;
+  work_cri_desc = new(space) ex_cri_desc(10, space);
+
+  NABoolean returnRow = getReturnRow(this, getIndexDesc());
+
+  if (returnRow)
+    // one for fetchedRow, one for updatedRow.
+    returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 2, space);
+  else
+    returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+ 
+  const Int16 returnedFetchedTuppIndex = (Int16)(returnedDesc->noTuples()-2);
+  const Int16 returnedUpdatedTuppIndex = (Int16)(returnedFetchedTuppIndex + 1);
+  
+  ExpTupleDesc::TupleDataFormat asciiRowFormat = 
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  ExpTupleDesc::TupleDataFormat hbaseRowFormat = 
+    //    ExpTupleDesc::SQLMX_ALIGNED_FORMAT;
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+    
+  ValueIdList asciiVids;
+  ValueIdList executorPredCastVids;
+  ValueIdList convertExprCastVids;
+
+  NABoolean addDefaultValues = TRUE;
+  NABoolean hasAddedColumns = FALSE;
+  if (getTableDesc()->getNATable()->hasAddedColumn())
+    hasAddedColumns = TRUE;
+
+  ValueIdList columnList;
+  HbaseAccess::sortValues(retColRefSet_, columnList,
+			  (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE));
+
+  const CollIndex numColumns = columnList.entries();
+
+ // build key information
+  keyRangeGen * keyInfo = 0;
+  expGen->buildKeyInfo(&keyInfo, // out
+		       generator,
+		       getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
+		       getIndexDesc()->getIndexKey(),
+		       getBeginKeyPred(),
+		       (getSearchKey() && getSearchKey()->isUnique() ? NULL : getEndKeyPred()),
+		       getSearchKey(),
+		       NULL, //getMdamKeyPtr(),
+		       FALSE,
+		       0,
+		       ExpTupleDesc::SQLMX_KEY_FORMAT);
+
+  UInt32 keyColValLen = 0;
+  char * keyColName = NULL;
+  if ((canDoCheckAndUpdel()) &&
+      (getSearchKey() && getSearchKey()->isUnique()) &&
+      (getBeginKeyPred().entries() > 0))
+    {
+      expGen->generateKeyColValueExpr(
+				      getBeginKeyPred()[0],
+				      work_atp, keyColValTuppIndex,
+				      keyColValLen,
+				      &keyColValExpr);
+      if (! keyColValExpr)
+	canDoCheckAndUpdel() = FALSE;
+      else
+	{
+	  ItemExpr * col_node = getBeginKeyPred()[0].getItemExpr()->child(0);
+	  HbaseAccess::genColName(generator, col_node, keyColName);
+	}
+    }
+
+  Queue * tdbListOfUniqueRows = NULL;
+  Queue * tdbListOfRangeRows = NULL;
+
+  HbaseAccess::genListsOfRows(generator,
+			      listOfUpdSubsetRows_,
+			      listOfUpdUniqueRows_,
+			      tdbListOfRangeRows,
+			      tdbListOfUniqueRows);
+
+  ULng32 convertRowLen = 0;
+
+  for (CollIndex ii = 0; ii < numColumns; ii++)
+    {
+      ItemExpr * col_node = ((columnList[ii]).getValueDesc())->getItemExpr();
+      
+      const NAType &givenType = col_node->getValueId().getType();
+      int res;    
+      ItemExpr *asciiValue = NULL;
+      ItemExpr *castValue = NULL;
+      
+      res = HbaseAccess::createAsciiColAndCastExpr2(
+						   generator,        // for heap
+						   col_node,
+						   givenType,         // [IN] Actual type of HDFS column
+						   asciiValue,         // [OUT] Returned expression for ascii rep.
+						   castValue        // [OUT] Returned expression for binary rep.
+						   );
+      
+      GenAssert(res == 1 && asciiValue != NULL && castValue != NULL,
+		"Error building expression tree for cast output value");
+      asciiValue->synthTypeAndValueId();
+      asciiValue->bindNode(generator->getBindWA());
+      asciiVids.insert(asciiValue->getValueId());
+      
+      castValue->bindNode(generator->getBindWA());
+      convertExprCastVids.insert(castValue->getValueId());
+    } // for (ii = 0; ii < numCols; ii++)
+  
+      // Add ascii columns to the MapTable. After this call the MapTable
+      // has ascii values in the work ATP at index asciiTuppIndex.
+  expGen->processValIdList(
+			   asciiVids,                             // [IN] ValueIdList
+			   asciiRowFormat,                        // [IN] tuple data format
+			   asciiRowLen,                           // [OUT] tuple length 
+			   work_atp,                              // [IN] atp number
+			   asciiTuppIndex,                        // [IN] index into atp
+			   &asciiTupleDesc,                       // [optional OUT] tuple desc
+			   ExpTupleDesc::LONG_FORMAT);             // [optional IN] desc format
+  
+  work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
+  
+  ExpTupleDesc * tuple_desc = 0;
+  
+  expGen->generateContiguousMoveExpr(
+				     convertExprCastVids,              // [IN] source ValueIds
+				     FALSE,                                // [IN] add convert nodes?
+				     work_atp,                             // [IN] target atp number
+				     convertTuppIndex,                 // [IN] target tupp index
+				     hbaseRowFormat,                        // [IN] target tuple format
+				     convertRowLen,             // [OUT] target tuple length
+				     &convert_expr,                // [OUT] move expression
+				     &tuple_desc,                     // [optional OUT] target tuple desc
+				     ExpTupleDesc::LONG_FORMAT,       // [optional IN] target desc format
+				     NULL,
+				     NULL,
+				     0,
+				     NULL,
+				     FALSE,
+				     NULL,
+				     FALSE /* doBulkMove */);
+  
+  for (CollIndex i = 0; i < columnList.entries(); i++) 
+    {
+      ValueId colValId = columnList[i];
+      ValueId castValId = convertExprCastVids[i];
+      
+      Attributes * colAttr = (generator->addMapInfo(colValId, 0))->getAttr();
+      Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
+      
+      colAttr->copyLocationAttrs(castAttr);
+    } // for
+  
+  if (getScanIndexDesc() != NULL) 
+    {
+      for (CollIndex i = 0; i < getScanIndexDesc()->getIndexColumns().entries(); i++)
+	{
+	  ValueId scanIndexDescVID = getScanIndexDesc()->getIndexColumns()[i];
+	  const ValueId indexDescVID = getIndexDesc()->getIndexColumns()[i];
+	  
+	  CollIndex pos = 0;
+
+	  pos = columnList.index(indexDescVID);
+	  if (pos != NULL_COLL_INDEX)
+	    {
+	      Attributes * colAttr = (generator->addMapInfo(scanIndexDescVID, 0))->getAttr();
+	      
+	      ValueId castValId = convertExprCastVids[pos];
+	      Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
+	      
+	      colAttr->copyLocationAttrs(castAttr);
+	    } // if
+	  else
+	    {
+	      pos = columnList.index(scanIndexDescVID);
+	      if (pos != NULL_COLL_INDEX)
+		{
+		  Attributes * colAttr = (generator->addMapInfo(indexDescVID, 0))->getAttr();
+		  
+		  ValueId castValId = convertExprCastVids[pos];
+		  Attributes * castAttr = (generator->getMapInfo(castValId))->getAttr();
+		  
+		  colAttr->copyLocationAttrs(castAttr);
+		} // if
+	    } // else
+	  
+	} // for
+    } // getScanIndexDesc != NULL
+
+  if (addDefaultValues) 
+    {
+      expGen->addDefaultValues(columnList,
+			       getIndexDesc()->getAllColumns(),
+			       tuple_desc,
+			       TRUE); 
+
+      // copy default values from convertTupleDesc to asciiTupleDesc
+      expGen->copyDefaultValues(asciiTupleDesc, tuple_desc);
+    }
+
+  // generate explain selection expression, if present
+  if ((NOT (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
+      (! executorPred().isEmpty()))
+    //  if (! executorPred().isEmpty())
+    {
+      ItemExpr * newPredTree = executorPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(newPredTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			   &scanExpr);
+    }
+
+  ex_expr * mergeInsertRowIdExpr = NULL;
+  ULng32 mergeInsertRowIdLen = 0;
+  ExpTupleDesc *updatedRowTupleDesc   = 0;
+  ULng32 updateRowLen = 0;
+  Queue * listOfUpdatedColNames = NULL;
+  genHbaseUpdOrInsertExpr(generator, 
+			  FALSE,
+			  newRecExprArray(), updateTuppIndex,
+			  &updateExpr, updateRowLen, 
+			  &updatedRowTupleDesc,
+			  listOfUpdatedColNames,
+			  NULL, mergeInsertRowIdLen, 0,
+			  getIndexDesc());
+
+  work_cri_desc->setTupleDescriptor(updateTuppIndex, updatedRowTupleDesc);
+  
+  ExpTupleDesc *mergedRowTupleDesc   = 0;
+  ULng32 mergeInsertRowLen = 0;
+  Queue * listOfMergedColNames = NULL;
+  if (isMerge())
+    {
+      genHbaseUpdOrInsertExpr(generator, 
+			      TRUE,
+			      mergeInsertRecExprArray(), mergeInsertTuppIndex,
+			      &mergeInsertExpr, mergeInsertRowLen, 
+			      &mergedRowTupleDesc,
+			      listOfMergedColNames,
+			      &mergeInsertRowIdExpr, mergeInsertRowIdLen,
+			      mergeInsertRowIdTuppIndex,
+			      getIndexDesc());
+      
+      work_cri_desc->setTupleDescriptor(mergeInsertTuppIndex, mergedRowTupleDesc);
+    }
+
+  ULng32 rowIdAsciiRowLen = 0; 
+  ExpTupleDesc * rowIdAsciiTupleDesc = 0;
+  ex_expr * rowIdExpr = NULL;
+  ULng32 rowIdLength = 0;
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      HbaseAccess::genRowIdExpr(generator,
+				getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
+				getHbaseSearchKeys(), 
+				work_cri_desc, work_atp,
+				rowIdAsciiTuppIndex, rowIdTuppIndex,
+				rowIdAsciiRowLen, rowIdAsciiTupleDesc,
+				rowIdLength, 
+				rowIdExpr);
+   }
+  else
+    {
+      HbaseAccess::genRowIdExprForNonSQ(generator,
+					getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
+					getHbaseSearchKeys(), 
+					work_cri_desc, work_atp,
+					rowIdAsciiTuppIndex, rowIdTuppIndex,
+					rowIdAsciiRowLen, rowIdAsciiTupleDesc,
+					rowIdLength, 
+					rowIdExpr);
+    }
+ 
+  Queue * listOfFetchedColNames = NULL;
+  HbaseAccess::genListOfColNames(generator,
+				 getIndexDesc(),
+				 columnList,
+				 listOfFetchedColNames);
+
+  ex_expr * mergeUpdScanExpr = NULL;
+  if (isMerge() && !mergeUpdatePred().isEmpty()) 
+    {
+      // Generate expression to evaluate any merge update predicate on the 
+      // fetched row
+      ItemExpr* updPredTree = 
+	mergeUpdatePred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(updPredTree->getValueId(), 
+			   ex_expr::exp_SCAN_PRED,
+			   &mergeUpdScanExpr);
+    }
+  else if (0) //getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
+    {
+      const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
+      CollIndex jj = 0;
+      for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
+	{
+	  const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
+	  const ValueId &tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+	  Attributes * colAttr = (generator->addMapInfo(tgtValueId, 0))->getAttr();
+	  Attributes * castAttr = (generator->getMapInfo(tgtValueId, 0))->getAttr();
+	  
+	  colAttr->copyLocationAttrs(castAttr);
+	}
+
+      ItemExpr *constrTree = 
+	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
+      
+      if (getTableDesc()->getNATable()->hasSerializedColumn())
+	constrTree = generator->addCompDecodeForDerialization(constrTree);
+
+      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			   &mergeUpdScanExpr);
+    }
+ 
+  ex_expr * returnMergeInsertExpr = NULL;
+  ULng32 returnedFetchedRowLen = 0;
+  ULng32 returnedUpdatedRowLen = 0;
+  ULng32 returnedMergeInsertedRowLen = 0;
+  if (returnRow)
+    {
+      const ValueIdList &fetchedOutputs =
+	((getScanIndexDesc() != NULL) ?
+	 getScanIndexDesc()->getIndexColumns() :
+	 getIndexDesc()->getIndexColumns());
+
+       // Generate a project expression to move the fetched row from
+      // the fetchedRowAtpIndex in the work Atp to the returnedFetchedAtpIndex 
+      // in the return Atp.
+      MapTable * returnedFetchedMapTable = 0;
+      ExpTupleDesc * returnedFetchedTupleDesc = NULL;
+      expGen->generateContiguousMoveExpr
+	(fetchedOutputs,
+	 1, // add conv nodes
+	 0,
+	 returnedFetchedTuppIndex,
+	 generator->getInternalFormat(),
+	 returnedFetchedRowLen,
+	 &projExpr, 
+	 &returnedFetchedTupleDesc,
+	 ExpTupleDesc::SHORT_FORMAT,
+	 &returnedFetchedMapTable);
+      
+      ValueIdList updatedOutputs;
+
+      if (isMerge())
+	{
+	  BaseColumn *updtCol       = NULL,
+	    *fetchedCol    = NULL;
+	  Lng32        updtColNum    = -1,
+	    fetchedColNum = 0;
+	  CollIndex   recEntries    = newRecExprArray().entries(),
+	    colEntries    = getIndexDesc()->getIndexColumns().entries(),
+	    j = 0;
+	  ValueId tgtValueId;
+	  for (CollIndex ii = 0; ii < colEntries; ii++)
+	    {
+	      fetchedCol =
+		(BaseColumn *)(((getIndexDesc()->getIndexColumns())[ii]).getItemExpr());
+	      fetchedColNum = fetchedCol->getColNumber();
+	      
+	      updtCol =
+		(updtCol != NULL ? updtCol :
+		 (j < recEntries ?
+		  (BaseColumn *)(newRecExprArray()[j].getItemExpr()->child(0)->castToItemExpr()) :
+		  NULL));
+	      
+	      updtColNum = (updtCol ? updtCol->getColNumber() : -1);
+	      
+	      if (fetchedColNum == updtColNum)
+		{
+		  const ItemExpr *assignExpr = newRecExprArray()[j].getItemExpr();
+		  tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+
+		  j++;
+		  updtCol = NULL;
+		}
+	      else
+		{
+		  tgtValueId = fetchedCol->getValueId();
+		}
+ 
+	      updatedOutputs.insert(tgtValueId);
+	    }
+	}
+      else
+	{
+	  for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
+	    {
+	      const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
+	      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+	      
+	      updatedOutputs.insert(tgtValueId);
+	    }
+	}
+
+      ValueIdSet outputs = fetchedOutputs; 
+      ValueIdSet updatedOutputsSet = updatedOutputs;
+      outputs += updatedOutputsSet;
+      getGroupAttr()->setCharacteristicOutputs(outputs);
+      
+      MapTable * returnedUpdatedMapTable = 0;
+      ExpTupleDesc * returnedUpdatedTupleDesc = NULL;
+      ValueIdList tgtConvValueIdList;
+
+     if (getTableDesc()->getNATable()->hasSerializedColumn())
+	{
+	  // if serialized columns are present, then create a new row with
+	  // deserialized columns before returning it.
+	  expGen->generateDeserializedMoveExpr
+	    (updatedOutputs,
+	     0, 
+	     returnedUpdatedTuppIndex, //projRowTuppIndex,
+	     generator->getInternalFormat(),
+	     returnedUpdatedRowLen,
+	     &returnUpdateExpr, 
+	     &returnedUpdatedTupleDesc,
+	     ExpTupleDesc::SHORT_FORMAT,
+	     tgtConvValueIdList);
+	}
+     else
+       {
+	 expGen->generateContiguousMoveExpr
+	   (updatedOutputs,
+	    1, // add conv nodes
+	    0,
+	    returnedUpdatedTuppIndex,
+	    generator->getInternalFormat(),
+	    returnedUpdatedRowLen,
+	    &returnUpdateExpr, 
+	    &returnedUpdatedTupleDesc,
+	    ExpTupleDesc::SHORT_FORMAT,
+	    &returnedUpdatedMapTable,
+	    &tgtConvValueIdList);
+       }
+
+      const ValueIdList &indexColList = getIndexDesc()->getIndexColumns();
+      for (CollIndex ii = 0; ii < tgtConvValueIdList.entries(); ii++)
+	{
+	  const ValueId &tgtColValueId = updatedOutputs[ii];
+	  const ValueId &tgtColConvValueId = tgtConvValueIdList[ii];
+
+	  BaseColumn * bc = (BaseColumn*)tgtColValueId.getItemExpr();
+	  const ValueId &indexColValueId = indexColList[bc->getColNumber()];
+	  
+	  Attributes * tgtColConvAttr = (generator->getMapInfo(tgtColConvValueId, 0))->getAttr();
+	  Attributes * indexColAttr = (generator->addMapInfo(indexColValueId, 0))->getAttr();
+	  
+	  indexColAttr->copyLocationAttrs(tgtColConvAttr);
+	}
+
+      // Set up the returned tuple descriptor for the updated tuple.
+      //
+      returnedDesc->setTupleDescriptor(returnedFetchedTuppIndex, 
+				       returnedFetchedTupleDesc);
+      returnedDesc->setTupleDescriptor(returnedUpdatedTuppIndex, 
+				       returnedUpdatedTupleDesc);
+      
+      expGen->assignAtpAndAtpIndex(getScanIndexDesc()->getIndexColumns(),
+				   0, returnedFetchedTuppIndex); 
+  
+      if (isMerge())
+	{
+	  ValueIdList mergeInsertOutputs;
+
+	  for (CollIndex ii = 0; ii < mergeInsertRecExprArray().entries(); ii++)
+	    {
+	      const ItemExpr *assignExpr = mergeInsertRecExprArray()[ii].getItemExpr();
+	      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+	      
+	      mergeInsertOutputs.insert(tgtValueId);
+	    }
+	  
+	  MapTable * returnedMergeInsertedMapTable = 0;
+	  ExpTupleDesc * returnedMergeInsertedTupleDesc = NULL;
+	  ValueIdList tgtConvValueIdList;
+
+	  if (getTableDesc()->getNATable()->hasSerializedColumn())
+	    {
+	      // if serialized columns are present, then create a new row with
+	      // deserialized columns before returning it.
+	      expGen->generateDeserializedMoveExpr
+		(mergeInsertOutputs,
+		 0, 
+		 returnedUpdatedTuppIndex, 
+		 generator->getInternalFormat(),
+		 returnedMergeInsertedRowLen,
+		 &returnMergeInsertExpr, 
+		 &returnedMergeInsertedTupleDesc,
+		 ExpTupleDesc::SHORT_FORMAT,
+		 tgtConvValueIdList);
+	    }
+	  else
+	    {
+	      expGen->generateContiguousMoveExpr
+		(mergeInsertOutputs,
+		 1, // add conv nodes
+		 0,
+		 returnedUpdatedTuppIndex,
+		 generator->getInternalFormat(),
+		 returnedMergeInsertedRowLen,
+		 &returnMergeInsertExpr, 
+		 &returnedMergeInsertedTupleDesc,
+		 ExpTupleDesc::SHORT_FORMAT,
+		 &returnedMergeInsertedMapTable,
+		 &tgtConvValueIdList);
+	    }
+	}
+    }
+
+  ULng32 buffersize = getDefault(GEN_DPSO_BUFFER_SIZE);
+  buffersize = MAXOF(3*convertRowLen, buffersize);
+
+  queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
+  queue_index downqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_DOWN);
+  Int32 numBuffers = getDefault(GEN_DPUO_NUM_BUFFERS);
+
+  char * tablename = NULL;
+  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
+    {
+      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
+    }
+  else
+    {
+      if (getIndexDesc() && getIndexDesc()->getNAFileSet())
+	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+    }
+
+  if (! tablename)
+    tablename = 
+      space->AllocateAndCopyToAlignedSpace(
+					   GenGetQualifiedName(getTableName()), 0);
+
+  NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
+  NAString portNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_THRIFT_PORT);
+  NAString interfaceNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
+  NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
+  char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
+  strcpy(server, serverNAS.data());
+  char * port = space->allocateAlignedSpace(portNAS.length() + 1);
+  strcpy(port, portNAS.data());
+  char * interface = space->allocateAlignedSpace(interfaceNAS.length() + 1);
+  strcpy(interface, interfaceNAS.data());
+  char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
+  strcpy(zkPort, zkPortNAS.data());
+
+  ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
+    new(space) ComTdbHbaseAccess::HbasePerfAttributes();
+  if (CmpCommon::getDefault(HBASE_SCAN_CACHE_BLOCKS) == DF_ON)
+    hbpa->setCacheBlocks(TRUE);
+  hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_SCAN_NUM_CACHE_ROWS));
+
+
+  // create hdfsscan_tdb
+  ComTdbHbaseAccess *hbasescan_tdb = new(space) 
+    ComTdbHbaseAccess(
+		      (isMerge() ? ComTdbHbaseAccess::MERGE_ : ComTdbHbaseAccess::UPDATE_),
+		      tablename,
+
+		      convert_expr,
+		      scanExpr,
+		      rowIdExpr,
+		      updateExpr,
+		      mergeInsertExpr,
+		      mergeInsertRowIdExpr,
+		      mergeUpdScanExpr,
+		      projExpr,
+		      returnUpdateExpr,
+		      returnMergeInsertExpr,
+		      NULL, // encodedKeyExpr
+		      keyColValExpr,
+		      NULL, // hbaseFilterValExpr
+
+		      asciiRowLen,
+		      convertRowLen,
+		      updateRowLen,
+		      mergeInsertRowLen,
+		      returnedFetchedRowLen,
+		      returnedUpdatedRowLen,
+		      
+		      ((rowIdLength > 0) ? rowIdLength : mergeInsertRowIdLen),
+		      convertRowLen,
+		      rowIdAsciiRowLen,
+		      (keyInfo ? keyInfo->getKeyLength() : 0),
+		      keyColValLen,
+		      0, // hbaseFilterValRowLen
+
+		      asciiTuppIndex,
+		      convertTuppIndex,
+		      updateTuppIndex,
+		      mergeInsertTuppIndex,
+		      mergeInsertRowIdTuppIndex,
+		      returnedFetchedTuppIndex,
+		      returnedUpdatedTuppIndex,
+
+		      rowIdTuppIndex,
+		      returnedDesc->noTuples()-1,
+		      rowIdAsciiTuppIndex,
+		      0, // keyTuppIndex,
+		      keyColValTuppIndex,
+		      0, // hbaseFilterValTuppIndex
+
+		      tdbListOfRangeRows,
+		      tdbListOfUniqueRows,
+		      listOfFetchedColNames,
+		      listOfUpdatedColNames,
+		      listOfMergedColNames,
+
+		      keyInfo,
+		      keyColName,
+
+		      work_cri_desc,
+		      givenDesc,
+		      returnedDesc,
+		      downqueuelength,
+		      upqueuelength,
+		      numBuffers,
+		      buffersize,
+
+		      server,
+		      port,
+		      interface,
+                      zkPort,
+		      hbpa
+		      );
+
+  generator->initTdbFields(hbasescan_tdb);
+
+  if (getTableDesc()->getNATable()->isHbaseRowTable()) 
+    hbasescan_tdb->setRowwiseFormat(TRUE);
+
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      hbasescan_tdb->setSQHbaseTable(TRUE);
+
+      if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
+	hbasescan_tdb->setHbaseSqlIUD(TRUE);
+    }
+
+  if (keyInfo && getSearchKey() && getSearchKey()->isUnique())
+    hbasescan_tdb->setUniqueKeyInfo(TRUE);
+
+  if (returnRow)
+    hbasescan_tdb->setReturnRow(TRUE);
+
+  if (rowsAffected() != GenericUpdate::DO_NOT_COMPUTE_ROWSAFFECTED)
+    hbasescan_tdb->setComputeRowsAffected(TRUE);
+
+  if (! tdbListOfUniqueRows)
+    {
+      hbasescan_tdb->setSubsetOper(TRUE);
+    }
+
+  if (uniqueRowsetHbaseOper())
+    hbasescan_tdb->setRowsetOper(TRUE);
+
+  if (canDoCheckAndUpdel())
+    hbasescan_tdb->setCanDoCheckAndUpdel(TRUE);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(hbasescan_tdb, 0, 0, generator));
+  }
+
+  if ((generator->computeStats()) && 
+      (generator->collectStatsType() == ComTdb::PERTABLE_STATS
+      || generator->collectStatsType() == ComTdb::OPERATOR_STATS))
+    {
+      hbasescan_tdb->setPertableStatsTdbId((UInt16)generator->
+					   getPertableStatsTdbId());
+    }
+
+  if (generator->isTransactionNeeded())
+    setTransactionRequired(generator);
+
+  generator->setFoundAnUpdate(TRUE);
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, hbasescan_tdb);
+
+  return 0;
+}
+
+bool compHBaseQualif ( NAString a  , NAString b)
+{
+  char * a_str = (char*)(a.data());
+  char * b_str = (char*)(b.data());
+
+  return (strcmp (&(a_str[sizeof(short) + sizeof(UInt32)]), &(b_str[sizeof(short)+ sizeof(UInt32)]))<0);
+};
+short HbaseInsert::codeGen(Generator *generator)
+{
+  Space * space          = generator->getSpace();
+  ExpGenerator * expGen = generator->getExpGenerator();
+
+  // allocate a map table for the retrieved columns
+  MapTable * last_map_table = generator->getLastMapTable();
+
+  NABoolean returnRow = getReturnRow(this, getIndexDesc());
+
+  ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
+  ex_cri_desc * returnedDesc = givenDesc;
+
+  if (returnRow)
+    returnedDesc = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  const Int32 returnRowTuppIndex = returnedDesc->noTuples() - 1;
+
+  const Int32 work_atp = 1;
+  ex_cri_desc * workCriDesc = NULL;
+  const UInt16 insertTuppIndex = 2;
+  const UInt16 rowIdTuppIndex = 3;
+  const UInt16 projRowTuppIndex = 5;
+  workCriDesc = new(space) ex_cri_desc(6, space);
+
+  NABoolean addDefaultValues = TRUE;
+  NABoolean hasAddedColumns = FALSE;
+  if (getTableDesc()->getNATable()->hasAddedColumn())
+    hasAddedColumns = TRUE;
+
+  ValueIdList insertVIDList;
+  ValueIdList keyVIDList;
+  NAColumnArray colArray;
+  NAColumn *col;
+
+  ValueIdList returnRowVIDList;
+  NABoolean upsertColsWereSkipped = FALSE;
+  for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
+    {
+      const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
+      ValueId tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+      ValueId srcValueId = assignExpr->child(1)->castToItemExpr()->getValueId();
+
+      col = tgtValueId.getNAColumn( TRUE );
+
+      // if upsert stmt and this assign was not specified by user, skip it. 
+      // If used, it will overwrite existing values if this row exists in the table.
+      if ((isUpsert()) &&
+	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
+	  (NOT col->isSystemColumn()))
+	{
+	  upsertColsWereSkipped = TRUE;
+	  continue;
+	}
+
+      if (returnRow)
+	returnRowVIDList.insert(tgtValueId);
+
+      if ( col != NULL )
+	colArray.insert( col );
+       
+      ItemExpr * child1Expr = assignExpr->child(1);
+      const NAType &givenType = tgtValueId.getType();
+      
+      ItemExpr * ie = new(generator->wHeap())
+	Cast(child1Expr, &givenType);
+
+      if (HbaseAccess::isEncodingNeededForSerialization
+	  (assignExpr->child(0)->castToItemExpr()))
+	{
+	  ie = new(generator->wHeap()) CompEncode
+	    (ie, FALSE, -1, CollationInfo::Sort, TRUE);
+	}
+
+      ie->bindNode(generator->getBindWA());
+      insertVIDList.insert(ie->getValueId());
+    }
+
+  ULng32 insertRowLen    = 0;
+  ExpTupleDesc * tupleDesc   = 0;
+  ExpTupleDesc::TupleDataFormat tupleFormat =
+    ExpTupleDesc::SQLARK_EXPLODED_FORMAT;
+  ex_expr *insertExpr = 0;
+  expGen->generateContiguousMoveExpr(
+				     insertVIDList,
+				     0, // dont add convert nodes
+				     1,  // work atp
+				     insertTuppIndex,
+				     tupleFormat,
+				     insertRowLen,
+				     &insertExpr, 
+				     &tupleDesc,
+				     ExpTupleDesc::LONG_FORMAT,
+				     NULL,
+				     NULL,
+				     0,
+				     NULL,
+				     NULL,
+				     &colArray);
+  
+  if (addDefaultValues) 
+    {
+      expGen->addDefaultValues(insertVIDList,
+			       (upsertColsWereSkipped ? colArray : getIndexDesc()->getAllColumns()),
+			       tupleDesc);
+    }
+
+  const NATable *naTable = getTableDesc()->getNATable();
+
+ // If constraints are present, generate constraint expression.
+  // Only works for base tables because the constraint information is
+  // stored with the table descriptor which doesn't exist for indexes.
+  //
+  ex_expr * constraintExpr = NULL;
+  Queue * listOfUpdatedColNames = NULL;
+  Lng32 keyAttrPos = -1;
+  ex_expr * rowIdExpr = NULL;
+  ULng32 rowIdLen = 0;
+
+  const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
+  CollIndex jj = 0;
+  for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
+    {
+      const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
+      const ValueId &tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
+      const ValueId &indexValueId = indexVIDlist[ii];
+      col = tgtValueId.getNAColumn( TRUE );
+      
+      if ((isUpsert()) &&
+	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
+	  (NOT col->isSystemColumn()))
+	{
+	  continue;
+	}
+      
+      ValueId &srcValId = insertVIDList[jj];
+      jj++;
+      
+      Attributes * colAttr = (generator->addMapInfo(tgtValueId, 0))->getAttr();
+      Attributes * indexAttr = (generator->addMapInfo(indexValueId, 0))->getAttr();
+      Attributes * castAttr = (generator->getMapInfo(srcValId, 0))->getAttr();
+      
+      colAttr->copyLocationAttrs(castAttr);
+      indexAttr->copyLocationAttrs(castAttr);
+    }
+  
+  ULng32 f;
+  expGen->generateKeyEncodeExpr(
+				getIndexDesc(),                         // describes the columns
+				work_atp,                                      // work Atp
+				rowIdTuppIndex,                     // work Atp entry 
+				ExpTupleDesc::SQLMX_KEY_FORMAT,         // Tuple format
+				rowIdLen,                                 // Key length
+				&rowIdExpr,                            // Encode expression
+				FALSE,
+				f,
+				NULL,
+				TRUE); // handle serialization
+  
+  if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
+    {
+      ItemExpr *constrTree = 
+	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
+
+      if (getTableDesc()->getNATable()->hasSerializedColumn())
+	constrTree = generator->addCompDecodeForDerialization(constrTree);
+
+      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
+			   &constraintExpr);
+    }
+  
+  listOfUpdatedColNames = new(space) Queue(space);
+  std::vector<NAString> columNamesVec;
+  
+  for (CollIndex c = 0; c < colArray.entries(); c++)
+    {
+      const NAColumn * nac = colArray[c];
+      
+      NAString cnInList;
+      HbaseAccess::createHbaseColId(nac, cnInList,
+				    (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
+
+      if (this->getIsTrafLoadPrep())
+      {
+        UInt32 pos = (UInt32)c +1;
+        cnInList.prepend((char*)&pos, sizeof(UInt32));
+        columNamesVec.push_back(cnInList);
+      }
+      else
+      {
+         char * colNameInList =
+	  space->AllocateAndCopyToAlignedSpace(cnInList, 0);
+
+         listOfUpdatedColNames->insert(colNameInList);
+      }
+    }
+  
+  if (getIsTrafLoadPrep())
+  {
+    std::sort(columNamesVec.begin(), columNamesVec.end(),compHBaseQualif);
+     for (std::vector<NAString>::iterator it = columNamesVec.begin() ; it != columNamesVec.end(); ++it)
+     {
+       NAString cnInList2 = *it;
+       char * colNameInList =
+                 space->AllocateAndCopyToAlignedSpace(cnInList2, 0);
+
+       listOfUpdatedColNames->insert(colNameInList);
+     }
+  }
+  // Assign attributes to the ASSIGN nodes of the newRecExpArray()
+  // This is not the same as the generateContiguousMoveExpr() call
+  // above since different valueId's are added to the mapTable.
+  // 
+  ULng32 tempInsertRowLen    = 0;
+  ExpTupleDesc * tempTupleDesc   = 0;
+  expGen->processValIdList(newRecExprArray(),
+			   tupleFormat,
+			   tempInsertRowLen,
+			   0, 
+			   returnRowTuppIndex, // insertTuppIndex,
+			   &tempTupleDesc,
+			   ExpTupleDesc::LONG_FORMAT,
+                           0, NULL, &colArray);
+
+  // Add the inserted tuple descriptor to the work cri descriptor.
+  //
+  if (workCriDesc)
+    workCriDesc->setTupleDescriptor(insertTuppIndex, tupleDesc);
+
+  ex_expr * projExpr = NULL;
+  ULng32 projRowLen    = 0;
+  ExpTupleDesc * projRowTupleDesc   = 0;
+  if (returnRow)
+    {
+      if (getTableDesc()->getNATable()->hasSerializedColumn())
+	{
+	  ValueIdList deserColVIDList;
+
+	  // if serialized columns are present, then create a new row with
+	  // deserialized columns before returning it.
+	  expGen->generateDeserializedMoveExpr
+	    (returnRowVIDList,
+	     0,//work_atp,
+	     returnRowTuppIndex, //projRowTuppIndex,
+	     generator->getInternalFormat(),
+	     projRowLen,
+	     &projExpr, 
+	     &projRowTupleDesc,
+	     ExpTupleDesc::SHORT_FORMAT,
+	     deserColVIDList);
+	  
+	  workCriDesc->setTupleDescriptor(projRowTuppIndex, projRowTupleDesc);
+
+	  // make the location of returnRowVIDlist point to the newly generated values.
+	  for (CollIndex ii = 0; ii < returnRowVIDList.entries(); ii++)
+	    {
+	      const ValueId &retColVID = returnRowVIDList[ii];
+	      const ValueId &deserColVID = deserColVIDList[ii];
+	      
+	      Attributes * retColAttr = (generator->getMapInfo(retColVID, 0))->getAttr();
+	      Attributes * deserColAttr = (generator->addMapInfo(deserColVID, 0))->getAttr();
+	      
+	      retColAttr->copyLocationAttrs(deserColAttr);
+	    }
+	  
+	  expGen->assignAtpAndAtpIndex(returnRowVIDList,
+				       0, returnRowTuppIndex);
+	}
+      else
+	{
+	  expGen->processValIdList(returnRowVIDList,
+				   tupleFormat,
+				   tempInsertRowLen,
+				   0, 
+				   returnRowTuppIndex);
+	}
+    }
+
+  ComTdbDp2Oper::SqlTableType stt = ComTdbDp2Oper::NOOP_;
+  if (getIndexDesc()->getNAFileSet()->isKeySequenced())
+    {
+      const NAColumnArray & column_array = getIndexDesc()->getAllColumns();
+  
+      if ((column_array[0]->isSyskeyColumn()) &&
+	  (column_array[0]->getType()->getNominalSize() >= 4)) {
+	stt = ComTdbDp2Oper::KEY_SEQ_WITH_SYSKEY_;
+      }
+      else
+	stt = ComTdbDp2Oper::KEY_SEQ_;
+    }
+  
+  ULng32 buffersize = getDefault(GEN_DP2I_BUFFER_SIZE);
+  buffersize = MAXOF(3*insertRowLen, buffersize);
+
+  queue_index upqueuelength =  (queue_index)getDefault(GEN_DP2I_SIZE_UP);
+  queue_index downqueuelength = (queue_index)getDefault(GEN_DP2I_SIZE_DOWN);
+  Int32 numBuffers = getDefault(GEN_DP2I_NUM_BUFFERS);
+
+  if (getInsertType() == Insert::VSBB_INSERT_USER)
+    downqueuelength = 400;
+
+  char * tablename = NULL;
+  if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
+    {
+      tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getIndexName().getObjectName()), 0);
+    }
+  else
+    {
+      tablename = space->AllocateAndCopyToAlignedSpace(
+						       GenGetQualifiedName(getIndexDesc()->getIndexName()), 0);
+    }
+
+  NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
+  NAString portNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_THRIFT_PORT);
+  NAString interfaceNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_INTERFACE);
+  NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
+  char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
+  strcpy(server, serverNAS.data());
+  char * port = space->allocateAlignedSpace(portNAS.length() + 1);
+  strcpy(port, portNAS.data());
+  char * interface = space->allocateAlignedSpace(interfaceNAS.length() + 1);
+  strcpy(interface, interfaceNAS.data());
+  char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
+  strcpy(zkPort, zkPortNAS.data());
+
+  ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
+    new(space) ComTdbHbaseAccess::HbasePerfAttributes();
+
+  ComTdbHbaseAccess::ComTdbAccessType t;
+  if (isUpsert())
+    {
+      if (getInsertType() == Insert::UPSERT_LOAD)
+	t = ComTdbHbaseAccess::UPSERT_LOAD_;
+      else
+	t = ComTdbHbaseAccess::UPSERT_;
+    }
+  else
+    t = ComTdbHbaseAccess::INSERT_;
+
+  // create hdfsscan_tdb
+  ComTdbHbaseAccess *hbasescan_tdb = new(space) 
+    ComTdbHbaseAccess(
+		      t,
+		      tablename,
+		      insertExpr,
+		      constraintExpr,
+		      rowIdExpr,
+		      NULL, // updateExpr
+		      NULL, // mergeInsertExpr
+		      NULL, // mergeInsertRowIdExpr
+		      NULL, // mergeUpdScanExpr
+		      NULL, // projExpr
+		      projExpr, // returnedUpdatedExpr
+		      NULL, // returnMergeUpdateExpr
+		      NULL, // encodedKeyExpr, 
+		      NULL, // keyColValExpr
+		      NULL, // hbaseFilterValExpr
+
+		      0, //asciiRowLen,
+		      insertRowLen,
+		      0, // updateRowLen
+		      0, // mergeInsertRowLen
+		      0, // fetchedRowLen
+		      projRowLen, // returnedUpdatedRowLen
+
+		      rowIdLen,
+		      0, //outputRowLen,
+		      0, //rowIdAsciiRowLen
+		      0, // keyLen
+		      0, // keyColValLen
+		      0, // hbaseFilterValRowLen
+
+		      0, //asciiTuppIndex,
+		      insertTuppIndex,
+		      0, //updateTuppIndex
+		      0, // mergeInsertTuppIndex
+		      0, // mergeInsertRowIdTuppIndex
+		      0, // returnedFetchedTuppIndex
+		      projRowTuppIndex, // returnedUpdatedTuppIndex
+		      
+		      rowIdTuppIndex,
+		      returnRowTuppIndex, //returnedDesc->noTuples()-1,
+		      0, // rowIdAsciiTuppIndex
+		      0, // keyTuppIndex
+		      0, // keyColValTuppIndex
+		      0, // hbaseFilterValTuppIndex
+
+		      NULL,
+		      NULL, //tdbListOfDelRows,
+		      NULL,
+		      listOfUpdatedColNames,
+		      NULL,
+
+		      NULL,
+		      NULL,
+
+		      workCriDesc,
+		      givenDesc,
+		      returnedDesc,
+
+		      downqueuelength,
+		      upqueuelength,
+		      numBuffers,
+		      buffersize,
+
+		      server, 
+		      port,
+		      interface,
+                      zkPort,
+		      hbpa
+		      );
+
+  generator->initTdbFields(hbasescan_tdb);
+
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      hbasescan_tdb->setSQHbaseTable(TRUE);
+
+      if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
+	hbasescan_tdb->setHbaseSqlIUD(TRUE);
+
+      if ((isUpsert()) ||
+	  (noCheck()))
+	hbasescan_tdb->setHbaseSqlIUD(FALSE);
+
+      if ((getInsertType() == Insert::VSBB_INSERT_USER) ||
+	  (getInsertType() == Insert::UPSERT_LOAD))
+	hbasescan_tdb->setVsbbInsert(TRUE);
+
+      if ((isUpsert()) &&
+	  (getInsertType() == Insert::UPSERT_LOAD))
+	{
+	  // this will cause tupleflow operator to send in an EOD to this upsert
+	  // operator. On seeing that, executor will flush the buffers.
+	  generator->setVSBBInsert(TRUE);
+	}
+
+      //setting parametes for hbase bulk load integration
+      hbasescan_tdb->setIsTrafodionLoadPrep(this->getIsTrafLoadPrep());
+      if (hbasescan_tdb->getIsTrafodionLoadPrep())
+      {
+        NAString tlpTmpLocationNAS = ActiveSchemaDB()->getDefaults().getValue(TRAF_LOAD_PREP_TMP_LOCATION);
+        char * tlpTmpLocation = space->allocateAlignedSpace(tlpTmpLocationNAS.length() + 1);
+        strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
+        hbasescan_tdb->setLoadPrepLocation(tlpTmpLocation);
+      }
+
+      // setting parameters for upsert statement// not related to the hbase bulk load intergration
+      NABoolean traf_upsert_adjust_params =
+         (CmpCommon::getDefault(TRAF_UPSERT_ADJUST_PARAMS) == DF_ON);
+      if (traf_upsert_adjust_params)
+      {
+        ULng32 wbSize = getDefault(TRAF_UPSERT_WB_SIZE);
+        NABoolean traf_auto_flush =
+           (CmpCommon::getDefault(TRAF_UPSERT_AUTO_FLUSH) == DF_ON);
+        NABoolean traf_write_toWAL =
+                   (CmpCommon::getDefault(TRAF_UPSERT_WRITE_TO_WAL) == DF_ON);
+
+        hbasescan_tdb->setTrafWriteToWAL(traf_write_toWAL);
+
+        hbasescan_tdb->setCanAdjustTrafParams(true);
+
+        hbasescan_tdb->setWBSize(wbSize);
+        hbasescan_tdb->setIsTrafAutoFlush(traf_auto_flush);
+
+
+      }
+    }
+  else
+    {
+      if (getTableDesc()->getNATable()->isHbaseRowTable()) //rowwiseHbaseFormat())
+	hbasescan_tdb->setRowwiseFormat(TRUE);
+    }
+
+  if (returnRow)
+    hbasescan_tdb->setReturnRow(TRUE);
+
+  if (rowsAffected() != GenericUpdate::DO_NOT_COMPUTE_ROWSAFFECTED)
+    hbasescan_tdb->setComputeRowsAffected(TRUE);
+
+  if (stt == ComTdbDp2Oper::KEY_SEQ_WITH_SYSKEY_)
+    hbasescan_tdb->setAddSyskeyTS(TRUE);
+ 
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(hbasescan_tdb, 0, 0, generator));
+  }
+
+  if ((generator->computeStats()) && 
+      (generator->collectStatsType() == ComTdb::PERTABLE_STATS
+      || generator->collectStatsType() == ComTdb::OPERATOR_STATS))
+    {
+      hbasescan_tdb->setPertableStatsTdbId((UInt16)generator->
+					   getPertableStatsTdbId());
+    }
+
+  if (generator->isTransactionNeeded())
+    setTransactionRequired(generator);
+
+   generator->setFoundAnUpdate(TRUE);
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, hbasescan_tdb);
+
+  return 0;
+}

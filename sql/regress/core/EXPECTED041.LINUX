@@ -1,0 +1,1082 @@
+>>obey TEST041(cdb);
+>>#ifMX
+>>create table T041t
++>  (a int not null , b int not null droppable, c int);
+
+--- SQL operation complete.
+>>#ifMX
+>>#ifMP
+>>create table T041t
++>  (a int not null , b int, c int);
+>>create constraint t041tnnc1 on t041t check (b is not null);
+>>#ifMP
+>>insert into T041t values(1,10,100),(2,20,200);
+
+--- 2 row(s) inserted.
+>>insert into T041t(a,b) values(1,2),(9,90),(8,80);
+
+--- 3 row(s) inserted.
+>>
+>>
+>>obey TEST041(tests);
+>>
+>>--?section OK
+>>create table T041a(
++>  dx3 pic x(3) default '' not null,
++>  d93 pic 9(3) default 0 not null,
++>  primary key (dx3));
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>alter table T041a add constraint T041a_c0 check (dx3,d93 < 'y',940);
+
+--- SQL operation complete.
+>>alter table T041a add constraint T041a_c1 check ((dx3,d93) between
++>						 ('a',50) and
++>						 ('z',990));
+
+--- SQL operation complete.
+>>#ifMX
+>>#ifMP
+>>create constraint T041a_c0 on T041a check (dx3,d93 < 'y',940);
+>>create constraint T041a_c1 on T041a check ((dx3,d93) between
++>						 ('a',50) and
++>						 ('z',990));
+>>#ifMP
+>>
+>>insert into T041a values('zaz',999);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH.T041A_C0 on table CAT.SCH.T041A.
+
+--- 0 row(s) inserted.
+>>	-- C0 vio
+>>insert into T041a values('z',910);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH.T041A_C0 on table CAT.SCH.T041A.
+
+--- 0 row(s) inserted.
+>>	-- C0 vio
+>>insert into T041a values('a',10);
+
+*** ERROR[8101] The operation is prevented by check constraint CAT.SCH.T041A_C1 on table CAT.SCH.T041A.
+
+--- 0 row(s) inserted.
+>>	-- C1 vio
+>>insert into T041a values('a',50);
+
+--- 1 row(s) inserted.
+>>insert into T041a values('b',10);
+
+--- 1 row(s) inserted.
+>>table T041a;
+
+DX3  D93
+---  ---
+
+a     50
+b     10
+
+--- 2 row(s) selected.
+>>
+>>select * from T041t where (a,b)=(1,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+
+--- 1 row(s) selected.
+>>select * from T041t where  a,b = 1,10;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+
+--- 1 row(s) selected.
+>>select * from T041t where (a,b) is not null;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where  a,b  is not null;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select a from T041t where b,(select b,c from T041t where a<=1)=2,1,2;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t where (select * from T041t) +  1,2,3 is not null;
+
+*** ERROR[4020] Arithmetic operations on row value constructors are not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	--4020
+>>select * from T041t where (select * from T041t) + (select * from T041t) is not null;
+
+*** ERROR[4020] Arithmetic operations on row value constructors are not allowed.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--4020
+>>
+>>--?section GenMapTable
+>>select * from T041t where (select * from T041t where a=1) is not null;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>  --maptable.
+>>select * from T041t where (select * from (values(1,2))x) <= (a,b);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where (select * from T041t)=(1,2,3);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t where (select * from T041t)= 1,2,3;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t where (a,b) < (select * from (values(1,2))x);
+
+--- 0 row(s) selected.
+>>select * from T041t where (1,2,3)=(select * from T041t);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t where 1,2,3=(select * from T041t);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>--?section SynErr					
+>>select * from T041t where a,b=(1,10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where a,b=(1,10);
+                                ^ (33 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>				--15001
+>>select * from T041t where (1,10)=a,b;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (1,10)=a,b;
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>				--15001
+>>select * from T041t where (select * from T041t) + (1,2,3) is not null;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (select * from T041t) + (1,2,3) is not null;
+                                                    ^ (53 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--15001
+>>select * from T041t where (1,2,3)+(select * from T041t) is not null;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (1,2,3)+(select * from T041t) is not null;
+                                 ^ (34 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	--15001
+>>select * from T041t where  a,b  >=  values(1,2);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where  a,b  >=  values(1,2);
+                                         ^ (42 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>			--15001
+>>select * from T041t where (a,b) >= (values(1,2));
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>			--normitemexpr.
+>>
+>>--?section Subq
+>>select * from T041t where (select 1,2 from T041t) = (T041t.a,b);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>	--maptable.
+>>select * from T041t where (T041t.a,b) = (select 1,2 from T041t);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>	--maptable.
+>>select * from T041t where  T041t.a,b  = (select 1,2 from T041t);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>	--maptable.
+>>
+>>select * from T041t where (T041t.a,b) >any (select b,c from T041t);
+
+A            B            C          
+-----------  -----------  -----------
+
+          9           90            ?
+          8           80            ?
+
+--- 2 row(s) selected.
+>>select * from T041t where  T041t.a,b  >any (select b,c from T041t);
+
+A            B            C          
+-----------  -----------  -----------
+
+          9           90            ?
+          8           80            ?
+
+--- 2 row(s) selected.
+>>select * from T041t where  T041t.a       >any (select   c from T041t);
+
+--- 0 row(s) selected.
+>>select * from T041t where (select b from T041t) >any (select a from T041t);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>--8401
+>>select * from T041t where (select b,c from T041t) >any (select a,b from T041t);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>--8401.
+>>select * from T041t where (T041t.a,b) in (select b,c from T041t);
+
+--- 0 row(s) selected.
+>>select * from T041t where  T041t.a,b  in (select b,c from T041t);
+
+--- 0 row(s) selected.
+>>select * from T041t where (a) = (select b from T041t where c=100);
+
+--- 0 row(s) selected.
+>>select * from T041t where  a  = (select b from T041t where c=100);
+
+--- 0 row(s) selected.
+>>
+>>select * from T041t where (select b,c from T041t) in (T041t.a,b);
+
+*** ERROR[3147] In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	--3147
+>>select * from T041t where (values(1,2)) in (1,2);
+
+*** ERROR[3147] In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>			--3147
+>>select * from T041t where (a,b) in (1,2);
+
+*** ERROR[3147] In an IN predicate whose right operand is a value list, the left operand must be scalar (degree of one).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>				--3147
+>>select * from T041t where (a,b) in (select b/10,a*10 from T041t);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          9           90            ?
+          8           80            ?
+
+--- 4 row(s) selected.
+>>	--legal!
+>>select * from T041t where (select b from T041t) in (T041t.a,b);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>  	--8401
+>>select * from T041t where (values(1)) in (1,2);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>			--normitemexpr.
+>>select * from T041t where (a) in (1,2,11);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+
+--- 3 row(s) selected.
+>>select * from T041t where  (select b,c from T041t) in T041t.a,b;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where  (select b,c from T041t) in T041t.a,b;
+                                                          ^ (59 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>	--15001
+>>select * from T041t where (select b from T041t where c=100) = (a);
+
+--- 0 row(s) selected.
+>>select * from T041t where (select b from T041t where c=100) = a;
+
+--- 0 row(s) selected.
+>>
+>>-- (scalar subq),(ss),(ss) = 1,2,3;
+>>select * from T041t where  (select b from T041t where c=100),
++>			(select b from T041t where c=200),c = 10,20,200;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2           20          200
+
+--- 1 row(s) selected.
+>>select * from T041t where ((select b from T041t where c=100),
++>			(select b from T041t where c=200),c) = (10,20,200);
+
+A            B            C          
+-----------  -----------  -----------
+
+          2           20          200
+
+--- 1 row(s) selected.
+>>select * from T041t where  (select b from T041t ),c = 10,200;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>		--8401.
+>>select * from T041t where ((select b from T041t ),c) = (10,200);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>	--8401.
+>>select a from T041t where -(select b from T041t where c>100),1 = -20,1;
+
+A          
+-----------
+
+          1
+          2
+          1
+          9
+          8
+
+--- 5 row(s) selected.
+>>select a from T041t where(-(select b from T041t where c>100),1)=(-20,1);
+
+A          
+-----------
+
+          1
+          2
+          1
+          9
+          8
+
+--- 5 row(s) selected.
+>>
+>>select * from T041t where (values(9)),b = 9,10;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+
+--- 1 row(s) selected.
+>>select * from T041t where ((values(9)),b) = (9,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+
+--- 1 row(s) selected.
+>>select * from T041t where ((values(9,2)),b) = (9,2,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+
+--- 1 row(s) selected.
+>>		--8401.
+>>select * from T041t where (a,b) in (values(1,10),(7,70));
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+
+--- 1 row(s) selected.
+>>	--normitemexpr.
+>>select * from T041t where (a,b) <all (values(1,10),(7,70));
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2            ?
+
+--- 1 row(s) selected.
+>>	--normitemexpr.
+>>
+>>-- between ...
+>>select * from T041t where (a,b) between (1,10) and (2,20);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+
+--- 2 row(s) selected.
+>>select * from T041t where ((select a from T041t where b=10),b) between(1,10)and(2,20);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          9           90            ?
+          8           80            ?
+
+--- 4 row(s) selected.
+>>select * from T041t where (select a from T041t where b=10) between (1) and (2);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where (select a from T041t where b=10) between 1 and 2;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where (select a from T041t where b=10) between (1) and 2;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where (select a from T041t where b=10) between 1 and (2);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>
+>>select * from T041t where ((select a from T041t where b=10),b) between (1,2)and(2,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where (select a from T041t where b=10),b between 1,2 and 2,10;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>
+>>select * from T041t where (select a from T041t where b=10) between 1 and 20;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where ((select a from T041t where b=10)) between 1 and 20;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where 1 between (select a from T041t where b=10) and 20;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where 1 between ((select a from T041t where b=10)) and 20;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where 1 between 0 and (select a from T041t where b=10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where 1 between 0 and ((select a from T041t where b=10));
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where 1 not between 0 and ((select a from T041t where b=10));
+
+--- 0 row(s) selected.
+>>
+>>select * from T041t where (select a,b from T041t where b=10) between 1,2 and 2,10;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where (select a,b from T041t where b=10) between (1,2)and(2,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where ((select a,b from T041t where b=10)) between (1,2)and(2,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where(((select a,b from T041t where b=10)))between (1,2)and(2,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>
+>>select * from T041t where 1,2 between (select a,b from T041t where b=10) and 2,10;
+
+--- 0 row(s) selected.
+>>select * from T041t where(1,2)between (select a,b from T041t where b=10)and(2,10);
+
+--- 0 row(s) selected.
+>>select * from T041t where(1,2)between ((select a,b from T041t where b=10))and(2,10);
+
+--- 0 row(s) selected.
+>>select * from T041t where(1,2)between (((select a,b from T041t where b=10)))and(2,10);
+
+--- 0 row(s) selected.
+>>
+>>select * from T041t where 1,2 between 2,10 and (select a,b from T041t where b=10);
+
+--- 0 row(s) selected.
+>>select * from T041t where(1,2)between(2,10)and (select a,b from T041t where b=10);
+
+--- 0 row(s) selected.
+>>select * from T041t where(1,2)between(2,10)and ((select a,b from T041t where b=10));
+
+--- 0 row(s) selected.
+>>select * from T041t where(1,2)between(2,10)and (((select a,b from T041t where b=10)));
+
+--- 0 row(s) selected.
+>>
+>>select * from T041t where(1,2)between(select a,b from T041t where b=10)and (select a,b from T041t where b=10);
+
+--- 0 row(s) selected.
+>>select * from T041t where(select a,b from T041t where b=10)between(select a,b from T041t where b=10)and (2,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t where(select a,b from T041t where b=10)between(1,2)and (select a,b from T041t where b=10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>
+>>select * from T041t where(select a,b from T041t where b=10)between(select a,b from T041t where b=10)and (select a,b from T041t where b=10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>
+>>-- between, 15001:
+>>select * from T041t where ((select a from T041t where b=10),b) between (1,2)and 2,10;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where ((select a from T041t where b=10),b) between (1,2)and
+ 2,10;
+ ^ (81 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where ((select a from T041t where b=10),b) between  1,2 and(2,10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where ((select a from T041t where b=10),b) between  1,2 and
+                                                                        ^ (73 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where (select a from T041t where b=10),b between 1,2 and (2,10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (select a from T041t where b=10),b between 1,2 and (2
+,10);
+^ (80 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where (select a from T041t where b=10),b between (1,2) and 2,10;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (select a from T041t where b=10),b between (1,2) and 
+                                                                       ^ (72 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select * from T041t where (select a,b from T041t where b=10) between (1,2)and 2,10;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (select a,b from T041t where b=10) between (1,2)and 2
+                                                                              ^ (79 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where ((select a,b from T041t where b=10)) between (1,2)and 2,10;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where ((select a,b from T041t where b=10)) between (1,2)and
+ 2,10;
+ ^ (81 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where(1,2)between (select a,b from T041t where b=10)and 2,10;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where(1,2)between (select a,b from T041t where b=10)and 2,1
+                                                                            ^ (77 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where(1,2)between 2,10 and (select a,b from T041t where b=10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where(1,2)between 2,10 and (select a,b from T041t where b=1
+                                      ^ (39 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select * from T041t where (select a,b from T041t where b=10) between 1,2 and (2,10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where (select a,b from T041t where b=10) between 1,2 and (2
+,10);
+^ (80 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where ((select a,b from T041t where b=10)) between 1,2 and (2,10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where ((select a,b from T041t where b=10)) between 1,2 and 
+(2,10);
+  ^ (82 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where 1,2 between (select a,b from T041t where b=10)and (2,10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where 1,2 between (select a,b from T041t where b=10)and (2,
+                                                                              ^ (79 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from T041t where 1,2 between (2,10) and (select a,b from T041t where b=10);
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select * from T041t where 1,2 between (2,10) and (select a,b from T041t where b
+                                        ^ (41 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--?section orvc2
+>>select * from T041t where (select b from T041t where a=1 and c is not null) in (1,10);
+
+A            B            C          
+-----------  -----------  -----------
+
+          1           10          100
+          2           20          200
+          1            2            ?
+          9           90            ?
+          8           80            ?
+
+--- 5 row(s) selected.
+>>select * from T041t x where a in (select c from T041t s);
+
+--- 0 row(s) selected.
+>>
+>>select * from T041t where (select b from T041t) in (10);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>		-- 8401
+>>select * from T041t where ((select b from T041t ),c) = (10,200);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>	-- 8401 !
+>>
+>>select * from T041t where (select b from T041t)=10 and c=200;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>		-- 8401
+>>
+>>select * from T041t where ((select b from T041t ),c) is null;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>		-- 8401
+>>
+>>select a,max(b) from T041t group by a having ((select b from T041t ),20)=(1,2);
+
+--- 0 row(s) selected.
+>>-- 8401
+>>select * from T041t join T041t x on ((select b from T041t ),20)=(1,2);
+
+--- 0 row(s) selected.
+>>select * from T041t where ((select b from T041t ),2+18) = (10,200);
+
+--- 0 row(s) selected.
+>>select * from T041t join T041t x on ((select b from T041t ),x.a)=(1,T041t.a);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>-- 8401
+>>select * from T041t where ((select b from T041t ),c) = (10,200) is unknown;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>-- 8401
+>>select * from T041t where not ((select b from T041t ),c) = (10,200);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>	-- 8401
+>>select * from T041t where ((select b from T041t ),c) = (10,200) or
++>		       (a,(select b from T041t )) = (2,20);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>		-- 8401
+>>
+>>select * from T041t x where((select b from T041t ),x.a)in(select b,c from T041t s);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>--8401
+>>
+>>-- Expecting 8401 here, but getting predicatesOnParent.isEmpty()
+>>
+>>-- Expecting 8401 here, but getting 7000 GenMapTable:
+>>-- Running this query twice once with the default shape and second time
+>>-- with the old shape. With new shape the query goes ahead and inserts
+>>-- the row from subquery, while with the old shape it gets an error
+>>-- This seems to be a bug in the code. We have created a solution to
+>>-- track the problem. Sol: 10-091102-5937
+>>
+>>-- The query does not give 8401
+>>select * from T041t x where ((select b,c from T041t ),x.a)=((select b,a from T041t y),c);
+
+--- 0 row(s) selected.
+>>
+>>-- With the old shape you get error 8401
+>>
+>>control query shape hybrid_hash_join(hybrid_hash_join(partition_access(
++>scan(TABLE 'X', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off)),partition_access(sort_groupby(scan(path 'CAT.SCH.T041T',
++>forward, blocks_per_access 1 , mdam off)))),partition_access(sort_groupby(
++>scan(TABLE 'Y', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off))));
+
+--- SQL operation complete.
+>>
+>>select * from T041t x where ((select b,c from T041t ),x.a)=((select b,a from T041t y),c);
+
+*** ERROR[2105] This query could not be compiled because of incompatible Control Query Shape (CQS) specifications. Inspect the CQS in effect.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>select * from T041t x where (select a,b,c from T041t r) = (select b,c,a from T041t s);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t x where ((select b,c from T041t ),x.a)in(select b,c,a from T041t s);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- Expecting 8401 here, but getting VEGTable (found) assertion
+>>select * from T041t where ((select b from T041t ),c)=(select a,c from T041t where c=200);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t x where ((select b,c from T041t ),x.a)= (select b,c,a from T041t s);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select * from T041t x where ((select b,c from T041t ),x.a)=(c,(select b,a from T041t y));
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- 8401 gets output twice
+>>
+>>select * from T041t x where 
++>  ((select b,c from T041t one where 
++>    ((select a,b from T041t two where
++>      ((select c,b from T041t thr),a)=(c,(select b,a from T041t fou))
++>    ),c)=(c,(select b,a from T041t fiv))
++>  ),a)=(c,(select b,a from T041t six));
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- same query compiled with a different shape emits out 8401 once
+>>-- This seems to be a bug. Use the above query with the new shape to
+>>-- reproduce the bug
+>>
+>> control query shape hybrid_hash_join(hybrid_hash_join(partition_access(
++>scan(TABLE 'X', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off)),partition_access(sort_groupby(
++>scan(TABLE 'SIX', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off)))),sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>partition_access(scan(TABLE 'ONE', path 'CAT.SCH.T041T', forward
++>, blocks_per_access 1 , mdam off)),partition_access(sort_groupby(
++>scan(TABLE 'FIV', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off)))),sort_groupby(hybrid_hash_join(hybrid_hash_join(
++>partition_access(scan(TABLE 'TWO', path 'CAT.SCH.T041T', forward
++>, blocks_per_access 1 , mdam off)),partition_access(sort_groupby(
++>scan(TABLE 'FOU', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off)))),partition_access(sort_groupby(
++>scan(TABLE 'THR', path 'CAT.SCH.T041T', forward, blocks_per_access 1
++>, mdam off))))))));
+
+--- SQL operation complete.
+>>
+>>
+>>control query shape cut;
+
+--- SQL operation complete.
+>>-- test fix to genesis case 10-981208-4203
+>>select a, b from t041t group by a, b having a < (select d93 - 2 from t041a);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>select a, b from t041t where a < (select d93 / 2 from t041a);
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>log;

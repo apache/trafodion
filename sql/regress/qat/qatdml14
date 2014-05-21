@@ -1,0 +1,1806 @@
+LOG aqatdml14 Clear;
+---------------------------------------------------------------------
+-- Component: NonStop SQL Regression Test Suite
+-- Description:
+--   This test unit is a positive local test for the select statement.
+--It tests SELECT statements with correlated subqueries in their HAVING
+--clauses.
+--   This test unit uses the order-entry database (sqldd01d).  Each
+--test case in this test unit tests a particular relationship between
+--the outer query(s) and the subquery(s).  The following attributes
+--are varied inside of testcases.  Note that all of these attributes
+--are not tested in every testcase - some of these attributes only apply
+--to certain types of tests.
+--      Attributes varied:
+--              objects:  joins
+--                        subquery and outer query on same table
+--                        views
+
+--     columns selected:  one column
+--                        * (one column table if not inside exists)
+--                        distinct -- subquery only
+--                                 -- outer query only
+--                                 -- both
+--  name qualifications:  necessary
+--                        unnecessary
+
+--              no where clause in subquery
+--              group by/having in subquery
+--              subquery returning only one record with IN,=ANY,=ALL
+
+--The test cases in this test unit are as follows:
+--  testcase A0: correlated subquery with IN clause between outer query
+--               and subquery
+--  testcase A1: correlated subquery with simple and quantified comparison
+--               operators between outer query and subquery
+--  testcase A2: correlated subquery with translated IN form of EXISTS/
+--               NOT EXISTS
+--  testcase A3: multiple nesting,multiple subqueries connected with
+--               and/or,mixed correlated/uncorrelated nested subqueries
+--  testcase A4: use of for browse access,
+--               for stable access,for repeatable access
+--  testcase A5: SELECT aggregate functions with aggregates in
+--               subquery
+
+
+--all testcases are documented further below.
+
+--***************      end test unit comments    ***************************
+
+--<testunit-summary>
+--select #10 pos/loc ufi subq cor having
+
+--<testunit-specs>
+
+--mode-type ufi
+--test-type functional
+--form-type pos/loc
+--select-test
+
+--<testcase A0>
+
+--   <detail>
+--       correlated subquery in having clause test - tests the use of
+--       the IN operator connecting the outer query with the subquery.
+--       Vary attributes as described in testunit comments above. Test
+--       the use of NOT IN.
+
+--   <templates>
+--       US00
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  supplier.suppnum = suppnum);
+
+-- <comment> same as above , add fromsup as qualifier for suppnum
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  supplier.suppnum =  fromsup.suppnum);
+
+-- <comment> get supplier numbers for suppliers who DON'T supply part 4102
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 NOT in
+        (select partnum
+         from fromsup
+         where  supplier.suppnum = suppnum);
+
+-- <comment> same as previous, except use alias
+-- <ufi-input>
+      select suppnum
+      from supplier X
+      group by suppnum
+      having 4102 NOT in
+        (select partnum
+         from fromsup
+         where X.suppnum = suppnum);
+
+-- <comment> get part numbers whose price is equal to its' cost from
+-- <comment> at least one supplier
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having price IN
+        (select partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+         group by partcost
+        );
+
+-- <comment> same as above, except eliminate parts costing 20100
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having price IN
+        (select partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+         group by partcost
+         having partcost <> 20100
+        );
+
+
+-- <comment> same as above, except eliminate 'group by' and use 'distinct'
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having price IN
+        (select distinct partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+        );
+
+-- <comment> get part numbers for all parts supplied by more than one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+         );
+
+
+-- <comment> same as above, with 'distinct Y.partnum'
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select distinct Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+         );
+
+-- <comment> same as first, with 'group by Y.partnum'
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          group by Y.partnum
+         );
+
+-- <comment> use having clause to eliminate part # 4101 in subquery
+-- <ufi-input>
+      select X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          group by Y.partnum
+          having Y.partnum <> 4101
+         );
+
+-- <comment> get salesman #'s and order #'s for salesman who have orders
+-- <comment> for parts stored at location H76
+-- <ufi-input>
+     select salesman,ordernum
+     from orders
+     group by salesman, ordernum
+     having 'H76' in
+       (select parts.location
+        from odetail,parts
+        where ( odetail.partnum =  parts.partnum)
+        and ( orders.ordernum =  odetail.ordernum)
+       );
+
+-- <comment> same as above, use 'distinct parts.location'
+-- <ufi-input>
+     select salesman,ordernum
+     from orders
+     group by salesman, ordernum
+     having 'H76' in
+       (select distinct  parts.location
+        from odetail,parts
+        where ( odetail.partnum =  parts.partnum)
+        and ( orders.ordernum =  odetail.ordernum) );
+
+-- <comment> same as first, use 'group by parts.location' to eliminate
+-- <comment> duplicates
+-- <ufi-input>
+      select salesman,ordernum
+      from orders
+      group by salesman, ordernum
+      having 'H76' in
+        (select  parts.location
+         from odetail,parts
+         where ( odetail.partnum =  parts.partnum)
+         and ( orders.ordernum =  odetail.ordernum)
+         group by  parts.location
+        );
+
+-- <comment> same as first, except order by ordernum
+-- <ufi-input>
+     select salesman,ordernum
+     from orders
+     group by salesman, ordernum
+     having 'H76' in
+       (select  parts.location
+        from odetail,parts
+        where ( odetail.partnum =  parts.partnum)
+        and ( orders.ordernum =  odetail.ordernum) )
+     order by ordernum;
+
+-- <comment> get part numbers whose cost is greater than 10000 and whose
+-- <comment> price is equal to its' cost from at least one supplier
+-- <comment> NOTE: the subquery here returns 0 records sometimes.
+-- <ufi-input>
+     select partnum
+     from parts
+     group by partnum, price
+     having price IN
+       (select partcost
+        from expfroms
+        where  parts.partnum =  expfroms.partnum
+       );
+
+-- <comment> get salesman numbers for salesman who have already sold
+-- <comment> a previous order (a lower order number is a previous order)
+-- <ufi-input>
+     select salesman
+     from orders X
+     group by salesman, ordernum
+     having salesman in
+       (select salesman
+        from orders Y
+        where Y.ordernum < X.ordernum
+       );
+
+-- <comment> get employee names who do not work at first branches
+-- <comment> (eliminate duplicates)
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1 not in
+       (select branchnum
+        from branch
+        where  employee.branchnum =  branch.branchnum
+        group by branchnum
+       );
+
+-- <comment> same as above, use DISTINCT instead of GROUP BY
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1 not in
+       (select distinct branchnum
+        from branch
+        where  employee.branchnum =  branch.branchnum );
+
+-- <comment> same as query before last, but use HAVING with GROUP BY
+-- <comment> instead of WHERE
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1 not in
+       (select branchnum
+        from branch
+        group by branchnum
+        having branchnum =  employee.branchnum
+       );
+
+-- <comment> get part numbers, for parts supplied by supplier 15 and
+-- <comment> supplied by at least one other supplier
+-- <ufi-input>
+     select partnum
+     from fromsup X
+     where suppnum <> 15
+     group by partnum
+     having 15 in
+       (select suppnum
+        from fromsup Y
+        where Y.partnum = X.partnum
+       );
+
+-- <comment> get customer numbers for customers who have not ordered parts
+-- <comment> stored at location 'V67'
+-- <ufi-input>
+      select custnum
+      from customer
+      group by custnum
+      having 'V67' not in
+        (select col_2
+         from partsfor
+         where custnum = col_12
+        );
+
+-- <end-input>
+
+
+
+-- <testcase A1>
+
+-- <detail>
+--    correlated subquery in having clause test - this tests the use
+--    of simple comparison operators (<,<=,=,<>,>,>=) and quantified
+--    comparison operators (=ANY,>ALL,etc.) as the relational operator
+--    between the outer and subqueries. Note that some of the subqueries
+--    in this testcase return 0 records (empty sets ) sometimes.
+
+-- <templates>
+--     US00
+
+-- <comment> get employee name who is manager of region 1
+-- <ufi-input>
+      select empname
+      from employee
+      group by empnum, empname
+      having 1=
+        (select regnum
+         from region
+         where manager = empnum);
+
+
+-- <comment> same as above, add qualifications
+-- <ufi-input>
+      select empname
+      from employee
+      group by empnum, empname
+      having 1=
+        (select regnum
+         from region
+         where  region.manager =   employee.empnum);
+
+-- <comment> get customer numbers whose salesman is not salesman #212
+-- <ufi-input>
+      select custnum
+      from customer
+      group by custnum
+      having 212 <>
+        (select distinct col_11
+         from partsfor
+         where  customer.custnum =  partsfor.col_12
+        );
+
+-- <comment> same as above, use join instead of view partsfor
+-- <ufi-input>
+      select custnum
+      from customer
+      group by custnum
+      having 212 <>
+        (select distinct salesman
+         from orders,odetail,parts
+         where ( orders.ordernum =  odetail.ordernum)
+         and   ( odetail.partnum =  parts.partnum)
+         and   ( customer.custnum =  orders.custnum)
+        );
+
+-- <comment> get part numbers for parts whose price is less than 2000
+-- <comment> more than its' cost from all suppliers
+-- <ufi-input>
+     select partnum
+      from parts
+      group by partnum, price
+      having (price - 2000) <all
+        (select partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+         group by partcost
+        );
+
+-- <comment> get part names for parts who have the same price as at
+-- <comment> least one other part
+-- <ufi-input>
+      select col_1
+      from partsfor X
+      group by col_1, col_3
+      having X.col_3 =SOME
+        (select Y.col_3
+         from partsfor Y
+         where X.col_1 <> Y.col_1
+        );
+
+
+-- <comment>  get supplier numbers and part number for suppliers whose
+-- <comment>  cost for that part is less than or equal to some other
+-- <comment>  suppliers cost for that part
+-- <comment>  note: subquery returns 0 records sometimes
+-- <ufi-input>
+      select suppnum,partnum
+      from fromsup X
+      group by suppnum, partnum, partcost
+      having partcost <=SOME
+        (select partcost
+         from fromsup Y
+         where X.suppnum <> Y.suppnum
+         and X.partnum = Y.partnum
+        );
+
+-- <comment> same as above, use <=ANY instead of SOME
+-- <ufi-input>
+      select suppnum,partnum
+      from fromsup X
+      group by suppnum, partnum, partcost
+      having partcost <=ANY
+        (select partcost
+         from fromsup Y
+         where X.suppnum <> Y.suppnum
+         and X.partnum = Y.partnum
+        );
+
+-- <comment> same as above, use <ALL instead
+-- <ufi-input>
+      select suppnum,partnum
+      from fromsup X
+      group by suppnum, partnum, partcost
+      having partcost <ALL
+        (select partcost
+         from fromsup Y
+         where X.suppnum <> Y.suppnum
+         and X.partnum = Y.partnum
+        );
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 =SOME
+        (select partnum
+         from fromsup
+         where  supplier.suppnum = suppnum);
+
+-- <comment> same as above , add fromsup as qualifier for suppnum
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 =ANY
+        (select partnum
+         from fromsup
+         where  supplier.suppnum =  fromsup.suppnum);
+
+-- <comment> get supplier numbers for suppliers who DON'T supply part 4102
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 <>SOME
+        (select partnum
+         from fromsup
+         where  supplier.suppnum = suppnum);
+
+-- <comment> same as previous, except use alias
+-- <ufi-input>
+      select suppnum
+      from supplier X
+      group by suppnum
+      having 4102 <>ANY
+        (select partnum
+         from fromsup
+         where X.suppnum = suppnum);
+
+-- <comment> get part numbers whose price is equal to its' cost from
+-- <comment> at least one supplier
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having price =SOME
+        (select partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+         group by partcost
+        );
+
+-- <comment> same as above, except eliminate parts costing 20100
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having price =ANY
+        (select partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+         group by partcost
+         having partcost <> 20100
+        );
+
+
+-- <comment> same as above, except eliminate 'group by' and use 'distinct'
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having price =SOME
+        (select distinct partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+        );
+
+-- <comment> get part numbers for all parts supplied by more than one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum =ANY
+         (select Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+         );
+
+
+-- <comment> same as above, with 'distinct Y.partnum'
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum =SOME
+         (select distinct Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+         );
+
+-- <comment> same as first, with 'group by Y.partnum'
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum =ANY
+         (select Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          group by Y.partnum
+         );
+
+-- <comment> use having clause to eliminate part # 4101 in subquery
+-- <ufi-input>
+      select X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum =SOME
+         (select Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          group by Y.partnum
+          having Y.partnum <> 4101
+         );
+
+-- <comment> get salesman #'s and order #'s for salesman who have
+-- <comment> orders for parts stored at location H76
+-- <ufi-input>
+     select salesman,ordernum
+     from orders
+     group by ordernum, salesman
+     having 'H76' =ANY
+       (select parts.location
+        from odetail,parts
+        where ( odetail.partnum =  parts.partnum)
+        and ( orders.ordernum =  odetail.ordernum)
+       );
+
+-- <comment> same as above, use 'distinct parts.location'
+-- <ufi-input>
+     select salesman,ordernum
+     from orders
+     group by ordernum, salesman
+     having 'H76' =SOME
+       (select distinct  parts.location
+        from odetail,parts
+        where ( odetail.partnum =  parts.partnum)
+        and ( orders.ordernum =  odetail.ordernum)
+       );
+
+-- <comment> same as first, use 'group by parts.location' to eliminate
+-- <comment> duplicates
+-- <ufi-input>
+      select salesman,ordernum
+      from orders
+      group by ordernum, salesman
+      having 'H76' =ANY
+        (select  parts.location
+         from odetail,parts
+         where ( odetail.partnum =  parts.partnum)
+         and ( orders.ordernum =  odetail.ordernum)
+         group by  parts.location
+        );
+-- <comment> same as first, except order by ordernum
+-- <ufi-input>
+     select salesman,ordernum
+     from orders
+     group by ordernum, salesman
+     having 'H76' =SOME
+       (select  parts.location
+        from odetail,parts
+        where ( odetail.partnum =  parts.partnum)
+        and ( orders.ordernum =  odetail.ordernum)
+       )
+     order by ordernum;
+
+-- <comment> get part numbers whose cost is greater than 10000 and whose
+-- <comment> price is equal to its' cost from at least one supplier
+-- <comment> NOTE: the subquery here returns 0 records sometimes.
+-- <ufi-input>
+     select partnum
+     from parts
+     group by partnum, price
+     having price =ANY
+       (select partcost
+        from expfroms
+        where  parts.partnum =  expfroms.partnum
+       );
+
+-- <comment> get salesman numbers for salesman who have already sold
+-- <comment> a previous order (a lower order number is a previous
+-- <comment> order)
+-- <ufi-input>
+     select salesman
+     from orders X
+     group by salesman, ordernum
+     having salesman =SOME
+       (select salesman
+        from orders Y
+        where Y.ordernum < X.ordernum
+       );
+
+-- <comment> get employee names who do not work at first branches
+-- <comment> (eliminate duplicates)
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1 <> ANY
+       (select branchnum
+        from branch
+        where  employee.branchnum =  branch.branchnum
+        group by branchnum
+       );
+
+-- <comment> same as above, use DISTINCT instead of GROUP BY
+--           not =SOME
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1 <>SOME
+       (select distinct branchnum
+        from branch
+        where  employee.branchnum =  branch.branchnum
+       );
+-- <comment> same as above, use DISTINCT instead of GROUP BY
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1    <>SOME
+       (select distinct branchnum
+        from branch
+        where  employee.branchnum =  branch.branchnum
+       );
+
+-- <comment> same as query before last, but use HAVING with GROUP BY
+-- <comment> instead of WHERE
+-- <ufi-input>
+     select empname
+     from employee
+     group by branchnum, empname
+     having 1 <>ANY
+       (select branchnum
+        from branch
+        group by branchnum
+        having branchnum =  employee.branchnum
+       );
+
+-- <comment> get customer numbers for customers who have not ordered parts
+-- <comment> stored at location 'V67'
+-- <ufi-input>
+      select custnum
+      from customer
+      group by custnum
+      having 'V67' <>SOME
+        (select col_2
+         from partsfor
+         where custnum = col_12
+        );
+
+-- <end-input>
+
+
+
+-- <testcase A2>
+
+-- <detail>
+--     correlated subquery in having clause test - this tests the use of
+--     a correlated subquery with translated IN form of EXISTS/NOT EXISTS
+--     quanitifiers.
+
+-- <templates>
+--     US00
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <ufi-input>
+       select suppnum
+       from supplier
+       group by suppnum
+       having exists
+         (select *
+          from fromsup
+          where  supplier.suppnum = suppnum
+          and partnum = 4102
+         );
+
+-- <comment> same as above, change 'select *' to 'select partnum'
+-- <ufi-input>
+       select suppnum
+       from supplier
+       group by suppnum
+       having exists
+         (select partnum
+          from fromsup
+          where  supplier.suppnum = suppnum
+          and partnum = 4102
+         );
+
+-- <comment> get supplier names for suppliers who DON'T supply part 4102       y
+-- <ufi-input>
+       select suppnum
+       from supplier
+       group by suppnum
+       having not exists
+         (select *
+          from fromsup
+          where  supplier.suppnum = suppnum
+          and partnum = 4102
+         );
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having exists
+        (select Y.partnum
+         from fromsup Y
+         where Y.suppnum <> X.suppnum
+         and X.partnum = Y.partnum
+        );
+
+-- <comment> get salesman #'s and order #'s for salesman who have orders
+-- <comment> for parts stored at location H76
+-- <ufi-input>
+      select salesman,ordernum
+      from orders
+      group by salesman, ordernum
+      having exists
+        (select *
+         from odetail,parts
+         where ( odetail.partnum =  parts.partnum)
+         and ( orders.ordernum =  odetail.ordernum)
+         and ( parts.location = 'H76')
+        );
+
+-- <comment> get part numbers whose cost is greater than 10000 and whose
+-- <comment> price is equal to its' cost from at least one supplier
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having exists
+        (select *
+         from expfroms
+         where ( parts.partnum =  expfroms.partnum)
+         and (price = partcost)
+        );
+
+-- <comment> get salesman numbers for salesman who have already sold
+-- <comment> a previous order (a lower order number is a previous order)
+-- <ufi-input>
+      select salesman
+      from orders X
+      group by salesman, ordernum
+      having exists
+        (select salesman
+         from orders Y
+         where (Y.ordernum < X.ordernum)
+         and (X.salesman = Y.salesman)
+        );
+
+-- <comment> get employee names who do not work at first branches
+-- <comment> (eliminate duplicates)
+-- <ufi-input>
+      select empname
+      from employee
+      group by branchnum, empname
+      having not exists
+        (select branchnum
+         from branch
+         where ( employee.branchnum =  branch.branchnum)
+         and (branchnum = 1)
+         group by branchnum
+        );
+
+-- <comment> get employee names who do not work at first branches
+-- <comment>  eliminate duplicates and use having clause
+-- <ufi-input>
+      select empname
+      from employee
+      group by branchnum, empname
+      having not exists
+        (select branchnum
+         from branch
+         where ( employee.branchnum =  branch.branchnum)
+         group by branchnum
+         having branchnum = 1
+        );
+
+
+-- <comment> get part numbers for parts supplied by supplier 15
+-- <comment> and supplied by at least one other supplier
+-- <ufi-input>
+      select partnum
+      from fromsup X
+      where suppnum <> 15
+      group by partnum
+      having exists
+        (select *
+         from fromsup Y
+         where (Y.partnum = X.partnum)
+         and (suppnum = 15)
+        );
+
+-- <comment> get supplier numbers for suppliers who are in the same state      e
+-- <comment> as supplier 1
+-- <ufi-input>
+      select suppnum
+      from supplier X
+      group by state, suppnum
+      having exists
+        (select suppnum
+         from supplier Y
+         where (Y.state = X.state)
+         and (suppnum = 1)
+        );
+
+-- <comment> get customer numbers for customers who have not ordered
+-- <comment> parts stored at location V67
+-- <ufi-input>
+      select custnum
+      from customer
+      group by custnum
+      having not exists
+        (select *
+         from partsfor
+         where (custnum = col_12)
+         and (col_2 = 'V67')
+        );
+
+-- <end-input>
+
+
+
+-- <testcase A3>
+
+-- <detail>
+--    correlated subquery in having clause test - this tests multiply
+--    nested subqueries and multiple subqueries connected with
+--    and/or. This testcase also tests SELECT's with subqueries in both
+--    the where clause and having clause, both seperate and nested,
+--    correlated and uncorrelated.
+
+-- <templates>
+--     US00
+
+-- <comment> get supplier numbers for suppliers who supply
+-- <comment> part 4102 and part 5504
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      and 5504 =ANY
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        );
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <comment> and part 5504, except use a subquery in both a where
+-- <comment> clause and having clause
+-- <ufi-input>
+      select suppnum
+      from supplier
+      where 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      group by suppnum
+      having 5504 =ANY
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        );
+
+-- <comment> same as first,except one subquery correlated, other uncorrelated
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      and suppnum =ANY
+        (select suppnum
+         from fromsup
+         where partnum = 5504
+        );
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <comment> and part 5504, except use a subquery in both a where
+-- <comment> clause and having clause, and use one correlated and one
+-- <comment> uncorrelated subquery
+-- <ufi-input>
+      select suppnum
+      from supplier
+      where 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      group by suppnum
+      having suppnum =ANY
+        (select suppnum
+         from fromsup
+         where partnum = 5504
+        );
+
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <comment> OR 5504
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      OR 5504 =ANY
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        );
+
+-- <comment> same as above, except one subquery correlated, other uncorrelated
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      OR suppnum =ANY
+        (select suppnum
+         from fromsup
+         where partnum = 5504
+        );
+
+-- <comment> get supplier numbers for suppliers who DON'T supply parts
+-- <comment> 4102 or 5504
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having NOT (4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      OR suppnum =ANY
+        (select suppnum
+         from fromsup
+         where partnum = 5504
+        ));
+
+-- <comment> get supplier numbers for suppliers who DON'T supply parts
+-- <comment> 4102 or 5504, except use a subquery in both the where clause      a
+-- <comment> and a having clause
+-- <ufi-input>
+      select suppnum
+      from supplier
+      where NOT (4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        ))
+      group by suppnum
+      having suppnum <>ANY
+        (select suppnum
+         from fromsup
+         where partnum = 5504
+        );
+
+-- <comment> get supplier numbers for suppliers who supply parts 4102,
+-- <comment> 5504, and 5505
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      and 5504 =ANY
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+        )
+      and suppnum =SOME
+        (select suppnum
+         from fromsup
+         where partnum = 5505
+        );
+
+-- <comment> get supplier numbers for suppliers who supply at least
+-- <comment> one part whose inventory is negative (both subqueries in
+-- <comment> a having clause)
+-- <ufi-input>
+     select suppnum
+     from supplier
+     group by suppnum
+     having suppnum in
+       (select suppnum
+        from fromsup
+        group by partnum, suppnum
+        having 0 >
+          (select inventory
+           from parts
+           where  parts.partnum =  fromsup.partnum
+          )
+       );
+
+-- <comment> get supplier numbers for suppliers who supply at
+--least <comment> one part whose inventory is negative  (put outer subquery
+-- <comment> in a having clause and the inner in a where clause)
+-- <ufi-input>
+     select suppnum
+     from supplier
+     group by suppnum
+     having suppnum in
+       (select suppnum
+        from fromsup
+        where 0 >
+          (select inventory
+           from parts
+           where  parts.partnum =  fromsup.partnum
+          )
+       );
+
+-- <comment> get supplier names for suppliers who supply at least
+-- <comment> one part whose inventory is negative (put outer subquery
+-- <comment> in a where clause and the inner in a having clause)
+-- <ufi-input>
+     select suppname
+     from supplier
+     where suppnum in
+       (select suppnum
+        from fromsup
+        group by partnum, suppnum
+        having 0 >
+          (select inventory
+           from parts
+           where  parts.partnum =  fromsup.partnum
+          )
+       );
+
+
+-- <comment> get supplier numbers for suppliers who supply part 'LP 900 LPM'
+-- <comment> (put both subqueries in having clauses)
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having suppnum IN
+        (select suppnum
+         from fromsup
+         group by suppnum, partnum
+         having 'LP  900 LPM' in
+           (select partname
+            from parts
+            where  parts.partnum =  fromsup.partnum
+           )
+        );
+
+-- <comment> get supplier numbers for suppliers who supply part 'LP 900 LPM'
+-- <comment> (put outer subquery in a having clause, inner in a where clause)
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having suppnum IN
+        (select suppnum
+         from fromsup
+         where 'LP  900 LPM' in
+           (select partname
+            from parts
+            where  parts.partnum =  fromsup.partnum
+           )
+        );
+
+-- <comment> get supplier names for suppliers who supply part LP 900 LPM
+-- <comment> (put inner subquery in a having clause, outer in a where clause)
+-- <ufi-input>
+      select suppname
+      from supplier
+      where suppnum IN
+        (select suppnum
+         from fromsup
+         group by suppnum, partnum
+         having 'LP  900 LPM' in
+           (select partname
+            from parts
+            where  parts.partnum =  fromsup.partnum
+           )
+        );
+
+-- <comment> get employee names for employees who do not work at branches
+-- <comment> which are in the same city as the regional headquarters
+-- <comment> (put both subqueries in having clauses)
+-- <ufi-input>
+      select empname
+      from employee
+      group by empname, branchnum, regnum
+      having branchnum not in
+        (select branchnum
+         from branch
+         group by  branch.branchnum,  branch.regnum,
+                   branch.branchname
+         having  branch.regnum =  employee.regnum
+         and branchname =
+           (select location
+            from region
+            where  region.regnum =  employee.regnum
+           )
+        );
+
+-- <comment> get employee names for employees who do not work at branches
+-- <comment> which are in the same city as the regional headquarters
+-- <comment> (put outer subquery in a having clause, inner in where clause)
+-- <ufi-input>
+      select empname
+      from employee
+      group by empname, branchnum, regnum
+      having branchnum not in
+        (select branchnum
+         from branch
+         where  branch.regnum =  employee.regnum
+         and branchname =
+           (select location
+            from region
+            where  region.regnum =  employee.regnum
+           )
+        );
+
+-- <comment> get employee names for employees who do not work at branches
+-- <comment> which are in the same city as the regional headquarters
+-- <comment> (put inner subquery in a having clause, outer in where clause)
+-- <ufi-input>
+      select empname
+      from employee
+      where branchnum not in
+        (select branchnum
+         from branch
+         group by  branch.branchnum,  branch.regnum,
+                   branch.branchname
+         having  branch.regnum =  employee.regnum
+         and branchname =
+           (select location
+            from region
+            where  region.regnum =  employee.regnum
+           )
+        );
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> two suppliers
+-- <comment> (put both subqueries in having clauses)
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+        (select Y.partnum
+         from fromsup Y
+         group by partnum, suppnum
+         having Y.suppnum <> X.suppnum
+         and Y.partnum in
+           (select Z.partnum
+            from fromsup Z
+            where Z.suppnum <> Y.suppnum
+            and Z.suppnum <> X.suppnum
+           )
+        );
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> two suppliers
+-- <comment> (put outer subquery in a having clause, inner in a where clause)
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+        (select Y.partnum
+         from fromsup Y
+         where Y.suppnum <> X.suppnum
+         and Y.partnum in
+           (select Z.partnum
+            from fromsup Z
+            where Z.suppnum <> Y.suppnum
+            and Z.suppnum <> X.suppnum
+           )
+        );
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> two suppliers
+-- <comment> (put both subqueries in having clauses, but also use a where
+-- <comment> clause in the inner subquery. This tests the use of the same
+-- <comment> correlation variable in both a WHERE clause and a GROUP BY
+-- <comment> clause.
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+        (select Y.partnum
+         from fromsup Y
+         where Y.suppnum <> X.suppnum
+         group by partnum, suppnum
+         having Y.partnum in
+           (select Z.partnum
+            from fromsup Z
+            where Z.suppnum <> Y.suppnum
+            and Z.suppnum <> X.suppnum
+           )
+        );
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> two suppliers
+-- <comment> (put inner subquery in a having clause, outer in a where clause)
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      where X.partnum in
+        (select Y.partnum
+         from fromsup Y
+         group by partnum, suppnum
+         having Y.suppnum <> X.suppnum
+         and Y.partnum in
+           (select Z.partnum
+            from fromsup Z
+            where Z.suppnum <> Y.suppnum
+            and Z.suppnum <> X.suppnum
+           )
+        );
+
+-- <comment> same as above, use view fsdetail instead
+-- <ufi-input>
+      select distinct X.col_1
+      from fsdetail X
+      group by col_1, col_2
+      having X.col_1 in
+        (select Y.col_1
+         from fsdetail Y
+         group by col_1, col_2
+         having Y.col_2 <> X.col_2
+         and Y.col_1 in
+           (select Z.col_1
+            from fsdetail Z
+            where Z.col_2 <> Y.col_2
+            and Z.col_2 <> X.col_2
+           )
+        );
+
+-- <comment> same as above, except use table fromsup instead of fsdetail
+-- <comment> for one of the fsdetail occurences
+-- <ufi-input>
+      select distinct partnum
+      from fromsup
+      group by partnum, suppnum
+      having partnum in
+        (select Y.col_1
+         from fsdetail Y
+         group by col_1, col_2
+         having Y.col_2 <>  fromsup.suppnum
+         and Y.col_1 in
+           (select Z.col_1
+            from fsdetail Z
+            where Z.col_2 <> Y.col_2
+            and Z.col_2 <>  fromsup.suppnum
+           )
+        );
+
+-- <comment> get salesman numbers and order numbers for salesman who
+-- <comment> have orders for parts stored at location H76 and which
+-- <comment> have a cost less than or equal to 2500 from all
+-- <comment> suppliers that supply that part
+-- <ufi-input>
+      select salesman,ordernum
+      from orders
+      group by ordernum, salesman
+      having 'H76' in
+        (select  parts.location
+         from odetail,parts
+         where ( odetail.partnum =  parts.partnum)
+         and ( orders.ordernum =  odetail.ordernum)
+         group by  parts.partnum,parts.location
+         having 2500 >ALL
+           (select partcost
+            from fromsup
+            where  fromsup.partnum =  odetail.partnum
+           )
+        );
+
+-- <comment> same as above, except use additional subquery instead of join
+-- <ufi-input>
+      select salesman,ordernum
+      from orders
+      group by ordernum, salesman
+      having ordernum in
+        (select ordernum
+         from odetail
+         group by ordernum, partnum
+         having 'H76' in
+           (select location
+            from parts
+            group by partnum, location
+            having partnum =  odetail.partnum
+            and 2500 >ALL
+              (select partcost
+               from fromsup
+               where  fromsup.partnum =  odetail.partnum
+              )
+           )
+        );
+
+-- <end-input>
+
+
+
+-- <testcase A4>
+
+-- <detail>
+--    correlated subquery in having clause test - this tests the use of
+--    for browse access, for stable access,
+--    and for repeatable access inside of subqueries.
+
+-- <templates>
+--     US00
+
+-- <comment> get part numbers for all parts supplied by more than one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select distinct Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          for browse access
+         )
+      for stable access;
+
+-- <comment> get part numbers for all parts supplied by more than one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select distinct Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          for stable access
+         )
+      for repeatable access;
+
+-- <comment> get part numbers for all parts supplied by more than one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+         (select distinct Y.partnum
+          from fromsup Y
+          where Y.suppnum <> X.suppnum
+          for repeatable access
+         )
+      for repeatable access;
+
+-- <comment> get part numbers whose cost is greater than 10000 and whose
+-- <comment> price is equal to its' cost from at least one supplier
+-- <comment> NOTE: the subquery here returns 0 records sometimes.
+-- <ufi-input>
+     select partnum
+     from parts
+     group by partnum, price
+     having price IN
+       (select partcost
+        from expfroms
+        where  parts.partnum =  expfroms.partnum
+        for repeatable access
+       );
+
+-- <comment> get part numbers for parts whose price is less than 2000
+-- <comment> more than its' cost from all suppliers
+-- <ufi-input>
+      select partnum
+      from parts
+      group by partnum, price
+      having (price - 2000) <all
+        (select partcost
+         from fromsup
+         where  parts.partnum =  fromsup.partnum
+         group by partcost
+         for browse access
+        );
+
+-- <comment> get part names for parts who have the same price as at
+-- <comment> least one other part
+-- <ufi-input>
+      select col_1
+      from partsfor X
+      group by col_1, col_3
+      having X.col_3 =SOME
+        (select Y.col_3
+         from partsfor Y
+         where X.col_1 <> Y.col_1
+         for browse access
+        )
+      for browse access;
+
+-- <comment> get part names for parts who have the same price as at
+-- <comment> least one other part
+-- <ufi-input>
+      select col_1
+      from partsfor X
+      group by col_1, col_3
+      having X.col_3 =SOME
+        (select Y.col_3
+         from partsfor Y
+         where X.col_1 <> Y.col_1
+         for stable access
+        )
+      for stable access;
+
+-- <comment> get part names for parts who have the same price as at
+-- <comment> least one other part
+-- <ufi-input>
+      select col_1
+      from partsfor X
+      group by col_1, col_3
+      having X.col_3 =SOME
+        (select Y.col_3
+         from partsfor Y
+         where X.col_1 <> Y.col_1
+         for repeatable access
+        )
+      for browse access;
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> one supplier
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having exists
+        (select Y.partnum
+         from fromsup Y
+         where Y.suppnum <> X.suppnum
+         and X.partnum = Y.partnum
+         for repeatable access
+        );
+
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <comment> and part 5504
+-- <ufi-input>
+      select suppnum
+      from supplier
+      group by suppnum
+      having 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+         for repeatable access
+        )
+      and 5504 =ANY
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+         for stable access
+        );
+
+-- <comment> get supplier numbers for suppliers who supply part 4102
+-- <comment> and part 5504, except use a subquery in both a where clause
+-- <comment> and having clause
+-- <ufi-input>
+      select suppnum
+      from supplier
+      where 4102 in
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+         for repeatable access
+        )
+      group by suppnum
+      having 5504 =ANY
+        (select partnum
+         from fromsup
+         where  fromsup.suppnum =  supplier.suppnum
+         for browse access
+        );
+
+-- <comment> get employee names for employees who do not work at branches
+-- <comment> which are in the same city as the regional headquarters
+-- <comment> (put both subqueries in having clauses)
+-- <ufi-input>
+      select empname
+      from employee
+      group by empname, branchnum, regnum
+      having branchnum not in
+        (select branchnum
+         from branch
+         group by  branch.branchnum,  branch.regnum,
+                   branch.branchname
+         having  branch.regnum =  employee.regnum
+         and branchname =
+           (select location
+            from region
+            where  region.regnum =  employee.regnum
+            for browse access
+           )
+         for stable access
+        )
+      for repeatable access;
+
+-- <comment> get employee names for employees who do not work at branches
+-- <comment> which are in the same city as the regional headquarters
+-- <comment> (put outer subquery in where clause, inner in having clause)
+-- <ufi-input>
+      select empname
+      from employee
+      where branchnum not in
+        (select branchnum
+         from branch
+         group by  branch.branchnum,  branch.regnum,
+                   branch.branchname
+         having  branch.regnum =  employee.regnum
+         and branchname =
+           (select location
+            from region
+            where  region.regnum =  employee.regnum
+            for repeatable access
+           )
+         for stable access
+        )
+      for browse access;
+
+-- <comment> get part numbers for all parts supplied by more than
+-- <comment> two suppliers
+-- <comment> (put both subqueries in having clauses)
+-- <ufi-input>
+      select distinct X.partnum
+      from fromsup X
+      group by partnum, suppnum
+      having X.partnum in
+        (select Y.partnum
+         from fromsup Y
+         group by partnum, suppnum
+         having Y.suppnum <> X.suppnum
+         and Y.partnum in
+           (select Z.partnum
+            from fromsup Z
+            where Z.suppnum <> Y.suppnum
+            and Z.suppnum <> X.suppnum
+            for stable access
+           )
+         for browse access
+        )
+      for repeatable access;
+
+-- <comment> same as above, use view fsdetail instead
+-- <ufi-input>
+      select distinct X.col_1
+      from fsdetail X
+      group by col_1, col_2
+      having X.col_1 in
+        (select Y.col_1
+         from fsdetail Y
+         group by col_1, col_2
+         having Y.col_2 <> X.col_2
+         and Y.col_1 in
+           (select Z.col_1
+            from fsdetail Z
+            where Z.col_2 <> Y.col_2
+            and Z.col_2 <> X.col_2
+            for browse access
+           )
+         for repeatable access
+        )
+      for stable access;
+
+-- <comment> same as above, except use table fromsup instead of fsdetail
+-- <comment> for one of the fsdetail occurences
+-- <ufi-input>
+      select distinct partnum
+      from fromsup
+      group by partnum, suppnum
+      having partnum in
+        (select Y.col_1
+         from fsdetail Y
+         group by col_1, col_2
+         having Y.col_2 <>  fromsup.suppnum
+         and Y.col_1 in
+           (select Z.col_1
+            from fsdetail Z
+            where Z.col_2 <> Y.col_2
+            and Z.col_2 <>  fromsup.suppnum
+            for repeatable access
+           )
+         for repeatable access
+        )
+      for repeatable access;
+
+-- <end-input>
+
+
+-- <testcase A5>
+-- <detail>
+--    select correlated subquery in HAVING clause test - this tests the
+--    selection of aggregate functions (COUNT, AVG, MAX, MIN, SUM).
+--    Aggregates are tested in the SELECT clause, WHERE clause and in the
+--    HAVING clause.
+
+-- <templates>
+--     US00
+
+-- <comment> get part numbers and total value per order for that part
+-- <comment> for parts whose average total value per order is greater
+-- <comment> than the cost of its inventory
+-- <ufi-input>
+      select  odetail.partnum, sum(quantity * price)
+      from odetail,parts
+      where  odetail.partnum =  parts.partnum
+      group by  odetail.partnum
+      having avg(quantity * price) >
+        (select avg(partcost * inventory)
+         from fromsup,parts
+         where  fromsup.partnum =  parts.partnum
+         and  fromsup.partnum =  odetail.partnum
+        );
+
+-- <comment> get region #, branch#, and the average payroll for the branch(s)
+-- <comment> with the highest average payroll (having clause eliminates
+-- <comment> average payroll for the current branch so >ALL can be used
+-- <comment> instead of >=ALL)
+-- <ufi-input>
+      select regnum, branchnum, avg(X.salary)
+      from employee X
+      group by regnum, branchnum
+      having avg(X.salary) >ALL
+        (select avg(Y.salary)
+         from employee Y
+         group by regnum, branchnum
+         having avg(Y.salary) <> avg(X.salary)
+        );
+
+-- <comment> get region #, branch#, and the 'median' payroll for the branch(s)
+-- <comment> with the highest median payroll (having clause eliminates
+-- <comment> median payroll for the current branch so >ALL can be used
+-- <comment> instead of >=ALL)
+-- <ufi-input>
+      select regnum,branchnum,min(salary) + ((max(salary) - min(salary)) / 2)
+      from employee X
+      group by regnum, branchnum
+      having min(salary) + ((max(salary) - min(salary)) / 2) >ALL
+        (select min(Y.salary) + ((max(Y.salary) - min(Y.salary)) / 2)
+         from employee Y
+         group by regnum, branchnum
+         having min(Y.salary) + ((max(Y.salary) - min(Y.salary)) / 2) <>
+                min(X.salary) + ((max(X.salary) - min(X.salary)) / 2)
+        );
+
+-- <comment> get region # and branch # for branches where the average
+-- <comment> pay (not counting duplicates) is greater than the average
+-- <comment> pay with the largest and smallest salaries excluded.
+-- <ufi-input>
+      select regnum, branchnum
+      from employee X
+      group by regnum, branchnum
+      having avg(distinct salary) >
+        (select avg(Y.salary)
+         from employee Y
+         where salary <> max(X.salary) and
+               salary <> min(X.salary) and
+               (Y.regnum = X.regnum) and
+               (Y.branchnum = X.branchnum)
+        );
+
+-- <comment> get region # and branch # for branches where the average
+-- <comment> pay is greater than the average pay with the largest
+-- <comment> and smallest salaries excluded.
+-- <ufi-input>
+      select regnum, branchnum
+      from employee X
+      group by regnum, branchnum
+      having avg(salary) >
+        (select avg(Y.salary)
+         from employee Y
+         where salary <> max(X.salary) and
+               salary <> min(X.salary) and
+               (Y.regnum = X.regnum) and
+               (Y.branchnum = X.branchnum)
+        );
+
+-- <comment> get region # and branch # for branches whose average salary
+-- <comment> is greater than their managers' salary - 10000
+-- <ufi-input>
+      select regnum, branchnum
+      from employee X
+      group by regnum, branchnum
+      having avg(salary) >
+        (select (salary - 10000)
+         from employee Y , branch
+         where Y.regnum =  branch.regnum
+         and Y.branchnum =  branch.branchnum
+         and Y.empnum =  branch.manager
+         and Y.regnum = X.regnum
+         and Y.branchnum = X.branchnum
+        );
+
+-- <comment> get region # and branch # for branches A whose total payroll
+-- <comment> is greater than the total payroll of every other branch, not
+-- <comment> counting salaries less than the minimum salary of branch 'A'
+-- <ufi-input>
+      select regnum, branchnum
+      from employee X
+      group by regnum, branchnum
+      having sum(salary) >ALL
+        (select sum(Y.salary)
+         from employee Y
+         where salary >= min(X.salary)
+         group by regnum, branchnum
+         having sum(Y.salary) <> sum(X.salary)
+        );
+
+-- <end-input>
+
+
+
+-- <end-test>
+LOG;

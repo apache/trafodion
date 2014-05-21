@@ -1,0 +1,194 @@
+-- Tests for SQL on Hadoop PoC
+-- Added April 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+--if dirs exist belo will fail
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customer;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_promotion;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customer_address;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_store;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_store_sales;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customer_demographics;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_date_dim;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_time_dim;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_item;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_household_demographics;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customerNaddress;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_store_sales_summary;
+--empty folders
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customer/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_promotion/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customer_address/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store_sales/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customer_demographics/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_date_dim/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_time_dim/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_item/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_household_demographics/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customerNaddress/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store_sales_summary/*;
+
+
+--- setup tabkles to insert into
+sh regrhive.ksh -v -f $REGRTSTDIR/create_hive_tables.hive;
+
+prepare showOperators from
+select operator
+ from
+  (select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,16) operator
+         from table (explain(NULL,'XX'))
+         where operator NOT LIKE 'ESP_EXCHANGE%'
+  ) as t
+order by s desc;
+
+log LOG003 clear;
+
+set schema hive.hive;
+cqd attempt_esp_parallelism 'off';
+cqd AUTO_QUERY_RETRY 'OFF';
+cqd hive_max_esps  '1';
+cqd PARALLEL_NUM_ESPS '1';
+cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd mode_seahive 'ON';
+
+prepare s from insert into hive.ins_customer select * from hive.customer;
+execute s;
+select count(*) from hive.customer;
+select count(*) from hive.ins_customer;
+
+prepare s from insert into hive.ins_promotion select * from hive.promotion;
+execute s;
+select count(*) from hive.promotion;
+select count(*) from hive.ins_promotion;
+
+--try new HIVE SYNTAX
+--------------
+cqd query_cache '0';
+insert into TABLE hive.ins_customer_address select * from hive.customer_address;
+
+select count(*) from hive.customer_address;
+select count(*) from hive.ins_customer_address;
+
+insert OVERWRITE TABLE hive.ins_customer_address select * from hive.customer_address;
+
+select count(*) from hive.customer_address;
+select count(*) from hive.ins_customer_address;
+--execute  again
+insert OVERWRITE TABLE hive.ins_customer_address select * from hive.customer_address;
+
+select count(*) from hive.customer_address;
+select count(*) from hive.ins_customer_address;
+
+-------------------
+
+prepare s from insert into TABLE hive.ins_store select * from hive.store;
+execute s;
+select count(*) from hive.store;
+select count(*) from hive.ins_store;
+-- Now for the following inserts don't specify a schema
+prepare s from insert into ins_store_sales select * from store_sales;
+execute s;
+select count(*) from hive.store_sales;
+select count(*) from hive.ins_store_sales;
+
+prepare s from insert into ins_customer_demographics select * from customer_demographics;
+execute s;
+select count(*) from hive.customer_demographics;
+select count(*) from hive.ins_customer_demographics;
+
+prepare s from insert into hive.ins_date_dim select * from hive.date_dim;
+execute s;
+select count(*) from hive.date_dim;
+select count(*) from hive.ins_date_dim;
+
+prepare s from insert into hive.ins_time_dim select * from hive.time_dim;
+execute s;
+select count(*) from hive.time_dim;
+select count(*) from hive.ins_time_dim;
+
+prepare s from insert into hive.ins_item select * from item;
+execute s;
+select count(*) from hive.item;
+select count(*) from hive.ins_item;
+
+prepare s from insert into ins_household_demographics select * from hive.household_demographics;
+execute s;
+select count(*) from hive.household_demographics;
+select count(*) from hive.ins_household_demographics;
+
+--select [first 100] * from ins_date_dim order by d_date_sk;
+select [first 100] * from ins_time_dim order by t_time_sk;
+--------------------------------------------------
+--insert using parallel queries and overwrite 
+-----------------------
+cqd attempt_esp_parallelism 'on';
+cqd PARALLEL_NUM_ESPS '2';
+set schema hive;
+cqd hive_max_esps '2';
+cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd query_cache '0';
+control query shape esp_exchange(cut);
+prepare s from insert into table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk; 
+explain options 'f' s;
+execute s;
+
+
+-- hadoop ls should return 2 files
+-- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
+control query shape cut;
+log;
+sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
+log LOG003_orig_store_sales_summary.dat clear;
+select ss_sold_date_sk,ss_store_sk, sum (ss_quantity)  from store_sales group by  ss_sold_date_sk ,ss_store_sk order by  ss_sold_date_sk,ss_store_sk; 
+log;
+log LOG003_ins_store_sales_summary.dat clear;
+select  * from ins_store_sales_summary order by  ss_sold_date_sk,ss_store_sk; 
+log;
+sh diff -b LOG003_ORIG_STORE_SALES_SUMMARY.DAT LOG003_INS_STORE_SALES_SUMMARY.DAT 2>&1 >>LOG003;
+
+log LOG003;
+--execute again --overwrite should get rid og existing data from previous run
+control query shape union(cut,esp_exchange(cut));
+prepare s from insert overwrite table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk; 
+explain options 'f' s;
+execute s;
+control query shape cut;
+log;
+log LOG003_orig_store_sales_summary.dat clear;
+select ss_sold_date_sk,ss_store_sk, sum (ss_quantity)  from store_sales group by  ss_sold_date_sk ,ss_store_sk order by  ss_sold_date_sk,ss_store_sk; 
+log;
+log LOG003_ins_store_sales_summary.dat clear;
+select  * from ins_store_sales_summary order by  ss_sold_date_sk,ss_store_sk; 
+log;
+sh diff -b LOG003_ORIG_STORE_SALES_SUMMARY.DAT LOG003_INS_STORE_SALES_SUMMARY.DAT 2>&1 >>LOG003;
+
+
+
+
+---prepare s from insert into ins_customerNaddress 
+--prepare s from select c_customer_id, c_salutation, c_first_name, c_last_name, ca_address_id, ca_street_number, ca_street_name, ca_street_type, ca_suite_number,ca_city,  ca_county, ca_state, ca_zip, ca_country  from customer a join customer_address b on a.c_current_addr_sk=b.ca_address_sk where a.c_customer_sk <=1000;
+--explain options 'f' s;
+--execute s;
+
+--prepare s from insert into ins_store_sales_summary select ss_sold_date_sk ,s_store_id, s_store_name,ss_store_sk, sum (ss_quantity) , sum(ss_wholesale_cost) from store a join store_sales b on a.s_store_sk=b.ss_store_sk group by  ss_sold_date_sk ,s_store_id, s_store_name,ss_store_sk; 
+--explain options 'f' s;
+--execute s;

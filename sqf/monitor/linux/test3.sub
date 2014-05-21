@@ -1,0 +1,57 @@
+!
+! NonStop Process pair testing.
+!
+! - 1 NonStop Server, 1 client test driver
+!
+! Test A
+!   Client sends 20 requests to server
+!      5th, 10th, and 15th cause server primary to abort,
+!      20th will cause server to exit gracefully when client closes server.
+!
+!   Server primary check points requests to backup
+!      5th, 10th, and 15th cause server primary to abort and
+!      backup to takeover as primary and continues to
+!      accept and checkpoint requests from client.
+!
+! Server 
+!  Primary
+!    - starts backup <-(backup take over processing starts here)
+!    - mounts device
+!    - accepts connection from client
+!    - loops
+!         o receives message from client
+!         o processes message from client
+!         o checkpoints message from client to backup
+!    - on a process death notice
+!         o starts backup 
+!
+!  Backup
+!    - opens primary
+!    - loops
+!         o receives checkpoint messages from primary
+!         o processes checkpoint messages from primary
+!    - on a process death notice
+!         o takes over as primary
+!         o closes primary
+!         o startup Primary processing as above
+!
+! Client
+!    - opens Server
+!    - loops
+!         o sends MAX_CYCLES messages to server
+!            o every 5th send is an CMD_ABORT to abort current primary
+!              causing a takeover by the server backup
+!    - on a process death notice
+!         o takes over as primary
+!         o closes primary
+!         o startup Primary processing as above
+!
+exec {nowait,name $SERV0,nid 0, OUT SERV0.T1.log}nsserver
+ps
+delay 2
+ps
+exec {nowait,name $CLI,nid 0,debug}nsclient
+ps
+delay 5
+ps
+exit

@@ -1,0 +1,53 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2004-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+#ifndef _NA_INTERNAL_ERROR_H_
+#define _NA_INTERNAL_ERROR_H_
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         NAInternalError.h
+ * Description:  Encapsulate the exception call back handler
+ *               used in NAAssert and NAAbort functions
+ *               
+ * Created:      2/9/2003
+ * Language:     C++
+ *
+ *****************************************************************************
+ */
+#include "SqlExportDllDefines.h"
+
+class ExceptionCallBack;
+
+class SQLEXPORT_LIB_FUNC NAInternalError {
+private:
+  static ExceptionCallBack *pExceptionCallBack_;
+public:
+  static ExceptionCallBack *getExceptionCallBack();
+  static void registerExceptionCallBack(ExceptionCallBack *p);
+  static void unRegisterExceptionCallBack();
+  static void throwFatalException(const char *msg,
+				  const char *fileName,
+				  UInt32 lineNum);
+  static void throwAssertException(const char *cond,
+				   const char *fileName,
+				   UInt32 lineNum);
+};
+
+#endif

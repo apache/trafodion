@@ -1,0 +1,28 @@
+.TH SQPSTACK 1 "05 May 2010" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+sqpstack \- pstack processes with specific binaries over cluster
+.LP
+.SH SYNOPSIS
+.B sqpstack
+[
+.B program
+]
+.SH DESCRIPTION
+.LP
+.B sqpstack
+will find all instances of
+.B program
+running on the cluster and issue a
+.I pstack <pid>
+for each instance.
+With no parameters,
+.B sqpstack
+will select the
+.I monitor
+program.
+.SH SEE ALSO
+.I pdsh
+,
+.I pstack
+,
+.I ssh.

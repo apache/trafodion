@@ -1,0 +1,2800 @@
+//******************************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+/**********************************************************************/
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         Describe.C
+ * Description:
+ *
+ * Created:      4/15/95
+ * Language:     C++
+ * Status:       $State: Exp $
+ *
+ *
+ *****************************************************************************
+ */
+
+#define   SQLPARSERGLOBALS_FLAGS	// must precede all #include's
+#define   SQLPARSERGLOBALS_NADEFAULTS
+
+#include "Platform.h"
+
+#include <ctype.h>
+#include <iostream>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h>
+
+#ifndef   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
+#define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
+#endif
+#include "SqlParserGlobals.h"  // must be the last #include.
+
+#include "CmpCommon.h"
+#include "CmpContext.h"
+#include "CmpMain.h"
+#include "CmpErrors.h"
+#include "ComDiags.h"
+#include "ComObjectName.h"
+#include "ComOperators.h"
+#include "ComSpace.h"
+#include "ComTdbRoot.h"
+#include "ComSmallDefs.h"
+#include "ControlDB.h"
+#include "DatetimeType.h"
+#include "FragDir.h"
+#include "HeapLog.h"
+#include "parser.h"
+#include "ReadTableDef.h"
+#include "RelControl.h"
+#include "RelExpr.h"
+#include "RelExeUtil.h"
+#include "RelMisc.h"
+#include "RelRoutine.h"
+#include "RelScan.h"
+#include "sql_id.h"
+#include "Sqlcomp.h"
+#include "ItemOther.h"
+#include "NARoutine.h"
+#include "LmJavaSignature.h"
+#include "QueryText.h"
+#include "wstr.h"
+#include "SqlParserGlobals.h"
+#include "hs_update.h"
+#include "csconvert.h"
+#include "charinfo.h"
+#include "CmpDescribe.h"
+#include "CmpDDLCatErrorCodes.h"
+
+#include "CmpSeabaseDDL.h"
+
+#include "Analyzer.h"
+#include "ComSqlId.h"
+#include "ExExeUtilCli.h"
+
+#define CM_SIM_NAME_LEN 32
+
+
+enum PrivTarget {
+   PRIV_SCHEMA = 2,
+   PRIV_TABLE,
+   PRIV_PROCEDURE,
+   PRIV_LIBRARY};
+
+enum Display_Schema_Object {
+   SCHEMA_TABLE,
+   SCHEMA_TABLE_INDEX,
+   SCHEMA_TABLE_VIEW,
+   SCHEMA_TABLE_MV,
+   SCHEMA_TABLE_TRIGGER,
+   SCHEMA_TABLE_SYNONYM,
+   SCHEMA_TABLE_STORED_PROCEDURE,
+   SCHEMA_TABLE_TABLE_MAPPING_FUNCTION,
+   SCHEMA_TABLE_SCALAR_FUNCTION,
+   SCHEMA_TABLE_UNIVERSAL_FUNCTION,
+   SCHEMA_TABLE_ROUTINE_ACTION
+   };
+
+extern "C"
+{
+  Lng32 SQLCLI_GetRootTdb_Internal( /*IN*/ CliGlobals * cliGlobals,
+				         /*INOUT*/ char * roottdb_ptr,
+                                         /*IN*/ Int32 roottdb_len,
+				         /*INOUT*/ char * srcstr_ptr,
+                                         /*IN*/ Int32 srcstr_len,
+					 /*IN*/ SQLSTMT_ID *statement_id);
+
+  Lng32 SQLCLI_GetRootTdbSize_Internal(/*IN*/ CliGlobals * cliGlobals,
+				            /*INOUT*/ Lng32 * root_tdb_size,
+                                            /*INOUT*/ Lng32* srcstr_size,
+					    /*IN*/ SQLSTMT_ID *statement_id);
+}
+
+extern CliGlobals * GetCliGlobals();
+
+void outputLine(Space &space, NAString &outputText, size_t indent,
+                       size_t indentDeltaOfLineFollowingLineBreak = 2,
+		       NABoolean commentOut = FALSE,
+		       const char *testSchema = NULL);
+
+void outputLine(Space &space, const char *buf, size_t indent,
+                       size_t indentDeltaOfLineFollowingLineBreak = 2,
+		       NABoolean commentOut = FALSE,
+		       const char *testSchema = NULL);
+
+static size_t indexLastNewline(const NAString & text,
+                               size_t startPos,
+                               size_t maxLen);
+
+
+static short CmpDescribePlan(
+   const char   *query,
+   ULng32 flags,
+   char         *&outbuf,
+   ULng32 &outbuflen,
+   NAMemory      *heap);
+
+static short CmpDescribeShape(
+   const char    *query,
+   char         *&outbuf,
+   ULng32 &outbuflen,
+   NAMemory      *h);
+
+static short CmpDescribeTransaction(
+   char         *&outbuf,
+   ULng32 &outbuflen,
+   NAMemory      *h);
+
+short CmpDescribeHiveTable ( 
+			     const CorrName  &dtName,
+			     char* &outbuf,
+			     ULng32 &outbuflen,
+			     CollHeap *heap);
+
+short CmpDescribeSeabaseTable ( 
+			     const CorrName  &dtName,
+			     short type, // 1, invoke. 2, showddl. 3, createLike
+			     char* &outbuf,
+			     ULng32 &outbuflen,
+			     CollHeap *heap,
+			     const char * pkeyStr = NULL,
+			     NABoolean withPartns = FALSE,
+			     NABoolean noTrailingSemi = FALSE);
+
+
+// The real Ark catalog manager returns all object names as three-part
+// identifiers, properly delimited where necessary.
+// Only simple column names are returned undelimited;
+// only they should use this procedure.
+#define ANSI_ID(name)	ToAnsiIdentifier(name).data()
+
+// ## This only applies to CatSim; remove it!
+#define CONSTRAINT_IS_NAMED(constrdesc)	\
+	  (constrdesc->body.constrnts_desc.constrntname && \
+	  *constrdesc->body.constrnts_desc.constrntname)
+
+// Define a shorter synonym.
+#define SpacePrefix	CmpDescribeSpaceCountPrefix
+
+static short CmpDescribePlan    (const char *query,
+							     ULng32 flags,
+                          char *&outbuf,
+                          ULng32 &outbuflen,
+                          NAMemory *h);
+
+
+// DZC - outputToStream does nothing for SHOWDDL because outStream() returns NULL
+// needed for SHOWCONTROL though, so they must be left in. 
+static void outputToStream(const char *buf, NABoolean commentOut = FALSE)
+{
+  if (ActiveControlDB()->outStream())
+    *(ActiveControlDB()->outStream()) << (commentOut ? "--" : "") << buf << endl;
+}
+
+/*
+static void outputToStreamNoNewline(const char *buf, NABoolean commentOut = FALSE)
+{
+  if (ActiveControlDB()->outStream())
+    *(ActiveControlDB()->outStream()) << (commentOut ? "--" : "") << buf;
+}
+*/
+
+void outputShortLine(Space &space, const char *buf, NABoolean commentOut = FALSE)
+{
+  // DZC - if commentOut = TRUE, prepend buf with "--"
+  NAString outputString(buf);
+  if(commentOut)
+    outputString.prepend("--");
+  space.outputbuf_ = TRUE;
+  space.allocateAndCopyToAlignedSpace(outputString, outputString.length(), SpacePrefix);
+  outputToStream(buf ? buf : "", commentOut); //DZC - this does nothing
+}
+
+
+void outputColumnLine(Space &space, NAString pretty, 
+                      Int32 &colcount, NABoolean isForMV = FALSE,
+                      NABoolean isDivisionColumn = FALSE)
+{
+  // Must linebreak before prepending comma+space, else long colname won't
+  // display correctly.
+  if (isDivisionColumn)
+    LineBreakSqlText(pretty, FALSE/*showddlView*/, 79/*maxlen*/,
+                     6/*pfxlen*/, 4/*pfxinitlen*/, ' '/*pfxchar*/,
+                     NULL/*testSchema*/, isDivisionColumn/*commentOut*/);
+  else
+  LineBreakSqlText(pretty, FALSE, 79, 6, 4);	// initial indent 4, subseq 6
+  if (colcount++)				// if not first line,
+    pretty[(size_t)2] = ',';			// change "    " to "  , "
+  space.outputbuf_ = TRUE;
+  space.allocateAndCopyToAlignedSpace(pretty, pretty.length(), SpacePrefix);
+  if (isDivisionColumn)
+  {
+    // Do not prepend the leading "--" comment prefix because we have
+    // already done that in the LineBreakSqlText() call.
+    outputToStream(pretty, FALSE/*commentOut*/);
+  }
+  else
+  outputToStream(pretty, isForMV);
+}
+
+void outputLine(Space &space, const char *buf, size_t indent,
+                size_t indentDeltaOfLineFollowingLineBreak,
+                NABoolean commentOut,
+                const char *testSchema)
+{
+  NAString pretty(buf);
+  outputLine(space, pretty, indent, indentDeltaOfLineFollowingLineBreak, 
+             commentOut, testSchema);
+}
+
+// NAstring version of outputLine so there are fewer conversions
+void outputLine(Space &space, NAString &outputText, size_t indent,
+                size_t indentDeltaOfLineFollowingLineBreak,
+                NABoolean commentOut, 
+                const char *testSchema)
+{
+  if(commentOut)
+    outputText.prepend("--");
+
+  LineBreakSqlText(outputText, FALSE, 79,
+                   indent + indentDeltaOfLineFollowingLineBreak, 0, ' ',
+                   testSchema);
+  space.outputbuf_ = TRUE;
+  space.allocateAndCopyToAlignedSpace(outputText, outputText.length(), 
+    SpacePrefix);
+  outputToStream(outputText, commentOut);
+}
+
+// To output lines with more than 3000 characters
+void outputLongLine(Space &space, NAString & outputText, size_t indent,
+                    const char *testSchema = NULL, NABoolean commentOut = FALSE)
+{
+  if (commentOut)
+    LineBreakSqlText(outputText, TRUE, 79, indent+2, 0, ' ', testSchema, commentOut);
+  else
+  LineBreakSqlText(outputText, TRUE, 79, indent+2, 0, ' ', testSchema);
+
+  // Can only print out 3000 characters at a time due to generator limitation
+  // This limitation only applies to views because view DDL is printed out as
+  // a continuous string of text (vs. other DDL which is outputted piecemeal).
+  // This code assumes that there must be at least one space in every 3000
+  // chars of text.
+
+  const size_t CHUNK_SIZE = 3000;
+  size_t textLen = outputText.length();
+  space.outputbuf_ = TRUE;
+
+  // If there's only one chunk, print it
+  if (textLen <= CHUNK_SIZE) 
+  {
+    space.allocateAndCopyToAlignedSpace(outputText, textLen, SpacePrefix);
+  }
+  else
+  { 
+    // Output multiple chunks
+    size_t textStartPos = 0;
+    size_t finalTextStartPos = textLen - CHUNK_SIZE;
+    size_t chunkLen = 0;
+    NABoolean isFinalChunk = FALSE;
+    do
+    {
+      isFinalChunk = (textStartPos >= finalTextStartPos);
+      // Final chunk may be smaller than CHUNK_SIZE
+      chunkLen = (isFinalChunk) ? (textLen - textStartPos) : CHUNK_SIZE;
+      if (!isFinalChunk)
+      {
+        // Use the last newline in this chunk as the boundary between this
+        // chunk and the next chunk.
+        chunkLen = indexLastNewline(outputText, textStartPos, chunkLen);
+        CMPASSERT(chunkLen != NA_NPOS);
+      }
+      space.allocateAndCopyToAlignedSpace(outputText(textStartPos, chunkLen).data(),
+                                          chunkLen, SpacePrefix);
+      textStartPos += chunkLen + 1;  // + 1 skips over newline
+    } while (!isFinalChunk);
+  }
+}
+
+
+// Return index of closing right quote that matches the left quote
+// text(startPos).  Return NA_NPOS if closing right quote is not found.
+// Searches text(startPos+1) through text(endPos-1).
+static size_t skipQuotedText(const NAString & text,
+                             size_t startPos,
+                             size_t endPos)
+{
+  size_t closeQuotePos = NA_NPOS;
+
+  char quoteChar = text(startPos);
+
+  for (size_t pos = startPos + 1; pos < endPos; pos++)
+  {
+    char c = text(pos);
+    if (c == quoteChar)
+    {
+      if ( (pos != (endPos - 1))
+	   && (text(pos + 1) == quoteChar) )
+        pos++;  // skip embedded quote
+      else 
+      {
+        closeQuotePos = pos;
+        break;
+      }
+    }
+  }
+
+  return closeQuotePos;
+}
+
+// Return the offset from startPos of the last unquoted newline that occurs in
+// the substring text(startPos, maxLen).  Return NA_NPOS if the substring
+// contains fewer than maxLen characters (and therefore doesn't need to be
+// broken up) or we can't find an unquoted newline.
+//
+static size_t indexLastNewline(const NAString & text,
+                               size_t startPos,
+                               size_t maxLen)
+{
+  size_t newlinePos = NA_NPOS;
+
+  size_t endPos = startPos + maxLen;
+  if (text.length() <= endPos)
+    return NA_NPOS;
+
+  // search text(startPos) through text(endPos - 1)
+  for (size_t pos = startPos; pos < endPos; pos++)
+  {
+    char c = text[pos];
+    if ((c == '"') OR (c == '\''))
+    {
+      pos = skipQuotedText(text, pos, endPos);
+      // If a quoted string was split across the chunk, we won't find the 
+      // right-hand quote; break out of loop and return the offset of last  
+      // found (if any) newline character.
+      if (pos == NA_NPOS)
+         break;
+    }
+    else 
+       if (c == '\n')
+       {
+         newlinePos = pos;
+       }
+  }
+
+  // Convert newlinePos to offset from startPos
+  if (newlinePos != NA_NPOS)
+    newlinePos = (newlinePos - startPos);
+
+  return newlinePos;
+}
+
+NAString &replaceAll(NAString &source, NAString &searchFor,
+		     NAString &replaceWith)
+{
+  size_t indexOfReplace = NA_NPOS;
+  indexOfReplace = source.index(searchFor);
+  if (indexOfReplace != NA_NPOS)
+    {
+      // Replace all occurences of searchFor with replaceWith. When no
+      // more occurences are found or end of string is reached, index()
+      // will return NA_NPOS.
+      while (indexOfReplace != NA_NPOS)
+	{
+	  source.replace(indexOfReplace, searchFor.length(), 
+			 replaceWith);
+	  // Find index of next occurence to replace.
+	  indexOfReplace = 
+	    source.index(searchFor, indexOfReplace + replaceWith.length()); 
+	}
+    }
+
+  return source;
+}
+
+
+static Int32 displayDefaultValue(const char * defVal, const char * colName,
+				 NAString &displayableDefVal)
+{
+  CharInfo::CharSet charset = CharInfo::UTF8;
+  
+  //
+  // Check to see if all characters in the specified column default
+  // value can be successfully translated to the ISO_MAPPING character
+  // set for displaying.
+  //
+  char buf[2032];  // the output buffer - should be big enough
+  buf[0] = '\0';
+  enum cnv_charset eCnvCS = cnv_UTF8;
+  const char * pInStr = defVal;
+  Int32 inStrLen = BYTES_PER_NAWCHAR * NAWstrlen((NAWchar *)(defVal));
+  char * p1stUnstranslatedChar = NULL;
+  UInt32 outStrLenInBytes = 0;
+  UInt32 charCount = 0;  // number of characters translated/converted
+  Int32 cnvErrStatus = 0;
+  char *pSubstitutionChar = NULL;
+  Int32 convFlags = 0;
+  cnvErrStatus =
+    UTF16ToLocale
+    ( cnv_version1            // in  - const enum cnv_version version
+      , pInStr                  // in  - const char *in_bufr
+      , inStrLen                // in  - const Int32 in_len
+      , buf                     // out - const char *out_bufr
+      , 2016                    // in  - const Int32 out_len
+      , eCnvCS                  // in  - enum cnv_charset charset
+      , p1stUnstranslatedChar   // out - char * & first_untranslated_char
+      , &outStrLenInBytes       // out - UInt32 *output_data_len_p
+      , convFlags               // in  - const Int32 cnv_flags
+      , (Int32)TRUE               // in  - const Int32 addNullAtEnd_flag
+      , (Int32)FALSE              // in  - const Int32 allow_invalids
+      , &charCount              // out - UInt32 * translated_char_cnt_p
+      , pSubstitutionChar       // in  - const char *substitution_char
+      );
+  NABoolean isConvOkay = FALSE;
+  switch (cnvErrStatus)
+    {
+    case 0: // success
+    case CNV_ERR_NOINPUT: // note that an empty input string will
+      isConvOkay = TRUE;  // also get this error so be careful
+      break;
+    case CNV_ERR_INVALID_CHAR:
+      {
+	*CmpCommon::diags() << DgSqlCode(CAT_SHOWDDL_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE);
+	*CmpCommon::diags() << DgColumnName(ANSI_ID(colName));
+	*CmpCommon::diags() << DgString0("UTF8");
+      }
+      break;
+    case CNV_ERR_BUFFER_OVERRUN: // output buffer not big enough
+    case CNV_ERR_INVALID_CS:
+    default:
+      CMPABORT_MSG("SHOWDDL internal logic error");
+      break;
+    } // switch
+  
+  if (isConvOkay)
+    {
+      displayableDefVal.append(buf);
+      return 0;
+    }
+  
+  return -1;
+}
+
+
+static short CmpDescribeShowQryStats(
+   const char    *query,
+   char         *&outbuf,
+   ULng32        &outbuflen,
+   NAMemory      *heap)
+{
+  // make sure we have a showstats query to process
+  short rc = -1; 
+  if (!query) return rc;
+
+  // Skip leading blanks
+  const char *cc = query;
+  while(isSpace8859_1(*cc)) cc++;
+
+  // scan "showstats" token
+  char lowertok[10];
+  const char *ctok=cc;
+  while (isAlpha8859_1(*cc)) cc++;
+  strncpy(lowertok, ctok, 9);
+  lowertok[9] = '\0';
+  if (stricmp(lowertok, "showstats")) return rc;
+
+  // skip blanks
+  while(isSpace8859_1(*cc)) cc++;
+
+  // scan "for" token
+  ctok = cc;
+  while (isAlpha8859_1(*cc)) cc++;
+  strncpy(lowertok, ctok, 3);
+  lowertok[3] = '\0';
+  if (stricmp(lowertok, "for")) return rc;
+
+  // skip blanks
+  while(isSpace8859_1(*cc)) cc++;
+
+  // scan "query" token
+  ctok = cc;
+  while (isAlpha8859_1(*cc)) cc++;
+  strncpy(lowertok, ctok, 5);
+  lowertok[5] = '\0';
+  if (stricmp(lowertok, "query")) return rc;
+
+  // skip blanks
+  while(isSpace8859_1(*cc)) cc++;
+
+  // a "showstats for query <q>" does its work by:
+  //   1) at start, CmpCommon::context()->setShowQueryStats()
+  //   2) sqlcomp -- analyzer & cardinality estimation code will consult
+  //      CmpCommon::context()->showQueryStats() to do their part in
+  //      showing internal histogram stuff
+  //   3) at end, CmpCommon::context()->resetShowQueryStats()
+  CmpCommon::context()->setShowQueryStats();
+
+  // prepare this query.
+  char * qTree = NULL;
+  ULng32 dummyLen;
+
+  CmpMain sqlcomp;
+  CmpMain::CompilerPhase phase = CmpMain::ANALYSIS;
+
+  // "showstats for query <q>" will cause QueryAnalysis::analyzeThis() to
+  // call QueryAnalysis::setHistogramsToDisplay() which will set
+  // QueryAnalysis::Instance()->statsToDisplay_ which will be displayed
+  // by QueryAnalysis::Instance()->showQueryStats() below.
+  QueryText qText((char*)cc, SQLCHARSETCODE_ISO88591);
+  CmpMain::ReturnStatus rs = 
+    sqlcomp.sqlcomp(qText, 0, &qTree, &dummyLen, heap, phase);
+  CmpCommon::context()->resetShowQueryStats();
+  if (rs)
+    {
+      return rc;
+    }
+
+  Space space;
+  char buf[10000];
+  QueryAnalysis::Instance()->showQueryStats(query, &space, buf);
+  outputShortLine(space, buf);
+
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+  return 0;
+}
+
+// Returns -1, if error.
+short CmpDescribe(const char *query, const RelExpr *queryExpr,
+		  char* &outbuf, ULng32 &outbuflen,
+		  CollHeap *heap)
+{
+  // Display triggers using this object
+  NABoolean showUsingTriggers = !!getenv("SQLMX_SHOW_USING_TRIGGERS");
+
+  NABoolean showUsingMVs = !!getenv("SQLMX_SHOW_USING_MVS"); 
+  // MV
+  NABoolean showUnderlyingBT = !!getenv("SQLMX_SHOW_MVS_UNDERLYING_BASE_TABLE");
+
+  Lng32 replShowddl = (Lng32) CmpCommon::getDefaultNumeric(SHOWDDL_FOR_REPLICATE);
+  NABoolean logFormat = (CmpCommon::getDefault(SHOWDDL_DISPLAY_FORMAT) == DF_LOG);
+  Lng32 replIOVersion = (Lng32) CmpCommon::getDefaultNumeric(REPLICATE_IO_VERSION);
+  // Init SHOWDDL MX-format table regression test support for schema
+  // names longer than 'SCH'.
+  const char *testSchema = NULL;
+  NAString testSchemaName;
+  if (CmpCommon::context()->getSqlmxRegress() == 1)
+  {
+    const char *env = getenv("TEST_SCHEMA_NAME");
+    if (env) 
+    {
+      const size_t SCH_LEN= 3;  // 'SCH' schema length
+      testSchemaName = env;
+      if (testSchemaName.length() > SCH_LEN)
+        testSchema = testSchemaName.data();
+    }
+  }
+
+  char *buf = NULL;
+  Space space;
+
+  // emit an initial newline
+  outputShortLine(space, " ");
+
+  // initialize the returned values
+  outbuf = NULL;
+  outbuflen = 0;
+
+  CMPASSERT(queryExpr->getOperatorType() == REL_ROOT);
+  Describe *d = (Describe *)(queryExpr->child(0)->castToRelExpr());
+  CMPASSERT(d->getOperatorType() == REL_DESCRIBE);   
+
+  if (d->getIsSchema())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4222)
+                          << DgString0("DESCRIBE SCHEMA");
+      return -1;
+    }
+  // If SHOWDDL USER, go get description and return
+  if (d->getIsUser())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4222)
+                          << DgString0("DESCRIBE USER");
+      return -1;
+    }
+
+  // If SHOWDDL ROLE, go get description and return
+  if (d->getIsRole())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4222)
+                          << DgString0("DESCRIBE ROLE");
+      return -1;
+    }
+
+  // If SHOWDDL COMPONENT, go get description and return
+  if (d->getIsComponent())
+    {
+      *CmpCommon::diags() << DgSqlCode(-4222)
+                          << DgString0("DESCRIBE COMPONENT");
+      return -1;
+    }
+
+  if (d->getDescribedTableName().getQualifiedNameObj().getObjectNameSpace() 
+           == COM_LIBRARY_NAME)
+    {
+      *CmpCommon::diags() << DgSqlCode(-4222)
+                          << DgString0("DESCRIBE LIBRARY");
+      return -1;
+    }
+
+
+  ExtendedQualName::SpecialTableType tType =
+    d->getDescribedTableName().getSpecialType();
+  // Don't reveal exception table (special table syntax)
+  if ( (CmpCommon::getDefault(IS_DB_TRANSPORTER) == DF_OFF) &&
+       (tType == ExtendedQualName::EXCEPTION_TABLE) )
+      tType = ExtendedQualName::NORMAL_TABLE;
+
+  NAString upshiftedLocName(d->getDescribedTableName().getLocationName());
+  upshiftedLocName.toUpper();
+  NAString *pLocName = NULL;
+  if (d->getDescribedTableName().isLocationNameSpecified())
+    pLocName = &upshiftedLocName;
+
+  if (d->getFormat() == Describe::PLAN_)
+    {
+      // Return runtime plan.
+      // This command (SHOWPLAN) is for internal debugging use only.
+
+      CMPASSERT(query);
+
+      // Skip leading blanks
+      for ( ; *query == ' '; query++) ;
+
+      // Skip the SHOWPLAN token & option (if specified)(length to be determined) in front of the input query.
+      Int32 i=8;
+      while(query[i] == ' ') i++;
+      if(str_cmp(query+i,"option",6) == 0 || str_cmp(query+i,"OPTION",6) == 0)
+      {
+			while(query[i] != '\'' && query[i] != '\0') i++;
+         i++;
+			while(query[i] != '\'' && query[i] != '\0') i++;
+         i++;
+      }
+      return CmpDescribePlan(&query[i], d->getFlags(), outbuf, outbuflen, heap);
+    }
+
+  if (d->getFormat() == Describe::SHAPE_)
+    {
+      // Return CONTROL QUERY SHAPE statement for this query.
+
+      CMPASSERT(query);
+
+      // Skip leading blanks
+      for ( ; *query == ' '; query++) ;
+
+      // Skip the SHOWSHAPE token (length 9) in front of the input query.
+      return CmpDescribeShape(&query[9], outbuf, outbuflen, heap);
+    }
+
+  if (d->getFormat() == Describe::SHOWQRYSTATS_)
+    {
+      // show histogram for root of this query.
+      return CmpDescribeShowQryStats(query, outbuf, outbuflen, heap);
+    }
+
+  if (d->getFormat() >= Describe::CONTROL_FIRST_ &&
+      d->getFormat() <= Describe::CONTROL_LAST_)
+    {
+      return CmpDescribeControl(d, outbuf, outbuflen, heap);
+    }
+ 
+  if (d->getFormat() == Describe::LEAKS_)
+    {
+#ifdef NA_DEBUG_HEAPLOG
+      if ((d->getFlags()) & LeakDescribe::FLAG_ARKCMP)
+	outbuflen = HeapLogRoot::getPackSize();
+      else
+	outbuflen = 8;
+      HEAPLOG_OFF();
+      outbuf = (char *)heap->allocateMemory(outbuflen);
+      HEAPLOG_ON();
+      HeapLogRoot::pack(outbuf, d->getFlags());
+#endif
+      return 0;
+    }
+
+  if (d->getFormat() == Describe::SHOWSTATS_)
+    {
+      return (short)ShowStats(query, outbuf, outbuflen, heap);
+    }
+
+  if (d->getFormat() == Describe::TRANSACTION_)
+    {
+      return CmpDescribeTransaction(outbuf, outbuflen, heap);
+    }
+    
+    
+  // Start SHOWDDL code
+
+  // check if this is a hive table. If so, describe using hive info from NATable.
+  // For now, schemaName of HIVE indicates a hive table.
+  // Need to fix that at a later time when multiple hive schemas are supported.
+  if ((d->getFormat() == Describe::INVOKE_) &&
+      (d->getDescribedTableName().isHive()) &&
+      (!d->getDescribedTableName().isSpecialTable()))
+    {
+      short rc = 
+	CmpDescribeHiveTable(d->getDescribedTableName(), outbuf, outbuflen, heap);
+      return rc;
+    }
+
+  // check if this is an hbase/seabase table. If so, describe using info from NATable.
+  if (((d->getFormat() == Describe::INVOKE_) ||
+       (d->getFormat() == Describe::LONG_)) &&
+      ((d->getDescribedTableName().isHbase()) ||
+       (d->getDescribedTableName().isSeabase())))
+    {
+      short rc = 
+	CmpDescribeSeabaseTable(d->getDescribedTableName(), 
+				(d->getFormat() == Describe::INVOKE_ ? 1 : 2),
+				outbuf, outbuflen, heap, NULL, TRUE);
+      return rc;
+    }
+
+  desc_struct *tabledesc = NULL;
+  if ( ExtendedQualName::isDescribableTableType(tType) )
+  {
+    *CmpCommon::diags() << DgSqlCode(-4222)
+                        << DgString0("DESCRIBE");
+  }
+  else	// special virtual table
+    {
+      ExplainFunc explainF;
+      StatisticsFunc statisticsF;
+      HiveMDaccessFunc hiveMDF;
+      ExeUtilGetDiskStats getDiskStats(NULL, FALSE);
+      DiskLabelStatistics diskLabStats(CorrName("DUMMY"), TRUE, FALSE);
+       const NAString& virtualTableName =
+        d->getDescribedTableName().getQualifiedNameObj().getObjectName();
+      if (virtualTableName == explainF.getVirtualTableName())
+	{
+	  tabledesc = explainF.createVirtualTableDesc();
+	}
+      else if (virtualTableName == statisticsF.getVirtualTableName())
+	{
+	  tabledesc = statisticsF.createVirtualTableDesc();
+	}
+      else if (virtualTableName == diskLabStats.getVirtualTableName())
+	{
+	  tabledesc = diskLabStats.createVirtualTableDesc();
+	}
+      else if (virtualTableName == getDiskStats.getVirtualTableName())
+	{
+	  tabledesc = getDiskStats.createVirtualTableDesc();
+	}
+      else if (strncmp(virtualTableName.data(), "HIVEMD_", 7) == 0)
+	{
+	  NAString mdType = virtualTableName;
+	  mdType = mdType.strip(NAString::trailing, '_');
+	  mdType = mdType(7, mdType.length()-7);
+
+	  hiveMDF.setMDtype(mdType.data());
+
+	  tabledesc = hiveMDF.createVirtualTableDesc();
+	}
+      else
+	{
+	  // not supported
+	  *CmpCommon::diags() << DgSqlCode(-3131);
+	  return -1;
+	}
+    }
+  
+  
+  if (!tabledesc)
+    return -1;
+
+  NAString tableName(tabledesc->body.table_desc.tablename) ;
+  
+  NABoolean external = d->getIsExternal();
+  //strip catalog off of table name
+  if (external) 
+  {
+    ComObjectName externName(tableName, COM_TABLE_NAME);
+    if (logFormat || (replShowddl != 0))
+    {
+       if ((replIOVersion >= 5 && replIOVersion <= 10) ||
+           (replIOVersion >= 14))
+         tableName = externName.getObjectNamePartAsAnsiString();
+       else
+         tableName = externName.getExternalName(FALSE, TRUE);
+    }
+    else
+      tableName = externName.getExternalName(FALSE, TRUE);
+  }
+  
+  NABoolean isVolatile =
+                  FALSE;
+  NABoolean isInMemoryObjectDefn = 
+                  FALSE;
+
+  ULng32 saved_SqlParser_Flags = SqlParser_Flags;
+
+ // add an exception handler around all the SQL specific code
+ // fix for genesis case 10-050325-9899 
+ try
+ {
+  if(isVolatile)
+	Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+
+  // Allocate enough for a big view or constraint definition
+  const Int32 LOCAL_BIGBUF_SIZE = 30000;
+  buf = new (CmpCommon::statementHeap()) char[LOCAL_BIGBUF_SIZE];
+  CMPASSERT(buf);
+
+  desc_struct *viewdesc = tabledesc->body.table_desc.views_desc;
+
+  if (d->getFormat() == Describe::INVOKE_)
+    {
+      time_t tp;
+      time(&tp);
+      
+      if (viewdesc)
+        sprintf(buf, "-- Definition of view %s\n"
+		     "-- Definition current %s",
+		     tableName.data(), ctime(&tp));
+      else if ( tType == ExtendedQualName::TRIGTEMP_TABLE )
+	sprintf(buf, "-- Definition of table (TEMP_TABLE %s)\n"
+		     "-- Definition current  %s",
+		     tableName.data(), ctime(&tp));
+      else if ( tType == ExtendedQualName::EXCEPTION_TABLE )
+	sprintf(buf, "-- Definition of table (EXCEPTION_TABLE %s)\n"
+		     "-- Definition current  %s",
+		     tableName.data(), ctime(&tp));
+      else if ( tType == ExtendedQualName::IUD_LOG_TABLE )
+	sprintf(buf, "-- Definition of table (IUD_LOG_TABLE %s)\n"
+		     "-- Definition current  %s",
+		     tableName.data(), ctime(&tp));
+      else if ( tType == ExtendedQualName::RANGE_LOG_TABLE )
+	sprintf(buf, "-- Definition of table (RANGE_LOG_TABLE %s)\n"
+		     "-- Definition current  %s",
+		     tableName.data(), ctime(&tp));
+      
+
+      else
+      {
+	if (isVolatile)
+	  {
+	    ComObjectName cn(tableName.data());
+	    sprintf(buf,  "-- Definition of %svolatile table %s\n"
+		    "-- Definition current  %s",
+		    (isInMemoryObjectDefn ? "InMemory " : ""),
+		    cn.getObjectNamePartAsAnsiString().data(),
+		    ctime(&tp));
+	  }
+	else if (isInMemoryObjectDefn)
+	  {
+	    sprintf(buf,  "-- Definition of InMemory table %s\n"
+		    "-- Definition current  %s",
+		    tableName.data(), ctime(&tp));
+	  }
+	else
+	  {
+	    sprintf(buf,  "-- Definition of table %s\n"
+		    "-- Definition current  %s",
+		    tableName.data(), ctime(&tp));
+	  }
+      }
+
+      outputShortLine(space, buf);
+
+      outputShortLine(space, "  ( ");
+      NABoolean displayAddedCols = FALSE; // dummy variable
+      // this may be a problem when describing virtual tables like EXPLAIN
+      *CmpCommon::diags() << DgSqlCode(-4222)
+                          << DgString0("INVOKE for TABLE");
+      outputShortLine(space, "  )");
+      
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+
+      NADELETEBASIC(buf, CmpCommon::statementHeap());
+      CmpCommon::context()->readTableDef_->deleteTree(tabledesc);
+      return 0;
+    }
+
+   
+   // This is done for SHOWDDL only. Not for SHOWLABEL
+  if(logFormat)
+    outputShortLine(space, "--> BT ");
+  sprintf(buf, "CREATE TABLE %s",
+          tableName.data());
+
+  outputLine(space, buf, 0, 2, FALSE, testSchema);
+
+  const NABoolean commentOut = 
+    FALSE;
+  const NABoolean mustShowBT =
+    TRUE;
+  if(mustShowBT)
+  {
+    outputShortLine(space, "  (", commentOut);
+  }
+
+  NABoolean displayAddedCols = FALSE;
+
+  // this may be a problem when describing virtual tables like EXPLAIN
+  *CmpCommon::diags() << DgSqlCode(-4222)
+                      << DgString0("SHOWDDL for TABLE");
+
+  Int32 pkey_colcount = 0;
+  
+  // Flag for additional alter table statements for constraints
+  NABoolean displayAlterTable = FALSE; 
+  // Flag for whether primary key belongs in a ALTER TABLE statement
+  NABoolean alterTablePrimaryKey = FALSE;
+
+  buf[0] = '\0';
+
+  if(mustShowBT)
+  {
+    outputShortLine(space, "  ;", commentOut);
+  }
+  
+  
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+
+  Reset_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+  Set_SqlParser_Flags(saved_SqlParser_Flags);
+
+  NADELETEBASIC(buf, CmpCommon::statementHeap());
+  CmpCommon::context()->readTableDef_->deleteTree(tabledesc);
+  return 0;
+ }
+
+ // LCOV_EXCL_START
+ // exception handling
+ catch(...)
+ {
+
+   SqlParser_Flags = saved_SqlParser_Flags;
+
+    // Check diags area, if it doesn't contain an error, add an
+    // internal exception
+    if (CmpCommon::diags()->getNumber() == 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-2006);
+      *CmpCommon::diags() << DgString0("Unknown error returned while retrieving metadata from catalog manager");
+      *CmpCommon::diags() << DgString1(__FILE__);
+      *CmpCommon::diags() << DgInt0(__LINE__);
+    }
+    return -1;
+ }
+ // LCOV_EXCL_STOP
+
+} // SHOWDDL
+
+
+
+short exeImmedOneStmt(const char *controlStmt)
+{
+  Int32 retcode = 0;
+
+  ExeCliInterface cliInterface(CmpCommon::statementHeap());
+  retcode = cliInterface.executeImmediate(controlStmt);
+  if (retcode < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return retcode;
+    }
+      
+  return 0;
+}
+  
+short sendAllControls(NABoolean copyCQS,
+                      NABoolean sendAllCQDs,
+		      NABoolean sendUserCQDs,
+                      enum COM_VERSION versionOfCmplrRcvCntrlInfo,
+		      NABoolean sendUserCSs)
+{
+  // -----------------------------------------------------------------------
+  //  Given a SQL query, this procedure invokes the appropriate
+  //  CLI calls to prepare and execute the statement.
+  // -----------------------------------------------------------------------
+  Int32 retcode = 0;
+
+  char *buf =  new (CmpCommon::statementHeap()) char[15000];
+
+
+  if (copyCQS) 
+    {
+      if (ActiveControlDB()->getRequiredShape())
+        {
+          retcode = 
+            exeImmedOneStmt(ActiveControlDB()->getRequiredShape()->getShapeText());
+          if (retcode)
+	    return (short)retcode;
+        }
+      else if (ActiveControlDB()->requiredShapeWasOnceNonNull())
+        {
+          // Genesis solution 10-040528-6511: If we possibly
+          // sent a CQS down once before, we need to send a
+          // CQS CUT to get rid of it if it is no longer 
+          // active.
+          strcpy(buf,"CONTROL QUERY SHAPE CUT;");
+          retcode = exeImmedOneStmt(buf);	
+	    if (retcode)
+	      return((short)retcode);
+        }
+    }
+
+  CollIndex i;
+  ControlDB *cdb = ActiveControlDB();
+
+  if ((sendAllCQDs) ||
+      (sendUserCQDs))
+    {
+      // send all externalized CQDs.
+      NADefaults &defs = CmpCommon::context()->schemaDB_->getDefaults();
+      
+      for (i = 0; i < defs.numDefaultAttributes(); i++)
+	{
+	  const char *attrName, *val;
+	  if (defs.getCurrentDefaultsAttrNameAndValue(i, attrName, val,
+						      sendUserCQDs))
+	    {
+	      if (NOT defs.isReadonlyAttribute(attrName))
+		{
+		  if (strcmp(attrName, "ISO_MAPPING") == 0)
+		  {
+		    // ISO_MAPPING is a read-only default attribute --
+		    // But for internal development and testing purpose,
+		    // we sometimes want to change the setting within
+		    // an MXCI session. Make sure that we send the CQD
+		    // COMP_BOOL_58 'ON' before sending CQD ISO_MAPPING
+		    // so that the child/receiving MXCMP does not reject
+		    // the CQD ISO_MAPPING request.
+		    sprintf(buf, "CONTROL QUERY DEFAULT COMP_BOOL_58 'ON';");
+		    exeImmedOneStmt(buf);
+		  }
+
+		  if (strcmp(attrName, "TERMINAL_CHARSET") == 0 &&
+		      versionOfCmplrRcvCntrlInfo < COM_VERS_2300)
+		  {
+		    sprintf(buf, "CONTROL QUERY DEFAULT TERMINAL_CHARSET 'ISO88591';");
+		  }
+                  else
+                  {
+                    if (strcmp(attrName, "REPLICATE_IO_VERSION") == 0)
+                    {
+                       ULng32 originalParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+                       SQL_EXEC_SetParserFlagsForExSqlComp_Internal (originalParserFlags);
+                    }
+                    NAString quotedString;
+                    ToQuotedString(quotedString, NAString(val), TRUE);
+                    sprintf(buf, "CONTROL QUERY DEFAULT %s %s;", attrName, quotedString.data());
+                  }     
+	 	  retcode = exeImmedOneStmt(buf);	
+		  if (retcode)
+		    return((short)retcode);
+		}
+	    }
+	}
+    }
+
+  if (NOT sendUserCQDs)
+    {
+      // and send the CQDs that were entered by user and were not 'reset reset'
+      for (i = 0; i < cdb->getCQDList().entries(); i++)
+	{
+	  ControlQueryDefault * cqd = cdb->getCQDList()[i];
+	  NAString quotedString;
+	  ToQuotedString (quotedString, cqd->getValue());
+
+	  if (strcmp(cqd->getToken().data(), "TERMINAL_CHARSET") == 0 &&
+	      versionOfCmplrRcvCntrlInfo < COM_VERS_2300)
+	  {
+	    sprintf(buf, "CONTROL QUERY DEFAULT TERMINAL_CHARSET 'ISO88591';");
+	  }
+	  else
+          {
+             if (strcmp(cqd->getToken().data(), "REPLICATE_IO_VERSION") == 0)
+             {
+                ULng32 originalParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+                SQL_EXEC_SetParserFlagsForExSqlComp_Internal (originalParserFlags);
+             }
+	     sprintf(buf, "CONTROL QUERY DEFAULT %s %s;",
+		  cqd->getToken().data(),
+		  quotedString.data());
+          }
+	  retcode = exeImmedOneStmt(buf);	
+	  if (retcode)
+	    return((short)retcode);
+	}
+    }
+
+  for (i = 0; i < cdb->getCTList().entries(); i++)
+    {
+      ControlTableOptions *cto = cdb->getCTList()[i];
+
+      for (CollIndex j = 0; j < cto->numEntries(); j++)
+	{
+	  sprintf(buf, "CONTROL TABLE %s %s '%s';",
+		  cto->tableName().data(),
+		  cto->getToken(j).data(),
+		  cto->getValue(j).data());
+	  retcode = exeImmedOneStmt(buf);	
+	  if (retcode)
+	    return((short)retcode);
+	} // j
+    } // i
+
+
+  // pass on the parserflags to the new compiler
+  // used to enable SHOWPLAN for MV INTERNAL REFRESH
+  if (CmpCommon::getDefault(MV_ENABLE_INTERNAL_REFRESH_SHOWPLAN) == DF_ON)
+  {
+     ULng32 originalParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+     SQL_EXEC_SetParserFlagsForExSqlComp_Internal (originalParserFlags);
+  }
+
+  if (sendUserCSs)
+    {
+      for (i = 0; i < cdb->getCSList().entries(); i++)
+	{
+	  ControlSessionOption *cso = cdb->getCSList()[i];
+	  
+	  sprintf(buf, "CONTROL SESSION '%s' '%s';",
+		  cso->getToken().data(),
+		  cso->getValue().data());
+	  retcode = exeImmedOneStmt(buf);	
+	  if (retcode)
+	    return((short)retcode);
+	}
+    }
+
+  if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
+    {
+      // sendAllControls is called by mxcmp when it prepares internal
+      // queries. Tablenames used in these queries may already be fully
+      // qualified with volatile schema name.
+      // Set the flag to indicate that an error should not be returned
+      // if volatile schema name has been explicitely specified.
+      SQL_EXEC_SetParserFlagsForExSqlComp_Internal
+	(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);  
+    }
+  else
+    {
+      SQL_EXEC_ResetParserFlagsForExSqlComp_Internal
+	(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);  
+    }
+
+  return 0; 
+}
+
+void sendParserFlag (ULng32 flag)
+{
+  SQL_EXEC_SetParserFlagsForExSqlComp_Internal (flag);
+}
+
+short setParentQidAtSession(NAHeap *heap, const char *parentQid)
+{
+  Int32 retcode = 0;
+
+  short len = (short)strlen(parentQid);
+  char *srcBuf = new (heap) char[len+50];
+  strcpy(srcBuf, "SET SESSION DEFAULT PARENT_QID '");
+  strcat(srcBuf, parentQid);
+  strcat(srcBuf, "'");
+  retcode = exeImmedOneStmt(srcBuf);
+  NADELETEBASIC(srcBuf, heap);
+  return (short) retcode;
+}
+
+
+/*
+static long describeError(long retcode)
+{
+  *CmpCommon::diags() << DgSqlCode(retcode);
+  return -1;
+}
+*/
+
+/////////////////////////////////////////////////////////////////
+//
+// flags:
+//        0x00000001   display all expressions
+//        0x00000002   display pcode expressions
+//        0x00000004   display clause expressions
+//        0x00000008   display TDBs
+//        0x00000010   do not regenerate pcode for showplan.
+//        0x00000010   do downrev compile for R2. Used when pcode is
+//                     regenerated during display
+//        0x00000020   do downrev compile for RR. Used when pcode is
+//                     regenerated during display
+/////////////////////////////////////////////////////////////////
+static short CmpGetPlan(SQLSTMT_ID &stmt_id, 
+		 ULng32 flags,
+			Space &space, 
+			CollHeap * heap,
+			char* &rootTdbBuf, Lng32 &rootTdbSize,
+			char* &srcStrBuf, Lng32 &srcStrSize)
+{
+  Lng32 retcode = 0;
+  ULong stmtHandle = (ULong)stmt_id.handle;  // NA_64BIT
+
+  // Now get the generated code to describe the plan.
+  // do not advance to next statement yet, if all stmts are to be retrieved.
+  if ((stmt_id.handle) && (stmt_id.name_mode != stmt_handle) &&
+      ((stmtHandle & 0x0001) != 0))
+    stmt_id.handle = (void *)(stmtHandle & ~0x0004);
+  retcode = SQLCLI_GetRootTdbSize_Internal(GetCliGlobals(),
+                                           &rootTdbSize, 
+                                           &srcStrSize, 
+                                           &stmt_id);
+
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  rootTdbBuf = new (heap) char[rootTdbSize];
+  srcStrBuf  = new (heap) char[srcStrSize+1];
+  // now advance to the next statement
+  stmtHandle = (ULong)stmt_id.handle;
+  if ((stmt_id.handle) && (stmt_id.name_mode != stmt_handle) &&
+      ((stmtHandle & 0x0001) != 0))
+    stmt_id.handle = (void*)(stmtHandle | 0x0004);
+  retcode = SQLCLI_GetRootTdb_Internal(GetCliGlobals(),
+                                       rootTdbBuf, 
+                                       rootTdbSize,
+                                       srcStrBuf, 
+                                       srcStrSize,
+                                       &stmt_id);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  if (srcStrSize > 0)
+    srcStrBuf[srcStrSize] = 0;
+
+  return (short)retcode;
+}
+
+/////////////////////////////////////////////////////////////////
+//
+// flags:
+//        0x00000001   display all expressions
+//        0x00000002   display pcode expressions
+//        0x00000004   display clause expressions
+//        0x00000008   display TDBs
+//        0x00000010   do downrev compile. Used when pcode is regenerated
+//                     during display
+/////////////////////////////////////////////////////////////////
+static Lng32 CmpFormatPlan(SQLSTMT_ID &stmt_id, 
+			  ULng32 flags,
+			  char *rootTdbBuf, Lng32 rootTdbSize,
+			  char *srcStrBuf, Lng32 srcStrSize,
+			  NABoolean outputSrcInfo,
+			  Space &space, CollHeap * heap)
+{
+  char buf[200];
+
+  if (outputSrcInfo)
+    {
+      // output module and statement name
+      sprintf(buf, "\nModule: %s Statement: %s\n", 
+	      stmt_id.module->module_name, stmt_id.identifier);
+      outputShortLine(space, buf);
+      
+      if (srcStrSize > 0)
+	{
+	  Int32 i = 0;
+	  Int32 j = 0;
+	  while (i < srcStrSize)
+	    {
+	      if (srcStrBuf[i] == '\n')
+		{
+		  buf[j] = 0;
+		  outputShortLine(space, buf);
+		  j = 0;
+		}
+	      else
+		{
+		  buf[j] = srcStrBuf[i];
+		  j++;
+		}
+	      
+	      i++;
+	    }
+	  
+	  buf[j] = 0;
+	  outputShortLine(space, buf);
+	  
+	  sprintf(buf, "\n");
+	  outputShortLine(space, buf);
+	}
+    }
+
+  ComTdbRoot *rootTdb = (ComTdbRoot*) rootTdbBuf;
+
+  // unpack the root TDB
+  ComTdb dummyTdb;
+  if ( (rootTdb = (ComTdbRoot *)
+         rootTdb->driveUnpack((void *)rootTdb,&dummyTdb,NULL)) == NULL )
+  {
+    // ERROR during unpacking. Shouldn't occur here since we have just
+    // freshly prepared the statement using the latest version of the
+    // compiler. This is an unexpected error.
+    //
+    return -1;
+  }
+
+  UInt32 planVersion = rootTdb->getPlanVersion();
+
+  // This fragment corresponds to the MASTER.
+  // Get to the fragment directory from rootTdb.
+  void * baseAddr = (void *)rootTdb;
+
+  ExFragDir *fragDir = rootTdb->getFragDir();
+  ComTdb *fragTdb = rootTdb;
+
+  // a sanity check to see that it was the MASTER fragment.
+  CMPASSERT(fragDir->getType(0) == ExFragDir::MASTER);
+
+  // unpack each fragment independently;
+  // unpacking converts offsets to actual pointers.
+  for (Int32 i = 0; i < fragDir->getNumEntries(); i++)
+    {
+      void * fragBase = (void *)((char *)baseAddr + fragDir->getGlobalOffset(i));
+      void * fragStart = (void *)((char *)fragBase + fragDir->getTopNodeOffset(i));
+
+      switch (fragDir->getType(i))
+	{	
+	case ExFragDir::MASTER:
+	  {
+	    // already been unpacked. Nothing to be done.
+	    sprintf(buf, "MASTER Executor fragment");
+	    outputShortLine(space, buf);
+	    sprintf(buf, "========================\n");
+	    outputShortLine(space, buf);
+	    sprintf(buf, "Fragment ID: %d, Length: %d\n",
+                    i, fragDir->getFragmentLength(i));
+	    outputShortLine(space, buf);
+	  }
+	  break;
+	
+	case ExFragDir::ESP:
+	  {
+	    sprintf(buf, "ESP fragment");
+	    outputShortLine(space, buf);
+	    sprintf(buf, "===========\n");
+	    outputShortLine(space, buf);
+	    sprintf(buf, "Fragment ID: %d, Parent ID: %d, Length: %d\n",
+                    i, fragDir->getParentId(i), fragDir->getFragmentLength(i));
+	    outputShortLine(space, buf);
+	    ComTdb tdb;
+	    fragTdb = (ComTdb *)fragStart;
+	    fragTdb = (ComTdb *)(fragTdb->driveUnpack(fragBase,&tdb,NULL));
+	  }
+	  break;
+	
+	case ExFragDir::DP2:
+	  {
+	    sprintf(buf, "EID fragment");
+	    outputShortLine(space, buf);
+	    sprintf(buf, "===========\n");
+	    outputShortLine(space, buf);
+	  
+	    sprintf(buf, "Fragment ID: %d, Parent ID: %d, Length: %d\n",
+                    i, fragDir->getParentId(i), fragDir->getFragmentLength(i));
+	    outputShortLine(space, buf);
+	  }
+	  break;
+	case ExFragDir::EXPLAIN:
+	  // Not using explain frag here!
+	  fragTdb = NULL;
+	  break;
+	} // switch
+
+      // Now display expressions.
+      flags = flags | 0x00000001;
+      if (fragTdb)
+	{
+	  if ((planVersion > COM_VERS_R1_8) &&
+	      (planVersion < COM_VERS_R2_1))
+	    {
+	      // downrev compile needed.
+	      flags |= 0x00000020;
+	    }
+	  else if (planVersion == COM_VERS_R2_1)
+	    flags |= 0x0000020;
+
+	  if ((CmpCommon::getDefaultLong(QUERY_OPTIMIZATION_OPTIONS) & QO_EXPR_OPT) == 0)
+	    {
+	      flags |= 0x00000020;
+	    }
+
+	  fragTdb->displayContents(&space, flags);
+	}
+
+    } // for
+
+  return 0;
+}
+
+/////////////////////////////////////////////////////////////////
+//
+// flags:
+//        0x00000001   display all expressions
+//        0x00000002   display pcode expressions
+//        0x00000004   display clause expressions
+//        0x00000008   display TDBs
+//        0x00000010   do downrev compile. Used when pcode is regenerated
+//                     during display
+/////////////////////////////////////////////////////////////////
+static Lng32 CmpGetAndFormatPlan(SQLSTMT_ID &stmt_id, 
+			 ULng32 flags,
+				NABoolean outputSrcInfo,
+				Space &space, CollHeap * heap)
+{
+  Lng32 retcode = 0;
+
+  char *rootTdbBuf = NULL;
+  char *srcStrBuf = NULL;
+  Lng32 rootTdbSize;
+  Lng32 srcStrSize;
+  retcode = CmpGetPlan(stmt_id, flags, space, heap,
+		       rootTdbBuf, rootTdbSize, 
+		       srcStrBuf, srcStrSize);
+  if (retcode)
+    return ((retcode < 0) ? -1 : retcode);
+  
+  retcode = CmpFormatPlan(stmt_id, flags, 
+			  rootTdbBuf, rootTdbSize, 
+			  srcStrBuf, srcStrSize,
+			  outputSrcInfo,
+			  space, heap);
+  if (retcode)
+    return ((retcode < 0) ? -1 : retcode);
+
+  return retcode;
+}
+
+static short CmpDescribePlan(
+   const char   *query,
+   ULng32 flags,
+   char         *&outbuf,
+   ULng32 &outbuflen,
+   NAMemory      *heap)
+
+{
+  // prepare this query.
+  Lng32 retcode;
+  Lng32 resetRetcode;
+
+  SQLSTMT_ID stmt_id; // added for multi charset module names
+  SQLMODULE_ID module;
+  SQLDESC_ID sql_src;
+
+  init_SQLCLI_OBJ_ID(&stmt_id);
+  init_SQLMODULE_ID(&module);
+  init_SQLCLI_OBJ_ID(&sql_src);
+
+  retcode = SQL_EXEC_ClearDiagnostics(NULL);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  //Allocate a SQL statement
+  stmt_id.name_mode = stmt_handle;
+  stmt_id.module = &module;
+  module.module_name = 0;
+  stmt_id.identifier = 0;
+  stmt_id.handle = 0;
+  retcode = SQL_EXEC_AllocStmt(&stmt_id, 0);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+	
+  // Allocate a descriptor which will hold the SQL statement source
+  sql_src.name_mode = desc_handle;
+  sql_src.module    = &module;
+  module.module_name = 0;
+  sql_src.identifier = 0;
+  sql_src.handle = 0;
+  retcode = SQL_EXEC_AllocDesc(&sql_src, (SQLDESC_ID *)0);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_CHAR_SET,
+                                 SQLCHARSETCODE_UTF8
+                                 , 0);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  // The arkcmp that will be used to compile this query does not
+  // know about the control statements that were issued.
+  // Send all the CONTROL statements before preparing this statement.
+  retcode = sendAllControls(TRUE, FALSE, TRUE);
+  if (retcode)
+    return (short)retcode;
+  
+  // send control session to indicate showplan is being done
+  retcode = exeImmedOneStmt("CONTROL SESSION SET 'SHOWPLAN' 'ON';");
+  if (retcode)
+    return (short)retcode;
+
+  // Now prepare the query to be 'showplan'ed
+  retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_VAR_PTR,
+				 (Long)query, 0);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+  {
+    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
+    return ((retcode < 0) ? -1 : (short)retcode);
+  }
+#pragma warn(1506)  // warning elimination 
+
+  retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_LENGTH,
+#pragma nowarn(1506)   // warning elimination 
+				 strlen(query) + 1, 0);
+#pragma warn(1506)  // warning elimination 
+  if (retcode)
+  {
+    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+  }
+
+  ULng32 originalParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+  SQL_EXEC_SetParserFlagsForExSqlComp_Internal (originalParserFlags);
+
+  // prepare it and get the generated code size
+  char *genCodeBuf = NULL;
+  Lng32 genCodeSize = 0;
+  char uniqueStmtId[ComSqlId::MAX_QUERY_ID_LEN+1];
+  Lng32 uniqueStmtIdLen = ComSqlId::MAX_QUERY_ID_LEN;
+  strcpy(uniqueStmtId, "    ");
+  retcode = SQL_EXEC_Prepare2(&stmt_id, &sql_src, 
+			      NULL, 0, 
+			      &genCodeSize, NULL, NULL,
+			      uniqueStmtId,
+			      &uniqueStmtIdLen,0);
+  if ((retcode == -CLI_GENCODE_BUFFER_TOO_SMALL) &&
+      (genCodeSize > 0))
+    {
+      retcode = SQL_EXEC_ClearDiagnostics(NULL);
+
+      // retrieve the generated code
+      genCodeBuf = new (heap) char[genCodeSize];
+      strcpy(uniqueStmtId, "    ");
+      retcode = SQL_EXEC_Prepare2(&stmt_id, NULL, 
+				  genCodeBuf, genCodeSize, 
+				  NULL, NULL, NULL,
+				  uniqueStmtId,
+				  &uniqueStmtIdLen,0);
+    }
+  
+  if (retcode < 0) // ignore warnings
+  {
+    resetRetcode = SQL_EXEC_MergeDiagnostics_Internal(*CmpCommon::diags());
+
+    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
+    return -1;
+  }
+
+  Space space;
+
+  retcode = CmpFormatPlan(stmt_id, flags, 
+			  genCodeBuf, genCodeSize, 
+			  NULL, 0,
+			  FALSE,
+			  space, heap);
+  if (retcode)
+  {
+    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
+    return (short)retcode;
+  }
+
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+
+  retcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
+  if (retcode)
+    return (short) retcode;
+	
+   // free up resources
+  retcode = SQL_EXEC_DeallocDesc(&sql_src);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  retcode = SQL_EXEC_DeallocStmt(&stmt_id);
+  if (retcode)
+#pragma nowarn(1506)   // warning elimination 
+    return ((retcode < 0) ? -1 : (short)retcode);
+#pragma warn(1506)  // warning elimination 
+
+  return 0;
+} // CmpDescribePlan
+
+
+// TRUE if ident is nonempty and contained in comparand string c1.
+inline static NABoolean identSpecifiedMatches(const NAString &id, const char *c1)
+{ return (!id.isNull() && strstr(c1, id)); }	// strstr(fullstring, substring)
+
+// TRUE if ident is empty (not specified), or is contained in c1.
+inline static NABoolean identMatches(const NAString &id, const char *c1)
+{ return (id.isNull() || strstr(c1, id)); }	// strstr(fullstring, substring)
+
+// If not exact match:
+//   TRUE if ident is empty, or is contained in c1, or c1 equals c2.
+// If exact:
+//   TRUE if ident equals c1, period.
+inline static NABoolean identMatches2(const NAString &id, const char *c1, const char *c2,
+			    NABoolean exactMatch)
+{ 
+  return exactMatch ? (strcmp(id, c1) == 0)
+  		    : (identMatches(id, c1) || strcmp(c1, c2) == 0);
+}
+
+#define IDENTMATCHES(c1,c2)	identMatches2(ident, c1, c2, exactMatch)
+
+// these CQDs are used for internal purpose and are set/sent by SQL.
+// Do not display them.
+static NABoolean isInternalCQD(DefaultConstants attr)
+{
+  if ((attr == SESSION_ID) ||
+      (attr == SESSION_IN_USE) ||
+      (attr == LDAP_USERNAME) ||
+      (attr == VOLATILE_CATALOG) ||
+      (attr == VOLATILE_SCHEMA_IN_USE) ||
+      (attr == IS_SQLCI) ||
+      (attr == NVCI_PROCESS))
+    return TRUE;
+  else
+    return FALSE;
+}
+short CmpDescribeControl(Describe *d,
+			 char *&outbuf,
+			 ULng32 &outbuflen,
+			 CollHeap *heap)
+{
+  // Two kludgy passing mechanisms from SqlParser.y ...
+  NAString ident =
+    d->getDescribedTableName().getQualifiedNameObj().getObjectName();
+  NABoolean exactMatch =
+    !d->getDescribedTableName().getCorrNameAsString().isNull();
+  CMPASSERT(!(ident.isNull() && exactMatch));
+
+  NAString fmtdIdent;
+  if (!ident.isNull()) fmtdIdent = NAString(' ') + ident;
+  static const char fmtNoMatch []   = "No CONTROL %s%s settings are in effect.";
+  static const char fmtNoMatch2[]   = "No DEFAULTS attribute%s exists.";
+  static const char fmtNoMatch3[]   = "No externalized DEFAULTS attribute%s exists.";
+
+//static const char fmtExactMatch[] = "\n%-32s\t%s";
+  static const char fmtFuzzyMatch[] = "  %-30s\t%s";
+//const char *fmtInfo = exactMatch ? fmtExactMatch : fmtFuzzyMatch;
+  const char *fmtInfo = fmtFuzzyMatch;
+
+  // SHOWCONTROL DEFAULT CAT will display both CATALOG and SCHEMA defaults;
+  // SHOWCONTROL DEFAULT SCH will too.
+  static const char *defCatSchStrings[] = { "", "CATALOG", "SCHEMA" };
+  size_t ix = identSpecifiedMatches(ident, "CATALOG") ? 2 :
+	      identSpecifiedMatches(ident, "SCHEMA")  ? 1 : 0;
+  const char *defCatSch = defCatSchStrings[ix];
+
+  NABoolean showShape, showSession, showTable, showDefault, match = FALSE;
+  NABoolean showAll = d->getFormat() == Describe::CONTROL_ALL_;
+
+  if (showAll)
+    {
+      showShape   = TRUE;
+      showSession = TRUE;
+      showTable   = TRUE;
+      showDefault = TRUE;
+    }
+  else
+    {
+      showShape   = d->getFormat() == Describe::CONTROL_SHAPE_;
+      showSession = d->getFormat() == Describe::CONTROL_SESSION_;
+      showTable   = d->getFormat() == Describe::CONTROL_TABLE_;
+      showDefault = d->getFormat() == Describe::CONTROL_DEFAULTS_;
+    }
+
+  Space space;
+  char * buf = new (heap) char[15000];
+  CMPASSERT(buf);
+
+  ControlDB *cdb = ActiveControlDB();
+
+  if (showShape)
+    {
+      outputShortLine(space, "");
+      if ((cdb->getRequiredShape()) &&
+	  (cdb->getRequiredShape()->getShape()))
+	{
+	  NAString shape(cdb->getRequiredShape()->getShapeText());
+	  PrettifySqlText(shape);
+	  outputLine(space, shape, 2);
+	}
+      else
+	{
+	  // Only one shape at a time (no history-list), so no ident-matching...
+	  sprintf(buf, fmtNoMatch, "QUERY SHAPE", "");
+	  outputLine(space, buf, 0);
+	}
+    } // SHOWCONTROL SHAPE
+
+  if (showSession)
+    {
+      outputShortLine(space, "");
+      match = FALSE;
+      for (CollIndex i = 0; i < cdb->getCSList().entries(); i++)
+	{
+	  ControlSessionOption *cso = cdb->getCSList()[i];
+	  if (IDENTMATCHES(cso->getToken().data(), "*"))
+	    {
+	      if (!match)
+	        outputShortLine(space, "CONTROL SESSION");
+	      sprintf(buf, fmtInfo,
+		cso->getToken().data(),
+		cso->getValue().data());
+	      outputLine(space, buf, 2);
+	      match = TRUE;
+	    }
+	}
+      if (!match)
+	{
+	  sprintf(buf, fmtNoMatch, "SESSION", fmtdIdent.data());
+	  outputLine(space, buf, 0);
+	}
+    } // SHOWCONTROL SESSION
+
+  if (showTable)
+    {
+      outputShortLine(space, "");
+      match = FALSE;
+      for (CollIndex i = 0; i < cdb->getCTList().entries(); i++)
+	{
+	  ControlTableOptions *cto = cdb->getCTList()[i];
+	  if (IDENTMATCHES(cto->tableName().data(), "*") &&
+	      cto->numEntries() > 0)
+	    {
+	      sprintf(buf, "CONTROL TABLE %s", cto->tableName().data());
+	      outputLine(space, buf, 0);
+	      match = TRUE;
+	      for (CollIndex j = 0; j < cto->numEntries(); j++)
+		{
+		  sprintf(buf, fmtInfo,
+		    cto->getToken(j).data(),
+		    cto->getValue(j).data());
+		  outputLine(space, buf, 2);
+		} // j
+	    } // ident absent or it matches
+	} // i
+      if (!match)
+	{
+	  sprintf(buf, fmtNoMatch, "TABLE", fmtdIdent.data());
+	  outputLine(space, buf, 0);
+	}
+    } // SHOWCONTROL TABLE
+
+  if (showDefault)
+    {
+        {
+	  if (d->getHeader())
+	    outputShortLine(space, "");
+	  match = FALSE;
+	  for (CollIndex i = 0; i < cdb->getCQDList().entries(); i++)
+	    {
+	      ControlQueryDefault * cqd = cdb->getCQDList()[i];
+	      if (IDENTMATCHES(cqd->getToken().data(), defCatSch))
+		{
+		  // This is the NO HEADER option. We just want the value of the default.
+	          if (!(d->getHeader())) {
+	            strcpy(buf, cqd->getValue().data());
+		    outputLine(space, buf, 2);
+		    outbuflen = space.getAllocatedSpaceSize();
+                    outbuf = new (heap) char[outbuflen];
+                    space.makeContiguous(outbuf, outbuflen);
+                    NADELETEBASIC(buf, heap);
+		    return 0;
+	          }  
+		  else {
+		    if (NOT isInternalCQD(cqd->getAttrEnum()))
+		      {
+			if (!match)
+			  outputShortLine(space, "CONTROL QUERY DEFAULT");
+			sprintf(buf, fmtInfo,
+				cqd->getToken().data(),
+				cqd->getValue().data());
+			outputLine(space, buf, 2);
+			match = TRUE;
+		      }
+		  }
+		}
+	    }
+	  if (!match && d->getHeader())
+	    {
+	      sprintf(buf, fmtNoMatch, "QUERY DEFAULT", fmtdIdent.data());
+	      outputLine(space, buf, 0);
+	    }
+	}
+
+      // This is a nice little extra for partial-match, and
+      // essential for exactMatch:
+      if (!ident.isNull()) showAll = TRUE;
+
+    } // SHOWCONTROL DEFAULTS
+
+  if (showAll)
+    {
+      if (d->getHeader())
+	outputShortLine(space, "");
+      match = FALSE;
+      NADefaults &defs = CmpCommon::context()->schemaDB_->getDefaults();
+
+      for (CollIndex i = 0; i < defs.numDefaultAttributes(); i++)
+	{
+	  const char *attrName, *val;
+	  if (defs.getCurrentDefaultsAttrNameAndValue(i, attrName, val, FALSE) &&
+	      IDENTMATCHES(attrName, defCatSch)) 
+            {
+	      // This is the NO HEADER option. We just want the value of the default.
+	      if (!(d->getHeader())) {
+	        strcpy(buf, val);
+	        outputLine(space, buf, 2);
+		outbuflen = space.getAllocatedSpaceSize();
+                outbuf = new (heap) char[outbuflen];
+                space.makeContiguous(outbuf, outbuflen);
+                NADELETEBASIC(buf, heap);
+		return 0;
+	      } 
+	      else {  
+	        if (!match)
+	          outputShortLine(space, "Current DEFAULTS");
+	        sprintf(buf, fmtInfo, attrName, val);
+	        outputLine(space, buf, 2);
+	        match = TRUE;
+	      }
+	    }
+	}
+      if (!match)
+	{
+          if (CmpCommon::getDefault(SHOWCONTROL_SHOW_ALL) != DF_ON)
+            sprintf(buf, fmtNoMatch3, fmtdIdent.data());
+          else
+            sprintf(buf, fmtNoMatch2, fmtdIdent.data());
+	  outputLine(space, buf, 0);
+	}
+    }
+
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+
+  NADELETEBASIC(buf, heap);
+
+  return 0;
+}
+
+
+static short CmpDescribeShape(
+   const char    *query,
+   char         *&outbuf,
+   ULng32 &outbuflen,
+   NAMemory      *heap)
+
+{
+
+  // prepare this query.
+  char * qTree = NULL;
+  ULng32 dummyLen;
+
+  CmpMain sqlcomp;
+
+  CmpMain::CompilerPhase phase = CmpMain::PRECODEGEN;
+#ifdef _DEBUG
+  char * sp = getenv("SHOWSHAPE_PHASE");
+  if (sp)
+    {
+      switch (sp[0])
+	{
+	case 'S':
+	  phase = CmpMain::PARSE;
+	  break;
+	  
+	case 'B':
+	  phase = CmpMain::BIND;
+	  break;
+	  
+	case 'T':
+	  phase = CmpMain::TRANSFORM;
+	  break;
+	  
+	case 'N':
+	  phase = CmpMain::NORMALIZE;
+	  break;
+	  
+	case 'O':
+	  phase = CmpMain::OPTIMIZE;
+	  break;
+	  
+	case 'P':
+	  phase = CmpMain::PRECODEGEN;
+	  break;
+	  
+	case 'G':
+	  phase = CmpMain::GENERATOR;
+	  break;
+	  
+	default:
+	  phase = CmpMain::PRECODEGEN;
+	  break;
+	} // switch
+    } // if
+#endif
+
+  QueryText qText((char*)query, SQLCHARSETCODE_UTF8);
+  if (sqlcomp.sqlcomp(qText, 0, &qTree, &dummyLen, heap, phase))
+    {
+      CMPASSERT(query);
+      return -1;
+    }
+
+  RelExpr * queryTree = (RelExpr *)qTree;
+
+  Space space;
+  char buf[1000];
+
+  sprintf(buf, "control query shape ");
+
+  queryTree->generateShape(&space, buf);
+
+  strcat(buf, ";");
+  outputShortLine(space, buf);
+
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+#ifdef _DEBUG
+  printf ("%s\n", outbuf );
+#endif
+  return 0;
+}
+
+// show transaction
+static short CmpDescribeTransaction(
+   char         *&outbuf,
+   ULng32 &outbuflen,
+   NAMemory      *heap)
+
+{
+
+  Space space;
+  char buf[100];
+
+  if (CmpCommon::transMode()->getIsolationLevel() == TransMode::READ_UNCOMMITTED_)
+    outputShortLine(space, "ISOLATION LEVEL  : READ UNCOMMITTED");
+  else if (CmpCommon::transMode()->getIsolationLevel() == TransMode::READ_COMMITTED_)
+    outputShortLine(space, "ISOLATION LEVEL  : READ COMMITTED");
+  else if (CmpCommon::transMode()->getIsolationLevel() == TransMode::REPEATABLE_READ_)
+    outputShortLine(space, "ISOLATION LEVEL  : REPEATABLE READ");
+  else if (CmpCommon::transMode()->getIsolationLevel() == TransMode::SERIALIZABLE_)
+    outputShortLine(space, "ISOLATION LEVEL  : SERIALIZABLE");
+  else if (CmpCommon::transMode()->getIsolationLevel() == TransMode::IL_NOT_SPECIFIED_)
+    outputShortLine(space, "ISOLATION LEVEL  : NOT SPECIFIED");
+
+  if (CmpCommon::transMode()->getAccessMode() == TransMode::READ_ONLY_ ||
+	CmpCommon::transMode()->getAccessMode() == TransMode::READ_ONLY_SPECIFIED_BY_USER_)
+    outputShortLine(space, "ACCESS MODE      : READ ONLY");
+  else if (CmpCommon::transMode()->getAccessMode() == TransMode::READ_WRITE_)
+    outputShortLine(space, "ACCESS MODE      : READ WRITE");
+  else if (CmpCommon::transMode()->getAccessMode() == TransMode::AM_NOT_SPECIFIED_)
+    outputShortLine(space, "ACCESS MODE      : NOT SPECIFIED");
+
+  if (CmpCommon::transMode()->getAutoCommit() == TransMode::ON_)
+    outputShortLine(space, "AUTOCOMMIT       : ON");
+  else if (CmpCommon::transMode()->getAutoCommit() == TransMode::OFF_)
+    outputShortLine(space, "AUTOCOMMIT       : OFF");
+  else if (CmpCommon::transMode()->getAutoCommit() == TransMode::AC_NOT_SPECIFIED_)
+    outputShortLine(space, "AUTOCOMMIT       : NOT SPECIFIED");
+
+
+  if (CmpCommon::transMode()->getRollbackMode() == TransMode::NO_ROLLBACK_)
+    outputShortLine(space, "NO ROLLBACK      : ON");
+  else if (CmpCommon::transMode()->getRollbackMode() == TransMode::ROLLBACK_MODE_WAITED_)
+    outputShortLine(space, "NO ROLLBACK      : OFF");
+  else 
+    outputShortLine(space, "NO ROLLBACK      : NOT SPECIFIED");
+
+  sprintf(buf,             "DIAGNOSTICS SIZE : %d", CmpCommon::transMode()->getDiagAreaSize());
+  outputLine(space, buf, 0);
+
+  Lng32 val = CmpCommon::transMode()->getAutoAbortIntervalInSeconds() ;
+  if (val == -2)  // user specified never abort setting
+    val = 0;
+  if (val == -3)  // user specified reset to TMFCOM setting
+    val = -1;
+  sprintf(buf,             "AUTOABORT        : %d SECONDS", val);
+  outputLine(space, buf, 0);
+
+  if (CmpCommon::transMode()->getMultiCommit() == TransMode::MC_ON_)
+    outputShortLine(space, "MULTI COMMIT     : ON");
+  else if (CmpCommon::transMode()->getMultiCommit() == TransMode::MC_OFF_)
+    outputShortLine(space, "MULTI COMMIT     : OFF");
+  else if (CmpCommon::transMode()->getMultiCommit() == TransMode::MC_NOT_SPECIFIED_)
+    outputShortLine(space, "MULTI COMMIT     : NOT SPECIFIED");
+
+  if (CmpCommon::transMode()->getAutoBeginOn())
+    outputShortLine(space, "AUTOBEGIN        : ON");
+  else if (CmpCommon::transMode()->getAutoBeginOff())
+    outputShortLine(space, "AUTOBEGIN        : OFF");
+  else
+    outputShortLine(space, "AUTOBEGIN        : NOT SPECIFIED");
+  
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+
+  return 0;
+}
+
+static NAString CmpDescribe_ptiToInfCS(const NAString &inputInLatin1)
+{
+  return Latin1StrToUTF8 ( inputInLatin1 // in - const NAString & latin1Str
+                         , STMTHEAP      // in - NAMemory * heap
+                         );
+}
+
+
+short CmpDescribeHiveTable ( 
+			     const CorrName  &dtName,
+			     char* &outbuf,
+			     ULng32 &outbuflen,
+			     CollHeap *heap)
+{
+  const NAString& tableName =
+    dtName.getQualifiedNameObj().getObjectName();
+ 
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
+  if (naTable == NULL || bindWA.errStatus())
+    return -1;
+  else
+    {
+      bindWA.createTableDesc(naTable, (CorrName&)dtName);
+      if (bindWA.errStatus())
+	return -1;
+    }
+
+  if (NOT naTable->isHiveTable())
+    return -1;
+
+  char * buf = new (heap) char[15000];
+  CMPASSERT(buf);
+
+  time_t tp;
+  time(&tp);
+  
+  Space space;
+
+  // emit an initial newline
+  outputShortLine(space, " ");
+
+  sprintf(buf,  "-- Definition of hive table %s\n"
+	  "-- Definition current  %s",
+	  tableName.data(), ctime(&tp));
+  outputShortLine(space, buf);
+  
+  outputShortLine(space, "  ( ");
+
+  for (Int32 i = 0; i < (Int32)naTable->getColumnCount(); i++)
+    {
+      NAColumn * nac = naTable->getNAColumnArray()[i];
+
+      const NAString &colName = nac->getColName();
+
+      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+	      ANSI_ID(colName.data()));
+      
+      const NAType * nat = nac->getType();
+
+      NAString nas;
+      ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+      
+      sprintf(&buf[strlen(buf)], "%s", nas.data());
+
+      NAString colString(buf);
+      Int32 j = i;
+      outputColumnLine(space, colString, j);
+    }
+
+  outputShortLine(space, "  )");
+ 
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+  
+  NADELETEBASIC(buf, heap);
+
+  return 0;
+}
+
+static short cmpDisplayColumns(const NAColumnArray & naColArr,
+			       Space &space, char * buf, 
+			       NABoolean displaySystemCols,
+			       NABoolean namesOnly)
+{
+  Lng32 ii = 0;
+  for (Int32 i = 0; i < (Int32)naColArr.entries(); i++)
+    {
+      NAColumn * nac = naColArr[i];
+
+      if ((NOT displaySystemCols) &&
+	  (nac->isSystemColumn()))
+	{
+	  continue;
+	}
+
+      const NAString &colName = nac->getColName();
+
+      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+	      ANSI_ID(colName.data()));
+
+      if (namesOnly)
+	{
+	  NAString colString(buf);
+	  Int32 j = ii;
+	  outputColumnLine(space, colString, j);
+	  
+	  continue;
+	}
+
+      const NAType * nat = nac->getType();
+
+      NAString nas;
+      ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+
+      NAString attrStr;
+
+      NAString defVal;
+      if (nac->getDefaultClass() == COM_NO_DEFAULT)
+	defVal = "NO DEFAULT";
+      else if (nac->getDefaultClass() == COM_NULL_DEFAULT)
+	defVal = "DEFAULT NULL";
+      else if (nac->getDefaultClass() == COM_CURRENT_DEFAULT)
+	defVal = "DEFAULT CURRENT";
+      else if (nac->getDefaultClass() == COM_USER_FUNCTION_DEFAULT)
+	defVal = "DEFAULT USER";
+      else if (nac->getDefaultClass() == COM_USER_DEFINED_DEFAULT)
+	{
+	  defVal = "DEFAULT ";
+
+	  if (displayDefaultValue(nac->getDefaultValue(), colName.data(),
+				  defVal))
+	    {
+	      return -1;
+	    }
+
+	}
+      else
+	defVal = "NO DEFAULT";
+
+      attrStr = defVal;
+
+      if (nac->getHeading())
+	{
+	  NAString heading = "HEADING ";
+	  
+	  NAString externalHeading = "";
+	  ToQuotedString(externalHeading, nac->getHeading());
+	  heading += externalHeading;
+
+	  attrStr += " ";
+	  attrStr += heading;
+	}
+
+      if (NOT nat->supportsSQLnull())
+	{
+	  NAString nullVal = "NOT NULL NOT DROPPABLE";
+
+	  attrStr += " ";
+	  attrStr += nullVal;
+	}
+
+      char * sqlmxRegr = getenv("SQLMX_REGRESS");
+      if (! sqlmxRegr)
+	{
+	  if (CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
+	    {
+	      if (NOT CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
+		attrStr += " /* SERIALIZED */";
+	      else
+		attrStr += " SERIALIZED";
+	    }
+	  else if ((CmpSeabaseDDL::enabledForSerialization(nac)) &&
+		   (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
+	    {
+	      attrStr += " /* is serializable */ ";
+	    }
+	}
+
+      if (nac->isAddedColumn())
+	{
+	  attrStr += " /* added col */ ";
+	}
+
+
+      sprintf(&buf[strlen(buf)], "%s %s", 
+	      nas.data(), 
+	      attrStr.data());
+
+      NAString colString(buf);
+      Int32 j = ii;
+      outputColumnLine(space, colString, j);
+
+      ii++;
+    }
+
+  return 0;
+}
+
+static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
+				  Lng32 numKeys,
+				  NABoolean displaySystemCols,
+				  Space &space, char * buf, 
+				  NABoolean displayCompact,
+				  NABoolean displayAscDesc)
+{
+  if (numKeys > 0)
+    {
+      if (displayCompact)
+	sprintf(&buf[strlen(buf)],  "(");
+      else
+	{
+	  outputShortLine(space, "  ( ");
+	}
+      
+      NABoolean isFirst = TRUE;
+      for (Int32 jj = 0; jj < numKeys; jj++)
+	{
+	  NAColumn * nac = naColArr[jj];
+
+	  if ((NOT displaySystemCols) &&
+	      (nac->isSystemColumn()))
+	    {
+	      continue;
+	    }
+	  
+	  const NAString &keyName = nac->getColName();
+	  if (displayCompact)
+	    sprintf(&buf[strlen(buf)], "%s%s%s", 
+		    (NOT isFirst ? ", " : ""),
+		    ANSI_ID(keyName.data()),
+		    (displayAscDesc ?
+		     (! naColArr.isAscending(jj) ? " DESC" : " ASC") :
+		     " "));
+	  else
+	    {
+	      sprintf(buf, "%s%s", 
+		      ANSI_ID(keyName.data()),
+		      (displayAscDesc ?
+		       (! naColArr.isAscending(jj) ? " DESC" : " ASC") :
+		       " "));
+	      
+	      NAString colString(buf);
+	      Int32 j = jj;
+	      outputColumnLine(space, colString, j);
+	    }
+
+	  isFirst = FALSE;
+	} // for
+      
+      if (displayCompact)
+	{
+	  sprintf(&buf[strlen(buf)],  ")");
+	  outputLine(space, buf, 2);
+	}
+      else
+	{
+	  outputShortLine(space, "  )");
+	}
+    } // if
+  
+  return 0;
+}
+
+// type:  1, invoke. 2, showddl. 3, create_like
+short CmpDescribeSeabaseTable ( 
+			       const CorrName  &dtName,
+			       short type,
+			       char* &outbuf,
+			       ULng32 &outbuflen,
+			       CollHeap *heap,
+			       const char * pkeyStr,
+			       NABoolean withPartns,
+			       NABoolean noTrailingSemi)
+{
+  const NAString& tableName =
+    dtName.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
+ 
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
+  TableDesc *tdesc = NULL;
+  if (naTable == NULL || bindWA.errStatus())
+    return -1;
+  else
+    {
+      tdesc = bindWA.createTableDesc(naTable, (CorrName&)dtName);
+      if (bindWA.errStatus())
+	return -1;
+    }
+
+  if (NOT naTable->isHbaseTable())
+    return -1;
+
+  NABoolean isVolatile = naTable->isVolatileTable();
+
+  char * buf = new (heap) char[15000];
+  CMPASSERT(buf);
+
+  time_t tp;
+  time(&tp);
+  
+  Space space;
+
+  char * sqlmxRegr = getenv("SQLMX_REGRESS");
+
+  // display syscols for invoke if not running regrs
+  NABoolean displaySystemCols = ((!sqlmxRegr) && (type == 1));
+
+  NABoolean isView = (naTable->getViewText() ? TRUE : FALSE);
+
+  // emit an initial newline
+  outputShortLine(space, " ");
+
+  if ((type == 2) && (isView))
+    {
+      NAString viewtext(naTable->getViewText());
+
+      viewtext = viewtext.strip(NAString::trailing, ';');
+      viewtext += " ;";
+
+      outputLongLine(space, viewtext, 0);
+
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+      
+      NADELETEBASIC(buf, heap);
+      
+      return 0;
+    }
+
+  if (type == 1)
+    {
+      if (isView)
+	sprintf(buf,  "-- Definition of Trafodion view %s\n"
+		"-- Definition current  %s",
+		tableName.data(), ctime(&tp));
+      else
+	sprintf(buf,  "-- Definition of Trafodion%stable %s\n"
+		"-- Definition current  %s",
+		(isVolatile ? " volatile " : " "), 
+		tableName.data(), ctime(&tp));
+      outputShortLine(space, buf);
+    }
+  else if (type == 2)
+    {
+      sprintf(buf,  "CREATE%sTABLE %s",
+	      (isVolatile ? " VOLATILE " : " "),
+	      tableName.data());
+      outputShortLine(space, buf);
+    }
+
+  outputShortLine(space, "  ( ");
+  cmpDisplayColumns(naTable->getNAColumnArray(), space, buf, 
+		    displaySystemCols, 
+		    FALSE);
+
+  Int32 nonSystemKeyCols = 0;
+  NABoolean isStoreBy = FALSE;
+  NABoolean isSalted = FALSE;
+  ItemExpr *saltExpr;
+
+  if (naTable->getClusteringIndex())
+    {
+      NAFileSet * naf = naTable->getClusteringIndex();
+      for (Lng32 i = 0; i < naf->getIndexKeyColumns().entries(); i++)
+	{
+	  NAColumn * nac = naf->getIndexKeyColumns()[i];
+          if (nac->isComputedColumnAlways())
+            {
+              isSalted = TRUE;
+              ItemExpr * saltBaseCol =
+                tdesc->getColumnList()[nac->getPosition()].getItemExpr();
+              CMPASSERT(saltBaseCol->getOperatorType() == ITM_BASECOLUMN);
+              saltExpr = ((BaseColumn *) saltBaseCol)->getComputedColumnExpr().getItemExpr();
+            }
+	  if (NOT nac->isSystemColumn())
+	    nonSystemKeyCols++;
+	  else if (nac->isSyskeyColumn())
+	    isStoreBy = TRUE;
+	}
+    }
+  
+  if (nonSystemKeyCols == 0)
+    isStoreBy = FALSE;
+
+  if (type == 1)
+    outputShortLine(space, "  )");
+
+  Lng32 numBTpkeys = 0;
+
+  NAFileSet * naf = naTable->getClusteringIndex();
+  NABoolean isAudited = (naf ? naf->isAudited() : TRUE);
+
+  NABoolean closeParan = FALSE;
+  if ((type == 3) && (pkeyStr))
+    {
+      outputShortLine(space, " , PRIMARY KEY ");
+      
+      outputLine(space, pkeyStr, 2);
+    }
+  else
+    {
+      if ((naTable->getClusteringIndex()) &&
+	  (nonSystemKeyCols > 0) &&
+	  (NOT isStoreBy) &&
+	  (((type == 1) && (! sqlmxRegr)) || (type != 1)))
+	{
+	  numBTpkeys = naf->getIndexKeyColumns().entries();
+	  
+	  if (type == 1)
+	    sprintf(buf,  "  PRIMARY KEY ");
+	  else
+	    sprintf(buf,  "  , PRIMARY KEY ");
+	  
+	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), 
+			       naf->getIndexKeyColumns().entries(),
+			       displaySystemCols,
+			       space, buf, TRUE, TRUE);
+	} // if
+    }
+
+  if (type != 1)
+    {
+      if (NOT closeParan)
+	outputShortLine(space, "  )");
+      if (isStoreBy)
+	{
+	  sprintf(buf,  "  STORE BY ");
+	  
+	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), 
+			       naf->getIndexKeyColumns().entries(),
+			       displaySystemCols,
+			       space, buf, TRUE, TRUE);
+	}
+      
+      if ((isSalted) && (withPartns))
+        {
+          Lng32 numPartitions = naf->getCountOfPartitions();
+	  sprintf(buf,  "  SALT USING %d PARTITIONS", numPartitions);
+          outputShortLine(space, buf);
+
+          ValueIdList saltCols;
+
+          // get leaf nodes in left-to-right order from the salt expression,
+          // those are the salt columns
+          saltExpr->getLeafValueIds(saltCols);
+
+          // remove any nodes that are not base columns (e.g. # of partns)
+          CollIndex i = 0;
+          while (i < saltCols.entries())
+            if (saltCols[i].getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+              i++;
+            else
+              saltCols.removeAt(i);
+
+          // print a list of salt columns if they are a subset of the
+          // (non-system) clustering key columns or if they appear
+          // in a different order
+          NABoolean printSaltCols = (saltCols.entries() < nonSystemKeyCols);
+
+          if (!printSaltCols)
+            for (CollIndex j=0; j<saltCols.entries(); j++)
+              {
+                BaseColumn *bc = (BaseColumn *) saltCols[j].getItemExpr();
+                // compare col # with clustering key col #,
+                // but skip leading salt col in clustering key
+                if (bc->getColNumber() != naf->getIndexKeyColumns()[j+1]->getPosition())
+                  printSaltCols = TRUE;
+              }
+
+          if (printSaltCols)
+            {
+              NAString sc = "       ON (";
+              for (CollIndex k=0; k<saltCols.entries(); k++)
+                {
+                  BaseColumn *bc = (BaseColumn *) saltCols[k].getItemExpr();
+                  if (k > 0)
+                    sc += ", ";
+                  sc += bc->getColName();
+                }
+              sc += ")";
+              outputShortLine(space, sc.data());
+            }
+        }
+
+      if (NOT isAudited)
+	outputShortLine(space, " attributes no audit");
+      if (NOT noTrailingSemi)
+	outputShortLine(space, ";");
+    }
+
+  if (((type == 1) && (NOT sqlmxRegr)) || (type == 2))
+    {
+      const NAFileSetList &indexList = naTable->getIndexList();
+      
+      for (Int32 i = 0; i < indexList.entries(); i++)
+	{
+	  const NAFileSet * naf = indexList[i];
+	  if (naf->getKeytag() == 0)
+	    continue;
+	  
+	  const QualifiedName &qn = naf->getFileSetName();
+	  const NAString& indexName =
+	    qn.getObjectName();
+	  
+	  if (type == 1)
+	    {
+	      char vu[40];
+	      strcpy(vu, " ");
+	      if (isVolatile)
+		strcat(vu, "volatile ");
+	      if (naf->uniqueIndex())
+		strcat(vu, "unique ");
+
+	      sprintf(buf,  "\n-- Definition of%sTrafodion%sindex %s\n"
+		      "-- Definition current  %s",
+		      ((NOT naf->isCreatedExplicitly()) ? " implicit " : " "),
+		      vu,
+		      indexName.data(),
+		      ctime(&tp));
+	      outputShortLine(space, buf);
+	    }
+	  else
+	    {
+	      char vu[40];
+	      strcpy(vu, " ");
+	      if (isVolatile)
+		strcat(vu, "VOLATILE ");
+	      if (naf->uniqueIndex())
+		strcat(vu, "UNIQUE ");
+
+	      if (NOT naf->isCreatedExplicitly())
+		{
+		  outputLine(space, "\n-- The following index is a system created index --", 0);
+		}
+
+	      sprintf(buf,  "%sCREATE%sINDEX %s ON %s",
+		      (naf->isCreatedExplicitly() ? "\n" : ""),
+		      vu,
+		      indexName.data(),
+		      tableName.data());
+	      outputLine(space, buf, 0);
+	    }
+	  
+	  if (type == 1)
+	    {
+	      outputShortLine(space, "  ( ");
+	      cmpDisplayColumns(naf->getAllColumns(), space, buf,
+				displaySystemCols,
+				(type == 2));
+	      outputShortLine(space, "  )");
+	      
+	      sprintf(buf,  "  PRIMARY KEY ");
+	      outputShortLine(space, buf);
+	    }
+	  
+	  Lng32 numIndexCols =
+	    naf->getIndexKeyColumns().entries() - 
+	    (((type == 1) || naf->uniqueIndex()) ? 0 : numBTpkeys);
+	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), numIndexCols, 
+			       displaySystemCols,
+			       space, buf, FALSE, TRUE);
+	  
+	  if (type == 2)
+	    outputShortLine(space, ";");
+	  
+	} // for
+
+      if (type == 2) // showddl
+	{
+	  const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
+	  
+	  for (Int32 i = 0; i < uniqueList.entries(); i++)
+	    {
+	      AbstractRIConstraint *ariConstr = uniqueList[i];
+
+	      if (ariConstr->getOperatorType() != ITM_UNIQUE_CONSTRAINT)
+		continue;
+
+	      UniqueConstraint * uniqConstr = (UniqueConstraint*)ariConstr;
+	      if (uniqConstr->isPrimaryKeyConstraint())
+		continue;
+
+	      const NAString& ansiTableName = 
+		uniqConstr->getDefiningTableName().getQualifiedNameAsAnsiString(TRUE);
+
+	      const NAString &ansiConstrName =
+		uniqConstr->getConstraintName().getQualifiedNameAsAnsiString(TRUE);
+
+	      sprintf(buf,  "\nALTER TABLE %s ADD CONSTRAINT %s UNIQUE ",
+		      ansiTableName.data(),
+		      ansiConstrName.data());
+	      outputLine(space, buf, 0);
+
+	      NAColumnArray nacarr;
+
+	      for (Lng32 j = 0; j < uniqConstr->keyColumns().entries(); j++)
+		{
+		  nacarr.insert(uniqConstr->keyColumns()[j]);
+		}
+
+	      cmpDisplayPrimaryKey(nacarr, 
+				   uniqConstr->keyColumns().entries(),
+				   FALSE,
+				   space, &buf[strlen(buf)], FALSE, FALSE);
+
+	      outputShortLine(space, ";");
+	    } // for
+
+	  const AbstractRIConstraintList &refList = naTable->getRefConstraints();
+
+	  for (Int32 i = 0; i < refList.entries(); i++)
+	    {
+	      AbstractRIConstraint *ariConstr = refList[i];
+
+	      if (ariConstr->getOperatorType() != ITM_REF_CONSTRAINT)
+		continue;
+
+	      RefConstraint * refConstr = (RefConstraint*)ariConstr;
+	      const ComplementaryRIConstraint &uniqueConstraintReferencedByMe
+		= refConstr->getUniqueConstraintReferencedByMe();
+
+	      NATable *otherNaTable = NULL;
+	      CorrName otherCN(uniqueConstraintReferencedByMe.getTableName());
+	      otherNaTable = bindWA.getNATable(otherCN);
+	      if (otherNaTable == NULL || bindWA.errStatus())
+		return -1;
+	      
+	      const NAString& ansiTableName = 
+		refConstr->getDefiningTableName().getQualifiedNameAsAnsiString(TRUE);
+
+	      const NAString &ansiConstrName =
+		refConstr->getConstraintName().getQualifiedNameAsAnsiString(TRUE);
+
+	      sprintf(buf,  "\nALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY ",
+		      ansiTableName.data(),
+		      ansiConstrName.data());
+	      outputLine(space, buf, 0);
+
+	      NAColumnArray nacarr;
+
+	      for (Lng32 j = 0; j < refConstr->keyColumns().entries(); j++)
+		{
+		  nacarr.insert(refConstr->keyColumns()[j]);
+		}
+
+	      cmpDisplayPrimaryKey(nacarr, 
+				   refConstr->keyColumns().entries(),
+				   FALSE,
+				   space, &buf[strlen(buf)], FALSE, FALSE);
+
+	      const NAString& ansiOtherTableName = 
+		uniqueConstraintReferencedByMe.getTableName().getQualifiedNameAsAnsiString(TRUE);	      
+	      sprintf(buf,  " REFERENCES %s ",
+		      ansiOtherTableName.data());
+	      outputLine(space, buf, 0);
+
+	      AbstractRIConstraint * otherConstr = 
+		refConstr->findConstraint(&bindWA, refConstr->getUniqueConstraintReferencedByMe());
+	      
+	      NAColumnArray nacarr2;
+	      for (Lng32 j = 0; j < otherConstr->keyColumns().entries(); j++)
+		{
+		  nacarr2.insert(otherConstr->keyColumns()[j]);
+		}
+
+	      cmpDisplayPrimaryKey(nacarr2, 
+				   otherConstr->keyColumns().entries(),
+				   FALSE,
+				   space, &buf[strlen(buf)], FALSE, FALSE);
+
+	      outputShortLine(space, ";");
+	    } // for
+
+      const CheckConstraintList &checkList = naTable->getCheckConstraints();
+      
+      for (Int32 i = 0; i < checkList.entries(); i++)
+	{
+	  CheckConstraint *checkConstr = (CheckConstraint*)checkList[i];
+	  
+	  const NAString &ansiConstrName =
+	    checkConstr->getConstraintName().getQualifiedNameAsAnsiString(TRUE);
+
+	  sprintf(buf,  "\nALTER TABLE %s ADD CONSTRAINT %s CHECK %s",
+		  tableName.data(),
+		  ansiConstrName.data(), 
+		  checkConstr->getConstraintText().data());
+	  outputLine(space, buf, 0);
+	  
+	} // for
+
+	} // showddl
+    }
+
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+  
+  NADELETEBASIC(buf, heap);
+
+  return 0;
+}

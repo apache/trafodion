@@ -1,0 +1,7 @@
+4758c4758,4761
+< --- SQL command prepared.
+---
+> *** ERROR[2107] This statement could not be compiled. Suggestion: Address the issue(s) raised in the reported warning(s).
+> 
+> *** ERROR[8822] The statement was not prepared.
+> 

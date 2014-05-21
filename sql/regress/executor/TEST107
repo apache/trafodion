@@ -1,0 +1,312 @@
+-- Test: TEST107 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Sort tests with scratch overflow
+-- Expected files: EXPECTED107
+-- Table created: t107helper t107100k
+-- Limitations: 
+
+obey TEST107(clenup);
+
+log LOG107 clear;
+
+control query default ATTEMPT_ESP_PARALLELISM 'off';
+control query default query_cache '0';
+control query default EXE_DIAGNOSTIC_EVENTS 'on';
+
+obey TEST107(setup);
+
+obey TEST107(dml);
+#ifLINUX
+obey TEST107(cif_dml);
+#ifLINUX
+log;
+
+-- before cleanup, do a showplan to get better code coverage.
+obey TEST107(dml1);
+
+
+obey TEST107(clenup);
+
+exit;
+
+?section clenup
+-----------------
+drop table t107helper;
+drop table t107100k cascade;
+drop table t107t2 cascade;
+
+?section setup
+---------------
+create table t107helper (a int not null, primary key(a));
+insert into  t107helper values (1);
+
+create table t107100k
+  (uniq int not null,
+   c100K  int,
+   str1  varchar(4000),
+   primary key (uniq)
+  )
+#ifndef SEABASE_REGRESS
+hash partition by(uniq)
+(add location $$partition1$$, add location $$partition2$$, add location $$partition3$$)
+#endif
+;
+
+#ifdef SEABASE_REGRESS
+upsert using load into
+#else
+insert into
+#endif
+t107100k
+  select
+   0 + (10000 * x10000) + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+   0 + (10000 * x10000) + (1000 * x1000) + (100 * x100) + (10 * x10) + (1 * x1),
+   'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  from t107helper
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4 as x1
+  ;
+update statistics for table t107100k on  every column sample 1000 rows;
+#ifLINUX
+create table t107t2
+  (uniq int not null,
+   c100K int,
+   c100kchar char(10),
+   vc1 varchar(800),
+   fc1 char(255),
+   vc2 varchar(500),
+   fc2 char(200),
+   vc3 varchar(600),
+   int1 INT,
+   lint1 LARGEINT,
+   primary key (uniq)
+  )
+#ifndef SEABASE_REGRESS
+hash partition by(uniq)
+(add location $$partition1$$, add location $$partition2$$, add location $$partition3$$)
+#endif
+;
+
+control query default comp_bool_140 'on';
+#ifdef SEABASE_REGRESS
+upsert using load into
+#else
+insert into
+#endif
+t107t2(uniq,c100k,c100kchar,vc1,fc1,vc2,fc2,vc3,int1,lint1)
+select 
+  uniq,
+  uniq c100k,
+  lpad(rtrim(cast(uniq as char(10))),10,'0') c100kchar,
+  case when mod(uniq,2) = 0 then 
+  repeat('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',10)
+  else
+  repeat('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',5)
+  end vc1,
+  'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy' fc1,
+  case when mod(uniq,2) =0 then
+  repeat('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',6)
+  else
+   repeat('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',3) 
+  end vc2,
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' fc2,
+
+  'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' vc3,
+  uniq + 1000 int1,
+  uniq*uniq lint1 FROM t107100k;
+
+control query default comp_bool_140 reset;
+update statistics for table t107t2 on  every column sample 1000 rows;
+#ifLINUX
+
+?section dml
+-------------
+-- Test #1: In memory sort ,double & copy
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '40';
+prepare xx from SELECT [last 1] c100k from t107100k order by c100k;
+execute xx;
+
+-- Test #2: SQL buffer overflow, overflow and merge
+set envvar SCRATCH_IO_PENDING 280;
+control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
+control query default GEN_SORT_MAX_NUM_BUFFERS  '40'; -- total of 8000 rows per run NSK
+prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+execute xx;
+
+-- Test #3 - causes intermediate merge
+set envvar SCRATCH_IO_PENDING 50;
+control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; -- total of 8000 rows per run NSK
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    '2';
+prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+execute xx;
+reset envvar SCRATCH_IO_PENDING; 
+
+#ifNSK
+-- Test #4 - Test 2 with multiple opens = 4
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; -- total of 8000 rows per run NSK
+control query default SORT_MEMORY_QUOTA_SYSTEM '';
+control query default SORT_MAX_HEAP_SIZE_MB    '';
+control query default SCRATCH_MAX_OPENS_SORT '4';
+prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+execute xx;
+
+-- Test #5 - Test 2 with multiple opens = 4, intermediate merges
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; -- total of 8000 rows per run NSK
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    '2';
+control query default SCRATCH_MAX_OPENS_SORT '4';
+prepare xx from SELECT [last 1] c100k, str1 from t107100k order by c100k;
+execute xx;
+
+#ifNSK
+
+?section dml1
+-------------
+-- showplan example
+showplan SELECT [last 1] c100k from t107100k order by c100k;
+
+
+?section cif_dml
+---------------------------------------
+
+control query default COMPRESSED_INTERNAL_FORMAT 'ON';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '100'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    reset;
+
+prepare s from SELECT  [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2   where c100k <=100000 order by c100kchar,vc2,fc2;
+
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'OFF';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'OFF';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; -- 200 rows approx NSK
+control query default GEN_SORT_MAX_NUM_BUFFERS  '100'; -- total of 8000 rows per run NSK
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    reset;
+
+prepare s from SELECT [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2 where c100k <=100000 order by c100kchar,vc2,fc2;
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'ON';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    reset;
+
+prepare s from SELECT  [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2   where c100k <=100000 order by c100kchar,vc2,fc2;
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'OFF';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'OFF';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    reset;
+
+prepare s from SELECT  [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2  where c100k <=100000 order by c100kchar,vc2,fc2;
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'ON';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '10'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+control query default SORT_MAX_HEAP_SIZE_MB    '2';
+
+prepare s from SELECT  [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2   where c100k <=100000 order by c100kchar,vc2,fc2;
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'OFF';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'OFF';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '10'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+control query default SORT_MAX_HEAP_SIZE_MB    '2';
+
+prepare s from SELECT [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2  where c100k <=100000 order by c100kchar,vc2,fc2;
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'OFF';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '10'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+control query default SORT_MAX_HEAP_SIZE_MB    '2';
+
+prepare s from SELECT [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2  where c100k <=100000 order by c100kchar,vc2,fc2;
+execute s;
+
+control query default COMPRESSED_INTERNAL_FORMAT 'ON';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'OFF';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '10'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT 'ON';
+control query default SORT_MAX_HEAP_SIZE_MB    '2';
+
+prepare s from SELECT [last 1] c100kchar, vc1, vc2,fc1,vc3,fc2,int1,lint1 from t107t2  where c100k <=100000 order by c100kchar,vc2,fc2;
+
+execute s;
+-----------------------------
+control query default COMPRESSED_INTERNAL_FORMAT 'ON';
+control query default COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+
+control query default GEN_SORT_MAX_BUFFER_SIZE '3276800'; 
+control query default GEN_SORT_MAX_NUM_BUFFERS  '20'; 
+control query default SORT_MEMORY_QUOTA_SYSTEM 'OFF';
+control query default SORT_MAX_HEAP_SIZE_MB    reset;
+
+prepare s from SELECT [last 1] c100kchar, fc1,fc2,int1,lint1 from t107t2  where c100k <=100000 order by c100kchar,fc2;
+execute s;
+
+prepare s from SELECT [last 1] int1,lint1 from t107t2  where c100k <=100000 order by int1;
+execute s;
+
+prepare s from SELECT [last 1] int1,lint1 from t107t2  where c100k <=100000 order by int1,lint1;
+execute s;
+
+
+prepare s from SELECT [last 1] vc1 || c100kchar, vc2 , vc3 from t107t2  where c100k <=100000 order by 1,2;
+execute s;

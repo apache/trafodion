@@ -1,0 +1,151 @@
+-- Test: TEST001
+-- Functionality: This tests hexadecimal representation of string literal.
+-- Expected files:   EXPECTED001
+-- Tables created:   hex_iso, hex_ucs2, d
+-- Limitations: None
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop table hex_iso;
+drop table hex_ucs2;
+create table charset101b (b varchar(10) character set ucs2 primary key NOT NULL NOT DROPPABLE, c int);
+log LOG001 clear;
+
+create table hex_iso(c char(10) character set ISO88591);
+create table hex_ucs2(c char(10) character set UCS2);
+
+?section iso88591
+
+--positive tests
+--A hexadecimal represented ISO88591 string literal seperated by spaces
+insert into hex_iso values(_ISO88591 X'03 41 f3');
+
+--A hexadecimal represented ISO88591 string literal seperated by spaces
+--with non-printable characters
+insert into hex_iso values(_ISO88591 X'81 01 02 41');
+
+--Spaces between hex digits are optional 
+insert into hex_iso values(_ISO88591 X'454545');
+insert into hex_iso values(_iso88591 X'54  e4 54');
+
+--the charset prefix can be omitted
+insert into hex_iso values(X'');
+
+--Concatenation of two strings
+insert into hex_iso values(_ISO88591 X'61 61 61' x'62 62 62');
+
+select count(*) from hex_iso;
+
+--get 2 back
+select char_length(trim(x'00' from x'00 01 02 00')) from (values(1)) x;
+
+--get 11 back
+select char_length(trim(x'00' from '00 01 02 00')) from (values(1)) x;
+
+
+--negative tests
+
+--bad hexdecimal digits
+insert into hex_iso values(x'e00O');
+
+--unknown character set name
+insert into hex_iso values(_IS088591x'43 43 43');
+
+--no space is allowed between X and the quote 
+insert into hex_iso values(_ISO88591 X '44 44 44');
+
+--for ISO88591, hex digits should be grouped in pairs
+insert into hex_iso values(_ISO88591 X'4 8 48 48');
+
+--invalid hex format, odd number of digits
+insert into hex_iso values(_ISO88591 X'4949494');
+
+--hexadecimal representation of SJIS string literals
+--has not been implemented
+insert into hex_iso values(_SJIS X'50 50 50');
+
+-- hex string literal is not allowed in any DDL
+create table d(a char(10) default x'00');
+create table d(a char(10) heading x'4d 5f');
+alter table hex_iso add constraint ch1 check (c < x'12');
+
+?section ucs2
+--The following insertion tests the same feature for UCS2 
+--which has to be group into 4 instead of 2
+
+--positive
+insert into hex_ucs2 values(_UCS2 X'0041 0041 0041');
+insert into hex_ucs2 values(_UCS2 X'00610494 04A2');
+insert into hex_ucs2 values(_UCS2 X'  0062 eeEeE000');
+insert into hex_ucs2 values(_UCS2 X'');
+
+--string concatenation
+insert into hex_ucs2 values(_UCS2 X'0061 0061 0061' _UCS2 X'0062 0062 0062');
+
+select count(*) from hex_ucs2;
+
+-- should be 3
+-- NSK -- select char_length(trim(c)) from hex_ucs2 where c = x'0041 0041 0041';
+-- Seaquest --
+select char_length(trim(c)) from hex_ucs2 where c = x'41 41 41';
+
+
+--negative
+
+--non hex decimal
+insert into hex_ucs2 values(_UCS2 x'asdf');
+
+--FFFF, FFFE is not legal in UCS2
+insert into hex_ucs2 values(_UCS2 x'0000FFFF');
+insert into hex_ucs2 values(_UCS2 x'0000  FFFe');
+
+--space not allowed between X and the quote
+insert into hex_ucs2 values(_UCS2 X '0044 0044 0044');
+
+--number of digits not a mutiple of 4
+insert into hex_ucs2 values(_UCS2 X'44 44 44');
+insert into hex_ucs2 values(_UCS2 X'444 4a44');
+insert into hex_ucs2 values(_UCS2 X'0123456789');
+
+--charset mismatch for concatenation
+insert into hex_ucs2 values(_UCS2 X'006000600060' X'006000600060');
+
+
+-- testing fix for bugzilla case#1843
+insert into charset101b values (_ucs2'test',1);
+insert into charset101b values (_ucs2 X'  5168 4E16754C',2);
+insert into charset101b values (_ucs2'',3);
+insert into charset101b values (_ucs2 X'FFFD',4);
+insert into charset101b values (_ucs2't',5);
+insert into charset101b values (_ucs2 X'FC01',6);
+insert into charset101b values (_ucs2 X'FD00',7);
+insert into charset101b values (_ucs2 X'FE00',8);
+insert into charset101b values (_ucs2 X'FE11',9);
+insert into charset101b values (_ucs2 X'FEAA',10);
+insert into charset101b values (_ucs2 X'FEFF',11);
+insert into charset101b values (_ucs2 X'FF00',12);
+insert into charset101b values (_ucs2 X'FF11',13);
+insert into charset101b values (_ucs2 X'FFAA',14);
+insert into charset101b values (_ucs2 X'FFFD',15);
+
+select c,b, converttohex(b), converttohex(sort_key(b)) from charset101b order by c;
+drop table hex_iso;
+drop table hex_ucs2;
+drop table charset101b ;
+log;

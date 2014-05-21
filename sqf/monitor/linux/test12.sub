@@ -1,0 +1,8 @@
+! STD Redirection test
+node
+ps
+exec {nowait,name $SHELL1,nid 1} shell test12a.sub
+delay 1
+wait $SHELL1
+ps
+exit

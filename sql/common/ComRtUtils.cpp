@@ -1,0 +1,963 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+/* -*-C++-*-
+ *****************************************************************************
+ *
+ * File:         ComRtUtils.cpp
+ * Description:  Some common OS functions that are called by the
+ *               executor (run-time) and may also b called by other components
+ *
+ * Created:      7/4/97
+ * Language:     C++
+ *
+ *
+ *****************************************************************************
+ */
+
+#include "Platform.h"
+#include "PortProcessCalls.h"
+
+
+#include "ExCextdecs.h"
+#include "str.h"
+#include "ComRtUtils.h"
+#include "charinfo.h"
+
+#include "ComCextdecs.h"
+
+
+#ifdef _DEBUG
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <iostream>
+#include <fstream>
+#endif
+
+
+#include "nsk/nskcommonhi.h"
+#define  psecure_h_including_section
+#define  psecure_h_security_psb_get_
+#include "security/psecure.h"
+#define  dsecure_h_including_section
+#define  dsecure_h_psb_selectors
+#include "security/dsecure.h"
+
+
+#include "fs/feerrors.h"
+
+
+#include "ComDistribution.h"
+
+#include "logmxevent.h"
+#undef SQL_TEXT
+
+
+#include "seabed/ms.h"
+#include "seabed/fs.h"
+
+struct ModName {
+public:
+  const char * name;
+};
+
+static const ModName internalSystemSchemaModNameList[] = {
+  {"CMNAMEMAPSQLM_N29_000"} 
+  ,{"CMSMDIOREADM_N29_000"} 
+  ,{"CMSMDIOWRITEM_N29_000"} 
+  ,{"MVQR_N29_000"} 
+  ,{"READDEF_N29_000"} 
+  ,{"RFORK_N29_000"} 
+  ,{"SQLHIST_N29_000"} 
+  ,{"SQLUTILS_N29_000"} 
+  ,{"HP_ROUTINES_N29_000"} 
+  ,{"ANSINAMES_N29_000"} 
+  ,{"SECURITYDATA_N29_000"} 
+  ,{"USERLIST_N29_000"} 
+  ,{"SSQLSRVRDATA_N29_000"} 
+  ,{"QVP_N29_000"} 
+};
+
+static const ModName internalMxcsSchemaModNameList[] = {
+  {"CATANSIMXGTI"},
+  {"CATANSIMXJAVA"},
+  {"CATANSIMX"}
+};
+
+// returns TRUE, if modName is an internal module name
+NABoolean ComRtIsInternalModName(const char * modName)
+{
+  Int32 i = 0;
+  for (i = 0; i < sizeof(internalSystemSchemaModNameList)/sizeof(ModName); i++)
+    {
+      if (strcmp(internalSystemSchemaModNameList[i].name, modName) == 0)
+	return TRUE;
+    }
+
+  for (i = 0; i < sizeof(internalMxcsSchemaModNameList)/sizeof(ModName); i++)
+    {
+      if (strcmp(internalMxcsSchemaModNameList[i].name, modName) == 0)
+	return TRUE;
+    }
+
+  return FALSE;
+}
+
+// returns 'next' internal 3-part system mod name.
+// 'index' keeps track of the current mod name returned. It should
+// be initialized to 0 on the first call to this method.
+const char * ComRtGetNextInternalModName(Lng32 &index, char * modNameBuf)
+{
+  if (index == (sizeof(internalSystemSchemaModNameList)
+		) / sizeof(ModName)
+      )
+    return NULL;
+
+  if (index < sizeof(internalSystemSchemaModNameList) / sizeof(ModName))
+    {
+      strcpy(modNameBuf, systemModulePrefix);
+      strcat(modNameBuf, internalSystemSchemaModNameList[index].name);
+    }
+
+  index++;
+
+  return modNameBuf;
+}
+
+// implementation of open, seek, read, close is platform-dependent
+// (no use of C runtime on NSK, not even in the debug version)
+
+// non NSK implementations uses IOSTREAM library
+ModuleOSFile::ModuleOSFile() {}
+
+ModuleOSFile::~ModuleOSFile() {}
+
+Int32 ModuleOSFile::open(const char *fname)
+{
+  fs_.open(fname, ios::in | ios::binary);
+  if (fs_.fail())
+    return 1;
+  else
+    return 0;
+}
+
+Int32 ModuleOSFile::close()
+{
+  fs_.close();
+  if (fs_.fail())
+    return 1;
+  else
+    return 0;
+}
+
+Int32 ModuleOSFile::readpos(char *buf, Lng32 pos, Lng32 len, short &countRead)
+{
+  // no explicit error handling for these operations
+  fs_.seekg(pos, ios::beg);
+  fs_.read(buf, len);
+  return 0;
+}
+
+
+// -----------------------------------------------------------------------
+// Utility proc to move result into a buffer of limited size. Make
+// sure the result buffer is always NUL-terminated.
+// -----------------------------------------------------------------------
+static Lng32 ComRtMoveResult(char *tgt,
+			    const char *src,
+			    Lng32 tgtBufferLength,
+			    Lng32 srcLength)
+{
+  if (tgtBufferLength > srcLength)
+    {
+      // the easy case, move result and add NUL terminator
+      // (don't rely on the source being NUL-terminated)
+      str_cpy_all(tgt,src,srcLength);
+      tgt[srcLength] = '\0';
+      return 0;
+    }
+  else
+    {
+      str_cpy_all(tgt,src,tgtBufferLength-1);
+      tgt[tgtBufferLength-1] = '\0';
+      return -1;
+    }
+}
+
+// -----------------------------------------------------------------------
+// Get the directory name where NonStop SQL software resides
+// (from registry on NT, $SYSTEM.SYSTEM on NSK)
+// -----------------------------------------------------------------------
+Lng32 ComRtGetInstallDir(
+     char *buffer,
+     Lng32 inputBufferLength,
+     Lng32 *resultLength)	// OUT optional
+{
+  if (resultLength)
+    *resultLength = 0;
+
+  Lng32 result = 0;
+  Lng32 lResultLen;
+
+  // For Linux, we need to decide what to do for the install directory. 
+  // This is work that is TBD. For now, this is set to null, so that
+  // we can re-visit this once a decision has been made. This API
+  // is used by catman to determine where to put saved DDL for drop
+  // table commands.
+  lResultLen=0;
+  buffer[lResultLen] = '\0';
+
+  if (result == 0 && resultLength)
+    *resultLength = lResultLen;
+  return result;
+}
+
+static NABoolean canUseModuleDirEnvVar() {
+  // get session user id
+  return TRUE; // anything goes on NT
+}
+
+#define SYSTEMMODULESDIR "/usr/tandem/sqlmx/SYSTEMMODULES/"
+#define USERMODULESDIR   "/usr/tandem/sqlmx/USERMODULES/"
+
+Lng32 ComRtGetModuleFileName(
+     const char *moduleName,
+     const char *moduleDir, // use this as the module dir, if not NULL.
+     char *buffer,
+     Lng32 inputBufferLength,
+     char * sysModuleDir,
+     char * userModuleDir,
+     Lng32 *resultLength,
+     short &isASystemModule)	// OUT optional
+{
+  if (resultLength)
+    *resultLength = 0;
+
+  // NOTE: this code is temporary until modules become SQL objects
+  // which may not be in this millennium
+  const char * envVal;
+
+  #define bufSize 512
+  char * mySQROOT;
+  char sysModuleDirNameBuf[bufSize];
+  char userModuleDirNameBuf[bufSize];
+
+  //Initialize the buffer
+  memset(sysModuleDirNameBuf, 0, bufSize);
+  memset(userModuleDirNameBuf, 0, bufSize);
+
+  mySQROOT = getenv("MY_SQROOT");
+  if (mySQROOT != NULL && strlen(mySQROOT) <= bufSize-100) {
+    strcpy(sysModuleDirNameBuf, mySQROOT);
+    strcpy(userModuleDirNameBuf, mySQROOT);
+  } else {
+    sysModuleDirNameBuf[0] = '\0';
+    userModuleDirNameBuf[0] = '\0';
+    assert(0);
+  }
+
+  //System Module location
+  strcat(sysModuleDirNameBuf,"/sql/sqlmx/SYSTEMMODULES/");
+  sysModuleDir = sysModuleDirNameBuf;
+
+  // User Module location
+  strcat(userModuleDirNameBuf,"/sql/sqlmx/USERMODULES/");
+  userModuleDir = userModuleDirNameBuf;
+
+
+  Int32 isSystemModule = 0;
+  //  const char *systemModulePrefix = "NONSTOP_SQLMX_NSK.SYSTEM_SCHEMA.";
+  //  const char *systemModulePrefixODBC = "NONSTOP_SQLMX_NSK.MXCS_SCHEMA.";
+  //  int systemModulePrefixLen = str_len(systemModulePrefix);
+  //  int systemModulePrefixLenODBC = str_len(systemModulePrefixODBC);
+  Int32 modNameLen = str_len(moduleName);
+  Lng32 lResultLen;
+  Lng32 result = 0;
+  return result;
+}
+
+// -----------------------------------------------------------------------
+// Get the cluster (EXPAND node) name (returns "NSK" on NT)
+// -----------------------------------------------------------------------
+Lng32 ComRtGetOSClusterName(
+     char *buffer,
+     Lng32 inputBufferLength,
+     Lng32 *resultLength, // OUT optional
+     short * nodeNumber)
+{
+  if (resultLength)
+    *resultLength = 0;
+
+  Lng32 result = 1;		// positive "ldev"
+  Lng32 lResultLen = 0;
+
+  // for now, the cluster name on NT is always NSK
+  lResultLen = 3;
+  ComRtMoveResult(buffer,"NSK",inputBufferLength,lResultLen);
+
+  if (result > 0 && resultLength)
+    *resultLength = lResultLen;
+  return result;
+}
+// -----------------------------------------------------------------------
+// Get the MP system catalog name.
+// the guardian name of the system catalog is returned in sysCatBuffer and
+// its size in sysCatLength.
+// Error code or 0 is returned for error case and success case respectively.
+// -----------------------------------------------------------------------
+Lng32 ComRtGetMPSysCatName(
+     char *sysCatBuffer,        // in/out
+     Lng32 inputBufferLength,    // in
+     char *inputSysName,        // in, must set to NULL if no name is passed.
+     Lng32 *sysCatLength,	// out
+     short *detailError,        // out
+     CollHeap *heap)            // in
+
+{
+  // the following enum is replicated from ComMPSysCat.h for detail error
+  enum MPSysCatErr { NSK_SYSTEM_NAME_ERROR
+                   , NSK_CANNOT_LOCATE_MP_SYSTEM_CATALOG
+                   , NSK_DEVICE_GETINFOBYLDEV_ERROR
+                   , NSK_FILE_GETINFOBYNAME_ERROR
+                   };
+
+  const Int32 DISPLAYBUFSIZE = 8000;
+  const Int32 FILENAMELEN = 36;
+
+  char mpSysCat[FILENAMELEN];
+  Lng32 nameSize = 0;
+
+  Lng32 error = 0;
+  *detailError = 0;
+  char *sysCatLoc = NULL;
+
+#ifdef _DEBUG
+  sysCatLoc = getenv("MP_SYSTEM_CATALOG");  // for Dev+QA convenience
+#endif
+
+  if (sysCatLoc)
+  {
+    if (inputBufferLength < str_len(sysCatLoc))
+      return -1;
+    Int32 locLen = str_len (sysCatLoc);
+
+    // add local system name if not specified.
+    //
+    if ((sysCatLoc[0] != '\\') && (sysCatLoc[0] == '$'))
+      {
+	mpSysCat[0] = '\\';
+
+        error = ComRtGetOSClusterName (&mpSysCat[1], sizeof(mpSysCat), &nameSize);
+	if (error || nameSize == 0)
+	  {
+	    *detailError = NSK_SYSTEM_NAME_ERROR;
+	    return -1;
+	  }
+	nameSize++;
+	mpSysCat[nameSize] = '.';
+	str_cpy_all(&mpSysCat[nameSize+1], sysCatLoc, locLen);
+	locLen = locLen + nameSize + 1;
+	str_cpy_all (sysCatBuffer, mpSysCat,locLen );
+      }
+    else
+      {
+	if (sysCatLoc[0] != '\\')
+	  return -1;
+	str_cpy_all (sysCatBuffer, sysCatLoc, locLen);
+      }
+    sysCatBuffer[locLen] = '\0';
+    *sysCatLength = locLen;
+  }
+  else {
+    sysCatLoc = sysCatBuffer;
+    *sysCatLoc = '\0';
+    *sysCatLength = 0;
+
+
+    // Allows some debugging/testing of this code while on NT.
+    struct la_display_table_struct { char cat_volname[10], cat_subvolname[10]; };
+    la_display_table_struct la   = { "??MPVOL ", "MPSYSCAT" };
+    la_display_table_struct *tab = &la;
+    char sysName[8] = "\\MPSYS ";
+
+
+    size_t i, z;
+    for (i = 0; i < 8; i++)  //padded with blanks
+      {
+	if (sysName[i] == ' ') break;
+      }
+#pragma nowarn(1506)   // warning elimination
+    str_cpy_all(sysCatLoc, sysName, i);
+#pragma warn(1506)  // warning elimination
+    if (i)
+      sysCatLoc[i++] = '.';
+    z = i;
+
+    for (i = 2; i < 8; i++)  // the first 2 chars are the sysnum, and the volume
+                             // name is blank-padded
+      {
+	if (tab->cat_volname[i] == ' ') break;
+      }
+    //ComDEBUG(i > 2);
+    sysCatLoc[z++] = '$';
+#pragma nowarn(1506)   // warning elimination
+#pragma nowarn(252)   // warning elimination
+    str_cpy_all(sysCatLoc + z, tab->cat_volname + 2, i - 2);
+#pragma warn(252)  // warning elimination
+#pragma warn(1506)  // warning elimination
+    z += i - 2;
+    sysCatLoc[z++] = '.';
+    for (i = 0; i < 8; i++)  //padded with blanks
+      {
+	if (tab->cat_subvolname[i] == ' ') break;
+      }
+#pragma nowarn(252)   // warning elimination
+#pragma nowarn(1506)   // warning elimination
+    str_cpy_all(sysCatLoc + z, tab->cat_subvolname, i);
+#pragma warn(252)  // warning elimination
+#pragma warn(1506)  // warning elimination
+    sysCatLoc[z+i] = '\0';
+#pragma nowarn(1506)   // warning elimination
+    *sysCatLength = (Lng32)z+i;
+#pragma warn(1506)  // warning elimination
+
+  }
+
+  return 0;
+}
+
+// -----------------------------------------------------------------------
+// Upshift a simple char string
+// -----------------------------------------------------------------------
+//#define TOUPPER(c) (((c >= 'a') && (c <= 'z')) ? (c - 32) : c);
+void ComRt_Upshift (char * buf)
+{
+// NOTE: buf is assumed to be non-NULL so it will not be checked again
+//  if (buf && (*buf != '\"'))
+
+    if (*buf != '\"')
+    {
+        // Assume that the name is in the form of an SQL92 <identifier>,
+        // meaning that it could be a (case-insensitive) unquoted name
+        // or a (case-sensitive) delimited identifier in double quotes.
+        // So, upshift the name if it's not in double quotes.
+        // NOTE: this code has a counterpart in the
+        // parser. Make sure both parts are kept in sync.
+
+        register char * pBuf = buf;
+
+        // NOTE: the string in buf is assumed to null terminated, so no need
+        //       to worry about the loop not terminating appropriately
+
+        while (*pBuf)
+        {
+#pragma nowarn(1506)   // warning elimination
+	    *pBuf = TOUPPER(*pBuf);
+#pragma warn(1506)  // warning elimination
+            ++pBuf;
+        }
+    }
+}
+
+const char * ComRtGetEnvValueFromEnvvars(const char ** envvars,
+					 const char * envvar,
+					 Lng32 * envvarPos)
+{
+  if (envvarPos)
+    *envvarPos = -1;
+
+  if (! envvars)
+    return NULL;
+
+  Lng32 envvarLen = str_len(envvar);
+  for (Int32 i = 0; envvars[i]; i++)
+    {
+      // Each envvar[i] is of the form:  envvar=value
+      // search for '='
+      Int32 j = 0;
+      for (j = 0;  ((envvars[i][j] != 0) && (envvars[i][j] != '=')); j++);
+
+      if (envvars[i][j] == '=')
+	{
+	  if ((j == envvarLen) && (str_cmp(envvar, envvars[i], j) == 0))
+	    {
+	      if (envvarPos)
+		*envvarPos = i;
+	      return &envvars[i][j+1];
+	    }
+	}
+    }
+
+  return NULL;
+}
+
+#if defined (_DEBUG) && !defined (ARKFS_OPEN) && !defined (__EID)
+// -----------------------------------------------------------------------
+// Convenient handling of envvars: Return a value if one exists
+// NB: DEBUG mode only!
+// -----------------------------------------------------------------------
+NABoolean ComRtGetEnvValue(const char * envvar, const char ** envvarValue)
+{
+  const char * ptr = getenv(envvar);
+  if (!ptr)
+    // envvar not there
+    return FALSE;
+  if (!strlen(ptr))
+    // envvar there but no value
+    return FALSE;
+
+  if (envvarValue)
+    // only return a value if caller asked for one
+    *envvarValue = ptr;
+  return TRUE;
+}
+
+NABoolean ComRtGetEnvValue(const char * envvar, Lng32 * envvarValue)
+{
+  const char * ptr;
+  if (!ComRtGetEnvValue(envvar, &ptr))
+    // envvar not there or no value
+    return FALSE;
+
+#pragma nowarn(1506)   // warning elimination
+  Int32 max = strlen(ptr);
+#pragma warn(1506)  // warning elimination
+  Lng32 tempValue = 0;
+  for (Int32 i = 0;i < max;i++)
+  {
+    if (ptr[i] < '0' || ptr[i] > '9')
+      // value is not numeric
+      return FALSE;
+    tempValue = (tempValue * 10) + (ptr[i] - '0');
+  }
+  *envvarValue = tempValue;
+  return TRUE;
+}
+
+NABoolean ComRtGetValueFromFile (const char * envvar, char * valueBuffer,
+                                 const UInt32 valueBufferSizeInBytes)
+{
+  // "envvar" supposedly specifies the name of a file, from which we
+  // read values.
+  // Return TRUE if value was read from the file, FALSE otherwise
+  // Only one file at a time can be handled - each time
+
+  static char * theFileName = NULL;
+  static char * theEnvVar;
+  static ifstream * theFile;
+  const char * tempFileName;
+
+  if (!ComRtGetEnvValue (envvar, &tempFileName))
+  {
+    // The requested envvar is not set.
+    // Close the corresponding file if we have it open
+    if (theFileName != NULL)
+    {
+      if (!strcmp (theEnvVar, envvar))
+      {
+        // The same envvar => we have the file open
+        delete theFile;
+        delete theFileName;
+        delete theEnvVar;
+        theFileName = NULL;
+      }
+    }
+    return FALSE;
+  }
+
+  if (theFileName != NULL)
+  {
+    // We already have a file open, see if it is the same
+    // env var and file name
+    if (strcmp (theFileName, tempFileName) || strcmp (theEnvVar, envvar))
+    {
+      // a different env var or file, close the previous one
+      delete theFile;
+      delete theFileName;
+      delete theEnvVar;
+      theFileName = NULL;
+    }
+  }
+
+  if (theFileName == NULL)
+  {
+    // Set the current env var name and file name and open the file
+    theFileName = new char [strlen(tempFileName) + 1];
+    strcpy (theFileName, tempFileName);
+    theEnvVar = new char [strlen(envvar) + 1];
+    strcpy (theEnvVar, envvar);
+
+    theFile = new ifstream (theFileName, ios::in);
+
+  }
+
+  if (theFile->good())
+  {
+    // Check to make sure the buffer is big enough:
+    // The buffer needs at least to be able to hold a NULL terminator
+    if (valueBufferSizeInBytes < 1)
+      return FALSE;
+
+    UInt32 valStrLimitInBytes = valueBufferSizeInBytes - 1;
+
+    // Read from the file if last read was OK
+    char tmpBuf[81];
+    theFile->getline(tmpBuf, 80, '\n');
+    if (theFile->good())
+    {
+      if (valStrLimitInBytes <= strlen(tmpBuf))
+        strcpy(valueBuffer, tmpBuf);
+      else
+      {
+        // The input string is too long, truncate it to fit the valueBuffer.
+        memcpy(valueBuffer, tmpBuf, valStrLimitInBytes);
+        valueBuffer[valStrLimitInBytes] = '\0';
+      }
+      return TRUE;
+    }
+  }
+
+  if (theFile->eof())
+    return FALSE;
+
+  if (theFile->bad() || theFile->fail())
+  {
+    // File is unusable, get rid of it and clear the
+    // current file
+    delete theFile;
+    delete theFileName;
+    theFileName = NULL;
+  }
+  return FALSE;
+
+}
+#endif // #if defined(_DEBUG) ...
+
+// -----------------------------------------------------------------------
+//
+// ComRtGetJulianFromUTC()
+//
+// This function converts a unix-epoch timespec, which is based on midnight
+// GMT, the morning of Jan 1, 1970 to a JulianTimestamp, which is based on
+// noon GMT, the day of Jan 1, 4713 B.C.  The constant 2440588 represents
+// the number of whole days between these two dates.  The constant 86400 is
+// the number of seconds per day.  The 43200 is number of seconds in a half
+// day and is subtracted to account for the JulianDate starting at noon.
+// The 1000000 constant converts seconds to microseconds, and the 1000 is
+// to convert the nanosecond part of the unix timespec to microseconds. The
+// JulianTimesamp returned is in microseconds so it can be used directly
+// with the Guardian INTERPRETTIMESTAMP function.
+Int64 ComRtGetJulianFromUTC(timespec ts)
+{
+  return (((ts.tv_sec  + (2440588LL * 86400LL) - 43200LL) * 1000000LL)
+                + (ts.tv_nsec / 1000)) ;
+}
+
+// -----------------------------------------------------------------------
+//
+// ComRtGetProgramInfo()
+//
+// Outputs:
+// 1) the pathname of the directory where the application program
+//    is being run from.
+//    For OSS processes, this will be the fully qualified oss directory
+//      pathname.
+//    For Guardian processes, pathname is not set
+// 2) the process type (oss or guardian).
+// 3) Other output values are: cpu, pin, nodename, nodename Len, processCreateTime
+//       and processNameString in the format <\node_name>.<cpu>,<pin>
+//
+// // Return status:      0, if all ok. <errnum>, in case of an error.
+//
+// -----------------------------------------------------------------------
+Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
+			 Lng32 pathNameMaxLen,
+			 short  &processType,/* out */
+			 Int32  &cpu, /* cpu */
+			 pid_t  &pin, /* pin */
+			 Lng32   &nodeNumber,
+			 char * nodeName, // GuaNodeNameMaxLen+1
+			 short  &nodeNameLen,
+			 Int64  &processCreateTime,
+			 char *processNameString,
+			 char *parentProcessNameString)
+{
+  Lng32 retcode = 0;
+
+  processType = 2;
+  strcpy(nodeName, "NSK");
+  nodeNameLen = strlen("NSK");
+  SB_Phandle_Type procHandle;
+  Int32 lc_pin;
+  Int32 lc_cpu;
+  XPROCESSHANDLE_GETMINE_(&procHandle);
+  XPROCESSHANDLE_DECOMPOSE_ (&procHandle, &lc_cpu, &lc_pin);
+  cpu = lc_cpu;
+  pin = lc_pin;
+  // Map the node number to cpu
+  nodeNumber = lc_cpu;
+  MS_Mon_Process_Info_Type processInfo;
+  char processName[MS_MON_MAX_PROCESS_NAME];
+  if ((retcode = msg_mon_get_process_name(lc_cpu, lc_pin, processName))
+                        != XZFIL_ERR_OK)
+     return retcode;  
+  strcpy(processNameString, processName);   
+  if ((retcode = msg_mon_get_process_info_detail(processName, &processInfo))
+                        != XZFIL_ERR_OK)
+     return retcode;
+  processCreateTime = ComRtGetJulianFromUTC(processInfo.creation_time);
+  if (processInfo.parent_nid != -1 && processInfo.parent_pid != -1 && parentProcessNameString)
+    strcpy(parentProcessNameString, processInfo.parent_name);
+  else
+    parentProcessNameString = NULL;
+  return retcode;
+}
+
+Lng32 ComRtGetProcessPriority(Lng32  &processPriority /* out */)
+{
+  Lng32 retcode = 0;
+
+  processPriority = -1;
+
+  return retcode;
+}
+
+Lng32 ComRtGetProcessPagesInUse(Int64 &pagesInUse /* out */)
+{
+    pagesInUse = -1;
+    return 0;
+}
+
+
+// IN:  if cpu, pin and nodeName are passed in, is that to find process.
+//      Otherwise, use current process
+// OUT: processCreateTime: time when this process was created.
+Lng32 ComRtGetProcessCreateTime(short  *cpu, /* cpu */
+			       pid_t  *pin, /* pin */
+			       short  *nodeNumber,
+			       Int64  &processCreateTime,
+			       short  &errorDetail
+			       )
+{
+  Lng32 retcode = 0;
+
+  MS_Mon_Process_Info_Type processInfo;
+  char processName[MS_MON_MAX_PROCESS_NAME];
+
+  Int32 lnxCpu = (Int32) (*cpu);
+  Int32 lnxPin = (Int32) (*pin);
+  processCreateTime = 0;
+  if ((retcode = msg_mon_get_process_name(lnxCpu, lnxPin, processName))
+                        != XZFIL_ERR_OK)
+     return retcode;
+  if ((retcode = msg_mon_get_process_info_detail(processName, &processInfo))
+                        != XZFIL_ERR_OK)
+     return retcode;
+  processCreateTime = ComRtGetJulianFromUTC(processInfo.creation_time);
+  return retcode;
+}
+
+
+
+Lng32 ComRtSetProcessPriority(Lng32 priority,
+			     NABoolean isDelta)
+{
+  short rc = 0;
+
+  return rc;
+}
+
+
+Lng32 ComRtGetIsoMappingEnum()
+{
+
+  return (Lng32)CharInfo::DefaultCharSet;
+
+}
+
+char * ComRtGetIsoMappingName()
+{
+  Lng32 ime = ComRtGetIsoMappingEnum();
+
+  return (char*)CharInfo::getCharSetName((CharInfo::CharSet)ime);
+}
+
+
+#ifdef _DEBUG
+#endif 
+
+NABoolean ComRtIsNeoSystem(void)
+{
+   return TRUE;
+}
+
+Lng32 ComRtGetNeoSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs, 
+				NAHeap *heap)
+{
+  Int32 nodeCount = 0;
+  Int32 nodeMax = 0;
+  MS_Mon_Node_Info_Entry_Type *nodeInfo = NULL;
+
+  // Get the number of nodes to know how much info space to allocate
+  Int32 error = msg_mon_get_node_info(&nodeCount, 0, NULL);
+  if (error != 0)
+     return 0;
+  if (nodeCount <= 0)
+     return 0;
+
+  // Allocate the space for node info entries
+  nodeInfo = new (heap) MS_Mon_Node_Info_Entry_Type[nodeCount];
+
+  if (!nodeInfo)
+     return 0;
+  // Get the node info
+  memset(nodeInfo, 0, sizeof(nodeInfo));
+  nodeMax = nodeCount;
+  error = msg_mon_get_node_info(&nodeCount, nodeMax, nodeInfo);
+  if (error != 0)
+  { 
+     NADELETEBASIC(nodeInfo, heap);
+     return 0;
+  }
+  Int32 i;
+  Int32 j=0;
+  for (i = 0 ; i < nodeCount && j < maxNoSegs ; i++)
+  {
+     if (!nodeInfo[i].spare_node)
+     {
+        segs[j].segName_[0] = '\0';
+        segs[j].segNo_ = nodeInfo[i].nid;
+        segs[j].noOfCpus_ = 1;
+        segs[j].cpuStatus_ = 0x8000;
+        segs[j].nodeDown_ = FALSE;
+        j++;
+     }
+  }
+  noOfSegs = j;
+  NADELETEARRAY(nodeInfo, nodeCount, MS_Mon_Node_Info_Entry_Type, heap);
+  return i;
+}
+
+NABoolean ComRtGetCpuStatus(char *nodeName, short cpuNum)
+{
+  NABoolean retval = FALSE;   // assume cpu is down
+  MS_Mon_Node_Info_Type nodeInfo;
+  memset(&nodeInfo, 0, sizeof(nodeInfo));
+  Int32 error = msg_mon_get_node_info_detail(cpuNum, &nodeInfo);
+  if ( XZFIL_ERR_OK == error ) {
+        if ( MS_Mon_State_Up == nodeInfo.node[0].state ) retval = TRUE;
+  }
+  return retval;
+}
+
+void genLinuxCorefile(const char *eventMsg)
+{
+//LCOV_EXCL_START
+// I unit tested this code with the test case in QC 1387 and by faking
+// errors from msg_mon_get_my_info, msg_mon_get_process_info_detail and
+// gethostname in a gdb session. - 3/22/2012.
+  Int32 nid = 0;
+  Int32 pid = 0;
+  char *progFileName = (char *) "noname";
+  char pName[MS_MON_MAX_PROCESS_NAME];
+  if (XZFIL_ERR_OK == msg_mon_get_my_info(&nid, &pid, &pName[0],
+                        sizeof(pName), NULL, NULL, NULL, NULL))
+  {
+    // use msg_mon_dump_process_id - 5/28/2013
+    char coreFile[1024];
+    msg_mon_dump_process_id(NULL, nid, pid, coreFile);
+  }
+  if (eventMsg)
+    SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, eventMsg, 0);
+//LCOV_EXCL_STOP
+}
+Int16 getBDRClusterName(char *bdrClusterName)
+{
+  MS_Mon_Reg_Get_Type regList;
+  Int16  error;
+  strcpy(bdrClusterName, "UNKNOWN");
+
+  if ((error = msg_mon_reg_get(MS_Mon_ConfigType_Cluster,
+                               false,
+                               (char *)"CLUSTER",
+                               (char *)BDR_CLUSTER_NAME_KEY,
+                               &regList)) == XZFIL_ERR_OK)
+  {
+    if (regList.num_returned > 0 &&
+        (strcmp(regList.list[0].key, BDR_CLUSTER_NAME_KEY) == 0))
+    {
+      strncpy(bdrClusterName, regList.list[0].value, BDR_CLUSTER_NAME_LEN);
+      Int16 i = BDR_CLUSTER_NAME_LEN-1;
+      while (bdrClusterName[i] == ' ')
+        i--;
+      bdrClusterName[i+1] = '\0';
+    }
+  }
+  return error;
+}
+ 
+SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr)
+{
+  Int32 retrys = 0;
+  int lv_fserr = FEOK;
+  SB_Phandle_Type *phandle = NULL;
+  const Int32 NumRetries = 10;
+  timespec retryintervals[NumRetries] = {
+                               {  0, 10*1000*1000 }  // 10 ms
+                             , {  0, 100*1000*1000 } // 100 ms
+                             , {  1, 0 } // 1 second
+                             , {  3, 0 } // 3 seconds
+                             , {  6, 0 } // 6 seconds
+                             , { 10, 0 } // 10 seconds
+                             , { 15, 0 } // 15 seconds
+                             , { 15, 0 } // 15 seconds
+                             , { 15, 0 } // 15 seconds
+                             , { 15, 0 } // 15 seconds
+                           } ;
+
+  for (;;)
+  {
+    phandle = msg_get_phandle (pname, &lv_fserr);
+    if (retrys >= NumRetries)
+      break;
+    if ((lv_fserr == FEPATHDOWN) ||
+        (lv_fserr == FEOWNERSHIP))
+      nanosleep(&retryintervals[retrys++], NULL);
+    else
+      break;
+  }
+
+  if (fserr)
+    *fserr = (short) lv_fserr;
+
+ return phandle;
+}
+
+// A function to return the string "UNKNOWN (<val>)" which can be
+// useful when displaying values from an enumeration and an unexpected
+// value is encountered. The function is thread-safe. The returned
+// string can be overwritten by another call to the function from the
+// same thread.
+static __thread char ComRtGetUnknownString_Buf[32];
+const char *ComRtGetUnknownString(Int32 val)
+{
+  sprintf(ComRtGetUnknownString_Buf, "UNKNOWN (%d)", (int) val);
+  return &(ComRtGetUnknownString_Buf[0]);
+}

@@ -1,0 +1,26 @@
+61,64c61,63
+<  2 EX_SORT
+<  3 EX_HBASE_ACCESS
+<  4 EX_TUPLE_FLOW
+<  5 EX_ROOT
+---
+>  2 EX_HBASE_ACCESS
+>  3 EX_TUPLE_FLOW
+>  4 EX_ROOT
+66c65
+< --- 5 row(s) selected.
+---
+> --- 4 row(s) selected.
+99,102c98,100
+<  2 EX_SORT
+<  3 EX_HBASE_ACCESS
+<  4 EX_TUPLE_FLOW
+<  5 EX_ROOT
+---
+>  2 EX_HBASE_ACCESS
+>  3 EX_TUPLE_FLOW
+>  4 EX_ROOT
+104c102
+< --- 5 row(s) selected.
+---
+> --- 4 row(s) selected.

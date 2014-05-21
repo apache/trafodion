@@ -1,0 +1,986 @@
+>>---------------------------------------------------------------------
+>>-- Component: NonStop SQL Regression Test Suite
+>>-- Description:  Create order entry database: populate Order Entry
+>>--               database, as described in ENFORM manuals.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- INSERT into TABLEs.
+>>---------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>-- Table ORDERS.
+>>---------------------------------------------------------------------
+>>--INSERT INTO orders VALUES ( 21, 1,10,78, 4,10,78, 205,1234);
+>>-- Test insert with parameter values.
+>>set param ?p 21;
+>>set param ?p1 10;
+>>set param ?p2 205;
+>>set param ?p3 1234;
+>>INSERT INTO orders VALUES ( ?p, 1,?p1 ,78, 4,10,78,?p2 ,?p3 );
+
+--- 1 row(s) inserted.
+>>
+>>-- INSERT INTO orders VALUES ( 25, 1,23,78, 6,15,78, 212,7777);
+>>-- Test inserting expressions in particular operation involving
+>>-- addition, multiplication and division.
+>>set param ?p 20;
+>>set param ?p1 2;
+>>set param ?p3 30;
+>>--INSERT INTO orders VALUES ( ?p + 5 , 1,23,78, ?p1 * 3,?p3 / 2,78, 212,7777);
+>>INSERT INTO orders VALUES ( 20 + 5 , 1,23,78, ?p1 * 3,15,78, 212,7777);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 30, 2, 6,78, 7, 1,78, 222, 926);
+
+--- 1 row(s) inserted.
+>>--INSERT INTO orders VALUES ( 32, 2,17,78, 7,20,78, 204,  21);
+>>-- Test inserting expressions in particular operation involving
+>>-- subtraction and more complicated arithmetic
+>>set param ?p 34;
+>>set param ?p1 35;
+>>--INSERT INTO orders VALUES ( ?p - 2, 2,17,78, 7,20, 2 * ?p1 + 8 , 204,  21);
+>>INSERT INTO orders VALUES ( 34 - 2, 2,17,78, 7,20, 2 * ?p1 + 8 , 204,  21);
+
+--- 1 row(s) inserted.
+>>
+>>INSERT INTO orders VALUES ( 35, 3, 3,78, 8,10,78, 231, 543);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 38, 3,19,78, 8,20,78, 218, 123);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 41, 3,27,78, 9, 1,78, 207,7654);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 45, 4,20,78, 9,15,78, 212, 324);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 48, 5,12,78,10,10,78, 225,3333);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 51, 6, 1,78,10,20,78, 210, 143);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES ( 66, 7, 9,78,11, 1,78, 205,3210);
+
+--- 1 row(s) inserted.
+>>INSERT INTO orders VALUES (122, 7,21,78,12,15,78, 221,5635);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table orders on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>set param ?p 'CENTRAL UNIVERSITY';
+>>set param ?p1 'PHILADELPHIA  ';
+>>INSERT INTO customer VALUES (  21,?p ,'UNIVERSITY WAY        ',?p1 ,'PENN        ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES ( 123,'BROWN MEDICAL CO  ','100 CALIFORNIA STREET ','SAN FRANCISCO ','CALIFORNIA  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES ( 143,'STEVENS SUPPLY    ','2020 HARRIS STREET    ','DENVER        ','COLORADO    ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES ( 324,'PREMIER INSURANCE ','3300 WARBASH          ','LUBBOCK       ','TEXAS       ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES ( 543,'FRESNO STATE BANK ','2300 BROWN BLVD       ','FRESNO        ','CALIFORNIA  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES ( 926,'METALL-AG.        ','12 WAGNERRING         ','FRANKFURT     ','GERMANY     ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES (1234,'DATASPEED         ','300 SAN GABRIEL WAY   ','NEW YORK      ','NEW YORK    ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES (3210,'BESTFOOD MARKETS  ','3333 PLELPS STREET    ','LINCOLN       ','NEBRASKA    ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES (3333,'DEUTSCHE STAHL    ','SIEMENS-STRASSE       ','DUISBURG      ','GERMANY     ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES (5635,'VEREINIGTE CHEMIE ','45 FRANKENSTRASSE     ','MUENCHEN      ','GERMANY     ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES (7654,'MOTOR DISTRIBUTING','2345 FIRST STREET     ','CHICAGO       ','ILLINOIS    ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO customer VALUES (7777,'SLEEPWELL HOTELS  ','9000 PETERS AVENUE    ','DALLAS        ','TEXAS       ');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table customer on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>--INSERT INTO fromsup VALUES ( 212,  1, 92000.00);
+>>set param ?p 92000.00;
+>>INSERT INTO fromsup VALUES ( 212,  1, ?p );
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES ( 244,  1, 87000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (1403,  1, 22000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (2001,  1,  1500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (2002,  1,  1000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (2003,  1,   500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (2402,  1,  7500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (2403,  1,  9600.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (3102,  1,  4800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (3103,  1, 10500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (3201,  1,  4800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (3302,  1,  2800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4101,  6,  6000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4101, 15,  6000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4102,  6, 10000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4102,  8, 12000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4102, 15, 11000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4103,  6, 20100.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4103,  8, 19300.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (4103, 15, 19500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5101,  8,  5800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5101, 15,  5900.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5103,  8,  6200.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5103, 15,  6250.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5502,  2,  9100.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5504,  2,  1600.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5504,  6,  1580.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5504, 15,  1620.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (5505, 15, 33000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6201,  1,  5800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6301,  1,  2900.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6302,  1,  4300.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6401,  2,  1200.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6401,  3,  1100.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6402,  2,  1100.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6402,  3,  1200.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (6603,  2,  2600.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (7102, 10,  6000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO fromsup VALUES (7301,  1,  2400.00);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table fromsup on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>INSERT INTO odetail VALUES ( 21, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 21,2001,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 21,2403,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 21,4103,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 25, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 25,5103,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 25,6301,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 25,6402, 10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30,2001,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30,2002,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30,2003,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30,3102,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30,4101,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 30,6302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,2001,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,2402,  6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,3102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,3202,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,3302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,4102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,5103,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,5504,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,6201,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,6301,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 32,6302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,2001,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,2403,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,3103,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,3302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,4103,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,5503,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,6301,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 35,6302,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,2402,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,3102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,4102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,5502,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,6201,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,6302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 38,6402,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,1403,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,2001,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,2002,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,2003,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,2403, 10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,3103,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,3302,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,4103,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,5504,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,6201,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,6301,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,6302, 10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 41,7301,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45, 212,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,1403,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,2001,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,2002,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,2402,  6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,2403,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,3102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,4102,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,6301,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,6302,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 45,7301,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,1403,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,2001,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,2002,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,2003,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,2403,  6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,3103,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,3302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,4103,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,5103,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,5504,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,6201,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,6302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,7102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 48,7301,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,1403,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,2001,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,2002,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,2003,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,2403, 16);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,3103,  5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,3202,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,3302,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,4103, 11);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,5103,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,5505,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,6301,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,6302,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,6402,  8);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 51,7102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66, 244,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,1403,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,2001,  5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,2403,  8);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,3102,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,3202,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,3302,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,4101,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,4102,  6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,4103,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,5101,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,5502,  8);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,5504,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,6201,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,6301,  4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,6302,  5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,6401,  6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,6402, 22);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,7102,  1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES ( 66,7301,  2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,1403, 10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,2002, 10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,2403, 30);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,3103, 20);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,3201,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,4103, 40);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,5103,  3);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,7102,  7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO odetail VALUES (122,7301,  8);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table odetail on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>INSERT INTO parts VALUES ( 212,'SYSTEM 192KB CORE ',    7,'J87', 92000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES ( 244,'SYSTEM 192KB SEMI ',    3,'B78', 87000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (1403,'PROC     96KB SEMI',   21,'A21', 22000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (2001,'DECIMAL ARITH     ', -100,'X10',  1500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (2002,'ENSCRIBE MICRO    ',  200,'X11',  1000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (2003,'COBOL MICRO       ',  200,'X12',   500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (2402,'MEM MOD 64K MOS   ',  -34,'H87',  7500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (2403,'MEM MOD 96K MOS   ',   12,'J88',  9600.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (3102,'DISC CONT SINGLE  ',   12,'H76',  4800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (3103,'DISC CONT DUAL    ',   -4,'H87', 10500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (3201,'MAG TAPE CONT 8/16',    6,'J65',  4800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (3302,'LINE PRINTER CONT ',    9,'K94',  2800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (4101,'DISC 10MB         ',   14,'K87',  8000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (4102,'DISC 50MB         ',    9,'K45', 14500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (4103,'DISK 160MB        ',    7,'K43', 24500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (5101,'MAG TAPE DR 800BPI',    6,'K89',  7400.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (5103,'MAG TAPE DR 8/16  ',    8,'L98',  8000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (5502,'LP  300 LPM       ',    6,'L98', 11500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (5504,'LP  900 LPM       ',   -1,'L88', 21000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (5505,'LP  1500LPM       ',    0,'L78', 42000.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (6201,'SYNC CONTROLLER   ',  -16,'A34',  5800.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (6301,'ASYNC CONTROLLER  ',  -21,'A35',  2900.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (6302,'ASYNC EXTENSION   ',   34,'A36',  4300.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (6401,'TERM CRT CHAR     ',   54,'V67',  1500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (6402,'TERM CRT PAGE     ',  -32,'V68',  1500.00);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (6603,'TERM HARD COPY    ',   40,'V66',  3200.04);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (7102,'CABINET LARGE     ',   20,'F76', 68000.05);
+
+--- 1 row(s) inserted.
+>>INSERT INTO parts VALUES (7301,'POWER MODULE      ',   32,'H76',  2400.06);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table parts on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>INSERT INTO supplier VALUES (  1,'TANDEM COMPUTERS  ','19333 VALLCO PARKWAY  ','CUPERTINO     ','CALIFORNIA  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO supplier VALUES (  2,'DATA TERMINAL CO  ','2000 BAKER STREET     ','IRVINE        ','CALIFORNIA  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO supplier VALUES (  3,'DISPLAY INC       ','7600 EMERSON          ','PALO ALTO     ','CALIFORNIA  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO supplier VALUES (  6,'INFOMATION STORAGE','1000 INDUSTRY DRIVE   ','LEXINGTON     ','MASS        ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO supplier VALUES (  8,'MAGNETICS CORP    ','7777 FOUNTAIN WAY     ','SEATTLE       ','WASHINGTON  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO supplier VALUES ( 10,'STEELWORK INC     ','6000 LINCOLN LANE     ','SUNNYVALE     ','CALIFORNIA  ');
+
+--- 1 row(s) inserted.
+>>INSERT INTO supplier VALUES ( 15,'DATADRIVE         ','100  MACARTHUR        ','DALLAS        ','TEXAS       ');
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table supplier on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>INSERT INTO region VALUES ( 1,'EAST        ','NEW YORK' ,  29);
+
+--- 1 row(s) inserted.
+>>INSERT INTO region VALUES ( 2,'CENTRAL     ','CHICAGO'  , 104);
+
+--- 1 row(s) inserted.
+>>INSERT INTO region VALUES ( 3,'WEST        ','DALLAS'   ,  72);
+
+--- 1 row(s) inserted.
+>>INSERT INTO region VALUES ( 4,'CANADA      ','TORONTO'  , 343);
+
+--- 1 row(s) inserted.
+>>INSERT INTO region VALUES ( 5,'GERMANY     ','FRANKFURT',  43);
+
+--- 1 row(s) inserted.
+>>INSERT INTO region VALUES ( 6,'ENGLAND     ','LONDON'   ,  87);
+
+--- 1 row(s) inserted.
+>>INSERT INTO region VALUES (99,'HEADQUARTERS','CUPERTINO',   1);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table region on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>INSERT INTO branch VALUES ( 1, 1,'NEW YORK'     ,  75);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 1, 2,'NEW JERSEY'   , 129);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 2, 1,'CHICAGO'      ,  23);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 2, 2,'HOUSTON'      , 109);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 2, 3,'ST. LOUIS'    , 111);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 3, 1,'DALLAS'       , 321);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 3, 2,'LOS ANGELES'  , 337);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 3, 3,'SAN FRANCISCO',  89);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 4, 1,'TORONTO'      , 178);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 4, 2,'VANCOUVER'    ,  93);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 5, 1,'FRANKFURT'    , 180);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 5, 2,'DUESSELDORF'  ,  39);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 5, 3,'MUENCHEN'     ,  32);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES ( 6, 1,'LONDON'       ,  65);
+
+--- 1 row(s) inserted.
+>>INSERT INTO branch VALUES (99, 1,'CUPERTINO'    ,  88);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table branch on every column;
+>>-- ------------------------------------------------------------------
+>>
+>>INSERT INTO employee VALUES (   1,'ROGER GREEN       ',99, 1,'MANAGER'   ,37, 39500, 2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  23,'JERRY HOWARD      ', 2, 1,'MANAGER'   ,34, 37000,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  29,'JACK RAYMOND      ', 1, 1,'MANAGER'   ,39, 36000, 1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  32,'THOMAS RUDLOFF    ', 5, 3,'MANAGER'   ,43, 38000, 4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  39,'KLAUS SAFFERT     ', 5, 2,'MANAGER'   ,35, 35000,12);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  43,'PAUL WINTER       ', 5, 1,'MANAGER'   ,41, 40000, 5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  65,'SUSAN HENDERSON   ', 6, 1,'MANAGER'   ,45, 38000, 9);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  72,'GLENN THOMAS      ', 3, 1,'MANAGER'   ,48, 40000,14);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  75,'TIM WALKER        ', 1, 1,'MANAGER'   ,29, 32000, 7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  87,'ERIC BROWN        ', 6, 1,'MANAGER'   ,31, 39000,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  89,'PETER SMITH       ', 3, 3,'MANAGER'   ,36, 37000, 4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES (  93,'DONALD TAYLOR     ', 4, 2,'MANAGER'   ,31, 33000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 104,'DAVID STRAND      ', 2, 1,'MANAGER'   ,32, 39000, 2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 109,'STEVE COOK        ', 2, 2,'MANAGER'   ,39, 38000,15);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 111,'SHERRIE WONG      ', 2, 3,'MANAGER'   ,43, 40000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 129,'TONY CRAFT        ', 1, 2,'MANAGER'   ,35, 37000, 5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 178,'LINDA JONES       ', 4, 1,'MANAGER'   ,40, 38000, 8);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 180,'MANFRED CONRAD    ', 5, 1,'MANAGER'   ,30, 32000,14);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 201,'JIM HERMAN        ', 1, 1,'SALESMAN'  ,27, 19000,13);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 202,'LARRY CLARK       ', 1, 1,'SYS.-ANAL.',30, 25000, 7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 203,'KATHRYN DAY       ', 1, 1,'SECRETARY' ,24, 12000,12);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 204,'TOM HALL          ', 1, 1,'SALESMAN'  ,35, 26000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 205,'GEORGE FORSTER    ', 1, 2,'SALESMAN'  ,39, 30000, 4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 206,'DAVE FISHER       ', 2, 1,'SALESMAN'  ,32, 25000, 7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 207,'MARK FOLEY        ', 2, 1,'SALESMAN'  ,27, 23000,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 208,'SUE CRAMER        ', 2, 1,'SECRETARY' ,47, 19000, 6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 209,'SUSAN CHAPMAN     ', 2, 1,'PROGRAMMER',26, 17000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 210,'RICHARD BARTON    ', 2, 2,'SALESMAN'  ,39, 29000, 7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 211,'JIMMY SCHNEIDER   ', 2, 3,'SYS.-ANAL.',34, 26000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 212,'JONATHAN MITCHEL  ', 3, 1,'SALESMAN'  ,39, 32000,15);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 213,'ROBERT WHITE      ', 3, 1,'ENGINEER'  ,29, 30000, 4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 214,'JULIA KELLY       ', 3, 1,'SECRETARY' ,21, 50000, 1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 215,'WALTER LANCASTER  ', 3, 2,'SALESMAN'  ,49, 33000,15);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 216,'JOHN JONES        ', 3, 2,'SYS.-ANAL.',31, 30000, 7);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 217,'MARLENE BONNY     ', 3, 3,'SYS.-ANAL.',25, 24000, 9);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 218,'GEORGE FRENCHMAN  ', 3, 3,'SALESMAN'  ,35, 31000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 219,'DAVID TERRY       ', 3, 3,'PROGRAMMER',37, 27000,12);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 220,'JOHANN HUBER      ', 5, 1,'SYS.-ANAL.',35, 33000,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 221,'OTTO SCHNABL      ', 5, 1,'SALESMAN'  ,39, 33000, 1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 222,'MARTIN SCHAEFER   ', 5, 1,'SALESMAN'  ,32, 31000, 1);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 223,'HERBERT KARAJAN   ', 5, 1,'ENGINEER'  ,33, 29000, 6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 224,'MARIA JOSEF       ', 5, 1,'SECRETARY' ,19, 18000,10);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 225,'KARL HELMSTED     ', 5, 2,'SALESMAN'  ,34, 32000,11);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 226,'HEIDI WEIGL       ', 5, 2,'SECRETARY' ,55, 22000,14);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 227,'XAVER SEDLMEYER   ', 5, 3,'SYST.-ANAL',30, 30000, 4);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 228,'PETE WELLINGTON   ',99, 1,'SYST.-ANAL',39, 32000, 2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 229,'GEORGE STRICKER   ',99, 1,'SYST.-ANAL',36, 32222, 6);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 230,'ROCKY LEWIS       ',99, 1,'PROGRAMMER',32, 24000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 231,'HERB ALBERT       ',99, 1,'SALESMAN'  ,39, 33000, 2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 232,'THOMAS SPINNER    ',99, 1,'SALESMAN'  ,33, 30000, 5);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 233,'TED MCDONNALDS    ',99, 1,'ENGINEER'  ,29, 29000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 234,'MARY MILLER       ',99, 1,'SECRETARY' ,22, 16000, 9);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 235,'MIRIAM KING       ',99, 1,'SECRETARY' ,24, 18000,11);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 321,'BILL WINN         ', 3, 1,'MANAGER'   ,28, 32000, 0);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 337,'DAVE CLARK        ', 3, 2,'MANAGER'   ,36, 37000, 2);
+
+--- 1 row(s) inserted.
+>>INSERT INTO employee VALUES ( 343,'ALAN TERRY        ', 4, 1,'MANAGER'   ,39, 39500, 0);
+
+--- 1 row(s) inserted.
+>>-- ------------------------------------------------------------------
+>>-- update statistics for table employee on every column;
+>>-- ------------------------------------------------------------------
+>>LOG;

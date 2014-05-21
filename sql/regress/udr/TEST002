@@ -1,0 +1,135 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2000-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set pattern $$QUOTE$$ '''';      -- Needed for metadata insert of DLL path
+
+#ifNT
+-- On Windows we use fake hardware settings to parallelize UDFs
+--control query default ARKCMP_FAKE_HW 'ON';
+--control query default DEF_NUM_SMP_CPUS '4';
+--control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '1';
+--control query default ATTEMPT_ESP_PARALLELISM 'ON';
+#ifNT
+
+
+obey TEST002(clean_up);
+log LOG002 clear;
+sh rm -f LOG002-SECONDARY;
+obey TEST002(compile_libs);
+obey TEST002(create_tables);
+obey TEST002(register_functions);
+obey TEST002(tests);
+log;
+--obey TEST002(clean_up);
+exit;
+
+?section clean_up
+--------------------------------------------------------------------------
+drop table doc_table;
+drop table_mapping function tokenizer;
+drop table_mapping function tokenizer1;
+drop library TEST002;
+
+?section compile_libs
+--------------------------------------------------------------------------
+log;
+#ifNT
+sh rm -f ./TEST002.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh TEST002.c 
+  2>&1 | tee -a LOG002-SECONDARY;
+set pattern $$DLL$$ TEST002.dll;
+#ifNT
+#ifNSK
+sh rm -f ./TEST002.so;
+sh $scriptsdir/tools/dll-compile.ksh TEST002.c 
+  "-I$mxcidir -I/usr/tandem/sqlmx/include" "-lib zrlddll"
+   2>&1 | tee -a LOG002-SECONDARY;
+set pattern $$DLL$$ TEST002.so;
+#ifNSK
+log LOG002;
+
+?section create_tables
+--------------------------------------------------------------------------
+create table doc_table (a int not null, text_data varchar(4000), primary key (a));
+insert into doc_table values
+ (1,'Hello world! Hello world! This is a sample ');
+
+?section register_functions
+--------------------------------------------------------------------------
+
+create library TEST002 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$;
+
+create table_mapping function tokenizer(pattern char(1))
+returns (outval char(40))
+external name 'TOKENIZER'
+library TEST002;
+
+-- Register tokenizer1 without column information
+create table_mapping function tokenizer1(pattern char(1))
+returns (outval char(40))
+external name 'TOKENIZER1'
+library TEST002;
+
+?section tests
+--------------------------------------------------------------------------
+select token, count(*) from
+UDF(tokenizer(TABLE(select text_data from doc_table), ' ')) XO(token)
+group by token order by 2,1;
+
+prepare s1 from
+select * from 
+UDF(tokenizer(TABLE(select text_data from 
+doc_table where a < ?p2), cast(?p1 as char(1)))) XO(token);
+
+set param ?p1 ' ' ;
+set param ?p2 2;
+execute s1 ;
+
+select token, count(*) from 
+UDF(tokenizer(TABLE(select * from (values
+('This is the first row'),
+('This is the second row'),
+('This is the third row'),
+('This is the fourth row'),
+('This is the fifth row'),
+('This is the sixth row'),
+('This is the seventh row'),
+('This is the eigth row')
+) as val(text_data) ), ' ')) XO(token)
+group by token 
+order by token;
+
+select * from 
+UDF(tokenizer(TABLE(select text_data from doc_table), 1)) XO(token);
+
+
+select * from 
+UDF(tokenizer(TABLE(select text_data from doc_table), ' ', 1)) XO(token);
+
+prepare s1 from
+select token, count(*) from
+UDF(tokenizer1(TABLE(select * from (values
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo1.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo2.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo3.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo4.txt')
+) as val(text_data) ), ' ')) XO(token)
+group by token
+order by 2,1;
+
+execute s1 ;

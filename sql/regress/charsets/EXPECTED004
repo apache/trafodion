@@ -1,0 +1,483 @@
+>>
+>>create table tab_iso91 (c char(10) character set ISO88591);
+
+--- SQL operation complete.
+>>create table tab_ucs2 (d char(10) character set UCS2);
+
+--- SQL operation complete.
+>>create table tab_int( i int);
+
+--- SQL operation complete.
+>>
+>>?section dml
+>>
+>>--positive
+>>
+>>insert into tab_int values(ASCII('asdf'));
+
+--- 1 row(s) inserted.
+>>insert into tab_int values(ASCII(x'00'));
+
+--- 1 row(s) inserted.
+>>insert into tab_int values(code_value('zxcv'));
+
+--- 1 row(s) inserted.
+>>insert into tab_int values(code_value('zxcv'));
+
+--- 1 row(s) inserted.
+>>insert into tab_int values(code_value(_ucs2 x'1234 5678'));
+
+--- 1 row(s) inserted.
+>>select * from tab_int;
+
+I          
+-----------
+
+         97
+          0
+        122
+        122
+       4660
+
+--- 5 row(s) selected.
+>>
+>>insert into tab_iso91 values(CHAR(43));
+
+--- 1 row(s) inserted.
+>>insert into tab_iso91 values(CHAR(65, ISO88591));
+
+--- 1 row(s) inserted.
+>>select * from tab_iso91;
+
+C         
+----------
+
++         
+A         
+
+--- 2 row(s) selected.
+>>
+>>insert into tab_ucs2 values(CHAR(1041, UCS2));
+
+--- 1 row(s) inserted.
+>> -- cyrillic capital letter BE
+>>insert into tab_ucs2 values(CHAR(9617, UCS2));
+
+--- 1 row(s) inserted.
+>> -- light shade symbol
+>>select code_value(d) from tab_ucs2;
+
+(EXPR)    
+----------
+
+      1041
+      9617
+
+--- 2 row(s) selected.
+>>
+>>select UPPER(_UCS2'ALL IN CAPS') from (values(1))x;
+
+(EXPR)                                                            
+------------------------------------------------------------------
+
+ALL IN CAPS                                                       
+
+--- 1 row(s) selected.
+>>select UPPER(_UCS2'all in small case') from (values(1))x;
+
+(EXPR)
+------------------------------------------------------------------------------------------------------
+
+ALL IN SMALL CASE                                                                                     
+
+--- 1 row(s) selected.
+>>select lower(_UCS2'ALL IN CAPS') from (values(1))x;
+
+(EXPR)                
+----------------------
+
+all in caps           
+
+--- 1 row(s) selected.
+>>select lower(_UCS2'all in small case') from (values(1))x;
+
+(EXPR)                            
+----------------------------------
+
+all in small case                 
+
+--- 1 row(s) selected.
+>>
+>>-- title cases.
+>>--0x01F1 "DZ" capital dz is U+01F2 "Dz" capital d with small z. 
+>>
+>>
+>>-- should get 0x01f1 = 497
+>>select code_value(UPPER(_UCS2 x'01f2')) from (values(1))x;
+
+(EXPR)    
+----------
+
+       497
+
+--- 1 row(s) selected.
+>>
+>>-- should get 0x01f3 = 499
+>>select code_value(lower(_UCS2 x'01f2')) from (values(1))x;
+
+(EXPR)    
+----------
+
+       499
+
+--- 1 row(s) selected.
+>>
+>>--00e0 and 00f6
+>>select converttohex(upper(_ucs2 x'00e0 00f6')) from (values(1))x;
+
+(EXPR)                  
+------------------------
+
+00C000D6                
+
+--- 1 row(s) selected.
+>>select converttohex(lower(_ucs2 x'00c0 00d6')) from (values(1))x;
+
+(EXPR)  
+--------
+
+00E000F6
+
+--- 1 row(s) selected.
+>>select converttohex(code_value(_ucs2 x'00c0 00d6')) from (values(1))x;
+
+(EXPR)  
+--------
+
+C0000000
+
+--- 1 row(s) selected.
+>>
+>>--0130
+>>select converttohex(lower(_UCS2 x'0130')) from (values(1))x;
+
+(EXPR)
+------
+
+0069  
+
+--- 1 row(s) selected.
+>>select converttohex(upper(_UCS2 x'0130')) from (values(1))x;
+
+(EXPR)      
+------------
+
+0130        
+
+--- 1 row(s) selected.
+>>
+>>--0131
+>>select converttohex(lower(_UCS2 x'0131')) from (values(1))x;
+
+(EXPR)
+------
+
+0131  
+
+--- 1 row(s) selected.
+>>select converttohex(upper(_UCS2 x'0131')) from (values(1))x;
+
+(EXPR)      
+------------
+
+0049        
+
+--- 1 row(s) selected.
+>>
+>>-- 1e9a -> 0041 02be
+>>-- 00df -> 0053 0053
+>>select char_length(upper(_UCS2 X'1e9a 00DF')) from (values(1))x;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select upper(repeat(_UCS2 X'00DF', 10)) from (values(1))x;
+
+(EXPR)                                                      
+------------------------------------------------------------
+
+SSSSSSSSSSSSSSSSSSSS                                        
+
+--- 1 row(s) selected.
+>>
+>>--both have the same upper/lower case
+>>select code_value(upper(_ucs2 x'0000')) from (values(1))x;
+
+(EXPR)    
+----------
+
+         0
+
+--- 1 row(s) selected.
+>>select code_value(lower(_ucs2 x'FFFD')) from (values(1))x;
+
+(EXPR)    
+----------
+
+     65533
+
+--- 1 row(s) selected.
+>>
+>>--l/r trims
+>>select char_length(ltrim(_ucs2'  abc  ')) from (values(1))x;
+
+(EXPR)    
+----------
+
+         5
+
+--- 1 row(s) selected.
+>>select rtrim(_ucs2'  abc  ') from (values(1))x;
+
+(EXPR)        
+--------------
+
+  abc         
+
+--- 1 row(s) selected.
+>>
+>>--space
+>>select * from (values(1))x where char_length(space(30, iso88591)) = 30;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>select * from (values(1))x where char_length(space(30, ucs2)) = 30;
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>select space(10) from (values(1))x;
+
+(EXPR)    
+----------
+
+          
+
+--- 1 row(s) selected.
+>>select space(10, ucs2) from (values(1))x;
+
+(EXPR)              
+--------------------
+
+                    
+
+--- 1 row(s) selected.
+>>
+>>--replace
+>>select replace(_ucs2'1abcdeab', _ucs2'abcdeab', _ucs2 x'0058') from (values(1))x;
+
+(EXPR)          
+----------------
+
+1X              
+
+--- 1 row(s) selected.
+>>select replace(_ucs2'1abcdeab', _ucs2'abcdeab', _ucs2 x'') from (values(1))x;
+
+(EXPR)          
+----------------
+
+1               
+
+--- 1 row(s) selected.
+>>select replace(_ucs2'abc', _ucs2'z', _ucs2 x'') from (values(1))x;
+
+(EXPR)
+------
+
+abc   
+
+--- 1 row(s) selected.
+>>
+>>--UCS2 column can be used in where clause
+>>select d from tab_ucs2 where d = _ucs2'abc';
+
+--- 0 row(s) selected.
+>>
+>>--negative
+>>
+>>--charset mismatch
+>>select ascii(_ucs2'asdf') from (values(1)) x;
+
+*** ERROR[4106] The character set for the operand of function ASCII must be ISO88591.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into tab_ucs2 values(CHAR(43));
+
+--- 1 row(s) inserted.
+>>
+>>--illegal chars
+>>select char(-1) from (values(1)) x;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
+
+--- 0 row(s) selected.
+>>select char(257) from (values(1)) x;
+
+*** ERROR[8428] The argument to function CHAR is not valid.
+
+--- 0 row(s) selected.
+>>select char(-10, ucs2) from (values(1)) x;
+
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
+
+--- 0 row(s) selected.
+>>select char(65535, ucs2) from (values(1)) x;
+
+*** ERROR[8428] The argument to function CHAR is not valid.
+
+--- 0 row(s) selected.
+>>
+>>-- overflow 
+>>
+>>--ok as 4096 bytes or 2048 UCS2 chars is the upper limit. 682x 3 = 2046 
+>>select char_length(upper(repeat(_ucs2 x'0390', 682))) from (values(1))x;
+
+(EXPR)    
+----------
+
+      2046
+
+--- 1 row(s) selected.
+>>
+>>--should see an overflow error (683x3=2049)
+>>select char_length(upper(repeat(_ucs2 x'0390', 683))) from (values(1))x;
+
+(EXPR)    
+----------
+
+      2049
+
+--- 1 row(s) selected.
+>>
+>>--disabled old func names
+>>cqd ALLOW_UDF 'on';
+
+--- SQL operation complete.
+>>select unicode_value(_ucs2 x'0390', ucs2) from (values(1))x;
+*** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
+
+*** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
+
+*** ERROR[4450] Function TRAFODION.SCH.UNICODE_VALUE is not a built-in function or registered user-defined function.
+
+*** ERROR[4450] Function NEO.UDF.UNICODE_VALUE is not a built-in function or registered user-defined function.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select unicode_char(0390, ucs2) from (values(1))x;
+*** ERROR[1389] Object UNICODE_CHAR does not exist in Trafodion.
+
+*** ERROR[1389] Object UNICODE_CHAR does not exist in Trafodion.
+
+*** ERROR[4450] Function TRAFODION.SCH.UNICODE_CHAR is not a built-in function or registered user-defined function.
+
+*** ERROR[4450] Function NEO.UDF.UNICODE_CHAR is not a built-in function or registered user-defined function.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>cqd ALLOW_UDF 'off';
+
+--- SQL operation complete.
+>>
+>>--replace(), zero length pattern
+>>select replace(_ucs2'abc', _ucs2'', _ucs2 x'') from (values(1))x;
+
+*** ERROR[8428] The argument to function REPLACE is not valid.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- ANSI char matching rules are preserved (i.e., relaxation only done on UCS2 hostvars)
+>>select _ucs2'abc' || '' from (values(1))x;
+
+(EXPR)
+------
+
+abc   
+
+--- 1 row(s) selected.
+>>
+>>select repeat(_ucs2 x'00c0 00d6', 25000) from (values(1))x;
+
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than 32768 octets.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select _iso88591 x'$#' from (values(1))x;
+
+*** ERROR[3402] The format of the ISO88591 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select _iso88591 x'$#' from (values(1))x;
+                     ^ (22 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select _ucs2 x'0a$#' from (values(1))x;
+
+*** ERROR[3402] The format of the UCS2 hexadecimal string literal is not valid.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+select _ucs2 x'0a$#' from (values(1))x;
+                   ^ (20 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--large length values should not cause core-dump (case 10-040218-2346)
+>>select space(2147483647,ucs2) from (values (1)) as x;
+
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than 32768 octets.
+
+*** ERROR[4062] The preceding error actually occurred in function SPACE.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select rpad(N'test',2147483647,N'T') from (values(1)) as x;
+
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than 32768 octets.
+
+*** ERROR[4062] The preceding error actually occurred in function RPAD.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select lpad(N'test',2147483647,N'T') from (values(1)) as x;
+
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than 32768 octets.
+
+*** ERROR[4062] The preceding error actually occurred in function LPAD.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select substring(_ucs2'character set test' from 1 for 2147483647) from (values(1)) as x;
+
+(EXPR)                              
+------------------------------------
+
+character set test                  
+
+--- 1 row(s) selected.
+>>
+>>log;

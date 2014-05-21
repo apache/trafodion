@@ -1,0 +1,202 @@
+README for TRAFCI Samples
+========================
+
+The samples directory contains these files:
+
+sample.sql      - Sample script file that creates a sample database. You can
+                  run this script file using an OBEY command at Trafodion
+                  Command Interface (TRAFCI) prompt.
+                  
+sample.pl       - Sample Perl file that uses the Java Perl module (Java.pm) to
+                  access the database. 
+
+arrayDML.pl     - A Perl example that executes SQL statements and returns the 
+                  results in an array format.
+                  
+sampleTables.pl - Sample Perl file that uses the Java Perl module (Java.pm) to
+                  show table names and row counts. Wildcards can be passed to 
+                  the script to filter desired tables.    
+       
+sampleDDL.py    - Sample Python file that uses Jython (that is, the Java 
+                  implementation of Python) to execute DDL statements.
+
+sampleDML.py    - Sample Python file that uses Jython to execute DML 
+                  statements.
+
+sampleTables.py - Sample Python file that uses Jython to show table names and
+                  row counts. Wildcards can be passed to the script to filter 
+                  desired tables.
+
+I. Prerequisites
+------------------------------------------------------------------------------
+
+1. Install Perl and Python on the client workstation. The Trafodion Command
+   Interface (TRAFCI) supports these versions of Perl and Python:
+
+   Perl version 5.8.8
+   Python version 2.3.4
+
+   If you do not have Perl or Python, please download it from any open source 
+   software vendor.
+    
+   If you have already installed the open source extensions via the 
+   Installation Wizard, please proceed to step 3 of the prerequisites.
+
+2. The TRAFCI Installation Wizard can attempt to automatically download and 
+   install both the Perl JavaServer and Jython (Java implementation of Python) 
+   open source extensions. If you wish to download and install
+   them manually, see the following two URLS:
+     
+   Download and install the Perl Module for Java (Java 4.7) from the following 
+   location    
+       http://search.cpan.org/~metzzo/Java-4.7/Java.pm
+
+   Download and install Jython 2.2 from the following location :
+       http://www.jython.org/download.html
+    
+
+3. The following applies to all the Perl sample files.
+
+   a) Check that settings.pl exists in your bin directory.
+     
+   If the file does not exist, set the following environment variable:
+       TRAFCI_PERL_JSERVER  - Set this to the absolute path of JavaServer.jar. 
+       
+       For E.g.
+       set TRAFCI_PERL_JSERVER=C:\Java-4.7\JavaServer.jar
+          OR
+       export TRAFCI_PERL_JSERVER=<your trafci lib directory>/perl/JavaServer.jar
+
+       
+       Note: Make sure that the Java.pm and JavaArray.pm module files exist 
+             in the TRAFCI or ActivePerl lib directory. If these module files
+             do not exist, the sample.pl file will not execute successfully. 
+             The TRAFCI Installation Wizard tries to automatically download 
+             and install these files. 
+              
+   b) Set the TRAFCI_PERL_JSERVER_PORT environment variable to the port number
+      where the JavaServer will be listening. For example:
+ 
+      set TRAFCI_PERL_JSERVER_PORT=2000
+        OR
+      export TRAFCI_PERL_JSERVER_PORT=2000
+  
+4. Follow these steps for the Python sample files:
+
+   a) Check that settings.py exists in your bin directory.
+
+   b) If the file does not exist, set the TRAFCI_PYTHON_JSERVER environment 
+      variable to the absolute path of jython.jar. For example:
+
+      set TRAFCI_PYTHON_JSERVER=C:\jython\jython.jar
+          OR
+      export TRAFCI_PYTHON_JSERVER=<your trafci lib directory>/python/jython.jar
+
+
+II. How to run the script files
+------------------------------------------------------------------------------
+
+To run sample.sql
+------------------
+
+1. Launch the Trafodion Command Interface (TRAFCI) by invoking trafci.cmd on a
+   Windows client or trafci.sh on a Linux or UNIX client.
+   
+2. At the TRAFCI prompt, enter this OBEY command to run the sample.sql script 
+   file to create the sample database:
+   
+   On Windows:
+
+      obey "<trafci-installation-directory>\samples\sample.sql"
+
+      <trafci-installation-directory> is the directory where you installed 
+      TRAFCI.
+
+   On Linux or UNIX:
+
+      obey "<trafci-installation-directory>/samples/sample.sql"
+
+      <trafci-installation-directory> is the directory where you installed 
+      TRAFCI.
+
+
+To run the Python samples
+--------------------------
+
+1. Modify the connection parameters in this line of the sample files 
+   to reflect the correct values:
+
+   sess.__connect__("USERNAME","PASSWORD","HOSTNAME","PORTNUMBER","DSNAME");
+
+2. Change the current working directory to the bin directory.
+   
+3. On Windows, enter these commands:
+
+   trafci.py ..\samples\sampleDDL.py
+   trafci.py ..\samples\sampleDML.py
+   trafci.py ..\samples\sampleTables.py
+   
+   On Linux or UNIX, enter these commands: 
+ 
+   python trafci.py ../samples/sampleDDL.py
+   python trafci.py ../samples/sampleDML.py
+   python trafci.py ../samples/sampleTables.py
+   
+
+To run the Perl samples: sample.pl and sampleTables.pl
+------------------------------------------------------
+
+Note: If a password contains $ or any special characters, use the backslash 
+      escape sequence (\) before each special character, or put the password
+      within single quotes.
+
+1. Change the current working directory to the bin directory.
+
+2. Run the sample.sql script file in the samples directory to create the 
+   sample database.
+
+3. Modify the connection parameters in this line of the sample files 
+   to reflect the correct values:
+
+   $sess->connect("USERNAME","PASSWORD","HOSTNAME","PORTNUMBER","DSNAME");
+   
+4. To run sample.pl on Linux or UNIX platforms, modify this line to 
+   reflect the correct path for the sample.sql and sample.sql.log files:
+
+   $retval=$sess->executeScript("..\\samples\\sample.sql","..\\samples\\sample.sql.log");
+   
+5. On Windows, enter these commands:
+
+   trafci.pl ..\samples\sample.pl
+   trafci.pl ..\samples\sampleTables.pl
+   
+   On Linux or UNIX, enter these commands:
+
+   perl trafci.pl ../samples/sample.pl
+   perl trafci.pl ../samples/sampleTables.pl
+
+
+To run the Perl samples: arrayDML.pl 
+---------------------------------------------------
+
+1. The TRAFCI Installation Wizard tries to automatically download and install
+   the Perl XML SAX module (XML::Parser::PerlSAX). To install it manually, 
+   see this link:
+   
+   http://search.cpan.org/~kmacleod/libxml-perl-0.08/lib/XML/Parser/PerlSAX.pm
+      
+2. Modify the connection parameters in this line of the sample files to 
+   reflect the correct values:
+
+   $sess->connect("USERNAME","PASSWORD","HOSTNAME","PORTNUMBER","DSNAME");
+   
+3. Run the sample.sql script file in the samples directory to create the 
+   sample database.
+
+4. On Windows, enter these commands:
+ 
+   trafci.pl ..\samples\arrayDML.pl
+   
+   On Linux or UNIX, enter these commands:
+ 
+   perl trafci.pl ../samples/arrayDML.pl

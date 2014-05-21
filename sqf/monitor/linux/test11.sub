@@ -1,0 +1,22 @@
+! Test SeaPilot ProXy w/ process death
+!
+exec {type spx,nowait,nid 2,out SPX02.lst}testspx
+exec {type spx,nowait,name $SPX01, nid 1,out SPX01.lst}testspx
+exec {type spx,nowait,nid 0,out SPX00.lst}testspx
+delay 5
+! 3 SPX processes should be started
+ps {SPX}
+
+! Start Test1 - Dead SPX process test
+event {SPX} 1
+delay 5
+! 2 SPX processes should remain running
+ps {SPX}
+
+! Start Test3 - End test - all SPX processes exit
+event {SPX} 10
+delay 5
+! All SPX processes should have exited
+ps {SPX}
+
+exit !

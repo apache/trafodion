@@ -1,0 +1,156 @@
+-- tests for access to external native hbase tables.
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+log LOG022 clear;
+
+cqd hbase_native_iud 'ON';
+cqd hbase_filter_preds 'ON';
+
+drop hbase table T022HBT1;
+create hbase table T022HBT1 (column family 'cf');
+
+drop table if exists t022t1;
+create table if not exists t022t1 (a int not null primary key, b int not null);
+
+insert into hbase."_CELL_".t022hbt1 values ('1', 'cf', '1a', -1, '101');
+insert into hbase."_ROW_".t022hbt1 values ('2', column_create('cf:2b', '201')),
+                              ('1', column_create('cf:1b', '102'));
+insert into hbase."_ROW_".t022hbt1 values 
+       ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
+
+select left(row_id, 10) row_id, column_display(column_details, 40) column_details
+           from hbase."_ROW_".t022hbt1;
+select left(row_id, 10) row_id, left(column_display(column_details), 40) 
+           from hbase."_ROW_".t022hbt1;
+select left(row_id, 10) row_id, left(column_display(column_details, ('cf:2b', 'cf:1b')), 40) 
+           from hbase."_ROW_".t022hbt1;
+
+-- no rows updated. where pred fails.
+update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a', 
+          (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
+   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '3021';
+
+-- no rows updated. column not found in set clause.
+update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a', 
+          (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
+   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+
+begin work;
+-- one row updated
+update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a', 
+          (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
+   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+
+select left(row_id, 10) row_id, left(column_display(column_details), 50) 
+           from hbase."_ROW_".t022hbt1;
+rollback work;
+
+select left(row_id, 10) row_id, left(column_display(column_details), 50) 
+           from hbase."_ROW_".t022hbt1;
+
+begin work;
+-- one row updated
+update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a', 
+          (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
+   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+
+select left(row_id, 10) row_id, left(column_display(column_details), 50) 
+           from hbase."_ROW_".t022hbt1;
+commit work;
+
+select left(row_id, 10) row_id, left(column_display(column_details), 50) 
+           from hbase."_ROW_".t022hbt1;
+
+begin work;
+insert into hbase."_ROW_".t022hbt1 values 
+       ('4', column_create(('cf:4a', '301'), ('cf:4b', '302')));
+select left(row_id, 10) row_id, left(column_display(column_details), 40) 
+           from hbase."_ROW_".t022hbt1 where row_id = '4';
+rollback work;
+select left(row_id, 10) row_id, left(column_display(column_details), 40) 
+           from hbase."_ROW_".t022hbt1 where row_id = '4';
+
+select left(column_lookup (column_details, 'cf:1a'), 20) from hbase."_ROW_".t022hbt1;
+
+select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
+  where column_lookup (column_details, 'cf:3b') = '302';
+
+select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
+  where column_lookup (column_details, 'cf:3a') = '301' 
+     and column_lookup (column_details, 'cf:3b') = '302';
+
+select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
+  where column_lookup (column_details, 'cf:3a') = '3010103' 
+     and column_lookup (column_details, 'cf:3b') = '302';
+
+select left(column_lookup (column_details, 'cf:3c'), 20) from hbase."_ROW_".t022hbt1
+  where column_lookup (column_details, 'cf:3b') = '3020';
+
+select left(column_lookup (column_details, 'cf:3c'), 20) from hbase."_ROW_".t022hbt1
+  where column_lookup (column_details, 'cf:3b') = '302';
+
+select column_lookup (column_details, 'cf:3a', cast as int),
+       column_lookup (column_details, 'cf:3a', cast as int) + 1 
+  from hbase."_ROW_".t022hbt1;
+
+select column_lookup (column_details, 'cf:3a', cast as int),
+       column_lookup (column_details, 'cf:3a', cast as int) + 1 
+  from hbase."_ROW_".t022hbt1
+   where 
+       column_lookup (column_details, 'cf:3b', cast as int) = 302;
+
+begin work;
+delete from hbase."_ROW_".t022hbt1 where row_id = '3';
+select left(row_id, 10) from hbase."_ROW_".t022hbt1;
+commit work;
+select left(row_id, 10) from hbase."_ROW_".t022hbt1;
+
+delete columns ('cf:1a') from hbase."_ROW_".t022hbt1  where row_id  = '1';
+select left(row_id, 10) row_id, column_display(column_details, 40) column_details
+           from hbase."_ROW_".t022hbt1;
+
+delete from hbase."_ROW_".t022hbt1;
+select count(*) from hbase."_ROW_".t022hbt1;
+
+-- operations between trafodion and hbase tables
+begin work;
+insert into t022t1 values (1, 100);
+insert into hbase."_ROW_".t022hbt1 values ('1', column_create('cf:a', '100'));
+select count(*) from t022t1;
+select count(*) from hbase."_ROW_".t022hbt1;
+rollback work;
+select count(*) from t022t1;
+select count(*) from hbase."_ROW_".t022hbt1;
+
+insert into hbase."_ROW_".t022hbt1 values 
+       ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
+update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022')
+  where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 3011;
+update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022')
+  where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 301;
+select left(row_id, 10) row_id, left(column_display(column_details), 40) 
+           from hbase."_ROW_".t022hbt1;
+
+
+-- negative tests
+delete from hbase."_CELL_".t022hbt1;
+insert into hbase."_ROW_".t022hbt1 values ('2', column_create(':b', '201'));
+
+log;

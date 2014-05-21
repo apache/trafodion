@@ -1,0 +1,630 @@
+-- Test: TEST005 (Core)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Index access in join, groupby, index only access,
+--                union, distinct aggregate, and elimination of groupby.
+--                IS NULL predicate on various data types.
+-- Expected files: EXPECTED005, EXPECTED005.MP
+-- Known diff files: DIFF005.KNOWN - returned errors are not as expected
+-- Table created: t005t1, t005t2, t005t3, t005ut2
+-- Limitations:
+-- To do: - Fix the error handling problem and remove known diff files
+--        - Remove DIFF005.KNOWN.NSK when Unicode is supported on MX tables
+--          while Unicode may never be supported on MP tables
+--          (Done 05/19/02)
+--        - There are number of CQS incompatible errors in expected files
+--        - VSBB side-tree insert is used in index creation on NT, but
+--          need ways to verify.
+-- Revision history:
+--     (1/28/02) - Copied from fullstack/TEST005
+--     (2/15/02) - Selectively merged tests in fullstack/TESTS005U:
+--                 only NCHAR related tests were included.
+--     (3/04/02) - Comment out Unicode tests for MP tables
+--     (5/19/02) - Removed DIFF005.KNOWN.NSK as unicode is supported.
+
+-- test of several optimization rules and the corresponding executor parts:
+-- - index access
+-- - elimination of groupbys
+-- - transformation of distinct aggregates into regular aggregates
+-- - use of orderings for unions and groupbys
+-- Force the execution of the rules with CONTROL QUERY SHAPE.
+-- Many of the queries will NOT run with the file system simulator.
+
+?section ddl
+
+drop index t005x1b;
+drop index t005x1c;
+drop index t005x1d;
+drop index t005x2a;
+drop index t005x2b;
+drop table t005t1;
+drop table t005t2;
+
+drop index t005t3a;
+drop index t005t3b;
+drop index t005t3c;
+drop index t005t3d;
+drop index t005t3e;
+drop index t005t3f;
+drop index t005t3g;
+drop index t005t3h;
+drop table t005t3;
+
+drop index t005t4x1;
+drop table t005t4;
+
+#ifMX
+drop table t005ut2;
+#ifMX
+
+?section crdb t005t1, t005t2, t005t3, t005t4
+control query default POS 'OFF';
+log LOG005 clear;
+
+--
+-- create tables and update statistics
+--
+create table t005t1(a int not null,
+b int not null,
+c int,
+d int,
+primary key (a,b) );
+
+create table t005t2(a int,
+b int not null,
+c char(10) not null,
+d int,
+primary key (c) );
+
+create table t005t3(a int, b decimal(1), c char(3), d varchar(4),
+	            e real, f date,
+                    g time, h interval year to month);
+
+create table t005t4 (item_nbr  integer signed not null not droppable,
+                     order_dept_nbr  smallint signed,
+                     acct_dept_nbr  smallint signed,
+                     primary_desc  char(20),
+                     type_code  char(2),
+                     subclass_code  char(2),
+                     fineline  char(4),
+                     upc  char(13),
+                     vendor_nbr  char(6) not null not droppable,
+                     activity_cd  char(1) not null not droppable,
+                     primary key (item_nbr asc) not droppable );
+
+create index t005t3a on t005t3(a);
+create index t005t3b on t005t3(b);
+create index t005t3c on t005t3(c);
+create index t005t3d on t005t3(d);
+create index t005t3e on t005t3(e);
+create index t005t3f on t005t3(f);
+create index t005t3g on t005t3(g);
+create index t005t3h on t005t3(h);
+create index t005t4x1 on t005t4 (acct_dept_nbr,
+                                 type_code,
+                                 upc,
+                                 primary_desc,
+                                 activity_cd);
+
+#ifMX
+create table t005ut2(a int,
+b int not null,
+c nchar(10) not null,
+d int,
+primary key (c) );
+#ifMX
+
+?section explain
+
+prepare explainIt from
+  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
+         substring(operator,1,20) operator,        
+         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,        
+         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,        
+         substring
+         (substring(tname from (1+locate('.',tname))),
+         (1+locate('.',substring(tname from (1+locate('.',tname))))),
+         10
+        ) tab_name        
+         from table (explain(NULL,'XX'))
+         order by 1 desc;
+
+?section dml
+
+-- populate tables
+--
+-- for now create index after the inserts
+--create index t005x1b on t005t1(b);
+--create index t005x1c on t005t1(c);
+--create index t005x1d on t005t1(d);
+--create index t005x2a on t005t2(a);
+--create index t005x2b on t005t2(b);
+
+insert into t005t1 values (1,2,3,4);    
+insert into t005t1 values (1,22,33,44);
+insert into t005t1 values (11,12,13,14);
+select * from t005t1;
+-- 3 result rows
+insert into t005t2 values (1,   1,'1-1-1',1);
+insert into t005t2 values (2,   1,'2-1-2',2);
+insert into t005t2 values (3,   3,'3-3-3',3);
+insert into t005t2 values (3,   3,'3-3-4',4);
+insert into t005t2 values (4,   4,'4-4-5',5);
+insert into t005t2 values (5,   5,'5-5-6',6);
+insert into t005t2 values (5,   6,'5-6-7',7);
+insert into t005t2 values (5,   7,'5-7-8',8);
+insert into t005t2 values (6,   7,'6-7-9',9);
+insert into t005t2 values (NULL,7,'?-7-?',NULL);
+insert into t005t2 values (NULL,8,'?-8-6',6);
+insert into t005t2 values (NULL,9,'?-9-?',NULL);
+select * from t005t2;
+-- 12 result rows
+
+insert into t005t3 values (1, 1, 'a', 'a', 1, date '1998-08-04',
+                           time '13:09:45', interval '98-08' year to month);
+insert into t005t3 default values;
+select * from t005t3;
+-- 2 result rows
+
+
+-- populate indexes
+create index t005x1b on t005t1(b);
+create index t005x1c on t005t1(c);
+create index t005x1d on t005t1(d);
+create index t005x2a on t005t2(a);
+
+#ifndef SEABASE_REGRESS
+-- This create should fail.
+-- To be enabled in seabase wjhen tx support is available
+create unique index t005x2b on t005t2(b);
+#endif
+
+-- This create should succeed
+create index t005x2b on t005t2(b);
+
+#ifMX
+insert into t005ut2 values (1,   1,N'1-1-1',1);
+insert into t005ut2 values (2,   1,N'2-1-2',2);
+insert into t005ut2 values (3,   3,N'3-3-3',3);
+insert into t005ut2 values (3,   3,N'3-3-4',4);
+insert into t005ut2 values (4,   4,N'4-4-5',5);
+insert into t005ut2 values (5,   5,N'5-5-6',6);
+insert into t005ut2 values (5,   6,N'5-6-7',7);
+insert into t005ut2 values (5,   7,N'5-7-8',8);
+insert into t005ut2 values (6,   7,N'6-7-9',9);
+insert into t005ut2 values (NULL,7,N'?-7-?',NULL);
+insert into t005ut2 values (NULL,8,N'?-8-6',6);
+insert into t005ut2 values (NULL,9,N'?-9-?',NULL);
+select * from t005ut2;
+-- 12 result rows
+#ifMX
+
+--
+-- test indexonly access
+--
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t1','t005x1b');
+#else
+control query shape pa(scan('t005t1','t005x1b'));
+#endif
+select b from t005t1;
+-- (2), (12), (22) in this order
+-- 
+select 1 from t005t1;
+-- 3 result rows
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t1','t005x1c');
+#else
+control query shape pa(scan('t005t1','t005x1c'));
+#endif
+select c+3 from t005t1;
+-- (6), (16), (36) in this order
+select c/c from t005t1 where c = c;
+-- 3 rows with 1.0000...
+select a,c from t005t1;
+-- (1,3), (11,13), (1,33) ordered by c
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t1');
+#else
+control query shape pa(scan('t005t1'));
+#endif
+select a-b from t005t1;
+-- (-1),(-1),(-21)
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t2','t005x2a');
+#else
+control query shape pa(scan('t005t2','t005x2a'));
+#endif
+select a from t005t2;
+-- 12 rows, 3 NULL values
+--
+-- join of two indexes
+--
+#ifdef SEABASE_REGRESS
+control query shape join(cut,cut);
+#else
+control query shape join(pa(cut),pa(cut));
+#endif
+select c,d from t005t1;
+-- (3,4), (13,14), (33,44)
+-- 3 result rows
+select c+d from t005t1;
+-- (7), (77), (27)
+select c+3, d*4-a from t005t1;
+-- (6,15), (36,175), (16,45)
+select c from t005t1 order by d;
+-- (3), (13), (33)
+select d from t005t1 where c > 3;
+-- (14), (44)
+select a,b from t005t2;
+-- 12 rows
+select a,b from t005t2 where b = 7;
+-- (5,7), (6,7), (?,7)
+--
+-- use of index for groupby
+--
+#ifdef SEABASE_REGRESS
+control query shape sort_groupby(tsj(scan,scan));
+#else
+control query shape sort_groupby(tsj(pa(scan),pa(scan)));
+#endif
+select c,max(d) from t005t1 group by c;
+-- 3 result rows (3,4),(13,14),(33,44)
+-- indexonly access with groupby
+#ifdef SEABASE_REGRESS
+control query shape sort_groupby(scan);
+#else
+control query shape pa(sort_groupby(scan));
+#endif
+select c,count(*) from t005t1 group by c;
+-- 3 result rows (3,1),(13,1),(33,1)
+select a,count(*) from t005t1 group by a;
+-- 2 rows (1,2),(11,1)
+--
+-- use of index for join
+--
+#ifdef SEABASE_REGRESS
+control query shape join(scan('x','t005x1b'),scan('y'));
+#else
+control query shape join(pa(scan('x','t005x1b')),pa(scan('y')));
+#endif
+select x.b, y.c from t005t1 x join t005t1 y on x.a=y.a;
+-- 5 rows (2,3),(2,33),(12,13),(22,3),(22,33)
+#ifdef SEABASE_REGRESS
+control query shape join(scan('x','t005x1b'),scan('y','t005x1c'));
+#else
+control query shape join(pa(scan('x','t005x1b')),
+                         pa(scan('y','t005x1c')));
+#endif
+select x.b, y.c from t005t1 x join t005t1 y on x.b=y.b;
+-- 3 rows (2,3),(22,33),(12,13)
+#ifdef SEABASE_REGRESS
+control query shape join(scan('t005t1','t005x1c'),scan('t005t2'));
+#else
+control query shape join(pa(scan('t005t1','t005x1c')),
+                         pa(scan('t005t2')));
+#endif
+select t005t1.c,t005t2.*
+from t005t1 join t005t2 on t005t1.a=t005t2.a and t005t1.c > t005t2.d;
+-- 2 rows (3,1,1,'1-1-1',1), (33,1,1,'1-1-1',1)
+#ifdef SEABASE_REGRESS
+control query shape groupby(join(scan('t005t1','t005x1c'),
+                                 scan('t005t2')));
+#else
+control query shape groupby(join(pa(scan('t005t1','t005x1c')),
+                                 pa(scan('t005t2'))));
+#endif
+
+select distinct t005t2.*
+from t005t1 join t005t2 on t005t1.a=t005t2.a and t005t1.c > t005t2.d;
+-- 1 row (1,1,'1-1-1',1)
+--
+-- union all, union, ordered union
+--
+#ifdef SEABASE_REGRESS
+control query shape union(scan('t005t1','t005x1b'),
+                          scan('t005t1','t005x1d'));
+#else
+control query shape union(pa(scan('t005t1','t005x1b')),
+                          pa(scan('t005t1','t005x1d')));
+#endif
+select b from t005t1 union all select d from t005t1;
+-- 6 rows (2),(12),(22),(4),(44),(14)
+#ifdef SEABASE_REGRESS
+control query shape groupby(union(scan('t005t1','t005x1c'),
+                                  scan('t005t1','t005x1c')));
+#else
+control query shape groupby(union(pa(scan('t005t1','t005x1c')),
+                                  pa(scan('t005t1','t005x1c'))));
+#endif
+
+select c from t005t1 union select a from t005t1;
+-- 5 rows (3),(33),(13),(1),(11)
+-- no sort should be needed for the following
+control query shape union(cut,cut);
+select * from (select c from t005t1 union all select a from t005t1) as t(y)
+where y > 1 order by y;
+-- 4 rows (3),(11),(13),(33) in this order
+control query shape groupby(union(cut,cut));
+select * from (select b+1 from t005t1 union select c from t005t1) as t(y)
+where y between 3 and 13 order by y;
+-- 2 rows (3),(13) in this order
+
+control query shape sort_groupby(union(cut,cut));
+select y,sum(z)
+from (select b+1,b from t005t1 union all select c, a+1 from t005t1) as t(y,z)
+group by y having count(*) > 1 order by y;
+-- 2 rows (3,4),(13,24) in this order
+--
+-- distinct aggregates
+--
+control query shape cut;
+select count(distinct a) from t005t2;
+-- 6
+select max(distinct c) from t005t2;
+-- '?-9-?'
+select min(distinct d) + max(distinct a-b+5) * sum(d-a) from t005t2;
+-- 67 (calculated from 1 + 6 * 11)
+select count(distinct a) from t005t2 group by b;
+-- 8 rows: (2),(1),(1),(1),(1),(2),(0),(0)
+select count(distinct b) from t005t2 group by a;
+-- 7 rows: (1),(1),(1),(1),(3),(1),(3)
+select a+3,count(distinct b),max(distinct d) from t005t2 group by a;
+-- 7 rows: (4,1,1),(5,1,2),(6,1,4),(7,1,5),(8,3,8),(9,1,9),(?,3,6)
+select count(distinct b),sum(distinct b),sum(distinct b)/count(distinct b)
+from t005t2 group by a;
+-- 7 rows: (1,1,1),(1,1,1),(1,3,3),(1,4,4),(3,18,6),(1,7,7),(3,24,8)
+
+#ifMX
+select max(distinct c) from t005ut2;
+-- '?-9-?'
+#ifMX
+
+-- negative test, multiple distincts aren't implemented yet
+select sum(distinct a), count(distinct b) from t005t2 group by d;
+-- this will work after common item subexpressions are implemented
+select sum(distinct a+b), count(distinct a+b), max(c) from t005t2 group by d;
+
+select distinct sum(distinct a) from t005t2 group by b;
+-- 5 rows: (3),(4),(5),(11),(?)
+
+-- TBF: binder support for count(distinct *)
+-- select count(distinct *), sum(t005t1.a * t005t2.a)  from t005t1 cross join t005t2;
+-- ??
+--
+-- testing elimination of unnecessary groupbys
+--
+#ifdef SEABASE_REGRESS
+control query shape mvi(scan);
+#else
+control query shape mvi(pa(scan));
+#endif
+
+-- TBF: uniqueness constraints are not always recognized correctly
+--      (several of the queries below fail)
+
+select distinct a,b from t005t1;
+-- 3 rows: (1,2),(11,12),(1,22)
+select count(distinct c) from t005t2;
+-- 12
+select a,b,c,sum(d) from t005t1 group by a,b,c;
+
+select a,sum(distinct b),max(distinct b),count(b) from t005t2 group by a;
+-- 7 rows: (1,1,1,1), (2,1,1,1),(3,3,3,2),(4,4,4,1),
+--         (5,18,7,3),(6,7,7,1),(?,24,9,3)
+
+#ifMX
+select count(distinct c) from t005ut2;
+-- 12
+#ifMX
+
+#ifdef SEABASE_REGRESS
+control query shape mvi(join(scan,scan));
+#else
+control query shape mvi(join(pa(scan),pa(scan)));
+#endif
+
+select xa,yb,count(*)
+from (select * from t005t1 x cross join t005t1 y) as j(xa,xb,xc,xd,ya,yb,yc,yd)
+group by xa,xb,ya,yb;
+-- 9 rows, counts are all 1
+
+select a1,c2,count(*)
+from (select * from t005t1,t005t2) as t(a1,b1,c1,d1,a2,b2,c2,d2)
+where a1 > 1 and b2 < 5
+group by a1,b1,c2;
+-- 5 rows (11,'1-1-1',1),(11,'2-1-2',1),(11,'3-3-3',1),
+--        (11,'3-3-4',1),(11,'4-4-5',1)
+
+#ifdef SEABASE_REGRESS
+control query shape mvi(scan);
+#else
+control query shape mvi(pa(scan));
+#endif
+select a,min(c),avg(d+4) from t005t1 group by a,b;
+-- 3 rows (1,3,8), (1,33,48), (11,13,18)
+
+
+-- queries to test IS NULL predicate on nullable keys.
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3a');
+#else
+control query shape pa(scan('t005t3', 't005t3a'));
+#endif
+
+select a from t005t3 where a is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3b');
+#else
+control query shape pa(scan('t005t3', 't005t3b'));
+#endif
+select b from t005t3 where b is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3c');
+#else
+control query shape pa(scan('t005t3', 't005t3c'));
+#endif
+select c from t005t3 where c is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3d');
+#else
+control query shape pa(scan('t005t3', 't005t3d'));
+#endif
+select d from t005t3 where d is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3e');
+#else
+control query shape pa(scan('t005t3', 't005t3e'));
+#endif
+select e from t005t3 where e is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3f');
+#else
+control query shape pa(scan('t005t3', 't005t3f'));
+#endif
+select f from t005t3 where f is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3g');
+#else
+control query shape pa(scan('t005t3', 't005t3g'));
+#endif
+select g from t005t3 where g is null;
+
+#ifdef SEABASE_REGRESS
+control query shape scan('t005t3', 't005t3h');
+#else
+control query shape pa(scan('t005t3', 't005t3h'));
+#endif
+select h from t005t3 where h is null;
+
+#ifMX
+----- test for OR optimization
+control query shape without enforcers union(scan, scan);
+select * from t005t3 where a=5 or b=2;
+control query shape cut;
+#ifMX
+
+----- test for key access into the basetable
+----- should be a filescan unique into the basetable
+control query shape nested_join(cut,cut);
+
+prepare xx from
+select
+  'D482AC77WMH6002',
+  item_nbr ,
+  4
+from
+  t005t4
+where
+  vendor_nbr in ('074690','100305')
+  and
+  not (
+    (
+      (order_dept_nbr = 82 and subclass_code = '00')
+      and
+      fineline in ('0160') 
+    )
+    or (
+      (order_dept_nbr = 82 and subclass_code = '00')
+      and
+      fineline in ('0170')
+    )
+    or (
+      (order_dept_nbr = 90 and subclass_code = '00')
+      and
+      fineline in ('1342')
+    )
+    or (
+      (order_dept_nbr = 90 and subclass_code = '00')
+      and
+      fineline in ('1344') 
+    )
+    or (
+      (order_dept_nbr = 90 and subclass_code = '00')
+      and
+      fineline in ('1351')
+    )
+    or (
+      (order_dept_nbr = 92 and subclass_code = '00')
+      and
+      fineline in ('3751')
+    )
+  )
+  and
+  substr (upc, 4, 5) in ('00000','00001','00082','00091','00092','0699','12114','12919','13130','18715','19000','19582','21000','24000','28400','29000','40001','41000','41129','43000','44000','44700','46800','49900','50049','54400','59283','62111','70221','70346','71040','71159','71537','71871','71921','73510','74653','85844','87684','93649','94522')
+  and
+  vendor_nbr in ('490102','339457')
+;
+
+execute explainit;
+
+control query shape cut;
+
+-- verify fix to genesis case 10-070628-2258 solution 10-070610-5412
+delete from t005t1;
+-- ffg used to get error 8421 null cannot be assigned to a not null column.
+select count(distinct c), count(*) from t005t1; -- should return 0 0
+select avg(distinct c), count(*) from t005t1; -- should return ? 0
+select sum(distinct c), count(*) from t005t1; -- should return ? 0
+select count(distinct c), count(d) from t005t1; -- should return 0 0
+select avg(distinct c), count(d) from t005t1; -- should return ? 0
+select sum(distinct c), count(d) from t005t1; -- should return ? 0
+
+select count(distinct c), sum(d) from t005t1; -- should return 0 ?
+select avg(distinct c), sum(d) from t005t1; -- should return ? ?
+select sum(distinct c), sum(d) from t005t1; -- should return ? ?
+select max(distinct c), sum(d) from t005t1; -- should return ? ?
+select min(distinct c), sum(d) from t005t1; -- should return ? ?
+select max(distinct c), count(*) from t005t1; -- should return ? 0
+select min(distinct c), count(*) from t005t1; -- should return ? 0
+
+select sum(a) from t005t1; -- should return ?
+select avg(a) from t005t1; -- should return ?
+select max(a) from t005t1; -- should return ?
+select min(a) from t005t1; -- should return ?
+select count(a) from t005t1; -- should return 0
+
+select sum(distinct a) from t005t1; -- should return ?
+select avg(distinct a) from t005t1; -- should return ?
+select max(distinct a) from t005t1; -- should return ?
+select min(distinct a) from t005t1; -- should return ?
+select count(distinct a) from t005t1; -- should return 0
+
+-- verify fix for case 10-081203-5622, soln 10-081203-7701
+control query shape groupby(esp_exchange(groupby(cut))); -- force parallel plan
+
+-- used to get error 8421 NULL cannot be assigned to a NOT NULL column.
+select count(distinct c), count(d) from t005t1; 
+-- should now get 0 0
+
+control query shape cut;
+
+?section clnup
+control query shape cut;
+
+obey TEST005(ddl);
+
+log;

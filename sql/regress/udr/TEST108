@@ -1,0 +1,186 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set envvar SQLMX_REGRESS 1;      -- To enable #ifNT and #ifNSK
+set pattern $$QUOTE$$ '''';      -- Needed for metadata insert of DLL path
+
+#ifNT
+set pattern $$DLL2$$ TEST002.dll;
+set pattern $$DLL1$$ TEST001.dll;
+#ifNT
+#ifNSK
+set pattern $$DLL2$$ TEST002.so;
+set pattern $$DLL1$$ TEST001.so;
+#ifNSK
+
+cd $$REGRRUNDIR$$;
+
+--CQD COMP_BOOL_191 'ON';
+drop table docs;
+drop table docs_part;
+drop table clicks ;
+drop table_mapping function tokenizer1 ;
+drop table_mapping function sessionize108 ;
+drop library TEST108;
+
+log LOG108 clear;
+
+create table docs
+  ( seqno int not null not droppable primary key, text_data varchar(4000) );
+
+create table docs_part
+  ( seqno int not null not droppable primary key, text_data varchar(4000) )
+ location $$partition$$
+ hash2 partition
+ (
+     add location $$partition1$$
+   , add location $$partition2$$
+   , add location $$partition3$$
+ );
+
+create table clicks
+  ( seqno int not null primary key, userid varchar(40), ts timestamp(6),
+    ipaddr char(20) )
+ location $$partition$$
+ hash2 partition
+ (
+     add location $$partition1$$
+   , add location $$partition2$$
+   , add location $$partition3$$
+ );
+
+create library TEST108 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL2$$ $$QUOTE$$;
+
+create table_mapping function tokenizer1(inval char(1))
+returns (outval varchar(40))
+external name 'TOKENIZER1'
+library TEST108;
+
+create table_mapping function sessionize108(gap int)
+returns (ts timestamp(6), userid varchar(40), sessionid int)
+external name 'SESSIONIZE'
+library TEST108;
+
+cqd DEF_NUM_SMP_CPUS '1' ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs_part ), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from 
+docs), ' ')) XO(token);
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs), ' ')) XO(token)
+where token = 'haha' ;
+
+
+prepare s1 from
+select * from 
+UDF(tokenizer1( ' ')) XO;
+
+prepare s1 from
+select token from 
+UDF(tokenizer1(TABLE(select text_data from docs), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs), ' ')) XO ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs) inp, ' ')) XO ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs) inp(text), ' ')) XO ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs_part partition by text_data), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs as tt partition by 1), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs partition by 1 order by 1), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs partition by text_data order by text_data), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs as tt NO PARTITION), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs NO PARTITION), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs REPLICATE PARTITION), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs NO PARTITION order by 1 ASC), ' ')) XO(token) ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs REPLICATE PARTITION order by 1 DESC), ' ')) XO(token) ;
+
+
+cqd def_num_smp_cpus '4' ;
+
+prepare s1 from
+select token, count(*) from 
+UDF(tokenizer1(TABLE(select text_data from docs_part <<+ cardinality 10e8 >>), ' ')) XO(token)
+group by token ;
+
+prepare s1 from
+select * from 
+UDF(tokenizer1(TABLE(select text_data from docs_part partition by text_data), ' ')) XO(token) ;
+
+prepare s1 from
+SELECT ts, userid, sessionid 
+FROM UDF(sessionize108 
+(TABLE(SELECT userid, ts FROM clicks <<+ cardinality 10e8 >> PARTITION BY userid ORDER BY ts),60)) XO;
+
+prepare s1 from
+SELECT ts, userid, sessionid 
+FROM UDF(sessionize108 
+(TABLE(SELECT userid, ts FROM clicks PARTITION BY userid),60)) XO
+;
+
+prepare s1 from
+select token, count(*) from
+UDF(tokenizer1(TABLE(select * from (values
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo1.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo2.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo3.txt'),
+(trim($$QUOTE$$ $$scriptsdir$$ $$QUOTE$$) || '/udr/romeo4.txt')
+) as val(text_data) ), ' ')) XO(token)
+group by token
+order by 2,1;
+
+log;

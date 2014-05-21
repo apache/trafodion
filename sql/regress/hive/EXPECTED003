@@ -1,0 +1,535 @@
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>cqd attempt_esp_parallelism 'off';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY 'OFF';
+
+--- SQL operation complete.
+>>cqd hive_max_esps  '1';
+
+--- SQL operation complete.
+>>cqd PARALLEL_NUM_ESPS '1';
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '25' ;
+
+--- SQL operation complete.
+>>cqd mode_seahive 'ON';
+
+--- SQL operation complete.
+>>
+>>prepare s from insert into hive.ins_customer select * from hive.customer;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 100000 row(s) inserted.
+>>select count(*) from hive.customer;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_customer;
+
+(EXPR)              
+--------------------
+
+              100000
+
+--- 1 row(s) selected.
+>>
+>>prepare s from insert into hive.ins_promotion select * from hive.promotion;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 300 row(s) inserted.
+>>select count(*) from hive.promotion;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_promotion;
+
+(EXPR)              
+--------------------
+
+                 300
+
+--- 1 row(s) selected.
+>>
+>>--try new HIVE SYNTAX
+>>--------------
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>insert into TABLE hive.ins_customer_address select * from hive.customer_address;
+
+--- 50000 row(s) inserted.
+>>
+>>select count(*) from hive.customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>insert OVERWRITE TABLE hive.ins_customer_address select * from hive.customer_address;
+
+--- 50000 row(s) inserted.
+>>
+>>select count(*) from hive.customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>--execute  again
+>>insert OVERWRITE TABLE hive.ins_customer_address select * from hive.customer_address;
+
+--- 50000 row(s) inserted.
+>>
+>>select count(*) from hive.customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>-------------------
+>>
+>>prepare s from insert into TABLE hive.ins_store select * from hive.store;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 12 row(s) inserted.
+>>select count(*) from hive.store;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_store;
+
+(EXPR)              
+--------------------
+
+                  12
+
+--- 1 row(s) selected.
+>>-- Now for the following inserts don't specify a schema
+>>prepare s from insert into ins_store_sales select * from store_sales;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 2880404 row(s) inserted.
+>>select count(*) from hive.store_sales;
+
+(EXPR)              
+--------------------
+
+             2880404
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_store_sales;
+
+(EXPR)              
+--------------------
+
+             2880404
+
+--- 1 row(s) selected.
+>>
+>>prepare s from insert into ins_customer_demographics select * from customer_demographics;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 1920800 row(s) inserted.
+>>select count(*) from hive.customer_demographics;
+
+(EXPR)              
+--------------------
+
+             1920800
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_customer_demographics;
+
+(EXPR)              
+--------------------
+
+             1920800
+
+--- 1 row(s) selected.
+>>
+>>prepare s from insert into hive.ins_date_dim select * from hive.date_dim;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 73049 row(s) inserted.
+>>select count(*) from hive.date_dim;
+
+(EXPR)              
+--------------------
+
+               73049
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_date_dim;
+
+(EXPR)              
+--------------------
+
+               73049
+
+--- 1 row(s) selected.
+>>
+>>prepare s from insert into hive.ins_time_dim select * from hive.time_dim;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 86400 row(s) inserted.
+>>select count(*) from hive.time_dim;
+
+(EXPR)              
+--------------------
+
+               86400
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_time_dim;
+
+(EXPR)              
+--------------------
+
+               86400
+
+--- 1 row(s) selected.
+>>
+>>prepare s from insert into hive.ins_item select * from item;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 18000 row(s) inserted.
+>>select count(*) from hive.item;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_item;
+
+(EXPR)              
+--------------------
+
+               18000
+
+--- 1 row(s) selected.
+>>
+>>prepare s from insert into ins_household_demographics select * from hive.household_demographics;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 7200 row(s) inserted.
+>>select count(*) from hive.household_demographics;
+
+(EXPR)              
+--------------------
+
+                7200
+
+--- 1 row(s) selected.
+>>select count(*) from hive.ins_household_demographics;
+
+(EXPR)              
+--------------------
+
+                7200
+
+--- 1 row(s) selected.
+>>
+>>--select [first 100] * from ins_date_dim order by d_date_sk;
+>>select [first 100] * from ins_time_dim order by t_time_sk;
+
+T_TIME_SK    T_TIME_ID                  T_TIME       T_HOUR       T_MINUTE     T_SECOND     T_AM_PM                    T_SHIFT                    T_SUB_SHIFT                T_MEAL_TIME
+-----------  -------------------------  -----------  -----------  -----------  -----------  -------------------------  -------------------------  -------------------------  -------------------------
+
+          0  AAAAAAAABAAAAAAA                     0            0            0            0  AM                         third                      night                      ?                        
+          1  AAAAAAAACAAAAAAA                     1            0            0            1  AM                         third                      night                      ?                        
+          2  AAAAAAAADAAAAAAA                     2            0            0            2  AM                         third                      night                      ?                        
+          3  AAAAAAAAEAAAAAAA                     3            0            0            3  AM                         third                      night                      ?                        
+          4  AAAAAAAAFAAAAAAA                     4            0            0            4  AM                         third                      night                      ?                        
+          5  AAAAAAAAGAAAAAAA                     5            0            0            5  AM                         third                      night                      ?                        
+          6  AAAAAAAAHAAAAAAA                     6            0            0            6  AM                         third                      night                      ?                        
+          7  AAAAAAAAIAAAAAAA                     7            0            0            7  AM                         third                      night                      ?                        
+          8  AAAAAAAAJAAAAAAA                     8            0            0            8  AM                         third                      night                      ?                        
+          9  AAAAAAAAKAAAAAAA                     9            0            0            9  AM                         third                      night                      ?                        
+         10  AAAAAAAALAAAAAAA                    10            0            0           10  AM                         third                      night                      ?                        
+         11  AAAAAAAAMAAAAAAA                    11            0            0           11  AM                         third                      night                      ?                        
+         12  AAAAAAAANAAAAAAA                    12            0            0           12  AM                         third                      night                      ?                        
+         13  AAAAAAAAOAAAAAAA                    13            0            0           13  AM                         third                      night                      ?                        
+         14  AAAAAAAAPAAAAAAA                    14            0            0           14  AM                         third                      night                      ?                        
+         15  AAAAAAAAABAAAAAA                    15            0            0           15  AM                         third                      night                      ?                        
+         16  AAAAAAAABBAAAAAA                    16            0            0           16  AM                         third                      night                      ?                        
+         17  AAAAAAAACBAAAAAA                    17            0            0           17  AM                         third                      night                      ?                        
+         18  AAAAAAAADBAAAAAA                    18            0            0           18  AM                         third                      night                      ?                        
+         19  AAAAAAAAEBAAAAAA                    19            0            0           19  AM                         third                      night                      ?                        
+         20  AAAAAAAAFBAAAAAA                    20            0            0           20  AM                         third                      night                      ?                        
+         21  AAAAAAAAGBAAAAAA                    21            0            0           21  AM                         third                      night                      ?                        
+         22  AAAAAAAAHBAAAAAA                    22            0            0           22  AM                         third                      night                      ?                        
+         23  AAAAAAAAIBAAAAAA                    23            0            0           23  AM                         third                      night                      ?                        
+         24  AAAAAAAAJBAAAAAA                    24            0            0           24  AM                         third                      night                      ?                        
+         25  AAAAAAAAKBAAAAAA                    25            0            0           25  AM                         third                      night                      ?                        
+         26  AAAAAAAALBAAAAAA                    26            0            0           26  AM                         third                      night                      ?                        
+         27  AAAAAAAAMBAAAAAA                    27            0            0           27  AM                         third                      night                      ?                        
+         28  AAAAAAAANBAAAAAA                    28            0            0           28  AM                         third                      night                      ?                        
+         29  AAAAAAAAOBAAAAAA                    29            0            0           29  AM                         third                      night                      ?                        
+         30  AAAAAAAAPBAAAAAA                    30            0            0           30  AM                         third                      night                      ?                        
+         31  AAAAAAAAACAAAAAA                    31            0            0           31  AM                         third                      night                      ?                        
+         32  AAAAAAAABCAAAAAA                    32            0            0           32  AM                         third                      night                      ?                        
+         33  AAAAAAAACCAAAAAA                    33            0            0           33  AM                         third                      night                      ?                        
+         34  AAAAAAAADCAAAAAA                    34            0            0           34  AM                         third                      night                      ?                        
+         35  AAAAAAAAECAAAAAA                    35            0            0           35  AM                         third                      night                      ?                        
+         36  AAAAAAAAFCAAAAAA                    36            0            0           36  AM                         third                      night                      ?                        
+         37  AAAAAAAAGCAAAAAA                    37            0            0           37  AM                         third                      night                      ?                        
+         38  AAAAAAAAHCAAAAAA                    38            0            0           38  AM                         third                      night                      ?                        
+         39  AAAAAAAAICAAAAAA                    39            0            0           39  AM                         third                      night                      ?                        
+         40  AAAAAAAAJCAAAAAA                    40            0            0           40  AM                         third                      night                      ?                        
+         41  AAAAAAAAKCAAAAAA                    41            0            0           41  AM                         third                      night                      ?                        
+         42  AAAAAAAALCAAAAAA                    42            0            0           42  AM                         third                      night                      ?                        
+         43  AAAAAAAAMCAAAAAA                    43            0            0           43  AM                         third                      night                      ?                        
+         44  AAAAAAAANCAAAAAA                    44            0            0           44  AM                         third                      night                      ?                        
+         45  AAAAAAAAOCAAAAAA                    45            0            0           45  AM                         third                      night                      ?                        
+         46  AAAAAAAAPCAAAAAA                    46            0            0           46  AM                         third                      night                      ?                        
+         47  AAAAAAAAADAAAAAA                    47            0            0           47  AM                         third                      night                      ?                        
+         48  AAAAAAAABDAAAAAA                    48            0            0           48  AM                         third                      night                      ?                        
+         49  AAAAAAAACDAAAAAA                    49            0            0           49  AM                         third                      night                      ?                        
+         50  AAAAAAAADDAAAAAA                    50            0            0           50  AM                         third                      night                      ?                        
+         51  AAAAAAAAEDAAAAAA                    51            0            0           51  AM                         third                      night                      ?                        
+         52  AAAAAAAAFDAAAAAA                    52            0            0           52  AM                         third                      night                      ?                        
+         53  AAAAAAAAGDAAAAAA                    53            0            0           53  AM                         third                      night                      ?                        
+         54  AAAAAAAAHDAAAAAA                    54            0            0           54  AM                         third                      night                      ?                        
+         55  AAAAAAAAIDAAAAAA                    55            0            0           55  AM                         third                      night                      ?                        
+         56  AAAAAAAAJDAAAAAA                    56            0            0           56  AM                         third                      night                      ?                        
+         57  AAAAAAAAKDAAAAAA                    57            0            0           57  AM                         third                      night                      ?                        
+         58  AAAAAAAALDAAAAAA                    58            0            0           58  AM                         third                      night                      ?                        
+         59  AAAAAAAAMDAAAAAA                    59            0            0           59  AM                         third                      night                      ?                        
+         60  AAAAAAAANDAAAAAA                    60            0            1            0  AM                         third                      night                      ?                        
+         61  AAAAAAAAODAAAAAA                    61            0            1            1  AM                         third                      night                      ?                        
+         62  AAAAAAAAPDAAAAAA                    62            0            1            2  AM                         third                      night                      ?                        
+         63  AAAAAAAAAEAAAAAA                    63            0            1            3  AM                         third                      night                      ?                        
+         64  AAAAAAAABEAAAAAA                    64            0            1            4  AM                         third                      night                      ?                        
+         65  AAAAAAAACEAAAAAA                    65            0            1            5  AM                         third                      night                      ?                        
+         66  AAAAAAAADEAAAAAA                    66            0            1            6  AM                         third                      night                      ?                        
+         67  AAAAAAAAEEAAAAAA                    67            0            1            7  AM                         third                      night                      ?                        
+         68  AAAAAAAAFEAAAAAA                    68            0            1            8  AM                         third                      night                      ?                        
+         69  AAAAAAAAGEAAAAAA                    69            0            1            9  AM                         third                      night                      ?                        
+         70  AAAAAAAAHEAAAAAA                    70            0            1           10  AM                         third                      night                      ?                        
+         71  AAAAAAAAIEAAAAAA                    71            0            1           11  AM                         third                      night                      ?                        
+         72  AAAAAAAAJEAAAAAA                    72            0            1           12  AM                         third                      night                      ?                        
+         73  AAAAAAAAKEAAAAAA                    73            0            1           13  AM                         third                      night                      ?                        
+         74  AAAAAAAALEAAAAAA                    74            0            1           14  AM                         third                      night                      ?                        
+         75  AAAAAAAAMEAAAAAA                    75            0            1           15  AM                         third                      night                      ?                        
+         76  AAAAAAAANEAAAAAA                    76            0            1           16  AM                         third                      night                      ?                        
+         77  AAAAAAAAOEAAAAAA                    77            0            1           17  AM                         third                      night                      ?                        
+         78  AAAAAAAAPEAAAAAA                    78            0            1           18  AM                         third                      night                      ?                        
+         79  AAAAAAAAAFAAAAAA                    79            0            1           19  AM                         third                      night                      ?                        
+         80  AAAAAAAABFAAAAAA                    80            0            1           20  AM                         third                      night                      ?                        
+         81  AAAAAAAACFAAAAAA                    81            0            1           21  AM                         third                      night                      ?                        
+         82  AAAAAAAADFAAAAAA                    82            0            1           22  AM                         third                      night                      ?                        
+         83  AAAAAAAAEFAAAAAA                    83            0            1           23  AM                         third                      night                      ?                        
+         84  AAAAAAAAFFAAAAAA                    84            0            1           24  AM                         third                      night                      ?                        
+         85  AAAAAAAAGFAAAAAA                    85            0            1           25  AM                         third                      night                      ?                        
+         86  AAAAAAAAHFAAAAAA                    86            0            1           26  AM                         third                      night                      ?                        
+         87  AAAAAAAAIFAAAAAA                    87            0            1           27  AM                         third                      night                      ?                        
+         88  AAAAAAAAJFAAAAAA                    88            0            1           28  AM                         third                      night                      ?                        
+         89  AAAAAAAAKFAAAAAA                    89            0            1           29  AM                         third                      night                      ?                        
+         90  AAAAAAAALFAAAAAA                    90            0            1           30  AM                         third                      night                      ?                        
+         91  AAAAAAAAMFAAAAAA                    91            0            1           31  AM                         third                      night                      ?                        
+         92  AAAAAAAANFAAAAAA                    92            0            1           32  AM                         third                      night                      ?                        
+         93  AAAAAAAAOFAAAAAA                    93            0            1           33  AM                         third                      night                      ?                        
+         94  AAAAAAAAPFAAAAAA                    94            0            1           34  AM                         third                      night                      ?                        
+         95  AAAAAAAAAGAAAAAA                    95            0            1           35  AM                         third                      night                      ?                        
+         96  AAAAAAAABGAAAAAA                    96            0            1           36  AM                         third                      night                      ?                        
+         97  AAAAAAAACGAAAAAA                    97            0            1           37  AM                         third                      night                      ?                        
+         98  AAAAAAAADGAAAAAA                    98            0            1           38  AM                         third                      night                      ?                        
+         99  AAAAAAAAEGAAAAAA                    99            0            1           39  AM                         third                      night                      ?                        
+
+--- 100 row(s) selected.
+>>--------------------------------------------------
+>>--insert using parallel queries and overwrite 
+>>-----------------------
+>>cqd attempt_esp_parallelism 'on';
+
+--- SQL operation complete.
+>>cqd PARALLEL_NUM_ESPS '2';
+
+--- SQL operation complete.
+>>set schema hive;
+
+--- SQL operation complete.
+>>cqd hive_max_esps '2';
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '25' ;
+
+--- SQL operation complete.
+>>cqd query_cache '0';
+
+--- SQL operation complete.
+>>control query shape esp_exchange(cut);
+
+--- SQL operation complete.
+>>prepare s from insert into table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk;
+
+*** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (SS_SOLD_DATE_SK, SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  4.00E+000
+6    .    7    esp_exchange                    1:2(hash2)            4.00E+000
+4    .    6    hive_insert                     INS_STORE_SALES_SUMM  4.00E+000
+3    .    4    hash_partial_groupby                                  4.00E+000
+2    .    3    esp_exchange                    2(hash2):2(hash2)     4.00E+000
+1    .    2    hash_partial_groupby                                  4.00E+000
+.    .    1    hive_scan                       STORE_SALES           2.92E+006
+
+--- SQL operation complete.
+>>execute s;
+
+--- 12768 row(s) inserted.
+>>
+>>
+>>-- hadoop ls should return 2 files
+>>-- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
+>>control query shape cut;
+
+--- SQL operation complete.
+>>log;
+2
+1c1
+< >>select ss_sold_date_sk,ss_store_sk, sum (ss_quantity)  from store_sales group by  ss_sold_date_sk ,ss_store_sk order by  ss_sold_date_sk,ss_store_sk;
+---
+> >>select  * from ins_store_sales_summary order by  ss_sold_date_sk,ss_store_sk;
+3,10c3,4
+< *** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+< 
+< *** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+< 
+< *** WARNING[6007] Multi-column statistics for columns (SS_SOLD_DATE_SK, SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+< 
+< SS_SOLD_DATE_SK  SS_STORE_SK  (EXPR)              
+< ---------------  -----------  --------------------
+---
+> SS_SOLD_DATE_SK  SS_STORE_SK  SS_QUANTITY
+> ---------------  -----------  -----------
+>>--execute again --overwrite should get rid og existing data from previous run
+>>control query shape union(cut,esp_exchange(cut));
+
+--- SQL operation complete.
+>>prepare s from insert overwrite table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk;
+
+*** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+
+*** WARNING[6007] Multi-column statistics for columns (SS_SOLD_DATE_SK, SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+9    .    10   root                                                  5.00E+000
+1    8    9    blocked_union                                         5.00E+000
+7    .    8    esp_exchange                    1:2(hash2)            4.00E+000
+5    .    7    hive_insert                     INS_STORE_SALES_SUMM  4.00E+000
+4    .    5    hash_partial_groupby                                  4.00E+000
+3    .    4    esp_exchange                    2(hash2):2(hash2)     4.00E+000
+2    .    3    hash_partial_groupby                                  4.00E+000
+.    .    2    hive_scan                       STORE_SALES           2.92E+006
+.    .    1    hive_truncate                                         1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- 12768 row(s) inserted.
+>>control query shape cut;
+
+--- SQL operation complete.
+>>log;
+1c1
+< >>select ss_sold_date_sk,ss_store_sk, sum (ss_quantity)  from store_sales group by  ss_sold_date_sk ,ss_store_sk order by  ss_sold_date_sk,ss_store_sk;
+---
+> >>select  * from ins_store_sales_summary order by  ss_sold_date_sk,ss_store_sk;
+3,10c3,4
+< *** WARNING[6008] Statistics for column (SS_SOLD_DATE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+< 
+< *** WARNING[6008] Statistics for column (SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
+< 
+< *** WARNING[6007] Multi-column statistics for columns (SS_SOLD_DATE_SK, SS_STORE_SK) from table HIVE.HIVE.STORE_SALES were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+< 
+< SS_SOLD_DATE_SK  SS_STORE_SK  (EXPR)              
+< ---------------  -----------  --------------------
+---
+> SS_SOLD_DATE_SK  SS_STORE_SK  SS_QUANTITY
+> ---------------  -----------  -----------

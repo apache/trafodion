@@ -1,0 +1,350 @@
+#! /bin/sh
+
+#######################################################################
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 1999-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#######################################################################
+
+# regression test output filter for Windows
+
+# Like the pattern-masking of QACOMP, here we filter out such stuff as
+# timestamps and generated identifiers.  Called by the runregr script
+# before doing diff.
+
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
+fi
+SYSKEY=`grep '\<SYSKEY\>' $fil | egrep -v '(--|^>>|^\*\*)'`
+if [ "$SYSKEY" = "" ]; then
+  SYSKEY='@syskey@'
+else
+  SYSKEY='[0-9]\{18,20\}\>'
+fi
+#       123456789 123456789
+
+#=================================================================
+#                  I M P O R T A N T   N O T E                   =
+#                                                                =
+#  Various test suites may put (hopefully) unique token strings  =
+# in their output for the purpose of filtering out that token    =
+# and all other text following the token on the same line.  If   =
+# any other regression tests happen to generate such a token in  =
+# their output by chance, that token and all text following it   =
+# on the same line will be filtered out.  Beware!!!              =
+#                                                                =
+#   The table below documents the tokens:                        =
+#                                                                =
+# +--------------------+--------------------------+              =
+# |       Token        | Regression Suite         |              =
+# +--------------------+--------------------------+              =
+# | FUNKY_OPT_UNIQUE   | (W:/regress/opt)         |              =
+# +--------------------+--------------------------+              =
+#                                                                =
+#=================================================================
+
+# Substitute #CAT.#SCH for schema names when running regression tests
+# concurrently.
+if [ -z "$REGRCONCURRENT" ] || [ "$REGRCONCURRENT" -eq 0 ] \
+   || [ "$fil" = "$NULL" ]; then
+  sedInput="$fil"
+else
+  fname="$(basename $fil)"
+  concurFile="${fname%%.*}.cflt"
+
+  if [ -n "$TEST_SCHEMA" ]; then
+    schema="$TEST_SCHEMA"
+    u_schema=$(echo "$TEST_SCHEMA" | tr [:lower:] [:upper:])
+  else
+    schema='cat.sch'
+    u_schema='CAT.SCH'
+  fi
+
+  if [ -n "$TEST_SCHEMA_NAME" ]; then
+    schema_name="$TEST_SCHEMA_NAME"
+    u_schema_name=$(echo "$TEST_SCHEMA_NAME" | tr [:lower:] [:upper:])
+  else
+    schema_name='sch'
+    u_schema_name='SCH'
+  fi
+
+  sed "
+  s|SQL C file \"$REGRRUNDIR/|SQL C file \"|g
+  s/\<$schema\>/#CAT.#SCH/g
+  s/\<$u_schema\>/#CAT.#SCH/g
+  s/\<[Cc][Aa][Tt]\.[Ss][Cc][Hh]\>/#CAT.#SCH/g
+  s/\\\\[Cc][Aa][Tt]\.[Ss][Cc][Hh]\./\\\\#CAT.#SCH./g
+  s/\<$schema_name\>/#SCH/g
+  s/\<$u_schema_name\>/#SCH/g
+  s/\\\\$u_schema\>/\\\\#CAT.#SCH/
+  " $fil > $concurFile
+
+  sedInput="$concurFile"
+fi
+
+# When making lots of changes to the error messages file,
+# 	'/^\*\*\* ERROR\[[0-9][0-9]*] /s/].*/]/'
+# goes in here.  When not, then remove it!
+sed "
+/--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------/d
+# Always translate schema environment variable references and literal cat.sch
+# references to minimize changes to EXPECTED files.  $$TEST_SCHEMA$$ substitution
+# must occur before $volume substitution
+s/\\\$\\\$TEST_SCHEMA\\\$\\\$/#CAT.#SCH/g
+s/\\\$\\\$UTEST_SCHEMA\\\$\\\$/#CAT.#SCH/g
+s/\\\$\\\$TEST_CATALOG\\\$\\\$/#CAT/g
+s/\\\$\\\$TEST_SCHEMA_NAME\\\$\\\$/#SCH/g
+s/\\\$\\\$QTEST_SCHEMA_NAME\\\$\\\$/'#SCH'/g
+s/\<[Cc][Aa][Tt]\.[Ss][Cc][Hh]\>/#CAT.#SCH/g
+s/\\\\[Cc][Aa][Tt]\.[Ss][Cc][Hh]\./\\\\#CAT.#SCH./g
+s/\<[Ss][Cc][Hh]\>/#SCH/g
+s/#[#]*SCH/#SCH/g
+# Avoid differences in blank padding caused by substitutions
+s/[ ][ ]*#CAT.#SCH/ #CAT.#SCH/g
+s/[ ][ ]*#SCH/ #SCH/g
+s/[ ][ ]*^/ ^/g
+/#CAT.#SCH.*lock_mode:/s/ [ ]*/ /g
+s/\(.*\)#CAT.#SCH[ ][ ]*TMPNAME\(.*\)/\1#CAT.#SCH TMPNAME\2/
+#
+s/^\([ ][ ]*[0-9][0-9]*[ ][ ]*\)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\([ ][ ]*\)[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\([ ][ ]*\)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\([ ][ ]*\)[0-9][0-9]:[0-9][0-9]:[0-9][0-9][.][0-9][0-9]*\([ \t]*AMERICAS[\\].*\)$/\1yyyy-mm-dd\2hh:mm:ss\3yyyy-mm-dd\4hh:mm:ss.xxxxxx\5/
+# VO: Each of the NT user name substitutions must appear twice, to handle multiple occurrences per output line
+s/([A-Za-z]:\\\\[Tt][Dd][Mm]_[Ss][Qq][Ll][Mm][Oo][Dd][Uu][Ll][Ee][Ss]\\\\/(/g
+s/\<CPQTDM\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<CPQTDM\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<AMERICAS\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<americas\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<AMERICAS\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<americas\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<AMERICAS\\\\[\$][A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<americas\\\\[\$][A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<AMERICAS\\\\[\$][A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<americas\\\\[\$][A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<ASIAPACIFIC\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<asiapacific\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<ASIAPACIFIC\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<asiapacific\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<EMEA\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<emea\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<EMEA\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<emea\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<TSS\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<tss\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<TSS\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s/\<tss\\\\[A-Za-z][-A-Za-z0-9_]*[ ]*/@username@ /g
+s:^[A-Z][0-9A-Z]*.ZSD[0-9A-Z][0-9A-Z]*.:@volume@/ZSDsubsv.:
+s/\(???_RealColumnsNeedToAppearHere_\)[0-9][0-9]*\(_[0-9][0-9]*_???\)/\1ddddddddd\2/
+s/^\([ ][ ]*[0-9][0-9]*[ ][ ]*\)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\([ ][ ]*\)[0-9][0-9]:[0-9][0-9]:[0-9][0-9][.][0-9][0-9]*\(.*\)$/\1yyyy-mm-dd\2hh:mm:ss.xxxxxx\3/
+s/^\([ ][ ]*[0-9][0-9]*[ ][ ]*\)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\([ ][ ]*\)[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\(.*\)$/\1yyyy-mm-dd\2hh:mm:ss\3/
+s/^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\([ ][ ]*\)[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\([ ][ ]*\)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\([ ][ ]*\)[0-9][0-9]:[0-9][0-9]:[0-9][0-9][.][0-9][0-9]*\([ \t]*\)$/yyyy-mm-dd\1hh:mm:ss\2yyyy-mm-dd\3hh:mm:ss.xxxxxx\4/
+s/^$SYSKEY/@syskey@/
+s/FUNKY_OPT_UNIQUE.*//
+s/\([^.0-9A-Za-z_]\)$SYSKEY/\1@syskey@/
+/^\*\*\* WARNING\[1126\]/s/_[0-9]\{3,\}_[0-9]\{3,\}\([^A-Za-z0-9]\)/_nnn_nnnn\1/g
+/^\*\*\* WARNING\[12112\]/s/_[0-9]\{8,\}_[0-9]\{4,\}/_@ts@_@num@/g
+/^ValueId .*not found in MapTable 0x/s/ [0-9][0-9]*/ @vid@/
+/^ValueId .*not found in MapTable 0x/s/\\NSK.\$[^ ]*\./@loc@./g
+/^ValueId .*not found in MapTable 0x/s/ 0x[^ ]*\.$/./
+# VO: The next 4 lines must appear before the general
+#     filtering of Guardian name parts, in order to prevent
+#     NT path name parts from being interpreted as node names
+/^.*[Ww]:/s/\\\\/\//g
+/[Ii]nternal error.*\.cpp/s/\\\\/\//g
+s|SQL C file \"$REGRRUNDIR/|SQL C file \"|g
+s|SQL COBOL file \"$REGRRUNDIR/|SQL COBOL file \"|g
+#
+# VO: General filtering of Guardian name parts
+#       1. Node name (with backslash prefix) -> @system@
+#       2. Volume name (with dollar prefix)  -> @volume@
+#       3. <ZSD-subvolume>.<filename> -> @svol-file@
+#       4. @system@.@volume@.@svol-file@ -> @location@
+#     To avoid confusion, node- and volume names are only filtered
+#     in combination with certain surrounding characters
+s/\\\\[A-Za-z][A-Za-z0-9]*[,;\.]/@system@./g
+s/\\\\[A-Za-z][A-Za-z0-9]* /@system@ /g
+s/\.\$[A-Za-z][A-Za-z0-9]*/.@volume@/g
+s/\$[A-Za-z][A-Za-z0-9]*[,;\.]/@volume@./g
+s/\$[A-Za-z][A-Za-z0-9]* /@volume@ /g
+s/ZSD[A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*/@svol-file@/g
+s/zsd[A-Za-z0-9]*\.[A-Za-z][A-Za-z0-9]*/@svol-file@/g
+s/@system@\.@volume@\.@svol-file@/@location@/g
+#
+# end general filtering of Guardian name parts
+#
+/^-- Definition current  /s/  .*//
+/^-- Definition current /s/ .*//
+/^[^A-Z0-9]*ERROR *\[[0-9]/s/\.  */. /g
+/^[^A-Z0-9]*ERROR *\[[0-9].* constraint /s/_[0-9]\{3,\}_[0-9]\{3,\}/_nnn_nnn/
+/^[^A-Z0-9]*ERROR *\[[0-9].* in file /s/\\\\/\//g
+/^[^A-Z0-9]*ERROR *\[[0-9]/s/ at line [0-9][0-9]*\([ :.,]\)/ at line #nnn\1/
+/^[^A-Z0-9]*ERROR *\[[0-9]/s/ on line [0-9][0-9]*\([ :.,]\)/ on line #nnn\1/
+/^[^A-Z0-9]*WARNING *\[[0-9]/s/ at line [0-9][0-9]*\([ :.]*\)\$/ at line #nnn\1/
+/^[^A-Z0-9]*ERROR *\[[0-9]/s/[Ww]:/../g
+/^\*\*\* ERROR/s/Unable to access object [A-Za-z0-9]*[.][A-Za-z0-9]*[.][A-Za-z0-9]*/@OBJECT@/g
+s/^\([ 	]*Time Run:[ 	]*\)[-\/ A-Za-z0-9]*:[0-9][0-9]:[0-9][0-9]/\1 @trun@/
+s/^\([ 	]*Time:[ 	]*\)[-\/ A-Za-z0-9]*:[0-9][0-9]:[0-9][0-9]/\1 @trun@/
+s/@trun@ 1999\>/@trun@/
+s/@trun@ 20[0-9][0-9]\>/@trun@/
+s/^[A-Za-z]*Time[sS]tamp\:[[:space:]]*[0-9]*.*$/@tstamp@/
+s/^\(Owner: \)[ ]*[A-Z][-A-Z0-9.]*/\1@owner@/
+s/Owner\: [A-Z0-9\-]*/@owner@/
+
+# the following substitutions are used to commonize the SHOWLABEL command
+s/RecExpr length: [ ]*[0-9][0-9]*/RecExpr length: @size@/g
+s/Record Expression Label Length: [0-9][0-9]*/RecExpr length: @size@/g
+s/Security length\(: [0-9][0-9]*\)/Security Label Length\1/g
+s/Security Label Length: [0-9][0-9]*/Security length: @size@/g
+s/Extents Allocated: [0-9][0-9]*/Extents Allocated: @ext_alloc@/g
+s/EOF: [0-9][0-9]*/EOF: @eof@/g
+s/trigger created (ID): [0-9][0-9]*/trigger created (ID): @trigger-id@/
+s/ObjectSchemaVersion: [0-9][0-9][0-9][0-9]/ObjectSchemaVersion: @osv@/
+s/ObjectFeatureVersion: [0-9][0-9][0-9][0-9]/ObjectFeatureVersion: @osv@/
+s/Rcb version: [0-9][0-9][0-9][0-9]/Rcb version: @rcbv@/
+# end showlabel substitutions
+
+#s/DEFINITION_SCHEMA_VERSION_\$\$VERS_CURR_SCHEMA_VERSION\$\$\./DEFINITION_SCHEMA_VERSION_XXXX./
+#s/DEFINITION_SCHEMA_VERSION_[0-9][0-9][0-9][0-9]/DEFINITION_SCHEMA_VERSION_XXXX/
+s/DEFINITION_SCHEMA_VERSION_\$\$VERS_CURR_SCHEMA_VERSION\$\$\./HP_DEFINITION_SCHEMA./
+s/DEFINITION_SCHEMA_VERSION_[0-9]\{4,4\}/HP_DEFINITION_SCHEMA/
+s/DEFINITION_SCHEMA_VERSION_[Xx]\{4,4\}/HP_DEFINITION_SCHEMA/
+
+s/^\(  , CONSTRAINT \).*_[0-9]\{8,\}.*\( CHECK\)/\1@name@\2/
+s/^\(  , CONSTRAINT \).*_[0-9]\{8,\}.*\( FOREIGN KEY\)/\1@name@\2/
+s/^\(  , CONSTRAINT \).*_[0-9]\{8,\}.*\( PRIMARY KEY\)/\1@name@\2/
+s/^\(  , CONSTRAINT \).*_[0-9]\{8,\}.*\( UNIQUE\)/\1@name@\2/
+s/^\(  ADD CONSTRAINT \).*_[0-9]\{8,\}.*\( CHECK\)/\1@name@\2/
+s/^\(  ADD CONSTRAINT \).*_[0-9]\{8,\}.*\( FOREIGN KEY\)/\1@name@\2/
+s/^\(  ADD CONSTRAINT \).*_[0-9]\{8,\}.*\( PRIMARY KEY\)/\1@name@\2/
+s/^\(  ADD CONSTRAINT \).*_[0-9]\{8,\}.*\( UNIQUE\)/\1@name@\2/
+s/^\(    CONSTRAINT \).*_[0-9]\{8,\}.*\( NOT NULL\)/\1@name@\2/
+s/^\(-\{0,2\}CREATE [UNIQUE ]*INDEX \).*_[0-9]\{8,\}.*\( ON \)/\1@name@\2/
+s/\(NAME \)[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9]*_[A-Za-z][A-Za-z0-9]*_[A-Za-z][A-Za-z0-9]*/\1@logicalname@/g
+/^[A-Z]\{3,\}[_A-Z]*  *[-+0-9][.0-9]*E[-+][0-9][0-9]* .*CPU: .*: /s/  *\$//
+/^[A-Z]\{3,\}[_A-Z]*  *[-+0-9][.0-9]*E[-+][0-9][0-9]* .*CPU: .*: /s/[-+]*[0-9][0-9]*/#/g
+/^rm[ 	][-f 	]*[Ee][Tt][Ee][Ss][Tt][0-9][0-9A-Za-z]*\./d
+s/^Compaq NonStop(TM) SQL\/MX \([A-Za-z\/ +]*\) [0-9][0-9]*\.[0-9][0-9]*$/\1 #n.#n/
+s/^Hewlett-Packard NonStop(TM) SQL\/MX \([A-Za-z#\/ +]*\) [0-9][0-9]*\.[0-9][0-9]*$/\1 #n.#n/
+#/^NonStop SQL\/MX C/s/[0-9][0-9]*\.[0-9][0-9]*$/#n.#n/
+#s/^NonStop SQL\/MX C/s/[0-9][0-9]*\.[0-9][0-9]*$/#n.#n/
+s/[A-Za-z]:\\\\[Tt][Dd][Mm]_[Ss][Qq][Ll]\\\\bin\\\\tdm_arkcmp\.exe/mxcmp/g
+s/w:\\\\lib\\\\nt\\\\debug\\\\tdm_arkcmp\.exe/mxcmp/g
+s/^tdm_sqlc/mxsqlc/g
+s/^tdm_arkcmp/mxcmp/g
+s|^\([A-Za-z0-9_$]\+\.m\)[ ]\+(.\+\..\+\.\(.\+\))|\1 (#CAT.#SCH.\2)|
+s/^\([A-Za-z0-9]\+\.mdf\)[ ]\+([A-Za-z]:\\\\.\+\\\\\(.\+\..\+\..\+\))/\1 (\2)/
+s/^\([A-Za-z0-9]\+\.m[df]?\)[ ]\+([A-Za-z]:\\\\.\+\\\\\(.\+\..\+\..\+\))/\1 (\2)/
+/^[A-Za-z0-9]*\.mdf[ ]*([A-Za-z0-9]*\.[A-Za-z0-9]*\.[A-Za-z0-9]*)/s/[ ]*([A-Za-z0-9]*\.[A-Za-z0-9]*/ (#CAT.#SCH/
+s/^NonStop SQL\/MX \([A-Za-z\/ +]*\) [0-9][0-9]*\.[0-9][0-9]*$/\1 #n.#n/
+/^Copyright (c).*All Rights Reserved. *$/s/[0-9]/#/g
+/^Copyright (c).*All Rights Reserved. *$/s/Tandem[^.]*\./#CPQ#TDM#./
+/^Copyright (c).*All Rights Reserved. *$/s/Compaq[^.]*\./#CPQ#TDM#./
+/^(c) Copyright [0-9][0-9][0-9][0-9] Hewlett-Packard Development Company.*$/s/^.*$/Copyright (c) ####-#### #CPQ#TDM#\.  All Rights Reserved./
+/^(c) Copyright [0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9] Hewlett-Packard Development Company.*$/s/^.*$/Copyright (c) ####-#### #CPQ#TDM#\.  All Rights Reserved./
+/^[Hh]istory file .* Access is denied/d
+s/^\(MESSAGEFILE     [ 	]*\).*/\1#f/
+/^MESSAGEFILE VRSN[ 	]*{/s/{.*/#v/
+s/: .*\<runregr [1-9][0-9]*: not found$/: runregr #nnn: not found/
+# substitution for embedded test ins1:
+s/[A-Za-z0-9]*.cpp([0-9]*)\(.*warning C\)/@prog@ @lineno@\1/
+
+# resolve differences due to setting of pattern $$runid$$ used in MODIFY and RECOVER tests
+s/\(CAT\.SCH\)[0-9A-Z]\{3\}\([0-9A-Z]\{2\}\.\)/\1@runid@\2/g
+
+# With Row Hiding support enable, a partition may still
+# contain data even when a DML scan shows that it is empty.
+# DISK-0   AV   16   64  160  EMPTY        _ISO88591'ssssss'
+# DISK-0   AV   16   64  160  DATA EXISTS  _ISO88591'ssssss'
+s/^DISK-[0-9]\( [ ]*[A-Z][ A-Z] [ ]*[0-9][0-9]* [ ]*[0-9][0-9]* [ ]*[0-9][0-9]* [ ]*\)EMPTY       /DISK-n\1@eof@       /
+s/^DISK-[0-9]\( [ ]*[A-Z][ A-Z] [ ]*[0-9][0-9]* [ ]*[0-9][0-9]* [ ]*[0-9][0-9]* [ ]*\)DATA EXISTS /DISK-n\1@eof@       /
+s/^DISK-[0-9]/DISK-n/
+# ==>  T221I1  AV  @eof@        NULL STRING
+# ==>  T221I1  AV  EMPTY        NULL STRING
+# ==>  T221I1  AV  DATA EXISTS  NULL STRING
+#      T221I1  AV  @eof@        _ISO88591'ssssss'
+#      T221I1  AV  EMPTY        _ISO88591'ssssss'
+#      T221I1  AV  DATA EXISTS  _ISO88591'uuuuuu'
+s/^\([= ][= ][> ] [ ]*[^ ][^ ]* [ ]*[A-Z][A-Z ] [ ]*\)[DE@][A-Z@eof ]\{10\}/\1@eof@      /
+
+#             5             0  CAT.SCHREC91
+#             5             0  CAT.SCHKL291
+#                                     xxx
+s/^\([ ][ ]*[0-9][0-9]*[ ][ ]*[0-9][0-9]*[ ][ ]*CAT.SCH\)[A-Z][0-9A-Z][0-9A-Z]\([0-9A-Z][0-9A-Z]\)/\1xxx\2/
+
+#*** ERROR[20215] Recovery failed for DDL_LOCKS name PDMVTEST01_619373764_3912.
+#Added for purgedata test06.txt
+/^\*\*\* ERROR\[20215\] /s/\(DDL_LOCKS name .*\)_[0-9]\{8,\}_[0-9]\{4,\}/\1_nnnnnnnn_nnnn/
+
+
+s/^--- SQL operation completed with errors./--- SQL operation failed with errors./
+# Filter out Microsoft compiler and linker information
+s/Microsoft (R) .*/Microsoft (R) xxxxxx/g
+s/Copyright (C) Microsoft Corp.*/Copyright (C) Microsoft Corp xxxxxx/g
+
+# ... NonStop(TM) SQL/MX Compiler 2.0
+#                                 ^^^
+s:\( NonStop.TM. SQL/MX Compiler \)[0-9][0-9]*\.[0-9][0-9]*:\1@version_id@:
+
+# mask possibly changing error positions
+s/([0-9]* characters from start/(zzz characters from start/
+
+# ATTRIBUTES BLOCKSIZE 32768, EXTENT (16, 16)
+# ATTRIBUTES EXTENT (16, 16), MAXEXTENTS 768
+s/^ *ATTRIBUTES BLOCKSIZE [0-9][0-9]*.*$/@ATTRIBUTES line@/
+s/^ *ATTRIBUTES EXTENT ([0-9][0-9]*.*$/@ATTRIBUTES line@/
+
+# Block Length: 32768
+s/^ *Block Length:  *[0-9][0-9]*[ \t]*$/@Block Length line@/
+
+# Primary Extent Size: 256 Pages
+s/^ *Primary Extent Size:  *[0-9][0-9]*  *Pages[ \t]*$/@Primary Extent Size line@/
+
+# Secondary Extent Size: 16 Pages
+s/^ *Secondary Extent Size:  *[0-9][0-9]*  *Pages[ \t]*$/@Secondary Extent Size line@/
+
+# Max Extents: 768
+s/^ *Max Extents:  *[0-9][0-9]*[ \t]*$/@Max Extents line@/
+
+# Several metadata columns are now in UCS2 instead of ISO88591
+# so the display width is now double for those.  Use the following
+# 3 patterns so we don't have to update existing expected results
+# and known differences.
+s/^-----[- ]*$/----------/
+s/^\([<>][ ]*\)-----[- ]*$/\1----------/
+s/  */ /g
+
+s/\(_NAME *\)CHAR(122) CHARACTER SET UCS2/\1CHAR(xxx) CHARACTER SET UCS2/
+s/\(_NAME *\)CHAR(128) CHARACTER SET UCS2/\1CHAR(xxx) CHARACTER SET UCS2/
+
+s/Histogram ID = [0-9]*/@hist-id@/
+s/[0-9]*: [(]*VEGRef_[0-9]*/@VEGRef-id@/
+
+#/^ *$/d
+
+" $sedInput
+
+#
+# Only need the following SED command if we want to remove mismatched extra
+# blank lines, but then the line numbers appearing in the DIFF files do not
+# correspond to the line numbers in the LOG files.
+#
+# /^ *$/d
+# 
+
+if [ -n "$concurFile" ] && [ -a "$concurFile" ]; then
+  rm -f $concurFile
+fi

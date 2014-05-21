@@ -1,0 +1,7 @@
+#!/bin/sh
+
+HNAME=localhost:37800
+UNAME=zz
+PWORD=zz
+
+$MY_SQROOT/trafci/bin/trafci.sh -h $HNAME -u $UNAME -p $PWORD

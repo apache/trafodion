@@ -1,0 +1,80 @@
+LOG aqatddl03 Clear;
+
+  CREATE VIEW partsfor
+      ( col_1
+      , col_2
+      , col_3
+      , col_4
+      , col_5
+      , col_6
+      , col_7
+      , col_8
+      , col_9
+      , col_10
+      , col_11
+      , col_12
+        )
+     AS SELECT
+               partname
+      ,        location
+      ,        price
+      ,        orders.ordernum
+      ,        oyear
+      ,        omonth
+      ,        oday
+      ,        dyear
+      ,        dmonth
+      ,        dday
+      ,        salesman
+      ,        custnum
+     FROM orders, odetail,
+          parts
+     WHERE orders.ordernum  = odetail.ordernum AND
+         ( odetail.partnum = parts.partnum )
+  ;
+
+  CREATE VIEW salecust
+     AS SELECT empname
+      ,        regnum
+      ,        branchnum
+      ,        custname
+      ,        address
+      ,        city
+      ,        state
+     FROM orders, emppub,
+          customer
+     WHERE orders.salesman = emppub.empnum AND
+         ( orders.custnum  = customer.custnum )
+  ;
+
+  CREATE VIEW salecub
+     AS SELECT
+               empname
+      ,        branchname
+      ,        custname
+      ,        city
+     FROM branch,
+          salecust
+     WHERE salecust.branchnum = branch.branchnum
+     AND ( salecust.regnum    = branch.regnum    )
+  ;
+
+  CREATE VIEW fsdetail
+      ( col_1
+      , col_2
+      , col_3
+      , col_4
+      , col_5
+      , col_6
+        )
+     AS SELECT fromsup.partnum
+      ,                suppnum
+      ,                partcost
+      ,                ordernum
+      ,        odetail.partnum
+      ,                quantity
+     FROM odetail, fromsup
+     WHERE ( odetail.partnum = fromsup.partnum )
+           AND ( quantity > 20 )
+  ;
+LOG;

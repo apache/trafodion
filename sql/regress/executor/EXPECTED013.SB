@@ -1,0 +1,1318 @@
+>>
+>>#ifndef SEABASE_REGRESS
+>>control query default volatile_catalog 'T013_VOLATILE_CAT';
+>>#endif
+>>
+>>#ifndef SEABASE_REGRESS
+>>create schema t013_sch;
+>>set schema $$TEST_CATALOG$$.t013_sch;
+>>#else
+>>set schema trafodion.t013_sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>create table t013t1 (a int);
+
+--- SQL operation complete.
+>>invoke t013t1;
+
+-- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
+-- Definition current  Wed May 14 06:03:20 2014
+
+  (
+    A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>insert into t013t1 values (1);
+
+--- 1 row(s) inserted.
+>>select * from t013t1;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>create index t013t1i on t013t1(a);
+
+--- SQL operation complete.
+>>grant select on t013t1 to public;
+
+*** ERROR[8448] Unable to access Hbase interface. Call to ExpHbaseInterface::grant() returned error HBASE_ACCESS_ERROR(705). Cause: 
+org.apache.hadoop.hbase.coprocessor.CoprocessorException: Coprocessor [org.apache.hadoop.hbase.security.access.AccessController]: This method can only execute at _acl_ table.
+org.apache.hadoop.hbase.security.access.AccessController.grant(AccessController.java:1094)
+org.trafodion.sql.HBaseAccess.HBaseClient.grant(HBaseClient.java:530)
+.
+
+--- SQL operation failed with errors.
+>>
+>>create volatile table t013t1(a int, b int);
+
+--- SQL operation complete.
+>>invoke t013t1;
+
+-- Definition of Trafodion volatile table T013T1
+-- Definition current  Wed May 14 06:03:30 2014
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>insert into t013t1 values (1,2);
+
+--- 1 row(s) inserted.
+>>select * from t013t1;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>create volatile index t013t1i1 on t013t1 (a);
+
+--- SQL operation complete.
+>>insert into t013t1 values (3,4);
+
+--- 1 row(s) inserted.
+>>select * from t013t1;
+
+A            B          
+-----------  -----------
+
+          1            2
+          3            4
+
+--- 2 row(s) selected.
+>>
+>>create volatile index t013t1i2 on t013t1 (b);
+
+--- SQL operation complete.
+>>
+>>#ifndef SEABASE_REGRESS
+>>update statistics for table t013t1 on every column;
+>>#endif
+>>
+>>select * from t013_sch.t013t1;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>drop volatile index t013t1i1;
+
+--- SQL operation complete.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>invoke t013t1;
+
+-- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
+-- Definition current  Wed May 14 06:03:50 2014
+
+  (
+    A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from t013t1;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>create volatile table t013t1(a int, b int, c int);
+
+--- SQL operation complete.
+>>create volatile index t013t1i on t013t1(b);
+
+--- SQL operation complete.
+>>invoke t013t1;
+
+-- Definition of Trafodion volatile table T013T1
+-- Definition current  Wed May 14 06:03:56 2014
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>insert into t013t1 values (1,2,3);
+
+--- 1 row(s) inserted.
+>>select * from t013t1;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            2            3
+
+--- 1 row(s) selected.
+>>
+>>set session default sql_session 'END';
+
+--- SQL operation complete.
+>>#ifndef SEABASE_REGRESS
+>>set session default sql_user 'SQL_USER1';
+>>#endif
+>>set session default sql_session 'BEGIN';
+
+--- SQL operation complete.
+>>
+>>#ifndef SEABASE_REGRESS
+>>grant create on schema t013_sch to sql_user1 ;
+>>grant alter on schema t013_sch to sql_user1 ;
+>>#endif
+>>
+>>invoke t013t1;
+
+-- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
+-- Definition current  Wed May 14 06:04:05 2014
+
+  (
+    A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from t013t1;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>create volatile table t013t1(a int, b int, c int, d int);
+
+--- SQL operation complete.
+>>invoke t013t1;
+
+-- Definition of Trafodion volatile table T013T1
+-- Definition current  Wed May 14 06:04:08 2014
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                INT DEFAULT NULL
+  , D                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>insert into t013t1 values (1,2,3,4);
+
+--- 1 row(s) inserted.
+>>select * from t013t1;
+
+A            B            C            D          
+-----------  -----------  -----------  -----------
+
+          1            2            3            4
+
+--- 1 row(s) selected.
+>>
+>>#ifndef SEABASE_REGRESS
+>>select * from sql_user1.t013t1;
+>>
+>>-- should return error.
+>>select * from $$TEST_CATALOG$$.sql_user1.t013t1;
+>>select * from sql_user1_2.t013t1;
+>>#endif
+>>
+>>-- Negative tests
+>>
+>>-- cannot use VOLATILE_SCHEMA_ prefix in sql queries
+>>set schema volatile_schema_a;
+
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>set schema $$TEST_CATALOG$$.volatile_schema_a;
+
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default schema 'volatile_schema_a';
+
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>#ifndef SEABASE_REGRESS
+>>control query default schema 'cat.volatile_schema_a';
+>>#else
+>>control query default schema 'seabase.volatile_schema_a';
+
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>#endif
+>>
+>>select * from volatile_schema_a.t;
+
+*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from $$TEST_CATALOG$$.volatile_schema_a.t;
+
+*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop table volatile_schema_a.t;
+
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>drop table $$TEST_CATALOG$$.volatile_schema_a.t;
+
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>#ifndef SEABASE_REGRESS
+>>update statistics for table volatile_schema_a.t on every column;
+>>update statistics for table $$TEST_CATALOG$$.volatile_schema_a.t on every column;
+>>#endif
+>>
+>>-- cannot create volatile index on regular tables and vica-versa
+>>create volatile index tempi on $$TEST_CATALOG$$.t013_sch.t013t1(a);
+
+*** ERROR[4192] An invalid volatile object name was specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create volatile index tempi on sch.t013t1(a);
+
+*** ERROR[4191] Schema name SCH specified as part of the volatile table or index must be the same as the current user name, DB__ROOT.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot create views, alter, etc on volatile tables
+>>
+>>-- this will create view on the permanent table t013t1
+>>create view tempv as select * from t013t1;
+
+--- SQL operation complete.
+>>showddl tempv;
+
+CREATE VIEW TRAFODION.T013_SCH.TEMPV AS
+  SELECT TRAFODION.T013_SCH.T013T1.A FROM TRAFODION.T013_SCH.T013T1 ;
+
+--- SQL operation complete.
+>>
+>>create volatile table t013t2 (a int);
+
+--- SQL operation complete.
+>>-- this will return an error, no permanent table exists
+>>create view tempv2 as select * from t013t2;
+
+*** ERROR[4082] Object TRAFODION.T013_SCH.T013T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+>>-- will alter base table, t013t1
+>>alter table t013t1 add column z int default 0 not null;
+
+--- SQL operation complete.
+>>
+>>-- this will return an error, no permanent table exists
+>>alter table t013t2 add column z int default 0 not null;
+
+*** ERROR[4082] Object TRAFODION.T013_SCH.T013T2 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot use volatile syntax to drop regular tables
+>>drop volatile table $$TEST_CATALOG$$.t013_sch.t013t1;
+
+*** ERROR[4192] An invalid volatile object name was specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- duplicate volatile table error
+>>create volatile table t013t1 (a int);
+
+*** ERROR[1390] Object T013T1 already exists in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- duplicate volatile index error
+>>create volatile index t013t1i1 on t013t1(a);
+
+--- SQL operation complete.
+>>create volatile index t013t1i1 on t013t1(a);
+
+*** ERROR[1390] Object T013T1I1 already exists in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- remove volatile index
+>>drop volatile index t013t1i1;
+
+--- SQL operation complete.
+>>
+>>-- volatile index doesn't exist
+>>drop volatile index t013t1i1;
+
+*** ERROR[1389] Object T013T1I1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- remove the volatile table. 
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>
+>>-- volatile table doesn't exist
+>>drop volatile table t013t1;
+
+*** ERROR[1389] Object T013T1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot use volatile syntax on regular tables
+>>create volatile index tempi on sch.t013t1(a);
+
+*** ERROR[4191] Schema name SCH specified as part of the volatile table or index must be the same as the current user name, DB__ROOT.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>create volatile index tempi on t013t1(a);
+
+*** ERROR[4082] Object T013T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>drop volatile index t013t1i;
+
+*** ERROR[1389] Object T013T1I does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>drop volatile table t01351;
+
+*** ERROR[1389] Object T01351 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- should not show SESSION_ID or any internal CQDs
+>>showcontrol defaults;
+
+CONTROL QUERY DEFAULT
+  TARGET_CODE                   	DEBUG
+  TARGET_CPU_FREQUENCY          	199.
+  TARGET_IO_SEEK_TIME           	0.020147
+  TARGET_IO_SEQ_READ_RATE       	2.5
+  TARGET_MSG_LOCAL_RATE         	10.
+  TARGET_MSG_LOCAL_TIME         	0.000125
+  TARGET_MSG_REMOTE_RATE        	100.
+  TARGET_MSG_REMOTE_TIME        	0.00125
+  ARKCMP_FAKE_HW                	ON
+  SKIP_METADATA_VIEWS           	ON
+  DEF_NUM_SMP_CPUS              	2
+  MAX_ESPS_PER_CPU_PER_OP       	1
+  DEF_NUM_NODES_IN_ACTIVE_CLUSTERS	1
+  POS_ALLOW_NON_PK_TABLES       	ON
+  MODE_SEABASE                  	ON
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
+  HBASE_ASYNC_DROP_TABLE        	OFF
+  SEABASE_VOLATILE_TABLES       	ON
+  POS                           	OFF
+  SCHEMA                        	TRAFODION.T013_SCH
+
+--- SQL operation complete.
+>>
+>>--drop table t013t1;
+>>
+>>invoke t013t1;
+
+-- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
+-- Definition current  Wed May 14 06:04:37 2014
+
+  (
+    A                                INT DEFAULT NULL
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
+      added col */
+  )
+
+--- SQL operation complete.
+>>
+>>set session default sql_session 'END';
+
+--- SQL operation complete.
+>>set session default sql_session 'BEGIN';
+
+--- SQL operation complete.
+>>
+>>invoke t013t1;
+
+-- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
+-- Definition current  Wed May 14 06:04:42 2014
+
+  (
+    A                                INT DEFAULT NULL
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
+      added col */
+  )
+
+--- SQL operation complete.
+>>drop volatile table t013t1;
+
+*** ERROR[1279] A volatile DDL statement cannot be used on regular objects.
+
+--- SQL operation failed with errors.
+>>create volatile index tempi on t013t1(a);
+
+*** ERROR[4082] Object T013T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>drop volatile index tempi;
+
+*** ERROR[1389] Object TEMPI does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>#ifndef SEABASE_REGRESS
+>>create catalog t013cat;
+>>create schema t013cat.t013sch;
+>>set catalog t013cat;
+>>set schema t013cat.t013sch;
+>>#else
+>>set catalog seabase;
+
+--- SQL operation complete.
+>>set schema trafodion.t013sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>create volatile table t013t1 (a int);
+
+--- SQL operation complete.
+>>
+>>select b from t013t1;
+
+*** ERROR[4001] Column B is not found.  Tables in scope: T013T1(volatile).  Default schema: TRAFODION.T013SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select t013t1.b from t013t1;
+
+*** ERROR[4002] Column T013T1.B is not found.  Table T013T1 not exposed.  Tables in scope: T013T1(volatile).  Default schema: TRAFODION.T013SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select b from $$TEST_CATALOG$$.t013_sch.t013t1;
+
+*** ERROR[4001] Column B is not found.  Tables in scope: TRAFODION.T013_SCH.T013T1.  Default schema: TRAFODION.T013SCH.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>create volatile index t013t1i on t013t1(a);
+
+--- SQL operation complete.
+>>
+>>-- explain, showshape...
+>>--explain select * from t013t1;
+>>--explain options 'f' select * from t013t1;
+>>--explain insert into t013t1 values (1);
+>>--explain options 'f' insert into t013t1 values (1);
+>>showshape select * from t013t1;
+control query shape scan(path 'T013T1I', forward, blocks_per_access 1
+, mdam off);
+
+--- SQL operation complete.
+>>showshape insert into t013t1 values (1);
+control query shape nested_join(anything,anything);
+
+--- SQL operation complete.
+>>
+>>set session default sql_session 'END';
+
+--- SQL operation complete.
+>>
+>>set session default sql_session 'BEGIN';
+
+--- SQL operation complete.
+>>
+>>create table t013t3 (a int, b int);
+
+--- SQL operation complete.
+>>create index t013t3i1 on t013t3(a);
+
+--- SQL operation complete.
+>>invoke t013t3;
+
+-- Definition of Trafodion table TRAFODION.T013SCH.T013T3
+-- Definition current  Wed May 14 06:05:05 2014
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>-- test use of regular stmts(drop table, drop index, create index)
+>>-- on volatile tables
+>>create local temporary table t013t3(a int);
+
+--- SQL operation complete.
+>>invoke t013t3;
+
+-- Definition of Trafodion volatile table T013T3
+-- Definition current  Wed May 14 06:05:07 2014
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>-- should drop volatile table
+>>drop table t013t3;
+
+--- SQL operation complete.
+>>invoke t013t3;
+
+-- Definition of Trafodion table TRAFODION.T013SCH.T013T3
+-- Definition current  Wed May 14 06:05:11 2014
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>create volatile table t013t3(a int);
+
+--- SQL operation complete.
+>>create index t013t3i1 on t013t3(a);
+
+--- SQL operation complete.
+>>showddl t013t3;
+
+CREATE VOLATILE TABLE T013T3
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+CREATE VOLATILE INDEX T013T3I1 ON T013T3
+  (
+    A ASC
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- should drop volatile index	
+>>drop index t013t3i1;
+
+--- SQL operation complete.
+>>showddl t013t3;
+
+CREATE VOLATILE TABLE T013T3
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- return error
+>>drop table tempuser.t013t3;
+
+*** ERROR[1389] Object TRAFODION.TEMPUSER.T013T3 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- should drop volatile table
+>>#ifndef SEABASE_REGRESS
+>>drop table sql_user1.t013t3;
+>>#else
+>>drop table t013t3;
+
+--- SQL operation complete.
+>>#endif
+>>invoke t013t3;
+
+-- Definition of Trafodion table TRAFODION.T013SCH.T013T3
+-- Definition current  Wed May 14 06:05:27 2014
+
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>-- drop regular table
+>>drop table t013sch.t013t3;
+
+--- SQL operation complete.
+>>
+>>-- these tests do not automatically make the first col to be NNND and
+>>-- the pkey of the volatile table.
+>>-- they also test for nullable primary keys for volatile tables.
+>>control query default volatile_table_find_suitable_key 'ON';
+
+--- SQL operation complete.
+>>control query default POS 'MULTI_NODE';
+
+--- SQL operation complete.
+>>
+>>-- NULLABLE unique constraints (primary key, unique key constr)
+>>drop volatile table t013t1;
+
+*** ERROR[1389] Object T013T1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>create volatile table t013t1 (a int, primary key(a));
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int, primary key(a) droppable);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int) store by (a);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int, primary key(a))
++>#ifndef SEABASE_REGRESS
++>partition by (a)
++>#endif
++>;
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int) store by (a)
++>#ifndef SEABASE_REGRESS
++>partition by (a)
++>#endif
++>;
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int unique);
+
+*** ERROR[1283] The specified constraint or file option is not supported on a volatile table.
+
+--- SQL operation failed with errors.
+>>showddl t013t1, external;
+
+*** ERROR[4082] Object TRAFODION.T013SCH.T013T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>-- store by a, 4 partns
+>>drop volatile table t013t1;
+
+*** ERROR[1389] Object T013T1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>create volatile table t013t1 (a int);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a char(10), b int);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by a, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a char(10) not null, b int not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by c, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int, b char(10) not null, c int not null, d date, e int not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                DATE DEFAULT NULL
+  , E                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (C ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a date, b char(10), c date not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                DATE DEFAULT NULL
+  , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                DATE NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a date, b date not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                DATE DEFAULT NULL
+  , B                                DATE NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partitions
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real not null, b char(10));
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by d, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real not null, b varchar(10) not null, c char(10), d largeint);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , D                                LARGEINT DEFAULT NULL
+  )
+  STORE BY (D ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real not null, b interval second, c varchar(10));
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INTERVAL SECOND(2,6) DEFAULT NULL
+  , C                                VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by c, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real not null, b interval second, c interval year, d varchar(10) not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INTERVAL SECOND(2,6) DEFAULT NULL
+  , C                                INTERVAL YEAR(2) DEFAULT NULL
+  , D                                VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (C ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- NO PARTITION, float keys not supported
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+--- SQL operation complete.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL DEFAULT NULL
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- store by a, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a varchar(10) not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a varchar(10));
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a real not null, b varchar(10) not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                REAL NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                VARCHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- NON-NULLABLE columns to get preferenace over nullable columns
+>>
+>>-- store by b, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int, b int not null);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by a, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int not null, b int);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- both nullable cols, choose the first one. store by a, 4 partns
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int, b int);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- USER specified clauses will disable auto-selection of keys
+>>
+>>-- store by b, 4 partitions.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int not null, b int, primary key(b));
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , PRIMARY KEY (B ASC)
+  )
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partitions.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int not null, b int not null) store by (b);
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>-- store by b, 4 partitions.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 (a int not null, b int not null) 
++>#ifndef SEABASE_REGRESS
++>partition by (b)
++>#endif
++>;
+
+--- SQL operation complete.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  STORE BY (A ASC)
+;
+
+--- SQL operation complete.
+>>
+>>
+>>-- CTAS queries
+>>create table t013t2 (a int not null, b int) no partition;
+
+--- SQL operation complete.
+>>drop volatile table t013t1;
+
+--- SQL operation complete.
+>>create volatile table t013t1 as select b from t013t2;
+
+--- 0 row(s) inserted.
+>>showddl t013t1, external;
+
+CREATE VOLATILE TABLE T013T1
+  (
+    B                                INT DEFAULT NULL
+  )
+  STORE BY (B ASC)
+;
+
+--- SQL operation complete.
+>>
+>>drop table t013t1;
+
+--- SQL operation complete.
+>>drop table t013t2;
+
+--- SQL operation complete.
+>>
+>>#ifndef SEABASE_REGRESS
+>>drop schema t013cat.t013sch cascade;
+>>drop catalog t013cat;
+>>#endif
+>>
+>>cleanup obsolete volatile tables;
+
+--- SQL operation complete.
+>>
+>>#ifndef SEABASE_REGRESS
+>>set catalog cat;
+>>set schema $$TEST_CATALOG$$.t013_sch;
+>>#else
+>>set schema trafodion.t013_sch;
+
+--- SQL operation complete.
+>>#endif
+>>
+>>invoke t013t1;
+
+-- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
+-- Definition current  Wed May 14 06:08:31 2014
+
+  (
+    A                                INT DEFAULT NULL
+  , Z                                INT DEFAULT 0 NOT NULL NOT DROPPABLE /*
+      added col */
+  )
+
+--- SQL operation complete.
+>>
+>>select * from t013t1;
+
+A            Z          
+-----------  -----------
+
+          1            0
+
+--- 1 row(s) selected.
+>>select * from $$TEST_CATALOG$$.t013_sch.t013t1;
+
+A            Z          
+-----------  -----------
+
+          1            0
+
+--- 1 row(s) selected.
+>>
+>>
+>>log;

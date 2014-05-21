@@ -1,0 +1,8 @@
+50c50,54
+< --- SQL operation complete.
+---
+> *** ERROR[1024] Distribution Service/Data Access Manager error 73 occurred in module W:\catman\CatError.cpp on line 630.  DETAILS().
+> 
+> *** ERROR[1071] Unable to access object CAT.SCH.BTEMPREL (file error 73).
+> 
+> --- SQL operation completed with errors.

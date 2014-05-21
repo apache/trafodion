@@ -1,0 +1,187 @@
+>>set schema seabase.seabase;
+
+--- SQL operation complete.
+>>
+>>cqd hbase_serialization 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_coprocessors 'ON';
+
+--- SQL operation complete.
+>>cqd hbase_filter_preds 'ON';
+
+--- SQL operation complete.
+>>
+>>obey TEST012(clnup);
+>>drop table if exists T012T1 cascade;
+
+--- SQL operation complete.
+>>drop table if exists T012T2 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t012tT3 cascade;
+
+--- SQL operation complete.
+>>drop table if exists t012t11 cascade;
+
+--- SQL operation complete.
+>>
+>>obey TEST012(ddl);
+>>create table if not exists t012t1(a smallint not null serialized, b int serialized, 
++>       	     	    	       c largeint serialized,
++>       	     	              aa smallint unsigned default 10 not null serialized, 
++>                              d char(4) serialized, e varchar(5) serialized,
++>                              g numeric(5,2) serialized,
++>			      primary key(a desc));
+
+--- SQL operation complete.
+>>create index t012t1i1 on t012t1(b);
+
+--- SQL operation complete.
+>>create index t012t1i2 on t012t1(g desc);
+
+--- SQL operation complete.
+>>invoke t012t1;
+
+-- Definition of Seabase table SEABASE.SEABASE.T012T1
+-- Definition current  Fri Nov 15 10:01:00 2013
+
+  (
+    A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                LARGEINT DEFAULT NULL
+  , AA                               SMALLINT UNSIGNED DEFAULT 10 NOT NULL NOT
+      DROPPABLE
+  , D                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , E                                VARCHAR(5) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , G                                NUMERIC(5, 2) DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>create view t012v1 as select a,b,c from t012t1 where c < 0 with check option;
+
+--- SQL operation complete.
+>>invoke t012v1;
+
+-- Definition of Seabase view SEABASE.SEABASE.T012V1
+-- Definition current  Fri Nov 15 10:01:01 2013
+
+  (
+    A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  , C                                LARGEINT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>
+>>obey TEST012(tests);
+>>insert into t012t1 values (1,2,3, 1, 'a', 'b', 5.2);
+
+--- 1 row(s) inserted.
+>>insert into t012t1 values (2, null, null, 2, null, null, null);
+
+--- 1 row(s) inserted.
+>>select * from t012t1;
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     2            ?                     ?      2  ?     ?                 ?
+     1            2                     3      1  a     b              5.20
+
+--- 2 row(s) selected.
+>>
+>>select * from t012t1 where a = 1;
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     1            2                     3      1  a     b              5.20
+
+--- 1 row(s) selected.
+>>select * from t012t1 where b = 2;
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     1            2                     3      1  a     b              5.20
+
+--- 1 row(s) selected.
+>>select * from t012t1 where b < 3;
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     1            2                     3      1  a     b              5.20
+
+--- 1 row(s) selected.
+>>select * from t012t1 where d >= 'a';
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     1            2                     3      1  a     b              5.20
+
+--- 1 row(s) selected.
+>>
+>>update t012t1 set g = g+10;
+
+--- 2 row(s) updated.
+>>select * from t012t1;
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     2            ?                     ?      2  ?     ?                 ?
+     1            2                     3      1  a     b             15.20
+
+--- 2 row(s) selected.
+>>
+>>delete from t012t1 where (b,g) > (2,5);
+
+--- 1 row(s) deleted.
+>>select * from t012t1;
+
+A       B            C                     AA     D     E      G
+------  -----------  --------------------  -----  ----  -----  ------------
+
+     2            ?                     ?      2  ?     ?                 ?
+
+--- 1 row(s) selected.
+>>
+>>insert into t012v1 values (3,3,-1);
+
+--- 1 row(s) inserted.
+>>select * from t012v1;
+
+A       B            C                   
+------  -----------  --------------------
+
+     3            3                    -1
+
+--- 1 row(s) selected.
+>>
+>>obey TEST012(negtests);
+>>create table t012t10(f real not null serialized,
++>                              h decimal(4,3) serialized,
++>                              i date not null serialized,
++>                              j interval year to month serialized);
+
+*** ERROR[1191] SERIALIZE option is not yet supported for this datatype.
+
+--- SQL operation failed with errors.
+>>
+>>insert into t012v1 values (3,3,3);
+
+*** ERROR[8105] The operation is prevented by the check option on view SEABASE.SEABASE.T012V1.
+
+--- 0 row(s) inserted.
+>>
+>>create table t012t11(a int not null);
+
+--- SQL operation complete.
+>>
+>>log;

@@ -1,0 +1,7 @@
+! STD Redirection test
+! "tes12b - ******************"
+! "tes12b - STDOUT redirection"
+! "tes12b - ******************"
+exec {name $SHELL3,nid 3} shell -c ps
+delay 1
+exit 0

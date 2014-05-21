@@ -1,0 +1,284 @@
+-- Test: TEST315
+-- Functionality: This tests the handling of 3-byte UTF8 characters
+-- Expected files:   EXPECTED315
+-- Tables created:   cs315t*
+-- Limitations: None
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+--set terminal_charset utf8;  -- NOT on SeaQuest
+--set session default iso_mapping 'UTF8';  -- NOT on SeaQuest
+
+obey test315(clnup);
+
+log log315 clear;
+
+obey test315(ddl);
+
+obey test315(Three_Byte_tests);
+
+obey test315(clnup);
+
+log;
+exit;
+
+?section ddl
+
+create schema cs315s;
+set schema cs315s;
+
+?section Three_Byte_tests
+
+select converttohex(cast(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(8))) from (values(0))x;
+select converttohex(cast(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(8 BYTES) character set utf8)) from (values(0))x;
+select converttohex(cast(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(9))) from (values(0))x;
+select converttohex(cast(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(9 BYTES) character set utf8)) from (values(0))x;
+select converttohex(cast(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(12))) from (values(0))x;
+select converttohex(cast(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3' as char(12 BYTES) character set utf8)) from (values(0))x;
+--
+set terminal_charset gbk;
+select cast(_ucs2 x'515c515c515c515c' as char(11 bytes) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c' as char(12 bytes) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c' as char(3      ) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c' as char(4      ) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c0020' as char(12 bytes) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c0020' as char(13 bytes) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c0020' as char(4      ) character set utf8) from (values(1))t;
+select cast(_ucs2 x'515c515c515c515c0020' as char(5      ) character set utf8) from (values(1))t;
+--
+select octet_length(cast(_ucs2 x'515c515c515c515c' as char(11 bytes) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(11 bytes) character set utf8)) from (values(1))t;
+select octet_length(cast(_ucs2 x'515c515c515c515c' as char(13 bytes) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(13 bytes) character set utf8)) from (values(1))t;
+select octet_length(cast(_ucs2 x'515c515c515c515c' as char(3       ) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(3       ) character set utf8)) from (values(1))t;
+select octet_length(cast(_ucs2 x'515c515c515c515c' as char(5       ) character set utf8)), converttohex(cast(_ucs2 x'515c515c515c515c' as char(5       ) character set utf8)) from (values(1))t;
+set terminal_charset iso88591;
+--
+select converttohex(x'E0 A0 A1' || _utf8 x'E0 A0 A1') from (values(0))x;
+select 'BAD' from (values(0))x where x'E0 A0 A1'  = _utf8 x'E0 A0 A1';
+select 'OK ' from (values(0))x where x'E0 A0 A1' != _utf8 x'E0 A0 A1';
+
+select converttohex(substr(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',1,3)) from (values(0))x;
+select converttohex(substr(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',1,3)) from (values(0))x;
+
+select converttohex(substr(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',2,2)) from (values(0))x;
+select converttohex(substr(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',2,2)) from (values(0))x;
+
+select converttohex(insert(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 0, 'Z')) from (values(0))x;
+select converttohex(insert(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 0, 'Z')) from (values(0))x;
+select converttohex(insert(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 2, 'Z')) from (values(0))x;
+select converttohex(insert(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 2, 2, 'Z')) from (values(0))x;
+
+select converttohex(replace(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',       x'E0 A0 A2',       x'E0 A3 A7')) from (values(0))x;
+select converttohex(replace(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',       x'E0 A0 A2',       x'E0 A3 A7')) from (values(0))x;
+select converttohex(replace(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', _utf8 x'E0 A0 A2',       x'E0 A3 A7')) from (values(0))x;
+select converttohex(replace(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', _utf8 x'E0 A0 A2', _utf8 x'E0 A3 A7')) from (values(0))x;
+select CODE_VALUE( _utf8 x'20 20 21 E0 A0 A2 E0 A0 A3 E0 A0 A4') from (values(0))x;
+select CODE_VALUE( _utf8 x'C9 A0 20 E0 A0 A2 E0 A0 A3 E0 A0 A4') from (values(0))x;
+select CODE_VALUE( _utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4') from (values(0))x;
+select CODE_VALUE( _utf8 x'F7 BF BF BF 20 E0 A0 A2 E0 A0 A3'   ) from (values(0))x;
+select case when _utf8 x'E0 A0 A1' = CHAR(CODE_VALUE(_utf8 x'E0 A0 A1'),UTF8) then 'GOOD' else 'BAD' end from (values(0))x;
+select converttohex(LOWER(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+select converttohex(LOWER(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+select converttohex(UPPER(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+select converttohex(UPPER(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4')) from (values(0))x;
+select converttohex(UPPER(_ucs2 x'1FF7 1FCC FB04'))                       from (values(0))x;
+select converttohex(UPPER(TRANSLATE(_ucs2 x'1FF7 1FCC FB04' USING UCS2toUTF8))) from (values(0))x;
+select * from (values(1))x where UPPER(_ucs2 x'1FF7 1FCC FB04') = UPPER(TRANSLATE(_ucs2 x'1FF7 1FCC FB04' USING UCS2toUTF8));
+select converttohex(LEFT(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+select converttohex(LEFT(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+select converttohex(RIGHT(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+select converttohex(RIGHT(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4',3)) from (values(0))x;
+select converttohex(LPAD(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+select converttohex(LPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+select converttohex(LPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15, _utf8 x'E1 A1 A1')) from (values(0))x;
+create table cs315t99 (c1 varchar(10) character set utf8, c2 char(10) character set utf8) no partition;
+insert into cs315t99 values(_UTF8 x'E4B8ADE59BAF', _UTF8 x'E4B8ADE59BAF');
+select LPAD(c1,0,_utf8'z') from cs315t99;
+select LPAD(c2,0,_utf8'z') from cs315t99;
+select RPAD(c1,0,_utf8'z') from cs315t99;
+select RPAD(c2,0,_utf8'z') from cs315t99;
+select LPAD(c1,2,_utf8'z') from cs315t99;
+select LPAD(c2,2,_utf8'z') from cs315t99;
+select RPAD(c1,2,_utf8'z') from cs315t99;
+select RPAD(c2,2,_utf8'z') from cs315t99;
+select LPAD(c1,3,_utf8'z') from cs315t99;
+select LPAD(c2,3,_utf8'z') from cs315t99;
+select RPAD(c1,3,_utf8'z') from cs315t99;
+select RPAD(c2,3,_utf8'z') from cs315t99;
+select LPAD(c1,5,_utf8'ab') from cs315t99;
+select LPAD(c2,5,_utf8'ab') from cs315t99;
+select RPAD(c1,5,_utf8'ab') from cs315t99;
+select RPAD(c2,5,_utf8'ab') from cs315t99;
+select RPAD(c1,13,_utf8'ab') from cs315t99;
+select RPAD(c2,13,_utf8'ab') from cs315t99;
+select converttohex(RPAD(      x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+select converttohex(RPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15,       x'E1 A1 A1')) from (values(0))x;
+select converttohex(RPAD(_utf8 x'E0 A0 A1 E0 A0 A2 E0 A0 A3 E0 A0 A4', 15, _utf8 x'E1 A1 A1')) from (values(0))x;
+
+select DECODE(x'E0 A0 A1', _utf8 x'E0 A0 A1', 'BAD',
+                           'E0 A0 A1', 'BAD',
+                           substr(x'E0 A0 A2 E0 A0 A1',4,3), 'GOOD')
+                           from (values(0))x;
+select DECODE(_utf8 x'E0 A0 A1', x'E0 A0 A1', 'BAD',
+                                 substr(x'E0 A0 A2 E0 A0 A1',2,1), 'BAD',
+                                 substr(_utf8 x'E0 A0 A2 E0 A0 A1',2,1), 'GOOD')
+                                 from (values(0))x;
+
+select converttohex(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toUCS2)) from (values(0))x;
+--
+-- Both of the following should get error at runtime because TRANSLATION encounters non-ISO88591 char
+--
+select converttohex(TRANSLATE(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toUCS2) using UCS2toISO88591)) from (values(0))x;
+select converttohex(TRANSLATE('abcdefgh' || _utf8 x'E0A0A0' using UTF8toISO88591)) from (values(0))x;
+
+create table cs315t1 (uf8 char(8) character set utf8, uf8v varchar(8) character set utf8) no partition;
+insert into cs315t1 values(_utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
+                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8)),
+       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8)),
+       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8)) from cs315t1 order by 1,2,3;
+select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8v)),
+       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8v)),
+       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8v)) from cs315t1 order by 1,2,3;
+select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
+       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
+       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)) from cs315t1 order by 1,2,3;
+select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
+       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
+       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)) from cs315t1 order by 1,2,3;
+select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
+       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
+       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)) from cs315t1 order by 1,2,3;
+select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
+       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
+       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)) from cs315t1 order by 1,2,3;
+--
+create table cs315t2 (uf8 char(10) character set utf8, uf8v varchar(10) character set utf8) no partition;
+insert into cs315t2 values(_utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
+                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8)),
+       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8)),
+       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8)) from cs315t2 order by 1,2,3;
+select char_length( TRIM(_utf8 x'E0A0A0' FROM uf8v)),
+       octet_length(TRIM(_utf8 x'E0A0A0' FROM uf8v)),
+       converttohex(TRIM(_utf8 x'E0A0A0' FROM uf8v)) from cs315t2 order by 1,2,3;
+select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
+       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)),
+       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8)) from cs315t2 order by 1,2,3;
+select char_length( TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
+       octet_length(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)),
+       converttohex(TRIM(LEADING _utf8 x'E0A0A0' FROM uf8v)) from cs315t2 order by 1,2,3;
+select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
+       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)),
+       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8)) from cs315t2 order by 1,2,3;
+select char_length( TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
+       octet_length(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)),
+       converttohex(TRIM(TRAILING _utf8 x'E0A0A0' FROM uf8v)) from cs315t2 order by 1,2,3;
+
+create table cs315t3 (trimc char(1) character set utf8, uf8 char(8) character set utf8, uf8v varchar(8) character set utf8) no partition;
+insert into cs315t3 values(_utf8 x'E0A0A0',
+                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
+                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+insert into cs315t3 values(_utf8 x'E0A0A0',
+                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0',
+                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0');
+insert into cs315t3 values(_utf8 x'E0A0A0',
+                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020',
+                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020');
+insert into cs315t3 values(_utf8' ',
+                           _utf8' 555555 ',
+                           _utf8' 555555 ');
+insert into cs315t3 values(_utf8 x'F7BFBFBF',
+                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'66' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF',
+                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'66' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF');
+insert into cs315t3 values(_utf8 x'F7BFBFBF',
+                           _utf8 x'F7BFBFBF' _utf8'  77' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20',
+                           _utf8 x'F7BFBFBF' _utf8'  77' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20');
+select char_length( TRIM( trimc from uf8 ) ),
+       octet_length( TRIM( trimc from uf8 ) ),
+       converttohex( TRIM( trimc from uf8 ) ) from cs315t3 order by 1,2,3;
+
+select char_length( TRIM( trimc from uf8v ) ),
+       octet_length( TRIM( trimc from uf8v ) ),
+       converttohex( TRIM( trimc from uf8v ) ) from cs315t3 order by 1,2,3;
+
+select char_length( TRIM( LEADING trimc from uf8 ) ),
+       octet_length( TRIM( LEADING trimc from uf8 ) ),
+       converttohex( TRIM( LEADING trimc from uf8 ) ) from cs315t3 order by 1,2,3;
+
+select char_length( TRIM( LEADING trimc from uf8v ) ),
+       octet_length( TRIM( LEADING trimc from uf8v ) ),
+       converttohex( TRIM( LEADING trimc from uf8v ) ) from cs315t3 order by 1,2,3;
+
+select char_length( TRIM( TRAILING trimc from uf8 ) ),
+       octet_length( TRIM( TRAILING trimc from uf8 ) ),
+       converttohex( TRIM( TRAILING trimc from uf8 ) ) from cs315t3 order by 1,2,3;
+
+select char_length( TRIM( TRAILING trimc from uf8v ) ),
+       octet_length( TRIM( TRAILING trimc from uf8v ) ),
+       converttohex( TRIM( TRAILING trimc from uf8v ) ) from cs315t3 order by 1,2,3;
+--
+-- Now try with CHAR(32 BYTES) CHARACTER SET UTF8
+--
+create table cs315t4 (trimc char(1) character set utf8, uf8 char(32 BYTES) character set utf8, uf8v varchar(32 BYTES) character set utf8) no partition;
+insert into cs315t4 values(_utf8 x'E0A0A0',
+                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0',
+                           _utf8 x'E0A0A0E0A0A0E0A0A0' _utf8'zz' _utf8 x'E0A0A0E0A0A0E0A0A0');
+insert into cs315t4 values(_utf8 x'E0A0A0',
+                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0',
+                           _utf8 x'E0A0A0' _utf8' 333' _utf8 x'E0A0A0E0A0A0E0A0A0');
+insert into cs315t4 values(_utf8 x'E0A0A0',
+                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020',
+                           _utf8 x'E0A0A0' _utf8' 444' _utf8 x'E0A0A0' _utf8 x'2020');
+insert into cs315t4 values(_utf8' ',
+                           _utf8' 777777 ',
+                           _utf8' 777777 ');
+insert into cs315t4 values(_utf8 x'F7BFBFBF',
+                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'33' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF',
+                           _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF' _utf8'33' _utf8 x'F7BFBFBFF7BFBFBFF7BFBFBF');
+insert into cs315t4 values(_utf8 x'F7BFBFBF',
+                           _utf8 x'F7BFBFBF' _utf8'  55' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20',
+                           _utf8 x'F7BFBFBF' _utf8'  55' _utf8 x'F7BFBFBFF7BFBFBF' _utf8 x'20');
+select char_length( TRIM( trimc from uf8 ) ),
+       octet_length( TRIM( trimc from uf8 ) ),
+       converttohex( TRIM( trimc from uf8 ) ) from cs315t4 order by 1,2,3;
+
+select char_length( TRIM( trimc from uf8v ) ),
+       octet_length( TRIM( trimc from uf8v ) ),
+       converttohex( TRIM( trimc from uf8v ) ) from cs315t4 order by 1,2,3;
+
+select char_length( TRIM( LEADING trimc from uf8 ) ),
+       octet_length( TRIM( LEADING trimc from uf8 ) ),
+       converttohex( TRIM( LEADING trimc from uf8 ) ) from cs315t4 order by 1,2,3;
+
+select char_length( TRIM( LEADING trimc from uf8v ) ),
+       octet_length( TRIM( LEADING trimc from uf8v ) ),
+       converttohex( TRIM( LEADING trimc from uf8v ) ) from cs315t4 order by 1,2,3;
+
+select char_length( TRIM( TRAILING trimc from uf8 ) ),
+       octet_length( TRIM( TRAILING trimc from uf8 ) ),
+       converttohex( TRIM( TRAILING trimc from uf8 ) ) from cs315t4 order by 1,2,3;
+
+select char_length( TRIM( TRAILING trimc from uf8v ) ),
+       octet_length( TRIM( TRAILING trimc from uf8v ) ),
+       converttohex( TRIM( TRAILING trimc from uf8v ) ) from cs315t4 order by 1,2,3;
+
+?section clnup
+
+drop schema cs315s cascade;
+

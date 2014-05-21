@@ -1,0 +1,76 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+
+#ifndef WIDECHAR_H
+#define WIDECHAR_H 1
+
+/* uncomment out for debug
+#if !defined(NA_NSK)   // for debug on NT only
+#include <wchar.h>
+#else
+#include "NAWinnt.h"
+#endif
+
+#ifdef NAWchar
+#undef NAWchar
+#endif
+
+#if !defined(NA_NSK) // for debug on NT only
+#define NAWchar NAWchar
+#else
+#define NAWchar NAWchar
+#endif
+*/
+
+#include "NAWinNT.h"
+
+struct _scanfbuf {
+        NAWchar *_ptr;
+        UInt32   _cnt;
+        };
+
+typedef struct _scanfbuf SCANBUF;
+
+#define _r _cnt
+#define _p _ptr
+
+Int32 na_swscanf(const NAWchar *str, NAWchar const *fmt, ...);
+
+struct _sprintf_buf {
+        NAWchar *_ptr;
+         Int32   _cnt;
+        };
+
+typedef struct _sprintf_buf SPRINTF_BUF;
+
+#define _w _cnt
+
+Int32
+na_wsprintf(NAWchar *str, NAWchar const *fmt, ...);
+
+#if (defined(NA_C89) || defined(NA_WINNT) || defined(NA_HSC_WINDOWS)) 
+typedef UInt64  u_quad_t;
+typedef Int64 quad_t;
+#endif
+
+typedef unsigned short u_short;
+typedef UInt32   u_int;
+
+#endif

@@ -1,0 +1,103 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+ifndef SQ_MTYPE
+SQ_MTYPE	= 32
+endif
+
+# save CC/CXX
+OCC	        := $(CC)
+OCXX	        := $(CXX)
+
+# tools
+ifeq ($(SQ_MTYPE),32)
+ifeq ($(SQ_USE_INTC),0)
+CC		+= -m32
+CXX		+= -m32
+endif
+endif
+
+# flags
+CFLAGS		= $(DEFINES) $(CWARN) $(DFLAG)
+CXXFLAGS	= $(DEFINES) $(CXXWARN) $(DFLAG)
+ifeq ($(SQ_BUILD_TYPE),release)
+DFLAG		= -g3 $(OPTIM_FLGS)
+else
+DFLAG		= -g3
+DEFINES         = -DDEBUG
+endif
+
+CFLAGS	       += -fPIC
+CXXFLAGS       += -fPIC
+
+ifeq ($(SQ_USE_INTC),1)
+
+IOPTS		= -Wall -Werror -wd177 -wd981 -wd1418 -wd1684 -Wcheck -Wp64
+IOPTSTEMP	= -wd383
+CWARN		= $(HPCWARN) $(IOPTS)
+CXXWARN		= $(HPCXXWARN) $(IOPTS)
+
+ifeq ($(SQ_BUILD_TYPE),release)
+DFLAG		= -g3 -debug full -O2
+else
+DFLAG		= -g3
+endif
+else
+CWARN		= -Wall -Wextra $(HPCWARN) -pedantic -Werror -Wno-long-long
+CXXWARN		= -Wall -Wextra $(HPCXXWARN) -pedantic -Werror -Wno-long-long
+endif
+INCLUDES	= -I$(INCEXPDIR)
+USE_DMALLOC=0
+ifeq ($(USE_DMALLOC),1)
+INCLUDES	+= -I$(DMALLOCROOT)
+LIBSX		+= -L$(DMALLOCROOT) -ldmallocthcxx
+LIBSTHX		+= -L$(DMALLOCROOT) -ldmallocthcxx
+endif
+
+ifndef SQ_PACK
+SQ_PACK         = 0
+endif
+
+ifeq ($(SQ_STFSD),1)
+DEFINES        += -DSQ_STFSD
+ifeq ($(SQ_PACK),0)
+DEFINES        += -DSQ_PACK
+endif
+endif
+ 
+ifeq ($(SQ_PACK),1)
+DEFINES        += -DSQ_PACK
+endif
+ 
+# stfs libs
+LIBSTFS		= $(LIBEXPDIR)/libstfs.so 
+
+# common rules
+.c.o:
+	$(CC) $(CDEPFLAGS) $(CFLAGS) $(INCLUDES) -c $<
+
+.cpp.o:
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c $<
+
+# common pattern rules
+$(OUTDIR)/%.o: %.c
+	$(CC) $(CDEPFLAGS) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+  
+$(OUTDIR)/%.o: %.cpp
+	$(CXX) $(CDEPFLAGS) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
+

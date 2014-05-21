@@ -1,0 +1,61 @@
+.TH SHELL 1 "05 October 2012" "SQ bin" "SQ-BIN Reference Pages"
+.SH NAME
+shell \- monitor shell
+.LP
+.SH SYNOPSIS
+.B shell
+[
+[
+.B \-a
+]
+[
+.B infile
+] |
+.B \-c command
+]
+.SH DESCRIPTION
+.LP
+.B shell
+manages the SQ system.
+.SH USAGE
+.TP 7
+.BI -a
+will cause the
+.B shell
+to attach to an already existing monitor process.
+.TP
+.BI infile
+specifies an input-file to be processed.
+.TP
+.BI -c
+will cause the
+.B shell
+to attach to an already existing monitor process
+and execute the single
+.B command.
+.SH FILES
+$MPI_TMPDIR/cluster.conf
+.SH ENVIRONMENT VARIABLES
+.B MPI_FLAGS
+.LP
+.B MPI_IC_ORDER
+.LP
+.B MPI_RDMA_MSGSIZE
+.LP
+.B MPI_ROOT
+.LP
+.B MPI_TEST_DELAY
+.LP
+.B MPI_TMPDIR
+.LP
+.B SQ_IC
+.LP
+.B SQ_MEASURE
+.LP
+.B SQ_SNAPSHOT_DIR
+.LP
+.B SQ_VIRTUAL_NID
+.LP
+.B SQ_VIRTUAL_NODES
+.LP
+.B SQ_WATCHDOG

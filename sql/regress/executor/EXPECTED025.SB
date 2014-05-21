@@ -1,0 +1,2252 @@
+>>
+>>create table t025mdam ( a smallint no default not null ,
++>                               b smallint no default not null ,
++>                               c smallint no default not null,
++>                               d smallint no default not null,
++>                               primary key (a,b) );
+
+--- SQL operation complete.
+>>
+>>create table t025mtmp 
++>                           ( a smallint no default not null ,
++>                               b smallint no default not null ,
++>                               c smallint no default not null,
++>                               d smallint no default not null,
++>                               primary key (a,b) );
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>insert into t025mdam values (0,0,0,0),
++>                                 (1,0,0,0),
++>                                 (2,0,0,0),
++>                                 (3,0,0,0),
++>                                 (4,0,0,0),
++>                                 (5,0,0,0),
++>                                 (6,0,0,0),
++>                                 (7,0,0,0),
++>                                 (8,0,0,0),
++>                                 (9,0,0,0);
+
+--- 10 row(s) inserted.
+>>
+>>insert into t025mtmp select * from t025mdam;
+
+--- 10 row(s) inserted.
+>>insert into t025mtmp select a,1,c,d from t025mdam;
+
+--- 10 row(s) inserted.
+>>insert into t025mtmp select a,2,c,d from t025mdam;
+
+--- 10 row(s) inserted.
+>>insert into t025mtmp select a,3,c,d from t025mdam;
+
+--- 10 row(s) inserted.
+>>
+>>insert into t025mdam select * from t025mtmp where b > 0;
+
+--- 30 row(s) inserted.
+>>
+>>insert into t025mdam select a-20,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a-10,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+10,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+20,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+30,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+40,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+50,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+60,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+70,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+80,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+90,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+100,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>insert into t025mdam select a+110,b,c,d from t025mtmp;
+
+--- 40 row(s) inserted.
+>>
+>>update statistics for table t025mdam on every column;
+
+--- SQL operation complete.
+>>
+>>-- ******************************************************************
+>>--   Create and populate table - one partition for now
+>>-- ******************************************************************
+>>
+>>create table t025m2 ( q int not null , 
++>                             r int not null , 
++>                             s int, 
++>                             primary key (q,r) );
+
+--- SQL operation complete.
+>>
+>>insert into t025m2 values (1,1,1),
++>                                 (1,10,10),
++>                                 (5,5,5),
++>                                 (5,50,50);
+
+--- 4 row(s) inserted.
+>>
+>>
+>>--==================================================================
+>>--  tests where disjuncts do not overlap
+>>--==================================================================
+>>
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t025mdam', MDAM_COLUMNS ALL);
+
+--- SQL operation complete.
+>>#else
+>>control query shape exchange(scan('t025mdam', MDAM_COLUMNS ALL));
+>>#endif
+>>
+>>?section q1
+>>--------------------------------------------------------------------
+>>--   2 disjuncts, one interval in each, 1st precedes 2nd
+>>-- expect rows (1,0),(2,0),(3,0),(5,1),(6,1),(7,1),(8,1)  (7 rows)
+>>--------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a > 0 and a < 4)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     1       0       0       0  
+     2       0       0       0  
+     3       0       0       0  
+     5       1       0       0  
+     6       1       0       0  
+     7       1       0       0  
+     8       1       0       0  
+
+--- 7 row(s) selected.
+>>
+>>?section q2
+>>--------------------------------------------------------------------
+>>--   2 disjuncts, one interval in each, 1st follows 2nd
+>>-- expect rows (1,1),(2,1),(3,1),(5,0),(6,0),(7,0),(8,0)  (7 rows)
+>>--------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 1 and a > 0 and a < 4);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     1       1       0       0  
+     2       1       0       0  
+     3       1       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     7       0       0       0  
+     8       0       0       0  
+
+--- 7 row(s) selected.
+>>
+>>?section q3
+>>--------------------------------------------------------------------
+>>--   2 disjuncts, two intervals in each, 1st precedes 2nd
+>>-- expect rows (0,0),(4,0),(9,1),(12,1)  (4 rows)
+>>--------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (0,4))
++>         or
++>        (b = 1 and a in (9,12));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       0       0       0  
+     4       0       0       0  
+     9       1       0       0  
+    12       1       0       0  
+
+--- 4 row(s) selected.
+>>
+>>?section q4
+>>--------------------------------------------------------------------
+>>--   2 disjuncts, two intervals in each, 1st follows 2nd
+>>-- expect rows (0,1),(4,1),(9,0),(12,0)  (4 rows)
+>>--------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (9,12))
++>         or
++>        (b = 1 and a in (0,4));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       1       0       0  
+     4       1       0       0  
+     9       0       0       0  
+    12       0       0       0  
+
+--- 4 row(s) selected.
+>>
+>>?section q5
+>>------------------------------------------------------------------------
+>>--   2 disjuncts, two intervals in each, lists interleave thus: 0 1 0 1
+>>-- expect rows (0,0),(4,1),(9,0),(12,1)  (4 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (0,9))
++>         or
++>        (b = 1 and a in (4,12));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       0       0       0  
+     4       1       0       0  
+     9       0       0       0  
+    12       1       0       0  
+
+--- 4 row(s) selected.
+>>
+>>?section q6
+>>------------------------------------------------------------------------
+>>--   2 disjuncts, two intervals in each, lists interleave thus: 1 0 1 0
+>>-- expect rows (0,1),(4,0),(9,1),(12,0)  (4 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (4,12))
++>         or
++>        (b = 1 and a in (0,9));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       1       0       0  
+     4       0       0       0  
+     9       1       0       0  
+    12       0       0       0  
+
+--- 4 row(s) selected.
+>>
+>>?section q7
+>>------------------------------------------------------------------------
+>>--   2 disjuncts, two intervals in each, lists interleave thus: 0 1 1 0
+>>-- expect rows (0,0),(4,1),(9,1),(12,0)  (4 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (0,12))
++>         or
++>        (b = 1 and a in (4,9));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       0       0       0  
+     4       1       0       0  
+     9       1       0       0  
+    12       0       0       0  
+
+--- 4 row(s) selected.
+>>
+>>?section q8
+>>------------------------------------------------------------------------
+>>--   2 disjuncts, two intervals in each, lists interleave thus: 1 0 0 1
+>>-- expect rows (0,1),(4,0),(9,0),(12,1)  (4 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (4,9))
++>         or
++>        (b = 1 and a in (0,12));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       1       0       0  
+     4       0       0       0  
+     9       0       0       0  
+    12       1       0       0  
+
+--- 4 row(s) selected.
+>>
+>>?section q9
+>>------------------------------------------------------------------------
+>>--   2 disjuncts, long lists just for fun, lists interleave thus:
+>>--   1 1 0 0 1 0 1 0 1 1 1 0
+>>-- expect rows (0,1),(2,1),(4,0),(6,0),(8,1),(10,0),
+>>--             (12,1),(14,0),(16,1),(18,1),(20,1),(22,0)  (12 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (4,6,10,14,22))
++>         or
++>        (b = 1 and a in (0,2,8,12,16,18,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       1       0       0  
+     2       1       0       0  
+     4       0       0       0  
+     6       0       0       0  
+     8       1       0       0  
+    10       0       0       0  
+    12       1       0       0  
+    14       0       0       0  
+    16       1       0       0  
+    18       1       0       0  
+    20       1       0       0  
+    22       0       0       0  
+
+--- 12 row(s) selected.
+>>
+>>?section q10
+>>------------------------------------------------------------------------
+>>--   for more fun, 3 disjuncts, interleaved thus:
+>>--   1 1 0 0 1 2 0 1 0 1 2 1 1 0
+>>-- expect rows (0,1),(2,1),(4,0),(6,0),(8,1),(9,2),(10,0),
+>>--             (12,1),(14,0),(16,1),(17,2),(18,1),(20,1),(22,0)  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (4,6,10,14,22))
++>         or
++>        (b = 1 and a in (0,2,8,12,16,18,20))
++>         or
++>        (b = 2 and a in (9,17));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     0       1       0       0  
+     2       1       0       0  
+     4       0       0       0  
+     6       0       0       0  
+     8       1       0       0  
+     9       2       0       0  
+    10       0       0       0  
+    12       1       0       0  
+    14       0       0       0  
+    16       1       0       0  
+    17       2       0       0  
+    18       1       0       0  
+    20       1       0       0  
+    22       0       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section sido
+>>--==================================================================
+>>--  tests on single interval disjuncts that overlap
+>>
+>>--  The dimensions we have are:
+>>--  1.  front interval:
+>>--    a.  exists and comes from interval1
+>>--    b.  exists and comes from interval2
+>>--    c.  does not exist
+>>--  2.  back interval:
+>>--    a.  exists and comes from interval1
+>>--    b.  exists and comes from interval2
+>>--    c.  does not exist
+>>--
+>>--  A structured test requires 5 cases (say, one each of
+>>--  dimension 1 with dimension 2 held constant, then one
+>>--  each in dimension 2 with dimension 1 held constant,
+>>--  note that these have one case in common).  But since the
+>>--  space is small we do all 9 possibilities.
+>>
+>>--  In this script, we are *not* giving reference list union
+>>--  a rigorous test - the disjuncts always have a single
+>>--  disjunct reference, and they always differ.
+>>--==================================================================
+>>
+>>?section sido1a2a
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a
+>>-- expect rows (4,0),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0)
+>>--  (10 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+
+--- 10 row(s) selected.
+>>
+>>?section sido1a2b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2b
+>>-- expect rows (4,0),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,1)
+>>--  (10 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 8)
++>         or
++>        (b = 1 and a >= 5 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+
+--- 10 row(s) selected.
+>>
+>>?section sido1a2c
+>>------------------------------------------------------------------------
+>>-- case 1a, 2c
+>>-- expect rows (4,0),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1)
+>>--  (9 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 8)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+
+--- 9 row(s) selected.
+>>
+>>?section sido1b2a
+>>------------------------------------------------------------------------
+>>-- case 1b, 2a
+>>-- expect rows (4,1),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0)
+>>--  (10 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 9)
++>         or
++>        (b = 1 and a >= 4 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+
+--- 10 row(s) selected.
+>>
+>>?section sido1b2b
+>>------------------------------------------------------------------------
+>>-- case 1b, 2b
+>>-- expect rows (4,1),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,1)
+>>--  (10 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 1 and a >= 4 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+
+--- 10 row(s) selected.
+>>
+>>?section sido1b2c
+>>------------------------------------------------------------------------
+>>-- case 1b, 2c
+>>-- expect rows (4,1),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1)
+>>--  (9 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 1 and a >= 4 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+
+--- 9 row(s) selected.
+>>
+>>?section sido1c2a
+>>------------------------------------------------------------------------
+>>-- case 1c, 2a
+>>-- expect rows (5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0)
+>>--  (9 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 9)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+
+--- 9 row(s) selected.
+>>
+>>?section sido1c2b
+>>------------------------------------------------------------------------
+>>-- case 1c, 2b
+>>-- expect rows (5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,1)
+>>--  (9 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 1 and a >= 5 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+
+--- 9 row(s) selected.
+>>
+>>?section sido1c2c
+>>------------------------------------------------------------------------
+>>-- case 1c, 2c
+>>-- expect rows (5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),(8,1)
+>>--  (8 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+
+--- 8 row(s) selected.
+>>
+>>?section mido
+>>--==================================================================
+>>--  tests on multiple interval disjuncts that overlap
+>>--
+>>--  The dimensions we have are:
+>>--  1.  front interval:
+>>--    a.  exists and comes from interval1
+>>--    b.  exists and comes from interval2
+>>--    c.  does not exist
+>>--  2.  back interval:
+>>--    a.  exists and comes from interval1
+>>--    b.  exists and comes from interval2
+>>--    c.  does not exist
+>>--  3.  prev interval:
+>>--    a.  NULLP
+>>--    b.  not NULLP
+>>--  4.  next interval:
+>>--    a.  NULLP
+>>--    b.  not NULLP
+>>--
+>>--  The previous section varied dimensions 1 and 2, while
+>>--  holding dimensions 3 and 4 constant (at 3a and 4a).
+>>--  In this section we take a subset of the dimension 1
+>>--  and 2 combinations, with combinations of (3a,4b),
+>>--  (3b,4a) and (3b,4b).  Note that (3a,4b) and (3b,4a)
+>>--  is enough to span the vector space, but we add some
+>>--  (3b,4b) cases just for fun.
+>>--==================================================================
+>>
+>>?section mido1a2a3a4b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3a, 4b
+>>-- expect rows (4,0),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),
+>>--             (8,1),(9,0),(11,0) through (14,0)
+>>--  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section mido1a2b3a4b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2b, 3a, 4b
+>>-- expect rows (4,0),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),
+>>--             (8,1),(9,1),(11,0) through (14,0)
+>>--  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 8)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section mido1a2c3a4b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2c, 3a, 4b
+>>-- expect rows (4,0),(5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),
+>>--             (8,1),(11,0) through (14,0)
+>>--  (13 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 8)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 13 row(s) selected.
+>>
+>>?section mido1c2b3a4b
+>>------------------------------------------------------------------------
+>>-- case 1c, 2b, 3a, 4b
+>>-- expect rows (5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),
+>>--             (8,1),(9,1),(11,0) through (14,0)
+>>--  (13 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 13 row(s) selected.
+>>
+>>?section mido1c2c3a4b
+>>------------------------------------------------------------------------
+>>-- case 1c, 2c, 3a, 4b
+>>-- expect rows (5,0),(5,1),(6,0),(6,1),(7,0),(7,1),(8,0),
+>>--             (8,1),(11,0) through (14,0)
+>>--  (12 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 12 row(s) selected.
+>>
+>>?section mido1a2a3b4a
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4a
+>>-- expect rows (-5,0) through (0,0),(4,0),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0)
+>>--  (16 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+
+--- 16 row(s) selected.
+>>
+>>?section mido1b2a3b4a
+>>------------------------------------------------------------------------
+>>-- case 1b, 2a, 3b, 4a
+>>-- expect rows (-5,0) through (0,0),(4,1),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0)
+>>--  (16 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a >= 4 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+
+--- 16 row(s) selected.
+>>
+>>?section mido1c2a3b4a
+>>------------------------------------------------------------------------
+>>-- case 1c, 2a, 3b, 4a
+>>-- expect rows (-5,0) through (0,0),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0)
+>>--  (15 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+
+--- 15 row(s) selected.
+>>
+>>?section mido1b2b3b4a
+>>------------------------------------------------------------------------
+>>-- case 1b, 2b, 3b, 4a
+>>-- expect rows (-5,0) through (0,0),(4,1),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,1)
+>>--  (16 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a >= 4 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+
+--- 16 row(s) selected.
+>>
+>>?section mido1c2c3b4a
+>>------------------------------------------------------------------------
+>>-- case 1c, 2c, 3b, 4a
+>>-- expect rows (-5,0) through (0,0),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1)
+>>--  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section mido1b2c3b4b
+>>------------------------------------------------------------------------
+>>-- case 1b, 2c, 3b, 4b
+>>-- expect rows (-5,0) through (0,0),(4,1),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),
+>>--             (11,0) through (14,0)
+>>--  (19 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 4 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 19 row(s) selected.
+>>
+>>?section mido1c2a3b4b
+>>------------------------------------------------------------------------
+>>-- case 1c, 2a, 3b, 4b
+>>-- expect rows (-5,0) through (0,0),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0),
+>>--             (11,0) through (14,0)
+>>--  (19 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 19 row(s) selected.
+>>
+>>?section mido1a2a3b4b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4b
+>>-- expect rows (-5,0) through (0,0),(4,0),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,0),
+>>--             (11,0) through (14,0)
+>>--  (20 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 20 row(s) selected.
+>>
+>>?section mido1b2b3b4b
+>>------------------------------------------------------------------------
+>>-- case 1b, 2b, 3b, 4b
+>>-- expect rows (-5,0) through (0,0),(4,1),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,1),
+>>--             (11,0) through (14,0)
+>>--  (20 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 4 and a <= 9);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 20 row(s) selected.
+>>
+>>?section mido1c2c3b4b
+>>------------------------------------------------------------------------
+>>-- case 1c, 2c, 3b, 4b
+>>-- expect rows (-5,0) through (0,0),(5,0),(5,1),
+>>--             (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),
+>>--             (11,0) through (14,0)
+>>--  (18 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 5 and a <= 8)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a >= 5 and a <= 8);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 18 row(s) selected.
+>>
+>>?section multint
+>>--==================================================================
+>>--  This section is the fourth part of a "white box" test of
+>>--  evai^or^disjuncts.
+>>--
+>>--  In the first section, we tested the non-overlap code paths.  In
+>>--  the second, we tested overlap code paths, where @prev^interval and
+>>--  @next^interval were both NULLP.  In the third, we tested overlap
+>>--  code paths, where @prev^interval and @next^interval varied.  But,
+>>--  in both the second and third sections, the @interval2 chain
+>>--  consisted of a single interval that was consumed.
+>>--
+>>--  This script, then, combines the dimensions varied in the first
+>>--  section with those in the second and third.  Note that in theory,
+>>--  first + second + third span the vector space.  However, there is a
+>>--  data condition that has not been tested (this is one of the
+>>--  limitations of the vector space model):  We must make sure that
+>>--  when we consume an interval from the interval2 chain, the rest of
+>>--  that chain remains intact.
+>>--
+>>--  So, this section adds additional (non-overlapping) intervals to
+>>--  the interval2 chain.
+>>--
+>>--  The dimensions we have are:
+>>--  1.  front interval:
+>>--    a.  exists and comes from interval1
+>>--    b.  exists and comes from interval2
+>>--    c.  does not exist
+>>--  2.  back interval:
+>>--    a.  exists and comes from interval1
+>>--    b.  exists and comes from interval2
+>>--    c.  does not exist
+>>--  3.  prev interval:
+>>--    a.  NULLP
+>>--    b.  not NULLP
+>>--  4.  next interval:
+>>--    a.  NULLP
+>>--    b.  not NULLP
+>>--  5.  interval2 chain
+>>--    a.  one interval which is consumed
+>>--    b.  consumed interval, with one following that does not overlap
+>>--    c.  consumed interval, with one preceding that does not overlap
+>>--    d.  consumed interval, with one preceding and one following that
+>>--        do not overlap
+>>--
+>>--  The second and third sections held dimension 5 constant at 5a.
+>>--  Here we take a subset of cases from those sections and vary on
+>>--  dimension 5.
+>>--==================================================================
+>>
+>>?section multint1a2a3a4b5b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3a, 4b, 5b
+>>-- expect rows (4,0),(5,0),(6,0),(6,1),(7,0),(8,0),
+>>--             (9,0),(11,0) through (14,0),(20,1)
+>>--  (12 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+    20       1       0       0  
+
+--- 12 row(s) selected.
+>>
+>>?section multint1a2a3b4a5b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4a, 5b
+>>-- expect rows (-5,0) through (0,0),(4,0),(5,0),
+>>--             (6,0),(6,1),(7,0),(8,0),(9,0),(20,1)
+>>--  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a in (6,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    20       1       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section multint1a2a3b4b5b
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4b, 5b
+>>-- expect rows (-5,0) through (0,0),(4,0),(5,0),
+>>--             (6,0),(6,1),(7,0),(8,0),(9,0),
+>>--             (11,0) through (14,0),(20,1)
+>>--  (18 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+    20       1       0       0  
+
+--- 18 row(s) selected.
+>>
+>>?section multint1a2a3a4b5c
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3a, 4b, 5c
+>>-- expect rows (-20,1),(4,0),(5,0),(6,0),(6,1),(7,0),(8,0),
+>>--             (9,0),(11,0) through (14,0)
+>>--  (12 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,-20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 12 row(s) selected.
+>>
+>>?section multint1a2a3b4a5c
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4a, 5c
+>>-- expect rows (-20,1),(-5,0) through (0,0),(4,0),(5,0),
+>>--             (6,0),(6,1),(7,0),(8,0),(9,0)
+>>--  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a in (6,-20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section multint1a2a3b4b5c
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4b, 5c
+>>-- expect rows (-20,1),(-5,0) through (0,0),(4,0),(5,0),
+>>--             (6,0),(6,1),(7,0),(8,0),(9,0),
+>>--             (11,0) through (14,0)
+>>--  (18 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,-20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+
+--- 18 row(s) selected.
+>>
+>>?section multint1a2a3a4b5d
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3a, 4b, 5d
+>>-- expect rows (-20,1),(4,0),(5,0),(6,0),(6,1),(7,0),(8,0),
+>>--             (9,0),(11,0) through (14,0),(20,1)
+>>--  (13 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,-20,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+    20       1       0       0  
+
+--- 13 row(s) selected.
+>>
+>>?section multint1a2a3b4a5d
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4a, 5d
+>>-- expect rows (-20,1),(-5,0) through (0,0),(4,0),(5,0),
+>>--             (6,0),(6,1),(7,0),(8,0),(9,0),(20,1)
+>>--  (15 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 1 and a in (6,-20,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    20       1       0       0  
+
+--- 15 row(s) selected.
+>>
+>>?section multint1a2a3b4b5d
+>>------------------------------------------------------------------------
+>>-- case 1a, 2a, 3b, 4b, 5d
+>>-- expect rows (-20,1),(-5,0) through (0,0),(4,0),(5,0),
+>>--             (6,0),(6,1),(7,0),(8,0),(9,0),
+>>--             (11,0) through (14,0),(20,1)
+>>--  (19 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 4 and a <= 9)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,-20,20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     4       0       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+    20       1       0       0  
+
+--- 19 row(s) selected.
+>>
+>>?section multint1c2c3b4b5d
+>>------------------------------------------------------------------------
+>>-- case 1c, 2c, 3b, 4b, 5d
+>>-- expect rows (-20,1),(-5,0) through (0,0),(6,0),(6,1),
+>>--             (11,0) through (14,0),(20,1)
+>>--  (14 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a = 6)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,20,-20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+    20       1       0       0  
+
+--- 14 row(s) selected.
+>>
+>>?section multint1c2a3b4b5d
+>>------------------------------------------------------------------------
+>>-- case 1c, 2a, 3b, 4b, 5d
+>>-- expect rows (-20,1),(-5,0) through (0,0),(6,0),(6,1),
+>>--             (7,0),(8,0),(11,0) through (14,0),(20,1)
+>>--  (16 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 6 and a <= 8)
++>         or
++>        (b = 0 and a > -6 and a <= 0)
++>         or
++>        (b = 0 and a > 10 and a < 15)
++>         or
++>        (b = 1 and a in (6,20,-20));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+   -20       1       0       0  
+    -5       0       0       0  
+    -4       0       0       0  
+    -3       0       0       0  
+    -2       0       0       0  
+    -1       0       0       0  
+     0       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+    11       0       0       0  
+    12       0       0       0  
+    13       0       0       0  
+    14       0       0       0  
+    20       1       0       0  
+
+--- 16 row(s) selected.
+>>
+>>?section multov
+>>--======================================================================
+>>--  This section is the fifth and last part of a "white box" test of
+>>--  evai^or^disjuncts.
+>>--
+>>--  In this section, we do test cases involving multiple overlaps, i.e.
+>>--  where some interval in a new disjunct overlaps several intervals
+>>--  in a prior disjunct or vice versa.
+>>--======================================================================
+>>
+>>?section multov1
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--       xxxxxxxxxxxx
+>>--       x          x
+>>-- expect rows (6,0),(6,1),(7,0),(8,0),(9,0),(10,0),(10,1)
+>>--  (7 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 6 and a <= 10)
++>         or
++>        (b = 1 and a in (6,10));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     9       0       0       0  
+    10       0       0       0  
+    10       1       0       0  
+
+--- 7 row(s) selected.
+>>
+>>?section multov2
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--       xxxx    xxxx
+>>--       xxxxxxxxxxxx
+>>-- expect rows (6,0),(6,1),(7,0),(7,1),(8,0),(8,1),(9,1),
+>>--             (10,0),(10,1),(11,0),(11,1),(12,0),(12,1)
+>>--  (13 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 6 and a <= 8)
++>         or
++>        (b = 0 and a >= 10 and a <= 12)
++>         or
++>        (b = 1 and a >= 6 and a <= 12);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    10       0       0       0  
+    10       1       0       0  
+    11       0       0       0  
+    11       1       0       0  
+    12       0       0       0  
+    12       1       0       0  
+
+--- 13 row(s) selected.
+>>
+>>?section multov3
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--       (xxx    xxx)
+>>--       [xxxxxxxxxx]
+>>-- expect rows (6,1),(7,0),(7,1),(8,0),(8,1),(9,1),
+>>--             (10,0),(10,1),(11,0),(11,1),(12,1)
+>>--  (11 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a > 6 and a <= 8)
++>         or
++>        (b = 0 and a >= 10 and a < 12)
++>         or
++>        (b = 1 and a >= 6 and a <= 12);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    10       0       0       0  
+    10       1       0       0  
+    11       0       0       0  
+    11       1       0       0  
+    12       1       0       0  
+
+--- 11 row(s) selected.
+>>
+>>?section multov4
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--       [xxx    xxx]
+>>--       (xxxxxxxxxx)
+>>-- expect rows (6,0),(7,0),(7,1),(8,0),(8,1),(9,1),
+>>--             (10,0),(10,1),(11,0),(11,1),(12,0)
+>>--  (11 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 6 and a <= 8)
++>         or
++>        (b = 0 and a >= 10 and a <= 12)
++>         or
++>        (b = 1 and a > 6 and a < 12);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     6       0       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    10       0       0       0  
+    10       1       0       0  
+    11       0       0       0  
+    11       1       0       0  
+    12       0       0       0  
+
+--- 11 row(s) selected.
+>>
+>>?section multov5
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--       xxxxxxx      xxx   xxx
+>>--            xxxxxxxxxxxxxxxxxxxx
+>>-- expect rows (3,0),(4,0),(4,1),(5,0),(5,1),(6,1),(7,1),(8,1),
+>>--             (9,1),(10,1),(11,0),(11,1),(12,0),(12,1),(13,1),
+>>--             (14,1),(15,1),(16,0),(16,1),(17,0),(17,1),(18,0),
+>>--             (18,1),(19,0),(19,1),(20,1),(21,1)
+>>--  (27 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 3 and a <= 5)
++>         or
++>        (b = 0 and a > 10 and a < 13)
++>         or
++>        (b = 0 and a >= 16 and a <= 19)
++>         or
++>        (b = 1 and a >= 4 and a <= 21);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     3       0       0       0  
+     4       0       0       0  
+     4       1       0       0  
+     5       0       0       0  
+     5       1       0       0  
+     6       1       0       0  
+     7       1       0       0  
+     8       1       0       0  
+     9       1       0       0  
+    10       1       0       0  
+    11       0       0       0  
+    11       1       0       0  
+    12       0       0       0  
+    12       1       0       0  
+    13       1       0       0  
+    14       1       0       0  
+    15       1       0       0  
+    16       0       0       0  
+    16       1       0       0  
+    17       0       0       0  
+    17       1       0       0  
+    18       0       0       0  
+    18       1       0       0  
+    19       0       0       0  
+    19       1       0       0  
+    20       1       0       0  
+    21       1       0       0  
+
+--- 27 row(s) selected.
+>>
+>>?section multov6
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--       xxxxxxxxx  x xxx xxxx xxx
+>>--    x   x  x  x   x      x       x
+>>-- expect rows (-5,1),(3,0),(4,0),(4,1),(5,0),(6,0),(6,1),(7,0),(8,0),(8,1),
+>>--             (9,0),(13,0),(13,1),(16,0),(17,0),(18,0),(21,0),
+>>--             (22,0),(22,1),(23,0),(24,0),(27,0),(28,0),(29,0),
+>>--             (31,1)
+>>--  (25 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a >= 3 and a <= 9)
++>         or
++>        (b = 0 and a = 13)
++>         or
++>        (b = 0 and a >= 16 and a <= 18)
++>         or
++>        (b = 0 and a >= 21 and a <= 24)
++>         or
++>        (b = 0 and a >= 27 and a <= 29)
++>         or
++>        (b = 1 and a in (-5,4,6,8,13,22,31));
+
+A       B       C       D       
+------  ------  ------  ------  
+
+    -5       1       0       0  
+     3       0       0       0  
+     4       0       0       0  
+     4       1       0       0  
+     5       0       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     8       0       0       0  
+     8       1       0       0  
+     9       0       0       0  
+    13       0       0       0  
+    13       1       0       0  
+    16       0       0       0  
+    17       0       0       0  
+    18       0       0       0  
+    21       0       0       0  
+    22       0       0       0  
+    22       1       0       0  
+    23       0       0       0  
+    24       0       0       0  
+    27       0       0       0  
+    28       0       0       0  
+    29       0       0       0  
+    31       1       0       0  
+
+--- 25 row(s) selected.
+>>
+>>?section multov7
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--      x  xxxx  x  xxxxxxx
+>>--    xxxxxxxxxxxxxxxxx
+>>-- expect rows (1,1),(2,1),(3,0),(3,1),(4,1),(5,1),(6,0),(6,1),
+>>--             (7,0),(7,1),(8,1),(9,0),(9,1),(10,1),(11,1),(12,1),(13,1),
+>>--             (14,1),(15,1),(16,0),(16,1),(17,0),(17,1),(18,0),(19,0)
+>>--  (25 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (3,9))
++>         or
++>        (b = 0 and a > 5 and a < 8)
++>         or
++>        (b = 0 and a >= 16 and a <= 19)
++>         or
++>        (b = 1 and a > 0 and a < 18);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     1       1       0       0  
+     2       1       0       0  
+     3       0       0       0  
+     3       1       0       0  
+     4       1       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       1       0       0  
+     9       0       0       0  
+     9       1       0       0  
+    10       1       0       0  
+    11       1       0       0  
+    12       1       0       0  
+    13       1       0       0  
+    14       1       0       0  
+    15       1       0       0  
+    16       0       0       0  
+    16       1       0       0  
+    17       0       0       0  
+    17       1       0       0  
+    18       0       0       0  
+    19       0       0       0  
+
+--- 25 row(s) selected.
+>>
+>>?section multov8
+>>------------------------------------------------------------------------
+>>-- test this picture:
+>>--      x  xxxx  x  xxxxxxx
+>>--    xxxxxxxxxxxxxx
+>>-- expect rows (1,1),(2,1),(3,0),(3,1),(4,1),(5,1),(6,0),(6,1),
+>>--             (7,0),(7,1),(8,1),(9,0),(9,1),(10,1),(11,1),(12,1),(13,1),
+>>--             (14,1),(15,1),(16,0),(17,0),(18,0),(19,0)
+>>--  (23 rows)
+>>------------------------------------------------------------------------
+>>
+>>select * from t025mdam
++>  where (b = 0 and a in (3,9))
++>         or
++>        (b = 0 and a > 5 and a < 8)
++>         or
++>        (b = 0 and a > 15 and a <= 19)
++>         or
++>        (b = 1 and a > 0 and a < 16);
+
+A       B       C       D       
+------  ------  ------  ------  
+
+     1       1       0       0  
+     2       1       0       0  
+     3       0       0       0  
+     3       1       0       0  
+     4       1       0       0  
+     5       1       0       0  
+     6       0       0       0  
+     6       1       0       0  
+     7       0       0       0  
+     7       1       0       0  
+     8       1       0       0  
+     9       0       0       0  
+     9       1       0       0  
+    10       1       0       0  
+    11       1       0       0  
+    12       1       0       0  
+    13       1       0       0  
+    14       1       0       0  
+    15       1       0       0  
+    16       0       0       0  
+    17       0       0       0  
+    18       0       0       0  
+    19       0       0       0  
+
+--- 23 row(s) selected.
+>>
+>>control query shape anything;
+
+--- SQL operation complete.
+>>
+>>
+>>-- ******************************************************************
+>>--  Test dimensions:
+>>--     1.
+>>--        d.  MDAM
+>>--     2.
+>>--        a.  non-partitioned tables, non-empty
+>>--        b.  non-partitioned tables, innermost table empty,
+>>--                outermost non-empty
+>>--        c.  non-partitioned tables, outermost table empty
+>>--        d.  partitioned tables, all innermost partitions non-empty
+>>--                all outermost partitions non-empty
+>>--        e.  partitioned tables, 1st innermost partition empty,
+>>--                2nd non-empty, all outermost partitions non-empty
+>>--        f.  partitioned tables, 1st innermost partition non-empty,
+>>--                2nd empty, all outermost partitions non-empty
+>>--        g.  partitioned tables, both innermost partitions empty
+>>--                all outermost partitions non-empty
+>>--        h.  partitioned tables, 1st outermost partition empty,
+>>--                2nd non-empty, all innermost partitions non-empty
+>>--        i.  partitioned tables, 1st outermost partition non-empty,
+>>--                2nd empty, all innermost partitions non-empty
+>>--        j.  partitioned tables, both outermost partitions empty
+>>--                all innermost partitions non-empty
+>>--        (note:  c, h, i, j done only for join plans)
+>>--
+>>-- ******************************************************************
+>>
+>>-- ******************************************************************
+>>--  3.  Test dimensions 2a with 1d (MDAM)
+>>-- ******************************************************************
+>>
+>>-- test 1d2a
+>>#ifdef SEABASE_REGRESS
+>>control query shape groupby(scan('t025m2', MDAM_COLUMNS ALL));
+
+--- SQL operation complete.
+>>#else
+>>control query shape exchange(groupby(scan('t025m2', MDAM_COLUMNS ALL)));
+>>#endif
+>>
+>>prepare s1d2a from
++>  select count(*),sum(s),min(s),max(s),avg(s) from t025m2
++>      where r > 4 and r < 60;
+
+--- SQL command prepared.
+>>
+>>-- answer should be 3, 65, 5, 50, 21
+>>execute s1d2a;
+
+(EXPR)                (EXPR)                (EXPR)       (EXPR)       (EXPR)                
+--------------------  --------------------  -----------  -----------  --------------------  
+
+                   3                    65            5           50                    21  
+
+--- 1 row(s) selected.
+>>
+>>control query shape anything;
+
+--- SQL operation complete.
+>>
+>>-- ******************************************************************
+>>--  4.  Test dimensions 2b with 1d (MDAM)
+>>-- ******************************************************************
+>>
+>>-- delete rows from table
+>>
+>>delete from t025m2;
+
+--- 4 row(s) deleted.
+>>
+>>-- test 1d2b
+>>
+>>-- answer should be  0, ?, ?, ?, ?
+>>execute s1d2a;
+
+(EXPR)                (EXPR)                (EXPR)       (EXPR)       (EXPR)                
+--------------------  --------------------  -----------  -----------  --------------------  
+
+                   0                     ?            ?            ?                     ?  
+
+--- 1 row(s) selected.
+>>
+>>-- ******************************************************************
+>>--  6.  Test dimensions 2d with 1d (MDAM)
+>>-- ******************************************************************
+>>
+>>-- The optimizer is not returning a plan to
+>>-- the prepare s1d2d probably because the cqs statement
+>>-- is not adequate. I'll fix it later (09/19/97)
+>>
+>>-- drop table t025m2;
+>>
+>>-- add a partition to the table, repopulate it
+>>
+>>-- create table t025m2 ( q int not null , 
+>>--                              r int not null , 
+>>--                             s int, 
+>>--                             primary key (q,r) )
+>>--                   partition (add first key (140) location /G/DATA2);
+>>
+>>-- insert into t025m2 values (1,1,1),
+>>--                                  (1,10,10),
+>>--                                  (5,5,5),
+>>--                                  (5,50,50),
+>>--                                  (201,201,201),
+>>--                                  (205,205,205),
+>>--                                  (205,255,255),
+>>--                                  (205,265,265);
+>>
+>>-- test 1d2d
+>>-- control query shape exchange(groupby(scan('t025m2', MDAM_COLUMNS ALL)));
+>>
+>>--prepare s1d2d from
+>>--  select count(*),sum(s),min(s),max(s),avg(s) from t025m2
+>>--      where r > 4 and r < 204;
+>>
+>>-- answer should be 4, 266, 5, 201, 66
+>>-- execute s1d2d;  
+>>
+>>
+>>-- ******************************************************************
+>>--  9.  Test dimensions 2e with 1d (MDAM)
+>>-- ******************************************************************
+>>
+>>-- test 1d2e
+>>
+>>-- delete data from 1st partition
+>>--delete from t025m2 where q < 140;
+>>
+>>--prepare s1d2e from
+>>  --select count(*),sum(s),min(s),max(s),avg(s) from t025m2
+>>      --where r > 4 and r < 204;
+>>
+>>-- answer should be 1, 201, 201, 201, 201
+>>--execute s1d2e;  
+>>
+>>control query shape anything;
+
+--- SQL operation complete.
+>>
+>>-- ******************************************************************
+>>--  10.  Test dimensions 2f with 1d (MDAM)
+>>-- ******************************************************************
+>>
+>>-- repopulate 1st partition of innermost table, and make 2nd partition
+>>-- empty
+>>
+>>-- s/b 4 rows deleted
+>>--delete from t025m2;
+>>--insert into t025m2 values (1,1,1),
+>>                                 --(1,10,10),
+>>                                 --(5,5,5),
+>>                                 --(5,50,50);
+>>
+>>-- test 1d2f
+>>
+>>-- answer should be 3, 65, 5, 50, 21
+>>--execute s1d2e;  
+>>
+>>?section bugfix1
+>>------------------------------------------------------------------
+>>-- Description:      Genesis case 10-980205-3598                --
+>>-- Expected result:  0 row(s) selected                          --
+>>------------------------------------------------------------------
+>>#ifdef SEABASE_REGRESS
+>>control query shape scan('t025mdam', MDAM_COLUMNS ALL);
+
+--- SQL operation complete.
+>>#else
+>>control query shape partition_access(scan('t025mdam', MDAM_COLUMNS ALL));
+>>#endif
+>>select * from t025mdam
++>  where b = 2 and c = 3
++>     or c = 1
++>     or c = 2
++>     or c = 3
++>     or c = 4
++>     or c = 5
++>     or c = 6
++>  ;
+
+--- 0 row(s) selected.
+>>control query shape anything;
+
+--- SQL operation complete.
+>>
+>>?section cleanup
+>>
+>>control query shape anything;
+
+--- SQL operation complete.
+>>
+>>drop table t025m2;
+
+--- SQL operation complete.
+>>drop table t025mdam;
+
+--- SQL operation complete.
+>>drop table t025mtmp;
+
+--- SQL operation complete.
+>>
+>>log;

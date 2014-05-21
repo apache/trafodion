@@ -1,0 +1,216 @@
+>>
+>>sh sqlci -i"TEST021(s0)" >> LOG021;
+Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
+(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+>>?section s0
+>>initialize trafodion, drop;
+
+*** ERROR[1393] Trafodion is not initialized on this system.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>sh sqlci -i"TEST021(s1)" >> LOG021;
+Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
+(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+>>?section s1
+>>initialize trafodion;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>sh sqlci -i"TEST021(s11)" >> LOG021;
+Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
+(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+>>?section s11
+>>create table t021 (a int not null);
+
+--- SQL operation complete.
+>>create index t021i on t021(a);
+
+--- SQL operation complete.
+>>
+>>select * from trafodion."_MD_".indexes;
+
+BASE_TABLE_UID        KEYTAG       IS_UNIQUE    KEY_COLCOUNT  NONKEY_COLCOUNT  IS_EXPLICIT  INDEX_UID
+--------------------  -----------  -----------  ------------  ---------------  -----------  --------------------
+
+  118812258470797179            1            0             2                0            1    118812258470797410
+  137389606905699355            1            1             1                4            1    137389606905699896
+
+--- 2 row(s) selected.
+>>
+>>showddl t021;
+
+CREATE TABLE TRAFODION.SEABASE.T021
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE INDEX T021I ON TRAFODION.SEABASE.T021
+  (
+    A ASC
+  )
+;
+
+--- SQL operation complete.
+>>select * from t021;
+
+--- 0 row(s) selected.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>sh sqlci -i"TEST021(s2)" >> LOG021;
+Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
+(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+>>?section s2
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>initialize trafodion, downgrade;
+Metadata Downgrade: started
+
+Version Check: started
+Version Check: done
+
+Drop Old Metadata Pre: started
+Drop Old Metadata Pre: done
+
+Backup Current Metadata: started
+Backup Current Metadata: done
+
+Customize New Metadata: started
+  Start: Remove Constraints
+  End: Remove Constraints
+  Start: Update INDEXES
+  End: Update INDEXES
+Customize New Metadata: done
+
+Drop Added Columns: started
+Drop Added Columns: done
+
+Drop Added MD Tables: started
+Drop Added MD Tables: done
+
+Drop Added MD Indexes: started
+Drop Added MD Indexes: done
+
+Drop Old Metadata Post: started
+Drop Old Metadata Post: done
+
+Update Metadata Version: started
+Update Metadata Version: done
+
+Metadata Downgrade: done
+
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>sh sqlci -i"TEST021(s3)" >> LOG021;
+Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
+(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+>>?section s3
+>>initialize trafodion, upgrade;
+Metadata Upgrade: started
+
+Version Check: started
+Version Check: done
+
+Drop Old Metadata: started
+Drop Old Metadata: done
+
+Backup Current Metadata: started
+Backup Current Metadata: done
+
+Drop Current Metadata: started
+Drop Current Metadata: done
+
+Initialize New Metadata: started
+Initialize New Metadata: done
+
+Copy Old Metadata: started
+
+Copy Old Metadata: done
+
+Validate Metadata Copy: started
+Validate Metadata Copy: done
+
+Customize New Metadata: started
+  Start: Populate Primary Key Constraint
+  End: Populate Primary Key Constraint
+Customize New Metadata: done
+
+Drop Old Metadata: started
+Drop Old Metadata: done
+
+Update Metadata Version: started
+Update Metadata Version: done
+
+Metadata Upgrade: done
+
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>sh sqlci -i"TEST021(s4)" >> LOG021;
+Hewlett-Packard NonStop(TM) SQL/MX Conversational Interface 0.7.0
+(c) Copyright 2003-2010 Hewlett-Packard Development Company, LP.
+>>?section s4
+>>select * from trafodion."_MD_".indexes;
+
+BASE_TABLE_UID        KEYTAG       IS_UNIQUE    KEY_COLCOUNT  NONKEY_COLCOUNT  IS_EXPLICIT  INDEX_UID
+--------------------  -----------  -----------  ------------  ---------------  -----------  --------------------
+
+  118812258470797179            1            0             2                0            1    118812258470797410
+  136263707315887855            1            1             1                4            1    136263707315889245
+  137389606905699355            1            1             1                4            1    137389606905699896
+
+--- 3 row(s) selected.
+>>
+>>showddl t021;
+
+CREATE TABLE TRAFODION.SEABASE.T021
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+;
+
+CREATE INDEX T021I ON TRAFODION.SEABASE.T021
+  (
+    A ASC
+  )
+;
+
+--- SQL operation complete.
+>>select * from t021;
+
+--- 0 row(s) selected.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>log;

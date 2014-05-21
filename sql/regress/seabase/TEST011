@@ -1,0 +1,221 @@
+-- Tests for SeaBase
+-- Added July 2013
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey TEST011(setup);
+obey TEST011(clnup);
+
+log LOG011 clear;
+obey TEST011(tests);
+log;
+exit;
+
+?section setup
+--------------------------------------------------------------------------
+
+cqd query_cache '0';
+
+?section clnup
+drop table T011T1;
+drop table t011tT3;
+
+?section tests
+
+create table T011T1 (a int not null, b char(10), primary key(a));
+
+invoke T011T1;
+
+insert into T011T1 values (1, 'a'), (2, 'b'), (3, 'c');
+
+select * from T011T1;
+
+select * from T011T1 where a = 2;
+select * from t011t1 where a = 1 or a = 2;
+select * from t011t1 where a = 1 or a = 4;
+select * from t011t1 where a = 5;
+
+select * from T011T1 where a > 1;
+
+select * from T011T1 where a >= 1;
+
+select * from t011t1 where a < 3;
+select * from t011t1 where a <= 3;
+
+select * from t011t1 where a > 1 and a < 3;
+select * from t011t1 where a >= 2 and a < 4;
+select * from t011t1 where a >= 2 and a <= 3;
+select * from t011t1 where a >= 3 and a < 5;
+
+select * from t011t1 where a > 4 and a < 2;
+
+delete from t011t1 where a = 1;
+select * from t011t1;
+
+delete from t011t1 where a > 2 and a <= 3;
+select * from t011t1;
+
+delete from t011t1;
+select * from t011t1;
+
+insert into T011T1 values (1, 'a'), (2, 'b'), (3, 'c');
+delete from t011t1 where a >= 3 and a < 4;
+select * from t011t1;
+
+select * from (delete from t011t1 where a = 2)x;
+select * from (delete from t011t1) x;
+
+cqd hbase_sql_iud_semantics 'ON';
+cqd hbase_rowset_vsbb_opt 'ON';
+cqd hbase_updel_cursor_opt 'ON';
+explain options 'f' delete from t011t1 where a = 10;
+explain options 'f' delete from t011t1 where a = 10 or a = 20;
+explain options 'f' delete from t011t1 where a = ?;
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = 10;
+explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = 'z' where a = ?;
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+cqd hbase_sql_iud_semantics 'ON';
+cqd hbase_rowset_vsbb_opt 'ON';
+cqd hbase_updel_cursor_opt 'OFF';
+explain options 'f' delete from t011t1 where a = 10;
+explain options 'f' delete from t011t1 where a = 10 or a = 20;
+explain options 'f' delete from t011t1 where a = ?;
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = 10;
+explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = 'z' where a = ?;
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+cqd hbase_sql_iud_semantics 'ON';
+cqd hbase_rowset_vsbb_opt 'OFF';
+cqd hbase_updel_cursor_opt 'OFF';
+explain options 'f' delete from t011t1 where a = 10;
+explain options 'f' delete from t011t1 where a = 10 or a = 20;
+explain options 'f' delete from t011t1 where a = ?;
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = 10;
+explain options 'f' update t011t1 set b = 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10;
+explain options 'f' update t011t1 set b = b || 'z' where a = 10 or a = 20;
+explain options 'f' update t011t1 set b = 'z' where a = ?;
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+explain options 'f' update t011t1 set b = b || 'z' where a = ?;
+explain options 'f' update t011t1 set b = b || 'z' where a = ?[10];
+
+drop table if exists t011t3;
+create table if not exists t011t3 (a int not null, b int not null, c char(500), 
+                                            primary key(a,b)); 
+
+-- should return error 4246
+prepare s from 
+upsert using load into t011t3 (a,b) values (1,2);
+
+prepare s from
+upsert with no rollback into t011t3
+  select
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  from (values(1)) as starter
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+explain options 'f' s;
+execute s;
+
+delete from t011t3;
+
+prepare s from
+upsert using load into t011t3
+  select
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    0 + (1000 * x1000) + (100 * x100) + + (10 * x10) + x1,
+    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  from (values(1)) as starter
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1000
+    transpose 0,1,2,3,4,5,6,7,8,9 as x100
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1
+  ;
+explain options 'f' s;
+execute s;
+
+-- transaction optimization tests
+delete from t011t1;
+
+-- next 4 explains should not choose external transaction
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+explain options 'f' select * from t011t1 where a = 1;
+
+-- next 2 explains should not choose external transaction
+explain options 'f' upsert using load into t011t1 values (1,'a'), (2,'b');
+explain options 'f' upsert with no rollback into t011t1 values (1,'a'), (2,'b');
+
+-- next 3 explains should choose external transaction with 'return' on error
+begin work;
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+commit work;
+
+-- next 3 explains should choose external transaction with 'return' on error
+set transaction autocommit off;
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+
+set transaction autocommit on;
+
+-- next 3 explains should choose external transaction with abort on error
+explain options 'f' insert into t011t1 values (?[10], ?[10]);
+explain options 'f' delete from t011t1 where a = ?[10];
+explain options 'f' update t011t1 set b = 'z' where a = ?[10];
+
+-- next 3 explains should choose external transaction with abort on error
+create index t011t1i1 on t011t1(b);
+explain options 'f' insert into t011t1 values (1,'a');
+explain options 'f' delete from t011t1 where a = 1;
+explain options 'f' update t011t1 set b = 'b' where a = 1;
+drop index t011t1i1;
+
+-- next 4 explain should choose external transaction with abort on error
+explain options 'f' insert into t011t1 values (1,'a'), (2,'b');
+explain options 'f' delete from t011t1 where a = 1 or a = 2;
+explain options 'f' update t011t1 set b = 'b' where a = 1 or a = 2;
+explain options 'f' insert into t011t1 select a,c from t011t3;
+
+
+
+
+

@@ -1,0 +1,137 @@
+/**********************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+**********************************************************************/
+#ifndef EXP_HBASE_DEFS_H
+#define EXP_HBASE_DEFS_H
+
+#include "BaseTypes.h"
+
+#define HBASE_ACCESS_SUCCESS 0
+#define HBASE_ACCESS_PREEMPT 1
+#define HBASE_ACCESS_EOD 100
+#define HBASE_ACCESS_EOR 101
+
+typedef struct 
+{
+  //  char val[1000];
+  char * val;
+  Lng32 len;
+} HbaseStr;
+
+// this enum MUST be kept in sync with the Java constants in HBaseClient.java
+enum HbaseOptionEnum
+  {
+    HBASE_NAME = 0,
+    HBASE_MAX_VERSIONS,
+    HBASE_MIN_VERSIONS,
+    HBASE_TTL,
+    HBASE_BLOCKCACHE,
+    HBASE_IN_MEMORY,
+    HBASE_COMPRESSION,
+    HBASE_BLOOMFILTER,
+    HBASE_BLOCKSIZE,
+    HBASE_DATA_BLOCK_ENCODING,
+    HBASE_CACHE_BLOOMS_ON_WRITE,
+    HBASE_CACHE_DATA_ON_WRITE,
+    HBASE_CACHE_INDEXES_ON_WRITE,
+    HBASE_COMPACT_COMPRESSION,
+    HBASE_ENCODE_ON_DISK,
+    HBASE_EVICT_BLOCKS_ON_CLOSE,
+    HBASE_KEEP_DELETED_CELLS,
+    HBASE_REPLICATION_SCOPE, // items here and above are column family level
+    HBASE_MAX_FILESIZE,  // items below are on a table level
+    HBASE_COMPACT,
+    HBASE_DURABILITY,
+    HBASE_MEMSTORE_FLUSH_SIZE,
+    HBASE_MAX_OPTIONS
+  };
+
+
+class HbaseCreateOption
+{
+ public:
+  HbaseCreateOption(NAText &key, NAText &val)
+    {
+      key_ = key;
+      val_ = val;
+    }
+  
+  HbaseCreateOption(HbaseCreateOption &hbo)
+    {
+      key_ = hbo.key();
+      val_ = hbo.val();
+    }
+  
+  NAText &key() { return key_;}
+  NAText &val()  { return val_;}
+  
+ private:
+  NAText key_;
+  NAText val_;
+};
+
+typedef NAList<HbaseStr> HBASE_NAMELIST;
+
+typedef enum 
+  {
+    HBASE_MIN_ERROR_NUM = 700,
+    HBASE_OPER_OK = HBASE_MIN_ERROR_NUM,
+    HBASE_CREATE_ERROR,
+    HBASE_DROP_ERROR,
+    HBASE_OPEN_ERROR,
+    HBASE_CLOSE_ERROR,
+    HBASE_ACCESS_ERROR,
+    HBASE_CREATE_ROW_ERROR,
+    HBASE_DUP_ROW_ERROR,
+    HBASE_ROW_NOTFOUND_ERROR,
+    HBASE_CREATE_OPTIONS_ERROR,
+    HBASE_COPY_ERROR,
+    HBASE_CREATE_HFILE_ERROR,
+    HBASE_ADD_TO_HFILE_ERROR,
+    HBASE_CLOSE_HFILE_ERROR,
+    HBASE_DOBULK_LOAD_ERROR,
+    HBASE_CLEANUP_HFILE_ERROR,
+    HBASE_INIT_HBLC_ERROR,
+    HBASE_MAX_ERROR_NUM     // keep this as the last element in enum list.
+
+  } HbaseError;
+
+static const char * const hbaseErrorEnumStr[] = 
+  {
+    "HBASE_ERROR_OK",
+    "HBASE_CREATE_ERROR",
+    "HBASE_DROP_ERROR",
+    "HBASE_OPEN_ERROR",
+    "HBASE_CLOSE_ERROR",
+    "HBASE_ACCESS_ERROR",
+    "HBASE_CREATE_ROW_ERROR",
+    "HBASE_DUP_ROW_ERROR",
+    "HBASE_ROW_NOTFOUND_ERROR",
+    "HBASE_CREATE_OPTIONS_ERROR",
+    "HBASE_COPY_ERROR",
+    "HBASE_CREATE_HFILE_ERROR",
+    "HBASE_ADD_TO_HFILE_ERROR",
+    "HBASE_CLOSE_HFILE_ERROR",
+    "HBASE_DOBULK_LOAD_ERROR",
+    "HBASE_CLEANUP_HFILE_ERROR",
+    "HBASE_INIT_HBLC_ERROR",
+    "HBASE_MAX_ERROR_NUM"     // keep this as the last element in enum list.
+  };
+
+#endif

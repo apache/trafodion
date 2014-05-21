@@ -1,0 +1,24 @@
+.TH SQIPCRM 1 "05 May 2010" "SQ scripts" "SQ-SCRIPTS Reference Pages"
+.SH NAME
+sqipcrm \- SQ ipcrm
+.LP
+.SH SYNOPSIS
+.B sqipcrm
+.SH DESCRIPTION
+.LP
+.B sqipcrm
+will remove all all shared memory ids,
+all semaphores ids,
+and all message queue ids
+on all nodes in a cluster
+(or current node for virtual systems).
+This is done via ssh (if necessary)
+and the ipcrm command.
+.SH SEE ALSO
+.I ipcs
+,
+.I ipcrm
+,
+.I pdsh
+,
+.I ssh.

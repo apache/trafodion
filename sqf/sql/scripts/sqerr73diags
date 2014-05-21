@@ -1,0 +1,1051 @@
+#! /bin/bash
+# =============================================================================
+# SCRIPT: sqerr73diags
+#
+# This file contain functions that report owner and waiter information related
+# to error 73.
+#
+# Usage  - see printHelp function below 
+#
+# Description:
+#
+# script returns:
+#  0 successful operations
+#  1 unexpected error
+#  2 syntax error
+#  3 error while processing events
+#
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+# =============================================================================
+
+# **************************************************************************
+# FUNCTION: printHelp
+# prints out help text
+function printHelp 
+{
+  echo ""
+  echo "Description: reports owner and waiter lock information for error 73"
+  echo "  Usage: "
+  echo "    sqerr73diags [<options>]"
+  echo "    <options> "
+  echo ""
+  echo "         -a           archive file to $TAR_DOWNLOAD_ROOT"
+  echo "         -d           run in debug mode "
+  echo "         -h | --help  display help text"
+  echo "         -o           return lock owner details"
+  echo "         -w           return lock waiter details"
+  echo "         --start <time> time to start looking for events"
+  echo "         --stop  <time> time to stop looking for events"
+  echo ""
+  echo "     <time> yyyy-mm-dd hh:mm:ss   "
+  echo ""
+  echo "  Example: "
+  echo "    sqerr73diags --start 2013-10-28 11:03:00"
+  echo " " 
+}
+
+# **************************************************************************
+# FUNCTION: adjustSavedFiles
+# removes old versions of saved files, only retain $archiveCount versions
+function adjustSavedFiles
+{
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Start adjusting files" 0
+  fi
+  numLogFiles=`ls $scriptAndLogLoc/error73diags*.log | wc -l`
+  fileToRemove=""
+  while [ $numLogFiles -gt $archiveCount ]; 
+  do
+    logFile=`ls -tr $scriptAndLogLoc/*error73diags*.log | head -1`
+    fileToRemove=$fileToRemove" "$logFile
+
+    #   Remove old files
+    if [ "$fileToRemove" != "" ]; then
+       printInfo "Removing file $fileToRemove" 0
+       rm $fileToRemove > /dev/null 2>&1
+    fi
+    let numLogFiles=numLogFiles-1
+  done
+
+  if [ $debugOn -eq 1 ]; then
+    printInfo "Completed step:  adjusting files" 1
+  fi
+}
+
+
+# **************************************************************************
+# FUNCTION: chkInstance
+# checks to see if the SeaQuest environment is up
+function chkInstance
+{
+  if [ -z $MY_SQROOT ]; then
+     echo "ERROR: You need to set up the MY_SQROOT environment variable "
+     echo "to continue using this script."
+     echo
+     echo "Exiting the sqerr73diags script." 
+     exit 1;
+  fi
+
+  $MY_SQROOT/sql/scripts/sqcheck -i 1 -d 1 > /dev/null 2>&1
+  sqcheck_result=$?
+
+  if   [ $sqcheck_result -eq 0 ]; then
+    echo "The SeaQuest environment is up."
+  elif [ $sqcheck_result -eq 1 ]; then
+    echo "ERROR:  The SeaQuest environment is only partially up."
+    echo
+    echo "Exiting the sqerr73diags script." 
+    exit 1;
+  elif [ $sqcheck_result -eq 2 ]; then
+    echo "ERROR:  The SeaQuest environment is not up."
+    echo
+    echo "Exiting the sqerr73diags script." 
+    exit 1;
+  else
+    echo "ERROR:  The SeaQuest environment is unknown."
+    echo
+    echo "Exiting the sqerr73diags script." 
+    exit 1;
+  fi
+}
+
+# **************************************************************************
+	# FUNCTION: cleanUp
+# remove temporary tables.  
+function cleanUp {
+  if [ $isCluster -eq 0 ]; then
+    rm  $scriptAndLogLoc/sqerr73diags_* > /dev/null 2>&1
+  else
+    pdsh $MY_NODES 'rm  $MY_SQROOT/logs/sqerr73diags_logs/sqerr73diags*' > /dev/null 2>&1
+  fi
+}
+
+# *****************************************************************************
+# FUNCTION: gather results
+# gathers and combines all the error 73 events from each node
+# sorts the final list by timestamp
+function gatherResults
+{
+  # gather the stdout results from each node
+  # put the rpdcp statements into a file and execute them in parallel
+  stdoutResults=$scriptAndLogLoc/sqerr73diags_events
+  rpdcpFile=$scriptAndLogLoc/sqerr73diags_rpdcp
+
+  # Create the file that copies node specific output files to the local node
+  if [ $isCluster -eq 1 ]; then
+    lv_nodes=`echo $MY_NODES`
+    echo "# rpdcp commands to obtain stdout results from each node" > $rpdcpFile
+    for lv_node in $lv_nodes; do
+      if [ ${lv_node} != "-w" ]; then
+        if [ "$lv_node" != "nodeName" ]; then
+          echo "rpdcp -p -w ${lv_node} $stdoutEvents $scriptAndLogLoc > /dev/null 2>&1 &" >> $rpdcpFile
+        fi
+      fi
+    done
+    echo "wait" >> $rpdcpFile
+    chmod +x $rpdcpFile
+
+    # Do the actual copy and wait for them all to complete
+    $rpdcpFile
+  fi
+
+  # files are now all on the local node
+  # combine and sort them into a single file
+  numResultsFiles=`ls $stdoutEvents* | wc -l`
+  if [ $numResultsFiles -gt 0 ]; then
+    /bin/cat $stdoutEvents* | sort >> $stdoutResults
+  fi
+  echo "ZZZEOF" >> $stdoutResults
+}
+
+# *****************************************************************************
+# FUNCTION: generateParallelRunScript
+# creates a script to copy all the node specific scripts to individual nodes,
+# executes each node specific script in parallel, and waits until they are done
+function generateParallelRunScript
+{
+  if [ $debugOn -eq 1 ]; then
+     printInfo "Creating script to read stdout_tse files in parallel" 0
+  fi
+
+  # for work stations, defaults to n001
+  if [ $isCluster -eq 0 ]; then
+    echo $stdoutScript"_n001">> $parallelScript
+
+  # for clusters, loop through all the nodes.
+  else
+    nodeList=`echo $MY_NODES`
+  
+    for node in $nodeList; do
+      if [ "$node" != "-w" ]; then
+        if [ $nodeName != $node ]; then
+           echo "pdsh -w ${node} 'mkdir -p $scriptAndLogLoc ' > /dev/null 2>&1" >> $parallelScript
+           echo "pdcp -p -w ${node} $stdoutScript"_"$node $scriptAndLogLoc" >> $parallelScript
+        fi
+        echo "pdsh -w ${node} '$stdoutScript"_"$node ' > /dev/null 2>&1 &" >> $parallelScript
+      fi
+    done
+  fi
+
+   # add a wait so when the parallel script is executed, it waits until
+   # all the individual nodes complete before returning
+   echo "wait" >> $parallelScript
+   chmod ugo+rwx $parallelScript 2>/dev/null
+   if [ $debugOn -eq 1 ]; then
+     printInfo "Completed step:  creating script to read all nodes in parallel" 1
+   fi
+}
+
+# *****************************************************************************
+# FUNCTION: generateStdoutSearchScript
+# Create scripts (one per node) containing stdout search commands (-g option)
+function generateStdoutSearchScript
+{
+  stdoutScript=$scriptAndLogLoc/sqerr73diags_scripts
+
+  # get the list of nodes
+  if [ $isCluster -eq 0 ]; then
+    nodeList="-w n001"
+  else
+    nodeList=`echo $MY_NODES`
+  fi
+
+  for node in $nodeList; do
+    if [ "$node" != "-w" ]; then
+      echo "$MY_SQROOT/sql/scripts/sqerr73diags -g --start $timeToStart --stop $timeToStop" > $stdoutScript"_"$node 
+      chmod +x $stdoutScript"_"$node   
+    fi
+  done
+}
+
+# **************************************************************************
+# FUNCTION: getLockOwnerRows
+# Read the metric_query_table looking for rows associated with the transid
+function getLockOwnerRows
+{
+  sqlResults=$scriptAndLogLoc/sqerr73diags_sqlfile1
+  ownerRows=$scriptAndLogLoc/sqerr73diags_owner
+
+sqlci > $sqlResults 2>&1 <<eof
+ select distinct 'LOCK_HOLDER_' ||
+        'ROW',
+        gen_ts_utc,
+        '$partitionName',
+        transaction_id,
+        node_id,
+        process_id,
+        process_name,
+        'SQL_TEXT: ',
+        replace (substring (sql_text,1,100), char(10)/*newline*/,' ') as event_text
+ from manageability.instance_repository.metric_query_3 
+ where transaction_id <> '<N/A>' 
+   and transaction_id = '$ownerTransId' 
+ order by 2
+ for read uncommitted access;
+eof
+
+  # instead of dying, perhaps report the error and continue?
+  errorRows=`/bin/cat $sqlResults | grep -e "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    printInfo "ERROR: errors occurred while gathering owner info" 0
+    printInfo "See $sqlResults for details" 0
+    exit 3
+  fi  
+
+  # If no rows were returned, then the queries associated with the 
+  # transaction were not written into the repository.  This happens
+  # when SQL statements are not written to the repository.  For example
+  # queries executed through sqlci are not logged.
+  queryRows=`/bin/cat $sqlResults | grep -e "LOCK_HOLDER_ROW" | wc -l`
+  if [ $queryRows -eq 0 ]; then
+    printInfo "WARNING:  Could not find repository details for transaction $ownerTransId" 0
+
+  # found some queries, write the query infomation to the log
+  else
+
+    # when the query contains an "*", it gets transformed into -a-. This
+    # avoid issues with shell processing
+    /bin/cat $sqlResults | grep -e "LOCK_HOLDER_ROW"  | sed -e 's/*/-a-/g' > $ownerRows
+    printInfo "--  Transaction $ownerTransId queries:" 0
+    currentLine=
+    /bin/cat $ownerRows | while read -r currentLine
+    do
+      firstWord=`echo $currentLine | awk '{print $1}'`
+
+      # save query details
+      if [ "$firstWord" == "LOCK_HOLDER_ROW" ]; then
+        textLine=`echo $currentLine | sed -e 's/^.*SQL_TEXT://g' | sed -e 's/ *$//g'`
+        textPrefix=" ...... ($timeStamp): "
+        textPostfix=" ..."
+        textLine=$textPrefix$textLine$textPostfix
+        echo $textLine >> $resultsFile
+      fi
+    done
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: getObjectName
+# Find the object name associated with the partition
+function getObjectName
+{
+  # call mxtool info to get the associated Ansi Name
+  cmd="sh mxtool info \\"
+  cmd=$cmd$partitionName
+  sqlFile=$scriptAndLogLoc/sqerr73diags_sqlfile3
+
+sqlci > $sqlFile 2>&1 <<eof
+  $cmd;
+  exit;
+eof
+
+  foundObject=`/bin/cat $sqlFile | grep "Ansi Name:" | wc -l` 
+  if [ $foundObject -gt 0 ]; then
+    objectName=`/bin/cat $sqlFile | grep "Ansi Name:" | awk '{print $3}'`
+  else
+    objectName="unknown"
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: getOwnerDetails
+# This function is responsible for scanning the tse standard output files
+# looking for error 73 events.  For each event that meets the criteria,
+# the lock owner information is extracted from event; the repository
+# is read to obtain lock owner details.
+# 
+function getOwnerDetails
+{
+  stdoutEvents=$scriptAndLogLoc/sqerr73diags_filtered_output
+  parallelScript=$scriptAndLogLoc/sqerr73diags_parallel
+  stdoutResults=$scriptAndLogLoc/sqerr73diags_events
+
+  # generate script to read stdout files
+  generateStdoutSearchScript
+  generateParallelRunScript
+
+  # execute the parallel script to read stdout files in parallel
+  printInfo "Running scans of stdout files: $(date)" 0
+  $parallelScript
+  printInfo "Completed step: scanning stdout files: $(date)" 1
+
+  # gather results
+  printInfo "Gathering results of stdout scans: $(date)" 0
+  gatherResults
+  printInfo "Completed step: gathering results of stdout scans: $(date)" 1
+
+  # get number of events found
+  # subtract one to remove the ZZZEOF line
+  eventCount=`/bin/cat $stdoutResults | wc -l`
+  typeset numEvents=$eventCount
+  let numEvents=$numEvents-1 
+
+  # if number events is greater than the max, return an error
+  if [ $numEvents -gt $maxEvents ]; then
+    printInfo "ERROR:  too many events to process ($numEvents), please rerun and change the --start and --stop times" 1
+  else
+    # if greater than maxEventsForRepository, don't report transaction details
+    if [ $numEvents -gt $maxEventsForRepository ]; then
+      printInfo "WARNING: too many events to process ($numEvents), skip reporting transaction details" 1
+    fi
+
+    # process the data
+    typeset numFound=1
+    /bin/cat $stdoutResults | while read -r currentLine
+    do
+
+      # If unable to process events, an error is returned
+      # report the error and continue
+      token=`echo $currentLine | awk '{ print $1}'`
+      if [ "$token" == "ZZERROR" ]; then
+        printInfo "Found error while processing data: $currentLine" 1
+        continue
+      fi
+
+      # The last line in the events file is "ZZZEOF".  If "ZZZEOF' is found
+      # report the summary and continue
+      if [ "$token" == "ZZZEOF" ]; then
+        printInfo "Found $numEvents Storage Engine events reporting error 73" 1
+        continue
+      fi
+
+      # extract the timeStamp
+      timeStamp=`echo $currentLine | awk '{print $2 " " $3 " " $4 " " $5}'`
+
+      parseEvent
+
+      # print out result information:
+      getObjectName
+      printInfo "Event number $numFound of $numEvents @ $timeStamp: Error 73 from process $waiterNodeId $waiterProcessId " 0
+      printInfo "--  SQL object $objectName ($partitionName)" 0
+      printInfo "--  Lock type requested is $reqState" 0
+      printInfo "--  Transaction holding resource: $ownerTransId (0x$transIdHex)" 0
+      if [ $numEvents -le $maxEventsForRepository ]; then
+        getLockOwnerRows
+      fi
+      printInfo "--  Lock type on owner is $holdState" 0
+      printInfo "-- qid: $qidInfo" 1
+
+      let numFound=$numFound+1
+    done
+  fi
+}
+
+
+# ****************************************************************************
+# FUNCTION: getWaiterDetails
+# This function reads the repository for the specified time frame and
+# returns any error 73 issues.
+#
+# the row returned from the repository has the following format:
+#  $1 - header (SQL_ERROR)
+#  $2 & $3 - timestamp
+#  $4 - sqlerror code
+#  $5 - transaction id
+#  $6 - last error code before AQR
+#  $7 - total number AQR retries
+#  $8 - query id
+#  $9+  - query executed
+#  $?? - after the query is the error code beginning with *** ERROR/WARNING
+function getWaiterDetails
+{
+  eventErrorRows=$scriptAndLogLoc/sqerr73diags_waiter
+  readRepository
+
+  /bin/cat $eventErrorRows | while read -r currentLine
+  do
+    timeStamp=`echo $currentLine | awk '{print $2 " " $3}';`
+    transid=`echo $currentLine | awk '{print $5}';`
+    lastAQR=`echo $currentLine | awk '{print $6}';`
+    totalAQR=`echo $currentLine | awk '{print $7}';`
+    queryId=`echo $currentLine | awk '{print $8};'`
+
+    # split up the query from the message text. 
+    # the message text begins at item 9
+    lineSuffix=`echo $currentLine | cut -d' ' -f9-`
+    ary=($lineSuffix)
+
+    # process each value in the message
+    msgStart=0
+    for value in "${!ary[@]}"
+    do
+
+      # search for the ERROR token in the line suffix, this
+      # indicates the start of the error message text
+      token="${ary[$value]}"
+      if [[ `echo $token | grep -e "WARNING" -e "ERROR"` != "" ]]; then
+        msgStart=$value
+
+        # change from 1 based to 0 based list
+        let msgStart=$msgStart+1
+      fi
+    done
+
+    # split the message from the query
+    message=`echo $lineSuffix | cut -d' ' -f$msgStart-`
+    
+    # go past the *** ERROR fields
+    let msgStart=$msgStart-2
+    query=`echo $lineSuffix | cut -d' ' -f1-$msgStart`
+
+    # report error details in output
+    if [ $standardMode -eq 1 ]; then
+      printInfo "($timeStamp): Error 73 returned" 0
+      printInfo "-- Transaction id: $transid" 0
+      printInfo "-- Last error returned by AQR: $lastAQR" 0
+      printInfo "-- Total number of AQR retries: $totalAQR" 0
+      printInfo "-- Error message: $message" 0
+      printInfo "-- Query: $query" 1
+    fi
+  done
+  numRows=`/bin/cat $eventErrorRows | wc -l`
+
+  printInfo "Found $numRows repository events reporting error 73" 1
+}
+
+
+# ****************************************************************************
+# FUNCTION: parseEvent
+# parses event details returned from the stdout_tse_disk* files
+# an event detail is a combination of events 104005217 and 104005218
+#   value 1 is the timestamp in seconds since 1970-01-01 UTC
+#   values 2-5 is the timestamp
+#   values 6 is the tse process identification
+#   values 7-8 is the event id
+#   values 9-11 is the error identification
+#   values 12 is the file name
+#   values 13-16 is the lock waiter nid and pid
+#   the next set of values are lock state details  
+#      lock state values are followed by lock owner details
+#      first are a set of conflicting lab details
+#      next are transactions details
+#      remaining values is the tse version of the qid
+#
+# example event output:
+#
+# 1384193736 Nov 11 18:15:36 2013 ($DB0005,0,1160) Event 104005217 Error 73 on 
+# ZSDJ7KTL.GD81NH00, nid 0, pid 28983, cannot get lock state 4 (grant 7, wish 0, 
+# range 0) conflicting lab 2121 (grant 7), transid 0x500007b64 (1), qid (seg 5, 
+# node 0, pin 22875, ts 212250912973608361, num 2724)
+#
+# row translated:
+#
+# value 1-5:         1384193736 Nov 11 18:15:36 2013 
+# value 6-8:         ($DB0005,0,1160) Event 104005217 
+# value 9-12:        Error 73 on ZSDJ7KTL.GD81NH00, 
+# value 13-16:       nid 0, pid 28983, 
+# lock state values: cannot get lock state 4 (grant 7, wish 0, range 0) 
+# lab:               conflicting lab 2121 (grant 7), 
+# transid:           transid 0x500007b64 (1), i
+# qid:               qid (seg 5, node 0, pin 22875, ts 212250912973608361, num 2724)
+function parseEvent
+{
+  # split up the event (by spaces) into an array
+  ary=($currentLine)
+
+  # initialize all variables to unknown
+  diskName="unknown"
+  partitionName="unknown"
+  waiterNodeId="unknown"
+  waiterProcessId="unknown"
+  qidInfo="unknown"
+  reqState="unknown"
+  holdState="unknown"
+  ownerTransId="unknown"
+
+  # process each value in the event
+  for value in "${!ary[@]}"
+  do
+    token="${ary[$value]}"
+
+    # the 5th token is always the tse information - ($DISK, node, pin)
+    if [ $value -eq 5 ]; then
+      diskName=`echo $token | cut -d',' -f1 | sed -e 's/(//g'`
+    fi
+
+    # Error starts the Error 73 on <file> series
+    # get the file name
+    if [ "$token" == "Error" ]; then
+      let index=$value+3
+      partitionName=${ary[$index]}
+      partitionName=`echo $partitionName | sed -e 's/,//g'`
+      partitionName=$diskName'.'$partitionName
+    fi
+
+    # nid is the node id of the requesting process
+    if [ "$token" == "nid" ]; then
+      let index=$value+1
+      waiterNodeId=${ary[$index]}
+    fi
+
+    # pid is the pin of the requesting process
+    if [ "$token" == "pid" ]; then
+      let index=$value+1
+      waiterProcessId=${ary[$index]}
+      waiterProcessId=`echo $waiterProcessId | sed -e 's/,//g'`
+    fi
+
+    # qid is the tse version of the qid for the lock owner
+    # it is the last set of tokens in the event, just display the remaining
+    # tokens
+    if [ "$token" == "qid" ]; then
+      let index=$value+1
+      qidInfo=`echo $currentLine | cut -d' ' -f$index- `
+    fi
+    if [ "$token" == "state" ]; then
+      let index=$value+1
+      state=${ary[$index]}
+      case $state in
+        1) reqState="LK_IS"
+           ;;
+        2) reqState="LK_IX"
+           ;;
+        3) reqState="LK_R"
+           ;;
+        4) reqState="LK_US"
+           ;;
+        5) reqState="LK_S"
+           ;;
+        6) reqState="LK_IX"
+           ;;
+        7) reqState="LK_US"
+           ;;
+        8) reqState="LK_X"
+           ;;
+        *) reqState="UNKNOWN"
+           ;;
+      esac
+    fi
+
+    # the token (grant is the lock state of the lock owner
+    # is is found twice in the event report the first one
+    if [ "$token" == "(grant" ]; then
+      if [ $value -lt 25 ]; then
+        let index=$value+1
+        state=${ary[$index]}
+        state=`echo $state | sed -e 's/,//g'`
+        case $state in
+          1) holdState="LK_IS"
+             ;;
+          2) holdState="LK_IX"
+             ;;
+          3) holdState="LK_R"
+             ;;
+          4) holdState="LK_US"
+             ;;
+          5) holdState="LK_S"
+             ;;
+          6) holdState="LK_IX"
+             ;;
+          7) holdState="LK_US"
+             ;;
+          8) holdState="LK_X"
+             ;;
+          *) holdState="UNKNOWN"
+             ;;
+        esac
+      fi
+    fi
+
+    # get the transid stored in hex, translate to decimal
+    # the metadata uses the decimal version
+    if [ "$token" == "transid" ]; then
+      let index=$value+1
+      transIdHex=${ary[$index]}
+      transIdHex=`echo $transIdHex | tr a-z A-Z | sed -e 's/0X//g'`
+      ownerTransId=`echo "ibase=16; $transIdHex" | bc`
+    fi
+  done
+}
+
+# **************************************************************************
+# FUNCTION: parseRequest
+# parses the request
+function parseRequest
+{
+  specifiedLockOwner=0
+  specifiedLockWaiter=0
+  specifiedStartTime=""
+  specifiedStopTime=""
+  specifiedStandard=0
+  specifiedCsv=0
+
+  while [ $# -gt 0 ]; do
+
+    case $1 in
+
+      #  option: -a 
+      -a)
+        archiveResult=1
+        ;;
+
+      # unexternalized option
+      # get number of files to retain, defaults to 1
+      -c)
+       if [ $# -eq 1 ]; then
+         echo "ERROR: Syntax error expecting number files to retain: $1 "
+         printHelp
+         exit 2
+       fi
+         nextValue=`echo $2 | head -c 1`
+        if [ "$nextValue" = "-" ]; then
+          echo "ERROR: Syntax error expecting number files to retain: $1 "
+          printHelp
+          exit 2
+        fi
+        shift
+        archiveCount=$1
+        ;;
+
+       #  debug option
+      -d)
+        debugOn=1
+        ;;
+
+      # used internally to gather results from parallel scans
+      -g)
+         scanTseStdout=1
+         ;;
+
+      -h | --help)
+        printHelp
+        exit
+        ;;
+
+      -o)
+         specifiedLockOwner=1
+         ;;
+
+       -w)
+         specifiedLockWaiter=1
+         ;;
+
+      # unsupported option at this time
+      --csv)
+         specifiedCsv=1
+         ;;
+
+      # unsupported option at this time
+      --standard)
+         specifiedStandard=1
+         ;;
+
+     # check for start time
+      --start)
+        if [ $# -eq 1 ]; then
+          echo "ERROR: Syntax error expecting timestamp value: $1 "
+          printHelp
+          exit 2
+        fi
+        loopDone=0
+        while [ $loopDone -eq 0 ]; do
+          nextValue=`echo $2 | head -c 1`
+          if [ "$nextValue" = "-" ]; then
+            loopDone=1
+          else
+            specifiedStartTime=$specifiedStartTime$2" "
+            shift
+          fi
+          if [ $# -eq 1 ]; then
+            loopDone=1
+          fi
+        done
+
+        if [ "$specifiedStartTime" == "" ]; then
+          echo "ERROR: Syntax error expecting a timestamp value: $1 "
+          printHelp
+          exit 2
+        fi
+        ;;
+
+     # check for stop time
+      --stop)
+      if [ $# -eq 1 ]; then
+        echo "ERROR: Syntax error expecting timestamp value: $1 "
+        printHelp
+        exit 2
+      fi
+        loopDone=0
+        while [ $loopDone -eq 0 ]; do
+          nextValue=`echo $2 | head -c 1`
+          if [ "$nextValue" = "-" ]; then
+            loopDone=1
+          else
+            specifiedStopTime=$specifiedStopTime$2" "
+            shift
+          fi
+          if [ $# -eq 1 ]; then
+            loopDone=1
+          fi
+        done
+
+        if [ "$specifiedStopTime" == "" ]; then
+          echo "ERROR: Syntax error expecting a timestamp value: $1 "
+          printHelp
+          exit 2
+        fi
+        ;;
+
+      **)
+        echo "ERROR: Syntax error in call to sqerr73diags: Invalid option: $1 "
+        printHelp
+        echo
+        echo "Exiting the sqerr73diags script." 
+        exit 2
+        ;;
+
+    esac
+    shift
+  done
+
+  if [ $specifiedLockOwner -eq 1 -o $specifiedLockWaiter -eq 1 ]; then
+    doLockOwner=$specifiedLockOwner
+    doLockWaiter=$specifiedLockWaiter
+  fi
+
+  if [ "$specifiedStartTime" != "" ]; then
+    timeToStart=$specifiedStartTime
+  fi
+  if [ "$specifiedStopTime" != "" ]; then
+    timeToStop=$specifiedStopTime
+  fi
+
+  if [ $specifiedStandard -eq 1 -o $specifiedCsv -eq 1 ]; then
+    standardMode=$specifiedStandard
+    csvMode=$specifiedCsv
+  fi
+}
+
+
+# **************************************************************************
+# FUNCTION:  printInfo
+# prints out messages to standard out and log
+#   Parameter 1 - message to print
+#   Parameter 2 - if 1, then add an extra line
+function printInfo
+{
+  echo $1
+  echo $1 >> $resultsFile
+  if [ $# -gt 1 ]; then
+    if [ $2 -eq 1 ]; then
+      echo ""
+      echo "" >> $resultsFile
+   fi
+  fi
+}
+
+# **************************************************************************
+# FUNCTION: readRepository
+# reads rows from the manageability.instance_repository tabkes
+function readRepository
+{
+  # select information from the metric_query_table and event_sqlerror_table
+  # related to error 73
+  sqlfile2=$scriptAndLogLoc/sqerr73diags_sqlfile2
+
+sqlci > $sqlfile2 2>&1 <<eof
+select 'SQL' ||
+       '_ERROR: ',
+       e.gen_ts_lct, sqlerrcode, transaction_id,
+       last_error_before_aqr,
+       total_num_aqr_retries,
+       query_id,
+       replace (substring (sql_text,1,200),char(10)/*newline*/,' ') as query,
+       substring (messagetext,1,200) as msg
+from manageability.instance_repository.event_sqlerror_1 e, 
+     manageability.instance_repository.metric_query_3 q
+where e.gen_ts_lct >= timestamp '$timeToStart' 
+  and e.gen_ts_lct <= timestamp '$timeToStop' 
+  and platformerrorcode = 73
+  and e.queryid = q.query_id
+  for read uncommitted access
+;
+eof
+
+   /bin/cat $sqlfile2 | grep -e "SQL_ERROR"  | sed -e 's/*/-a-/g' > $eventErrorRows
+}
+
+# *****************************************************************************
+# FUNCTION: readTseStdout
+# scans tse standard out files (stdout_tse_<disk>)related to error 73
+# extracts rows that fall within specified timeframe (start and stop times)
+#
+# tse reports an error 73 with two events - 104005217 and 104005218.  They
+# need two rows because of an internal row size limitation.
+# When a valid entry is found, this function combines the event together into
+# a single row.  This is done to make sorting and processing easier later on.
+#
+# See parseEvent for formats of 104005217 and 104005218
+#
+# Concern - the stdout_tse_* files are not cleaned up.  This operation scans 
+# the entire file and saves it.  As the files get bigger processing the output
+# will get longer.  Need a better way to scan the file.
+function readTseStdout 
+{
+  stdoutFilter="stdout_tse_*"
+  stdoutRawOutput=$scriptAndLogLoc/sqerr73diags_raw_output
+  stdoutEvents=$scriptAndLogLoc/sqerr73diags_filtered_output
+
+  #searches tse standard out files for these events:
+  event1="Event 104005217"
+  event2="Event 104005218"
+
+  /bin/cat $MY_SQROOT/sql/scripts/$stdoutFilter | grep -e "$event1" -e "$event2"> $stdoutRawOutput
+
+  # converts dates to seconds since 1970-01-01 UTC
+  startTime=`date -d "$timeToStart" "+%s"`
+  stopTime=`date -d "$timeToStop" "+%s"`
+
+  # finds events that meet the requirements and places them in $stdoutEvents
+  numEvent1=0
+  numEvent2=0
+  foundEvent217=0
+  /bin/cat $stdoutRawOutput | while read -r currentLine
+  do
+
+    # if the ZZZEOF row is found then we are done processing the file
+    # verify that an equal number of events were found and continue
+    eofFound=`echo $currentLine | awk '{print $1}'`
+    if [ "$eofFound" == "ZZZEOF" ]; then
+      if [ $numEvent1 -ne $numEvent2 ]; then
+        echo "ZZERROR from $nodeName : Events returned out of order" >> $stdoutEvents
+        exit 3
+      fi
+      echo $currentLine >> $stdoutEvents
+      continue
+    fi
+
+    # convert timestamp to seconds
+    # the timestamp is always the first 5 fields of both events
+    timeStamp=`echo $currentLine | awk '{print $1 " " $2 " " $3 " " $4 " " $5}'`
+    currentTime=`date -d "$timeStamp" "+%s"`
+
+    # if event falls within requested timeframe, continue processing
+    if [ $currentTime -ge $startTime -a $currentTime -le $stopTime ]; then
+
+      # need to combine events 104005217 and 104005218 into a single row
+      # the event ID is always the 8 field of both events
+      eventId=`echo $currentLine | awk '{print $8}'`
+      if [ "$eventId" == "104005217" ]; then
+
+        # the first column is the day of the week, this is not required
+        # to convert timestamps and it makes it difficult to sort by 
+        # time, so just remove it 
+        row=`echo $currentLine | cut -d' ' -f 2-`
+        foundEvent217=1
+        let numEvent1=$numEvent1+1
+      fi
+
+      if [ "$eventId" == "104005218" ]; then
+        if [ $foundEvent217 -eq 0 ]; then
+          echo "ZZERROR from $nodeName : Events returned out of order" >> $stdoutEvents
+          exit 3
+        fi
+
+        # add event 104005217 to the row
+        # make the first field in the row be the current time in seconds
+        # this makes the sorting much easier
+        ownerInfo=`echo $currentLine | cut -d' ' -f 13-`
+        row=$currentTime" "$row" "$ownerInfo
+        echo $row >> $stdoutEvents
+        foundEvent217=0
+        let numEvent2=$numEvent2+1
+      fi
+    fi
+  done
+}
+
+
+##############################################################################
+#Main body of sqerr73diags script
+##############################################################################
+
+# Initialize variables
+debugOn=0
+scriptAndLogLoc=$MY_SQROOT/logs/sqerr73diags_logs
+archiveResult=0
+archiveCount=1
+archiveLoc=$TAR_DOWNLOAD_ROOT
+scriptStartTime=$(date +"%Y%m%d_%H%M%S")
+doLockOwner=1
+doLockWaiter=1
+scanTseStdout=0
+standardMode=1
+csvMode=1
+maxEventsForRepository=500
+maxEvents=2000
+
+#  set default start and stop times:  
+#   start time defaults to 6 hours ago
+#   stop time defaults to current time
+timeToStart=$(date --date="6 hours ago" +"%F %T" -u)
+timeToStop=$(date +"%F %T" -u)
+
+# Parse the input request
+parseRequest $*
+ 
+# determine if running on workstation or cluster
+lv_nodes=`echo $MY_NODES`
+isCluster=1
+if [ "$lv_nodes" == "" ]; then
+  isCluster=0
+fi
+
+# get node name
+nodeName=`uname -n`
+
+# if the -g options was specified, then the script is being called
+# called by node specific scripts, scan the standard out files
+# and return
+if [ $scanTseStdout -eq 1 ]; then
+  readTseStdout
+  exit 0
+fi
+
+
+resultsFile=$scriptAndLogLoc/error73diags_details_$scriptStartTime.log
+
+if [ ! -d $scriptAndLogLoc ]; then
+  echo "Script start time: $(date)."
+else
+  printInfo "Script start time: $(date)." 1
+fi
+
+# make sure instance is running
+chkInstance
+
+# create directory to store results from operation if not already created
+if [ ! -d $scriptAndLogLoc ]; then
+   if [ $debugOn -eq 1 ]; then
+     echo "Creating directory $scriptAndLogLoc to store results"
+   fi
+   mkdir -p $scriptAndLogLoc
+   if [[ $? != 0 ]]; then
+      echo "ERROR: Problem creating directory: $scriptAndLogLoc." 
+      echo "Exiting script." 
+      exit 1;
+   fi
+fi
+
+if [ $debugOn -eq 1 ]; then
+  printInfo "Cleaning up old temporary files " 0
+fi
+cleanUp
+
+# Display operation details
+printInfo "For operation details see $resultsFile on node $nodeName" 1
+
+# get error 73 details about the lock owner from the Storage Engine and repository
+if [ $doLockOwner -eq 1 ]; then
+  printInfo "Extracting error 73 details about lock owners between $timeToStart and $timeToStop" 1
+  getOwnerDetails
+fi
+
+# get error 73 details about the lock waiter from the repository
+if [ $doLockWaiter -eq 1 ]; then
+  printInfo "Extracting error 73 details about lock waiters between $timeToStart and $timeToStop" 1
+  getWaiterDetails
+fi
+
+# archive if requested
+if [ $archiveResult -eq 1 ]; then 
+  printInfo "Archiving results to $archiveLoc" 0
+  cp $resultsFile $scriptAndLogLoc/error73_diagnostics_results
+  if [ -d $archiveLoc ]; then
+    osimtargen -cr $scriptAndLogLoc/error73_diagnostics_results >> $resultsFile
+    mv $scriptAndLogLoc/error73_diagnostics_results.tar.gz $archiveLoc
+    printInfo "Completed step: archive results, see error73_diagnostics_results.tar.gz " 1
+  else
+    printInfo "Invalid archive $archiveLoc location specified" 0
+  fi
+fi
+
+  
+# remove temporary files
+if [ $debugOn -eq 0 ]; then
+  cleanUp
+fi
+
+# remove old versions of results 
+adjustSavedFiles
+
+printInfo "Script end time: $(date)." 0
+
+exit 0; 

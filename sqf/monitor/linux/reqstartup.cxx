@@ -1,0 +1,84 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
+#include <stdio.h>
+#include "reqqueue.h"
+#include "montrace.h"
+#include "monsonar.h"
+#include "monlogging.h"
+
+extern CMonStats *MonStats;
+extern CNode *MyNode;
+
+CExtStartupReq::CExtStartupReq (reqQueueMsg_t msgType, int pid,
+                                struct message_def *msg )
+    : CExternalReq(msgType, pid, msg)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQES", 4);
+}
+
+CExtStartupReq::~CExtStartupReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqes", 4);
+}
+
+void CExtStartupReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
+
+    sprintf( strBuf, "ExtReq(%s) req #=%ld requester(pid=%d) (name=%s/nid=%d/pid=%d)"
+             , CReqQueue::svcReqType[reqType_], getId(), pid_,
+             msg_->u.request.u.startup.process_name,
+             msg_->u.request.u.startup.nid,
+             msg_->u.request.u.startup.pid );
+    requestString_.assign( strBuf );
+}
+
+void CExtStartupReq::performRequest()
+{
+    const char method_name[] = "CExtStartupReq::performRequest";
+    TRACE_ENTRY;
+
+    // Trace info about request
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf("%s@%d request #%ld: Startup for pid=%d, name=%s, "
+                     "port=%s\n",
+                     method_name, __LINE__, id_,
+                     msg_->u.request.u.startup.os_pid,
+                     msg_->u.request.u.startup.process_name,
+                     msg_->u.request.u.startup.port_name);
+    }
+
+       MonStats->req_type_startup_Incr();
+
+    // Process the request
+    MyNode->AttachProcessCheck( msg_ );
+
+    // note: requester does not expect an application level reply for a
+    // "Startup" message but must signal client so it can dispose of
+    // the local io buffer.
+    lioreply(msg_, pid_);
+
+}

@@ -1,0 +1,491 @@
+-- Test: TEST005 (compGeneral)
+-- Functionality: Tests FOJ
+-- Expected files: EXPECTED005
+-- Tables created: t005t01 - t005t5
+-- Partitioned tables and indexes :
+--
+-- This test is run against MX tables only.
+-- Limitations:
+--
+-- Revision history:
+-- (05/09/07) Created TEST005 - Personal testsuite only
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2007-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+ 
+?section ddl
+drop table t005t01;
+drop table t005t02;
+drop table t005t03;
+drop table t005t04;
+drop table t005t05;
+drop table t005_ex;
+drop table t005_gx;
+drop table t005_hx;
+drop table t005_fx;
+
+log LOG005 clear;
+
+?section create_tables
+create table t005t01(eno int not null ,
+                 dno largeint,
+                 primary key(eno) );
+
+create table t005t02(dno largeint not null ,
+                 dname char(20) not null,
+                 primary key (dno) );
+
+
+create table t005t03
+(
+ seqno integer  not null not droppable,
+ smin1 smallint  default null,
+ pict1 pic s9(13)v9(5)  default null,
+ primary key (seqno)
+) ;
+
+create table t005t04
+(
+ seqno integer  not null not droppable,
+ smin1 smallint  default null,
+ pict1 pic s9(13)v9(5)  default null,
+ primary key (seqno)
+) ;
+
+
+create table t005t05(seqno integer not null primary key  ) ;
+
+create table t005_ex (
+           e1 decimal(10,0) not null,
+           e2 decimal(10,0) not null,
+           e3 decimal(10,0) not null
+        ) no partition;
+        
+  
+create table t005_fx (
+    f1 decimal(10,0) not null,
+    f2 decimal(10,0) not null,
+    f3 decimal(10,0) not null
+) no partition;
+        
+        
+create table t005_gx (
+    g1 decimal(10,0) default null,
+    g2 decimal(10,0) default null
+) no partition;
+        
+create table t005_hx (
+	h1 decimal(10,0) not null,
+	h2 decimal(10,0) not null,
+	h3 decimal(10,0) not null
+) no partition;
+
+?section populate_tables 
+-- Populate t005t01
+insert into t005t01 values (30, 33);
+insert into t005t01 values (3, 33);
+insert into t005t01 values (4, 44);
+insert into t005t01 values (5, 55);
+insert into t005t01 values (6, 66);
+
+-- Populate t005t02
+insert into t005t02 values (33, 'Sales'),
+                       (44, 'Marketing'),
+                       (55, 'Production'),
+		       (77, 'R&D');
+		       
+insert into t005_ex (e1, e2, e3) values(1,1,1);
+insert into t005_ex (e1, e2, e3) values(1,1,2);
+insert into t005_ex (e1, e2, e3) values(1,1,3);
+insert into t005_ex (e1, e2, e3) values(1,2,1);
+insert into t005_ex (e1, e2, e3) values(1,2,2);
+insert into t005_ex (e1, e2, e3) values(1,2,4);
+insert into t005_ex (e1, e2, e3) values(1,3,1);
+insert into t005_ex (e1, e2, e3) values(1,3,2);
+insert into t005_ex (e1, e2, e3) values(1,3,3);
+
+insert into t005_fx select * from t005_ex;
+
+insert into t005_gx values(1,2);
+insert into t005_gx values(2,2);
+insert into t005_gx values(3,2);
+insert into t005_gx values(4,1);
+
+insert into t005_hx values(1,1,1);
+insert into t005_hx values(1,1,2);
+insert into t005_hx values(1,1,3);
+insert into t005_hx values(1,1,4);
+insert into t005_hx values(1,2,1);
+insert into t005_hx values(1,2,2);
+insert into t005_hx values(1,2,3);
+insert into t005_hx values(1,3,2);
+insert into t005_hx values(1,3,3);
+insert into t005_hx values(1,3,4);
+insert into t005_hx values(2,1,1);
+insert into t005_hx values(2,1,2);
+insert into t005_hx values(2,1,3);
+insert into t005_hx values(2,1,4);
+insert into t005_hx values(2,2,1);
+insert into t005_hx values(2,2,2);
+insert into t005_hx values(2,2,3);
+        
+
+
+?section prep
+control query default query_cache '0';
+control query default comp_bool_199 'on';
+
+?section positive_tests
+
+-- FOJ1 - Natural Full Outer Join 
+-- t005t01 FOJ t005t02
+select * from t005t01 natural full outer join t005t02 order by 1,2 DESC;
+
+-- FOJ2 - Natural Full Outer Join 
+-- t005t02 FOJ t005t01
+select * from t005t02 natural full outer join t005t01 order by 1,3;
+
+-- FOJ3 - Use ON clause - non equijoin predicate
+-- t005t02 FOJ t005t01 
+select * from t005t02 full outer join t005t01 on t005t01.dno = 33 order by 1,3;
+
+-- FOJ4 - Use ON clause - non equijoin predicate
+-- t005t01 FOJ t005t02
+select * from t005t01 full outer join t005t02 on t005t02.dno = 33 order by 1,4;
+
+
+-- FOJ5 - Use ON clause - equijoin predicate
+-- t005t02 FOJ t005t01 
+select * from t005t02 full outer join t005t01 on t005t02.dno = t005t01.dno order by 1,3;
+
+-- FOJ6 - Use ON clause - equijoin predicate
+-- t005t01 FOJ t005t02
+select * from t005t01 full outer join t005t02 on t005t01.dno = t005t02.dno order by 1;
+
+-- FOJ7 - Use WHERE clause on Full Outer 
+-- Join t005t02 FOJ t005t01
+-- WHERE clause on t005t02 and the column is part of a join column
+-- Must Convert FOJ to LJ - TBD - Hema
+select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
+		where t005t02.dno = 33 order by 3;
+
+-- FOJ8 - Use WHERE clause on Full Outer 
+-- Join t005t02 FOJ t005t01
+-- WHERE clause on t005t01 and the column is part of a join column
+-- Must Convert FOJ to RJ - TBD - Hema
+select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
+		where t005t01.dno = 33 order by 3;
+
+
+-- FOJ9 - Use AND in ON clause on Full Outer 
+-- Join t005t02 FOJ t005t01
+select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
+		AND t005t01.dno = 33 order by 1,3;
+
+-- FOJ10 - Use AND in ON clause on Full Outer 
+-- Join t005t01 FOJ t005t02
+select * from t005t01 full outer join t005t02 on t005t01.dno = t005t02.dno 
+		AND t005t01.dno = 33 order by 1,4;
+
+
+-- FOJ11 - Use OR in ON clause on Full Outer 
+-- Join t005t02 FOJ t005t01
+select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno 
+		OR t005t01.dno = 33 order by 1,3;
+
+-- FOJ12 - Use OR in ON clause on Full Outer 
+-- Join t005t01 FOJ t005t02
+select * from t005t01 full outer join t005t02 on t005t01.dno = t005t02.dno 
+		OR t005t01.dno = 33 order by 1, 3;
+
+
+?section DERIVED_TABLE
+-- FOJ13 - use derived table syntax
+-- Join t005t02 FOJ t005t01
+-- WHERE clause
+select * from (select * from t005t02 full outer join t005t01 
+	on t005t01.dno = t005t02.dno) as T(a,b,c,d) where T.a = 33 order by 3; 
+
+-- FOJ13 - use derived table syntax
+-- Join t005t02 FOJ t005t01
+select * from (select * from t005t02 full outer join 
+     t005t01 on t005t01.dno = t005t02.dno) as T(a,b,c,d) order by 3; 
+
+
+?section predicates
+delete from t005t03;
+delete from t005t04;
+
+insert INTO t005t03 values (1, 1,1);
+insert INTO t005t03 values (2, 1,1);
+insert INTO t005t03 (seqno) values (3);
+insert INTO t005t03 values (4,-32768,1);
+insert INTO t005t03 values (5, 32767,1);
+insert INTO t005t03 values (6,7892,1);
+insert INTO t005t03 values (7,2834,1);
+insert INTO t005t03 values (8,123,1);
+
+ 
+insert INTO t005t04 values (1, 1,1);
+insert INTO t005t04 values (2, 1,1);
+insert INTO t005t04 values (3,24923,1);
+insert INTO t005t04 values (4,-32768,1);
+insert INTO t005t04 values (5,25065,1);
+insert INTO t005t04 values (6,7892,1);
+insert INTO t005t04 values (12,9374,1);
+
+-- FOJ14 - selection predicate on left table columns
+-- Join t005t03 FOJ t005t04
+select a.seqno, a.smin1, b.seqno, b.smin1 FROM 
+	t005t03 a 
+	FULL OUTER JOIN                                                   
+       t005t04 b ON a.seqno = b.seqno 
+       where (a.seqno > 3 and a.smin1 < 123) or a.seqno < 5                
+ORDER BY a.seqno, b.seqno, a.smin1, b.smin1 ;
+
+-- FOJ15 - selection predicate on right table columns
+-- Join t005t03 FOJ t005t04
+select a.seqno, a.smin1, b.seqno, b.smin1 FROM t005t03 a 
+	FULL OUTER JOIN 
+t005t04 b ON a.seqno = b.seqno 
+where (b.seqno > 3 and b.smin1 < 123) or b.seqno = 2 order by a.seqno;
+
+
+delete from t005t03;
+delete from t005t04;
+
+insert INTO t005t04 values(0, 1,1);
+insert INTO t005t04 values(1,1,1);
+insert INTO t005t04 (seqno) values (3);
+insert INTO t005t04 values(-2147483648, -32768,1);
+insert INTO t005t04 values(2147483647, 32767,1);
+insert INTO t005t04 values(293847923, 7892,1);
+insert INTO t005t04 values(450,2834,1);
+insert INTO t005t04 values(789,123,1);
+
+
+insert INTO  t005t04 values(2,1,1);
+
+-- FOJ15 - selection predicate on left and right table columns
+-- Join t005t03 FOJ t005t04
+select a.seqno, a.smin1, b.seqno, b.smin1 FROM t005t03 a 
+	FULL OUTER JOIN 
+t005t04 b ON a.seqno = b.seqno 
+where (a.seqno > 3 and a.seqno < 123) or b.seqno = 2 order by a.seqno;
+
+?section PIC_Datatype
+delete from t005t03;
+delete from t005t04;
+
+insert INTO t005t03 values(0,1, 0);
+insert INTO t005t04 values(0,1, 2);
+
+select a.pict1, b.pict1 FROM t005t03 a 
+	FULL OUTER JOIN t005t04 b 
+ON a.pict1 = b.pict1 where  ( b.pict1  > 1 or a.pict1  < 1 ) order by 1;
+
+?section 3-way FOJ
+delete from t005t03;
+delete from t005t04;
+delete from t005t05;
+
+insert INTO t005t03 values (1, 1,1);
+insert INTO t005t03 values (2, 1,1);
+insert INTO t005t03 (seqno) values (3);
+insert INTO t005t03 values (4,-32768,1);
+insert INTO t005t03 values (5, 32767,1);
+insert INTO t005t03 values (6,7892,1);
+insert INTO t005t03 values (7,2834,1);
+insert INTO t005t03 values (8,123,1);
+
+ 
+insert INTO t005t04 values (1, 1,1);
+insert INTO t005t04 values (2, 1,1);
+insert INTO t005t04 values (3,24923,1);
+insert INTO t005t04 values (4,-32768,1);
+insert INTO t005t04 values (5,25065,1);
+insert INTO t005t04 values (6,7892,1);
+insert INTO t005t04 values (12,9374,1);
+
+
+insert into t005t05 values (7);
+
+-- FOJ16 - columns projected from the left table only.
+-- Join t005t03 FOJ t005t04 FOJ t005t05
+SELECT a.seqno, b.seqno FROM t005t03 a       
+  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno      
+       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno order by 1,2;
+
+-- FOJ17 - columns projected from the left table only, with a WHERE clasue
+-- on the right column.
+-- Join t005t03 FOJ t005t04 FOJ t005t05
+SELECT a.seqno, e.seqno FROM t005t03 a       
+  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno      
+       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno where e.seqno = 7;
+
+
+-- FOJ18 - columns projected from the right table only.
+-- Join t005t03 FOJ t005t04 FOJ t005t05
+SELECT e.seqno FROM t005t03 a       
+  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno 
+       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno order by 1;
+
+
+-- FOJ19 - columns projected from the right table only with a WHERE clause
+-- on the right table column.
+-- Join t005t03 FOJ t005t04 FOJ t005t05
+SELECT e.seqno FROM t005t03 a       
+  FULL OUTER JOIN  t005t04 b ON a.seqno = b.seqno 
+       FULL OUTER JOIN t005t05 e ON b.seqno = e.seqno where e.seqno = 7;
+
+
+?section FOJ_other_join_combination
+delete from t005t03;
+delete from t005t04;
+delete from t005t05;
+
+insert INTO t005t03 values (0, 1,1);
+insert INTO t005t03 values (1, 1,1);
+insert INTO t005t03 (seqno) values (3);
+insert INTO t005t03 values (4,-32768,1);
+
+
+insert INTO t005t04 values (0, 1,1);
+insert INTO t005t04 values (1, 1,1);
+insert INTO t005t04 (seqno) values (3);
+insert INTO t005t04 values (4,-32768,1);
+
+insert into t005t05 values (1);
+insert into t005t05 values (2);
+insert into t005t05 values (3);
+
+-- FOJ20 - FOJ-INNER with ON clause
+-- Join t005t03 FOJ t005t04 INNER t005t05
+SELECT seqno, smin1     
+        FROM                                                             
+     t005t03                                                        
+   FULL OUTER JOIN                                                   
+        (select t005t04.seqno  as b                                            
+              from t005t04 INNER JOIN t005t05                         
+              ON t005t04.seqno = t005t05.seqno                      
+         ) as t2                                                      
+on t005t03.seqno = t2.b 
+order by 1,2;
+
+-- FOJ21 - FOJ-INNER with ON clause
+-- and WHERE clause on left table
+-- Join t005t03 FOJ t005t04 INNER t005t05
+SELECT seqno, smin1     
+        FROM                                                             
+     t005t03 t1                                                    
+   FULL OUTER JOIN                                                   
+        (select t005t04.seqno  as b                                            
+              from t005t04 INNER JOIN  t005t05
+              ON t005t04.seqno = t005t05.seqno                      
+         ) as t2 
+on t1.seqno = t2.b                                                     
+where  t1.seqno < 4 order by 1;
+
+
+-- FOJ22 - FOJ-INNER with ON clause
+-- and WHERE clause on right table
+-- Join t005t03 FOJ t005t04 INNER t005t05
+SELECT seqno, smin1     
+        FROM                                                             
+     t005t03 t1                                                    
+   FULL OUTER JOIN                                                   
+        (select t005t04.seqno  as b                                            
+              from t005t04 INNER JOIN  t005t05                         
+              ON t005t04.seqno = t005t05.seqno                      
+         ) as t2 
+on t1.seqno = t2.b                                                     
+where  t2.b < 4 order by 1;
+
+-- FOJ23, FOJ, INNER and LOJ.
+-- Soln 10-081027-6839 
+-- predicate was lost because a column was incorrectly flagged as NOT outerrerfernce
+
+select * from t005_ex left outer join t005_fx
+on (t005_ex.e3 = t005_fx.f3 and t005_ex.e2 = t005_fx.f2 and t005_ex.e1 = t005_fx.f1)
+join t005_gx on (t005_ex.e1 = t005_gx.g1)
+full outer join t005_hx on (t005_gx.g2 = t005_hx.h1 and t005_ex.e3 = t005_hx.h3 and t005_ex.e2 = t005_hx.h2)
+order by t005_ex.e1 asc, t005_ex.e2 asc, t005_ex.e3 asc, t005_hx.h1, t005_hx.h2, t005_hx.h3;
+
+-- FOJ24
+-- actual query from previous solution. Order of FOJ is different
+
+select * from t005_ex full outer join t005_fx
+on (t005_ex.e3 = t005_fx.f3 and t005_ex.e2 = t005_fx.f2 and t005_ex.e1 = t005_fx.f1)
+join t005_gx on (t005_ex.e1 = t005_gx.g1)
+left outer join t005_hx on (t005_gx.g2 = t005_hx.h1 and t005_ex.e3 = t005_hx.h3 and t005_ex.e2 = t005_hx.h2)
+order by t005_ex.e1 asc, t005_ex.e2 asc, t005_ex.e3 asc;
+
+ 
+?section NEGATIVE_VALUES
+
+insert into t005t01 values (-1, -5);
+insert into t005t02 values (-5, 'REWS');
+
+select * from t005t02 full outer join t005t01 on t005t01.dno = t005t02.dno order by 3;
+
+delete from t005t01 where dno = -5;
+delete from t005t02 where dno = -5;
+
+?section 3-Way Join
+
+?section FOJ_restrictions
+-- FOJ50 - Must raise an error? FOJ is only supported for Hash Joins.
+-- control query default hash_joins 'off';
+
+-- FOJ51 - Subquery in the join predicate of FOJ is not supported.
+select * from t005t02 full outer join t005t01 on t005t01.dno = (select min(dno
+) from t005t01);
+
+-- FOJ52 - Broadcast join is not supported for FOJ.
+
+-- FOJ503 - MV not supported
+create materialized view T_MV1
+        Refresh on request
+        initialize on create
+        AS
+        select A.dno,B.eno
+        from t005t02 A full outer join t005t01 B on A.dno = B.dno;
+
+create materialized view T_MV1
+        Refresh on statement
+        initialize on create
+        AS
+        select A.dno,B.eno
+        from t005t02 A full outer join t005t01 B on A.dno = B.dno;
+
+
+?section cleanup
+
+-- Clean up test
+drop table t005t01;
+drop table t005t02;
+ 
+drop table t005t03;
+drop table t005t04;
+drop table t005t05;
+
+drop table t005_ex;
+drop table t005_gx;
+drop table t005_hx;
+drop table t005_fx;
+

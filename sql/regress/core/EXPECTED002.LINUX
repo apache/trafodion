@@ -1,0 +1,1152 @@
+>>
+>>create table t002t1 (a int, b char(9), c int, d char(4));
+
+--- SQL operation complete.
+>>create table t002t2 (a int not null, b char(9), c int, d char(4), primary key (a));
+
+--- SQL operation complete.
+>>create table t002t3 (a int not null, b char(9) not null, c int, d char(4), primary key (a, b));
+
+--- SQL operation complete.
+>>create table t002bad(a int, b int, c int);
+
+--- SQL operation complete.
+>>
+>>#ifMX
+>>create table t002ut1 (a int, b nchar(9), c int, d nchar(4));
+
+--- SQL operation complete.
+>>create table t002ut2 (a int not null, b nchar(9), c int, d nchar(4), primary key (a));
+
+--- SQL operation complete.
+>>#ifMX
+>>
+>>?section dml
+>>-- INSERT queries
+>>insert into t002t1 values (10, 'abc', 20, 'xy');
+
+--- 1 row(s) inserted.
+>>insert into t002t1(b,d,a,c) values ('defg', 'wx', 10+10, 30);
+
+--- 1 row(s) inserted.
+>>insert into t002t2 select * from t002t1;
+
+--- 2 row(s) inserted.
+>>insert into t002t3(a,b,c,d) select a,b,c,d from t002t2;
+
+--- 2 row(s) inserted.
+>>
+>>#ifMX
+>>insert into t002ut1 values (10, N'abc', 20, N'xy');
+
+--- 1 row(s) inserted.
+>>insert into t002ut1(b,d,a,c) values (N'defg', N'wx', 10+10, 30);
+
+--- 1 row(s) inserted.
+>>insert into t002ut2 select * from t002ut1;
+
+--- 2 row(s) inserted.
+>>#ifMX
+>>
+>>?section subqtests
+>>-- Expect 2 identical rows saying "2 2";
+>>-- thus certain queries following expect 2 identical rows
+>>-- (duplicates of the fixed subquery result)
+>>select (select count(*) from t002t1), (select count(*) from t002t2) from t002t1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   2                     2
+                   2                     2
+
+--- 2 row(s) selected.
+>>-- Expect 1 row
+>>select * from t002t2 where a=(select min(a) from t002t2);
+
+A            B          C            D   
+-----------  ---------  -----------  ----
+
+         10  abc                 20  xy  
+
+--- 1 row(s) selected.
+>>select * from t002t2 where b=(select min(b) from t002t2);
+
+A            B          C            D   
+-----------  ---------  -----------  ----
+
+         10  abc                 20  xy  
+
+--- 1 row(s) selected.
+>>select * from t002t2 where c=(select min(c) from t002t2);
+
+A            B          C            D   
+-----------  ---------  -----------  ----
+
+         10  abc                 20  xy  
+
+--- 1 row(s) selected.
+>>
+>>-- Expect 2 identical rows saying "2 2";
+>>-- thus certain queries following expect 2 identical rows
+>>-- (duplicates of the fixed subquery result)
+>>#ifMX
+>>select (select count(*) from t002ut1), (select count(*) from t002ut2) from t002ut1;
+
+(EXPR)                (EXPR)              
+--------------------  --------------------
+
+                   2                     2
+                   2                     2
+
+--- 2 row(s) selected.
+>>#ifMX
+>>
+>>
+>>--
+>>-- Illegal, a delimited identifier must contain at least one character.
+>>SELECT A FROM T002T2 "";
+
+*** ERROR[3004] A delimited identifier must contain at least one nonblank character.
+
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT A FROM T002T2 "";
+                      ^ (23 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
+>>-- Illegal, subquery in select list must be scalar
+>>SELECT (SELECT A,B FROM T002T2 WHERE b=(select min(b) from t002t2)) FROM T002T1 OUTT;
+
+(EXPR)       (EXPR)   
+-----------  ---------
+
+         10  abc      
+         10  abc      
+
+--- 2 row(s) selected.
+>>--
+>>
+>>-- Outer ref in agg; but 2-row subquery should cause a CardinalityViolation
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(OUTT.C)>1) FROM T002T1 OUTT;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>-- Expect 2 NULL rows
+>>SELECT (SELECT A FROM T002T2 WHERE 1>1) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+          ?
+          ?
+
+--- 2 row(s) selected.
+>>-- Ok, outer ref in agg; expect 1 NULL row (7.9 GR1a(i))
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(OUTT.C)>100000) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>>SELECT (SELECT B FROM T002T2 WHERE MAX(OUTT.C)>100000) FROM T002T1 OUTT;
+
+(EXPR)   
+---------
+
+?        
+
+--- 1 row(s) selected.
+>>SELECT (SELECT MAX(OUTT.C) FROM T002T2 WHERE MAX(OUTT.C)>100000) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+          ?
+
+--- 1 row(s) selected.
+>>
+>>-- Err 8401 (CardinalityViolation)
+>>SELECT (SELECT MAX(OUTT.C) FROM T002T2) FROM T002T1 OUTT;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>-- Ok, 1 row
+>>SELECT MIN(A) FROM T002T1 HAVING (SELECT COUNT(*) FROM T002T2) > 0;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT MIN(A) FROM T002T1 HAVING MIN(A) > 0;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>select 54 from (values(0))x where exists(select 99 from T002T1) and 1=1;
+
+(EXPR)
+------
+
+    54
+
+--- 1 row(s) selected.
+>>select 54 from (values(0))x having 1=1;
+
+(EXPR)
+------
+
+    54
+
+--- 1 row(s) selected.
+>>select 54 from T002T1       having 1=1;
+
+(EXPR)
+------
+
+    54
+
+--- 1 row(s) selected.
+>>
+>>-- Ok, expect 2 identical nonnull rows
+>>SELECT (SELECT A FROM T002T2 WHERE b='abc') FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+         10
+
+--- 2 row(s) selected.
+>>-- Ok, outer ref in agg; expect 1 nonnull row (7.9 GR1a(i))
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(OUTT.C)>1
++>   and b='abc') FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(OUTT.C)>1
++>   and b=(select min(b) from t002t2)) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>--
+>>-- Ok, outer ref and constant in agg; expect 1 nonnull row (7.9 GR1a(i))
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(3+OUTT.C-2-2+1)>1
++>   and b=(select min(b) from t002t2)) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>-- Ok, two outer refs in agg but from same scope; expect 1 nonnull row (7.9 ...)
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(OUTT.C+OUTT.C)>1
++>   and b=(select min(b) from t002t2)) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(3+OUTT.C+OUTT.C-2-2+1)>1
++>   and b=(select min(b) from t002t2)) FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(3+OUTT.C+OUTT.C-2-2+1)>1
++>   and b='abc') FROM T002T1 OUTT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>--
+>>-- Ok, outer ref in agg on a grby; expect 1 NULL and 1 nonnull row
+>>SELECT (SELECT A FROM T002T2 WHERE OUTT.A > A AND MAX(OUTT.B)>'C') FROM T002T1 OUTT
++>GROUP BY OUTT.A;
+
+(EXPR)     
+-----------
+
+          ?
+         10
+
+--- 2 row(s) selected.
+>>--
+>>--
+>>
+>>-- Illegal, local refs in agg
+>>SELECT (SELECT A FROM T002T2 WHERE 
++>	AVG(C)+MIN(C)+SUM(T002T2.A)+COUNT(D)+COUNT(7)+COUNT(*)
++>	>2) FROM T002T1 OUTT;
+
+*** ERROR[4015] Aggregate functions are placed incorrectly: AVG(C), MIN(C), SUM(T002T2.A), COUNT(D), COUNT(7), COUNT(*).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- Illegal, local refs in agg
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(C+C)>1) FROM T002T1 OUTT;
+
+*** ERROR[4015] Aggregate functions are placed incorrectly: MAX((TRAFODION.SCH.T002T2.C + TRAFODION.SCH.T002T2.C)).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- Illegal, in an agg all column refs must come from the same scope.
+>>SELECT (SELECT A FROM T002T2 WHERE MAX(OUTT.C+C)>1) FROM T002T1 OUTT;
+
+*** ERROR[4006] Within an aggregate, all column references must come from the same scope.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--
+>>--
+>>
+>>-- Ok, all scalar subqueries of cardinality 0 or 1
+>>-- Only the 2 "NULLx" columns should contain nulls!
+>>SELECT 
++>   A,(SELECT A FROM T002T1 WHERE A=(SELECT MAX(A) FROM T002T1)) AS AMAX,
++>   B,(SELECT B FROM T002T1 WHERE B=(SELECT MAX(B) FROM T002T1)) AS BMAX,
++>   C,(SELECT C FROM T002T1 WHERE C=(SELECT MAX(C) FROM T002T1)) AS CMAX,
++>   D,(SELECT D FROM T002T1 WHERE D=(SELECT MAX(D) FROM T002T1)) AS DMAX,
++>   A,(SELECT A FROM T002T1 WHERE A IS NULL) AS NULLA,
++>   D,(SELECT D FROM T002T1 WHERE D IS NULL) AS NULLD
++>   FROM T002T1;
+
+A            AMAX         B          BMAX       C            CMAX         D     DMAX  A            NULLA        D     NULLD
+-----------  -----------  ---------  ---------  -----------  -----------  ----  ----  -----------  -----------  ----  -----
+
+         10           20  abc        defg                20           30  xy    xy             10            ?  xy    ?    
+         20           20  defg       defg                30           30  wx    xy             20            ?  wx    ?    
+
+--- 2 row(s) selected.
+>>
+>>-- Ok, outer ref in agg; expect 1 NULL row (7.9 GR1a(i))
+>>#ifMX
+>>SELECT (SELECT B FROM T002UT2 WHERE MAX(TUT.C)>100000) FROM T002UT1 TUT;
+
+(EXPR)            
+------------------
+
+?                 
+
+--- 1 row(s) selected.
+>>
+>>-- Ok, expect 2 identical nonnull rows
+>>SELECT (SELECT A FROM T002UT2 WHERE b=N'abc') FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+         10
+
+--- 2 row(s) selected.
+>>-- Ok, outer ref in agg; expect 1 nonnull row (7.9 GR1a(i))
+>>SELECT (SELECT A FROM T002UT2 WHERE MAX(TUT.C)>1
++>   and b=N'abc') FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT (SELECT A FROM T002UT2 WHERE MAX(TUT.C)>1
++>   and b=(select min(b) from t002ut2)) FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>
+>>-- Ok, outer ref and constant in agg; expect 1 nonnull row (7.9 GR1a(i))
+>>SELECT (SELECT A FROM T002UT2 WHERE MAX(3+TUT.C-2-2+1)>1
++>   and b=(select min(b) from t002ut2)) FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>-- Ok, two outer refs in agg but from same scope; expect 1 nonnull row (7.9 ...)
+>>SELECT (SELECT A FROM T002UT2 WHERE MAX(TUT.C+TUT.C)>1
++>   and b=(select min(b) from t002ut2)) FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT (SELECT A FROM T002UT2 WHERE MAX(3+TUT.C+TUT.C-2-2+1)>1
++>   and b=(select min(b) from t002ut2)) FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>SELECT (SELECT A FROM T002UT2 WHERE MAX(3+TUT.C+TUT.C-2-2+1)>1
++>   and b=N'abc') FROM T002UT1 TUT;
+
+(EXPR)     
+-----------
+
+         10
+
+--- 1 row(s) selected.
+>>
+>>-- Ok, outer ref in agg on a grby; expect 1 NULL and 1 nonnull row
+>>SELECT (SELECT A FROM T002UT2 WHERE TUT.A > A AND MAX(TUT.B)>N'C') FROM T002UT1 TUT
++>GROUP BY TUT.A;
+
+(EXPR)     
+-----------
+
+          ?
+         10
+
+--- 2 row(s) selected.
+>>--
+>>--
+>>
+>>-- Ok, all scalar subqueries of cardinality 0 or 1
+>>-- Only the 2 "NULLx" columns should contain nulls!
+>>SELECT 
++>   A,(SELECT A FROM T002UT1 WHERE A=(SELECT MAX(A) FROM T002UT1)) AS AMAX,
++>   B,(SELECT B FROM T002UT1 WHERE B=(SELECT MAX(B) FROM T002UT1)) AS BMAX,
++>   C,(SELECT C FROM T002UT1 WHERE C=(SELECT MAX(C) FROM T002UT1)) AS CMAX,
++>   D,(SELECT D FROM T002UT1 WHERE D=(SELECT MAX(D) FROM T002UT1)) AS DMAX,
++>   A,(SELECT A FROM T002UT1 WHERE A IS NULL) AS NULLA,
++>   D,(SELECT D FROM T002UT1 WHERE D IS NULL) AS NULLD
++>   FROM T002UT1;
+
+A            AMAX         B                   BMAX                C            CMAX         D         DMAX      A            NULLA        D         NULLD
+-----------  -----------  ------------------  ------------------  -----------  -----------  --------  --------  -----------  -----------  --------  --------
+
+         10           20  abc                 defg                         20           30  xy        xy                 10            ?  xy        ?       
+         20           20  defg                defg                         30           30  wx        xy                 20            ?  wx        ?       
+
+--- 2 row(s) selected.
+>>#ifMX
+>>
+>>
+>>------------------------------------------------------------------------
+>>?section Genesis_10_000222_6892_p1
+>>SELECT 1 FROM T002T3 T1
++>GROUP BY T1.A
++>HAVING T1.A >ANY
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C >SOME
++>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
++>  );
+
+(EXPR)
+------
+
+     1
+     1
+
+--- 2 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p2
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >ANY
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C =ANY
++>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
++>  );
+
+(EXPR)
+------
+
+     1
+
+--- 1 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p3
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >ANY
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =ANY
++>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p4
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =ANY
++>      ( SELECT COUNT (T1.C) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p5
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT AVG (T1.C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p5a
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT COUNT (T1.C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p6
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT COUNT (T1.C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_p7
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT SUM (T1.C) / COUNT(T1.C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q1
+>>SELECT 1 FROM T002T3 T1
++>GROUP BY T1.A
++>HAVING T1.A >
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C >
++>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
++>  );
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q2
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >
++>  ( SELECT 2 FROM T002T1 T2
++>   WHERE T2.C =
++>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
++>  );
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q3
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >
++>  ( SELECT T2.C FROM T002T1 T2
++>   WHERE T2.C =
++>      ( SELECT AVG (T1.A) FROM T002T1 T3 )
++>  );
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q4
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =
++>      ( SELECT COUNT (T1.C) FROM T002T1 T3 )
++>  );
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q5
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>      ( SELECT AVG (T1.C) FROM T002T2 T3 )
++>   ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q6
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>      ( SELECT COUNT (T1.C) FROM T002T2 T3 )
++>   ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_q7
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>      ( SELECT SUM (T1.C) / COUNT(T1.C) FROM T002T2 T3 )
++>   ;
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r1
+>>SELECT 1 FROM T002T3 T1
++>GROUP BY T1.A
++>HAVING T1.A >ANY
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C >SOME
++>      ( SELECT AVG (A) FROM T002T1 T3 )
++>  );
+
+(EXPR)
+------
+
+     1
+     1
+
+--- 2 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r2
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >ANY
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C =ANY
++>      ( SELECT AVG (A) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r3
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >ANY
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =ANY
++>      ( SELECT AVG (A) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r4	-- none of these SELECTs should fail
+>>
+>>select count(*) from t002t1;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>		-- nonzero
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =ANY
++>      ( SELECT COUNT (C) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>delete from T002bad;
+
+--- 0 row(s) deleted.
+>>
+>>SELECT T1.A FROM T002bad T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>  ( SELECT T2.C FROM T002bad T2
++>    WHERE T2.C =ANY
++>      ( SELECT COUNT (C) FROM T002bad T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>insert into T002bad values (11,21,61);
+
+--- 1 row(s) inserted.
+>>	-- nonzero
+>>
+>>control query default optimization_level 'minimum';
+
+--- SQL operation complete.
+>>SELECT T1.A FROM T002bad T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>  ( SELECT T2.C FROM T002bad T2
++>    WHERE T2.C =ANY
++>      ( SELECT COUNT (C) FROM T002bad T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>control query default optimization_level 'reset';
+
+--- SQL operation complete.
+>>SELECT T1.A FROM T002bad T1				-- should not fail
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>  ( SELECT T2.C FROM T002bad T2
++>    WHERE T2.C =ANY
++>      ( SELECT COUNT (C) FROM T002bad T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r5
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT AVG (C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r6
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT COUNT (C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_r7
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =ANY
++>      ( SELECT SUM (C) / COUNT(C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s1
+>>SELECT 1 FROM T002T3 T1
++>GROUP BY T1.A
++>HAVING T1.A >
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C >
++>      ( SELECT AVG (A) FROM T002T1 T3 )
++>  );
+
+*** ERROR[8401] A row subquery or SELECT...INTO statement cannot return more than one row.
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s2
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >
++>  ( SELECT 2 FROM T002T1 T2
++>    WHERE T2.C =
++>      ( SELECT AVG (A) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s3
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A >
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =
++>      ( SELECT AVG (A) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s4
+>>SELECT 1 FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>  ( SELECT T2.C FROM T002T1 T2
++>    WHERE T2.C =
++>      ( SELECT COUNT (C) FROM T002T1 T3 )
++>  );
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s5
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>      ( SELECT AVG (C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s6
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>      ( SELECT COUNT (C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>
+>>?section Genesis_10_000222_6892_s7
+>>SELECT T1.A FROM T002T1 T1
++>GROUP BY T1.A
++>HAVING T1.A =
++>      ( SELECT SUM (C) / COUNT(C) FROM T002T2 T3 )
++>   ;
+
+--- 0 row(s) selected.
+>>------------------------------------------------------------------------
+>>
+>>--log BR0198.log clear;
+>>create table t002ZZ (x int);
+
+--- SQL operation complete.
+>>create table t002ZZI(x int);
+
+--- SQL operation complete.
+>>create table t002FU (x int);
+
+--- SQL operation complete.
+>>create table t002FUI(x int);
+
+--- SQL operation complete.
+>>insert into  t002FU  values(3),(4);
+
+--- 2 row(s) inserted.
+>>insert into  t002FUI values(13);
+
+--- 1 row(s) inserted.
+>>
+>>-- Tables t002ZZ and t002ZZI are empty (have zero rows), tables t002FU and t002FUI are full.
+>>--
+>>-- "[?]" means one null row is returned,
+>>-- "[0]" means one row containing zero is returned,
+>>-- "sum" means one row containing the sum (7) is returned,
+>>-- "cnt" means one row containing the cnt (2) is returned,
+>>-- "0 rows" means no rows are returned.
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select SUM  (123) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select SUM  (O.X) from t002ZZ O having exists(select      (123) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select SUM  (O.X) from t002ZZ O having exists(select SUM  (O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select COUNT(O.X) from t002ZZ O having exists(select SUM  (O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select SUM  (O.X) from t002FU O having exists(select SUM  (O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select COUNT(O.X) from t002FU O having exists(select SUM  (O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select SUM  (O.X) from t002ZZ O having exists(select COUNT(O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select COUNT(O.X) from t002ZZ O having exists(select COUNT(O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select SUM  (O.X) from t002FU O having exists(select COUNT(O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>select COUNT(O.X) from t002FU O having exists(select COUNT(O.X) from t002ZZI I);
+
+--- 0 row(s) selected.
+>>--0 rows
+>>
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select SUM  (I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select COUNT(O.X) from t002ZZ O having exists(select SUM  (I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- [0]
+>>select SUM  (O.X) from t002FU O having exists(select SUM  (I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>> -- sum
+>>select COUNT(O.X) from t002FU O having exists(select SUM  (I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>> -- cnt
+>>
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select COUNT(I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select COUNT(O.X) from t002ZZ O having exists(select COUNT(I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- [0]
+>>select SUM  (O.X) from t002FU O having exists(select COUNT(I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>> -- sum
+>>select COUNT(O.X) from t002FU O having exists(select COUNT(I.X) from t002ZZI I);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>> -- cnt
+>>
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select SUM  (O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select COUNT(O.X) from t002ZZ O having exists(select SUM  (O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- [0]
+>>select SUM  (O.X) from t002FU O having exists(select SUM  (O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>> -- sum
+>>select COUNT(O.X) from t002FU O having exists(select SUM  (O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>> -- cnt
+>>
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select COUNT(O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select COUNT(O.X) from t002ZZ O having exists(select COUNT(O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- [0]
+>>select SUM  (O.X) from t002FU O having exists(select COUNT(O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>> -- sum
+>>select COUNT(O.X) from t002FU O having exists(select COUNT(O.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>> -- cnt
+>>
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select SUM  (I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select COUNT(O.X) from t002ZZ O having exists(select SUM  (I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- [0]
+>>select SUM  (O.X) from t002FU O having exists(select SUM  (I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>> -- sum
+>>select COUNT(O.X) from t002FU O having exists(select SUM  (I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>> -- cnt
+>>
+>>
+>>select SUM  (O.X) from t002ZZ O having exists(select COUNT(I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   ?
+
+--- 1 row(s) selected.
+>> -- [?]
+>>select COUNT(O.X) from t002ZZ O having exists(select COUNT(I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>> -- [0]
+>>select SUM  (O.X) from t002FU O having exists(select COUNT(I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   7
+
+--- 1 row(s) selected.
+>> -- sum
+>>select COUNT(O.X) from t002FU O having exists(select COUNT(I.X) from t002FUI I);
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>> -- cnt
+>>------------------------------------------------------------------------
+>>
+>>log;
