@@ -34,8 +34,8 @@ if [[ $v == "N" ]] || [[ $v == "n" ]]; then
 fi
 
 OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
-MY_NODES=$(cat my_nodes)
-my_node_list=$(cat node_list)
+MY_NODES=$(cat ../../my_nodes)
+my_node_list=$(cat ../../node_list)
 
 if [ $OPENSTACK_VM -ne 0 ]; then
   my_node_list=`nova list |grep $vm_prefix|awk '{print $4}'`

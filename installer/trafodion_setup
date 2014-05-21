@@ -34,12 +34,13 @@ NOTE: This script does NOT install a Trafodion build
 Usage: $(basename $0) [options]
 
 Options:
-    --help                Print this message and exit.
-    --nodes "<node_list>" Blank separated list of nodes (within quotes) in this Trafodion environment
-                          From 1 to N nodes, although two is the recommended minimum.
-    --username <user>     Trafodion user name (default "$TRAF_USER")
-    --password <password> Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
-    --clustername <name>  Name of Trafodion cluster. (default $HOSTNAME)
+    --help                 Print this message and exit.
+    --nodes "<node_list>"  Blank separated list of nodes (within quotes) in this Trafodion environment
+                           From 1 to N nodes, although two is the recommended minimum.
+    --username <user>      Trafodion user name (default "$TRAF_USER")
+    --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
+    --clustername <name>   Name of Trafodion cluster. (default $HOSTNAME)
+    --hbase_trx_jar <path> 
 
 EOF
 }
