@@ -111,7 +111,7 @@ public class TransactionalRegion extends HRegion {
 	private Set<TransactionState> commitPendingTransactions = Collections
 			.synchronizedSet(new HashSet<TransactionState>());
 
-        // SST: add an in-doubt transaction list during recovery WALEdit replay
+        // an in-doubt transaction list during recovery WALEdit replay
         private Map<Long, WALEdit> indoubtTransactionsById = new TreeMap<Long, WALEdit>();
         private Map<Integer, Integer> indoubtTransactionsCountByTmid = new TreeMap<Integer,Integer>();
 
@@ -149,6 +149,12 @@ public class TransactionalRegion extends HRegion {
                                                           true);
                 this.doWALHlog = conf.getBoolean("hbase.regionserver.region.transactional.hlog", true);
                 LOG.debug("Trafodion Recovery: WAL HLOG setting " + this.doWALHlog);
+
+                boolean doTlog = conf.getBoolean("hbase.regionserver.region.transactional.tlog", false);
+                LOG.debug("Trafodion Recovery: TM TLOG setting " + doTlog);
+                if (doTlog) this.cleanAT = 0;
+                else this.cleanAT = 1;
+
 	}
 
 	/**
@@ -420,7 +426,7 @@ public class TransactionalRegion extends HRegion {
 	public void beginTransaction(final long transactionId) throws IOException {
                 LOG.debug("beginTransaction -- ENTRY txId: " + transactionId);
 		checkClosing(transactionId);
-                // SST: block new transaction to begin if the region has not completed recovery
+                // block new transaction to begin if the region has not completed recovery
                 if (regionState != 2) {
                    LOG.debug("Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
                 }
@@ -617,7 +623,7 @@ public class TransactionalRegion extends HRegion {
 		state.addDelete(delete);
 	}
 
-        // SST: here add the doRecover to reply a list of in-doubt transactions from TM nn
+        // add the doRecover to reply a list of in-doubt transactions from TM nn
         public List<Long> doRecoveryRequest(final int tmid) throws IOException {
 	     //checkClosing();
         

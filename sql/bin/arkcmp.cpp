@@ -81,17 +81,9 @@ DEFINE_DOVERS(tdm_arkcmp)
 
 #include "CmpISPInterface.h"
 
-// In order to support template instantiation for TANDEM builds (using c89)
-// we conditionally include cmp_templ.C.  Furthermore, we
-// #define a special macro, __CMP_TMPL_INCLUDED so that
-// we obtain the template implementation code from that file.
-//
 
 
-//-------------------------------------------------------------------------
-// We set the trap handler to be used by TFDS (Tandem Failuer Data System)
-// These have a " C" flavor as TFDS RTL seems to be written in C.
-//-------------------------------------------------------------------------
+
 
 
 
@@ -103,75 +95,6 @@ THREAD_P NABoolean DisplayGraph = FALSE;
 ostream &operator<<(ostream &dest, const ComDiagsArea& da);
 
 
-//class CmpISPInterface 
-//{
-//public:
-//  CmpISPInterface();
-//  void InitISPFuncs();
-//  virtual ~CmpISPInterface();
-//private:
-//  NABoolean initCalled_;
-//  SP_DLL_HANDLE handle_;
-//  CmpISPInterface(const CmpISPInterface&);
-//  const CmpISPInterface& operator=(const CmpISPInterface&);
-//};
-//
-//CmpISPInterface::CmpISPInterface()
-//{
-//  initCalled_ = FALSE;
-//}
-//
-//void CmpISPInterface::InitISPFuncs()
-//{
-//  SP_REGISTER_FUNCPTR regFunc = &(CmpISPFuncs::RegFuncs);
-//  // todo, error handling.
-//#ifdef HP_CLOSED_SOURCE_1
-//  SQLISP_INIT(regFunc, &handle_); // from DLL provided by SQL/Util
-//
-//#endif // HP_CLOSED_SOURCE_1
-//  // Query cache virtual tables
-//  QueryCacheStatStoredProcedure::Initialize(regFunc);
-//  QueryCacheEntriesStoredProcedure::Initialize(regFunc);
-//  QueryCacheDeleteStoredProcedure::Initialize(regFunc);
-//
-//#ifdef HP_CLOSED_SOURCE_1
-//  // Versioning virtual tables
-//  VersionInfoStoredProcedure::Initialize(regFunc);
-//  RelatednessStoredProcedure::Initialize(regFunc);
-//  SpCatApiRequest::Initialize(regFunc);
-//  FeatureVersionInfoStoredProcedure::Initialize(regFunc);
-//
-//  // Catman cache statistics virtual table
-//  CatmanCacheStatStoredProcedure::Initialize(regFunc);
-//#endif // HP_CLOSED_SOURCE_1
-//  
-//  // NATable cache statistics virtual table
-//  NATableCacheStatStoredProcedure::Initialize(regFunc);
-//  NATableCacheEntriesStoredProcedure::Initialize(regFunc);
-//
-//    // NATable cache statistics delete
-//  NATableCacheDeleteStoredProcedure::Initialize(regFunc);
-//
-//  // NARoutine cache statistics virtual table
-//  NARoutineCacheStatStoredProcedure::Initialize(regFunc);
-//
-//  // NARoutine cache statistics delete
-//  NARoutineCacheDeleteStoredProcedure::Initialize(regFunc);
-//
-//  // insert an empty entry to indicate end of array
-//  CmpISPFuncs::procFuncsArray_.insert(CmpISPFuncs::ProcFuncsStruct());
-//  initCalled_ = TRUE;
-//}
-//
-//CmpISPInterface::~CmpISPInterface()
-//{
-//#ifdef HP_CLOSED_SOURCE_1
-//#ifndef NA_LINUX
-//  if (initCalled_)
-//    SQLISP_EXIT(handle_); // from DLL provided by SQL/Util
-//#endif
-//#endif // HP_CLOSED_SOURCE_1
-//}
 
 extern CmpISPInterface cmpISPInterface;
 
@@ -247,10 +170,6 @@ static ofstream* initializeArkcmpCoutCerr()
 
   return outstream;
 }
-
-static void extractSysModDirFromDefineAndThenPutEnvIfFound()
-{
-} // static void extractSysModDirFromDefineAndThenPutEnvIfFound()
 
 
 

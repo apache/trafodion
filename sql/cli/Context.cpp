@@ -55,6 +55,7 @@
 #include "ComExeTrace.h"
 #include "exp_clause_derived.h"
 #include "ComUser.h"
+#include "CmpSeabaseDDLauth.h"
 
 #include "ExCextdecs.h"
 
@@ -4744,42 +4745,6 @@ void ContextCli::initializeUserInfoFromOS()
 {
 
 
-#if 0
-  // Acquire the Linux user name
-  uid_t osUserID = geteuid();
-  struct passwd *pwd = getpwuid(osUserID);
-
-  // $$$$ M4 SECURITY
-  // Once this code is enabled we should handle errors from
-  // getpwuid. We should also consider calling the thread-safe version
-  // of the function.
-  ex_assert(pwd, "getpwuid returned NULL");
-  char usersNameFromUsersTable[600];
-  Int32 userIDFromUsersTable;
-
-  // Read a row from the USERS table where EXTERNAL_USER_NAME matches
-  // the Linux user name
-  const char *userName = pwd->pw_name;
-  RETCODE result = usersQuery(USERS_QUERY_BY_EXTERNAL_NAME,
-                              userName,    // IN user name
-                              0,           // IN user ID (ignored)
-                              usersNameFromUsersTable, //OUT
-                              userIDFromUsersTable);  // OUT
-  // Cases to consider
-  // (a) Row does not exist: no side effects, return any errors that
-  //      might be in diagsArea_
-  // (b) Row exists, marked invalid: no side effects, return any errors
-  //      that might be in diagsArea_
-  // (c) Row exists, marked valid: update ContextCli, return success
-  //
-  // (a) and (b) are indicated by result == ERROR and diagnostic
-  // conditions are already in diagsArea_. All we need to do is
-  // return.
-
-  if (result != ERROR)
-    setDatabaseUser(userIDFromUsersTable, usersNameFromUsersTable);
-
-#endif // #if 0
 }
 
 #pragma page "ContextCli::authQuery"
@@ -4828,8 +4793,135 @@ RETCODE ContextCli::authQuery(
    Int32       & authIDFromTable)   
    
 {
-  // disable authorization for now
-  return ERROR;
+
+  // We may need to perform a transactional lookup into metadata.
+  // The following steps will be taken to manage the
+  // transaction. The same steps are used in the Statement class when
+  // we read the authorization information
+  //
+  //  1. Disable autocommit
+  //  2. Note whether a transaction is already in progress
+  //  3. Do the work
+  //  4. Commit the transaction if a new one was started
+  //  5. Enable autocommit if it was disabled
+
+  // If we hit errors and need to inject the user name in error
+  // messages, but the caller passed in a user ID not a name, we will
+  // use the string form of the user ID.
+
+  const char *nameForDiags = authName;
+  char localNameBuf[32];
+  char isValidFromUsersTable[3];
+
+  if (queryType == USERS_QUERY_BY_USER_ID)
+  {
+    sprintf(localNameBuf, "%d", (int) authID);
+    nameForDiags = localNameBuf;
+  }
+
+  //  1. Disable autocommit 
+  NABoolean autoCommitDisabled = FALSE;
+
+   if (transaction_->autoCommit())
+   {
+      autoCommitDisabled = TRUE;
+      transaction_->disableAutoCommit();
+   }
+
+  //  2. Note whether a transaction is already in progress
+  NABoolean txWasInProgress = transaction_->xnInProgress();
+
+  //  3. Do the work
+  Int32 sqlcode = 0;
+
+   switch (queryType)
+   {
+      case USERS_QUERY_BY_USER_NAME:
+      {
+        CmpSeabaseDDLuser userInfo;
+        sqlcode = userInfo.getUserDetails(authName, FALSE);
+        if (sqlcode == 0)
+         {
+           authIDFromTable = userInfo.getAuthID();
+           strcpy (authNameFromTable, userInfo.getAuthDbName().data());    
+         }
+      }
+      break;
+
+      case USERS_QUERY_BY_EXTERNAL_NAME:
+      {
+        CmpSeabaseDDLuser userInfo;
+        sqlcode = userInfo.getUserDetails(authName, TRUE);
+        if (sqlcode == 0)
+         {
+           authIDFromTable = userInfo.getAuthID();
+           strcpy (authNameFromTable, userInfo.getAuthExtName().data());    
+         }
+      }
+      break;
+
+      case USERS_QUERY_BY_USER_ID:
+      {
+        CmpSeabaseDDLuser userInfo;
+        sqlcode = userInfo.getUserDetails(authID);
+        if (sqlcode == 0)
+        {
+          authIDFromTable = userInfo.getAuthID();
+          strcpy (authNameFromTable, userInfo.getAuthDbName().data());
+        }
+      }
+      break;
+
+
+      default:
+      {
+         ex_assert(0, "Invalid query type");
+      }
+      break;
+   }
+  
+   //  4. Commit the transaction if a new one was started
+   if (!txWasInProgress && transaction_->xnInProgress())
+      transaction_->commitTransaction();
+  
+   //  5. Enable autocommit if it was disabled
+   if (autoCommitDisabled)
+      transaction_->enableAutoCommit();
+    
+  // Errors to consider:
+  // * an unexpected error (sqlcode < 0)
+  // * the row does not exist (sqlcode == 100)
+  // * row exists but is marked invalid
+  RETCODE result = SUCCESS;
+  if (sqlcode < 0)
+  {
+    result = ERROR;
+    // ACH: Make error specific to "user" or "role" depending on what we're trying to get
+    // ACH: But make sure ROLE stuff is Linux specific 
+    diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
+               << DgString0(nameForDiags)
+               << DgInt1(sqlcode);
+  }
+  else if (sqlcode == 100)
+  {
+    result = ERROR;
+    // ACH: Make error specific to "user" or "role" depending on what we're trying to get
+    diagsArea_.clear();
+    diagsArea_ << DgSqlCode(-CLI_USER_NOT_REGISTERED)
+               << DgString0(nameForDiags);
+  }
+  else
+  {  
+    // If warnings were generated, do not propagate them to the caller
+    if (sqlcode > 0)
+      diagsArea_.clear();
+
+
+
+  }
+          
+  return result;
+
 }
 //*********************** End of ContextCli::authQuery *************************
 
@@ -4867,133 +4959,6 @@ RETCODE ContextCli::usersQuery(AuthQueryType queryType,      // IN
                      usersNameFromUsersTable, userIDFromUsersTable);
   return result; 
 
-#if 0
-// original code  
-// ACH:  replace with call to authQuery as above
-//
-
-  // authQuery is a superset of usersQuery functionality
-  // so now usersQuery just calls authQuery and returns the result
-  //  
-  // We need to perform a transactional lookup into the USERS
-  // table. The following steps will be taken to manage the
-  // transaction. The same steps are used in the Statement class when
-  // we call CatMapAnsiNameToGuardianName:
-  //
-  //  1. Disable autocommit
-  //  2. Note whether a transaction is already in progress
-  //  3. Do the work
-  //  4. Commit the transaction if a new one was started
-  //  5. Enable autocommit if it was disabled
-
-  // If we hit errors and need to inject the user name in error
-  // messages, but the caller passed in a user ID not a name, we will
-  // use the string form of the user ID.
-  const char *nameForDiags = userName;
-  char localNameBuf[32];
-  char isValidFromUsersTable[3];
-
-  if (queryType == USERS_QUERY_BY_USER_ID)
-  {
-    sprintf(localNameBuf, "%d", (int) userID);
-    nameForDiags = localNameBuf;
-  }
-
-  //  1. Disable autocommit
-  NABoolean autoCommitDisabled = FALSE;
-  if (transaction_->autoCommit())
-  {
-    autoCommitDisabled = TRUE;
-    transaction_->disableAutoCommit();
-  }
-
-  //  2. Note whether a transaction is already in progress
-  NABoolean txWasInProgress = transaction_->xnInProgress();
-
-  //  3. Do the work
-  Int32 sqlcode = 0;
-  switch (queryType)
-  {
-    case USERS_QUERY_BY_USER_NAME:
-    {
-      sqlcode = CatMapGetUsersRowByUserName(userName,  userIDFromUsersTable ,
-                                            usersNameFromUsersTable,
-                                            isValidFromUsersTable,
-                                            (CatmanInfo *) catmanInfo_);
-    }
-    break;
-
-    case USERS_QUERY_BY_EXTERNAL_NAME:
-    {
-      sqlcode = CatMapGetUsersRowByExternalName(userName, userIDFromUsersTable,
-                                                usersNameFromUsersTable,
-                                                isValidFromUsersTable,
-                                                (CatmanInfo *) catmanInfo_);
-
-    }
-    break;
-
-    case USERS_QUERY_BY_USER_ID:
-    {
-      sqlcode = CatMapGetUsersRowByUserID(userID,  userIDFromUsersTable, 
-                                          usersNameFromUsersTable,
-                                          isValidFromUsersTable,
-                                          (CatmanInfo *) catmanInfo_);
-    }
-    break;
-
-    default:
-    {
-      ex_assert(0, "Invalid query type");
-    }
-    break;
-  }
-  
-  //  4. Commit the transaction if a new one was started
-  if (!txWasInProgress && transaction_->xnInProgress())
-    transaction_->commitTransaction();
-  
-  //  5. Enable autocommit if it was disabled
-  if (autoCommitDisabled)
-    transaction_->enableAutoCommit();
-
-  // Errors to consider:
-  // * an unexpected error (sqlcode < 0)
-  // * the row does not exist (sqlcode == 100)
-  // * row exists but is marked invalid
-  RETCODE result = SUCCESS;
-  if (sqlcode < 0)
-  {
-    result = ERROR;
-    diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
-               << DgString0(nameForDiags)
-               << DgInt1(sqlcode);
-  }
-  else if (sqlcode == 100)
-  {
-    result = ERROR;
-    diagsArea_.clear();
-    diagsArea_ << DgSqlCode(-CLI_USER_NOT_REGISTERED)
-               << DgString0(nameForDiags);
-  }
-  else
-  {
-    // If warnings were generated, do not propagate them to the caller
-    if (sqlcode > 0)
-      diagsArea_.clear();
-
-    // If the user is not valid, return a "user not valid" error
-    NABoolean isValid =
-      (strcmp(isValidFromUsersTable, COM_YES_LIT) == 0 ? TRUE : FALSE);
-    if (!isValid)
-    {
-      result = ERROR;
-      diagsArea_ << DgSqlCode(-CLI_USER_NOT_VALID) << DgString0(nameForDiags);
-    }
-  }
-
-  return result;
-#endif 
 }
 
 // Private method to update the databaseUserID_ and databaseUserName_

@@ -45,8 +45,7 @@
 	<property name="installer.zipfile" value="JDBCT4.zip" />
 	<property name="temp.test" value="${temp.dir}/test" />
 	<property name="vproc.java" value="org/trafodion/jdbc/t4/Vproc.java" />
-	<property name="vproc.class" value="org.trafodion.jdbcT4.Vproc" />
-	<property name="extract.class" value="org.trafodion.jdbcT4.Extract" />
+	<property name="vproc.class" value="org.trafodion.jdbc.t4.Vproc" />
 
 	<!-- output -->
 	<property name="temp.src" value="${temp.dir}/src" />

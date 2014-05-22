@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,13 +22,10 @@
  *****************************************************************************
  *
  * File:         SqlciCmd.C
- * RCS:          $Id: SqlciCmd.cpp,v 1.25 1998/09/04 19:41:44  Exp $
  * Description:
  *
  * Created:      4/15/95
- * Modified:     $ $Date: 1998/09/04 19:41:44 $ (GMT)
  * Language:     C++
- * Status:       $State: Exp $
  *
  *
  *
@@ -656,12 +653,6 @@ short Exit::process(SqlciEnv * sqlci_env)
  
   if (retval == -1)
     {
-
-      #if 0 // !defined( NA_NSK ) && !defined( NA_WINNT ) -- old dead code
-	// close hybrid server, if one was started
-	closeServer();
-      #endif
-
       sqlci_env->get_logfile()->WriteAll("\nEnd of MXCI Session\n"); // ##I18N
     }
 

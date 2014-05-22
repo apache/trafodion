@@ -26,10 +26,12 @@
 sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/customer_ddl;
 sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/customer_temp;
 sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_utf8;
+sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_type;
 --empty folders
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/customer_ddl/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/customer_temp/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_utf8/*;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_type/*;
 
 --- setup Hive tables
 sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_a.hive.sql;

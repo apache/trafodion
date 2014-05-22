@@ -443,8 +443,10 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		step_ = SCAN_CLOSE;
 		break;
 	      }
-
-	    step_ = SCAN_FETCH_ROW_VEC;
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::fetchNextRow"))
+               step_ = HANDLE_ERROR; 
+            else
+	       step_ = SCAN_FETCH_ROW_VEC;
 	  }
 	  break;
 
@@ -457,7 +459,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanFetch"))
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::fetchRowVec"))
 	      step_ = HANDLE_ERROR;
 	    else
 	      step_ = CREATE_ROW;

@@ -152,7 +152,6 @@ static Int32 safe_add_digit_to_double(
          double * result
 			  )
 {
-//#ifdef NA_NSK
     short ov;
 
     *result = MathReal64Mul(dvalue, (double)10, &ov);
@@ -1757,7 +1756,6 @@ ex_expr::exp_return_type convAsciiToFloat64(char * target,
       return ex_expr::EXPR_ERROR;
     }
 
-//#ifdef NA_NSK
   short ov;
   ptarget = MathReal64Mul(mantissa, exponent, &ov);
   if (ov)
@@ -7564,7 +7562,6 @@ convDoIt(char * source,
 
   case CONV_FLOAT64_FLOAT32:
     {
-//#ifdef NA_NSK
       short ov = 0;
       double doubleSource = *doubleSrcPtr;
       *floatTgtPtr = MathConvReal64ToReal32(doubleSource, &ov);
@@ -7618,7 +7615,6 @@ convDoIt(char * source,
 
   case CONV_FLOAT64_FLOAT64: 
     {
-//#ifdef NA_NSK
       short ov = 0;
       //      double doubleSource = *doubleSrcPtr;
       *doubleTgtPtr = MathConvReal64ToReal64(*doubleSrcPtr, &ov);

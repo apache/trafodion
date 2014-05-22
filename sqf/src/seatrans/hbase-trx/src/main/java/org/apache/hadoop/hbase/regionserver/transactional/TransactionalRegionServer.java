@@ -189,9 +189,7 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
     private void initializeTHLog() throws IOException {
         // We keep in the same directory as the core HLog.
     	
-        // Directory used in newer version
-        Path oldLogDir = new Path(getRootDir(), HLogSplitter.RECOVERED_EDITS);       
-        // Path oldLogDir = new Path(getRootDir(), HConstants.HREGION_OLDLOGDIR_NAME);       
+        Path oldLogDir = new Path(getRootDir(), HConstants.HREGION_OLDLOGDIR_NAME);       
 
         Path logdir = new Path(getRootDir(), HLog.getHLogDirectoryName(this.getServerName().getServerName()));
 

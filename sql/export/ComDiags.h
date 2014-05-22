@@ -379,13 +379,6 @@ SQLEXPORT_LIB_FUNC
 NA_EIDPROC
   const char         * getColumnName               () const;
 
-// #if defined (NA_NSK) && (SQLEXPORT_LIB)
-// #pragma srlexports
-// #endif
-// SQLEXPORT_LIB_FUNC
-// NA_EIDPROC
-//   CharInfo::CharSet  getIso88591MappingCharSet   () const;
-//   // returns CharInfo::UnknownCharSet if this field is not set
 
 SQLEXPORT_LIB_FUNC
 NA_EIDPROC
@@ -479,12 +472,6 @@ SQLEXPORT_LIB_FUNC
 NA_EIDPROC
   void                      setTableName          (const char *const);
 
-// #if defined (NA_NSK) && (SQLEXPORT_LIB)
-// #pragma srlexports
-// #endif
-// SQLEXPORT_LIB_FUNC
-// NA_EIDPROC
-//   void                  setIso88591MappingCharSet (CharInfo::CharSet isoMapCS);
 
 SQLEXPORT_LIB_FUNC
 NA_EIDPROC

@@ -110,7 +110,7 @@ class ODBCMXTraceMsg;
 #define DEFAULT_EMS_TIMEOUT			100 // 1 sec
 #define DEFAULT_INIT_SRVR			5
 #define DEFAULT_INIT_TIME			5
-#define DEFAULT_DSG					false // delegate super group: false - only super.super, true - any user
+#define DEFAULT_DSG				false // delegate super group: false - only super.super, true - any user
 #define DEFAULT_MAX_CFG_START		5 // AS will try to spawn CFG before stops
 #define DEFAULT_CONNECTING_POLLING	20 //seconds
 #define DEFAULT_CONNECTING_TOTAL_TIME 3600 //seconds
@@ -266,7 +266,7 @@ class ODBCMXTraceMsg;
 #define ATTR_TYPE6_VALUE1	"SQL_TRUE"
 
 #define ATTR_TYPE7			"SQL_ATTR_WARNING"  // no longer used, always return connection warning
-#define ATTR_TYPE7_VALUE1	"0"	// To supress the warning information during connection
+#define ATTR_TYPE7_VALUE1	"0"	// To suppress the warning information during connection
 #define ATTR_TYPE7_VALUE2	"1"	// To populate the warning information during connection
 
 #define ATTR_TYPE8			"SQL_ATTR_FRACTION_FIELD"
@@ -811,7 +811,7 @@ typedef struct _SRVR_INIT_PARAM_Def
 	bool				ext_21036; // true - for single row per query, false - original 21036 msg, default true
 	bool                            isBlades;
         bool                            floatIP;
-		bool 			timeLogger;
+	bool				timeLogger;
 	char				QSsyncProcessName[MAX_PROCESS_NAME_LEN];
 } SRVR_INIT_PARAM_Def;
 
@@ -873,19 +873,6 @@ typedef struct _MAPPING_OPTIONS
 
 } MAPPING_OPTIONS;
 
-/*
-#ifndef HP_CLOSED_SOURCE_1
-
-typedef struct _ZK_GLOBAL_Def
-{
-	clientid_t myid;
-	pthread_cond_t cond;
-	pthread_mutex_t lock;
-	int shutdownThisThing;
-} ZK_GLOBAL_Def ;
-
-#endif
-*/
 
 typedef struct _SRVR_GLOBAL_Def
 {
@@ -921,7 +908,7 @@ typedef struct _SRVR_GLOBAL_Def
 		m_aggr_wms_interval = 0;
 		m_aggr_exec_interval = 0;
 		m_aggr_stats_once = 0;		// perf
-   		receiveThrId = 0;
+		receiveThrId = 0;
 	    mutex = new SB_Thread::Errorcheck_Mutex(true);
 
 		wmsActive = false;
@@ -1017,10 +1004,10 @@ typedef struct _SRVR_GLOBAL_Def
 	int		                CreatorAccessId;
 	int		                ProcessAccessId;
 	char				RoleName[MAX_ROLE_LEN + 1];		// ROLE Name
-														//	- MGR  for ROLE.MGR,
-														//	- USER for ROLE.USER
-														//	- DBA  for ROLE.DBA
-														//	- SUPER.SERVICES for SUPER.SERVICES etc.
+										//	- MGR  for ROLE.MGR,
+										//	- USER for ROLE.USER
+										//	- DBA  for ROLE.DBA
+										//	- SUPER.SERVICES for SUPER.SERVICES etc.
 	bool				DSG;
 	ODBCMXTraceMsg		*traceLogger;
 	ODBCMXEventMsg		*resAcctLogger;
@@ -1038,8 +1025,8 @@ typedef struct _SRVR_GLOBAL_Def
 	BOOL				resGovernOn;
 	BOOL				envVariableOn;
 	char				userSID[MAX_TEXT_SID_LEN+1];// This points to the SID in which the server is running
-													// If this is same as the incoming SID do not flush the
-													//  cache
+								    // If this is same as the incoming SID do not flush the
+								    //  cache
 	long				userID;		// Added for replacing the expensive
 									// USER_GETINFO_() call with PROCESS_GETINFO()
 	__int64				redefTime;	// Store the last time this users information
@@ -1065,7 +1052,7 @@ typedef struct _SRVR_GLOBAL_Def
 	char				DefaultCatalog[MAX_SQL_IDENTIFIER_LEN+3];
 	char				DefaultSchema[MAX_SQL_IDENTIFIER_LEN+3]; // this is to allow double quotes around the schema name
 	short				EnvironmentType; // Since from 2.0 SQL we don't need SHORTANSI,
-										// ApplicationType is merged into this variable.
+								// ApplicationType is merged into this variable.
 	char				NskSystemCatalogsTableName[EXT_FILENAME_LEN+1];
 	char				DSName[MAX_DSOURCE_NAME+1];
 	char				SystemCatalog[MAX_SQL_IDENTIFIER_LEN+3]; // System catalog name
@@ -1115,7 +1102,7 @@ typedef struct _SRVR_GLOBAL_Def
 	bool				fetchAhead; // fetch ahead support
 	MAPPING_OPTIONS		mapOptions;	//wms_mapping
 	bool				defaultSchemaAccessOnly;
-	bool 			enableLongVarchar; //enable/disable old longvarchar feature
+	bool			enableLongVarchar; //enable/disable old longvarchar feature
 
 	bool m_rule_wms_off;		// perf
 	bool m_rule_endstats_off;	// perf
@@ -1151,7 +1138,6 @@ typedef struct _SRVR_GLOBAL_Def
 	//std::map<int, long>::iterator stmtHandleIter;
 	//std::pair<map<int, long>::iterator,bool> stmtHandleRet;
 
-//#ifdef JAVA_AS
 	long				portNumber;
 
 #ifdef __TIME_LOGGER
@@ -1263,7 +1249,7 @@ typedef struct _AS_SRVR_GLOBAL_Def
 	// so we'll use the NT default (in case it applies to NT also)
 	char			AS_OSSPathname[_MAX_PATH+1];
 	char			QSProcessName[MAX_PROCESS_NAME_LEN];
-	CEE_handle_def  	ConnectingTimerHandle;
+	CEE_handle_def		ConnectingTimerHandle;
 	TCP_ADDRESS		tcp_address;
 //===================== This part is for NEO =======================================
 // NEO can have max 16 nodes - it is not true anymore
@@ -1271,7 +1257,7 @@ typedef struct _AS_SRVR_GLOBAL_Def
 //
 	bool			isBlades;
 	short			neoSegmentMax;
-	NEO_SEGMENT*    	neoSegment;
+	NEO_SEGMENT*		neoSegment;
 	short			neoActiveSegments;
 	char*			neoODBC;
 

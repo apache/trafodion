@@ -778,6 +778,7 @@ public:
       down_cri_desc = cri_desc_;
   };
 
+  void remapESPAllocation();
 
   ExpTupleDesc::TupleDataFormat determineInternalFormat( const ValueIdList &valIdList,
                                                           RelExpr * relExpr,

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@
 /* -*-C++-*-
  *****************************************************************************
  *
- * File:         <file>
+ * File:         ext_tuple_desc.cpp
  * Description:  
- *               
- *               
+ *
  * Created:      7/10/95
  * Language:     C++
  *
@@ -43,7 +42,7 @@
 
 // Uncomment this line to see the offsets computed.
 // #define LOG_OFFSETS
-#if defined( LOG_OFFSETS ) && !defined( NA_NSK )
+#if defined( LOG_OFFSETS )
 #include <stdlib.h>
 #endif
 
@@ -842,8 +841,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
           ((*rtnFlags & ADDED_COLUMN) > 0))
           *rtnFlags |= ExpTupleDesc::ADDED_FIXED_PRESENT;
 
-
-#if defined( LOG_OFFSETS ) && !defined( NA_NSK )
+#if defined( LOG_OFFSETS )
         fprintf(stderr, "RowLen: %d \n", offset);
         for(Int32 k = 0; k < (Int32)num_attrs; k++)
         {

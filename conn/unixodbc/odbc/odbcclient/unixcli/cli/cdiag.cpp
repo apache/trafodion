@@ -42,13 +42,12 @@ DIAG_FUNC_MAP diagFuncMap[] = {
 // This should be in sync with ERROR_COMPONENT in drvrGlobal.h
 char *gErrorMsgHeader[] = 
 {
-	"[HP][HP ODBC Driver]",
-	"[HP][HP ODBC Driver][NDCS Server]",
-	"[HP][HP ODBC Driver][Network Component]",
-	"[HP][HP ODBC Driver][HP Neoview Database]",
-	"[HP][HP ODBC Driver][NDCS Services]",
-	"[HP][HP ODBC Driver][NDCS Cfg Server]",
-	"[HP][HP ODBC Driver Manager]"
+		"[Trafodion ODBC Driver]",
+		"[Trafodion ODBC Driver][DCS Server]",
+		"[Trafodion ODBC Driver][Network Component]",
+		"[Trafodion ODBC Driver][Trafodion Database]",
+		"[Trafodion ODBC Driver][DCS Services]",
+		"[Trafodion ODBC Driver Manager]"
 };
 
 

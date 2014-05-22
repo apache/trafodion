@@ -22,11 +22,7 @@ namespace log4cpp {
      **/
     class LOG4CPP_EXPORT OstreamAppender : public LayoutAppender {
         public:
-#ifdef NA_NSK
-        OstreamAppender(const std::string& name, ostream* stream);
-#else
         OstreamAppender(const std::string& name, std::ostream* stream);
-#endif
         virtual ~OstreamAppender();
         
         virtual bool reopen();
@@ -35,11 +31,7 @@ namespace log4cpp {
         protected:
         virtual void _append(const LoggingEvent& event);
 
-#ifdef NA_NSK
-        ostream* _stream;
-#else
         std::ostream* _stream;
-#endif
     };
 }
 

@@ -226,12 +226,12 @@ public:
 
   // For smart-pointer callers, some defensive programming for Debug build.
   // For some reason, this method won't link into the NSK mxcmp static object.
-  #if !defined(NDEBUG) && !defined(NA_NSK)
+#if !defined(NDEBUG)
     NA_EIDPROC Int32 checkInvalidObject(const void* const referencingObject=NULL);
-  #else
+#else
     NA_EIDPROC Int32 checkInvalidObject(const void* const = NULL) 
 					       { return 0/*not invalid*/; }
-  #endif
+#endif
 
 private:
   // To add a field into the NABasicObject in later releases,

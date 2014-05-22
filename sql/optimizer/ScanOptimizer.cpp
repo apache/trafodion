@@ -421,7 +421,7 @@ private:
   // Histograms to apply first column predicates from different disjunct
   // This is used to compute whether there is disjunct overlaps.
   IndexDescHistograms firstColumnHistogram_;
-  // Outer histograms is used in multple probes, where it is joined with
+  // Outer histograms is used in multiple probes, where it is joined with
   // the disjunct histograms and also used to compute # of failed probes
   const Histograms outerHistograms_;
   CollIndex disjunctIndex_;
@@ -515,7 +515,7 @@ private:
   const ValueIdSet & disjunctKeyPreds_;
   // executor predicates of the disjunct
   const ValueIdSet & exePreds_;
-  // Outer histograms is used in multple probes, where it is joined with
+  // Outer histograms is used in multiple probes, where it is joined with
   // the disjunct histograms and also used to compute # of failed probes
   const Histograms & outerHistograms_;
   // User specified scan force pattern
@@ -9111,7 +9111,7 @@ void MDAMOptimalDisjunctPrefixWA::processNonLeadingColumn()
       // This limits the multiplication of uec due to the new column to be no
       // more than the number of blocks per uec of previous columns.
       uecForPrevColForSeeks_ = uecPerBlock;
-      // This further reduces the multplication of uec considering the caching effects
+      // This further reduces the multiplication of uec considering the caching effects
       // of DP2 read-ahead. The higher is the column, the more effects is there.
       CostScalar reductionFactor =
 	       MAXOF( (sumOfUecs_ - sumOfUecsSoFar_)/sumOfUecs_,
@@ -9165,7 +9165,7 @@ void MDAMOptimalDisjunctPrefixWA::applyPredsToHistogram()
 	  isMultipleProbes_)
 	{
 	  MDAM_DEBUG0(MTL2, "Applying cross product");
-	  // If this is multple probes, we need to use joined histograms to
+	  // If this is multiple probes, we need to use joined histograms to
 	  // estimate the cost factors (rows, uecs)
 	  // Therefore, apply the cross product to the disjunctHistograms only once.
 	  // Use the disjunctHistograms as normal after cross product is applied.

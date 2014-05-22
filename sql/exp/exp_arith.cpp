@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@
  *
  * File:         <file>
  * Description:  
- *               
- *               
+ *
  * Created:      7/10/95
  * Language:     C++
  *
@@ -38,7 +37,6 @@
 #include "Platform.h"
 
 
-// NT Port - vs 01/17/97
 #if (!defined (__TANDEM) && !defined(__EID))
 #include <iostream>
 #endif
@@ -50,7 +48,6 @@
 #include "exp_bignum.h"
 
 #include "exp_ovfl_ptal.h"
-//#ifdef NA_NSK
 #include "exp_ieee.h"
 
 
@@ -763,7 +760,6 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 
     case ADD_FLOAT64_FLOAT64_FLOAT64:
       {
-//#ifdef NA_NSK
 	short ov;
 	*(double *)op_data[0] = MathReal64Add(*(double *)op_data[1],
 					      *(double *)op_data[2],
@@ -863,7 +859,6 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
       break;
     case SUB_FLOAT64_FLOAT64_FLOAT64:
       {
-//#ifdef NA_NSK
 	short ov;
 	*(double *)op_data[0] = MathReal64Sub(*(double *)op_data[1],
 					      *(double *)op_data[2],
@@ -966,7 +961,6 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 
     case MUL_FLOAT64_FLOAT64_FLOAT64:
       {
-//#ifdef NA_NSK
 	short ov;
 	*(double *)op_data[0] = MathReal64Mul(*(double *)op_data[1],
 					      *(double *)op_data[2],
@@ -1329,7 +1323,6 @@ ex_expr::exp_return_type ex_arith_clause::eval(char *op_data[],
 	  return ex_expr::EXPR_ERROR;
 	}
 
-//#ifdef NA_NSK
 	short ov;
 	*(double *)op_data[0] = MathReal64Div(*(double *)op_data[1],
 					       *(double *)op_data[2],

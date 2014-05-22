@@ -34,16 +34,6 @@
 
 // a stub to avoid an undefined external
 #include "NAType.h"
-
-NABoolean NAType::isComparable(const NAType &other,
-			       ItemExpr *parentOp,
-			       Int32 emitErr) const
-{ return FALSE; }
-
-NABoolean CharType::isComparable(const NAType &other,
-			       ItemExpr *parentOp,
-			       Int32 emitErr) const
-{ return FALSE; }
 //////////////////////////////////////////////////////////////////////
 //
 // Class LmLanguageManager

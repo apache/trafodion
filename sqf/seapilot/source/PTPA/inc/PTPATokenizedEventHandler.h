@@ -63,6 +63,12 @@ public:
     //! \return true if the translation suceed, false if not.
     bool processMsg(const google::protobuf::Message *m, const std::string &routingKey);
 
+    //! \brief returns severity text for severity number.
+    //!
+    //! \param [in] eventSeverity - the severity.
+    //! \return the name of the severity (critical, error, ...)
+    std::string severityText(int32_t eventSeverity);
+
 private:        
     //! message catalog wrapper
     Trinity::MalMessageTextCatalog & messageCatalog_;

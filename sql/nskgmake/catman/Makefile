@@ -18,7 +18,7 @@
 #######################################################################
 
 CPPSRC := CatAll.cpp
-DEFS := -D__CAT_RFORK -DNA_ARKFS -DHP_CLOSED_SOURCE_1
+DEFS := -D__CAT_RFORK -DNA_ARKFS
 
 
 CPPSRC += \

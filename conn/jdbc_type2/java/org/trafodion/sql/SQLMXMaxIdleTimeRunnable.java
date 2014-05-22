@@ -1,3 +1,21 @@
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+
 package org.trafodion.sql;
 
 import java.sql.SQLException;
@@ -33,9 +51,9 @@ public class SQLMXMaxIdleTimeRunnable implements Runnable {
 	 * SQLMXPooledConnectionManager
 	 */
 	LinkedList<PooledConnection> listOfClosedPC = new LinkedList<PooledConnection>();
-	
+
 	private SQLMXMaxIdleTimeRunnable() {
-		if (JdbcDebugCfg.entryActive) 
+		if (JdbcDebugCfg.entryActive)
 			debug[methodId_SQLMXMaxIdleTimeRunnable].methodEntry();
 		try{
 			sleepTime = 0;
@@ -45,7 +63,7 @@ public class SQLMXMaxIdleTimeRunnable implements Runnable {
 				debug[methodId_SQLMXMaxIdleTimeRunnable].methodExit();
 		}
 	}
-	
+
 	public static SQLMXMaxIdleTimeRunnable getSQLMXMaxIdleTimeRunnable() {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_getSQLMXMaxIdleTimeRunnable].methodEntry();
@@ -142,7 +160,7 @@ public class SQLMXMaxIdleTimeRunnable implements Runnable {
 										 */
 										if (pcm.out_ != null)
 										{
-											if ((pcm.traceFlag_ == T2Driver.POOLING_LVL) || 
+											if ((pcm.traceFlag_ == T2Driver.POOLING_LVL) ||
 												(pcm.traceFlag_ == T2Driver.ENTRY_LVL))
 												pcm.out_.println(pcm.getTraceId() + "MaxIdleTime elapsed, This Connection will be Hard closed");
 										}
@@ -219,7 +237,7 @@ public class SQLMXMaxIdleTimeRunnable implements Runnable {
 				debug[methodId_addPoolManager].methodExit();
 		}
 	}
-	
+
 	public void removePoolManager(SQLMXPooledConnectionManager mgr) {
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_removePoolManager].methodEntry();
@@ -231,9 +249,9 @@ public class SQLMXMaxIdleTimeRunnable implements Runnable {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_removePoolManager].methodExit();
 		}
-		
+
 	}
-	
+
 	private static int methodId_getSQLMXMaxIdleTimeRunnable = 0;
 	private static int methodId_setSleepTime = 1;
 	private static int methodId_run = 2;
@@ -243,7 +261,7 @@ public class SQLMXMaxIdleTimeRunnable implements Runnable {
 	private static int methodId_SQLMXMaxIdleTimeRunnable = 6;
 	private static int totalMethodIds = 7;
 	private static JdbcDebug[] debug;
-	
+
 	static
 	{
 		String className = "SQLMXMaxIdleTimeRunnable";

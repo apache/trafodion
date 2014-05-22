@@ -148,7 +148,6 @@ typedef enum ERROR_COMPONENT
 	 NETWORK_ERROR,
 	 SQLMX_ERROR,
 	 ASSOC_SERVER_ERROR,
-	 CONFIG_SERVER_ERROR,
 	 DM_ERROR
 } ERROR_COMPONENT;
 
@@ -224,7 +223,7 @@ typedef enum ERROR_COMPONENT
 #define SQLFREECONNECT_PROCNAME					"SQLFreeConnect"
 #define SQLCATALOGS_PROCNAME					"SQLCatalogs" 
 
-#define ODBCMX_ERROR_MSGBOX_TITLE				"HP ODBC Error"
+#define ODBCMX_ERROR_MSGBOX_TITLE				"TRAF ODBC Error"
 #define MSG_SERVERID_EMPTY						"Server ID empty, Must be entered"
 
 #ifdef unixcli
@@ -253,11 +252,9 @@ typedef enum ERROR_COMPONENT
 	#endif
 #endif /* defined(__LP64__) */
 
-
-#define TRACE_DLL_NAME							"hp_odbctrace.dll"
-
-#define TCPIPV4_DLL_NAME                                                "hp_tcpipv4.dll"
-#define TCPIPV6_DLL_NAME                                                "hp_tcpipv6.dll"
+#define TRACE_DLL_NAME							"traf_odbctrace.dll"
+#define TCPIPV4_DLL_NAME                        "traf_tcpipv4.dll"
+#define TCPIPV6_DLL_NAME                        "traf_tcpipv6.dll"
 
 #define TCPIPINITIO_PROCNAME                                    "TCPIPInitIO"
 #define TCPIPEXITIO_PROCNAME                                    "TCPIPExitIO"

@@ -46,9 +46,8 @@
 #include <math.h>
 #define MathPow(op1, op2, err) pow(op1, op2)
 #else
-//#ifdef NA_NSK
 #include "ieeemath.h"
-#endif //NA_NSK
+#endif
 
 
 #define EXE_CONVERT_STRING_ERROR -8413

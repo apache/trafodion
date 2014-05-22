@@ -340,9 +340,7 @@ CDrvrGlobal::CDrvrGlobal()// : gOdbcMsg(DRVRMSG_DLL)
 		SigTermActionHandler.sa_handler = ODBC_SIGTERM_handler;
 	    sigaction(SIGTERM,&SigTermActionHandler,&gOldSigTermActionHandler);
 	}
-
-	
-	strcpy(gCapsuleName, "HP ODBC Driver");
+	strcpy(gCapsuleName, "TRAF ODBC Driver");
 	strcpy(gProcName, "$ZTCP0");
 
 #ifdef MXAIX

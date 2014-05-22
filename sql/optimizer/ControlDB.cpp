@@ -121,6 +121,7 @@ void ControlDB::setRequiredShape(ControlQueryShape *shape)
   requiredShapeWasOnceNonNull_ = TRUE;
 }
 
+
 void ControlDB::setHistogramCacheState()
 {
   UInt32 size = 0;
@@ -129,6 +130,8 @@ void ControlDB::setHistogramCacheState()
             (CACHE_HISTOGRAMS_IN_KB)*1024);
   CURRCONTEXT_HISTCACHE->resizeCache(size);
 }
+
+extern char *__progname;
 
 void ControlDB::setControlDefault(ControlQueryDefault *def)
 {
@@ -260,7 +263,10 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
 
     strcpy(logFileName, optDbgLog);
     strcat(logFileName, ".");
-    itoa(pid, logFileName+len+1, 10);
+    strcat(logFileName, __progname);
+    strcat(logFileName, ".");
+
+    str_itoa(pid, logFileName+strlen(logFileName));
 
     CURRCONTEXT_OPTDEBUG->openLog(logFileName);
 

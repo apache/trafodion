@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,15 +22,10 @@
  *****************************************************************************
  *
  * File:         SqlciNode.C
- * RCS:          $Id: SqlciNode.cpp,v 1.3 1998/07/20 07:27:45  Exp $
  * Description:  
- *               
- *               
+ *
  * Created:      4/15/95
- * Modified:     $ $Date: 1998/07/20 07:27:45 $ (GMT)
- * Modified:	 Krithika Swaminathan 6/15/03
  * Language:     C++
- * Status:       $State: Exp $
  *
  *
  *

@@ -28,10 +28,6 @@ public class THLogSplitter extends HLogSplitter {
 	
 	private static final Log LOG = LogFactory.getLog(THLogSplitter.class);
 
-    // SST: how do we invoke THLogSplitter? (createLogSplitter), so the log splitting can invoke dual writer
-    // of THLogSplitter to wtite the trx log into correct file containing "thlog.dat", which is used in doReconstructionLog
-    //
-
     public THLogSplitter(final Configuration conf, final Path rootDir, final Path srcDir, final Path oldLogDir,
             final FileSystem fs) {
         super(conf, rootDir, srcDir, oldLogDir, fs);

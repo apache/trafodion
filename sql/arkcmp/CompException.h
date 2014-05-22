@@ -71,6 +71,7 @@ public:
  private:
    Int32 sqlcode_;
 };
+
 // FatalException is unrecoverable, give up the compilation if one is thrown
 class FatalException : public BaseException{
 public:

@@ -96,7 +96,7 @@ TM_Info::TM_Info()
    iv_all_rms_closed = true;
    iv_perf_tx_count = iv_perf_abort_count =
    iv_perf_commit_count = iv_perf_tm_initiated_aborts = 
-   iv_perf_tx_hung_count = iv_rm_wait_time = 0;
+   iv_perf_tx_hung_count = iv_rm_wait_time = iv_stall_phase_2 = 0;
 
    iv_run_mode = iv_incarnation_num = iv_lead_tm_nid = iv_sys_recov_state = 
    iv_sys_recov_lead_tm_nid = iv_stats_interval = iv_RMRetry_interval =  
@@ -249,6 +249,19 @@ void TM_Info::initialize()
    // iv_mat.initialize_adp();
     iv_lead_tm = false;
     iv_lead_tm_takeover = false;
+
+    // get stall directive from registry
+    lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 
+                  (char *) CLUSTER_GROUP, (char *) DTM_STALL_PHASE_2, la_value);
+           
+    if (lv_error == 0)
+    {
+       iv_stall_phase_2 = atoi (la_value);
+       if (iv_stall_phase_2 < 0)
+          iv_stall_phase_2 = 0; // Turn it off
+    }
+    else
+        iv_stall_phase_2 = 0;   // Turn it off
 
     // get interval from registry
    lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 

@@ -105,7 +105,5 @@ ifeq ($(TARGTYPE),yos)
 DLL_LINKOPTS += -l zusrdll
 
 DEP_DLLS := ZUSRDLL
-#tbc: End
-#tbc: DEP_LIBS += neouser security_embedded security_pwd_priv_dll
 INCLUDE_DIRS := client
 endif

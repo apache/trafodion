@@ -175,8 +175,6 @@ CmpStatement::CmpStatement(CmpContext* context,
 
   optGlobals_  = new (heap_) OptGlobals(heap_);
 
-  optDefaults_ = new (heap_) OptDefaults();
-
   queryAnalysis_ = NULL;
 
   cqsWA_ = NULL;

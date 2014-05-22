@@ -596,15 +596,10 @@ void spptLogger::logError ( int32_t LEVEL,  int32_t error_num, spptErrorVar &var
   }
   else if( mode_ == LOG_MODE_BRIEF)
   {
-    sp_cout << "logError1 - LOG_MODE_BRIEF." << endl;
     if( normal_info_parts_ & MAIN_INFO_PARTS)
     {
       spptError aErr(error_num,LEVEL,"",0, catd_);
-      if( normal_info_parts_ & TIMESTAMP_PARTS)
-      {
-        getCurrTime();
-        aErr.ts_ = timebuf_;
-      }
+      aErr.ts_ = "";
 
       vector<spptAddError> vars = var.getErrorList();
       int sizeOfIt = vars.size();
@@ -713,15 +708,10 @@ void spptLogger::logError ( int32_t LEVEL,  int32_t error_num, const string& v1,
   }
   else if( mode_ == LOG_MODE_BRIEF)
   {
-    sp_cout << "logError2 - LOG_MODE_BRIEF." << endl;
     if( normal_info_parts_ & MAIN_INFO_PARTS)
     {
       spptError aErr(error_num,LEVEL,v1,"","","",src_file,line_num, catd_);
-      if( normal_info_parts_ & TIMESTAMP_PARTS)
-      {
-        getCurrTime();
-        aErr.ts_ = timebuf_;
-      }
+      aErr.ts_ = "";
 
       currBufPtr_++;
       report_error(pthread_mutex_lock(&lglock));

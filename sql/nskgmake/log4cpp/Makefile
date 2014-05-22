@@ -65,21 +65,7 @@ CPPSRC= AbortAppender.cpp \
 	TriggeringEventEvaluatorFactory.cpp \
 	Win32DebugAppender.cpp \
 
-ifeq ($(TARGTYPE),linux)
 CPPSRC += vers_log4cpp.cpp
-endif
-
 
 SRCPATH := bin log4cpp/log4cpp-1.0/src
-
-
-ifeq ($(TARGTYPE),nt)
-DEFS := /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_DLL" /D "_USRDLL" /D "LOG4CPP_HAS_DLL" /D "LOG4CPP_BUILD_DLL" /D "_WINDLL" /D "_MBCS" /Gm /EHsc /RTC1 /MDd
-
-SYS_LIBS := kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib
-endif
-           
-ifeq ($(TARGTYPE),yos)
-DEFS := -DNA_NSK
-endif
 

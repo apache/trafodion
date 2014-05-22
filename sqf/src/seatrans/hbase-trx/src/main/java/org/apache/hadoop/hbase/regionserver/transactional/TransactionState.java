@@ -114,7 +114,6 @@ class TransactionState {
     private Integer sequenceNumber;
     private int commitPendingWaits = 0;
     private HTableDescriptor tabledescriptor;
-    // SST: add a variable to indicate if this transcation is reinstated from recovery or not
     private int reInstated = 0;
     private WALEdit e;
     private int transactionEditsLen;
@@ -296,9 +295,7 @@ class TransactionState {
         this.status = status;
     }
 
-    // SST: add calls to get/set reInstated
-
-    Boolean isReinstated() {
+     Boolean isReinstated() {
         if (reInstated == 0) return false;
         return true;
     }

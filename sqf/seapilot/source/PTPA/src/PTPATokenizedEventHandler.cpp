@@ -67,10 +67,10 @@ PTPATokenizedEventHandler::~PTPATokenizedEventHandler()
     closeAMQPConnection();
 }
 
-
 bool PTPATokenizedEventHandler::processMsg(const google::protobuf::Message *m, const string &routingKey)
 {
     bool ret = true;
+    int64_t generationTimeTsUtc = 0;
     // extract the event id from the message
     const protobuf::Reflection *reflect = m->GetReflection();
     const protobuf::Descriptor *desc = m->GetDescriptor();
@@ -159,7 +159,7 @@ bool PTPATokenizedEventHandler::processMsg(const google::protobuf::Message *m, c
                     const protobuf::FieldDescriptor *fHH =
                             descHH->FindFieldByName("info_generation_time_ts_utc");
 
-                    int64_t generationTimeTsUtc = usUtcTimestamp; // in case we can't get it
+                    generationTimeTsUtc = usUtcTimestamp; // in case we can't get it
                     if ((fHH) && (protobuf::FieldDescriptor::CPPTYPE_INT64 == fHH->cpp_type()))
                     {
                         generationTimeTsUtc = reflectHH->GetInt64(mHH, fHH);
@@ -351,9 +351,21 @@ bool PTPATokenizedEventHandler::processMsg(const google::protobuf::Message *m, c
                     logError(PTPA_PROTOBUF_ERROR, errVar_);
                 }
 
-                // Log the event publication message text to the event log.
-                string eventLogText;
-                if (sqProcessName != "") eventLogText += sqProcessName +": ";
+                // Create event text string and write it to the log.   The format is:
+                //   [Date time] <severity>:<severity code> <component>: <message>
+                time_t gentime = generationTimeTsUtc/1000000;
+                struct tm* loctime = localtime(&gentime);
+                char timebuf[TLEN];
+                bzero(timebuf,TLEN);
+                strftime(timebuf, TLEN, "[%m/%d/%Y %T]", loctime);
+                string eventLogText = timebuf;
+                eventLogText += "  ";
+                eventLogText += severityText(eventSeverity) + ":";
+                ostringstream number1; number1 << eventSeverity;
+                eventLogText += number1.str() + " ";
+                if (sqProcessName != "") eventLogText += sqProcessName + " ";
+                ostringstream number2; number2 << eventId;
+                eventLogText += number2.str() + ":";             
                 eventLogText += messageText;
                 logInfo(eventLogText.data());
 
@@ -376,6 +388,25 @@ bool PTPATokenizedEventHandler::processMsg(const google::protobuf::Message *m, c
     }
 
     return ret;
+}
+
+std::string PTPATokenizedEventHandler::severityText(int32_t eventSeverity)
+{
+  // Return the event severity as text or "" if not found.
+  std::string result;
+  switch (eventSeverity)
+  {
+    case SQ_LOG_EMERG  : result = "EMERGENCY"; break; // system is unusable 
+    case SQ_LOG_ALERT  : result = "ALERT";     break; // action must be taken immediately 
+    case SQ_LOG_CRIT   : result = "CRITICAL";  break; // critical conditions 
+    case SQ_LOG_ERR    : result = "ERROR";     break; // error conditions 
+    case SQ_LOG_WARNING: result = "WARNING";   break; // warning conditions 
+    case SQ_LOG_NOTICE : result = "NOTICE";    break; // normal but significant condition 
+    case SQ_LOG_INFO   : result = "INFO";      break; // informational 
+    case SQ_LOG_DEBUG  : result = "DEBUG";     break; // debug-level messages 
+    default            : result = "";
+  }
+  return result;
 }
 
 

@@ -3568,6 +3568,10 @@ enum DefaultConstants
   // of salted partitions on primary key columns.
   TRAF_NUM_OF_SALT_PARTNS,
 
+  // controls whether to compute the DoP based on the table sizes 
+  // for a query. 
+  HBASE_COMPUTE_DOP_USING_TABLE_SIZES,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

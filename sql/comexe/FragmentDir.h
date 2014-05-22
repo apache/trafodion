@@ -228,6 +228,8 @@ public:
   inline double getBMOsMemoryUsage(CollIndex ix)
   { return (*entries_)[ix]->BMOsMemoryUsage_; }
 
+  NABoolean containsESPLayer();
+
 private:
   CollHeap * heap_;
   NAArray<FragmentDirEntry*> * entries_;

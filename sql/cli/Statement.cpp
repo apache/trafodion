@@ -732,7 +732,10 @@ Statement::~Statement()
     childQueryCompStatsInfo_ = NULL;
   }
   if (spaceObject_ != NULL)
+  {
     delete spaceObject_;
+    spaceObject_ = NULL;
+  }
 } // Statement::~Statement
 
 NABoolean Statement::updateInProgress ()

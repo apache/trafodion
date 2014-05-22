@@ -65,11 +65,9 @@ JSRC := MethodValidationFailedException.java \
 # the class is only used on platforms where we run our JDBC T4 driver
 # inside the UDR server and Windows is not one of these platforms.
 
-ifndef HP_CLOSED_SOURCE_1
 JSRC += LmT2Driver.java
 PACKAGE := org/trafodion/sql/udr
 JARPREFIX := trafodion-UDR-$(TRAFODION_VER)
-endif
 JSRC_DIR := $(MY_SQROOT)/../sql/langman
 CLASSPATH := $(TARGOBJDIR)/java:$(JSRC_DIR):$(ENV_CLASSPATH)
 

@@ -36,13 +36,7 @@
 
 export SQLMX_REGRESS=1
 
-if [ "$HP_CLOSED_SOURCE_1" = "" ]; then
-  # open source regressions run
   export SEABASE_REGRESS=2
-else
-  #closed source regressions run
-  export SEABASE_REGRESS=1
-fi
 
 TEST_SUBDIRS="catman1 core compGeneral fullstack2 charsets executor qat udr hive seabase" 
 

@@ -3,6 +3,10 @@
 >>set schema Trafodion.hbase;
 
 --- SQL operation complete.
+>>
+>>cqd HBASE_COMPUTE_DOP_USING_TABLE_SIZES 'OFF';
+
+--- SQL operation complete.
 >>cqd query_cache '0';
 
 --- SQL operation complete.
@@ -176,7 +180,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018772593592
+PLAN_ID .................. 212267624701127459
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 876.41
 STATEMENT ................ select f,count(f)
@@ -200,7 +204,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -215,6 +219,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
@@ -343,7 +348,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018772852408
+PLAN_ID .................. 212267624701364472
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.6
 STATEMENT ................ select f,count(f)
@@ -367,7 +372,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -382,6 +387,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
@@ -510,7 +516,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018773114369
+PLAN_ID .................. 212267624701607975
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.6
 STATEMENT ................ select f,count(f)
@@ -534,7 +540,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -549,6 +555,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
@@ -677,7 +684,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018773379509
+PLAN_ID .................. 212267624701853747
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 851.77
 STATEMENT ................ select f,count(f)
@@ -701,7 +708,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -716,6 +723,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
@@ -844,7 +852,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018773643518
+PLAN_ID .................. 212267624702098736
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 851.77
 STATEMENT ................ select f,count(f)
@@ -868,7 +876,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -883,6 +891,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
@@ -1011,7 +1020,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018773907320
+PLAN_ID .................. 212267624702343400
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 876.41
 STATEMENT ................ select f,count(f)
@@ -1035,7 +1044,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1050,6 +1059,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1
@@ -1178,7 +1188,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267018774170007
+PLAN_ID .................. 212267624702586777
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.6
 STATEMENT ................ select f,count(f)
@@ -1202,7 +1212,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1217,6 +1227,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_FILTER_PREDS ..... ON
   SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
   QUERY_CACHE ............ 0
   CACHE_HISTOGRAMS ....... OFF
   HBASE_MIN_BYTES_PER_ESP  1

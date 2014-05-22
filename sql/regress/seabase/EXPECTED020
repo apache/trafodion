@@ -465,6 +465,8 @@ A
 
 *** ERROR[1090] Self-referencing constraints are currently not supported.
 
+*** ERROR[1029] Object TRAFODION.SCH.TEST020T17 could not be created.
+
 --- SQL operation failed with errors.
 >>
 >>create table test020t18 (c int not null constraint test020t18pk primary key);

@@ -24,7 +24,6 @@
 #include <log4cpp/Appender.hh>
 #include <log4cpp/OstreamAppender.hh>
 #include <log4cpp/FileAppender.hh>
-// RAVISH
 #include <log4cpp/RollingFileAppender.hh>
 #include <log4cpp/Layout.hh>
 #include <log4cpp/BasicLayout.hh>
@@ -86,7 +85,6 @@ namespace log4cpp {
                         }
                         appender = new log4cpp::FileAppender(categoryName, logFileName);
                     }
-                    // RAVISH for neofileappender
                     else if (appenderName.compare("rolling") == 0) {
                         std::string logFileName;
                         size_t maxFileSize;

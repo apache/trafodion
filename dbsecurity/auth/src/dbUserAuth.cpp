@@ -1519,7 +1519,8 @@ int32_t len = 0;
    userID = *reinterpret_cast<int32_t *>(ptr);
 
    cliInterface.getPtrAndLen(3,ptr,len);
-   strcpy(databaseUsername,ptr);
+   strncpy(databaseUsername,ptr,len);
+   databaseUsername[len] = '\0';
 
    cliInterface.getPtrAndLen(4,ptr,len);
     
@@ -1636,10 +1637,12 @@ int32_t len = 0;
       return 100;
       
    cliInterface.getPtrAndLen(2,ptr,len);
-   strcpy(externalUsername,ptr);
+   strncpy(externalUsername,ptr,len);
+   databaseUsername[len] = '\0';
 
    cliInterface.getPtrAndLen(3,ptr,len);
-   strcpy(databaseUsername,ptr);
+   strncpy(databaseUsername,ptr,len);
+   databaseUsername[len] = '\0';
 
    cliInterface.getPtrAndLen(4,ptr,len);
     

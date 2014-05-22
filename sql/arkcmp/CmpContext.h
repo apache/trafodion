@@ -78,6 +78,7 @@ class OptimizerSimulator;
 class QueryCache;
 class HistogramCache;
 class CompilerTrackingInfo;
+class OptDefaults;
 
 // Template changes for Yosemite compiler incompatible with others
 typedef HASHDICTIONARY(NAString, CollIndex) CursorSelectColumns;
@@ -334,6 +335,11 @@ public :
   // used by stats caching logic
   Int64 getLastUpdateStatsTime() { return lastUpdateStatsTime_; }
   void setLastUpdateStatsTime(Int64 updateTime) { lastUpdateStatsTime_ = updateTime; }
+
+
+  // optimizer cached defaults
+  OptDefaults* getOptDefaults() { return optDefaults_; }
+
     
 // MV
 private:
@@ -461,6 +467,9 @@ private:
   TransMode transMode_; 
 
   Int64 lastUpdateStatsTime_; // used by stats caching logic
+
+  // query defaults using during a statement compilation
+  OptDefaults* optDefaults_;
 
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 

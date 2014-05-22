@@ -205,7 +205,12 @@ t44.a*10 + t43.a, t44.a*10 + t43.a, t44.a*10 + t43.a,
 t44.a*10 + t43.a 
 from t43, t44 ;
 
-insert into t40 select
+#ifdef SEABASE_REGRESS
+upsert using load into
+#else
+insert into
+#endif
+ t40 select
 t41.a*100 + t42.a, t41.a*100 + t42.a, t41.a*100 + t42.a, 
 t41.a*100 + t42.a, t41.a*100 + t42.a, t41.a*100 + t42.a, 
 1, 1, 1, 1 from t41, t42 ;

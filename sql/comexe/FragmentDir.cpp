@@ -172,6 +172,17 @@ Lng32 FragmentDir::getTotalLength() const
   return result;
 }
 
+NABoolean FragmentDir::containsESPLayer()
+{
+   for (CollIndex i = 0; i < entries(); i++) 
+     if (getPartitioningFunction(i) != NULL && getType(i) == FragmentDir::ESP)
+     {
+        return TRUE;
+     }
+
+   return FALSE;
+}
+
 
 FragmentDirEntry::FragmentDirEntry() 
 			      { type_                = 99; 

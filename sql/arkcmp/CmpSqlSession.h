@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public:
 
   ~CmpSqlSession();
 
-  // validates that the input schema or table name is a valid
+  // Validates that the input schema or table name is a valid
   // volatile name.
   // Validation is if it doesn't contain the reserved
   // volatile name prefix, is not more than 2 parts, and
@@ -94,13 +94,9 @@ public:
   void restoreVolatileSchemaInUse();
   void setParentQid(const char *parentQid) 
   { 
-#ifdef HP_CLOSED_SOURCE
-     parentQid_ = parentQid; 
-#else
      // Need to revisit the parentQid concept with embedded compiler
      // For now, it is not supported
      parentQid_ = NULL;
-#endif
   }
   const char *getParentQid() { return parentQid_; }
 

@@ -10037,7 +10037,7 @@ void CostMethodHashJoin::computeStage1Cost()
       computeCreateHashTableCost(rowsInMemory);
   }
 
-  // Ravish: Optimizer shouldn't choose OHJ for BMOs.
+  // Optimizer shouldn't choose OHJ for BMOs.
   // no IO cost for OHJ.
   // ---------------------------------------------------------------------
   // PAGE FAULT cost in case of an Ordered Hash Join that is a BMO.-OA

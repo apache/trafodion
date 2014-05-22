@@ -1,8 +1,8 @@
-/********************************************************************  
+/********************************************************************
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,13 +26,10 @@
  *****************************************************************************
  *
  * File:         SqlciCmd.h
- * RCS:          $Id: SqlciCmd.h,v 1.9 1998/09/07 21:49:59  Exp $
- * Description:  
- *               
+ * Description:
+ *
  * Created:      4/15/95
- * Modified:     $ $Date: 1998/09/07 21:49:59 $ (GMT)
  * Language:     C++
- * Status:       $State: Exp $
  *
  *
  *
@@ -47,14 +44,14 @@
 class SqlciCmd : public SqlciNode {
 public:
   enum sqlci_cmd_type {
-    ENV_TYPE, ERROR_TYPE, EXIT_TYPE, 
-    FC_TYPE, 
+    ENV_TYPE, ERROR_TYPE, EXIT_TYPE,
+    FC_TYPE,
     HELP_TYPE, HISTORY_TYPE,
     LISTCOUNT_TYPE, VERBOSE_TYPE, PARSERFLAGS_TYPE,
-    LOG_TYPE, 
+    LOG_TYPE,
     OBEY_TYPE,
-    REPEAT_TYPE, 
-    SETDEFINE_TYPE, SETENVVAR_TYPE, SETPARAM_TYPE, SETPATTERN_TYPE, 
+    REPEAT_TYPE,
+    SETDEFINE_TYPE, SETENVVAR_TYPE, SETPARAM_TYPE, SETPATTERN_TYPE,
     SET_TERMINAL_CHARSET_TYPE,
     SHOW_TYPE, STATISTICS_TYPE,
     SHAPE_TYPE, WAIT_TYPE,
@@ -79,7 +76,7 @@ public:
   inline char * get_argument(char * dummy_arg = 0){return argument;};
   inline Lng32   get_arglen(){return arglen;};
   NABoolean isAllowedInSIP() { return FALSE; }
-  NABoolean isAllowedInRWMode() { return TRUE; } 
+  NABoolean isAllowedInRWMode() { return TRUE; }
   NABoolean isAllowedInCSMode() { return FALSE; }
 
 };
@@ -103,7 +100,7 @@ private:
   StatsCmdType type_;
   char *       statsOptions_;
 public:
-  Statistics(char *, Lng32 arglen_, StatsCmdType, 
+  Statistics(char *, Lng32 arglen_, StatsCmdType,
 	     char * statsOptions);
   ~Statistics();
   short process(SqlciEnv * sqlci_env);
@@ -128,7 +125,7 @@ public:
   ~FixCommand(){};
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class FCRepeat : public SqlciCmd {
@@ -141,7 +138,7 @@ public:
   ~FCRepeat(){};
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 
 };
 
@@ -152,7 +149,7 @@ public:
   ~Obey(){};
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Log : public SqlciCmd {
@@ -166,7 +163,7 @@ public:
   ~Log(){};
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class History : public SqlciCmd {
@@ -174,7 +171,7 @@ public:
   History(char *, Lng32 arglen_);
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class ListCount : public SqlciCmd {
@@ -184,7 +181,6 @@ public:
     NABoolean isAllowedInSIP() {return TRUE;};
 };
 
-// Krithika added for MODE command.
 class Mode :  public SqlciCmd {
 public:
     enum ModeType { SQL_, REPORT_, DISPLAY_, MXCS_};
@@ -198,7 +194,7 @@ private:
     short process_report(SqlciEnv * sqlci_env);
     short process_mxcs(SqlciEnv * sqlci_env);
     short process_display(SqlciEnv * sqlci_env);
-    NABoolean isAllowedInCSMode() { return TRUE; }; 
+    NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Verbose : public SqlciCmd {
@@ -209,7 +205,7 @@ private:
   VerboseCmdType type_;
 
 public:
-  Verbose(char *, Lng32 arglen_, VerboseCmdType); 
+  Verbose(char *, Lng32 arglen_, VerboseCmdType);
   ~Verbose(){};
   short process(SqlciEnv * sqlci_env);
 };
@@ -229,13 +225,13 @@ public:
   short process(SqlciEnv * sqlci_env);
 };
 
-#pragma nowarn(1506)   // warning elimination 
+#pragma nowarn(1506)   // warning elimination
 class SetTerminalCharset : public SqlciCmd {
 
 private:
 
 public:
-  SetTerminalCharset(char* new_cs_name) : 
+  SetTerminalCharset(char* new_cs_name) :
   SqlciCmd(SET_TERMINAL_CHARSET_TYPE, new_cs_name, strlen(new_cs_name)) {};
   ~SetTerminalCharset(){};
   short process(SqlciEnv * sqlci_env);
@@ -273,7 +269,7 @@ public:
   ~SetInferCharset(){};
   short process(SqlciEnv * sqlci_env);
 };
-#pragma warn(1506)  // warning elimination 
+#pragma warn(1506)  // warning elimination
 
 class Error : public SqlciCmd {
 public:
@@ -302,7 +298,7 @@ public:
   Env(char *, Lng32 arglen_);
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Exit : public SqlciCmd {
@@ -310,7 +306,7 @@ public:
   Exit(char *, Lng32 arglen_);
   short process(SqlciEnv * sqlci_env);
   NABoolean isAllowedInSIP() {return TRUE;};
-  NABoolean isAllowedInCSMode() { return TRUE; }; 
+  NABoolean isAllowedInCSMode() { return TRUE; };
 };
 
 class Reset : public SqlciCmd {
@@ -372,7 +368,7 @@ public:
   short process(SqlciEnv * sqlci_env);
 
   CharInfo::CharSet getCharSet() { return cs; };
-  NABoolean isInSingleByteForm() { return inSingleByteForm_; }; 
+  NABoolean isInSingleByteForm() { return inSingleByteForm_; };
   NAWchar * getUTF16ParamStrLit() { return m_convUTF16ParamStrLit; }
   void setUTF16ParamStrLit(const NAWchar * utf16Str, size_t ucs2StrLen);
   CharInfo::CharSet getTermCharSet() const { return m_termCS; }
@@ -395,8 +391,8 @@ public:
 
 class Show : public SqlciCmd {
 public:
-  enum show_type {CURSOR_, PARAM_, PATTERN_, 
-		  PREPARED_, CONTROL_, DEFINE_, 
+  enum show_type {CURSOR_, PARAM_, PATTERN_,
+		  PREPARED_, CONTROL_, DEFINE_,
 		  SESSION_, VERSION_};
 private:
   show_type type;

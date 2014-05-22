@@ -18,23 +18,4 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-ifeq ($(TARGTYPE),linux)
-ifdef HP_CLOSED_SOURCE_1
-CPPSRC += CmNameMapSql.cpp \
-	CmSmdioRead.cpp \
-	CmSmdioWrite.cpp \
-	vers_libsmdio.cpp
-else
 CPPSRC += CmUtil.cpp
-endif
-endif
-ifneq (,$(findstring $(TARGTYPE), oss yos))
-DEFS := -DNA_ARKFS -DNO_NA_MOTIF_GUI
-endif
-
-ifeq ($(TARGTYPE),nt)
-DEFS := /D "NA_ARKFS"
-ifeq (($FLAVOR),debug)
-DEFS += /D "CAT_DEBUG"
-endif
-endif

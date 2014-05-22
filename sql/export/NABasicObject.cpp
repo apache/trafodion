@@ -297,7 +297,7 @@ void NABasicObject::operator delete[](void* p,  NAMemory* h, NABoolean)
 // okay FOR NOW; it may not on a future platform or future deallocation scheme.
 // This finds latent bugs.)
 
-#if !defined(NDEBUG) && !defined(NA_NSK)
+#if !defined(NDEBUG)
 #ifndef __EID
   NA_EIDPROC
   Int32 NABasicObject::checkInvalidObject(const void* const referencingObject)

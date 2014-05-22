@@ -17,22 +17,14 @@ namespace log4cpp {
 		unsigned int size;
 	public:
 inline	width(unsigned int i) : size(i) {}
-#ifdef NA_NSK
-friend LOG4CPP_EXPORT ostream& operator<< (ostream& os, const width& w);
-#else
 friend LOG4CPP_EXPORT std::ostream& operator<< (std::ostream& os, const width& w);
-#endif
 	};
 class LOG4CPP_EXPORT tab {
 	private:
 		unsigned int size;
 	public:
 inline	tab(unsigned int i) : size(i) {}
-#ifdef NA_NSK
-friend LOG4CPP_EXPORT ostream& operator<< (ostream& os, const tab& w);
-#else
 friend LOG4CPP_EXPORT std::ostream& operator<< (std::ostream& os, const tab& w);
-#endif
 	};
 }
 #endif

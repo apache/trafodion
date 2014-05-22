@@ -278,6 +278,8 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   
   HHDFSMasterHostList::resetNumSQNodes();
   HHDFSMasterHostList::resethasVirtualSQNodes();
+
+  optDefaults_ = new (heap_) OptDefaults();
 }
 
 // MV -amir
@@ -325,9 +327,12 @@ CmpContext::~CmpContext()
   delete readTableDef_;
   delete schemaDB_;
   delete controlDB_;
+  delete optDefaults_;
+
   readTableDef_ = 0;
   schemaDB_ = 0;
   controlDB_ = 0;
+  optDefaults_ = 0;
 
   delete envs_;
   envs_ = 0;

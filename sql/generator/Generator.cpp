@@ -713,6 +713,39 @@ const Space* Generator::getTopSpace() const
 }
 
 
+// map ESPs randomly
+void
+Generator::remapESPAllocation()
+{
+   if (!fragmentDir_ || !fragmentDir_->containsESPLayer())
+     return; 
+
+   for (Int32 i = 0; i < fragmentDir_->entries(); i++) {
+
+     if (fragmentDir_->getPartitioningFunction(i) != NULL &&
+         fragmentDir_->getType(i) == FragmentDir::ESP)
+     {
+
+       // Get the node map for this ESP fragment.
+       NodeMap *nodeMap =
+          (NodeMap *)fragmentDir_->getPartitioningFunction(i)->getNodeMap();
+
+       for (CollIndex j=0; j<nodeMap->getNumEntries(); j++) {
+ 
+         nodeMap->setNodeNumber(j, ANY_NODE);
+         nodeMap->setClusterNumber(j, 0);
+
+       }
+
+       // After remapping the node map (copy), make it the
+       // node map for this ESP fragment.
+       PartitioningFunction *partFunc = (PartitioningFunction *)
+                           (fragmentDir_->getPartitioningFunction(i));
+       partFunc->replaceNodeMap(nodeMap);
+     }
+   }
+}
+
 desc_struct* Generator::createColDescs(
   const char * tableName,
   ComTdbVirtTableColumnInfo * columnInfo,

@@ -210,7 +210,7 @@ compile_java_rule = $(JAVAC) ${JAVA_COMPILE_FLAGS} -d $(TARGOBJDIR)/java -classp
 
 
   append_jar_rule = cp $(JAR_APPEND) $$(JARFILE);$(JAR) uvmf $$(JARMANIFEST) $$(JARFILE) -C $$(TARGOBJDIR)/java $$(PACKAGE)
-  compile_jar_rule = $(JAR) cvmf $$(JARMANIFEST) $$(JARFILE) -C $$(TARGOBJDIR)/java $$(PACKAGE)
+  compile_jar_rule = $(JAR) cvmf $$(JARMANIFEST) $$(JARFILE)_temp -C $$(TARGOBJDIR)/java $$(PACKAGE); mv -f $$(JARFILE)_temp $$(JARFILE)
 
 build_java_rule = $(JAVAC_ECHO_RULE) \
 		HEADING="Compiling $(<) --> $(@)"; $(starting_logfile) \

@@ -30,11 +30,7 @@ namespace log4cpp {
         virtual ~PropertyConfiguratorImpl();
         virtual void doConfigure(const std::string& initFileName)
             throw (ConfigureFailure);
-#ifdef NA_NSK
-        virtual void doConfigure(istream& in)
-#else
         virtual void doConfigure(std::istream& in)
-#endif
             throw (ConfigureFailure);
 
         void setLogsFolder(const char* logsFolder)

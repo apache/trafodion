@@ -58,6 +58,6 @@ CPPSRC := GenBitMuxFunction.cpp \
 	LmExpr.cpp \
 	LmGenUtil.cpp
 
-DEFS := -DNDEBUG -DNA_NSK_REL2
+DEFS := -DNDEBUG
 
 SRCPATH := generator langman smdio

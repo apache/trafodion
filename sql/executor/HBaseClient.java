@@ -181,6 +181,7 @@ public class HBaseClient {
     public boolean create(String tblName, StringArrayList colFamNameList) 
         throws IOException, MasterNotRunningException {
             logger.debug("HBaseClient.create(" + tblName + ") called.");
+            cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             for (String colFam : colFamNameList) {
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
@@ -198,6 +199,7 @@ public class HBaseClient {
         throws IOException, MasterNotRunningException {
             logger.debug("HBaseClient.create(" + tblName + ") called.");
             String trueStr = "TRUE";
+            cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             HColumnDescriptor colDesc = new HColumnDescriptor(tableOptions.get(HBASE_NAME));
             for (int i = 0; i < tableOptions.size(); i++) {

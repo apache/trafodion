@@ -158,7 +158,7 @@ CostMethod::scmComputePlanCost( RelExpr* op,
 
   // The following code assumes that each operator will have maximum
   // of two children. And requires modification if that is not true.
-  // For example UNION operator. -RAVISH
+  // For example UNION operator.
 
   CostPtr leftChildCost = NULL;
   CostPtr rightChildCost = NULL;
@@ -3117,8 +3117,6 @@ CostMethodUnPackRows::scmComputeOperatorCostInternal(RelExpr *op,
 }      // CostMethodUnPackRows::scmComputeOperatorInternal()
 
 
-// cost methods related Materialize and VPJoin operatos have been removed
-// as part of SQ-M6 code cverage clean-up. -Ravish
 
 /**********************************************************************/
 /*                                                                    */

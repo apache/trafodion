@@ -2663,7 +2663,13 @@ ExEspManager::ExEspManager(IpcEnvironment *env, CliGlobals *cliGlobals)
 			       &lv_os_tid);
   
   if (lv_ret == 0) {
-    lastAssignedCpu_ = lv_nid;
+
+#ifndef _DEBUG
+    lastAssignedCpu_ = (Int32)lv_os_tid % maxCpuNum_;
+#else
+     lastAssignedCpu_ = lv_nid;
+#endif
+
   }
   /* Added with multi fragment esp support end */
 

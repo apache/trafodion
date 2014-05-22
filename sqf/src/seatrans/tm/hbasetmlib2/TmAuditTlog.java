@@ -212,7 +212,6 @@ public class TmAuditTlog {
          LOG.trace("BufferAdd start in thread " + threadId );
          LOG.trace("BufferAdd synchronizing on bufferLock in thread " + threadId );
          synchronized (bufferLock) {
-            LOG.debug("bufferAdd bufferLock owned by thread " + threadId);
             try {
                buffer.add(localPut);
                if (bufferUsed == false) {
@@ -236,7 +235,6 @@ public class TmAuditTlog {
          LOG.trace("BufferSize start in thread " + threadId );
          LOG.trace("BufferSize synchronizing on bufferLock in thread " + threadId );
          synchronized (bufferLock) {
-            LOG.debug("bufferSize bufferLock owned by thread " + threadId);
             try {
                lvSize = buffer.size();
             }
@@ -245,7 +243,6 @@ public class TmAuditTlog {
                throw e;
             }
          }
-         LOG.debug("BufferSize bufferLock synchronization complete in thread " + threadId );
          LOG.trace("TmAuditTlogAuditBuffer bufferSize end; returning " + lvSize + " in thread " 
                     +  Thread.currentThread().getId());
          return lvSize;
@@ -261,9 +258,7 @@ public class TmAuditTlog {
          }
          LOG.trace("TmAuditTlogAuditBuffer getResult synchronizing on resultLock in thread " + threadId);
          synchronized (resultLock) {
-            LOG.debug("getResult resultLock owned by thread " + threadId);
             while (resultAvailable == false) {
-               LOG.debug("TmAuditTlogAuditBuffer getResult Waiting on resultAvailable in thread " + threadId);
                try {
                   LOG.debug("TmAuditTlogAuditBuffer getResult resultLock.wait in thread " + threadId);
                   resultLock.wait();
@@ -288,8 +283,6 @@ public class TmAuditTlog {
          int lvResultCount = 0;
          try {
             lvResultCount = retrievedResultCount.incrementAndGet();
-            LOG.debug("incRetrievedResult incremented in thread " +  threadId + 
-                      " retrieved: " + lvResultCount + " expected: " + resultWaiterCount.get());
          }
          catch (Exception e) {
             LOG.debug("incRetrievedResult Exception " + e);
@@ -298,7 +291,6 @@ public class TmAuditTlog {
          if (lvResultCount == resultWaiterCount.get()){
             LOG.trace("incRetrievedResult synchronizing on  resultLock in thread " + threadId );
             synchronized (resultLock) {
-               LOG.debug("resultLock owned by thread " + threadId);
                LOG.debug("incRetrievedResult all results received");
                allResultsReceived = true;
                resultLock.notify();
@@ -318,7 +310,6 @@ public class TmAuditTlog {
          LOG.trace("TmAuditTlogAuditBuffer setResult start in thread " + threadId);
          LOG.trace("TmAuditTlogAuditBuffer setResult synchronizing on resultLock in thread " + threadId);
          synchronized (resultLock) {
-            LOG.debug("resultLock owned by thread " + threadId);
             try {
                putResult = pvResult;
                retrievedResultCount.set(0);
@@ -342,7 +333,6 @@ public class TmAuditTlog {
          LOG.trace("TmAuditTlogAuditBuffer bufferClear start in thread " + threadId);
          LOG.trace("TmAuditTlogAuditBuffer bufferClear synchronizing on bufferLock in thread " + threadId);
          synchronized (bufferLock) {
-            LOG.debug("bufferClear bufferLock owned by thread " + threadId);
             try {
                bufferSubmitting = false;
                bufferSubmitted = false;
@@ -359,7 +349,6 @@ public class TmAuditTlog {
          LOG.trace("TmAuditTlogAuditBuffer bufferClear synchronization on bufferLock complete in thread " + threadId);
          LOG.trace("TmAuditTlogAuditBuffer bufferClear synchronizing on resultLock in thread " + threadId);
          synchronized (resultLock) {
-            LOG.debug("resultLock owned by thread " + threadId);
             putResult = false;
             resultAvailable = false;
             allResultsReceived = false;
@@ -381,7 +370,6 @@ public class TmAuditTlog {
          LOG.trace("TmAuditTlogAuditWriter synchronizing on grossAuditLock in thread " 
                      + threadId);
          synchronized (grossAuditLock) {
-            LOG.debug("grossAuditLock owned by thread " + threadId);
             lvPrevIndex = prevIndex; 
             lvCurrIndex = currIndex; 
          }
@@ -390,8 +378,6 @@ public class TmAuditTlog {
          cvAuditBuffer = auditBuffer[lvPrevIndex];
          boolean lvResult;
          try {
-            LOG.debug("TmAuditTlogAuditWriter() Ensuring previous buffer[" + lvPrevIndex + 
-                      "] results are received before swapping");
             // First we make sure the previous buffer's results are returned before 
             // trying to put another.  This prevents us from having 2 outstanding writes
             // at the same time which might complete in reverse order.
@@ -403,7 +389,6 @@ public class TmAuditTlog {
             LOG.trace("TmAuditTlogAuditWriter synchronizing on auditBuffer[" + lvPrevIndex + "].resultLock in thread " 
                      + threadId);
             synchronized (cvAuditBuffer.resultLock) {
-               LOG.debug("resultLock owned by thread " + threadId);
                while (cvAuditBuffer.allResultsReceived == false) {
                   try {
                      LOG.debug("resultLock resultLock.wait by thread " + threadId);
@@ -421,7 +406,6 @@ public class TmAuditTlog {
 
             // All previous results received, so let's clear the buffer
             try {
-               LOG.debug("TmAuditTlogAuditWriter() all results received.  Clearing buffer[" + lvPrevIndex + "]");
                cvAuditBuffer.bufferClear();
             }
             catch (Exception e){
@@ -452,7 +436,6 @@ public class TmAuditTlog {
         LOG.trace("TmAuditTlogAuditWriter call() synchronizing on grossAuditLock in thread " 
                      + threadId);
         synchronized (grossAuditLock) {
-           LOG.debug("grossAuditLock owned by thread " + threadId);
            // Set a shortcut to the current buffer and switch the currIndex and PrevIndex
            // This will force any new writers that arrive to the other buffer, but we can
            // still handle all threads in the middle of the put to the current buffer
@@ -468,7 +451,6 @@ public class TmAuditTlog {
            LOG.trace("TmAuditTlogAuditWriter call() synchronizing on auditBuffer[" + lvPrevIndex + "].bufferLock in thread " 
                      + threadId);
            synchronized(cvAuditBuffer.bufferLock) {
-              LOG.debug("bufferLock[" + lvPrevIndex + "] owned by thread " + threadId);
               while (cvAuditBuffer.writerCount.get() != cvAuditBuffer.buffer.size()) {
                  // Some other thread intends to add a Put to this buffer, but it's not here yet
 
@@ -751,10 +733,6 @@ public class TmAuditTlog {
             if (name.length() > 0){
                tableString.append(",");
                tableString.append(name);
-               LOG.debug("current table name: [" + name + "]");
-            }
-            else {
-               LOG.debug("current table name is empty");
             }
          }
          LOG.debug("table names: " + tableString.toString());
@@ -762,9 +740,7 @@ public class TmAuditTlog {
 
       //Update input string in message digest
       Put p = new Put(md.digest(Bytes.toBytes(transidString)));
-      LOG.trace("TLOG putRecord synchronizing on grossAuditLock in thread " + threadId );
       synchronized (grossAuditLock) {
-         LOG.debug("grossAuditLock owned by thread " + threadId);
          lvMyIndex = currIndex;
          lvPrevIndex = prevIndex;
 
@@ -777,11 +753,8 @@ public class TmAuditTlog {
             auditBuffer[lvMyIndex].resultWaiterCount.getAndIncrement();
          }
       } // End global synchronization
-      LOG.trace("TLOG putRecord grossAuditLock synchronization complete in thread " + threadId );
 
       lvAsn = asn.getAndIncrement();
-      LOG.debug("TLOG putRecord adding " + ((wait == true) ? "waited" : "no-waited") + 
-                  " put to buffer in thread " + threadId );
       LOG.debug("transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn + " buffer: " + lvMyIndex);
       p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + "," 
                        + transidString + "," + lvTxState 
@@ -790,12 +763,10 @@ public class TmAuditTlog {
 
       LOG.trace("TLOG putRecord synchronizing auditBuffer[" + lvMyIndex + "].bufferLock in thread " + threadId );
       synchronized (auditBuffer[lvMyIndex].bufferLock) {
-         LOG.debug("TLOG putRecord bufferLock owned by thread " + threadId);
          if ((auditBuffer[lvMyIndex].bufferSubmitting == false) && (wait == true)) {
             lvSubmitIt = auditBuffer[lvMyIndex].bufferSubmitting = true;
          }
          auditBuffer[lvMyIndex].bufferAdd(p);
-         LOG.debug("TLOG current auditBuffer " + lvMyIndex + " is size: " + auditBuffer[lvMyIndex].buffer.size());
       } //end synchronized bufferLock
       LOG.trace("TLOG putRecord auditBuffer[" + lvMyIndex + "].bufferLock synchronization complete in thread " + threadId );
 
@@ -820,18 +791,14 @@ public class TmAuditTlog {
             if (auditWriteResult == null) {
                LOG.debug("putRecord auditWriteResult is null in thread " + threadId);
             }
-            LOG.debug("putRecord getting write result from buffer " + lvMyIndex + " in thread " + threadId);
             if (lvResult = auditWriteResult.get()) {
-               LOG.debug("putRecord write succeeded for buffer " + lvMyIndex + " in thread " + threadId);
                LOG.trace("TLOG putRecord synchronizing auditBuffer[" + lvMyIndex + "].resultLock in thread " + threadId );
                synchronized (auditBuffer[lvMyIndex].resultLock) {
-                  LOG.debug("resultLock owned by thread " + threadId);
                   // We just got the results back from our audit buffer so we need to populate the results
                   LOG.debug("auditBuffer.setResult in putRecord " + lvResult + " by thread " + threadId + 
                              " from currIndex " + lvMyIndex);
                   auditBuffer[lvMyIndex].setResult(lvResult);
                } // End synchronization
-               LOG.trace("TLOG putRecord auditBuffer[" + lvMyIndex + "].resultLock synchronization complete in thread " + threadId );
             }
             else {
                LOG.debug("putRecord write auditWriteResult returned false in thread " + threadId);
@@ -847,8 +814,6 @@ public class TmAuditTlog {
       
       if (wait) {
          // We need to get the result to maintin proper counts
-         LOG.debug("calling auditBuffer.getResult " + (lvSubmitIt ? " by submitter" : " by joiner") +
-                    " for buffer " + lvMyIndex + " in thread " + threadId);
          lvResult = auditBuffer[lvMyIndex].getResult();
 
          LOG.debug("auditBuffer.incRetrievedResult with retrieved result " + lvResult + (lvSubmitIt ? " by submitter" : " by joiner") + " in thread " + threadId);
@@ -878,10 +843,6 @@ public class TmAuditTlog {
          if (name.length() > 0){
             tableString.append(",");
             tableString.append(name);
-            LOG.debug("current table name: [" + name + "]");
-         }
-         else {
-            LOG.debug("current table name is empty");
          }
       }
       LOG.debug("formatRecord table names " + tableString.toString());
@@ -910,7 +871,6 @@ public class TmAuditTlog {
          prepTime = System.nanoTime() - startTime;
          synchronized(tablePutLock) {
             synchTime = System.nanoTime() - prepTime;
-            LOG.debug("putBuffer trying table.put with buffer size " + buffer.size());
             table.put(buffer);
             writeTime = System.nanoTime() - synchTime;
          }
@@ -1174,7 +1134,6 @@ public class TmAuditTlog {
       long threadId = Thread.currentThread().getId();
       LOG.trace("addControlPoint start from thread " + threadId + " with map size " + map.size());
 
-      LOG.debug("addControlPoint thread " + threadId + " submitting new TmAuditTlogControlPointWriter");
       cntrlPtWriteResult = controlPointWriter.submit(writer);
       try {
          if (cntrlPtWriteResult == null) {
@@ -1201,16 +1160,12 @@ public class TmAuditTlog {
       long agedAsn;  // Writes older than this audit seq num will be deleted
       long lvAsn;    // local copy of the asn
       boolean success = false;
-//      ArrayList<Put> lvBuffer = new ArrayList<Put>();
       for (Map.Entry<Long, TransactionState> e : map.entrySet()) {
          try {
             Long transid = e.getKey();
             TransactionState value = e.getValue();
-//            LOG.debug("formatting trans state record for trans (" + transid + ") : state is " + value.getStatus());
             LOG.debug("addControlPoint putting state record for trans (" + transid + ") : state is " + value.getStatus());
             putRecord(transid, value.getStatus(), value.getParticipatingRegions(), false);
-//            Put lvPut = formatRecord(transid, value);
-//            lvBuffer.add(lvPut);
          }
          catch (Exception ex) {
             LOG.error("formatRecord Exception");
@@ -1218,25 +1173,14 @@ public class TmAuditTlog {
          }
       }
 
-//      try {
-//         LOG.debug("putBuffer of size " + lvBuffer.size());
-//         success = putBuffer(lvBuffer);
-//      }
-//      catch (Exception e) {
-//         LOG.error("addControlPoint Exception in Tlog.putBuffer");
-//         throw e;
-//      }
-      
       try {
          lvAsn = asn.getAndIncrement();
 
          // Write the control point interval and the ASN to the control point table
          lvCtrlPt = tLogControlPoint.doControlPoint(lvAsn); 
-         LOG.debug("addControlPoint returned " + lvCtrlPt + " asn is " + lvAsn);
 
          if ((lvCtrlPt - 5) > 0){  // We'll keep 5 control points of audit
             try {
-               LOG.debug("addControlPoint calling tLogControlPoint.getRecord " + (lvCtrlPt - 5));
                agedAsn = tLogControlPoint.getRecord(String.valueOf(lvCtrlPt - 5));
                if (agedAsn > 0){
                   try {
@@ -1250,7 +1194,6 @@ public class TmAuditTlog {
                }
 
                try {
-                  LOG.debug("addControlPoint - removing control point record " + (lvCtrlPt - 5));
                   tLogControlPoint.deleteAgedRecords(lvCtrlPt - 5);
                }
                catch (Exception e){
@@ -1358,13 +1301,9 @@ public class TmAuditTlog {
          String transidToken = new String();
          String tableNameToken = new String();
          try {
-            LOG.debug("getTransactionState: tLog getting Result: " + transidString);
             Result r = table.get(g);
             if (r == null) {
                LOG.debug("getTransactionState: tLog result is null: " + transidString);
-            }
-            else {
-               LOG.debug("getTransactionState: tLog result is good: " + transidString);
             }
             if (r.isEmpty()) {
                LOG.debug("getTransactionState: tLog empty result: " + transidString);
@@ -1381,16 +1320,12 @@ public class TmAuditTlog {
                return;
             }
             recordString =  new String (Bytes.toString(value));
-            LOG.debug("getTransactionState: tLog recordString: " + recordString);
             StringTokenizer st = new StringTokenizer(recordString, ",");
             if (st.hasMoreElements()) {
                asnToken = st.nextElement().toString() ;
                transidToken = st.nextElement().toString() ;
                stateString = st.nextElement().toString() ;
                LOG.debug("getTransactionState: stateString is " + stateString);
-            }
-            else {
-               LOG.debug("getTransactionState: stateString is empty");
             }
             if (stateString.compareTo("COMMITTED") == 0){
                lvTxState = TM_TX_STATE_COMMITTED;
@@ -1483,11 +1418,9 @@ public class TmAuditTlog {
             // Load the TransactionState object up with regions
             while (st.hasMoreElements()) {
                tableNameToken = st.nextToken();
-               LOG.debug("getTransactionState: found table name " + tableNameToken);
                HTable table = new HTable(config, tableNameToken);
                NavigableMap<HRegionInfo, ServerName> regions = table.getRegionLocations();
                Iterator it =  regions.entrySet().iterator();
-               LOG.debug("getTransactionState: iterating regions" + it);
                while(it.hasNext()) { // iterate entries.
                   NavigableMap.Entry pairs = (NavigableMap.Entry)it.next();
                   HRegionInfo key = (HRegionInfo) pairs.getKey();
@@ -1497,7 +1430,6 @@ public class TmAuditTlog {
                   StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
                   String hostName = new String(tok.nextElement().toString());
                   int portNumber = Integer.parseInt(tok.nextElement().toString());
-                  LOG.debug("getTransactionState: host: " + hostName + ", port: " + portNumber);
                   TransactionRegionLocation loc = new TransactionRegionLocation(key, hostName, portNumber);
                   ts.addRegion(loc);
               }

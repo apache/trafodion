@@ -65,6 +65,7 @@ public class HBaseTxClient {
    private static HBaseTmZK tmZK;
    private static RecoveryThread recovThread;
    private short dtmID;
+   private static int stallWhere;
 
    boolean useTlog;
    boolean useRecovThread;
@@ -120,6 +121,7 @@ public class HBaseTxClient {
       config.set("dtmid", "0");
       this.dtmID = 0;
       this.useRecovThread = false;
+      this.stallWhere = 0;
 
       String useAudit = System.getenv("TM_ENABLE_TLOG_WRITES");
       if (useAudit != null)
@@ -175,6 +177,7 @@ public class HBaseTxClient {
 
       this.dtmID = dtmid;
       this.useRecovThread = false;
+      this.stallWhere = 0;
 
       String useAudit = System.getenv("TM_ENABLE_TLOG_WRITES");
       if (useAudit != null)
@@ -212,6 +215,12 @@ public class HBaseTxClient {
       return true;
    }
 
+   public short stall (int where) {
+      LOG.debug("Entering stall with parameter " + where);
+      this.stallWhere = where;
+      return RET_OK;
+   }
+
    public long beginTransaction(final long transactionId) throws Exception
     {
 
@@ -231,6 +240,7 @@ public class HBaseTxClient {
    public short abortTransaction(final long transactionID) throws Exception {
       LOG.debug("Enter abortTransaction, txid: " + transactionID);
       TransactionState ts = mapTransactionStates.get(transactionID);
+
       if(ts == null) {
           LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: " + RET_NOTX);
           return RET_NOTX;
@@ -244,6 +254,11 @@ public class HBaseTxClient {
       } catch(Exception e) {
          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " tLog.putRecord: EXCEPTION");
          return RET_EXCEPTION;
+      }
+
+      if ((stallWhere == 1) || (stallWhere == 3)) {
+         LOG.info("Stalling in phase 2 for abortTransaction");
+         Thread.sleep(300000); // Initially set to run every 5 min                                 
       }
 
       try {
@@ -301,6 +316,7 @@ public class HBaseTxClient {
    public short doCommit(long transactionId) throws Exception {
        LOG.debug("Enter doCommit, txid: " + transactionId);
        TransactionState ts = mapTransactionStates.get(transactionId);
+
        if(ts == null) {
 	  LOG.error("Returning from HBaseTxClient:doCommit, (null tx) retval: " + RET_NOTX + " txid: " + transactionId);
           return RET_NOTX;
@@ -315,6 +331,12 @@ public class HBaseTxClient {
           LOG.error("Returning from HBaseTxClient:doCommit, txid: " + transactionId + " tLog.putRecord: EXCEPTION " + e);
           return RET_EXCEPTION;
        }
+
+       if ((stallWhere == 2) || (stallWhere == 3)) {
+          LOG.info("Stalling in phase 2 for doCommit");
+          Thread.sleep(300000); // Initially set to run every 5 min                                 
+       }
+
        try {
           trxManager.doCommit(ts);
        } catch (CommitUnsuccessfulException e) {

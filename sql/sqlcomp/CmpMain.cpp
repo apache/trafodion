@@ -2316,10 +2316,9 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
 /////////////////// little monitors //////////////////////
 //if (OptDefaults::optimizerHeuristic2()) { //#ifdef _DEBUG  /* } make vi happy */
-          NAString x;
+
           NABoolean onlyLogCompilerAllTime = 
-                 ActiveSchemaDB()->getDefaults().
-                       getValue(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY, x);
+                 (CmpCommon::getDefault(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY) == DF_ON);
 
           if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor() && !onlyLogCompilerAllTime)
 	  {
@@ -2405,9 +2404,8 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
   {
     compilerAll.exit();
 
-    NAString x;
-    NABoolean onlyLogCompilerAllTime = ActiveSchemaDB()->getDefaults().
-                         getValue(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY, x);
+    NABoolean onlyLogCompilerAllTime = 
+            (CmpCommon::getDefault(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY) == DF_ON);
 
     const char * fname = getCOMPILE_TIME_MONITOR_OUTPUT_FILEname();
     if (fname)

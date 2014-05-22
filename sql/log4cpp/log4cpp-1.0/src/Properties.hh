@@ -21,13 +21,8 @@ namespace log4cpp {
         Properties();
         virtual ~Properties();
 
-#ifdef NA_NSK
-        virtual void load(istream& in);
-        virtual void save(ostream& out);
-#else
         virtual void load(std::istream& in);
         virtual void save(std::ostream& out);
-#endif
 
         virtual int getInt(const std::string& property, int defaultValue);
         virtual bool getBool(const std::string& property, bool defaultValue);

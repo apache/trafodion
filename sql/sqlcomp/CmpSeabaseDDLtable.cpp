@@ -1164,7 +1164,6 @@ void CmpSeabaseDDL::createSeabaseTable(
       keyLength += colType->getEncodedKeyLength();
     }
 
-
   // create table in seabase
   Lng32 numCols = colArray.entries();
   Lng32 numKeys = keyArray.entries();
@@ -1289,6 +1288,10 @@ void CmpSeabaseDDL::createSeabaseTable(
 			   0, NULL,
 			   objUID))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(extTableName);
+
       deallocEHI(ehi); 
       processReturn();
       return;
@@ -1663,9 +1666,28 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
       goto label_error;
     }
 
+  cliRC = beginXn(&cliInterface);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
   createSeabaseTable(createTableNode, currCatName, currSchName);
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
-    return;
+    {
+      rollbackXn(&cliInterface);
+
+      return;
+    }
+
+  cliRC = commitXn(&cliInterface);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      goto label_error;
+    }
 
   cliRC = cliInterface.holdAndSetCQD("TRAF_NO_CONSTR_VALIDATION", "ON");
   if (cliRC < 0)
@@ -1677,6 +1699,13 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
       goto label_error;
     }
 
+  cliRC = beginXn(&cliInterface);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
   addConstraints(tableName, currCatAnsiName, currSchAnsiName,
 		 NULL,
 		 createTableNode->getAddConstraintUniqueArray(),
@@ -1684,7 +1713,20 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
 		 createTableNode->getAddConstraintCheckArray());		     
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
     {
+      rollbackXn(&cliInterface);
+
+      *CmpCommon::diags() << DgSqlCode(-1029)
+			  << DgTableName(extTableName);
+      
       processReturn();
+      
+      goto label_error;
+    }
+
+  cliRC = commitXn(&cliInterface);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       
       goto label_error;
     }
@@ -1699,6 +1741,12 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
   if (NOT createTableNode->isVolatile())
     {
       char buf [1000];
+
+      Lng32 ij = 0;
+      while (ij)
+	{
+	  ij = 2 - ij;
+	}
 
       str_sprintf(buf, "drop table if exists \"%s\".\"%s\".\"%s\" cascade",
 		  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
@@ -3338,6 +3386,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
   if (updateConstraintMD(keyColList, keyColOrderList, uniqueStr, tableUID, uniqueUID, 
 			 naTable, COM_UNIQUE_CONSTRAINT, &cliInterface))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(uniqueStr);
+
       return;
     }
 
@@ -3353,6 +3405,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
 		      (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_ON),
 		      &cliInterface))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(uniqueStr);
+
       return;
     }
 
@@ -3687,12 +3743,20 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   if (updateConstraintMD(ringKeyColList, ringKeyColOrderList, uniqueStr, tableUID, ringConstrUID, 
 			 ringNaTable, COM_FOREIGN_KEY_CONSTRAINT, &cliInterface))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(uniqueStr);
+
       return;
     }
 
   if (updateRIConstraintMD(ringConstrUID, refdConstrUID,
 			   &cliInterface))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(uniqueStr);
+
       return;
     }
 
@@ -3707,6 +3771,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 		      (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_ON),
 		      &cliInterface))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(uniqueStr);
+
       return;
     }
 
@@ -4033,6 +4101,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
   if (updateConstraintMD(keyColList, emptyList, uniqueStr, tableUID, checkUID, 
 			 naTable, COM_CHECK_CONSTRAINT, &cliInterface))
     {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1029)
+	<< DgTableName(uniqueStr);
+      
       return;
     }
 

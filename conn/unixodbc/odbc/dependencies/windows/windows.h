@@ -760,7 +760,7 @@ char * _strnset(char * str, int c, unsigned int count);
 #ifndef unixcli
 #define SYSTEM_DSNFILE	"$SYSTEM.SYSTEM.MXODSN"
 #else
-#define SYSTEM_DSNFILE "/etc/hpodbc/MXODSN"
+#define SYSTEM_DSNFILE "/etc/odbc/TRAFDSN"
 #endif
 
 #define ENV_DSNVAR	DSNFILE

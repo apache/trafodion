@@ -3753,6 +3753,27 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
 
+  NAFileSet * naf = naTable->getClusteringIndex();
+  NABoolean isSalted = FALSE;
+  Int32 keyLength = 0;
+  for (Lng32 ii = 0; (ii < naf->getIndexKeyColumns().entries()); ii++)
+    {
+      NAColumn * nac = naf->getIndexKeyColumns()[ii];
+      if (nac->isComputedColumnAlways())
+	{
+	  isSalted = TRUE;
+	}
+
+      const NAType *colType = nac->getType();
+      keyLength += colType->getEncodedKeyLength();
+    }
+
+  Lng32 numSaltedPartitions = 0;
+  if (isSalted)
+    {
+      numSaltedPartitions = naf->getCountOfPartitions();
+    }
+
   if (naTable->getUniqueConstraints().entries() > 0)
     {
       const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
@@ -3815,14 +3836,16 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
     }
 
   // and recreate it.
-  // TBD: get hbaseCreateOptions and split info from metadata to recreate it.
+  // TBD: get hbaseCreateOption from metadata to recreate it.
   NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL;
-  Lng32 numSplits = 0;
-  Lng32 keyLength = 0;
+  Lng32 numSplits = numSaltedPartitions;
+  //  Lng32 keyLength = 0;
   char * encodedKeysBuffer = NULL;
+
+  // Need to fix encodedKeysBuffer before passing in salt related info. TBD.
   retcode = createHbaseTable(ehi, &hbaseTable, SEABASE_DEFAULT_COL_FAMILY, 
 			     NULL, NULL,
-			     hbaseCreateOptions, numSplits, keyLength, 
+			     hbaseCreateOptions, 0, 0, //numSplits, keyLength, 
 			     NULL);
   if (retcode == -1)
     {
@@ -3957,7 +3980,11 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->dropMDViews()) ||
       ((ddlNode) &&
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
-	(ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY))))
+	(ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
+	((ddlNode->getOperatorType() == DDL_CREATE_TABLE) &&
+	 ((ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintUniqueArray().entries() > 0) ||
+	  (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintRIArray().entries() > 0) ||
+	  (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintCheckArray().entries() > 0))))))
     {
       // transaction will be started and commited in dropSeabaseMD method.
       startXn = FALSE;

@@ -174,7 +174,6 @@ hbasetmlib:
 	cd $(HBASETMLIB); $(MAKE)
 
 setup:
-	@echo "HP_CLOSED_SOURCE_1 = " $(HP_CLOSED_SOURCE_1)
 	cd tools; $(MAKE) setup
 	@echo "HBASETMLIB = " $(HBASETMLIB)
 	cd $(HBASETMLIB); $(MAKE) setup

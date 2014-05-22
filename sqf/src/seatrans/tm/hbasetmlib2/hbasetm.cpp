@@ -100,6 +100,16 @@ void HbaseTM_initiate_cp()
    gv_HbaseTM.addControlPoint();
 }
 
+//----------------------------------------------------------------
+// HbaseTM_initiate_stall
+// Purpose - Initiate stall in phase 2
+//----------------------------------------------------------------
+void HbaseTM_initiate_stall(int where)
+{
+   cout << "HbaseTM_initiate_stall called with parameter " << where << "\n";
+   gv_HbaseTM.stall(where);
+}
+
 
 // CHbaseTM Methods
 // TM Default Constructor
@@ -182,6 +192,8 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_PARREGION  ].jm_signature = "(J)I";
   JavaMethods_[JM_CNTPOINT   ].jm_name      = "addControlPoint";
   JavaMethods_[JM_CNTPOINT   ].jm_signature = "()Z";
+  JavaMethods_[JM_STALL      ].jm_name      = "stall";
+  JavaMethods_[JM_STALL      ].jm_signature = "(I)S";
 
   char className[]="org/trafodion/dtm/HBaseTxClient";
   return (HBTM_RetCode)JavaObjectInterfaceTM::init(className, (JavaMethodInit*)&JavaMethods_, (int)JM_LAST, false);
@@ -664,6 +676,28 @@ int CHbaseTM::unresolvedRegions(int64 pv_transid)
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::unresolvedRegions : Count %d.\n", lv_unresolvedCount));
    return lv_unresolvedCount;
 } //CHbaseTM::unresolvedRegions
+
+short CHbaseTM::stall(int where){
+  jthrowable exc;
+  jint jiv_where = where;
+  JOI_RetCode lv_joi_retcode = JOI_OK;
+  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  if (lv_joi_retcode != JOI_OK) {
+    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+    fflush(stdout);
+    abort();
+  }
+
+  cout << "CHbaseTM::stall called with: " << jiv_where << "\n";
+  _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_STALL].methodID, jiv_where);
+  exc = _tlp_jenv->ExceptionOccurred();
+  if(exc) {
+    _tlp_jenv->ExceptionDescribe();
+    _tlp_jenv->ExceptionClear();
+    return RET_EXCEPTION;
+  }
+  return RET_OK;
+}
 
 
 //----------------------------------------------------------------------------

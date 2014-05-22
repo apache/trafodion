@@ -125,32 +125,8 @@ public class TmAuditTlogControlPointWriter implements Callable<Boolean> {
          throw e;
       }
 
-//           for (Map.Entry<Long, TransactionState> e : map.entrySet()) {
-//              try {
-//                 Long transid = e.getKey();
-//                 TransactionState value = e.getValue();
-//                 if (value.getStatus().compareTo("COMMITTED") == 0){
-//                    LOG.debug("TmAuditTlogControlPointWriter writing trans state record for trans (" + transid + ") : state is " + value.getStatus());
-//                    tLog.putRecord(transid, value.getStatus(), value.getParticipatingRegions());
-//                 }
-//                 else {
-//                    LOG.debug("TmAuditTlogControlPointWriter skipping trans state record for trans (" + transid + ") : state is " + value.getStatus());
-//                 }
-//              }
-//              catch (Exception ex) {
-//                 LOG.error("TmAuditTlogControlPointWriter puting record Exception");
-//                 throw ex;
-//              }
-//           }
       LOG.debug("TmAuditTlogControlPointWriter completed putBuffer");
-//        } catch (Exception e) {
-//           LOG.error("TmAuditTlogControlPointWriter putBuffer exception " + e);
-//           throw e;
-//        } //catch (InterruptedException e) {
-//           LOG.debug("TmAuditTlogControlPointWriter child interrupted.");
-//           throw e;
-//        }
-         // All state records are written, now update the conrol point number and table
+      // All state records are written, now update the conrol point number and table
       try {
         long lvAsn = tLog.asnGetAndIncrement();
         long lvCtrlPt = controlPoint.doControlPoint(lvAsn);

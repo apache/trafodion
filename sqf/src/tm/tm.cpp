@@ -55,6 +55,7 @@
 extern void tm_xarm_initialize();
 extern void tm_process_msg_from_xarm(CTmTxMessage * pp_msg);
 extern int HbaseTM_initialize (bool pp_tracing, bool pv_tm_stats, CTmTimer *pp_tmTimer, short pv_nid);
+extern int HbaseTM_initiate_stall(int where);
 
 
 
@@ -2115,7 +2116,16 @@ void tm_process_registry_change(MS_Mon_Change_def *pp_change )
     //tm_log_event(DTM_REGCHANGE_NOTICE, SQ_LOG_INFO, "DTM_REGCHANGE_NOTICE",
     //            -1,-1,gv_tm_info.nid(),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,lp_regKeyText);
 
-    if (strcmp(pp_change->key, DTM_RM_WAIT_TIME) == 0)
+    if (strcmp(pp_change->key, DTM_STALL_PHASE_2) == 0)
+    {
+       lv_value = atoi (pp_change->value);
+       if (lv_value >= 0)
+       {
+          gv_tm_info.stall_phase_2(lv_value);
+          HbaseTM_initiate_stall(lv_value);
+       }
+    }
+    else if (strcmp(pp_change->key, DTM_RM_WAIT_TIME) == 0)
     {
        lv_value = atoi (pp_change->value);
        if (lv_value > 0)

@@ -132,12 +132,12 @@ public:
   static NAHeap * statementHeap();
 
   #define CURRENTSTMT (CmpCommon::statement())
-  #define CURRSTMT_OPTDEFAULTS (CmpCommon::statement()->getOptDefaults())
   #define CURRSTMT_OPTGLOBALS  (CmpCommon::statement()->getOptGlobals())
   #define CURRSTMT_CQSWA  (CmpCommon::statement()->getCqsWA())
   #define CURRCONTEXT_OPTDEBUG (CmpCommon::context()->getOptDbg())
   #define CURRCONTEXT_HISTCACHE (CmpCommon::context()->getHistogramCache())
   #define CURRCONTEXT_OPTSIMULATOR (CmpCommon::context()->getOptimizerSimulator())
+  #define CURRSTMT_OPTDEFAULTS (CmpCommon::context()->getOptDefaults())
 
   // For some routines that do care about the current CmpContext*. 
   // If you need to declare some global/static variables in the scope of

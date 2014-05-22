@@ -7,14 +7,13 @@
  * File:         <file>
  * Description:
  *
- *
  * Created:      10/17/95
  * Language:     C++
  *
  *
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,9 +35,6 @@
 
 #include "Platform.h"
 #include "ExpError.h"
-
-// NT port - vs 01/17/97
-//#define NA_NO_C_RUNTIME
 
 #include "BaseTypes.h"
 #include "NAHeap.h"

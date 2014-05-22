@@ -149,6 +149,7 @@ class TM_Info
        MS_MON_ShutdownLevel    iv_shutdown_level;
        bool             iv_all_rms_closed;
        bool             iv_shutdown_coordination_started;
+       int32            iv_stall_phase_2; // 1 = ABORT, 2 = COMMIT, 3 = ABORT or COMMIT
        int32            iv_rm_wait_time;
        int32            iv_timeout;  //-1 = no timeout, > 0 = timeout in seconds.
        bool             iv_trace_initialized;
@@ -463,6 +464,8 @@ class TM_Info
        void  init_tracing(bool pv_unique, const char *pp_trace_file, int32 pv_detail);
        void rm_wait_time (int32 pv_rm_wait_time) {iv_rm_wait_time = pv_rm_wait_time;}
        int32 rm_wait_time () {return iv_rm_wait_time;}
+       void stall_phase_2 (int32 pv_stall_phase_2) {iv_stall_phase_2 = pv_stall_phase_2;}
+       int32 stall_phase_2 () {return iv_stall_phase_2;}
        void  all_rms_closed(bool pv_all_closed);
        bool  all_rms_closed();
        void  shutdown_level(MS_MON_ShutdownLevel pv_shutdown_level);

@@ -92,8 +92,6 @@ class TransMode;
 
 extern CliGlobals *cli_globals;
 static __thread ContextCli *tsCurrentContext = NULL;
-static __thread HBaseClient_JNI *tsHBaseClient_JNI = NULL;
-static __thread HiveClient_JNI *tsHiveClient_JNI = NULL;
 static  pthread_key_t thread_key;
 
 // A cleanup function when thread exits

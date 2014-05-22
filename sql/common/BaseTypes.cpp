@@ -123,10 +123,7 @@ void NAExit(Int32 status)
     {
       my_mpi_fclose();
     }
-  if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
-    AssertException("", __FILE__, __LINE__).throwException();
-  else
-    exit(status);
+   exit(status);
 }
 
 

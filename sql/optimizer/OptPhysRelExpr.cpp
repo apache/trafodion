@@ -569,7 +569,7 @@ Context* RelExpr::createPlan(Context* myContext,
 // Exchange operator cannot be used in this case to enforce partitioning)
 // or correlated subquery. In both cases non-empty histogram is passed
 // to this expression through input logical properties.
-// We don't want to abort creting a plan if Context requires exactly
+// We don't want to abort creating a plan if Context requires exactly
 // one partition or replication of the table which might be necessary
 // for the right child of nested or hash join.
 NABoolean RelExpr::isParHeuristic4Feasible(Context* myContext,
@@ -1112,7 +1112,7 @@ NABoolean RelExpr::rppRequiresEnforcer
 // are the same as it's child. If not, it makes the child's PIVs, partitioning
 // key predicates, and partitioning expression the same as the parent's.
 //  For some operators, the parent partitioning key predicates and
-// partitioning expression might need to be mapped first before assiging
+// partitioning expression might need to be mapped first before assigning
 // them to the child.
 //  Most of the time, the PIVs will be the same. They could only be different
 // if the child's plan was stolen from another context.
@@ -1560,7 +1560,7 @@ Context* Sort::createContextForAChild(Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for sort operator's current plan extracted
-// from a spcified context.
+// from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -2410,7 +2410,7 @@ void Exchange::storePhysPropertiesInNode(const ValueIdList &partialSortKey)
   }
   else if (CmpCommon::getDefault(COMP_BOOL_86) == DF_ON) 
   {
-    // begin Ravish's fix to partial sort: comment out this if
+    // begin fix to partial sort: comment out this if
     // if (partialSortKey == sppForMe->getSortKey())
     // otherwise, partial sort with split top can give wrong results
       sortKeyForMyOutput_ = partialSortKey;
@@ -2510,7 +2510,7 @@ void Exchange::storePhysPropertiesInNode(const ValueIdList &partialSortKey)
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for exchange operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 // Calls: synthPhysicalPropertyDP2() OR synthPhysicalPropertyESP();
 //
 // Input:
@@ -2547,7 +2547,7 @@ Exchange::synthPhysicalProperty(const Context *myContext,
 
 //==============================================================================
 // Synthesize physical properties for exchange operator's current plan
-// extracted from a spcified context when child executes in DP2.
+// extracted from a specified context when child executes in DP2.
 //
 // Helper method for Exchange::synthPhysicalProperty()
 //==============================================================================
@@ -2743,7 +2743,7 @@ Exchange::synthPhysicalPropertyDP2(const Context *myContext)
 
 //==============================================================================
 // Synthesize physical properties for exchange operator's current plan
-// extracted from a spcified context when child executes in ESP.
+// extracted from a specified context when child executes in ESP.
 //
 // Helper method for Exchange::synthPhysicalProperty()
 //==============================================================================
@@ -2961,7 +2961,7 @@ Exchange::synthPhysicalPropertyFinalize(const Context *myContext,
   // condition below.
   hash2RepartitioningWithSameKey_ = FALSE;
 
-  // hash2RepartitioningWithSameKey_ should be TRUE if the repartitioing
+  // hash2RepartitioningWithSameKey_ should be TRUE if the repartitioning
   //  operation is just repartitioning to a different # of partitions
   // but the partitioning key is the same. Also the partitioning should be
   // a hash2 partitioning
@@ -3204,7 +3204,7 @@ DefaultToken Join::getParallelControlSettings (
 
 // -----------------------------------------------------------------------
 // Split any sort or arrangement requirements between the left and
-// right childs. Add those that are for the left child to the
+// right children. Add those that are for the left child to the
 // passed in requirement generator object, and return those that
 // are for the right child.
 // -----------------------------------------------------------------------
@@ -3263,7 +3263,7 @@ void Join::splitSortReqsForLeftChild(
 
 // -----------------------------------------------------------------------
 // Split any sort or arrangement requirements between the left and
-// right childs. Add those that are for the right child to the
+// right children. Add those that are for the right child to the
 // passed in requirement generator object, and return those that
 // are for the left child.
 // -----------------------------------------------------------------------
@@ -3648,7 +3648,7 @@ ValueIdList NestedJoin::genWriteOpLeftChildSortReq()
       // sort is used as a blocking operator and therefore
       // it does not matter (for correctness) which column is used for sorting as long 
       // as the sort operator is present. If reqdOrder is empty then a sort node 
-      // wiil not be present as an empty sortOrder is always satisfied. 
+      // will not be present as an empty sortOrder is always satisfied. 
       // For performance it does help if the sort order is the same as 
       // clustering key of target side. If we get into the following statement
       // then we know that the source side is not able to provide the target clustering
@@ -3789,7 +3789,7 @@ ReqdPhysicalProperty* NestedJoin::genRightChildReqs(
   PartitioningRequirement* partReqForChild;
   RequirementGenerator rg (child(1),rppForMe);
 
-  // Remove any parent requirements for the sort key or arrangment,
+  // Remove any parent requirements for the sort key or arrangement,
   // since most likely these only refer to the left child. But,
   // if there is a portion that refers to the right child, then
   // pass this along.
@@ -4042,7 +4042,7 @@ InputPhysicalProperty* NestedJoin::generateIpp(
 	      )
 	    {
 	      useListInsteadOfSet = TRUE;
-  	      updateSelectValueIdMap()->rewriteValueIdListUpWithIndex(
+	      updateSelectValueIdMap()->rewriteValueIdListUpWithIndex(
 		mappedCharOPs,
 		bottomOutputValues );
 
@@ -6554,7 +6554,7 @@ NABoolean NestedJoin::okToAttemptESPParallelism (
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for nested join operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -7601,8 +7601,8 @@ Context* MergeJoin::createContextForAChild(Context* myContext,
           childPartFuncRewritten->makePartitioningRequirement();
 
         RequirementGenerator rg (child(1),rppForMe);
-        // Remove any parent requirements for the sort key or arrangment,
-        // since they do not need to be satisified by the
+        // Remove any parent requirements for the sort key or arrangement,
+        // since they do not need to be satisfied by the
         // right child of a join (we only insist that the left child
         // satisfy these requirements).
         if (myContext->requiresOrder())
@@ -7709,8 +7709,8 @@ Context* MergeJoin::createContextForAChild(Context* myContext,
       ValueIdSet  joinColumns;
 
       RequirementGenerator rg(child(1),rppForMe);
-      // Remove any parent requirements for the sort key or arrangment,
-      // since they do not need to be satisified by the
+      // Remove any parent requirements for the sort key or arrangement,
+      // since they do not need to be satisfied by the
       // right child of a join (we only insist that the left child
       // satisfy these requirements).
       if (myContext->requiresOrder())
@@ -7915,7 +7915,7 @@ Context* MergeJoin::createContextForAChild(Context* myContext,
               // predicates (see Join::separateEquiAndNonEquiJoinPrediates),
               // we must not only save leftOverEquiJoinPreds into but also 
               // remove orderedMJPreds from joinPred or selectionPred.
-              // Otherwise, duplicate equijoinpredicates can cause
+              // Otherwise, duplicate equijoin predicates can cause
               // MergeJoin::preCodeGen to GenAssert(!mjp.isEmpty()) because
               // mjp.replaceVEGExpressions refuses to replace VEGExpr that
               // it has already replaced.
@@ -8027,7 +8027,7 @@ NABoolean MergeJoin::currentPlanIsAcceptable(Lng32 planNo,
             const ReqdPhysicalProperty* const rppForMe) const
 {
   // This is probably not the best place to check it. It should work
-  // temporarely. We are trying to force potentially hanging plan
+  // temporarily. We are trying to force potentially hanging plan
   // to fail. See solution 10-051219-3501.
   if ( deadLockIsPossible_)
 	  return FALSE;
@@ -8073,7 +8073,7 @@ NABoolean MergeJoin::currentPlanIsAcceptable(Lng32 planNo,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for merge join operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -8204,7 +8204,7 @@ NABoolean HashJoin::isBigMemoryOperatorSetRatio(const Context* context,
 
   // ---------------------------------------------------------------------
   // Not given any memory constraints, the HJ would like to have enough
-  // memory to hold the whole inner table and auxillary hash structures.
+  // memory to hold the whole inner table and auxiliary hash structures.
   // Each row is stored with its hash key and a chain pointer (8 bytes in
   // total).
   // ---------------------------------------------------------------------
@@ -8325,7 +8325,7 @@ void HashJoin::addNullToSkewedList(SkewedValueList** skList)
 
   ValueIdList child0ColList = getEquiJoinExprFromChild0();
 
-  // get the first column id and use it as skew lis identifiwer 
+  // get the first column id and use it as skew list identifier 
   // same as in skew buster
   ValueId colVid = child0ColList[0];
 
@@ -8453,7 +8453,7 @@ Context* HashJoin::createContextForAChild(Context* myContext,
          ( (getSource() == Join::STAR_FILTER_JOIN) OR
            (CmpCommon::getDefault(COMP_BOOL_68) == DF_ON)
          ) AND
-         // To avoid complex subqueries due to cardinality uncertainities
+         // To avoid complex subqueries due to cardinality uncertainties
          ( child(1).getGroupAttr()->getNumBaseTables() <=  baseTableThreshold) AND
          // the child is small - defined by COMP_INT_7
          ( innerChildSize < CostScalar(ActiveSchemaDB()->getDefaults().getAsLong(COMP_INT_7))) AND
@@ -8479,7 +8479,7 @@ Context* HashJoin::createContextForAChild(Context* myContext,
     //      Range 1               Range 2              Range 3
     //
     // * If inner table size is in range 1 i.e. < comp_int_70 then repartitioning
-    //   plan is not tried, the table is unconditionaly broadcast
+    //   plan is not tried, the table is unconditionally broadcast
     // * If inner table size is in range 2 i.e. > comp_int_70 and < comp_int_7
     //   then repartition plan is not tried i.e. only broadcast plan is tried
     //   if the join column from the left child is skewed.
@@ -8625,7 +8625,7 @@ Context* HashJoin::createContextForAChild(Context* myContext,
               skList->getNAType()->getTypeQualifier() != NA_CHARACTER_TYPE)  
               // no real skewed values. null is the only item in the list and is not skewed
               // in this case we don't really need to uniform-distribute rows on the right side
-              // all we need is the brodcast null (and one row if applicable) on the right side
+              // all we need is the broadcast null (and one row if applicable) on the right side
               // NOTE: This will cause a regular "hash2" function to be used on the left side
               // and a "h2-br" function on the right. We have to guarantee that those produce
               // the same hash value for every non-NULL column value. This is NOT true for
@@ -8675,7 +8675,7 @@ Context* HashJoin::createContextForAChild(Context* myContext,
 	  // If it's full outer join, then force the requirement
 	  // to be one partition - (serial).
 	  rg.addNumOfPartitions(1);
-  	}
+	}
       else if (okToAttemptESPParallelism(myContext,
                                     pws,
                                     childNumPartsRequirement,
@@ -9495,7 +9495,7 @@ HashJoin::computeCostLimit(const Context*       myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for hash join operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -9929,8 +9929,8 @@ void MergeUnion::synthUnionSortKeyFromChild (
     //
     // Duplications require extra sort requirement for the other side; it's bad
     // from performance point of view. Worse, the method finalizeUnionSortKey()
-    // requries the size of unionSortKey to be the same as the reqArrangement.
-    // So childSortKey with dupilcates will lead to an assertion failure there.
+    // requires the size of unionSortKey to be the same as the reqArrangement.
+    // So childSortKey with duplicates will lead to an assertion failure there.
     //
     // We can remove duplicates simplified expressions because they do not
     // provide any useful information, as in the following code,
@@ -10104,7 +10104,7 @@ MergeUnion::finalizeUnionSortKey(const ValueIdList& knownSortKey,
      {
         if ( NOT simplifiedUnionSortKey.contains(vid) ) {
 
-          // duplications of source vids, which means dupliacted
+          // duplications of source vids, which means duplicated
           // columns in the Union columns. We need to insert such vids
           // into the UnionSortKey. But before that, we need to determine
           // the ASC or DESC order for each such vid.
@@ -10171,7 +10171,7 @@ Context* MergeUnion::createContextForAChild(Context* myContext,
   // parallel. But, if we were to allow the two children of a union
   // to exhibit different partitioning functions, what would the
   // partitioning function for the union be? Until we solve this
-  // problem, we must insist that both sides of the union allways
+  // problem, we must insist that both sides of the union always
   // exhibit the same partitioning function.
   // ---------------------------------------------------------------------
 
@@ -10392,7 +10392,7 @@ Context* MergeUnion::createContextForAChild(Context* myContext,
         // Try a new requirement (require right child of the UNION to be 
         // hash2 partitioned with the same number of partitions as the 
         // left child) when the partitioning key is not covered by the 
-        // characterstic output AND if both children are hash2 partitioned
+        // characteristic output AND if both children are hash2 partitioned
         // with the same number of partitions. Please note that, in this 
         // scenario, a parallel UNION plan is considered only for hash2 
         // partitioned children and NOT for hash (hash1) and range
@@ -10720,7 +10720,7 @@ Context* MergeUnion::createContextForAChild(Context* myContext,
         // Try a new requirement (require left child of the UNION to be 
         // hash2 partitioned with the same number of partitions as the 
         // right child) when the partitioning key is not covered by the 
-        // characterstic output AND if both children are hash2 partitioned
+        // characteristic output AND if both children are hash2 partitioned
         // with the same number of partitions. Please note that, in this 
         // scenario, a parallel UNION plan is considered only for hash2 
         // partitioned children and NOT for hash (hash1) and range
@@ -10942,7 +10942,7 @@ NABoolean MergeUnion::findOptimalSolution(Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for merge union operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -11478,7 +11478,7 @@ Context* GroupByAgg::createContextForAChild(Context* myContext,
     //
     // The UD case (i.e., the left child of a skew buster join is a full
     // groupby) is dealt with through the partitioning key requirement
-    // (i.e., the parttitioning keys added by statement
+    // (i.e., the partitioning keys added by statement
     // rg.addPartitioningKey(groupExpr()) above will NEVER be satisfied
     // by a SkewedDataPartitioningFunction).
     //
@@ -11587,7 +11587,7 @@ void SortGroupBy::addArrangementAndOrderRequirements(
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Sort-group-by operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -11738,7 +11738,7 @@ void PhysShortCutGroupBy::addArrangementAndOrderRequirements(
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Any-true-group-by operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -11912,7 +11912,7 @@ HashGroupBy::costMethod() const
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Hash-group-by operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -12103,9 +12103,12 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     Lng32 nodesInActiveClusters =  gpClusterInfo->numOfSMPs();
 
 
+    NABoolean canAdjustDoP = TRUE;
+
     if(CURRSTMT_OPTDEFAULTS->isFakeHardware())
     {
       nodesInActiveClusters = defs.getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
+      canAdjustDoP = FALSE;
     }
 
     countOfCPUs = cpusPerNode * nodesInActiveClusters;
@@ -12128,6 +12131,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
          pipelinesPerCPU = pne / countOfCPUs;
       }
+
+      canAdjustDoP = FALSE;
     }
 
     // final adjustment to countOfCPUs and pipelinesPerCPU - special cases
@@ -12158,6 +12163,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
              CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
              CURRSTMT_OPTDEFAULTS->setRequiredScanDescForFastDelete(
                                 ((Delete*)x)->getScanIndexDesc());
+             canAdjustDoP = FALSE;
           }
        } 
     }
@@ -12191,6 +12197,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
          countOfCPUs = partns;
          pipelinesPerCPU = 1;
          CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
+
+         canAdjustDoP = FALSE;
        }
     } 
 
@@ -12214,6 +12222,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
           countOfCPUs = partns;
           pipelinesPerCPU = 1;
           CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
+
+          canAdjustDoP = FALSE;
        }
     }
    
@@ -12265,7 +12275,42 @@ Context* RelRoot::createContextForAChild(Context* myContext,
              countOfCPUs = partns;
              pipelinesPerCPU = 1;
              CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
+             canAdjustDoP = FALSE;
           }
+       }
+    }
+             
+                               
+    Lng32 minBytesPerESP = defs.getAsLong(HBASE_MIN_BYTES_PER_ESP_PARTITION);
+
+    if ( CmpCommon::getDefault(HBASE_COMPUTE_DOP_USING_TABLE_SIZES) != DF_ON )
+      canAdjustDoP = FALSE;
+
+    // Adjust DoP based on table size, if possible
+    if ( canAdjustDoP ) {
+       QueryAnalysis* qAnalysis = CmpCommon::statement()->getQueryAnalysis();
+       TableAnalysis * tAnalysis = qAnalysis->getLargestTable();
+   
+       if ( tAnalysis ) {
+          CostScalar tableSize = tAnalysis->getCardinalityOfBaseTable() *
+                                 tAnalysis->getRecordSizeOfBaseTable() ;
+   
+          CostScalar esps = tableSize / CostScalar(minBytesPerESP);
+   
+          countOfCPUs = (Lng32)(esps.getCeiling().getValue());
+   
+          if ( countOfCPUs < 1 )
+             countOfCPUs = 1;
+          else {
+   
+            Lng32 maxCPUs =  cpusPerNode * nodesInActiveClusters;
+   
+            if ( countOfCPUs >  maxCPUs * pipelinesPerCPU )
+               countOfCPUs = maxCPUs * pipelinesPerCPU;
+          }
+   
+          pipelinesPerCPU = 1;
+   
        }
     }
 
@@ -12473,7 +12518,7 @@ NABoolean RelRoot::currentPlanIsAcceptable(Lng32 planNo,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for RelRoot operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -12661,7 +12706,7 @@ Context* MapValueIds::createContextForAChild(Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for MapValueIds operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -13132,7 +13177,7 @@ computeDP2CostDataThatDependsOnSPP(
               CostScalar minRC = (probes/affectedPartitions).getCeiling();
 
               // If not all partitions are covered, minRC must be
-              // multplied by a "fanout". The "fanout" represents
+              // multiplied by a "fanout". The "fanout" represents
               // the number of partitions each probe goes to.
               // our first estimate for the fanout is the maximum
               // number of partitions sharing the same boundary
@@ -13212,7 +13257,7 @@ computeDP2CostDataThatDependsOnSPP(
 	  partKey.getKeyPredicatesByColumn(keyPredsByCol);
 
           ULng32 keyColsCoveredByNJPredOrConst = 0;
-  	  ULng32 keyColsCoveredByConst = 0;
+	  ULng32 keyColsCoveredByConst = 0;
 
 	  // iterate over all partition-key columns
           ValueId firstPredId;
@@ -13344,7 +13389,7 @@ computeDP2CostDataThatDependsOnSPP(
 	      // (not host-vars or params), then we can determine the one
 	      // active partition by computing the hash-partitioning function
 	      // (using the constant-folding technique) and can set the active
-	      // partition bitmap appropriately. However, my investigtion shows
+	      // partition bitmap appropriately. However, my investigation shows
 	      // that this bitmap is used only for range-partitioned tables.
 	      // Moreover, query-caching (in ODBC/JDBC & in MXCMP) replaces
 	      // constant values in equality predicates with param. Hence, the
@@ -13354,7 +13399,7 @@ computeDP2CostDataThatDependsOnSPP(
 	      // for hash-partitioned tables. The bitmap will be left as-is.
 
 	      // Indicate in the node map that only one partition will be
-	      // accessed during plan evaluaion.
+	      // accessed during plan evaluation.
 	      NodeMapPtr->setEstNumActivePartitionsAtRuntime(1);
 	    }
 	  else if (keyColsCoveredByNJPredOrConst == partKeyList.entries())
@@ -13388,7 +13433,7 @@ computeDP2CostDataThatDependsOnSPP(
                (DP2CostDataThatDependsOnSPP::KEYCOLS_COVERED_BY_PROBE_COLS_CONST);
 
 	      // indicate in the node map that all partitions will be
-	      // accessed during plan evaluaion.
+	      // accessed during plan evaluation.
 	      NodeMapPtr->setEstNumActivePartitionsAtRuntime
 		(physicalPartFunc.getCountOfPartitions());
 	    }
@@ -13405,7 +13450,7 @@ computeDP2CostDataThatDependsOnSPP(
                 DP2CostDataThatDependsOnSPP::KEYCOLS_NOT_COVERED);
 
 	      // indicate in the node map that all partitions will be
-	      // accessed during plan evaluaion.
+	      // accessed during plan evaluation.
 	      NodeMapPtr->setEstNumActivePartitionsAtRuntime
 		(physicalPartFunc.getCountOfPartitions());
 	    };
@@ -13943,7 +13988,7 @@ PhysicalProperty * RelExpr::synthDP2PhysicalProperty(
       // instance may access all partitions via PAs.  If there is
       // grouping, then each instance will access a non-overlapping
       // group of partitions.  So in this case the total number of PAs
-      // accross all instances is just the total number of partitions.
+      // across all instances is just the total number of partitions.
       NABoolean grouping = FALSE;
 
       const RequireReplicateNoBroadcast *rnbReq =
@@ -14102,7 +14147,7 @@ PhysicalProperty * RelExpr::synthDP2PhysicalProperty(
               // instance may access all partitions via PAs.  If there is
               // grouping, then each instance will access a non-overlapping
               // group of partitions.  So in this case the total number of PAs
-              // accross all instances is just the total number of partitions.
+              // across all instances is just the total number of partitions.
 
               const RequireReplicateNoBroadcast *rnbReq =
                 logPartReq->castToRequireReplicateNoBroadcast();
@@ -14521,7 +14566,7 @@ FileScan::createRangePartFuncForHbaseTableUsingStats(
 
   NABoolean useMCSplit = (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_MC_SPLIT) == DF_ON);
 
-  if ( bytesPerESP == 0 || partns == 1 ||
+  if ( partns == 1 ||
        (!useMCSplit && (partitioningKeyColumns.entries() != 1 ))) // if partition key has more than one column but MC stats based 
                                                                   // partitioning is disabled, then return
     return NULL;
@@ -14872,7 +14917,7 @@ FileScan::costMethod() const
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for FileScan operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15162,7 +15207,7 @@ DP2Scan::costMethod() const
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Describe operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15214,7 +15259,7 @@ Describe::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for GenericUtilExpr operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15266,7 +15311,7 @@ GenericUtilExpr::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for FirstN operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 // FirstN operator has the same properties as its child.
 //
 // Input:
@@ -15310,7 +15355,7 @@ FirstN::synthPhysicalProperty(const Context* context,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for RelTransaction operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15360,7 +15405,7 @@ RelTransaction::synthPhysicalProperty(const Context* myContext,
 
 //============================================================================
 //  Synthesize physical properties for RelSetTimeout operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15411,7 +15456,7 @@ RelSetTimeout::synthPhysicalProperty(const Context* myContext,
 
 //==============================================================================
 //  Synthesize physical properties for RelLock operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15487,7 +15532,7 @@ RelLock::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for ControlAbstractClass operator's current
-// plan extracted from a spcified context.
+// plan extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15556,7 +15601,7 @@ Tuple::costMethod() const
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Tuple operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15727,13 +15772,13 @@ Tuple::synthPhysicalProperty(const Context* myContext,
               myPartFunc->makePartitioningRequirement());
 
          myPartFunc = new(CmpCommon::statementHeap())
-              LogPhysPartitioningFunction(
-	     	logicalPartFunc, // logical
-	  	myPartFunc,      // physical
-	  	logPartType,
-	  	numPAs,
-	  	usePapa,
-	  	shouldUseSynchronousAccess);
+         LogPhysPartitioningFunction(
+		logicalPartFunc, // logical
+		myPartFunc,      // physical
+		logPartType,
+		numPAs,
+		usePapa,
+		shouldUseSynchronousAccess);
 
          myPartFunc->createPartitioningKeyPredicates();
        }
@@ -15819,7 +15864,7 @@ Tuple::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for InsertCursor operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15857,7 +15902,7 @@ InsertCursor::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for UpdateCursor operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -15897,7 +15942,7 @@ UpdateCursor::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for DeleteCursor operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -16293,7 +16338,7 @@ DP2Insert::synthPhysicalProperty(const Context* myContext,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Explain operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -16443,7 +16488,7 @@ PhysTranspose::costMethod() const
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Transpose operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -16477,7 +16522,7 @@ PhysTranspose::synthPhysicalProperty(const Context *context,
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Stored Procedure operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -16708,7 +16753,7 @@ CostMethod* PhyPack::costMethod() const
 //<pb>
 //==============================================================================
 //  Synthesize physical properties for Pack operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.
@@ -16890,14 +16935,14 @@ Context* CompoundStmt::createContextForAChild(Context* myContext,
        // Add the push-down requirement if the left child echos back
        // the push down requirement.
           rg.addPushDownRequirement(
-   	     sppForChild->getPushDownProperty()->makeRequirement());
+	     sppForChild->getPushDownProperty()->makeRequirement());
     } else {
     // ---------------------------------------------------------------
     // spp should have been synthesized for child's optimal plan.
     // ---------------------------------------------------------------
 
        PartitioningFunction* childPartFunc =
-   	sppForChild->getPartitioningFunction();
+	  sppForChild->getPartitioningFunction();
 
        PartitioningRequirement* partReqForChild =
           childPartFunc->makePartitioningRequirement();
@@ -17064,7 +17109,7 @@ PhysicalIsolatedScalarUDF::costMethod() const
 
 //==============================================================================
 //  Synthesize physical properties for IsolatedScalarUDF operator's current plan
-// extracted from a spcified context.
+// extracted from a specified context.
 //
 // Input:
 //  myContext  -- specified context containing this operator's current plan.

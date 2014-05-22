@@ -1311,35 +1311,29 @@ char* HBaseClient_JNI::getErrorText(HBC_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 HBaseClient_JNI* HBaseClient_JNI::getInstance(int debugPort, int debugTimeout)
 {
-  if (tsHBaseClient_JNI == NULL)
-  {
-     ContextCli *currContext = GetCliGlobals()->currContext();
+   ContextCli *currContext = GetCliGlobals()->currContext();
+   HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
+   if (hbaseClient_JNI == NULL)
+   {
      NAHeap *heap = currContext->exHeap();
     
-     NAHeap *hbaseHeap = new (heap) NAHeap("HBase Heap",
-                                       heap,
-                                       4 *1024); // 4KB block size
-     tsHBaseClient_JNI = new (hbaseHeap) HBaseClient_JNI(hbaseHeap,
+     hbaseClient_JNI  = new (heap) HBaseClient_JNI(heap,
                    debugPort, debugTimeout);
-     currContext->setHbaseClient(tsHBaseClient_JNI);
-     //pthread_setspecific(thread_key, tsHBaseClient_JNI);
-  }
-  return tsHBaseClient_JNI;
+     currContext->setHbaseClient(hbaseClient_JNI);
+   }
+   return hbaseClient_JNI;
 }
 
 void HBaseClient_JNI::deleteInstance()
 {
-  if (tsHBaseClient_JNI != NULL)
-  {
-     ContextCli *currContext = GetCliGlobals()->currContext();
-     NAHeap *heap = currContext->exHeap();
-     NAHeap *hbaseHeap = tsHBaseClient_JNI->heap_;
-     NADELETE(tsHBaseClient_JNI, HBaseClient_JNI, hbaseHeap);
-     // NADELETE(hbaseHeap, NAHeap, heap); 
-     delete hbaseHeap;
-     tsHBaseClient_JNI = NULL;
-     currContext->setHbaseClient(tsHBaseClient_JNI);
-  }
+   ContextCli *currContext = GetCliGlobals()->currContext();
+   HBaseClient_JNI *hbaseClient_JNI = currContext->getHBaseClient();
+   if (hbaseClient_JNI != NULL)
+   {
+      NAHeap *heap = currContext->exHeap();
+      NADELETE(hbaseClient_JNI, HBaseClient_JNI, heap);
+      currContext->setHbaseClient(NULL);
+   }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2031,7 +2025,7 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, bool async)
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::flushAllTablesStatic()
 {
-  return tsHBaseClient_JNI->flushAllTables();
+  return GetCliGlobals()->currContext()->getHBaseClient()->flushAllTables();
 }
 
 HBC_RetCode HBaseClient_JNI::flushAllTables()
@@ -3958,31 +3952,26 @@ char* HiveClient_JNI::getErrorText(HVC_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 HiveClient_JNI* HiveClient_JNI::getInstance()
 {
-  if (tsHiveClient_JNI == NULL)
-  {
-     ContextCli *currContext = GetCliGlobals()->currContext();
-     NAHeap *heap = currContext->exHeap();
-    
-     NAHeap *hiveHeap = new (heap) NAHeap("Hive Heap",
-                                       heap,
-                                       4 *1024); // 4KB block size
-     tsHiveClient_JNI = new (hiveHeap) HiveClient_JNI(hiveHeap);
-     currContext->setHiveClient(tsHiveClient_JNI);
+    ContextCli *currContext = GetCliGlobals()->currContext();
+    HiveClient_JNI *hiveClient_JNI = currContext->getHiveClient();
+    if (hiveClient_JNI == NULL)
+    { 
+       NAHeap *heap = currContext->exHeap();
+       hiveClient_JNI = new (heap) HiveClient_JNI(heap);
+       currContext->setHiveClient(hiveClient_JNI);
   }
-  return tsHiveClient_JNI;
+  return hiveClient_JNI;
 }
 
 void HiveClient_JNI::deleteInstance()
 {
-  if (tsHiveClient_JNI != NULL)
+  ContextCli *currContext = GetCliGlobals()->currContext();
+  HiveClient_JNI *hiveClient_JNI = currContext->getHiveClient();
+  if (hiveClient_JNI != NULL)
   {
-     ContextCli *currContext = GetCliGlobals()->currContext();
      NAHeap *heap = currContext->exHeap();
-     NAHeap *hiveHeap = tsHiveClient_JNI->heap_;
-     delete tsHiveClient_JNI;
-     NADELETE(hiveHeap, NAHeap, heap); 
-     tsHiveClient_JNI = NULL;
-     currContext->setHiveClient(tsHiveClient_JNI);
+     NADELETE(hiveClient_JNI, HiveClient_JNI, heap);
+     currContext->setHiveClient(NULL);
   }
 }
 

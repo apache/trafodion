@@ -85,7 +85,7 @@ ComDiagsArea &SqlciEnv::diagsArea() { return sqlci_DA; }
 
 extern SqlciEnv * global_sqlci_env ; // Global sqlci_env for break key handling purposes.
 
- 
+
 #define MXCI_DONOTISSUE_ERRMSGS   -1
 
 	static char brkMessage[] = "Break.";
@@ -114,8 +114,8 @@ BOOL CtrlHandler(DWORD ctrlType) {
 	if (TryEnterCriticalSection(&g_CriticalSection))
      {
 	   Lng32 eCode = SQL_EXEC_Cancel(0);
-		if (eCode ==0) 	{
-			sqlci_DA << DgSqlCode( -SQL_Canceled, DgSqlCode::WARNING_);			
+		if (eCode ==0) {
+			sqlci_DA << DgSqlCode( -SQL_Canceled, DgSqlCode::WARNING_);
 			LeaveCriticalSection(&g_CriticalSection);
 
 		}
@@ -158,7 +158,7 @@ BOOL CtrlHandler(DWORD ctrlType) {
 	if (TryEnterCriticalSection(&g_CriticalSection))
      {
 	   Lng32 eCode = SQL_EXEC_Cancel(0);
-		if (eCode ==0) 	{
+		if (eCode ==0) {
 			sqlci_DA << DgSqlCode( -SQL_Canceled, DgSqlCode::WARNING_);
       LeaveCriticalSection(&g_CriticalSection);
 
@@ -216,7 +216,7 @@ void interruptHandler (Int32 signalType)
    if (TryEnterCriticalSection(&g_CriticalSection))
      {
 	   Lng32 eCode = SQL_EXEC_Cancel(0);
-		if (eCode ==0) 	{
+		if (eCode ==0) {
 
 			LeaveCriticalSection(&g_CriticalSection);
 
@@ -333,7 +333,7 @@ SqlciEnv::SqlciEnv(short serv_type, NABoolean macl_rw_flag)
 // Note that interactive_session is overwritten in SqlciEnv::run(infile) ...
    // Executing on NT
   if ((Int32)cin.tellg() == EOF)
-    interactive_session = -1;  	// Std. input is terminal keyboard
+    interactive_session = -1;	// Std. input is terminal keyboard
   else
     interactive_session = 0;
   cin.clear();			// Always clear() bad results from any tellg()
@@ -399,7 +399,7 @@ void SqlciEnv::autoCommit()
   SqlCmd::executeQuery("SET TRANSACTION AUTOCOMMIT ON;", this);
   // Should an error occur,  exit MXCI.
   if (!specialError_)
-  	{
+	{
       char *noexit = getenv("SQL_MXCI_NO_EXIT_ON_COMPILER_STARTUP_ERROR");
 	  if (!noexit)
         exit(EXIT_FAILURE);
@@ -436,7 +436,7 @@ void SqlciEnv::pertableStatistics()
   // (SqlciEnv_prologue_to_run). Use specialERROR_ as a flag indicating that
   // the querry being executed is invoke during MXCI's initialization phase and
   // that any errors will be fatal.
-  
+
   char * buf = new char[300];
   sprintf(buf, "select variable_info from table(statistics(null, cast(? as char(256) character set iso88591)))");
   SqlCmd sqlCmd(SqlCmd::DML_TYPE, buf);
@@ -520,7 +520,7 @@ void SqlciEnv::sqlmxRegress()
 	  char *noexit = getenv("SQL_MXCI_NO_EXIT_ON_COMPILER_STARTUP_ERROR");
 	  if (!noexit)
 	    exit(EXIT_FAILURE);
- 	}
+	}
 
       str_sprintf(buf, "cqd sqlmx_regress 'ON';");
       SqlCmd::executeQuery(buf, this);
@@ -529,9 +529,9 @@ void SqlciEnv::sqlmxRegress()
 	  char *noexit = getenv("SQL_MXCI_NO_EXIT_ON_COMPILER_STARTUP_ERROR");
 	  if (!noexit)
 	    exit(EXIT_FAILURE);
- 	}
+	}
     }
-  
+
 }
 
 static void SqlciEnv_prologue_to_run(SqlciEnv *sqlciEnv) 
@@ -551,9 +551,9 @@ static void SqlciEnv_prologue_to_run(SqlciEnv *sqlciEnv)
   // *** because CLI treats this operation as the beginning of a new
   // *** session with the compiler. Previous state in the compiler is
   // *** not guaranteed to persist after this interaction.
-  // 
+  //
   sqlciEnv->setUserIdentityInCLI();
-  
+
   // Suppress console messages
   sqlciEnv->setSpecialError(MXCI_DONOTISSUE_ERRMSGS, NULL);
 
@@ -594,36 +594,18 @@ static void SqlciEnv_prologue_to_run(SqlciEnv *sqlciEnv)
 
   // indicate that the caller is sqlci
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT IS_SQLCI 'ON';", sqlciEnv);
-  
+
   // Protect our startup CQDs and SET SCHEMA (from any SQL_MXCI_INITIALIZATION)
   // from being RESET.  User may still manually alter them, of course.
   //
 
-  // TEMP CODE
-//#ifdef HP_CLOSED_SOURCE_1
-//  if (getenv("MXCI_REPLICATE_ALLOW_ROLES"))
-//    {
-//      char * role = getenv("MXCI_REPLICATE_ALLOW_ROLES");
-//      char defRole[500];
-//      short defRoleLen = 0;
-//      Int64 redefTime = 0;
-//      Lng32 rc = SQL_EXEC_SetAuthID((char *) "_MXCI_USER",
-//                                    SQLAUTHID_TYPE_ASCII_USERROLE,
-//                                    defRole, &defRoleLen, &redefTime);
-//      char buf[1000];
-//      strcpy(buf, "CONTROL QUERY DEFAULT REPLICATE_ALLOW_ROLES '");
-//      strcat(buf, role);
-//      strcat(buf, "';");
-//
-//      SqlCmd::executeQuery(buf, sqlciEnv);
-//    }
-//#endif //HP_CLOSED_SOURCE_1
+
 
 
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT * RESET RESET;", sqlciEnv);
 
 
-  
+
 
   // tell CLI that datetime & interval values are to be input/output in internal format.
   SqlCmd::executeQuery("SET SESSION DEFAULT INTERNAL_FORMAT_IO 'ON';", sqlciEnv);
@@ -718,7 +700,7 @@ void SqlciEnv::run(char * in_filename, char * input_string)
       runWithInputString(input_string);
       return;
     }
-  interactive_session = 0;   		// overwrite value from ctor!
+  interactive_session = 0;		// overwrite value from ctor!
   // This function is called during the initialization phase of MXCI
   // (SqlciEnv_prologue_to_run). Use specialERROR_ as a flag indicating that
   // the querry being executed is invoke during MXCI's initialization phase and
@@ -857,7 +839,7 @@ Int32 SqlciEnv::executeCommands(InputStmt *& input_stmt)
 		     getSqlciStmts()->add(input_stmt);
 		     if (!read_error)
 		     {
-           		retval = sqlci_parser(input_stmt->getPackedString(),
+			retval = sqlci_parser(input_stmt->getPackedString(),
 				   input_stmt->getPackedString(),
 				   &sqlci_node, this);
 			if (sqlci_node)
@@ -875,11 +857,11 @@ Int32 SqlciEnv::executeCommands(InputStmt *& input_stmt)
 		    }
                     if (retval > 0)
                     {
-         		if (!eol_seen_on_input)
-         		{
-         			prev_err_flush_input = -1;
-            	        }
-            	        retval = 0;
+			if (!eol_seen_on_input)
+			{
+				prev_err_flush_input = -1;
+			}
+			retval = 0;
                     }
 
                  } // else
@@ -973,7 +955,7 @@ short SqlciEnv::statusTransaction(Int64 * transid)
   if (rc == 0)
     {
       if (transid) *transid = transid_;	// return transID if arg was passed in.
-      rc = -1;  			// transaction is active.
+      rc = -1;				// transaction is active.
     }
   else
     rc = 0;
@@ -987,7 +969,7 @@ void SqlciEnv::displayDiagnostics()
 {
   NADumpDiags(cout, &sqlci_DA,
 	      TRUE/*newline*/, FALSE/*comment-style*/,
-  	      get_logfile()->GetLogfile());
+	      get_logfile()->GetLogfile());
 }
 
 void SqlciEnv::setPrepareOnly(char * prepareOnly)
@@ -1357,14 +1339,14 @@ CharInfo::CharSet SqlciEnv::retrieveIsoMappingCharsetViaShowControlDefault()
 
 CharInfo::CharSet SqlciEnv::retrieveDefaultCharsetViaShowControlDefault()
 {
-  
+
   this->default_charset_ = CharInfo::ISO88591;
   return this->default_charset_;
 }
 
 NABoolean SqlciEnv::retrieveInferCharsetViaShowControlDefault()
 {
-  
+
   this->infer_charset_ = FALSE;
   return this->infer_charset_;
 }

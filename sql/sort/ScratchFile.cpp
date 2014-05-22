@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,18 +21,14 @@
 ******************************************************************************
 *
 * File:         scratchfile.cpp
-* RCS:          $Id: scratchfile.cpp,v 1.1 2006/11/01 01:44:37  Exp $
 *                               
 * Description:  This file contains the member function implementation for 
 *               class ScratchFile. This class is used to encapsulate all 
 *               data and methods about a scratch file.  
-*                                                                 
+*                               
 * Created:      05/30/96
-* Modified:     $ $Date: 2006/11/01 01:44:37 $ (GMT)
 * Language:     C++
-* Status:       $State: Exp $
-* 
-* Modified:     Chen $ $Date: 200/01/02 01:44:37 $ (GMT)
+*
 * Description:	Split scratchfile.cpp to scratchfile_base.cpp and scratchfile_xxx.cpp
 *
 *

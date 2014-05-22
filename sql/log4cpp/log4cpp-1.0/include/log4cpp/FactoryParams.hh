@@ -3,11 +3,7 @@
 
 #include <map>
 #include <string>
-#ifdef NA_NSK
-  #include <strstream>
-#else
   #include <sstream>
-#endif
 #include <stdexcept>
 #include "Portability.hh"
 
@@ -34,15 +30,9 @@ namespace log4cpp
             template<typename T>
             void assign_impl(const std::string& param_value, T& value) const
             {
-#ifdef NA_NSK
-               std::ostringstream s;
-               s << param_value;
-               //s >> value;
-#else
                std::stringstream s;
                s << param_value;
                s >> value;
-#endif
             }
 
             void assign_impl(const std::string& param_value, std::string& value) const
@@ -52,11 +42,7 @@ namespace log4cpp
 
             void throw_error(const char* param_name) const
             {
-#ifdef NA_NSK
-               std::ostringstream s;
-#else
                std::stringstream s;
-#endif
                s << "Property '" << param_name << "' required to configure " << tag_;
                throw std::runtime_error(s.str());
             }

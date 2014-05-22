@@ -160,7 +160,6 @@ void processOption(Int32 argc, char *argv[], Int32 &i,
         user_name = argAfterOp;
         user_name.toUpper();
 
-
       } // case 'u'
       break;
 

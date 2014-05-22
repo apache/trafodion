@@ -261,8 +261,6 @@ UdrResultSet::deallocateUDRGeneratedFields()
   if (getContextHandle() != 0)
     SQL_EXEC_SwitchContext((Lng32) getContextHandle(), &prevContext);
 
-  if (stmt_id_)
-    SQL_EXEC_DeallocStmt(stmt_id_);
 
   NAMemory *heap = collHeap();
 

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,12 +22,9 @@
  *****************************************************************************
  *
  * File:         SqlciParser.C
- * RCS:          $Id: SqlciParser.cpp,v 1.4 1998/07/20 07:27:50  Exp $
  * Description:  
- *               
- *               
+ *
  * Created:      4/15/95
- * Modified:     $ $Date: 1998/07/20 07:27:50 $ (GMT)
  * Language:     C++
  * Status:       $State: Exp $
  *
@@ -215,7 +212,7 @@ Int32 sqlci_parser_handle_report_writer(SqlciEnv *sqlci_env, Lng32 retval)
 
       }
       else
-	return 1; // krithika added for NT compilation on 7/15
+	return 1;
     }
   else
     return 1;
@@ -245,8 +242,8 @@ Int32 sqlci_parser_handle_error(SqlciNode **node, Lng32 retval)
 	  sqlci_DA.clear(); // clear the diagonistics
 	  return 0;
       }
-      else 
-	return retval; // Krithika added for NT debugging.
+      else
+	return retval;
     }
   else
     return retval;

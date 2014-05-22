@@ -280,7 +280,7 @@ skippedfiles=
 #
 #    TEST062 - This script has to be updated to support different
 #              sets of known differences for release mode and
-#              MX and MP files.  This work was not added (rsm)
+#              MX and MP files.  This work was not added.
 #              It is enabled after R1.8 merge
 #
 ################################################################
@@ -289,10 +289,10 @@ prettyfiles=
 
 # skip these tests on all platforms.
 # For now, lets not run test050 on all platforms.  There are problems with
-# partially checked in changes that will be fixed later (rsm - 5/20/02)
+# partially checked in changes that will be fixed later ( - 5/20/02)
 # TEST043 - failure w/ VS2003 SOL 10-070227-2886
-# TEST062 fails because of non-deterministic  card estimation, will be 
-# enabled when we fix it -Ravish
+# TEST062 fails because of non-deterministic card estimation, will be 
+#   enabled when we fix it
 skipTheseTests="TEST030 TEST044 TEST050 TEST065 TESTNIST"
 
 # skip these tests for SQLMX and SQLMP tables on NSK platform

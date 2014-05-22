@@ -59,7 +59,6 @@ class CostMethod;
 class NAMemory;
 class CompilationStats;
 class OptGlobals;
-class OptDefaults;
 class CqsWA;
 
 typedef NASimpleArray<NAString*>                   NAStringList;
@@ -192,9 +191,6 @@ public:
   // optimizer globals
   OptGlobals*  getOptGlobals()  { return optGlobals_; }
  
-  // optimizer cached defaults
-  OptDefaults* getOptDefaults() { return optDefaults_; }
-
   TaskMonitor* getSimpleFSOMonPtr() { return simpleFSOTaskMonitor_;}
   TaskMonitor* getComplexFSOMonPtr()  { return complexFSOTaskMonitor_; }
 
@@ -263,9 +259,6 @@ private:
 
   // globals used during query optimization
   OptGlobals* optGlobals_;
-
-  // query defaults using during a statement compilation
-  OptDefaults* optDefaults_;
 
   // force a shape
   CqsWA*       cqsWA_;

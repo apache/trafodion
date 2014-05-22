@@ -12,11 +12,7 @@
 
 #include <log4cpp/Portability.hh>
 #include <log4cpp/Priority.hh>
-#ifdef NA_NSK
-  #include <iostream>
-#else
 #include <ios>
-#endif
 #ifdef LOG4CPP_HAVE_SSTREAM
 #include <sstream>
 #endif
@@ -122,11 +118,7 @@ namespace log4cpp {
         /**
          * Set the width output on CategoryStream
          **/
-#ifdef NA_NSK
-		streamsize width(streamsize wide );
-#else
 		std::streamsize width(std::streamsize wide );
-#endif
 
 
         private:

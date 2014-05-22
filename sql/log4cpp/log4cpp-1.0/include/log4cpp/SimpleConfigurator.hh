@@ -45,11 +45,7 @@ namespace log4cpp {
          * @exception ConfigureFailure if the method encountered a read or 
          * syntax error.
          **/
-#ifdef NA_NSK
-        static void configure(istream& initFile) throw (ConfigureFailure);    
-#else
         static void configure(std::istream& initFile) throw (ConfigureFailure);    
-#endif
     };
 }
 

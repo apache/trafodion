@@ -1717,6 +1717,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HBASE_CATALOG,                        "HBASE"),
   DDkwd__(HBASE_CHECK_AND_UPDEL_OPT,		"ON"),
 
+ DDkwd__(HBASE_COMPUTE_DOP_USING_TABLE_SIZES,        "ON"),
  DDkwd__(HBASE_COPROCESSORS,		             "ON"),
 
  DDkwd__(HBASE_CREATE_OLD_MD_FOR_UPGRADE_TESTING,   "OFF"),
@@ -1728,7 +1729,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_MAX_COLUMN_VAL_LENGTH,                  "1000"),
  DDui___(HBASE_MAX_ESPS,                        "9999"),
  DDui___(HBASE_MAX_NUM_SEARCH_KEYS,                  "512"),
- DDui___(HBASE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
+ DDui1__(HBASE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
 
   DDkwd__(HBASE_NATIVE_IUD,		"OFF"),
 
@@ -2224,7 +2225,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // $$$ This should be removed. It is only used by preliminary costing
   // for the materialize operator, which should not be using it.
   DDflte_(MSCF_ET_NM_PAGE_FAULTS,		"1"),	// "?" used?
-  // Ravish: for calibration on 04/08/2004
+  // : for calibration on 04/08/2004
   // Seek time will be derived from disk type.
 
   // MSCF_ET_NUM_IO_SEEKS units are seconds
@@ -2238,7 +2239,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Change the number of instructions to encode a remote message to be
   // the same as the local message
   DDflte_(MSCF_ET_NUM_REMOTE_MSGS,		"0.000125"),
-  // Assume 1MB/second transfer rate for transfering remote message bytes
+  // Assume 1MB/second transfer rate for transferring remote message bytes
   // (Based on 10 Megabit/second Ethernet transfer rate)
   // MSCF_ET_REMOTE_MSG_TRANSFER units are kb/Sec
   //  DDflte_(MSCF_ET_REMOTE_MSG_TRANSFER,		"0.001"),

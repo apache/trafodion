@@ -60,11 +60,6 @@ extern void releaseRTSSemaphore();  // Functions implemented in SqlStats.cpp
 #include "PortProcessCalls.h"
 #endif
 
-//#if defined (NA_NSK) && (SQLEXPORT_LIB)
-//#pragma srlexports
-//ComDiagsArea sqlci_DA;
-//#endif
-
 
 // This is a "helper" function that factors out a bunch of code
 // from the packedLength() routines.

@@ -70,6 +70,7 @@ private:
       JM_REGREGION,
       JM_PARREGION,
       JM_CNTPOINT,
+      JM_STALL,
       JM_LAST
    };
    JavaMethodInit JavaMethods_[JM_LAST];
@@ -135,6 +136,7 @@ public:
    int failedRegions(int64 pv_transid);
    int participatingRegions(int64 pv_transid);
    int unresolvedRegions(int64 pv_transid);
+   short stall(int32 when);
    void shutdown();
 
 private:

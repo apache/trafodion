@@ -24,7 +24,6 @@
 #include <log4cpp/Appender.hh>
 #include <log4cpp/OstreamAppender.hh>
 #include <log4cpp/FileAppender.hh>
-//RAVISH
 
 #include <log4cpp/RollingFileAppender.hh>
 #include <log4cpp/AbortAppender.hh>
@@ -208,7 +207,6 @@ namespace log4cpp {
             bool append = _properties.getBool(appenderPrefix + ".append", true);
             appender = new FileAppender(appenderName, fileName, append);
         }
-//RAVISH NeoFileAppender
         else if (appenderType == "RollingFileAppender") {
             std::string fileName = _logsFolder + _properties.getString(appenderPrefix + ".fileName", "foobar");
             size_t maxFileSize = _properties.getInt(appenderPrefix + ".maxFileSize", 10*1024*1024);

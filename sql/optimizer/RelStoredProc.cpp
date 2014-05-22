@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
  *
  * File:         RelStoredProc.cpp
  * Description:  The implementation for stored procedure related RelExprs.
- *               
+ *
  * Created:      03/12/97
  * Language:     C++
  *
@@ -117,10 +117,10 @@ NABoolean RelInternalSP::duplicateMatch(const RelExpr & other) const
   if ( !TableValuedFunction::duplicateMatch(other))
     return FALSE;
   RelInternalSP &o = (RelInternalSP &) other;
-  
+
   if (! (procName_ == o.procName_) )
     return FALSE;
-  
+
   return TRUE;
 }
 
@@ -165,7 +165,7 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
   CmpInternalSP* cmpInternalSP = new(bindWA->wHeap())
 	  CmpInternalSP(procName_, bindWA->currentCmpContext());
   CMPASSERT(cmpInternalSP);
-  
+
   bindWA->currentCmpContext()->statement()->setStoredProc(cmpInternalSP);
 
   outTableName_ = cmpInternalSP->OutTableName();
@@ -222,14 +222,6 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
     }
   else 
     {
-/*
-#ifndef HP_CLOSED_SOURCE_1
-      // the function pointer array is not initialized in this version
-      *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("internal compiler functions");
-      bindWA->setErrStatus();	  
-      return 0;
-#endif
-*/
       CmpSPInputFormat inputFormat(bindWA->currentCmpContext());
       if ( !cmpInternalSP->InputFormat(0, inputFormat) )
 	{
@@ -439,12 +431,12 @@ RelExpr* RelUtilInternalSP::bindNode(BindWA *bindWA)
   RelExpr * boundExpr = RelInternalSP::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return this;
-  
+
   // this node doesn't return any data.
   // Allocate an empty RETDesc and attach it to this.
   ((RelInternalSP*)boundExpr)->setRETDesc(
        new (bindWA->wHeap()) RETDesc(bindWA));
-  
+
   return boundExpr;
 }
 
@@ -482,7 +474,7 @@ RelExpr *RelUtilInternalSP::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 // relevant flag value settings. Example:
 //  ...
 //  , { RelInternalSP::executeInSameArkcmp | RelInternalSP::requiresTMFTransaction, "SpFutureFunc" }
- 
+
 const literalAndEnumStruct SPFlagsValues [] =
 {
   { RelInternalSP::suppressDefaultSchema, "SpImport" }

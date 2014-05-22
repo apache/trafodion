@@ -1376,6 +1376,10 @@ short RelRoot::codeGen(Generator * generator)
       childTdbIsNull = TRUE;
 
 
+  // Remap the allocation of ESPs to Nodes/CPUs.
+  // 
+  generator->remapESPAllocation();
+
   generator->compilerStatsInfo().affinityNumber()
     = generator->getAffinityValueUsed();
 

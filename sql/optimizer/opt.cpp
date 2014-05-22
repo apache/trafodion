@@ -684,7 +684,9 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
           }
 
 #ifdef _DEBUG
-          if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor())
+          if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor() &&
+              (CmpCommon::getDefault(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY) == DF_OFF)
+          )
 	  {
             const char * fname = getCOMPILE_TIME_MONITOR_OUTPUT_FILEname();
 	    if (fname)
@@ -4535,6 +4537,9 @@ RequiredResources * OptDefaults::estimateRequiredResources(RelExpr* rootExpr)
 
 void OptDefaults::initialize(RelExpr* rootExpr)
 {
+   compileTimeMonitor_	= (CmpCommon::getDefault(COMPILE_TIME_MONITOR) == DF_ON);
+  incorporateSkewInCosting_ = (CmpCommon::getDefault(INCORPORATE_SKEW_IN_COSTING) == DF_ON);
+  fakeHardware_ = (CmpCommon::getDefault(ARKCMP_FAKE_HW) == DF_ON);
 
   defs_ = &(ActiveSchemaDB()->getDefaults());
 
@@ -4623,7 +4628,6 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   memUsageNiceContextFactor_ = defs_->getAsDouble(MEMORY_USAGE_NICE_CONTEXT_FACTOR);
   shortOptPassThreshold_ = defs_->getAsLong(SHORT_OPTIMIZATION_PASS_THRESHOLD);
 
-  fakeHardware_ = (CmpCommon::getDefault(ARKCMP_FAKE_HW) == DF_ON);
   additiveResourceCosting_ = (CmpCommon::getDefault(TOTAL_RESOURCE_COSTING)                                == DF_ON);
 
   if (((RelRoot *)rootExpr)->getTriggersList() != NULL)
@@ -4859,7 +4863,6 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   else
     (*ranSeq_).initialize();
 
-  compileTimeMonitor_		= (CmpCommon::getDefault(COMPILE_TIME_MONITOR) == DF_ON);
 
   reuseBasicCost_		= (CmpCommon::getDefault(REUSE_BASIC_COST) == DF_ON);
 
@@ -4953,7 +4956,6 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   histSkipMCUecForNonKeyCols_	    = (CmpCommon::getDefault(HIST_SKIP_MC_FOR_NONKEY_JOIN_COLUMNS) == DF_ON);
   histMissingStatsWarningLevel_	    = defs_->getAsLong(HIST_MISSING_STATS_WARNING_LEVEL);
   histOptimisticCardOpt_	    = defs_->getAsLong(HIST_OPTIMISTIC_CARD_OPTIMIZATION);
-  incorporateSkewInCosting_		= (CmpCommon::getDefault(INCORPORATE_SKEW_IN_COSTING) == DF_ON);
   histAssumeIndependentReduction_    = (CmpCommon::getDefault(HIST_ASSUME_INDEPENDENT_REDUCTION) == DF_ON);
   histUseSampleForCardEst_              = (CmpCommon::getDefault(HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION ) == DF_ON);
   useHighFreqInfo_                   = (CmpCommon::getDefault(HIST_USE_HIGH_FREQUENCY_INFO) == DF_ON);
@@ -7245,7 +7247,8 @@ void QueryOptimizerDriver::DEBUG_SHOW_PLAN(Context *context)
     }
 
 #ifdef _DEBUG
-  if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor())
+  if (CURRSTMT_OPTDEFAULTS->compileTimeMonitor() &&
+      (CmpCommon::getDefault(COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY) == DF_OFF))
     {
       const char * fname = getCOMPILE_TIME_MONITOR_OUTPUT_FILEname();
       if (fname)

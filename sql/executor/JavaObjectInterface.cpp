@@ -68,6 +68,7 @@ JavaObjectInterface::~JavaObjectInterface()
   jenv_->DeleteGlobalRef(javaObj_);
   javaObj_ = NULL;
   jenv_ = NULL;
+  isInitialized_ = FALSE;
 }
  
 //////////////////////////////////////////////////////////////////////////////

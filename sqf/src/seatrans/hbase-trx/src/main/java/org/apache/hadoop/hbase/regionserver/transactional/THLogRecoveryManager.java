@@ -95,14 +95,9 @@ class THLogRecoveryManager {
             return null;
         }
 
-        // SST: the map contains all the in-doubt transaction from edits replay, needs to be cleared or entry-deleted later
+        // the map contains all the in-doubt transaction from edits replay, needs to be cleared or entry-deleted later
         SortedMap<Long, WALEdit> pendingTransactionsById = new TreeMap<Long, WALEdit>();
 
-        // FIXME need to setup for trxLog keys?
-        //
-        // SST: maybe we don't need to explicitly setup the trxlog key since when we new the THLOG reader
-        // we use new SequenceFileLogReader(THLogKey.class) by passing the THLogkey.class to the constructor,
-        // assume the following comment works correctly
         //
         //   * This constructor allows a specific HLogKey implementation to override that
         //   * which would otherwise be chosen via configuration property.
@@ -136,14 +131,6 @@ class THLogRecoveryManager {
             // partial transaction during this recovery phase.
             //
 
-            // SST: Do we need to re-apply alreday committed edits, we put the THLOG commit records for transactions after super.put,
-            //         however, HBase may just keep that in the memstore (and reply on HLOG to recover ??). Here, maybe it is doing a
-            //         double logging, if we disable the WAL before super.put then we need to re-apply, at certain time, we may have to call
-            //         hflush or hsync. No matter how since we are recovering, so re-apply the edits should be fine (To be testing ...)
-            //
-            // SST: Later, we will throw away FORCED_FLUSH_FILLER during log splitting (save extra write into thlog.dat)
-            //
-
            LOG.debug("Trafodion Recovery:  " + regionInfo.getRegionNameAsString() + " Start processing THLOG edits with minSeqId " + minSeqID + " from path " + reconstructionLog);
 
             while ((entry = logReader.next()) != null) {
@@ -151,8 +138,6 @@ class THLogRecoveryManager {
                 WALEdit val = entry.getEdit();
                 if (LOG.isTraceEnabled())
                     switch (key.getTrxOp()) {
-                       // SST: TBD we may add some information in this type of edits (e.g. redo log seqnum) to speed up edit replay or other control
-                       //          operations (e.g. spit, or even relocation)
                        case FORCED_FLUSH_FILLER:
                            break;
                        default:
@@ -161,9 +146,7 @@ class THLogRecoveryManager {
 
                //LOG.debug("RRR read edits " + key + " - " + key.getLogSeqNum());
 
-                // SST: TBD here needs to verify the relationship between minSeqID and key.getLogSeqNum  to determine if we need to re-apply the edits due to
-                //          flush into H-file
-                // SST: from THLog, "-1" is used for all commit/abort/commitRequest cases
+                // "-1" is used for all commit/abort/commitRequest cases
                 // therefore any non-negative minSeqId could be used to retrieve all necessary WALEdits from trx-log
                 // optimization may be needed later. Need to handle this situation to avoid failure during recovery
                 //if (key.getLogSeqNum() < minSeqID) {
@@ -171,10 +154,6 @@ class THLogRecoveryManager {
                 //    continue;
                 //}
                 
-                // SST: TBD To use this to skip edits, the minSeqId from memstore may not be correct if the op on a Trafodion table is updated through both
-                //          transactional and no-transactional update, therefore, a FORCED FLUSH FILEER can be utilized to record the conservation CP memstore
-                //          flush point to bound the edits replay range
-
                 //if (key.getLogSeqNum() < minSeqID) {
                 //    LOG.debug("Trafodion Recovery:  " + regionInfo.getRegionNameAsString() + " process edits " + key + " - " + key.getTransactionId() + " - " + key.getTrxOp() + " with LogSeqNum " + key.getLogSeqNum()
                 //                           + " < " + minSeqID + " skip edits");
