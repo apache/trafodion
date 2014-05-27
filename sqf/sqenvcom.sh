@@ -177,12 +177,6 @@ export PATH=$MPI_ROOT/bin:$MY_SQROOT/export/bin"$SQ_MBTYPE":$MY_SQROOT/sql/scrip
 # need these to link
 
 MPILIB=linux_amd64
-if [ "$SQ_VERBOSE" == "1" ]; then
- echo "*****************************"
- echo "*  64-bit build selected    *"
- echo "*****************************"
- echo
-fi
 
 
 #-------------------------------------------------------------------------------
