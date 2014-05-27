@@ -36,7 +36,7 @@
 --
 -- Sections:
 --   clean_up - removes database setup
---   set_up/set_up_sb - prepares for test
+--   set_up - prepares for test
 --   create_objects - creates object needed by the test
 --   tests - runs tests
 -- ============================================================================
@@ -90,7 +90,7 @@ unregister user user1;
 
 execute get_users;
 
-?section set_up_sb
+?section set_up
 -- turn off LDAP checking
 -- set parserflags 64;
 -- Query to return currently registered users
@@ -165,11 +165,7 @@ create table "delimited_sch136".t1 (a int not null not droppable primary key, b 
 -- this set of tests run basic register tests
 -- =================================================================
 
-#ifdef SEABASE_REGRESS
-obey TEST136(set_up_sb);
-#else
 obey TEST136(set_up);
-#endif
 
 log LOG136;
 -- succeed: register users -> no clauses
@@ -323,11 +319,7 @@ register user none;
 register user user1 as none;
 
 ?section unregister_tests
-#ifdef SEABASE_REGRESS
-obey TEST136(set_up_sb);
-#else
 obey TEST136(set_up);
-#endif
 log LOG136;
 -- =================================================================
 -- this set of tests run basic unregister tests
@@ -380,11 +372,7 @@ select * from t136t2;
 -- grant select on t136t2 to test136_u2;
 
 ?section no_priv_test
-#ifdef SEABASE_REGRESS
-obey TEST136(set_up_sb);
-#else
 obey TEST136(set_up);
-#endif
 log LOG136;
 execute get_users;
 -- these commands should fail because user does not have authority
@@ -392,86 +380,4 @@ register user test136_u2 as userx;
 unregister user sql_user1;
 execute get_users;
 log;
-
-?section set_up
--- turn off LDAP checking
-set parserflags 64;
--- Query to return currently registered users
-prepare get_users from
-select distinct
-   substring (user_name,1,20) as db_user_name,
-   case
-     when (user_name = 'DB__ROOT') then 'ROOT'
-     when (user_name = 'DB__USERADMINUSER') then 'USERADMIN'
-     else substring (external_user_name,1,20)
-   end as external_user_name,
-   case
-     when (logon_role_id = 0) then 'NONE'
-     else substring (role_name,1,15)
-   end as logon_role,
-   case
-    when (user_id > 65535) then 'NORMAL'
-    else 'SYSTEM'
-   end as user_id,
-   is_valid_user as valid,
-   case
-     when (id_type = 'U') then 'USER'
-     when (id_type = 'R') then 'ROLE'
-     when (id_type = 'G') then 'GROUP'
-     when (id_type = 'N') then 'NEOVIEW ROLE'
-     else id_type
-   end as id_type
-from hp_system_catalog.hp_security_schema.users u
-     ,hp_system_catalog.hp_security_schema.id_mapping i
-     ,hp_system_catalog.hp_security_schema.roles r
-  where
-    (u.user_name like 'TEST136%' or
-     u.user_name like 'CMU_T%' or
-     u.user_name like 'DB__NEOVIEW%' or
-     u.user_name in ('DB__ROOT', 'DB__USERADMINUSER'))
-  and i.auth_id = u.user_id
-  and (u.logon_role_id = r.role_id or u.logon_role_id = 0)
-  order by 1, 2
-  for read uncommitted access
-;
-
--- query to return table space owner information
-prepare get_owners from
-select
-  substring (object_name,1,20) as object_name,
-  object_owner
-  from $$TEST_CATALOG$$.hp_definition_schema.objects
-  where
-     object_security_class = 'UT' and
-     object_name_space = 'TA'
-  order by 1, 2
-  for read uncommitted access
-;
-
--- query to return schema owner information
-prepare get_sch_owners from
-select
-  trim(substring (cat_name,1,20)) || '.' ||
-  trim(substring (schema_name,1,20)) as schema_name,
-  schema_owner
-from hp_system_catalog.system_schema.catsys c,
-     hp_system_catalog.system_schema.schemata s
-where
-  c.cat_uid = s.cat_uid and
-  s.current_operation = '  ' and
-  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
-order by 1, 2
-for read uncommitted access;
-
--- query to return catalog owner information
-prepare get_cat_owners from
-select
-  substring (cat_name,1,20) as catalog_name,
-  cat_owner
-from hp_system_catalog.system_schema.catsys
-where
-  cat_name like 'T136%'
-order by 1
-for read uncommitted access;
-
 

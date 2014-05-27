@@ -2767,7 +2767,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    unload_statement
 %type <relx>                    load_statement
 %type <relx>                    exe_util_init_hbase
-%type <relx>                    exe_util_drop_hbase
 %type <feOptionsList>           optional_unload_options
 %type <feOptionsList>           unload_option_list
 %type <feOption>                unload_option
@@ -14670,10 +14669,6 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
-              | exe_util_drop_hbase
-                                {
-                                   $$ = finalize($1);
-                                }
               | TOK_SELECT TOK_UUID '(' ')'
 	                        {
 				  NAString * v = new (PARSERHEAP()) NAString("1");
@@ -15963,20 +15958,6 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 		   new(PARSERHEAP()) ExeUtilMetadataUpgrade(PARSERHEAP());
 		 $$ = mu;
 	       }
-
-exe_util_drop_hbase : TOK_PUBLISH  TOK_TRAFODION
-               {
-                CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-                 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-                                                   , PARSERHEAP()
-                                               );
-                 //DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE,
-                 //                                         (char*)stmt->data(),
-                 //                                         stmtCharSet,
-                 //                                         PARSERHEAP());
-                 //$$ = de;
-                 $$ = NULL;
-              }
 
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look

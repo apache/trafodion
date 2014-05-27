@@ -37,8 +37,7 @@
 >>-- this set of tests run basic register tests
 >>-- =================================================================
 >>
->>#ifdef SEABASE_REGRESS
->>obey TEST136(set_up_sb);
+>>obey TEST136(set_up);
 >>-- turn off LDAP checking
 >>-- set parserflags 64;
 >>-- Query to return currently registered users
@@ -101,9 +100,6 @@
 >>--for read uncommitted access;
 >>
 >>
->>#else
->>obey TEST136(set_up);
->>#endif
 >>
 >>log LOG136;
 >>-- succeed: register users -> no clauses
@@ -533,8 +529,7 @@ register user user1 as none;
 
 >>
 >>obey TEST136(unregister_tests);
->>#ifdef SEABASE_REGRESS
->>obey TEST136(set_up_sb);
+>>obey TEST136(set_up);
 >>-- turn off LDAP checking
 >>-- set parserflags 64;
 >>-- Query to return currently registered users
@@ -597,9 +592,6 @@ register user user1 as none;
 >>--for read uncommitted access;
 >>
 >>
->>#else
->>obey TEST136(set_up);
->>#endif
 >>log LOG136;
 >>-- =================================================================
 >>-- this set of tests run basic unregister tests
