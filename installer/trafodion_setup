@@ -277,7 +277,9 @@ if [ $node_count -ne 1 ]; then
         fi
     done
 fi
-package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite expect perl-DBD-SQLite* protobuf-compiler.x86_64 protobuf-devel.x86_64 xerces-c-devel.x86_64 libiodbc-3.52.7-1.el6.x86_64 unixODBC-2.2.14-11.el6.x86_64"
+package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite "
+package_list+=" expect perl-DBD-SQLite* protobuf xerces-c "
+package_list+=" libiodbc unixODBC tigervnc-server firefox "
 for package in $package_list
 do
     echo "***INFO: ... $package"
@@ -289,17 +291,6 @@ do
 done
 
 #================================
-echo "***INFO: installing optional packages"
-package_list="tigervnc-server firefox"
-for package in $package_list
-do
-    echo "***INFO: ... $package"
-    $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
-    if [ $? != 0 ]; then
-        echo "***WARNING: Can't install optional package $package"
-    fi
-done
-
 echo "***INFO: ... Desktop 'Desktop Platform' 'X Windows System' 'Fonts'"
 $TRAF_PDSH "sudo yum --assumeyes groupinstall \"Desktop\" \"Desktop Platform\" \"X Windows System\" \"Fonts\" " 2>> $YUM_LOG >> $YUM_LOG
 if [ $? != 0 ]; then
