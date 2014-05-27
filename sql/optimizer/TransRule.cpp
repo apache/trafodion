@@ -2847,7 +2847,8 @@ NABoolean JoinToTSJRule::topMatch (RelExpr * expr,
     Lng32 ratio = (ActiveSchemaDB()->getDefaults()).getAsLong
       (HJ_SCAN_TO_NJ_PROBE_SPEED_RATIO);
 
-    if (CURRSTMT_OPTDEFAULTS->isHashJoinConsidered() AND ratio > 0)
+    if ( CURRSTMT_OPTDEFAULTS->isHashJoinConsidered() AND ratio > 0 AND
+         !(joinExpr->getGroupAttr()->isSeabaseMDTable()) )
       {
         // hash join is clearly faster if reading inner table once (after
         // applying local predicates) is faster than reading inner table P

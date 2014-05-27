@@ -642,6 +642,9 @@ RelExpr::synthLogProp(NormWA * normWAPtr)
 
       if (child(i).getGroupAttr()->getHasNonDeterministicUDRs())
         getGroupAttr()->setHasNonDeterministicUDRs(TRUE);
+
+      if (child(i).getGroupAttr()->isSeabaseMDTable())
+        getGroupAttr()->setSeabaseMDTable(TRUE);
     }
   }
 
@@ -5072,6 +5075,11 @@ Scan::synthLogProp(NormWA * normWAPtr)
                                      output /*output*/);
     initialStats[i]->VEGColumn() = output[0] ;
   }
+
+  // set if this scan node is trafodion SMD table
+  if ( getTableDesc()->getNATable()->isSeabaseMDTable() )
+    getGroupAttr()->setSeabaseMDTable(TRUE);
+
 } // Scan::synthLogProp()
 
 void Scan::processCompRefOptConstraints(NormWA * normWAPtr)

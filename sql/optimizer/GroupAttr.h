@@ -742,6 +742,10 @@ ValueIdList recommendedOrderForNJProbing(
   NABoolean getIsProbeCacheable() const
   { return probeCacheable_; }
 
+  void setSeabaseMDTable(NABoolean b = FALSE)
+                { isSeabaseMD_ = b; }
+  NABoolean isSeabaseMDTable() const  { return isSeabaseMD_; }
+
 private:
 
   // --------------------------------------------------------------------
@@ -820,6 +824,9 @@ private:
 
   // stream, embedded delete or update require query tree to be reordered
   NABoolean reorderNeeded_;
+
+  // attribute to determine RelExpr is seabase MD Table
+  NABoolean isSeabaseMD_;
 
   // we need this to check whether an index qualifies, i.e. covers all
   // the outputs of the genericupdate subtree - we can't just simply look
