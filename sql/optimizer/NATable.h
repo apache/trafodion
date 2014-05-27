@@ -1417,11 +1417,4 @@ public:
 
 }; // class NATableDB
 
-NABoolean createNAType(columns_desc_struct *column_desc /*IN*/,
-                       const NATable *table             /*IN*/,
-                       NAType *&type                    /*OUT*/,
-                       NAMemory *heap                   /*IN*/,
-                       Lng32 * errorCode = NULL
-                       );
-
 #endif  /* NATABLE_H */

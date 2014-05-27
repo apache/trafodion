@@ -44,89 +44,6 @@ NABoolean CmpSeabaseMDupgrade::isOldMDtable(const NAString &objName)
     return FALSE;
 }
 
-NABoolean CmpSeabaseMDupgrade::getMDtableInfo(const NAString &objName,
-					      Lng32 &colInfoSize,
-					      const ComTdbVirtTableColumnInfo* &colInfo,
-					      Lng32 &keyInfoSize,
-					      const ComTdbVirtTableKeyInfo * &keyInfo,
-					      Lng32 &indexInfoSize,
-					      const ComTdbVirtTableIndexInfo* &indexInfo,
-					      Lng32 &indexKeyInfoSize,
-					      const ComTdbVirtTableKeyInfo * &indexKeyInfo,
-					      const char * objType)
-{
-  indexInfoSize = 0;
-  indexKeyInfoSize = 0;
-  indexInfo = NULL;
-  indexKeyInfo = NULL;
-
-  for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
-    {
-      const MDTableInfo &mdi = allMDtablesInfo[i];
-
-      if (mdi.newName && (objName == mdi.newName))
-	{
-	  if (strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0)
-	    {
-	      colInfoSize = mdi.newColInfoSize;
-	      colInfo = mdi.newColInfo;
-	      keyInfoSize = mdi.newKeyInfoSize;
-	      keyInfo = mdi.newKeyInfo;
-	  
-	      indexInfoSize = mdi.newIndexInfoSize;
-	      indexInfo = mdi.newIndexInfo;
-
-	      if ((indexInfo) && (mdi.newIndexKeyInfo))
-		{
-		  // cast const to non-const. Should fix this at some point.
-		  ((ComTdbVirtTableIndexInfo*)indexInfo)->keyInfoArray = mdi.newIndexKeyInfo;
-		  ((ComTdbVirtTableIndexInfo*)indexInfo)->nonKeyInfoArray = mdi.newIndexNonKeyInfo;
-		}
-	    }
-	  else if (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0)
-	    {
-	      colInfoSize = mdi.newColInfoSize;
-	      colInfo = mdi.newColInfo;
-	      keyInfoSize = mdi.newKeyInfoSize;
-	      keyInfo = mdi.newKeyInfo;
-	    }
-	  else
-	    return FALSE;
-
-	  return TRUE;
-	}
-      else  if (mdi.oldName && (objName == mdi.oldName))
-	{
-	  if ((mdi.oldColInfoSize > 0) && (mdi.oldColInfo))
-	    {
-	      colInfoSize = mdi.oldColInfoSize;
-	      colInfo = mdi.oldColInfo;
-	    }
-	  else
-	    {
-	      colInfoSize = mdi.newColInfoSize;
-	      colInfo = mdi.newColInfo;
-	    }
-
-	  if ((mdi.oldKeyInfoSize > 0) && (mdi.oldKeyInfo))
-	    {
-	      keyInfoSize = mdi.oldKeyInfoSize;
-	      keyInfo = mdi.oldKeyInfo;
-	    }
-	  else
-	    {
-	      keyInfoSize = mdi.newKeyInfoSize;
-	      keyInfo = mdi.newKeyInfo;
-	    }
-
-	  return TRUE;
-	}
-	
-    } // for
-
-  return FALSE;
-}
-
 short CmpSeabaseMDupgrade::dropMDtables(ExpHbaseInterface *ehi, 
 					NABoolean oldTbls,
 					NABoolean useOldNameForNewTables)
@@ -823,7 +740,7 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 	    if ((mdui.subStep() < sizeof(allMDtablesInfo)/sizeof(MDTableInfo)) &&
 		((NOT mdti.addedTable) && (NOT mdti.droppedTable) && (NOT mdti.isIndex)))
 	      {
-		str_sprintf(buf, "insert into %s.\"%s\".%s %s%s%s select %s from %s.\"%s\".%s SRC %s;",
+		str_sprintf(buf, "upsert into %s.\"%s\".%s %s%s%s select %s from %s.\"%s\".%s SRC %s;",
 			    TRAFODION_SYSCAT_LIT,
 			    SEABASE_MD_SCHEMA,
 			    mdti.newName, 

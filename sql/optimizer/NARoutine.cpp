@@ -478,8 +478,8 @@ NARoutine:: NARoutine(const QualifiedName   &name,
     param_desc = &params_desc_list->body.columns_desc;
 
     // Create the new NAType.
-    if (createNAType((columns_desc_struct *)param_desc, (const NATable *)NULL, newColType, heap_))
-    {
+    if (NAColumn::createNAType((columns_desc_struct *)param_desc, (const NATable *)NULL, newColType, heap_))
+      {
       errorOccurred = TRUE;
       return;
     }

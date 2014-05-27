@@ -728,7 +728,7 @@ Int32 Parser::parseSQL
   // Only internal *module* is trusted, not internal mdf...
   if (cmpContext() &&
       ((cmpContext()->internalCompile() == CmpContext::INTERNAL_MODULENAME)||
-       (cmpContext()->statement()->isSMDRecompile())))
+       (cmpContext()->statement() && cmpContext()->statement()->isSMDRecompile())))
     Set_SqlParser_Flags(ALLOW_SPECIALTABLETYPE);
     
   if ( internalExpr == INTERNALEXPR_TOKEN )

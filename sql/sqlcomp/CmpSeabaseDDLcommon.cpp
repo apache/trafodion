@@ -43,6 +43,8 @@
 #include "NAUserId.h"
 #include "StmtDDLCreateView.h"
 
+static __thread MDDescsInfo * trafMDDescsInfo_ = NULL;
+
 CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
   savedCmpParserFlags_ = 0;
@@ -57,6 +59,454 @@ CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
     }
 }
 
+NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
+					Lng32 &colInfoSize,
+					const ComTdbVirtTableColumnInfo* &colInfo,
+					Lng32 &keyInfoSize,
+					const ComTdbVirtTableKeyInfo * &keyInfo,
+					Lng32 &indexInfoSize,
+					const ComTdbVirtTableIndexInfo* &indexInfo,
+					const char * objType)
+{
+  indexInfoSize = 0;
+  indexInfo = NULL;
+
+  for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
+    {
+      const MDTableInfo &mdti = allMDtablesInfo[i];
+      MDDescsInfo &mddi = trafMDDescsInfo_[i];
+
+      if (mdti.newName && (objName == mdti.newName))
+	{
+	  if (strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0)
+	    {
+	      colInfoSize = mddi.numNewCols;
+	      colInfo = mddi.newColInfo;
+	      keyInfoSize = mddi.numNewKeys;
+	      keyInfo = mddi.newKeyInfo;
+
+	      indexInfoSize = mddi.numIndexes;
+	      indexInfo = mddi.indexInfo;
+
+	      // this is an index. It cannot selected as a base table objects.
+	      if (mdti.isIndex)
+	      	return FALSE;
+	    }
+	  else if (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0)
+	    {
+	      colInfoSize = mddi.numNewCols;
+	      colInfo = mddi.newColInfo;
+	      keyInfoSize = mddi.numNewKeys;
+	      keyInfo = mddi.newKeyInfo;
+
+	    }
+	  else
+	    return FALSE;
+
+	  return TRUE;
+	}
+      else  if (mdti.oldName && (objName == mdti.oldName))
+	{
+	  if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
+	    {
+	      colInfoSize = mddi.numOldCols;
+	      colInfo = mddi.oldColInfo;
+	    }
+	  else
+	    {
+	      colInfoSize = mddi.numNewCols;
+	      colInfo = mddi.newColInfo;
+	    }
+
+	  if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
+	    {
+	      keyInfoSize = mddi.numOldKeys;
+	      keyInfo = mddi.oldKeyInfo;
+	    }
+	  else
+	    {
+	      keyInfoSize = mddi.numNewKeys;
+	      keyInfo = mddi.newKeyInfo;
+	    }
+
+	  return TRUE;
+	}
+	
+    } // for
+
+  return FALSE;
+}
+
+short CmpSeabaseDDL::convertColAndKeyInfoArrays(
+						Lng32 btNumCols, // IN
+						ComTdbVirtTableColumnInfo* btColInfoArray, // IN
+						Lng32 btNumKeys, // IN
+						ComTdbVirtTableKeyInfo* btKeyInfoArray, // IN
+						NAColumnArray *naColArray,
+						NAColumnArray *naKeyArr)
+{
+  for (Lng32 i = 0; i < btNumCols; i++)
+    {
+      ComTdbVirtTableColumnInfo &ci = btColInfoArray[i];
+
+      columns_desc_struct column_desc;
+      column_desc.datatype = ci.datatype;
+      column_desc.length = ci.length;
+      column_desc.precision = ci.precision;
+      column_desc.scale = ci.scale;
+      column_desc.null_flag = ci.nullable;
+      column_desc.character_set/*CharInfo::CharSet*/ 
+	= (CharInfo::CharSet)ci.charset;
+      column_desc.upshift = ci.upshifted;
+      column_desc.caseinsensitive = 0;
+      column_desc.collation_sequence = CharInfo::DefaultCollation;
+      column_desc.encoding_charset = (CharInfo::CharSet)ci.charset;
+
+      column_desc.datetimestart = (rec_datetime_field)ci.dtStart;
+      column_desc.datetimeend = (rec_datetime_field)ci.dtEnd;
+      column_desc.datetimefractprec = ci.scale;
+
+      column_desc.defaultClass = ci.defaultClass;
+
+      NAType *type;
+      NAColumn::createNAType(&column_desc, NULL, type, STMTHEAP);
+
+      NAColumn * nac = new(STMTHEAP) NAColumn(ci.colName, i, type, STMTHEAP);
+      naColArray->insert(nac);
+
+      for (Lng32 ii = 0; ii < btNumKeys; ii++)
+	{
+	  ComTdbVirtTableKeyInfo &ki = btKeyInfoArray[ii];
+	  if (strcmp(ci.colName, ki.colName) == 0)
+	    {
+	      naKeyArr->insert(nac);
+	    }
+	} // for
+
+    } // for
+
+  return 0;
+}
+
+short CmpSeabaseDDL::processDDLandCreateDescs(
+					      Parser &parser,
+					      const QString *ddl,
+					      Lng32 sizeOfddl,
+
+					      NABoolean isIndexTable,
+
+					      Lng32 btNumCols, // IN
+					      ComTdbVirtTableColumnInfo* btColInfoArray, // IN
+					      Lng32 btNumKeys, // IN
+					      ComTdbVirtTableKeyInfo* btKeyInfoArray, // IN
+
+					      Lng32 &numCols, // OUT
+					      ComTdbVirtTableColumnInfo* &colInfoArray, // OUT
+					      Lng32 &numKeys, // OUT
+					      ComTdbVirtTableKeyInfo* &keyInfoArray, // OUT
+
+					      ComTdbVirtTableIndexInfo* &indexInfo) // OUT
+{
+  numCols = 0;
+  numKeys = 0;
+  colInfoArray = NULL;
+  keyInfoArray = NULL;
+
+  indexInfo = NULL;
+
+  ExprNode * exprNode = NULL;
+  const QString * qs = NULL;
+  Int32 sizeOfqs = 0;
+  
+  qs = ddl;
+  sizeOfqs = sizeOfddl; 
+  
+  Int32 qryArraySize = sizeOfqs / sizeof(QString);
+  char * gluedQuery;
+  Lng32 gluedQuerySize;
+  glueQueryFragments(qryArraySize,  qs,
+		     gluedQuery, gluedQuerySize);
+  
+  exprNode = parser.parseDML((const char*)gluedQuery, strlen(gluedQuery), 
+			     CharInfo::ISO88591);
+  if (! exprNode)
+    return -1;
+  
+  RelExpr * rRoot = NULL;
+  if (exprNode->getOperatorType() EQU STM_QUERY)
+    {
+      rRoot = (RelRoot*)exprNode->getChild(0);
+    }
+  else if (exprNode->getOperatorType() EQU REL_ROOT)
+    {
+      rRoot = (RelRoot*)exprNode;
+    }
+  
+  if (! rRoot)
+    return -1;
+  
+  ExprNode * ddlNode = NULL;
+  DDLExpr * ddlExpr = NULL;
+  
+  ddlExpr = (DDLExpr*)rRoot->getChild(0);
+  ddlNode = ddlExpr->getDDLNode();
+  if (! ddlNode)
+    return -1;
+  
+  if (ddlNode->getOperatorType() == DDL_CREATE_TABLE)
+    {
+      StmtDDLCreateTable * createTableNode =
+	ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable();
+      
+      ElemDDLColDefArray &colArray = createTableNode->getColDefArray();
+      ElemDDLColRefArray &keyArray = createTableNode->getPrimaryKeyColRefArray();
+      
+      numCols = colArray.entries();
+      numKeys = keyArray.entries();
+      
+      colInfoArray = (ComTdbVirtTableColumnInfo*)
+	new(CTXTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
+      
+      keyInfoArray = (ComTdbVirtTableKeyInfo*)
+	new(CTXTHEAP) char[numKeys * sizeof(ComTdbVirtTableKeyInfo)];
+      
+      if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, CTXTHEAP))
+	{
+	  return -1;
+	}
+
+      if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
+			    CTXTHEAP))
+	{
+	  return -1;
+	}
+
+      // if index table defn, append "@" to the hbase col qual.
+      if (isIndexTable)
+	{
+	  for (Lng32 i = 0; i < numCols; i++)
+	    {
+	      ComTdbVirtTableColumnInfo &ci = colInfoArray[i];
+
+	      char hcq[100];
+	      strcpy(hcq, ci.hbaseColQual);
+	      
+	      ci.hbaseColQual = new(CTXTHEAP) char[strlen(hcq) + 1 +1];
+	      strcpy((char*)ci.hbaseColQual, (char*)"@");
+	      strcat((char*)ci.hbaseColQual, hcq);
+	    } // for
+
+	  for (Lng32 i = 0; i < numKeys; i++)
+	    {
+	      ComTdbVirtTableKeyInfo &ci = keyInfoArray[i];
+
+	      ci.hbaseColQual = new(CTXTHEAP) char[10];
+	      str_sprintf((char*)ci.hbaseColQual, "@%d", ci.keySeqNum);
+	    }
+	} // if
+    }
+  else if (ddlNode->getOperatorType() == DDL_CREATE_INDEX)
+    {
+      StmtDDLCreateIndex * createIndexNode =
+	ddlNode->castToStmtDDLNode()->castToStmtDDLCreateIndex();
+      
+      ComObjectName tableName(createIndexNode->getTableName());
+      NAString extTableName = tableName.getExternalName(TRUE);
+      
+      //      ComObjectName indexName(createIndexNode->getIndexName());
+      NAString extIndexName = TRAFODION_SYSCAT_LIT;
+      extIndexName += ".";
+      extIndexName += "\"";
+      extIndexName += SEABASE_MD_SCHEMA;
+      extIndexName += "\"";
+      extIndexName += ".";
+      extIndexName += createIndexNode->getIndexName();
+      
+      ElemDDLColRefArray & indexColRefArray = createIndexNode->getColRefArray();
+      
+      NAColumnArray btNAColArray;
+      NAColumnArray btNAKeyArr;
+
+      if (convertColAndKeyInfoArrays(btNumCols, btColInfoArray,
+				     btNumKeys, btKeyInfoArray,
+				     &btNAColArray, &btNAKeyArr))
+	return -1;
+
+      Lng32 keyColCount = 0;
+      Lng32 nonKeyColCount = 0;
+      Lng32 totalColCount = 0;
+      
+      Lng32 numIndexCols = 0;
+      Lng32 numIndexKeys = 0;
+      Lng32 numIndexNonKeys = 0;
+
+      ComTdbVirtTableColumnInfo * indexColInfoArray = NULL;
+      ComTdbVirtTableKeyInfo * indexKeyInfoArray = NULL;
+      ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
+      
+      NAList<NAString> selColList;
+      
+      if (createIndexColAndKeyInfoArrays(indexColRefArray,
+					 createIndexNode->isUniqueSpecified(),
+					 FALSE, // no syskey
+					 btNAColArray, btNAKeyArr,
+					 numIndexKeys, numIndexNonKeys, numIndexCols,
+					 indexColInfoArray, indexKeyInfoArray,
+					 selColList,
+					 CTXTHEAP))
+	return -1;
+
+      numIndexNonKeys = numIndexCols - numIndexKeys;
+      
+      if (numIndexNonKeys > 0)
+	indexNonKeyInfoArray = (ComTdbVirtTableKeyInfo*)
+	  new(CTXTHEAP) char[numIndexNonKeys *  sizeof(ComTdbVirtTableKeyInfo)];
+      
+      Lng32 ink = 0;
+      for (Lng32 i = numIndexKeys; i < numIndexCols; i++)
+	{
+	  ComTdbVirtTableColumnInfo &indexCol = indexColInfoArray[i];
+	  
+	  ComTdbVirtTableKeyInfo &ki = indexNonKeyInfoArray[ink];
+	  ki.colName = indexCol.colName;
+
+	  NAColumn * nc = btNAColArray.getColumn(ki.colName);
+	  Lng32 colNumber = nc->getPosition();
+
+	  ki.tableColNum = colNumber;
+	  ki.keySeqNum = i+1;
+	  ki.ordering = 0;
+	  ki.nonKeyCol = 1;
+	  
+	  ki.hbaseColFam = new(CTXTHEAP) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
+	  strcpy((char*)ki.hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+	  
+	  char qualNumStr[40];
+	  str_sprintf(qualNumStr, "@%d", ki.keySeqNum);
+	  
+	  ki.hbaseColQual = new(CTXTHEAP) char[strlen(qualNumStr)+1];
+	  strcpy((char*)ki.hbaseColQual, qualNumStr);
+
+	  ink++;
+	} // for
+      
+      indexInfo = (ComTdbVirtTableIndexInfo*)
+	new(CTXTHEAP) char[1 * sizeof(ComTdbVirtTableIndexInfo)];
+      indexInfo->baseTableName = new(CTXTHEAP) char[extTableName.length()+ 1];
+      strcpy((char*)indexInfo->baseTableName, extTableName.data());
+
+      indexInfo->indexName = new(CTXTHEAP) char[extIndexName.length()+ 1];
+      strcpy((char*)indexInfo->indexName, extIndexName.data());
+
+      indexInfo->keytag = 1;
+      indexInfo->isUnique =  createIndexNode->isUniqueSpecified() ? 1 : 0;
+      indexInfo->isExplicit = 1;
+
+      indexInfo->keyColCount = numIndexKeys;
+      indexInfo->nonKeyColCount = numIndexNonKeys;
+      indexInfo->keyInfoArray = indexKeyInfoArray;
+      indexInfo->nonKeyInfoArray = indexNonKeyInfoArray;
+      
+      numCols = 0;
+      colInfoArray = NULL;
+      numKeys = 0;
+      keyInfoArray = NULL;
+    }
+  else
+    return -1;
+
+  return 0;
+}
+
+// RETURN: -1, error.  0, all ok.
+short CmpSeabaseDDL::createMDdescs()
+{
+  if (trafMDDescsInfo_) // already initialized
+    return 0;
+
+  Lng32 numTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
+  trafMDDescsInfo_ = (MDDescsInfo*) 
+    new(CTXTHEAP) char[numTables * sizeof(MDDescsInfo)];
+  Parser parser(CmpCommon::context());
+  for (Lng32 i = 0; i < numTables; i++)
+    {
+      const MDTableInfo &mdti = allMDtablesInfo[i];
+      MDDescsInfo &mddi = trafMDDescsInfo_[i];
+      
+      if (!mdti.newDDL)
+	continue;
+      
+      Lng32 numCols = 0;
+      Lng32 numKeys = 0;
+      
+      ComTdbVirtTableColumnInfo * colInfoArray = NULL;
+      ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
+      ComTdbVirtTableIndexInfo * indexInfo = NULL;
+
+      if (processDDLandCreateDescs(parser,
+				   mdti.newDDL, mdti.sizeOfnewDDL,
+				   (mdti.isIndex ? TRUE : FALSE),
+				   0, NULL, 0, NULL,
+				   numCols, colInfoArray,
+				   numKeys, keyInfoArray,
+				   indexInfo))
+	return -1;
+      
+      mddi.numNewCols = numCols;
+      mddi.newColInfo = colInfoArray;
+      
+      mddi.numNewKeys = numKeys;
+      mddi.newKeyInfo = keyInfoArray;
+      
+      if (mdti.oldDDL)
+	{
+	  if (processDDLandCreateDescs(parser,
+				       mdti.oldDDL, mdti.sizeOfoldDDL,
+				       (mdti.isIndex ? TRUE : FALSE),
+				       0, NULL, 0, NULL,
+				       numCols, colInfoArray,
+				       numKeys, keyInfoArray,
+				       indexInfo))
+	    return -1;
+	}
+      
+      mddi.numOldCols = numCols;
+      mddi.oldColInfo = colInfoArray;
+      
+      mddi.numOldKeys = numKeys;
+      mddi.oldKeyInfo = keyInfoArray;
+
+      mddi.numIndexes = 0;
+      mddi.indexInfo = NULL;
+
+      if (mdti.indexDDL)
+	{
+	  mddi.numIndexes = 1;
+	  mddi.indexInfo = NULL;
+
+	  ComTdbVirtTableIndexInfo * indexInfo = NULL;
+	  Lng32 numIndexCols = 0;
+	  Lng32 numIndexKeys = 0;
+	  ComTdbVirtTableColumnInfo * indexColInfoArray = NULL;
+	  ComTdbVirtTableKeyInfo * indexKeyInfoArray = NULL;
+ 	  
+	  if (processDDLandCreateDescs(parser,
+				       mdti.indexDDL, mdti.sizeOfIndexDDL,
+				       FALSE,
+				       numCols, colInfoArray,
+				       numKeys, keyInfoArray,
+				       numIndexCols, indexColInfoArray,
+				       numIndexKeys, indexKeyInfoArray,
+				       indexInfo))
+	    return -1;
+
+	  mddi.indexInfo = indexInfo;
+	}
+    } // for
+  
+  return 0;
+}
+					      
 NABoolean CmpSeabaseDDL::isHbase(const NAString &catName)
 {
   if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
@@ -216,36 +666,17 @@ ComBoolean CmpSeabaseDDL::isSeabaseMD(const ComObjectName &name)
 		   name.getObjectNamePartAsAnsiString());
 }
 
-// construct and return the column name value as stored with hbase rows.
-// colNum is 0-based (first col is 0)
-void CmpSeabaseDDL::getColName(const ComTdbVirtTableColumnInfo colInfo[],
-			       Lng32 colNum, NAString &colName)
+void CmpSeabaseDDL::getColName(const char * colFam, const char * colQual,
+			       NAString &colName)
 {
   char c;
 
   colName.resize(0);
 
-  colName = colInfo[colNum].hbaseColFam;
+  colName = colFam;
   colName += ":";
-  c = str_atoi(colInfo[colNum].hbaseColQual,
-	       strlen(colInfo[colNum].hbaseColQual));
+  c = str_atoi(colQual, strlen(colQual));
   colName += c;
-}
-
-Lng32 CmpSeabaseDDL::getColNumber(
-				  Lng32 numCols,
-				  const ComTdbVirtTableColumnInfo colInfo[],
-				  const char * colName)
-{
-
-  for (Lng32 i = 0; i < numCols; i++)
-    {
-      
-      if (strcmp(colInfo[i].colName, colName) == 0)
-	return i;
-    }
-
-  return -1;
 }
 
 short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
@@ -275,8 +706,8 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
   NAString col1NameStr;
   NAString col2NameStr;
 
-  getColName(seabaseMDDefaultsColInfo, 0, col1NameStr);
-  getColName(seabaseMDDefaultsColInfo, 1, col2NameStr);
+  getColName(SEABASE_DEFAULT_COL_FAMILY, "1", col1NameStr);
+  getColName(SEABASE_DEFAULT_COL_FAMILY, "2", col2NameStr);
 
   NAList<Text> col1ValueList;
   NAList<Text> col2ValueList;
@@ -348,9 +779,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   NAList<Text> col2ValueList;
   NAList<Text> col3ValueList;
 
-  getColName(seabaseMDDefaultsColInfo, 0, col1NameStr);
-  getColName(seabaseMDDefaultsColInfo, 1, col2NameStr);
-  getColName(seabaseMDDefaultsColInfo, 2, col3NameStr);
+  getColName(SEABASE_DEFAULT_COL_FAMILY, "1", col1NameStr);
+  getColName(SEABASE_DEFAULT_COL_FAMILY, "2", col2NameStr);
+  getColName(SEABASE_DEFAULT_COL_FAMILY, "3", col3NameStr);
 
   Text col1TextStr(col1NameStr);
   Text col2TextStr(col2NameStr);
@@ -1313,20 +1744,11 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 	collationSequence = charType->getCollation();
 	if (isSerialized)
 	  {
-	    //	    if (! upshifted)
-	    setFlags(colFlags, SEABASE_SERIALIZED);
-	    if (0) //charType->isEncodingNeeded())
-	      {
-		*CmpCommon::diags() << DgSqlCode(-1191);
-		return -1;
-	      }
-
 	    setFlags(colFlags, SEABASE_SERIALIZED);
 	  }
 	else
 	  {
 	    if (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON)
-	      //		(NOT upshifted))
 	      {
 		setFlags(colFlags, SEABASE_SERIALIZED);
 	      }
@@ -1750,6 +2172,78 @@ Int64 CmpSeabaseDDL::getObjectUID(
 
   return objUID;
 }
+
+Int64 CmpSeabaseDDL::getObjectUIDandOwner(
+				   ExeCliInterface *cliInterface,
+				   const char * catName,
+				   const char * schName,
+				   const char * objName,
+				   const char * inObjType,
+				   char * outObjType,
+				   Int32 * objectOwner)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, NAString(schName), FALSE);
+  NAString quotedObjName;
+  ToQuotedString(quotedObjName, NAString(objName), FALSE);
+
+  char buf[4000];
+  if (inObjType)
+    str_sprintf(buf, "select object_uid, object_type, object_owner from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' ",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+		catName, quotedSchName.data(), quotedObjName.data(),
+		inObjType);
+  else
+    str_sprintf(buf, "select object_uid, object_type, object_owner from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+		catName, quotedSchName.data(), quotedObjName.data());
+    
+  cliRC = cliInterface->fetchRowsPrologue(buf, TRUE/*no exec*/);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  if (cliRC == 100) // did not find the row
+    {
+      *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
+
+      return -1;
+    }
+
+  char * ptr = NULL;
+  Lng32 len = 0;
+  cliInterface->getPtrAndLen(1, ptr, len);
+  Int64 objUID = *(Int64*)ptr;
+
+  if (outObjType)
+    {
+      cliInterface->getPtrAndLen(2, ptr, len);
+      str_cpy_and_null(outObjType, ptr, len, '\0', ' ', TRUE);
+    }
+
+  if (objectOwner)
+    {
+      cliInterface->getPtrAndLen(3, ptr, len);
+      *objectOwner = *(Int32*)ptr;
+    }
+
+  cliInterface->fetchRowsEpilogue(NULL, TRUE);
+
+  return objUID;
+}
+
 
 short CmpSeabaseDDL::getObjectOwner(ExeCliInterface *cliInterface,
                      const char * catName,
@@ -2634,7 +3128,8 @@ short CmpSeabaseDDL::buildColInfoArray(
 				       ElemDDLColDefArray *colArray,
 				       ComTdbVirtTableColumnInfo * colInfoArray,
 				       NABoolean implicitPK,
-                                       CollIndex numSysCols)
+                                       CollIndex numSysCols,
+				       NAMemory * heap)
 {
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
@@ -2656,7 +3151,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
       colInfoArray[index].hbaseColFlags = colFlags;
       
-      char * col_name = new(STMTHEAP) char[colName.length() + 1];
+      char * col_name = new((heap ? heap : STMTHEAP)) char[colName.length() + 1];
       strcpy(col_name, (char*)colName.data());
 
       colInfoArray[index].colName = col_name;
@@ -2687,7 +3182,7 @@ short CmpSeabaseDDL::buildColInfoArray(
 
       if (defVal.length() > 0)
 	{
-	  char * def_val = new(STMTHEAP) char[defVal.length() +1];
+	  char * def_val = new((heap ? heap : STMTHEAP)) char[defVal.length() +1];
 	  str_cpy_all(def_val, (char*)defVal.data(), defVal.length());
 	  def_val[defVal.length()] = 0;
 	  colInfoArray[index].defVal = def_val;
@@ -2696,21 +3191,21 @@ short CmpSeabaseDDL::buildColInfoArray(
       colInfoArray[index].colHeading = NULL;
       if (heading.length() > 0)
 	{
-	  char * head_val = new(STMTHEAP) char[heading.length() +1];
+	  char * head_val = new((heap ? heap : STMTHEAP)) char[heading.length() +1];
 	  str_cpy_all(head_val, (char*)heading.data(), heading.length());
 	  head_val[heading.length()] = 0;
 	  colInfoArray[index].colHeading = head_val;
 	}
 
       colInfoArray[index].hbaseColFam = 
-	new(STMTHEAP) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
+	new((heap ? heap : STMTHEAP)) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
       strcpy((char*)colInfoArray[index].hbaseColFam, (char*)SEABASE_DEFAULT_COL_FAMILY);
 
       char idxNumStr[40];
       str_itoa(index+1, idxNumStr);
 
       colInfoArray[index].hbaseColQual =
-	new(STMTHEAP) char[strlen(idxNumStr) + 1];
+	new((heap ? heap : STMTHEAP)) char[strlen(idxNumStr) + 1];
       strcpy((char*)colInfoArray[index].hbaseColQual, idxNumStr);
 
       strcpy(colInfoArray[index].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
@@ -2792,6 +3287,56 @@ short CmpSeabaseDDL::buildColInfoArray(
                COM_UNKNOWN_PARAM_DIRECTION_LIT);
 
       colInfoArray[index].isOptional = 0; // Aways FALSE for now
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::buildKeyInfoArray(
+				       ElemDDLColDefArray *colArray,
+				       ElemDDLColRefArray *keyArray,
+				       ComTdbVirtTableColumnInfo * colInfoArray,
+				       ComTdbVirtTableKeyInfo * keyInfoArray,
+				       NABoolean allowNullableUniqueConstr,
+				       NAMemory * heap)
+{
+  size_t index = 0;
+  for ( index = 0; index < keyArray->entries(); index++)
+    {
+      char * col_name = new((heap ? heap : STMTHEAP)) 
+	char[strlen((*keyArray)[index]->getColumnName()) + 1];
+      strcpy(col_name, (*keyArray)[index]->getColumnName());
+
+      keyInfoArray[index].colName = col_name; //(*keyArray)[index]->getColumnName();
+
+      keyInfoArray[index].keySeqNum = index+1;
+      keyInfoArray[index].tableColNum = (Lng32)
+	colArray->getColumnIndex((*keyArray)[index]->getColumnName());
+
+      if (keyInfoArray[index].tableColNum == -1)
+	{
+	  // this col doesn't exist. Return error.
+	  *CmpCommon::diags() << DgSqlCode(-1009)
+			      << DgColumnName(keyInfoArray[index].colName);
+	  
+	  return -1;
+	}
+	
+      keyInfoArray[index].ordering = 
+	((*keyArray)[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
+      keyInfoArray[index].nonKeyCol = 0;
+
+      if ((colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
+	  (NOT allowNullableUniqueConstr))
+	{
+	  *CmpCommon::diags() << DgSqlCode(-CAT_CLUSTERING_KEY_COL_MUST_BE_NOT_NULL_NOT_DROP)
+			      << DgColumnName(keyInfoArray[index].colName);
+	  
+	  return -1;
+	}
+
+      keyInfoArray[index].hbaseColFam = NULL;
+      keyInfoArray[index].hbaseColQual = NULL;
     }
 
   return 0;
@@ -2955,6 +3500,8 @@ void CmpSeabaseDDL::initSeabaseMD()
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
 
+  Lng32 numTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
+
   Queue * tempQueue = NULL;
 
   // create metadata tables in hbase
@@ -2990,271 +3537,27 @@ void CmpSeabaseDDL::initSeabaseMD()
       return;
     }
 
+  // create hbase physical objects
+  for (Lng32 i = 0; i < numTables; i++)
+    {
+      const MDTableInfo &mdti = allMDtablesInfo[i];
+
+      HbaseStr hbaseObject;
+      NAString hbaseObjectStr(sysCat);
+      hbaseObjectStr += ".";
+      hbaseObjectStr += SEABASE_MD_SCHEMA;
+      hbaseObjectStr += ".";
+      hbaseObjectStr += mdti.newName;
+      hbaseObject.val = (char*)hbaseObjectStr.data();
+      hbaseObject.len = hbaseObjectStr.length();
+      if (createHbaseTable(ehi, &hbaseObject, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
+	{
+	  deallocEHI(ehi); 
+	  return;
+	}
+
+    } // for
  
-  HbaseStr hbaseObjects;
-  NAString hbaseObjectsStr(sysCat);
-  hbaseObjectsStr += ".";
-  hbaseObjectsStr += SEABASE_MD_SCHEMA;
-  hbaseObjectsStr += ".";
-  hbaseObjectsStr += SEABASE_OBJECTS;
-  hbaseObjects.val = (char*)hbaseObjectsStr.data();
-  hbaseObjects.len = hbaseObjectsStr.length();
-  if (createHbaseTable(ehi, &hbaseObjects, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  // unique index on OBJECTS table
-  HbaseStr hbaseObjectsIdx;
-  NAString hbaseObjectsIdxStr(sysCat);
-  hbaseObjectsIdxStr += ".";
-  hbaseObjectsIdxStr += SEABASE_MD_SCHEMA;
-  hbaseObjectsIdxStr += ".";
-  hbaseObjectsIdxStr += SEABASE_OBJECTS_UNIQ_IDX;
-  hbaseObjectsIdx.val = (char*)hbaseObjectsIdxStr.data();
-  hbaseObjectsIdx.len = hbaseObjectsIdxStr.length();
-
-  if (createHbaseTable(ehi, &hbaseObjectsIdx, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-  HbaseStr hbaseColumns;
-  NAString hbaseColumnsStr(sysCat);
-  hbaseColumnsStr += ".";
-  hbaseColumnsStr += SEABASE_MD_SCHEMA;
-  hbaseColumnsStr += ".";
-  hbaseColumnsStr += SEABASE_COLUMNS;
-  hbaseColumns.val = (char*)hbaseColumnsStr.data();
-  hbaseColumns.len = hbaseColumnsStr.length();
-  if (createHbaseTable(ehi, &hbaseColumns, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseDefaults;
-  NAString hbaseDefaultsStr(sysCat);
-  hbaseDefaultsStr += ".";
-  hbaseDefaultsStr += SEABASE_MD_SCHEMA;
-  hbaseDefaultsStr += ".";
-  hbaseDefaultsStr += SEABASE_DEFAULTS;
-  hbaseDefaults.val = (char*)hbaseDefaultsStr.data();
-  hbaseDefaults.len = hbaseDefaultsStr.length();
-  if (createHbaseTable(ehi, &hbaseDefaults, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseKeys;
-  NAString hbaseKeysStr(sysCat);
-  hbaseKeysStr += ".";
-  hbaseKeysStr += SEABASE_MD_SCHEMA;
-  hbaseKeysStr += ".";
-  hbaseKeysStr += SEABASE_KEYS;
-  hbaseKeys.val = (char*)hbaseKeysStr.data();
-  hbaseKeys.len = hbaseKeysStr.length();
-  if (createHbaseTable(ehi, &hbaseKeys, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseLibraries;
-  NAString hbaseLibrariesStr(sysCat);
-  hbaseLibrariesStr += ".";
-  hbaseLibrariesStr += SEABASE_MD_SCHEMA;
-  hbaseLibrariesStr += ".";
-  hbaseLibrariesStr += SEABASE_LIBRARIES;
-  hbaseLibraries.val = (char*)hbaseLibrariesStr.data();
-  hbaseLibraries.len = hbaseLibrariesStr.length();
-  if (createHbaseTable(ehi, &hbaseLibraries, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseLibrariesUsage;
-  NAString hbaseLibrariesUsageStr(sysCat);
-  hbaseLibrariesUsageStr += ".";
-  hbaseLibrariesUsageStr += SEABASE_MD_SCHEMA;
-  hbaseLibrariesUsageStr += ".";
-  hbaseLibrariesUsageStr += SEABASE_LIBRARIES_USAGE;
-  hbaseLibrariesUsage.val = (char*)hbaseLibrariesUsageStr.data();
-  hbaseLibrariesUsage.len = hbaseLibrariesUsageStr.length();
-  if (createHbaseTable(ehi, &hbaseLibrariesUsage, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseIndexes;
-  NAString hbaseIndexesStr(sysCat);
-  hbaseIndexesStr += ".";
-  hbaseIndexesStr += SEABASE_MD_SCHEMA;
-  hbaseIndexesStr += ".";
-  hbaseIndexesStr += SEABASE_INDEXES;
-  hbaseIndexes.val = (char*)hbaseIndexesStr.data();
-  hbaseIndexes.len = hbaseIndexesStr.length();
-  if (createHbaseTable(ehi, &hbaseIndexes, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseRefConstraints;
-  NAString hbaseRefConstraintsStr(sysCat);
-  hbaseRefConstraintsStr += ".";
-  hbaseRefConstraintsStr += SEABASE_MD_SCHEMA;
-  hbaseRefConstraintsStr += ".";
-  hbaseRefConstraintsStr += SEABASE_REF_CONSTRAINTS;
-  hbaseRefConstraints.val = (char*)hbaseRefConstraintsStr.data();
-  hbaseRefConstraints.len = hbaseRefConstraintsStr.length();
-  if (createHbaseTable(ehi, &hbaseRefConstraints, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-  
-  HbaseStr hbaseRoutines;
-  NAString hbaseRoutinesStr(sysCat);
-  hbaseRoutinesStr += ".";
-  hbaseRoutinesStr += SEABASE_MD_SCHEMA;
-  hbaseRoutinesStr += ".";
-  hbaseRoutinesStr += SEABASE_ROUTINES;
-  hbaseRoutines.val = (char*)hbaseRoutinesStr.data();
-  hbaseRoutines.len = hbaseRoutinesStr.length();
-  if (createHbaseTable(ehi, &hbaseRoutines, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseTables;
-  NAString hbaseTablesStr(sysCat);
-  hbaseTablesStr += ".";
-  hbaseTablesStr += SEABASE_MD_SCHEMA;
-  hbaseTablesStr += ".";
-  hbaseTablesStr += SEABASE_TABLES;
-  hbaseTables.val = (char*)hbaseTablesStr.data();
-  hbaseTables.len = hbaseTablesStr.length();
-  if (createHbaseTable(ehi, &hbaseTables, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseTableConstraints;
-  NAString hbaseTableConstraintsStr(sysCat);
-  hbaseTableConstraintsStr += ".";
-  hbaseTableConstraintsStr += SEABASE_MD_SCHEMA;
-  hbaseTableConstraintsStr += ".";
-  hbaseTableConstraintsStr += SEABASE_TABLE_CONSTRAINTS;
-  hbaseTableConstraints.val = (char*)hbaseTableConstraintsStr.data();
-  hbaseTableConstraints.len = hbaseTableConstraintsStr.length();
-  if (createHbaseTable(ehi, &hbaseTableConstraints, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseText;
-  NAString hbaseTextStr(sysCat);
-  hbaseTextStr += ".";
-  hbaseTextStr += SEABASE_MD_SCHEMA;
-  hbaseTextStr += ".";
-  hbaseTextStr += SEABASE_TEXT;
-  hbaseText.val = (char*)hbaseTextStr.data();
-  hbaseText.len = hbaseTextStr.length();
-  if (createHbaseTable(ehi, &hbaseText, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseUniqueRefConstrUsage;
-  NAString hbaseUniqueRefConstrUsageStr(sysCat);
-  hbaseUniqueRefConstrUsageStr += ".";
-  hbaseUniqueRefConstrUsageStr += SEABASE_MD_SCHEMA;
-  hbaseUniqueRefConstrUsageStr += ".";
-  hbaseUniqueRefConstrUsageStr += SEABASE_UNIQUE_REF_CONSTR_USAGE;
-  hbaseUniqueRefConstrUsage.val = (char*)hbaseUniqueRefConstrUsageStr.data();
-  hbaseUniqueRefConstrUsage.len = hbaseUniqueRefConstrUsageStr.length();
-  if (createHbaseTable(ehi, &hbaseUniqueRefConstrUsage, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseViews;
-  NAString hbaseViewsStr(sysCat);
-  hbaseViewsStr += ".";
-  hbaseViewsStr += SEABASE_MD_SCHEMA;
-  hbaseViewsStr += ".";
-  hbaseViewsStr += SEABASE_VIEWS;
-  hbaseViews.val = (char*)hbaseViewsStr.data();
-  hbaseViews.len = hbaseViewsStr.length();
-  if (createHbaseTable(ehi, &hbaseViews, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseViewsUsage;
-  NAString hbaseViewsUsageStr(sysCat);
-  hbaseViewsUsageStr += ".";
-  hbaseViewsUsageStr += SEABASE_MD_SCHEMA;
-  hbaseViewsUsageStr += ".";
-  hbaseViewsUsageStr += SEABASE_VIEWS_USAGE;
-  hbaseViewsUsage.val = (char*)hbaseViewsUsageStr.data();
-  hbaseViewsUsage.len = hbaseViewsUsageStr.length();
-  if (createHbaseTable(ehi, &hbaseViewsUsage, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseVersions;
-  NAString hbaseVersionsStr(sysCat);
-  hbaseVersionsStr += ".";
-  hbaseVersionsStr += SEABASE_MD_SCHEMA;
-  hbaseVersionsStr += ".";
-  hbaseVersionsStr += SEABASE_VERSIONS;
-  hbaseVersions.val = (char*)hbaseVersionsStr.data();
-  hbaseVersions.len = hbaseVersionsStr.length();
-  if (createHbaseTable(ehi, &hbaseVersions, SEABASE_DEFAULT_COL_FAMILY, 
-                       NULL, NULL) == -1)
-    {
-      deallocEHI(ehi); 
-      return;
-    }
-
-  HbaseStr hbaseAuths;
-  NAString hbaseAuthsStr(sysCat);
-  hbaseAuthsStr += ".";
-  hbaseAuthsStr += SEABASE_MD_SCHEMA;
-  hbaseAuthsStr += ".";
-  hbaseAuthsStr += SEABASE_AUTHS;
-  hbaseAuths.val = (char*)hbaseAuthsStr.data();
-  hbaseAuths.len = hbaseVersionsStr.length();
-  if (createHbaseTable(ehi, &hbaseAuths, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
-    {
-      deallocEHI(ehi);
-      return;
-    }
-
   // cleanup cached entries in client object.
   ehi->cleanupClient();
 
@@ -3275,246 +3578,34 @@ void CmpSeabaseDDL::initSeabaseMD()
 
       xnWasStartedHere = TRUE;
     }
-  // update metadata tables with info about the metadata tables
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-			   COM_BASE_TABLE_OBJECT_LIT,
-			   "Y",
-			   NULL,
-			   sizeof(seabaseMDObjectsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDObjectsColInfo,
-			   sizeof(seabaseMDObjectsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDObjectsKeyInfo,
-			   0, NULL))
-    {
-      goto label_error;
-    }
 
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDColumnsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDColumnsColInfo,
-			    sizeof(seabaseMDColumnsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDColumnsKeyInfo,
-                           0, NULL))
+  // update MD with information about metadata objects
+  for (Lng32 i = 0; i < numTables; i++)
     {
-      goto label_error;
-    }
+      const MDTableInfo &mdti = allMDtablesInfo[i];
+      MDDescsInfo &mddi = trafMDDescsInfo_[i];
 
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_KEYS,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDKeysColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDKeysColInfo,
-			    sizeof(seabaseMDKeysKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDKeysKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
+      if (mdti.isIndex)
+	continue;
 
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_INDEXES,
-			   COM_BASE_TABLE_OBJECT_LIT,
-			   "Y",
-			   NULL,
-			   sizeof(seabaseMDIndexesColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDIndexesColInfo,
-			   sizeof(seabaseMDIndexesKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDIndexesKeyInfo,
-			   0, NULL))
-    {
-      goto label_error;
-    }
+      if (updateSeabaseMDTable(&cliInterface, 
+			       sysCat, SEABASE_MD_SCHEMA, mdti.newName,
+			       COM_BASE_TABLE_OBJECT_LIT,
+			       "Y",
+			       NULL,
+			       mddi.numNewCols,
+			       mddi.newColInfo,
+			       mddi.numNewKeys,
+			       mddi.newKeyInfo,
+			       mddi.numIndexes,
+			       mddi.indexInfo))
+	{
+	  goto label_error;
+	}
 
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
-			   COM_BASE_TABLE_OBJECT_LIT,
-			   "Y",
-			   NULL,
-			   sizeof(seabaseMDLibrariesColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDLibrariesColInfo,
-			   sizeof(seabaseMDLibrariesKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDLibrariesKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-  
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_LIBRARIES_USAGE,
-			   COM_BASE_TABLE_OBJECT_LIT,
-			   "Y",
-			   NULL,
-			   sizeof(seabaseMDLibrariesUsageColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDLibrariesUsageColInfo,
-			   sizeof(seabaseMDLibrariesUsageKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDLibrariesUsageKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
+    } // for
 
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDRefConstraintsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDRefConstraintsColInfo,
-			    sizeof(seabaseMDRefConstraintsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDRefConstraintsKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-
- if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_ROUTINES,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDRoutinesColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDRoutinesColInfo,
-			    sizeof(seabaseMDRoutinesKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDRoutinesKeyInfo,
-                          0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_TABLES,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDTablesColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDTablesColInfo,
-			    sizeof(seabaseMDTablesKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDTablesKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDTableConstraintsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDTableConstraintsColInfo,
-			    sizeof(seabaseMDTableConstraintsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDTableConstraintsKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_TEXT,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDTextColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDTextColInfo,
-			    sizeof(seabaseMDTextKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDTextKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDUniqueRefConstrUsageColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDUniqueRefConstrUsageColInfo,
-			    sizeof(seabaseMDUniqueRefConstrUsageKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDUniqueRefConstrUsageKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_VIEWS,
-			   COM_BASE_TABLE_OBJECT_LIT,
-			   "Y",
-			   NULL,
-			   sizeof(seabaseMDViewsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDViewsColInfo,
-			   sizeof(seabaseMDViewsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDViewsKeyInfo,
-			   0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
-			   COM_BASE_TABLE_OBJECT_LIT,
-			   "Y",
-			   NULL,
-			   sizeof(seabaseMDViewsUsageColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDViewsUsageColInfo,
-			   sizeof(seabaseMDViewsUsageKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDViewsUsageKeyInfo,
-			   0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_DEFAULTS,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDDefaultsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDDefaultsColInfo,
-			    sizeof(seabaseMDDefaultsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDDefaultsKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
-
-  if (updateSeabaseMDTable(&cliInterface, 
-			    sysCat, SEABASE_MD_SCHEMA, SEABASE_VERSIONS,
-			    COM_BASE_TABLE_OBJECT_LIT,
-			    "Y",
-			    NULL,
-			    sizeof(seabaseMDVersionsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-			    seabaseMDVersionsColInfo,
-			    sizeof(seabaseMDVersionsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-			    seabaseMDVersionsKeyInfo,
-                           0, NULL))
-    {
-      goto label_error;
-    }
- 
-  if (updateSeabaseMDTable(&cliInterface,
-                            sysCat, SEABASE_MD_SCHEMA, SEABASE_AUTHS,
-                            COM_BASE_TABLE_OBJECT_LIT,
-                            "Y",
-                            NULL,
-                            sizeof(seabaseMDAuthsColInfo) / sizeof(ComTdbVirtTableColumnInfo),
-                            seabaseMDAuthsColInfo,
-                            sizeof(seabaseMDAuthsKeyInfo) / sizeof(ComTdbVirtTableKeyInfo),
-                            seabaseMDAuthsKeyInfo,
-                            0, NULL))
-    {
-      deallocEHI(ehi);
-      return;
-    }
-
+  // update metadata with metadata indexes information
   ComTdbVirtTableTableInfo tableInfo;
   tableInfo.tableName = NULL,
   tableInfo.createTime = 0;
@@ -3523,24 +3614,34 @@ void CmpSeabaseDDL::initSeabaseMD()
   tableInfo.isAudited = 1;
   tableInfo.validDef = 0;
   tableInfo.hbaseCreateOptions = NULL;
+  tableInfo.objOwner = SUPER_USER;
 
-  if (updateSeabaseMDTable(&cliInterface, 
-			   sysCat, SEABASE_MD_SCHEMA, SEABASE_OBJECTS_UNIQ_IDX,
-			   COM_INDEX_OBJECT_LIT,
-			   "Y",
-			   &tableInfo,
-			   sizeof(seabaseMDObjectsUniqIdxColInfo)/sizeof(ComTdbVirtTableColumnInfo),
-			   seabaseMDObjectsUniqIdxColInfo,
-			   sizeof(seabaseMDObjectsUniqIdxKeyInfo)/sizeof(ComTdbVirtTableKeyInfo),
-			   seabaseMDObjectsUniqIdxKeyInfo,
-			   1, // numIndex
-			   seabaseMDObjectsUniqIdxIndexInfo))
+  for (Lng32 i = 0; i < numTables; i++)
     {
-      processReturn();
+      const MDTableInfo &mdti = allMDtablesInfo[i];
+      MDDescsInfo &mddi = trafMDDescsInfo_[i];
 
-      goto label_error;
-    }
+      if (NOT mdti.isIndex)
+	continue;
 
+      if (updateSeabaseMDTable(&cliInterface, 
+			       sysCat, SEABASE_MD_SCHEMA, mdti.newName,
+			       COM_INDEX_OBJECT_LIT,
+			       "Y",
+			       &tableInfo,
+			       mddi.numNewCols,
+			       mddi.newColInfo,
+			       mddi.numNewKeys,
+			       mddi.newKeyInfo,
+			       0, NULL))
+			       //			       1, // numIndex
+			       //			       seabaseMDObjectsUniqIdxIndexInfo))
+	{
+	  goto label_error;
+	}
+    } // for
+
+  // update SPJ info
   if (updateSeabaseMDSPJ(&cliInterface, sysCat, SEABASE_MD_SCHEMA, 
                          SEABASE_VALIDATE_LIBRARY,
                          installJar.data(),

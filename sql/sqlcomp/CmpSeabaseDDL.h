@@ -85,6 +85,7 @@ class StmtDDLDropConstraint;
 class StmtDDLAddConstraintCheck;
 
 class ElemDDLColDefArray;
+class ElemDDLColRefArray;
 class ElemDDLParamDefArray;
 
 class DDLExpr;
@@ -101,7 +102,12 @@ class ByteArrayList;
 
 class HbaseCreateOption;
 
+class Parser;
+
+class NAColumnArray;
+
 struct routine_desc_struct;
+
 #include "CmpSeabaseDDLmd.h"
 
 class CmpSeabaseDDL
@@ -154,6 +160,8 @@ class CmpSeabaseDDL
                                       const NAString &schName,
                                       const NAString &objName);
 
+  short createMDdescs();
+
   static NAString getSystemCatalogStatic();
 
   static NABoolean isEncodingNeededForSerialization(NAColumn * nac);
@@ -170,8 +178,8 @@ class CmpSeabaseDDL
   enum { 
     METADATA_MAJOR_VERSION = 2,
     METADATA_OLD_MAJOR_VERSION = 2,
-    METADATA_MINOR_VERSION = 2,
-    METADATA_OLD_MINOR_VERSION = 1,
+    METADATA_MINOR_VERSION = 3,
+    METADATA_OLD_MINOR_VERSION = 2,
     DATAFORMAT_MAJOR_VERSION = 1,
     DATAFORMAT_MINOR_VERSION = 1,
     SOFTWARE_MAJOR_VERSION = 1,
@@ -222,10 +230,8 @@ class CmpSeabaseDDL
   void getColName(const ComTdbVirtTableColumnInfo columnInfo[],
 		  Lng32 colNum, NAString &colName);
   
-Lng32 getColNumber(
-		   Lng32 numCols,
-		   const ComTdbVirtTableColumnInfo colInfo[],
-		   const char * colName);
+  void getColName(const char * colFam, const char * colQual,
+		  NAString &colName);
 
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
@@ -325,6 +331,15 @@ Lng32 getColNumber(
                      const char * objName,
                      const char * inObjType,
                      char * outObjType = NULL);
+
+   Int64 getObjectUIDandOwner(
+                     ExeCliInterface *cliInterface,
+                     const char * catName,
+                     const char * schName,
+                     const char * objName,
+                     const char * inObjType,
+                     char * outObjType = NULL,
+		     Int32 * objectOwner =NULL);
   
   short getBaseTable(ExeCliInterface *cliInterface,
 		     const NAString &indexCatName,
@@ -446,11 +461,20 @@ Lng32 getColNumber(
 			  ElemDDLColDefArray * colArray,
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
-			  CollIndex numSysCols);
+			  CollIndex numSysCols,
+			  NAMemory * heap = NULL);
 
   short buildColInfoArray(ElemDDLParamDefArray *paramArray,
                           ComTdbVirtTableColumnInfo * colInfoArray);
   
+  short buildKeyInfoArray(
+			  ElemDDLColDefArray *colArray,
+			  ElemDDLColRefArray *keyArray,
+			  ComTdbVirtTableColumnInfo * colInfoArray,
+			  ComTdbVirtTableKeyInfo * keyInfoArray,
+			  NABoolean allowNullableUniqueConstr,
+			  NAMemory * heap = NULL);
+
   const char * computeCheckOption(StmtDDLCreateView * createViewParseNode);
   
   short updateViewUsage(StmtDDLCreateView * createViewParseNode,
@@ -669,6 +693,11 @@ Lng32 getColNumber(
 				      const NAString &schName, 
 				      const NAString &objName,
 				      const char * objType);
+
+  desc_struct * getSeabaseHistTableDesc(const NAString &catName, 
+					const NAString &schName, 
+					const NAString &objName);
+
   Lng32 getSeabaseColumnInfo(ExeCliInterface *cliInterface,
                                    Int64 objUID,
                                    char *direction,
@@ -682,9 +711,62 @@ Lng32 getColNumber(
 					const char * objType,
 					NABoolean includeInvalidDefs);
  
+  static NABoolean getMDtableInfo(const NAString &objName,
+				  Lng32 &colInfoSize,
+				  const ComTdbVirtTableColumnInfo* &colInfo,
+				  Lng32 &keyInfoSize,
+				  const ComTdbVirtTableKeyInfo* &keyInfo,
+				  Lng32 &indexInfoSize,
+				  const ComTdbVirtTableIndexInfo* &indexInfo,
+				  const char * objType);
 
   desc_struct * assembleRegionDescs(ByteArrayList* bal, desc_nodetype format);
 
+  void glueQueryFragments(Lng32 queryArraySize,
+			  const QString * queryArray,
+			  char * &gluedQuery,
+			  Lng32 &gluedQuerySize);
+
+  short convertColAndKeyInfoArrays(
+				    Lng32 btNumCols, // IN
+				    ComTdbVirtTableColumnInfo* btColInfoArray, // IN
+				    Lng32 btNumKeys, // IN
+				    ComTdbVirtTableKeyInfo* btKeyInfoArray, // IN
+				    NAColumnArray *naColArray,
+				    NAColumnArray *naKeyArr);
+
+  short processDDLandCreateDescs(
+				 Parser &parser,
+				 const QString *ddl,
+				 Lng32 sizeOfddl,
+
+				 NABoolean isIndexTable,
+
+				 Lng32 btNumCols, // IN
+				 ComTdbVirtTableColumnInfo* btColInfoArray, // IN
+				 Lng32 btNumKeys, // IN
+				 ComTdbVirtTableKeyInfo* btKeyInfoArray, // IN
+    
+				 Lng32 &numCols,
+				 ComTdbVirtTableColumnInfo* &colInfoArray,
+				 Lng32 &numKeys,
+				 ComTdbVirtTableKeyInfo* &keyInfoArray,
+				 
+				 ComTdbVirtTableIndexInfo* &indexInfo);
+
+  short createIndexColAndKeyInfoArrays(
+				       ElemDDLColRefArray & indexColRefArray,
+				       NABoolean isUnique,
+				       NABoolean hasSyskey,
+				       const NAColumnArray &baseTableNAColArray,
+				       const NAColumnArray &baseTableKeyArr,
+				       Lng32 &keyColCount,
+				       Lng32 &nonKeyColCount,
+				       Lng32 &totalColCount,
+				       ComTdbVirtTableColumnInfo * &colInfoArray,
+				       ComTdbVirtTableKeyInfo * &keyInfoArray,
+				       NAList<NAString> &selColList,
+				       NAMemory * heap);
  private:
   enum
   {

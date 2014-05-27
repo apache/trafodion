@@ -1190,45 +1190,12 @@ void CmpSeabaseDDL::createSeabaseTable(
        (createTableNode->isVolatile())) ||
       (CmpCommon::getDefault(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT) == DF_ON))
     allowNullableUniqueConstr = TRUE;
-  
-  size_t index = 0;
-  for ( index = 0; index < keyArray.entries(); index++)
+
+  if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, allowNullableUniqueConstr))
     {
-      keyInfoArray[index].colName = keyArray[index]->getColumnName();
-
-      keyInfoArray[index].keySeqNum = index+1;
-      keyInfoArray[index].tableColNum = (Lng32)
-	colArray.getColumnIndex(keyArray[index]->getColumnName());
-
-      if (keyInfoArray[index].tableColNum == -1)
-	{
-	  // this col doesn't exist. Return error.
-	  *CmpCommon::diags() << DgSqlCode(-1009)
-			      << DgColumnName(keyInfoArray[index].colName);
-	  
-	  deallocEHI(ehi); 
-
-	  processReturn();
-
-	  return;
-	}
-	
-      keyInfoArray[index].ordering = 
-	(keyArray[index]->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
-      keyInfoArray[index].nonKeyCol = 0;
-
-      if ((colInfoArray[keyInfoArray[index].tableColNum].nullable != 0) &&
-	  (NOT allowNullableUniqueConstr))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-CAT_CLUSTERING_KEY_COL_MUST_BE_NOT_NULL_NOT_DROP)
-			      << DgColumnName(keyInfoArray[index].colName);
-	  
-	  deallocEHI(ehi); 
-
-	  processReturn();
-
-	  return;
-	}
+      processReturn();
+      
+      return;
     }
 
   ParDDLFileAttrsCreateTable &fileAttribs =
@@ -4617,7 +4584,6 @@ void CmpSeabaseDDL::dropSeabaseSchema(
 	someObjectsCouldNotBeDropped = TRUE;
     }
 
-
   processReturn();
 
   if (someObjectsCouldNotBeDropped)
@@ -4935,14 +4901,10 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(const NAString &catName,
 
   Lng32 indexInfoSize = 0;
   const ComTdbVirtTableIndexInfo * indexInfo = NULL;
-  Lng32 indexKeyInfoSize = 0;
-  const ComTdbVirtTableKeyInfo * indexKeyInfo = NULL;
-    
   if (NOT CmpSeabaseMDupgrade::getMDtableInfo(objName,
 					      colInfoSize, colInfo,
 					      keyInfoSize, keyInfo,
 					      indexInfoSize, indexInfo,
-					      indexKeyInfoSize, indexKeyInfo,
 					      objType))
     return NULL;
 
@@ -4961,6 +4923,64 @@ desc_struct * CmpSeabaseDDL::getSeabaseMDTableDesc(const NAString &catName,
 
 }
 
+desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName, 
+						     const NAString &schName, 
+						     const NAString &objName)
+{
+  desc_struct * tableDesc = NULL;
+  NAString schNameL = "\"";
+  schNameL += schName;
+  schNameL += "\"";
+
+  ComObjectName coName(catName, schNameL, objName);
+  NAString extTableName = coName.getExternalName(TRUE);
+
+  Lng32 numCols = 0;
+  ComTdbVirtTableColumnInfo * colInfo = NULL;
+  Lng32 numKeys;
+  ComTdbVirtTableKeyInfo * keyInfo;
+  ComTdbVirtTableIndexInfo * indexInfo;
+
+  Parser parser(CmpCommon::context());
+
+  if (objName == HBASE_HIST_NAME)
+    {
+      if (processDDLandCreateDescs(parser,
+				   seabaseHistogramsDDL, sizeof(seabaseHistogramsDDL),
+				   FALSE,
+				   0, NULL, 0, NULL,
+				   numCols, colInfo,
+				   numKeys, keyInfo,
+				   indexInfo))
+	return NULL;
+    }
+  else if (objName == HBASE_HISTINT_NAME)
+    {
+      if (processDDLandCreateDescs(parser,
+				   seabaseHistogramIntervalsDDL, sizeof(seabaseHistogramIntervalsDDL),
+				   FALSE,
+				   0, NULL, 0, NULL,
+				   numCols, colInfo,
+				   numKeys, keyInfo,
+				   indexInfo))
+	return NULL;
+    }
+  else
+    return NULL;
+
+  tableDesc =
+    Generator::createVirtualTableDesc
+    ((char*)extTableName.data(),
+     numCols,
+     colInfo,
+     numKeys,
+     keyInfo,
+     0, NULL,
+     0, NULL);
+
+  return tableDesc;
+
+}
 
 
 Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
@@ -5143,9 +5163,10 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       return NULL;
     }
 
-  Int64 objUID = getObjectUID(&cliInterface,
+  Int32 objectOwner;
+  Int64 objUID = getObjectUIDandOwner(&cliInterface,
 			      catName.data(), schName.data(), objName.data(),
-                              objType);
+				      objType, NULL, &objectOwner);
   if (objUID < 0)
   {
      if ((!objType) || (objType && (strcmp(objType, "BT") != 0)))
@@ -5158,10 +5179,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
        // object type passed in was for a table. Could not find it but.
        // this could be a view. Look for that.
        CmpCommon::diags()->clear();
-       objUID = getObjectUID(&cliInterface,
-              	catName.data(), schName.data(), objName.data(), "VI");
+       objUID = getObjectUIDandOwner(&cliInterface,
+				     catName.data(), schName.data(), objName.data(), "VI", NULL, 
+				     &objectOwner);
        if (objUID < 0)
-       {
+	 {
           processReturn();
           return NULL;
        }
@@ -5322,13 +5344,6 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
       ComObjectName coIdxName(qIdxCatName, qIdxSchName, qIdxObjName);
       
-      /*
-      NAString cnNas(idxCatName);
-      NAString snNas(idxSchName);
-      NAString onNas(idxObjName);
-      ComObjectName coIdxName(cnNas, snNas, onNas);
-      */
-
       NAString * extIndexName = 
 	new(STMTHEAP) NAString(coIdxName.getExternalName(TRUE));
 
@@ -5704,6 +5719,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   tableInfo.objUID = objUID;
   tableInfo.isAudited = (isAudited ? -1 : 0);
   tableInfo.validDef = 1;
+  tableInfo.objOwner = objectOwner;
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -5794,6 +5810,20 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
       // Could not find this metadata object in the static predefined structs.
       // It could be a metadata view or other objects created in MD schema.
       // Look for it as a regular object.
+    }
+  else if ((objName == HBASE_HIST_NAME) ||
+	   (objName == HBASE_HISTINT_NAME))
+    {
+      NAString tabName = catName;
+      tabName += ".";
+      tabName += schName;
+      tabName += ".";
+      tabName += objName;
+      if (existsInHbase(tabName))
+	{
+	  tDesc = getSeabaseHistTableDesc(catName, schName, objName);
+	}
+      return tDesc;
     }
   
   if (! tDesc)

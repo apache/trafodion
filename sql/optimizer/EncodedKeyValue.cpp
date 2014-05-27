@@ -60,7 +60,7 @@ NAString * getMinMaxValue(desc_struct * column,
   NAString * minMaxValue = NULL;
   
   NAType * type; // deleted at the end of this method
-  if (createNAType(&column->body.columns_desc, NULL, type, NULL))
+  if (NAColumn::createNAType(&column->body.columns_desc, NULL, type, NULL))
     return NULL;
   
   Lng32 buflen = type->getTotalSize();

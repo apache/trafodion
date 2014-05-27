@@ -52,323 +52,299 @@
 
 #define TEXTLEN 10000
 
+struct QString {
+public:
+  const char * str;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // *** current version ***
-// Current metadata tables definition for Metadata Version 2.2
-//  (Major version = 2, Minor version = 2)
+// Current metadata tables definition for Metadata Version 2.3
+//  (Major version = 2, Minor version = 3)
 ///////////////////////////////////////////////////////////////////////////////
 
-static const ComTdbVirtTableColumnInfo seabaseMDColumnsColInfo[] =
-  {                                                                                     
-    { "OBJECT_UID",             0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_NAME",         1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_COLUMN_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_NUMBER",    2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_CLASS",        3, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "FS_DATA_TYPE",          4, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "COLUMN_SIZE",           5, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "COLUMN_PRECISION", 6, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "COLUMN_SCALE",        7, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "DATETIME_START_FIELD", 8, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"9", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "DATETIME_END_FIELD", 9, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"10", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_UPSHIFTED",           10, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"11", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "COLUMN_FLAGS",        11, COM_USER_COLUMN_LIT, REC_BIN32_UNSIGNED, 4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"12", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "NULLABLE",                 12, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"13", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "CHARACTER_SET",      13, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"14", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "DEFAULT_CLASS",       14, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"15", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "DEFAULT_VALUE",     15, COM_USER_COLUMN_LIT, REC_BYTE_V_DOUBLE,    1024,   FALSE, SQLCHARSETCODE_UCS2, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"16", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_HEADING",         16, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_COLUMN_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"17", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "HBASE_COL_FAMILY", 17, COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII,      40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"18", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "HBASE_COL_QUALIFIER", 18, COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII, 40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"19", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "DIRECTION",           19, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"20", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "IS_OPTIONAL",           20, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"21", COM_UNKNOWN_DIRECTION_LIT, 0} 
-  };
+static const QString seabaseAuthsDDL[] =
+{
+  {" create table "SEABASE_AUTHS" "},
+  {" ( "},
+  {"  auth_id int unsigned not null, "},
+  {"  auth_db_name varchar(256 bytes) character set utf8 not null, "},
+  {"  auth_ext_name varchar(256 bytes) character set utf8 not null, "},
+  {"  auth_type char(2) not null, "},
+  {"  auth_creator int unsigned not null, "},
+  {"  auth_is_valid char(2) not null, "},
+  {"  auth_redef_time largeint not null, "},
+  {"  auth_create_time largeint not null "},
+  {" ) "},
+  {" primary key (auth_id) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDColumnsKeyInfo[] =
-  {
-    // columnname     keyseqnumber            tablecolnumber       ordering
-    {    "OBJECT_UID",                1,                                0,            0  , 0 },
-    {    "COLUMN_NAME",            2,                                1,            0  , 0 }
-  };
+static const QString seabaseColumnsDDL[] =
+{
+  {" create table "SEABASE_COLUMNS" "},
+  {" ( "},
+  {"   object_uid largeint not null, "},
+  {"   column_name varchar(256 bytes) character set utf8 not null, "},
+  {"   column_number int not null, "},
+  {"   column_class char(2) not null, "},
+  {"   fs_data_type int not null, "},
+  {"   column_size int not null, "},
+  {"   column_precision int not null, "},
+  {"   column_scale int not null, "},
+  {"   datetime_start_field int not null, "},
+  {"   datetime_end_field int not null, "},
+  {"   is_upshifted char(2) not null, "},
+  {"   column_flags int unsigned not null, "},
+  {"   nullable int not null, "},
+  {"   character_set char(40) not null, "},
+  {"   default_class int not null, "},
+  {"   default_value varchar(512) character set ucs2 not null, "},
+  {"   column_heading varchar(256 bytes) character set utf8 not null, "},
+  {"   hbase_col_family varchar(40) not null, "},
+  {"   hbase_col_qualifier varchar(40) not null, "},
+  {"   direction char(2) not null, "},
+  {"   is_optional char(2) not null "},
+  {" ) "},
+  {" primary key (object_uid, column_name) "},
+  {" ; "}
+};
 
+static const QString seabaseDefaultsDDL[] =
+{
+  {" create table "SEABASE_DEFAULTS" "},
+  {" ( "},
+  {"   attribute varchar(100 bytes) character set utf8 not null, "},
+  {"   attr_value varchar(1000 bytes) character set utf8 not null, "},
+  {"   attr_comment varchar(1000 bytes) character set utf8 not null "},
+  {" ) "},
+  {" primary key (attribute) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseMDObjectsColInfo[] =
-  {                                                                                     
-    { "CATALOG_NAME",  0, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_CATALOG_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "SCHEMA_NAME",    1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_SCHEMA_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "OBJECT_NAME",     2,  COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_TABLE_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "OBJECT_TYPE",     3,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "OBJECT_UID",       4,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CREATE_TIME",     5,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "REDEF_TIME",      6,    COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "VALID_DEF",         7,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0},
-   { "OBJECT_OWNER",    8, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"9", COM_UNKNOWN_DIRECTION_LIT, 0},
-  };
+static const QString seabaseKeysDDL[] =
+{
+  {" create table "SEABASE_KEYS" "},
+  {" ( "},
+  {"   object_uid largeint not null, "},
+  {"   column_name varchar( 256 bytes ) character set utf8 not null, "},
+  {"   keyseq_number int not null, "},
+  {"   column_number int not null, "},
+  {"   ordering int not null, "},
+  {"   nonkeycol int not null "},
+  {" ) "},
+  {" primary key (object_uid, keyseq_number) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDObjectsKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "CATALOG_NAME",           1,                                0,            0  , 0},
-    {    "SCHEMA_NAME",            2,                                 1,            0  , 0},
-    {    "OBJECT_NAME",             3,                                 2,            0  , 0},
-    {    "OBJECT_TYPE",              4,                                 3,            0  , 0}
-  };
+static const QString seabaseIndexesDDL[] =
+{
+  {" create table "SEABASE_INDEXES" "},
+  {" ( "},
+  {"   base_table_uid largeint not null, "},
+  {"   keytag int not null, "},
+  {"   is_unique int not null, "},
+  {"   key_colcount int not null, "},
+  {"   nonkey_colcount int not null, "},
+  {"   is_explicit int not null, "},
+  {"   index_uid largeint not null "},
+  {" ) "},
+  {" primary key (base_table_uid, index_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableIndexInfo seabaseMDObjectsUniqIdxIndexInfo[] =
-  {                                                                                     
-    { TRAFODION_SYSCAT_LIT".""\""SEABASE_MD_SCHEMA"\"""."SEABASE_OBJECTS,  TRAFODION_SYSCAT_LIT".""\""SEABASE_MD_SCHEMA"\"""."SEABASE_OBJECTS_UNIQ_IDX, 1, 1, 1, 1, 4, 0, 0 }
-  };
- 
-static const ComTdbVirtTableColumnInfo seabaseMDObjectsUniqIdxColInfo[] =
-  {       
-    { "OBJECT_UID@",       0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"@1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CATALOG_NAME",  1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_CATALOG_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"@2", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "SCHEMA_NAME",    2, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_SCHEMA_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"@3", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "OBJECT_NAME",     3,  COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_TABLE_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"@4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "OBJECT_TYPE",     4,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"@5", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+static const QString seabaseLibrariesDDL[] =
+{
+  {" create table "SEABASE_LIBRARIES" "},
+  {" ( "},
+  {"   library_uid largeint not null, "},
+  {"   library_filename varchar(512) not null, "},
+  {"   version int not null "},
+  {" ) "},
+  {" primary key (library_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDObjectsUniqIdxKeyInfo[] =
-  {
-    // columnname        keyseqnumber            tablecolnumber       ordering  nonkeycol  hbaseCF            hbaseCQ
-    {    "OBJECT_UID@",                      1,                                4,                 0,   0,             SEABASE_DEFAULT_COL_FAMILY, "@1"}
-  };
+static const QString seabaseLibrariesUsageDDL[] =
+{
+  {" create table "SEABASE_LIBRARIES_USAGE" "},
+  {" ( "},
+  {"   using_library_uid largeint not null, "},
+  {"   used_udr_uid largeint not null "},
+  {" ) "},
+  {" primary key (using_library_uid, used_udr_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDObjectsUniqIdxNonKeyInfo[] =
-  {
-    // columnname        keyseqnumber            tablecolnumber       ordering  nonkeycol     hbaseCF            hbaseCQ
-    {    "CATALOG_NAME",                  2,                                 0,                0  ,              1,  SEABASE_DEFAULT_COL_FAMILY,  "@2"},
-    {    "SCHEMA_NAME",                    3,                                 1,                0  ,             1,   SEABASE_DEFAULT_COL_FAMILY, "@3"},
-    {    "OBJECT_NAME",                     4,                                 2,                0  ,             1,   SEABASE_DEFAULT_COL_FAMILY, "@4"},
-    {    "OBJECT_TYPE",                      5,                                 3,                0  ,             1,   SEABASE_DEFAULT_COL_FAMILY, "@5"}
-  };
+static const QString seabaseObjectsDDL[] =
+{
+  {" create table "SEABASE_OBJECTS" "},
+  {" ( "},
+  {"   catalog_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   schema_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   object_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   object_type char(2) not null, "},
+  {"   object_uid largeint not null, "},
+  {"   create_time largeint not null, "},
+  {"   redef_time largeint not null, "},
+  {"   valid_def char(2) not null, "},
+  {"   object_owner int not null "},
+  {" ) "},
+  {" primary key (catalog_name, schema_name, object_name, object_type) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDObjectsUniqIdxOnlyKeyInfo[] =
-  {
-    // columnname        keyseqnumber            tablecolnumber       ordering  nonkeycol
-    {    "OBJECT_UID@",                      1,                                0,                 0,   0,   SEABASE_DEFAULT_COL_FAMILY, "@1"}
-  };
+static const QString seabaseObjectsUniqIdxIndexDDL[] =
+{
+  {" create unique index "SEABASE_OBJECTS_UNIQ_IDX" on "TRAFODION_SYSCAT_LIT".\""SEABASE_MD_SCHEMA"\"."SEABASE_OBJECTS" "},
+  {" ( "},
+  {"   object_uid "},
+  {" ) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseMDKeysColInfo[] =
-  {                                                                                     
-    { "OBJECT_UID",             0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_NAME",         1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_COLUMN_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "KEYSEQ_NUMBER",     2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_NUMBER",    3, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "ORDERING",                4, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "NONKEYCOL",             5, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6" , COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+static const QString seabaseObjectsUniqIdxDDL[] =
+{
+  {" create table "SEABASE_OBJECTS_UNIQ_IDX" "},
+  {" ( "},
+  {"   \"OBJECT_UID@\" largeint not null, "},
+  {"   catalog_name varchar(256 bytes) character set utf8 not null, "},
+  {"   schema_name varchar(256 bytes) character set utf8 not null, "},
+  {"   object_name varchar(256 bytes) character set utf8 not null, "},
+  {"   object_type char(2) not null "},
+  {" ) "},
+  {" primary key (\"OBJECT_UID@\") "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDKeysKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "OBJECT_UID",                1,                                0,            0  , 0 },
-    {    "KEYSEQ_NUMBER",        2,                                 2,            0  , 0 }
-  };
+static const QString seabaseRefConstraintsDDL[] =
+{
+  {" create table "SEABASE_REF_CONSTRAINTS" "},
+  {" ( "},
+  {"   ref_constraint_uid largeint not null, "},
+  {"   unique_constraint_uid largeint not null, "},
+  {"   match_option char(2) not null, "},
+  {"   update_rule char(2) not null, "},
+  {"   delete_rule char(2) not null "},
+  {" ) "},
+  {" primary key (ref_constraint_uid, unique_constraint_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseMDIndexesColInfo[] =
-  {                                                                                     
-    { "BASE_TABLE_UID",      0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "KEYTAG",                   1, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_UNIQUE",               2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "KEY_COLCOUNT",       3, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "NONKEY_COLCOUNT", 4, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8" , COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_EXPLICIT",             5, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"9", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "INDEX_UID",      6, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"10", COM_UNKNOWN_DIRECTION_LIT, 0},
-  };
+static const QString seabaseRoutinesDDL[] =
+{
+  {" create table "SEABASE_ROUTINES" "},
+  {" ( "},
+  {"   udr_uid largeint not null, "},
+  {"   udr_type char(2) not  null, "},
+  {"   language_type char(2) not null, "},
+  {"   deterministic_bool char(2) not null, "},
+  {"   sql_access char(2) not null, "},
+  {"   call_on_null char(2) not null, "},
+  {"   isolate_bool char(2) not null, "},
+  {"   param_style char(2) not null, "},
+  {"   transaction_attributes char(2) not null, "},
+  {"   max_results int not null, "},
+  {"   state_area_size int not null, "},
+  {"   external_name varchar(1024 bytes) character set utf8 not null, "},
+  {"   parallelism char(2) not null, "},
+  {"   user_version varchar(32) not null, "},
+  {"   external_security char(2) not null, "},
+  {"   execution_mode char(2) not null, "},
+  {"   library_uid largeint not null, "},
+  {"   signature varchar(8192 bytes) character set utf8 not null "},
+  {" ) "},
+  {" primary key (udr_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDIndexesKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "BASE_TABLE_UID",         1,                               0,             0  , 0},
-    {    "INDEX_UID",                   2,                               6,             0  , 0}
-  };
+static const QString seabaseTablesDDL[] =
+{
+  {" create table "SEABASE_TABLES" "},
+  {" ( "},
+  {"   table_uid largeint not null, "},
+  {"   is_audited char(2) not null, "},
+  {"   hbase_create_options varchar(6000) not null "},
+  {" ) "},
+  {" primary key (table_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseMDTablesColInfo[] =
-  {                                                                                     
-    { "TABLE_UID",                        0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_AUDITED",                       1,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "HBASE_CREATE_OPTIONS",  2,  COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII,     6000, FALSE , SQLCHARSETCODE_UTF8, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+static const QString seabaseTableConstraintsDDL[] =
+{
+  {" create table "SEABASE_TABLE_CONSTRAINTS" "},
+  {" ( "},
+  {"   table_uid largeint not null, "},
+  {"   constraint_uid largeint not null, "},
+  {"   constraint_type char(2) not null, "},
+  {"   col_count int not null, "},
+  {"   index_uid largeint not null "},
+  {" ) "},
+  {" primary key (table_uid, constraint_uid, constraint_type) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDTablesKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber            ordering
-    {    "TABLE_UID",                    1,                                0,            0  , 0}
-  };
+static const QString seabaseTextDDL[] =
+{
+  {" create table "SEABASE_TEXT" "},
+  {" ( "},
+  {"   object_uid largeint not null, "},
+  {"   seq_num int not null, "},
+  {"   text varchar(10000 bytes) character set utf8 not null "},
+  {" ) "},
+  {" primary key (object_uid, seq_num) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseMDViewsColInfo[] =
-  {                                                                                     
-    { "VIEW_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CHECK_OPTION",  1,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_UPDATABLE",    2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_INSERTABLE",   3, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-  };
+static const QString seabaseUniqueRefConstrUsageDDL[] =
+{
+  {" create table "SEABASE_UNIQUE_REF_CONSTR_USAGE" "},
+  {" ( "},
+  {"   unique_constraint_uid largeint not null, "},
+  {"   foreign_constraint_uid largeint not null "},
+  {" ) "},
+  {" primary key (unique_constraint_uid, foreign_constraint_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDViewsKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "VIEW_UID",         1,                               0,                     0, 0}
-  };
+static const QString seabaseVersionsDDL[] =
+{
+  {" create table "SEABASE_VERSIONS" "},
+  {" ( "},
+  {"   version_type char(50 bytes) character set utf8 not null, "},
+  {"   major_version largeint not null, "},
+  {"   minor_version largeint not null, "},
+  {"   init_time largeint not null, "},
+  {"   comment varchar(1000 bytes) character set utf8 not null "},
+  {" ) "},
+  {" primary key (version_type) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseMDViewsUsageColInfo[] =
-  {                                                                                     
-    { "USING_VIEW_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "USED_OBJECT_UID",         1,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "USED_OBJECT_TYPE",     2,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+static const QString seabaseViewsDDL[] =
+{
+  {" create table "SEABASE_VIEWS" "},
+  {" ( "},
+  {"   view_uid largeint not null, "},
+  {"   check_option char(2) not null, "},
+  {"   is_updatable int not null, "},
+  {"   is_insertable int not null "},
+  {" ) "},
+  {" primary key (view_uid) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseMDViewsUsageKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "USING_VIEW_UID",         1,                               0,                     0, 0},
-    {    "USED_VIEW_UID",          2,                               1,                     0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDDefaultsColInfo[] =
-  {   
-    { "ATTRIBUTE",         0, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,  100, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "ATTR_VALUE",       1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,  1000, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "ATTR_COMMENT",  2, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,  1000, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDDefaultsKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "ATTRIBUTE",         1,                               0,                     0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDVersionsColInfo[] =
-  {   
-    { "VERSION_TYPE",         0, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,  50, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "MAJOR_VERSION",         1,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "MINOR_VERSION",         2,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "INIT_TIME",                  3,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COMMENT",                 4, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,  1000, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDVersionsKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "VERSION_TYPE",         1,                               0,                     0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDTableConstraintsColInfo[] =
-  {                                                                                     
-    { "TABLE_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CONSTRAINT_UID",            1,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CONSTRAINT_TYPE",  2,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COL_COUNT",       3, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "INDEX_UID",            4,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDTableConstraintsKeyInfo[] =
-  {
-    // columnname          keyseqnumber            tablecolnumber       ordering
-    {    "TABLE_UID",                   1,                               0,                     0, 0},
-    {    "CONSTRAINT_UID",         2,                               1,                     0, 0},
-    {    "CONSTRAINT_TYPE",       3,                               2,                     0, 0}
-
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDTextColInfo[] =
-  {                                                                                     
-    { "OBJECT_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "SEQ_NUM",                 1, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "TEXT",                       2,   COM_USER_COLUMN_LIT, MD_COL_DATATYPE,   TEXTLEN,     FALSE, MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDTextKeyInfo[] =
-  {
-    // columnname          keyseqnumber            tablecolnumber       ordering
-    {    "OBJECT_UID",                   1,                               0,                     0, 0},
-    {    "SEQ_NUM",                        2,                               1,                     0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDRefConstraintsColInfo[] =
-  {                                                                                     
-    { "REF_CONSTRAINT_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "UNIQUE_CONSTRAINT_UID",            1,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "MATCH_OPTION",  2,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-   { "UPDATE_RULE",  3,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-   { "DELETE_RULE",  4,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDRefConstraintsKeyInfo[] =
-  {
-    // columnname                      keyseqnumber            tablecolnumber       ordering
-    {    "REF_CONSTRAINT_UID",                   1,                               0,                 0, 0},
-    {    "UNIQUE_CONSTRAINT_UID",             2,                               1,                 0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDUniqueRefConstrUsageColInfo[] =
-  {                                                                                     
-    { "UNIQUE_CONSTRAINT_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "FOREIGN_CONSTRAINT_UID",            1,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDUniqueRefConstrUsageKeyInfo[] =
-  {
-    // columnname                      keyseqnumber            tablecolnumber       ordering
-    {  "UNIQUE_CONSTRAINT_UID",                   1,                               0,                 0, 0},
-    {  "FOREIGN_CONSTRAINT_UID",                 2,                               1,                 0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDRoutinesColInfo[] =
-  {
-    { "UDR_UID",             0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "UDR_TYPE",            1, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "LANGUAGE_TYPE",       2, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "DETERMINISTIC_BOOL",  3, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "SQL_ACCESS",          4, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CALL_ON_NULL",        5, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "ISOLATE_BOOL",        6, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "PARAM_STYLE",         7, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "TRANSACTION_ATTRIBUTES", 8, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"9", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "MAX_RESULTS",         9, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"10", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "STATE_AREA_SIZE",    10, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"11", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "EXTERNAL_NAME",      11, COM_USER_COLUMN_LIT, MD_COL_DATATYPE, COL_MAX_EXT_LEN,   FALSE, MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"12", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "PARALLELISM",        12, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"13", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "USER_VERSION",       13, COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII,   32,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"14", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "EXTERNAL_SECURITY",  14, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"15", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "EXECUTION_MODE",     15, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"16", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "LIBRARY_UID",        16, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"17", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "SIGNATURE",         17,  COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII,    8192, FALSE , SQLCHARSETCODE_UTF8, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"18", COM_UNKNOWN_DIRECTION_LIT, 0}
-
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDRoutinesKeyInfo[] =
-  {
-    //  columnname      keyseqnumber                      tablecolnumber       ordering
-    {    "UDR_UID",         1,                               0,                     0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDLibrariesColInfo[] =
-  {
-    { "LIBRARY_UID",             0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "LIBRARY_FILENAME",        1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE, COL_MAX_LIB_LEN,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "VERSION",                 2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDLibrariesKeyInfo[] =
-  {
-    //  columnname      keyseqnumber                      tablecolnumber       ordering
-    { "LIBRARY_UID",         1,                               0,                     0, 0}
-  };
-
-static const ComTdbVirtTableColumnInfo seabaseMDLibrariesUsageColInfo[] =
-  {
-    { "USING_LIBRARY_UID",       0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "USED_UDR_UID",            1, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-  };
-
-static const ComTdbVirtTableKeyInfo seabaseMDLibrariesUsageKeyInfo[] =
-  {
-    //  columnname      keyseqnumber                      tablecolnumber       ordering
-    {    "USING_LIBRARY_UID",    1,                               0,                     0, 0},
-    //  columnname      keyseqnumber                      tablecolnumber       ordering
-    {    "USED_UDR_UID",         2,                               1,                     0, 0}
-  };
+static const QString seabaseViewsUsageDDL[] =
+{
+  {" create table "SEABASE_VIEWS_USAGE" "},
+  {" ( "},
+  {"   using_view_uid largeint not null, "},
+  {"   used_object_uid largeint not null, "},
+  {"   used_object_type char(2) not null "},
+  {" ) "},
+  {" primary key (using_view_uid, used_object_uid) "},
+  {" ; "}
+};
 
 static const ComTdbVirtTableRoutineInfo seabaseMDValidateRoutineInfo =
   {
@@ -389,21 +365,60 @@ static const ComTdbVirtTableColumnInfo seabaseMDValidateRoutineColInfo[] =
      { "ERRDETAIL", 9,  COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII, 8192, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"10", COM_OUTPUT_COLUMN_LIT, 0}
   };
 
-static const ComTdbVirtTableColumnInfo seabaseMDAuthsColInfo[] =
-  {
-    { "AUTH_ID",         0, COM_USER_COLUMN_LIT, REC_BIN32_UNSIGNED,  4, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_DB_NAME",         1,   COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_TABLE_LEN,     FALSE, MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_EXT_NAME",         2,   COM_USER_COLUMN_LIT, MD_COL_DATATYPE,   COL_MAX_TABLE_LEN,     FALSE, MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_TYPE",                  3,   COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_CREATOR",                  4,   COM_USER_COLUMN_LIT, REC_BIN32_UNSIGNED,   4,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_IS_VALID",                 5, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,  2, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_REDEF_TIME",      6,    COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "AUTH_CREATE_TIME",     7,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
-static const ComTdbVirtTableKeyInfo seabaseMDAuthsKeyInfo[] =
-  {
-    {    "AUTH_ID",         1,                               0,                     0, 0}
-  };
+static const QString seabaseHistogramsDDL[] =
+{
+  {" create table "HBASE_HIST_NAME" "},
+  {" ( "},
+  {"   table_uid largeint not null, "},
+  {"   histogram_id int unsigned not null, "},
+  {"   col_position int not null, "},
+  {"   column_number int not null, "},
+  {"   colcount int not null, "},
+  {"   interval_count smallint not null, "},
+  {"   rowcount largeint not null, "},
+  {"   total_uec largeint not null, "},
+  {"   stats_time timestamp(0) not null, "},
+  {"   low_value varchar(250) character set ucs2 not null, "},
+  {"   high_value varchar(250) character set ucs2 not null, "},
+  {"   read_time timestamp(0) not null, "},
+  {"   read_count smallint not null, "},
+  {"   sample_secs largeint not null, "},
+  {"   col_secs largeint not null, "},
+  {"   sample_percent smallint not null, "},
+  {"   cv double precision not null, "},
+  {"   reason char(1) not null, "},
+  {"   v1 largeint not null, "},
+  {"   v2 largeint not null, "},
+  {"   v3 largeint not null, "},
+  {"   v4 largeint not null, "},
+  {"   v5 varchar(250) character set ucs2 not null, "},
+  {"   v6 varchar(250) character set ucs2 not null "},
+  {" ) "},
+  {" primary key (table_uid, histogram_id, col_position) "},
+  {" ; "}
+};
+
+static const QString seabaseHistogramIntervalsDDL[] =
+{
+  {" create table "HBASE_HISTINT_NAME" "},
+  {" ( "},
+  {"   table_uid largeint not null, "},
+  {"   histogram_id int unsigned not null, "},
+  {"   interval_number smallint not null, "},
+  {"   interval_rowcount largeint not null, "},
+  {"   interval_uec largeint not null, "},
+  {"   interval_boundary varchar(250) character set ucs2 not null, "},
+  {"   std_dev_of_freq numeric(12,3) not null, "},
+  {"   v1 largeint not null, "},
+  {"   v2 largeint not null, "},
+  {"   v3 largeint not null, "},
+  {"   v4 largeint not null, "},
+  {"   v5 varchar(250) character set ucs2 not null, "},
+  {"   v6 varchar(250) character set ucs2 not null "},
+  {" ) "},
+  {" primary key (table_uid, histogram_id, interval_number) "},
+  {" ; "}
+};
 
 
 /////////////////////////////////////////////////////////////////////
@@ -413,7 +428,7 @@ static const ComTdbVirtTableKeyInfo seabaseMDAuthsKeyInfo[] =
 // These definitions have changed in the current version of code.
 // 
 // Old definitions have the form (for ex for COLUMNS table):
-//            seabaseOldMDv??ColumnsColInfo[]
+//            seabaseOldMDv??ColumnsDDL[]
 // v?? is the old version.
 //
 // When definitions change, make new entries between
@@ -427,6 +442,7 @@ static const ComTdbVirtTableKeyInfo seabaseMDAuthsKeyInfo[] =
 //////////////////////////////////////////////////////////////////////
 #define OLD_MD_EXTENSION "_OLD_MD"
 
+#define SEABASE_AUTHS_OLD_MD           SEABASE_AUTHS"_OLD_MD"
 #define SEABASE_COLUMNS_OLD_MD           SEABASE_COLUMNS"_OLD_MD"
 #define SEABASE_DEFAULTS_OLD_MD          SEABASE_DEFAULTS"_OLD_MD"
 #define SEABASE_INDEXES_OLD_MD            SEABASE_INDEXES"_OLD_MD"
@@ -450,17 +466,23 @@ static const ComTdbVirtTableKeyInfo seabaseMDAuthsKeyInfo[] =
 //// START_OLD_MD_v21: 
 ////        OLD metadata Version 2.1  (Major version = 2, Minor version = 1).
 //////////////////////////////////////////////////////////////////////////
-static const ComTdbVirtTableColumnInfo seabaseOldMDv21ObjectsColInfo[] =
-  {
-    { "CATALOG_NAME",  0, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_CATALOG_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "SCHEMA_NAME",    1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_SCHEMA_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "OBJECT_NAME",     2,  COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_TABLE_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "OBJECT_TYPE",     3,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "OBJECT_UID",       4,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CREATE_TIME",     5,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "REDEF_TIME",      6,    COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "VALID_DEF",         7,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,   2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+
+static const QString seabaseOldMDv21ObjectsDDL[] =
+{
+  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" ( "},
+  {"   catalog_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   schema_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   object_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   object_type char(2) not null, "},
+  {"   object_uid largeint not null, "},
+  {"   create_time largeint not null, "},
+  {"   redef_time largeint not null, "},
+  {"   valid_def char(2) not null "},
+  {" ) "},
+  {" primary key (catalog_name, schema_name, object_name, object_type) "},
+  {" ; "}
+};
 
 ////////////////////////////////////////////////////////////////////////
 //// END_OLD_MD_v21: 
@@ -468,71 +490,86 @@ static const ComTdbVirtTableColumnInfo seabaseOldMDv21ObjectsColInfo[] =
 //////////////////////////////////////////////////////////////////////////
 
 
-
 ////////////////////////////////////////////////////////////////////////
 // START_OLD_MD_v11: 
 //        OLD metadata Version 1.1  (Major version = 1, Minor version = 1).
 ////////////////////////////////////////////////////////////////////////
-static const ComTdbVirtTableColumnInfo seabaseOldMDv11ColumnsColInfo[] =
-  {                                                                                     
-    { "OBJECT_UID",             0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_NAME",         1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_COLUMN_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_NUMBER",    2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_CLASS",        3, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "FS_DATA_TYPE",          4, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "COLUMN_SIZE",           5, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "COLUMN_PRECISION", 6, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "COLUMN_SCALE",        7, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "DATETIME_START_FIELD", 8, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"9", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "DATETIME_END_FIELD", 9, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,   4,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"10", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_UPSHIFTED",           10, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"11", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "COLUMN_FLAGS",        11, COM_USER_COLUMN_LIT, REC_BIN32_UNSIGNED, 4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"12", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "NULLABLE",                 12, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"13", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "CHARACTER_SET",      13, COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"14", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "DEFAULT_CLASS",       14, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"15", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "DEFAULT_VALUE",     15, COM_USER_COLUMN_LIT, REC_BYTE_V_DOUBLE,    1024,   FALSE, SQLCHARSETCODE_UCS2, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"16", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "COLUMN_HEADING",         16, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_COLUMN_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"17", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "HBASE_COL_FAMILY", 17, COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII,      40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"18", COM_UNKNOWN_DIRECTION_LIT, 0}, 
-    { "HBASE_COL_QUALIFIER", 18, COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII, 40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"19", COM_UNKNOWN_DIRECTION_LIT, 0},
-  };
 
-static const ComTdbVirtTableColumnInfo seabaseOldMDv11IndexesColInfo[] =
-  {                                                                                     
-    { "BASE_TABLE_UID",      0, COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CATALOG_NAME",       1, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_CATALOG_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "SCHEMA_NAME",         2, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_SCHEMA_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},  
-    { "INDEX_NAME",            3, COM_USER_COLUMN_LIT, MD_COL_DATATYPE,    COL_MAX_TABLE_LEN, FALSE , MD_COL_CHARSET, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "KEYTAG",                   4, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_UNIQUE",               5, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"6", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "KEY_COLCOUNT",       6, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"7", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "NONKEY_COLCOUNT", 7, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"8", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+static const QString seabaseOldMDv11ColumnsDDL[] =
+{
+  {" create table "SEABASE_COLUMNS_OLD_MD" "},
+  {" ( "},
+  {"   object_uid largeint not null, "},
+  {"   column_name varchar(256 bytes) character set utf8 not null, "},
+  {"   column_number int not null, "},
+  {"   column_class char(2) not null, "},
+  {"   fs_data_type int not null, "},
+  {"   column_size int not null, "},
+  {"   column_precision int not null, "},
+  {"   column_scale int not null, "},
+  {"   datetime_start_field int not null, "},
+  {"   datetime_end_field int not null, "},
+  {"   is_upshifted char(2) not null, "},
+  {"   column_flags int unsigned not null, "},
+  {"   nullable int not null, "},
+  {"   character_set char(40) not null, "},
+  {"   default_class int not null, "},
+  {"   default_value varchar(512) character set ucs2 not null, "},
+  {"   column_heading varchar(256 bytes) character set utf8 not null, "},
+  {"   hbase_col_family varchar(40) not null, "},
+  {"   hbase_col_qualifier varchar(40) not null "},
+  {" ) "},
+  {" primary key (object_uid, column_name) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseOldMDv11IndexesKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "BASE_TABLE_UID",         1,                               0,             0  , 0},
-    {    "CATALOG_NAME",          2,                                1,             0  , 0},
-    {    "SCHEMA_NAME",            3,                                2,             0  , 0},
-    {    "INDEX_NAME",               4,                                3,             0  , 0}
-  };
+static const QString seabaseOldMDv11IndexesDDL[] =
+{
+  {" create table "SEABASE_INDEXES_OLD_MD" "},
+  {" ( "},
+  {"   base_table_uid largeint not null, "},
+  {"   catalog_name varchar(256 bytes) character set utf8 not null, "},
+  {"   schema_name varchar(256 bytes) character set utf8 not null, "},
+  {"   index_name varchar(256 bytes) character set utf8 not null, "},
+  {"   keytag int not null, "},
+  {"   is_unique int not null, "},
+  {"   key_colcount int not null, "},
+  {"   nonkey_colcount int not null "},
+  {" ) "},
+  {" primary key (base_table_uid, catalog_name, schema_name, index_name) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableKeyInfo seabaseOldMDv11ObjectsKeyInfo[] =
-  {
-    // columnname keyseqnumber            tablecolnumber       ordering
-    {    "CATALOG_NAME",           1,                                0,            0  , 0},
-    {    "SCHEMA_NAME",            2,                                 1,            0  , 0},
-    {    "OBJECT_NAME",             3,                                 2,            0  , 0}
-  };
+static const QString seabaseOldMDv11ObjectsDDL[] =
+{
+  {" create table "SEABASE_OBJECTS_OLD_MD" "},
+  {" ( "},
+  {"   catalog_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   schema_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   object_name varchar ( 256 bytes ) character set utf8 not null, "},
+  {"   object_type char(2) not null, "},
+  {"   object_uid largeint not null, "},
+  {"   create_time largeint not null, "},
+  {"   redef_time largeint not null, "},
+  {"   valid_def char(2) not null "},
+  {" ) "},
+  {" primary key (catalog_name, schema_name, object_name) "},
+  {" ; "}
+};
 
-static const ComTdbVirtTableColumnInfo seabaseOldMDv11ViewsColInfo[] =
-  {                                                                                     
-    { "VIEW_UID",            0,   COM_USER_COLUMN_LIT, REC_BIN64_SIGNED,   8,     FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"1", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "CHECK_OPTION",  1,  COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,     2,     FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"2", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_UPDATABLE",    2, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"3", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "IS_INSERTABLE",   3, COM_USER_COLUMN_LIT, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"4", COM_UNKNOWN_DIRECTION_LIT, 0},
-    { "VIEW_TEXT",         4,  COM_USER_COLUMN_LIT, REC_BYTE_V_ASCII,     6000, FALSE , SQLCHARSETCODE_UTF8, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",SEABASE_DEFAULT_COL_FAMILY,"5", COM_UNKNOWN_DIRECTION_LIT, 0}
-  };
+static const QString seabaseOldMDv11ViewsDDL[] =
+{
+  {" create table "SEABASE_VIEWS_OLD_MD" "},
+  {" ( "},
+  {"   view_uid largeint not null, "},
+  {"   check_option char(2) not null, "},
+  {"   is_updatable int not null, "},
+  {"   is_insertable int not null, "},
+  {"   view_text varchar(6000 bytes) character set utf8 not null "},
+  {" ) "},
+  {" primary key (view_uid) "},
+  {" ; "}
+};
 
 ////////////////////////////////////////////////////////////////////////
 // END_OLD_MD_v11: 
@@ -543,11 +580,6 @@ static const ComTdbVirtTableColumnInfo seabaseOldMDv11ViewsColInfo[] =
 ////////////////////////////////////////////////////////////////////////
 // Metadata views.
 ////////////////////////////////////////////////////////////////////////
-struct QString {
-public:
-  const char * str;
-};
-
 #define TRAF_COLUMNS_VIEW "COLUMNS_VIEW"
 #define TRAF_INDEXES_VIEW "INDEXES_VIEW"
 #define TRAF_KEYS_VIEW "KEYS_VIEW"

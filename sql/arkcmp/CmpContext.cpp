@@ -280,6 +280,10 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   HHDFSMasterHostList::resethasVirtualSQNodes();
 
   optDefaults_ = new (heap_) OptDefaults();
+
+  // create global dynamic metadata descriptors
+  CmpSeabaseDDL cmpSeabaseDDL(heap_);
+  cmpSeabaseDDL.createMDdescs();
 }
 
 // MV -amir

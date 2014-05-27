@@ -702,10 +702,10 @@ void CmpSeabaseDDL::dropSeabaseView(
   return;
 }
 
-static void glueQueryFragments(Lng32 queryArraySize,
-			       const QString * queryArray,
-			       char * &gluedQuery,
-			       Lng32 &gluedQuerySize)
+void CmpSeabaseDDL::glueQueryFragments(Lng32 queryArraySize,
+				       const QString * queryArray,
+				       char * &gluedQuery,
+				       Lng32 &gluedQuerySize)
 {
   Int32 i = 0;
   gluedQuerySize = 0;

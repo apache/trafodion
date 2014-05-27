@@ -51,6 +51,7 @@ class CheckConstraint;
 class DomainDesc;
 class NATable;
 class NAType;
+struct columns_desc_struct;
 
 enum ColumnClass  { SYSTEM_COLUMN, USER_COLUMN, USER_AND_SYSTEM_COLUMNS };
 enum SortOrdering { NOT_ORDERED = 0, ASCENDING = +1, DESCENDING = -1 };
@@ -318,6 +319,13 @@ public:
 
   inline void setMvSystemAddedColumn() { mvSystemAddedColumn_ = TRUE; }
   inline NABoolean isMvSystemAddedColumn() const { return mvSystemAddedColumn_; }
+
+  static NABoolean createNAType(columns_desc_struct *column_desc	/*IN*/,
+				const NATable *table  		/*IN*/,
+				NAType *&type       		/*OUT*/,
+				NAMemory *heap			/*IN*/,
+				Lng32 * errorCode = NULL
+				);
 
   // ---------------------------------------------------------------------
   // Standard operators

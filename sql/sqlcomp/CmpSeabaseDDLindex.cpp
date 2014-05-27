@@ -59,6 +59,292 @@
 
 #include "NumericType.h"
 
+short CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
+						    ElemDDLColRefArray &indexColRefArray,
+						    NABoolean isUnique,
+						    NABoolean hasSyskey,
+						    const NAColumnArray &baseTableNAColArray,
+						    const NAColumnArray &baseTableKeyArr,
+						    Lng32 &keyColCount,
+						    Lng32 &nonKeyColCount,
+						    Lng32 &totalColCount,
+						    ComTdbVirtTableColumnInfo * &colInfoArray,
+						    ComTdbVirtTableKeyInfo * &keyInfoArray,
+						    NAList<NAString> &selColList,
+						    NAMemory * heap)
+{
+  Lng32 retcode = 0;
+
+  keyColCount = indexColRefArray.entries();
+  nonKeyColCount = 0;
+
+  Lng32 baseTableKeyCount = baseTableKeyArr.entries();
+
+  if (isUnique)
+    nonKeyColCount = baseTableKeyCount;
+  else
+    keyColCount += baseTableKeyCount;
+
+  totalColCount = keyColCount + nonKeyColCount;
+
+  colInfoArray = (ComTdbVirtTableColumnInfo*)
+    new(heap) char[totalColCount *  sizeof(ComTdbVirtTableColumnInfo)];
+
+  keyInfoArray = (ComTdbVirtTableKeyInfo*)
+    new(heap) char[totalColCount * sizeof(ComTdbVirtTableKeyInfo)];
+
+  CollIndex i = 0;
+  NABoolean syskeyOnly = TRUE;
+  NABoolean syskeySpecified = FALSE;
+  NABoolean incorrectSyskeyPos = FALSE;
+  for ( i = 0; i < indexColRefArray.entries(); i++ )
+    {
+      ElemDDLColRef *nodeKeyCol = indexColRefArray[i];
+      
+     const NAColumn *tableCol =
+       baseTableNAColArray.getColumn(nodeKeyCol->getColumnName());
+     if (tableCol == NULL)
+       {
+	 *CmpCommon::diags() << DgSqlCode(-1009) //CAT_COLUMN_DOES_NOT_EXIST_ERR
+			     << DgColumnName(ToAnsiIdentifier(nodeKeyCol->getColumnName()));
+	 
+	 return -1;
+       }
+
+     if (strcmp(nodeKeyCol->getColumnName(), "SYSKEY") != 0)
+       syskeyOnly = FALSE;
+     else
+       {
+	 syskeySpecified = TRUE;
+	 if (i < (indexColRefArray.entries() - 1))
+	   incorrectSyskeyPos = TRUE;
+       }
+
+     // update column info for the index
+     char * col_name = new(heap) char[strlen(nodeKeyCol->getColumnName()) + 2 + 1];
+     strcpy(col_name, nodeKeyCol->getColumnName());
+     strcat(col_name, "@");
+     if (baseTableKeyArr.getColumn(col_name))
+       {
+	 strcat(col_name, "@");
+       }
+     colInfoArray[i].colName = col_name;
+
+     selColList.insert(nodeKeyCol->getColumnName());
+
+     colInfoArray[i].colNumber = i; 
+
+     strcpy(colInfoArray[i].columnClass, COM_USER_COLUMN_LIT);
+
+     const NAType * naType = tableCol->getType();
+
+     Lng32 precision = 0;
+     Lng32 scale = 0;
+     Lng32 dtStart = 0; 
+     Lng32 dtEnd = 0;
+     Lng32 upshifted = 0;
+     NAString charsetStr;
+     SQLCHARSET_CODE charset = SQLCHARSETCODE_UNKNOWN;
+     CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
+     ULng32 colFlags = 0;
+     retcode = getTypeInfo(naType, FALSE,
+			   colInfoArray[i].datatype, colInfoArray[i].length, 
+			   precision, scale, dtStart, dtEnd, upshifted, 
+			   colInfoArray[i].nullable,
+			   charsetStr, collationSequence, colFlags);
+      if (retcode)
+	{
+	  if  (collationSequence != CharInfo::DefaultCollation)
+	    {
+	      // collation not supported
+	      *CmpCommon::diags() << DgSqlCode(-4069)
+				  << DgColumnName(ToAnsiIdentifier(col_name))
+				  << DgString0(CharInfo::getCollationName(collationSequence));
+	    }
+
+	  return -1;
+	}
+
+     colInfoArray[i].precision = precision;
+     colInfoArray[i].scale = scale;
+     colInfoArray[i].dtStart = dtStart;
+     colInfoArray[i].dtEnd = dtEnd;
+     colInfoArray[i].upshifted = upshifted;
+     colInfoArray[i].charset = 
+       (SQLCHARSET_CODE)CharInfo::getCharSetEnum(charsetStr.data());
+     
+     colInfoArray[i].defaultClass = COM_NO_DEFAULT;
+     colInfoArray[i].defVal = NULL;
+
+     colInfoArray[i].colHeading = NULL;
+     if (tableCol->getHeading())
+       {
+	 char * h = (char*)tableCol->getHeading();
+	 Lng32 hlen = strlen(h);
+	 char * head_val = new(heap) char[hlen+1];
+	 strcpy(head_val, h); 
+	 colInfoArray[i].colHeading = head_val;
+       }
+
+     colInfoArray[i].hbaseColFam = 
+	new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
+     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+
+      char idxNumStr[40];
+      idxNumStr[0] = '@';
+      str_itoa(i+1, &idxNumStr[1]);
+
+      colInfoArray[i].hbaseColQual =
+	new(heap) char[strlen(idxNumStr) + 1];
+      strcpy((char*)colInfoArray[i].hbaseColQual, idxNumStr);
+
+      colInfoArray[i].hbaseColFlags = tableCol->getHbaseColFlags();
+      strcpy(colInfoArray[i].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
+      colInfoArray[i].isOptional = FALSE;
+ 
+     // update key info
+     keyInfoArray[i].colName = col_name; 
+     keyInfoArray[i].keySeqNum = i+1;
+     keyInfoArray[i].tableColNum = tableCol->getPosition();
+     keyInfoArray[i].ordering = 
+       (nodeKeyCol->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
+
+     keyInfoArray[i].nonKeyCol = 0;
+
+     keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
+     strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+     
+     char qualNumStr[40];
+     str_sprintf(qualNumStr, "@%d", keyInfoArray[i].keySeqNum);
+     
+     keyInfoArray[i].hbaseColQual = new(CTXTHEAP) char[strlen(qualNumStr)+1];
+     strcpy((char*)keyInfoArray[i].hbaseColQual, qualNumStr);
+    }
+  
+  if ((syskeyOnly) &&
+      (hasSyskey))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1112);
+
+      return -1;
+    }
+
+  if ((syskeySpecified && incorrectSyskeyPos) &&
+      (hasSyskey))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1089);
+
+      return -1;
+    }
+
+  // add base table primary key info
+  CollIndex j = 0;
+  while (i < totalColCount)
+    {
+      const NAColumn * keyCol = baseTableKeyArr[j];
+
+      // update column info for the index
+      char * col_name = new(heap) char[strlen(keyCol->getColName().data()) + 2 + 1];
+      strcpy(col_name, keyCol->getColName().data());
+      colInfoArray[i].colName = col_name;
+
+      colInfoArray[i].colNumber = i; 
+      strcpy(colInfoArray[i].columnClass, COM_USER_COLUMN_LIT);
+
+      selColList.insert(keyCol->getColName());
+
+      const NAType * naType = keyCol->getType();
+      
+      Lng32 precision = 0;
+      Lng32 scale = 0;
+      Lng32 dtStart = 0; 
+      Lng32 dtEnd = 0;
+      Lng32 upshifted = 0;
+      NAString charsetStr;
+      SQLCHARSET_CODE charset = SQLCHARSETCODE_UNKNOWN;
+      CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
+      ULng32 colFlags = 0;
+      
+      retcode = getTypeInfo(naType, FALSE,
+			    colInfoArray[i].datatype, colInfoArray[i].length, 
+			    precision, scale, dtStart, dtEnd, upshifted, 
+			    colInfoArray[i].nullable,
+			    charsetStr, collationSequence, colFlags);
+      if (retcode)
+	{
+	  if  (collationSequence != CharInfo::DefaultCollation)
+	    {
+	      // collation not supported
+	      *CmpCommon::diags() << DgSqlCode(-4069)
+				  << DgColumnName(ToAnsiIdentifier(col_name))
+				  << DgString0(CharInfo::getCollationName(collationSequence));
+	    }
+
+	  return -1;
+	}
+
+      colInfoArray[i].precision = precision;
+      colInfoArray[i].scale = scale;
+      colInfoArray[i].dtStart = dtStart;
+      colInfoArray[i].dtEnd = dtEnd;
+      colInfoArray[i].upshifted = upshifted;
+      colInfoArray[i].charset = charset;
+      colInfoArray[i].defaultClass = COM_NO_DEFAULT;
+      colInfoArray[i].defVal = NULL;
+      colInfoArray[i].colHeading = NULL;
+      if (keyCol->getHeading())
+	{
+	  char * h = (char*)keyCol->getHeading();
+	  Lng32 hlen = strlen(h);
+	  char * head_val = new(heap) char[hlen+1];
+	  strcpy(head_val, h); 
+	  colInfoArray[i].colHeading = head_val;
+	}
+      
+     colInfoArray[i].hbaseColFam = 
+       new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
+     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+     
+      char idxNumStr[40];
+      idxNumStr[0] = '@';
+      str_itoa(i+1, &idxNumStr[1]);
+
+      colInfoArray[i].hbaseColQual =
+	new(heap) char[strlen(idxNumStr) + 1];
+      strcpy((char*)colInfoArray[i].hbaseColQual, idxNumStr);
+
+      colInfoArray[i].hbaseColFlags = keyCol->getHbaseColFlags();
+      strcpy(colInfoArray[i].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
+      colInfoArray[i].isOptional = FALSE;
+ 
+      // add base table keys for non-unique index
+      keyInfoArray[i].colName = col_name;
+      keyInfoArray[i].keySeqNum = i+1;
+      keyInfoArray[i].tableColNum = keyCol->getPosition();
+      keyInfoArray[i].ordering = 
+	(keyCol->getClusteringKeyOrdering() == ASCENDING ? 0 : 1);
+      
+      if (isUnique)
+	keyInfoArray[i].nonKeyCol = 1;
+      else
+	keyInfoArray[i].nonKeyCol = 0;
+
+      keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
+      strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
+      
+      char qualNumStr[40];
+      str_sprintf(qualNumStr, "@%d", keyInfoArray[i].keySeqNum);
+      
+      keyInfoArray[i].hbaseColQual = new(CTXTHEAP) char[strlen(qualNumStr)+1];
+      strcpy((char*)keyInfoArray[i].hbaseColQual, qualNumStr);
+      
+      j++;
+      i++;
+    }
+
+  return 0;
+}
+
 void CmpSeabaseDDL::createSeabaseIndex(
 				       StmtDDLCreateIndex * createIndexNode,
 				       NAString &currCatName, NAString &currSchName)
@@ -315,262 +601,36 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   const NAColumnArray & naColArray = naTable->getNAColumnArray();
   ElemDDLColRefArray & indexColRefArray = createIndexNode->getColRefArray();
-
-  Lng32 keyColCount = indexColRefArray.entries();
-  Lng32 nonKeyColCount = 0;
-
   const NAFileSet * nafs = naTable->getClusteringIndex();
   const NAColumnArray &baseTableKeyArr = nafs->getIndexKeyColumns();
-  Lng32 baseTableKeyCount = baseTableKeyArr.entries();
 
-  if (createIndexNode->isUniqueSpecified())
-    nonKeyColCount = baseTableKeyCount;
-  else
-    keyColCount += baseTableKeyCount;
+  Lng32 keyColCount = 0;
+  Lng32 nonKeyColCount = 0;
+  Lng32 totalColCount = 0;
 
-  Lng32 totalColCount = keyColCount + nonKeyColCount;
-
-  ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
-    new(STMTHEAP) char[totalColCount *  sizeof(ComTdbVirtTableColumnInfo)];
-
-  ComTdbVirtTableKeyInfo * keyInfoArray = (ComTdbVirtTableKeyInfo*)
-    new(STMTHEAP) char[totalColCount * sizeof(ComTdbVirtTableKeyInfo)];
+  ComTdbVirtTableColumnInfo * colInfoArray = NULL;
+  ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
 
   NAList<NAString> selColList;
 
-  CollIndex i = 0;
-  NABoolean syskeyOnly = TRUE;
-  NABoolean syskeySpecified = FALSE;
-  NABoolean incorrectSyskeyPos = FALSE;
-  for ( i = 0; i < indexColRefArray.entries(); i++ )
+  if (createIndexColAndKeyInfoArrays(indexColRefArray,
+				     createIndexNode->isUniqueSpecified(),
+				     naTable->getClusteringIndex()->hasSyskey(),
+				     naColArray,
+				     baseTableKeyArr,
+				     keyColCount,
+				     nonKeyColCount,
+				     totalColCount,
+				     colInfoArray,
+				     keyInfoArray,
+				     selColList,
+				     STMTHEAP))
     {
-      ElemDDLColRef *nodeKeyCol = indexColRefArray[i];
+      deallocEHI(ehi); 
       
-     const NAColumn *tableCol =
-       naColArray.getColumn(nodeKeyCol->getColumnName());
-     if (tableCol == NULL)
-       {
-	 *CmpCommon::diags() << DgSqlCode(-1009) //CAT_COLUMN_DOES_NOT_EXIST_ERR
-			     << DgColumnName(ToAnsiIdentifier(nodeKeyCol->getColumnName()));
-	 
-	 deallocEHI(ehi); 
-
-	 processReturn();
-
-	 return;
-       }
-
-     if (strcmp(nodeKeyCol->getColumnName(), "SYSKEY") != 0)
-       syskeyOnly = FALSE;
-     else
-       {
-	 syskeySpecified = TRUE;
-	 if (i < (indexColRefArray.entries() - 1))
-	   incorrectSyskeyPos = TRUE;
-       }
-
-     // update column info for the index
-     char * col_name = new(STMTHEAP) char[strlen(nodeKeyCol->getColumnName()) + 2 + 1];
-     strcpy(col_name, nodeKeyCol->getColumnName());
-     strcat(col_name, "@");
-     if (baseTableKeyArr.getColumn(col_name))
-       {
-	 strcat(col_name, "@");
-       }
-     colInfoArray[i].colName = col_name;
-
-     selColList.insert(nodeKeyCol->getColumnName());
-
-     colInfoArray[i].colNumber = i; 
-
-     strcpy(colInfoArray[i].columnClass, COM_USER_COLUMN_LIT);
-
-     const NAType * naType = tableCol->getType();
-
-     Lng32 precision = 0;
-     Lng32 scale = 0;
-     Lng32 dtStart = 0; 
-     Lng32 dtEnd = 0;
-     Lng32 upshifted = 0;
-     NAString charsetStr;
-     SQLCHARSET_CODE charset = SQLCHARSETCODE_UNKNOWN;
-     CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
-     ULng32 colFlags = 0;
-     retcode = getTypeInfo(naType, FALSE,
-			   colInfoArray[i].datatype, colInfoArray[i].length, 
-			   precision, scale, dtStart, dtEnd, upshifted, 
-			   colInfoArray[i].nullable,
-			   charsetStr, collationSequence, colFlags);
-      if (retcode)
-	{
-	  if  (collationSequence != CharInfo::DefaultCollation)
-	    {
-	      // collation not supported
-	      *CmpCommon::diags() << DgSqlCode(-4069)
-				  << DgColumnName(ToAnsiIdentifier(col_name))
-				  << DgString0(CharInfo::getCollationName(collationSequence));
-	    }
-
-	  return;
-	}
-
-     colInfoArray[i].precision = precision;
-     colInfoArray[i].scale = scale;
-     colInfoArray[i].dtStart = dtStart;
-     colInfoArray[i].dtEnd = dtEnd;
-     colInfoArray[i].upshifted = upshifted;
-     colInfoArray[i].charset = 
-       (SQLCHARSET_CODE)CharInfo::getCharSetEnum(charsetStr.data());
-     
-     colInfoArray[i].defaultClass = COM_NO_DEFAULT;
-     colInfoArray[i].defVal = NULL;
-
-     colInfoArray[i].colHeading = NULL;
-     if (tableCol->getHeading())
-       {
-	 char * h = (char*)tableCol->getHeading();
-	 Lng32 hlen = strlen(h);
-	 char * head_val = new(STMTHEAP) char[hlen+1];
-	 strcpy(head_val, h); 
-	 colInfoArray[i].colHeading = head_val;
-       }
-
-     colInfoArray[i].hbaseColFam = 
-	new(STMTHEAP) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
-
-      char idxNumStr[40];
-      idxNumStr[0] = '@';
-      str_itoa(i+1, &idxNumStr[1]);
-
-      colInfoArray[i].hbaseColQual =
-	new(STMTHEAP) char[strlen(idxNumStr) + 1];
-      strcpy((char*)colInfoArray[i].hbaseColQual, idxNumStr);
-
-      colInfoArray[i].hbaseColFlags = tableCol->getHbaseColFlags();
-      strcpy(colInfoArray[i].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
-      colInfoArray[i].isOptional = FALSE;
- 
-     // update key info
-     keyInfoArray[i].colName = col_name; 
-     keyInfoArray[i].keySeqNum = i+1;
-     keyInfoArray[i].tableColNum = tableCol->getPosition();
-     keyInfoArray[i].ordering = 
-       (nodeKeyCol->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
-
-     keyInfoArray[i].nonKeyCol = 0;
-    }
-  
-  if ((syskeyOnly) &&
-      (naTable->getClusteringIndex()->hasSyskey()))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1112);
-
+      processReturn();
+      
       return;
-    }
-
-  if ((syskeySpecified && incorrectSyskeyPos) &&
-      (naTable->getClusteringIndex()->hasSyskey()))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1089);
-
-      return;
-    }
-
-  // add base table primary key info
-  CollIndex j = 0;
-  while (i < totalColCount)
-    {
-      const NAColumn * keyCol = baseTableKeyArr[j];
-
-      // update column info for the index
-      char * col_name = new(STMTHEAP) char[strlen(keyCol->getColName().data()) + 2 + 1];
-      strcpy(col_name, keyCol->getColName().data());
-      colInfoArray[i].colName = col_name;
-
-      colInfoArray[i].colNumber = i; 
-      strcpy(colInfoArray[i].columnClass, COM_USER_COLUMN_LIT);
-
-      selColList.insert(keyCol->getColName());
-
-      const NAType * naType = keyCol->getType();
-      
-      Lng32 precision = 0;
-      Lng32 scale = 0;
-      Lng32 dtStart = 0; 
-      Lng32 dtEnd = 0;
-      Lng32 upshifted = 0;
-      NAString charsetStr;
-      SQLCHARSET_CODE charset = SQLCHARSETCODE_UNKNOWN;
-      CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
-      ULng32 colFlags = 0;
-      
-      retcode = getTypeInfo(naType, FALSE,
-			    colInfoArray[i].datatype, colInfoArray[i].length, 
-			    precision, scale, dtStart, dtEnd, upshifted, 
-			    colInfoArray[i].nullable,
-			    charsetStr, collationSequence, colFlags);
-      if (retcode)
-	{
-	  if  (collationSequence != CharInfo::DefaultCollation)
-	    {
-	      // collation not supported
-	      *CmpCommon::diags() << DgSqlCode(-4069)
-				  << DgColumnName(ToAnsiIdentifier(col_name))
-				  << DgString0(CharInfo::getCollationName(collationSequence));
-	    }
-
-	  return;
-	}
-
-      colInfoArray[i].precision = precision;
-      colInfoArray[i].scale = scale;
-      colInfoArray[i].dtStart = dtStart;
-      colInfoArray[i].dtEnd = dtEnd;
-      colInfoArray[i].upshifted = upshifted;
-      colInfoArray[i].charset = charset;
-      colInfoArray[i].defaultClass = COM_NO_DEFAULT;
-      colInfoArray[i].defVal = NULL;
-      colInfoArray[i].colHeading = NULL;
-      if (keyCol->getHeading())
-	{
-	  char * h = (char*)keyCol->getHeading();
-	  Lng32 hlen = strlen(h);
-	  char * head_val = new(STMTHEAP) char[hlen+1];
-	  strcpy(head_val, h); 
-	  colInfoArray[i].colHeading = head_val;
-	}
-      
-     colInfoArray[i].hbaseColFam = 
-       new(STMTHEAP) char[strlen(SEABASE_DEFAULT_COL_FAMILY) +1];
-     strcpy((char*)colInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
-     
-      char idxNumStr[40];
-      idxNumStr[0] = '@';
-      str_itoa(i+1, &idxNumStr[1]);
-
-      colInfoArray[i].hbaseColQual =
-	new(STMTHEAP) char[strlen(idxNumStr) + 1];
-      strcpy((char*)colInfoArray[i].hbaseColQual, idxNumStr);
-
-      colInfoArray[i].hbaseColFlags = keyCol->getHbaseColFlags();
-      strcpy(colInfoArray[i].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
-      colInfoArray[i].isOptional = FALSE;
- 
-      // add base table keys for non-unique index
-      keyInfoArray[i].colName = col_name;
-      keyInfoArray[i].keySeqNum = i+1;
-      keyInfoArray[i].tableColNum = keyCol->getPosition();
-      keyInfoArray[i].ordering = 
-	(keyCol->getClusteringKeyOrdering() == ASCENDING ? 0 : 1);
-      
-      if (createIndexNode->isUniqueSpecified())
-	keyInfoArray[i].nonKeyCol = 1;
-      else
-	keyInfoArray[i].nonKeyCol = 0;
-
-      j++;
-      i++;
     }
 
   ComTdbVirtTableTableInfo tableInfo;

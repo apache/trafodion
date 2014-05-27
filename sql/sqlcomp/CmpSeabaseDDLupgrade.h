@@ -33,35 +33,18 @@ struct MDTableInfo
   // if NULL, then the new MD table is an added table.
   const char * oldName;  // name of the old
 
-  // column information of the new table
-  Lng32 newColInfoSize;
-  const ComTdbVirtTableColumnInfo * newColInfo;
+  // ddl stmt corresponding to the current ddl.
+  const QString *newDDL;
+  Lng32 sizeOfnewDDL;
 
-  // column information of the old table.
-  // if NULL, then old and new structure are the same. In this case, data could
-  // be copied as is using an "insert into tgt select * from src;" stmt.
-  Lng32 oldColInfoSize;
-  const ComTdbVirtTableColumnInfo * oldColInfo;
+  // ddl stmt corresponding to the old ddl which is being upgraded.
+  // If null, then old/new ddl are the same.
+  const QString *oldDDL;
+  Lng32 sizeOfoldDDL;
 
-  // key information of the new table
-  Lng32 newKeyInfoSize;
-  const ComTdbVirtTableKeyInfo * newKeyInfo;
-
-  // key information of the old table
-  Lng32 oldKeyInfoSize;
-  const ComTdbVirtTableKeyInfo * oldKeyInfo;
-
-  // index information of the new table
-  Lng32 newIndexInfoSize;
-  const ComTdbVirtTableIndexInfo * newIndexInfo;
-
-  // key information of the new index
-  Lng32 newIndexKeyInfoSize;
-  const ComTdbVirtTableKeyInfo * newIndexKeyInfo;
-
-  // non key col information of the new index
-  Lng32 newIndexNonKeyInfoSize;
-  const ComTdbVirtTableKeyInfo * newIndexNonKeyInfo;
+  // ddl stmt corresponding to index on this table, if one exists
+  const QString *indexDDL;
+  Lng32 sizeOfIndexDDL;
 
   // if new and old col info is different, then data need to be copied using
   // explicit column names in insert and select part of the query.
@@ -81,609 +64,288 @@ struct MDTableInfo
   const NABoolean isIndex;
 };
 
+struct MDDescsInfo
+{
+  Lng32 numNewCols;
+  ComTdbVirtTableColumnInfo * newColInfo;
+  Lng32 numNewKeys;
+  ComTdbVirtTableKeyInfo       * newKeyInfo;
+
+  Lng32 numOldCols;
+  ComTdbVirtTableColumnInfo * oldColInfo;
+  Lng32 numOldKeys;
+  ComTdbVirtTableKeyInfo       * oldKeyInfo;
+
+  Lng32 numIndexes;
+  ComTdbVirtTableIndexInfo * indexInfo;
+
+};
+
 //////////////////////////////////////////////////////////////
 // This section should reflect the upgrade steps needed to go from
 // source to current version.
 // Modify it as needed.
-// Currently it is set to upgrade from V21(source major version 2, minor version 1)
-// to V22.
+// Currently it is set to upgrade from V22(source major version 2, minor version 2)
+// to V23.
 //////////////////////////////////////////////////////////////
 static const MDTableInfo allMDtablesInfo[] = {
-  {SEABASE_AUTHS, NULL,
-   sizeof(seabaseMDAuthsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDAuthsColInfo,
-   0, NULL,
-   sizeof(seabaseMDAuthsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDAuthsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
+  {SEABASE_AUTHS, SEABASE_AUTHS_OLD_MD,
+   seabaseAuthsDDL, sizeof(seabaseAuthsDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_COLUMNS, SEABASE_COLUMNS_OLD_MD,
-   sizeof(seabaseMDColumnsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDColumnsColInfo,
-   0, NULL,
-   sizeof(seabaseMDColumnsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDColumnsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
-   NULL,
-   NULL,
-   NULL, 
-   FALSE, FALSE, FALSE,
-   FALSE, FALSE},
+   seabaseColumnsDDL, sizeof(seabaseColumnsDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
-   sizeof(seabaseMDDefaultsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDDefaultsColInfo,
-   0, NULL,
-   sizeof(seabaseMDDefaultsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDDefaultsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
+   seabaseDefaultsDDL, sizeof(seabaseDefaultsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_INDEXES, SEABASE_INDEXES_OLD_MD,
-   sizeof(seabaseMDIndexesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDIndexesColInfo,
-   0, NULL,
-   sizeof(seabaseMDIndexesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDIndexesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
+   seabaseIndexesDDL, sizeof(seabaseIndexesDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_KEYS, SEABASE_KEYS_OLD_MD,
+   seabaseKeysDDL, sizeof(seabaseKeysDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_LIBRARIES, SEABASE_LIBRARIES_OLD_MD,
+   seabaseLibrariesDDL, sizeof(seabaseLibrariesDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_LIBRARIES_USAGE, SEABASE_LIBRARIES_USAGE_OLD_MD,
+   seabaseLibrariesUsageDDL, sizeof(seabaseLibrariesUsageDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  {SEABASE_OBJECTS, SEABASE_OBJECTS_OLD_MD,
+   seabaseObjectsDDL, sizeof(seabaseObjectsDDL),
+   NULL, 0,
+   seabaseObjectsUniqIdxIndexDDL, sizeof(seabaseObjectsUniqIdxIndexDDL),
+
    NULL,
-   NULL, 
+  "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, object_owner",
    NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
-  {SEABASE_OBJECTS, SEABASE_OBJECTS_OLD_MD,
-   sizeof(seabaseMDObjectsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDObjectsColInfo,
-   sizeof(seabaseOldMDv21ObjectsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseOldMDv21ObjectsColInfo,
-   sizeof(seabaseMDObjectsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsKeyInfo,
-   0, NULL,
-   // new index info
-   0, NULL,
-
-   // new index key info
-   0, NULL, 
-   // new index nonkey info
-   0, NULL,
-   NULL,
-  "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, "SUPER_USER_LIT" ",
-   NULL, TRUE, FALSE, FALSE, FALSE, FALSE},
-
   {SEABASE_OBJECTS_UNIQ_IDX, SEABASE_OBJECTS_UNIQ_IDX_OLD_MD,
-   sizeof(seabaseMDObjectsUniqIdxColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDObjectsUniqIdxColInfo,
-   0, NULL,
-   sizeof(seabaseMDObjectsUniqIdxOnlyKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsUniqIdxOnlyKeyInfo,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   NULL,
-   NULL,
-   NULL, FALSE, FALSE, FALSE, FALSE, TRUE},
-
-  {SEABASE_KEYS, SEABASE_KEYS_OLD_MD,
-   sizeof(seabaseMDKeysColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDKeysColInfo,
-   0, NULL,
-   sizeof(seabaseMDKeysKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDKeysKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_LIBRARIES, SEABASE_LIBRARIES_OLD_MD,
-   sizeof(seabaseMDLibrariesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDLibrariesColInfo,
-   0, NULL,
-   sizeof(seabaseMDLibrariesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDLibrariesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_LIBRARIES_USAGE, SEABASE_LIBRARIES_USAGE_OLD_MD,
-   sizeof(seabaseMDLibrariesUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDLibrariesUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDLibrariesUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDLibrariesUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+   seabaseObjectsUniqIdxDDL, sizeof(seabaseObjectsUniqIdxDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, TRUE},
 
   {SEABASE_REF_CONSTRAINTS, SEABASE_REF_CONSTRAINTS_OLD_MD,
-   sizeof(seabaseMDRefConstraintsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDRefConstraintsColInfo,
-   0, NULL,
-   sizeof(seabaseMDRefConstraintsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDRefConstraintsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseRefConstraintsDDL, sizeof(seabaseRefConstraintsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_ROUTINES, SEABASE_ROUTINES_OLD_MD,
-   sizeof(seabaseMDRoutinesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDRoutinesColInfo,
-   0, NULL,
-   sizeof(seabaseMDRoutinesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDRoutinesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseRoutinesDDL, sizeof(seabaseRoutinesDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_TABLES, SEABASE_TABLES_OLD_MD,
-   sizeof(seabaseMDTablesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTablesColInfo,
-   0, NULL,
-   sizeof(seabaseMDTablesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTablesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseTablesDDL, sizeof(seabaseTablesDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_TABLE_CONSTRAINTS, SEABASE_TABLE_CONSTRAINTS_OLD_MD,
-   sizeof(seabaseMDTableConstraintsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTableConstraintsColInfo,
-   0, NULL,
-   sizeof(seabaseMDTableConstraintsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTableConstraintsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseTableConstraintsDDL, sizeof(seabaseTableConstraintsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_TEXT, SEABASE_TEXT_OLD_MD,
-   sizeof(seabaseMDTextColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTextColInfo,
-   0, NULL,
-   sizeof(seabaseMDTextKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTextKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseTextDDL, sizeof(seabaseTextDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_UNIQUE_REF_CONSTR_USAGE, SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD,
-   sizeof(seabaseMDUniqueRefConstrUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDUniqueRefConstrUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDUniqueRefConstrUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDUniqueRefConstrUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_VIEWS, SEABASE_VIEWS_OLD_MD,
-   sizeof(seabaseMDViewsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDViewsColInfo,
-   0, NULL,
-   sizeof(seabaseMDViewsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL,
-   NULL,
-   NULL,
-   FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_VIEWS_USAGE, SEABASE_VIEWS_USAGE_OLD_MD,
-   sizeof(seabaseMDViewsUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDViewsUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDViewsUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseUniqueRefConstrUsageDDL, sizeof(seabaseUniqueRefConstrUsageDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_VERSIONS, SEABASE_VERSIONS_OLD_MD,
-   sizeof(seabaseMDVersionsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDVersionsColInfo,
-   0, NULL,
-   sizeof(seabaseMDVersionsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDVersionsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE}
-};
-
-//////////////////////////////////////////////////////////////
-// This struct is set up for V21 to V22 upgrade.
-//////////////////////////////////////////////////////////////
-static const MDTableInfo allMDv21tov22TablesInfo[] = {
-  {SEABASE_AUTHS, NULL,
-   sizeof(seabaseMDAuthsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDAuthsColInfo,
-   0, NULL,
-   sizeof(seabaseMDAuthsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDAuthsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
-
-  {SEABASE_COLUMNS, SEABASE_COLUMNS_OLD_MD,
-   sizeof(seabaseMDColumnsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDColumnsColInfo,
-   0, NULL,
-   sizeof(seabaseMDColumnsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDColumnsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
-   sizeof(seabaseMDDefaultsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDDefaultsColInfo,
-   0, NULL,
-   sizeof(seabaseMDDefaultsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDDefaultsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_INDEXES, SEABASE_INDEXES_OLD_MD,
-   sizeof(seabaseMDIndexesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDIndexesColInfo,
-   0, NULL,
-   sizeof(seabaseMDIndexesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDIndexesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_OBJECTS, SEABASE_OBJECTS_OLD_MD,
-   sizeof(seabaseMDObjectsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDObjectsColInfo,
-   sizeof(seabaseOldMDv21ObjectsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseOldMDv21ObjectsColInfo,
-   sizeof(seabaseMDObjectsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsKeyInfo,
-   0, NULL,
-   // new index info
-   0, NULL,
-
-   // new index key info
-   0, NULL, 
-   // new index nonkey info
-   0, NULL,
-   NULL,
-    "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def, "SUPER_USER_LIT" ",
-    NULL, TRUE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_OBJECTS_UNIQ_IDX, NULL,
-   sizeof(seabaseMDObjectsUniqIdxColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDObjectsUniqIdxColInfo,
-   0, NULL,
-   sizeof(seabaseMDObjectsUniqIdxOnlyKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsUniqIdxOnlyKeyInfo,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_KEYS, SEABASE_KEYS_OLD_MD,
-   sizeof(seabaseMDKeysColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDKeysColInfo,
-   0, NULL,
-   sizeof(seabaseMDKeysKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDKeysKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_LIBRARIES, SEABASE_LIBRARIES_OLD_MD,
-   sizeof(seabaseMDLibrariesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDLibrariesColInfo,
-   0, NULL,
-   sizeof(seabaseMDLibrariesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDLibrariesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_LIBRARIES_USAGE, SEABASE_LIBRARIES_USAGE_OLD_MD,
-   sizeof(seabaseMDLibrariesUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDLibrariesUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDLibrariesUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDLibrariesUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_REF_CONSTRAINTS, SEABASE_REF_CONSTRAINTS_OLD_MD,
-   sizeof(seabaseMDRefConstraintsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDRefConstraintsColInfo,
-   0, NULL,
-   sizeof(seabaseMDRefConstraintsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDRefConstraintsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_ROUTINES, SEABASE_ROUTINES_OLD_MD,
-   sizeof(seabaseMDRoutinesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDRoutinesColInfo,
-   0, NULL,
-   sizeof(seabaseMDRoutinesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDRoutinesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_TABLES, SEABASE_TABLES_OLD_MD,
-   sizeof(seabaseMDTablesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTablesColInfo,
-   0, NULL,
-   sizeof(seabaseMDTablesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTablesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_TABLE_CONSTRAINTS, SEABASE_TABLE_CONSTRAINTS_OLD_MD,
-   sizeof(seabaseMDTableConstraintsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTableConstraintsColInfo,
-   0, NULL,
-   sizeof(seabaseMDTableConstraintsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTableConstraintsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_TEXT, SEABASE_TEXT_OLD_MD,
-   sizeof(seabaseMDTextColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTextColInfo,
-   0, NULL,
-   sizeof(seabaseMDTextKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTextKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_UNIQUE_REF_CONSTR_USAGE, SEABASE_UNIQUE_REF_CONSTR_USAGE_OLD_MD,
-   sizeof(seabaseMDUniqueRefConstrUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDUniqueRefConstrUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDUniqueRefConstrUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDUniqueRefConstrUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseVersionsDDL, sizeof(seabaseVersionsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
   {SEABASE_VIEWS, SEABASE_VIEWS_OLD_MD,
-   sizeof(seabaseMDViewsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDViewsColInfo,
-   0, NULL,
-   sizeof(seabaseMDViewsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL,
-   NULL,
-   NULL, 
-   FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_VIEWS_USAGE, SEABASE_VIEWS_USAGE_OLD_MD,
-   sizeof(seabaseMDViewsUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDViewsUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDViewsUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseViewsDDL, sizeof(seabaseViewsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
-  {SEABASE_VERSIONS, SEABASE_VERSIONS_OLD_MD,
-   sizeof(seabaseMDVersionsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDVersionsColInfo,
-   0, NULL,
-   sizeof(seabaseMDVersionsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDVersionsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE}
+  {SEABASE_VIEWS_USAGE, SEABASE_VIEWS_USAGE_OLD_MD,
+   seabaseViewsUsageDDL, sizeof(seabaseViewsUsageDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
 };
+
 
 //////////////////////////////////////////////////////////////
 // This struct is set up for V11 to V21 upgrade.
+// keep_this_around_for_examples_of_upgrade_struct_change
 //////////////////////////////////////////////////////////////
 static const MDTableInfo allMDv11tov21TablesInfo[] = {
+
+  // added columns
   {SEABASE_COLUMNS, SEABASE_COLUMNS_OLD_MD,
-   sizeof(seabaseMDColumnsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDColumnsColInfo,
-   sizeof(seabaseOldMDv11ColumnsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseOldMDv11ColumnsColInfo,
-   sizeof(seabaseMDColumnsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDColumnsKeyInfo,
-   sizeof(seabaseMDColumnsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDColumnsKeyInfo,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
+   seabaseColumnsDDL, sizeof(seabaseColumnsDDL),
+   seabaseOldMDv11ColumnsDDL, sizeof(seabaseOldMDv11ColumnsDDL),
+   NULL, 0,
    NULL,
    "object_uid, column_name, column_number, column_class, fs_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, is_upshifted, column_flags, nullable, character_set, default_class, default_value, column_heading, hbase_col_family, hbase_col_qualifier, ' ', 'N'",
    NULL,
-   TRUE /* added cols*/, FALSE,
-   FALSE, FALSE,
-   FALSE},
+   TRUE /* added cols*/, FALSE, FALSE, FALSE, FALSE},
 
+  // no change
   {SEABASE_DEFAULTS, SEABASE_DEFAULTS_OLD_MD,
-   sizeof(seabaseMDDefaultsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDDefaultsColInfo,
-   0, NULL,
-   sizeof(seabaseMDDefaultsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDDefaultsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
+   seabaseDefaultsDDL, sizeof(seabaseDefaultsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
+  // added columns
   {SEABASE_INDEXES, SEABASE_INDEXES_OLD_MD,
-   sizeof(seabaseMDIndexesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDIndexesColInfo,
-   sizeof(seabaseOldMDv11IndexesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseOldMDv11IndexesColInfo,
-   sizeof(seabaseMDIndexesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDIndexesKeyInfo,
-   sizeof(seabaseOldMDv11IndexesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseOldMDv11IndexesKeyInfo,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index non key info
+   seabaseIndexesDDL, sizeof(seabaseIndexesDDL),
+   seabaseOldMDv11IndexesDDL, sizeof(seabaseOldMDv11IndexesDDL),
+   NULL, 0,
    "BASE_TABLE_UID, KEYTAG, IS_UNIQUE, KEY_COLCOUNT, NONKEY_COLCOUNT, IS_EXPLICIT, INDEX_UID",
    "BASE_TABLE_UID, KEYTAG, IS_UNIQUE, KEY_COLCOUNT, NONKEY_COLCOUNT, 1, (select object_uid from "TRAFODION_SYSCAT_LIT".""\""SEABASE_MD_SCHEMA"\"""."SEABASE_OBJECTS_OLD_MD" O where o.catalog_name = src.catalog_name and o.schema_name = src.schema_name and o.object_name = src.index_name and o.object_type = 'IX')",
-   NULL, TRUE, FALSE, FALSE, FALSE, FALSE},
+   NULL, 
+   TRUE, FALSE, FALSE, FALSE, FALSE},
 
+  // no change
+  {SEABASE_KEYS, SEABASE_KEYS_OLD_MD,
+   seabaseKeysDDL, sizeof(seabaseKeysDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  // new table added
+  {SEABASE_LIBRARIES, NULL,
+   seabaseLibrariesDDL, sizeof(seabaseLibrariesDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
+
+  // new table added
+  {SEABASE_LIBRARIES_USAGE, NULL,
+   seabaseLibrariesUsageDDL, sizeof(seabaseLibrariesUsageDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
+
+  // primary key changed. Unique index added. Reflected in the new struct
   {SEABASE_OBJECTS, SEABASE_OBJECTS_OLD_MD,
-   sizeof(seabaseMDObjectsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDObjectsColInfo,
-   0, NULL,
-   sizeof(seabaseMDObjectsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsKeyInfo,
-   sizeof(seabaseOldMDv11ObjectsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseOldMDv11ObjectsKeyInfo,
-   // new index info
-   sizeof(seabaseMDObjectsUniqIdxIndexInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsUniqIdxIndexInfo,
-
-   // new index key info
-   sizeof(seabaseMDObjectsUniqIdxKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsUniqIdxKeyInfo,
-   // new index nonkey info
-   sizeof(seabaseMDObjectsUniqIdxNonKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsUniqIdxNonKeyInfo,
+   seabaseObjectsDDL, sizeof(seabaseObjectsDDL),
+   NULL, 0,
+   seabaseObjectsUniqIdxIndexDDL, sizeof(seabaseObjectsUniqIdxIndexDDL),
    NULL,
    "catalog_name, schema_name, case when schema_name = '_MD_' then object_name || '_OLD_MD' else object_name end, object_type, object_uid, create_time, redef_time, valid_def",
    NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
+  // new index added
   {SEABASE_OBJECTS_UNIQ_IDX, NULL,
-   sizeof(seabaseMDObjectsUniqIdxColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDObjectsUniqIdxColInfo,
-   0, NULL,
-   sizeof(seabaseMDObjectsUniqIdxOnlyKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDObjectsUniqIdxOnlyKeyInfo,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   NULL,
-   NULL,
-   NULL, FALSE, FALSE, TRUE, FALSE, TRUE},
+   seabaseObjectsUniqIdxDDL, sizeof(seabaseObjectsUniqIdxDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, TRUE},
 
+  // this table was removed in v21
   {SEABASE_OBJECTUID, SEABASE_OBJECTUID_OLD_MD,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL,
-   NULL,
-   NULL, FALSE, FALSE, FALSE, TRUE, FALSE},
+   NULL, 0,
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, TRUE, FALSE},
 
-  {SEABASE_KEYS, SEABASE_KEYS_OLD_MD,
-   sizeof(seabaseMDKeysColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDKeysColInfo,
-   0, NULL,
-   sizeof(seabaseMDKeysKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDKeysKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
-
-  {SEABASE_LIBRARIES, NULL,
-   sizeof(seabaseMDLibrariesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDLibrariesColInfo,
-   0, NULL,
-   sizeof(seabaseMDLibrariesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDLibrariesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
-
-  {SEABASE_LIBRARIES_USAGE, NULL,
-   sizeof(seabaseMDLibrariesUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDLibrariesUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDLibrariesUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDLibrariesUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
-
+  // new table added
   {SEABASE_REF_CONSTRAINTS, NULL,
-   sizeof(seabaseMDRefConstraintsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDRefConstraintsColInfo,
-   0, NULL,
-   sizeof(seabaseMDRefConstraintsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDRefConstraintsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseRefConstraintsDDL, sizeof(seabaseRefConstraintsDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
 
+  // new table added
   {SEABASE_ROUTINES, NULL,
-   sizeof(seabaseMDRoutinesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDRoutinesColInfo,
-   0, NULL,
-   sizeof(seabaseMDRoutinesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDRoutinesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseRoutinesDDL, sizeof(seabaseRoutinesDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
 
+  // no change
   {SEABASE_TABLES, SEABASE_TABLES_OLD_MD,
-   sizeof(seabaseMDTablesColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTablesColInfo,
-   0, NULL,
-   sizeof(seabaseMDTablesKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTablesKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseTablesDDL, sizeof(seabaseTablesDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
+  // new table added
   {SEABASE_TABLE_CONSTRAINTS, NULL,
-   sizeof(seabaseMDTableConstraintsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTableConstraintsColInfo,
-   0, NULL,
-   sizeof(seabaseMDTableConstraintsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTableConstraintsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseTablesDDL, sizeof(seabaseTablesDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
 
+  // new table added
   {SEABASE_TEXT, NULL,
-   sizeof(seabaseMDTextColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDTextColInfo,
-   0, NULL,
-   sizeof(seabaseMDTextKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDTextKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
+   seabaseTextDDL, sizeof(seabaseTextDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
+  // new table added
   {SEABASE_UNIQUE_REF_CONSTR_USAGE, NULL,
-   sizeof(seabaseMDUniqueRefConstrUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDUniqueRefConstrUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDUniqueRefConstrUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDUniqueRefConstrUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseUniqueRefConstrUsageDDL, sizeof(seabaseUniqueRefConstrUsageDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, FALSE},
 
+  // no change
+  {SEABASE_VERSIONS, SEABASE_VERSIONS_OLD_MD,
+   seabaseVersionsDDL, sizeof(seabaseVersionsDDL),
+   NULL, 0,
+   NULL, 0,
+   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
+
+  // columns dropped
   {SEABASE_VIEWS, SEABASE_VIEWS_OLD_MD,
-   sizeof(seabaseMDViewsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDViewsColInfo,
-   sizeof(seabaseOldMDv11ViewsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseOldMDv11ViewsColInfo,
-   sizeof(seabaseMDViewsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsKeyInfo,
-   sizeof(seabaseMDViewsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsKeyInfo,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseViewsDDL, sizeof(seabaseViewsDDL),
+   seabaseOldMDv11ViewsDDL, sizeof(seabaseOldMDv11ViewsDDL),
+   NULL, 0,
    "VIEW_UID, CHECK_OPTION, IS_UPDATABLE, IS_INSERTABLE",
    "VIEW_UID, CHECK_OPTION, IS_UPDATABLE, IS_INSERTABLE",
    NULL,
    FALSE, TRUE, FALSE, FALSE, FALSE},
 
+  // no change
   {SEABASE_VIEWS_USAGE, SEABASE_VIEWS_USAGE_OLD_MD,
-   sizeof(seabaseMDViewsUsageColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDViewsUsageColInfo,
-   0, NULL,
-   sizeof(seabaseMDViewsUsageKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDViewsUsageKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
+   seabaseViewsUsageDDL, sizeof(seabaseViewsUsageDDL),
+   NULL, 0,
+   NULL, 0,
    NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE},
 
-  {SEABASE_VERSIONS, SEABASE_VERSIONS_OLD_MD,
-   sizeof(seabaseMDVersionsColInfo)/sizeof(ComTdbVirtTableColumnInfo), seabaseMDVersionsColInfo,
-   0, NULL,
-   sizeof(seabaseMDVersionsKeyInfo)/sizeof(ComTdbVirtTableKeyInfo), seabaseMDVersionsKeyInfo,
-   0, NULL,
-   0, NULL, // new index info
-   0, NULL, // new index key info
-   0, NULL, // new index nonkey col info
-   NULL, NULL, NULL, FALSE, FALSE, FALSE, FALSE, FALSE}
 };
 
 class CmpSeabaseMDupgrade : public CmpSeabaseDDL
@@ -729,16 +391,6 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
   short executeSeabaseMDupgrade(CmpMDupgradeInfo &mdi,
 				NAString &currCatName, NAString &currSchName);
 
-  static NABoolean getMDtableInfo(const NAString &objName,
-				  Lng32 &colInfoSize,
-				  const ComTdbVirtTableColumnInfo* &colInfo,
-				  Lng32 &keyInfoSize,
-				  const ComTdbVirtTableKeyInfo* &keyInfo,
-				  Lng32 &indexInfoSize,
-				  const ComTdbVirtTableIndexInfo* &indexInfo,
-				  Lng32 &indexKeyInfoSize,
-				  const ComTdbVirtTableKeyInfo * &indexKeyInfo,
-				  const char * objType);
 };
 
 #endif
