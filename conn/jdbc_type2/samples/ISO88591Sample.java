@@ -23,8 +23,8 @@ import java.sql.*;
 public class ISO88591Sample
 {
     private static final String PROLOG = "ISO88591Sample: ";
-    private static final String JDBCDRIVER = "org.trafodion.sql.T2Driver";
-    private static final String URL = "jdbc:sql:";
+    private static final String JDBCDRIVER = "org.trafodion.jdbc.t2.T2Driver";
+    private static final String URL = "jdbc:t2jdbc:";
     private static final String TBLNAME = "ISOTbl";
 
     private static final String Yen = ("”\");

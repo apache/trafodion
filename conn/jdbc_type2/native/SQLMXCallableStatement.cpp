@@ -22,7 +22,7 @@
 //
 /*Change Log
  * Solution Number:10-091103-5969
- * Methods Changed: Java_org_trafodion_sql_SQLMXCallableStatement_prepareCall(JNIEnv *, jobject, jstring, jint, jint, jboolean, jint, jstring, jstring, jint, jint, jint)
+ * Methods Changed: Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_prepareCall(JNIEnv *, jobject, jstring, jint, jint, jboolean, jint, jstring, jstring, jint, jint, jint)
  * Changed By: gargesh
  */
 #include <platform_ndcs.h>
@@ -34,18 +34,18 @@
 #include <sqlext.h>
 #include "CoreCommon.h"
 #include "JdbcDriverGlobal.h"
-#include "org_trafodion_sql_SQLMXCallableStatement.h"
+#include "org_trafodion_jdbc_t2_SQLMXCallableStatement.h"
 #include "SQLMXCommonFunctions.h"
 #include "CSrvrStmt.h"
 #include "SrvrCommon.h"
 #include "Debug.h"
 
-JNIEXPORT void JNICALL Java_org_trafodion_sql_SQLMXCallableStatement_prepareCall
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_prepareCall
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit, jint txnMode, jstring stmtLabel, jstring sql,
  jint queryTimeout, jint holdability, jint fetchSize)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_sql_SQLMXCallableStatement_prepareCall",("... fetchSize=%ld",
+	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_prepareCall",("... fetchSize=%ld",
 		fetchSize));
 
 	long					estimatedCost;
@@ -188,12 +188,12 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_SQLMXCallableStatement_prepareCall
 	FUNCTION_RETURN_VOID((NULL));
 }
 //venu changed from int to long for 64 bit
-JNIEXPORT void JNICALL Java_org_trafodion_sql_SQLMXCallableStatement_executeCall
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_executeCall
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit, jint txnMode, jlong stmtId,
  jint paramCount, jobject paramValues, jint queryTimeout, jstring iso88591Encoding)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_sql_SQLMXCallableStatement_executeCall",("..."));
+	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_executeCall",("..."));
 
 	SQLValueList_def				outputSqlValueList;
 	ERROR_DESC_LIST_def				sqlWarning;
@@ -291,13 +291,13 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_SQLMXCallableStatement_executeCall
 	FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_sql_SQLMXCallableStatement_cpqPrepareCall
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_cpqPrepareCall
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit, jint txnMode,
  jstring moduleName, jint moduleVersion, jlong moduleTimestamp, jstring stmtName,
  jint queryTimeout, jint holdability, jint fetchSize)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_sql_SQLMXCallableStatement_cpqPrepareCall",("..."));
+	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXCallableStatement_cpqPrepareCall",("..."));
 
 	long							estimatedCost;
 	long							inputParamOffset;

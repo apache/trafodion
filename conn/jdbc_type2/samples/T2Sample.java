@@ -33,7 +33,7 @@ public class T2Sample
 
         try
         {
-            Class.forName("org.trafodion.sql.T2Driver");
+            Class.forName("org.trafodion.jdbc.t2.T2Driver");
         }
         catch (Exception e)
         {
@@ -43,7 +43,7 @@ public class T2Sample
         }
         try
         {
-            String url = "jdbc:sql:";
+            String url = "jdbc:t2jdbc:";
             connection = DriverManager.getConnection(url);
             stmt = connection.createStatement();
             System.out.println("Successfully connected");

@@ -33,7 +33,7 @@ public class HoldCursorSample
 
         try
         {
-            Class.forName("org.trafodion.sql.T2Driver");
+            Class.forName("org.trafodion.jdbc.t2.T2Driver");
         }
         catch (Exception e)
         {
@@ -43,7 +43,7 @@ public class HoldCursorSample
         }
         try
         {
-            connection = DriverManager.getConnection("jdbc:sql:");
+            connection = DriverManager.getConnection("jdbc:t2jdbc:");
             DatabaseMetaData dbmeta;
             dbmeta = connection.getMetaData();
 
@@ -107,7 +107,7 @@ class subscribeThread extends Thread
         boolean         ok=true;
         try
         {
-            connection = DriverManager.getConnection("jdbc:sql:");
+            connection = DriverManager.getConnection("jdbc:t2jdbc:");
             stmt = connection.createStatement();
             stmt.executeUpdate("CONTROL QUERY DEFAULT STREAM_TIMEOUT '500'");
 

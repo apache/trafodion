@@ -109,11 +109,10 @@ public class Installer
    BufferedReader bufReader= new BufferedReader(new InputStreamReader(System.in));
 
    private static String nixDefaultInstallDir="/usr/local/";
-   private static String wDefaultInstallDir="\\Hewlett-Packard\\" + productTitle;
+   private static String wDefaultInstallDir="\\Trafodion\\" + productTitle;
    private static String defaultInstallDir=wDefaultInstallDir;
    
-   private static String wDefaultInstallJDBC=
-	   "C:\\Program Files\\Hewlett-Packard\\HP JDBC 3.0\\lib\\jdbcT4.jar";
+   private static String wDefaultInstallJDBC="";
    private static String nixDefaultInstallJDBC="/usr/local/trafci/jdbcT4.jar";
    private static String defaultInstallJDBC=wDefaultInstallJDBC;
    
@@ -2286,7 +2285,7 @@ public class Installer
              {
                 System.out.print("\n"+ NEW_JDBC +
                    "\n--------------------------------------"+
-                   "\nEnter the location and file name [" + defaultInstallJDBC + "]: ");
+                   "\nEnter the location and file name: " + defaultInstallJDBC);
                 line=bufReader.readLine();
                 Thread.sleep(100);
              } catch (IOException ioe)
@@ -2344,8 +2343,7 @@ public class Installer
 			if (!silentInstall) {
 				System.out.print("\n" + productTitle
 						+ "\n--------------------------------"
-						+ "\nEnter the installation directory ["
-						+ defaultInstallDir + "]:");
+						+ "\nEnter the installation directory: ");
 
 				try {
 					line = bufReader.readLine();
@@ -3112,7 +3110,7 @@ void processCmdMode(String zipfile)
 
       if (osName.startsWith("window"))
       {
-          try {
+          /*try {
               String line;
               Process p = Runtime.getRuntime().exec("cmd /c set programfiles") ;
               BufferedReader input =
@@ -3125,7 +3123,7 @@ void processCmdMode(String zipfile)
               wDefaultInstallDir = line + wDefaultInstallDir;
            } catch (Exception e) {
               wDefaultInstallDir = "C:\\Program Files" + wDefaultInstallDir;
-           }
+           }*/
 
          defaultInstallDir=wDefaultInstallDir;
          defaultInstallJDBC=wDefaultInstallJDBC;
