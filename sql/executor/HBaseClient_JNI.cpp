@@ -1209,6 +1209,7 @@ bool ResultKeyValueList::toTRowResult(TRowResult& rowResult)
   rowResult.__set_row(*rowID);
 
   kvBuf += rowIDLen;
+  NADELETE(rowID, Text, heap_);
 
   std::map<Text, TCell> columns;
 
@@ -1239,6 +1240,7 @@ bool ResultKeyValueList::toTRowResult(TRowResult& rowResult)
     columns.insert(colPair);
 
     kvBuf = (char *)temp + kvLength;
+    NADELETE(cell, TCell, heap_);
   }
 
   rowResult.__set_columns(columns);
