@@ -113,6 +113,8 @@ pkg-client: ci ndcs
 pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
+version:
+	@cd sqf; unset SQ_VERBOSE; source sqenv.sh ; echo "$${TRAFODION_VER}"
 
 # Check that Environment variables are set correctly
 sqroot:

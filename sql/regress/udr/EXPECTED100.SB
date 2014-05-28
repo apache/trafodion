@@ -1688,7 +1688,7 @@ OUT2
 >>
 >>obey TEST100(udrtrace);
 >>log;
-Trafodion Conversational Interface 0.7.0
+Trafodion Conversational Interface @version@
 (c) Copyright 2014 Hewlett-Packard Development Company, LP.
 >>?section udrtrace2
 >>--
