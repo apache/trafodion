@@ -17,11 +17,14 @@
 #
 # @@@ END COPYRIGHT @@@
 
-RELEASE_VER ?= 0.7.0
+RELEASE_VER ?= 0.8.0
 
 all: pkg-installer 
 
 pkg-installer: 
 	chmod -R a+x installer
 	tar czf installer-$(RELEASE_VER).tgz installer
+
+version:
+	@echo "$(RELEASE_VER)"
 
