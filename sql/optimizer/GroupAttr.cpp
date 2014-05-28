@@ -92,7 +92,8 @@ GroupAttributes::GroupAttributes() :
      hasCompRefOptConstraint_(FALSE),
      potential_(-1),
      hasNonDeterministicUDRs_(FALSE),
-     probeCacheable_(FALSE)
+     probeCacheable_(FALSE),
+     isSeabaseMD_(FALSE)
 {
   groupAnalysis_ = new (STMTHEAP) GroupAnalysis(this,STMTHEAP);
 }
@@ -129,7 +130,8 @@ GroupAttributes::GroupAttributes (const GroupAttributes & rhs) :
      hasCompRefOptConstraint_(rhs.hasCompRefOptConstraint_),
      potential_(rhs.potential_),
      hasNonDeterministicUDRs_(rhs.hasNonDeterministicUDRs_),
-     probeCacheable_(rhs.probeCacheable_)
+     probeCacheable_(rhs.probeCacheable_),
+     isSeabaseMD_(rhs.isSeabaseMD_)
 {
   groupAnalysis_ = new (STMTHEAP) GroupAnalysis(*(rhs.groupAnalysis_),STMTHEAP);
   // need to reset the groupAttributes pointer in groupAnalysis_ to

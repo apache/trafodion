@@ -4711,6 +4711,10 @@ NABoolean MergeJoinRule::topMatch (RelExpr *relExpr,
   if ( joinExpr->isTSJ() || relExpr->isinBlockStmt() )
     return FALSE;
 
+  // avoid merge join on seabase MD tables
+  if (joinExpr->getGroupAttr()->isSeabaseMDTable())
+    return FALSE;
+
   // The avoidHalloweenR2 flag will be set on two Join nodes.  The join
   // used for the Subquery and the Tuple Flow Join used for write.  If
   // avoidHalloweenR2 is set and this is the join used for the subquery,
