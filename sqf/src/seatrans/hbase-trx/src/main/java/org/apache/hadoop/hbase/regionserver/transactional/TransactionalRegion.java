@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.reflect.InvocationTargetException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -178,10 +179,12 @@ public class TransactionalRegion extends HRegion {
 		return this;
 	}
 
-	@Override
+        // This is the method used by Cloudera HBase 0.94.6 and possibly other versions
+        // @Override
 	protected long replayRecoveredEditsIfAny(final Path regiondir,
-			//final Map<byte[], Long> maxSeqIdInStores, final CancelableProgressable reporter,
-			final long minSeqId, final CancelableProgressable reporter,
+			//final Map<byte[], Long> maxSeqIdInStores,
+			final long minSeqId, 
+                        final CancelableProgressable reporter,
 			final MonitoredTask status) throws UnsupportedEncodingException,
 			IOException {
 
@@ -189,35 +192,93 @@ public class TransactionalRegion extends HRegion {
                 //          for example, doReconstructionLog call getCommitFromLog will read Edits rather than
                 //          super.replayRecoveredEdits
                 //
-		long maxSeqId = super.replayRecoveredEditsIfAny(regiondir, minSeqId,
+                // We don't use reflection here, since the super class used at compile time
+                // matches this signature and we should not invoke this method at runtime
+                // on systems that don't have this method
+		long maxSeqId = super.replayRecoveredEditsIfAny(regiondir,
+                                //maxSeqIdInStores,
+                                minSeqId,
 				reporter, status);
 
 		Path recoveredEdits = new Path(regiondir, HLogSplitter.RECOVERED_EDITS);
 
                 LOG.trace("Trafodion Recovery: replayRecoveredEditsIfAny -- Path " + recoveredEdits);
 
-		doReconstructionLog(recoveredEdits, minSeqId, maxSeqId, reporter);
+		doReconstructionLog(recoveredEdits, 
+                                    //maxSeqIdInStores,
+                                    minSeqId,
+                                    maxSeqId, reporter);
 
                 LOG.trace("Trafodion Recovery: replayRecoveredEditsIfAny -- EXIT");
 		return maxSeqId;
 	}
 
+        // This is the method used by MapR HBase 0.94.13 and possibly other versions
+        // @Override
+	protected long replayRecoveredEditsIfAny(final Path regiondir,
+			final Map<byte[], Long> maxSeqIdInStores,
+                        //final long minSeqId, 
+                        final CancelableProgressable reporter,
+			final MonitoredTask status) throws UnsupportedEncodingException,
+			IOException {
+                LOG.trace("replayRecoveredEditsIfAny -- ENTRY");
+                // Use reflection, since the super class has a different signature, based
+                // on the HBase distribution used
+                long maxSeqId = -1;
+
+                try {
+                    Object res = HRegion.class.getMethod(
+                      "replayRecoveredEditsIfAny",
+                      new Class[] { Path.class,
+                                    maxSeqIdInStores.getClass(),
+                                    CancelableProgressable.class,
+                                    MonitoredTask.class }).invoke(
+                         this,
+                         new Object[] { regiondir,
+                                        maxSeqIdInStores,
+                                        reporter,
+                                        status });
+                    if (res.getClass().equals(Long.TYPE)) {
+                        maxSeqId = Long.parseLong(res.toString());
+                    }
+                    else
+                        throw new IOException("invalid return type for replayRecoveredEditsIfAny");
+                } catch (InvocationTargetException ite) {
+                    // function was properly called, but threw it's own exception
+                    throw new IOException(ite.getCause());
+                } catch (IllegalAccessException iae) {
+                    throw new IOException(iae.getCause());
+                } catch (NoSuchMethodException nsme) {
+                    throw new IOException(nsme.getCause());
+                }
+		//long maxSeqId = super.replayRecoveredEditsIfAny(regiondir,
+                //                maxSeqIdInStores,
+                //                //minSeqId,
+		//		reporter, status);
+
+		Path recoveredEdits = new Path(regiondir, HLogSplitter.RECOVERED_EDITS);
+
+                LOG.trace("replayRecoveredEditsIfAny -- Path " + recoveredEdits);
+
+		doReconstructionLog(recoveredEdits,
+                                    maxSeqIdInStores,
+                                    //minSeqId,
+                                    maxSeqId, reporter);
+
+                LOG.trace("replayRecoveredEditsIfAny -- EXIT");
+		return maxSeqId;
+	}
+
+        // This is the method used by Cloudera HBase 0.94.6 and possibly other versions
+        // @Override
 	protected void doReconstructionLog(final Path oldCoreLogFile,
-			// final Map<byte[], Long> maxSeqIdInStores, final long maxSeqId,
-			final long minSeqId, final long maxSeqId,
+			// final Map<byte[], Long> maxSeqIdInStores,
+			final long minSeqId,
+                        final long maxSeqId,
 			final CancelableProgressable reporter)
 			throws UnsupportedEncodingException, IOException {
                 LOG.trace("doReconstructionLog -- ENTRY");
 		
-		/*
-	    long minSeqIdForTheRegion = -1;
-	    for (Long  maxSeqIdInStore : maxSeqIdInStores.values()) {
-	      if (maxSeqIdInStore < minSeqIdForTheRegion || minSeqIdForTheRegion == -1) {
-	        minSeqIdForTheRegion = maxSeqIdInStore;
-	      }
-	    }
-	    */
-
 		//Path trxPath = new Path(oldCoreLogFile.getParent(),
 		Path trxPath = new Path(oldCoreLogFile,THLog.HREGION_OLD_THLOGFILE_NAME);
                 recoveryTrxPath = trxPath;
@@ -344,6 +405,30 @@ public class TransactionalRegion extends HRegion {
                    LOG.debug("Trafodion Recovery:  Flushcache returns false !!! " + getRegionInfo().getRegionNameAsString());
                 }
                 LOG.trace("doReconstructionLog -- EXIT");
+	}
+
+        // This is the method used by MapR HBase 0.94.13 and possibly other versions
+        // @Override
+	protected void doReconstructionLog(final Path oldCoreLogFile,
+			final Map<byte[], Long> maxSeqIdInStores,
+                        //final long minSeqId,
+                        final long maxSeqId,
+			final CancelableProgressable reporter)
+			throws UnsupportedEncodingException, IOException {
+                LOG.trace("doReconstructionLog with Map param -- ENTRY");
+		
+                long minSeqIdForTheRegion = -1;
+                for (Long  maxSeqIdInStore : maxSeqIdInStores.values()) {
+                    if (maxSeqIdInStore < minSeqIdForTheRegion || minSeqIdForTheRegion == -1) {
+                        minSeqIdForTheRegion = maxSeqIdInStore;
+                    }
+                }
+
+                doReconstructionLog(oldCoreLogFile,
+                                    minSeqIdForTheRegion,
+                                    maxSeqId,
+                                    reporter);
+                LOG.trace("doReconstructionLog with Map param -- EXIT");
 	}
 
         public void startRegionAfterRecovery() throws IOException {

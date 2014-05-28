@@ -648,18 +648,29 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           {
             memset (hdfsHost_, '\0', sizeof(hdfsHost_));
             memset (hdfsPort_, '\0', sizeof(hdfsPort_));
+            hdfsPort_[0] = '0'; // default is zero
             memset (hdfsFileName_, '\0', sizeof(hdfsFileName_));
             memset (hiveTableLocation_, '\0', sizeof(hiveTableLocation_));
 
             char * outputPath = (char *)myTdb().getTargetName() ;
             assert(strncmp(outputPath, "hdfs://", 7) == 0);
             outputPath = &outputPath[str_len("hdfs://")];
-            char *  dotPtr = strchr(outputPath , ':');
-            assert (dotPtr);
-            strncpy(hdfsHost_, outputPath, dotPtr -  outputPath);
-            outputPath = dotPtr + 1;
+            char *  colonPtr = strchr(outputPath , ':');
             char * slashPtr = strchr(outputPath , '/');
-            strncpy(hdfsPort_, outputPath, slashPtr - outputPath);
+            assert(slashPtr);
+            if (colonPtr)
+              {
+                assert(colonPtr -  outputPath < sizeof(hdfsHost_));
+                strncpy(hdfsHost_, outputPath, colonPtr -  outputPath);
+                outputPath = colonPtr + 1;
+                assert(slashPtr - outputPath < sizeof(hdfsPort_));
+                strncpy(hdfsPort_, outputPath, slashPtr - outputPath);
+              }
+            else
+              {
+                assert(slashPtr -  outputPath < sizeof(hdfsHost_));
+                strncpy(hdfsHost_, outputPath, slashPtr -  outputPath);
+              }
             outputPath = slashPtr;
 
             time_t t;

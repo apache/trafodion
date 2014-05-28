@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.lang.reflect.Constructor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,10 +50,11 @@ public class THLog extends HLog {
     /** Name of old log file for reconstruction */
     static final String HREGION_OLD_THLOGFILE_NAME = "oldthlogfile.log";
 
-    public THLog(final FileSystem fs, final Path dir, final Path oldLogDir, final Configuration conf,
-            final List<WALActionsListener> listeners) throws IOException {    	
+    private THLog(final FileSystem fs, final Path dir, final Path oldLogDir, final Configuration conf,
+            final List<WALActionsListener> listeners) throws IOException {
+
     	super(fs, dir, oldLogDir, conf, listeners, false, null
-	      //only_for_hortonworks	      , false
+	//      , false // required for Hortonworks and MapR
 	      );
         if (LocalHBaseCluster.isLocal(conf)) distributedMode = false;
         if (distributedMode) LOG.debug("Trafodion Recovery: cluster is distributed mode");
@@ -60,6 +62,45 @@ public class THLog extends HLog {
 
         this.doTlog = conf.getBoolean("hbase.regionserver.region.transactional.tlog", false);
         LOG.debug("Trafodion Recovery: TM TLOG setting " + this.doTlog);
+    }
+
+    // constructor used for Hortonworks and MapR
+    // (compiles only because we put an edited HLog.java file into the classpath,
+    // but this file will not be compiled into the packaged jar)
+    private THLog(final FileSystem fs, final Path dir, final Path oldLogDir, final Configuration conf,
+                 final List<WALActionsListener> listeners, boolean dummy) throws IOException {
+
+    	super(fs, dir, oldLogDir, conf, listeners, false, null
+	      , false // required for Hortonworks and MapR
+	      );
+    }
+
+    public static THLog createTHLog(final FileSystem fs, final Path dir, final Path oldLogDir,
+                                    final Configuration conf,
+                                    final List<WALActionsListener> listeners) throws IOException {
+        boolean dummyParam = false;
+        Constructor c7 = null;
+
+        // use reflection to find out whethe the relevant constructor
+        // is the one with 7 or 8 parameters, this tests for the one with 7
+        try {
+            c7 = HLog.class.getConstructor(
+                                           new Class [] {
+                                               FileSystem.class,
+                                               Path.class,
+                                               Path.class,
+                                               Configuration.class,
+                                               List.class,
+                                               Boolean.TYPE,
+                                               String.class });
+        } catch (NoSuchMethodException nsm) {
+            c7 = null;
+        }
+
+        if (c7 != null)
+            return new THLog(fs, dir, oldLogDir, conf, listeners);
+        else
+            return new THLog(fs, dir, oldLogDir, conf, listeners, dummyParam);
     }
 
     /**
