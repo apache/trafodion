@@ -224,13 +224,12 @@ SYS_INCLUDES :=
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
 
-OTHER_INCLUDES := -I$(NSK_SQ)/winplat -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
+OTHER_INCLUDES := -include "$(NSK_SQ)/inc/seaquest/sqtypes.h" \
 	-I$(LLVM_INC_ROOT) \
 	-I$(LLVM_INC_ROOT2) \
 	-I$(UDIS86_INC_ROOT) \
 	-I$(NSK_SQ)/../dbsecurity/auth/inc \
 	-I$(TOPDIR)/log4cpp/log4cpp-1.0/include
-#OTHER_INCLUDES := -I$(NSK_SQ)/winplat -include "$(NSK_SQ)/inc/seaquest/sqtypes.h"
 
 LOC_LIBS := \
 	-L$(RESULTDIR) \
@@ -328,7 +327,7 @@ SQLUTILS_INCLUDE_DIRS := sqlutils/inc \
 
 SQLUTILS_NSK_INCLUDES := $(NSK_SQ)/inc $(NSK)/inc $(NSK_SQ)/inc/cextdecs \
 	$(NSK_SQ)/inc/fs $(NSK)/inc/sqlcli_shadow $(NSK_SQ)/inc/fs2 \
-	$(NSK)/src $(NSK_SQ)/export/include $(NSK_SQ)/winplat
+	$(NSK)/src $(NSK_SQ)/export/include
 
 # SQLUTILS_SYSTEM_INCLUDES includes all of the system-wide directories when
 # building under the sqlutils directory.
