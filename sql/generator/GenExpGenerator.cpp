@@ -483,6 +483,7 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
     }
 
   fsDataType = attr->getDatatype();
+  NABoolean isUpshifted = FALSE;
   switch (dc)
   {
     case Attributes::DEFAULT_CURRENT:
@@ -592,6 +593,10 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
             // intentionally not deallocate memory pointed by pWcs/pColDefaultValueStr
             // the memory will be deallocated later
           }
+
+	  if (colCharType->isUpshifted())
+	    isUpshifted = TRUE;
+	  
         }
 	castStr = new(wHeap()) NAWString(CharInfo::ISO88591,"CAST(", wHeap());
 	castStr->append(NAWString(pColDefaultValueStr, wHeap()));
@@ -621,6 +626,8 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
   }
   // Append Type Name
   castStr->append(NAWString(CharInfo::ISO88591, col->getType()->getTypeSQLname(TRUE), wHeap()));
+  if (isUpshifted)
+    castStr->append(NAWString(CharInfo::ISO88591," UPSHIFT ", wHeap()));
   if (! attr->getNullFlag())
       castStr->append(NAWString(CharInfo::ISO88591," NOT NULL)", wHeap()));
   else

@@ -6497,6 +6497,15 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         bindWA->setErrStatus();
         return NULL;
       }
+
+      // if unique, ref or check constrs are specified, then dont start a transaction.
+      // ddl with these clauses is executed as a compound create.
+      // A compound create cannot run under a user transaction.
+      if ((createTableNode->getAddConstraintUniqueArray().entries() > 0) ||
+	  (createTableNode->getAddConstraintRIArray().entries() > 0) ||
+	  (createTableNode->getAddConstraintCheckArray().entries() > 0))
+	hbaseDDLNoUserXn_ = TRUE;
+       
     } // createTable
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateHbaseTable())
     {

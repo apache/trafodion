@@ -923,6 +923,18 @@ static const QueryString getTrafTablesInSchemaQuery[] =
   {"  ; "}
 };
 
+static const QueryString getTrafIndexesInSchemaQuery[] =
+{
+  {" select object_name  from "},
+  {"   %s.\"%s\".%s T "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.schema_name = '%s'  and "},
+  {"        T.object_type = 'IX'  "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
 static const QueryString getTrafViewsInCatalogQuery[] =
 {
   {" select T.schema_name || '.' || "},
@@ -2197,6 +2209,19 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		{
 		  qs = getTrafTablesInSchemaQuery;
 		  sizeOfqs = sizeof(getTrafTablesInSchemaQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = getMItdb().cat_;
+		  param_[4] = getMItdb().sch_;
+		}
+	      break;
+	      
+	      case ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_:
+		{
+		  qs = getTrafIndexesInSchemaQuery;
+		  sizeOfqs = sizeof(getTrafIndexesInSchemaQuery);
 
 		  param_[0] = cat;
 		  param_[1] = sch;

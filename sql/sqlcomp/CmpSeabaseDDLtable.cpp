@@ -1892,7 +1892,8 @@ void CmpSeabaseDDL::dropSeabaseTable(
     return;
   }
 
-  ActiveSchemaDB()->getNATableDB()->useCache();
+  if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
+    ActiveSchemaDB()->getNATableDB()->useCache();
 
  // save the current parserflags setting
   ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
@@ -3172,10 +3173,31 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
   
-  // Check if there are any dependent objects.
+  // if the table is not empty, or there are dependent objects/constraints,
+  //  or the table already has  a pkey/store by, then create a unique constraint.
+  NABoolean isStoreBy = FALSE;
+  Int32 nonSystemKeyCols = 0;
+  if (naTable->getClusteringIndex())
+    {
+      NAFileSet * naf = naTable->getClusteringIndex();
+      for (Lng32 i = 0; i < naf->getIndexKeyColumns().entries(); i++)
+	{
+	  NAColumn * nac = naf->getIndexKeyColumns()[i];
+   
+	  if (NOT nac->isSystemColumn())
+	    nonSystemKeyCols++;
+	  else if (nac->isSyskeyColumn())
+	    isStoreBy = TRUE;
+	} // for
+
+      if (nonSystemKeyCols == 0)
+	isStoreBy = FALSE;
+    } // if
+  
   if ((rowCount > 0) || // not empty
       (naTable->hasSecondaryIndexes()) || // user indexes
-      (NOT naTable->getClusteringIndex()->hasSyskey()) || // not user defined pkey
+      (NOT naTable->getClusteringIndex()->hasSyskey()) || // user defined pkey
+      (isStoreBy) ||     // user defined store by
       (naTable->getUniqueConstraints().entries() > 0) || // unique constraints
       (naTable->getRefConstraints().entries() > 0) || // ref constraints
       (naTable->getCheckConstraints().entries() > 0))
@@ -4397,6 +4419,14 @@ static NABoolean dropOneTable(ExeCliInterface &cliInterface,
   Lng32 cliRC = 0;
   char buf [1000];
   
+  cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      
+      return FALSE;
+    }
+
   NABoolean someObjectsCouldNotBeDropped = FALSE;
   str_sprintf(buf, "drop table \"%s\".\"%s\".\"%s\" cascade",
 	      catName, schName, objName);
@@ -4412,6 +4442,8 @@ static NABoolean dropOneTable(ExeCliInterface &cliInterface,
   CorrName cn(catName, STMTHEAP, schName, objName);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
   
+  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+
   return someObjectsCouldNotBeDropped;
 }
 
@@ -4516,11 +4548,51 @@ void CmpSeabaseDDL::dropSeabaseSchema(
 	      (cliRC != -1389))
 	    {
 	      someObjectsCouldNotBeDropped = TRUE;
+ 	    }
+	} // if
+    } // for
+
+  // drop tables 
+  NABoolean histExists = FALSE;
+  objectsQueue->position();
+  for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+    {
+      OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
+
+      NAString objName = vi->get(0);
+      NAString objType = vi->get(1);
+
+      // drop user objects first
+      if (objType == COM_BASE_TABLE_OBJECT_LIT)
+	{
+	  if (NOT ((objName == HBASE_HIST_NAME) ||
+		   (objName == HBASE_HISTINT_NAME)))
+	    {
+	      if (dropOneTable(cliInterface, 
+			       (char*)catName.data(), (char*)schName.data(), (char*)objName.data()))
+		someObjectsCouldNotBeDropped = TRUE;
 	    }
+	  else
+	    histExists = TRUE;
 	} // if
     } // for
 
   // drop indexes
+  str_sprintf(query, "select trim(object_name), trim(object_type) from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_type = '%s' for read committed access ",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+	      (char*)catName.data(), (char*)schName.data(), 
+	      COM_INDEX_OBJECT_LIT);
+  
+  cliRC = cliInterface.fetchAllRows(objectsQueue, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+      processReturn();
+      
+      return;
+    }
+
   objectsQueue->position();
   for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
     {
@@ -4545,51 +4617,27 @@ void CmpSeabaseDDL::dropSeabaseSchema(
 	} // if
     } // for
 
-  // drop tables 
-  NABoolean histExists = FALSE;
-  objectsQueue->position();
-  for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
-    {
-      OutputInfo * vi = (OutputInfo*)objectsQueue->getNext(); 
-
-      NAString objName = vi->get(0);
-      NAString objType = vi->get(1);
-
-      // drop user objects first
-      if (objType == COM_BASE_TABLE_OBJECT_LIT)
-	{
-	  if (NOT ((objName == HBASE_HIST_NAME) ||
-		   (objName == HBASE_HISTINT_NAME)))
-	    {
-	      someObjectsCouldNotBeDropped =
-		dropOneTable(cliInterface, 
-			     (char*)catName.data(), (char*)schName.data(), (char*)objName.data());
-	    }
-	  else
-	    histExists = TRUE;
-	} // if
-    } // for
-
   // now drop histogram objects
   if (histExists)
     {
-      NAString histint(HBASE_HISTINT_NAME);
-      if (dropSeabaseObject(ehi, 
-			    histint, catName, schName, COM_BASE_TABLE_OBJECT_LIT))
+      if (dropOneTable(cliInterface, 
+		       (char*)catName.data(), (char*)schName.data(), (char*)HBASE_HISTINT_NAME))
 	someObjectsCouldNotBeDropped = TRUE;
       
-      NAString hist(HBASE_HIST_NAME);
-      if (dropSeabaseObject(ehi, 
-			    hist, catName, schName, COM_BASE_TABLE_OBJECT_LIT))
+      if (dropOneTable(cliInterface, 
+		       (char*)catName.data(), (char*)schName.data(), (char*)HBASE_HIST_NAME))
 	someObjectsCouldNotBeDropped = TRUE;
     }
 
   processReturn();
 
   if (someObjectsCouldNotBeDropped)
-    *CmpCommon::diags() << DgSqlCode(-1069)
-			<< DgSchemaName(catName + "." + schName);
-  
+    {
+      CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-1069)
+			  << DgSchemaName(catName + "." + schName);
+    }
 }
 
 void CmpSeabaseDDL::seabaseGrantRevoke(
@@ -4943,6 +4991,10 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
 
   Parser parser(CmpCommon::context());
 
+  ComTdbVirtTableConstraintInfo * constrInfo = (ComTdbVirtTableConstraintInfo*)
+	new(STMTHEAP) char[sizeof(ComTdbVirtTableConstraintInfo)];
+
+  NAString constrName;
   if (objName == HBASE_HIST_NAME)
     {
       if (processDDLandCreateDescs(parser,
@@ -4953,6 +5005,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
 				   numKeys, keyInfo,
 				   indexInfo))
 	return NULL;
+
+      constrName = HBASE_HIST_PK;
     }
   else if (objName == HBASE_HISTINT_NAME)
     {
@@ -4964,9 +5018,30 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
 				   numKeys, keyInfo,
 				   indexInfo))
 	return NULL;
+      
+      constrName = HBASE_HISTINT_PK;
     }
   else
     return NULL;
+  
+  ComObjectName coConstrName(catName, schName, constrName);
+  NAString * extConstrName = 
+    new(STMTHEAP) NAString(coConstrName.getExternalName(TRUE));
+  
+  constrInfo->baseTableName = (char*)extTableName.data();
+  constrInfo->constrName = (char*)extConstrName->data();
+  constrInfo->constrType = 3; // pkey_constr
+
+  constrInfo->colCount = numKeys;
+  constrInfo->keyInfoArray = keyInfo;
+
+  constrInfo->numRingConstr = 0;
+  constrInfo->ringConstrArray = NULL;
+  constrInfo->numRefdConstr = 0;
+  constrInfo->refdConstrArray = NULL;
+  
+  constrInfo->checkConstrLen = 0;
+  constrInfo->checkConstrText = NULL;
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -4975,13 +5050,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
      colInfo,
      numKeys,
      keyInfo,
-     0, NULL,
+     1, constrInfo,
      0, NULL);
 
   return tableDesc;
-
 }
-
 
 Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
                                    Int64 objUID,

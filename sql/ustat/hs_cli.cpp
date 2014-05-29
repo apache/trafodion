@@ -403,7 +403,8 @@ Lng32 CreateSeabaseHist(const HSGlobalsClass* hsGlobal)
                "  , V4             LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE"
                "  , V5             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE"
                "  , V6             VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE"
-               "  , PRIMARY KEY (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
+              "  , constraint "HBASE_HIST_PK" primary key"
+                "  (TABLE_UID ASC, HISTOGRAM_ID ASC, COL_POSITION ASC)"
                " );");
 
     LM->StartTimer("Create Trafodion HISTOGRAMS table");
@@ -444,7 +445,8 @@ Lng32 CreateSeabaseHistint(const HSGlobalsClass* hsGlobal)
                "  , V4                LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE"
                "  , V5                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE"
                "  , V6                VARCHAR(250) CHARACTER SET UCS2 COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE"
-               "  , primary key(TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
+               "  , constraint "HBASE_HISTINT_PK" primary key"
+              "     (TABLE_UID ASC, HISTOGRAM_ID ASC, INTERVAL_NUMBER ASC)"
                " );");
 
     LM->StartTimer("Create Trafodion HISTOGRAM_INTERVALS table");

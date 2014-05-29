@@ -116,7 +116,8 @@ typedef NABoolean               ComBoolean;
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
 #define HBASE_HIST_NAME               "SB_HISTOGRAMS"
 #define HBASE_HISTINT_NAME            "SB_HISTOGRAM_INTERVALS"
-//#define SEABASE_SYSCAT_LIT                   "SEABASE"
+#define HBASE_HIST_PK                    "SB_HISTOGRAMS_PK"
+#define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
 

@@ -4412,7 +4412,7 @@ StmtDDLCreateTable::synthesize()
   NABoolean userSpecifiedPKey = FALSE;
   if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
       (isVolatile()) ||
-      ((isPkeyStoreByKeylist) && (pTableDefBody->castToElemDDLLikeCreateTable() == NULL)))
+      ((isPkeyStoreByKeylist) && pTableDefBody && (pTableDefBody->castToElemDDLLikeCreateTable() == NULL)))
     {
       NABoolean addPrimaryKeyClause = FALSE;
 

@@ -1,5 +1,6 @@
 -- Tests for SeaBase
--- Tests coprocessors, serialization, hbase filter preds pushdown
+-- Tests coprocessors, serialization, hbase filter preds pushdown.
+-- Tests schema drop.
 -- Added November 2013
 --
 -- @@@ START COPYRIGHT @@@
@@ -31,6 +32,7 @@ obey TEST012(clnup);
 obey TEST012(ddl);
 obey TEST012(tests);
 obey TEST012(negtests);
+obey TEST012(schemaDrop);
 log;
 exit;
 
@@ -83,4 +85,32 @@ create table t012t10(f real not null serialized,
 insert into t012v1 values (3,3,3);
 
 create table t012t11(a int not null);
+
+?section schemaDrop
+set schema trafodion.zschema;
+create table t012t11 (a int not null primary key, b int not null, c int not null, d int not null);
+create table t012t12 (a int not null primary key, b int not null);
+create index t012t11i1 on t012t11(b);
+create unique index t012t11i2 on t012t11(b);
+alter table t012t11 add constraint t012t11c1 unique (c);
+alter table t012t11 add constraint t012t11c2 foreign key (d) references t012t12(a);
+create view t012t11v1(a1,a2) as select x.a, y.a from t012t11 x, t012t11 y where x.a = y.a;
+showddl t012t11;
+insert into t012t12 values (1,1), (2,2), (3,3);
+insert into t012t11 values (1,1,1,1), (2,2,2,2), (3,3,3,3);
+update statistics for table t012t11 on every column;
+
+get tables in schema trafodion.zschema;
+get indexes in schema trafodion.zschema;
+get views in schema trafodion.zschema;
+
+drop schema trafodion.zschema cascade;
+
+get tables in schema trafodion.zschema;
+get indexes in schema trafodion.zschema;
+get views in schema trafodion.zschema;
+
+
+
+
 

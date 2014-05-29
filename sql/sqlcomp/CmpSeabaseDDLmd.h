@@ -393,8 +393,9 @@ static const QString seabaseHistogramsDDL[] =
   {"   v4 largeint not null, "},
   {"   v5 varchar(250) character set ucs2 not null, "},
   {"   v6 varchar(250) character set ucs2 not null "},
+  {" , constraint "HBASE_HIST_PK" primary key "},
+  {"     (table_uid, histogram_id, col_position) "},
   {" ) "},
-  {" primary key (table_uid, histogram_id, col_position) "},
   {" ; "}
 };
 
@@ -415,8 +416,9 @@ static const QString seabaseHistogramIntervalsDDL[] =
   {"   v4 largeint not null, "},
   {"   v5 varchar(250) character set ucs2 not null, "},
   {"   v6 varchar(250) character set ucs2 not null "},
+  {" , constraint "HBASE_HISTINT_PK" primary key "},
+  {"    (table_uid, histogram_id, interval_number) "},
   {" ) "},
-  {" primary key (table_uid, histogram_id, interval_number) "},
   {" ; "}
 };
 

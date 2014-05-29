@@ -1,4 +1,4 @@
->>set schema seabase.seabase;
+>>set schema trafodion.seabase;
 
 --- SQL operation complete.
 >>
@@ -43,8 +43,8 @@
 --- SQL operation complete.
 >>invoke t012t1;
 
--- Definition of Seabase table SEABASE.SEABASE.T012T1
--- Definition current  Fri Nov 15 10:01:00 2013
+-- Definition of Trafodion table TRAFODION.SEABASE.T012T1
+-- Definition current  Thu May 29 07:45:21 2014
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -66,8 +66,8 @@
 --- SQL operation complete.
 >>invoke t012v1;
 
--- Definition of Seabase view SEABASE.SEABASE.T012V1
--- Definition current  Fri Nov 15 10:01:01 2013
+-- Definition of Trafodion view TRAFODION.SEABASE.T012V1
+-- Definition current  Thu May 29 07:45:23 2014
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -176,12 +176,153 @@ A       B            C
 >>
 >>insert into t012v1 values (3,3,3);
 
-*** ERROR[8105] The operation is prevented by the check option on view SEABASE.SEABASE.T012V1.
+*** ERROR[8105] The operation is prevented by the check option on view TRAFODION.SEABASE.T012V1.
 
 --- 0 row(s) inserted.
 >>
 >>create table t012t11(a int not null);
 
 --- SQL operation complete.
+>>
+>>obey TEST012(schemaDrop);
+>>set schema trafodion.zschema;
+
+--- SQL operation complete.
+>>create table t012t11 (a int not null primary key, b int not null, c int not null, d int not null);
+
+--- SQL operation complete.
+>>create table t012t12 (a int not null primary key, b int not null);
+
+--- SQL operation complete.
+>>create index t012t11i1 on t012t11(b);
+
+--- SQL operation complete.
+>>create unique index t012t11i2 on t012t11(b);
+
+--- SQL operation complete.
+>>alter table t012t11 add constraint t012t11c1 unique (c);
+
+--- SQL operation complete.
+>>alter table t012t11 add constraint t012t11c2 foreign key (d) references t012t12(a);
+
+--- SQL operation complete.
+>>create view t012t11v1(a1,a2) as select x.a, y.a from t012t11 x, t012t11 y where x.a = y.a;
+
+--- SQL operation complete.
+>>showddl t012t11;
+
+CREATE TABLE TRAFODION.ZSCHEMA.T012T11
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX T012T11C1 ON TRAFODION.ZSCHEMA.T012T11
+  (
+    C ASC
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX T012T11C2 ON TRAFODION.ZSCHEMA.T012T11
+  (
+    D ASC
+  )
+;
+
+CREATE INDEX T012T11I1 ON TRAFODION.ZSCHEMA.T012T11
+  (
+    B ASC
+  )
+;
+
+CREATE UNIQUE INDEX T012T11I2 ON TRAFODION.ZSCHEMA.T012T11
+  (
+    B ASC
+  )
+;
+
+ALTER TABLE TRAFODION.ZSCHEMA.T012T11 ADD CONSTRAINT
+  TRAFODION.ZSCHEMA.T012T11C1 UNIQUE
+  (
+    C
+  )
+;
+
+ALTER TABLE TRAFODION.ZSCHEMA.T012T11 ADD CONSTRAINT
+  TRAFODION.ZSCHEMA.T012T11C2 FOREIGN KEY
+  (
+    D
+  )
+ REFERENCES TRAFODION.ZSCHEMA.T012T12
+  (
+    A
+  )
+;
+
+--- SQL operation complete.
+>>insert into t012t12 values (1,1), (2,2), (3,3);
+
+--- 3 row(s) inserted.
+>>insert into t012t11 values (1,1,1,1), (2,2,2,2), (3,3,3,3);
+
+--- 3 row(s) inserted.
+>>update statistics for table t012t11 on every column;
+
+--- SQL operation complete.
+>>
+>>get tables in schema trafodion.zschema;
+
+Tables in Schema TRAFODION.ZSCHEMA
+==================================
+
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+T012T11
+T012T12
+
+--- SQL operation complete.
+>>get indexes in schema trafodion.zschema;
+
+Indexes in Schema TRAFODION.ZSCHEMA
+===================================
+
+T012T11C1
+T012T11C2
+T012T11I1
+T012T11I2
+
+--- SQL operation complete.
+>>get views in schema trafodion.zschema;
+
+Views in Schema TRAFODION.ZSCHEMA
+=================================
+
+T012T11V1
+
+--- SQL operation complete.
+>>
+>>drop schema trafodion.zschema cascade;
+
+--- SQL operation complete.
+>>
+>>get tables in schema trafodion.zschema;
+
+--- SQL operation complete.
+>>get indexes in schema trafodion.zschema;
+
+--- SQL operation complete.
+>>get views in schema trafodion.zschema;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
 >>
 >>log;
