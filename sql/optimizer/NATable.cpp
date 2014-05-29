@@ -1358,6 +1358,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 {
   Lng32 keyColOffset = 0;
   ItemExpr *result = NULL;
+  const char* encodedKeyP = NULL;
+  char* varCharstr = NULL;
+
 
   for (CollIndex c = 0; c < partColArray.entries(); c++)
     {
@@ -1367,10 +1370,23 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
       if (pkType->isEncodingNeeded())
         {
+          encodedKeyP = &encodedKey[keyColOffset];
+
+          // for varchar the decoding logic expects the length to be in the first
+          // pkType->getVarLenHdrSize() chars, so add it 
+          if (pkType->getTypeName() == "VARCHAR")
+          {
+              varCharstr = new (heap) char[decodedValueLen + pkType->getVarLenHdrSize()];
+              str_cpy_all(varCharstr, (char*) &decodedValueLen, pkType->getVarLenHdrSize());
+              str_cpy_all(varCharstr+pkType->getVarLenHdrSize(), encodedKeyP, decodedValueLen);
+              decodedValueLen += pkType->getVarLenHdrSize();
+              encodedKeyP = varCharstr;
+          }
+
           // un-encode the key value by using an expression
           ConstValue *keyColEncVal =
             new (heap) ConstValue(pkType,
-                                  (void *) &encodedKey[keyColOffset],
+                                  (void *) encodedKeyP,
                                   decodedValueLen,
                                   new(heap) NAString("'<region boundary>'"),
                                   heap);
@@ -1413,7 +1429,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
            // implementation of the decoding logic.
            ex_expr::exp_return_type rc = exprs.evalAtCompileTime
                (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, decodeBuf, decodeBufLen,
-                &resultLength, &resultOffset
+                &resultLength, &resultOffset, CmpCommon::diags()
                );
 
 
@@ -1500,6 +1516,12 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       // this and the above assumes that encoded and unencoded values
       // have the same length
       keyColOffset += decodedValueLen;
+      if (pkType->getTypeName() == "VARCHAR")
+      {
+         keyColOffset -= pkType->getVarLenHdrSize();
+         NADELETEBASIC (varCharstr, heap);
+         varCharstr = NULL;
+      }
 
       if (result)
         result = new(heap) ItemList(result, keyColVal);
