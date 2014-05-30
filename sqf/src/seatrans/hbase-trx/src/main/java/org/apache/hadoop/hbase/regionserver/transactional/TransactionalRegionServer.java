@@ -193,7 +193,7 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
 
         Path logdir = new Path(getRootDir(), HLog.getHLogDirectoryName(this.getServerName().getServerName()));
 
-        trxHLog = new THLog(getFileSystem(), logdir, oldLogDir, conf, null);        
+        trxHLog = THLog.createTHLog(getFileSystem(), logdir, oldLogDir, conf, null);        
     }
 
     @Override

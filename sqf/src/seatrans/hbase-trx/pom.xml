@@ -24,125 +24,143 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.apache</groupId>
 	<artifactId>hbase-trx</artifactId>
-	<version>0.90.0RC3</version>
+        <!-- obey sqenv.sh to get the value of TRAFODION_VER -->
+	<version>${env.TRAFODION_VER}</version>
 	<packaging>jar</packaging>
 	<name>hbase-trx</name>
-	<description>Hbase-trx is an HBase extension that provides serialzied transactions and indexed tables.</description>
+	<description>Hbase-trx is an HBase extension that provides serialized transactions and indexed tables.</description>
 	
 	<properties>
-		<hadoop.version>0.20.2</hadoop.version>
-		<hbase.version>0.94.6-cdh4.4.0</hbase.version>
-	   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	  <hadoop.version>1.2.0</hadoop.version>
+	  <hbase.version>0.94.6-trafodion</hbase.version>
+	  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+          <java.version>1.7</java.version>
+          <trx-suffix></trx-suffix>
 	</properties>
 	
 	<dependencies>
-		<dependency>
-			<groupId>org.apache.hbase</groupId>
-			<artifactId>hbase</artifactId>
-			<version>${hbase.version}</version>
-		</dependency>
-		
-		<!--  Test dependencies -->
-		<dependency>
-	        <groupId>org.apache.hbase</groupId>
-	        <artifactId>hbase</artifactId>
-			<version>${hbase.version}</version>
-	        <classifier>tests</classifier>
-	        <scope>test</scope>
-    	</dependency>
-    	<dependency>
-	        <groupId>org.apache.hadoop</groupId>
-	        <artifactId>hadoop-core</artifactId>
-	        <version>${hadoop.version}</version>
-        </dependency>
-    	<dependency>
-	        <groupId>org.apache.hadoop</groupId>
-	        <artifactId>hadoop-test</artifactId>
-	        <version>${hadoop.version}</version>
-	        <scope>test</scope>
-        </dependency>
-        <dependency>
-	        <groupId>junit</groupId>
-	        <artifactId>junit</artifactId>
-	        <version>4.8.1</version>
-	        <scope>test</scope>
-      </dependency>
+	  <dependency>
+	    <groupId>org.apache.hbase</groupId>
+	    <artifactId>hbase</artifactId>
+	    <version>${hbase.version}</version>
+	  </dependency>
+	  
+	  <!--  Test dependencies -->
+	  <dependency>
+	    <groupId>org.apache.hbase</groupId>
+	    <artifactId>hbase</artifactId>
+	    <version>${hbase.version}</version>
+	    <classifier>tests</classifier>
+	    <scope>test</scope>
+    	  </dependency>
+    	  <dependency>
+	    <groupId>org.apache.hadoop</groupId>
+	    <artifactId>hadoop-core</artifactId>
+	    <version>${hadoop.version}</version>
+          </dependency>
+    	  <dependency>
+	    <groupId>org.apache.hadoop</groupId>
+	    <artifactId>hadoop-test</artifactId>
+	    <version>${hadoop.version}</version>
+	    <scope>test</scope>
+          </dependency>
+          <dependency>
+	    <groupId>junit</groupId>
+	    <artifactId>junit</artifactId>
+	    <version>4.8.1</version>
+	    <scope>test</scope>
+          </dependency>
 	</dependencies>
-	<repositories>
-		 <repository>
-		    <id>cloudera-repo-releases</id>
-		    <url>https://repository.cloudera.com/artifactory/repo/</url>
-		  </repository>
-	 </repositories>
-	 <build>
-    <!-- Some plugins (javadoc for example) can be used in the normal build- and the site phase.
-         These plugins inherit their options from the <reporting> section below. These settings
-         can be overwritten here. -->
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>2.1</version>
-          <configuration>
-            <source>1.6</source>
-            <target>1.6</target>
-            <showWarnings>true</showWarnings>
-            <showDeprecation>false</showDeprecation>
-          </configuration>
-        </plugin>
-        <plugin>
-          <artifactId>maven-assembly-plugin</artifactId>
-          <version>2.2-beta-5</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>2.3</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>2.1.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.5</version>
-          <configuration>
-            <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
-            <argLine>-Xmx1g</argLine>
-            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          </configuration>
-        </plugin>
-        <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.6.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-clean-plugin</artifactId>
-          <version>2.4</version>
-        </plugin>
-        
-      </plugins>
-    </pluginManagement>
 
-    <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <!-- THIS might not be doable
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-        -->
-        <configuration>
-          <tarLongFileMode>gnu</tarLongFileMode>
-          <descriptors>
-            <descriptor>src/assembly/bin.xml</descriptor>
-          </descriptors>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+	<repositories>
+	  <repository>
+	    <id>hbase-trafodion-repos</id>
+	    <url>http://mvnrepo.trafodion.org</url>
+	  </repository>
+	</repositories>
+
+	<build>
+          <defaultGoal>package</defaultGoal>
+          <!-- allow for different build targets with separate classes directories and
+               output jars, used for Java 6 compile for now -->
+          <outputDirectory>${project.build.directory}/classes${trx-suffix}</outputDirectory>
+          <finalName>${project.artifactId}-${project.version}${trx-suffix}</finalName>
+          <!-- Some plugins (javadoc for example) can be used in the normal build- and the site phase.
+               These plugins inherit their options from the <reporting> section below. These settings
+               can be overwritten here. -->
+          <pluginManagement>
+            <plugins>
+              <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                  <source>${java.version}</source>
+                  <target>${java.version}</target>
+                  <showWarnings>true</showWarnings>
+                  <showDeprecation>false</showDeprecation>
+                </configuration>
+              </plugin>
+              <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                  <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
+                  <argLine>-Xmx1g</argLine>
+                  <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                </configuration>
+              </plugin>
+              <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6.1</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.4</version>
+              </plugin>
+            </plugins>
+          </pluginManagement>
+          
+          <plugins>
+            <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <!-- THIS might not be doable
+                   <executions>
+                     <execution>
+                       <phase>package</phase>
+                       <goals>
+                         <goal>single</goal>
+                       </goals>
+                     </execution>
+                   </executions>
+                   -->
+              <configuration>
+                <tarLongFileMode>gnu</tarLongFileMode>
+                <descriptors>
+                  <descriptor>src/assembly/bin.xml</descriptor>
+                </descriptors>
+              </configuration>
+            </plugin>
+          </plugins>
+          <resources>
+            <resource>
+              <directory>${basedir}/src/main/java</directory>
+              <includes>
+                <!-- include all the Java sources in the jar -->
+                <include>**/*.java</include>
+              </includes>
+            </resource>
+          </resources>
+        </build>
 </project>

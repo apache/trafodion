@@ -84,7 +84,7 @@ public class TestTHLog {
     @Test
     public void testSingleCommit() throws IOException {
 
-        THLog log = new THLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
+        THLog log = THLog.createTHLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
 
         // Write columns named 1, 2, 3, etc. and then values of single byte
         // 1, 2, 3...
@@ -100,14 +100,15 @@ public class TestTHLog {
 
         log.close();
         Path filename = log.computeFilename();
-        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(fs, regionInfo, TEST_UTIL.getConfiguration());
+        // The "null" as first argument will probably not work, just making this compile for now...
+        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(null, fs, regionInfo, TEST_UTIL.getConfiguration());
         Map<Long, WALEdit> commits = logRecoveryMangaer.getCommitsFromLog(filename, -1, null);
         Assert.assertNull(commits);
     }
 
     @Test
     public void testSingleAbort() throws IOException {
-        THLog log = new THLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
+        THLog log = THLog.createTHLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
 
         // Write columns named 1, 2, 3, etc. and then values of single byte
         // 1, 2, 3...
@@ -120,14 +121,15 @@ public class TestTHLog {
         log.writeAbortToLog(regionInfo, transactionId, tableDesc);
         log.close();
         Path filename = log.computeFilename();
-        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(fs, regionInfo, TEST_UTIL.getConfiguration());
+        // The "null" as first argument will probably not work, just making this compile for now...
+        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(null, fs, regionInfo, TEST_UTIL.getConfiguration());
         Map<Long, WALEdit> commits = logRecoveryMangaer.getCommitsFromLog(filename, -1, null);
         Assert.assertNull(commits);
     }
 
     @Test
     public void testWithPendingTransactionToCommit() throws IOException {
-        THLog log = new THLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
+        THLog log = THLog.createTHLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
 
         // Write columns named 1, 2, 3, etc. and then values of single byte
         // 1, 2, 3...
@@ -139,7 +141,8 @@ public class TestTHLog {
         log.writeCommitRequestToLog(regionInfo, state);
         log.close();
         Path filename = log.computeFilename();
-        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(fs, regionInfo, TEST_UTIL.getConfiguration());
+        // The "null" as first argument will probably not work, just making this compile for now...
+        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(null, fs, regionInfo, TEST_UTIL.getConfiguration());
         logRecoveryMangaer.setGlobalTransactionLog(new TransactionLogger() {
 
             @Override
@@ -171,7 +174,7 @@ public class TestTHLog {
 
     @Test
     public void testWithPendingTransactionToAbort() throws IOException {
-        THLog log = new THLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
+        THLog log = THLog.createTHLog(fs, dir, oldDir, TEST_UTIL.getConfiguration(), null);
 
         // Write columns named 1, 2, 3, etc. and then values of single byte
         // 1, 2, 3...
@@ -183,7 +186,8 @@ public class TestTHLog {
         log.writeCommitRequestToLog(regionInfo, state);
         log.close();
         Path filename = log.computeFilename();
-        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(fs, regionInfo, TEST_UTIL.getConfiguration());
+        // The "null" as first argument will probably not work, just making this compile for now...
+        THLogRecoveryManager logRecoveryMangaer = new THLogRecoveryManager(null, fs, regionInfo, TEST_UTIL.getConfiguration());
         logRecoveryMangaer.setGlobalTransactionLog(new TransactionLogger() {
 
             @Override

@@ -270,8 +270,7 @@ elif [ -e /usr/lib/hadoop/*HDP* ]; then
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
-                          /usr/lib/hadoop/lib
-                          $TOOLSDIR/hadoop-2.0.0-cdh4.2.0/share/hadoop/hdfs"
+                          /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES=
   export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
                           /usr/lib/hbase/lib/zookeeper.jar
@@ -289,6 +288,10 @@ elif [ -d /opt/mapr ]; then
   # ----------------------------------------------------------------
  
   # We tried this with MapR 3.1, which has hadoop-0.20.2, hbase-0.94.13, hive-0.12 
+
+  # Note that hadoopversion and hiveversion are not officially
+  # supported by MapR, only hbaseversion is. We recommend creating
+  # these files to guide Trafodion to the right version, if necessary.
   if [ -r /opt/mapr/hadoop/hadoopversion ]; then
     MAPR_HADOOP_VERSION=`cat /opt/mapr/hadoop/hadoopversion`
     MAPR_HADOOPDIR=/opt/mapr/hadoop/hadoop-${MAPR_HADOOP_VERSION}
@@ -317,8 +320,7 @@ elif [ -d /opt/mapr ]; then
   export HADOOP_INC_DIR=/build-not-supported-on-MapR-yet
  
   # directories with jar files and list of jar files
-  export HADOOP_JAR_DIRS="$MAPR_HADOOPDIR/lib
-                          $TOOLSDIR/hadoop-2.0.0-cdh4.2.0/share/hadoop/hdfs"
+  export HADOOP_JAR_DIRS="$MAPR_HADOOPDIR/lib"
   export HADOOP_JAR_FILES=
   export HBASE_JAR_FILES="$MAPR_HBASEDIR/hbase-*.jar
                           $MAPR_HBASEDIR/lib/zookeeper.jar
@@ -367,8 +369,7 @@ fi
 # Common for local workstations, Cloudera, Hortonworks and MapR
 
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
-# Some distros require a custom HBase-trx jar
-export HBASE_TRX_JAR=${HBASE_TRX_JAR:-hbase-trx-0.94.6.jar}
+export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
 
 export ZOOKEEPER_DIR=$TOOLSDIR/zookeeper-3.4.5
 export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4

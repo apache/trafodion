@@ -183,7 +183,9 @@ public class SequenceFileLogWriter implements HLog.Writer {
     if (this.writer == null) {
       LOG.debug("new createWriter -- HADOOP-6840 -- not available");
       this.writer = SequenceFile.createWriter(fs, conf, path,
-        HLog.getKeyClass(conf), WALEdit.class,
+        //HLog.getKeyClass(conf),
+        keyClass,
+        WALEdit.class,
         fs.getConf().getInt("io.file.buffer.size", 4096),
         (short) conf.getInt("hbase.regionserver.hlog.replication",
           fs.getDefaultReplication()),

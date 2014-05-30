@@ -45,10 +45,8 @@ public class THLogSplitter extends HLogSplitter {
     	return new DualWriter(fs, logfile, conf);
     }
 
-    /* The following getReader method is for use with the Cloudera HBase distro (part of CDH 4.4)
-     * Remove the @Override annotation when compiling with Apache HBase 0.94.6 code
-     */
-    @Override
+    // The following getReader method is for use with the Cloudera HBase distro (part of CDH 4.4)
+    //@Override
     protected Reader getReader(FileSystem fs, FileStatus file, Configuration conf,
                                                        boolean skipErrors, CancelableProgressable reporter) throws IOException {
 
@@ -61,7 +59,8 @@ public class THLogSplitter extends HLogSplitter {
         return HLog.getReader(fs, logfile, conf);
     }
 
-    /* Add the @Override annotation when using Apache HBase 0.94.6 */
+    // This is used with Apache HBase 0.94.6, MapR HBase 0.94.13 and others
+    //@Override
     protected Reader getReader(final FileSystem fs, final Path logfile, final Configuration conf) throws IOException {
     	if (isTrxLog(logfile)) {
     		LOG.trace("getReader, Path: " + logfile.toString());
