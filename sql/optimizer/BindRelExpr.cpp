@@ -14966,6 +14966,8 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
   // ourselves, however, we need to set our characteristic outputs
   getGroupAttr()->addCharacteristicOutputs(getProcOutputParamsVids());
 
+  if (getNARoutine()->isProcedure())
+    bindWA->setHasCallStmts(TRUE);
 
   bindWA->setBindingCall (FALSE);
   return boundExpr;

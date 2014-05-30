@@ -2720,7 +2720,7 @@ short RelRoot::codeGen(Generator * generator)
 	    root_tdb->setNoEspsFixup(TRUE);
 	}
     }
-  else if (noOfUdrs > 0)
+  else if (generator->getBindWA()->hasCallStmts())
   {
     // In this version of the compiler we assume any statement that
     // contains UDRs is either a CALL statement.

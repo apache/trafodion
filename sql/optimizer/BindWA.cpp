@@ -172,7 +172,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
      , overrideSchemaEnabled_ (FALSE)
      , schemaCount_ (0)
      , routineInvocationNum_ (0)
-     , isBindTrueToot_(FALSE)
+     , isBindTrueRoot_(FALSE)
      , noNeedToLimitSchemaAccess_(FALSE)
      , holdableType_(SQLCLIDEV_NONHOLDABLE)
      , usingSideinserts_(FALSE)
@@ -182,6 +182,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
      , queryCanUseSeaMonster_(-1)
      , volatileTableFound_(FALSE)
      , outerAggScope_(NULL)
+     , hasCallStmts_(FALSE)
 {
   // get current default schema, using NAMETYPE NSK or ANSI rules
   defaultSchema_ = schemaDB_->getDefaultSchema(SchemaDB::APPLY_NAMETYPE_RULES);

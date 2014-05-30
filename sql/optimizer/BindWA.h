@@ -1586,8 +1586,8 @@ public:
 
   SQLATTRHOLDABLE_INTERNAL_TYPE getHoldableType() { return holdableType_; } 
 
-  NABoolean isBindTrueRoot() const { return isBindTrueToot_; }
-  void setBindTrueRoot(NABoolean x) { isBindTrueToot_ = x; }
+  NABoolean isBindTrueRoot() const { return isBindTrueRoot_; }
+  void setBindTrueRoot(NABoolean x) { isBindTrueRoot_ = x; }
 
   inline NAString getOsFromSchema() const { return osFromSchema_; }
   inline NAString getOsToSchema() const { return osToSchema_; }
@@ -1624,6 +1624,10 @@ public:
   NABoolean &volatileTableFound() { return volatileTableFound_; }
   
   BindScope  *&outerAggScope()   { return outerAggScope_; }
+
+  inline NABoolean hasCallStmts()     { return hasCallStmts_; }
+  inline void setHasCallStmts(NABoolean v)      { hasCallStmts_ = v; }
+
 private:
 
   // --------------------------------------------------------------------
@@ -1898,7 +1902,7 @@ private:
 
   LIST (SchemaLabelInfoPtr) schemaLabelInfoList_;
 
-  NABoolean isBindTrueToot_;
+  NABoolean isBindTrueRoot_;
   SQLATTRHOLDABLE_INTERNAL_TYPE holdableType_;
 
   // TRUE if there is no need to limit schema access. Default is FALSE.
@@ -1924,7 +1928,8 @@ private:
   // used to help bind agg functions that are compositions of other
   // primitive aggr-funcs such as AVG and VARIANLE
   BindScope *outerAggScope_;
-  
+
+  NABoolean hasCallStmts_;
 }; // class BindWA
 
 class HbaseColUsageInfo : public NABasicObject
