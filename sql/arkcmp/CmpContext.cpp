@@ -331,7 +331,7 @@ CmpContext::~CmpContext()
   delete readTableDef_;
   delete schemaDB_;
   delete controlDB_;
-  delete optDefaults_;
+  NADELETE(optDefaults_, OptDefaults, heap_);
 
   readTableDef_ = 0;
   schemaDB_ = 0;
