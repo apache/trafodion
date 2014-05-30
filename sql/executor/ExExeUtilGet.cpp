@@ -4365,7 +4365,7 @@ ExExeUtilHiveMDaccessTcb::ExExeUtilHiveMDaccessTcb(
      const ComTdbExeUtilHiveMDaccess & exe_util_tdb,
      ex_globals * glob)
   : ExExeUtilTcb( exe_util_tdb, NULL, glob),
-    hiveMD_(NULL), hiveMysql_(NULL),
+    hiveMD_(NULL),
     currColDesc_(NULL),
     currKeyDesc_(NULL),
     tblNames_(getHeap()),
@@ -4477,30 +4477,18 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if (hiveMD_)
 	      NADELETEBASIC(hiveMD_, getHeap());
 	    
-	    if (hiveMysql_ != NULL)
-	      NADELETEBASIC(hiveMysql_, getHeap());
-
             char val[5];
-            NABoolean useJNI = FALSE;
-            cliInterface()->getCQDval("HIVE_METADATA_JAVA_ACCESS", val);
-            if ((strcmp(val, "ON") == 0))
-              useJNI = TRUE;
             cliInterface()->getCQDval("HIVE_CATALOG", hiveCat_);
             cliInterface()->getCQDval("HIVE_DEFAULT_SCHEMA", hiveSch_);
 
-            char url[2000];
-            char user[1000];
-            char passwd[1000];
-            char schema[1024];
             char userTblSch[256];
-	    
      
             cliInterface()->getCQDval("HIVE_DEFAULT_SCHEMA", userTblSch);
             NAString hiveDefaultSch(userTblSch);
             hiveDefaultSch.toLower();
             // the current schema name has been lower cased in the tdb
 
-            hiveMD_ = new (getHeap()) HiveMetaData(useJNI);
+            hiveMD_ = new (getHeap()) HiveMetaData();
 
             char* currSch = hiveMDtdb().getSchema();
 // change schema name to "default", since the default schema name Hive uses, 
@@ -4509,27 +4497,11 @@ short ExExeUtilHiveMDaccessTcb::work()
               currSch = (char *) hiveMD_->getDefaultSchemaName(); 
 
             NABoolean readEntireSchema = FALSE;
-            if ((hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_)||
-                !useJNI) {
+            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
               readEntireSchema = TRUE;
-              // only the case of TABLES_ with JNI have a shortcut where we
-              // don't read the entire schema.
             }
 
-            if (!useJNI) {
-              cliInterface()->getCQDval("HIVE_METADATA_CPPC_URL", url);
-              cliInterface()->getCQDval("HIVE_METADATA_USER", user);
-              cliInterface()->getCQDval("HIVE_METADATA_PASSWORD", passwd);
-              cliInterface()->getCQDval("HIVE_METADATA_SCHEMA", schema);
-              hiveMysql_ = new (getHeap()) 
-                mysqlDesc(url, user, passwd, schema);
-            }
-            else
-              hiveMysql_ = new (getHeap()) mysqlDesc();
-              
-
-            retStatus = hiveMD_->init(*hiveMysql_,
-                                      readEntireSchema,
+            retStatus = hiveMD_->init(readEntireSchema,
                                       currSch,
                                       hiveMDtdb().hivePredStr());
             if (!retStatus)
@@ -4566,8 +4538,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	case POSITION_:
 	  {
             hive_tbl_desc * htd = NULL;
-            if ((hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_)||
-                !hiveMD_->useJNI()) {
+            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
               hiveMD_->position();
               htd = hiveMD_->getNext();
             }
@@ -4609,8 +4580,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-            if ((hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_)||
-                !hiveMD_->useJNI()) {
+            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
               if (hiveMD_->atEnd())
               {
                 step_ = DONE_;
@@ -4630,8 +4600,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    str_cpy(s->catName, hiveCat_, 256, ' ');
 	    str_cpy(s->schName, hiveSch_, 256, ' ');
 
-            if ((hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_)||
-                !hiveMD_->useJNI()) {
+            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
               struct hive_tbl_desc * htd = hiveMD_->getNext();
               str_cpy(s->tblName, htd->tblName_, 256, ' ');
             }
@@ -4791,12 +4760,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	  {
 	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
 	      {
-                if ((hiveMDtdb().mdType_ != 
-                     ComTdbExeUtilHiveMDaccess::TABLES_)|| !hiveMD_->useJNI())
-                  hiveMD_->advance();
-                else
-                  pos_++;
-
+                pos_++;
 		step_ = FETCH_TABLE_;
 	      }
             // next two else blocks do not work with JNI

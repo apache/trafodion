@@ -37,7 +37,7 @@ export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
 # authentication in the Trafodion environment.
-# LDAP configuration must also be setup--see 
+# LDAP configuration must also be setup--see
 # $MY_SQROOT/sql/scripts/traf_authentication_config for details.
 ##############################################################
 export TRAFODION_ENABLE_AUTHENTICATION=NO
@@ -190,8 +190,6 @@ MPILIB=linux_amd64
 
 # Native libraries and include directories (the latter needed only to build from source)
 
-# DRIZZLE_LIB_DIR          directory of drizzle client lib libdrizzle.so
-# DRIZZLE_INC_DIR          directory with header files for drizzle client lib
 # HADOOP_LIB_DIR           directory of HDFS library libhdfs.so
 # HADOOP_INC_DIR           directory with header files for libhdfs
 # THRIFT_LIB_DIR           directory of Thrift library libthrift.so
@@ -218,10 +216,6 @@ if [ "$SQ_MTYPE" == 64 ]; then
 else
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/i386/server
 fi
-
-# native library directories and include directories common to all platforms
-export DRIZZLE_LIB_DIR=$TOOLSDIR/libdrizzle-5.1.4/libdrizzle/.libs
-export DRIZZLE_INC_DIR=$TOOLSDIR/libdrizzle-5.1.4
 
 ls /usr/lib/hadoop/hadoop-*cdh4*.jar >/dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -286,8 +280,8 @@ elif [ -e /usr/lib/hadoop/*HDP* ]; then
 elif [ -d /opt/mapr ]; then
   # we are on a MapR system
   # ----------------------------------------------------------------
- 
-  # We tried this with MapR 3.1, which has hadoop-0.20.2, hbase-0.94.13, hive-0.12 
+
+  # We tried this with MapR 3.1, which has hadoop-0.20.2, hbase-0.94.13, hive-0.12
 
   # Note that hadoopversion and hiveversion are not officially
   # supported by MapR, only hbaseversion is. We recommend creating
@@ -318,16 +312,16 @@ elif [ -d /opt/mapr ]; then
   # native library directories and include directories
   export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/lib/native/Linux-amd64-64
   export HADOOP_INC_DIR=/build-not-supported-on-MapR-yet
- 
+
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="$MAPR_HADOOPDIR/lib"
   export HADOOP_JAR_FILES=
   export HBASE_JAR_FILES="$MAPR_HBASEDIR/hbase-*.jar
                           $MAPR_HBASEDIR/lib/zookeeper.jar
                           $MAPR_HBASEDIR/lib/protobuf-*.jar"
-  
+
   # Configuration directories
-  
+
   export HADOOP_CNF_DIR=$MAPR_HADOOPDIR/conf
   export HBASE_CNF_DIR=$MAPR_HBASEDIR/conf
   export HIVE_CNF_DIR=$MAPR_HIVEDIR/conf

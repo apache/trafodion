@@ -2840,10 +2840,6 @@ ComTdbExeUtilGetHiveMetadataInfo::ComTdbExeUtilGetHiveMetadataInfo
      char *    obj,
      char *    pattern,
      char *    param1,
-     char *    url,
-     char *    user,
-     char *    password,
-     char *    schema,
      ex_expr_base * scan_expr,
      ex_cri_desc * work_cri_desc,
      const unsigned short work_atp_index,
@@ -2861,10 +2857,10 @@ ComTdbExeUtilGetHiveMetadataInfo::ComTdbExeUtilGetHiveMetadataInfo
 				    given_cri_desc, returned_cri_desc,
 				    down, up, 
 				    num_buffers, buffer_size),
-       hiveUrl_(url),
-       hiveUser_(user),
-       hivePassword_(password),
-       hiveSchema_(schema)
+       unused1_(NULL),
+       unused2_(NULL),
+       unused3_(NULL),
+       unused4_(NULL)
 {
   setType(ComTdbExeUtil::GET_HIVE_METADATA_INFO_);
   setNodeType(ComTdb::ex_GET_HIVE_METADATA_INFO);
@@ -2872,64 +2868,17 @@ ComTdbExeUtilGetHiveMetadataInfo::ComTdbExeUtilGetHiveMetadataInfo
 
 Long ComTdbExeUtilGetHiveMetadataInfo::pack(void * space)
 {
-  if (hiveUrl_)
-    hiveUrl_.pack(space);
-  if (hiveUser_)
-    hiveUser_.pack(space);
-  if (hivePassword_)
-    hivePassword_.pack(space);
-  if (hiveSchema_)
-    hiveSchema_.pack(space);
-
   return ComTdbExeUtilGetMetadataInfo::pack(space);
 }
 
 Lng32 ComTdbExeUtilGetHiveMetadataInfo::unpack(void * base, void * reallocator)
 {
-  if (hiveUrl_.unpack(base))
-    return -1;
-  if (hiveUser_.unpack(base))
-    return -1;
-  if (hivePassword_.unpack(base))
-    return -1;
-  if (hiveSchema_.unpack(base))
-    return -1;
   return ComTdbExeUtilGetMetadataInfo::unpack(base, reallocator);
 }
 
 void ComTdbExeUtilGetHiveMetadataInfo::displayContents(Space * space,ULng32 flag)
 {
   ComTdbExeUtilGetMetadataInfo::displayContents(space,flag & 0xFFFFFFFE);
-  
-  if(flag & 0x00000008)
-    {
-      char buf[1000];
-
-      if (getHiveUrl() != NULL)
-	{
-	  str_sprintf(buf,"HiveUrl = %s ", getHiveUrl());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-	}
-
-      if (getHiveUser() != NULL)
-	{
-	  str_sprintf(buf,"HiveUrl = %s ", getHiveUser());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-	}
-
-      if (getHivePassword() != NULL)
-	{
-	  str_sprintf(buf,"HiveUrl = %s ", getHivePassword());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-	}
-
-      if (getHiveSchema() != NULL)
-	{
-	  str_sprintf(buf,"HiveUrl = %s ", getHiveSchema());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-	}
-
-    }
   
   if (flag & 0x00000001)
     {

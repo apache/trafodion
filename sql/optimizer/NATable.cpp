@@ -7003,31 +7003,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       if ( hiveMetaDB_ == NULL ) {
 	if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) != DF_ON)
 	  {
-	   
-            NABoolean useJNI = 
-              (CmpCommon::getDefault(HIVE_METADATA_JAVA_ACCESS) == DF_ON);
-            
-	    hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData(useJNI);
-	    mysqlDesc* mysql = NULL;
-            if (!useJNI) {
-              // get MySQL connection info from CQDs for now
-              NAString url  = ActiveSchemaDB()->getDefaults().getValue
-                (HIVE_METADATA_CPPC_URL);
-              NAString user = ActiveSchemaDB()->getDefaults().getValue
-                (HIVE_METADATA_USER);
-              NAString password  = ActiveSchemaDB()->getDefaults().getValue
-                (HIVE_METADATA_PASSWORD);
-              NAString schema    = ActiveSchemaDB()->getDefaults().getValue
-                (HIVE_METADATA_SCHEMA);
-              mysql = new (CmpCommon::statementHeap()) 
-                mysqlDesc(url.data(), user.data(), 
-                          password.data(), schema.data());
-            }
-            else
-              mysql = new (CmpCommon::statementHeap()) mysqlDesc();
-
+	    hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData();
 	    
-	    if ( !hiveMetaDB_->init(*mysql) ) {
+	    if ( !hiveMetaDB_->init() ) {
 	      *CmpCommon::diags() << DgSqlCode(-1190)
                                   << DgString0(hiveMetaDB_->getErrMethodName())
                                   << DgString1(hiveMetaDB_->getErrCodeStr())
@@ -7043,7 +7021,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	  }
 	else
 	  hiveMetaDB_ = new (CmpCommon::contextHeap()) 
-            HiveMetaData(FALSE); // fake metadata
+            HiveMetaData(); // fake metadata
       }
       
       // this default schema name is what the Hive default schema is called in SeaHive

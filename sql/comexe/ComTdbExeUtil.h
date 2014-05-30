@@ -3876,10 +3876,6 @@ public:
        char *    obj,
        char *    pattern,
        char *    param1,
-       char *    url,
-       char *    user,
-       char *    password,
-       char *    schema,
        ex_expr_base * scan_expr,
        ex_cri_desc * work_cri_desc,
        const unsigned short work_atp_index,
@@ -3893,11 +3889,6 @@ public:
 
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
-
-  char * getHiveUrl() { return hiveUrl_; }
-  char * getHiveUser() { return hiveUser_; }
-  char * getHivePassword() { return hivePassword_; }
-  char * getHiveSchema() { return hiveSchema_; }
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -3916,10 +3907,10 @@ public:
 
  private:
 
-  NABasicPtr hiveUrl_;
-  NABasicPtr hiveUser_;
-  NABasicPtr hivePassword_;
-  NABasicPtr hiveSchema_;
+  NABasicPtr unused1_;
+  NABasicPtr unused2_;
+  NABasicPtr unused3_;
+  NABasicPtr unused4_;
 };
 
 
