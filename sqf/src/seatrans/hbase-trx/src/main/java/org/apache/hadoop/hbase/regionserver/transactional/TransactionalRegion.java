@@ -544,7 +544,8 @@ public class TransactionalRegion extends HRegion {
 		synchronized (transactionsById) {
 			transactionsById.put(transactionId, state);
                         // Logging to catch error 97
-                        LOG.info("Adding transaction: " + transactionId + " to list");
+                        LOG.info("Adding transaction: [" + transactionId + "] in region ["
+                             + super.getRegionInfo().getRegionNameAsString() + "]" + " to list");
 		}
 		try {
 			transactionLeases.createLease(getLeaseId(transactionId),
