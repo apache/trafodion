@@ -24,7 +24,6 @@
 #include "CmpCommon.h"
 
 class HiveClient_JNI;
-struct drizzle_st;
 
 static char* strduph(const char *s, CollHeap* h) {
   char *d = new (h) char[strlen (s) + 1];   // Space for length plus nul
@@ -199,35 +198,16 @@ struct hive_tbl_desc
    Int64 redeftime();
 };
 
-struct mysqlDesc
-{
-   const char* URL_;
-   const char* userID_;
-   const char* password_;
-   const char* schema_;
-
-  mysqlDesc(const char* URL,
-            const char* user,
-            const char* password,
-            const char *schema) : 
-       URL_(URL), userID_(user), password_(password), schema_(schema)
-  {}
-  mysqlDesc() : 
-       URL_(NULL), userID_(NULL), password_(NULL), schema_(NULL)
-  {}
-};
-
 class HiveMetaData
 {
  
 public:
-   HiveMetaData(NABoolean jniVal); 
+   HiveMetaData(); 
    ~HiveMetaData();
 
-   NABoolean init(mysqlDesc &desc,
-                  NABoolean readEntireSchema = FALSE,
-                  const char * hiveSchemaName = "default",
-		  const char * tabSearchPredStr = 0);
+  NABoolean init(NABoolean readEntireSchema = FALSE,
+                 const char * hiveSchemaName = "default",
+                 const char * tabSearchPredStr = 0);
 
    NABoolean connect();
    NABoolean disconnect();
@@ -250,7 +230,6 @@ public:
    // what the Hive default schema is called in the Hive metadata
   static const char *getDefaultSchemaName() { return "default"; }
 
-  struct drizzle_st * getConn() const { return sqlConnection_; }
    // get lower-level error code
   Int32 getErrCode() const { return errCode_; }
 
@@ -268,8 +247,6 @@ public:
   void recordParseError(Int32 errCode, const char* errCodeStr,
                         const char *errMethodName, const char* errDetail);
 
-  NABoolean useJNI() {return useJNI_;}
-
   HiveClient_JNI* getClient() {return client_;}
 
 protected:
@@ -278,15 +255,12 @@ protected:
   struct hive_tbd_desc* read(const char *schemaName,
                              const char *tableName);
 
-  mysqlDesc desc_;
   struct hive_tbl_desc* tbl_;
   hive_tbl_desc * currDesc_;
-  struct drizzle_st * sqlConnection_;
   Int32 errCode_;
   const char *errCodeStr_;
   const char *errMethodName_;
   const char *errDetail_;
-  NABoolean useJNI_;
   // HiveMetadata does not "own" this pointer. There is an assumption that
   // client is not null then it points to a HiveClient object that has 
   // been initialized and connected. The pointer is owened by CliGlobals.

@@ -837,17 +837,9 @@ NABoolean HSHiveTableDef::objExists(labelDetail unused)
   HiveMetaData* hiveMetaDB;
   if (CmpCommon::getDefault(HIVE_USE_FAKE_TABLE_DESC) != DF_ON)
     {
-      // get MySQL connection info from CQDs for now
-      NAString url       = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_CPPC_URL);
-      NAString user      = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_USER);
-      NAString password  = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_PASSWORD);
-      NAString schema    = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_SCHEMA);
-       NABoolean useJNI = 
-              (CmpCommon::getDefault(HIVE_METADATA_JAVA_ACCESS) == DF_ON);
-      hiveMetaDB = new(STMTHEAP) HiveMetaData(useJNI);
-      mysqlDesc mysql(url, user, password, schema);
+      hiveMetaDB = new(STMTHEAP) HiveMetaData();
 
-      if (!hiveMetaDB->init(mysql))
+      if (!hiveMetaDB->init())
         {
           *CmpCommon::diags() << DgSqlCode(-1190)
                               << DgString0(hiveMetaDB->getErrMethodName())
@@ -860,7 +852,7 @@ NABoolean HSHiveTableDef::objExists(labelDetail unused)
         }
     }
   else
-    hiveMetaDB = new(STMTHEAP) HiveMetaData(FALSE); // fake metadata
+    hiveMetaDB = new(STMTHEAP) HiveMetaData(); // fake metadata
 
   if (!HSGlobalsClass::isHiveCat(*catalog_))
     {

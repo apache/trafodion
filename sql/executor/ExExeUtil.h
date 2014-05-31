@@ -3399,7 +3399,6 @@ protected:
   Step step_;
 
   HiveMetaData* hiveMD_;
-  mysqlDesc * hiveMysql_;
 
   hive_column_desc * currColDesc_;
   hive_bkey_desc * currKeyDesc_;

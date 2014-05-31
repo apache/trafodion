@@ -1708,7 +1708,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // HBASE_CATALOG:                Catalog of "_ROW_" and "_CELL_" schemas
   // HBASE_COPROCESSORS:           Enable use of co-processors for aggregates.
   //                               need to set the coprocessor in HBase config file
-  // HBASE_INTERFACE:              JNI, THRIFT, or JNI_TRX (transactional interface)
+  // HBASE_INTERFACE:              JNI or JNI_TRX (transactional interface)
   // HBASE_MAX_COLUMN_xxx_LENGTH:  Max length of some
   //                               string columns in the "_ROW_" and "_CELL_" schemas
   // HBASE_SQL_IUD_SEMANTICS:      Off: Don't check for existing rows for insert/update
@@ -1893,7 +1893,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HIST_USE_HIGH_FREQUENCY_INFO,          "ON"),
  XDDkwd__(HIST_USE_SAMPLE_FOR_CARDINALITY_ESTIMATION ,      "ON"), 
 
- // CQDs for SeaQuest on Hive
+ // CQDs for Trafodion on Hive
  // Main ones to use:
  // HIVE_MAX_STRING_LENGTH: Hive "string" data type gets converted
  //                         into a VARCHAR with this length
@@ -1911,12 +1911,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
   DDui___(HIVE_MAX_STRING_LENGTH,               "32000"),
-  DD_____(HIVE_METADATA_CPPC_URL,               "tcp://127.0.0.1:3306"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
-  DD_____(HIVE_METADATA_PASSWORD,               ""),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
-  DD_____(HIVE_METADATA_SCHEMA,                 "metastore"),
-  DD_____(HIVE_METADATA_USER,                   "root"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),

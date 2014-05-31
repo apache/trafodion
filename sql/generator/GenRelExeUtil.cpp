@@ -2877,39 +2877,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 
   if (hiveObjects())
     {
-      NAString url       = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_CPPC_URL);
-      NAString user      = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_USER);
-      NAString password  = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_PASSWORD);
-      NAString schema    = ActiveSchemaDB()->getDefaults().getValue(HIVE_METADATA_SCHEMA);
-      
-      char * urlHive = NULL;
-      char * userHive = NULL;
-      char * passwordHive = NULL;
-      char * schemaHive = NULL;
-      if (NOT url.isNull())
-	{
-	  urlHive = space->allocateAlignedSpace(url.length() + 1);
-	  strcpy(urlHive, url.data());
-	}
-
-     if (NOT user.isNull())
-	{
-	  userHive = space->allocateAlignedSpace(user.length() + 1);
-	  strcpy(userHive, user.data());
-	}
-
-     if (NOT password.isNull())
-	{
-	  passwordHive = space->allocateAlignedSpace(password.length() + 1);
-	  strcpy(passwordHive, password.data());
-	}
-    
-     if (NOT schema.isNull())
-	{
-	  schemaHive = space->allocateAlignedSpace(schema.length() + 1);
-	  strcpy(schemaHive, schema.data());
-	}
-  
       gm_exe_util_tdb = new(space) 
 	ComTdbExeUtilGetHiveMetadataInfo(
 					 queryType,
@@ -2918,10 +2885,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 					 obj,
 					 pattern,
 					 param1,
-					 urlHive,
-					 userHive,
-					 passwordHive,
-					 schemaHive,
 					 scanExpr,
 					 workCriDesc, exe_util_row_atp_index, // work cri desc
 					 givenDesc,

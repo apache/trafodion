@@ -45,8 +45,6 @@ ZOOKEEPER_DIR="$TOOLSDIR/zookeeper-3.4.5"
 THRIFT_LIB_DIR="$TOOLSDIR/thrift-0.9.0/lib"
 THRIFT_INC_DIR="$TOOLSDIR/thrift-0.9.0/include"
 PROTOBUFS="$TOOLSDIR/protobuf-2.4.1"
-DRIZZLE_LIB_DIR="$TOOLSDIR/libdrizzle-5.1.4/libdrizzle/.libs"
-DRIZZLE_INC_DIR="$TOOLSDIR/libdrizzle-5.1.4"
 QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
 # Explicitly unset QT_TOOLKIT here if Qt is not installed and you don't want to build the SqlCompilerDebugger
 # unset QT_TOOLKIT

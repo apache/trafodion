@@ -99,9 +99,6 @@ endif
 JVMJNIINC=$(JAVA_HOME)/include
 
 # set up Hadoop include and library directives, these variables are defined in sqenvcom.sh
-DRIZZLE_INC=-I$(DRIZZLE_INC_DIR)
-DRIZZLE_LIB=-ldrizzle
-DRIZZLE_SO=libdrizzle.so
 LLVM_INC_ROOT2  :=$(LLVM_INC_ROOT)/llvm
 UDIS86_INC_ROOT :=$(UDIS86)/include
 
@@ -130,7 +127,7 @@ THRIFT_LIB=-lthrift
 THRIFT_SO=libthrift-*.so
 
 # for now, include these libs (copied to our local lib dir) everywhere
-GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(DRIZZLE_LIB) $(LIBHDFS_LIB) $(THRIFT_LIB)
+GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB)
 
 # EXECUTABLES defines the executables that are built for release and debug
 # builds.  Any flavor-specific targets can be added later in this makefile.
@@ -220,7 +217,7 @@ SYS_INCLUDES :=
 	-I$(NSK_SQ)/export/include \
 	-I$(SP_INC) \
         -I$(PROTOBUFS_INC) \
-	$(LIBHDFS_INC) 	$(DRIZZLE_INC) $(THRIFT_INC)				   \
+	$(LIBHDFS_INC) $(THRIFT_INC)				   \
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
 
@@ -490,8 +487,7 @@ linuxcleandebug linuxdebugclean linuxcleanrelease linuxreleaseclean : clean
 #   need extra command to get the link (without extra libs)
 copytoolslibs:
 	mkdir -p $(NSKLIB)
-	(for i in $(DRIZZLE_LIB_DIR)/$(DRIZZLE_SO) \
-	          $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
+	(for i in $(HADOOP_LIB_DIR)/$(LIBHDFS_SO) \
 	          $(THRIFT_LIB_DIR)/$(THRIFT_SO); \
 	 do\
 	   cp -Pf $$i* $(NSKLIB); \

@@ -162,7 +162,7 @@ sub find_elfs ($$) {
 		if ($file =~ /libQtGuiCmpDbg.so.4/) {
 			$dochk = 0;
 		}
-		if ($file =~ /libhdfs.so|libmysql|libdrizzle|libthrift|libzookeeper/) {
+		if ($file =~ /libhdfs.so|libmysql|libthrift|libzookeeper/) {
 			$dochk = 0;
 		}
 		if ($dochk) {

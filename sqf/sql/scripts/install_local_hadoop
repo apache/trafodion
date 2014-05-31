@@ -19,62 +19,22 @@
 #
 ##############################################################################
 ##
-## This sets up a Hadoop/Hive environment to be used with a SeaQuest
-## workstation development environment.
-## Note that you can't have two users on the same workstation running Hadoop.
+## This sets up a Hadoop/Hive/HBase environment to be used with a trafodion
+## workstation development environment. This script is meant for developers
+## and has the following characteristics:
 ##
-## Version 0.36  Small logging enhancements, using only a single HBase jar,
-##               hbase-<vers>-security.jar, which is the one that is built
-##               against Hadoop 2.0 and includes security features.
-## Version 0.35  Configuring ssh to suppress the host key check for localhost,
-##               this allows running multiple hadoop instances on different
-##               machines that have a shared home directory. Alternatively,
-##               using DNS name of local host instead of "localhost".
-##               Fixed a port conflict on the HBase thrift server http port.
-## Version 0.34: HBase is now supported when installing with custom ports.
-##               Output of install is less chatty, creating a log file
-##               sqf/sql/local_hadoop/log/install_local_hadoop_<time>.log
-## Version 0.33: Support for starting thrift server.
-##               Added HBASE_MD_TABLES as a table in hbase.
-## Version 0.32: Support for installing with non-default ports, allowing
-##               multiple users to run a local Hadoop instance on the
-##               same workstation. Recommended options:
-##                 * if default ports are available:
-##                       install_local_hadoop
-##                 * if you are running on a VNC session:
-##                       install_local_hadoop -p fromDisplay
-##                 * for EC builds and similar environments (once supported):
-##                       install_local_hadoop -p rand
-##                 * custom cases:
-##                       install_local_hadoop -p <your start port #>
-## Version 0.31: Basic check for conflicting Hadoop processes.
-## Version 0.30: Convert local Hadoop installation to CDH4.
-##               Don't install  MySQL C++ connector anymore,
-##               SQL build is no longer dependent on this script.
-##               Move script to $MY_SQROOT/sql/scripts/install_local_hadoop.
-##               Move convenience scripts to $MY_SQROOT/sql/scripts
-## Version 0.28: Fixes for CDH4 distribution, missing sym link
-## Version 0.27: Added libraries for CDH4, to be able to reconfigure the SQ
-##               build to use a remote CDH4 cluster. Run bin/swmakesymlinks-cdh4
-##               to use this option.
-## Version 0.26: Fixed two issues commonly encountered: dfs -ls -R is incorrect
-##               and Hive complains about missing HADOOP_HOME in some cases.
-## Version 0.25: Added a convenience script swmakesymlinks to create symbolic
-##               links in the sql directory, require for building.
-## Version 0.24: Fixed a bug with deriving JAVA_HOME from the java executable
-##               in the path. Added a code patch for libhdfs where sourcing
-##               the header file hdfs.h caused a name conflict for "INPUT".
-## Version 0.23: Only ask user for ssh setup if ssh localhost fails.
-##               Get JAVA_HOME from java executable in the path, if possible.
-##               Include Hadoop source distribution to get libhdfs header files.
-## Version 0.22: Set JAVA_HOME automatically and don't require it to
-##               be set in .bashrc anymore.
-## Version 0.21: Add MySQL C++ connector to installation.
-##               Change Hive log directory to a directory within this tree,
-##               also move Hive scratch directory to this tree.
-## Version 0.20: Allow JDKs 1.6 and 1.7.
-##               Fix permission issue with mysqld pid file by bypassing
-##               the MySQL config files installed on the system.
+## - Creates a pseudo-distributed single node installation
+## - Sandboxes the installation into a single directory,
+##   $MY_SQROOT/sqf/sql/local_hadoop
+## - creates some convenience shell scripts in $MY_SQROOT/sqf/sql/scripts
+##   to start and stop Hadoop and for some interactive shells
+## - Does not require sudo privileges for installing or running Hadoop
+## - Can run on non-standard ports, if needed, to be able to run multiple
+##   Hadoop/Hive/HBase instances on the same machine
+## - Uses a file system directory to store HBase data, not HDFS
+## - Uses MySQL as the Hive metastore
+## - Creates a TPC-DS sample database in Hive
+##
 ##############################################################################
 
 function usage {
@@ -174,8 +134,10 @@ EOF
 
     if [ "$YN" = "y" -o "$YN" = "Y" ]; then
       echo "Setting up public/private key pair for connection to ${MY_HOST_1}..."
+      echo "Saving the old ~/.ssh directory to ~/.ssh-renamed, in case this is not what you wanted"
       cd
-      rm -rf .ssh
+      rm -rf .ssh-renamed
+      mv -f .ssh .ssh-renamed
       # generate an RSA public/private key pair without a passphrase
       ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa 
 
@@ -380,10 +342,6 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=2181
   # hbase.rest.port
   MY_HBASE_REST_PORT_NUM=8080
-  # thrift server port (set via cmd line arg)
-  MY_HBASE_THRIFT_PORT_NUM=9090
-  # thrift server http port (set via cmd line arg)
-  MY_HBASE_THRIFT_INFO_PORT_NUM=9095
 else
   # fs.default.name
   MY_HADOOP_HDFS_PORT_NUM=$MY_START_PORT
@@ -402,8 +360,6 @@ else
   MY_HBASE_ZOOKEEPER_LEADERPORT_NUM=`expr $MY_START_PORT + 168`
   MY_HBASE_ZOOKEEPER_PROPERTY_CLIENTPORT_NUM=`expr $MY_START_PORT + 170`
   MY_HBASE_REST_PORT_NUM=`expr $MY_START_PORT + 171`
-  MY_HBASE_THRIFT_PORT_NUM=`expr $MY_START_PORT + 169`
-  MY_HBASE_THRIFT_INFO_PORT_NUM=`expr $MY_START_PORT + 172`
   # unique port # for MySQL (default is 3306)
   MY_SQL_PORT_NUM=`expr $MY_START_PORT + 46`
 fi
@@ -594,8 +550,6 @@ export YARN_HOME=${YARN_HOME}
 export HIVE_HOME=${HIVE_HOME}
 export HBASE_HOME=${HBASE_HOME}
 export MY_HADOOP_HDFS_PORT_NUM=${MY_HADOOP_HDFS_PORT_NUM}
-export MY_HBASE_THRIFT_PORT_NUM=${MY_HBASE_THRIFT_PORT_NUM}
-export MY_HBASE_THRIFT_PORT_NUM_CQD=\'${MY_HBASE_THRIFT_PORT_NUM}\'
 EOF
 
   # now source in this script
@@ -611,7 +565,6 @@ cd ${MY_SW_SCRIPTS_DIR}
 ./swstarthadoop
 ./swstartmysql
 ./swstarthbase
-./swstartthriftserver
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopall
@@ -621,7 +574,6 @@ cd ${MY_SW_SCRIPTS_DIR}
 ./swstophadoop
 ./swstopmysql
 ./swstophbase
-./swstopthriftserver
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthadoop
@@ -671,21 +623,6 @@ EOF
 cd ${MY_SW_ROOT}
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 ./hbase/bin/stop-hbase.sh
-EOF
-
-  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstartthriftserver
-#!/bin/sh
-echo "Starting ThriftServer for Hbase access..."
-cd ${MY_SW_ROOT}
-. $MY_SW_SCRIPTS_DIR/sw_env.sh
-hbase/bin/hbase-daemon.sh start thrift -p ${MY_HBASE_THRIFT_PORT_NUM} --infoport ${MY_HBASE_THRIFT_INFO_PORT_NUM}
-EOF
-
-  cat <<EOF >$MY_SW_SCRIPTS_DIR/swstopthriftserver
-#!/bin/sh
-cd ${MY_SW_ROOT}
-. $MY_SW_SCRIPTS_DIR/sw_env.sh
-hbase/bin/hbase-daemon.sh stop thrift -p ${MY_HBASE_THRIFT_PORT_NUM}
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstatus
@@ -790,28 +727,9 @@ EOF
 <a href="http://${MY_HOST_1}:${MY_YARN_HTTP_PORT_NUM}">Yarn</a>
 <a href="http://${MY_HOST_1}:${MY_HBASE_MASTER_INFO_PORT_NUM}">HBase Master</a>
 <a href="http://${MY_HOST_1}:${MY_HBASE_REGIONSERVER_INFO_PORT_NUM}">HBase Region Server</a>
-<a href="http://${MY_HOST_1}:${MY_HBASE_THRIFT_INFO_PORT_NUM}">HBase Thrift Server</a>
 </pre>
 </BODY>
 </HTML>
-EOF
-
-  cat <<EOF >$MY_SW_SCRIPTS_DIR/swsetupcqds
-sqlci <<ENDOFDATA
-delete from HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
-where ATTRIBUTE in ('HBASE_PORT', 'HBASE_THRIFT_PORT',
-                    'HIVE_METADATA_CPPC_URL', 'HIVE_METADATA_PASSWORD',
-                    'MODE_SEABASE', 'MODE_SEAHIVE');
-insert into HP_SYSTEM_CATALOG.SYSTEM_DEFAULTS_SCHEMA.SYSTEM_DEFAULTS
-     (ATTRIBUTE, ATTR_VALUE, ATTR_COMMENT)
-     values
-     ('HBASE_THRIFT_PORT',      '${MY_HBASE_THRIFT_PORT_NUM}',        'Added by swsetupcqds script'),
-     ('HIVE_METADATA_CPPC_URL', 'tcp://127.0.0.1:${MY_SQL_PORT_NUM}', 'Added by swsetupcqds script'),
-     ('HIVE_METADATA_PASSWORD', '${MY_SQL_ADMIN_PASSWD}',             'Added by swsetupcqds script'),
-     ('MODE_SEABASE',           'ON',                                 'Added by swsetupcqds script'),
-     ('MODE_SEAHIVE',           'ON',                                 'Added by swsetupcqds script');
-
-ENDOFDATA
 EOF
 
   mkdir -p $MY_SQROOT/etc
@@ -820,9 +738,7 @@ EOF
   # alternative method for open source build, system defaults in a text file
   cat <<EOF >${SYSTEM_DEFAULTS_TEXT_FILE}.temp
 #+-+-+ install_local_hadoop inserted this - please do not edit this section
-HBASE_THRIFT_PORT,      ${MY_HBASE_THRIFT_PORT_NUM}
-HIVE_METADATA_CPPC_URL, tcp://127.0.0.1:${MY_SQL_PORT_NUM}
-HIVE_METADATA_PASSWORD, ${MY_SQL_ADMIN_PASSWD}
+# No default settings added by install_local_hadoop at this time
 #-+-+- install_local_hadoop end of system-inserted values, please add your own custom values below
 EOF
 
@@ -1404,11 +1320,6 @@ EOF
   $MY_SW_SCRIPTS_DIR/swstarthbase >>${MY_LOG_FILE} 2>&1
   if [ $? -ne 0 ]; then
     echo "Problem starting HBase, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
-  fi
-  echo "Starting HBase Thrift server..." | tee -a ${MY_LOG_FILE}
-  $MY_SW_SCRIPTS_DIR/swstartthriftserver >>${MY_LOG_FILE} 2>&1
-  if [ $? -ne 0 ]; then
-    echo "Problem starting HBase Thrift server, see, file ${MY_LOG_FILE}" | tee -a ${MY_LOG_FILE}
   fi
 
 fi
