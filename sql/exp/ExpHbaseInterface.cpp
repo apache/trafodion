@@ -1756,6 +1756,31 @@ Lng32 ExpHbaseInterface_JNI::fetchRowVec(TRowResult& rowResult)
     return -HBASE_ACCESS_ERROR;
 }
 
+Lng32 ExpHbaseInterface_JNI::fetchRowVec(jbyte **jbRowResult,
+                            jbyteArray &jbaRowResult,
+                            jboolean *isCopy)
+{
+  retCode_ = htc_->fetchRowVec(jbRowResult, jbaRowResult, isCopy);
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  if (retCode_ == HTC_DONE_DATA)
+    return HBASE_ACCESS_EOD;
+  else if (retCode_ == HTC_DONE_RESULT)
+    return HBASE_ACCESS_EOR;
+  else
+    return -HBASE_ACCESS_ERROR;
+}
+
+Lng32 ExpHbaseInterface_JNI::freeRowResult(jbyte *jbRowResult,
+                            jbyteArray &jbaRowResult)
+{
+  retCode_ = htc_->freeRowResult(jbRowResult, jbaRowResult);
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else
+    return -HBASE_ACCESS_ERROR;
+}
+   
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::getRowInfo(
 	     HbaseStr &tblName,

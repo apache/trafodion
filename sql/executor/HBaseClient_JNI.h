@@ -389,6 +389,8 @@ public:
   KeyValue* getEntry(Int32 i);
   
   bool toTRowResult(TRowResult& rowResult);
+  bool toJbyte(jbyte **rowResult, jbyteArray &jRowResult, jboolean *isCopy);
+
     
   // Get the error description.
   virtual char* getErrorText(RKL_RetCode errEnum);
@@ -512,6 +514,9 @@ public:
   HTC_RetCode getFetch();
   HTC_RetCode fetchNextRow();
   HTC_RetCode fetchRowVec(TRowResult& rowResult);
+  HTC_RetCode fetchRowVec(jbyte **rowResult, jbyteArray &jRowResult,
+                             jboolean *isCopy);
+  HTC_RetCode freeRowResult(jbyte *rowResult, jbyteArray &jRowResult);
   KeyValue*   getLastFetchedCell();
   HTC_RetCode deleteRow(Int64 transID, const Text& rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, std::vector<BatchMutation> &rowBatches, Int64 timestamp);

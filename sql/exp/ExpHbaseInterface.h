@@ -187,6 +187,21 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 fetchRowVec(
 		 TRowResult  &rowResult
 		 ) = 0;
+
+  virtual Lng32 fetchRowVec(jbyte **jbRowResult,
+                            jbyteArray &jbaRowResult,
+                            jboolean *isCopy)
+  {
+    assert(false); // Not supported
+    return 0; 
+  };
+
+  virtual Lng32 freeRowResult(jbyte *jbRowResult,
+                            jbyteArray &jbaRowResult)
+  {
+    assert(false); // Not supported
+    return 0;
+  };
  
   virtual Lng32 getRowInfo(
 		   HbaseStr &tblName,
@@ -607,6 +622,13 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 fetchRowVec(
 		 TRowResult  &rowResult
 		 );
+
+  virtual Lng32 fetchRowVec(jbyte **jbRowResult,
+                      jbyteArray &jbaRowResult,
+                      jboolean *isCopy);
+
+  virtual Lng32 freeRowResult(jbyte *jbRowResult,
+                      jbyteArray &jbaRowResult);
  
   virtual Lng32 getRowInfo(
 		   HbaseStr &tblName,

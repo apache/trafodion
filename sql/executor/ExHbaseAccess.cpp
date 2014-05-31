@@ -32,6 +32,7 @@
 
 #include  "cli_stdh.h"
 #include "exp_function.h"
+#include "jni.h"
 
 Int64 getTransactionIDFromContext()
 {
@@ -873,6 +874,11 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
   while ((numCompares > 0) &&
             (NOT found))
     {
+      if (hbaseAccessTdb().listOfFetchedColNames()->atEnd())
+      {
+	hbaseAccessTdb().listOfFetchedColNames()->position();
+        idx = -1;
+      }
       short len = *(short*)hbaseAccessTdb().listOfFetchedColNames()->getCurr();
       char * currName = 
 	&((char*)hbaseAccessTdb().listOfFetchedColNames()->getCurr())[sizeof(short)];
@@ -886,8 +892,6 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
 	numCompares--;
 
       hbaseAccessTdb().listOfFetchedColNames()->advance();
-      if (hbaseAccessTdb().listOfFetchedColNames()->atEnd())
-	hbaseAccessTdb().listOfFetchedColNames()->position();
       idx++;
     }
   
@@ -1046,6 +1050,210 @@ short ExHbaseAccessTcb::createSQRow(TRowResult &rowResult)
 
   return 0;
 }
+#define INLINE_COLNAME_LEN 256
+short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
+{
+  // no columns are being fetched from hbase, do not create a row.
+  if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
+    return 0;
+
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
+  ExpTupleDesc * asciiSourceTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().asciiTuppIndex_);
+
+  ExpTupleDesc * convertTuppTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().convertTuppIndex_);
+  
+  Attributes * attr = NULL;
+
+  // initialize as missing cols.
+  // TBD: can optimize to skip this step if there are no nullable and no added cols
+  memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
+
+  char colTSstrTmp[30];
+  
+  hbaseAccessTdb().listOfFetchedColNames()->position();
+  Lng32 idx = -1;
+
+  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
+  Int32 familyLength, familyOffset;
+  long timestamp;
+
+  char *kvBuf = (char *) rowResult;
+
+  Int32 numCols = *(Int32 *)kvBuf;
+  kvBuf += sizeof(numCols);
+  if (numCols == 0)
+    return 0;
+
+  Int32 rowIDLen = *(Int32 *)kvBuf;
+  kvBuf += sizeof(rowIDLen);
+  kvBuf += rowIDLen;
+
+  Int32 *temp;
+  char *value;
+  char *buffer;
+  char *colName;
+  char *family;
+  char inlineColName[INLINE_COLNAME_LEN+1];
+  char *fullColName;
+  char *colVal; 
+  Lng32 colValLen;
+  Lng32  colNameLen;
+
+  for (int i= 0; i< numCols; i++)
+  {
+     temp = (Int32 *)kvBuf;
+     kvLength = *temp++;
+     valueLength = *temp++;
+     valueOffset = *temp++;
+     qualLength = *temp++;
+     qualOffset = *temp++;
+     familyLength = *temp++;
+     familyOffset = *temp++;
+     timestamp = *(long *)temp;
+     temp += 2;
+     buffer = (char *)temp;
+     value = buffer + valueOffset; 
+
+     colName = (char*)buffer + qualOffset;
+     family = (char *)buffer + familyOffset;
+     colNameLen = familyLength + qualLength + 1; // 1 for ':'
+
+     if (colNameLen > INLINE_COLNAME_LEN)
+        fullColName = new (getHeap()) char[colNameLen + 1];
+     else
+        fullColName = inlineColName;
+     strncpy(fullColName, family, familyLength);
+     fullColName[familyLength] = '\0';
+     strcat(fullColName, ":");
+     strncat(fullColName, colName, qualLength); 
+     fullColName[colNameLen] = '\0';
+    
+     colName = fullColName;
+      
+     colVal = (char*)value;
+     colValLen = valueLength;
+
+      if (! getColPos(colName, colNameLen, idx)) // not found
+	{
+          if (colNameLen > INLINE_COLNAME_LEN)
+             NADELETEBASIC(fullColName, getHeap());
+	  // error
+	  return -HBASE_CREATE_ROW_ERROR;
+	}
+
+      // not missing any more
+      asciiRowMissingCols_[idx] = 0;
+
+      Attributes * attr = asciiSourceTD->getAttr(idx);
+      if (! attr)
+	{
+          if (colNameLen > INLINE_COLNAME_LEN)
+              NADELETEBASIC(fullColName, getHeap());
+	  // error
+	  return -HBASE_CREATE_ROW_ERROR;
+	}
+
+      if (attr->getNullFlag())
+	{
+	  if (*colVal)
+	    *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
+	  else
+	    *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
+
+	  colValLen = colValLen - sizeof(char);
+	  colVal += sizeof(char);
+	}
+
+      if (attr->getVCIndicatorLength() > 0)
+	{
+	  if (attr->getVCIndicatorLength() == sizeof(short))
+	    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+	  else
+	    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+	  *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)colVal;
+	}
+      else
+	{
+	  char * srcPtr = &asciiRow_[attr->getOffset()];
+	  Lng32 copyLen = MINOF(attr->getLength(), colValLen);
+	  str_cpy_all(srcPtr, colVal, copyLen);
+	}
+    if (colNameLen > INLINE_COLNAME_LEN)
+       NADELETEBASIC(fullColName, getHeap());
+    kvBuf = (char *)temp + kvLength;
+  }
+
+  // fill in null or default values for missing cols.
+  for (idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
+    {
+      if (asciiRowMissingCols_[idx] == 1) // missing
+	{
+	  attr = asciiSourceTD->getAttr(idx);
+	  if (! attr)
+	    {
+	      // error
+	      return -HBASE_CREATE_ROW_ERROR;
+	    }
+	  
+	  char * defVal = attr->getDefaultValue();
+	  char * defValPtr = defVal;
+	  short nullVal = 0;
+	  if (attr->getNullFlag())
+	    {
+	      nullVal = *(short*)defVal;
+	      *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
+	      
+	      defValPtr += 2;
+	    }
+	  
+	  if (! nullVal)
+	    {
+	      if (attr->getVCIndicatorLength() > 0)
+		{
+		  Lng32 vcLen = *(short*)defValPtr;
+		  if (attr->getVCIndicatorLength() == sizeof(short))
+		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = vcLen; 
+		  else
+		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = vcLen;
+		  
+		  defValPtr += attr->getVCIndicatorLength();
+		  
+		  *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)defValPtr;
+		}
+	      else
+		{
+		  char * srcPtr = &asciiRow_[attr->getOffset()];
+		  Lng32 copyLen = attr->getLength();
+		  str_cpy_all(srcPtr, defValPtr, copyLen);
+		}
+	    } // not nullVal
+	} // missing col
+    }
+
+  workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
+    .setDataPointer(convertRow_);
+  workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
+    .setDataPointer(asciiRow_);
+  
+  if (convertExpr())
+    {
+      ex_expr::exp_return_type evalRetCode =
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+      if (evalRetCode == ex_expr::EXPR_ERROR)
+	{
+	  return -1;
+	}
+    }
+
+  return 0;
+}
+
+// returns:
 
 // returns:
 // 0, if expr is false

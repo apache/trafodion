@@ -1250,6 +1250,30 @@ bool ResultKeyValueList::toTRowResult(TRowResult& rowResult)
   return true;
 } 
 
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+bool ResultKeyValueList::toJbyte(jbyte **rowResult, jbyteArray &jRowResult,
+                                     jboolean *isCopy)
+{
+
+  jbyteArray jba_kvs = static_cast<jbyteArray>(jenv_->CallObjectMethod(
+             javaObj_, JavaMethods_[JM_KVS].methodID));
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    return false;
+  }
+
+  if (jba_kvs == NULL)
+    return false;
+  jRowResult = (jbyteArray)jenv_->NewGlobalRef(jba_kvs);
+  *rowResult = jenv_->GetByteArrayElements(jba_kvs, isCopy);
+  jenv_->DeleteLocalRef(jba_kvs);
+  return true;
+}
+
 // ===========================================================================
 // ===== Class HBaseClient_JNI
 // ===========================================================================
@@ -3213,6 +3237,54 @@ HTC_RetCode HTableClient_JNI::fetchRowVec(TRowResult& rowResult)
     return HTC_DONE_DATA;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+HTC_RetCode HTableClient_JNI::fetchRowVec(jbyte **rowResult,
+                    jbyteArray &jRowResult, jboolean *isCopy)
+{
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::fetchRowVec() called.");
+
+  // public org.trafodion.sql.HBaseAccess.ResultKeyValueList fetchRowVec();
+  jobject jResult = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCH_ROWV].methodID);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HTableClient_JNI::fetchRowVec()", getLastError());
+    return HTC_ERROR_FETCHROWVEC_EXCEPTION;
+  }
+
+  if (jResult == NULL)
+  {
+    return HTC_DONE_RESULT;
+  } 
+
+  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jvm_, jenv_, jResult);
+  if (result->init() != RKL_OK)
+     return HTC_ERROR_FETCHROWVEC_EXCEPTION;
+  bool gotData = result->toJbyte(rowResult, jRowResult, isCopy);
+
+  jenv_->DeleteLocalRef(jResult);  
+  NADELETE(result, ResultKeyValueList, result->getHeap());
+  
+  if (gotData)
+    return HTC_OK;
+  else
+    return HTC_DONE;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+HTC_RetCode HTableClient_JNI::freeRowResult(jbyte *rowResult,
+                    jbyteArray &jRowResult)
+{
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::freeRowResult() called.");
+  jenv_->ReleaseByteArrayElements(jRowResult, rowResult, JNI_ABORT);
+  jenv_->DeleteGlobalRef(jRowResult);
+  return HTC_OK;
+}
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
