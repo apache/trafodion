@@ -2446,10 +2446,6 @@ void PCodeCfg::generateShowPlan(PCodeBinary* pCode, Space* space)
   createInsts(pCode);
   createCfg();
 
-  // Null out ptrs into Generator object as there is none for showplan
-  expr_->setNExDbgInfo(NULL);
-  NExDbgInfoPtr_ = NULL ;
-
 #if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
   NExLog("-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
 #endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)

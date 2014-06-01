@@ -1755,14 +1755,10 @@ public:
     jitParams_ = NULL;
     jitFailureSeen_ = FALSE;
 
-    // Copy Native Expression Debug Level from the expr into the PCodeCfg
-    NExDbgInfoPtr_ = expr->getNExDbgInfoPtr() ;
-    if ( NExDbgInfoPtr_ &&
-         ( NExDbgInfoPtr_ > (NExDbgInfo *)(expr->getConstsLength()) )
-       )
-       NExprDbgLvl_    = NExDbgInfoPtr_->getNExDbgLvl() ;
-    else
-       NExprDbgLvl_    = 0 ;
+    // Null out ptrs into Generator object as there is none for showplan
+    expr->setNExDbgInfo(NULL);
+    NExDbgInfoPtr_ = NULL ;
+    NExprDbgLvl_    = 0 ;
   }
 
   // Destructor Routines

@@ -14755,6 +14755,10 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         }
      }
    
+     // TEMPTEMP: temporary fix to influence DoP
+     if ((ActiveSchemaDB()->getDefaults()).getAsULong(COMP_INT_81) > 0)
+       minESPs = ActiveSchemaDB()->getDefaults().getAsULong(COMP_INT_81);
+     
      numESPs = MINOF(minESPs, maxESPs);
    
      if (partReq && partReq->castToRequireReplicateNoBroadcast()) {

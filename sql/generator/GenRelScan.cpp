@@ -1739,6 +1739,10 @@ short HbaseAccess::codeGen(Generator * generator)
 	}
      }
 
+
+  // contains source values corresponding to the key columns that will be used
+  // to create the encoded key.  
+  ValueIdArray encodedKeyExprVidArr(getIndexDesc()->getIndexKey().entries());
   const CollIndex numColumns = columnList.entries();
 
   for (CollIndex ii = 0; ii < numColumns; ii++)
@@ -1769,7 +1773,27 @@ short HbaseAccess::codeGen(Generator * generator)
 
      castValue->bindNode(generator->getBindWA());
      convertExprCastVids.insert(castValue->getValueId());
+
+     NAColumn * nac = NULL;
+     if (col_node->getOperatorType() == ITM_BASECOLUMN)
+       {
+	 nac = ((BaseColumn*)col_node)->getNAColumn();
+       }
+     else if (col_node->getOperatorType() == ITM_INDEXCOLUMN)
+       {
+	 nac = ((IndexColumn*)col_node)->getNAColumn();
+       }
+
+     if (getMdamKeyPtr() && nac)
+       {
+	 // find column position of the key col and add that value id to the vidlist
+	 Lng32 colPos = getIndexDesc()->getNAFileSet()->getIndexKeyColumns().getColumnPosition(*nac);
+	 if (colPos != -1)
+	   encodedKeyExprVidArr.insertAt(colPos, castValue->getValueId());
+       }
     } // for (ii = 0; ii < numCols; ii++)
+
+  ValueIdList encodedKeyExprVids(encodedKeyExprVidArr);
 
   // Add ascii columns to the MapTable. After this call the MapTable
   // has ascii values in the work ATP at index asciiTuppIndex.
@@ -1846,7 +1870,8 @@ short HbaseAccess::codeGen(Generator * generator)
 				    &encodedKeyExpr,
 				    FALSE,
 				    firstKeyColumnOffset,
-				    &convertExprCastVids);
+				    &encodedKeyExprVids);
+      //				    &convertExprCastVids);
     }
 
   Queue * listOfFetchedColNames = NULL;

@@ -72,6 +72,7 @@
 #include "NLSConversion.h"
 #include "nawstring.h"
 #include "SqlciList_templ.h"
+#include "ComCextMisc.h"
 
 extern SqlciEnv * global_sqlci_env; // global sqlci_env for break key handling purposes.
 extern ComDiagsArea sqlci_DA;
@@ -2875,6 +2876,17 @@ short DML::process(SqlciEnv * sqlci_env)
           sqlci_env->diagsArea() << DgSqlCode(SQLCI_BREAK_RECEIVED, DgSqlCode::WARNING_);
           return SQL_Canceled;
         }
+    }
+
+  // TEMP TEMP
+  // Sometimes inserted rows are not being flushed out. That causes selected
+  // rows to not get returned.
+  // Temporarily add a one sec delay so it can get flushed out.
+  // Do this only for regressions run.
+  if ((prep_stmt) && (prep_stmt->getType() == DML_INSERT_TYPE) &&
+      (getenv("SQLMX_REGRESS")))
+    {
+      DELAY(100);
     }
   
   if ((prepcode >= 0) && (retcodeExe == SQL_Canceled))

@@ -68,6 +68,11 @@ cqd mdam_scan_method 'ON';
 obey TEST010(clean_up);
 obey TEST010(tests);
 
+-- other mdam queries
+cqd mdam_scan_method 'ON';
+cqd query_cache '1024';
+obey TEST010(otherMdam);
+
 log;
 exit;
 
@@ -286,3 +291,41 @@ select "_SALT_", * from t010t2 natural join t010t3 order by a,b,c;
 select "_SALT_", * from table(table t010t3, partition number 4);
 select "_SALT_", * from table(table t010t3, partition number from 1 to 3);
 -- 2 statements above must return 10 rows total
+
+?section otherMdam
+drop table if exists minotaur.events_load75;
+CREATE TABLE if not exists TRAFODION.MINOTAUR.EVENTS_LOAD75
+  (
+    SRCIP                            CHAR(45) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , SRCPORT                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DSTIP                            VARCHAR(45) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DSTPORT                          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , AGENTRECEIPTTIME                 TIMESTAMP(0) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , CATEGORYOUTCOME                  VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CATEGORYSIGNIFICANCE             VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DEVICESEVERITY                   VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , CATEGORYDEVICETYPE               VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , DEVICECUSTOMSTRING1              VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , FLEXSTRING1                      VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , EVENT_ID                         LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (EVENT_ID ASC,SRCIP ASC, AGENTRECEIPTTIME ASC)
+  )
+  SALT USING 75 PARTITIONS
+;
+
+--cqd attempt_esp_parallelism 'OFF';
+--cqd pcode_opt_level 'OFF';
+
+prepare s from
+select * from minotaur.events_load75<<+ cardinality 10e6 >>  where srcip = '120.120.120.1' and agentreceipttime = timestamp '2014-05-28 15:10:33';
+
+execute s;

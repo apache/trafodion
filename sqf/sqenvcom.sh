@@ -270,6 +270,7 @@ elif [ -e /usr/lib/hadoop/*HDP* ]; then
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar"
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
+  export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core*.jar"
 
   # Configuration directories
 

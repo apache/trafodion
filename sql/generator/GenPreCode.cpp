@@ -12306,7 +12306,8 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
       if (isUnique)
 	{
 	  if ((CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
-	      (NOT generator->isRIinliningForTrafIUD()))
+	      (NOT generator->isRIinliningForTrafIUD()) &&
+	      (searchKey() && searchKey()->isUnique()))
 	    {
 	      uniqueRowsetHbaseOper() = TRUE;
 	    }

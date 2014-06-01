@@ -1680,7 +1680,10 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
 		 createTableNode->getAddConstraintCheckArray());		     
   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
     {
-      rollbackXn(&cliInterface);
+      if (cliInterface.statusXn() == 0) // xn in progress
+	{
+	  rollbackXn(&cliInterface);
+	}
 
       *CmpCommon::diags() << DgSqlCode(-1029)
 			  << DgTableName(extTableName);
@@ -1708,12 +1711,6 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
   if (NOT createTableNode->isVolatile())
     {
       char buf [1000];
-
-      Lng32 ij = 0;
-      while (ij)
-	{
-	  ij = 2 - ij;
-	}
 
       str_sprintf(buf, "drop table if exists \"%s\".\"%s\".\"%s\" cascade",
 		  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());

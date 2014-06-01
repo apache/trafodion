@@ -763,8 +763,8 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		  updateRowLen_, returnFetchedRowLen_, returnUpdatedRowLen_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "mergeInsertRowLen_ = %d", 
-		  mergeInsertRowLen_);
+      str_sprintf(buf, "mergeInsertRowLen_ = %d, keyLen_ = %d", 
+		  mergeInsertRowLen_, keyLen_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       str_sprintf(buf, "Flag = %b",flags_);
