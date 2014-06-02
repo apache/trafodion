@@ -738,7 +738,7 @@ function DO_DIFF
 	fi
     fi
 
-    printf "\n$RESULT\n"
+    printf "$RESULT\n"
     printf "$(date '+%m/%d/%Y %R')    $T\t  $RESULT\n" >> $rgrlog
 
 }
