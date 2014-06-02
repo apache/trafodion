@@ -181,11 +181,19 @@ Int32 CmpSeabaseDDLauth::getAuthDetails (Int32 authID)
   }
   catch (DDLException e)
   {
+    // At this time, an error should be in the diags area.
     return e.getSqlcode();
   }
   catch (...)
   {
-    return -1;
+    // If there is no error in the diags area, set up an internal error
+    Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
+    if (numErrors == 0)
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("getAuthDetails for authID");
+
+    return -CAT_INTERNAL_EXCEPTION_ERROR;
   }
 }
 
@@ -254,6 +262,7 @@ void CmpSeabaseDDLauth::deleteRow(const NAString &authName)
   str_sprintf(buf, "delete from %s.\"%s\".%s where auth_db_name = '%s'",
               systemCatalog.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, authName.data());
   Lng32 cliRC = cliInterface.executeImmediate(buf);
+  
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -327,8 +336,12 @@ bool CmpSeabaseDDLauth::selectExactRow(const NAString & cmd)
       excp.throwException();
     }
 
+  // if diags not cleared, then no error is returned -- ??
   if (cliRC == 100) // did not find the row
+  {
+    cliInterface.clearGlobalDiags();
     return false;
+  }
 
   char * ptr = NULL;
   Lng32 len = 0;
@@ -340,13 +353,13 @@ bool CmpSeabaseDDLauth::selectExactRow(const NAString & cmd)
 
   // value 2: auth_db_name (NAString)
   cliInterface.getPtrAndLen(2,ptr,len);
-  NAString value(ptr);
-  setAuthDbName(value);
+  NAString dbName(ptr,len);
+  setAuthDbName(dbName);
 
   // value 3: auth_ext_name (NAString)
   cliInterface.getPtrAndLen(3,ptr,len);
-  value = ptr;
-  setAuthExtName(value);
+  NAString extName(ptr,len);
+  setAuthExtName(extName);
 
   // value 4: auth_type (char)
   // str_cpy_and_null params: *tgt, *src, len, endchar, blank, null term
@@ -592,9 +605,12 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
   {
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
-    Int32 errorIndex = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
-    if (errorIndex == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR);
+    Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
+    if (numErrors == 0)
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("register user");
+
   }
 }
 
@@ -665,20 +681,23 @@ void CmpSeabaseDDLuser::unregisterUser (StmtDDLRegisterUser * pNode)
   {
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
-    Int32 errorIndex = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
-    if (errorIndex == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR);
+    Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
+    if (numErrors == 0)
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("unregister user");
+
   }
 }
 
 
-// *****************************************************************************
+// -----------------------------------------------------------------------------
 // *                                                                           *
 // * Function: validateExternalUsername                                        *
 // *                                                                           *
 // *    Determines if an external username is valid.                           *
 // *                                                                           *
-// *****************************************************************************
+// -----------------------------------------------------------------------------
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
@@ -694,7 +713,7 @@ void CmpSeabaseDDLuser::unregisterUser (StmtDDLRegisterUser * pNode)
 // *  <foundConfigurationNumber> DBUserAuth::AuthenticationConfiguration & In  *
 // *    passes back the configuration used to validate the username.           *
 // *                                                                           *
-// *****************************************************************************
+// -----------------------------------------------------------------------------
 inline static bool validateExternalUsername(
    const char *                                 externalUsername,
    DBUserAuth::AuthenticationConfiguration      configurationNumber,
@@ -737,5 +756,70 @@ DBUserAuth::CheckUserResult chkUserRslt = DBUserAuth::UserDoesNotExist;
    return false;
 
 }
-//********************** End of validateExternalUsername ***********************
+//---------------------- End of validateExternalUsername -----------------------
+
+// -----------------------------------------------------------------------------
+// Method:  describe
+//
+// This method returns the showddl text for the requested user in string format
+//
+// Input:
+//   authName - name of user to describe
+//
+// Input/Output:  
+//   authText - the REGISTER USER text
+//
+// returns result:
+//    true -  successful
+//    false - failed (ComDiags area will be set up with appropriate error)
+//-----------------------------------------------------------------------------
+bool CmpSeabaseDDLuser::describe (const NAString &authName, NAString &authText)
+{
+  Int32 retcode = 0;
+  try
+  {
+    retcode = getUserDetails(authName.data());
+    if (retcode == 100)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
+                          << DgString0 (authName.data());
+      return false;
+    }
+    
+    // throw an exception so the catch handler will put a value in ComDiags
+    // area in case no message exists
+    if (retcode < 0)
+    {
+      UserException excp (NULL, 0);
+      throw excp;
+    }
+  
+    authText = "REGISTER USER ";
+    authText += getAuthExtName();
+    if (getAuthExtName() != getAuthDbName())
+    {
+      authText += " AS ";
+      authText += getAuthDbName();
+    }
+    authText += ";\n";
+  }
+
+  catch (...)
+  {
+   // At this time, an error should be in the diags area.
+   // If there is no error, set up an internal error
+   Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
+   if (numErrors == 0)
+    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
+                        << DgInt0(__LINE__)
+                        << DgString0("describe");
+
+    return false;
+  }
+
+  return true;
+}
+//------------------------------ End of describe -------------------------------
+
+
 

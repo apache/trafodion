@@ -70,6 +70,8 @@ class CmpSeabaseDDLauth
      bool  isRole()   const        { return authType_ == COM_ROLE_CLASS; }
      bool  isUser()   const        { return authType_ == COM_USER_CLASS; }
 
+     virtual bool describe (const NAString &authName, NAString &authText) = 0;
+
      // mutators
      void setAuthCreator      (const Int32 authCreator)
        {authCreator_ = authCreator;}
@@ -135,6 +137,8 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
      
      Int32 getUserDetails(const char *pUserName, bool isExternal = false);
      Int32 getUserDetails(Int32 userID);
+
+     bool describe (const NAString &authName, NAString &authText);
 
    protected:
 
