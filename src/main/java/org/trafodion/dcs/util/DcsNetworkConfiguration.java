@@ -38,6 +38,7 @@ import java.net.NetworkInterface;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Scanner;
 
@@ -60,6 +61,7 @@ public class DcsNetworkConfiguration {
 	private String intHostAddress;
 	private String extHostAddress;
 	private String canonicalHostName;
+	private boolean matchedInterface = false;
 
 	public DcsNetworkConfiguration(Configuration conf) throws Exception {
 
@@ -75,25 +77,53 @@ public class DcsNetworkConfiguration {
 			// For all nics get all hostnames and addresses	
 			// and try to match against dcs.dns.interface property 
 			Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-			while(nics.hasMoreElements()) {
-				NetworkInterface ni = nics.nextElement();
-				Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
-				while(rawAdrs.hasMoreElements()) {
-					InetAddress inet = rawAdrs.nextElement();
-					LOG.info("Found interface [" + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
-					if( dcsDnsInterface.equalsIgnoreCase(ni.getDisplayName()) && inet.getCanonicalHostName().contains(".") ) {
-						intHostAddress = extHostAddress = inet.getHostAddress();
-						canonicalHostName = inet.getCanonicalHostName();
-						LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
-						ia = inet;
-						break;
+			while(nics.hasMoreElements() && !matchedInterface) {
+				InetAddress inet = null;
+                		NetworkInterface ni = nics.nextElement();
+			        LOG.info("Found interface [" + ni.getDisplayName() + "]");
+				if (dcsDnsInterface.equalsIgnoreCase(ni.getDisplayName())) {
+                   			LOG.info("Matched specified interface ["+ ni.getName() + "]");
+					inet = getInetAddress(ni);
+					getCanonicalHostName(ni,inet);
+				} else {
+					Enumeration<NetworkInterface> subIfs = ni.getSubInterfaces();
+					for (NetworkInterface subIf : Collections.list(subIfs)) {
+						LOG.debug("Sub Interface Display name [" + subIf.getDisplayName() + "]");
+						if (dcsDnsInterface.equalsIgnoreCase(subIf.getDisplayName())) {
+							LOG.info("Matched subIf [" + subIf.getName() + "]");
+							inet = getInetAddress(subIf);
+							getCanonicalHostName(subIf,inet);
+							break;
+						}
 					}
 				}
 			}
 		}
 
-		checkCloud();
+		if (!matchedInterface) 
+			checkCloud();
 	}
+
+        public void getCanonicalHostName (NetworkInterface ni, InetAddress inet) throws Exception {
+               if(inet.getCanonicalHostName().contains(".") ) {
+                  intHostAddress = extHostAddress = inet.getHostAddress();
+                  canonicalHostName = inet.getCanonicalHostName();
+                  LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
+                  ia = inet;
+               }
+
+        }
+
+        public InetAddress getInetAddress (NetworkInterface ni) throws Exception {
+           InetAddress inet=null;
+           Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
+           while(rawAdrs.hasMoreElements()) {
+              inet = rawAdrs.nextElement();
+              LOG.info("Match Found interface [" + ni.toString() +"," + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
+          }
+          matchedInterface = true;
+          return inet;
+        }
 
 	public void checkCloud() {
 		//Ideally we want to use http://jclouds.apache.org/ so we can support all cloud providers.
