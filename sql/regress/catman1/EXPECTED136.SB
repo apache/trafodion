@@ -84,22 +84,6 @@
 
 --- SQL command prepared.
 >>
->>-- query to return schema owner information
->>--prepare get_sch_owners from
->>--select
->>--  trim(substring (cat_name,1,20)) || '.' ||
->>--  trim(substring (schema_name,1,20)) as schema_name,
->>--  schema_owner
->>--from hp_system_catalog.system_schema.catsys c,
->>--     hp_system_catalog.system_schema.schemata s
->>--where
->>--  c.cat_uid = s.cat_uid and
->>--  s.current_operation = '  ' and
->>--  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
->>--order by 1, 2
->>--for read uncommitted access;
->>
->>
 >>
 >>log LOG136;
 >>-- succeed: register users -> no clauses
@@ -196,9 +180,9 @@ DB__ROOT                                                                        
 --- SQL operation complete.
 >>showddl user x;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER X;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user x;
 
 --- SQL operation complete.
@@ -207,9 +191,9 @@ DB__ROOT                                                                        
 --- SQL operation complete.
 >>showddl user y;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER TEST136_USER1 AS Y;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user y;
 
 --- SQL operation complete.
@@ -264,16 +248,6 @@ Users
 =====
 
 DB__ROOT
-SQL_USER1
-SQL_USER10
-SQL_USER2
-SQL_USER3
-SQL_USER4
-SQL_USER5
-SQL_USER6
-SQL_USER7
-SQL_USER8
-SQL_USER9
 
 --- SQL operation complete.
 >>
@@ -283,9 +257,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user user1;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER REGISTER AS USER1;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user user1;
 
 --- SQL operation complete.
@@ -294,9 +268,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user register;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER UNREGISTER AS REGISTER;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user register;
 
 --- SQL operation complete.
@@ -305,9 +279,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user unregister;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER USER1 AS UNREGISTER;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user unregister;
 
 --- SQL operation complete.
@@ -316,9 +290,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user test136_u2;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER LOGON AS TEST136_U2;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user test136_u2;
 
 --- SQL operation complete.
@@ -327,9 +301,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user logon;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER TEST136_U2 AS LOGON;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user logon;
 
 --- SQL operation complete.
@@ -338,9 +312,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user user3;
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER NONE AS USER3;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user user3;
 
 --- SQL operation complete.
@@ -349,9 +323,9 @@ SQL_USER9
 --- SQL operation complete.
 >>showddl user "/forward";
 
-*** ERROR[4222] The DESCRIBE USER feature is not supported in this software version.
+REGISTER USER USER3 AS /FORWARD;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>unregister user "/forward";
 
 --- SQL operation complete.
@@ -576,22 +550,6 @@ register user user1 as none;
 
 --- SQL command prepared.
 >>
->>-- query to return schema owner information
->>--prepare get_sch_owners from
->>--select
->>--  trim(substring (cat_name,1,20)) || '.' ||
->>--  trim(substring (schema_name,1,20)) as schema_name,
->>--  schema_owner
->>--from hp_system_catalog.system_schema.catsys c,
->>--     hp_system_catalog.system_schema.schemata s
->>--where
->>--  c.cat_uid = s.cat_uid and
->>--  s.current_operation = '  ' and
->>--  c.cat_name in ('T136CAT', 'HP_SYSTEM_CATALOG')
->>--order by 1, 2
->>--for read uncommitted access;
->>
->>
 >>log LOG136;
 >>-- =================================================================
 >>-- this set of tests run basic unregister tests
@@ -705,7 +663,6 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
 >>-- Add more complex relationships
 >>-- Add cascade tests later
 >>
->>-- s/b 1 rows returned
 >>execute get_users;
 
 DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE

@@ -1773,20 +1773,23 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
   if ((dropTableNode->isVolatile()) &&
       (CmpCommon::context()->sqlSession()->volatileSchemaInUse()))
-  {
-    volTabName = tableName;
-    isVolatile = TRUE;
-  }
-
-  CmpSeabaseObjectsTable objectsTable;
+    {
+      volTabName = tableName;
+      isVolatile = TRUE;
+    }
+  
   if ((NOT dropTableNode->isVolatile()) &&
       (CmpCommon::context()->sqlSession()->volatileSchemaInUse()))
     {
+
+      // updateVolatileQualifiedName qualifies the object name with a 
+      // volatile catalog and schema name (if a volatile schema exists)
       QualifiedName *qn =
 	CmpCommon::context()->sqlSession()->
 	updateVolatileQualifiedName
 	(dropTableNode->getOrigTableNameAsQualifiedName().getObjectName());
       
+      // don't believe it is possible to get a null pointer returned
       if (qn == NULL)
 	{
 	  *CmpCommon::diags()
@@ -1806,18 +1809,18 @@ void CmpSeabaseDDL::dropSeabaseTable(
 	NAString vtSchNamePart = volTabName.getSchemaNamePartAsAnsiString(TRUE);
 	NAString vtObjNamePart = volTabName.getObjectNamePartAsAnsiString(TRUE);
 
-        NABoolean tableExists = objectsTable.getObjRow (vtCatNamePart, 
-                                                        vtSchNamePart, 
-                                                        vtObjNamePart, 
-                                                        COM_BASE_TABLE_OBJECT);
-        if (!tableExists)
+	retcode = existsInSeabaseMDTable(&cliInterface, 
+					 vtCatNamePart, vtSchNamePart, vtObjNamePart,
+					 COM_BASE_TABLE_OBJECT_LIT);
+
+	if (retcode < 0)
 	  {
 	    processReturn();
 	    
 	    return;
 	  }
 
-        else
+        if (retcode == 1)
           {
             // table found in volatile schema
             // Validate volatile table name.
@@ -1841,19 +1844,25 @@ void CmpSeabaseDDL::dropSeabaseTable(
                 // schema.
                 // But first clear the diags area.
                 CmpCommon::diags()->clear();
-                objectsTable.setDataRetrieved(FALSE);
               }
           }
+	else
+	  {
+	    CmpCommon::diags()->clear();
+	  }
       }
 
-  // Get definition of the object
-  if (!objectsTable.isDataRetrieved())
-  {
-    NABoolean tableExists = objectsTable.getObjRow (catalogNamePart, 
-                                                    schemaNamePart, 
-                                                    objectNamePart, 
-                                                    COM_BASE_TABLE_OBJECT);
-    if (!tableExists)
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+				   catalogNamePart, schemaNamePart, objectNamePart,
+				   COM_BASE_TABLE_OBJECT_LIT);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+
+  if (retcode == 0) // does not exist
     {
       if (NOT dropTableNode->dropIfExists())
         {
@@ -1871,7 +1880,6 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
       return;
     }
-  }
 
   // Check to see if the user has the authority to drop the table
   ComObjectName verifyName;

@@ -84,6 +84,7 @@
 #include "CmpDDLCatErrorCodes.h"
 
 #include "CmpSeabaseDDL.h"
+#include "CmpSeabaseDDLauth.h"
 
 #include "Analyzer.h"
 #include "ComSqlId.h"
@@ -632,12 +633,21 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
                           << DgString0("DESCRIBE SCHEMA");
       return -1;
     }
+  
   // If SHOWDDL USER, go get description and return
   if (d->getIsUser())
     {
-      *CmpCommon::diags() << DgSqlCode(-4222)
-                          << DgString0("DESCRIBE USER");
-      return -1;
+      NAString userText;
+      CmpSeabaseDDLuser userInfo;
+      if (!userInfo.describe(d->getAuthIDName(), userText))
+        return -1;
+
+      outputLine(space, userText,0);
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+
+      return 0;
     }
 
   // If SHOWDDL ROLE, go get description and return
