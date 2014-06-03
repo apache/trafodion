@@ -413,16 +413,16 @@ HADOOP_TAR=hadoop-2.0.0-cdh4.2.0.tar.gz
 # MARIADB_MIRROR_URL=https://downloads.mariadb.org/f/mariadb-5.5.29/kvm-bintar-hardy-amd64/mariadb-5.5.29-linux-x86_64.tar.gz/from/http:/ftp.osuosl.org/pub/mariadb
 # MARIADB_TAR=mariadb-5.5.29-linux-x86_64.tar.gz
 
-MYSQL_MIRROR_URL=http://downloads.mysql.com/archives/mysql-5.6/mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
+MYSQL_MIRROR_URL=http://cdn.mysql.com/archives/mysql-5.6
 MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 
-MYSQL_JDBC_URL=http://downloads.mysql.com/archives/mysql-connector-java-5.1/mysql-connector-java-5.1.23.tar.gz
+MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
 HIVE_MIRROR_URL=http://archive.apache.org/dist/hive/hive-0.9.0
 HIVE_TAR=hive-0.9.0-bin.tar.gz
 
-HBASE_MIRROR_URL=http://mirror.reverse.net/pub/apache/hbase/stable
+HBASE_MIRROR_URL=http://archive.cloudera.com/cdh4/cdh/4
 HBASE_TAR=hbase-0.94.6-cdh4.4.0.tar.gz
 
 TPCDS_MIRROR_URL=http://www.tpc.org/tpcds/dsgen/dsgen-download-files.asp?download_key=NaN
@@ -992,7 +992,7 @@ else
   if [ -f $MY_LOCAL_SW_DIST/${MYSQL_TAR} ]; then
     cp $MY_LOCAL_SW_DIST/${MYSQL_TAR} .
   else
-    curl ${MYSQL_MIRROR_URL} -o ${MYSQL_TAR}
+    curl ${MYSQL_MIRROR_URL}/${MYSQL_TAR} -o ${MYSQL_TAR}
   fi
 
   echo "Unpacking MySQL tar file ${MYSQL_TAR} ..."

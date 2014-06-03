@@ -250,7 +250,7 @@ if [ $? -eq 0 ]; then
   export HBASE_CNF_DIR=/etc/hbase/conf
   export HIVE_CNF_DIR=/etc/hive/conf
 
-elif [ -e /usr/lib/hadoop/*HDP* ]; then
+elif [ -n "$(ls /usr/lib/hadoop/*HDP* /usr/lib/hbase/*HDP* 2>/dev/null)" ]; then
   # we are on a cluster with Hortonworks installed
   # ----------------------------------------------
 
@@ -265,7 +265,7 @@ elif [ -e /usr/lib/hadoop/*HDP* ]; then
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/lib/hadoop
                           /usr/lib/hadoop/lib"
-  export HADOOP_JAR_FILES=
+  export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
   export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar"
@@ -316,7 +316,7 @@ elif [ -d /opt/mapr ]; then
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="$MAPR_HADOOPDIR/lib"
-  export HADOOP_JAR_FILES=
+  export HADOOP_JAR_FILES="$MAPR_HADOOPDIR/client/hadoop-hdfs-*.jar"
   export HBASE_JAR_FILES="$MAPR_HBASEDIR/hbase-*.jar
                           $MAPR_HBASEDIR/lib/zookeeper.jar
                           $MAPR_HBASEDIR/lib/protobuf-*.jar"
