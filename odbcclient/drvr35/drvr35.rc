@@ -1,0 +1,192 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 3,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "CompanyName", "Hewlett-Packard Company"
+			VALUE "FileDescription", "TRAF ODBC Driver DLL"
+            VALUE "FileVersion", "1, 0, 0, 0"
+            VALUE "InternalName", "TRAF ODBC Driver DLL"
+            VALUE "LegalCopyright", "?Copyright 2011 Hewlett-Packard Development Company, LP"
+            VALUE "OriginalFilename", "trfodbc1.dll"
+            VALUE "ProductName", "TRAF ODBC"
+			VALUE "ProductVersion", "1, 0, 0, 0"
+
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONNECT_DIALOG DIALOGEX 0, 0, 245, 95
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "TRAF ODBC Data Source"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    RTEXT           "&User Name :",IDC_STATIC,19,20,40,8,SS_CENTERIMAGE | NOT WS_GROUP,WS_EX_RIGHT
+    EDITTEXT        IDC_LOGIN_ID,63,17,87,13,ES_AUTOHSCROLL
+    RTEXT           "&Password :",IDC_STATIC,22,44,36,8,SS_CENTERIMAGE
+    EDITTEXT        IDC_PASSWORD,63,42,87,13,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "&Schema :",IDC_STATIC,27,66,31,8
+    EDITTEXT        IDC_SCHEMA,63,66,158,13,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&OK",IDOK,171,16,50,14
+    PUSHBUTTON      "Ca&ncel",IDCANCEL,171,41,50,14
+END
+
+IDD_CONNECT_DRIVER_KW_DIALOG DIALOGEX 0, 0, 279, 122
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "TRAF ODBC Data Source"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "Server &ID:",IDC_STATIC,21,17,33,8
+    EDITTEXT        IDC_DKW_SERVER,61,14,129,15,ES_AUTOHSCROLL
+    RTEXT           "&User Name :",IDC_STATIC,14,42,40,8,SS_CENTERIMAGE | NOT WS_GROUP,WS_EX_RIGHT
+    EDITTEXT        IDC_DKW_LOGIN_ID,61,39,129,15,ES_AUTOHSCROLL
+    RTEXT           "&Password :",IDC_STATIC,18,68,36,8,SS_CENTERIMAGE
+    EDITTEXT        IDC_DKW_PASSWORD,61,64,129,15,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "&Schema :",IDC_STATIC,23,91,31,8
+    EDITTEXT        IDC_DKW_SCHEMA,61,88,192,15,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&OK",IDOK,203,15,50,14
+    PUSHBUTTON      "Ca&ncel",IDCANCEL,204,40,50,14
+END
+
+IDD_CHANGE_PWD DIALOG  0, 0, 255, 138
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Change Password Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,71,111,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,137,111,50,14
+    RTEXT           "&User Name:",IDC_STATIC,13,19,73,16
+    RTEXT           "&Old Password:",IDC_STATIC,13,40,73,16
+    RTEXT           "&New Password:",IDC_STATIC,13,60,73,16
+    EDITTEXT        IDC_USERNAME,107,16,93,16,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_OLD_PWD,107,36,93,16,ES_PASSWORD | ES_AUTOHSCROLL
+    EDITTEXT        IDC_NEW_PWD,107,56,93,16,ES_PASSWORD | ES_AUTOHSCROLL
+    RTEXT           "Verify Password:",IDC_STATIC,13,81,73,18
+    EDITTEXT        IDC_VERIFY_PWD,107,78,93,16,ES_PASSWORD | ES_AUTOHSCROLL
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_CONNECT_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 238
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+
+    IDD_CONNECT_DRIVER_KW_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 272
+        BOTTOMMARGIN, 115
+    END
+
+    IDD_CHANGE_PWD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 248
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 131
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

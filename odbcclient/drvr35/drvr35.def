@@ -1,0 +1,71 @@
+;// @@@ START COPYRIGHT @@@
+;//
+;// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+;//
+;// @@@ END COPYRIGHT @@@
+; Drvr35.def : Declares the module parameters for the DLL.
+
+LIBRARY      "hpodbc03"
+
+EXPORTS
+SQLAllocHandle			@1
+SQLBindCol				@2
+SQLBindParameter		@3
+SQLBrowseConnectW		@4
+;SQLBulkOperations
+SQLCancel				@5
+SQLCloseCursor			@6
+SQLColAttributeW		@7
+SQLColumnsW				@8
+SQLColumnPrivilegesW	@9
+SQLConnectW				@10
+SQLCopyDesc				@11
+SQLDescribeColW			@12
+SQLDescribeParam		@13
+SQLDisconnect			@14
+SQLDriverConnectW		@15 
+SQLEndTran				@16
+SQLExecDirectW			@17
+SQLExecute				@18
+SQLFetch				@19
+SQLExtendedFetch		@20
+SQLFetchScroll			@21
+SQLForeignKeysW			@22
+SQLFreeHandle			@23
+SQLFreeStmt				@24
+SQLGetConnectAttrW		@25
+SQLGetCursorNameW		@26
+SQLGetData				@27
+SQLGetDescFieldW		@28
+SQLGetDescRecW			@29
+SQLGetDiagFieldW		@30
+SQLGetDiagRecW			@31
+SQLGetEnvAttr			@32
+SQLGetInfoW				@33
+SQLGetStmtAttrW			@34
+SQLGetTypeInfoW			@35
+SQLMoreResults			@36
+SQLNativeSqlW			@37
+SQLNumParams			@38
+SQLNumResultCols		@39
+SQLParamData			@40
+SQLPrepareW				@41
+SQLPrimaryKeysW			@42
+SQLProcedureColumnsW	@43
+SQLProceduresW			@44
+SQLPutData				@45
+SQLRowCount				@46
+SQLSetConnectAttrW		@47
+SQLSetCursorNameW		@48
+SQLSetDescFieldW		@49
+SQLSetDescRec			@50
+SQLSetEnvAttr			@51
+SQLSetPos				@52
+SQLSetStmtAttrW			@53
+SQLSpecialColumnsW		@54
+SQLStatisticsW			@55
+SQLTablesW				@56
+SQLTablePrivilegesW		@57
+
+TCPIP_SET_ERROR
+;//GET_DS_ALL

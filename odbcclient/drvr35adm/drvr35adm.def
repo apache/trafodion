@@ -1,0 +1,14 @@
+;// @@@ START COPYRIGHT @@@
+;//
+;// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+;//
+;// @@@ END COPYRIGHT @@@
+
+; Drvr35Adm.def : Declares the module parameters for the DLL.
+
+LIBRARY      "hpoadm03"
+DESCRIPTION  'hp_oadm Windows Dynamic Link Library'
+
+EXPORTS
+    ; Explicit exports can go here
+ ConfigDSN @1 
