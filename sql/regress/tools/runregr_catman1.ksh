@@ -420,7 +420,6 @@ for ix in $testfiles; do
         test $ktmp -ne 0 && knownsize=" (vs. $ktmp known)"
       fi
     fi
-  echo
 
   #--------------------------
   #  Print result of test. --
