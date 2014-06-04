@@ -3684,6 +3684,11 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     dml += sampleTable;
     dml += " SELECT * FROM ";
     dml += getTableName(objDef->getObjectFullName(), objDef->getNameSpace());
+
+    char cardHint[50];
+    sprintf(cardHint, " <<+ cardinality %e >> ", (double)hs_globals->actualRowCount);
+    dml += cardHint;
+
     dml += sampleOption;
     dml += " FOR READ UNCOMMITTED ACCESS";
     const Int32 hsALLOW_SPECIALTABLETYPE = 0x1;
@@ -5374,12 +5379,22 @@ Lng32 HSGlobalsClass::CollectStatistics()
         else
          group->clistr->append(", COUNT(*) FROM ");
         group->clistr->append(hssample_table->data());
+       
+        Int64 hintRowCount =  0;
+
         if (sampleTableUsed)
         {
-          char cardHint[50];
-          sprintf(cardHint, " <<+ cardinality %e >> ", (double)sampleRowCount);
-          group->clistr->append(cardHint);
+          hintRowCount = sampleRowCount;
         }
+        else
+        {
+          hintRowCount = actualRowCount;
+        }
+
+        char cardHint[50];
+        sprintf(cardHint, " <<+ cardinality %e >> ", (double)hintRowCount);
+        group->clistr->append(cardHint);
+
         group->clistr->append(" GROUP BY ");
         group->clistr->append(columnName.data());
         group->clistr->append(" FOR READ UNCOMMITTED ACCESS) T(");
@@ -8298,17 +8313,22 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
               mgroup->clistr->append(", _ucs2'unused', COUNT(*) FROM ");
             mgroup->clistr->append(hssample_table->data());
 
-            if (samplingUsed)
+            Int64 hintRowCount = 0;
+            if (sampleTableUsed)
             {
-              if (sampleTableUsed)
-              {
-                char cardHint[50];
-                sprintf(cardHint, " <<+ cardinality %e >> ", (double)sampleRowCount);
-                mgroup->clistr->append(cardHint);
-              }
-              else
-                mgroup->clistr->append(sampleOption->data());
+              hintRowCount = sampleRowCount;
             }
+            else
+            {
+              hintRowCount = actualRowCount;
+            }
+
+            char cardHint[50];
+            sprintf(cardHint, " <<+ cardinality %e >> ", (double)hintRowCount);
+            mgroup->clistr->append(cardHint);
+
+            if (samplingUsed && !sampleTableUsed)
+               mgroup->clistr->append(sampleOption->data());
 
             mgroup->clistr->append(" GROUP BY ");
             mgroup->clistr->append(mgroup->colNames->data());
@@ -10373,17 +10393,24 @@ Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
   internalSortQuery.append(" FROM ");
   // hssample_table->data() will be the real table name if a sample table is not used.
   internalSortQuery.append(hssample_table->data());
-  if (samplingUsed)
-    {
-      if (sampleTableUsed)
-        {
-          char cardHint[50];
-          sprintf(cardHint, " <<+ cardinality %e >> ", (double)sampleRowCount);
-          internalSortQuery.append(cardHint);
-        }
-      else
-        internalSortQuery.append(sampleOption->data());
-    }
+
+  Int64 hintRowCount = 0;
+  if (sampleTableUsed)
+  {
+     hintRowCount = sampleRowCount;
+  }
+  else
+  {
+     hintRowCount = actualRowCount;
+  }
+
+  char cardHint[50];
+  sprintf(cardHint, " <<+ cardinality %e >> ", (double)hintRowCount);
+  internalSortQuery.append(cardHint);
+
+  if (samplingUsed && !sampleTableUsed)
+     internalSortQuery.append(sampleOption->data());
+
   internalSortQuery.append(" FOR READ UNCOMMITTED ACCESS");  
 
   LM->Log("Preparing rowset...");

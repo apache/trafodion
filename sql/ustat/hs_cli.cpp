@@ -734,7 +734,7 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
     if (objDef->getObjectFormat() == SQLMX)
       {
-        tableOptions = " WITH DIVISION";
+        tableOptions = " WITH DIVISION WITH PARTITIONS";
         // If a transaction is running, the table needs to be created as audited.
         // Otherwise, create table as non-audited.
         if (TM->InTransaction())
@@ -5786,9 +5786,9 @@ static char ppStmtText[] =
 "                    || ')'"
 "                when OPERATOR in ('ESP_EXCHANGE', 'SPLIT_TOP') then"
 "                    trim(substring(DESCRIPTION"
-"                                   from (position('top_degree_parallelism' in DESCRIPTION) + 24)"
+"                                   from (position('parent_processes' in DESCRIPTION) + 18)"
 "                                   for  (position(' ' in substring(DESCRIPTION"
-"                                                                   from (position('top_degree_parallelism' in DESCRIPTION) + 24)"
+"                                                                   from (position('parent_processes' in DESCRIPTION) + 18)"
 "                                                                  )"
 "                                                 ) - 1"
 "                                        )"
@@ -5825,9 +5825,9 @@ static char ppStmtText[] =
 "                               '):'"
 "                       end"
 "                    || trim(substring(DESCRIPTION"
-"                                      from (position('bottom_degree_parallelism' in DESCRIPTION) + 27)"
+"                                      from (position('child_processes' in DESCRIPTION) + 17)"
 "                                      for  (position(' ' in substring(DESCRIPTION"
-"                                                                      from (position('bottom_degree_parallelism' in DESCRIPTION) + 27)"
+"                                                                      from (position('child_processes' in DESCRIPTION) + 17)"
 "                                                                     )"
 "                                                    ) - 1"
 "                                           )"
