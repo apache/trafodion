@@ -51,11 +51,9 @@
 #include "RelUpdate.h"
 #include "Sqlcomp.h"
 #include "StmtDDLAddConstraintCheck.h"
-//#ifdef HP_CLOSED_SOURCE_1
 #include "StmtDDLCreateTrigger.h"
 #include "StmtDDLCreateView.h"
 #include "StmtDDLCreateMV.h"
-//#endif
 #include "ex_error.h"
 #include "exp_like.h"
 #include "ItemColRef.h"
@@ -276,7 +274,6 @@ static ItemExpr *applyUpperToSource(BindWA *bindWA, ItemExpr *ie, Int32 srcIndex
 }
 
 
-//#ifdef HP_CLOSED_SOURCE_1
 // There are two metadata tables containing view-column-usage information,
 // VW_COL_USAGE and VW_COL_TBL_COLS.
 //
@@ -539,7 +536,6 @@ static NABoolean BindUtil_CollectColumnUsageInfo(BindWA *bindWA,
   }
   return FALSE;
 } // BindUtil_CollectColumnUsageInfo()
-//#endif // HP_CLOSED_SOURCE_1
 
 static void BindUtil_UpdateNameLocForColRef(BindWA *bindWA,
                                             ColRefName &colRefName,
@@ -597,7 +593,6 @@ static void BindUtil_UpdateNameLocForColRef(BindWA *bindWA,
     pNameLoc->setExpandedName(colRefNameExpanded.getColRefAsAnsiString());
   }
 
-  //#ifdef HP_CLOSED_SOURCE_1
   // Note that colRefNameExpanded might not be fully qualified in
   // certain cases (for example, the column is a derived column,
   // not a catalog object).  These should not be put into the usage
@@ -609,7 +604,6 @@ static void BindUtil_UpdateNameLocForColRef(BindWA *bindWA,
 
   BindUtil_CollectColumnUsageInfo(bindWA, colRefNameExpanded,
                                   colNameMap->getValueId(), parent);
-  //#endif
 
 } // BindUtil_UpdateNameLocForColRef()
 
@@ -642,14 +636,12 @@ static void BindUtil_UpdateNameLocForStarExpansion
       pNameLoc->setExpandedName(colDescList.getColumnDescListAsString());
   }
 
-  //#ifdef HP_CLOSED_SOURCE_1
   for (CollIndex i = 0; i < colDescList.entries(); i++)
     if (NOT BindUtil_CollectColumnUsageInfo(bindWA,
     					    colDescList[i]->getColRefNameObj(),
                                             colDescList[i]->getValueId(),
                                             parent))
       break;
-  //#endif
 
 } // BindUtil_UpdateNameLocForStarExpansion()
 
@@ -4334,7 +4326,6 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
 	current_ie->synthTypeAndValueId();
       else
 	{
-	  //#ifdef HP_CLOSED_SOURCE_1
           StmtDDLCreateView *pcvn = NULL;
           if (bindWA->inViewDefinition())
 	    {
@@ -4353,7 +4344,6 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
 		    pcvn->setItmColRefInColInRowValsFlag(FALSE);
 	      }
 	    }
-	  //#endif
 
 	  BindScope *currScope = bindWA->getCurrentScope();
 	  if (current_ie->inGroupByOrdinal())
@@ -4368,7 +4358,6 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
 
 	  if (bindWA->errStatus()) return TRUE;		// error
 
-	  //#ifdef HP_CLOSED_SOURCE_1
           if (pcvn &&
               pcvn->isProcessingViewColList() &&
               parent == pcvn->getQueryExpression() &&
@@ -4377,7 +4366,6 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
 	      pcvn->incrCurViewColNum();
 	    }
 	  else
-	    //#endif
 	  if (parent &&
 	      bindWA->getCurrentScope()->context()->counterForRowValues())
 	    {

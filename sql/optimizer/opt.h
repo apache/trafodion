@@ -825,10 +825,6 @@ public:
     return optimizerGracefulTermination_;
   };
 
-//#ifdef HP_CLOSED_SOURCE_ASG
-  RequiredResources * estimateRequiredResources(RelExpr* rootExpr);
-//#endif //HP_CLOSED_SOURCE_ASG
-
   // initialize portion of the cache based on ActiveSchemaDB's optDefaults 
   // and the pass-in argument rootExpr
   void initialize(RelExpr* rootExpr);

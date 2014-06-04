@@ -268,11 +268,6 @@ public:
   // this is called at the end of the analysis phase
   virtual void analyzeInitialPlan();
 
-//#ifdef HP_CLOSED_SOURCE_ASG
-  virtual void computeMyRequiredResources(RequiredResources & reqResources,
-                                      EstLogPropSharedPtr & inLP);
-//#endif //HP_CLOSED_SOURCE_ASG
-
   // use the input JBBCExprGroupMap to set this MultiJoin childrenMap_
   void setChildren(const JBBCExprGroupMap & map);
 

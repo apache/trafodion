@@ -2400,12 +2400,6 @@ public:
 
   void analyzeInitialPlan(MultiJoin * mjoin);
 
-//#ifdef HP_CLOSED_SOURCE_ASG
-  void computeRequiredResources(MultiJoin * mjoin,
-                            RequiredResources & reqResouces,
-                            EstLogPropSharedPtr & inLP);
-//#endif //HP_CLOSED_SOURCE_ASG
-
   const NAList<CANodeIdSet> * const getInitialPlanLeftDeepJoinSequence()
   { return &leftDeepJoinSequence_; }
 

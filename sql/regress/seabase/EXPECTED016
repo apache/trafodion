@@ -180,9 +180,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624701127459
+PLAN_ID .................. 212268656980287560
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 STATEMENT ................ select f,count(f)
                            from mcStatPart7 <<+ cardinality 10e8 >>
                            group by f;
@@ -193,7 +193,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -204,7 +204,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -234,7 +234,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -249,7 +249,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -268,7 +268,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -281,8 +281,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 875.92
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 875.9
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -310,8 +310,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART7
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 853.66
-EST_TOTAL_COST ......... 853.66
+EST_OPER_COST .......... 853.64
+EST_TOTAL_COST ......... 853.64
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -348,9 +348,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624701364472
+PLAN_ID .................. 212268656980532173
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 STATEMENT ................ select f,count(f)
                            from mcStatPart5 <<+ cardinality 10e8 >>
                            group by f;
@@ -361,7 +361,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -372,7 +372,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -402,7 +402,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -417,7 +417,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -436,7 +436,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -449,8 +449,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 902.11
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 902.09
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -478,8 +478,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART5
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 879.84
-EST_TOTAL_COST ......... 879.84
+EST_OPER_COST .......... 879.83
+EST_TOTAL_COST ......... 879.83
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -516,9 +516,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624701607975
+PLAN_ID .................. 212268656980773233
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 STATEMENT ................ select f,count(f)
                            from mcStatPart3 <<+ cardinality 10e8 >>
                            group by f;
@@ -529,7 +529,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -540,7 +540,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -570,7 +570,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -585,7 +585,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -604,7 +604,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -617,8 +617,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 902.11
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 902.09
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -646,8 +646,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART3
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 879.84
-EST_TOTAL_COST ......... 879.84
+EST_OPER_COST .......... 879.83
+EST_TOTAL_COST ......... 879.83
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -684,9 +684,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624701853747
+PLAN_ID .................. 212268656981017783
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 STATEMENT ................ select f,count(f)
                            from mcStatPart6 <<+ cardinality 10e8 >>
                            group by f;
@@ -697,7 +697,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -708,7 +708,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -738,7 +738,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -753,7 +753,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -772,7 +772,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -785,8 +785,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 851.28
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 851.27
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -814,8 +814,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART6
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 829.02
-EST_TOTAL_COST ......... 829.02
+EST_OPER_COST .......... 829.01
+EST_TOTAL_COST ......... 829.01
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -852,9 +852,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624702098736
+PLAN_ID .................. 212268656981260350
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 STATEMENT ................ select f,count(f)
                            from mcStatPart2 <<+ cardinality 10e8 >>
                            group by f;
@@ -865,7 +865,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -876,7 +876,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -906,7 +906,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -921,7 +921,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -940,7 +940,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 851.77
+EST_TOTAL_COST ......... 851.75
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -953,8 +953,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 851.28
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 851.27
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -982,8 +982,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART2
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 829.02
-EST_TOTAL_COST ......... 829.02
+EST_OPER_COST .......... 829.01
+EST_TOTAL_COST ......... 829.01
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -1020,9 +1020,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624702343400
+PLAN_ID .................. 212268656981503643
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 STATEMENT ................ select f,count(f)
                            from mcStatPart1 <<+ cardinality 10e8 >>
                            group by f;
@@ -1033,7 +1033,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1044,7 +1044,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1074,7 +1074,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -1089,7 +1089,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1108,7 +1108,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 876.41
+EST_TOTAL_COST ......... 876.39
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1121,8 +1121,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 875.92
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 875.9
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -1150,8 +1150,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 853.66
-EST_TOTAL_COST ......... 853.66
+EST_OPER_COST .......... 853.64
+EST_TOTAL_COST ......... 853.64
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -1188,9 +1188,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212267624702586777
+PLAN_ID .................. 212268656981745358
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 STATEMENT ................ select f,count(f)
                            from mcStatPart8 <<+ cardinality 10e8 >>
                            group by f;
@@ -1201,7 +1201,7 @@ ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1212,7 +1212,7 @@ DESCRIPTION
   est_memory_per_cpu ..... 74 KB
   max_max_cardinality .... 0
   total_overflow_size .... 0.00 KB
-  esp_2_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
   esp_3_node_map ......... (\NSK:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
@@ -1242,7 +1242,7 @@ HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -1257,7 +1257,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1276,7 +1276,7 @@ HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.49
-EST_TOTAL_COST ......... 902.6
+EST_TOTAL_COST ......... 902.58
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1289,8 +1289,8 @@ DESCRIPTION
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 22.27
-EST_TOTAL_COST ......... 902.11
+EST_OPER_COST ........... 22.26
+EST_TOTAL_COST ......... 902.09
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3
@@ -1318,8 +1318,8 @@ TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART8
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 879.84
-EST_TOTAL_COST ......... 879.84
+EST_OPER_COST .......... 879.83
+EST_TOTAL_COST ......... 879.83
 DESCRIPTION
   max_card_est ........... 1e+09
   fragment_id ............ 3

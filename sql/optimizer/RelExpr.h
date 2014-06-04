@@ -1300,13 +1300,6 @@ public:
   // do some analysis on the initial plan
   // this is called at the end of the analysis phase
   virtual void analyzeInitialPlan();
-//#ifdef HP_CLOSED_SOURCE_ASG
-  virtual void computeRequiredResources(RequiredResources & reqResources,
-                                       EstLogPropSharedPtr & inLP = (*GLOBAL_EMPTY_INPUT_LOGPROP));
-
-  virtual void computeMyRequiredResources(RequiredResources & reqResources,
-                                      EstLogPropSharedPtr & inLP);
-//#endif //HP_CLOSED_SOURCE_ASG
 
   // Accessor for the rowsetIterator flag.
   NABoolean isRowsetIterator() const { return rowsetIterator_; }

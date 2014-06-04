@@ -302,10 +302,6 @@ public:
   // node to an existing list of expressions (used by GUI tool)
   virtual void addLocalExpr(LIST(ExprNode *) &xlist,
 			    LIST(NAString) &llist) const;
-//#ifdef HP_CLOSED_SOURCE_ASG
-  virtual void computeMyRequiredResources(RequiredResources & reqResources,
-                                      EstLogPropSharedPtr & inLP);
-//#endif // HP_CLOSED_SOURCE_ASG
 
   // get a printable string that identifies the operator
   virtual const NAString getText() const;

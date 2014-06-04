@@ -293,6 +293,9 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
           NAString x(mmCqd);
           x.append(".");
 
+          x.append(__progname);
+          x.append(".");
+
           char buf[30];
           str_itoa((ULng32)pid, buf);
 

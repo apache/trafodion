@@ -369,15 +369,6 @@ public:
   // A method for converting an ordinary join to a tsj
   void convertToTsj();
 
-//#ifdef HP_CLOSED_SOURCE_ASG
-  void computeRequiredResources(RequiredResources & reqResources,
-                                       EstLogPropSharedPtr & inLP = (*GLOBAL_EMPTY_INPUT_LOGPROP));
-
-
-  virtual void computeMyRequiredResources(RequiredResources & reqResources,
-                                      EstLogPropSharedPtr & inLP);
-//#endif //HP_CLOSED_SOURCE_ASG
-
   // Map tables: Map a logical op type to a physical/logical op type.
   //             Used by implementation/transformation rules.
   // What should my operator type translate to if a TSJ/nested/merge/hash

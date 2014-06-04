@@ -717,7 +717,8 @@ const Space* Generator::getTopSpace() const
 void
 Generator::remapESPAllocation()
 {
-   if (!fragmentDir_ || !fragmentDir_->containsESPLayer())
+   if (!fragmentDir_ || !fragmentDir_->containsESPLayer() ||
+       CmpCommon::getDefault(HBASE_COMPUTE_DOP_USING_TABLE_SIZES) != DF_ON)
      return; 
 
    for (Int32 i = 0; i < fragmentDir_->entries(); i++) {
