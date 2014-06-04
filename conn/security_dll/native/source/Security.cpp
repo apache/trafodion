@@ -159,6 +159,7 @@ void Security::generateSessionKey() throw (SecurityException)
           }
        }
    }
+	close(fd);
 #endif //MXHPUXPA
 #else // _WINDOWS
         seedSize=SEED_SIZE;
