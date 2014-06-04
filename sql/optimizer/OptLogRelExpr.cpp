@@ -188,7 +188,7 @@ RelExpr::synthEstLogPropForUnaryLeafOp (const EstLogPropSharedPtr& inputEstLogPr
   if (childStats.entries() > 0)
     newRowCount = childStats[0]->getColStats()->getRowcount();
 
-  //++MV, amir
+  //++MV
   // remember the initial cardinality for later use
   CostScalar initialCardinality = newRowCount;
   //--MV
@@ -534,7 +534,7 @@ RelExpr::synthEstLogPropForUnaryLeafOp (const EstLogPropSharedPtr& inputEstLogPr
       newRowCount = MINOF(newRowCount, inputCard * initialCardinality);
   }
 
-  // ++MV , amir
+  // ++MV
   if (getInliningInfo().isForceCardinality())
   {
     CostScalar oldCount = newRowCount;
@@ -547,7 +547,7 @@ RelExpr::synthEstLogPropForUnaryLeafOp (const EstLogPropSharedPtr& inputEstLogPr
   }
   else
     columnStats.synchronizeStats(newRowCount, columnStats.entries());
-  // --MV , amir
+  // --MV
 
   myEstProps->setResultCardinality( newRowCount );
   if (cardHint != NULL)
@@ -659,7 +659,7 @@ RelExpr::synthLogProp(NormWA * normWAPtr)
   // Associate this GA with this log expr for any further synthesis
   GA->setLogExprForSynthesis (this);
 
-  //++MV,amir
+  //++MV
   // Used by inlining mechanism for adding optimizer constraints
   if (!getUniqueColumns().isEmpty())
   {
@@ -673,7 +673,7 @@ RelExpr::synthLogProp(NormWA * normWAPtr)
 			 CardConstraint(getCardConstraint()->getLowerBound(),
 					getCardConstraint()->getUpperBound()));
   }
-  //--MV,amir
+  //--MV
 } // RelExpr::synthLogProp()
 
 void
@@ -1399,7 +1399,7 @@ Join::synthEstLogPropForTSJ(const EstLogPropSharedPtr& inputEstLogProp)
   NABoolean synchronizeStatNeeded = FALSE;
 
   CostScalar oldCount = newRowcount;
-  // ++MV , amir
+  // ++MV
   if (getInliningInfo().isForceCardinality())
   {
     // Override the estimated cardinality using the inlining information.
@@ -1587,7 +1587,7 @@ Join::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
   // that represents matching outer references.
   //--------------------------------------------------------------------
 
-  //++MV, amir
+  //++MV
   // remember the initial cardinality for later use
   CostScalar initialCardinality = newRowCount;
   //--MV
@@ -1823,13 +1823,13 @@ Join::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 
     CostScalar oldCount = newRowCount;
 
-  // ++MV , amir
+  // ++MV
   if (getInliningInfo().isForceCardinality())
   {
     // Override the estimated cardinality using the inlining information.
     newRowCount = getInliningInfo().getNewCardinality(initialCardinality);
   }
-  // --MV , amir
+  // --MV
 
   // since the histograms have been merged together. Set the scale factor of remaining 
   // histograms to one.

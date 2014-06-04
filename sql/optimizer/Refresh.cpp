@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2003-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1999-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -354,7 +354,7 @@ MvRefreshBuilder *Refresh::constructMavSpecifichBuilder(BindWA       *bindWA,
   {
     // We have a "COMMIT EACH" clause, need the multi-txn builder.
     if (deltaDefList_->at(0)->useIudLog() && deltaDefList_->at(0)->useRangeLog() 
-#ifndef NDEBUG // ?????? TEMP amir
+#ifndef NDEBUG // ?????? TEMP
       && !getenv( "REFRESH_WITH_DE" ) 
 #endif
 	)

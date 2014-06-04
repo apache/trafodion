@@ -1851,7 +1851,7 @@ RelExpr * UnionRule::nextSubstitute(RelExpr * before,
 
   // now set the attributes of the result's top node
   result->setCondExpr(bef->getCondExpr());
-  result->setAlternateRightChildOrderExpr(bef->getAlternateRightChildOrderExpr()); //++ MV - Amir
+  result->setAlternateRightChildOrderExpr(bef->getAlternateRightChildOrderExpr()); //++ MV
   result->setGroupAttr(bef->getGroupAttr());
   result->setUnionFlags(bef->getUnionFlags());
   result->setControlFlags(bef->getControlFlags()); //++ Triggers -
@@ -3820,7 +3820,7 @@ NABoolean NestedJoinRule::topMatch(RelExpr * relExpr,
   if (relExpr->getOperator().match(REL_ANY_FULL_JOIN))
     return FALSE;
 
-  //++MV, amir
+  //++MV
   //If this node was marked in inlining for single execution ,the rule will be fired
   //only if there is a single input request.
   if (relExpr->getInliningInfo().isSingleExecutionForTSJ() &&
@@ -3828,7 +3828,7 @@ NABoolean NestedJoinRule::topMatch(RelExpr * relExpr,
   {
     return FALSE;
   }
-  //--MV, amir
+  //--MV
 
   // QSTUFF
   // we can only implement embedded deletes if no join

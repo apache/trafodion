@@ -284,7 +284,7 @@ public:
   const ValueIdList & nullInstantiatedForRightJoinOutput() const
   { return nullInstantiatedForRightJoinOutput_; }
 
-//++MV,amir
+//++MV
   // Used for translating the required sort key to the right
   // child sort key and backwards
   // For more information see NestedJoin::synthPhysicalProperty()
@@ -303,7 +303,7 @@ public:
 
   GenericUpdate* getFirstIUDNode(RelExpr* currentNode);
 
-//--MV,amir
+//--MV
 
   // Each operator supports a (virtual) method for transforming its
   // scalar expressions to a canonical form
@@ -953,7 +953,7 @@ private:
 
 
 
-//MV++,amir
+//MV++
   // ---------------------------------------------------------------------
   // Used for translating the required sort key to the right
   // child sort key and backwards
@@ -962,7 +962,7 @@ private:
   ValueIdMap rightChildMapForLeftJoin_;
 
   ValueIdMap leftChildMapForRightJoin_;
-//MV--,amir
+//MV--
 
   // ---------------------------------------------------------------------
   // Equijoin predicates. They are a subset of the joinPred_.
@@ -1580,7 +1580,6 @@ public:
   // Ratio is the ratio of file-size/memorysize. If the ratio >=1 it
   // is a BMO, if the ratio <1, it is not, and if the ratio > 5 it
   // is a VBMO (Very Big Memory Operator). Default is an improbable value.
-  // added by Ovamir Jan-02
   NABoolean isBigMemoryOperatorSetRatio(const Context* context,
                                         const Lng32 planNumber,
 					double & ratio);

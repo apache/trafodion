@@ -394,7 +394,7 @@ public:
 
   void setSelectionPredicates(const ValueIdSet& p)      { predicates_ = p; }
 
-  //++MV,amir
+  //++MV
   // Used by inlining mechanism for adding optimizer constraints
   void addUniqueColumnsTree(ItemExpr *uniqueColumnsTree);
   ItemExpr * removeUniqueColumnsTree();
@@ -411,7 +411,7 @@ public:
     cardConstraint_ = new(CmpCommon::statementHeap())
 			 CardConstraint(lowerBound,upperBound);
   }
-  //--MV,Amir
+  //--MV
 
 
   // ---------------------------------------------------------------------
@@ -1446,14 +1446,14 @@ private:
   // Information for Triggers, RI and IM.
   InliningInfo inliningInfo_;
 
-  //++MV,amir
+  //++MV
   // Used by inlining mechanism for adding optimizer constraints
   ItemExpr *uniqueColumnsTree_;
   ValueIdSet uniqueColumns_;
 
   CardConstraint *cardConstraint_;
 
-  //--MV,amir
+  //--MV
 
   SubTreeAccessSet *accessSet0_;
   SubTreeAccessSet *accessSet1_;

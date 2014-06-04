@@ -812,7 +812,7 @@ public:
 
 }; // class GenericUpdateOutputFunction
 
-//++MV, Amir
+//++MV
 class IsBitwiseAndTrue : public BuiltinFunction
 {
 public:
@@ -831,7 +831,7 @@ public:
 				 CollHeap* outHeap = 0);
 
 }; // class GetBitValueAt
-//--MV, Amir
+//--MV
 
 class CodeVal : public CacheableBuiltinFunction
 {

@@ -148,11 +148,11 @@ public:
   inline NABoolean isCacheable() const {return cacheable_;}
 
 
-  //++MV, amir
+  //++MV
   inline NABoolean isCardinalityEqOne() const { return isCardinalityEqOne_; }
   inline void setCardinalityEqOne() { isCardinalityEqOne_ = TRUE; }
   inline void resetCardinalityEqOne() { isCardinalityEqOne_ = FALSE; }
-  //--MV, amir
+  //--MV
 
   // Returns the (possibly multi-column) uec value for the
   // ValueId-specified column(s) in the parameter list.
@@ -229,11 +229,11 @@ private:
   SemiTSJEnum      inputForSemiTSJ_;   // For TSJ: pass semi-join flag to child
   NABoolean	   cacheable_;	       // check to see if these properties are cacheable by ASM
   
-  //++MV , amir
+  //++MV
   // This is a non-estimated information , which sets to TRUE if the cardinality
   // equals 1.
   NABoolean	   isCardinalityEqOne_;
-  //--MV , amir
+  //--MV
 
   // object counter
   static THREAD_P ObjectCounter *counter_;

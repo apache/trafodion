@@ -3847,7 +3847,7 @@ void ValueIdSet::categorizePredicates (const ValueIdSet & outerReferences,
       const ItemExpr *pred = id.getItemExpr();
 
       if (pred->synthSupportedOp() && // does the operator support synthesis??
-	  ((0 > pred->getSelectivityFactor()) || //++MV, amir does this operator has an assigned selectivity factor
+	  ((0 > pred->getSelectivityFactor()) || //++MV does this operator has an assigned selectivity factor
 	   ((ItemExpr *)pred)->isSelectivitySetUsingHint())) // Unless selectivity is specified by user
 	{
 	  OperatorTypeEnum op = pred->getOperatorType();

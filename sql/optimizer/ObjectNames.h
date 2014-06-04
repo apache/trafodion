@@ -562,8 +562,8 @@ public:
   const QualifiedName& getQualifiedNameObj() const	{ return qualName_; }
   QualifiedName& getQualifiedNameObj()		        { return qualName_; }
   SpecialTableType getSpecialType() const		{ return type_;     }
-  static ComAnsiNameSpace convSpecialTableTypeToAnsiNameSpace( const SpecialTableType type ); // ++MV amir
-  ComAnsiNameSpace getAnsiNameSpace() const;		// ++MV amir
+  static ComAnsiNameSpace convSpecialTableTypeToAnsiNameSpace( const SpecialTableType type ); // ++MV
+  ComAnsiNameSpace getAnsiNameSpace() const;		// ++MV
   const PartitionClause& getPartnClause() const {return partnClause_ ;}
   NAString getExtendedQualifiedNameAsString() const;
 

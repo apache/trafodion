@@ -6531,7 +6531,6 @@ RelExpr * Sort::preCodeGen(Generator * generator,
   // Replace VEGReferences in the order by list
   // Bugfix: sol# 10-020909-1555/56: the last argument, if not explicitly
   // stated, defaults to FALSE, and causes a shallow copy of the tree.
-  // -Ovamir
   // ----------------------------------------------------------------------
   sortKey_.replaceVEGExpressions
               (availableValues,

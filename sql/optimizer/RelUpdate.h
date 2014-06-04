@@ -305,7 +305,7 @@ GenericUpdate(const CorrName &name,
                                         {
                                           potentialOutputs_.insertList(vl);
                                         }
-  //++MV,Amir - returns the GenericUpdateOutputFunction's that are in the
+  //++MV - returns the GenericUpdateOutputFunction's that are in the
   // characteristic outputs
   NABoolean getOutputFunctionsForMV(ValueId &epochValueId, 
                                     OperatorTypeEnum opType) const;

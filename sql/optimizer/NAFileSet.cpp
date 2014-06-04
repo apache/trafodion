@@ -177,7 +177,7 @@ NABoolean NAFileSet::hasSyskey() const
     return TRUE;
 
   // check the NAColumn class of the key column
-  // ++MV , amir - 7/3/01 bug fix
+  // ++MV - 7/3/01 bug fix
 
 //  If the table only contains a clustering key, it is last.
 //  If it contains a clustering and hash key and the hash key has columns 

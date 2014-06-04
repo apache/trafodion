@@ -337,7 +337,7 @@ NA_EIDPROC Long ex_function_is_bitwise_and_true::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_is_bitwise_and_true));
 } 
-//--MV - Amir
+//--MV
 
 NA_EIDPROC Long ex_function_explode_varchar::pack(void * space_)
 {

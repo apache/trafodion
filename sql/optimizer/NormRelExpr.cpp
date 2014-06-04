@@ -909,11 +909,11 @@ void RelExpr::rewriteNode(NormWA & normWARef)
     {
     }
 
-  // ++MV , amir
+  // ++MV
   if (getUniqueColumns().normalizeNode(normWARef))
     {
     }
-  // --MV , amir
+  // --MV
 
   // ---------------------------------------------------------------------
   // Rewrite the expressions in the Group Attributes.
@@ -1951,11 +1951,11 @@ void Join::normalizeNullInstantiatedOutput(NormWA & normWARef)
       instNull->child(0) =  instNull->child(0)->normalizeNode(normWARef);
     } // endfor
  
-  //++MV,amir
+  //++MV
   // Used for translating the required sort key to the right 
   // child sort key and backwards
   BuildRightChildMapForLeftJoin();
-  //--MV,amir
+  //--MV
 
 } // Join::normalizeNullInstantiatedOutput()
 
@@ -1982,11 +1982,11 @@ void Join::normalizeNullInstantiatedForRightJoinOutput(NormWA & normWARef)
       instNull->child(0) =  instNull->child(0)->normalizeNode(normWARef);
     } // endfor
  
-  //++MV,amir
+  //++MV
   // Used for translating the required sort key to the right 
   // child sort key and backwards
   BuildLeftChildMapForRightJoin();
-  //--MV,amir
+  //--MV
 
 } // Join::nullInstantiatedForRightJoinOutput()
 
@@ -4554,7 +4554,7 @@ void Union::recomputeOuterReferences()
       // Add conditional expression for conditional union.
       exprSet.insertList(condExpr());
 
-      exprSet.insertList(alternateRightChildOrderExpr()); //++MV amir
+      exprSet.insertList(alternateRightChildOrderExpr()); //++MV
       
       // Add the output expressions of each child that are cached in the 
       // UnionMap. If a child references an external input value in its 
@@ -4632,13 +4632,13 @@ void Union::rewriteNode(NormWA & normWARef)
   // Normalize expressions contributed by child(1)
   getUnionMap()->normalizeSpecificChild(normWARef, 1); 
   
-  // ++MV , amir
+  // ++MV
   // The alternate right child order expression should be normalized in 
   // the region of the right child
   if (alternateRightChildOrderExpr().normalizeNode(normWARef))
     {
     }
-  // --MV , amir
+  // --MV
 
   normWARef.restoreOriginalVEGRegion();
   
@@ -8009,11 +8009,11 @@ void Transpose::rewriteNode(NormWA & normWARef)
     {
     }
 
-  // ++MV , amir
+  // ++MV
   if (getUniqueColumns().normalizeNode(normWARef))
     {
     }
-  // --MV , amir
+  // --MV
 
   // Rewrite the expressions in the Group Attributes.
   //

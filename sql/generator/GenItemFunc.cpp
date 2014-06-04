@@ -215,7 +215,7 @@ short BuiltinFunction::codeGen(Generator * generator)
       
       break;
 
-    // -- MV - Amir
+    // -- MV
     case ITM_CONCAT:
       {
 	function_clause =

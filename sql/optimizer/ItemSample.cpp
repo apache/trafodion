@@ -454,7 +454,7 @@ NABoolean NotCovered::isCovered(const ValueIdSet& newExternalInputs,
   // ---------------------------------------------------------------------
   return FALSE;
 }
-//++MV,amir 02/27/01
+//++MV 02/27/01
 void NotCovered::getLeafValuesForCoverTest(ValueIdSet& leafValues, 
                                            const GroupAttributes& coveringGA,
                                            const ValueIdSet & newExternalInputs) const
@@ -462,7 +462,7 @@ void NotCovered::getLeafValuesForCoverTest(ValueIdSet& leafValues,
   // NotCovered is considered a leaf operator for cover test.
   leafValues += getValueId();
 }
-//--MV,amir 02/27/01
+//--MV 02/27/01
 
 const NAType *NotCovered::synthesizeType()
 {

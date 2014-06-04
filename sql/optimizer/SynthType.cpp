@@ -5768,7 +5768,7 @@ const NAType *IsBitwiseAndTrue::synthesizeType()
   return new HEAP SQLBoolean(FALSE);
 }
 
-//--MV, Amir
+//--MV
 
 
 const NAType *ItemList::synthesizeType()

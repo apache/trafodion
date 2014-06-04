@@ -382,7 +382,7 @@ public:
   void copyLeftRightListsToPreviousIF(Union * previousIF, BindWA * bindWA);
 
 
-  // MV ++ Amir
+  // MV ++
   // MV refresh optimization refer to MVRefreshBuilder.cpp
   // MultiTxnMavBuilder::buildUnionBetweenRangeAndIudBlocks()
   // THIS OPTIMIZATION IS FOR MV REFRESH ONLY AND IS BASED ON THE KNOWLEDGE THAT RANGES RECORDS
@@ -397,7 +397,7 @@ public:
   {
     alternateRightChildOrderExpr_ = alternateRightChildOrderExpr;
   }
-  // MV -- Amir
+  // MV --
 
   // added for trigger project, to activate after trigger transformation
   virtual RelExpr * fixupTriggers(NABoolean & treeModified);
@@ -442,10 +442,10 @@ private:
   ItemExpr *trigExceptExprTree_;
   ValueIdList trigExceptExpr_;
 
-  // MV ++ Amir
+  // MV ++
   ItemExpr *alternateRightChildOrderExprTree_;
   ValueIdList alternateRightChildOrderExpr_;
-  // MV -- Amir
+  // MV --
 
   // The union map is shared by a number of Union nodes that were
   // transformed from one another

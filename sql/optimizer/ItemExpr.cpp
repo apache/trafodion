@@ -2674,7 +2674,7 @@ NABoolean ItemExpr::containsColumn()
   return FALSE;
 }
 
-//++MV, amir
+//++MV
 // -----------------------------------------------------------------------
 // Return the default selectivity for this predicate
 // -----------------------------------------------------------------------
@@ -2685,7 +2685,7 @@ double ItemExpr::defaultSel()
   else
     return selectivityFactor_;
 }
-//--MV, amir
+//--MV
 
 ItemExpr * ItemExpr::containsRightmost(const ItemExpr *ie)
 {
@@ -11497,7 +11497,7 @@ ItemExpr * Case::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   else
     result = derivedNode;
 
-  //++MV,amir bug fix
+  //++MV bug fix
   if (caseOperand_)
 	((Case*) result)->caseOperand_ = caseOperand_->copyTree(outHeap);
 

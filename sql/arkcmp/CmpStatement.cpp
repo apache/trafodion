@@ -1583,7 +1583,7 @@ QueryAnalysis* CmpStatement::initQueryAnalysis()
                                EstLogProp::NOT_SEMI_TSJ,
                                new (STMTHEAP) CANodeIdSet(),
                                TRUE));
-    //++MV, amir
+    //++MV
     // This input cardinality is not estimated , so we keep this knowledge
     // in a special attribute.
     (*GLOBAL_EMPTY_INPUT_LOGPROP)->setCardinalityEqOne();

@@ -1901,7 +1901,7 @@ EstLogPropSharedPtr GroupAttributes::outputLogProp (const EstLogPropSharedPtr& i
     outputEstLogProp = outputEstLogProp_[index] ;
   }
 
-  //++MV, amir
+  //++MV
   // !!!!! - This code must be carefully checked by the optimizer group.
   //
   // Update the estimated cardinality by taking the min(max) value between the
@@ -1929,7 +1929,7 @@ EstLogPropSharedPtr GroupAttributes::outputLogProp (const EstLogPropSharedPtr& i
   {
       outputEstLogProp->setCardinalityEqOne();
   }
-  //--MV, amir
+  //--MV
 
   return outputEstLogProp ;
 } // GroupAttributes::outputLogProp

@@ -109,7 +109,7 @@ RelSequence::removeRequiredOrderTree()
   return requiredOrderTree;
 }
 
-//++MV amir
+//++MV
 void RelSequence::addRequiredOrderTree(ItemExpr *orderExpr)
 {
   ExprValueId c = requiredOrderTree_;

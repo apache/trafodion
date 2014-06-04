@@ -6759,7 +6759,7 @@ NestedJoin::synthPhysicalProperty(const Context *myContext,
 	for (Lng32 i = 0; i < (Lng32)rightSortKey.entries(); i++)
 	  newSortKey.insert(rightSortKey[i]);
       }
-      //++MV amir
+      //++MV
       else
       {
 	// For left-join we need to translate the right child sort key
@@ -6771,7 +6771,7 @@ NestedJoin::synthPhysicalProperty(const Context *myContext,
 	for (Lng32 i = 0; i < (Lng32)newRightSortKey.entries(); i++)
 	  newSortKey.insert(newRightSortKey[i]);
       }
-      //--MV amir
+      //--MV
 
     // The sort order type stays that of the left child, unless the
     // the left child sort order type is ESP_NO_SORT and the right
@@ -10534,7 +10534,7 @@ Context* MergeUnion::createContextForAChild(Context* myContext,
            else if (rppForMe->getSortKey() != NULL)
            {
 	     ValueIdList newSortKey;
-	     //++MV amir
+	     //++MV
 	     if (alternateRightChildOrderExpr().isEmpty())
 	     {
 	       getMap(childIndex).rewriteValueIdListDown(*rppForMe->getSortKey(),
@@ -10837,7 +10837,7 @@ Context* MergeUnion::createContextForAChild(Context* myContext,
         else if (rppForMe->getSortKey() != NULL)
         {
 	   ValueIdList newSortKey;
-	   //++MV amir
+	   //++MV
 	   if (alternateRightChildOrderExpr().isEmpty())
 	   {
 	     getMap(childIndex).rewriteValueIdListDown(*rppForMe->getSortKey(),
@@ -11196,7 +11196,7 @@ MergeUnion::synthPhysicalProperty(const Context* myContext,
     }
   } // end if sort order is not empty
 
-  //++MV amir ,
+  //++MV
   // MV specific optimization refer to MVRefreshBuilder.cpp
   // MultiTxnMavBuilder::buildUnionBetweenRangeAndIudBlocks()
 
@@ -11230,7 +11230,7 @@ MergeUnion::synthPhysicalProperty(const Context* myContext,
            myPartSearchKey,
            sppOfLeftChild->getPushDownProperty());
 
-  //--MV , amir
+  //--MV
 
 
   sppForMe->setCurrentCountOfCPUs(sppTemp->getCurrentCountOfCPUs());

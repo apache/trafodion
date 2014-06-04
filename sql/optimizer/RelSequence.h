@@ -85,7 +85,7 @@ public:
   //
   virtual Int32 getArity() const {return 1;};
 
-  //++MV amir
+  //++MV
   void addRequiredOrderTree(ItemExpr *orderExpr);
 
   // a virtual function for performing name binding within the query tree

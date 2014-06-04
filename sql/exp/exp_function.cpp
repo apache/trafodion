@@ -1,7 +1,7 @@
 /*********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ ex_function_current::ex_function_current(){};
 ex_function_unique_execute_id::ex_function_unique_execute_id(){};//Trigger -
 ex_function_get_triggers_status::ex_function_get_triggers_status(){};//Trigger -
 ex_function_get_bit_value_at::ex_function_get_bit_value_at(){};//Trigger -
-ex_function_is_bitwise_and_true::ex_function_is_bitwise_and_true(){};//MV - Amir
+ex_function_is_bitwise_and_true::ex_function_is_bitwise_and_true(){};//MV
 ex_function_explode_varchar::ex_function_explode_varchar(){};
 ex_function_hash::ex_function_hash(){};
 ex_function_hivehash::ex_function_hivehash(){};
@@ -364,7 +364,7 @@ ex_function_get_bit_value_at::ex_function_get_bit_value_at(OperatorTypeEnum oper
   
 };
 
-//++ MV - Amir
+//++ MV
 ex_function_is_bitwise_and_true::ex_function_is_bitwise_and_true(OperatorTypeEnum oper_type,
 					     Attributes ** attr, Space * space)
 : ex_function_clause(oper_type, 3, attr, space)
@@ -687,7 +687,7 @@ ex_expr::exp_return_type ex_function_get_bit_value_at::eval(char *op_data[],
 }
 ;
 
-//++ MV - Amir
+//++ MV
 // The function returns True if any of the bits is set in both of the strings
 ex_expr::exp_return_type ex_function_is_bitwise_and_true::eval(char *op_data[],
 						     CollHeap *heap,

@@ -1492,7 +1492,6 @@ RelExpr * IndexJoinRule1::makeSubstituteFromIndexInfo(Scan *bef,
   // Bugfix: soln # 10-020930-2072
   // The selPred of the leftScan should be subtracted form the rightScan
   // selPred only if there is not uncovered part in the former.
-  // -Ovamir
   // ---------------------------------------------------------------------
 
   GroupAttributes alwaysCoveredGA;

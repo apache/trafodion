@@ -976,7 +976,7 @@ public:
 					       CostScalar & maxUec);
   
 
-  //++MV,amir
+  //++MV
   // Return the selectivityFactor for this predicate.
   // The selectivity factor is initialy set to -1, which means
   // that the default selectivity is used. If the selectivity
@@ -985,7 +985,7 @@ public:
   double getSelectivityFactor() const { return selectivityFactor_; }
   void setSelectivityFactor(double selectivityFactor)
   { selectivityFactor_ = selectivityFactor; }
-  //--MV,amir
+  //--MV
 
   // Return the inverse of the operator type if any.  Otherwise, return its operatorType.
   OperatorTypeEnum getInverseOpType () const;
@@ -1270,13 +1270,13 @@ private:
 
   NABoolean preCodeGenNATypeChange_;
 
-  //++MV, amir
+  //++MV
   // If selectivityFactor_ is not negative, then it contains the assumed selectivity
   // for this item expression (known by the optimizer or by inline information).
   // The item expression that has a non negative selectivityFactor, will be categorize
   // as a Default Predicate and the defaultSel method will return this attribute.
   double selectivityFactor_;
-  //--MV, amir
+  //--MV
 
   UInt32 flags_;
 }; // class ItemExpr

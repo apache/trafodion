@@ -73,13 +73,13 @@
 #include "CostMethod.h"
 #endif // NA_CMPDLL
 
-//++MV - amir
+//++MV
 extern "C" {
 #include "cextdecs/cextdecs.h"
 }
 
 
-//--MV - amir
+//--MV
   #define ENVIRON environ
   #define PUTENV  putenv
 
@@ -145,13 +145,13 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
 
   sqlSession_ = new (heap_) CmpSqlSession(heap_);
 
-// MV-amir
+// MV
 // Adding support for multi threaded requestor (multi transactions) handling
 // in the arkcmp
 // This is needed because arkcmp is also serves as a server for the utilities
 // store procedures
   OpenTMFFile();
-// MV-amir
+// MV
 
   // initialize CmpStatement related members.
   statements_.insert(0);
@@ -286,7 +286,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   cmpSeabaseDDL.createMDdescs();
 }
 
-// MV -amir
+// MV
 // ---------------------------------------------------------------------------
 // Adding support for multi threaded requestor (multi transactions) handling
 // in the arkcmp
@@ -313,7 +313,7 @@ void CmpContext::CloseTMFFile()
 // destructor
 // -----------------------------------------------------------------------
 
-// MV -amir
+// MV
 CmpContext::~CmpContext()
 {
   // cleanup the optimizer rules

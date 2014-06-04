@@ -1770,7 +1770,6 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
       wildcard = REL_FORCE_MERGE_JOIN;
     }
 
-  // Added by ovamir -fab02
   // previous HJ (hybrid_hash_join) is now split into three
   // HJ (hash_join), type unknown, the nextSubstitute will pick
   // HHJ (hybrid_hash_join) and OHJ (ordered_hash_join)

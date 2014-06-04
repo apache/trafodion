@@ -544,7 +544,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	case REL_FORCE_NESTED_JOIN:
 	  switch (op_)
 	    {
-	    //case REL_JOIN:  //added by Ovamir, needed for fbcqs.
+	    //case REL_JOIN:  // Needed for fbcqs.
 	    case REL_TSJ:
 	    case REL_TSJ_FLOW:
 	    case REL_ROUTINE_JOIN:

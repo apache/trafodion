@@ -339,7 +339,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
   // ---------------------------------------------------------------------
   //  synthLogProp(); Now being done in QueryAnalysis
 
-  //++MV, amir
+  //++MV
   // This input cardinality is not estimated , so we keep this knowledge
   // in a special attribute.
   (*GLOBAL_EMPTY_INPUT_LOGPROP)->setCardinalityEqOne();
@@ -5928,7 +5928,7 @@ void OptDebug::showLogicalProperties( const RelExpr *re,
         << "Input Est. Log. Props: #" << i
         << "; Estimated Rows = "
         << ga->getInputLogPropList()[i]->getResultCardinality().getValue()
-	<< (ga->getInputLogPropList()[i]->isCardinalityEqOne() ? "Single" : "Multiple") << "invocations" //++MV, amir
+	<< (ga->getInputLogPropList()[i]->isCardinalityEqOne() ? "Single" : "Multiple") << "invocations" //++MV
         << endl;
 
     showEstLogProp( ga->getInputLogPropList()[i], indent.data() );
