@@ -4,6 +4,8 @@
  * Copyright 2000, LifeLine Networks BV (www.lifeline.nl). All rights reserved.
  * Copyright 2000, Bastiaan Bakker. All rights reserved.
  *
+ * Modified 2010-2014 by Hewlett-Packard Development Company, L.P.
+ *
  * See the COPYING file for the terms of usage and distribution.
  */
 
@@ -32,8 +34,8 @@ namespace log4cpp {
     }
 
     HierarchyMaintainer::~HierarchyMaintainer() {
-          shutdown();
-          deleteAllCategories();
+        shutdown();
+        deleteAllCategories();
     }
 
     Category* HierarchyMaintainer::getExistingInstance(const std::string& name) {
@@ -122,7 +124,6 @@ namespace log4cpp {
       for(CategoryMap::const_iterator i = _categoryMap.begin(); i != _categoryMap.end(); i++) {
         ((*i).second)->eraseAppender(appender);
       }
-
     }
 
     void HierarchyMaintainer::deleteAllCategories() {

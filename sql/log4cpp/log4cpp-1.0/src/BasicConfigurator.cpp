@@ -10,7 +10,6 @@
 #ifdef LOG4CPP_HAVE_IO_H
 #    include <io.h>
 #endif
-
 #ifdef LOG4CPP_HAVE_UNISTD_H
 #    include <unistd.h>
 #endif

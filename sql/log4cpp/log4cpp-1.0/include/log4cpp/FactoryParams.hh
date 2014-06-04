@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-  #include <sstream>
+#include <sstream>
 #include <stdexcept>
 #include "Portability.hh"
 

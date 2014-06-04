@@ -1,3 +1,11 @@
+/*
+ * PThreads.cpp
+ *
+ * Modified 2010-2014 by Hewlett-Packard Development Company, L.P.
+ *
+ * See the COPYING file for the terms of usage and distribution.
+ */
+
 #include <log4cpp/threading/Threading.hh>
 
 #if defined(LOG4CPP_HAVE_THREADING) && defined(LOG4CPP_USE_PTHREADS)

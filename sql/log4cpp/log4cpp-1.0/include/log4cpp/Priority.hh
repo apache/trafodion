@@ -17,7 +17,6 @@
 /*
  * Optionally work around rudeness in windows.h on Win32.
  */
-
 #ifdef ERROR
 #ifdef LOG4CPP_FIX_ERROR_COLLISION
 
