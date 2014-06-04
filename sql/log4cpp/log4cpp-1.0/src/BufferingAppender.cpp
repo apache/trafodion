@@ -1,3 +1,11 @@
+/*
+ * BufferingAppender.cpp
+ *
+ * Modified 2010-2014 by Hewlett-Packard Development Company, L.P.
+ *
+ * See the COPYING file for the terms of usage and distribution.
+ */
+
 #include <log4cpp/BufferingAppender.hh>
 #include <algorithm>
 #ifdef LOG4CPP_HAVE_SSTREAM

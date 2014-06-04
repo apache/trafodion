@@ -1,3 +1,9 @@
+/*
+ * Modified 2010-2014 by Hewlett-Packard Development Company, L.P.
+ *
+ * See the COPYING file for the terms of usage and distribution.
+ */
+
 #if !defined(h_ebd0ee89_622d_4af1_9a9d_d0e057debe86)
 #define h_ebd0ee89_622d_4af1_9a9d_d0e057debe86
 

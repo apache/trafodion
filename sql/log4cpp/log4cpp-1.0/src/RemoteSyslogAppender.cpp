@@ -9,7 +9,6 @@
 
 #include "PortabilityImpl.hh"
 
-
 #ifdef LOG4CPP_HAVE_UNISTD_H
 #    include <unistd.h>
 #endif

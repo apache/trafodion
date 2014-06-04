@@ -3,6 +3,8 @@
  *
  * Copyright 2002, Log4cpp Project. All rights reserved.
  *
+ * Modified 2010-2014 by Hewlett-Packard Development Company, L.P.
+ *
  * See the COPYING file for the terms of usage and distribution.
  */
 #include "PortabilityImpl.hh"
