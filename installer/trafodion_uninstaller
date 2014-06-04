@@ -37,10 +37,11 @@ EOF
 }
 
 TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-
+echo $TRAF_WORKDIR
 #=========================================
 # define defaults
 TRAF_USER=$(cat $TRAF_WORKDIR/trafodion_userid)
+echo $TRAF_USER
 NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
 MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
 CLUSTERNAME="$HOSTNAME"

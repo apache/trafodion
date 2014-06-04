@@ -1,0 +1,240 @@
+#!/bin/bash
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# This script will uninstall Hortonworks
+
+#==============================================
+#Default Values
+typeset MY_NODES=""
+#==============================================
+
+function print_usage {
+cat << EOF
+This script will uninstall Hortonworks.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                 Print this message and exit.
+    --nodes "<node_list>"  -w separated list of nodes (within quotes)
+
+EOF
+}
+
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+         --nodes)
+             if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+             fi
+             MY_NODES=$2
+             shift
+             ;;
+         --help)
+             print_usage
+             exit -1
+             ;;
+         *)
+             echo "***ERROR: unknown parameter '$1'"
+             exit -1
+    esac
+    shift
+done
+
+#==============================================
+#Check with user if they want to preform the uninstall
+echo -n "Do you want to uninstall Hortonworks? (Y/N) "
+read v 
+
+if [[ $v != "Y" ]] || [[ $v != "y" ]]; then
+  echo "***INFO: Exiting..."
+  exit
+fi  
+
+if [[ $MY_NODES == "" ]]; then
+   MY_NODES=$(cat ../../my_nodes)
+fi
+
+echo $MY_NODES
+
+#==============================================
+#Stop All Services 
+echo "***INFO: Stopping all services"
+
+pdsh $MY_NODES sudo ambari-agent stop
+sudo ambari-server stop
+sudo yes | /usr/bin/yum ambari-server reset
+sudo /usr/bin/yum --assumeyes install pdsh --skip-broken
+pdsh $MY_NODES sudo service nagios stop
+pdsh $MY_NODES sudo /etc/init.d/hdp-gmetad stop
+pdsh $MY_NODES sudo /etc/init.d/hdp-gmond stop
+pdsh $MY_NODES sudo su -l hcat -c "/usr/lib/hcatalog/sbin/webhcat_server.sh  stop"
+pdsh $MY_NODES sudo ps aux | awk '{print $1,$2}' | grep hive | awk '{print $2}' | xargs kill >/dev/null 2>&1 
+
+pdsh $MY_NODES sudo su - zookeeper -c "export ZOOCFGDIR=/etc/zookeeper/conf ; export ZOOCFG=zoo.cfg ;source /etc/zookeeper/conf/zookeeper-env.sh ; /usr/lib/zookeeper/bin/zkServer.sh stop" 
+
+pdsh $MY_NODES sudo su -l hbase -c "/usr/lib/hbase/bin/hbase-daemon.sh --config /etc/hbase/conf stop regionserver"
+
+pdsh $MY_NODES sudo su -l  hbase -c "/usr/lib/hbase/bin/hbase-daemon.sh --config /etc/hbase/conf stop master"
+
+pdsh $MY_NODES "/usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop tasktracker"
+pdsh $MY_NODES "/usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop historyserver"
+pdsh $MY_NODES "/usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop jobtracker"
+pdsh $MY_NODES "/usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop datanode"
+ 
+pdsh $MY_NODES "/usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop secondarynamenode."
+
+pdsh $MY_NODES "/usr/lib/hadoop/bin/hadoop-daemon.sh --config /etc/hadoop/conf stop namenode"
+pdsh $MY_NODES sudo python /usr/lib/python2.6/site-packages/ambari_agent/HostCleanup.py --silent 
+sudo yum --assumeyes install pdsh
+
+#==============================================
+#Erase all packages
+echo "***INFO: Erasing yum packages"
+pdsh $MY_NODES sudo yum --assumeyes erase epel-release
+pdsh $MY_NODES sudo yum --assumeyes erase ganglia-gmond
+pdsh $MY_NODES sudo yum --assumeyes erase ganglia-web
+pdsh $MY_NODES sudo yum --assumeyes erase hadoop*
+pdsh $MY_NODES sudo yum --assumeyes erase libconfuse
+pdsh $MY_NODES sudo yum --assumeyes erase libganglia
+pdsh $MY_NODES sudo yum --assumeyes erase lzo
+pdsh $MY_NODES sudo yum --assumeyes erase lzo-devel
+pdsh $MY_NODES sudo yum --assumeyes erase ambari-agent
+pdsh $MY_NODES sudo yum --assumeyes erase ambari-log4j
+pdsh $MY_NODES sudo yum --assumeyes erase ambari-server
+
+pdsh $MY_NODES sudo yum --assumeyes erase perl-rrdtool
+pdsh $MY_NODES sudo yum --assumeyes erase perl-Crypt-DES
+pdsh $MY_NODES sudo yum --assumeyes erase perl-Net-SNMP
+pdsh $MY_NODES sudo yum --assumeyes erase perl-Digest-SHA1
+pdsh $MY_NODES sudo yum --assumeyes erase perl-Digest-HMAC
+pdsh $MY_NODES sudo yum --assumeyes erase nagios*
+pdsh $MY_NODES sudo yum --assumeyes erase fping
+pdsh $MY_NODES sudo yum --assumeyes erase python-rrdtool
+pdsh $MY_NODES sudo yum --assumeyes erase rrdtool
+
+pdsh $MY_NODES sudo yum --assumeyes erase snappy-devel
+pdsh $MY_NODES sudo yum --assumeyes erase webhcat-tar-hive
+pdsh $MY_NODES sudo yum --assumeyes erase extjs
+pdsh $MY_NODES sudo yum --assumeyes erase webhcat-tar-pig
+pdsh $MY_NODES sudo yum --assumeyes erase zookeeper
+pdsh $MY_NODES sudo yum --assumeyes erase snappy
+pdsh $MY_NODES sudo yum --assumeyes erase oozie
+pdsh $MY_NODES sudo yum --assumeyes erase oozie-client
+pdsh $MY_NODES sudo yum --assumeyes erase jdk.x86_84
+
+#==============================================
+#Remove all directories
+echo "***INFO: Removing directories"
+pdsh $MY_NODES sudo yum remove hcatalog\*
+pdsh $MY_NODES sudo yum remove hive\*
+pdsh $MY_NODES sudo yum remove tez
+pdsh $MY_NODES sudo yum remove hbase\*
+pdsh $MY_NODES sudo yum remove zookeeper\*
+pdsh $MY_NODES sudo yum remove pig\*
+pdsh $MY_NODES sudo yum remove snappy\*
+pdsh $MY_NODES sudo yum remove hadoop-lzo\*
+pdsh $MY_NODES sudo yum remove hadoop\*
+pdsh $MY_NODES sudo yum remove extjs-2.2-1 mysql-connector-java-5.0.8-1\*
+
+pdsh $MY_NODES sudo rm -rf /usr/sbin/ambari*
+pdsh $MY_NODES sudo rm -rf /usr/lib/hcatalog
+pdsh $MY_NODES sudo rm -rf /hadoop
+
+pdsh $MY_NODES sudo rm -rf /mnt/hadoop/*
+pdsh $MY_NODES sudo rm -rf /etc/yum.repos.d/ambari* /etc/yum.repos.d/HDP*
+
+pdsh $MY_NODES sudo rm -rf /etc/ambari*
+pdsh $MY_NODES sudo rm -rf /etc/hadoop*
+pdsh $MY_NODES sudo rm -rf /etc/hbase
+pdsh $MY_NODES sudo rm -rf /etc/hive
+pdsh $MY_NODES sudo rm -rf /etc/impala
+pdsh $MY_NODES sudo rm -rf /etc/oozie
+pdsh $MY_NODES sudo rm -rf /etc/pig
+pdsh $MY_NODES sudo rm -rf /etc/sqoop
+pdsh $MY_NODES sudo rm -rf /etc/zookeeper
+pdsh $MY_NODES sudo rm -rf /etc/flume*
+pdsh $MY_NODES sudo rm -rf /etc/hcatalog
+pdsh $MY_NODES sudo rm -rf /etc/ganglia
+pdsh $MY_NODES sudo rm -rf /etc/nagios
+pdsh $MY_NODES sudo rm -rf /etc/webhcat
+
+pdsh $MY_NODES sudo rm -rf /var/log/ambari*
+pdsh $MY_NODES sudo rm -rf /var/log/flume*
+pdsh $MY_NODES sudo rm -rf /var/log/hadoop*
+pdsh $MY_NODES sudo rm -rf /var/log/hbase
+pdsh $MY_NODES sudo rm -rf /var/log/hive
+pdsh $MY_NODES sudo rm -rf /var/log/hue
+pdsh $MY_NODES sudo rm -rf /var/log/oozie
+pdsh $MY_NODES sudo rm -rf /var/log/zookeeper
+pdsh $MY_NODES sudo rm -rf /var/log/webhcat
+pdsh $MY_NODES sudo rm -rf /var/log/nagios
+
+pdsh $MY_NODES sudo rm -rf /var/run/hadoop
+pdsh $MY_NODES sudo rm -rf /var/run/hadoop-yarn
+pdsh $MY_NODES sudo rm -rf /var/run/hadoop-mapreduce
+pdsh $MY_NODES sudo rm -rf /var/run/ganglia
+pdsh $MY_NODES sudo rm -rf /var/run/oozie
+pdsh $MY_NODES sudo rm -rf /var/run/zookeeper
+pdsh $MY_NODES sudo rm -rf /var/run/webhcat
+pdsh $MY_NODES sudo rm -rf /var/run/nagios
+
+pdsh $MY_NODES sudo rm -rf /usr/lib/hadoop
+pdsh $MY_NODES sudo rm -rf /usr/lib/hbase
+pdsh $MY_NODES sudo rm -rf /usr/lib/hive
+pdsh $MY_NODES sudo rm -rf /usr/lib/oozie
+pdsh $MY_NODES sudo rm -rf /usr/lib/zookeeper
+pdsh $MY_NODES sudo rm -rf /usr/lib/nagios
+
+pdsh $MY_NODES sudo rm -rf /var/lib/ambari-agent
+pdsh $MY_NODES sudo rm -rf /var/lib/ambari-server
+pdsh $MY_NODES sudo rm -rf /var/lib/ganglia
+pdsh $MY_NODES sudo rm -rf /var/lib/oozie
+pdsh $MY_NODES sudo rm -rf /var/lib/zookeeper
+pdsh $MY_NODES sudo rm -rf /var/lib/hadoop-hdfs
+
+pdsh $MY_NODES sudo rm -rf /var/nagios
+pdsh $MY_NODES sudo rm -rf /var/tmp/oozie
+pdsh $MY_NODES sudo rm -rf /tmp/hive
+
+#==============================================
+#Deleting all userids
+echo "***INFO: Deleting userids"
+pdsh $MY_NODES sudo /usr/sbin/userdel --force puppet
+pdsh $MY_NODES sudo /usr/sbin/userdel --force ambari-qa
+pdsh $MY_NODES sudo /usr/sbin/userdel --force mapred
+pdsh $MY_NODES sudo /usr/sbin/userdel --force hdfs
+pdsh $MY_NODES sudo /usr/sbin/userdel --force rrdcached
+pdsh $MY_NODES sudo /usr/sbin/userdel --force hbase
+pdsh $MY_NODES sudo /usr/sbin/userdel --force hive
+pdsh $MY_NODES sudo /usr/sbin/userdel --force hcat
+pdsh $MY_NODES sudo /usr/sbin/userdel --force oozie
+pdsh $MY_NODES sudo /usr/sbin/userdel --force sqoop
+pdsh $MY_NODES sudo /usr/sbin/userdel --force zookeeper
+pdsh $MY_NODES sudo /usr/sbin/userdel --force pulse
+pdsh $MY_NODES sudo /usr/sbin/userdel --force nagios
+pdsh $MY_NODES sudo /usr/sbin/userdel --force yarn
+
+#==============================================
+echo "***INFO: Hortonworks/Amabari is uninstalled."
+

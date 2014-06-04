@@ -29,7 +29,7 @@ typeset NODE_LIST="$HOSTNAME"
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 typeset CLUSTERNAME="$HOSTNAME"
 typeset QPIDPORT="65500"
-
+typeset HOME_DIR="/home"
 #=========================================
 function print_usage {
 cat << EOF
@@ -46,6 +46,7 @@ Options:
                           in this Trafodion environment.  This defaults
                           to the the single node $CLUSTERNAME
     --clustername <name>  Name of Trafodion cluster. Defaults to $CLUSTERNAME
+    --home_dir <path>     Path to Trafodion home directory. (default /home)
 EOF
 }
 
@@ -89,6 +90,15 @@ while [[ $# -gt 0 ]]; do
             CLUSTERNAME=$2
             shift
             ;;
+        --home_dir)
+            if [[ -z "$2" ]]; then
+               echo "***ERROR: No value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HOME_DIR=$2
+            shift
+            ;;
         --help)
             print_usage
             exit -1
@@ -113,9 +123,14 @@ if [ ${#TRAF_USER_PASSWORD} -gt 8 ]; then
 fi
 
 # get the default $HOME directory for this system
-default_home=$(sudo cat /etc/default/useradd | grep -E "^HOME=" | sed -e "s@HOME=@@" )
+if [[ $HOME_DIR == "/home" ]]; then
+   default_home=$(sudo cat /etc/default/useradd | grep -E "^HOME=" | sed -e "s@HOME=@@" )
+else
+   default_home="$HOME_DIR"
+fi
+
 if [ "$default_home" == "" ]; then
-    default_home="/home"
+    default_home="$HOME_DIR"
 fi
 typeset TRAF_USER_DIR="$default_home/$TRAF_USER"
 
@@ -216,7 +231,6 @@ if [ $return_code -ne 0 ]; then
         exit -1
     fi
 fi
-
 #=================================================
 
 # Setup passwordless ssh for this Trafodion userid

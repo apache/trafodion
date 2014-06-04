@@ -19,18 +19,62 @@
 
 #This script will uninstall MapR
 
+#==============================================
+function print_usage {
+cat << EOF
+This script will uninstall Hortonworks.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                 Print this message and exit.
+    --nodes "<node_list>"  -w separated list of nodes (within quotes)
+
+EOF
+}
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+         --nodes)
+             if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+             fi
+             MY_NODES=$2
+             shift
+             ;;
+         --help)
+             print_usage
+             exit -1
+             ;;
+         *)
+             echo "***ERROR: unknown parameter '$1'"
+             exit -1
+    esac
+    shift
+done
+#==============================================
+#Check with user if they want to preform the uninstall
 echo -n "Do you want to uninstall MapR (deleting all data) Y/N: "
 read v
 
-if [[ $v == "N" ]] || [[ $v == "n" ]]; then
+if [[ $v != "Y" ]] || [[ $v != "y" ]]; then
    echo "***INFO: Exiting..."
    exit
 fi
 
+if [[ $MY_NODES == "" ]]; then
+   MY_NODES=$(cat ../../my_nodes)
+fi
+
+echo $MY_NODES
+exit
+#==============================================
 echo
 echo "***INFO: Uninstalling MapR"
 echo
-
 #Stop the Warden on all nodes
 pdsh $MY_NODES service mapr-warden stop
 
@@ -50,6 +94,7 @@ pdsh $MY_NODES rm -rf /opt/mapr
 pdsh $MY_NODES rm /opt/storagefile
 pdsh $MY_NODES rm /opt/mapr-setup
 
+#==============================================
 echo
 echo "***INFO: MapR uninstall complete"
 echo

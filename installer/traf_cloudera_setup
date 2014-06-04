@@ -1,0 +1,207 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+
+# @@@ END COPYRIGHT @@@
+
+#  Setup Cloudera and Trafodion on a Cluster System
+
+#==============================================
+# Default values
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+typeset TOOLS_TAR="$TRAF_WORKDIR/traf_other_tools.tgz"
+typeset TRAF_USER="trafodion"
+typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
+typeset NODE_LIST="$HOSTNAME"
+typeset CLUSTERNAME="$HOSTNAME"
+typeset HBASE_TRX_JAR=""
+typeset HOME_DIR="/home"
+
+CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
+#==============================================
+
+function print_usage {
+cat << EOF
+This script will do the one-time setup needed
+to establish the Cloudera and Trafodion environment.
+
+NOTE: This script does NOT install a Trafodion build
+      it merely sets up everything needed to support
+      Trafodion.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                 Print this message and exit.
+    --nodes "<node_list>"  Blank separated list of nodes (within quotes) in this Trafodion environment
+                           From 1 to N nodes, although two is the recommended minimum.
+    --username <user>      Trafodion user name (default "$TRAF_USER")
+    --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
+    --clustername <name>   Name of Trafodion cluster. (default $HOSTNAME)
+    --home_dir <path>      Path to trafodion home directory. (default /home)
+    --hbase_trx_jar <path> Path to a recently built hbase trx jar file. 
+
+EOF
+}
+
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --username)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TRAF_USER=$2
+            shift
+            ;;
+        --password)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TRAF_USER_PASSWORD=$2
+            shift
+            ;;
+        --nodes)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            NODE_LIST=$2
+            shift
+            ;;
+        --clustername)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            CLUSTERNAME=$2
+            shift
+            ;;
+        --home_dir)
+            if [[ -z "$2" ]]; then
+               echo "***ERROR: No value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HOME_DIR=$2
+            shift
+            ;; 
+        --hbase_trx_jar)
+            if [[ -z "$2" ]]; then
+               echo "****ERROR: NO value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HBASE_TRX_JAR=$2
+            shift
+            ;;
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+         echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+#==============================================
+echo "***INFO: Checking the size of /var for Cloudera DB"
+
+var_min=20000000
+var_file='/var'
+var_lib_file='/var/lib'
+var_size=0
+var_on_root=0
+clouderadb_varfile="/var/lib/cloudera-scm-server-db"
+clouderadb_file="cloudera-scm-server-db"
+root="/"
+
+if [ -d ${var_file} ] ; then
+   df /var | grep var
+   if [ $? -eq 0 ] ; then
+      var_size=`df /var |grep var | tr -s [:space:] ':' | cut -d':' -f4`
+   else
+      var_size=`df / |grep dev | tr -s [:space:] ':' | cut -d':' -f4`
+      var_on_root=1
+   fi
+fi
+
+if [ -d ${clouderadb_varfile} ] ; then
+   echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists."
+   if [ -h ${clouderadb_varfile} ] ; then
+      echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory."
+      if ! [ -L ${clouderadb_varfile} ] ; then
+         echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not."
+         echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory."
+      fi
+   elif [ ${var_on_root} -eq 0 ] ; then
+        if [ ${var_size} -lt ${var_min} ] ; then
+           echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
+           echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space."
+        fi
+   else
+        echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /."
+        echo "*** WARNING: No additional movement of the file is recommended."
+   fi
+else
+   if [ ${var_size} -lt ${var_min} ] ; then
+      echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
+      echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory."
+      if [ $UID -ne 0 ] ; then
+         echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access."
+      else
+         if [ ! -d ${root}${clouderadb_file} ] ; then
+            mkdir ${root}${clouderadb_file}
+         fi
+         if [ ! -d ${var_lib_file} ] ; then
+            mkdir ${var_lib_file}
+         fi
+         ln -s ${root}${clouderadb_file} ${var_lib_file}
+         if [ $? -ne 0 ] ; then
+            echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib."
+         fi
+      fi
+   fi
+fi
+ 
+#==============================================
+
+echo "***INFO: Installing Cloudera, will need browser access to complete"
+
+wget ftp://sqstaf1.houston.hp.com/trafodion/cloudera-manager-installer.bin
+
+chmod +x cloudera-manager-installer.bin
+
+sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme
+
+
+#==============================================
+echo "***INFO: Running Trafodion Setup"
+if [[ $HBASE_TRX_JAR == "" ]]; then
+
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR
+
+else 
+  
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR
+
+fi
+
+if [ $? != 0 ]; then
+   echo "***ERROR: Unable to run Trafodion Setup successfully"
+   exit -1
+fi
+
+echo "***INFO: Cloudera and Trafodion setup complete"

@@ -19,54 +19,99 @@
 
 # This script will uninstall Cloudera and all its pieces
 
-# stop all services
-# TODO: maybe user REST API to stop all services
+#==============================================
+#Default Values
 
-# stop Cloudera Manager
-# TODO: can Rest API work for this too?
+OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
+MY_NODES=""
+my_node_list=""
+#==============================================
 
+function print_usage {
+cat << EOF
+This script will uninstall Hortonworks.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                 Print this message and exit.
+    --nodes "<node_list>"  -w separated list of nodes (within quotes)
+
+EOF
+}
+
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+         --nodes)
+             if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+             fi
+             MY_NODES=$2
+             shift
+             ;;
+         --help)
+             print_usage
+             exit -1
+             ;;
+         *)
+             echo "***ERROR: unknown parameter '$1'"
+             exit -1
+    esac
+    shift
+done
+
+#==============================================
+#Check with user if they want to preform the uninstall
 echo -n "Do you want to uninstall Cloudera? (Y/N) "
 read v
 
-if [[ $v == "N" ]] || [[ $v == "n" ]]; then
+if [[ $v != "Y" ]] || [[ $v != "y" ]]; then
   echo "***INFO: Exiting..."
   exit
 fi
 
-OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
-MY_NODES=$(cat ../../my_nodes)
-my_node_list=$(cat ../../node_list)
+if [[ $MY_NODES == "" ]]; then
+  MY_NODES=$(cat ../../my_nodes)
+  my_node_list=$(cat ../../node_list)
+fi
 
 if [ $OPENSTACK_VM -ne 0 ]; then
   my_node_list=`nova list |grep $vm_prefix|awk '{print $4}'`
 fi
 echo $MY_NODES
+#==============================================
+#Run Cloudera uninstall script and stop all services
 sudo /usr/share/cmf/uninstall-cloudera-manager.sh
 
 echo "***INFO: Shutdown Cloudera Manager agents on all nodes"
 pdsh $MY_NODES sudo /sbin/service cloudera-scm-agent hard_stop
 
+#==============================================
 echo "***INFO: Uninstall packages"
 pdsh $MY_NODES sudo yum --assumeyes remove 'cloudera-manager-*' hadoop hue-common 'bigtop-*' sqoop2-client
 pdsh $MY_NODES sudo yum --assumeyes clean all
 
+#==============================================
 echo "***INFO: Remove Cloudera Manager and CDH data"
 pdsh $MY_NODES sudo rm -Rf /usr/share/cmf /var/lib/cloudera* /var/cache/yum/cloudera* /var/log/cloudera* /var/run/cloudera*
 pdsh $MY_NODES sudo rm -Rf /var/lib/flume-ng /var/lib/hadoop* /var/lib/hue /var/lib/oozie /var/lib/solr /var/lib/sqoop*
 pdsh $MY_NODES sudo rm -Rf /dfs /mapred /yarn
 
-#sudo ln -s /data/cloudera-scm-server-db /var/lib/cloudera-scm-server-db
-
+#==============================================
 echo "***INFO: Kill any running Cloudera Manager and CDH processes that might still be running"
 for u in hdfs mapred cloudera-scm hbase hue zookeeper oozie hive impala flume; do
     pdsh $MY_NODES sudo kill $(ps -u $u -o pid=) 2>/dev/null
 done
 
-# pdsh $MY_NODES ps -C python -o pid,user,cmd | grep cmf | sed -e "s@:@@" | awk '{print "ssh "$1" sudo kill -9 "$2}'
-
+#==============================================
 echo "***INFO: Remove the Cloudera Manager lock file"
 pdsh $MY_NODES sudo rm /tmp/.scm_prepare_node.lock
 
+#==============================================
 echo "***INFO: Remove any left over Cloudera processes"
 
 for node in $my_node_list
@@ -97,6 +142,7 @@ do
 
 done
 
+#==============================================
 echo "***INFO: Removing Cloudera symbolic directory links"
 
 for node in $my_node_list
@@ -122,5 +168,5 @@ do
      fileFound=0
   fi
 done
-
+#==============================================
 echo "***INFO: Cloudera Manager uninstalled."

@@ -16,10 +16,8 @@ typeset TRAF_USER="trafodion"
 typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
 typeset NODE_LIST="$HOSTNAME"
 typeset CLUSTERNAME="$HOSTNAME"
-CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
-AMBARI=$(rpm -qa | grep ambari | wc -l)
-
-
+typeset HBASE_TRX_JAR=""
+typeset HOME_DIR="/home"
 #==============================================
 
 function print_usage {
@@ -40,7 +38,8 @@ Options:
     --username <user>      Trafodion user name (default "$TRAF_USER")
     --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
     --clustername <name>   Name of Trafodion cluster. (default $HOSTNAME)
-    --hbase_trx_jar <path> 
+    --home_dir <path>      Path to Trafodion home directory. (default /home)     
+    --hbase_trx_jar <path> Path to a recently built hbase trx jar file. 
 
 EOF
 }
@@ -49,14 +48,6 @@ EOF
 # Parse input parameters
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --cloudera)
-            HADOOP_OPTION="cloudera"
-            shift
-            ;;
-        --ambari|hortonworks)
-            HADOOP_OPTION="hortonworks"
-            shift
-            ;;
         --username)
             if [[ -z "$2" ]]; then
                 echo "***ERROR: No value passed to param $1."
@@ -93,6 +84,24 @@ while [[ $# -gt 0 ]]; do
             CLUSTERNAME=$2
             shift
             ;;
+        --home_dir)
+            if [[ -z "$2" ]]; then
+               echo "***ERROR: No value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HOME_DIR=$2
+            shift
+            ;;
+        --hbase_trx_jar)
+            if [[ -z "$2" ]]; then
+               echo "****ERROR: NO value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HBASE_TRX_JAR=$2
+            shift
+            ;; 
         --help)
             print_usage
             exit -1
@@ -111,9 +120,9 @@ done
 clusterName=`echo $CLUSTERNAME | grep [A-Z]`
 
 if [ "$?" = "0" ]; then
-  echo "***ERROR: Cluster name is not named properly."
-  echo "***ERROR: Rename cluster to not include capital letters. Exiting..."
-  exit
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not include capital letters. Exiting..."
+   exit
 fi
 
 clusterName=`echo $CLUSTERNAME | sed 's/[\,\!\@\~\`\#\$\%\^\&\*\(\)\+\=\:\;\<\>\?\/]//g'`
@@ -374,24 +383,28 @@ $TRAF_WORKDIR/installer/traf_add_user \
     --username $TRAF_USER \
     --password $TRAF_USER_PASSWORD \
     --nodes "$NODE_LIST" \
-    --clustername "$CLUSTERNAME"
+    --clustername "$CLUSTERNAME" \
+    --home_dir "$HOME_DIR"
 if [ $? != 0 ]; then
     echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
     exit -1
 fi
 
 # Put build tar files in user's $HOME
-sudo cp $TRAF_WORKDIR/trafodion_build.tgz /home/$TRAF_USER &> /dev/null
-sudo cp $TRAF_WORKDIR/trafodion_server*.tgz /home/$TRAF_USER/trafodion_build.tgz &> /dev/null
-sudo cp $TRAF_WORKDIR/dcs_build.tgz /home/$TRAF_USER &> /dev/null
-sudo cp $TRAF_WORKDIR/dcs-*.tgz /home/$TRAF_USER/dcs_build.tgz &> /dev/null
-sudo cp $TRAF_WORKDIR/traf_other_tools.tgz /home/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/dcs_installer /home/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults /home/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller /home/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/trafodion_installer /home/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/trafodion_beta_license /home/$TRAF_USER
-sudo chown --recursive $TRAF_USER.$TRAF_GROUP /home/$TRAF_USER
+sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/dcs_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
+sudo cp $TRAF_WORKDIR/dcs-*.tgz $HOME_DIR/$TRAF_USER/dcs_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/traf_other_tools.tgz $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_installer $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_beta_license $HOME_DIR/$TRAF_USER
+if [[ $HBASE_TRX_JAR != '' ]]; then
+   sudo cp $HBASE_TRX_JAR/hbase_*.jar $HOME_DIR/$TRAF_USER
+fi
+sudo chown --recursive $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER
 
 #=======================================
 
@@ -407,66 +420,6 @@ if [ $node_count -gt 1 ] ; then
     pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
     pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
 
-fi
-
-if [[ $CLOUDERA -ne 0 ]]; then
-   echo "***INFO: Checking the size of /var for Cloudera DB"
-
-   var_min=20000000
-   var_file='/var'
-   var_lib_file='/var/lib'
-   var_size=0
-   var_on_root=0
-   clouderadb_varfile="/var/lib/cloudera-scm-server-db"
-   clouderadb_file="cloudera-scm-server-db"
-   root="/"
-
-   if [ -d ${var_file} ] ; then
-      df /var | grep var
-      if [ $? -eq 0 ] ; then
-         var_size=`df /var |grep / | tr -s [:space:] ':' | cut -d':' -f4`
-      else
-         var_on_root=1
-      fi
-   fi
-
-   if [ -d ${clouderadb_varfile} ] ; then
-      echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists."
-      if [ -h ${clouderadb_varfile} ] ; then
-         echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory."
-         if ! [ -L ${clouderadb_varfile} ] ; then
-              echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not."
-              echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory."
-         fi
-      elif [ ${var_on_root} -eq 0 ] ; then
-           if [ ${var_size} -lt ${var_min} ] ; then
-              echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
-              echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space."
-           fi
-      else
-           echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /."
-           echo "*** WARNING: No additional movement of the file is recommended."
-      fi
-    else
-      if [ ${var_size} -lt ${var_min} ] ; then
-         echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
-         echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory."
-         if [ $UID -ne 0 ] ; then
-            echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access."
-         else
-            if [ ! -d ${root}${clouderadb_file} ] ; then
-               mkdir ${root}${clouderadb_file}
-            fi
-            if [ ! -d ${var_lib_file} ] ; then
-               mkdir ${var_lib_file}
-            fi
-            ln -s ${root}${clouderadb_file} ${var_lib_file}
-            if [ $? -ne 0 ] ; then
-               echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib."
-            fi
-         fi
-      fi
-    fi
 fi
 
 echo "***INFO: Trafodion setup completed"
