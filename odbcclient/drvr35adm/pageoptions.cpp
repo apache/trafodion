@@ -82,7 +82,7 @@ BOOL PageOptions::OnInitDialog()
 		sDSName = getNextDSName();
 	}
 	
-	char szStaticText[]="Schema is used to qualify HP Database object names.\
+	char szStaticText[]="Schema is used to qualify Trafodion object names.\
 The default value is USR.";
 
 	m_static_options.SetWindowText(szStaticText);
