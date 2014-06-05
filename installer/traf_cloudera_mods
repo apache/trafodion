@@ -108,28 +108,43 @@ if [ $cloudera_installed -eq 0 ]; then
     exit -1
 fi
 
+#=====================================
 # copy Trafodion trx jar to Cloudera's plugins directory on all nodes
+
 cd $TRAF_WORKDIR
-tar -xzf $TRAF_BUILD export/lib/hbase_jdk1_6-trx-0.94.6.jar
+
+# determine java version and choose corresponding jar file
+java_version=$(java -version 2>&1 | grep version | awk '{print $3}' | sed -e 's@.[0-9]_[0-9]*@@'| sed -e 's@\"@@g')
+echo "***INFO: Detected JAVA version $java_version"
+if [ "$java_version" == "1.6" ]; then
+	hbase_trx_jar=hbase-trx-0.8.0-java6.jar
+else
+	hbase_trx_jar=hbase-trx-0.8.0.jar
+fi
+tar -xzf $TRAF_BUILD export/lib/$hbase_trx_jar
 if [ $? != 0 ]; then
-    echo "***ERROR: unable to find export/lib/hbase_jdk1_6-trx-0.94.6.jar in $TRAF_BUILD"
+    echo "***ERROR: unable to find export/lib/$hbase_trx_jar in $TRAF_BUILD"
     exit -1
 fi
 
 # if more than one node then copy to all nodes
 if [ $node_count -ne 1 ]; then
-    pdcp $MY_NODES export/lib/hbase_jdk1_6-trx-0.94.6.jar $TRAF_WORKDIR
-    pdsh $MY_NODES chmod 755 $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar
-    pdsh $MY_NODES sudo cp $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar /usr/share/cmf/lib/plugins
+    pdcp $MY_NODES export/lib/$hbase_trx_jar $TRAF_WORKDIR
+    pdsh $MY_NODES chmod 755 $TRAF_WORKDIR/$hbase_trx_jar
+    pdsh $MY_NODES sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/share/cmf/lib/plugins
 else
-    cp export/lib/hbase_jdk1_6-trx-0.94.6.jar $TRAF_WORKDIR
-    chmod 755 $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar
-    sudo cp $TRAF_WORKDIR/hbase_jdk1_6-trx-0.94.6.jar /usr/share/cmf/lib/plugins
+    cp export/lib/$hbase_trx_jar $TRAF_WORKDIR
+    chmod 755 $TRAF_WORKDIR/$hbase_trx_jar
+    sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/share/cmf/lib/plugins
 fi
+
+#=====================================
+# Modify hadoop settings as needed by Trafodion
 
 rm $TRAF_WORKDIR/traf_hdfs1_config_temp 2> /dev/null
 rm $TRAF_WORKDIR/traf_hbase_config_temp 2> /dev/null
 
+# change the hdfs configuration using Cloudera's REST API
 curl -X PUT -H 'Content-Type:application/json' -u $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD  --data \
 '{ "roleTypeConfigs" :  [ {
         "roleType" : "NAMENODE",
@@ -201,6 +216,8 @@ fi
 
 rm $TRAF_WORKDIR/traf_hbase_config_temp 2> /dev/null
 
+#=====================================
+# restart Cloudera to pick up all the changes just made
 poll_time=30
 echo "***INFO: restarting hbase to pickup Trafodion transaction jar"
 echo "***INFO: ...polling every $poll_time seconds until restart is completed."
