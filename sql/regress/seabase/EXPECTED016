@@ -22,6 +22,10 @@
 >>cqd PARALLEL_NUM_ESPS '8';
 
 --- SQL operation complete.
+>>cqd MAX_ESPS_PER_CPU_PER_OP '4';
+
+--- SQL operation complete.
+>>
 >>
 >>obey TEST016(mcStatsPart_Setup);
 >>-- int, smallint, largeint
@@ -180,7 +184,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656980287560
+PLAN_ID .................. 212268758765879456
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 876.39
 STATEMENT ................ select f,count(f)
@@ -225,6 +229,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART7.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART7.
                              F)))
@@ -348,7 +353,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656980532173
+PLAN_ID .................. 212268758766115089
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.58
 STATEMENT ................ select f,count(f)
@@ -393,6 +398,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART5.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.
                              F)))
@@ -516,7 +522,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656980773233
+PLAN_ID .................. 212268758766355172
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.58
 STATEMENT ................ select f,count(f)
@@ -561,6 +567,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART3.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART3.
                              F)))
@@ -684,7 +691,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656981017783
+PLAN_ID .................. 212268758766597617
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 851.75
 STATEMENT ................ select f,count(f)
@@ -729,6 +736,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART6.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART6.
                              F)))
@@ -852,7 +860,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656981260350
+PLAN_ID .................. 212268758766839623
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 851.75
 STATEMENT ................ select f,count(f)
@@ -897,6 +905,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART2.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART2.
                              F)))
@@ -1020,7 +1029,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656981503643
+PLAN_ID .................. 212268758767080874
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 876.39
 STATEMENT ................ select f,count(f)
@@ -1065,6 +1074,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART1.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART1.
                              F)))
@@ -1188,7 +1198,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212268656981745358
+PLAN_ID .................. 212268758767321173
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.58
 STATEMENT ................ select f,count(f)
@@ -1233,6 +1243,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
   select_list ............ TRAFODION.HBASE.MCSTATPART8.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART8.
                              F)))
