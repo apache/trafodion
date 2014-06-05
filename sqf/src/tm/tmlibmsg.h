@@ -195,7 +195,7 @@
 // earlyCommitReply allows the TM to reply to commit requests
 // early and not wait for phase 2 to complete.  This is implicit for TSE branches,
 // so the value only applies to HBase branches.
-#define TM_DEFAULT_EARLY_COMMIT_REPLY true
+#define TM_DEFAULT_EARLY_COMMIT_REPLY false
 
 // The original implementation had only a single TLOG per environment.  Set
 // DEFAULT_TLOG_PER_TM or the DTM_TLOG_PER_TM registry value or environment variable

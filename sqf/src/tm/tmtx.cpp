@@ -1585,6 +1585,10 @@ bool TM_TX_Info::req_end_complete(CTmTxMessage * pp_msg)
    if (tx_state() != TM_TX_STATE_HUNGCOMMITTED)
       stats()->txnCommit()->stop();
 
+   if (pp_msg->replyPending())  
+      pp_msg->reply(FEOK);  
+
+
    TMTrace (2, ("TM_TX_Info::req_end_complete : ID %d, EXIT\n", seqnum()));
 
    return false; //Don't terminate transaction, still need to do forget

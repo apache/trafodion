@@ -25,6 +25,9 @@
 // ===========================================================================
 
 JavaVM* JavaObjectInterfaceTM::jvm_  = NULL;
+
+#define DEFAULT_MAX_TM_HEAP_SIZE "2048" 
+#define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
   
 static const char* const joiErrorEnumStr[] = 
 {
@@ -105,6 +108,19 @@ int JavaObjectInterfaceTM::createJVM()
   int numJVMOptions = 0;
 
   printf("In JavaObjectInterfaceTM::createJVM\n");
+
+  const char *maxHeapSize = getenv("DTM_JVM_MAX_HEAP_SIZE_MB");  
+  char heapOptions[100];  
+  int heapSize;  
+  if (maxHeapSize == NULL) {  
+     maxHeapSize = DEFAULT_MAX_TM_HEAP_SIZE;  
+  }  
+  heapSize = atoi(maxHeapSize);  
+  if (heapSize != USE_JVM_DEFAULT_MAX_HEAP_SIZE) {  
+      sprintf(heapOptions, "-Xmx%sm", maxHeapSize);  
+      jvm_options[numJVMOptions++].optionString = heapOptions;  
+  }  
+
   jvm_options[numJVMOptions++].optionString = classPathArg;
   jvm_options[numJVMOptions++].optionString = (char *) "-XX:-LoopUnswitching";
   //  jvm_options[numJVMOptions++].optionString = (char *) "-Xcheck:jni";

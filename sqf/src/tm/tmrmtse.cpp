@@ -705,6 +705,7 @@ int32 RM_Info_TSE::rollback_branches_single_pass (CTmTxBase *pp_txn,
    // Always reply FEOK to ABORTTRANSACTION unless told otherwise,
    // we should have already replied if there was an error in earlier 
    // processing.  Now that we're in phase 2, the rollback should succeed.
+   /*
    if (pp_msg->replyPending())
    {
       if (!pv_error_condition)
@@ -712,6 +713,9 @@ int32 RM_Info_TSE::rollback_branches_single_pass (CTmTxBase *pp_txn,
       else
          pp_msg->reply();
    }
+   */
+   if (!pv_error_condition)  
+       pp_msg->responseError(FEOK); 
  
    int32 lv_repliesOutstanding = complete_all(lv_count, la_resp, pp_txn->rm_wait_time(), pp_txn->legacyTransid());
    pp_txn->stats()->RMSend_stop();
@@ -901,20 +905,16 @@ int32 RM_Info_TSE::commit_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMess
       }
    } //for each rm
 
-   // respond now to the APP if appropriate
-   if (pp_msg->replyPending())
+   // Set response code
+   switch (lv_TRerror)
    {
-      // respond back to the app to allow processing to continue
-      switch (lv_TRerror)
-      {
       case XA_OK:
-         pp_msg->reply(FEOK);
+         pp_msg->responseError(FEOK);
          break;
       case XAER_RMFAIL:
       default:
-         pp_msg->reply(FEDEVICEDOWNFORTMF);
+         pp_msg->responseError(FEDEVICEDOWNFORTMF);
          break;
-      }
    }
 
    // We must call complete_all to process any

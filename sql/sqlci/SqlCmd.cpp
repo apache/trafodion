@@ -2886,7 +2886,7 @@ short DML::process(SqlciEnv * sqlci_env)
   if ((prep_stmt) && (prep_stmt->getType() == DML_INSERT_TYPE) &&
       (getenv("SQLMX_REGRESS")))
     {
-      DELAY(100);
+      //DELAY(100);
     }
   
   if ((prepcode >= 0) && (retcodeExe == SQL_Canceled))
