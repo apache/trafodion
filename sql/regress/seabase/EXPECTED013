@@ -143,6 +143,9 @@
 >>cqd PARALLEL_NUM_ESPS '8';
 
 --- SQL operation complete.
+>>cqd MAX_ESPS_PER_CPU_PER_OP '4';
+
+--- SQL operation complete.
 >>
 >>obey TEST013(test_char);
 >>--------------------------------------------------------------------------
@@ -306,8 +309,8 @@ B            (EXPR)
           2                     1
          10                     1
           8                     1
-          9                     1
           3                     1
+          9                     1
           7                     1
           5                     1
           1                     1
