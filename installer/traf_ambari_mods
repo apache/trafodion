@@ -46,7 +46,7 @@ function displayHelp
   echo
   echo "Options:"
   echo "    --help             Print this message and exit."
-  echo "    --trafodion_build  Full path to the Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz")
+  echo "    --trafodion_build  Full path to the Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz)"
   echo "    --ambari_userid    Ambari username if not chosen will default to admin"
   echo "    --ambari_password  Ambari password if not chosen will default to admin"
   echo "    --ambari_url       Ambari url:port if not chosen will default to hostname:7180"
@@ -108,13 +108,18 @@ if [ $ambari_installed -eq 0 ]; then
     exit -1
 fi
 
+if [ -z "$MY_NODES" ]; then
+   echo "***ERROR: $TRAF_WORKDIR/my_nodes not found.  Unable to determine list of nodes."
+   exit -1
+fi
+
 #=====================================
 # copy Trafodion hbase trx jar to /usr/lib/hbase/lib
 
 cd $TRAF_WORKDIR
 
 # determine java version and choose corresponding jar file
-java_version=$(java -version 2>&1 | grep version | awk '{print $3}' | sed -e 's@.[0-9]_[0-9]*@@'| sed -e 's@\"@@g')
+java_version=$(ps -C java --noheader -o pid,user,cmd | grep --max-count=1 jdk | awk '{print $3}' | sed -e "s@^.*jdk\([0-9]*.[0-9]*\).*@\1@")
 echo "***INFO: Detected JAVA version $java_version"
 if [ "$java_version" == "1.6" ]; then
 	hbase_trx_jar="hbase-trx-0.8.0-java6.jar"
@@ -128,10 +133,12 @@ if [ $? != 0 ]; then
 fi
 
 # if more than one node then copy to all nodes
+echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
+    pdsh $MY_NODES mkdir -p $TRAF_WORKDIR 2>/dev/null
     pdcp $MY_NODES export/lib/$hbase_trx_jar $TRAF_WORKDIR
-    pdsh $MY_NODES chmod 755 $TRAF_WORKDIR/$hbase_trx_jar
     pdsh $MY_NODES sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
+    pdsh $MY_NODES sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
 else
     cp export/lib/$hbase_trx_jar $TRAF_WORKDIR
     chmod 755 $TRAF_WORKDIR/$hbase_trx_jar
@@ -181,7 +188,8 @@ if [ $? != 0 ]; then
     echo "***INFO: unable to modify hbase.snapshot.enabled through Ambari's configs.sh script."
     exit -1
 fi
-
+echo
 echo "***WARNING: Unable to restart HBase programatically..."
 echo "***WARNING: ...please manually restart HBase through the Ambari web GUI"
+echo
 exit
