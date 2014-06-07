@@ -4239,10 +4239,10 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                               {
                                  // strcpy((char *)catStmtLabel, "SQL_TABLES_ANSI_Q1");
                                  snprintf(CatalogQuery, sizeof(CatalogQuery),
-"select distinct(cast('%s' as varchar(128) character set ucs2)) TABLE_CAT, "
-  "cast(NULL as varchar(128) character set ucs2) TABLE_SCHEM, "
-  "cast(NULL as varchar(128) character set ucs2) TABLE_NAME, "
-  "cast(NULL as varchar(128) character set ucs2) TABLE_TYPE, "
+"select distinct(cast('%s' as varchar(128))) TABLE_CAT, "
+  "cast(NULL as varchar(128) ) TABLE_SCHEM, "
+  "cast(NULL as varchar(128) ) TABLE_NAME, "
+  "cast(NULL as varchar(128) ) TABLE_TYPE, "
   "cast(NULL as varchar(128)) REMARKS "
 "from TRAFODION.\"_MD_\".objects "
 "where CATALOG_NAME = '%s' "
@@ -4253,7 +4253,7 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                               {
                                 // strcpy((char *)catStmtLabel, "SQL_JAVA_TABLES_ANSI_Q1");
                                 snprintf(CatalogQuery, sizeof(CatalogQuery),
-"select distinct(cast('%s' as varchar(128) character set ucs2)) TABLE_CAT "
+"select distinct(cast('%s' as varchar(128) )) TABLE_CAT "
 "from TRAFODION.\"_MD_\".objects "
 "where CATALOG_NAME = '%s' "
 "FOR READ UNCOMMITTED ACCESS ORDER BY 1;", 
@@ -4275,17 +4275,17 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                               {
                                  // strcpy((char *)catStmtLabel, "SQL_TABLES_ANSI_Q2");
                                  snprintf(CatalogQuery,sizeof(CatalogQuery),
- "select distinct cast(NULL as varchar(128) character set ucs2) TABLE_CAT, "
-   "cast(trim(SCHEMA_NAME) as varchar(128) character set ucs2) TABLE_SCHEM, "
-   "cast(NULL as varchar(128) character set ucs2) TABLE_NAME, "
-   "cast(NULL as varchar(128) character set ucs2) TABLE_TYPE, "
+ "select distinct cast(NULL as varchar(128) ) TABLE_CAT, "
+   "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+   "cast(NULL as varchar(128) ) TABLE_NAME, "
+   "cast(NULL as varchar(128) ) TABLE_TYPE, "
    "cast(NULL as varchar(128)) REMARKS "
  "from TRAFODION.\"_MD_\".objects "
  "where "
-   "(CATALOG_NAME = translate('%s' using UTF8TOUCS2) or "
-   " CATALOG_NAME LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
-   "and (SCHEMA_NAME = translate('%s' using UTF8TOUCS2) or "
-   "SCHEMA_NAME LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
+   "(CATALOG_NAME = '%s' or "
+   " CATALOG_NAME LIKE '%s' ESCAPE '\\') "
+   "and (SCHEMA_NAME = '%s' or "
+   "SCHEMA_NAME LIKE '%s' ESCAPE '\\') "
  "FOR READ UNCOMMITTED ACCESS ORDER BY 4,1,2,3;", 
                                  inputParam[0], inputParam[1], inputParam[2],
                                  inputParam[3]);
@@ -4295,14 +4295,14 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                       // strcpy((char *)catStmtLabel, "SQL_JAVA_TABLES_ANSI_Q2");
                                  snprintf(CatalogQuery,sizeof(CatalogQuery),
  "select distinct "
-   "cast(trim(SCHEMA_NAME) as varchar(128) character set ucs2) TABLE_SCHEM, "
-   "cast(trim(CATALOG_NAME) as varchar(128) character set ucs2) TABLE_CATALOG "
+   "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+   "cast(trim(CATALOG_NAME) as varchar(128) ) TABLE_CATALOG "
  "from TRAFODION.\"_MD_\".objects "
  "where "
-   "(CATALOG_NAME = translate('%s' using UTF8TOUCS2) or "
-   " CATALOG_NAME LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
-   "and (SCHEMA_NAME = translate('%s' using UTF8TOUCS2) or "
-   "SCHEMA_NAME LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
+   "(CATALOG_NAME = '%s' or "
+   " CATALOG_NAME LIKE '%s' ESCAPE '\\') "
+   "and (SCHEMA_NAME = '%s' or "
+   "SCHEMA_NAME LIKE '%s' ESCAPE '\\') "
  "FOR READ UNCOMMITTED ACCESS ORDER BY 2;", 
                                  inputParam[0], inputParam[1], inputParam[2],
                                  inputParam[3]);
@@ -4319,9 +4319,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                 tableParam[0] = NULL;
                                 inputParam[0] = NULL;
                                 snprintf(CatalogQuery,sizeof(CatalogQuery),
- "select cast(NULL as varchar(128) character set ucs2) TABLE_CAT,"
-    "cast(NULL as varchar(128) character set ucs2) TABLE_SCHEM, "
-    "cast(NULL as varchar(128) character set ucs2) TABLE_NAME,"
+ "select cast(NULL as varchar(128) ) TABLE_CAT,"
+    "cast(NULL as varchar(128) ) TABLE_SCHEM, "
+    "cast(NULL as varchar(128) ) TABLE_NAME,"
     "trim(TABLE_TYPE) TABLE_TYPE,"
     "cast(NULL as varchar(128)) REMARKS " 
  " from (VALUES "
@@ -4422,19 +4422,19 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                 {
                                    // strcpy((char *)catStmtLabel, "SQL_TABLES_ANSI_Q7");
                                    snprintf(CatalogQuery,sizeof(CatalogQuery),
- "select cast(translate('%s' using UTF8TOUCS2) as varchar(128) character set ucs2) TABLE_CAT,"
-   "cast(trim(SCHEMA_NAME) as varchar(128) character set ucs2) TABLE_SCHEM,"
-   "cast(trim(OBJECT_NAME) as varchar(128) character set ucs2) TABLE_NAME,"
+ "select cast('%s' as varchar(128) ) TABLE_CAT,"
+   "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+   "cast(trim(OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
    "trim(case OBJECT_TYPE "
        "when 'BT' then 'TABLE' "
        "when 'VI' then 'VIEW' "
       "end) TABLE_TYPE,"
    "cast(NULL as varchar(128)) REMARKS "
  " from TRAFODION.\"_MD_\".OBJECTS "
- " where (SCHEMA_NAME = translate('%s' using UTF8TOUCS2) or "
- " trim(SCHEMA_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\')"
- " and (OBJECT_NAME = translate('%s' using UTF8TOUCS2) or"
- " trim(OBJECT_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\')"
+ " where (SCHEMA_NAME = '%s' or "
+ " trim(SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+ " and (OBJECT_NAME = '%s' or"
+ " trim(OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
  "  and ((SCHEMA_NAME <> '_MD_' and '%s'='UT' and OBJECT_TYPE in ('%s', '%s'))"
  "  or   (SCHEMA_NAME = '_MD_' and '%s'='SM' and OBJECT_TYPE in ('%s')))"
  " FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;", 
@@ -4448,9 +4448,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
                                 {
                                    // strcpy((char *)catStmtLabel, "SQL_JAVA_TABLES_ANSI_Q7");
                                    snprintf(CatalogQuery,sizeof(CatalogQuery),
- "select cast(translate('%s' using UTF8TOUCS2) as varchar(128) character set ucs2) TABLE_CAT,"
-  "cast(trim(SCHEMA_NAME) as varchar(128) character set ucs2) TABLE_SCHEM,"
-  "cast(trim(OBJECT_NAME) as varchar(128) character set ucs2) TABLE_NAME,"
+ "select cast('%s' as varchar(128) ) TABLE_CAT,"
+  "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+  "cast(trim(OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
   "trim(case OBJECT_TYPE "
        "when 'BT' then 'TABLE' "
        "when 'VI' then 'VIEW' "
@@ -4462,10 +4462,10 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
   "cast(NULL as varchar(128)) SELF_REFERENCING_COL_NAME, "
   "cast(NULL as varchar(128)) REF_GENERATION"
  " from TRAFODION.\"_MD_\".OBJECTS "
- " where (SCHEMA_NAME = translate('%s' using UTF8TOUCS2) or "
- " trim(SCHEMA_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\')"
- " and (OBJECT_NAME = translate('%s' using UTF8TOUCS2) or"
- " trim(OBJECT_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\')"
+ " where (SCHEMA_NAME = '%s' or "
+ " trim(SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+ " and (OBJECT_NAME = '%s' or"
+ " trim(OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
  "  and ((SCHEMA_NAME <> '_MD_' and '%s'='UT' and OBJECT_TYPE in ('%s', '%s'))"
  "  or   (SCHEMA_NAME = '_MD_' and '%s'='SM' and OBJECT_TYPE in ('%s')))"
  " FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;", 
@@ -4576,9 +4576,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 
                         snprintf(CatalogQuery,sizeof(CatalogQuery),
  "select "
-  "cast(translate('%s' using UTF8TOUCS2) as varchar(128) character set ucs2) PROCEDURE_CAT, "
-  "cast(trim(SCHEMA_NAME) as varchar(128) character set ucs2) PROCEDURE_SCHEM, "
-  "cast(trim(OBJECT_NAME)   as varchar(128) character set ucs2) PROCEDURE_NAME, "
+  "cast('%s' as varchar(128) ) PROCEDURE_CAT, "
+  "cast(trim(SCHEMA_NAME) as varchar(128) ) PROCEDURE_SCHEM, "
+  "cast(trim(OBJECT_NAME)   as varchar(128) ) PROCEDURE_NAME, "
   "cast (NULL as smallint) NUM_INPUT_PARAMS, "
   "cast (NULL as smallint) NUM_OUTPUT_PARAMS, "
   "cast (NULL as smallint) NUM_RESULT_SETS, "
@@ -4588,10 +4588,10 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
         "else cast(0 as smallint) end) PROCEDURE_TYPE "
  "from "
  "TRAFODION.\"_MD_\".OBJECTS "
- "where (SCHEMA_NAME = translate('%s' using UTF8TOUCS2) "
-        "or trim(SCHEMA_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
-  "and (OBJECT_NAME = translate('%s' using UTF8TOUCS2) "
-        "or trim(OBJECT_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\') "
+ "where (SCHEMA_NAME = '%s' "
+        "or trim(SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+  "and (OBJECT_NAME = '%s' "
+        "or trim(OBJECT_NAME) LIKE '%s' ESCAPE '\') "
   "and OBJECT_TYPE = 'UR' "
  "FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;",
                                tableParam[0], inputParam[0], inputParam[1],
@@ -4637,10 +4637,10 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 
                                 snprintf(CatalogQuery,sizeof(CatalogQuery),
 "select "
-  "cast(translate('%s' using UTF8TOUCS2) as varchar(128) character set ucs2) TABLE_CAT, "
-"cast(trim(ob.SCHEMA_NAME) as varchar(128) character set ucs2) TABLE_SCHEM, "
-  "cast(trim(ob.OBJECT_NAME) as varchar(128) character set ucs2) TABLE_NAME, "
-  "cast(trim(co.COLUMN_NAME) as varchar(128) character set ucs2) COLUMN_NAME, "
+  "cast('%s' as varchar(128) ) TABLE_CAT, "
+"cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+  "cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME, "
+  "cast(trim(co.COLUMN_NAME) as varchar(128) ) COLUMN_NAME, "
    "cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
      "when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.DATA_TYPE end) as smallint) DATA_TYPE, "
   "trim(dt.TYPE_NAME) TYPE_NAME, "
@@ -4714,9 +4714,9 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
   "and co.OBJECT_UID = co1.OBJECT_UID and co1.COLUMN_NUMBER = 0 "
   "and (dt.DATETIMESTARTFIELD = co.DATETIME_START_FIELD) "
   "and (dt.DATETIMEENDFIELD = co.DATETIME_END_FIELD) "
-  "and (ob.SCHEMA_NAME = translate('%s' using UTF8TOUCS2) or trim(ob.SCHEMA_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
-  "and (ob.OBJECT_NAME = translate('%s' using UTF8TOUCS2) or trim(ob.OBJECT_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
-  "and (co.COLUMN_NAME = translate('%s' using UTF8TOUCS2) or trim(co.COLUMN_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\')  "
+  "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+  "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+  "and (co.COLUMN_NAME = '%s' or trim(co.COLUMN_NAME) LIKE '%s' ESCAPE '\\')  "
   "and (ob.OBJECT_TYPE in ('BT' , 'VI') ) "
   "and (trim(co.COLUMN_CLASS) not in ('S', 'M')) "
   "and dt.APPLICATION_VERSION = %s "
@@ -4767,18 +4767,18 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 
                         snprintf(CatalogQuery,sizeof(CatalogQuery),
  "select "
- "cast(translate('%s' using UTF8TOUCS2) as varchar(128) character set ucs2) TABLE_CAT,"
- "cast(trim(ob.SCHEMA_NAME) as varchar(128) character set ucs2) TABLE_SCHEM,"
- "cast(trim(ob.OBJECT_NAME) as varchar(128) character set ucs2) TABLE_NAME,"
+ "cast('%s' as varchar(128) ) TABLE_CAT,"
+ "cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+ "cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
  "trim(ky.COLUMN_NAME) COLUMN_NAME,"
  "cast((ky.keyseq_number) as smallint) KEY_SEQ,"
  "trim(ob.OBJECT_NAME) PK_NAME "
  " from TRAFODION.\"_MD_\".OBJECTS ob, "
        "TRAFODION.\"_MD_\".KEYS ky "
- " where (ob.SCHEMA_NAME = translate('%s' using UTF8TOUCS2) or "
- " trim(ob.SCHEMA_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
- " and (ob.OBJECT_NAME = translate('%s' using UTF8TOUCS2) or "
- " trim(ob.OBJECT_NAME) LIKE translate('%s' using UTF8TOUCS2) ESCAPE '\\') "
+ " where (ob.SCHEMA_NAME = '%s' or "
+ " trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+ " and (ob.OBJECT_NAME = '%s' or "
+ " trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
   " and ob.OBJECT_UID = ky.OBJECT_UID and ky.COLUMN_NAME <> '_SALT_' "
   " FOR READ UNCOMMITTED ACCESS order by 1, 2, 3, 5 ;",
                         tableParam[0], inputParam[0], inputParam[1],
