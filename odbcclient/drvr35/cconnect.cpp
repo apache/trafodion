@@ -1010,7 +1010,8 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		connectFieldItems = (CONNECT_FIELD_ITEMS*)GetWindowLongPtr(hwndDlg,DWLP_USER);
+		connectFieldItems = (CONNECT_FIELD_ITEMS *)lParam;
+		SetWindowLongPtr(hwndDlg,GWLP_USERDATA,(long)connectFieldItems);
 	    retCode = SetDlgItemText(hwndDlg, IDC_DKW_SERVER, connectFieldItems->server);
   		retCode = SetDlgItemText(hwndDlg, IDC_DKW_LOGIN_ID, connectFieldItems->loginId);
   		retCode = SetDlgItemText(hwndDlg, IDC_DKW_PASSWORD, connectFieldItems->password);
@@ -1053,7 +1054,7 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
         } 
   		return TRUE;
 	case WM_COMMAND:
-		connectFieldItems = (CONNECT_FIELD_ITEMS*)GetWindowLongPtr(hwndDlg,DWLP_USER);
+		connectFieldItems = (CONNECT_FIELD_ITEMS*)GetWindowLongPtr(hwndDlg,GWLP_USERDATA);
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
@@ -1079,11 +1080,9 @@ INT_PTR CALLBACK ConnectDriverKWDialogProc(
 				MessageBox(hwndDlg, MSG_SERVERID_EMPTY, ODBCMX_ERROR_MSGBOX_TITLE, MB_OK | MB_ICONEXCLAMATION );
 				SetFocus(GetDlgItem(hwndDlg, IDC_DKW_SERVER)); 
             }
-			PostMessage(hwndDlg,WM_QUIT,0,0);
 			break;
 		case IDCANCEL:
 			EndDialog(hwndDlg, FALSE);
-			PostMessage(hwndDlg,WM_QUIT,0,0);
 			break;
 		}
 		return TRUE;
@@ -1738,42 +1737,15 @@ SQLRETURN CConnect::DriverConnect(SQLHWND WindowHandle,
 			//	 WindowHandle, ConnectDriverKWDialogProc, (long)&connectFieldItems);
 			HINSTANCE hinst = LoadLibrary(ODBC_RESOURCE_DLL);
 			if (hinst != NULL) {
-				BOOL b=EnableWindow(WindowHandle,FALSE);
-				HWND hWndDlg=CreateDialog(hinst,
+				DialogRetCode = DialogBoxParam(hinst,
 				   MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
-				   WindowHandle, ConnectDriverKWDialogProc);
-				SetWindowLongPtr(hWndDlg,DWLP_USER,(LONG_PTR)&connectFieldItems);
-				SendMessage(hWndDlg,WM_INITDIALOG,0,0);
-				ShowWindow(hWndDlg,SW_SHOW);  // always shown, regardless of WS_VISIBLE flag
-				MSG msg;
-				while (GetMessage(&msg,hWndDlg,0,0)) {  // assuming that EndDialog() is posting WM_QUIT, which is not true
-				 if (IsDialogMessage(hWndDlg,&msg)) continue;
-				 TranslateMessage(&msg);
-				 DispatchMessage(&msg);
-				}
-				DestroyWindow(hWndDlg);
-				EnableWindow(WindowHandle,b);
-
+				   WindowHandle, ConnectDriverKWDialogProc, (long)&connectFieldItems);
 				FreeLibrary(hinst);
 			 }
 			 else {
-				BOOL b=EnableWindow(WindowHandle,FALSE);
-				HWND hWndDlg=CreateDialog(gDrvrGlobal.gModuleHandle,
-				   MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
-				   WindowHandle, ConnectDriverKWDialogProc);
-				SetWindowLongPtr(hWndDlg,DWLP_USER,(LONG_PTR)&connectFieldItems);
-				SendMessage(hWndDlg,WM_INITDIALOG,0,0);
-				ShowWindow(hWndDlg,SW_SHOW);  
-				MSG msg;
-				while (GetMessage(&msg,hWndDlg,0,0)) {
-				 if (IsDialogMessage(hWndDlg,&msg)) continue;
-				 TranslateMessage(&msg);
-				 DispatchMessage(&msg);
-				}
-				DestroyWindow(hWndDlg);
-				EnableWindow(WindowHandle,b);
-
-				FreeLibrary(hinst);
+				DialogRetCode = DialogBoxParam(gDrvrGlobal.gModuleHandle,
+					 MAKEINTRESOURCE(IDD_CONNECT_DRIVER_KW_DIALOG),
+					 WindowHandle, ConnectDriverKWDialogProc, (long)&connectFieldItems);
 			 }
 
 		}
