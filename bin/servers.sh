@@ -51,24 +51,26 @@ fi
 
 instance=1
 
-for server in `cat "$HOSTLIST"`; do
+while read server count
+do
   if [ "$server" == "localhost" ] || [ "$server" == "$HOSTNAME" ] ; then
-    eval $"${@// /\\ } $instance" 2>&1 | sed "s/^/$server: /" &
+    eval $"${@// /\\ } $instance $count" 2>&1 | sed "s/^/$server: /" &
   else 
     if ${DCS_SLAVE_PARALLEL:-true}; then 
-      ssh $DCS_SSH_OPTS $server $"${@// /\\ } $instance" \
+      ssh $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count"\
         2>&1 | sed "s/^/$server: /" &
     else # run each command serially 
-      ssh $DCS_SSH_OPTS $server $"${@// /\\ } $instance" \
+      ssh $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count" \
         2>&1 | sed "s/^/$server: /" &
     fi
   fi
   
-  let instance++ 
-  
   if [ "$DCS_SLAVE_SLEEP" != "" ]; then
     sleep $DCS_SLAVE_SLEEP
   fi
-done
+  
+  let instance++ 
+
+done < "$HOSTLIST"
 
 wait

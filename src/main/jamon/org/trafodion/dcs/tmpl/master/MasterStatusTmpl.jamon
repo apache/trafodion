@@ -35,12 +35,13 @@ limitations under the License.
 DcsMaster master;
 String filter = "general";
 String format = "html";
-List<Server> servers = null;
+List<RunningServer> servers = null;
 </%args>
 <%import>
 java.util.*;
 org.trafodion.dcs.master.DcsMaster;
-org.trafodion.dcs.master.Server;
+org.trafodion.dcs.master.RunningServer;
+org.trafodion.dcs.master.RegisteredServer;
 org.trafodion.dcs.util.DcsConfiguration;
 org.trafodion.dcs.Constants;
 org.trafodion.dcs.util.Bytes;
@@ -95,6 +96,7 @@ org.trafodion.dcs.util.Bytes;
 <%if (servers != null && servers.size() > 0)%>
 <%java>
      int totalServers = 0;
+     int totalChildServers = 0;
 </%java>
 
 <table>
@@ -102,6 +104,20 @@ org.trafodion.dcs.util.Bytes;
 <th rowspan="<% servers.size() + 1%>"></th>
 <th>Host:Instance</th>
 <th>Start Time</th>
+<th>Child Server Details</th>
+</tr>
+<%java>
+     for (RunningServer aRunningServer: servers) {
+       int infoPort = aRunningServer.getInfoPort();
+       String url = "http://" + aRunningServer.getHostname() + ":" + infoPort + "/";
+</%java>
+<tr>
+<td><a href="<% url %>"><% aRunningServer.getHostname() + ":" + aRunningServer.getInstance() %></a></td>
+<td><% new Date(aRunningServer.getStartTime()) %></td>
+<td> 
+<table>
+<tr>
+<th rowspan="<% aRunningServer.getRegistered().size() + 1%>"></th>
 <th>Registered</th>
 <th>State</th>
 <th>Node</th>
@@ -115,30 +131,31 @@ org.trafodion.dcs.util.Bytes;
 <th>Client Port</th>
 </tr>
 <%java>
-     for (Server aServer: servers) {
-       int infoPort = aServer.getInfoPort();
-       String url = "http://" + aServer.getHostname() + ":" + infoPort + "/";
+       for (RegisteredServer aRegisteredServer: aRunningServer.getRegistered()) {
 </%java>
 <tr>
-<td><a href="<% url %>"><% aServer.getHostname() + ":" + aServer.getInstance() %></a>
-</td>
-<td><% new Date(aServer.getStartTime()) %></td>
-<td><% aServer.isRegistered() %></td>
-<td><% aServer.getState() %></td>
-<td><% aServer.getNid() %></td>
-<td><% aServer.getPid() %></td>
-<td><% aServer.getProcessName() %></td>
-<td><% aServer.getIpAddress() %></td>
-<td><% aServer.getPort() %></td>
-<td><% aServer.getClientName() %></td>
-<td><% aServer.getClientAppl() %></td>
-<td><% aServer.getClientIpAddress() %></td>
-<td><% aServer.getClientPort() %></td>
+<td><% aRegisteredServer.isRegistered() %></td>
+<td><% aRegisteredServer.getState() %></td>
+<td><% aRegisteredServer.getNid() %></td>
+<td><% aRegisteredServer.getPid() %></td>
+<td><% aRegisteredServer.getProcessName() %></td>
+<td><% aRegisteredServer.getIpAddress() %></td>
+<td><% aRegisteredServer.getPort() %></td>
+<td><% aRegisteredServer.getClientName() %></td>
+<td><% aRegisteredServer.getClientAppl() %></td>
+<td><% aRegisteredServer.getClientIpAddress() %></td>
+<td><% aRegisteredServer.getClientPort() %></td>
 </tr>
 <%java>
-    }
+         totalChildServers++;
+       }
 </%java>
-<tr><th>Total: </th><td>servers: <% servers.size() %></td></tr>
+</table>
+</td>
+<%java>
+     }
+</%java>
+<tr><th>Total: </th><td>Dcs Servers: <% servers.size() %>, Child Servers: <% totalChildServers %> </td></tr>
 </table>
 </%if>
 </%def>

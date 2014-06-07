@@ -66,7 +66,7 @@ public class MasterStatusServlet extends HttpServlet {
     assert master != null : "No Master in context!";
     
     Configuration conf = master.getConfiguration();
-    List<Server> servers = master.getServerManager().getServersList();
+    List<RunningServer> servers = master.getServerManager().getServersList();
 
     response.setContentType("text/html");
     MasterStatusTmpl tmpl = new MasterStatusTmpl() 

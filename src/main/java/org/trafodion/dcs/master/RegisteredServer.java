@@ -42,12 +42,9 @@ import org.trafodion.dcs.script.ScriptContext;
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.DcsConfiguration;
 
-public class Server  {
-	private static  final Log LOG = LogFactory.getLog(Server.class);
-	private String hostname;
-	private String instance;
-	private int infoPort;
-	private long startTime;
+public class RegisteredServer  {
+	private static  final Log LOG = LogFactory.getLog(RegisteredServer.class);
+
 	private boolean registered=false;
 	private String dialogueId;
 	private String nid;
@@ -62,33 +59,6 @@ public class Server  {
 	private String clientPort;
 	private String clientAppl;
 
-	public void setHostname(String value) {
-		hostname = value;
-	}
-	public String getHostname() {
-		return hostname;
-	}
-	public void setInstance(String value) {
-		instance = value;
-	}
-	public String getInstance() {
-		return instance;
-	}
-	public int getInstanceIntValue() {
-		return new Integer(instance).intValue();
-	}
-	public void setInfoPort(int value) {
-		infoPort = value;
-	}
-	public int getInfoPort() {
-		return infoPort;
-	}
-	public void setStartTime(long value) {
-		startTime = value;
-	}
-	public long getStartTime() {
-		return startTime;
-	}
 	public void setIsRegistered() {
 		registered = true;
 	}

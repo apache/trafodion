@@ -23,6 +23,8 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
 import java.util.Date;
@@ -62,68 +64,33 @@ public final class ServerManager implements Callable {
 	private static int port;
 	private static int portRange;
 	private static DcsNetworkConfiguration netConf;
-	private static String instance;
-	private static String registeredPath;
+	private static int instance;
+	private static int childServers;
 	private static String parentZnode;
 	private static int connectingTimeout;
 	private static int zkSessionTimeout;
 	private static int userProgExitAfterDisconnect;
 	private static int infoPort;
 	
-	class ServerRunner implements Callable<ScriptContext> {
-		ScriptContext scriptContext;
-		Stat stat=null;
+	class ServerMonitor {
+		ScriptManager scriptManager;
+		ScriptContext scriptContext = new ScriptContext();
+		int childInstance;
+		String registeredPath;
+		Stat stat = null;
 
-		public ServerRunner() {
-			scriptContext = new ScriptContext();
-			scriptContext.setHostName(hostName);
-			scriptContext.setScriptName("sys_shell.py");
-			StringBuilder progParams = new StringBuilder();
-			progParams.append(" -ZkHost " + zkc.getZkQuorum());
-			progParams.append(" -RZ " + hostName + ":" + instance);
-			progParams.append(" -ZkPnode " + "\"" + parentZnode + "\""); 
-			progParams.append(" -CNGTO " + connectingTimeout); 
-			progParams.append(" -ZKSTO " + zkSessionTimeout);
-			progParams.append(" -EADSCO " + userProgExitAfterDisconnect);
-			progParams.append(" -TCPADD " + netConf.getExtHostAddress());
-			scriptContext.setCommand(userProgCommand + progParams.toString());
+		public ServerMonitor(ScriptManager scriptManager,int childInstance) {
+			this.scriptManager = scriptManager;
+			this.childInstance = childInstance;
+			this.registeredPath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + hostName + ":" + instance + ":" + childInstance; 
 		}
-		@Override
-		public ScriptContext call() throws Exception {
-			cleanupZk();
-			LOG.info("User program exec [" + scriptContext.getCommand() + "]");
-			ScriptManager.getInstance().runScript(scriptContext);//This will block while user prog is running
-			LOG.info("User program exit [" + scriptContext.getExitCode()+ "]");
-			return scriptContext;
-		}
-		private void cleanupZk() {
-			try {
-				stat = zkc.exists(registeredPath,false);
-				if(stat != null)  	 
-					zkc.delete(registeredPath,-1);
-			} catch (Exception e) {
-				e.printStackTrace();
-				LOG.debug(e);
-			}
-		}
-	}
-	
-	class ServerMonitor implements Callable<Boolean> {
-		ScriptContext scriptContext;
-		Stat stat=null;
 
-		public ServerMonitor() {
-			scriptContext = new ScriptContext();
-			scriptContext.setHostName(hostName);
-			scriptContext.setScriptName("sys_shell.py");
-		}
-		@Override
-		public Boolean call() throws Exception {
-			Boolean result = Boolean.valueOf(false);
+		public boolean call() throws Exception {
+			boolean result = false;
 			stat = zkc.exists(registeredPath,false);
 			if(stat != null) {	//User program znode found in /registered...check pid
 				if(isPid())
-					result=true;//User program znode found in /registered...pid found to be running
+					result = true;//User program znode found in /registered...pid found to be running
 			}
 			return result;
 		}
@@ -137,28 +104,149 @@ public final class ServerManager implements Callable {
 			scn.next();//nid
 			String pid = scn.next();//pid
 			scn.close();
+			scriptContext.setHostName(hostName);
+			scriptContext.setScriptName("sys_shell.py");
 			scriptContext.setCommand("ps -p " + pid);
-			ScriptManager.getInstance().runScript(scriptContext);
+			scriptManager.runScript(scriptContext);
 			return scriptContext.getExitCode() != 0 ? false: true;
 		}
 	}
 
-	public ServerManager(Configuration conf,ZkClient zkc,DcsNetworkConfiguration netConf,String instance,int infoPort) throws Exception {
+	class ServerRunner {
+		ScriptManager scriptManager;
+		ScriptContext scriptContext;
+		String registeredPath;
+		int childInstance;
+
+		public ServerRunner(ScriptManager scriptManager,int childInstance) {
+			this.scriptManager = scriptManager;
+			this.scriptContext = new ScriptContext();
+			this.childInstance = childInstance;
+			this.registeredPath = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + hostName + ":" + instance + ":" + childInstance; 
+			scriptContext.setHostName(hostName);
+			scriptContext.setScriptName("sys_shell.py");
+			StringBuilder progParams = new StringBuilder();
+			progParams.append(" -ZkHost " + zkc.getZkQuorum());
+			progParams.append(" -RZ " + hostName + ":" + instance + ":" + childInstance);
+			progParams.append(" -ZkPnode " + "\"" + parentZnode + "\""); 
+			progParams.append(" -CNGTO " + connectingTimeout); 
+			progParams.append(" -ZKSTO " + zkSessionTimeout);
+			progParams.append(" -EADSCO " + userProgExitAfterDisconnect);
+			progParams.append(" -TCPADD " + netConf.getExtHostAddress());
+			scriptContext.setCommand(userProgCommand + progParams.toString());
+		}
+
+		public void call() throws Exception {
+			cleanupZk();
+			LOG.info("User program exec [" + scriptContext.getCommand() + "]");
+			scriptManager.runScript(scriptContext);//This will block while user prog is running
+			LOG.info("User program exit [" + scriptContext.getExitCode()+ "]");
+			StringBuilder sb = new StringBuilder();
+			sb.append("exit code [" + scriptContext.getExitCode() + "]");
+			if(! scriptContext.getStdOut().toString().isEmpty()) 
+				sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+			if(! scriptContext.getStdErr().toString().isEmpty())
+				sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+			LOG.info(sb.toString());
+
+			switch(scriptContext.getExitCode()) {
+			case 3:
+				LOG.error("Trafodion is not running");
+				break;
+			case 127:
+				LOG.error("Cannot find user program executable");
+				break;
+			default:
+			}
+		}
+		
+		private void cleanupZk() {
+			try {
+				Stat stat = zkc.exists(registeredPath,false);
+				if(stat != null)  	 
+					zkc.delete(registeredPath,-1);
+			} catch (Exception e) {
+				e.printStackTrace();
+				LOG.debug(e);
+			}
+		}
+	}
+
+	class ServerHandler implements Callable<Integer> {
+		ScriptManager scriptManager;
+		ServerMonitor serverMonitor;
+		ServerRunner serverRunner;
+		int childInstance;
+
+		public ServerHandler(int childInstance) {
+			this.childInstance = childInstance;
+			scriptManager = new ScriptManager();
+			serverMonitor = new ServerMonitor(scriptManager,childInstance);
+			serverRunner = new ServerRunner(scriptManager,childInstance);
+		}
+
+		@Override
+		public Integer call() throws Exception {
+			Integer result = new Integer(childInstance);
+
+			if(false == serverMonitor.call()) {  
+				LOG.info("User program, instance [" + instance + ":" + childInstance + "] is not running");
+				serverRunner.call();
+			}
+			
+			return result;
+		}
+	}
+	
+	public ServerManager(Configuration conf,ZkClient zkc,DcsNetworkConfiguration netConf,
+			String instance,int infoPort,int childServers) throws Exception {
 		this.conf = conf;
 		this.zkc = zkc;
 		this.netConf = netConf;
 		this.hostName = netConf.getHostName();
-		this.instance = instance;
+		this.instance = Integer.parseInt(instance);
 		this.infoPort = infoPort;
+		this.childServers = childServers;
 		this.parentZnode = this.conf.get(Constants.ZOOKEEPER_ZNODE_PARENT,Constants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);	   	
-		this.registeredPath = this.parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + hostName + ":" + instance; 
 		this.connectingTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT);	   	
 		this.zkSessionTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT);	   	
 		this.userProgExitAfterDisconnect = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT);
-
 	}
+
 	@Override
 	public Boolean call() throws Exception {
+		
+	    ExecutorService executorService = Executors.newFixedThreadPool(childServers);
+	    CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(executorService);
+
+ 		try {
+			getMaster();
+			featureCheck();
+			registerInRunning(instance);
+			
+			for(int childInstance = 1; childInstance <= childServers; childInstance++) {
+				completionService.submit(new ServerHandler(childInstance));
+				LOG.debug("Started server handler [" + instance + ":" + childInstance + "]");
+			}
+
+		    while(true) {
+		    	LOG.debug("Waiting for thread completion");
+		    	Future<Integer> f = completionService.take();//blocks waiting for any ServerHandler to finish
+		    	if(f != null) {
+		    		Integer result = f.get();
+		    		LOG.debug("Server handler result [" + result + "], restarting");
+		    		completionService.submit(new ServerHandler(result));
+		    	}
+		    }
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.error(e);
+			if(executorService != null)
+				executorService.shutdown();
+			throw e;
+		}
+/*
 	    ExecutorService pool = Executors.newSingleThreadExecutor();
 	    
 		try {
@@ -214,7 +302,9 @@ public final class ServerManager implements Callable {
 			pool.shutdown();
 			throw e;
 		}
+*/
 	}
+
 	private void featureCheck() {
 		final String msg1 = 
 			"Property " + Constants.DCS_SERVER_USER_PROGRAM  + " is false. "
@@ -278,7 +368,7 @@ public final class ServerManager implements Callable {
 			}
 		}
 	}
-	private void registerInRunning() {
+	private void registerInRunning(int instance) {
 		String znode = parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_RUNNING + "/" + hostName + ":" + instance + ":" + infoPort + ":" + System.currentTimeMillis(); 
 		try {
 			Stat stat = zkc.exists(znode,false);
@@ -293,6 +383,7 @@ public final class ServerManager implements Callable {
 			LOG.error(e);
 		}
 	}
+	
 	public String getMasterHostName(){
 		return masterHostName;
 	}

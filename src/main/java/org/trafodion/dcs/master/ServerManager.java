@@ -49,7 +49,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.trafodion.dcs.master.Server;
+import org.trafodion.dcs.master.RunningServer;
+import org.trafodion.dcs.master.RegisteredServer;
 import org.trafodion.dcs.master.Metrics;
 import org.trafodion.dcs.script.ScriptManager;
 import org.trafodion.dcs.script.ScriptContext;
@@ -270,8 +271,13 @@ public class ServerManager implements Callable {
     	BufferedReader br = new BufferedReader(new InputStreamReader(is));
     	configuredServers.clear();
     	String line;
+    	int count = 1;
     	while((line = br.readLine()) != null) {
-    		configuredServers.add(line);
+    		if(line.equalsIgnoreCase("localhost")){
+    			line = netConf.getHostName();
+    		}
+    		configuredServers.add(line + ":" + count);
+    		count++;
      	}
 
     	Collections.sort(configuredServers);
@@ -338,9 +344,16 @@ public class ServerManager implements Callable {
 			runningServers.remove(child);
 			metrics.setTotalRunning(runningServers.size());
 		}
+		
+		//For local-servers.sh we won't restart anything that's not in the servers file
+		if(! configuredServers.contains(hostName + ":" + instance)){
+			LOG.info("DcsServer [" + hostName + ":" + instance + "] not in servers file. Not restarting");
+			return;
+		}
 
 		RestartHandler handler = new RestartHandler(child);
 		restartQueue.add(handler);
+
 	}
 	
 	private synchronized void getZkRegistered() throws Exception {
@@ -359,8 +372,8 @@ public class ServerManager implements Callable {
         }
 	}
 
-	public synchronized List<Server> getServersList() {
-		ArrayList<Server> serverList = new ArrayList<Server>();
+	public synchronized List<RunningServer> getServersList() {
+		ArrayList<RunningServer> serverList = new ArrayList<RunningServer>();
 		Stat stat = null;
 		byte[] data = null;
 		
@@ -372,57 +385,58 @@ public class ServerManager implements Callable {
 		
 		if( ! runningServers.isEmpty()) {
 			for(String aRunningServer : runningServers) {
-				Server aServer = new Server();
+				RunningServer runningServer = new RunningServer();
 				Scanner scn = new Scanner(aRunningServer);
 				scn.useDelimiter(":");
-				aServer.setHostname(scn.next());
-				aServer.setInstance(scn.next());
-				aServer.setInfoPort(Integer.parseInt(scn.next()));
-				aServer.setStartTime(Long.parseLong(scn.next()));
+				runningServer.setHostname(scn.next());
+				runningServer.setInstance(scn.next());
+				runningServer.setInfoPort(Integer.parseInt(scn.next()));
+				runningServer.setStartTime(Long.parseLong(scn.next()));
 				scn.close();
 				
 				if( ! registeredServers.isEmpty()) {
 					for(String aRegisteredServer : registeredServers) {
-						if(aRegisteredServer.equals(aServer.getHostname() + ":" + aServer.getInstance())){
+						if(aRegisteredServer.contains(runningServer.getHostname() + ":" + runningServer.getInstance() + ":")){
 							try {
+								RegisteredServer registeredServer = new RegisteredServer();
 								stat = zkc.exists(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + aRegisteredServer,false);
 								if(stat != null) {
 									data = zkc.getData(parentZnode + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED + "/" + aRegisteredServer, false, stat);
 									scn = new Scanner(new String(data));
 									scn.useDelimiter(":");
 									LOG.debug("getDataRegistered [" + new String(data) + "]");
-									aServer.setState(scn.next());
-									String state = aServer.getState();
+									registeredServer.setState(scn.next());
+									String state = registeredServer.getState();
 									if(state.equals("AVAILABLE"))
 										totalAvailable += 1;
 									else if(state.equals("CONNECTING"))
 										totalConnecting += 1;
 									else if(state.equals("CONNECTED"))
 										totalConnected += 1;
-									aServer.setTimestamp(Long.parseLong(scn.next()));
-									aServer.setDialogueId(scn.next());  
-									aServer.setNid(scn.next());
-									aServer.setPid(scn.next());
-									aServer.setProcessName(scn.next());
-									aServer.setIpAddress(scn.next());
-									aServer.setPort(scn.next());
-									aServer.setClientName(scn.next());
-									aServer.setClientIpAddress(scn.next());
-									aServer.setClientPort(scn.next());
-									aServer.setClientAppl(scn.next());
+									registeredServer.setTimestamp(Long.parseLong(scn.next()));
+									registeredServer.setDialogueId(scn.next());  
+									registeredServer.setNid(scn.next());
+									registeredServer.setPid(scn.next());
+									registeredServer.setProcessName(scn.next());
+									registeredServer.setIpAddress(scn.next());
+									registeredServer.setPort(scn.next());
+									registeredServer.setClientName(scn.next());
+									registeredServer.setClientIpAddress(scn.next());
+									registeredServer.setClientPort(scn.next());
+									registeredServer.setClientAppl(scn.next());
+									registeredServer.setIsRegistered();
 									scn.close();
+									runningServer.getRegistered().add(registeredServer);
 								}
 							} catch (Exception e) {
 								e.printStackTrace();
 								LOG.error("Exception: " + e.getMessage());
 							}
-						
-							aServer.setIsRegistered();
 						}
 					}
 				}
 				
-				serverList.add(aServer);
+				serverList.add(runningServer);
 			}
 		}
 		
@@ -430,8 +444,8 @@ public class ServerManager implements Callable {
 		metrics.setTotalConnecting(totalConnecting);
 		metrics.setTotalConnected(totalConnected);
 		
-		Collections.sort(serverList, new Comparator<Server>(){
-		     public int compare(Server s1, Server s2){
+		Collections.sort(serverList, new Comparator<RunningServer>(){
+		     public int compare(RunningServer s1, RunningServer s2){
 		         if(s1.getInstanceIntValue() == s2.getInstanceIntValue())
 		             return 0;
 		         return s1.getInstanceIntValue() < s2.getInstanceIntValue() ? -1 : 1;

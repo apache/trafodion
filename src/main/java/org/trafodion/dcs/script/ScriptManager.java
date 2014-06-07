@@ -49,8 +49,8 @@ public final class ScriptManager {
 		}
 		return instance;
 	}
-
-	private ScriptManager() {
+	
+	public ScriptManager() {
 		StringBuffer sb = new StringBuffer();
 
 		List<ScriptEngineFactory> engines = manager.getEngineFactories();
