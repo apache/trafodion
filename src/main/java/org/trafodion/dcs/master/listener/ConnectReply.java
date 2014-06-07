@@ -86,7 +86,7 @@ class ConnectReply {
 		buf.putLong(timestamp);
 		Util.insertString(clusterName,buf);
 	}
-
+	
 	boolean buildConnectReply  (Header hdr, ConnectionContext cc, SocketAddress clientSocketAddress ) throws java.io.UnsupportedEncodingException {
 
 		boolean replyException = false;
@@ -112,6 +112,13 @@ class ConnectReply {
 		Stat stat = null;
 		byte[] data = null;
 		boolean found = false;
+		boolean exceptionThrown = false;
+		
+        int length = 0;
+        int index = 0;
+        int maxIndex = -1;
+        int randomPicks = 0;
+        String server = "";
 
 		if(hdr.getOperationId() == ListenerConstants.DCS_MASTER_GETSRVRAVAILABLE)
 		{
@@ -124,19 +131,107 @@ class ConnectReply {
 	
 				zkc.sync(registeredPath,null,null);
 				List<String> servers = zkc.getChildren(registeredPath, null);
-				for (String aserver : servers) {
-					LOG.debug(clientSocketAddress + ": " + "znode name " + aserver);
-					nodeRegisteredPath = registeredPath + "/" + aserver;
-					stat = zkc.exists(nodeRegisteredPath,false);
-					if(stat != null){
-						data = zkc.getData(nodeRegisteredPath, false, stat);
-						if (false == (new String(data)).startsWith("AVAILABLE:"))
-							continue;
-					}
-					else
-						continue;
+				length = servers.size();
+				if (length == 0){
+	                throw new IOException("No Available Servers - length is 0");
+				}
+				int dbgLength = length > 4 ? 4 : length;
+				for (int i = 0; i < dbgLength; i++){
+	                LOG.debug(clientSocketAddress + ": " + i + " server " + servers.get(i) );
+				}
+		        switch(length) {
+		                case 1: randomPicks = 1;break;
+		                case 2: randomPicks = 1;break;
+		                case 3: case 4: randomPicks = 2;break;
+		                default:randomPicks = 3;
+		        }
+                LOG.debug(clientSocketAddress + ": " + "randomPicks " + randomPicks + ", length " + length );
+		        
+                int[] indexArr = new int[length];
+                Arrays.fill(indexArr, 0, length - 1, -1);
+                indexArr[0] = -1;
+//
+// pick randomly the AVAILABLE server 
+//                
+                for(int i=0; i < randomPicks; i++){
+                    while(true){
+                        index = random.nextInt();
+                        index = index > 0? index : -index;
+                        index %= length;
+                        if (indexArr[index] != index) break;
+                    }
+                    indexArr[index] = index;
+                    maxIndex = index > maxIndex ? index : maxIndex;
+                    server = servers.get(index);
+                    LOG.debug(clientSocketAddress + ": " + " index " + index + " server picked " + server );
+                    
+                    nodeRegisteredPath = registeredPath + "/" + server;
+                    stat = zkc.exists(nodeRegisteredPath,false);
+                    if(stat != null){
+                        data = zkc.getData(nodeRegisteredPath, false, stat);
+                        if (false == (new String(data)).startsWith("AVAILABLE:"))
+                            continue;
+                        else {
+                            found = true;
+                            break;
+                        }
+                    }
+                    else
+                        continue;
+                }
+//
+// search sequentially for AVAILABLE server starting from highest random index + 1 to length
+//
+                if (found == false){
+                    for(index=maxIndex+1; index<length; index++){
+                        if (indexArr[index] != index){
+                            server = servers.get(index);
+                            LOG.debug(clientSocketAddress + ": " + "server selected in search 1 " + server );
+                                
+                            nodeRegisteredPath = registeredPath + "/" + server;
+                            stat = zkc.exists(nodeRegisteredPath,false);
+                            if(stat != null){
+                                data = zkc.getData(nodeRegisteredPath, false, stat);
+                                if (false == (new String(data)).startsWith("AVAILABLE:"))
+                                    continue;
+                                else {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                    }
+                }
+//
+// search sequentially for AVAILABLE server starting from index 0 to max random index - 1
+//
+                if (found == false){
+                    for(index=0; index<maxIndex; index++){
+                        if (indexArr[index] != index){
+                            server = servers.get(index);
+                            LOG.debug(clientSocketAddress + ": " + "server selected in search 2 " + server );
+                                
+                            nodeRegisteredPath = registeredPath + "/" + server;
+                            stat = zkc.exists(nodeRegisteredPath,false);
+                            if(stat != null){
+                                data = zkc.getData(nodeRegisteredPath, false, stat);
+                                if (false == (new String(data)).startsWith("AVAILABLE:"))
+                                    continue;
+                                else {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            else
+                                continue;
+                        }
+                    }
+                }
+                if (found == true){
 	
-					String[] stNode = aserver.split(":");
+					String[] stNode = server.split(":");
 					serverHostName=stNode[0];
 					serverInstance=Integer.parseInt(stNode[1]);
 					
@@ -172,29 +267,40 @@ class ConnectReply {
 							clientSocketAddress, 
 							cc.windowText ));
 					zkc.setData(nodeRegisteredPath, data, -1);
-					found = true;
-					break;
 				}
 			} catch (KeeperException.NodeExistsException e) {
 				LOG.error(clientSocketAddress + ": " + "do nothing...some other server has created znodes: " + e.getMessage());
+				exceptionThrown = true;
 			} catch (KeeperException e) {
 				LOG.error(clientSocketAddress + ": " + "KeeperException: " + e.getMessage());
+				exceptionThrown = true;
 			} catch (InterruptedException e) {
 				LOG.error(clientSocketAddress + ": " + "InterruptedException: " + e.getMessage());
+				exceptionThrown = true;
+			} catch (IOException ie){
+	            LOG.error(clientSocketAddress + ": " + ie.getMessage());
+                exceptionThrown = true;
 			}
-			if (found == false){
+			if (found == false || exceptionThrown == true){
 				exception.exception_nr = ListenerConstants.DcsMasterNoSrvrHdl_exn; //no available servers
 				replyException = true;
-				LOG.info(clientSocketAddress + ": " + "No Available Servers");
+				if (found == false)
+				    LOG.info(clientSocketAddress + ": " + "No Available Servers");
+				else
+                    LOG.info(clientSocketAddress + ": " + "No Available Servers - exception thrown");
 			} else {
-	
-				dataSource = "TDM_Default_DataSource";
+			    
+				if (cc.datasource.length() == 0)
+					dataSource = "TDM_Default_DataSource";
+				else
+					dataSource = cc.datasource;
 			
 				LOG.debug(clientSocketAddress + ": " + "userName: " + cc.user.userName);
 				LOG.debug(clientSocketAddress + ": " + "password: " + cc.user.password);
 				LOG.debug(clientSocketAddress + ": " + "client: " + cc.client);
 				LOG.debug(clientSocketAddress + ": " + "location: " + cc.location);
 				LOG.debug(clientSocketAddress + ": " + "windowText: " + cc.windowText);
+				LOG.debug(clientSocketAddress + ": " + "dataSource: " + dataSource);
 				LOG.debug(clientSocketAddress + ": " + "client computer name:ipaddress:port " + cc.computerName+ ":" + clientSocketAddress);
 	
 				userSid = new String(cc.user.userName).getBytes("UTF-8");
