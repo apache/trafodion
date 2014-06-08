@@ -736,7 +736,7 @@ Lng32 AddKeyGroups()
           autoGroup = "(";
           for (j = 0; j < numKeys; j++)
             {
-              colPos = keyCols[0]->getPosition();
+              colPos = keyCols[j]->getPosition();
               col = hs_globals->objDef->getColInfo(colPos);
               col.colnum = colPos;
               colSet.insert(col);
