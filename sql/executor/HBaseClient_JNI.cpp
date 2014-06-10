@@ -2423,7 +2423,7 @@ HBLC_RetCode HBulkLoadClient_JNI::createHFile(
 HBLC_RetCode HBulkLoadClient_JNI::addToHFile( const HbaseStr &tblName,
                                          std::vector<BatchMutation> &rows)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::addToHFile(%s) called.");
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::addToHFile called.");
 
   RowsToInsert* rowsData = new RowsToInsert(heap_,jvm_, jenv_);
   RTI_RetCode result = rowsData->init();
@@ -2540,7 +2540,7 @@ HBLC_RetCode HBulkLoadClient_JNI::bulkLoadCleanup(
                              const HbaseStr &tblName,
                              const Text& location)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::bulkLoadCleanup(%s, %s, %s) called.", tblName.val, location.data());
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::bulkLoadCleanup(%s, %s) called.", tblName.val, location.data());
 
   jstring js_location = jenv_->NewStringUTF(location.c_str());
    if (js_location == NULL)
@@ -3317,7 +3317,7 @@ KeyValue* HTableClient_JNI::getLastFetchedCell()
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, const Text& rowID, const TextVec& cols, Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%s, %s) called.", rowID.data());
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%d, %s) called.", transID, rowID.data());
   int len = rowID.size();
   jbyteArray jba_rowID = jenv_->NewByteArray(len);
   if (jba_rowID == NULL) 
@@ -3374,7 +3374,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, const Text& rowID, const 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, std::vector<BatchMutation> &rows, Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRows(%s) called.");
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRows() called.");
 
   RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_, jvm_, jenv_);
   RTI_RetCode result = rowsData->init();
@@ -3424,7 +3424,7 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, const Text& rowID
 					    const Text &columnToCheck, const Text &colValToCheck,
 					    Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s, %s) called.", rowID.data(), columnToCheck.data(), colValToCheck.data());
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s, %s, %s) called.", rowID.data(), columnToCheck.data(), colValToCheck.data());
   int len = rowID.size();
   jbyteArray jba_rowID = jenv_->NewByteArray(len);
   if (jba_rowID == NULL) 
@@ -3549,7 +3549,7 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, const Text& rowID, Mutati
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, std::vector<BatchMutation> &rows, Int64 timestamp, bool autoFlush)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRows(%s) called.");
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRows() called.");
 
   RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_, jvm_, jenv_);
   RTI_RetCode result = rowsData->init();
@@ -3597,7 +3597,7 @@ HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, std::vector<BatchMutatio
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::setWriteBufferSize(Int64 size)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::setWriteBufferSize(%s) called.");
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::setWriteBufferSize() called.");
 
 
 
@@ -3626,7 +3626,7 @@ HTC_RetCode HTableClient_JNI::setWriteBufferSize(Int64 size)
 
 HTC_RetCode HTableClient_JNI::setWriteToWAL(bool WAL)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::setWriteToWAL(%s) called.");
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::setWriteToWAL() called.");
 
   jboolean j_WAL = WAL;
 
