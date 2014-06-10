@@ -180,7 +180,7 @@ public class TransactionalRegion extends HRegion {
 	}
 
         // This is the method used by Cloudera HBase 0.94.6 and possibly other versions
-        // @Override
+        @Override
 	protected long replayRecoveredEditsIfAny(final Path regiondir,
 			//final Map<byte[], Long> maxSeqIdInStores,
 			final long minSeqId, 
@@ -214,47 +214,22 @@ public class TransactionalRegion extends HRegion {
 	}
 
         // This is the method used by MapR HBase 0.94.13 and possibly other versions
-        // @Override
+        @Override
 	protected long replayRecoveredEditsIfAny(final Path regiondir,
 			final Map<byte[], Long> maxSeqIdInStores,
                         //final long minSeqId, 
                         final CancelableProgressable reporter,
 			final MonitoredTask status) throws UnsupportedEncodingException,
 			IOException {
-                LOG.trace("replayRecoveredEditsIfAny -- ENTRY");
-                // Use reflection, since the super class has a different signature, based
-                // on the HBase distribution used
-                long maxSeqId = -1;
+                LOG.trace("replayRecoveredEditsIfAny with Map param -- ENTRY");
 
-                try {
-                    Object res = HRegion.class.getMethod(
-                      "replayRecoveredEditsIfAny",
-                      new Class[] { Path.class,
-                                    maxSeqIdInStores.getClass(),
-                                    CancelableProgressable.class,
-                                    MonitoredTask.class }).invoke(
-                         this,
-                         new Object[] { regiondir,
-                                        maxSeqIdInStores,
-                                        reporter,
-                                        status });
-                    if (res.getClass().equals(Long.TYPE)) {
-                        maxSeqId = Long.parseLong(res.toString());
-                    }
-                    else
-                        throw new IOException("invalid return type for replayRecoveredEditsIfAny");
-                } catch (InvocationTargetException ite) {
-                    // function was properly called, but threw it's own exception
-                    throw new IOException(ite.getCause());
-                } catch (IllegalAccessException iae) {
-                    throw new IOException(iae.getCause());
-                } catch (NoSuchMethodException nsme) {
-                    throw new IOException(nsme.getCause());
-                }
-		//long maxSeqId = super.replayRecoveredEditsIfAny(regiondir,
-                //                maxSeqIdInStores,
-                //                //minSeqId,
-		//		reporter, status);
+                // The actual HBase code will have only one of the two
+                // replayRecoveredEditsIfAny methods used here and above, but
+                // we use a modified HBase source tree that has both methods declared
+                long maxSeqId = super.replayRecoveredEditsIfAny(regiondir,
+                                maxSeqIdInStores,
+                                //minSeqId,
+				reporter, status);
 
 		Path recoveredEdits = new Path(regiondir, HLogSplitter.RECOVERED_EDITS);
 
@@ -265,7 +240,7 @@ public class TransactionalRegion extends HRegion {
                                     //minSeqId,
                                     maxSeqId, reporter);
 
-                LOG.trace("replayRecoveredEditsIfAny -- EXIT");
+                LOG.trace("replayRecoveredEditsIfAny with Map param -- EXIT");
 		return maxSeqId;
 	}
 

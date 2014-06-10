@@ -32,7 +32,7 @@
 	
 	<properties>
 	  <hadoop.version>1.2.0</hadoop.version>
-	  <hbase.version>0.94.6-trafodion</hbase.version>
+	  <hbase.version>0.94.6-trafodion-15</hbase.version>
 	  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
           <java.version>1.7</java.version>
           <trx-suffix></trx-suffix>
