@@ -21,9 +21,8 @@
  *****************************************************************************
  *
  * File:         arkcmp_proc.cpp
- * Description:  This is the main entry point for arkcmp procedural interface. 
- *               
- *               
+ * Description:  This is the main entry point for arkcmp procedural interface.
+ *
  *
  *
  * Created:      7/9/2013
@@ -150,11 +149,11 @@ Int32 arkcmp_main_entry()
 
 
   initializeArkcmp();
-  
+
 
   try
   {
-    
+
 
     { // a local ctor scope, within a try block
 
@@ -181,7 +180,7 @@ Int32 arkcmp_main_entry()
       catch (...)
       {
         ArkcmpErrorMessageBox
-          (ARKCMP_ERROR_PREFIX "- Cannot initialize Compiler global data.", 
+          (ARKCMP_ERROR_PREFIX "- Cannot initialize Compiler global data.",
            ERROR_SEV, FALSE, FALSE, TRUE);
         return(1);
       }
@@ -193,17 +192,17 @@ Int32 arkcmp_main_entry()
       context->initContextGlobals();
       context->envs()->cleanup();
 
-      // Clear the CLI globals context area if there are any leftover CLI diags 
+      // Clear the CLI globals context area if there are any leftover CLI diags
       //This is a fresh context and shouldn't have CLI diags.
       SQL_EXEC_ClearDiagnostics(NULL);
 
       assert(cmpCurrentContext == context);
-    
+
       // Clear the SQL text buffer in the event logging area.
       cmpCurrentContext->resetLogmxEventSqlText();
 
     }
-  
+
   }
 
   catch(BaseException& bE)
@@ -219,22 +218,8 @@ Int32 arkcmp_main_entry()
     }
 
    ENDTRANSACTION();
-#ifdef CLOSED_SOURCE_1
-#ifdef NA_CMPDLL
-  // This flag causes sqlark_requester flag to be set and eventually telling
-  // TSE to set the FL_SQL_ANSI_TABLE in the file label, otherwise, we could
-  // get error 1163 (FERESERVEDNAME) while doing DDL operations via the
-  // embedded arkcmp
-  if (CatFsSetSqlLicense(1))
-    {
-      SQLMXLoggingArea::logExecRtInfo(NULL, 0,
-                                "Cannot get FS2 license.", 0);
-    }
-#endif  // NA_CMPDLL
-#endif
 
-
-  return 0;  
+  return 0;
 }
 
 
