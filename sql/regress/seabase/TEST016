@@ -154,9 +154,9 @@ explain options 'f' st1;
 explain st1;
 
 -- decimal
-prepare st1 from select f,count(f) from mcStatPart5 <<+ cardinality 10e8 >> group by f;
-explain options 'f' st1;
-explain st1;
+--prepare st1 from select f,count(f) from mcStatPart5 <<+ cardinality 10e8 >> group by f;
+--explain options 'f' st1;
+--explain st1;
 
 -- timestamp type
 prepare st1 from select f,count(f) from mcStatPart3 <<+ cardinality 10e8 >> group by f;
