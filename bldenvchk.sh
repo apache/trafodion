@@ -19,7 +19,7 @@
 # @@@ END COPYRIGHT @@@
 #
 
-# This script checks that build variables refer to real directories and that expected 
+# This script checks that build variables refer to real directories and that expected
 # tools are on the current PATH.  Script returns zero only if both statements are true.
 RETVAL=0
 CUR_DIR=$(pwd)
@@ -37,8 +37,8 @@ if [[ "$MY_SQROOT" != "$CUR_DIR/sqf" ]]; then
 fi
 
 # These files should be on the PATH or fully qualified.
-# Bison is the one build env var thus far that references a specific file, not a directory.
-VARFILELIST="ANT AR FLEX CXX BISON"
+# In sqenvcom.sh, ANT, BISON and MAVEN can reference specific files.
+VARFILELIST="ANT AR FLEX CXX BISON MAVEN"
 for AVAR in $VARFILELIST; do
    AVAL="$(eval "echo \$$AVAR")"
    AVALUE="$(which $AVAL 2> /dev/null)"
@@ -80,4 +80,3 @@ for AVAR in $VARDIRLIST; do
 done
 
 exit $RETVAL
-

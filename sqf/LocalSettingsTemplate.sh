@@ -37,6 +37,7 @@ CXX=g++
 TOOLSDIR="/opt/home/tools"   # convenient to put them all in the same place
 
 BISON="${TOOLSDIR}/bison_3_linux/bin/bison"
+MAVEN="${TOOLSDIR}/apache-maven-3.0.5/bin/mvn"
 LLVM="${TOOLSDIR}/dest-llvm-3.2"
 UDIS86="${TOOLSDIR}/udis86-1.7.2"
 ICU="${TOOLSDIR}/icu4.4"
