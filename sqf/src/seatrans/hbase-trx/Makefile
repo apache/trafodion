@@ -33,11 +33,11 @@ BLD_HBASE_TRX_JARNAME_1_6   =hbase-trx-$(TRAFODION_VER)$(JAVA6_SUFFIX).jar
 all: build_all
 
 jdk_1_7:
-	mvn package -DskipTests | tee -a build_trx.log
+	set -o pipefail && mvn package -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 
 jdk_1_6:
-	JAVA_HOME=$(JAVAJDK16) mvn package -Djava.version=$(JAVA6_VERSION) -Dtrx-suffix=$(JAVA6_SUFFIX) -DskipTests | tee -a build_trx.log
+	set -o pipefail && JAVA_HOME=$(JAVAJDK16) mvn package -Djava.version=$(JAVA6_VERSION) -Dtrx-suffix=$(JAVA6_SUFFIX) -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME_1_6) $(MY_SQROOT)/export/lib
 
 build_all: jdk_1_6 jdk_1_7
