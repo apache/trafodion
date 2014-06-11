@@ -335,6 +335,7 @@ protected:
   char * beginRowIdRow_;
   char * endRowIdRow_;
   char * asciiRowMissingCols_;
+  long * latestTimestampForCols_;
   char * beginKeyRow_;
   char * endKeyRow_;
   char * encodedKeyRow_;

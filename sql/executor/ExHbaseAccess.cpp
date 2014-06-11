@@ -331,6 +331,7 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
 
   asciiRow_ = NULL;
   asciiRowMissingCols_ = NULL;
+  latestTimestampForCols_ = NULL;
   convertRow_ = NULL;
   updateRow_ = NULL;
   mergeInsertRow_ = NULL;
@@ -351,6 +352,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
       asciiRowMissingCols_ = 
 	new(glob->getDefaultHeap()) 
 	char[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()];
+      latestTimestampForCols_ = new(glob->getDefaultHeap()) 
+	long[hbaseAccessTdb.workCriDesc_->getTupleDescriptor(hbaseAccessTdb.asciiTuppIndex_)->numAttrs()] ;
     }
 
   if (hbaseAccessTdb.convertRowLen_ > 0)
@@ -925,8 +928,6 @@ short ExHbaseAccessTcb::createSQRow(TRowResult &rowResult)
   // initialize as missing cols.
   // TBD: can optimize to skip this step if there are no nullable and no added cols
   memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
-
-  char colTSstrTmp[30];
   
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
@@ -1072,8 +1073,8 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
   // initialize as missing cols.
   // TBD: can optimize to skip this step if there are no nullable and no added cols
   memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
-
-  char colTSstrTmp[30];
+    // initialize latest timestamp to 0 for every column
+  memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
   
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
@@ -1148,6 +1149,8 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 
       // not missing any more
       asciiRowMissingCols_[idx] = 0;
+      if (timestamp > latestTimestampForCols_[idx])
+        latestTimestampForCols_[idx] = timestamp;
 
       Attributes * attr = asciiSourceTD->getAttr(idx);
       if (! attr)
@@ -1158,31 +1161,37 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 	  return -HBASE_CREATE_ROW_ERROR;
 	}
 
-      if (attr->getNullFlag())
-	{
-	  if (*colVal)
-	    *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
-	  else
-	    *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
+      // copy to asciiRow only if this is the latest version seen so far
+      // for this column. On 6/10/2014 we get two versions for a newly
+      // updated column that has not been committed yet.
+      if (timestamp == latestTimestampForCols_[idx]) 
+        {
+          if (attr->getNullFlag())
+            {
+              if (*colVal)
+                *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
+              else
+                *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
 
-	  colValLen = colValLen - sizeof(char);
-	  colVal += sizeof(char);
-	}
+              colValLen = colValLen - sizeof(char);
+              colVal += sizeof(char);
+            }
 
-      if (attr->getVCIndicatorLength() > 0)
-	{
-	  if (attr->getVCIndicatorLength() == sizeof(short))
-	    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
-	  else
-	    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
-	  *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)colVal;
-	}
-      else
-	{
-	  char * srcPtr = &asciiRow_[attr->getOffset()];
-	  Lng32 copyLen = MINOF(attr->getLength(), colValLen);
-	  str_cpy_all(srcPtr, colVal, copyLen);
-	}
+          if (attr->getVCIndicatorLength() > 0)
+            {
+              if (attr->getVCIndicatorLength() == sizeof(short))
+                *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+              else
+                *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+              *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)colVal;
+            }
+          else
+            {
+              char * srcPtr = &asciiRow_[attr->getOffset()];
+              Lng32 copyLen = MINOF(attr->getLength(), colValLen);
+              str_cpy_all(srcPtr, colVal, copyLen);
+            }
+        }
     if (colNameLen > INLINE_COLNAME_LEN)
        NADELETEBASIC(fullColName, getHeap());
     kvBuf = (char *)temp + kvLength;
