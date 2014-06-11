@@ -3317,7 +3317,7 @@ KeyValue* HTableClient_JNI::getLastFetchedCell()
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, const Text& rowID, const TextVec& cols, Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%d, %s) called.", transID, rowID.data());
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.data());
   int len = rowID.size();
   jbyteArray jba_rowID = jenv_->NewByteArray(len);
   if (jba_rowID == NULL) 
