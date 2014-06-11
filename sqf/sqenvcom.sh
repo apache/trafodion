@@ -523,13 +523,22 @@ fi
 export AR=ar
 export FLEX=flex
 export CXX=g++
+export MAVEN=mvn
+if [[ -z "$(which $MAVEN)" ]]
+then
+  export M2_HOME="${TOOLSDIR}/apache-maven-3.0.5"
+  MAVEN="${M2_HOME}/bin/mvn"
+fi
 
 # Non-standard or newer version tools
 export BISON="${TOOLSDIR}/bison_3_linux/bin/bison"     # Need 1.3 version or later
+
+
 export LLVM="${TOOLSDIR}/dest-llvm-3.2"
 export UDIS86="${TOOLSDIR}/udis86-1.7.2"
 export ICU="${TOOLSDIR}/icu4.4"
 export QT_TOOLKIT="${TOOLSDIR}/Qt-4.8.5-64"
+
 
 #######################
 # Developer Local over-rides  (see sqf/LocalSettingsTemplate.sh)
