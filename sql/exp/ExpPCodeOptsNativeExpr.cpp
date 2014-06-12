@@ -5350,7 +5350,7 @@ void PCodeOperand::storeNullJitValueAndBranch( PCodeCfg   * cfg
       } // End: if (isVar())
 
       else {
-        if (forComp) {
+        if ( 1 /* forComp ? */) {
 //        storeJitValue(cfg, f, jit_type_int, cfg->getZeroJitVal(), b, NULL);
 
           CDPT1( "VV1252: ", VV_BD, "In storeNJ2 ... forComp = %d\n", forComp);
@@ -5379,11 +5379,14 @@ void PCodeOperand::storeNullJitValueAndBranch( PCodeCfg   * cfg
 //        storeJitValue(cfg, f, jit_type_int, cfg->getNeg1JitVal(), b, NULL);
           storeJitValue(cfg, Bldr, cfg->getInt32Ty(), cfg->getNeg1JitVal(), b, NULL );
         }
+#if 0 /* The following OPTIMIZATION (over the above section of code) does NOT always work */
+      // because sometimes we NEED the call to storeJitValue above even for Temps.
+      // Case in point:  Launchpad defect 1328248
         else { // forComp == FALSE
 
           CDPT1( "VV1262: ", VV_BD, "In storeNJ3 ... forComp = %d\n", forComp);
 
-          jitValue_ = value; // QXX ??????????????????????????????????????????
+          jitValue_ = value;
 
           CDPT2( "VV1263: ", VV_BD,
                  "In storeNullJV(): setting jitValue_ in PCodeOp at %p to %p\n",
@@ -5413,6 +5416,7 @@ void PCodeOperand::storeNullJitValueAndBranch( PCodeCfg   * cfg
           Bldr->SetInsertPoint( nullLabel );
 
         } // End: else
+#endif
       } // End: else  [i.e. (isVar()) == FALSE ]
     } // End: else  [ i.e. (nullBitIndex_ == -1) ]
   } // End:  if (TRUE)
