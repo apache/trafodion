@@ -244,7 +244,7 @@ class THLogRecoveryManager {
     	LOG.trace("resolvePendingTransaction -- ENTRY");
         SortedMap<Long, WALEdit> commitedTransactionsById = new TreeMap<Long, WALEdit>();
 
-        LOG.info("Region log has " + pendingTransactionsById.size()
+        LOG.debug("Region log has " + pendingTransactionsById.size()
                 + " unfinished transactions. Going to the transaction log to resolve");
 
         for (Entry<Long, WALEdit> entry : pendingTransactionsById.entrySet()) {

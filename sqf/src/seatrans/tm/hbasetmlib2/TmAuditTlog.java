@@ -59,6 +59,8 @@ import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableExistsException;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import org.apache.hadoop.hbase.regionserver.RegionSplitPolicy;
+
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -124,6 +126,7 @@ public class TmAuditTlog {
 
    private static int    versions;
    private static boolean distributedFS;
+   private static boolean useHashedKeys;
  
    private static AtomicLong asn;  // Audit sequence number is the monotonic increasing value of the tLog write
 
@@ -403,7 +406,6 @@ public class TmAuditTlog {
             LOG.trace("TmAuditTlogAuditWriter auditBuffer[" + lvPrevIndex + "].resultLock synchronization complete in thread " 
                      + threadId);
 
-
             // All previous results received, so let's clear the buffer
             try {
                cvAuditBuffer.bufferClear();
@@ -421,8 +423,6 @@ public class TmAuditTlog {
          }
          LOG.trace("TmAuditTlogAuditWriter constructor exit by thread " +  threadId);
       }
-
-
  
       @Override
       public Boolean call() throws IOException, InterruptedException {
@@ -478,7 +478,6 @@ public class TmAuditTlog {
               endTimes[timeIndex] = System.nanoTime();
            }
            LOG.trace("TmAuditTlogAuditWriter call() tablePutLock synchronization complete in thread " + threadId);
-
 
            synchTimes[timeIndex] = endSynch - startSynch;
            totalSynchTime += synchTimes[timeIndex];
@@ -586,6 +585,14 @@ public class TmAuditTlog {
       controlPointWriter.shutdown();
    }
 
+   public class TmAuditTlogRegionSplitPolicy extends RegionSplitPolicy {
+
+      @Override
+      protected boolean shouldSplit(){
+         return false;
+      }
+   }
+
    public TmAuditTlog (Configuration config) throws IOException {
 
       this.config = config;
@@ -601,12 +608,20 @@ public class TmAuditTlog {
       else {
          distributedFS = true;
       }
-      LOG.info("distributedFS is " + distributedFS);
+      LOG.debug("distributedFS is " + distributedFS);
       String maxVersions = System.getenv("TM_TLOG_MAX_VERSIONS");
       if (maxVersions != null){
          versions = (Integer.parseInt(maxVersions) > versions ? Integer.parseInt(maxVersions) : versions);
       }
 
+      String useHash = System.getenv("TM_TLOG_HASH_KEYS");
+      if (useHash != null)
+         useHashedKeys = (Integer.parseInt(useHash) != 0);
+      LOG.debug("TM_TLOG_HASH_KEYS is " + useHashedKeys);
+
+      if (useHashedKeys ==  false) {
+         desc.setValue(HTableDescriptor.SPLIT_POLICY, TmAuditTlogRegionSplitPolicy.class.getName()); // Never split
+      }
       hcol.setMaxVersions(versions);
       desc.addFamily(hcol);
       admin = new HBaseAdmin(config);
@@ -738,8 +753,16 @@ public class TmAuditTlog {
          LOG.debug("table names: " + tableString.toString());
       }
 
-      //Update input string in message digest
-      Put p = new Put(md.digest(Bytes.toBytes(transidString)));
+      //Create the Put as directed by the hashed key boolean
+      Put p;
+      if (useHashedKeys) {
+         //Update input string in message digest hashed key
+         p = new Put(md.digest(Bytes.toBytes(transidString)));
+      }
+      else {
+         //Straight text key
+         p = new Put(Bytes.toBytes(transidString));
+      }
       synchronized (grossAuditLock) {
          lvMyIndex = currIndex;
          lvPrevIndex = prevIndex;
@@ -846,7 +869,13 @@ public class TmAuditTlog {
          }
       }
       LOG.debug("formatRecord table names " + tableString.toString());
-      Put p = new Put(md.digest(Bytes.toBytes(transidString)));
+      Put p;
+      if (useHashedKeys) {
+         p = new Put(md.digest(Bytes.toBytes(transidString)));
+      }
+      else {
+         p = new Put(Bytes.toBytes(transidString));
+      }
       lvAsn = asn.getAndIncrement();
       lvTxState = lvTx.getStatus();
       LOG.debug("formatRecord transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
@@ -899,7 +928,13 @@ public class TmAuditTlog {
          //Create MessageDigest object for MD5
          MessageDigest md = MessageDigest.getInstance("MD5");
          String transidString = new String(String.valueOf(lvTransid));
-         Get g = new Get(md.digest(Bytes.toBytes(transidString)));
+         Get g;
+         if (useHashedKeys) {
+            g = new Get(md.digest(Bytes.toBytes(transidString)));
+         }
+         else {
+            g = new Get(Bytes.toBytes(transidString));
+         }
          try {
             Result r = table.get(g);
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
@@ -990,7 +1025,13 @@ public class TmAuditTlog {
       try {
          //Create MessageDigest object for MD5
          MessageDigest md = MessageDigest.getInstance("MD5");
-         Get g = new Get(md.digest(Bytes.toBytes(transidString)));
+         Get g;
+         if (useHashedKeys) {
+            g = new Get(md.digest(Bytes.toBytes(transidString)));
+         }
+         else {
+            g = new Get(Bytes.toBytes(transidString));
+         }
          try {
             Result r = table.get(g);
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
@@ -1020,7 +1061,13 @@ public class TmAuditTlog {
       try {
          //Create MessageDigest object for MD5
          MessageDigest md = MessageDigest.getInstance("MD5");
-         Delete d = new Delete(md.digest(Bytes.toBytes(transidString)));
+         Delete d;
+         if (useHashedKeys) {
+            d = new Delete(md.digest(Bytes.toBytes(transidString)));
+         }
+         else {
+            d = new Delete(Bytes.toBytes(transidString));
+         }
          LOG.debug("deleteRecord  (" + transid + ") ");
          table.delete(d);
       }
@@ -1293,7 +1340,13 @@ public class TmAuditTlog {
          //Create MessageDigest object for MD5
          MessageDigest md = MessageDigest.getInstance("MD5");
          String transidString = new String(String.valueOf(ts.getTransactionId()));
-         Get g = new Get(md.digest(Bytes.toBytes(transidString)));
+         Get g;
+         if (useHashedKeys) {
+            g = new Get(md.digest(Bytes.toBytes(transidString)));
+         }
+         else {
+            g = new Get(Bytes.toBytes(transidString));
+         }
          int lvTxState = TM_TX_STATE_NOTX;
          String recordString;
          String asnToken = new String();

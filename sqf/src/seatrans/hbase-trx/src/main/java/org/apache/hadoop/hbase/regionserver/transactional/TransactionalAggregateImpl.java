@@ -51,7 +51,7 @@ public class TransactionalAggregateImpl extends AggregateImplementation
 		} finally {
 			scanner.close();
 		}
-		log.info("Row counter, txid: " + transactionId + ", from this region is "
+		log.debug("Row counter, txid: " + transactionId + ", from this region is "
 				+ ((RegionCoprocessorEnvironment) getEnvironment()).getRegion()
 						.getRegionNameAsString() + ": " + counter);
 		return counter;
@@ -94,7 +94,7 @@ public class TransactionalAggregateImpl extends AggregateImplementation
 		} finally {
 			scanner.close();
 		}
-		log.info("Maximum, txid: " + transactionId + ", from this region is "
+		log.debug("Maximum, txid: " + transactionId + ", from this region is "
 				+ ((RegionCoprocessorEnvironment) getEnvironment()).getRegion()
 						.getRegionNameAsString() + ": " + max);
 		return max;
@@ -133,7 +133,7 @@ public class TransactionalAggregateImpl extends AggregateImplementation
 		} finally {
 			scanner.close();
 		}
-		log.info("Minimum, txid: " + transactionId + ", from this region is "
+		log.debug("Minimum, txid: " + transactionId + ", from this region is "
 				+ ((RegionCoprocessorEnvironment) getEnvironment()).getRegion()
 						.getRegionNameAsString() + ": " + min);
 		return min;
