@@ -1113,5 +1113,24 @@ Expression: unPackColsExpr
 
 --- SQL command prepared.
 >>
+>>?section LP_1324303
+>>
+>>-- cardinality changes for LP 1324303
+>>prepare st1 from select O.object_name from trafodion."_MD_".objects O, trafodion."_MD_".table_constraints T where O.object_uid = T.table_uid ;
+
+--- SQL command prepared.
+>>explain options 'f' st1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+002
+1    3    4    nested_join                                           1.00E+002
+2    .    3    probe_cache                                           1.00E+000
+.    .    2    trafodion_index_scan            OBJECTS               1.00E+000
+.    .    1    trafodion_scan                  TABLE_CONSTRAINTS     1.00E+002
+
+--- SQL operation complete.
+>>
 >>?section tests_end
 >>log;

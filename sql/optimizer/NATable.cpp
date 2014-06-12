@@ -541,6 +541,30 @@ void HistogramCache::createColStatsList
 		   (type == ExtendedQualName::NORMAL_TABLE))
       preFetch = TRUE;
 
+     // flag the unique columns so the uec can be set correctly
+     // specially in the case of columns with fake stats
+     for (CollIndex j = 0; j < colArray.entries(); j++)
+     {
+        NAList<NAString> keyColList(STMTHEAP, 1);
+        NAColumn *col = colArray[j];
+        if (!col->isUnique())
+        {
+           const NAString &colName = col->getColName();
+           keyColList.insert(colName);
+ 
+           // is there a unique index on this column?
+           if (col->needHistogram () && 
+               table.getCorrespondingIndex(keyColList,  // input columns
+                                           TRUE,        // look for explicit index
+                                           TRUE,        // look for unique index
+                                           FALSE,       // look for primary key
+                                           FALSE,       // look for any index or primary key
+                                           NULL         // index name
+                                           ))
+              col->setIsUnique(); 
+        }
+     }
+
      FetchHistograms(qualifiedName,
                      type,
                     (colArray),

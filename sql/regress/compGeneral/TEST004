@@ -844,6 +844,12 @@ SELECT
   END "Col1"
 FROM v_t1 INNER JOIN v_t2 ON ( v_t1.b  =  v_t2.d ) ;
 
+?section LP_1324303
+
+-- cardinality changes for LP 1324303
+prepare st1 from select O.object_name from trafodion."_MD_".objects O, trafodion."_MD_".table_constraints T where O.object_uid = T.table_uid ;
+explain options 'f' st1;
+
 ?section tests_end
 log;
 
