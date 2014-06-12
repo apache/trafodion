@@ -212,6 +212,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("COMP",               TOK_COMP,        NONRESTOKEN_),
   ParKeyWord("COMPACT",            TOK_COMPACT,     NONRESTOKEN_),
   ParKeyWord("COMPARE",            TOK_COMPARE,        NONRESTOKEN_),
+  ParKeyWord("COMPLETE",           TOK_COMPLETE,   NONRESTOKEN_),
   ParKeyWord("COMPLETION",         IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("COMPONENT",          TOK_COMPONENT,   NONRESTOKEN_|SECOND_),
   ParKeyWord("COMPONENTS",         TOK_COMPONENTS,  NONRESTOKEN_),

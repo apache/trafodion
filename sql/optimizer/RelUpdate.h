@@ -1921,20 +1921,8 @@ public:
 
   ValueIdList &lobLoadExpr()                    { return lobLoadExpr_; }
 
-
-//  NABoolean getIsTrafLoadPrep() const
-//  {
-//    return isTrafLoadPrep_;
-//  }
-//
-//  void setIsTrafLoadPrep(NABoolean isTrafLoadPrep)
-//  {
-//    isTrafLoadPrep_ = isTrafLoadPrep;
-//  }
-
 private:
 
-  //NABoolean isTrafLoadPrep_;
   // used when lob colums are being loaded. Set in GenPreCode.
   ValueIdList lobLoadExpr_;
 
@@ -1942,10 +1930,10 @@ private:
 };
 
 
-class HbaseBulkLoadPrep: public Insert
+class HBaseBulkLoadPrep: public Insert
 {
 public:
-  HbaseBulkLoadPrep(const CorrName &name,
+  HBaseBulkLoadPrep(const CorrName &name,
                TableDesc *tabId,
                OperatorTypeEnum otype = REL_HBASE_BULK_LOAD,
                RelExpr *child = NULL,
@@ -1955,10 +1943,10 @@ public:
     {};
 
   // copy ctor
-  HbaseBulkLoadPrep(const HbaseBulkLoadPrep&) ; // not written
+  HBaseBulkLoadPrep(const HBaseBulkLoadPrep&) ;
 
   // virtual destructor
-  virtual ~HbaseBulkLoadPrep() {};
+  virtual ~HBaseBulkLoadPrep() {};
 
   virtual RelExpr * bindNode(BindWA *bindWA);
 
@@ -1968,18 +1956,7 @@ public:
   virtual NABoolean isLogical() const { return TRUE; };
   virtual NABoolean isPhysical() const { return FALSE; };
 
-  // get a printable string that identifies the operator
-//  const NAString getText() const;
-
-  // method to do code generation
-//  virtual RelExpr *preCodeGen(Generator * generator,
-//                              const ValueIdSet & externalInputs,
-//                              ValueIdSet &pulledNewInputs);
-//  virtual short codeGen(Generator *);
-
-
 private:
-
 
 };
 // -----------------------------------------------------------------------

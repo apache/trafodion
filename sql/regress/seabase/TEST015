@@ -47,7 +47,8 @@ exit;
 drop table customer_demographics;
 drop table customer_demographics_salt;
 drop table customer_address;
-
+drop table t015t1;
+drop table t015t2;
 ?section setup
 --------------------------------------------------------------------------
 create table customer_demographics
@@ -99,18 +100,59 @@ create table customer_address
 );
 
 
+create table t015t1 (a int) ;
+create table t015t2 (a int) ;
+
+insert into t015t1 values (1),(2),(3),(4),(5);
+
+
+
 ?section test_bulk_load_simple
 --------------------------------------------------------------------------
 
+
+prepare s from load cleanup for table t015t2;
+explain options 'f' s;
+execute s;
+ 
+prepare s from load transform into t015t2 select * from t015t1;
+explain options 'f' s;
+execute s;
+
+
+prepare s from load complete for table t015t2;
+explain options 'f' s;
+execute s;
+
+
+select * from t015t2 order by a;
+
+prepare s from load into t015t2 select * from t015t1;
+explain options 'f' s;
+execute s;
+
+prepare s from load with no rollback into t015t2 select * from t015t1;
+explain options 'f' s;
+execute s;
+
+--truncate and log errors are not implemented yet .
+prepare s from load with truncate,log error into t015t2 select * from t015t1;
+--explain options 'f' s;
+--execute s;
+
+
+
+--------------------------------------------------------------------------
 select count(*) from hive.hive.customer_address;
 select count(*) from customer_address;
 
 prepare s from 
-load into customer_address 
+load transform into customer_address 
 select * from hive.hive.customer_address;                                                                                              
 explain options 'f' s;
 
-execute s;                                                                                             
+load into customer_address 
+select * from hive.hive.customer_address;                                                                                                   
 
 select count(*) from customer_address;
 
@@ -121,11 +163,12 @@ select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 select count(*) from customer_demographics;
 
 prepare s from 
-load into customer_demographics 
+load transform into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 explain options 'f' s;
 
-execute s;                                                                                             
+load into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;                                                                                            
 
 select count(*) from customer_demographics;
 
@@ -139,11 +182,12 @@ select count(*) from customer_demographics_salt;
 cqd MAX_ESPS_PER_CPU_PER_OP reset;
 CQD ATTEMPT_ESP_PARALLELISM reset;
 prepare s from 
-load into customer_demographics_salt 
+load transform into customer_demographics_salt 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;;                                                                                              
 explain options 'f' s;
 
-execute s;                                                                                             
+load  into customer_demographics_salt 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;;                                                                                              
 
 select count(*) from customer_demographics_salt;
 

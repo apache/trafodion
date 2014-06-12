@@ -2355,7 +2355,7 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
     JavaMethods_[JM_CLOSE_HFILE      ].jm_name      = "closeHFile";
     JavaMethods_[JM_CLOSE_HFILE      ].jm_signature = "()Z";
     JavaMethods_[JM_DO_BULK_LOAD     ].jm_name      = "doBulkLoad";
-    JavaMethods_[JM_DO_BULK_LOAD     ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
+    JavaMethods_[JM_DO_BULK_LOAD     ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;Z)Z";
     JavaMethods_[JM_BULK_LOAD_CLEANUP].jm_name      = "bulkLoadCleanup";
     JavaMethods_[JM_BULK_LOAD_CLEANUP].jm_signature = "(Ljava/lang/String;)Z";
 
@@ -2490,7 +2490,8 @@ HBLC_RetCode HBulkLoadClient_JNI::closeHFile(
 HBLC_RetCode HBulkLoadClient_JNI::doBulkLoad(
                              const HbaseStr &tblName,
                              const Text& prepLocation,
-                             const Text& tableName)
+                             const Text& tableName,
+                             NABoolean quasiSecure)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::doBulkLoad(%s, %s, %s) called.", tblName.val, prepLocation.data(), tableName.data());
 
@@ -2514,7 +2515,10 @@ HBLC_RetCode HBulkLoadClient_JNI::doBulkLoad(
     logError(CAT_HBASE, "HBulkLoadClient_JNI::doBulkLoad() => before calling Java.", getLastError());
     return HBLC_ERROR_DO_BULKLOAD_EXCEPTION;
   }
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DO_BULK_LOAD].methodID, js_PrepLocation, js_TableName);
+
+  jboolean j_quasiSecure = quasiSecure;
+
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DO_BULK_LOAD].methodID, js_PrepLocation, js_TableName, j_quasiSecure);
 
   jenv_->DeleteLocalRef(js_PrepLocation);
   jenv_->DeleteLocalRef(js_TableName);

@@ -434,8 +434,10 @@ public:
     HBASE_DDL_                = 28,
     HBASE_COPROC_AGGR_        = 29,
     WNR_INSERT_               = 30,
-    METADATA_UPGRADE_    = 31,
-    HBASE_LOAD_                = 32
+    METADATA_UPGRADE_         = 31,
+    HBASE_LOAD_               = 32,
+    HBASE_LOAD_TASK_          = 33
+
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -2589,20 +2591,145 @@ public:
   UInt32 myFlags_;
 };
 
-class ExeUtilHbaseLoad : public ExeUtilExpr
+class ExeUtilHBaseBulkLoad : public ExeUtilExpr
 {
 public:
 
-  ExeUtilHbaseLoad(const CorrName &hBaseTableName,
-                 NAString path,
-                 CollHeap *oHeap = CmpCommon::statementHeap())
-   : ExeUtilExpr(HBASE_LOAD_, hBaseTableName,
-                 NULL, NULL,
-                 NULL, CharInfo::UnknownCharSet, oHeap),
-    hFilesPath_(path)
+
+  enum HBaseBulkLoadOptionType {NO_ROLLBACK_, TRUNCATE_TABLE_, LOG_ERRORS_, STOP_AFTER_N_ERRORS_};
+
+    class HBaseBulkLoadOption
+    {
+      friend class ExeUtilHBaseBulkLoad;
+    public:
+      HBaseBulkLoadOption(HBaseBulkLoadOptionType option, Lng32 numericVal, char * stringVal )
+      : option_(option), numericVal_(numericVal), stringVal_(stringVal)
+    {
+    } ;
+
+        private:
+          HBaseBulkLoadOptionType option_;
+          Lng32   numericVal_;
+          char * stringVal_;
+    };
+
+  ExeUtilHBaseBulkLoad(const CorrName &hBaseTableName,
+                   ExprNode * exprNode,
+                   char * stmtText,
+                   CharInfo::CharSet stmtTextCharSet,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+   : ExeUtilExpr(HBASE_LOAD_, hBaseTableName, exprNode, NULL,
+                 stmtText, stmtTextCharSet, oHeap),
+    preLoadCleanup_(FALSE),
+    keepHFiles_(FALSE),
+    truncateTable_(FALSE),
+    noRollback_(FALSE),
+    logErrors_(FALSE)
   {
 
   };
+
+  virtual const NAString getText() const;
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+                                CollHeap* outHeap = 0);
+
+  virtual short codeGen(Generator*);
+
+  NABoolean getCleanOnly() const
+  {
+    return preLoadCleanup_;
+  }
+
+  void setCleanOnly(NABoolean cleanOnly)
+  {
+    preLoadCleanup_ = cleanOnly;
+  }
+
+  NABoolean getKeepHFiles() const
+  {
+    return keepHFiles_;
+  }
+
+  void setKeepHFiles(NABoolean keepHFiles)
+  {
+    keepHFiles_ = keepHFiles;
+  }
+  NABoolean getLogErrors() const
+  {
+    return logErrors_;
+  }
+
+  void setLogErrors(NABoolean logErrors)
+  {
+    logErrors_ = logErrors;
+  }
+
+  NABoolean getNoRollback() const
+  {
+    return noRollback_;
+  }
+
+  void setNoRollback(NABoolean noRollback)
+  {
+    noRollback_ = noRollback;
+  }
+
+  NABoolean getTruncateTable() const
+  {
+    return truncateTable_;
+  }
+
+  void setTruncateTable(NABoolean truncateTable)
+  {
+    truncateTable_ = truncateTable;
+  }
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  short setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> *
+      hBaseBulkLoadOptionList,
+      ComDiagsArea * da);
+private:
+
+  NABoolean preLoadCleanup_;
+  NABoolean keepHFiles_;
+  NABoolean truncateTable_;
+  NABoolean noRollback_;
+  NABoolean logErrors_;
+
+};
+
+//hbase bulk load task
+class ExeUtilHBaseBulkLoadTask : public ExeUtilExpr
+{
+public:
+
+  enum TaskType
+  {
+    NOT_SET_,
+    TRUNCATE_TABLE_,
+    TAKE_SNAPSHOT, //for recovery???  -- not implemented yet
+    PRE_LOAD_CLEANUP_,
+    COMPLETE_BULK_LOAD_,
+    COMPLETE_BULK_LOAD_N_KEEP_HFILES_,
+    EXCEPTION_TABLE_,  //or file  -- not implemented yet
+    EXCEPTION_ROWS_PERCENTAGE_, // --not implemented yet
+    EXCEPTION_ROWS_NUMBER_,     // -- not implemneted yet
+  };
+  ExeUtilHBaseBulkLoadTask(const CorrName &hBaseTableName,
+                   ExprNode * exprNode,
+                   char * stmtText,
+                   CharInfo::CharSet stmtTextCharSet,
+                   TaskType ttype,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+   : ExeUtilExpr(HBASE_LOAD_TASK_, hBaseTableName, exprNode, NULL,
+                 stmtText, stmtTextCharSet, oHeap),
+    taskType_(ttype)
+  {
+
+  };
+
+  virtual const NAString getText() const;
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
@@ -2610,8 +2737,14 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
 
+
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
 private:
-  NAString hFilesPath_;
+
+  TaskType taskType_;
 };
+
+
 
 #endif /* RELEXEUTIL_H */

@@ -1380,6 +1380,7 @@ $1~String1 --------------------------------
 4482 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on user-defined routine $1~string1.
 4483 ZZZZZ 99999 BEGINNER MINOR LOGONLY This LOB conversion function is not allowed in the VALUES clause with multiple input value rows. Use it with a single value row.
 4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY Indexes and constraints are not supported yet with bulk load.
+4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Bulk Load: $0~String0 
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.
@@ -1764,6 +1765,7 @@ drop the default context
 8961 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD is unable to write to file $0~String0.
 8962 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD is unable to allocate buffers for data.
 8963 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD encountered a backup TSE switch.
+8964 ZZZZZ 99999 BEGINNER MAJOR DBADMIN LOAD is not currently supported with non empty tables.
 9200 ZZZZZ 99999 ADVANCED MAJOR DIALOUT UPDATE STATISTICS for table $0~CatalogName.$1~SchemaName.$2~TableName encountered an error$3~string2 from statement $4~string0.
 9201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unable to DROP object $0~string0.
 9202 ZZZZZ 99999 BEGINNER INFRM DBADMIN UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are $0~string0.

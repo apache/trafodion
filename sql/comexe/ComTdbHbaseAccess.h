@@ -101,8 +101,8 @@ class ComTdbHbaseAccess : public ComTdb
   friend class ExHbaseUMDnativeSubsetTaskTcb;
   friend class ExHbaseCoProcAggrTcb;
   friend class ExMetadataUpgradeTcb;
-  friend class ExHbaseAccessLoadPrepSQTcb;
-  friend class ExHbaseAccessBulkLoadTcb;
+  friend class ExHbaseAccessBulkLoadPrepSQTcb;
+  friend class ExHbaseAccessBulkLoadTaskTcb;
 
 public:
   enum ComTdbAccessType
@@ -123,7 +123,7 @@ public:
     DROP_MD_,
     UPGRADE_MD_,
     BULK_LOAD_PREP_,
-    BULK_LOAD_
+    BULK_LOAD_TASK_
   };
 
   const char * getAccessTypeStr(UInt16 v)
@@ -143,7 +143,8 @@ public:
       case GET_TABLES_: return "GET_TABLES_"; break;
       case COPROC_: return "COPROC_"; break;
       case UPGRADE_MD_: return "UPGRADE_MD_"; break;
-      case BULK_LOAD_: return "LOAD_"; break;
+      case BULK_LOAD_PREP_: return "BULK_LOAD_PREP"; break;
+      case BULK_LOAD_TASK_: return "BULK_LOAD_TASK"; break;
       default: return "NOOP_"; break;
       };
 
@@ -598,6 +599,25 @@ public:
   {
     LoadPrepLocation_ = loadPrepLocation;
   }
+
+
+  void setIsTrafLoadCleanup(NABoolean v)
+   {(v ? flags2_ |= TRAF_LOAD_CLEANUP : flags2_ &= ~TRAF_LOAD_CLEANUP); };
+  NABoolean getIsTrafLoadCleanup() { return (flags2_ & TRAF_LOAD_CLEANUP) != 0; };
+
+   void setIsTrafLoadKeepHFiles(NABoolean v)
+    {(v ? flags2_ |= TRAF_LOAD_KEEP_HFILES : flags2_ &= ~TRAF_LOAD_KEEP_HFILES); };
+   NABoolean getIsTrafLoadKeepHFiles() { return (flags2_ & TRAF_LOAD_KEEP_HFILES) != 0; };
+
+   void setIsTrafLoadCompetion(NABoolean v)
+     {(v ? flags2_ |= TRAF_LOAD_COMPLETION : flags2_ &= ~TRAF_LOAD_COMPLETION); };
+   NABoolean getIsTrafLoadCompletion() { return (flags2_ & TRAF_LOAD_COMPLETION) != 0; };
+
+   void setQuasiSecure(NABoolean v)
+     {(v ? flags2_ |= TRAF_LOAD_QUASI_SECURE : flags2_ &= ~TRAF_LOAD_QUASI_SECURE); };
+   NABoolean getUseQuasiSecure() { return (flags2_ & TRAF_LOAD_QUASI_SECURE) != 0; };
+
+
  protected:
   enum
   {
@@ -622,7 +642,11 @@ public:
       TRAF_UPSERT_ADJUST_PARAMS        = 0x0001,
       TRAF_UPSERT_AUTO_FLUSH           = 0x0002,
       TRAF_UPSERT_WRITE_TO_WAL         = 0x0004,
-      TRAF_LOAD_PREP                   = 0x0008
+      TRAF_LOAD_PREP                   = 0x0008,
+      TRAF_LOAD_COMPLETION             = 0x0010,
+      TRAF_LOAD_CLEANUP                = 0x0020,
+      TRAF_LOAD_KEEP_HFILES            = 0x0040,
+      TRAF_LOAD_QUASI_SECURE           = 0x0080
   };
 
   UInt16 accessType_;

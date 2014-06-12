@@ -337,6 +337,7 @@ public:
     ex_PROCESS_STATISTICS = 145,
     ex_ARQ_WNR_INSERT = 146,
     ex_METADATA_UPGRADE = 147,
+    ex_HBASE_LOAD = 148,
     ex_LAST = 9999              // not used
   };
 

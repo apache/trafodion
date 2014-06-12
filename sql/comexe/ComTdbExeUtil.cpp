@@ -3449,3 +3449,87 @@ ComTdbExeUtilMetadataUpgrade::ComTdbExeUtilMetadataUpgrade(
 
 
 
+ComTdbExeUtilHBaseBulkLoad::ComTdbExeUtilHBaseBulkLoad(char * tableName,
+                           ULng32 tableNameLen,
+                           char * ldStmtStr,
+                           ex_cri_desc * work_cri_desc,
+                           const unsigned short work_atp_index,
+                           ex_cri_desc * given_cri_desc,
+                           ex_cri_desc * returned_cri_desc,
+                           queue_index down,
+                           queue_index up,
+                           Lng32 num_buffers,
+                           ULng32 buffer_size
+                           )
+    : ComTdbExeUtil(ComTdbExeUtil::HBASE_LOAD_,
+                    NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+                    tableName, tableNameLen,
+                    NULL, 0,
+                    NULL, 0,
+                    NULL,
+                    work_cri_desc, work_atp_index,
+                    given_cri_desc, returned_cri_desc,
+                    down, up,
+                    num_buffers, buffer_size),
+      ldQuery_(ldStmtStr),
+      flags_(0)
+    {
+    setNodeType(ComTdb::ex_HBASE_LOAD);
+    }
+
+Long ComTdbExeUtilHBaseBulkLoad::pack(void * space)
+{
+  if (ldQuery_)
+    ldQuery_.pack(space);
+
+  return ComTdbExeUtil::pack(space);
+}
+
+Lng32 ComTdbExeUtilHBaseBulkLoad::unpack(void * base, void * reallocator)
+{
+  if(ldQuery_.unpack(base))
+    return -1;
+  return ComTdbExeUtil::unpack(base, reallocator);
+}
+void ComTdbExeUtilHBaseBulkLoad::displayContents(Space * space,ULng32 flag)
+{
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+
+  if(flag & 0x00000008)
+    {
+      char buf[1000];
+      str_sprintf(buf, "\nFor ComTdbExeUtilHbaseLoad :");
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+      if (getTableName() != NULL)
+        {
+          str_sprintf(buf,"Tablename = %s ",getTableName());
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
+
+      if (ldQuery_)
+        {
+          char query[400];
+          if (strlen(ldQuery_) > 390)
+            {
+              strncpy(query, ldQuery_, 390);
+              query[390] = 0;
+              strcat(query, "...");
+            }
+          else
+            strcpy(query, ldQuery_);
+
+          str_sprintf(buf,"ld Query = %s ",query);
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
+
+
+    }
+
+  if (flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
+}
+

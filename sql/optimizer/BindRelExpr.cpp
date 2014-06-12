@@ -9631,7 +9631,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
   return boundExpr;
 } // Insert::bindNode()
-RelExpr *HbaseBulkLoadPrep::bindNode(BindWA *bindWA)
+RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
 {
   //CMPASSERT((CmpCommon::getDefault(TRAF_LOAD) == DF_ON &&
    //   CmpCommon::getDefault(TRAF_LOAD_HFILE) == DF_ON));
@@ -9639,7 +9639,7 @@ RelExpr *HbaseBulkLoadPrep::bindNode(BindWA *bindWA)
   {
     return this;
   }
-  //RelExpr * inschild = child(0).getPtr();
+
   Insert * newInsert = new (bindWA->wHeap())
                             Insert(getTableName(),
                                    NULL,
@@ -9653,31 +9653,9 @@ RelExpr *HbaseBulkLoadPrep::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
 
+  return boundNewInsert;
 
 
-  RelExpr * newRelExpr = new (bindWA->wHeap()) RelRoot(boundNewInsert);
-  //hardcoded for now
-  NAString path = "/tmp";
-
-  RelExpr * utilHbaseLoad =  new (bindWA->wHeap())
-                               ExeUtilHbaseLoad(
-                                         getTableName(),
-                                         path,
-                                         bindWA->wHeap());
-
-  //new root to prevent  error 4056 when binding???????
-
-
-  RelExpr *blockedUnion = new (bindWA->wHeap()) Union(newRelExpr, utilHbaseLoad);
-  ((Union*)blockedUnion)->setBlockedUnion();
-  ((Union*)blockedUnion)->setSerialUnion();
-  //((Union*)blockedUnion)->setNoOutputs();
-
-  RelExpr *boundBlockedUnion = blockedUnion->bindNode(bindWA);
-  if (bindWA->errStatus())
-    return NULL;
-
-  return boundBlockedUnion;
 
 }
 
