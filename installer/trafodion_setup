@@ -11,7 +11,6 @@
 #==============================================
 # Default values
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-typeset TOOLS_TAR="$TRAF_WORKDIR/traf_other_tools.tgz"
 typeset TRAF_USER="trafodion"
 typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
 typeset NODE_LIST="$HOSTNAME"
@@ -307,28 +306,6 @@ if [ $? != 0 ]; then
 fi
 
 #=======================================
-echo "***INFO: installing additional libraries"
-echo "***INFO: ... libqpidclient.so.6 libqpidcommon.so.6 libqpidtypes.so.1"
-# TODO: perhaps change this to install the qpid-cpp-client-0.14-16.el6.x86_64.rpm
-# but we already install qpid-cpp-client so shouldn't that one work?
-cd $TRAF_WORKDIR
-tar -xzf $TOOLS_TAR traf_other_tools/qpidlibs.6
-if [ $? != 0 ]; then
-    echo "***ERROR: Problem untarring $TOOLS_TAR"
-    exit -1
-fi
-if [ $node_count -gt 1 ]; then
-    pdsh $MY_NODES -x $HOSTNAME mkdir -p $TRAF_WORKDIR/traf_other_tools
-    pdcp $MY_NODES -r $TRAF_WORKDIR/traf_other_tools/qpidlibs.6 $TRAF_WORKDIR/traf_other_tools
-fi
-
-$TRAF_PDSH sudo cp $TRAF_WORKDIR/traf_other_tools/qpidlibs.6/* /usr/lib64
-if [ $? != 0 ]; then
-    echo "***ERROR: Problem copying additional libraries to /usr/lib64"
-    exit -1
-fi
-
-#=======================================
 # Install additional packages if we are on an OpenStack VM
 OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
 if [ $OPENSTACK_VM -ne 0 ]; then
@@ -395,7 +372,6 @@ sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs-*.tgz $HOME_DIR/$TRAF_USER/dcs_build.tgz &> /dev/null
-sudo cp $TRAF_WORKDIR/traf_other_tools.tgz $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller $HOME_DIR/$TRAF_USER

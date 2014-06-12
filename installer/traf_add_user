@@ -329,7 +329,7 @@ if [ "$node_count" -ne 1 ]; then
     sudo rm -rf $TRAF_WORKDIR/$TRAF_USER/.pulse 2>/dev/null
     sudo chown -R $USER.$(id -ng) $TRAF_WORKDIR/$TRAF_USER
     pdcp -r $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/$TRAF_USER $TRAF_WORKDIR
-    pdsh $MY_NODES -x $HOSTNAME sudo cp -r $TRAF_WORKDIR/$TRAF_USER /home
+    pdsh $MY_NODES -x $HOSTNAME sudo cp -r $TRAF_WORKDIR/$TRAF_USER $default_home
     pdsh $MY_NODES -x $HOSTNAME sudo chown -R $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR
 fi
 
