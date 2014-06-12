@@ -60,7 +60,7 @@ done
 echo -n "Do you want to uninstall MapR (deleting all data) Y/N: "
 read v
 
-if [[ $v != "Y" ]] || [[ $v != "y" ]]; then
+if [[ $v != "Y" ]] && [[ $v != "y" ]]; then
    echo "***INFO: Exiting..."
    exit
 fi
