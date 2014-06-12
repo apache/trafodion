@@ -141,7 +141,7 @@ public class HBaseTxClient {
             throw new RuntimeException(e);
       }
 
-      String useRecov = System.getenv("TM_ENABLE_RECOV_CLIENT");
+      String useRecov = System.getenv("TM_ENABLE_TLOG_WRITES");
       if (useRecov != null) {
          useRecovThread = (Integer.parseInt(useRecov) != 0);
          LOG.debug("useRecov != null");
@@ -196,7 +196,7 @@ public class HBaseTxClient {
             LOG.error("Unable to create TransactionManager, Exception: " + e + "throwing new RuntimeException");
             throw new RuntimeException(e);
       }
-      String useRecov = System.getenv("TM_ENABLE_RECOV_CLIENT");
+      String useRecov = System.getenv("TM_ENABLE_TLOG_WRITES");
       if (useRecov != null)
          useRecovThread = (Integer.parseInt(useRecov) != 0);
          LOG.debug("useRecov != null");
@@ -340,16 +340,10 @@ public class HBaseTxClient {
        try {
           trxManager.doCommit(ts);
        } catch (CommitUnsuccessfulException e) {
-	   LOG.error("Returning from HBaseTxClient:doCommit, retval: " + RET_EXCEPTION + " IOException" + " txid: " + transactionId);
-	   return RET_EXCEPTION;
+          LOG.error("Returning from HBaseTxClient:doCommit, retval: " + RET_EXCEPTION + " IOException" + " txid: " + transactionId);
+          return RET_EXCEPTION;
        }
        if (useTlog) {
-//Temp SLB
-//       LOG.debug("Creating copy of TransactionState: " + ts.toString());
-//       TransactionState ts2 = new TransactionState(transactionId);
-//       LOG.debug("Copy of TransactionState: " + ts.toString() + " created");
-//       tLog.getTransactionState(ts2);
-//       LOG.debug("TransactionState returned: " + ts.toString());
 
           tLog.putRecord(transactionId, "FORGOTTEN", null, true);
        }

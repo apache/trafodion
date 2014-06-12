@@ -23,7 +23,7 @@ echo "## setting the default for ax_reg"
 echo "DTM_RM_PARTIC=0"
 echo "DTM_TLOG_PER_TM=0"
 echo "TM_ENABLE_TLOG_WRITES=0"
-echo "TM_ENABLE_RECOV_CLIENT=0"
+echo "TM_TLOG_HASH_KEYS=0"
 echo "#TM_TLOG_MAX_VERSIONS less than 3 will be ignored"
 echo "TM_TLOG_MAX_VERSIONS=5"
 

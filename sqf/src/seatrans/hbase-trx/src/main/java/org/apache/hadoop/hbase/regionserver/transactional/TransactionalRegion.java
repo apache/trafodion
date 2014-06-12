@@ -130,7 +130,7 @@ public class TransactionalRegion extends HRegion {
         private int cleanAT = 0; // 0 is to process edits from split-THLOG and resolve in-doubt transaction, (default, value set in genms)
                                                   // 1 is to process split-THLOG but ignore any in-doubt transaction
                                                   // else is to ignore split-THLOG, so we basically discard all the edits from split-THLOG and returns 
- 
+
 	/**
 	 * @param basedir
 	 * @param log
@@ -427,7 +427,7 @@ public class TransactionalRegion extends HRegion {
                 else
                     LOG.trace("Trafodion Recovery: region " + recoveryTrxPath + " has 0 in-doubt transactions and edits are archived.");
                 regionState = 2; // region started
-                LOG.info("Trafodion Recovery: region " + super.getRegionInfo().getEncodedName() + " is STARTED.");
+                LOG.debug("Trafodion Recovery: region " + super.getRegionInfo().getEncodedName() + " is STARTED.");
         }
 
         public void replayCommittedTransaction(long transactionId, WALEdit val) throws IOException {
@@ -519,7 +519,7 @@ public class TransactionalRegion extends HRegion {
 		synchronized (transactionsById) {
 			transactionsById.put(transactionId, state);
                         // Logging to catch error 97
-                        LOG.info("Adding transaction: [" + transactionId + "] in region ["
+                        LOG.debug("Adding transaction: [" + transactionId + "] in region ["
                              + super.getRegionInfo().getRegionNameAsString() + "]" + " to list");
 		}
 		try {
@@ -701,7 +701,7 @@ public class TransactionalRegion extends HRegion {
                                long tid = state.getTransactionId();
                                if ((int) (tid >> 32) == tmid) {
                                    indoubtTransactions.add(tid);
-                                   LOG.info("Trafodion Recovery: region " + super.getRegionInfo().getEncodedName() + " in-doubt transaction " + tid + "has been added into the recovery repply to TM " + tmid);
+                                   LOG.debug("Trafodion Recovery: region " + super.getRegionInfo().getEncodedName() + " in-doubt transaction " + tid + "has been added into the recovery repply to TM " + tmid);
                                }
                           } 
                           break;
@@ -731,12 +731,11 @@ public class TransactionalRegion extends HRegion {
 			}
 
 			if (hasConflict(state)) {
-				state.setStatus(Status.ABORTED);
+  				state.setStatus(Status.ABORTED);
 				retireTransaction(state);
                                 LOG.info("commitRequest encountered conflict txId: " + transactionId + "returning COMMIT_CONFLICT");
 				return TransactionalRegionInterface.COMMIT_CONFLICT;
 			}
-
 			// No conflicts, we can commit.
 			LOG.trace("No conflicts for transaction " + transactionId
 					+ " found in region "
@@ -759,7 +758,7 @@ public class TransactionalRegion extends HRegion {
                         LOG.debug("commitRequest COMMIT_OK -- EXIT txId: " + transactionId);
 			return TransactionalRegionInterface.COMMIT_OK;
 		}
-		// Otherwise we were read-only and commitable, so we can forget it.
+ 		// Otherwise we were read-only and commitable, so we can forget it.
 		state.setStatus(Status.COMMITED);
 		retireTransaction(state);
                 LOG.debug("commitRequest READ ONLY -- EXIT txId: " + transactionId);
@@ -844,7 +843,7 @@ public class TransactionalRegion extends HRegion {
 		try {
 			state = getTransactionState(transactionId);
 		} catch (UnknownTransactionException e) {
-			LOG.info("Asked to abort unknown transaction [" + transactionId
+			LOG.debug("Asked to abort unknown transaction [" + transactionId
 					+ "] in region [" + getRegionInfo().getRegionNameAsString()
 					+ "], ignoring");
 			return;
@@ -1015,18 +1014,18 @@ public class TransactionalRegion extends HRegion {
 			return;
 		}
 
-		LOG.info("Preparing to split region "
+		LOG.debug("Preparing to split region "
 				+ getRegionInfo().getRegionNameAsString());
 
                 if(splitDelayEnabled) {
 			while (!commitPendingTransactions.isEmpty() || !transactionsById.isEmpty()) {
-				LOG.info("Preparing to close transactional region ["
+				LOG.debug("Preparing to close transactional region ["
 						+ getRegionInfo().getRegionNameAsString()
 						+ "], but still have [" + commitPendingTransactions.size()
 						+ "] transactions that are pending commit. And [ " 
 						+ transactionsById.size() + "] active transactions. Sleeping");
 				for (TransactionState s : commitPendingTransactions) {
-					LOG.info("commit pending: " + s.toString());
+					LOG.debug("commit pending: " + s.toString());
 				}
 				try {
 					Thread.sleep(CLOSE_WAIT_ON_COMMIT_PENDING);
@@ -1051,18 +1050,18 @@ public class TransactionalRegion extends HRegion {
 			return;
 		}
 
-		LOG.info("Preparing to close region "
+		LOG.debug("Preparing to close region "
 				+ getRegionInfo().getRegionNameAsString());
 		closing = true;
 
 		while (!commitPendingTransactions.isEmpty()) {
-			LOG.info("Preparing to close transactional region ["
+			LOG.debug("Preparing to close transactional region ["
 					+ getRegionInfo().getRegionNameAsString()
 					+ "], but still have [" + commitPendingTransactions.size()
 					+ "] transactions that are pending commit. Sleeping");
 					 
 			for (TransactionState s : commitPendingTransactions) {
-				LOG.info("commit pending: " + s.toString());
+				LOG.debug("commit pending: " + s.toString());
 			}
 			try {
 				Thread.sleep(CLOSE_WAIT_ON_COMMIT_PENDING);
@@ -1097,7 +1096,7 @@ public class TransactionalRegion extends HRegion {
 		synchronized (transactionsById) {
 			transactionsById.remove(key);
                         // Logging to catch error 97
-                        LOG.info("Removing transaction: " + key + " from list");
+                        LOG.debug("Removing transaction: " + key + " from list");
 		}
 	}
 
@@ -1221,14 +1220,14 @@ public class TransactionalRegion extends HRegion {
 
 		@Override
 		public void leaseExpired() {
-			LOG.info("Transaction [" + this.transactionName
+			LOG.debug("Transaction [" + this.transactionName
 					+ "] expired in region ["
 					+ getRegionInfo().getRegionNameAsString() + "]");
 			TransactionState s = null;
 			synchronized (transactionsById) {
 				s = transactionsById.remove(transactionName);
                                 // Logging to catch error 97
-                                LOG.info("Removing transaction: " + this.transactionName + " from list");
+                                LOG.debug("Removing transaction: " + this.transactionName + " from list");
 			}
 			if (s == null) {
 				LOG.warn("Unknown transaction expired " + this.transactionName);
@@ -1241,20 +1240,20 @@ public class TransactionalRegion extends HRegion {
 												// ref
 				break;
 			case COMMIT_PENDING:
-				LOG.info("Transaction " + s.getTransactionId()
+				LOG.debug("Transaction " + s.getTransactionId()
 						+ " expired in COMMIT_PENDING state");
 
 				try {
 					if (s.getCommitPendingWaits() > MAX_COMMIT_PENDING_WAITS) {
-						LOG.info("Checking transaction status in transaction log");
+						LOG.debug("Checking transaction status in transaction log");
 						resolveTransactionFromLog(s);
 						break;
 					}
-					LOG.info("renewing lease and hoping for commit");
+					LOG.debug("renewing lease and hoping for commit");
 					s.incrementCommitPendingWaits();
 					transactionsById.put(s.getTransactionId(), s);
                                         // Logging to catch error 97
-                                        LOG.info("Adding transaction: " + s.getTransactionId() + " to list");
+                                        LOG.debug("Adding transaction: " + s.getTransactionId() + " to list");
 					try {
 						transactionLeases.createLease(
 								getLeaseId(s.getTransactionId()), this);
