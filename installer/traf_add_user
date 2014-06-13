@@ -212,6 +212,10 @@ do
     fi
 done
 
+# Make sure all prefix directories of TRAF_USER_DIR exist or
+# useradd command will fail
+$TRAF_PDSH sudo mkdir -p $default_home
+
 userid_already_exists="N"
 $TRAF_PDSH sudo /usr/sbin/useradd \
     --shell /bin/bash \
