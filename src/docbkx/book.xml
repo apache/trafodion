@@ -46,7 +46,7 @@
   <info>
     
     <title><link xlink:href="http://www.trafodion.org">
-    The Trafodion&#153; Data Connectivity Services Reference Guide
+    Trafodion Database Connectivity Services Reference Guide
     </link></title>
     <subtitle><link xlink:href="http://www.trafodion.org">
            <inlinemediaobject>
@@ -56,13 +56,25 @@
            </inlinemediaobject>
       </link>
     </subtitle>
-   <copyright><year>2013</year><holder>The Hewlett-Packard Development Company, L.P.
-        All Rights Reserved. Trafodion, Trafodion DCS and the Trafodion project logo are trademarks of the Hewlett-Packard Development Company, L.P..
-        </holder>
+   <copyright>
+       <year>2014</year>
+       <holder>Hewlett-Packard Development Company, L.P.
+        <para> 
+        The information contained herein is subject to change without notice. 
+        This documentation is distributed on an “AS IS” basis, without warranties or conditions of any kind, either express or implied. Nothing herein should be construed as constituting an additional warranty. 
+        HP shall not be liable for technical or editorial errors or omissions contained herein.
+        </para>
+        <para>
+        NOTICE REGARDING OPEN SOURCE SOFTWARE: Project Trafodion is licensed under the Apache License, Version 2.0 (the "License"); you may not use software from Project Trafodion except in compliance with the License. 
+        You may obtain a copy of the License at <link xlink:href="http://www.apache.org/licenses/LICENSE-2.0"></link> 
+        Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+        See the License for the specific language governing permissions and limitations under the License.
+       </para>
+       </holder>
     </copyright>
       <abstract>
     <para>This is the official reference guide of
-    <link xlink:href="http://www.trafodion.org">Trafodion DCS (Data Connectivity Services)</link>,
+    <link xlink:href="http://www.trafodion.org">Trafodion DCS (Database Connectivity Services)</link>,
     a distributed, ODBC, JDBC connectivity component of Trafodion, built on top of 
     <link xlink:href="http://zookeeper.apache.org/">Apache ZooKeeper</link>
       </para>
@@ -92,7 +104,7 @@
 	  <section xml:id="arch.overview.dcs">
 	  <title>DCS?</title>
 	  <para>DCS, see figure <xref linkend='architecture.overview.dcs.graphic'></xref>, is a framework that connects 
-	      ODBC/JDBC T4 clients to Trafodion user programs (MXOSRVR servers). In a nutshell, clients connect to a listening 
+	      ODBC/JDBC Type 4 clients to Trafodion user programs (MXOSRVR servers). In a nutshell, clients connect to a listening 
 	      DcsMaster on a well known port. DcsMaster looks in ZooKeeper for an "available"
 	      DcsServer user program (MXOSRVR) and returns an object reference to that server back to the client.
 	      The client then connects directly to the MXOSRVR. After the initial startup DcsMaster restarts any failed
@@ -126,7 +138,7 @@
     
 	<section xml:id="client">
 	 <title>Client</title>
-     <para>The Trafodion ODBC/JDBC T4 client drivers connect to MXOSRVRs through the DCS Master.
+     <para>The Trafodion ODBC/JDBC Type 4 client drivers connect to MXOSRVRs through the DCS Master.
     </para>
 	</section>
 	

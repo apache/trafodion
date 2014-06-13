@@ -46,7 +46,7 @@
   <groupId>org.trafodion</groupId>
   <artifactId>dcs</artifactId>
   <packaging>jar</packaging>
-  <version>0.8.0</version>
+  <version>0.8.1</version>
   <name>dcs</name>
   <url>http://dcs.trafodion.org</url>
   
@@ -398,7 +398,7 @@
   	<jython-standalone.version>2.5.3</jython-standalone.version>
 
   	<!-- also must update this when we bump version -->
-  	<package.version>0.8.0</package.version>
+  	<package.version>0.8.1</package.version>
   	<final.name>${project.artifactId}-${project.version}</final.name>
   	
   	<!-- Test inclusion patterns used by failsafe configuration -->
@@ -662,16 +662,18 @@
             <reports>
               <report>project-team</report>
               <report>mailing-list</report>
+<!--   
               <report>cim</report>
               <report>issue-tracking</report>
               <report>license</report>
               <report>scm</report>
               <report>index</report>
+-->
             </reports>
           </reportSet>
         </reportSets>
-
       </plugin>
+<!-- 
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
         <version>3.2</version>
@@ -681,6 +683,7 @@
           <templateFile>src/site/site.vm</templateFile>
         </configuration>
       </plugin>
+ -->      
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.6.1</version>
