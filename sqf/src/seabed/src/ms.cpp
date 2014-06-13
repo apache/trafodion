@@ -1199,6 +1199,9 @@ SB_THROWS_FATAL {
 #endif
 
     SB_UTRACE_MPI_TEST();
+
+    setvbuf(stdout, NULL, _IOLBF, 0);
+
     // TODO: remove when evlog gone
     lv_act.sa_handler = SIG_IGN;
     sigemptyset(&lv_act.sa_mask);

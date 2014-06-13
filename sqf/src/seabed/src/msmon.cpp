@@ -4739,7 +4739,6 @@ SB_THROWS_FATAL {
     gp_local_mon_io = new Local_IO_To_Monitor(gv_ms_su_pid);
 
     if ((gp_local_mon_io != NULL) && !gp_local_mon_io->init_comm()) {
-abort();
         delete gp_local_mon_io;
         gp_local_mon_io = NULL;
     }
