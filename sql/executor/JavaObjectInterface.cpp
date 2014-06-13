@@ -22,9 +22,6 @@
 #include "HdfsLogger.h"
 #include "Globals.h"
 
-#define DEFAULT_MAX_HEAP_SIZE "512"
-#define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
-
 NABoolean loggerStatus = HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config");
 
 // ===========================================================================
@@ -94,25 +91,53 @@ char* JavaObjectInterface::buildClassPath()
 int JavaObjectInterface::createJVM()
 {
   JavaVMInitArgs jvm_args;
-  JavaVMOption jvm_options[3];
+  JavaVMOption jvm_options[4];
 
   char* classPathArg = buildClassPath();
-  char debugOptions[300];
   int numJVMOptions = 0;
-  int heapSize;
-  int debugPort = 0;
-  jvm_options[numJVMOptions++].optionString = classPathArg;
-  const char *maxHeapSize = getenv("JVM_MAX_HEAP_SIZE_MB");
-  char heapOptions[100];
-  if (maxHeapSize == NULL)
-      maxHeapSize = DEFAULT_MAX_HEAP_SIZE;
-  heapSize = atoi(maxHeapSize);
-  if (heapSize != USE_JVM_DEFAULT_MAX_HEAP_SIZE)
-  { 
-     sprintf(heapOptions, "-Xmx%sm", maxHeapSize);
-     jvm_options[numJVMOptions++].optionString = heapOptions;
+  jvm_options[numJVMOptions].optionString = classPathArg;
+  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Using classpath: %s", 
+                 jvm_options[numJVMOptions].optionString);
+  numJVMOptions++;
+
+  char maxHeapOptions[64];
+  bool passMaxHeapToJVM = true;
+  int maxHeapEnvvarMB = 512;
+  const char *maxHeapSizeStr = getenv("JVM_MAX_HEAP_SIZE_MB");
+  if (maxHeapSizeStr)
+  {
+    maxHeapEnvvarMB = atoi(maxHeapSizeStr);
+    if (maxHeapEnvvarMB <= 0)
+      passMaxHeapToJVM = false;
   }
+  if (passMaxHeapToJVM)
+  {
+    sprintf(maxHeapOptions, "-Xmx%dm", maxHeapEnvvarMB);
+    jvm_options[numJVMOptions].optionString = maxHeapOptions;
+    HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG,
+                    "Max heap option: %s",
+                    jvm_options[numJVMOptions].optionString);
+    numJVMOptions++;
+  }
+
+  char initHeapOptions[64];
+  const char *initHeapSizeStr = getenv("JVM_INIT_HEAP_SIZE_MB");
+  if (initHeapSizeStr)
+  {
+    const int initHeapEnvvarMB = atoi(initHeapSizeStr);
+    if (initHeapEnvvarMB > 0)
+    {
+      sprintf(initHeapOptions, "-Xms%dm", initHeapEnvvarMB);
+      jvm_options[numJVMOptions].optionString = initHeapOptions;
+      HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG,
+                    "Init heap option: %s",
+                    jvm_options[numJVMOptions].optionString);
+      numJVMOptions++;
+    }
+  }
+
 #ifdef _DEBUG
+  int debugPort = 0;
   const char *debugPortStr = getenv("JVM_DEBUG_PORT");
   if (debugPortStr != NULL)
      debugPort = atoi(debugPortStr);
@@ -120,6 +145,7 @@ int JavaObjectInterface::createJVM()
   if (debugTimeoutStr != NULL)
      debugTimeout_ = atoi(debugTimeoutStr);
   const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
+  char debugOptions[300];
   if (debugPort > 0)
   {
      debugPort_ = debugPort + (GetCliGlobals()->myPin() % 1000);
@@ -129,11 +155,13 @@ int JavaObjectInterface::createJVM()
         strcat(debugOptions, ",suspend=y");
      else
         strcat(debugOptions, ",suspend=n");
-      jvm_options[numJVMOptions++].optionString = debugOptions;
+     jvm_options[numJVMOptions].optionString = debugOptions;
+     HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG,
+                     "Debug options: %s", 
+                     jvm_options[numJVMOptions].optionString);
+     numJVMOptions++;
   }
 #endif 
-  HdfsLogger::log1(CAT_JNI_TOP, LL_DEBUG, "Using classpath:");
-  HdfsLogger::log1(CAT_JNI_TOP, LL_DEBUG, jvm_options[0].optionString);
 
   jvm_args.version            = JNI_VERSION_1_6;
   jvm_args.options            = jvm_options;
