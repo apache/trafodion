@@ -888,34 +888,9 @@ void TM_Info::initialize()
        else
          trace_printf("TM will use a single TLOG for all audit.\n");
     }
-    bool lv_earlyCommitReply;
-    ms_getenv_bool ("DTM_EARLYCOMMITREPLY", &lv_earlyCommitReply);
-    if (lv_earlyCommitReply)
-        iv_earlyCommitReply = lv_earlyCommitReply;
-    else
-    {   
-       // Check for registry value
-       lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 
-                          (char *) CLUSTER_GROUP, (char *) DTM_EARLYCOMMITREPLY, la_value);
 
-       if (lv_error == 0)
-       {
-          lv_earlyCommitReply =  atoi(la_value);
-          switch (lv_earlyCommitReply)
-          {
-          case false:
-             iv_earlyCommitReply = false;
-             break;
-          case true:
-             iv_earlyCommitReply = true;
-             break;
-          default:
-             iv_earlyCommitReply = (bool) TM_DEFAULT_EARLY_COMMIT_REPLY;
-          }
-       }
-       else
-          iv_earlyCommitReply = lv_earlyCommitReply;
-    }
+    iv_earlyCommitReply = TM_DEFAULT_EARLY_COMMIT_REPLY;
+    ms_getenv_bool ("DTM_EARLYCOMMITREPLY", &iv_earlyCommitReply);
 
     if (iv_trace_level)
     {
