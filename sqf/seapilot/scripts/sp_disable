@@ -59,15 +59,7 @@ if [[ -e $SQ_PDSH ]]; then
 else
     $MY_SQROOT/seapilot/scripts/sp_disableNodeHelper
 fi
-
-echo
-echo '*** I M P O R T A N T ***'
-echo
-echo 'After running this script, you need to execute the following:'
-echo
-echo '       cd $MY_SQROOT; . ./sqenv.sh'
-echo
-echo 'in all open terminals!'
-echo
-echo '*** I M P O R T A N T ***'
+echo 
+echo 'Seapilot disabled.'
+echo 'You must restart the instance for these changes to take affect.'
 echo

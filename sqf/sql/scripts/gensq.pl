@@ -248,7 +248,7 @@ sub printInitialLines {
     $fcbpublishlog_string = "TSE_FCB_PUBLISH_LOG=0\n";
     $fcbpublishstd_string = "TSE_FCB_PUBLISH_STDOUT=0\n";
 
-    printScript(1, "export SQ_START_SEAPILOT=1\n");
+    printScript(1, "export SQ_START_SEAPILOT=0\n");
     printScript(1, "export SQ_SEAPILOT_SUSPENDED=0\n");
     printScript(1, "export SQ_SEAPILOT_PERF_SUSPENDED=0\n");
     open (ETC,">>$msenv")
@@ -383,11 +383,14 @@ sub printInitialLines {
 	printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
     }
     printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
-    #printScript(0, "\nset MY_SQROOT=\$MY_SQROOT\n"); // The monitor now propagates MY_SQROOT to all processes
     printScript(0, "\nset MY_NODES=\$MY_NODES\n");
 
     addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
     addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+    addDbClusterData( "QPID_ROUTE_DIR", $ENV{'QPID_ROUTE_DIR'});
+    addDbClusterData( "SP_EXPORT_LIB", $ENV{'SP_EXPORT_LIB'});
+    addDbClusterData( "SQ_SEAPILOT_SUSPENDED", "0");
+    addDbClusterData( "SQ_SEAPILOT_PERF_SUSPENDED", "0");
 
     $gbInitialLinesPrinted = 1;
 }
@@ -1059,7 +1062,7 @@ sub genProxy{
 
     printScript(1, "set SP_PROXIES_STARTED=0\n");
     printScript(1, "set SP_PROXY_START_STATE=1\n");
-
+	printScript(1, "set SQ_SEAPILOT_SUSPENDED=0\n");
 
     printScript(1, "set SP_BADMESSAGES=$gUNCBadMessagesDir\n");
     printScript(1, "set SP_OVERFLOW=$gUNCOverflowDir\n");
@@ -2394,6 +2397,7 @@ while (<SRC>) {
     if (/^begin node/) {
 	processNodes;
 	printInitialLines;
+	genProxy();
     }
     elsif (/^begin enclosure/) {
         processEnclosures;
@@ -2401,7 +2405,6 @@ while (<SRC>) {
     }
     elsif (/^begin tmase/) {
         validate_config_script();
-        genProxy();
 
     }
     elsif (/^begin role_node_map/) {

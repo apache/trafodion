@@ -29,45 +29,6 @@ fi
 
 
 # modify various files to disable SeaPilot on the current node
+sed -i 's/export SQ_START_SEAPILOT=1/export SQ_START_SEAPILOT=0/g' $MY_SQROOT/sql/scripts/gomon.cold
+sed -i 's/export SQ_START_SEAPILOT=1/export SQ_START_SEAPILOT=0/g' $MY_SQROOT/sql/scripts/gomon.warm
 
-sed -i 's/SQ_SEAPILOT_SUSPENDED=0/SQ_EVLOG_NONE=1/g' $MY_SQROOT/sqenvcom.sh
-sed -i 's/SQ_SEAPILOT_SUSPENDED=0/SQ_EVLOG_NONE=1/g' $MY_SQROOT/sql/scripts/gomon.cold
-sed -i 's/SQ_SEAPILOT_SUSPENDED=0/SQ_EVLOG_NONE=1/g' $MY_SQROOT/sql/scripts/gomon.warm
-sed -i '/export SQ_START_SEAPILOT=1/d' $MY_SQROOT/sql/scripts/gomon.cold
-sed -i '/export SQ_START_SEAPILOT=1/d' $MY_SQROOT/sql/scripts/gomon.warm
-
-sed -i '/export SQ_SEAPILOT_PERF_SUSPENDED=0/d' $MY_SQROOT/sqenvcom.sh
-sed -i '/set SQ_SEAPILOT_PERF_SUSPENDED=0/d' $MY_SQROOT/sql/scripts/gomon.cold
-sed -i '/set SQ_SEAPILOT_PERF_SUSPENDED=0/d' $MY_SQROOT/sql/scripts/gomon.warm
-sed -i '/export SQ_SEAPILOT_PERF_SUSPENDED=0/d' $MY_SQROOT/sql/scripts/gomon.cold
-sed -i '/export SQ_SEAPILOT_PERF_SUSPENDED=0/d' $MY_SQROOT/sql/scripts/gomon.warm
-
-
-
-# verify that the above file modifications were successful
-
-SQ_SEAPILOT_SUSPENDED_COUNT_SQENVCOM_SH=$(grep -a 'SQ_SEAPILOT_SUSPENDED=0' $MY_SQROOT/sqenvcom.sh | wc -l)
-
-if [[ $SQ_SEAPILOT_SUSPENDED_COUNT_SQENVCOM_SH -gt 0 ]]; then
-    echo
-    echo "*** ERROR: $MY_SQROOT/sqenvcom.sh was not successfully modified to disable SeaPilot."
-    echo
-fi
-
-SQ_SEAPILOT_SUSPENDED_COUNT_GOMON_COLD=$(grep -a 'SQ_SEAPILOT_SUSPENDED=0' $MY_SQROOT/sql/scripts/gomon.cold | wc -l)
-SQ_START_SEAPILOT_COUNT_GOMON_COLD=$(grep -a 'export SQ_START_SEAPILOT=1' $MY_SQROOT/sql/scripts/gomon.cold | wc -l)
-
-if [[ $SQ_SEAPILOT_SUSPENDED_COUNT_GOMON_COLD -gt 0 || $SQ_START_SEAPILOT_COUNT_GOMON_COLD -gt 0 ]]; then
-    echo
-    echo "*** ERROR: $MY_SQROOT/sql/scripts/gomon.cold was not successfully modified to disable SeaPilot."
-    echo
-fi
-
-SQ_SEAPILOT_SUSPENDED_COUNT_GOMON_WARM=$(grep -a 'SQ_SEAPILOT_SUSPENDED=0' $MY_SQROOT/sql/scripts/gomon.warm | wc -l)
-SQ_START_SEAPILOT_COUNT_GOMON_WARM=$(grep -a 'export SQ_START_SEAPILOT=1' $MY_SQROOT/sql/scripts/gomon.warm | wc -l)
-
-if [[ $SQ_SEAPILOT_SUSPENDED_COUNT_GOMON_WARM -gt 0 || $SQ_START_SEAPILOT_COUNT_GOMON_WARM -gt 0 ]]; then
-    echo
-    echo "*** ERROR: $MY_SQROOT/sql/scripts/gomon.warm was not successfully modified to disable SeaPilot."
-    echo
-fi
