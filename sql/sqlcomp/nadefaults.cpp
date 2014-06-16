@@ -2004,6 +2004,8 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // Disallow/Allow left joins in MultiJoin framework
   DDkwd__(LEFT_JOINS_SPOIL_JBB,        "OFF"),
 
+  DDkwd__(LIMIT_HBASE_SCAN_DOP,                 "OFF"),
+
   // if this default is set to ON, then the max precision of a numeric
   // expression(arithmetic, aggregate) is limited to MAX_NUMERIC_PRECISION
   // (= 18). If this is set to OFF, the default value, then the max precision
@@ -2011,7 +2013,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // result a software datatype(BIGNUM). Software datatypes give better
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
- 
+
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "localhost"), 
  

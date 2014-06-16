@@ -3573,6 +3573,9 @@ enum DefaultConstants
   HBASE_COMPUTE_DOP_USING_TABLE_SIZES,
 
   TRAF_LOAD_USE_QUASI_SECURE,
+  // if ON limits DoP of Hbase scan to number of partitions
+  LIMIT_HBASE_SCAN_DOP,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

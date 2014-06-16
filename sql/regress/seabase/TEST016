@@ -41,9 +41,7 @@ cqd query_cache '0';
 cqd cache_histograms 'off';
 cqd HBASE_MIN_BYTES_PER_ESP_PARTITION '1';
 cqd USTAT_COLLECT_MC_SKEW_VALUES 'on';
-cqd PARALLEL_NUM_ESPS '8';
-cqd MAX_ESPS_PER_CPU_PER_OP '4';
-
+cqd PARALLEL_NUM_ESPS '4';
 
 ?section mcStatsPart_cleanup
 drop table if exists mcStatPart1;
