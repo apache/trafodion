@@ -524,7 +524,7 @@ export AR=ar
 export FLEX=flex
 export CXX=g++
 export MAVEN=mvn
-if [[ -z "$(which $MAVEN)" ]]
+if [[ -z "$(which $MAVEN 2> /dev/null)" ]]
 then
   export M2_HOME="${TOOLSDIR}/apache-maven-3.0.5"
   MAVEN="${M2_HOME}/bin/mvn"
