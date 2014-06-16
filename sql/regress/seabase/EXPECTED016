@@ -184,7 +184,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212269277228033475
+PLAN_ID .................. 212269290831952872
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 876.41
 STATEMENT ................ select f,count(f)
@@ -332,9 +332,173 @@ DESCRIPTION
 --- SQL operation complete.
 >>
 >>-- decimal
->>--prepare st1 from select f,count(f) from mcStatPart5 <<+ cardinality 10e8 >> group by f;
->>--explain options 'f' st1;
->>--explain st1;
+>>prepare st1 from select f,count(f) from mcStatPart5 <<+ cardinality 10e8 >> group by f;
+
+--- SQL command prepared.
+>>explain options 'f' st1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+000
+4    .    5    hash_partial_groupby                                  1.00E+000
+3    .    4    esp_exchange                    1:8(hash2)            1.00E+000
+2    .    3    hash_partial_groupby                                  1.00E+000
+1    .    2    esp_exchange                    8(hash2):2(range)     1.00E+009
+.    .    1    trafodion_scan                  MCSTATPART5           1.00E+009
+
+--- SQL operation complete.
+>>explain st1;
+
+------------------------------------------------------------------ PLAN SUMMARY
+MODULE_NAME .............. DYNAMICALLY COMPILED
+STATEMENT_NAME ........... ST1
+PLAN_ID .................. 212269290832194215
+ROWS_OUT ................. 1
+EST_TOTAL_COST ......... 902.6
+STATEMENT ................ select f,count(f)
+                           from mcStatPart5 <<+ cardinality 10e8 >>
+                           group by f;
+
+
+------------------------------------------------------------------ NODE LISTING
+ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0
+EST_TOTAL_COST ......... 902.6
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  statement_index ........ 0
+  affinity_value ......... 0
+  est_memory_per_cpu ..... 74 KB
+  max_max_cardinality .... 0
+  total_overflow_size .... 0.00 KB
+  esp_2_node_map ......... (\NSK:0-1:0-1:0-1:0-1)
+  esp_3_node_map ......... (\NSK:-1:-1)
+  xn_access_mode ......... read_only
+  xn_autoabort_interval    0
+  auto_query_retry ....... enabled
+  plan_version ....... 2,600
+  embedded_arkcmp ........ used
+  IS_SQLCI ............... ON
+  LDAP_USERNAME
+  MODE_SEABASE ........... ON
+  SEABASE_VOLATILE_TABLES  ON
+  HBASE_ASYNC_DROP_TABLE   OFF
+  HBASE_SERIALIZATION .... ON
+  HBASE_FILTER_PREDS ..... ON
+  SCHEMA ................. TRAFODION.HBASE
+  HBASE_COMPUTE_DOP_USING  OFF
+  QUERY_CACHE ............ 0
+  CACHE_HISTOGRAMS ....... OFF
+  HBASE_MIN_BYTES_PER_ESP  1
+  USTAT_COLLECT_MC_SKEW_V  ON
+  PARALLEL_NUM_ESPS ...... 8
+  MAX_ESPS_PER_CPU_PER_OP  4
+  select_list ............ TRAFODION.HBASE.MCSTATPART5.F,
+                             cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.
+                             F)))
+
+
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ......... 902.6
+DESCRIPTION
+  memory_quota ........... 1200 MB
+  max_card_est ........... 1
+  fragment_id ............ 0
+  parent_frag ............ (none)
+  fragment_type .......... master
+  grouping_columns ....... TRAFODION.HBASE.MCSTATPART5.F
+  aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.F))
+
+
+ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0.01
+EST_TOTAL_COST ......... 902.6
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 2
+  parent_frag ............ 0
+  fragment_type .......... esp
+  buffer_size ........ 5,000
+  record_length ......... 16
+  parent_processes ....... 1
+  child_processes ........ 8
+  child_partitioning_func  hash2 partitioned 8 ways on (randomNum)
+  seamonster_query ....... no
+  seamonster_exchange .... no
+
+
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+REQUESTS_IN .............. 1
+ROWS_OUT ................. 1
+EST_OPER_COST ............ 0.49
+EST_TOTAL_COST ......... 902.6
+DESCRIPTION
+  max_card_est ........... 1
+  fragment_id ............ 2
+  parent_frag ............ 0
+  fragment_type .......... esp
+  grouping_columns ....... TRAFODION.HBASE.MCSTATPART5.F
+  aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART5.F)
+
+
+ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
+REQUESTS_IN .............. 1
+ROWS_OUT ..... 1,000,000,000
+EST_OPER_COST ........... 22.27
+EST_TOTAL_COST ......... 902.11
+DESCRIPTION
+  max_card_est ........... 1e+09
+  fragment_id ............ 3
+  parent_frag ............ 2
+  fragment_type .......... esp
+  est_memory_per_cpu ..... 74 KB
+  buffer_size ....... 30,388
+  record_length .......... 8
+  parent_processes ....... 8
+  child_processes ........ 2
+  parent_partitioning_fun  hash2 partitioned 8 ways on (randomNum)
+  child_partitioning_func  range partitioned 2 ways on
+                             (TRAFODION.HBASE.MCSTATPART5."_SALT_",
+                             TRAFODION.HBASE.MCSTATPART5.A,
+                             TRAFODION.HBASE.MCSTATPART5.B) with
+                             boundaries(c(<min>) c(<min>) c(<min>) ;c(4) c(3)
+                             c(2.0) )
+  seamonster_query ....... no
+  seamonster_exchange .... no
+  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
+                             scaledNumParts)
+
+
+TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
+TABLE_NAME ............... MCSTATPART5
+REQUESTS_IN .............. 1
+ROWS_OUT ..... 1,000,000,000
+EST_OPER_COST .......... 879.84
+EST_TOTAL_COST ......... 879.84
+DESCRIPTION
+  max_card_est ........... 1e+09
+  fragment_id ............ 3
+  parent_frag ............ 2
+  fragment_type .......... esp
+  scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART5
+  key_columns ............ _SALT_, A, B
+  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
+                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
+  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
+                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+
+--- SQL operation complete.
 >>
 >>-- timestamp type
 >>prepare st1 from select f,count(f) from mcStatPart3 <<+ cardinality 10e8 >> group by f;
@@ -358,7 +522,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212269277228280403
+PLAN_ID .................. 212269290832429301
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.6
 STATEMENT ................ select f,count(f)
@@ -527,7 +691,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212269277228524979
+PLAN_ID .................. 212269290832667337
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 851.77
 STATEMENT ................ select f,count(f)
@@ -696,7 +860,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212269277228767935
+PLAN_ID .................. 212269290832905459
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 851.77
 STATEMENT ................ select f,count(f)
@@ -865,7 +1029,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212269277229010622
+PLAN_ID .................. 212269290833144063
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 876.41
 STATEMENT ................ select f,count(f)
@@ -1034,7 +1198,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212269277229250328
+PLAN_ID .................. 212269290833380458
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 902.6
 STATEMENT ................ select f,count(f)

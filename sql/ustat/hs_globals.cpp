@@ -8107,8 +8107,7 @@ Lng32 HSGlobalsClass::ComputeMCStatistics(NABoolean usingIS)
           for (Int32 i=0; i<colCount; i++)
           {
             HSColumnStruct &col = mgroup->colSet[i];
-            if (DFS2REC::isDecimal(col.datatype) ||
-                DFS2REC::isInterval(col.datatype) ||
+            if (DFS2REC::isInterval(col.datatype) ||
                 DFS2REC::isFloat(col.datatype))
             {
               collectMCSkewedValues = FALSE;

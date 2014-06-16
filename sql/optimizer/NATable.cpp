@@ -2018,11 +2018,12 @@ RangePartitionBoundaries * createRangePartitionBoundariesFromStats
                                        const Int32 statsColsCount,
                                        NAMemory* heap)
 {
-  if ( !checkColumnTypeForSupportability(partColArray, "") )
+  if ( (!checkColumnTypeForSupportability(partColArray, "")) ||
+       (numberOfPartitions != hist->numIntervals())          ||
+       (partColArray.entries() < statsColsCount)
+     )
      return NULL;
 
-  CMPASSERT(numberOfPartitions == hist->numIntervals());
-  CMPASSERT(partColArray.entries() >=  statsColsCount);
   // ---------------------------------------------------------------------
   // Allocate a new RangePartitionBoundaries.
   // ---------------------------------------------------------------------
