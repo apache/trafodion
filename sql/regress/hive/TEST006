@@ -22,7 +22,8 @@
 -- @@@ END COPYRIGHT @@@
 
 --- setup Hive tables
-sh swhive -v -f $REGRTSTDIR/TEST006_a.hive.sql;
+
+sh regrhive.ksh -v -f $REGRTSTDIR/TEST006_a.hive.sql;
 
 log LOG006 clear;
 
