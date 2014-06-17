@@ -22,6 +22,9 @@
 #include "HdfsLogger.h"
 #include "Globals.h"
 
+#define DEFAULT_MAX_HEAP_SIZE "512"
+#define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
+
 NABoolean loggerStatus = HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config");
 
 // ===========================================================================

@@ -143,8 +143,10 @@ Lng32 ExpHbaseInterface::deleteColumns(
 
 	      return retcode;
 	    }
-	  
-	  retcode = deleteRow(tblName, rowResult.row, columns, -1);
+          HbaseStr rowID;
+          rowID.val = (char *)rowResult.row.data();	  
+          rowID.len = rowResult.row.size();
+	  retcode = deleteRow(tblName, rowID, columns, -1);
 	  if (retcode != HBASE_ACCESS_SUCCESS)
 	    {
 	      // close
@@ -166,7 +168,7 @@ Lng32 ExpHbaseInterface::deleteColumns(
 
 Lng32 ExpHbaseInterface::checkAndInsertRow(
 					   HbaseStr &tblName,
-					   const Text& row, 
+					   HbaseStr &row, 
 					   MutationVec & mutations,
 					   const int64_t timestamp)
 {
@@ -192,7 +194,7 @@ Lng32 ExpHbaseInterface::checkAndInsertRow(
 
 Lng32 ExpHbaseInterface::checkAndUpdateRow(
 					   HbaseStr &tblName,
-					   const Text& row, 
+					   HbaseStr &row, 
 					   MutationVec & mutations,
 					   const Text& columnToCheck,
 					   const Text& colValToCheck,
@@ -221,7 +223,7 @@ Lng32 ExpHbaseInterface::checkAndUpdateRow(
 
 Lng32 ExpHbaseInterface::checkAndDeleteRow(
 					   HbaseStr &tblName,
-					   const Text& row, 
+					   HbaseStr &row, 
 					   const Text& columnToCheck,
 					   const Text& colValToCheck,
 					   const int64_t timestamp)
@@ -263,7 +265,10 @@ Lng32 ExpHbaseInterface::insertRows(
       const Text &row = bm.row;
       MutationVec &mutations = bm.mutations;
 
-      retcode = insertRow(tblName, row, mutations, timestamp);
+      HbaseStr insRow;
+      insRow.val = (char *)row.data();
+      insRow.len = row.size();
+      retcode = insertRow(tblName, insRow, mutations, timestamp);
       if (retcode != HBASE_ACCESS_SUCCESS)
 	return retcode;
     }
@@ -286,7 +291,10 @@ Lng32 ExpHbaseInterface::deleteRows(
       //      MutationVec &mutations = bm.mutations;
 
       TextVec columns;
-      retcode = deleteRow(tblName, row, columns, timestamp);
+      HbaseStr delRow;
+      delRow.val = (char *)row.data();
+      delRow.len = row.size();
+      retcode = deleteRow(tblName, delRow, columns, timestamp);
       if (retcode != HBASE_ACCESS_SUCCESS)
 	return retcode;
     }
@@ -749,7 +757,7 @@ void ExpHbaseInterface_Thrift::updateReturnValues(
 
 Lng32 ExpHbaseInterface_Thrift::getRowOpen(
 	     HbaseStr &tblName,
-	     const Text& row, 
+	     const Text &row, 
 	     const std::vector<Text> & columns,
 	     const int64_t timestamp)
 {
@@ -792,12 +800,12 @@ Lng32 ExpHbaseInterface_Thrift::getRowOpen(
 
 Lng32 ExpHbaseInterface_Thrift::rowExists(
 	     HbaseStr &tblName,
-	     const Text& row)
+	     HbaseStr &row)
 {
   Lng32 rc = 0;
   StrVec columns;
   
-  rc = getRowOpen(tblName, row, columns, -1);
+  rc = getRowOpen(tblName, row.val, columns, -1);
   if (rc < 0)
     return rc;
 
@@ -1159,7 +1167,7 @@ Lng32 ExpHbaseInterface_Thrift::scanClose()
 
 Lng32 ExpHbaseInterface_Thrift::deleteRow(
 	     HbaseStr &tblName,
-	     const Text& row, 
+	     HbaseStr &row, 
 	     const std::vector<Text> & columns,
 	     const int64_t timestamp)
 {
@@ -1173,16 +1181,16 @@ Lng32 ExpHbaseInterface_Thrift::deleteRow(
       if (timestamp == -1)
 	{
 	  if (column == "")
-	    client_->deleteAllRow(t, row, dummyAttributes);
+	    client_->deleteAllRow(t, row.val, dummyAttributes);
 	  else
-	    client_->deleteAll(t, row, column, dummyAttributes);
+	    client_->deleteAll(t, row.val, column, dummyAttributes);
 	}
       else
 	{
 	  if (column == "")
-	    client_->deleteAllRowTs(t, row, timestamp, dummyAttributes);
+	    client_->deleteAllRowTs(t, row.val, timestamp, dummyAttributes);
 	  else
-	    client_->deleteAllTs(t, row, column, timestamp, dummyAttributes);
+	    client_->deleteAllTs(t, row.val, column, timestamp, dummyAttributes);
 	}
     } catch (const TException &tx) {
       std::strcpy(errText_, tx.what());
@@ -1198,7 +1206,7 @@ Lng32 ExpHbaseInterface_Thrift::deleteRow(
 
 Lng32 ExpHbaseInterface_Thrift::insertRow(
 				   HbaseStr &tblName,
-				   const Text& row, 
+				   HbaseStr &row, 
 				   MutationVec & mutations,
 				   const int64_t timestamp)
 {
@@ -1209,11 +1217,11 @@ Lng32 ExpHbaseInterface_Thrift::insertRow(
     try {
       if (timestamp == -1)
 	{
-	  client_->mutateRow(t, row, mutations, dummyAttributes);
+	  client_->mutateRow(t, row.val, mutations, dummyAttributes);
 	}
       else
 	{
-	  client_->mutateRowTs(t, row, mutations, timestamp, dummyAttributes);
+	  client_->mutateRowTs(t, row.val, mutations, timestamp, dummyAttributes);
 	}
     } catch (const TException &tx) {
       std::strcpy(errText_, tx.what());
@@ -1670,7 +1678,7 @@ Lng32 ExpHbaseInterface_JNI::scanClose()
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::getRowOpen(
 	HbaseStr &tblName,
-	const Text& row, 
+	const Text &row, 
 	const std::vector<Text> & columns,
 	const int64_t timestamp)
 {
@@ -1833,7 +1841,7 @@ Lng32 ExpHbaseInterface_JNI::getRowInfo(
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr &tblName,
-	  const Text& row, 
+	  HbaseStr& row, 
 	  const std::vector<Text> & columns,
 	  const int64_t timestamp)
 {
@@ -1882,7 +1890,7 @@ Lng32 ExpHbaseInterface_JNI::deleteRows(
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
 	  HbaseStr &tblName,
-	  const Text& row, 
+	  HbaseStr& row, 
 	  const Text& columnToCheck,
 	  const Text& colValToCheck,
 	  const int64_t timestamp)
@@ -1915,7 +1923,7 @@ Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::insertRow(
 	  HbaseStr &tblName,
-	  const Text& row, 
+	  HbaseStr &row, 
 	  MutationVec & mutations,
 	  const int64_t timestamp)
 {
@@ -2116,7 +2124,7 @@ Lng32 ExpHbaseInterface_JNI::createHFile(HbaseStr &tblName,
 // Avoid messing up the class data members (like htc_)
 Lng32 ExpHbaseInterface_JNI::rowExists(
 	     HbaseStr &tblName,
-	     const Text& row)
+	     HbaseStr &row)
 {
   Lng32 rc = 0;
   StrVec columns;
@@ -2129,7 +2137,7 @@ Lng32 ExpHbaseInterface_JNI::rowExists(
   }
   
   Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc->startGet(transID, row, columns, -1); 
+  retCode_ = htc->startGet(transID, row.val, columns, -1); 
   if (retCode_ != HBC_OK)
     return -HBASE_OPEN_ERROR;
 
@@ -2147,7 +2155,7 @@ Lng32 ExpHbaseInterface_JNI::rowExists(
 
 Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 	  HbaseStr &tblName,
-	  const Text& row, 
+	  HbaseStr &row, 
 	  MutationVec & mutations,
 	  const int64_t timestamp)
 {
@@ -2176,7 +2184,7 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 
 Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
 	  HbaseStr &tblName,
-	  const Text& row, 
+	  HbaseStr &row, 
 	  MutationVec & mutations,
 	  const Text& columnToCheck,
 	  const Text& colValToCheck,

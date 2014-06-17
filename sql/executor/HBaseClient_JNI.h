@@ -518,15 +518,15 @@ public:
                              jboolean *isCopy);
   HTC_RetCode freeRowResult(jbyte *rowResult, jbyteArray &jRowResult);
   KeyValue*   getLastFetchedCell();
-  HTC_RetCode deleteRow(Int64 transID, const Text& rowID, const TextVec& columns, Int64 timestamp);
+  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, std::vector<BatchMutation> &rowBatches, Int64 timestamp);
-  HTC_RetCode checkAndDeleteRow(Int64 transID, const Text& rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
-  HTC_RetCode insertRow(Int64 transID, const Text& rowID, MutationVec& mutations, Int64 timestamp);
+  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+  HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, Int64 timestamp);
   HTC_RetCode insertRows(Int64 transID, std::vector<BatchMutation> &rowBatches, Int64 timestamp, bool autoFlush);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, const Text& rowID, MutationVec& mutations, Int64 timestamp);
-  HTC_RetCode checkAndUpdateRow(Int64 transID, const Text& rowID, MutationVec& mutations, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, Int64 timestamp);
+  HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 

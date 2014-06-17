@@ -160,14 +160,14 @@ class ExpHbaseInterface : public NABasicObject
 		     
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
-		const Text& row, 
+		const Text &row, 
 		const std::vector<Text> & columns,
 		const int64_t timestamp) = 0;
 
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
 			  HbaseStr &tblName,
-			  const Text& row) = 0;
+			  HbaseStr &row) = 0;
 
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
@@ -211,7 +211,7 @@ class ExpHbaseInterface : public NABasicObject
 		   
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
-		  const Text& row, 
+		  HbaseStr& row, 
 		  const std::vector<Text> & columns,
 		  const int64_t timestamp) = 0;
 
@@ -222,7 +222,7 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
-				  const Text& row, 
+				  HbaseStr& row, 
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
 				  const int64_t timestamp);
@@ -233,7 +233,7 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,
-		  const Text& row, 
+		  HbaseStr& row, 
 		  MutationVec & mutations,
 		  const int64_t timestamp) = 0;
  
@@ -272,13 +272,13 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 checkAndInsertRow(
 				  HbaseStr &tblName,
-				  const Text& row, 
+				  HbaseStr& row, 
 				  MutationVec & mutations,
 				  const int64_t timestamp);
   
   virtual Lng32 checkAndUpdateRow(
 				  HbaseStr &tblName,
-				  const Text& row, 
+				  HbaseStr& row, 
 				  MutationVec & mutations,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
@@ -394,14 +394,14 @@ class ExpHbaseInterface_Thrift : public ExpHbaseInterface
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
-		const Text& row, 
+		const Text &row, 
 		const std::vector<Text> & columns,
 		const int64_t timestamp);
 
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
 			  HbaseStr &tblName,
-			  const Text& row);
+			  HbaseStr  &row);
  
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
@@ -430,13 +430,13 @@ class ExpHbaseInterface_Thrift : public ExpHbaseInterface
  
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
-		  const Text& row, 
+		  HbaseStr& row, 
 		  const std::vector<Text> & columns,
 		  const int64_t timestamp);
  
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,
-		  const Text& row, 
+		  HbaseStr& row, 
 		  MutationVec & mutations,
 		  const int64_t timestamp);
  
@@ -597,14 +597,14 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 getRowOpen(
 		HbaseStr &tblName,
-		const Text& row, 
+		const Text &row, 
 		const std::vector<Text> & columns,
 		const int64_t timestamp);
  
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
 			  HbaseStr &tblName,
-			  const Text& row);
+			  HbaseStr &row);
 
  virtual Lng32 getRowsOpen(
 		HbaseStr &tblName,
@@ -640,7 +640,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		   
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
-		  const Text& row, 
+		  HbaseStr &row, 
 		  const std::vector<Text> & columns,
 		  const int64_t timestamp);
 
@@ -651,13 +651,13 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
-				  const Text& row, 
+				  HbaseStr& row, 
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
 				  const int64_t timestamp);
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,
-		  const Text& row, 
+		  HbaseStr& row, 
 		  MutationVec & mutations,
 		  const int64_t timestamp);
  
@@ -696,13 +696,13 @@ virtual Lng32 createHFile(HbaseStr &tblName,
 
   virtual Lng32 checkAndInsertRow(
 				  HbaseStr &tblName,
-				  const Text& row, 
+				  HbaseStr& row, 
 				  MutationVec & mutations,
 				  const int64_t timestamp);
 
   virtual Lng32 checkAndUpdateRow(
 				  HbaseStr &tblName,
-				  const Text& row, 
+				  HbaseStr& row, 
 				  MutationVec & mutations,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,

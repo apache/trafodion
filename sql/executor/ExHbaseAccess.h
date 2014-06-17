@@ -51,7 +51,7 @@ class ExHbaseAccessStats;
 class ExpHbaseInterface;
 class ExHbaseAccessSelectTcb;
 class ExHbaseAccessUMDTcb;
-
+#define INLINE_ROWID_LEN 255
 // -----------------------------------------------------------------------
 // ExHbaseAccessTdb
 // -----------------------------------------------------------------------
@@ -250,6 +250,8 @@ protected:
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
   short createColumnwiseRow();
   short createRowwiseRow();
+  short fetchRowVec();
+  short createSQRow();
   short createSQRow(TRowResult &rowResult);
   short createSQRow(jbyte *rowResult);
   short getColPos(char * colName, Lng32 colNameLen, Lng32 &idx);
@@ -287,8 +289,34 @@ protected:
   Lng32 setupListOfColNames(Queue * listOfColNames, TextVec &columns);
 
   short setupHbaseFilterPreds();
+  void setRowID(char *rowId, Lng32 rowIdLen)
+  {
+     if (rowAllocated_)
+        NADELETEBASIC(row_.val, getHeap()); 
+     if (rowId == NULL)
+     {
+        row_.val = NULL;
+        row_.len = 0;
+        rowAllocated_ = FALSE;
+        return;
+     }
+     if (rowIdLen > INLINE_ROWID_LEN)
+     {
+        row_.val = new (getHeap()) char[rowIdLen];
+        row_.len = rowIdLen;
+        rowAllocated_ = TRUE;
+     }
+     else
+     {
+        row_.val = inlineRow_;
+        row_.len = rowIdLen;
+        rowAllocated_ = FALSE;
+     }
+     memcpy(row_.val, rowId, rowIdLen);
+  }
 
   /////////////////////////////////////////////////////
+  //
   // Private data.
   /////////////////////////////////////////////////////
 
@@ -304,7 +332,7 @@ protected:
   HbaseStr table_;
   HbaseStr rowId_;
 
-  TRowResult rowResult_;
+  //TRowResult rowResult_;
 
   jbyte  *jbRowResult_;
   jbyteArray jbaRowResult_;
@@ -357,6 +385,9 @@ protected:
   Lng32 currRowidIdx_;
 
   MutationVec mutations_;
+  HbaseStr row_;
+  NABoolean rowAllocated_;
+  char inlineRow_[INLINE_ROWID_LEN + 1];
 };
 
 class ExHbaseTaskTcb : public ExGod

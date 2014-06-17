@@ -452,8 +452,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case SCAN_FETCH_ROW_VEC:
 	  {
-	    retcode = tcb_->ehi_->fetchRowVec(&tcb_->jbRowResult_,
-                            tcb_->jbaRowResult_, &tcb_->isCopy_);
+	    retcode = tcb_->fetchRowVec();
 	    if ( (retcode == HBASE_ACCESS_EOD) || (retcode == HBASE_ACCESS_EOR) )
 	      {
 		step_ = SCAN_FETCH_NEXT_ROW;
@@ -469,8 +468,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case CREATE_ROW:
 	  {
-	    rc = tcb_->createSQRow(tcb_->jbRowResult_);
-            tcb_->ehi_->freeRowResult(tcb_->jbRowResult_, tcb_->jbaRowResult_);
+	    rc = tcb_->createSQRow();
 	    if (rc < 0)
 	      {
 		if (rc != -1)
@@ -571,8 +569,7 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
       rc = 1; // no row found
       goto label_return;
     }
-
-  retcode = tcb_->ehi_->fetchRowVec(tcb_->rowResult_);
+  retcode = tcb_->fetchRowVec();
   if ( (retcode == HBASE_ACCESS_EOD) || (retcode == HBASE_ACCESS_EOR) )
     {
       rc = 1; // no row found
@@ -584,8 +581,7 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
       rc = -1;
       goto label_return;
     }
-
-  rc = tcb_->createSQRow(tcb_->rowResult_);
+  rc = tcb_->createSQRow();
   if (rc < 0)
     {
       if (rc != -1)
@@ -1018,7 +1014,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 
 	case GET_FETCH:
 	  {
-	    retcode = tcb_->ehi_->fetchRowVec(tcb_->rowResult_);
+	    retcode = tcb_->fetchRowVec();
             // EOD is end of data, EOR is end of result set. 
             // for single get, EOD or EOR indicates DONE
             // for multi get, only EOR indicates DONE
@@ -1047,7 +1043,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 
 	case CREATE_ROW:
 	  {
-	    rc = tcb_->createSQRow(tcb_->rowResult_);
+            rc = tcb_->createSQRow();
 	    if (rc == -1)
 	      {
 		step_ = HANDLE_ERROR;
