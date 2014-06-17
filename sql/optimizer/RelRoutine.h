@@ -1436,10 +1436,10 @@ public:
   // mutators
 
   //! populateColumnDesc method
-  // Copy attributes of column i into a desc_struct
-  void populateColumnDesc(ComUInt32 i,
-                          desc_struct *target,
-                          Lng32 &offset) const;
+  // Copy attributes getColumns to colDescs
+void populateColumnDesc(char *tableNam,
+                        desc_struct *&colDescs,
+                        Lng32 &reclen) const;
 
   //! createVirtualTableDesc method
   //  create the desc_struct for the Virtual Table

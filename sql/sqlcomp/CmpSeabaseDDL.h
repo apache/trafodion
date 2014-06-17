@@ -174,6 +174,13 @@ class CmpSeabaseDDL
     return (flags & SEABASE_SERIALIZED) != 0;
   }
 
+  short buildColInfoArray(
+			  ElemDDLColDefArray * colArray,
+			  ComTdbVirtTableColumnInfo * colInfoArray,
+			  NABoolean implicitPK,
+			  CollIndex numSysCols,
+			  NAMemory * heap = NULL);
+
  protected:
 
   enum { 
@@ -458,13 +465,6 @@ class CmpSeabaseDDL
   short buildViewColInfo(StmtDDLCreateView * createViewParseNode,
 			 ElemDDLColDefArray * colDefArray);
   
-  short buildColInfoArray(
-			  ElemDDLColDefArray * colArray,
-			  ComTdbVirtTableColumnInfo * colInfoArray,
-			  NABoolean implicitPK,
-			  CollIndex numSysCols,
-			  NAMemory * heap = NULL);
-
   short buildColInfoArray(ElemDDLParamDefArray *paramArray,
                           ComTdbVirtTableColumnInfo * colInfoArray);
   

@@ -5715,21 +5715,8 @@ static Lng32 createDescStructsForProxy(const ProxyFunc &proxy,
   desc_struct *prev_desc = NULL;
   ComUInt32 numCols = proxy.getNumColumns();
 
-  // Create column descs  
-  for (ComUInt32 colNum = 0; colNum < numCols; colNum++)
-  {
-    desc_struct *col_desc = readtabledef_allocate_desc(DESC_COLUMNS_TYPE);
-    if (prev_desc)
-      prev_desc->header.next = col_desc;
-    else
-      colDescs = col_desc;      
-    
-    prev_desc = col_desc;
-
-    proxy.populateColumnDesc(colNum, col_desc, reclen);
-
-    col_desc->body.columns_desc.tablename = tableName;
-  }
+  // Creates and populates column descs
+  proxy.populateColumnDesc(tableName, colDescs, reclen);
 
   // Create key descs
   prev_desc = NULL;

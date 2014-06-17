@@ -62,7 +62,9 @@
 #include "SequenceGeneratorAttributes.h"
 #include "SqlParserGlobals.h"
 #include "RelRoutine.h"
-
+#include "ElemDDLColDefArray.h"
+#include "CmpSeabaseDDL.h"
+#include "CmpSeabaseDDLtable.cpp"
 
 
 // -----------------------------------------------------------------------
@@ -1434,11 +1436,54 @@ const NAString *ProxyFunc::getColumnHeading(ComUInt32 i) const
 }
 
 //! ProxyFunc::populateColumnDesc method 
-void ProxyFunc::populateColumnDesc(ComUInt32 i,
-                                   desc_struct *target,
-                                   Lng32 &offset) const
+void ProxyFunc::populateColumnDesc(char *tableNam,
+                                   desc_struct *&colDescs,
+                                   Lng32 &reclen) const
 {
+    ElemDDLColDefArray colArray;
+    ComObjectName tableName(tableNam);
+    ComUInt32 numCols = getNumColumns();
+
+  
+    for (ComUInt32 colNum = 0; colNum < numCols; colNum++)
+    {
+      ElemProxyColDef *result =
+        (*columnListFromParser_)[colNum]->castToElemProxyColDef();
+
+      colArray.insert(result);
+    }
+
+   CmpSeabaseDDL cmpSBD(CmpCommon::statementHeap());
+
+   ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
+                      new(STMTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
+
+   cmpSBD.buildColInfoArray(&colArray, 
+                            colInfoArray, 
+                            FALSE, 0, 
+                            CmpCommon::statementHeap());
+
+   colDescs = convertVirtTableColumnInfoArrayToDescStructs(&tableName,
+                                                           colInfoArray,
+                                                           numCols) ;
+
+  // calculate the record length 
+  desc_struct *tempDescs = colDescs;
+  for (ComUInt32 colNum = 0; colNum < numCols; colNum++)
+  { 
+    NAType *naType = getColumn(colNum).getColumnDataType();
+    Int32 fsType = naType->getFSDatatype();
+
+    if (tempDescs->body.columns_desc.null_flag)
+      reclen += SQL_NULL_HDR_SIZE;
+    if (DFS2REC::isSQLVarChar(fsType))
+      reclen += SQL_VARCHAR_HDR_SIZE;
+
+    reclen += tempDescs->body.columns_desc.length;
+    tempDescs = tempDescs->header.next;
+  }
 }
+
 
 //! ProxyFunc::copyTopNode method 
 RelExpr *ProxyFunc::copyTopNode(RelExpr *derivedNode, CollHeap *outHeap)
