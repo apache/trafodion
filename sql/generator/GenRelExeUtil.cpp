@@ -5381,7 +5381,68 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
 // ExeUtilHbaseLoad::codeGen()
 //
 /////////////////////////////////////////////////////////
-short ExeUtilHbaseLoad::codeGen(Generator * generator)
+
+short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  NAString ldQueryNAS = this->getStmtText();
+  char * ldQuery = NULL;
+
+  if (ldQueryNAS.length() > 0)
+  {
+    ldQuery = space->allocateAlignedSpace(ldQueryNAS.length() + 1);
+    strcpy(ldQuery, ldQueryNAS.data());
+  }
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+#pragma nowarn(1506)   // warning elimination
+  = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+#pragma warn(1506)  // warning elimination
+
+  char * tablename = space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
+
+  ComTdbExeUtilHBaseBulkLoad * exe_util_tdb = new(space)
+  ComTdbExeUtilHBaseBulkLoad(
+         tablename, strlen(tablename),
+         ldQuery,
+         0, 0, // no work cri desc
+         givenDesc,
+         returnedDesc,
+         (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+         (queue_index)getDefault(GEN_DDL_SIZE_UP),
+#pragma nowarn(1506)   // warning elimination
+         2, //getDefault(GEN_DDL_NUM_BUFFERS),
+         1024); //getDefault(GEN_DDL_BUFFER_SIZE));
+#pragma warn(1506)  // warning elimination
+
+  exe_util_tdb->setPreloadCleanup(this->preLoadCleanup_);
+  exe_util_tdb->setPreparation(TRUE);
+  exe_util_tdb->setKeepHFiles(this->keepHFiles_);
+  exe_util_tdb->setTruncateTable(this->truncateTable_);
+  exe_util_tdb->setNoRollback(this->noRollback_);
+  exe_util_tdb->setLogErrors(this->logErrors_);
+
+  generator->initTdbFields(exe_util_tdb);
+
+  if (!generator->explainDisabled())
+  {
+    generator->setExplainTuple(addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  return 0;
+}
+short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
 {
   Space * space = generator->getSpace();
 
@@ -5416,13 +5477,9 @@ short ExeUtilHbaseLoad::codeGen(Generator * generator)
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
-  //hFilePath not used. /tmp is used for now
-  char * hFilesPath = space->allocateAlignedSpace(hFilesPath_.length()+ 1);
-  strcpy(hFilesPath,hFilesPath_.data());
-
   ComTdbHbaseAccess *load_tdb = new(space)
     ComTdbHbaseAccess(
-                      ComTdbHbaseAccess::BULK_LOAD_,
+                      ComTdbHbaseAccess::BULK_LOAD_TASK_,
                       tablename,
                       0,
                       0,
@@ -5433,7 +5490,6 @@ short ExeUtilHbaseLoad::codeGen(Generator * generator)
                       upqueuelength,
                       numBuffers,
                       buffersize,
-
                       server,
                       port,
                       interface,
@@ -5446,6 +5502,16 @@ short ExeUtilHbaseLoad::codeGen(Generator * generator)
   char * tlpTmpLocation = space->allocateAlignedSpace(tlpTmpLocationNAS.length() + 1);
   strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
   load_tdb->setLoadPrepLocation(tlpTmpLocation);
+
+  load_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
+  if (taskType_ == PRE_LOAD_CLEANUP_)
+    load_tdb->setIsTrafLoadCleanup(TRUE);
+  else   if (taskType_ == COMPLETE_BULK_LOAD_ || taskType_ == COMPLETE_BULK_LOAD_N_KEEP_HFILES_)
+  {
+    load_tdb->setIsTrafLoadCompetion(TRUE);
+    load_tdb->setIsTrafLoadKeepHFiles(taskType_ == COMPLETE_BULK_LOAD_N_KEEP_HFILES_ ? TRUE: FALSE);
+  }
+
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(

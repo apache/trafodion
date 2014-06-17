@@ -602,7 +602,9 @@ public class HBaseClient {
     return hblc;
     
   }
+  
+}
 
     
-}
+
 

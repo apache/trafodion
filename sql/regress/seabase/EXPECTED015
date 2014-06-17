@@ -57,6 +57,19 @@
 --- SQL operation complete.
 >>
 >>
+>>create table t015t1 (a int) ;
+
+--- SQL operation complete.
+>>create table t015t2 (a int) ;
+
+--- SQL operation complete.
+>>
+>>insert into t015t1 values (1),(2),(3),(4),(5);
+
+--- 5 row(s) inserted.
+>>
+>>
+>>
 >>
 >>cqd COMPRESSED_INTERNAL_FORMAT 'ON';
 
@@ -82,6 +95,119 @@
 >>obey TEST015(test_bulk_load_simple);
 >>--------------------------------------------------------------------------
 >>
+>>
+>>prepare s from load cleanup for table t015t2;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    cleanup                                               1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>prepare s from load transform into t015t2 select * from t015t1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T015T2                1.00E+000
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+--- 5 row(s) inserted.
+>>
+>>
+>>prepare s from load complete for table t015t2;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    complete                                              1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>
+>>select * from t015t2 order by a;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>prepare s from load into t015t2 select * from t015t1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    hbase_bulk_load                                       1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+*** ERROR[8964] LOAD is not currently supported with non empty tables.
+
+--- SQL operation failed with errors.
+>>
+>>prepare s from load with no rollback into t015t2 select * from t015t1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+000
+.    .    1    hbase_bulk_load                                       1.00E+000
+
+--- SQL operation complete.
+>>execute s;
+
+--- SQL operation complete.
+>>
+>>--truncate and log errors are not implemented yet .
+>>prepare s from load with truncate,log error into t015t2 select * from t015t1;
+
+*** ERROR[4485] Bulk Load:  Error logging option is not supported yet
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--explain options 'f' s;
+>>--execute s;
+>>
+>>
+>>
+>>--------------------------------------------------------------------------
 >>select count(*) from hive.hive.customer_address;
 
 (EXPR)              
@@ -100,7 +226,7 @@
 --- 1 row(s) selected.
 >>
 >>prepare s from 
-+>load into customer_address 
++>load transform into customer_address 
 +>select * from hive.hive.customer_address;
 
 --- SQL command prepared.
@@ -109,9 +235,7 @@
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-8    .    9    root                                                  5.19E+004
-6    7    8    blocked_union                                         5.19E+004
-.    .    7    hbase_load                                            1.00E+000
+6    .    7    root                                                  5.19E+004
 5    .    6    esp_exchange                    1:4(hash2)            5.19E+004
 3    4    5    tuple_flow                                            5.19E+004
 .    .    4    trafodion_load_prepa            CUSTOMER_ADDRESS      1.00E+000
@@ -121,9 +245,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>execute s;
+>>load into customer_address 
++>select * from hive.hive.customer_address;
 
---- 50000 row(s) inserted.
+--- SQL operation complete.
 >>
 >>select count(*) from customer_address;
 
@@ -183,7 +308,7 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 --- 1 row(s) selected.
 >>
 >>prepare s from 
-+>load into customer_demographics 
++>load transform into customer_demographics 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
@@ -194,9 +319,7 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-8    .    9    root                                                  8.96E+005
-6    7    8    blocked_union                                         8.96E+005
-.    .    7    hbase_load                                            1.00E+000
+6    .    7    root                                                  8.96E+005
 5    .    6    esp_exchange                    1:4(hash2)            8.96E+005
 3    4    5    tuple_flow                                            8.96E+005
 .    .    4    trafodion_load_prepa            CUSTOMER_DEMOGRAPHIC  1.00E+000
@@ -206,9 +329,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>execute s;
+>>load into customer_demographics 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 
---- 500000 row(s) inserted.
+--- SQL operation complete.
 >>
 >>select count(*) from customer_demographics;
 
@@ -275,7 +399,7 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 
 --- SQL operation complete.
 >>prepare s from 
-+>load into customer_demographics_salt 
++>load transform into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.
@@ -287,9 +411,7 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-8    .    9    root                                                  8.96E+005
-6    7    8    blocked_union                                         8.96E+005
-.    .    7    hbase_load                                            1.00E+000
+6    .    7    root                                                  8.96E+005
 5    .    6    esp_exchange                    1:4(range)            8.96E+005
 3    4    5    tuple_flow                                            8.96E+005
 .    .    4    trafodion_load_prepa            CUSTOMER_DEMOGRAPHIC  1.00E+000
@@ -299,9 +421,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>execute s;
+>>load  into customer_demographics_salt 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 
---- 500000 row(s) inserted.
+--- SQL operation complete.
+>>
 >>
 >>select count(*) from customer_demographics_salt;
 

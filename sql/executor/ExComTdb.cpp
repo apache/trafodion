@@ -679,7 +679,14 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 
       break;
     }
+  case ex_HBASE_LOAD:
+    {
+#pragma nowarn(1506)   // warning elimination
+      GetVTblPtr(vtblptr,ExExeUtilHBaseBulkLoadTdb);
+#pragma warn(1506)  // warning elimination
 
+      break;
+    }
 #endif
     default:
       ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId"); // LCOV_EXCL_LINE

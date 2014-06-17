@@ -1352,7 +1352,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
   return WORK_OK;
 }
 
-ExHbaseAccessLoadPrepSQTcb::ExHbaseAccessLoadPrepSQTcb(
+ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb,
           ex_globals * glob ) :
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob)
@@ -1365,7 +1365,7 @@ ExHbaseAccessLoadPrepSQTcb::ExHbaseAccessLoadPrepSQTcb(
 }
 
 
-ExWorkProcRetcode ExHbaseAccessLoadPrepSQTcb::work()
+ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 {
   Lng32 retcode = 0;
   short rc = 0;

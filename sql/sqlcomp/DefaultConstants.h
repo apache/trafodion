@@ -3553,21 +3553,26 @@ enum DefaultConstants
   TRAF_UPSERT_WB_SIZE,
   TRAF_UPSERT_AUTO_FLUSH,
   TRAF_UPSERT_WRITE_TO_WAL,
-  TRAF_LOAD_PREP_MATCH_TARGET_PARTS,
+  TRAF_LOAD_PREP_ADJUST_PART_FUNC,
   TRAF_LOAD_PREP_TMP_LOCATION,
+  TRAF_LOAD_PREP_PHASE_ONLY,
 
   //log only the overall time of a compilation.
   COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY,
+
+  TRAF_LOAD_PREP_KEEP_HFILES,
 
   // if an explicit salt option is not specified in create stmt and this cqd is
   // specified with a value > 0, then that value is used to create the number
   // of salted partitions on primary key columns.
   TRAF_NUM_OF_SALT_PARTNS,
+  TRAF_LOAD_PREP_CLEANUP,
 
   // controls whether to compute the DoP based on the table sizes 
   // for a query. 
   HBASE_COMPUTE_DOP_USING_TABLE_SIZES,
 
+  TRAF_LOAD_USE_QUASI_SECURE,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

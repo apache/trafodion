@@ -724,10 +724,10 @@ public:
 };
 
 
-class ExHbaseAccessLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
+class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
 {
   public:
-    ExHbaseAccessLoadPrepSQTcb( const ExHbaseAccessTdb &tdb,
+    ExHbaseAccessBulkLoadPrepSQTcb( const ExHbaseAccessTdb &tdb,
                                 ex_globals *glob );
 
 
@@ -1098,10 +1098,10 @@ public:
 };
 
 
-class ExHbaseAccessBulkLoadTcb  : public ExHbaseAccessTcb
+class ExHbaseAccessBulkLoadTaskTcb  : public ExHbaseAccessTcb
 {
 public:
-  ExHbaseAccessBulkLoadTcb( const ExHbaseAccessTdb &tdb,
+  ExHbaseAccessBulkLoadTaskTcb( const ExHbaseAccessTdb &tdb,
                        ex_globals *glob );
 
   virtual ExWorkProcRetcode work();
@@ -1109,8 +1109,8 @@ public:
  private:
   enum {
       NOT_STARTED
-    , LOAD_HFILES
-    , CLEANUP
+    , LOAD_CLEANUP
+    , COMPLETE_LOAD
     , HANDLE_ERROR
     , DONE
   } step_;

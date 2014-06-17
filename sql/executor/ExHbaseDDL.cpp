@@ -521,108 +521,109 @@ ExWorkProcRetcode ExExeUtilMetadataUpgradeTcb::work()
   return WORK_OK;
 }
 
-ExHbaseAccessBulkLoadTcb::ExHbaseAccessBulkLoadTcb(
-          const ExHbaseAccessTdb &hbaseAccessTdb,
-          ex_globals * glob ) :
-  ExHbaseAccessTcb(hbaseAccessTdb, glob)
-  , step_(NOT_STARTED)
+ExHbaseAccessBulkLoadTaskTcb::ExHbaseAccessBulkLoadTaskTcb(const ExHbaseAccessTdb &hbaseAccessTdb, ex_globals * glob) :
+    ExHbaseAccessTcb(hbaseAccessTdb, glob), step_(NOT_STARTED)
 {
 }
 
-
-ExWorkProcRetcode ExHbaseAccessBulkLoadTcb::work()
+ExWorkProcRetcode ExHbaseAccessBulkLoadTaskTcb::work()
 {
   short retcode = 0;
   short rc = 0;
 
-  ExMasterStmtGlobals *g = getGlobals()->
-    castToExExeStmtGlobals()->castToExMasterStmtGlobals();
-
+  ExMasterStmtGlobals *g = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
 
   while (1)
+  {
+    switch (step_)
     {
-      switch (step_)
+      case NOT_STARTED:
+      {
+        matches_ = 0;
+
+        retcode = ehi_->initHBLC();
+        if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
         {
-        case NOT_STARTED:
-          {
-            matches_ = 0;
-
-            retcode = ehi_->initHBLC();
-            if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
-            {
-              step_ = HANDLE_ERROR;
-              break;
-            }
-
-            table_.val = hbaseAccessTdb().getTableName();
-            table_.len = strlen(hbaseAccessTdb().getTableName());
-
-            hBulkLoadPrepPath_ = std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
-                                ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
-
-            step_ = LOAD_HFILES;
-          }
+          step_ = HANDLE_ERROR;
           break;
+        }
 
-        case LOAD_HFILES:
-          {
-            Text tabName = ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName();
-            retcode = ehi_->doBulkLoad(table_, hBulkLoadPrepPath_,tabName);
+        table_.val = hbaseAccessTdb().getTableName();
+        table_.len = strlen(hbaseAccessTdb().getTableName());
 
-            if (setupError(retcode, "ExpHbaseInterface::doBulkLoad"))
-              {
-                step_ = HANDLE_ERROR;
-                break;
-              }
+        hBulkLoadPrepPath_ = std::string(((ExHbaseAccessTdb&) hbaseAccessTdb()).getLoadPrepLocation())
+            + ((ExHbaseAccessTdb&) hbaseAccessTdb()).getTableName();
 
+        if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getIsTrafLoadCleanup())
+          step_ = LOAD_CLEANUP;
+        else
+          step_ = COMPLETE_LOAD;
+      }
+        break;
+      case LOAD_CLEANUP:
+      {
+        //cleanup
+        retcode = ehi_->bulkLoadCleanup(table_, hBulkLoadPrepPath_);
 
-            step_ = CLEANUP;
-          }
+        if (setupError(retcode, "ExpHbaseInterface::bulkLoadCleanup"))
+        {
+          step_ = HANDLE_ERROR;
           break;
+        }
 
-        case CLEANUP:
-          {
-            //nothing to clanup for now
-            retcode = ehi_->bulkLoadCleanup(table_, hBulkLoadPrepPath_);
+        step_ = DONE;
+      }
+        break;
 
-            if (setupError(retcode, "ExpHbaseInterface::bulkLoadCleanup"))
-              {
-                step_ = HANDLE_ERROR;
-                break;
-              }
+      case COMPLETE_LOAD:
+      {
 
-            step_ = DONE;
-          }
+        Text tabName = ((ExHbaseAccessTdb&) hbaseAccessTdb()).getTableName();
+        retcode = ehi_->doBulkLoad(table_, hBulkLoadPrepPath_, tabName,hbaseAccessTdb().getUseQuasiSecure());
+
+        if (setupError(retcode, "ExpHbaseInterface::doBulkLoad"))
+        {
+          step_ = HANDLE_ERROR;
           break;
+        }
 
-        case HANDLE_ERROR:
-          {
-            if (handleError(rc))
-              return rc;
-
-            step_ = DONE;
-          }
+        if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getIsTrafLoadKeepHFiles())
+        {
+          step_ = DONE;
           break;
+        }
 
-        case DONE:
-          {
+        step_ = LOAD_CLEANUP;
+      }
+        break;
+      case HANDLE_ERROR:
+      {
+        if (handleError(rc))
+          return rc;
 
-            if (handleDone(rc))
-              return rc;
+        step_ = DONE;
+      }
+        break;
 
-            retcode = ehi_->close();
+      case DONE:
+      {
 
-            step_ = NOT_STARTED;
+        if (handleDone(rc))
+          return rc;
 
-            return WORK_OK;
-          }
-          break;
+        retcode = ehi_->close();
 
-        }// switch
+        step_ = NOT_STARTED;
 
-    } // while
+        return WORK_OK;
+      }
+        break;
+
+    } // switch
+
+  } // while
 }

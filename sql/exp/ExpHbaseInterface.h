@@ -264,7 +264,8 @@ class ExpHbaseInterface : public NABasicObject
 
  virtual Lng32 doBulkLoad(HbaseStr &tblName,
                           Text& location,
-                          Text& tableName) = 0;
+                          Text& tableName,
+                          NABoolean quasiSecure) = 0;
 
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location) = 0;
@@ -465,7 +466,8 @@ class ExpHbaseInterface_Thrift : public ExpHbaseInterface
 
  virtual Lng32 doBulkLoad(HbaseStr &tblName,
                           Text& location,
-                          Text& tableName);
+                          Text& tableName,
+                          NABoolean quasiSecure);
 
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location);
@@ -686,7 +688,8 @@ virtual Lng32 createHFile(HbaseStr &tblName,
 
  virtual Lng32 doBulkLoad(HbaseStr &tblName,
                           Text& location,
-                          Text& tableName);
+                          Text& tableName,
+                          NABoolean quasiSecure);
  
  virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
                           Text& location);

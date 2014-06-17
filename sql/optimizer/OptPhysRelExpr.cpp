@@ -3386,11 +3386,15 @@ NABoolean NestedJoin::genLeftChildPartReq(
   NABoolean isUpdateOfHBaseTable = updateTableDesc() &&
        updateTableDesc()->getNATable()->isHbaseTable();
 
-  NABoolean isForTrafodionBulkLoadPrep = isUpdateOfHBaseTable &&
+  //adjust plan for hbase bulk load:
+  // -use range partitioning for salted tables
+  // -use hash on primary key for non salted tables
+  NABoolean adjustPFForTrafBulkLoadPrep = isUpdateOfHBaseTable &&
                                          getIsForTrafLoadPrep() &&
-                                         CmpCommon::getDefault(TRAF_LOAD_PREP_MATCH_TARGET_PARTS) == DF_ON;
+                                         CmpCommon::getDefault(TRAF_LOAD_PREP_ADJUST_PART_FUNC) == DF_ON ;//&&
+                                         //!updateTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey();
 
-  if (isForTrafodionBulkLoadPrep)
+  if (adjustPFForTrafBulkLoadPrep)
   {
     baseNumPartsOnAP = TRUE;
   }
@@ -3415,12 +3419,12 @@ NABoolean NestedJoin::genLeftChildPartReq(
                                  childNumPartsAllowedDeviation,
                                  numOfESPsForced);
 
-
+  ValueIdList pkList;
 
   // notice if parent requires a particular number of partitions
   if ((partReqForMe != NULL) AND
       (partReqForMe->getCountOfPartitions() != ANY_NUMBER_OF_PARTITIONS) AND
-      !isForTrafodionBulkLoadPrep)
+      !adjustPFForTrafBulkLoadPrep)
   {
     if (NOT numOfESPsForced)
       childNumPartsRequirement = partReqForMe->getCountOfPartitions();
@@ -3462,11 +3466,33 @@ NABoolean NestedJoin::genLeftChildPartReq(
     // the ESPs must be a grouping of that partitioning scheme
     if (isUpdateOfHBaseTable)
     {
-      if (baseNumPartsOnAP && numActivePartitions >1 )
+      if (adjustPFForTrafBulkLoadPrep )
       {
-        childNumPartsRequirement = numActivePartitions;
-      }
-      else
+        if (baseNumPartsOnAP && numActivePartitions >1 &&
+            !updateTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())
+        {
+          childNumPartsRequirement = numActivePartitions;
+        }
+        else if (numActivePartitions ==1 && childNumPartsRequirement > 1 &&
+                !updateTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())
+        {
+          pkList.insert(updateTableDesc()->getClusteringIndex()->getClusteringKeyCols());
+          physicalPartFunc = new(CmpCommon::statementHeap())
+                Hash2PartitioningFunction(pkList, pkList,childNumPartsRequirement);
+          createPartReqForChild = TRUE;
+        }
+        else
+        {
+          ValueIdSet partKey;
+          ItemExpr *randNum =
+            new(CmpCommon::statementHeap()) RandomNum(NULL, TRUE);
+          randNum->synthTypeAndValueId();
+          partKey.insert(randNum->getValueId());
+          physicalPartFunc = new(CmpCommon::statementHeap())
+              Hash2PartitioningFunction (partKey, partKey, childNumPartsRequirement);
+        }
+    }
+    else
       // HBase tables can be updated in any way, no restrictions on 
       // parallelism
       if (numOfESPsForced && physicalPartFunc)

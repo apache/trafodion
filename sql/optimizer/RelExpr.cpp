@@ -13308,7 +13308,7 @@ RelExpr * HbaseInsert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   return Insert::copyTopNode(result, outHeap);
 }
 
-RelExpr * HbaseBulkLoadPrep::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+RelExpr * HBaseBulkLoadPrep::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
   RelExpr *result;
 

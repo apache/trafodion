@@ -522,6 +522,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_COMP
 %token <tokval> TOK_COMPACT
 %token <tokval> TOK_COMPARE
+%token <tokval> TOK_COMPLETE
 %token <tokval> TOK_COMPRESS            /* TD extension that HP wants to ignore */
 %token <tokval> TOK_COMPRESSED
 %token <tokval> TOK_CONCAT              /* ODBC extension   */
@@ -1659,6 +1660,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
   NAList<ExeUtilUserLoad::UserLoadOption*> * userLoadOptionsList;
   ExeUtilUserLoad::UserLoadOption * userLoadOption;
   
+  NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> * hBaseBulkLoadOptionsList;
+  ExeUtilHBaseBulkLoad::HBaseBulkLoadOption * hBaseBulkLoadOption;
+
   NAList<FastExtract::UnloadOption*> * feOptionsList;
   FastExtract::UnloadOption * feOption;
 
@@ -2776,6 +2780,13 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <feOption>                null_string_option
 %type <feOption>                record_separator_option
 %type <feOption>                compression_option 
+%type <hBaseBulkLoadOptionsList> optional_hbbload_options
+%type <hBaseBulkLoadOptionsList> hbbload_option_list
+%type <hBaseBulkLoadOption>      hbbload_option
+%type <hBaseBulkLoadOption>      hbb_no_rollback_option
+%type <hBaseBulkLoadOption>      hbb_truncate_option
+%type <hBaseBulkLoadOption>      hbb_log_errors_option
+%type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
@@ -19681,21 +19692,170 @@ internal_parallel_purgedata: TOK_LABEL_PURGEDATA TOK_TABLE actual_table_name TOK
                }
 
 /* type relx */
-load_statement : TOK_LOAD TOK_INTO table_name query_expression
-                                {
-                                  //disabled by default in june release 
-                                  if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
-                                    YYERROR;                                
-                                  $$ = new (PARSERHEAP())
-                                       HbaseBulkLoadPrep(CorrName(*$3, PARSERHEAP()),
-                                                         NULL,
-                                                         REL_HBASE_BULK_LOAD,
-                                                         $4//,
-                                                         //NULL
-                                                         );            
-                                  //delete $3;
-                                  //delete $4;
-                                }
+//HBASE LOAD 
+load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
+                  {
+                    //disabled by default in 0.8.0 release 
+                    if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                      YYERROR; 
+                      
+                    $$ = new (PARSERHEAP())
+                          HBaseBulkLoadPrep(CorrName(*$4, PARSERHEAP()),
+                                            NULL,
+                                            REL_HBASE_BULK_LOAD,
+                                            $5//,
+                                            //NULL
+                                            );  
+                    }
+                   | TOK_LOAD optional_hbbload_options TOK_INTO table_name query_expression
+                    {
+                      //disabled by default in 0.8.0 release 
+                      if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                        YYERROR;   
+                        
+                      CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+                      NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                      , PARSERHEAP() // in  - NAMemory * 
+                                                      );
+
+                      // If we can not get a variable-width multi-byte or single-byte string here, report error 
+                      if ( stmt == NULL )
+                      {
+                        *SqlParser_Diags <<  DgSqlCode(-3406);
+                        YYERROR;
+                      }
+                      UInt32 pos = 
+                          stmt->index(" into ", 0, NAString::ignoreCase);
+                       
+                      NAString stmt1 = "LOAD TRANSFORM ";
+                      stmt1.append((char*)&(stmt->data()[pos]));
+                      
+                        ExeUtilHBaseBulkLoad * eubl = new (PARSERHEAP()) 
+                                        ExeUtilHBaseBulkLoad(CorrName(*$4, PARSERHEAP()),
+                                        NULL,
+                                        (char*)stmt1.data(),
+                                        stmtCharSet,
+                                        PARSERHEAP());
+                        if (eubl->setOptions($2, SqlParser_Diags))
+                               YYERROR;                                        
+                        $$ = finalize(eubl);    
+                    
+                    }
+                                            
+                    //delete $3;
+                    //delete $4;
+                  //}
+
+                    |   TOK_LOAD  TOK_COMPLETE TOK_FOR TOK_TABLE table_name
+                      {
+                        //disabled by default in 0.8.0 release 
+                        if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                          YYERROR; 
+                          
+                          ExeUtilHBaseBulkLoadTask::TaskType tt = ExeUtilHBaseBulkLoadTask::COMPLETE_BULK_LOAD_;
+                          if (CmpCommon::getDefault(TRAF_LOAD_PREP_KEEP_HFILES) == DF_ON)
+                            tt = ExeUtilHBaseBulkLoadTask::COMPLETE_BULK_LOAD_N_KEEP_HFILES_;
+                            
+                          ExeUtilHBaseBulkLoadTask * hblt = new (PARSERHEAP())   
+                                              ExeUtilHBaseBulkLoadTask(CorrName(*$5, PARSERHEAP()),
+                                              NULL,
+                                              NULL,
+                                              CharInfo::UnknownCharSet,
+                                              tt,
+                                              PARSERHEAP());
+                          $$ = finalize(hblt);         
+                          
+                      }
+                    |   TOK_LOAD  TOK_CLEANUP TOK_FOR TOK_TABLE table_name
+                      {
+                        //disabled by default in 0.8.0 release 
+                        if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                          YYERROR; 
+                          
+                          ExeUtilHBaseBulkLoadTask::TaskType tt = ExeUtilHBaseBulkLoadTask::PRE_LOAD_CLEANUP_;
+                            
+                          ExeUtilHBaseBulkLoadTask * hblt = new (PARSERHEAP())   
+                                              ExeUtilHBaseBulkLoadTask(CorrName(*$5, PARSERHEAP()),
+                                              NULL,
+                                              NULL,
+                                              CharInfo::UnknownCharSet,
+                                              tt,
+                                              PARSERHEAP());
+                          $$ = finalize(hblt);         
+                          
+                      }   
+                      
+optional_hbbload_options : TOK_WITH hbbload_option_list
+                            {
+                               $$ = $2;
+                            }
+                            | empty /* empty */
+                            {
+                                $$ = NULL;
+                            }
+                            
+hbbload_option_list : hbbload_option
+                      {
+                        NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> * hbol =
+                        new (PARSERHEAP ()) NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*>;
+                        hbol->insert($1);
+                        $$ = hbol;
+                      }
+                      | hbbload_option ',' hbbload_option_list
+                      {
+                          $3->insert($1);
+                          $$ = $3;
+                      }
+
+hbbload_option :   hbb_no_rollback_option
+                | hbb_truncate_option
+                | hbb_log_errors_option
+                | hbb_stop_after_n_errors
+                
+                /* need to add execptions table and number of erros before stopping*/
+
+hbb_no_rollback_option : TOK_NO TOK_ROLLBACK
+                    {
+                    //NO ROLLBACK
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::NO_ROLLBACK_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+hbb_truncate_option : TOK_TRUNCATE
+                    {
+                      //TRUNCATE
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::TRUNCATE_TABLE_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+                
+hbb_log_errors_option : TOK_LOG TOK_ERROR   //will need to add hdfs location for errors
+                    {
+                    //LOG_ERRORS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::LOG_ERRORS_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+hbb_stop_after_n_errors: TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS                
+                    {
+                    //LOG_ERRORS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERRORS_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }                                      
+                      
 unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_options simple_table  
 				{
                                   // UNLOAD is disabled by default in M9.
@@ -19713,6 +19873,11 @@ unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_opt
                                   delete $4;
 				}
 
+                
+                
+                
+                
+///////////////////////////////                
 optional_unload_options : TOK_WITH unload_option_list
                             {
                                $$ = $2;
@@ -34496,6 +34661,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_COMP
                       | TOK_COMPACT
                       | TOK_COMPARE
+                      | TOK_COMPLETE
                       | TOK_COMPONENT
                       | TOK_COMPONENTS
 		      | TOK_COMPRESS

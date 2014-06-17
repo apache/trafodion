@@ -456,7 +456,8 @@ enum ExeErrorCode
   EXE_EXTRACT_ERROR_CREATING_FILE       = 8960,
   EXE_EXTRACT_ERROR_WRITING_TO_FILE     = 8961,
   EXE_EXTRACT_CANNOT_ALLOCATE_BUFFER    = 8962,
-  EXE_EXTRACT_BACKUP_SWITCHED			= 8963,
+  EXE_EXTRACT_BACKUP_SWITCHED           = 8963,
+  EXE_LOAD_NON_EMPTY_TABLE              = 8964,
 
   // ---------------------------------------------------------------------
   // SeaMonster

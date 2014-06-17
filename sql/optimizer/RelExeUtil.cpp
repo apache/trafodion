@@ -382,9 +382,6 @@ const NAString ExeUtilExpr::getText() const
    case METADATA_UPGRADE_:
       result = "METADATA_UPGRADE";
       break;
-   case HBASE_LOAD_:
-      result = "HBASE_LOAD";
-      break;
 
    default:
 
@@ -8336,15 +8333,111 @@ RelExpr * ExeUtilMetadataUpgrade::copyTopNode(RelExpr *derivedNode, CollHeap* ou
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilHbaseLoad
 // -----------------------------------------------------------------------
-RelExpr * ExeUtilHbaseLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
-  ExeUtilHbaseLoad *result;
+  ExeUtilHBaseBulkLoad *result;
 
   if (derivedNode == NULL)
     result = new (outHeap)
-      ExeUtilHbaseLoad(getTableName(), hFilesPath_, outHeap);
+      ExeUtilHBaseBulkLoad(getTableName(),
+                      getExprNode(),
+                      NULL, CharInfo::UnknownCharSet, outHeap);
   else
-    result = (ExeUtilHbaseLoad *) derivedNode;
+    result = (ExeUtilHBaseBulkLoad *) derivedNode;
+
+  //result->hFilesPath_ = hFilesPath_;
+  result->preLoadCleanup_ = preLoadCleanup_;
+  result->keepHFiles_ = keepHFiles_;
+  result->truncateTable_ = truncateTable_;
+  result->noRollback_= noRollback_;
+  result->logErrors_ = logErrors_ ;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
+
+const NAString ExeUtilHBaseBulkLoad::getText() const
+{
+  NAString result(CmpCommon::statementHeap());
+
+  result = "HBASE_BULK_LOAD";
+
+  return result;
+}
+
+short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> *
+    hBaseBulkLoadOptionList,   ComDiagsArea * da)
+{
+  if (!hBaseBulkLoadOptionList)
+    return 0;
+
+  for (CollIndex i = 0; i < hBaseBulkLoadOptionList->entries(); i++)
+  {
+    HBaseBulkLoadOption * lo = (*hBaseBulkLoadOptionList)[i];
+    switch (lo->option_)
+    {
+      case NO_ROLLBACK_:
+      {
+        setNoRollback(TRUE);
+      }
+      break;
+      case TRUNCATE_TABLE_:
+      {
+        setTruncateTable(TRUE);
+      }
+
+      break;
+      case STOP_AFTER_N_ERRORS_:
+      {
+        *da << DgSqlCode(-4485)
+        << DgString0(" Stop after N Erros option is not supported yet");
+        return 1;
+      }
+
+      break;
+      case LOG_ERRORS_:
+      {
+        *da << DgSqlCode(-4485)
+        << DgString0(" Error logging option is not supported yet");
+        return 1;
+      }
+      break;
+
+      default:
+        return 1;
+    }
+  }
+  return 0;
+
+};
+RelExpr * ExeUtilHBaseBulkLoadTask::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilHBaseBulkLoadTask *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap)
+    ExeUtilHBaseBulkLoadTask(getTableName(),
+                            getExprNode(),
+                            NULL,
+                            CharInfo::UnknownCharSet,
+                            NOT_SET_,
+                            outHeap);
+  else
+    result = (ExeUtilHBaseBulkLoadTask *) derivedNode;
+
+  result->taskType_ = taskType_;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+const NAString ExeUtilHBaseBulkLoadTask::getText() const
+{
+  NAString result(CmpCommon::statementHeap());
+
+  if (taskType_ == PRE_LOAD_CLEANUP_)
+       result = "CLEANUP";
+  else
+       result = "COMPLETE HBASE LOAD";
+
+  return result;
+}
+

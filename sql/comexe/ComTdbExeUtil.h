@@ -87,7 +87,8 @@ public:
     GET_HIVE_METADATA_INFO_ = 29,
     HIVE_MD_ACCESS_ = 30,
     AQR_WNR_INSERT_          = 31,
-    UPGRADE_MD_                 = 32
+    UPGRADE_MD_                 = 32,
+    HBASE_LOAD_                  = 33
   };
 
   ComTdbExeUtil()
@@ -4524,6 +4525,91 @@ protected:
   UInt32 flags_;                      
   char fillersComTdbMU_[28];  
 
+};
+
+
+
+class ComTdbExeUtilHBaseBulkLoad : public ComTdbExeUtil
+{
+  friend class ExExeUtilHBaseBulkLoadTcb;
+  friend class ExExeUtilHbaseLoadPrivateState;
+
+public:
+  ComTdbExeUtilHBaseBulkLoad()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilHBaseBulkLoad(char * tableName,
+                             ULng32 tableNameLen,
+                             char * ldStmtStr,
+                             ex_cri_desc * work_cri_desc,
+                             const unsigned short work_atp_index,
+                             ex_cri_desc * given_cri_desc,
+                             ex_cri_desc * returned_cri_desc,
+                             queue_index down,
+                             queue_index up,
+                             Lng32 num_buffers,
+                             ULng32 buffer_size
+                             );
+
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHBaseBulkLoad);}
+
+  virtual const char *getNodeName() const
+  {
+    return "HBASE_BULK_LOAD";
+  };
+
+  void setPreloadCleanup(NABoolean v)
+  {(v ? flags_ |= PRE_LOAD_CLEANUP : flags_ &= ~PRE_LOAD_CLEANUP); };
+  NABoolean getPreloadCleanup() { return (flags_ & PRE_LOAD_CLEANUP) != 0; };
+
+  void setPreparation(NABoolean v)
+  {(v ? flags_ |= PREPARATION : flags_ &= ~PREPARATION); };
+  NABoolean getPreparation() { return (flags_ & PREPARATION) != 0; };
+
+  void setKeepHFiles(NABoolean v)
+  {(v ? flags_ |= KEEP_HFILES : flags_ &= ~KEEP_HFILES); };
+  NABoolean getKeepHFiles() { return (flags_ & KEEP_HFILES) != 0; };
+
+  void setTruncateTable(NABoolean v)
+  {(v ? flags_ |= TRUNCATE_TABLE : flags_ &= ~TRUNCATE_TABLE); };
+  NABoolean getTruncateTable() { return (flags_ & TRUNCATE_TABLE) != 0; };
+
+  void setNoRollback(NABoolean v)
+  {(v ? flags_ |= NO_ROLLBACK : flags_ &= ~NO_ROLLBACK); };
+  NABoolean getNoRollback() { return (flags_ & NO_ROLLBACK) != 0; };
+
+  void setLogErrors(NABoolean v)
+  {(v ? flags_ |= LOG_ERRORS : flags_ &= ~LOG_ERRORS); };
+  NABoolean getLogErrors() { return (flags_ & LOG_ERRORS) != 0; };
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+private:
+  enum
+  {
+    PRE_LOAD_CLEANUP = 0x0001,
+    PREPARATION      = 0x0002,
+    KEEP_HFILES      = 0x0004,
+    TRUNCATE_TABLE   = 0x0008,
+    NO_ROLLBACK      = 0x0010,
+    LOG_ERRORS       = 0x0020
+  };
+
+  // load stmt
+  NABasicPtr ldQuery_;                               // 00-07
+
+  UInt32 flags_;                                     // 08-11
+
+  char fillersExeUtilHbaseLoad_[4];                  // 12-15
 };
 
 #endif

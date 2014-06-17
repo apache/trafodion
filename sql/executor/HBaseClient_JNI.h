@@ -852,7 +852,7 @@ public:
 
   HBLC_RetCode closeHFile(const HbaseStr &tblName);
 
-  HBLC_RetCode doBulkLoad(const HbaseStr &tblName, const Text& location, const Text& tableName);
+  HBLC_RetCode doBulkLoad(const HbaseStr &tblName, const Text& location, const Text& tableName, NABoolean useHidden);
 
   HBLC_RetCode  bulkLoadCleanup(const HbaseStr &tblName, const Text& location);
 

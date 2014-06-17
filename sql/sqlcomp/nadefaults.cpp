@@ -3186,9 +3186,12 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
-   
-  DDkwd__(TRAF_LOAD_PREP_MATCH_TARGET_PARTS,    "ON"),
+  DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,    "ON"),
+  DDkwd__(TRAF_LOAD_PREP_CLEANUP,           "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_KEEP_HFILES,           "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,                 "OFF"),
   DD_____(TRAF_LOAD_PREP_TMP_LOCATION,          "/tmp/" ),
+  DDkwd__(TRAF_LOAD_USE_QUASI_SECURE ,          "OFF"),
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                 "OFF"),
 
   DDint__(TRAF_NUM_OF_SALT_PARTNS,          "-1"), 

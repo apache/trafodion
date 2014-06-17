@@ -1312,6 +1312,7 @@
 109004482 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004483 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004484 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
+109004485 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109005000 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109006000 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109006001 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
@@ -1695,6 +1696,7 @@
 109008961 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109008962 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109008963 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
+109008964 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109009200 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109009201 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109009202 SQL Error Message : $~message_text\nSQL Query id : $~sqlid

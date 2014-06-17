@@ -126,7 +126,7 @@ ex_tcb * ExHbaseAccessTdb::build(ex_globals * glob)
 	      (NOT hbaseSqlIUD()))
         if (this->getIsTrafodionLoadPrep())
               tcb = new(exe_glob->getSpace())
-                        ExHbaseAccessLoadPrepSQTcb(
+                        ExHbaseAccessBulkLoadPrepSQTcb(
                                                    *this,
                                                    exe_glob);
           else
@@ -162,10 +162,10 @@ ex_tcb * ExHbaseAccessTdb::build(ex_globals * glob)
 			     *this,
 			     exe_glob);
     }
-  else if (accessType_ == BULK_LOAD_)
+  else if (accessType_ == BULK_LOAD_TASK_)
     {
       tcb = new(exe_glob->getSpace())
-        ExHbaseAccessBulkLoadTcb(
+        ExHbaseAccessBulkLoadTaskTcb(
                              *this,
                              exe_glob);
     }

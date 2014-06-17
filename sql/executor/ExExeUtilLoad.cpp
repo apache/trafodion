@@ -59,6 +59,7 @@ using std::ofstream;
 #include  "ExStats.h"
 #include  "ExpLOBinterface.h"
 #include  "ExpLOBexternal.h"
+#include  "str.h"
 
 ////////////////////////////////////////////////////////////////
 // Constructor for class ExExeLoadUtilTcb
@@ -796,6 +797,7 @@ ExExeUtilCreateTableAsPrivateState::ExExeUtilCreateTableAsPrivateState()
 ExExeUtilCreateTableAsPrivateState::~ExExeUtilCreateTableAsPrivateState()
 {
 };
+
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilUserLoadTdb::build(ex_globals * glob)
@@ -3646,4 +3648,353 @@ void ExExeUtilUserLoadFastTcb:: changeAndTraceStep(Step newStep, Int32 l)
   step_ = newStep;
   return;
 }
+
+////////////////////////////////////////////////////////////////
+// build for class ExExeUtilHbaseLoadTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilHBaseBulkLoadTdb::build(ex_globals * glob)
+{
+  ExExeUtilHBaseBulkLoadTcb * exe_util_tcb;
+
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilHBaseBulkLoadTcb(*this, glob);
+
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilHbaseLoadTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilHBaseBulkLoadTcb::ExExeUtilHBaseBulkLoadTcb(
+     const ComTdbExeUtil & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob),
+       step_(INITIAL_)
+{
+  qparent_.down->allocatePstate(this);
+}
+
+//////////////////////////////////////////////////////
+// work() for ExExeUtilHbaseLoadTcb
+//////////////////////////////////////////////////////
+short ExExeUtilHBaseBulkLoadTcb::work()
+{
+  Lng32 cliRC = 0;
+  short retcode = 0;
+  Int64 rowsAffected = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
+  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
+  ContextCli *currContext = masterGlob->getStatement()->getContext();
+
+
+  while (1)
+  {
+    switch (step_)
+    {
+      case INITIAL_:
+      {
+
+        if (hblTdb().getTruncateTable())
+        {
+          step_ = TRUNCATE_TABLE_;
+          break;
+        }
+        // if no truncate table and rollback then check for emptiness
+        if (!hblTdb().getNoRollback())
+        {
+          step_ = CHECK_FOR_EMPTINESS_;
+          break;
+        }
+        step_ = LOAD_START_;
+      }
+        break;
+
+      case TRUNCATE_TABLE_:
+      {
+        char * ttQuery =
+          new(getMyHeap()) char[strlen("PURGEDATA  ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(ttQuery, "PURGEDATA  ");
+        strcat(ttQuery, hblTdb().getTableName());
+        strcat(ttQuery, ";");
+
+        Lng32 len = 0;
+        Int64 rowCount = 0;
+        cliRC = cliInterface()->executeImmediate(ttQuery, NULL,NULL,TRUE,NULL,TRUE);
+        NADELETEBASIC(ttQuery, getHeap());
+        ttQuery = NULL;
+
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+        step_ = LOAD_START_;
+      }
+        break;
+
+      case CHECK_FOR_EMPTINESS_:
+      {
+        char * cfeQuery =
+          new(getMyHeap()) char[strlen("SELECT COUNT(1) FROM   ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(cfeQuery, "SELECT COUNT(*) FROM ");
+        strcat(cfeQuery, hblTdb().getTableName());
+        strcat(cfeQuery, ";");
+
+        Lng32 len = 0;
+        Int64 rowCount = 0;
+        cliRC = cliInterface()->executeImmediate(cfeQuery,
+                                                 (char*)&rowCount,
+                                                 &len, NULL);
+        NADELETEBASIC(cfeQuery, getHeap());
+        cfeQuery = NULL;
+
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+        if (rowCount != 0)
+        {
+          //generate an error for now. later we may  use snapshot or other mechanism to recover data
+          //if something goes wrong
+          ComDiagsArea * da = getDiagsArea();
+          *da << DgSqlCode(-8964);
+          step_ = LOAD_ERROR_;
+          break;
+        }
+
+        step_ = LOAD_START_;
+      }
+        break;
+
+
+      case LOAD_START_:
+      {
+        if (hblTdb().getPreloadCleanup())
+          step_ = PRE_LOAD_CLEANUP_;
+        else
+          step_ = PREPARATION_;
+      }
+      break;
+
+      case PRE_LOAD_CLEANUP_:
+      {
+        //Cleanup files
+        cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+        char * clnpQuery =
+          new(getMyHeap()) char[strlen("LOAD CLEANUP FOR TABLE  ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(clnpQuery, "LOAD CLEANUP FOR TABLE  ");
+        strcat(clnpQuery, hblTdb().getTableName());
+        strcat(clnpQuery, ";");
+
+        cliRC = cliInterface()->executeImmediate(clnpQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+        NADELETEBASIC(clnpQuery, getHeap());
+        clnpQuery = NULL;
+
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+
+        step_ = PREPARATION_;
+      }
+        break;
+
+      case PREPARATION_:
+
+      {
+        cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+
+        char * transQuery =hblTdb().ldQuery_;
+
+        cliRC = cliInterface()->executeImmediate(transQuery,
+                                                 NULL,
+                                                 NULL,
+                                                 TRUE,
+                                                 &rowsAffected);
+        transQuery = NULL;
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+        else
+        {
+          masterGlob->setRowsAffected(rowsAffected);
+        }
+
+        step_ = COMPLETE_BULK_LOAD_;
+      }
+        break;
+
+      case COMPLETE_BULK_LOAD_:
+      {
+        cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+
+        if (hblTdb().getKeepHFiles())
+        {
+          cliRC = holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON");
+          if (cliRC < 0)
+          {
+            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+            step_ = LOAD_ERROR_;
+            break;
+          }
+        }
+        //complete load query
+        char * clQuery =
+          new(getMyHeap()) char[strlen("LOAD COMPLETE FOR TABLE  ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(clQuery, "LOAD COMPLETE FOR TABLE  ");
+        strcat(clQuery, hblTdb().getTableName());
+        strcat(clQuery, ";");
+
+        cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+        NADELETEBASIC(clQuery, getMyHeap());
+        clQuery = NULL;
+
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+
+        step_ = DONE_;
+      }
+        break;
+      case DONE_:
+      {
+        if (qparent_.up->isFull())
+          return WORK_OK;
+
+        // Return EOF.
+        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+        up_entry->upState.setMatchNo(0);
+        up_entry->upState.status = ex_queue::Q_NO_DATA;
+
+        // insert into parent
+        qparent_.up->insert();
+
+
+        step_ = INITIAL_;
+        qparent_.down->removeHead();
+
+        return WORK_OK;
+      }
+        break;
+
+      case LOAD_ERROR_:
+      {
+        if (qparent_.up->isFull())
+          return WORK_OK;
+
+        // Return EOF.
+        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+        up_entry->upState.setMatchNo(0);
+        up_entry->upState.status = ex_queue::Q_SQLERROR;
+
+        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+        if (diagsArea == NULL)
+          diagsArea = ComDiagsArea::allocate(getMyHeap());
+        else
+          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+        if (getDiagsArea())
+          diagsArea->mergeAfter(*getDiagsArea());
+
+        up_entry->setDiagsArea(diagsArea);
+
+        // insert into parent
+        qparent_.up->insert();
+
+        pstate.matches_ = 0;
+
+        step_ = DONE_;
+      }
+        break;
+
+    } // switch
+  } // while
+
+  return WORK_OK;
+
+}
+
+////////////////////////////////////////////////////////////////////////
+// Redefine virtual method allocatePstates, to be used by dynamic queue
+// resizing, as well as the initial queue construction.
+////////////////////////////////////////////////////////////////////////
+ex_tcb_private_state * ExExeUtilHBaseBulkLoadTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExExeUtilHbaseLoadPrivateState> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Constructor and destructor for ExeUtil_private_state
+/////////////////////////////////////////////////////////////////////////////
+ExExeUtilHbaseLoadPrivateState::ExExeUtilHbaseLoadPrivateState()
+{
+}
+
+ExExeUtilHbaseLoadPrivateState::~ExExeUtilHbaseLoadPrivateState()
+{
+};
 
