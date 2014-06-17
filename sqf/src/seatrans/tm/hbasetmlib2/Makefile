@@ -16,7 +16,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/TmAuditTlogControlPointWriter.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class testrun
+PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/TmAuditTlogControlPointWriter.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class testrun
 ###########################################################################
 
 include ../../../../macros.gmk
@@ -70,7 +70,7 @@ $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
 
 $(TMCLASS_FULL)/HBaseTxClient.class: HBaseTxClient.java
-	$(JAVAC) HBaseTxClient.java TmAuditTlogControlPointWriter.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java -d $(TMCLASS_DIR)
+	$(JAVAC) HBaseTxClient.java TmAuditTlogControlPointWriter.java TmAuditTlog.java HBaseAuditControlPoint.java HBaseTmZK.java HashMapArray.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/HBaseAuditControlPoint.class: HBaseAuditControlPoint.java
 	$(JAVAC) HBaseAuditControlPoint.java TmAuditTlogControlPointWriter.java TmAuditTlog.java -d $(TMCLASS_DIR)
@@ -83,6 +83,9 @@ $(TMCLASS_FULL)/TmAuditTlog.class: TmAuditTlog.java
 
 $(TMCLASS_FULL)/HBaseTmZK.class: HBaseTmZK.java
 	$(JAVAC) HBaseTmZK.java -d $(TMCLASS_DIR)
+
+$(TMCLASS_FULL)/HashMapArray.class: HashMapArray.java
+	$(JAVAC) HashMapArray.java -d $(TMCLASS_DIR)
 
 test:   testrun
 

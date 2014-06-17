@@ -239,10 +239,26 @@ typedef struct TM_STATUSSYS {
     int32 iv_leadtm;
 } TM_STATUSSYS;
 
+typedef struct TM_HBASEREGIONINFO {
+    int64 iv_transid;
+    short iv_status;
+    int iv_nid;                 // Transaction beginner TM nid
+    int iv_seqnum;              // Transaction sequence number
+    int iv_owner_nid;           // Transaction owner nid
+    int iv_owner_pid;           // Transaction owner pid
+    char iv_tablename[300];     // Tablename
+    char iv_enc_regionname[50]; // Encoded region name
+    char iv_regionname[300];   // Region name
+    char iv_is_offline[20];     // IsOffline
+    char iv_region_id[200];     // Region Id
+    char iv_hostname[200];      // Hostname
+    char iv_port[100];          // Port
+} TM_HBASEREGIONINFO;
 
 // Trafodion start //
 #define TM_MAX_REGIONSERVER_STRING 2048 
 extern "C" short REGISTERREGION(int port, char *hostname, int hostname_length, char *regionInfo, int regionInfo_Length);
+extern "C" short HBASETM_REQUESTREGIONINFO(TM_HBASEREGIONINFO pa_trans[], short *pp_count);
 // Trafodion end //
 //
 extern "C" short ABORTTRANSACTION();

@@ -414,8 +414,11 @@ typedef enum {
     TM_MSG_TYPE_STATUSALLTRANSMGT        = 333,
     TM_MSG_TYPE_STATUSALLTRANSMGT_REPLY  = 334,
 
-   TM_MSG_TYPE_REGISTERREGION           = 335, // TOPL
-   TM_MSG_TYPE_REGISTERREGION_REPLY     = 336, // TOPL
+    TM_MSG_TYPE_REGISTERREGION           = 335, // TOPL
+    TM_MSG_TYPE_REGISTERREGION_REPLY     = 336, // TOPL
+
+    TM_MSG_TYPE_REQUESTREGIONINFO        = 337,
+    TM_MSG_TYPE_REQUESTREGIONINFO_REPLY  = 338,
 
     TM_MSG_TYPE_QUIESCE                  = 9001, // Testing only!
     TM_MSG_TYPE_QUIESCE_REPLY            = 9002,
@@ -530,6 +533,9 @@ typedef struct registerregion_req {
     char ia_regioninfo2[TM_MAX_REGIONSERVER_STRING];
     int                 iv_regioninfo_length;
 } Register_Region_Req_Type;
+
+typedef struct hbaseregioninfo_req {
+} HbaseRegionInfo_Req_Type;
 
 typedef struct _tmlibmsg_h_as_0 {
     TM_Transid_Type     iv_transid;
@@ -718,6 +724,7 @@ typedef struct _tmlibmsg_h_as_22 {
         Test_Tx_Count           iv_count;
         Tm_RolloverCP_Req_Type  iv_control_point;
         Register_Region_Req_Type iv_register_region;
+        HbaseRegionInfo_Req_Type iv_hbase_regioninfo;
 
         // TM internal Tx Thread events
         TxTh_Initialize_Req_Type iv_init_txthread;
@@ -776,6 +783,12 @@ typedef enum {
 //TOPL
 typedef struct registerregion_rsp {
 } Register_Region_Rsp_Type;
+
+typedef struct hbaseregioninfo_rsp {
+  TM_HBASEREGIONINFO iv_status;
+  int                iv_count;
+  TM_HBASEREGIONINFO iv_trans[TM_MAX_LIST_TRANS];
+} HbaseRegionInfo_Rsp_Type;
 
 typedef struct _tmlibmsg_h_as_33 {
 } Abort_Trans_Rsp_Type;
@@ -910,6 +923,9 @@ typedef struct _tmlibmsg_h_as_43 {
         Wait_TmUp_Rsp_Type      iv_wait_tmup;
         Test_Tx_Count_Rsp_Type  iv_count;
         Tm_RolloverCP_Rsp_Type  iv_control_point;
+#ifndef HP_CLOSED_SOURCE_1
+        HbaseRegionInfo_Rsp_Type iv_hbaseregion_info;
+#endif
 
         // XARM Responses
         RM_Start_Rsp_Type    iv_start;

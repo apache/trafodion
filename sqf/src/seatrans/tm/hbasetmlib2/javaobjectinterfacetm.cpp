@@ -57,6 +57,7 @@ char* JavaObjectInterfaceTM::getErrorText(JOI_RetCode errEnum)
 //////////////////////////////////////////////////////////////////////////////
 JavaObjectInterfaceTM::~JavaObjectInterfaceTM()
 {
+  _tlp_jenv->DeleteGlobalRef(javaObj_);
 }
  
 //////////////////////////////////////////////////////////////////////////////
@@ -244,6 +245,7 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
 // 
 //////////////////////////////////////////////////////////////////////////////
 JOI_RetCode JavaObjectInterfaceTM::init(char*           className, 
+                                      jclass          &javaClass,
                                       JavaMethodInit* JavaMethods, 
                                       Int32           howManyMethods,
                                       bool            methodsInitialized)
@@ -304,6 +306,7 @@ JOI_RetCode JavaObjectInterfaceTM::init(char*           className,
         _tlp_jenv->DeleteLocalRef(javaClass);  
         return JOI_ERROR_NEWOBJ;
       }
+      javaObj_ = _tlp_jenv->NewGlobalRef(javaObj_);
     }
        
     _tlp_jenv->DeleteLocalRef(javaClass);  

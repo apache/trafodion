@@ -110,6 +110,21 @@ void HbaseTM_initiate_stall(int where)
    gv_HbaseTM.stall(where);
 }
 
+//----------------------------------------------------------------
+// HbaseTM_process_request_regions_info
+// Purpose: Retrieve region info for dtmci
+//---------------------------------------------------------------
+HashMapArray* HbaseTM_process_request_regions_info()
+{
+    cout << "Start HBaseTM_process_request_regions\n";
+    HashMapArray* mapArrayRegions = gv_HbaseTM.requestRegionInfo();
+    return mapArrayRegions;
+}
+
+// =============================================================
+// ===== Class CHbaseTM
+// =============================================================
+jclass CHbaseTM::javaClass_ = 0;
 
 // CHbaseTM Methods
 // TM Default Constructor
@@ -194,9 +209,12 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_CNTPOINT   ].jm_signature = "()Z";
   JavaMethods_[JM_STALL      ].jm_name      = "stall";
   JavaMethods_[JM_STALL      ].jm_signature = "(I)S";
+  JavaMethods_[JM_RQREGINFO  ].jm_name      = "callRequestRegionInfo";
+  JavaMethods_[JM_RQREGINFO  ].jm_signature = "()Lorg/trafodion/dtm/HashMapArray;";
+
 
   char className[]="org/trafodion/dtm/HBaseTxClient";
-  return (HBTM_RetCode)JavaObjectInterfaceTM::init(className, (JavaMethodInit*)&JavaMethods_, (int)JM_LAST, false);
+  return (HBTM_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, (JavaMethodInit*)&JavaMethods_, (int)JM_LAST, false);
 }
 
 //////////////////////////////////////////////
@@ -711,3 +729,251 @@ void CHbaseTM::shutdown()
 
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::shutdown EXIT.\n"));
 } //CHbaseTM::shutdown
+
+
+//-------------------------------------------------------------------------------------
+// requestRegionInfo
+// Purpose: request region information to the hbase regions api's via hbase-trx client
+//------------------------------------------------------------------------------------
+HashMapArray* CHbaseTM::requestRegionInfo(){
+   jthrowable exc;
+
+   JOI_RetCode lv_joi_retcode = JOI_OK;
+   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   if (lv_joi_retcode != JOI_OK) {
+      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
+      fflush(stdout);
+      abort();
+   }
+   jobject jHashMapArray = _tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_RQREGINFO].methodID);
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(jHashMapArray == NULL)
+      return NULL;
+
+   HashMapArray* regionMap = new HashMapArray(jvm_, _tlp_jenv, jHashMapArray);
+   regionMap->init();
+
+   return regionMap;
+}
+
+
+// ===========================================================================
+// ===== Class HashMapArray
+// ===========================================================================
+JavaMethodInit* HashMapArray::JavaMethods_ = NULL;
+jclass HashMapArray::javaClass_ = 0;
+
+HashMapArray::~HashMapArray()
+{
+
+}
+
+HMN_RetCode HashMapArray::init()
+{
+   static char className[]="org/trafodion/dtm/HashMapArray";
+
+   if (isInitialized())
+      return HMN_OK;
+
+   if (JavaMethods_)
+      return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, true);
+   else
+   {
+      JavaMethods_ = new JavaMethodInit[JM_LAST];
+
+      JavaMethods_[JM_CTOR           ].jm_name       = "<init>";
+      JavaMethods_[JM_CTOR           ].jm_signature  = "()V";
+      JavaMethods_[JM_GET            ].jm_name       = "getElement";
+      JavaMethods_[JM_GET            ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_TNAME      ].jm_name       = "getTableName";
+      JavaMethods_[JM_GET_TNAME      ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_ENCREGNAME ].jm_name       = "getEncodedRegionName";
+      JavaMethods_[JM_GET_ENCREGNAME ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_REGNAME    ].jm_name       = "getRegionName";
+      JavaMethods_[JM_GET_REGNAME    ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_OFFLINE    ].jm_name       = "getRegionOfflineStatus";
+      JavaMethods_[JM_GET_OFFLINE    ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_REGID      ].jm_name       = "getRegionId";
+      JavaMethods_[JM_GET_REGID      ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_HOSTNAME   ].jm_name       = "getHostName";
+      JavaMethods_[JM_GET_HOSTNAME   ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_PORT       ].jm_name       = "getPort";
+      JavaMethods_[JM_GET_PORT       ].jm_signature  = "(I)Ljava/lang/String;";
+
+      return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, false);
+    }
+}
+
+char* HashMapArray::get(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+   if(js_val == NULL){
+       printf("hbasetm::HashMapArray::get - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getTableName(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_TNAME].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+        printf("hbasetm::HashMapArray::getTableName - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getEncodedRegionName(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ENCREGNAME].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+       printf("hbasetm.cpp::HashMapArray::getEncodedRegionName - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getRegionName(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGNAME].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+       printf("hbasetm.cpp::HashMapArray::getRegionName - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getRegionOfflineStatus(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_OFFLINE].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+       printf("hbasetm.cpp::HashMapArray::getRegionOfflineStatus - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getRegionId(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGID].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+       printf("hbasetm.cpp::HashMapArray::getRegionId - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getHostName(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_HOSTNAME].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+       printf("hbasetm.cpp::HashMapArray::getHostName - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getPort(int tid)
+{
+   jthrowable exc;
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_PORT].methodID, tid));
+   exc = _tlp_jenv->ExceptionOccurred();
+   if(exc) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return NULL;
+   }
+
+   if(js_val == NULL){
+       printf("hbasetm.cpp::HashMapArray::getPort - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+

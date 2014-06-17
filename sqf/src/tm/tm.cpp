@@ -52,11 +52,13 @@
 #include "tmrecov.h"
 #include "tmtxbranches.h"
 
+#include "hbasetm.h"
+
 extern void tm_xarm_initialize();
 extern void tm_process_msg_from_xarm(CTmTxMessage * pp_msg);
 extern int HbaseTM_initialize (bool pp_tracing, bool pv_tm_stats, CTmTimer *pp_tmTimer, short pv_nid);
 extern int HbaseTM_initiate_stall(int where);
-
+extern HashMapArray* HbaseTM_process_request_regions_info();
 
 
 // Version
@@ -254,7 +256,7 @@ void tm_start_exampleThread()
 // ---------------------------------------------------------
 void tm_send_reply(int32 pv_msgid, Tm_Rsp_Msg_Type *pp_rsp)
 {
-    ushort lv_len = sizeof(Tm_Rsp_Msg_Type);
+    int lv_len = sizeof(Tm_Rsp_Msg_Type);
     TMTrace( 2, ("tm_send_reply : ENTRY. msgid(%d), reply code(%d), error(%d).\n", 
                     pv_msgid, pp_rsp->iv_msg_hdr.rr_type.reply_type, 
                     pp_rsp->iv_msg_hdr.miv_err.error));
@@ -413,6 +415,79 @@ void tm_process_req_registerregion(CTmTxMessage * pp_msg)
     TMTrace(2, ("tm_process_req_registerregion EXIT\n")); 
 
 } // tm_process_req_registerregion
+
+//-----------------------------------------------------------------
+// tm_process_req_requestregioninfo
+// Purpose: process message of type TM_MSG_TYPE_REQUESTREGIONINFO
+//-----------------------------------------------------------------
+void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
+{
+   int64          lv_size = 0;
+   void         **lp_tx_list = gv_tm_info.get_all_txs (&lv_size);
+   union
+   {
+       int64 lv_transid_int64;
+       TM_Txid_legacy lv_transid;
+   } u;
+
+   char res_array[10], tname[300], ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
+   res_array[9] = '\0', tname[299] = '\0', ername[49] = '\0', rname[99] = '\0', offline[19] = '\0';
+   regid[199]= '\0', hostname[199]='\0', port[99]='\0';
+
+   TMTrace(2, ("tm_process_req_requestregioninfo ENTRY.\n"));
+   HashMapArray* map = HbaseTM_process_request_regions_info();
+   TMTrace(2, ("tm_process_req_requestregioninfo HashMapArray call has finished.\n"));
+
+   pp_msg->response()->u.iv_hbaseregion_info.iv_count = 0;
+   for (int lv_inx = 0; ((lv_inx < TM_MAX_LIST_TRANS) && (lv_inx < lv_size)); lv_inx++)
+   {
+        TM_TX_Info *lp_current_tx = (TM_TX_Info *)lp_tx_list[lv_inx];
+        if (!lp_current_tx)
+            break;
+        pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_status = lp_current_tx->tx_state();
+        u.lv_transid.iv_seq_num = lp_current_tx->seqnum();
+        pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_transid = u.lv_transid_int64;
+        pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_nid = lp_current_tx->node();
+        pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_seqnum = lp_current_tx->seqnum();
+
+        char* res2 = map->getTableName(lv_inx);
+        strncpy(tname, res2, sizeof(tname) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_tablename, tname, sizeof(tname)-1);
+
+        char* res3 = map->getEncodedRegionName(lv_inx);
+        strncpy(ername, res3, sizeof(ername) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_enc_regionname, ername, sizeof(ername)-1);
+
+        char* res4 = map->getRegionName(lv_inx);
+        strncpy(rname, res4, sizeof(rname) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_regionname, res4, strlen(res4));
+
+        char* res5 = map->getRegionOfflineStatus(lv_inx);
+        strncpy(offline, res5, sizeof(offline) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_is_offline, offline, sizeof(offline)-1);
+
+        char* res6 = map->getRegionId(lv_inx);
+        strncpy(regid, res6, sizeof(regid) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_region_id, regid, sizeof(regid)-1);
+
+        char* res7 = map->getHostName(lv_inx);
+        strncpy(hostname, res7, sizeof(hostname) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_hostname, hostname, sizeof(hostname)-1);
+
+        char* res8 = map->getPort(lv_inx);
+        strncpy(port, res8, sizeof(port) -1);
+        strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_port, port, sizeof(port)-1);
+
+        pp_msg->response()->u.iv_hbaseregion_info.iv_count++;
+   }
+
+   if (lp_tx_list)
+      delete []lp_tx_list;
+   pp_msg->reply(FEOK);
+   delete pp_msg;
+
+   TMTrace(2, ("tm_process_req_requestregioninfo EXIT\n"));
+}
 
 
 // ----------------------------------------------------------------
@@ -3027,6 +3102,9 @@ void tm_process_msg(BMS_SRE *pp_sre)
         break;
    case TM_MSG_TYPE_REGISTERREGION:
         tm_process_req_registerregion(lp_msg);
+        break;
+   case TM_MSG_TYPE_REQUESTREGIONINFO:
+        tm_process_req_requestregioninfo(lp_msg);
    break;
    default:
 

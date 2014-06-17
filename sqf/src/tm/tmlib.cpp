@@ -406,6 +406,53 @@ short REGISTERREGION(int pv_port, char *pa_hostname, int pv_hostname_length, cha
    return lv_error;
 } //REGISTERREGION
 
+short HBASETM_REQUESTREGIONINFO(TM_HBASEREGIONINFO pa_trans[], short *pp_count)
+{
+    TMlibTrace(("TRY::TEST::: TMLIB_TRACE : REQUESTREGIONINFO entry\n"), 2);
+
+    short           lv_error = FEOK;
+    Tm_Req_Msg_Type lv_req;
+    Tm_Rsp_Msg_Type lv_rsp;
+
+    TMlibTrace(("TMLIB_TRACE : REQUESTREGIONINFO entry\n"), 2);
+    if (!gv_tmlib.is_initialized())
+        gv_tmlib.initialize();
+
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+
+    lv_error = tmlib_check_miss_param (pp_count);
+    if (lv_error)
+        return lv_error;
+
+    tmlib_init_req_hdr(TM_MSG_TYPE_REQUESTREGIONINFO, &lv_req);
+    if (gp_trans_thr == NULL)
+       gp_trans_thr = new TMLIB_ThreadTxn_Object();
+
+    lv_error = tmlib_check_miss_param (pp_count);
+    if (lv_error)
+        return lv_error;
+
+    tmlib_init_req_hdr(TM_MSG_TYPE_REQUESTREGIONINFO, &lv_req);
+    lv_error = gv_tmlib.send_tm(&lv_req, &lv_rsp, gv_tmlib.iv_my_nid);
+    if (lv_error)
+    {
+        *pp_count = 0;
+        TMlibTrace(("TMLIB_TRACE : HBASETM_REQUESTREGIONINFO EXIT with error %d\n", lv_error), 1);
+        return lv_error;
+    }
+
+    *pp_count = lv_rsp.u.iv_hbaseregion_info.iv_count;
+    for(int i=0; i < *pp_count; i++)
+    memcpy((void *) &pa_trans[i], &lv_rsp.u.iv_hbaseregion_info.iv_trans[i], (sizeof(TM_HBASEREGIONINFO)));
+
+    lv_error = lv_rsp.iv_msg_hdr.miv_err.error;
+
+    TMlibTrace(("TMLIB_TRACE : REQUESTREGIONINFO exit\n"), 2);
+
+    return lv_error;
+
+}//HBASETM_REQUESTREGIONINFO
 
 // -------------------------------------------------------------------
 // ABORTTRANSACTION
@@ -2288,7 +2335,7 @@ short TMLIB::send_tm(Tm_Req_Msg_Type *pp_req, Tm_Rsp_Msg_Type *pp_rsp,
                     int pv_node) 
 {
     ushort    lv_req_len = sizeof (Tm_Req_Msg_Type);
-    ushort    lv_rsp_len = sizeof (Tm_Rsp_Msg_Type);
+    int       lv_rsp_len = sizeof (Tm_Rsp_Msg_Type);
     int       lv_msgid;
     TPT_DECL( lv_phandle);
     short     la_results[6];

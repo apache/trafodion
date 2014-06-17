@@ -69,7 +69,7 @@ protected:
       ,debugTimeout_(debugTimeout)
   {}
 
-#if 0
+#if 1 
   // Constructor for reusing an existing JVM.
   JavaObjectInterfaceTM(JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
     : javaObj_(NULL)
@@ -79,8 +79,12 @@ protected:
       ,debugPort_(0)
       ,debugTimeout_(0)
   {
-    jenv_ = jenv;
-    javaObj_ = jObj;
+    _tlp_jenv = jenv;
+
+    if(jObj != NULL)
+       javaObj_ = _tlp_jenv->NewGlobalRef(jObj);
+    else
+       javaObj_ = jObj;
   }
 #endif
 
@@ -99,7 +103,7 @@ protected:
   
   // Initialize JVM and all the JNI configuration.
   // Must be called.
-  JOI_RetCode    init(char* className, JavaMethodInit* JavaMethods, Int32 howManyMethods, bool methodsInitialized);
+  JOI_RetCode    init(char* className, jclass &javaclass,  JavaMethodInit* JavaMethods, Int32 howManyMethods, bool methodsInitialized);
 
   // Get the error description.
   virtual char* getErrorText(JOI_RetCode errEnum);

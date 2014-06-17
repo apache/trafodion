@@ -25,6 +25,61 @@
 #include "javaobjectinterfacetm.h"
 #include "jni.h"
 
+// ===============================================================
+// ===== HashMapArray class: provides access to the Java 
+// ===== HashMapArray class to obtain Hbase Region Info
+// ===============================================================
+typedef enum {
+   HMN_OK       = 0,
+   HMN_LAST
+} HMN_RetCode;
+
+class HashMapArray : public JavaObjectInterfaceTM
+{
+public:
+   // Default constructor. Creates a new JVM
+   HashMapArray()
+   : JavaObjectInterfaceTM()
+   {}
+
+   HashMapArray(JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
+   : JavaObjectInterfaceTM(jvm, jenv, jObj)
+   {}
+
+   // Destructor
+   virtual ~HashMapArray();
+
+   HMN_RetCode  init();
+
+   char* get(int index);
+   char* getTableName(int index);
+   char* getEncodedRegionName(int index);
+   char* getRegionName(int index);
+   char* getRegionOfflineStatus(int index);
+   char* getRegionId(int index);
+   char* getHostName(int index);
+   char* getPort(int index);
+
+private:
+   enum JAVA_METHODS {
+       JM_CTOR = 0,
+       JM_GET,
+       JM_GET_TNAME,
+       JM_GET_ENCREGNAME,
+       JM_GET_REGNAME,
+       JM_GET_OFFLINE,
+       JM_GET_REGID,
+       JM_GET_HOSTNAME,
+       JM_GET_PORT,
+       JM_LAST
+   };
+   static JavaMethodInit* JavaMethods_;
+   static jclass          javaClass_;
+};
+
+// ==============================================================
+// === HBaseTM class
+// ==============================================================
 enum HBTM_RetCode {
    RET_OK = 0,
    RET_NOTX,
@@ -71,9 +126,11 @@ private:
       JM_PARREGION,
       JM_CNTPOINT,
       JM_STALL,
+      JM_RQREGINFO,
       JM_LAST
    };
    JavaMethodInit JavaMethods_[JM_LAST];
+   static jclass       javaClass_;
 
 public:
    CHbaseTM();
@@ -138,6 +195,7 @@ public:
    int unresolvedRegions(int64 pv_transid);
    short stall(int32 when);
    void shutdown();
+   HashMapArray* requestRegionInfo();
 
 private:
    // Private methods:
