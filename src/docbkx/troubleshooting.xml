@@ -85,9 +85,7 @@
               </para>
               <para>The DcsServer web UI lists its server metrics (build info, zookeeper quorum, usedHeap, maxHeap, etc.).
               </para>
-              <para>See <xref linkend="dcs_metrics"/> for more information in metric definitions.
-            </para>
-          </section>
+            </section>
           <section xml:id="trouble.tools.builtin.zkcli">
              <title>zkcli</title>
               <para><code>zkcli</code> is a very useful tool for investigating ZooKeeper-related issues.  To invoke:

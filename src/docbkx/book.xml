@@ -167,7 +167,7 @@
            <para>The listener thread is responsible for servicing client requests. It pairs
                each client with an registered MXOSRVR found in Zookeeper. A default port
                is configured but this may be changed in the configuration.               
-             See <xref linkend="listener_config" /> for configuring this property.
+             See <xref linkend="dcs.master.port" /> and <xref linkend="dcs.master.port.range" /> properties.
            </para>
        </section>
        </section>
