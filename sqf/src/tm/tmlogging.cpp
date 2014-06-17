@@ -17,8 +17,10 @@
 // @@@ END COPYRIGHT @@@
 
 #include <sys/time.h>
+#ifdef TM_USE_SEAPILOT
 #include "wrapper/amqpwrapper.h"
 #include "common/dtm.events.pb.h"
+#endif
 #include "common/evl_sqlog_eventnum.h"
 
 #include "tminfo.h"
@@ -32,12 +34,15 @@ int tm_init_logging()
     ms_getenv_int ("TM_DUAL_LOGGING", &gv_dual_logging);
     return gv_dual_logging; 
 }
+
+#ifdef TM_USE_SEAPILOT
 void tm_init_header (common::event_header *header, int pv_event_id, posix_sqlog_severity_t pv_severity)
 {
     header->set_event_id(pv_event_id);
     header->set_event_severity(pv_severity);
     initAMQPInfoHeader(header->mutable_header(), 3);
 }
+#endif
 
 int tm_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
