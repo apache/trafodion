@@ -1,0 +1,12 @@
+{
+  "namespace": "org.trafodion.wms.stats",
+  "type": "record",
+  "name": "platformStats",
+  "doc": "Platform statistics",
+  "fields":
+   [
+		{"name": "nodename", "type": "string"},
+		{"name": "cpubusy", "type": "float", "default": 0.0},
+		{"name": "memusage", "type": "float", "default": 0.0}
+    ]
+}

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+/**
+  *(C) Copyright 2013 Hewlett-Packard Development Company, L.P.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->
+<!--
+/**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+<book version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns:m="http://www.w3.org/1998/Math/MathML"
+      xmlns:html="http://www.w3.org/1999/xhtml"
+      xmlns:db="http://docbook.org/ns/docbook">
+  <info>
+    
+    <title><link xlink:href="http://www.trafodion.org">
+    The Trafodion&#153; Data Connectivity Services Reference Guide
+    </link></title>
+    <subtitle><link xlink:href="http://www.trafodion.org">
+           <inlinemediaobject>
+               <imageobject>
+                   <imagedata align="middle" valign="middle" fileref="Trafodion_DCS_logo.png" />
+               </imageobject>
+           </inlinemediaobject>
+      </link>
+    </subtitle>
+   <copyright><year>2013</year><holder>The Hewlett-Packard Development Company, L.P.
+        All Rights Reserved. Trafodion, Trafodion DCS and the Trafodion project logo are trademarks of the Hewlett-Packard Development Company, L.P..
+        </holder>
+    </copyright>
+      <abstract>
+    <para>This is the official reference guide of
+    <link xlink:href="http://www.trafodion.org">Trafodion DCS (Data Connectivity Services)</link>,
+    a distributed, ODBC, JDBC connectivity component of Trafodion, built on top of 
+    <link xlink:href="http://zookeeper.apache.org/">Apache ZooKeeper</link>
+      </para>
+      </abstract>
+
+    <revhistory>
+      <revision>
+        <revnumber>
+          <?eval ${project.version}?>
+        </revnumber>
+        <date>
+          <?eval ${buildDate}?>
+        </date>
+      </revision>
+    </revhistory>
+  </info>
+
+  <!--XInclude some chapters-->
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="preface.xml" />
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="getting_started.xml" />
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="configuration.xml" />
+
+  <chapter xml:id="architecture">
+    <title>Architecture</title>
+	<section xml:id="arch.overview">
+	<title>Overview</title>
+	  <section xml:id="arch.overview.dcs">
+	  <title>DCS?</title>
+	  <para>DCS, see figure <xref linkend='architecture.overview.dcs.graphic'></xref>, is a framework that connects 
+	      ODBC/JDBC T4 clients to Trafodion user programs (MXOSRVR servers). In a nutshell, clients connect to a listening 
+	      WmsMaster on a well known port. DcsMaster looks in ZooKeeper for an "available"
+	      DcsServer user program (MXOSRVR) and returns an object reference to that server back to the client.
+	      The client then connects directly to the MXOSRVR. After the initial startup DcsMaster restarts any failed
+	      DcsServers. And, DcsServers restart any failed MXOSRVRs.
+	  </para>
+	  <para>DCS provides the following:  
+	        <itemizedlist>
+	          <listitem>A lightweight process management framework.</listitem>
+	          <listitem>High performance client listener using Java NIO. </listitem>
+	          <listitem>Simple configuration and startup</listitem>
+              <listitem>A highly scaleable Trafodion connectivity service. </listitem>
+              <listitem>Uses ZooKeeper as backbone for coordination and process management.</listitem>
+              <listitem>Embedded user interface to examine state, logs, process status.</listitem>              
+              <listitem>Standalone REST server.</listitem>
+              <listitem>100% Java implementation. </listitem>
+            </itemizedlist>
+	  </para>
+	       <figure xml:id="architecture.overview.dcs.graphic"> 
+	       <title>DCS Architecture</title>
+           <mediaobject>
+               <imageobject>
+                   <imagedata align="middle" valign="middle" fileref="architecture.png" />
+               </imageobject>
+               <textobject>
+                 <phrase>DCS Architecture</phrase>
+               </textobject>
+           </mediaobject>
+           </figure>
+      </section>      
+	</section>
+    
+	<section xml:id="client">
+	 <title>Client</title>
+     <para>The Trafodion ODBC/JDBC T4 client drivers connect to MXOSRVRs through the DCS Master.
+    </para>
+	</section>
+	
+    <section xml:id="master"><title>DcsMaster</title>
+       <para><application>DcsMaster</application> is the implementation of the Master Server. The Master server
+       is responsible for listening for client connection requests, monitoring all DcsServer instances in the cluster
+       and restarting any DcsServers that fail after initial startup.
+       </para>
+       <section xml:id="master.startup"><title>Startup Behavior</title>
+         <para>The DcsMaster is started via the scripts found in the /bin directory. During startup it registers itself in Zookeeper.
+         </para>
+       </section>
+       <section xml:id="master.runtime"><title>Runtime Impact</title>
+         <para>A common question is what happens to an DCS cluster when the DcsMaster goes down. Because the
+         DcsMaster doesn't affect the running DcsServers or connected clients, the cluster can still function 
+         i.e., clients already connected to MXOSRVRs can continue to work." 
+         However, the DcsMaster controls critical functions such as listening for clients and restarting DcsServers.  
+         So while the cluster can still run <emphasis>for a time</emphasis> without the Master, 
+         the Master should be restarted as soon as possible.     
+         </para>
+       </section>
+       <section xml:id="master.processes"><title>Processes</title>
+         <para>The Master runs several background threads:
+         </para>
+       <section xml:id="master.processes.listener"><title>Listener</title>
+           <para>The listener thread is responsible for servicing client requests. It pairs
+               each client with an registered MXOSRVR found in Zookeeper. A default port
+               is configured but this may be changed in the configuration.               
+             See <xref linkend="listener_config" /> for configuring this property.
+           </para>
+       </section>
+       </section>
+
+     </section>
+     <section xml:id="server.arch"><title>DcsServer</title>
+       <para><code>DcsServer</code> is the server implementation. It is responsible for starting and keeping
+           its Trafodion MXOSRVR running.
+       </para>
+       <section xml:id="server.startup"><title>Startup Behavior</title>
+         <para>The DcsServer is started via the scripts found in the /bin directory. During startup it registers itself in Zookeeper. 
+         </para>
+       </section>
+       <section xml:id="server.runtime"><title>Runtime Impact</title>
+         <para>The DcsServer can continue to function if the DcsMaster goes down. the cluster can still function in a "steady 
+         state." However, the Master controls critical functions such as DcsServer failure and.  
+         So while the cluster can still run <emphasis>for a time</emphasis> without the Master, 
+         the Master should be restarted as soon as possible.     
+         </para>
+       </section>
+       <section xml:id="server.arch.processes"><title>Processes</title>
+         <para>The DcsServer runs a variety of background threads:</para>
+       </section>
+    </section>  <!--  server -->
+    
+ </chapter>   <!--  architecture -->
+  
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="external_apis.xml" />
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="performance.xml" />
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="troubleshooting.xml" />
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ops_mgt.xml" />
+ 
+<appendix xml:id="faq">
+    <title >FAQ</title>
+    <qandaset defaultlabel='faq'>
+        <qandadiv><title>General</title>
+        <qandaentry>
+                <question><para>What is DCS?</para></question>
+            <answer>
+                <para>See the <xref linkend="arch.overview" /> in the Architecture chapter.
+                </para>
+            </answer>
+        </qandaentry>
+    </qandadiv>
+    <qandadiv xml:id="faq.config"><title>Configuration</title>
+        <qandaentry xml:id="faq.config.started">
+            <question><para>How can I get started with my first cluster?</para></question>
+            <answer>
+                <para>
+                    See <xref linkend="quickstart" />.
+                </para>
+            </answer>
+            </qandaentry>
+        <qandaentry xml:id="faq.config.started">
+            <question><para>Where can I learn about the rest of the configuration options?</para></question>
+            <answer>
+                <para>
+                    See <xref linkend="configuration" />.
+                </para>
+            </answer>
+            </qandaentry>
+    </qandadiv>
+    <qandadiv><title>Performance and Troubleshooting</title>
+        <qandaentry>
+            <question><para>
+                   How can I improve DCS cluster performance?
+            </para></question>
+            <answer>
+                <para>
+                See <xref linkend="performance" />.
+                </para>
+            </answer>
+        </qandaentry>
+        <qandaentry>
+            <question><para>
+                    How can I troubleshoot my DCS cluster?
+            </para></question>
+            <answer>
+                <para>
+                See <xref linkend="trouble" />.
+                </para>
+            </answer>
+        </qandaentry>
+    </qandadiv>
+    <qandadiv><title xml:id="faq.operations">Operations</title>
+        <qandaentry>
+            <question><para>
+                    How do I manage my DCS cluster?
+            </para></question>
+            <answer>
+                <para>
+                    See <xref linkend="ops_mgt" />
+                </para>
+            </answer>
+        </qandaentry>
+    </qandadiv>
+    </qandaset>
+  </appendix>
+</book>
