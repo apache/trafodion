@@ -311,7 +311,11 @@ elif [ -d /opt/mapr ]; then
   export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
 
   # native library directories and include directories
-  export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/lib/native/Linux-amd64-64
+  if [ -r $MAPR_HADOOPDIR/lib/native/Linux-amd64-64/libhdfs.so ]; then
+    export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/lib/native/Linux-amd64-64
+  else
+    export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/c++/Linux-amd64-64/lib
+  fi
   export HADOOP_INC_DIR=/build-not-supported-on-MapR-yet
 
   # directories with jar files and list of jar files
@@ -320,6 +324,9 @@ elif [ -d /opt/mapr ]; then
   export HBASE_JAR_FILES="$MAPR_HBASEDIR/hbase-*.jar
                           $MAPR_HBASEDIR/lib/zookeeper.jar
                           $MAPR_HBASEDIR/lib/protobuf-*.jar"
+  export HIVE_JAR_DIRS="$MAPR_HIVEDIR/lib"
+  # Could not find a hadoop-mapreduce-client-core*.jar on my MapR test cluster,
+  # this jar file is required by other distros.
 
   # Configuration directories
 
