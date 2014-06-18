@@ -131,14 +131,12 @@ CFILES		= `ls *.c`
 ifeq ($(TM_USE_SEAPILOT),1)
 LIBSX		= -L$(LIBEXPDIR) -levlsq
 LIBSTMB         += -levlsq
+LIBSEAPILOT     = -L$(SP_EXPORT_LIB) -lwrappersq
 endif
 
 ifeq ($(USE_THREADED_IO),1)
 LIBSTM		+= $(LIBSTHX)
 endif
-
-
-LIBSEAPILOT = -L$(SP_EXPORT_LIB) -lwrappersq
 
 all:  $(LIBEXPDIR)/libstmlib.so cp_trx_jar
 
