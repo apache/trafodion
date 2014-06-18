@@ -401,6 +401,10 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   prevRowId_.val = NULL;
   prevRowId_.len = 0;
   isEOD_ = FALSE;
+  row_.val = NULL;
+  row_.len = 0;
+  rowAllocated_ = FALSE;
+  inlineRow_[0] = '\0';
 }
     
 ExHbaseAccessTcb::~ExHbaseAccessTcb()
@@ -432,6 +436,8 @@ void ExHbaseAccessTcb::freeResources()
     qparent_.down = NULL;
   }
   delete ehi_;
+  if (rowAllocated_)
+     NADELETEBASIC(row_.val, getHeap());
 }
 
 NABoolean ExHbaseAccessTcb::needStatsEntry()
@@ -1051,6 +1057,41 @@ short ExHbaseAccessTcb::createSQRow(TRowResult &rowResult)
 
   return 0;
 }
+
+short ExHbaseAccessTcb::fetchRowVec()
+{
+  short retcode;
+  Int32 numCols;
+  Int32 rowIDLen;
+  char *kvBuf;
+
+  retcode = ehi_->fetchRowVec(&jbRowResult_, jbaRowResult_, &isCopy_);
+  if (retcode == HBASE_ACCESS_SUCCESS)
+  {
+     kvBuf = (char *) jbRowResult_;
+     numCols = *(Int32 *)kvBuf;
+     kvBuf += sizeof(numCols);
+     if (numCols == 0)
+     {
+        setRowID(NULL, 0);
+        return retcode;
+     }
+     rowIDLen = *(Int32 *)kvBuf;
+     kvBuf += sizeof(rowIDLen);
+     setRowID(kvBuf, rowIDLen);
+  }
+  else
+     setRowID(NULL, 0);
+  return retcode;
+}
+
+short ExHbaseAccessTcb::createSQRow()
+{
+   short retcode = createSQRow(jbRowResult_);
+   ehi_->freeRowResult(jbRowResult_, jbaRowResult_);
+   return retcode;
+}
+
 #define INLINE_COLNAME_LEN 256
 short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 {

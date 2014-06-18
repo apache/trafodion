@@ -3275,7 +3275,7 @@ HTC_RetCode HTableClient_JNI::fetchRowVec(jbyte **rowResult,
   if (gotData)
     return HTC_OK;
   else
-    return HTC_DONE;
+    return HTC_DONE_DATA;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3319,17 +3319,16 @@ KeyValue* HTableClient_JNI::getLastFetchedCell()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, const Text& rowID, const TextVec& cols, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& cols, Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.data());
-  int len = rowID.size();
-  jbyteArray jba_rowID = jenv_->NewByteArray(len);
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.val);
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
   if (jba_rowID == NULL) 
   {
      GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_DELETEROW_PARAM));
      return HTC_ERROR_DELETEROW_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.data());
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
   ByteArrayList* columns = newByteArrayList(cols);
   if (columns == NULL)
@@ -3424,21 +3423,20 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, std::vector<BatchMutatio
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, const Text& rowID,
-					    const Text &columnToCheck, const Text &colValToCheck,
-					    Int64 timestamp)
+HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
+	    const Text &columnToCheck, const Text &colValToCheck,
+	    Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s, %s, %s) called.", rowID.data(), columnToCheck.data(), colValToCheck.data());
-  int len = rowID.size();
-  jbyteArray jba_rowID = jenv_->NewByteArray(len);
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s, %s, %s) called.", rowID.val, columnToCheck.data(), colValToCheck.data());
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
   if (jba_rowID == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_CHECKANDDELETEROW_PARAM));
     return HTC_ERROR_CHECKANDDELETEROW_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.data());
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
-  len = columnToCheck.size();
+  int len = columnToCheck.size();
   jbyteArray jba_columntocheck = jenv_->NewByteArray(len);
   if (jba_columntocheck == NULL) 
   {
@@ -3495,17 +3493,17 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, const Text& rowID
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, const Text& rowID, MutationVec& mutations, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID, 
+     MutationVec& mutations, Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRow(%s) called.", rowID.data());
-  int len = rowID.size();
-  jbyteArray jba_rowID = jenv_->NewByteArray(len);
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRow(%s) called.", rowID.val);
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
   if (jba_rowID == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROW_PARAM));
     return HTC_ERROR_INSERTROW_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.data());
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
   RowToInsert* rowData = new (heap_) RowToInsert(heap_, jvm_, jenv_);
   RTI_RetCode result = rowData->init();
@@ -3657,19 +3655,19 @@ HTC_RetCode HTableClient_JNI::setWriteToWAL(bool WAL)
 //////////////////////////////////////////////////////////////////////////////
 //   3-way return value!!!
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, const Text& rowID, MutationVec& mutations, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, HbaseStr &rowID,
+ MutationVec& mutations, Int64 timestamp)
 {
   //  return insertRow(transID, rowID, mutations, timestamp);
 
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndInsertRow(%s) called.", rowID.data());
-  int len = rowID.size();
-  jbyteArray jba_rowID = jenv_->NewByteArray(len);
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndInsertRow(%s) called.", rowID.val);
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
   if (jba_rowID == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_CHECKANDINSERTROW_PARAM));
     return HTC_ERROR_CHECKANDINSERTROW_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.data());
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
   RowToInsert* rowData = new (heap_) RowToInsert(heap_, jvm_, jenv_);
   RTI_RetCode result = rowData->init();
@@ -3708,18 +3706,19 @@ HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, const Text& rowID
   return HTC_OK;
 }
 
-HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, const Text& rowID, MutationVec& mutations, 
-					    const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
+            MutationVec& mutations, 
+	    const Text &columnToCheck, const Text &colValToCheck, 
+            Int64 timestamp)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndUpdateRow(%s) called.", rowID.data());
-  int len = rowID.size();
-  jbyteArray jba_rowID = jenv_->NewByteArray(len);
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndUpdateRow(%s) called.", rowID.val);
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
   if (jba_rowID == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_CHECKANDUPDATEROW_PARAM));
     return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
   }
-  jenv_->SetByteArrayRegion(jba_rowID, 0, len, (const jbyte*)rowID.data());
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
   RowToInsert* rowData = new (heap_) RowToInsert(heap_, jvm_, jenv_);
   RTI_RetCode result = rowData->init();
@@ -3736,7 +3735,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, const Text& rowID
     return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
   }
   
-  len = columnToCheck.size();
+  int len = columnToCheck.size();
   jbyteArray jba_columntocheck = jenv_->NewByteArray(len);
   if (jba_columntocheck == NULL) 
   {
