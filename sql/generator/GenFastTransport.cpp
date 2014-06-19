@@ -230,23 +230,25 @@ ExplainTuple *PhysicalFastExtract::addSpecificExplainInfo(ExplainTupleMaster *ex
 }
 
 static short ft_codegen(Generator *generator,
-                             RelExpr &relExpr,
-                             ComTdbFastExtract *&newTdb,
-                             Cardinality estimatedRowCount,
-                             char * targetName,
-                             char * hiveTableName,
-                             char * delimiter,
-                             char * header,
-                             char * nullString,
-                             char * recordSeparator,
-                             ULng32 downQueueMaxSize,
-                             ULng32 upQueueMaxSize,
-                             ULng32 outputBufferSize,
-                             ULng32 requestBufferSize,
-                             ULng32 replyBufferSize,
-                             ULng32 numOutputBuffers,
-                             ComTdb * childTdb,
-                             NABoolean isSequenceFile)
+                        RelExpr &relExpr,
+                        ComTdbFastExtract *&newTdb,
+                        Cardinality estimatedRowCount,
+                        char * targetName,
+                        char * hdfsHost,
+                        Int32 hdfsPort,
+                        char * hiveTableName,
+                        char * delimiter,
+                        char * header,
+                        char * nullString,
+                        char * recordSeparator,
+                        ULng32 downQueueMaxSize,
+                        ULng32 upQueueMaxSize,
+                        ULng32 outputBufferSize,
+                        ULng32 requestBufferSize,
+                        ULng32 replyBufferSize,
+                        ULng32 numOutputBuffers,
+                        ComTdb * childTdb,
+                        NABoolean isSequenceFile)
 {
   CmpContext *cmpContext = generator->currentCmpContext();
   Space *space = generator->getSpace();
@@ -378,6 +380,8 @@ static short ft_codegen(Generator *generator,
     flags,
     estimatedRowCount,
     targetName,
+    hdfsHost,
+    hdfsPort,
     hiveTableName,
     delimiter,
     header,
@@ -489,8 +493,11 @@ PhysicalFastExtract::codeGen(Generator *generator)
   char * header = NULL;
   char * nullString = NULL;
   char * recordSeparator = NULL;
+  char * hdfsHostName = NULL;
+  Int32 hdfsPortNum = getHdfsPort();
 
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
+  hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());
   hiveTableName = AllocStringInSpace(*space, (char *)getHiveTableName().data());
   delimiter = AllocStringInSpace(*space,  (char *)getDelimiter().data());
   header = AllocStringInSpace(*space, (char *)getHeader().data());
@@ -498,23 +505,25 @@ PhysicalFastExtract::codeGen(Generator *generator)
   recordSeparator = AllocStringInSpace(*space, (char *)getRecordSeparator().data());
 
    result = ft_codegen(generator,
-                            *this,              // RelExpr &relExpr
-                            newTdb,             // ComTdbUdr *&newTdb
-                            estimatedRowCount,
-                            targetName,
-                            hiveTableName,
-                            delimiter,
-                            header,
-                            nullString,
-                            recordSeparator,
-                            downQueueMaxSize,
-                            upQueueMaxSize,
-                            outputBufferSize,
-                            requestBufferSize,
-                            replyBufferSize,
-                            numOutputBuffers,
-                            childTdb,
-                            isSequenceFile());
+                       *this,              // RelExpr &relExpr
+                       newTdb,             // ComTdbUdr *&newTdb
+                       estimatedRowCount,
+                       targetName,
+                       hdfsHostName,
+                       hdfsPortNum,
+                       hiveTableName,
+                       delimiter,
+                       header,
+                       nullString,
+                       recordSeparator,
+                       downQueueMaxSize,
+                       upQueueMaxSize,
+                       outputBufferSize,
+                       requestBufferSize,
+                       replyBufferSize,
+                       numOutputBuffers,
+                       childTdb,
+                       isSequenceFile());
 
   if (!generator->explainDisabled())
   {

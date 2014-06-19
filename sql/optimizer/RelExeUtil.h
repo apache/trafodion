@@ -1077,23 +1077,28 @@ public:
 		    NABoolean isPurgedata = FALSE,
 		    CollHeap *oHeap = CmpCommon::statementHeap(),
 		    NABoolean isHiveTable = FALSE,
-		    NAString * hiveTableLocation = NULL)
-    : ExeUtilExpr(FAST_DELETE_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap),
-    doPurgedataCat_(doPurgedataCat),
-    noLog_(noLog), ignoreTrigger_(ignoreTrigger),
-    isPurgedata_(isPurgedata),
-    doParallelDelete_(FALSE),
-    doParallelDeleteIfXn_(FALSE),
-    offlineTable_(FALSE),
-    doLabelPurgedata_(FALSE),
-    numLOBs_(0),
-    isHiveTable_(isHiveTable)
+		    NAString * hiveTableLocation = NULL,
+                    NAString * hiveHostName = NULL,
+                    Int32 hiveHdfsPort = 0)
+       : ExeUtilExpr(FAST_DELETE_, name, exprNode, NULL, stmtText, stmtTextCharSet, oHeap),
+         doPurgedataCat_(doPurgedataCat),
+         noLog_(noLog), ignoreTrigger_(ignoreTrigger),
+         isPurgedata_(isPurgedata),
+         doParallelDelete_(FALSE),
+         doParallelDeleteIfXn_(FALSE),
+         offlineTable_(FALSE),
+         doLabelPurgedata_(FALSE),
+         numLOBs_(0),
+         isHiveTable_(isHiveTable)
   {
     if (isHiveTable )
-    {
-      CMPASSERT(hiveTableLocation != NULL);
-      hiveTableLocation_ = *hiveTableLocation;
-    }
+      {
+        CMPASSERT(hiveTableLocation != NULL);
+        hiveTableLocation_ = *hiveTableLocation;
+        if (hiveHostName)
+          hiveHostName_ = *hiveHostName;
+        hiveHdfsPort_ = hiveHdfsPort;
+      }
   };
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
@@ -1121,6 +1126,16 @@ public:
   const NAString &getHiveTableLocation() const
   {
     return hiveTableLocation_;
+  }
+
+  const NAString &getHiveHostName() const
+  {
+    return hiveHostName_;
+  }
+
+  const Int32 getHiveHdfsPort() const
+  {
+    return hiveHdfsPort_;
   }
 
 private:
@@ -1151,6 +1166,8 @@ private:
 
   NABoolean isHiveTable_;
   NAString  hiveTableLocation_;
+  NAString hiveHostName_;
+  Int32 hiveHdfsPort_;
 };
 
 class ExeUtilReorg : public ExeUtilExpr

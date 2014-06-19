@@ -1839,7 +1839,9 @@ ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
      Lng32 num_buffers,
      ULng32 buffer_size,
      NABoolean isHiveTruncate,
-     char * hiveTableLocation )
+     char * hiveTableLocation,
+     char * hiveHostName,
+     Lng32 hivePortNum)
      : ComTdbExeUtil(ComTdbExeUtil::FAST_DELETE_,
 		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
 		     tableName, tableNameLen,
@@ -1859,7 +1861,9 @@ ComTdbExeUtilFastDelete::ComTdbExeUtilFastDelete(
        objectUID_(objectUID),
        numLOBs_(numLOBs),
        lobNumArray_(lobNumArray),
-       hiveTableLocation_(hiveTableLocation)
+       hiveTableLocation_(hiveTableLocation),
+       hiveHdfsHost_(hiveHostName),
+       hiveHdfsPort_(hivePortNum)
 {
   setIsHiveTruncate(isHiveTruncate);
   setNodeType(ComTdb::ex_FAST_DELETE);
@@ -1881,6 +1885,9 @@ Long ComTdbExeUtilFastDelete::pack(void * space)
   if (hiveTableLocation_)
     hiveTableLocation_.pack(space);
 
+  if (hiveHdfsHost_)
+    hiveHdfsHost_.pack(space);
+
 
   return ComTdbExeUtil::pack(space);
 }
@@ -1901,6 +1908,8 @@ Lng32 ComTdbExeUtilFastDelete::unpack(void * base, void * reallocator)
   if(hiveTableLocation_.unpack(base))
       return -1;
 
+  if(hiveHdfsHost_.unpack(base))
+      return -1;
 
   return ComTdbExeUtil::unpack(base, reallocator);
 }

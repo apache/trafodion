@@ -637,41 +637,15 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 	//        char outFileName[500];
         if (myTdb().getTargetFile())
         {
-          if (myTdb().getIsHiveInsert())
-          {
-            assert(strncmp(myTdb().getTargetName(), "hdfs://", 7) == 0);
-          }
 
-          //Lng32 fileNum = getGlobals()->castToExEidStmtGlobals()->getMyInstanceNumber();
           Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
           if (myTdb().getIsHiveInsert())
           {
-            memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-            memset (hdfsPort_, '\0', sizeof(hdfsPort_));
-            hdfsPort_[0] = '0'; // default is zero
+            memset (hdfsHost_, '\0', sizeof(hdfsHost_)); 
+            strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
+            hdfsPort_ = myTdb().getHdfsPortNum();
             memset (hdfsFileName_, '\0', sizeof(hdfsFileName_));
             memset (hiveTableLocation_, '\0', sizeof(hiveTableLocation_));
-
-            char * outputPath = (char *)myTdb().getTargetName() ;
-            assert(strncmp(outputPath, "hdfs://", 7) == 0);
-            outputPath = &outputPath[str_len("hdfs://")];
-            char *  colonPtr = strchr(outputPath , ':');
-            char * slashPtr = strchr(outputPath , '/');
-            assert(slashPtr);
-            if (colonPtr)
-              {
-                assert(colonPtr -  outputPath < sizeof(hdfsHost_));
-                strncpy(hdfsHost_, outputPath, colonPtr -  outputPath);
-                outputPath = colonPtr + 1;
-                assert(slashPtr - outputPath < sizeof(hdfsPort_));
-                strncpy(hdfsPort_, outputPath, slashPtr - outputPath);
-              }
-            else
-              {
-                assert(slashPtr -  outputPath < sizeof(hdfsHost_));
-                strncpy(hdfsHost_, outputPath, slashPtr -  outputPath);
-              }
-            outputPath = slashPtr;
 
             time_t t;
             time(&t);
@@ -721,7 +695,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
                                                 hiveTableLocation_,
                                                 (Lng32)Lob_External_HDFS_File,
                                                 hdfsHost_,
-                                                atoi(hdfsPort_),
+                                                hdfsPort_,
                                                 0, //bufferSize -- 0 --> use default
                                                 myTdb().getHdfsReplication(), //replication
                                                 0 //bloclSize --0 -->use default
@@ -1077,7 +1051,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
                                         hiveTableLocation_,
                                         (Lng32)Lob_External_HDFS_File,
                                         hdfsHost_,
-                                        atoi(hdfsPort_),
+                                        hdfsPort_,
                                         0,
                                         NULL,  //lobHandle == NULL -->simpleInsert
                                         NULL,
@@ -1196,7 +1170,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
                                      NULL, //(char*)"",
                                      (Lng32)Lob_External_HDFS_File,
                                      hdfsHost_,
-                                     atoi(hdfsPort_));
+                                     hdfsPort_);
             if (! ErrorOccured_ && retcode < 0)
               {
                 Lng32 cliError = 0;

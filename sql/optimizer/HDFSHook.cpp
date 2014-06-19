@@ -788,7 +788,8 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   while (hsd)
     {
       // split table URL into host, port and filename
-      splitLocation(hsd->location_, hdfsHost, hdfsPort, tableDir);
+      result = splitLocation(hsd->location_, hdfsHost, hdfsPort, tableDir);
+      CMPASSERT(result);
       if (! connectHDFS(hdfsHost, hdfsPort))
         CMPASSERT(fs_);
 
@@ -832,7 +833,10 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
       Int32 hdfsPort;
       NAString partDir;
 
-      splitLocation(partStats->getDirName(), hdfsHost, hdfsPort, partDir);
+      result = splitLocation(partStats->getDirName(), hdfsHost, hdfsPort, 
+                             partDir);
+      CMPASSERT(result);
+
       if (! connectHDFS(hdfsHost, hdfsPort))
         CMPASSERT(fs_);
 
@@ -855,53 +859,69 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
                                          Int32 &hdfsPort,
                                          NAString &tableDir)
 {
-  NABoolean result = TRUE;
-  // split the location into host and file name, proto://host/file,
-  // split point is at the third slash in the URL
-  const char *c = tableLocation;
   const char *hostMark = NULL;
   const char *portMark = NULL;
   const char *dirMark  = NULL;
-  int numSlashes = 0;
-  int numColons = 0;
-  while (*c && dirMark == NULL)
-    {
-      if (*c == '/')
-        numSlashes++;
-      else if (*c == ':')
-        numColons++;
-      c++;
+  const char *fileSysTypeTok = NULL;
 
-      if (hostMark == NULL && numSlashes == 2)
-        hostMark = c;
-      else if (portMark == NULL && hostMark && numColons == 2)
-        portMark = c;
-      else if (numSlashes == 3 ||                         // regular URL
-               (numSlashes == 1 && c == tableLocation+1)) // just a file name
-        dirMark = c-1; // include the leading slash
-    }
+  // The only two filesysTypes supported are hdfs: and maprfs:
+  // One of these two tokens must appear at the the start of tableLocation
 
-  if (dirMark == NULL)
-    {
-      CMPASSERT(dirMark != NULL);
-      // TBD:DIAGS
-      result = FALSE;
-    }
+  // hdfs://localhost:35000/hive/tpcds/customer
+ if (fileSysTypeTok = strstr(tableLocation, "hdfs:"))
+    tableLocation = fileSysTypeTok + 5; 
+  // maprfs:/user/hive/warehouse/f301c7af0-2955-4b02-8df0-3ed531b9abb/select
+  else if (fileSysTypeTok = strstr(tableLocation, "maprfs:"))
+    tableLocation = fileSysTypeTok + 7; 
   else
+    return FALSE;
+
+  
+  // The characters that  come after "//" is the hostName.
+  // "//" has to be at the start of the string (after hdfs: or maprfs:)
+  if ((hostMark = strstr(tableLocation, "//"))&&
+      (hostMark == tableLocation))
     {
-      if (hostMark)
-        hdfsHost    = NAString(hostMark, (portMark ? portMark-hostMark-1
-                                                    : dirMark-hostMark));
-      if (hdfsPortOverride_ > -1)
-        hdfsPort    = hdfsPortOverride_;
+      hostMark = hostMark + 2;
+      
+      dirMark = strchr(hostMark, '/');
+      if (!dirMark)
+        return FALSE;
+
+      // if there is a hostName there could be a hostPort too.
+      // It is not not an error if there is a hostName but no hostPort
+      // for example  hdfs://localhost/hive/tpcds/customer is valid
+      portMark = strchr(hostMark, ':');
+      if (portMark && (portMark < dirMark))
+        portMark = portMark +1 ;
       else
-        if (portMark)
-          hdfsPort  = atoi(portMark);
-        else
-          hdfsPort  = 0;
-      tableDir      = NAString(dirMark);
+        portMark = NULL; 
     }
-  return result;
+  else // no host location, for example maprfs:/user/hive/warehouse/
+    {
+      hostMark = NULL;
+      portMark = NULL;
+      if (*tableLocation != '/') 
+        return FALSE;
+      dirMark = tableLocation;
+    }
+
+  
+  if (hostMark)
+    hdfsHost    = NAString(hostMark, (portMark ? portMark-hostMark-1
+                                      : dirMark-hostMark));
+  else
+    hdfsHost = NAString("default");
+
+  if (hdfsPortOverride_ > -1)
+    hdfsPort    = hdfsPortOverride_;
+  else
+    if (portMark)
+      hdfsPort  = atoi(portMark);
+    else
+      hdfsPort  = 0;
+  tableDir      = NAString(dirMark);
+  return TRUE;
 }
 
 NABoolean HHDFSTableStats::processDirectory(const NAString &dir, Int32 numOfBuckets, NABoolean doEstimate, char recordTerminator, NABoolean isSequenceFile)

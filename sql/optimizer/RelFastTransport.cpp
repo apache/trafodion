@@ -44,6 +44,8 @@ FastExtract::FastExtract(const FastExtract & other)
 {
   targetType_ = other.targetType_;
   targetName_ = other.targetName_;
+  hdfsHostName_ = other.hdfsHostName_;
+  hdfsPort_ = other.hdfsPort_;
   isHiveInsert_ = other.isHiveInsert_;
   hiveTableName_ = other.hiveTableName_;
   delimiter_ = other.delimiter_;
@@ -79,6 +81,8 @@ RelExpr * FastExtract::copyTopNode(RelExpr *derivedNode,
 
   result->targetType_ = targetType_;
   result->targetName_ = targetName_;
+  result->hdfsHostName_ = hdfsHostName_;
+  result->hdfsPort_ = hdfsPort_;
   result->isHiveInsert_= isHiveInsert_;
   result->hiveTableName_ = hiveTableName_;
   result->delimiter_ = delimiter_;

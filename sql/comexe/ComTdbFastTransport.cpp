@@ -40,6 +40,8 @@ ComTdbFastExtract::ComTdbFastExtract(
                      ULng32 flags,
                      Cardinality estimatedRowCount,
                      char * targetName,
+                     char * hdfsHost,
+                     Lng32 hdfsPort,
                      char * hiveTableName,
                      char * delimiter,
                      char * header,
@@ -72,6 +74,8 @@ ComTdbFastExtract::ComTdbFastExtract(
          numOutputBuffers, outputBufferSize),
   flags_(flags),
   targetName_(targetName),
+  hdfsHostName_(hdfsHost),
+  hdfsPortNum_(hdfsPort),
   delimiter_(delimiter),
   header_(header),
   nullString_(nullString),
@@ -112,6 +116,7 @@ Long ComTdbFastExtract::pack(void *space)
   childDataExpr_.pack(space);
   childTdb_.pack(space);
   hiveTableName_.pack(space);
+  hdfsHostName_.pack(space);
 
   return ComTdb::pack(space);
 }
@@ -130,6 +135,7 @@ Lng32 ComTdbFastExtract::unpack(void *base, void *reallocator)
   if (childDataExpr_.unpack(base, reallocator)) return -1;
   if (childTdb_.unpack(base,reallocator))  return -1;
   if (hiveTableName_.unpack(base)) return -1;
+  if (hdfsHostName_.unpack(base)) return -1;
 
   return ComTdb::unpack(base, reallocator);
 }
@@ -166,6 +172,16 @@ void ComTdbFastExtract::displayContents(Space *space, ULng32 flag)
 	 str_sprintf(buf, "targetName = %s", s);
 	 space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
    }
+
+    if (hdfsHostName_)
+   {
+	 char *s = hdfsHostName_;
+	 str_sprintf(buf, "hdfsHostName = %s", s);
+	 space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sz);
+   }
+    
+   str_sprintf(buf,"hdfsPortNum = %d", hdfsPortNum_);
+   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(UInt16));
 
    if (delimiter_)
    {
