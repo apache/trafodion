@@ -1,0 +1,151 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+
+# @@@ END COPYRIGHT @@@
+
+#  Setup Hortonworks/Ambari and Trafodion on a Cluster System
+
+#==============================================
+# Default values
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+typeset TOOLS_TAR="$TRAF_WORKDIR/traf_other_tools.tgz"
+typeset TRAF_USER="trafodion"
+typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
+typeset NODE_LIST="$HOSTNAME"
+typeset CLUSTERNAME="$HOSTNAME"
+typeset HBASE_TRX_JAR=""
+typeset HOME_DIR="/home"
+
+AMBARI=$(rpm -qa | grep ambari | wc -l)
+#==============================================
+
+function print_usage {
+cat << EOF
+This script will do the one-time setup needed
+to establish the Hortonworks/Ambari and Trafodion environment.
+
+NOTE: This script does NOT install a Trafodion build
+      it merely sets up everything needed to support
+      Trafodion.
+
+Usage: $(basename $0) [options]
+
+Options:
+    --help                 Print this message and exit.
+    --nodes "<node_list>"  Blank separated list of nodes (within quotes) in this Trafodion environment
+                           From 1 to N nodes, although two is the recommended minimum.
+    --username <user>      Trafodion user name (default "$TRAF_USER")
+    --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
+    --clustername <name>   Name of Trafodion cluster. (default $HOSTNAME)
+    --home_dir <path>      Path to trafodion home directory. (default /home)
+    --hbase_trx_jar <path> Path to a recently built hbase trx jar file.
+
+EOF
+}
+
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --username)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TRAF_USER=$2
+            shift
+            ;;
+        --password)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            TRAF_USER_PASSWORD=$2
+            shift
+            ;;
+        --nodes)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            NODE_LIST=$2
+            shift
+            ;;
+        --clustername)
+            if [[ -z "$2" ]]; then
+                echo "***ERROR: No value passed to param $1."
+                print_usage
+                exit -1
+            fi
+            CLUSTERNAME=$2
+            shift
+            ;;
+        --home_dir)
+            if [[ -z "$2" ]]; then
+               echo "***ERROR: No value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HOME_DIR=$2
+            shift
+            ;;
+        --hbase_trx_jar)
+            if [[ -z "$2" ]]; then
+               echo "****ERROR: NO value passed to param $1."
+               print_usage
+               exit -1
+            fi
+            HBASE_TRX_JAR=$2
+            shift
+            ;;
+        --help)
+            print_usage
+            exit -1
+            ;;
+        *)
+         echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+#==============================================
+
+echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete"
+
+wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.5.1/ambari.repo
+
+sudo cp ambari.repo /etc/yum.repos.d
+sudo yum --assumeyes install ambari-server
+sudo ambari-server setup
+sudo ambari-server start
+
+echo "***INFO: Complete Hortonworks/Ambari setup from http://localhost:8080"
+
+#==============================================
+
+echo "***INFO: Running Trafodion Setup"
+if [[ $HBASE_TRX_JAR == "" ]]; then
+
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR
+
+else
+
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR
+
+fi
+
+if [ $? != 0 ]; then
+   echo "***ERROR: Unable to run Trafodion Setup successfully"
+   exit -1
+fi
+
+echo "***INFO: Hortonworks/Ambari and Trafodion setup complete"
+
