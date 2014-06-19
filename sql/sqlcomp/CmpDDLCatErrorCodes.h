@@ -353,6 +353,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_ROUTINE_USES_LIBRARY                      = 1367
                   , CAT_LIBRARY_MUST_BE_IN_SAME_CATALOG           = 1368
                   , CAT_ONLY_UPDATE_OR_USAGE_PRIV_FOR_LIBRARY     = 1369
+                  , CAT_INVALID_CHARS_IN_AUTH_NAME                = 1370
                   , CAT_ONLY_SELECT_OR_INSERT_FOR_TABLE           = 1371
                   , CAT_ALTER_TABLE_INSERT_ONLY_FAILED            = 1372
                   , CAT_AUDIT_NOT_A_VALID_BOOL_VALUE              = 1373

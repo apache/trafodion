@@ -4287,6 +4287,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             unregisterSeabaseUser(registerUserParseNode);
         }
+      else if (ddlNode->getOperatorType() == DDL_ALTER_USER)
+        {
+          StmtDDLAlterUser *alterUserParseNode = 
+            ddlNode->castToStmtDDLNode()->castToStmtDDLAlterUser();
+          alterSeabaseUser(alterUserParseNode);
+        }
       else if ((ddlNode->getOperatorType() == DDL_GRANT) ||
 	       (ddlNode->getOperatorType() == DDL_REVOKE))
 	{
@@ -4385,5 +4391,11 @@ void CmpSeabaseDDL::unregisterSeabaseUser(StmtDDLRegisterUser * authParseNode)
 {
   CmpSeabaseDDLuser user;
   user.unregisterUser(authParseNode);
+}
+
+void CmpSeabaseDDL::alterSeabaseUser(StmtDDLAlterUser * authParseNode)
+{
+  CmpSeabaseDDLuser user;
+  user.alterUser(authParseNode);
 }
 

@@ -17,30 +17,41 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-/* -*-C++-*-
- *****************************************************************************
- *
- * File:         CmpSeabaseDDLauth.cpp
- * Description:  Implements methods for user management
- *
- * Contains methods for classes:
- *   CmpSeabaseDDLauth
- *   CmpSeabaseDDLuser
- *
- *
- *****************************************************************************
- */
 
-#include "StmtDDLRegisterUser.h"
+// *****************************************************************************
+// *
+// * File:         CmpSeabaseDDLauth.cpp
+// * Description:  Implements methods for user management
+// *
+// * Contains methods for classes:
+// *   CmpSeabaseDDLauth
+// *   CmpSeabaseDDLuser
+// *
+// *
+// *****************************************************************************
+
 #include "CmpSeabaseDDLauth.h"
 #include "CmpSeabaseDDL.h"
-#include "CmpSeabaseDDLincludes.h"
-#include "ComSmallDefs.h"
+#include "StmtDDLRegisterUser.h"
+#include "StmtDDLAlterUser.h"
+#include "ElemDDLGrantee.h"
 #include "CompException.h"
-#include "Globals.h"
 #include "Context.h"
 #include "dbUserAuth.h"
 #include "ComUser.h"
+#include "CmpDDLCatErrorCodes.h"
+#include "NAStringDef.h"
+#include "ExpHbaseInterface.h"
+
+#ifndef   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
+#define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
+#endif
+#ifndef   SQLPARSERGLOBALS_LEX_AND_PARSE
+#define   SQLPARSERGLOBALS_LEX_AND_PARSE
+#endif
+#define   SQLPARSERGLOBALS_FLAGS
+#define   SQLPARSERGLOBALS_NADEFAULTS_SET
+#include "SqlParserGlobalsCmn.h"
 
 #define  RESERVED_AUTH_NAME_PREFIX  "DB__"
 
@@ -67,90 +78,91 @@ CmpSeabaseDDLauth::CmpSeabaseDDLauth()
 {}
 
 // ----------------------------------------------------------------------------
-// method:  authExists
+// public method:  authExists
 //
-// Input: none
+// Input:
+//   authName - name to look up
+//   isExternal -
+//       true - the auth name is the external name (auth_ext_name)
+//       false - the auth name is the database name (auth_db_name)
 //
 // Output:
 //   Returns true if authorization row exists in the metadata
-//   Returns false if authorization row does not exist in the metadata
+//   Returns false if authorization row does not exist in the metadata or an 
+//      unexpected error occurs
 //
-//  An exception is thrown if any unexpected errors occurred.
+//  The diags area contains an error if any unexpected errors occurred.
+//  Callers should check the diags area when false is returned
 // ----------------------------------------------------------------------------
-bool  CmpSeabaseDDLauth::authExists (bool isExternal)
+bool CmpSeabaseDDLauth::authExists (const NAString &authName, bool isExternal)
 {
-  // Read the auths table based on the auth_db_name
-  NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
-  NAString colName = (isExternal) ? "auth_ext_name" : "auth_db_name";
-  NAString authName = (isExternal) ?  getAuthExtName() : getAuthDbName();
-  char buf[1000];
-  str_sprintf(buf, "select count(*) from %s.\"%s\".%s where %s = '%s' ",
-                sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, colName.data(),
-                authName.data());
-
-  Lng32 len = 0;
+  // Read the auths table to get a count of rows for the authName
   Int64 rowCount = 0;
-  ExeCliInterface cliInterface(STMTHEAP);
-  Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, NULL);
-
-  // If unexpected error occurred, return an exception
-  if (cliRC < 0)
+  try
   {
-    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-    UserException excp (NULL, 0);
-    excp.throwException();
+    NAString whereClause ("where ");
+    whereClause += (isExternal) ? "auth_ext_name = '" : "auth_db_name = '";
+    whereClause += authName;
+    whereClause += "'";
+    rowCount = selectCount(whereClause);
+    return (rowCount > 0) ? true : false;
   }
 
-  return (rowCount > 0) ? true : false;
+  catch (...)
+  {
+    // If there is no error in the diags area, set up an internal error
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("CmpSeabaseDDLauth::authExists for authName");
+    return false;
+  }
 }
 
 // ----------------------------------------------------------------------------
-// method: getAuthDetails
+// public method: getAuthDetails
 //
-// Creates the CmpSeabaseDDLauth class containing auth details for the
+// Populates the CmpSeabaseDDLauth class containing auth details for the
 // requested authName
 //
 // Input:
-//    authName - the database auth name to retrieve details for
+//    authName - the database or external auth name
 //    isExternal -
 //       true - the auth name is the external name (auth_ext_name)
 //       false - the auth name is the database name (auth_db_name)
 //
 // Output:
-//    A returned parameter:
-//       0 - authorization details are available
-//       < 0 - an error was returned trying to get details
-//       100 - authorization details were not found
-//       > 0 - (not 100) warning was returned
+//    Returned parameter (AuthStatus):
+//       STATUS_GOOD: authorization details are populated:
+//       STATUS_NOTFOUND: authorization details were not found
+//       STATUS_WARNING: (not 100) warning was returned, diags area populated
+//       STATUS_ERROR: error was returned, diags area populated
 // ----------------------------------------------------------------------------
-Int32 CmpSeabaseDDLauth::getAuthDetails(const char *pAuthName,
-                                        bool isExternal)
+CmpSeabaseDDLauth::AuthStatus 
+CmpSeabaseDDLauth::getAuthDetails(const char *pAuthName, bool isExternal)
 {
   try
   {
-    NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
-    char buf[1000];
-    NAString authNameCol = isExternal ? "auth_ext_name " : "auth_db_name ";
-   str_sprintf(buf, "select auth_id, auth_db_name, auth_ext_name, auth_type, auth_creator, auth_is_valid, auth_create_time, auth_redef_time from %s.\"%s\".%s where %s = '%s' ",
-              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, authNameCol.data(), pAuthName);
-    NAString cmd (buf);
+    NAString whereClause ("where ");
+    whereClause += (isExternal) ? "auth_ext_name = '" : "auth_db_name = '";
+    whereClause += pAuthName;
+    whereClause += "'";
+    return selectExactRow(whereClause);
+  }
 
-    if (selectExactRow(cmd))
-      return 0;
-    return 100;
-  }
-  catch (DDLException e)
-  {
-    return e.getSqlcode();
-  }
   catch (...)
   {
-    return -1;
+    // If there is no error in the diags area, set up an internal error
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("CmpSeabaseDDLauth::getAuthDetails for authName");
+    return STATUS_ERROR;
   }
 }
 
 // ----------------------------------------------------------------------------
-// method:  getAuthDetails
+// public method:  getAuthDetails
 //
 // Create the CmpSeabaseDDLauth class containing auth details for the
 // request authID
@@ -160,40 +172,29 @@ Int32 CmpSeabaseDDLauth::getAuthDetails(const char *pAuthName,
 //
 //  Output:
 //    A returned parameter:
-//       0 - authorization details are available
-//       < 0 - an error was returned trying to get details
-//       100 - authorization details were not found
-//       > 0 - (not 100) warning was returned
+//       STATUS_GOOD: authorization details are populated:
+//       STATUS_NOTFOUND: authorization details were not found
+//       STATUS_WARNING: (not 100) warning was returned, diags area populated
+//       STATUS_ERROR: error was returned, diags area populated
 // ----------------------------------------------------------------------------
-Int32 CmpSeabaseDDLauth::getAuthDetails (Int32 authID)
+CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
 {
   try
   {
-    NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
-    char buf[1000];
-   str_sprintf(buf, "select auth_id, auth_db_name, auth_ext_name, auth_type, auth_creator, auth_is_valid, auth_create_time, auth_redef_time from %s.\"%s\".%s where auth_id = %s ",
-              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, authID);
-    NAString cmd (buf);
+    NAString whereClause ("where auth_id = ");
+    whereClause += authID;
+    return selectExactRow(whereClause);
+  }
 
-    if (selectExactRow(cmd))
-      return 0;
-    return 100;
-  }
-  catch (DDLException e)
-  {
-    // At this time, an error should be in the diags area.
-    return e.getSqlcode();
-  }
   catch (...)
   {
     // If there is no error in the diags area, set up an internal error
-    Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
-    if (numErrors == 0)
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
                           << DgInt0(__LINE__)
-                          << DgString0("getAuthDetails for authID");
+                          << DgString0("CmpSeabaseDDLauth::getAuthDetails for authID");
 
-    return -CAT_INTERNAL_EXCEPTION_ERROR;
+    return STATUS_ERROR;
   }
 }
 
@@ -226,6 +227,26 @@ bool CmpSeabaseDDLauth::isAuthNameReserved (const NAString &authName)
 }
 
 // ----------------------------------------------------------------------------
+// method: isAuthNameValid
+//
+// checks to see if the name contains valid character
+//
+// Input:
+//    NAString - authName -- name string to check
+//
+// Returns:  true if valid, false otherwise
+// ----------------------------------------------------------------------------
+bool CmpSeabaseDDLauth::isAuthNameValid(const NAString &authName)
+{
+  string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_@./";
+  string strToScan = authName.data();
+  size_t found = strToScan.find_first_not_of(validChars);
+  if (found == string::npos)
+    return true;
+  return false;
+}
+
+// ----------------------------------------------------------------------------
 // method: verifyAuthority
 //
 // makes sure user has privilege to perform operation
@@ -237,7 +258,6 @@ bool CmpSeabaseDDLauth::isAuthNameReserved (const NAString &authName)
 void CmpSeabaseDDLauth::verifyAuthority()
 {
   // get effective user from the Context
-  // TBD - replace this call with SQL_EXEC_ call
   const char *databaseUserName = GetCliGlobals()->currContext()->getDatabaseUserName();
   NAString userNameStr = databaseUserName;
   NAString rootNameStr = ComUser::getRootUserName();
@@ -245,12 +265,14 @@ void CmpSeabaseDDLauth::verifyAuthority()
   {
     *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
     UserException excp (NULL, 0);
-    excp.throwException();
+    throw excp;
   }
 }
 
 // ----------------------------------------------------------------------------
-// Methods that access the AUTHS table
+// Methods that perform metadata access
+//
+// All methods return a UserException if an unexpected error occurs
 //-----------------------------------------------------------------------------
 
 // Delete a row from the AUTHS table based on the AUTH_ID
@@ -267,8 +289,16 @@ void CmpSeabaseDDLauth::deleteRow(const NAString &authName)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
     UserException excp (NULL, 0);
-    excp.throwException();
+    throw excp;
   }
+
+  // Existence of the row is already checked, throw an assertion the row does not exist
+  // With optimistic locking, this might occur if a concurrent session is deleting the
+  // same row and gets in first
+  CMPASSERT (cliRC == 100);
+
+  // Not sure if it is possible to get a warning from a delete and
+  // what it means if one is returned for now, it is ignored.
 }
 
 // Insert a row into the AUTHS table
@@ -287,7 +317,11 @@ void CmpSeabaseDDLauth::insertRow()
       authType = COM_USER_CLASS_LIT;
       break;
     default:
-      authType = COM_UNKNOWN_ID_CLASS_LIT;
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("CmpSeabaseDDLauth::deleteRow invalid authType");
+      UserException excp (NULL, 0);
+      throw excp;
   }
 
   NAString authValid = isAuthValid() ? "Y" : "N";
@@ -311,21 +345,63 @@ void CmpSeabaseDDLauth::insertRow()
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
     UserException excp (NULL, 0);
-    excp.throwException();
+    throw excp;
   }
+
+  // Not sure if it is possible to get a warning from an insert and
+  // what it means if one is returned, for now it is ignored.
+  
 }
 
-// select exact
-bool CmpSeabaseDDLauth::selectExactRow(const NAString & cmd)
+// update a row in AUTHS table based on the passed in setClause
+void CmpSeabaseDDLauth::updateRow(const NAString &setClause)
 {
+  char buf[1000];
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
+  str_sprintf(buf, "update %s.\"%s\".%s %s where auth_id = %d",
+              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
+              setClause.data(),
+              getAuthID());
+
+  Int32 cliRC = cliInterface.executeImmediate(buf);
+
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    UserException excp (NULL, 0);
+    throw excp;
+  }
+  
+  // Existence of the row is already checked, throw an assertion the row does not exist
+  // With optimistic locking, this might occur if a concurrent session is deleting the
+  // same row and gets in first
+  CMPASSERT (cliRC == 100);
+
+  // Not sure if it is possible to get a warning from an update and
+  // what it means if one is returned, for now it is ignored.
+  
+}
+
+// select exact based on the passed in whereClause
+CmpSeabaseDDLauth::AuthStatus 
+CmpSeabaseDDLauth::selectExactRow(const NAString & whereClause)
+{
+   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
+   char buf[1000];
+   str_sprintf(buf, "select auth_id, auth_db_name, auth_ext_name, auth_type, auth_creator, auth_is_valid, auth_create_time, auth_redef_time from %s.\"%s\".%s %s ",
+              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, whereClause.data());
+    NAString cmd (buf);
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   Int32 cliRC = cliInterface.fetchRowsPrologue(cmd.data(), true/*no exec*/);
-  if (cliRC < 0)
+  if (cliRC != 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       DDLException excp (cliRC, NULL, 0);
-      excp.throwException();
+      throw excp;
     }
 
   cliRC = cliInterface.clearExecFetchClose(NULL, 0);
@@ -333,16 +409,20 @@ bool CmpSeabaseDDLauth::selectExactRow(const NAString & cmd)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       DDLException excp (cliRC, NULL, 0);
-      excp.throwException();
+      throw excp;
     }
 
-  // if diags not cleared, then no error is returned -- ??
   if (cliRC == 100) // did not find the row
   {
     cliInterface.clearGlobalDiags();
-    return false;
+    return STATUS_NOTFOUND;
   }
 
+  // Set the return status
+  CmpSeabaseDDLauth::AuthStatus authStatus = 
+    (cliRC == 0) ? STATUS_GOOD : STATUS_WARNING;
+
+  // Populate the class
   char * ptr = NULL;
   Lng32 len = 0;
   char type [6];
@@ -395,7 +475,56 @@ bool CmpSeabaseDDLauth::selectExactRow(const NAString & cmd)
   setAuthRedefTime((ComTimestamp) intValue);
 
   cliInterface.fetchRowsEpilogue(NULL, true);
-  return true;
+  return authStatus;
+}
+
+// selectCount - returns the number of rows based on the where clause
+Int64 CmpSeabaseDDLauth::selectCount(const NAString & whereClause)
+{
+  NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
+  char buf[1000];
+  str_sprintf(buf, "select count(*) from %s.\"%s\".%s %s ",
+                sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, 
+                whereClause.data());
+
+  Lng32 len = 0;
+  Int64 rowCount = 0;
+  ExeCliInterface cliInterface(STMTHEAP);
+  Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, NULL);
+
+  // If unexpected error occurred, return an exception
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    DDLException excp (cliRC, NULL, 0);
+    throw excp;
+  }
+
+  return rowCount;
+}
+
+// selectMaxAuthID - gets the last used auth ID
+// ACH - need to improve the algorithm
+Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
+{
+  NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
+  char buf[400];
+  str_sprintf(buf, "select max (auth_id) from %s.\"%s\".%s %s" , 
+              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
+              whereClause.data());
+
+  Lng32 len = 0;
+  Int32 maxValue = 0;
+  ExeCliInterface cliInterface(STMTHEAP);
+  Lng32 cliRC = cliInterface.executeImmediate(buf, (char *)&maxValue, &len, true);
+  if (cliRC != 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    UserException excp (NULL, 0);
+    throw excp;
+  }
+
+  return maxValue;
 }
 
 // ****************************************************************************
@@ -410,36 +539,35 @@ CmpSeabaseDDLuser::CmpSeabaseDDLuser()
 {}
 
 // ----------------------------------------------------------------------------
-// method: getUserDetails
+// public method: getUserDetails
 //
 // Create the CmpSeabaseDDLuser class containing user details for the
-// request userID
+// requested userID
 //
 // Input:
 //    userID - the database authorization ID to search for
 //
 //  Output:
-//    A returned parameter:
-//       0 - authorization details are available
-//       < 0 - an error was returned trying to get details
-//       100 - authorization details were not found
-//       > 0 - (not 100) warning was returned
+//    Returned parameter:
+//       STATUS_GOOD: authorization details are populated:
+//       STATUS_NOTFOUND: authorization details were not found
+//       STATUS_WARNING: (not 100) warning was returned, diags area populated
+//       STATUS_ERROR: error was returned, diags area populated
 // ----------------------------------------------------------------------------
-Int32 CmpSeabaseDDLuser::getUserDetails(Int32 userID)
+CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLuser::getUserDetails(Int32 userID)
 {
-  Int32 retcode = getAuthDetails(userID);
-  if (retcode == 0)
+  CmpSeabaseDDLauth::AuthStatus retcode = getAuthDetails(userID);
+  if (retcode == STATUS_GOOD && !isUser())
   {
-    if (!isUser())
-      *CmpCommon::diags() << DgSqlCode (-CAT_IS_NOT_A_USER)
-                          << DgString0 (getAuthDbName());
-    return -CAT_IS_NOT_A_USER;
+    *CmpCommon::diags() << DgSqlCode (-CAT_IS_NOT_A_USER)
+                        << DgString0(getAuthDbName().data());
+     retcode =  STATUS_ERROR;
   }
   return retcode;
 }
 
 // ----------------------------------------------------------------------------
-// method: getUserDetails
+// public method: getUserDetails
 //
 // Create the CmpSeabaseDDLuser class containing user details for the
 // requested username
@@ -451,61 +579,45 @@ Int32 CmpSeabaseDDLuser::getUserDetails(Int32 userID)
 //       false - the username is the database name (auth_db_name)
 //
 //  Output:
-//    A returned parameter:
-//       0 - authorization details are available
-//       < 0 - an error was returned trying to get details
-//       100 - authorization details were not found
-//       > 0 - (not 100) warning was returned
+//    Returned parameter:
+//       STATUS_GOOD: authorization details are populated:
+//       STATUS_NOTFOUND: authorization details were not found
+//       STATUS_WARNING: (not 100) warning was returned, diags area populated
+//       STATUS_ERROR: error was returned, diags area populated
 // ----------------------------------------------------------------------------
-Int32 CmpSeabaseDDLuser::getUserDetails(const char *pUserName,
-                                        bool isExternal)
+CmpSeabaseDDLauth::AuthStatus 
+CmpSeabaseDDLuser::getUserDetails(const char *pUserName, bool isExternal)
 {
-  Int32 retcode = getAuthDetails(pUserName, isExternal);
-  if (retcode == 0)
+  CmpSeabaseDDLauth::AuthStatus retcode = getAuthDetails(pUserName, isExternal);
+  if (retcode == STATUS_GOOD && !isUser())
   {
-    if (!isUser())
-    {
-      *CmpCommon::diags() << DgSqlCode (-CAT_IS_NOT_A_USER)
-                          << DgString0 (pUserName);
-      return -CAT_IS_NOT_A_USER;
-    }
+    *CmpCommon::diags() << DgSqlCode (-CAT_IS_NOT_A_USER)
+                        << DgString0(getAuthDbName().data());
+     retcode = STATUS_ERROR;
   }
   return retcode;
 }
 
 // ----------------------------------------------------------------------------
-// method:  getUniqueUserID
+// method:  getUniqueID
 //
 // This method returns a unique user ID
 //
 // Input:  none
 //
 // Output:  returns a unique user ID
-//   An exception is generated, if a unique ID could not be generated
 // ----------------------------------------------------------------------------
-Int32 CmpSeabaseDDLuser::getUniqueUserID()
+Int32 CmpSeabaseDDLuser::getUniqueID()
 {
-  NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
-  char buf[400];
-  str_sprintf(buf, "select max (auth_id) from %s.\"%s\".%s where auth_id >= 0 and auth_id < 1000000" , sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS);
-
-  Lng32 len = 0;
-  Int32 maxValue = 0;
-  ExeCliInterface cliInterface(STMTHEAP);
-  Lng32 cliRC = cliInterface.executeImmediate(buf, (char *)&maxValue, &len, true);
-  if (cliRC != 0)
-  {
-    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-    UserException excp (NULL, 0);
-    excp.throwException();
-  }
-
-  maxValue++;
-  return maxValue;
-}
+  Int32 newUserID = 0;
+  NAString whereClause ("where auth_id >= 33333 and auth_id < 999999");
+  newUserID = selectMaxAuthID(whereClause);
+  newUserID++;
+  return newUserID;
+}  
 
 // ----------------------------------------------------------------------------
-// Method: registerUser
+// Public method: registerUser
 //
 // registers a user in the Trafodion metadata
 //
@@ -517,24 +629,36 @@ void CmpSeabaseDDLuser::registerUser(StmtDDLRegisterUser * pNode)
   // Set up a global try/catch loop to catch unexpected errors
   try
   {
-    // Verify user is authorized
-
+    // Verify user is authorized to perform REGISTER USER requests
     verifyAuthority();
 
     // Verify that the specified user name is not reserved
-    // TBD - add the isCatman concept
+    setAuthDbName(pNode->getDbUserName());
     if (isAuthNameReserved(pNode->getDbUserName()))
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_AUTH_NAME_RESERVED)
                           << DgString0(pNode->getDbUserName().data());
-      DDLException excp (CAT_AUTH_NAME_RESERVED, NULL, 0);
-      excp.throwException();
+      return;
     }
 
 
-    // set up class members from parse node
-    setAuthDbName(pNode->getDbUserName());
+    // Verify that the name does not include unsupported special characters
+    if (!isAuthNameValid(getAuthDbName()))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_INVALID_CHARS_IN_AUTH_NAME)
+                          << DgString0(pNode->getDbUserName().data());
+      return;
+    }
+
     setAuthExtName(pNode->getExternalUserName());
+    if (!isAuthNameValid(getAuthExtName()))
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_INVALID_CHARS_IN_AUTH_NAME)
+                          << DgString0(pNode->getExternalUserName().data());
+      return;
+    }
+
+    // set up class members from parse node
     setAuthImmutable(pNode->isImmutable());
     setAuthType(COM_USER_CLASS);  // we are a user
     setAuthValid(true); // assume a valid user
@@ -544,39 +668,38 @@ void CmpSeabaseDDLuser::registerUser(StmtDDLRegisterUser * pNode)
     setAuthRedefTime(createTime);  // make redef time the same as create time
 
     // Make sure db user has not already been registered
-    if (authExists())
+    if (authExists(getAuthDbName(), false))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_ALREADY_EXISTS)
                           << DgString0(getAuthDbName().data());
-      DDLException excp (CAT_AUTHID_ALREADY_EXISTS, NULL, 0);
-      excp.throwException();
+      return;
     }
+    // unexpected error occurred - ?
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+      return;
 
     // Make sure external user has not already been registered
-    if (authExists(true))
+    if (authExists(getAuthExtName(), true))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_LDAP_USER_ALREADY_EXISTS)
                           << DgString0(getAuthExtName().data());
-      DDLException excp (CAT_LDAP_USER_ALREADY_EXISTS, NULL, 0);
-      excp.throwException();
+       return;
     }
+    // unexpected error occurred - ?
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+      return;
 
 DBUserAuth::AuthenticationConfiguration configurationNumber = DBUserAuth::DefaultConfiguration;
 DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::DefaultConfiguration;
 
+    // Verify that the external user exists in configured identity store
     if (!validateExternalUsername(pNode->getExternalUserName().data(),
                                   configurationNumber,
                                   foundConfigurationNumber))
        return;
 
     // Get a unique auth ID number
-    // TBD - check a parserflag (or something) to add DB__ROOT
-    Int32 userID = 0;
-    if (getAuthDbName() == DB__ROOT)
-      userID = SUPER_USER;
-    else
-      userID = getUniqueUserID();
-
+    Int32 userID = getUniqueID();
     setAuthID (userID);
 
     // If the BY clause was specified, then register the user on behalf of the
@@ -585,7 +708,6 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
     if (pNode->getOwner() == NULL)
     {
       // get effective user from the Context
-      // TBD - replace this call with SQL_EXEC_ call
       Int32 *pUserID = GetCliGlobals()->currContext()->getDatabaseUserID();
       setAuthCreator(*pUserID);
     }
@@ -593,8 +715,8 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
     {
       const NAString creatorName =
         pNode->getOwner()->getAuthorizationIdentifier();
-      // TBD: get the authID for the creatorName
-      // TBD: verify creator can register users
+      // TODO: get the authID for the creatorName
+      // TODO: verify creator can register users
       setAuthCreator(NA_UserIdDefault);
     }
 
@@ -605,17 +727,15 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
   {
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
-    Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
-    if (numErrors == 0)
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
                           << DgInt0(__LINE__)
-                          << DgString0("register user");
-
+                          << DgString0("CmpSeabaseDDLuser::register user");
   }
 }
 
 // ----------------------------------------------------------------------------
-// method:  unregisterUser
+// public method:  unregisterUser
 //
 // This method removes a user from the database
 //
@@ -632,47 +752,31 @@ void CmpSeabaseDDLuser::unregisterUser (StmtDDLRegisterUser * pNode)
     if (pNode->getDropBehavior() == COM_CASCADE_DROP_BEHAVIOR)
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_ONLY_SUPPORTING_RESTRICT_DROP_BEHAVIOR);
-       DDLException excp (CAT_ONLY_SUPPORTING_RESTRICT_DROP_BEHAVIOR, NULL, 0);
-       excp.throwException();
+      return;
     }
 
     // Verify that the specified user name is not reserved
-    // TBD - add the isCatman concept
     if (isAuthNameReserved(pNode->getDbUserName()))
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_AUTH_NAME_RESERVED)
                           << DgString0(pNode->getDbUserName().data());
-       DDLException excp (CAT_AUTH_NAME_RESERVED, NULL, 0);
-       excp.throwException();
+       return;
     }
 
-    // set up class members from parse node
-    // Read the row from the AUTHS table
+    // read user details from the AUTHS table
     const NAString dbUserName(pNode->getDbUserName());
-    NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
-    char buf[1000];
-    str_sprintf(buf, "select auth_id, auth_db_name, auth_ext_name, auth_type, auth_creator, auth_is_valid, auth_create_time, auth_redef_time from %s.\"%s\".%s where auth_db_name = '%s' ",
-              sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS, dbUserName.data());
-
-    NAString cmd (buf);
-    if (!selectExactRow(cmd))
+    CmpSeabaseDDLauth::AuthStatus retcode =  getUserDetails(dbUserName);
+    if (retcode == STATUS_ERROR)
+      return;
+    if (retcode == STATUS_NOTFOUND)
     {
-      // TBD - add CQD to return okay if user has already been unregistered
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
                           << DgString0(dbUserName.data());
-       DDLException excp (CAT_USER_NOT_EXIST, NULL, 0);
-       excp.throwException();
+      return;
     }
 
-    // Cannot unregister immutable users
-    if (isAuthImmutable())
-    {
-      *CmpCommon::diags() << DgSqlCode(-1387);
-       DDLException excp (1387, NULL, 0);
-       excp.throwException();
-    }
 
-    // TBD, check to see if the user owns anything before removing
+    // TODO, check to see if the user owns anything before removing
 
     // delete the row
     deleteRow(getAuthDbName());
@@ -681,15 +785,110 @@ void CmpSeabaseDDLuser::unregisterUser (StmtDDLRegisterUser * pNode)
   {
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
-    Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
-    if (numErrors == 0)
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
       *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
                           << DgInt0(__LINE__)
-                          << DgString0("unregister user");
-
+                          << DgString0("CmpSeabaseDDLuser::unregister user");
   }
 }
 
+// ----------------------------------------------------------------------------
+// public method:  alterUser
+//
+// This method changes a user definition
+//
+// Input:  parse tree containing a definition of the user change
+// Output: the global diags area is set up with the result
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
+{
+  try
+  {
+    verifyAuthority();
+
+    // Verify that that user name being altered is not a reserved name
+    if (isAuthNameReserved(pNode->getDatabaseUsername()))
+     {
+       *CmpCommon::diags() << DgSqlCode (-CAT_AUTH_NAME_RESERVED)
+                           << DgString0(pNode->getDatabaseUsername().data());
+       return;
+     }
+
+    // read user details from the AUTHS table
+    const NAString dbUserName(pNode->getDatabaseUsername());
+    CmpSeabaseDDLauth::AuthStatus retcode = getUserDetails(dbUserName);
+    if (retcode == STATUS_ERROR)
+      return;
+    if (retcode == STATUS_NOTFOUND)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
+                          << DgString0(dbUserName.data());
+      return;
+    }
+
+    // Process the requested operation
+    StmtDDLAlterUser::AlterUserCmdSubType cmdSubType = 
+      pNode->getAlterUserCmdSubType();
+
+    NAString setClause("set ");
+    switch (cmdSubType)
+    {
+       case StmtDDLAlterUser::SET_EXTERNAL_NAME:
+       {
+          // Make sure external user has not already been registered
+          if (authExists(pNode->getExternalUsername(), true))
+          {
+            *CmpCommon::diags() << DgSqlCode(-CAT_LDAP_USER_ALREADY_EXISTS)
+                                << DgString0(pNode->getExternalUsername().data());
+             return;
+          }
+          // unexpected error occurred - ?
+          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+            return;
+
+          DBUserAuth::AuthenticationConfiguration 
+            configurationNumber = DBUserAuth::DefaultConfiguration;
+          DBUserAuth::AuthenticationConfiguration 
+            foundConfigurationNumber = DBUserAuth::DefaultConfiguration;
+
+          // Verify that the external user exists in configured identity store
+          if (!validateExternalUsername(pNode->getExternalUsername().data(),
+                                        configurationNumber,
+                                        foundConfigurationNumber))
+             return;
+
+          setAuthExtName(pNode->getExternalUsername());
+          setClause += "auth_ext_name = '";
+          setClause += getAuthExtName();
+          setClause += "'";
+          break;
+       }
+
+       case StmtDDLAlterUser::SET_IS_VALID_USER:
+       {
+          setAuthValid(pNode->isValidUser());
+          setClause += (isAuthValid()) ? "auth_is_valid = 'Y'" : "auth_is_valid = 'N'";
+          break;
+       }
+
+       default:
+       {
+         *CmpCommon::diags() << DgSqlCode (-CAT_UNSUPPORTED_COMMAND_ERROR );
+         return;
+       }
+    }
+    updateRow(setClause);
+  }
+  catch (...)
+  {
+    // At this time, an error should be in the diags area.
+    // If there is no error, set up an internal error
+    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                          << DgInt0(__LINE__)
+                          << DgString0("CmpSeabaseDDLuser::alterUser");
+  }
+}
 
 // -----------------------------------------------------------------------------
 // *                                                                           *
@@ -759,7 +958,7 @@ DBUserAuth::CheckUserResult chkUserRslt = DBUserAuth::UserDoesNotExist;
 //---------------------- End of validateExternalUsername -----------------------
 
 // -----------------------------------------------------------------------------
-// Method:  describe
+// public method:  describe
 //
 // This method returns the showddl text for the requested user in string format
 //
@@ -775,45 +974,52 @@ DBUserAuth::CheckUserResult chkUserRslt = DBUserAuth::UserDoesNotExist;
 //-----------------------------------------------------------------------------
 bool CmpSeabaseDDLuser::describe (const NAString &authName, NAString &authText)
 {
-  Int32 retcode = 0;
   try
   {
-    retcode = getUserDetails(authName.data());
-    if (retcode == 100)
+    CmpSeabaseDDLauth::AuthStatus retcode = getUserDetails(authName.data());
+    
+    // If the user was not found, set up an error
+    if (retcode == STATUS_NOTFOUND)
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
-                          << DgString0 (authName.data());
+                          << DgString0(authName.data());
       return false;
     }
-    
-    // throw an exception so the catch handler will put a value in ComDiags
-    // area in case no message exists
-    if (retcode < 0)
+
+    // If an error was detected, throw an exception so the catch handler will 
+    // put a value in ComDiags area in case no message exists
+    if (retcode == STATUS_ERROR)
     {
       UserException excp (NULL, 0);
       throw excp;
     }
   
-    authText = "REGISTER USER ";
+    // Generate output text
+    authText = "REGISTER USER \"";
     authText += getAuthExtName();
     if (getAuthExtName() != getAuthDbName())
     {
-      authText += " AS ";
+      authText += "\" AS \"";
       authText += getAuthDbName();
     }
-    authText += ";\n";
+    authText += "\";\n";
+
+    if (!isAuthValid())
+    {
+      authText += "ALTER USER \"";
+      authText += getAuthDbName();
+      authText += "\" SET OFFLINE;\n";
+    }
   }
 
   catch (...)
   {
    // At this time, an error should be in the diags area.
    // If there is no error, set up an internal error
-   Int32 numErrors = CmpCommon::diags()->getNumber(DgSqlCode::ERROR_);
-   if (numErrors == 0)
+   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
     *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
                         << DgInt0(__LINE__)
-                        << DgString0("describe");
-
+                        << DgString0("CmpSeabaseDDLuser::describe");
     return false;
   }
 

@@ -23,16 +23,9 @@
 --
 --   REGISTER USER <external-user> 
 --     [AS <database-user>] 
---     IMMUTABLE
---     [BY <grantor>]
---     seabase only: [CONFIGURATION <configuration-number>]
 --   UNREGISTER USER <database-user> [{RESTRICT | CASCADE}]
---
---   The BY <grantor> clause in REGISTER USER statements is now a special
---   for-internal-use-only syntax.  The enhancement was added as the result
---   of the code review of changes for ALM (QC) CR ID 4587.  We now need
---   the ALLOW_SPECIALTABLETYPE (1) parser flag.  The current process owner
---   should be DB__ROOT for the SET PARSERFLAGS command to work.    [4/12/2012]
+--   ALTER USER <database-user> SET <options>
+--     <options> ==> [{EXTERNAL NAME <external-name> | ONLINE | OFFLINE}]
 --
 -- Sections:
 --   clean_up - removes database setup
@@ -47,6 +40,7 @@ log LOG136 clear;
 obey TEST136(create_db);
 obey TEST136(register_tests);
 obey TEST136(unregister_tests);
+obey TEST136(alter_tests);
 execute get_users;
 log;
 -- Try a register user without authority
@@ -86,6 +80,8 @@ unregister user db__user1;
 unregister user x;
 unregister user y;
 unregister user user1;
+unregister user mickey;
+unregister user donald;
 
 execute get_users;
 
@@ -98,7 +94,6 @@ select distinct
    substring (auth_db_name,1,20) as db_user_name,
    case
      when (auth_db_name = 'DB__ROOT') then 'ROOT'
-     when (auth_db_name = 'DB__USERADMINUSER') then 'USERADMIN'
      else substring (auth_ext_name,1,20)
    end as auth_ext_name,
    case
@@ -115,7 +110,7 @@ from trafodion."_MD_".auths u
   where
     (u.auth_db_name like 'TEST136%' or
      u.auth_db_name like 'CMU_T%' or
-     u.auth_db_name in ('DB__ROOT', 'DB__USERADMINUSER'))
+     u.auth_db_name in ('DB__ROOT', 'MICKEY', 'DONALD'))
   order by 1, 2
   for read uncommitted access
 ;
@@ -198,24 +193,25 @@ unregister user x;
 register user test136_user1 as y;
 showddl user y;
 unregister user y;
--- this test is failing with an error 15005
---register user test136_user2 as "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
 register user test136_user3 as
   TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
 register user test136_user4 as test136_user4;
 register user test136_user5 as test136_user6;
 register user "/forward" as test136_user7;
+register user "donald/duck@disneyland.com" as test136_user8;;
+register user test136_user9 as "mickey/mouse@disneyland.com";
 
--- should be 5 rows
+-- should be 6 rows
 execute get_users;
 
 -- cleanup
--- unregister user "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
 unregister user 
   TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
 unregister user test136_user4;
 unregister user test136_user6;
 unregister user test136_user7;
+unregister user test136_user8;
+unregister user "mickey/mouse@disneyland.com";
 get users;
 
 -- succeed:  test unreserved words
@@ -301,6 +297,15 @@ unregister user "USER2";
 register user none;
 register user user1 as none;
 
+-- fail: invalid use of quotes
+register user test136_user2 as "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
+
+-- fail: unsupported special characters
+register user "try a space";
+register user "try$$char";
+register user "try *(char";
+register user user1 as "try:@#$%^";
+
 ?section unregister_tests
 obey TEST136(set_up);
 log LOG136;
@@ -346,6 +351,43 @@ unregister user test136_user1;
 
 -- Add more complex relationships
 -- Add cascade tests later
+
+?section alter_tests
+obey TEST136(set_up);
+log LOG136;
+-- =================================================================
+-- this set of tests run basic alter user tests
+-- =================================================================
+execute get_users;
+register user "mickey/mouse@disney.com" as mickey;
+register user "donald/duck@disney.com" as donald;
+execute get_users;
+showddl user mickey;
+showddl user donald;
+alter user mickey set external name "mickey/mouse@seaworld.com";
+showddl user mickey;
+alter user donald set offline;
+showddl user donald;
+execute get_users;
+alter user donald set online;
+showddl user donald;
+
+-- run negative tests
+-- error 1333
+alter user minnie set offline;
+-- error 1333
+alter user "donald/duck@disney.com" set offline;
+--error 1010
+alter user mickey set immutable;
+--error 1337
+alter user DB__ROOT set offline;
+--error 1335
+alter user mickey set external name "donald/duck@disney.com";
+
+-- cleanup
+unregister user mickey;
+unregister user donald;
+execute get_users;
 
 ?section create_user1_objects
 set schema $$TEST_CATALOG$$.t136sch;

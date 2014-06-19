@@ -349,7 +349,7 @@
 1367 ZZZZZ 99999 BEGINNER MINOR DBADMIN Procedure uses a library object, EXTERNAL PATH cannot be altered.
 1368 ZZZZZ 99999 BEGINNER MINOR DBADMIN The library must be defined in the same catalog.
 1369 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only UPDATE and USAGE privileges are supported for a library.
-1370 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unused - added as a place holder
+1370 ZZZZZ 99999 BEGINNER MINOR DBADMIN The authorization name "$0~String0" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
 1371 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only INSERT and SELECT privileges are supported for table $0~String0.
 1372 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to alter table $0~String0 because of dependent object $1~String1 with object type $0~String3.
 1373 ZZZZZ 99999 BEGINNER MINOR DBADMIN AUDITLOG: Value for column $0~int0 ($1~String0) must be either Y or N.

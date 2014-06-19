@@ -18,50 +18,61 @@
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
 
-
-/*
- *******************************************************************************
- *
- * File:         CmpSeabaseDDLauth.h
- * Description:  This file describes the DDL classes for Trafodion authorization
- *               
- * Contents:
- *   class CmpSeabaseDDLauth   
- *   class CmpSeabaseDDLuser
- *
- *****************************************************************************
-*/
 #ifndef _CMP_SEABASE_DDL_AUTH_H_
 #define _CMP_SEABASE_DDL_AUTH_H_
 
-#include "CmpDDLCatErrorCodes.h"
+// *****************************************************************************
+// *
+// * File:         CmpSeabaseDDLauth.h
+// * Description:  Describes the DDL classes for Trafodion user management
+// *               
+// * Contents:
+// *   class CmpSeabaseDDLauth   
+// *   class CmpSeabaseDDLuser
+// *
+// *****************************************************************************
+
+#include "ComSmallDefs.h"
 
 class StmtDDLRegisterUser;
 class StmtDDLAlterUser;
+class NAString;
 
 // ----------------------------------------------------------------------------
 // class:  CmpSeabaseDDLauth
 //
-// Class that manages authorization IDs
-//
-// Authorization IDs consist of user, roles, and groups
+// User management class defining commonality between all authorization IDs
+// Authorization IDs consist of users, PUBLIC(TDB), roles(TBD), and groups(TBD)
 // ----------------------------------------------------------------------------
+
 class CmpSeabaseDDLauth  
 {
+
    public:
+
+     enum AuthStatus { STATUS_UNKNOWN   = 10,
+                       STATUS_GOOD      = 11,
+                       STATUS_WARNING   = 12,
+                       STATUS_NOTFOUND  = 13,
+                       STATUS_ERROR     = 14 };
 
      CmpSeabaseDDLauth ();
 
-     Int32 getAuthDetails(const char *pAuthName, bool isExternal = false);
-     Int32 getAuthDetails(Int32 authID);
+     AuthStatus   getAuthDetails (const char *pAuthName, 
+                                    bool isExternal = false);
+     AuthStatus   getAuthDetails (Int32 authID);
+     bool         authExists     (const NAString &authName, 
+                                    bool isExternal = false);
+     virtual bool describe       (const NAString &authName, 
+                                    NAString &authText) = 0;
 
      // accessors
      Int32          getAuthCreator() const    { return authCreator_; }
-     ComTimestamp   getAuthCreateTime() const {return authCreateTime_;}
+     Int64          getAuthCreateTime() const { return authCreateTime_;}
      const NAString getAuthDbName() const     { return authDbName_; }
      const NAString getAuthExtName() const    { return authExtName_; }
      Int32          getAuthID() const         { return authID_; }
-     ComTimestamp   getAuthRedefTime() const  { return authRedefTime_; }
+     Int64          getAuthRedefTime() const  { return authRedefTime_; }
      ComIdClass     getAuthType() const       { return authType_; }
 
      bool  isAuthImmutable() const { return authImmutable_; }
@@ -70,50 +81,53 @@ class CmpSeabaseDDLauth
      bool  isRole()   const        { return authType_ == COM_ROLE_CLASS; }
      bool  isUser()   const        { return authType_ == COM_USER_CLASS; }
 
-     virtual bool describe (const NAString &authName, NAString &authText) = 0;
+ protected:
 
-     // mutators
-     void setAuthCreator      (const Int32 authCreator)
-       {authCreator_ = authCreator;}
-     void setAuthCreateTime   (const ComTimestamp authCreateTime)
-       { authCreateTime_ = authCreateTime;}
-     void setAuthDbName       (const NAString &authDbName)
-       {authDbName_=authDbName;}
-     void setAuthExtName      (const NAString &authExtName)
-       {authExtName_=authExtName;}
-     void setAuthID           (const Int32 authID)
-       {authID_ = authID;}
-     void setAuthImmutable    (bool isImmutable)
+    bool isAuthNameReserved (const NAString &authName);
+    bool isAuthNameValid    (const NAString &authName);
+    void verifyAuthority    (void);
+
+    virtual Int32 getUniqueID (void) = 0;
+
+    // mutators
+    void setAuthCreator      (const Int32 authCreator)
+      {authCreator_ = authCreator;}
+    void setAuthCreateTime   (const Int64 authCreateTime)
+      { authCreateTime_ = authCreateTime;}
+    void setAuthDbName       (const NAString &authDbName)
+      {authDbName_=authDbName;}
+    void setAuthExtName      (const NAString &authExtName)
+      {authExtName_=authExtName;}
+    void setAuthID           (const Int32 authID)
+      {authID_ = authID;}
+    void setAuthImmutable    (bool isImmutable)
        {authImmutable_ = isImmutable;}
-     void setAuthRedefTime    (const ComTimestamp authRedefTime)
+     void setAuthRedefTime    (const Int64 authRedefTime)
        { authRedefTime_ = authRedefTime;}
      void setAuthType        (ComIdClass authType)
        {authType_ = authType;}
      void setAuthValid       (bool isValid)
        {authValid_ = isValid;}
 
- protected:
-
-    bool authExists      (bool isExternal = false);
-    bool isAuthNameReserved(const NAString &authName);
-    void verifyAuthority (void);
-
+    // metadata access methods
     void deleteRow      (const NAString &authName);
     void insertRow      (void);
-    bool selectExactRow (Int32 authID);
-    bool selectExactRow (const NAString &cmd); 
+    void updateRow      (const NAString & setClause);
+    AuthStatus selectExactRow (const NAString &cmd); 
+    Int64      selectCount    (const NAString & whereClause);
+    Int32      selectMaxAuthID(const NAString &whereClause);
 
  private:
 
-    Int32                  authCreator_;
-    ComTimestamp           authCreateTime_;
-    NAString               authDbName_;
-    NAString               authExtName_;
-    Int32                  authID_;
-    bool                   authImmutable_;
-    ComTimestamp           authRedefTime_;
-    ComIdClass             authType_;
-    bool                   authValid_;
+    Int32             authCreator_;
+    Int64             authCreateTime_;
+    NAString          authDbName_;
+    NAString          authExtName_;
+    Int32             authID_;
+    bool              authImmutable_;
+    Int64             authRedefTime_;
+    ComIdClass        authType_;
+    bool              authValid_;
 
 };
 
@@ -135,13 +149,14 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
      void registerUser(StmtDDLRegisterUser * pNode);
      void unregisterUser(StmtDDLRegisterUser * pNode);
      
-     Int32 getUserDetails(const char *pUserName, bool isExternal = false);
-     Int32 getUserDetails(Int32 userID);
+     CmpSeabaseDDLauth::AuthStatus getUserDetails(const char *pUserName, 
+                                                    bool isExternal = false);
+     CmpSeabaseDDLauth::AuthStatus getUserDetails(Int32 userID);
 
      bool describe (const NAString &authName, NAString &authText);
 
    protected:
 
-      Int32     getUniqueUserID (void);
+     Int32 getUniqueID (void);
 };
-#endif
+#endif // _CMP_SEABASE_DDL_AUTH_H_

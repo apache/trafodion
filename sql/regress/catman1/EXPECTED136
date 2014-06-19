@@ -46,7 +46,6 @@
 +>   substring (auth_db_name,1,20) as db_user_name,
 +>   case
 +>     when (auth_db_name = 'DB__ROOT') then 'ROOT'
-+>     when (auth_db_name = 'DB__USERADMINUSER') then 'USERADMIN'
 +>     else substring (auth_ext_name,1,20)
 +>   end as auth_ext_name,
 +>   case
@@ -63,7 +62,7 @@
 +>  where
 +>    (u.auth_db_name like 'TEST136%' or
 +>     u.auth_db_name like 'CMU_T%' or
-+>     u.auth_db_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>     u.auth_db_name in ('DB__ROOT', 'MICKEY', 'DONALD'))
 +>  order by 1, 2
 +>  for read uncommitted access
 +>;
@@ -180,7 +179,7 @@ DB__ROOT                                                                        
 --- SQL operation complete.
 >>showddl user x;
 
-REGISTER USER X;
+REGISTER USER "X";
 
 --- SQL operation complete.
 >>unregister user x;
@@ -191,14 +190,12 @@ REGISTER USER X;
 --- SQL operation complete.
 >>showddl user y;
 
-REGISTER USER TEST136_USER1 AS Y;
+REGISTER USER "TEST136_USER1" AS "Y";
 
 --- SQL operation complete.
 >>unregister user y;
 
 --- SQL operation complete.
->>-- this test is failing with an error 15005
->>--register user test136_user2 as "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
 >>register user test136_user3 as
 +>  TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
 
@@ -212,8 +209,14 @@ REGISTER USER TEST136_USER1 AS Y;
 >>register user "/forward" as test136_user7;
 
 --- SQL operation complete.
+>>register user "donald/duck@disneyland.com" as test136_user8;
+
+--- SQL operation complete.
+>>register user test136_user9 as "mickey/mouse@disneyland.com";
+
+--- SQL operation complete.
 >>
->>-- should be 5 rows
+>>-- should be 6 rows
 >>execute get_users;
 
 DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
@@ -224,11 +227,11 @@ TEST136_901234567890                                                            
 TEST136_USER4                                                                     TEST136_USER4                                                                     NORMAL   Y      USER     
 TEST136_USER6                                                                     TEST136_USER5                                                                     NORMAL   Y      USER     
 TEST136_USER7                                                                     /FORWARD                                                                          NORMAL   Y      USER     
+TEST136_USER8                                                                     DONALD/DUCK@DISNEYLA                                                              NORMAL   Y      USER     
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>
 >>-- cleanup
->>-- unregister user "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
 >>unregister user 
 +>  TEST136_901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678;
 
@@ -242,12 +245,28 @@ TEST136_USER7                                                                   
 >>unregister user test136_user7;
 
 --- SQL operation complete.
+>>unregister user test136_user8;
+
+--- SQL operation complete.
+>>unregister user "mickey/mouse@disneyland.com";
+
+--- SQL operation complete.
 >>get users;
 
 Users
 =====
 
 DB__ROOT
+SQL_USER1
+SQL_USER10
+SQL_USER2
+SQL_USER3
+SQL_USER4
+SQL_USER5
+SQL_USER6
+SQL_USER7
+SQL_USER8
+SQL_USER9
 
 --- SQL operation complete.
 >>
@@ -257,7 +276,7 @@ DB__ROOT
 --- SQL operation complete.
 >>showddl user user1;
 
-REGISTER USER REGISTER AS USER1;
+REGISTER USER "REGISTER" AS "USER1";
 
 --- SQL operation complete.
 >>unregister user user1;
@@ -268,7 +287,7 @@ REGISTER USER REGISTER AS USER1;
 --- SQL operation complete.
 >>showddl user register;
 
-REGISTER USER UNREGISTER AS REGISTER;
+REGISTER USER "UNREGISTER" AS "REGISTER";
 
 --- SQL operation complete.
 >>unregister user register;
@@ -279,7 +298,7 @@ REGISTER USER UNREGISTER AS REGISTER;
 --- SQL operation complete.
 >>showddl user unregister;
 
-REGISTER USER USER1 AS UNREGISTER;
+REGISTER USER "USER1" AS "UNREGISTER";
 
 --- SQL operation complete.
 >>unregister user unregister;
@@ -290,7 +309,7 @@ REGISTER USER USER1 AS UNREGISTER;
 --- SQL operation complete.
 >>showddl user test136_u2;
 
-REGISTER USER LOGON AS TEST136_U2;
+REGISTER USER "LOGON" AS "TEST136_U2";
 
 --- SQL operation complete.
 >>unregister user test136_u2;
@@ -301,7 +320,7 @@ REGISTER USER LOGON AS TEST136_U2;
 --- SQL operation complete.
 >>showddl user logon;
 
-REGISTER USER TEST136_U2 AS LOGON;
+REGISTER USER "TEST136_U2" AS "LOGON";
 
 --- SQL operation complete.
 >>unregister user logon;
@@ -312,7 +331,7 @@ REGISTER USER TEST136_U2 AS LOGON;
 --- SQL operation complete.
 >>showddl user user3;
 
-REGISTER USER NONE AS USER3;
+REGISTER USER "NONE" AS "USER3";
 
 --- SQL operation complete.
 >>unregister user user3;
@@ -323,7 +342,7 @@ REGISTER USER NONE AS USER3;
 --- SQL operation complete.
 >>showddl user "/forward";
 
-REGISTER USER USER3 AS /FORWARD;
+REGISTER USER "USER3" AS "/FORWARD";
 
 --- SQL operation complete.
 >>unregister user "/forward";
@@ -502,6 +521,35 @@ register user user1 as none;
 *** ERROR[8822] The statement was not prepared.
 
 >>
+>>-- fail: invalid use of quotes
+>>register user test136_user2 as "TEST136_~`!@#$%^&*()_+-={}[]:"";'<>?,./a";
+
+*** ERROR[1370] The authorization name "TEST136_~`!@#$%^&*()_+-={}[]:";'<>?,./A" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
+
+--- SQL operation failed with errors.
+>>
+>>-- fail: unsupported special characters
+>>register user "try a space";
+
+*** ERROR[1370] The authorization name "TRY A SPACE" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
+
+--- SQL operation failed with errors.
+>>register user "try$$char";
+
+*** ERROR[1370] The authorization name "TRY$$CHAR" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
+
+--- SQL operation failed with errors.
+>>register user "try *(char";
+
+*** ERROR[1370] The authorization name "TRY *(CHAR" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
+
+--- SQL operation failed with errors.
+>>register user user1 as "try:@#$%^";
+
+*** ERROR[1370] The authorization name "TRY:@#$%^" contains one or more invalid characters. A valid name can only contain these characters: [a-zA-Z_0-9-@./]
+
+--- SQL operation failed with errors.
+>>
 >>obey TEST136(unregister_tests);
 >>obey TEST136(set_up);
 >>-- turn off LDAP checking
@@ -512,7 +560,6 @@ register user user1 as none;
 +>   substring (auth_db_name,1,20) as db_user_name,
 +>   case
 +>     when (auth_db_name = 'DB__ROOT') then 'ROOT'
-+>     when (auth_db_name = 'DB__USERADMINUSER') then 'USERADMIN'
 +>     else substring (auth_ext_name,1,20)
 +>   end as auth_ext_name,
 +>   case
@@ -529,7 +576,7 @@ register user user1 as none;
 +>  where
 +>    (u.auth_db_name like 'TEST136%' or
 +>     u.auth_db_name like 'CMU_T%' or
-+>     u.auth_db_name in ('DB__ROOT', 'DB__USERADMINUSER'))
++>     u.auth_db_name in ('DB__ROOT', 'MICKEY', 'DONALD'))
 +>  order by 1, 2
 +>  for read uncommitted access
 +>;
@@ -662,6 +709,176 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
 >>
 >>-- Add more complex relationships
 >>-- Add cascade tests later
+>>
+>>obey TEST136(alter_tests);
+>>obey TEST136(set_up);
+>>-- turn off LDAP checking
+>>-- set parserflags 64;
+>>-- Query to return currently registered users
+>>prepare get_users from
++>select distinct
++>   substring (auth_db_name,1,20) as db_user_name,
++>   case
++>     when (auth_db_name = 'DB__ROOT') then 'ROOT'
++>     else substring (auth_ext_name,1,20)
++>   end as auth_ext_name,
++>   case
++>    when (auth_id > 33333) then 'NORMAL'
++>    else 'SYSTEM'
++>   end as auth_id,
++>   auth_is_valid as valid,
++>   case
++>     when (auth_type = 'U') then 'USER'
++>     when (auth_type = 'R') then 'ROLE'
++>     else auth_type
++>   end as auth_type
++>from trafodion."_MD_".auths u
++>  where
++>    (u.auth_db_name like 'TEST136%' or
++>     u.auth_db_name like 'CMU_T%' or
++>     u.auth_db_name in ('DB__ROOT', 'MICKEY', 'DONALD'))
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>-- query to return table space owner information
+>>prepare get_owners from
++>select
++>  substring (object_name,1,20) as object_name,
++>  object_owner
++>  from trafodion."_MD_".objects
++>  where
++>     object_type = 'BT'
++>  order by 1, 2
++>  for read uncommitted access
++>;
+
+--- SQL command prepared.
+>>
+>>log LOG136;
+>>-- =================================================================
+>>-- this set of tests run basic alter user tests
+>>-- =================================================================
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+
+--- 1 row(s) selected.
+>>register user "mickey/mouse@disney.com" as mickey;
+
+--- SQL operation complete.
+>>register user "donald/duck@disney.com" as donald;
+
+--- SQL operation complete.
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+DONALD                                                                            DONALD/DUCK@DISNEY.C                                                              NORMAL   Y      USER     
+MICKEY                                                                            MICKEY/MOUSE@DISNEY.                                                              NORMAL   Y      USER     
+
+--- 3 row(s) selected.
+>>showddl user mickey;
+
+REGISTER USER "MICKEY/MOUSE@DISNEY.COM" AS "MICKEY";
+
+--- SQL operation complete.
+>>showddl user donald;
+
+REGISTER USER "DONALD/DUCK@DISNEY.COM" AS "DONALD";
+
+--- SQL operation complete.
+>>alter user mickey set external name "mickey/mouse@seaworld.com";
+
+--- SQL operation complete.
+>>showddl user mickey;
+
+REGISTER USER "MICKEY/MOUSE@SEAWORLD.COM" AS "MICKEY";
+
+--- SQL operation complete.
+>>alter user donald set offline;
+
+--- SQL operation complete.
+>>showddl user donald;
+
+REGISTER USER "DONALD/DUCK@DISNEY.COM" AS "DONALD";
+ALTER USER "DONALD" SET
+  OFFLINE;
+
+--- SQL operation complete.
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+DONALD                                                                            DONALD/DUCK@DISNEY.C                                                              NORMAL   N      USER     
+MICKEY                                                                            MICKEY/MOUSE@SEAWORL                                                              NORMAL   Y      USER     
+
+--- 3 row(s) selected.
+>>alter user donald set online;
+
+--- SQL operation complete.
+>>showddl user donald;
+
+REGISTER USER "DONALD/DUCK@DISNEY.COM" AS "DONALD";
+
+--- SQL operation complete.
+>>
+>>-- run negative tests
+>>-- error 1333
+>>alter user minnie set offline;
+
+*** ERROR[1333] User MINNIE does not exist.
+
+--- SQL operation failed with errors.
+>>-- error 1333
+>>alter user "donald/duck@disney.com" set offline;
+
+*** ERROR[1333] User DONALD/DUCK@DISNEY.COM does not exist.
+
+--- SQL operation failed with errors.
+>>--error 1010
+>>alter user mickey set immutable;
+
+*** ERROR[1010] The statement just entered is currently not supported.
+
+--- SQL operation failed with errors.
+>>--error 1337
+>>alter user DB__ROOT set offline;
+
+*** ERROR[1337] DB__ROOT is a reserved authorization identifier.
+
+--- SQL operation failed with errors.
+>>--error 1335
+>>alter user mickey set external name "donald/duck@disney.com";
+
+*** ERROR[1335] Directory service user DONALD/DUCK@DISNEY.COM already defined in the database.
+
+--- SQL operation failed with errors.
+>>
+>>-- cleanup
+>>unregister user mickey;
+
+--- SQL operation complete.
+>>unregister user donald;
+
+--- SQL operation complete.
+>>execute get_users;
+
+DB_USER_NAME                                                                      AUTH_EXT_NAME                                                                     AUTH_ID  VALID  AUTH_TYPE
+--------------------------------------------------------------------------------  --------------------------------------------------------------------------------  -------  -----  ---------
+
+DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
+
+--- 1 row(s) selected.
 >>
 >>execute get_users;
 

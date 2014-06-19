@@ -72,6 +72,7 @@ class StmtDDLDropSchema;
 
 // Classes for user management
 class StmtDDLRegisterUser;
+class StmtDDLAlterUser;
 class CmpSeabaseDDLauth;
 
 // classes for constraints
@@ -644,10 +645,9 @@ class CmpSeabaseDDL
   void createSeabaseLibrary(StmtDDLCreateLibrary  * createLibraryNode,
                             NAString &currCatName, NAString &currSchName);
   
-  void registerSeabaseUser (
-                            StmtDDLRegisterUser        * registerUserNode);
-  void unregisterSeabaseUser (
-                            StmtDDLRegisterUser        * registerUserNode);
+  void registerSeabaseUser   (StmtDDLRegisterUser  * registerUserNode);
+  void unregisterSeabaseUser (StmtDDLRegisterUser  * registerUserNode);
+  void alterSeabaseUser      (StmtDDLAlterUser     * registerUserNode);
 
   void dropSeabaseLibrary(StmtDDLDropLibrary  * dropLibraryNode,
                           NAString &currCatName, NAString &currSchName);
