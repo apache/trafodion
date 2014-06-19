@@ -1,9 +1,21 @@
 #!/bin/bash
 
 # @@@ START COPYRIGHT @@@
-
+#
 # (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
-
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
 # @@@ END COPYRIGHT @@@
 
 #  Setup Cloudera and Trafodion on a Cluster System
@@ -41,7 +53,7 @@ Options:
     --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
     --clustername <name>   Name of Trafodion cluster. (default $HOSTNAME)
     --home_dir <path>      Path to trafodion home directory. (default /home)
-    --hbase_trx_jar <path> Path to a recently built hbase trx jar file. 
+    --hbase_trx_jar <path> Path to a recently built hbase trx jar file.
 
 EOF
 }
@@ -94,7 +106,7 @@ while [[ $# -gt 0 ]]; do
             fi
             HOME_DIR=$2
             shift
-            ;; 
+            ;;
         --hbase_trx_jar)
             if [[ -z "$2" ]]; then
                echo "****ERROR: NO value passed to param $1."
@@ -175,7 +187,7 @@ else
       fi
    fi
 fi
- 
+
 #==============================================
 
 echo "***INFO: Installing Cloudera, will need browser access to complete"
@@ -193,8 +205,8 @@ if [[ $HBASE_TRX_JAR == "" ]]; then
 
    ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR
 
-else 
-  
+else
+
    ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR
 
 fi
