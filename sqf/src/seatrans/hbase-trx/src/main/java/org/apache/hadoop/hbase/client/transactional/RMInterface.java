@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RMInterface extends TransactionalTable{
@@ -37,6 +39,8 @@ public class RMInterface extends TransactionalTable{
 
     Map<Long, TransactionState> mapTransactionStates;
     
+    static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
+
     static {
         System.loadLibrary("stmlib");
    }
@@ -92,7 +96,16 @@ public class RMInterface extends TransactionalTable{
 	    byte [] lv_byte_region_info = lv_bos.toByteArray();
 	    LOG.trace("RMInterface:registerTransaction, byte region info: " + new String(lv_byte_region_info));
 	    registerRegion(lv_port, lv_hostname, lv_byte_region_info);
+	    
+	    Set<RMInterface> lv_set_rm = mapRMsPerTransaction.get(transactionID);
+	    if (lv_set_rm == null) {
+		lv_set_rm = new HashSet<RMInterface>();
+		mapRMsPerTransaction.put(transactionID, lv_set_rm);
+	    }
+	    lv_set_rm.add(this);
+	    LOG.trace("txid: " + transactionID + " mapRMsPerTransaction.lv_set_rm length: " + lv_set_rm.size());
         }
+
         if ((ts == null) || (ret != 0)) {
             LOG.error("registerTransaction failed, TransactionState is NULL"); 
             throw new IOException("registerTransaction failed with error.");
@@ -102,6 +115,28 @@ public class RMInterface extends TransactionalTable{
         return ts;
     }
    
+    
+    static public void clearTransactionStates(final long transactionID) {
+	LOG.trace("cts1 Enter txid: " + transactionID);
+	Set<RMInterface> lv_set_rm = mapRMsPerTransaction.get(transactionID);
+	if (lv_set_rm == null) {
+	    LOG.warn("No entry for txid: " + transactionID);
+	    return;
+	}
+	LOG.trace("cts2 txid: " + transactionID + " mapRMsPerTransaction.lv_set_rm length: " + lv_set_rm.size());
+	for (RMInterface lv_rm : lv_set_rm) {
+	    lv_rm.unregisterTransaction(transactionID);
+	}
+	
+	mapRMsPerTransaction.remove(transactionID);
+	LOG.trace("cts3 txid: " + transactionID);
+    }
+    
+    public synchronized void unregisterTransaction(final long transactionID) {
+	LOG.trace("Enter txid: " + transactionID);
+        mapTransactionStates.remove(transactionID);
+    }
+
     public synchronized void unregisterTransaction(TransactionState ts) {
         mapTransactionStates.remove(ts.getTransactionId());
     }
