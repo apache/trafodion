@@ -1,22 +1,29 @@
 #! /bin/ksh
 ############################################################################
 #                                                                         ##
-#   TRAFCI (Java EncryptUtil) exec script for Linux/Unix.                  ##
+#   TRAFCI (Java EncryptUtil) exec script for Linux/Unix.                 ##
 #                                                                         ##
-#   Usage: #ciencr.sh { see user manual }                              ##
-#                                                                         ##
-#   Copyright (c) 2011 Hewlett-Packard Development Company, L.P.          ##
-#                                                                         ##
-#   Legal Notice                                                          ##
-#                                                                         ##
-#   The computer program listings, specifications, and documentation      ##
-#   herein are the property of Hewlett-Packard Development Company, L.P.  ##
-#   or a third-party supplier and shall not be reproduced, copied,        ##
-#   disclosed, or used in whole or in part for any reason without the     ##
-#   prior express written permission of Hewlett-Packard Development       ##
-#   Company, L.P.                                                         ##
+#   Usage: #ciencr.sh { see user manual }                                 ##
 #                                                                         ##
 ############################################################################
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
 CUR=.
 CURR_DIR=`pwd`
 
@@ -73,13 +80,13 @@ fi
 # Note: Setting conf dir also in classpath
 CLASSPATH=$TRAFCIHOME/lib/trafci.jar
 
-if [ ! -e "${USERHOME}/.trafciconf/security.props" ]; then	
+if [ ! -e "${USERHOME}/.trafciconf/security.props" ]; then
 	#echo "********** Starting EncryptUtil **************************************"
   #echo $JAVA_EXE -cp $CLASSPATH org.trafodion.ci.pwdencrypt.EncryptUtil -o install
   $JAVA_EXE -cp $CLASSPATH org.trafodion.ci.pwdencrypt.EncryptUtil -o install
-  export ERR=$?	
+  export ERR=$?
   echo "-o install setting completed";
-  #echo "**********************************************************************"	
+  #echo "**********************************************************************"
 fi
 
 runTRAFCI()
@@ -93,13 +100,13 @@ runTRAFCI()
 
     #echo "********** Starting EncryptUtil **************************************"
     #echo $JAVA_EXE -cp $CLASSPATH org.trafodion.ci.pwdencrypt.EncryptUtil "$@"
-    $JAVA_EXE -cp $CLASSPATH org.trafodion.ci.pwdencrypt.EncryptUtil "$@"	
-    export ERR=$?	
+    $JAVA_EXE -cp $CLASSPATH org.trafodion.ci.pwdencrypt.EncryptUtil "$@"
+    export ERR=$?
     #echo "**********************************************************************"
 }
 
 runTRAFCI "$@"
-	
+
 #echo End ciencr Processing.
 if [ $ERR = "0" ]; then
 	echo "Operation succeeded!"
@@ -109,4 +116,3 @@ elif [ $ERR = "5" ]; then
 	#echo "Exit Status: "$ERR
 fi
 exit $ERR
-                                                                            
