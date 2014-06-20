@@ -4832,15 +4832,15 @@ RETCODE ContextCli::authQuery(
   NABoolean txWasInProgress = transaction_->xnInProgress();
 
   //  3. Do the work
-  Int32 sqlcode = 0;
+  CmpSeabaseDDLauth::AuthStatus authStatus = CmpSeabaseDDLauth::STATUS_GOOD;
 
    switch (queryType)
    {
       case USERS_QUERY_BY_USER_NAME:
       {
         CmpSeabaseDDLuser userInfo;
-        sqlcode = userInfo.getUserDetails(authName, FALSE);
-        if (sqlcode == 0)
+        authStatus = userInfo.getUserDetails(authName, FALSE);
+        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
          {
            authIDFromTable = userInfo.getAuthID();
            strcpy (authNameFromTable, userInfo.getAuthDbName().data());    
@@ -4851,8 +4851,8 @@ RETCODE ContextCli::authQuery(
       case USERS_QUERY_BY_EXTERNAL_NAME:
       {
         CmpSeabaseDDLuser userInfo;
-        sqlcode = userInfo.getUserDetails(authName, TRUE);
-        if (sqlcode == 0)
+        authStatus = userInfo.getUserDetails(authName, TRUE);
+        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
          {
            authIDFromTable = userInfo.getAuthID();
            strcpy (authNameFromTable, userInfo.getAuthExtName().data());    
@@ -4863,8 +4863,8 @@ RETCODE ContextCli::authQuery(
       case USERS_QUERY_BY_USER_ID:
       {
         CmpSeabaseDDLuser userInfo;
-        sqlcode = userInfo.getUserDetails(authID);
-        if (sqlcode == 0)
+        authStatus = userInfo.getUserDetails(authID);
+        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
         {
           authIDFromTable = userInfo.getAuthID();
           strcpy (authNameFromTable, userInfo.getAuthDbName().data());
@@ -4889,20 +4889,22 @@ RETCODE ContextCli::authQuery(
       transaction_->enableAutoCommit();
     
   // Errors to consider:
-  // * an unexpected error (sqlcode < 0)
-  // * the row does not exist (sqlcode == 100)
+  // * an unexpected error (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
+  // * the row does not exist (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
   // * row exists but is marked invalid
   RETCODE result = SUCCESS;
-  if (sqlcode < 0)
+  if (authStatus == CmpSeabaseDDLauth::STATUS_ERROR)
   {
     result = ERROR;
+    ex_assert (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0, "error getting user details");
+    Int32 primaryError = CmpCommon::diags()->getErrorEntry(1)->getSQLCODE();
     // ACH: Make error specific to "user" or "role" depending on what we're trying to get
     // ACH: But make sure ROLE stuff is Linux specific 
     diagsArea_ << DgSqlCode(-CLI_PROBLEM_READING_USERS)
                << DgString0(nameForDiags)
-               << DgInt1(sqlcode);
+               << DgInt1(primaryError);
   }
-  else if (sqlcode == 100)
+  else if (authStatus == CmpSeabaseDDLauth::STATUS_NOTFOUND)
   {
     result = ERROR;
     // ACH: Make error specific to "user" or "role" depending on what we're trying to get
@@ -4912,12 +4914,9 @@ RETCODE ContextCli::authQuery(
   }
   else
   {  
-    // If warnings were generated, do not propagate them to the caller
-    if (sqlcode > 0)
+   // If warnings were generated, do not propagate them to the caller
+   if (authStatus == CmpSeabaseDDLauth::STATUS_WARNING)
       diagsArea_.clear();
-
-
-
   }
           
   return result;

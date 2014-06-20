@@ -6631,6 +6631,10 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     {
       isAuth = TRUE; 
     }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterUser())
+    {
+      isAuth = TRUE; 
+    }
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGrant())
     {
       isTable_ = TRUE;
