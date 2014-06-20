@@ -14773,18 +14773,14 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         maxESPs = MAXOF(MINOF(numSQNodes*numESPsPerDataNode, maxESPs),1);
 
         if (!partReq && minESPs == 1) {
-          minESPs = numSQNodes;
+          minESPs = rppForMe->getCountOfPipelines();
 
-          if ( ixDescPartFunc ) {
+          if (ixDescPartFunc && (CmpCommon::getDefault(LIMIT_HBASE_SCAN_DOP) == DF_ON)) {
              minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
           }
         }
      }
    
-     // TEMPTEMP: temporary fix to influence DoP
-     if ((ActiveSchemaDB()->getDefaults()).getAsULong(COMP_INT_81) > 0)
-       minESPs = ActiveSchemaDB()->getDefaults().getAsULong(COMP_INT_81);
-     
      numESPs = MINOF(minESPs, maxESPs);
    
      if (partReq && partReq->castToRequireReplicateNoBroadcast()) {

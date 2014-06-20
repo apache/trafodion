@@ -2015,11 +2015,15 @@ const
                           foundPredForThisCol = TRUE;
                           // Farther down we are going to replace any occurrences of column
                           // u with the expression keyValueExpr in the ItemExpr tree compExpr
-                          // that computes column v. Note that compExpr is written in terms
-                          // of BaseColumns, so we dont need to add VEGRefs or IndexColumns
-                          // to the map.
+                          // that computes column v. Note that compExpr is written usually in 
+                          // terms of BaseColumns except for cases like key predicates. So
+                          // add base column and its VEGRefs to the map.
                           DCMPASSERT(u.getItemExpr()->getOperatorType() == ITM_BASECOLUMN);
+                          BaseColumn *bc = (BaseColumn *)(u.getItemExpr());
                           colToKeyValueMap.addMapEntry(u,keyValueExpr);
+                          colToKeyValueMap.addMapEntry(bc->getTableDesc()->
+                                                       getColumnVEGList()[bc->getColNumber()],
+                                                       keyValueExpr);
                           keyPredicatesOnCC.insert(p);
                           break;
                         }
