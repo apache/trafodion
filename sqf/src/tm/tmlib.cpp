@@ -33,6 +33,170 @@
 #include "tmlib.h"
 #include "tmlogging.h"
 
+//==== For the JNI call to RMInterface.cleartransaction - begin
+#include <iostream>
+#include "jni.h"
+
+JavaVM* _tmlib_jvm_  = NULL;
+__thread JNIEnv* _tlp_jenv = 0;
+__thread bool  _tlv_jenv_set = false;
+
+struct JavaMethodInit {
+  std::string   jm_name;       // The method name.
+  std::string   jm_signature;  // The method signature.
+  jmethodID     methodID;      // The JNI methodID
+};
+
+enum JAVA_METHODS {
+  JM_CLEARTRANSACTIONSTATES=0,
+  JM_LAST
+};
+
+JavaMethodInit TMLibJavaMethods_[JM_LAST];
+
+typedef enum {
+  JOI_OK = 0
+ ,JOI_ERROR_CHECK_JVM           // Cannot check existing JVMs
+ ,JOI_ERROR_JVM_VERSION         // Attaching to JVM of wrong version.
+ ,JOI_ERROR_ATTACH_JVM          // Cannot attach to an existing JVM
+ ,JOI_ERROR_CREATE_JVM          // Cannot create JVM
+ ,JOI_ERROR_FINDCLASS           // JNI FindClass() failed
+ ,JOI_ERROR_GETMETHOD           // JNI GetMethodID() failed
+ ,JOI_ERROR_NEWOBJ              // JNI NewObject() failed
+ ,JOI_LAST
+} JOI_RetCode;
+
+short initJVM()
+{
+  jint result;
+
+  if ((_tlp_jenv != 0) && (_tlv_jenv_set)) {
+    return JOI_OK;
+  }
+
+  if (_tmlib_jvm_ == NULL)
+  {
+    jsize jvm_count = 0;
+    // Is there an existing JVM?
+    result = JNI_GetCreatedJavaVMs (&_tmlib_jvm_, 1, &jvm_count);
+    if (result != JNI_OK)
+      return JOI_ERROR_CHECK_JVM;
+      
+    if (jvm_count == 0)
+    {
+      return 0;
+    }
+  }
+
+  // We found a JVM, can we use it?
+  result = _tmlib_jvm_->GetEnv((void**) &_tlp_jenv, JNI_VERSION_1_6);
+  switch (result)
+  {
+    case JNI_OK:
+      break;
+    
+    case JNI_EDETACHED:
+      printf("initJVM: Detached, Try 2 attach\n");
+      result = _tmlib_jvm_->AttachCurrentThread((void**) &_tlp_jenv, NULL);   
+      if (result != JNI_OK)
+	{
+	  printf("initJVM: Error in attaching\n");
+	  return JOI_ERROR_ATTACH_JVM;
+	}
+      
+      break;
+       
+    case JNI_EVERSION:
+      return JOI_ERROR_JVM_VERSION;
+      break;
+      
+    default:
+      return JOI_ERROR_ATTACH_JVM;
+      break;
+  }
+
+  _tlv_jenv_set = true;
+
+  return JOI_OK;
+}
+
+void cleanupTransactionLocal(long transactionID)
+{
+  static bool sv_class_initialized = false;
+  static bool sv_methods_initialized = false;
+  static jclass sv_jclass_rminterface;
+  static bool sv_enable_cleanup_rminterface = true;
+  static bool sv_envvar_checked = false;
+
+  if (!sv_envvar_checked) {
+    const char *envvar_enable_cleanup  = getenv("TMLIB_ENABLE_CLEANUP");
+    if (envvar_enable_cleanup && strcmp(envvar_enable_cleanup, "0")) {
+      sv_enable_cleanup_rminterface = false;
+    }
+    sv_envvar_checked = true;
+  }
+
+  if (! sv_enable_cleanup_rminterface) {
+    return;
+  }
+
+  char lv_rminterface_name[] = "org/apache/hadoop/hbase/client/transactional/RMInterface";
+  jthrowable jexception;
+
+  if (initJVM() != JOI_OK) {
+    return;
+  }
+  
+  if (! sv_class_initialized) {
+
+    sv_jclass_rminterface = _tlp_jenv->FindClass(lv_rminterface_name); 
+
+    if (_tlp_jenv->ExceptionCheck()) {
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return;
+    }
+  
+    if (sv_jclass_rminterface == 0) {
+      return;
+    }
+
+    sv_class_initialized = true;
+
+  }
+
+  if (! sv_methods_initialized) {
+
+    TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].jm_name      = "clearTransactionStates";
+    TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].jm_signature = "(J)V";
+    TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].methodID     = 
+      _tlp_jenv->GetStaticMethodID(sv_jclass_rminterface,
+				   TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].jm_name.data(),
+				   TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].jm_signature.data());
+
+    if (TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].methodID == 0 || _tlp_jenv->ExceptionCheck()) { 
+      _tlp_jenv->ExceptionDescribe();
+      _tlp_jenv->ExceptionClear();
+      return;
+    }      
+
+    sv_methods_initialized = true;
+  }
+
+  jlong j_tid = transactionID;
+  _tlp_jenv->CallStaticVoidMethod(sv_jclass_rminterface,
+				  TMLibJavaMethods_[JM_CLEARTRANSACTIONSTATES].methodID,
+				  j_tid);
+  jexception = _tlp_jenv->ExceptionOccurred();
+  if(jexception) {
+    _tlp_jenv->ExceptionDescribe();
+    _tlp_jenv->ExceptionClear();
+  }
+  
+}
+
+//==== For the JNI call to RMInterface.cleartransaction - end
+
 // global externsTMLIB_ThreadTxn_Object
 __thread  TMLIB_ThreadTxn_Object *gp_trans_thr;
 TMLIB                           gv_tmlib;
@@ -486,6 +650,9 @@ short ABORTTRANSACTION()
      // abort removes the tx from the list and deletes the
          // enlistment object.  We simply need to delete the trans 
          gp_trans_thr->set_current(NULL);
+	 TM_Native_Type lv_native_type_txid = lp_trans->getTransid()->get_native_type();
+	 cleanupTransactionLocal(lv_native_type_txid);
+
          delete lp_trans; 
      }
 
@@ -599,6 +766,9 @@ short ENDTRANSACTION()
          // end removes the tx from the list and deletes the
          // enlistment object.  We simply need to delete the trans 
          gp_trans_thr->set_current(NULL);
+	 TM_Native_Type lv_native_type_txid = lp_trans->getTransid()->get_native_type();
+	 cleanupTransactionLocal(lv_native_type_txid);
+
          delete lp_trans;
      }
 
@@ -991,8 +1161,12 @@ short SUSPENDTRANSACTION(short *pp_transid)
         ((gp_trans_thr->get_current() != NULL) && (gp_trans_thr->get_current_ios() == 0)))
     {
         gp_trans_thr->set_current(NULL);
-        if(!lp_trans->isEnder())
-            delete lp_trans;
+        if(!lp_trans->isEnder()) {
+	  TM_Native_Type lv_native_type_txid = lp_trans->getTransid()->get_native_type();
+	  cleanupTransactionLocal(lv_native_type_txid);
+	  
+	  delete lp_trans;
+	}
     }
     return lv_error;
 }
