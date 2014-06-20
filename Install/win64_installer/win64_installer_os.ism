@@ -1136,16 +1136,16 @@
 		<row><td>CommonFiles64Folder</td><td>TARGETDIR</td><td>.:Common64</td><td/><td>0</td><td/></row>
 		<row><td>CommonFilesFolder</td><td>TARGETDIR</td><td>.:Common</td><td/><td>0</td><td/></row>
 		<row><td>DATABASEDIR</td><td>ISYourDataBaseDir</td><td>.</td><td/><td>0</td><td/></row>
+		<row><td>DIRPROPERTY1</td><td>TARGETDIR</td><td>.</td><td/><td>0</td><td/></row>
 		<row><td>DesktopFolder</td><td>TARGETDIR</td><td>.:Desktop</td><td/><td>3</td><td/></row>
 		<row><td>FavoritesFolder</td><td>TARGETDIR</td><td>.:FAVORI~1|Favorites</td><td/><td>0</td><td/></row>
 		<row><td>FontsFolder</td><td>TARGETDIR</td><td>.:Fonts</td><td/><td>0</td><td/></row>
 		<row><td>GlobalAssemblyCache</td><td>TARGETDIR</td><td>.:Global~1|GlobalAssemblyCache</td><td/><td>0</td><td/></row>
-		<row><td>HEWLETT_PACKARD</td><td>ProgramFiles64Folder</td><td>HEWLET~1|Hewlett-Packard</td><td/><td>0</td><td/></row>
 		<row><td>HP</td><td>ProgramFilesFolder</td><td>HP</td><td/><td>0</td><td/></row>
 		<row><td>HPCERTDIR</td><td>USERPROFILE</td><td>.</td><td/><td>0</td><td/></row>
 		<row><td>HP_ODBC</td><td>HP</td><td>HPODBC~1|HP ODBC</td><td/><td>0</td><td/></row>
-		<row><td>HP_ODBC64_2.0</td><td>HEWLETT_PACKARD</td><td>HPODBC~1|HP ODBC64 2.0</td><td/><td>0</td><td/></row>
-		<row><td>HP_ODBC64_3.0</td><td>HEWLETT_PACKARD</td><td>HPODBC~1|HP ODBC64 3.0</td><td/><td>0</td><td/></row>
+		<row><td>HP_ODBC64_2.0</td><td>TRAFODION</td><td>HPODBC~1|HP ODBC64 2.0</td><td/><td>0</td><td/></row>
+		<row><td>HP_ODBC64_3.0</td><td>TRAFODION</td><td>HPODBC~1|HP ODBC64 3.0</td><td/><td>0</td><td/></row>
 		<row><td>HP_ODBC_2.0</td><td>HP</td><td>HPODBC~1|HP ODBC 2.0</td><td/><td>0</td><td/></row>
 		<row><td>HP_ODBC_2.01</td><td>ProgramFilesFolder</td><td>HPODBC~1|HP ODBC 2.0</td><td/><td>0</td><td/></row>
 		<row><td>INSATLLDIR</td><td>TARGETDIR</td><td>.</td><td/><td>0</td><td/></row>
@@ -1159,7 +1159,7 @@
 		<row><td>MY_PRODUCT_NAME</td><td>HP</td><td>MYPROD~1|My Product Name</td><td/><td>0</td><td/></row>
 		<row><td>MyPicturesFolder</td><td>TARGETDIR</td><td>.:MyPict~1|MyPictures</td><td/><td>0</td><td/></row>
 		<row><td>NEW_DIRECTORY1</td><td>SystemFolder</td><td>.:System64</td><td/><td>0</td><td/></row>
-		<row><td>NEW_DIRECTORY2</td><td>HEWLETT_PACKARD</td><td>HPODBC~1|HP ODBC 2.0</td><td/><td>0</td><td/></row>
+		<row><td>NEW_DIRECTORY2</td><td>TRAFODION</td><td>HPODBC~1|HP ODBC 2.0</td><td/><td>0</td><td/></row>
 		<row><td>ODBCTEST</td><td>INSTALLDIR</td><td>ODBCTest</td><td/><td>0</td><td/></row>
 		<row><td>PersonalFolder</td><td>TARGETDIR</td><td>.:Personal</td><td/><td>0</td><td/></row>
 		<row><td>PrimaryVolumePath</td><td>TARGETDIR</td><td>.:Primar~1|PrimaryVolumePath</td><td/><td>0</td><td/></row>
@@ -1175,8 +1175,9 @@
 		<row><td>System64Folder</td><td>TARGETDIR</td><td>.:System64</td><td/><td>0</td><td/></row>
 		<row><td>SystemFolder</td><td>TARGETDIR</td><td>.:System64</td><td/><td>0</td><td/></row>
 		<row><td>TARGETDIR</td><td/><td>SourceDir</td><td/><td>0</td><td/></row>
-		<row><td>TRAF_ODBC64_1.0</td><td>HEWLETT_PACKARD</td><td>TRAFOD~1|TRAF ODBC64 1.0</td><td/><td>0</td><td/></row>
-		<row><td>TRAF_ODBC64_3.0</td><td>HEWLETT_PACKARD</td><td>TRAFOD~1|TRAF ODBC64 3.0</td><td/><td>0</td><td/></row>
+		<row><td>TRAFODION</td><td>ProgramFiles64Folder</td><td>TRAFOD~1|Trafodion</td><td/><td>0</td><td/></row>
+		<row><td>TRAF_ODBC64_1.0</td><td>TRAFODION</td><td>TRAFOD~1|TRAF ODBC 1.0</td><td/><td>0</td><td/></row>
+		<row><td>TRAF_ODBC64_3.0</td><td>TRAFODION</td><td>TRAFOD~1|TRAF ODBC64 3.0</td><td/><td>0</td><td/></row>
 		<row><td>TempFolder</td><td>TARGETDIR</td><td>.:Temp</td><td/><td>0</td><td/></row>
 		<row><td>TemplateFolder</td><td>TARGETDIR</td><td>.:ShellNew</td><td/><td>0</td><td/></row>
 		<row><td>USERPROFILE</td><td>TARGETDIR</td><td>.:USERPR~1|UserProfile</td><td/><td>0</td><td/></row>
@@ -3923,11 +3924,11 @@
 		<row><td>ID_STRING1</td><td>1033</td><td>http://www.hp.com</td><td>0</td><td/><td>840767691</td></row>
 		<row><td>ID_STRING10</td><td>1033</td><td>Trafodion ODBC Driver</td><td>0</td><td/><td>815970063</td></row>
 		<row><td>ID_STRING11</td><td>1033</td><td>[ProductName]  - Certification Directory</td><td>0</td><td/><td>-1038001073</td></row>
-		<row><td>ID_STRING2</td><td>1033</td><td>TRAFOD~1.0|Trafodion ODBC64 1.0</td><td>0</td><td/><td>2023918416</td></row>
+		<row><td>ID_STRING2</td><td>1033</td><td>TRAFOD~1.0|Trafodion ODBC 1.0</td><td>0</td><td/><td>-1692251985</td></row>
 		<row><td>ID_STRING3</td><td>1033</td><td>Trafodion ODBC Driver</td><td>0</td><td/><td>815931473</td></row>
 		<row><td>ID_STRING4</td><td>1033</td><td>MSODBC~1|MS ODBC Test</td><td>0</td><td/><td>1117594505</td></row>
 		<row><td>ID_STRING5</td><td>1033</td><td>MSODBC~1|MS ODBC Administrator</td><td>0</td><td/><td>1117594537</td></row>
-		<row><td>ID_STRING6</td><td>1033</td><td>REMOVE~1.0|Remove TRAF ODBC64 1.0</td><td>0</td><td/><td>2023926608</td></row>
+		<row><td>ID_STRING6</td><td>1033</td><td>REMOVE~1.0|Remove TRAF ODBC 1.0</td><td>0</td><td/><td>-1692237649</td></row>
 		<row><td>ID_STRING7</td><td>1033</td><td>TFODBC~1|Trafodion ODBC Help</td><td>0</td><td/><td>1084360202</td></row>
 		<row><td>ID_STRING8</td><td>1033</td><td>TFODBC~1|Trafodion ODBC Help</td><td>0</td><td/><td>1084374538</td></row>
 		<row><td>ID_STRING9</td><td>1033</td><td>TFODBC~1|Trafodion ODBC Help</td><td>0</td><td/><td>1084388874</td></row>
@@ -4498,6 +4499,7 @@ UwBJAE4ARwBMAEUAXwBNAFMASQBfAEkATQBBAEcARQABAFAAUgBPAEoARQBDAFQAXwBBAFMAUwBJAFMA
 		<row><td>CERT_DEF_DIR_NAME</td><td>0</td><td/></row>
 		<row><td>CERT_DIR_RADIOS</td><td>1</td><td/></row>
 		<row><td>CertDirRadio</td><td>1</td><td/></row>
+		<row><td>DIRPROPERTY1</td><td>TRAF_ODBC_1.0</td><td/></row>
 		<row><td>DWUSINTERVAL</td><td>30</td><td/></row>
 		<row><td>DWUSLINK</td><td>CEECC0CFD90BB0D899AC40A8A92B978F99DCF78F59BBE7FFCEACC018BEBC479FE98C803F4EAC</td><td/></row>
 		<row><td>DefaultUIFont</td><td>Tahoma8</td><td/></row>

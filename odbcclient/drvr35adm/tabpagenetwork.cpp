@@ -109,9 +109,9 @@ BOOL TabPageNetwork::OnInitDialog()
 		m_fetch_buffer_size.SetCurSel(0);
 
 	char szStaticText[]="The current configuration is displayed.\n\
-NDCS IP address is specified during the HP Database installation.\n\
-Port is the starting port number for the NDCS specified during\n\
-the HP Database installation; default is 18650.\n\
+DCS Master IP address is specified during the Trafodion installation.\n\
+Port is the starting port number for the DCS Master specified during\n\
+the Trafodion installation; default is 37800.\n\
 Login Timeout default is 0 (no timeout). Connection Timeout default is 60 seconds.\n\
 Query Timeout is NO_TIMEOUT. Fetch Buffer Size default is 8 kbytes.";
 

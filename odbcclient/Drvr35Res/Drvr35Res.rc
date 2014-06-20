@@ -78,7 +78,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,0
- PRODUCTVERSION 3,0,0,0
+ PRODUCTVERSION 0,8,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -100,7 +100,7 @@ BEGIN
             VALUE "LegalCopyright", "?Copyright 2011 Hewlett-Packard Development Company, LP"
             VALUE "OriginalFilename", "traf_ores0100.dll"
             VALUE "ProductName", "TRAF ODBC"
-            VALUE "ProductVersion", "1, 0, 0, 0"
+            VALUE "ProductVersion", "0, 8, 0, 0"
         END
     END
     BLOCK "VarFileInfo"
@@ -118,7 +118,7 @@ END
 IDD_CONNECT_DRIVER_KW_DIALOG DIALOGEX 0, 0, 328, 127
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
 CAPTION "TRAF ODBC Data Source"
-FONT 8, "ÇlÇr ÉSÉVÉbÉN", 0, 0, 0x1
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     LTEXT           "Server &ID:",IDC_STATIC,17,13,46,8
     EDITTEXT        IDC_DKW_SERVER,69,10,178,15,ES_AUTOHSCROLL
@@ -135,7 +135,7 @@ END
 IDD_CONNECT_DIALOG DIALOGEX 0, 0, 328, 95
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
 CAPTION "TRAF ODBC Data Source"
-FONT 8, "ÇlÇr ÉSÉVÉbÉN", 0, 0, 0x1
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     LTEXT           "&User Name :",IDC_STATIC,17,13,46,8,SS_CENTERIMAGE | NOT WS_GROUP,WS_EX_RIGHT
     EDITTEXT        IDC_LOGIN_ID,69,10,178,15,ES_AUTOHSCROLL

@@ -83,7 +83,7 @@ BOOL TabPageOptions::OnInitDialog()
 	}
 
 	char szStaticText[]="The current configuration is displayed.\n\
-Schema is used to qualify HP Database object names.\
+Schema is used to qualify Trafodion object names.\
 The default value is USR.";
 
 	m_static_options.SetWindowText(szStaticText);
