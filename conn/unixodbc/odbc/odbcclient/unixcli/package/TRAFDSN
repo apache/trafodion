@@ -3,7 +3,6 @@ traceFlags              = ERROR
 TraceStart              = 0
 TraceFile               = tracefile.log
 MaxTraceFileSize        = 1024
-AppUnicodeType          = utf16
 
 [ODBC Data Sources]
 Default_DataSource      =    TRAFODBC
