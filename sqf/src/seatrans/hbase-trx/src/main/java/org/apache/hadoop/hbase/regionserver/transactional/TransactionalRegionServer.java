@@ -543,4 +543,17 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
 		return getTransactionalRegion(regionName).checkAndDelete(transactionId, row,
 									 family, qualifier, value, delete);
 	}
+	
+	@Override
+	public boolean isMoveable(final byte[] regionName)
+		      throws IOException {               
+            LOG.trace("isMoveable -- ENTRY");
+            try {
+                LOG.trace("isMoveable -- EXIT");
+                return getTransactionalRegion(regionName).isMoveable();
+            } catch (IOException e) {            
+                LOG.error("Unable to call isMoveable() on region: " + new String(regionName));
+                throw e;
+            }		
+	}
 }

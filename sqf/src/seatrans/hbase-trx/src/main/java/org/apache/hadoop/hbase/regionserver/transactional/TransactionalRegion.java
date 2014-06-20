@@ -1370,4 +1370,18 @@ public class TransactionalRegion extends HRegion {
 		}
 		return transactionsById.get(transactionId);
 	}
+        public boolean isMoveable() {
+                LOG.trace("isMoveable -- ENTRY");
+                if(!commitPendingTransactions.isEmpty() || !transactionsById.isEmpty()) {
+                        LOG.trace("Unable to balance transactional region ["
+                                        + getRegionInfo().getRegionNameAsString()
+                                        + "], still have [" + commitPendingTransactions.size()
+                                        + "] transactions that are pending commit. And [ "
+                                        + transactionsById.size() + "] active transactions.");
+                        LOG.trace("isMoveable -- EXIT -- returning false");
+                        return false;
+                }
+                LOG.trace("isMoveable -- EXIT -- returning true");
+                return true;
+        }
 }

@@ -208,4 +208,13 @@ public interface TransactionalRegionInterface extends HRegionInterface {
 	boolean checkAndDelete(long transactionId, byte[] regionName, byte[] row,
 			byte[] family, byte[] qualifier, byte[] value, Delete delete)
 			throws NotServingRegionException, IOException;
+	
+	  /**
+	   * Checks if transactions are present on region
+	   * 
+	   * @param regionName	  
+	   * @throws IOException
+	   */
+	boolean isMoveable(final byte[] regionName)
+	      throws IOException;
 }

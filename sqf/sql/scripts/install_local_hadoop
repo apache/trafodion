@@ -1294,6 +1294,10 @@ else
     <name>hbase.coprocessor.region.classes</name>
     <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl</value>
   </property>
+  <property>
+    <name>hbase.coprocessor.master.classes</name>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalMasterObserver</value>
+  </property>
  <property>
     <name>hbase.snapshot.enabled</name>
     <value>true</value>
