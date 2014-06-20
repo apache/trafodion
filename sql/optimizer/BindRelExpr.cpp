@@ -8505,6 +8505,11 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       getTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats();
 				 
     const char * hiveTablePath;
+    NAString hostName;
+    Int32 hdfsPort;
+    NAString tableDir;
+    NABoolean result;
+
     char fldSep[2];
     char recSep[2];
     memset(fldSep,'\0',2);
@@ -8520,16 +8525,27 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     // inserting into tables with multiple partitions is not yet supported
     CMPASSERT(hTabStats->entries() == 1);
     hiveTablePath = (*hTabStats)[0]->getDirName();
+    result = ((HHDFSTableStats* )hTabStats)->splitLocation
+      (hiveTablePath, hostName, hdfsPort, tableDir) ;       
+    if (!result) {
+       *CmpCommon::diags() << DgSqlCode(-4224)
+                            << DgString0(hiveTablePath);
+        bindWA->setErrStatus();
+        return this;
+    }
+     
     NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
     
     RelExpr * unloadRelExpr =
                     new (bindWA->wHeap())
-                        FastExtract( mychild,
-                             new NAString(hiveTablePath),
-                             TRUE,
-                             new NAString(getTableName().getQualifiedNameObj().getObjectName()),
-                             FastExtract::FILE,
-                             bindWA->wHeap());
+                    FastExtract( mychild,
+                                 new (bindWA->wHeap()) NAString(hiveTablePath),
+                                 new (bindWA->wHeap()) NAString(hostName),
+                                 hdfsPort,
+                                 TRUE,
+                                 new (bindWA->wHeap()) NAString(getTableName().getQualifiedNameObj().getObjectName()),
+                                 FastExtract::FILE,
+                                 bindWA->wHeap());
     RelExpr * boundUnloadRelExpr = unloadRelExpr->bindNode(bindWA);
     if (bindWA->errStatus())
       return NULL;
@@ -8541,17 +8557,19 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     if (getOverwriteHiveTable())
     {
       RelExpr * newRelExpr =  new (bindWA->wHeap())
-                        ExeUtilFastDelete(getTableName(),
-                            NULL,
-                            (char*)"hive_truncate",
-                            CharInfo::ISO88591,
-                            FALSE,
-                            TRUE,
-                            TRUE,
-                            TRUE,
-                            bindWA->wHeap(),
-                            TRUE,
-                            new NAString(hiveTablePath));
+        ExeUtilFastDelete(getTableName(),
+                          NULL,
+                          (char*)"hive_truncate",
+                          CharInfo::ISO88591,
+                          FALSE,
+                          TRUE,
+                          TRUE,
+                          TRUE,
+                          bindWA->wHeap(),
+                          TRUE,
+                          new (bindWA->wHeap()) NAString(tableDir),
+                          new (bindWA->wHeap()) NAString(hostName),
+                          hdfsPort);
 
       //new root to prevent  error 4056 when binding
       newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
@@ -10043,6 +10061,14 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
       return NULL;
     }
 
+  if (naTable->isHiveTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-3241) 
+			  << DgString0("Hive tables not supported.");
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
   bindWA->setMergeStatement(TRUE);  
   RelExpr * boundExpr = Update::bindNode(bindWA);
   if (bindWA->errStatus()) 
@@ -11217,6 +11243,16 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
       bindWA->setErrStatus();
       return this;
      }
+
+  if (naTable->isHiveTable() &&
+      (getOperatorType() != REL_UNARY_INSERT) && 
+      (getOperatorType() != REL_LEAF_INSERT))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4223)
+			  << DgString0("Update/Delete on Hive table is");
+      bindWA->setErrStatus();
+      return this;
+    }
 
   NABoolean insertFromValuesList =
    (getOperatorType() == REL_UNARY_INSERT &&

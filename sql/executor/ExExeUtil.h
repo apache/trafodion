@@ -3464,7 +3464,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
   Step step_;
 
   char  hdfsHost_[500];
-  char  hdfsPort_[20];
+  int  hdfsPort_;
   char  hiveTableLocation_[513];
   int   numExistingFiles_;
   void * lobGlob_;

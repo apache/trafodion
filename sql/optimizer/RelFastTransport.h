@@ -74,18 +74,20 @@ public :
 
   //! FastExtract Constructor
   FastExtract(RelExpr* child,
-		  	  NAString* targName,
-		  	  NAString* delim ,
-		  	  NAString* nullString ,
-		  	  NAString* recordSep ,
-		  	  ExtractDest targType = FILE,
-		  	  NABoolean isAppend = FALSE,
-		  	  NABoolean needsHeader = TRUE,
-		  	  CompressionType cType= NONE,
+              NAString* targName,
+              NAString* delim ,
+              NAString* nullString ,
+              NAString* recordSep ,
+              ExtractDest targType = FILE,
+              NABoolean isAppend = FALSE,
+              NABoolean needsHeader = TRUE,
+              CompressionType cType= NONE,
               CollHeap *oHeap = CmpCommon::statementHeap())
   : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
     targetType_(targType),
     targetName_(*targName, oHeap),
+    hdfsHostName_(oHeap),
+    hdfsPort_(0),
     isHiveInsert_(FALSE),
     delimiter_(*delim, oHeap),
     isAppend_(isAppend),
@@ -105,6 +107,8 @@ public :
     : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
       targetType_(targType),
       targetName_(*targName, oHeap),
+      hdfsHostName_(oHeap),
+      hdfsPort_(0),
       isHiveInsert_(FALSE),
       delimiter_(oHeap),
       isAppend_(FALSE),
@@ -123,6 +127,8 @@ public :
     : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
       targetType_(INVALID),
       targetName_(oHeap),
+      hdfsHostName_(oHeap),
+      hdfsPort_(0),
       isHiveInsert_(FALSE),
       delimiter_(oHeap),
       isAppend_(FALSE),
@@ -137,6 +143,8 @@ public :
 
   FastExtract(RelExpr* child,
               NAString* targName,
+              NAString* hostName,
+              Int32 portNum,
               NABoolean isHiveInsert,
               NAString* hiveTableName,
               ExtractDest targType,
@@ -144,6 +152,8 @@ public :
     : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
       targetType_(targType),
       targetName_(*targName, oHeap),
+      hdfsHostName_(*hostName, oHeap),
+      hdfsPort_(portNum),
       isHiveInsert_(isHiveInsert),
       hiveTableName_(*hiveTableName, oHeap),
       delimiter_(oHeap),
@@ -239,6 +249,8 @@ public :
   void setSelectList(const ValueIdList & val)    {selectList_ = val; }
   ExtractDest getTargetType() const {return targetType_; }
   const NAString& getTargetName() const {return targetName_;}
+  const NAString& getHdfsHostName() const {return hdfsHostName_;}
+  Int32 getHdfsPort() const {return hdfsPort_;}
   const NAString& getHiveTableName() const {return hiveTableName_;}
   NABoolean isHiveInsert() const {return isHiveInsert_;}
   const NAString& getDelimiter() const {return delimiter_;}
@@ -281,7 +293,9 @@ private:
   
   
   ExtractDest targetType_ ;
-  NAString targetName_;
+  NAString targetName_; 
+  NAString hdfsHostName_ ; // to be used only for hive inserts
+  Int32 hdfsPort_; // to be used only for hive inserts
   ValueIdList selectList_;
   NAString delimiter_;
   NABoolean includeHeader_;

@@ -1180,6 +1180,7 @@
 109004221 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004222 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004223 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
+109004224 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004240 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004241 SQL Error Message : $~message_text\nSQL Query id : $~sqlid
 109004242 SQL Error Message : $~message_text\nSQL Query id : $~sqlid

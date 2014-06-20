@@ -77,6 +77,8 @@ public:
     ULng32 flags,
     Cardinality estimatedRowCount,
     char * targetName,
+    char * hdfsHost,
+    Lng32 hdfsPort,
     char * hiveTableName,
     char * delimiter,
     char * header,
@@ -320,6 +322,8 @@ public:
   ;
 
   NA_EIDPROC inline const char *getTargetName() const { return targetName_; }
+  NA_EIDPROC inline const char *getHdfsHostName() const { return hdfsHostName_; }
+  NA_EIDPROC inline const Int32 getHdfsPortNum() const {return (Int32)hdfsPortNum_;}
   NA_EIDPROC inline const char *getHiveTableName() const { return hiveTableName_; }
   NA_EIDPROC inline const char *getHeader() const { return header_; }
   NA_EIDPROC inline const char *getNullString() const { return nullString_; }
@@ -366,13 +370,15 @@ protected:
   UInt16       childDataTuppIndex_;                          // 92 - 93
   UInt16       cnvChildDataTuppIndex_;                       // 94 - 95
   UInt16       numIOBuffers_;				     // 96 - 97
-  char         filler1[6];
-  NABasicPtr   hiveTableName_;
-  Int64        hdfsIOBufferSize_;
-  Int16        hdfsReplication_;
-  UInt16       ioTimeout_;
+  Int16        hdfsReplication_;                             // 98 - 99
+  Int32        hdfsPortNum_;                                 // 100 - 103
+  NABasicPtr   hiveTableName_;                               // 104 - 111
+  Int64        hdfsIOBufferSize_;                            // 112 - 120
+  NABasicPtr   hdfsHostName_  ;                              // 121 - 127
+  UInt16       ioTimeout_;                                   // 128 - 129
+  
   // Make sure class size is a multiple of 8
-  char fillerComTdbFastTransport_[20];                       // 98 -135
+  char fillerComTdbFastTransport_[14];                       // 130 -143
 
 };
 

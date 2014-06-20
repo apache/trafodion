@@ -4125,12 +4125,13 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
 
 
    char * hiveTableLocation = NULL;
+   char * hiveHdfsHost = NULL;
+   Int32 hiveHdfsPort = getHiveHdfsPort();
 
-   //char * tabLoc = (char*)(getHiveTableLocation().data());
-   //int len =  getHiveTableLocation().length();
    hiveTableLocation =
        space->AllocateAndCopyToAlignedSpace (getHiveTableLocation(), 0);
-   //AllocStringInSpace(space,(char*)(getHiveTableLocation().data()) );
+   hiveHdfsHost =
+       space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
 
    Lng32 numEsps = -1;
 
@@ -4154,7 +4155,7 @@ short ExeUtilFastDelete::codeGen(Generator * generator)
 			    getDefault(GEN_DDL_NUM_BUFFERS),
 			    getDefault(GEN_DDL_BUFFER_SIZE),
 			    isHiveTable(),
-			    hiveTableLocation);
+			    hiveTableLocation, hiveHdfsHost, hiveHdfsPort);
 #pragma warn(1506)  // warning elimination 
 
   if (doPurgedataCat_)

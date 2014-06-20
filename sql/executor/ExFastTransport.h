@@ -394,7 +394,7 @@ protected:
   void * lobGlob_;
 
   char hdfsHost_[500];
-  char hdfsPort_[20];
+  int hdfsPort_;
   char hdfsFileName_[1000];
   char hiveTableLocation_[1000];
   NABoolean ErrorOccured_;

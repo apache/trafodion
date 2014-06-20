@@ -2222,35 +2222,12 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
 
   numExistingFiles_ = 0;
   memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-  memset (hdfsPort_, '\0', sizeof(hdfsPort_));
   memset (hiveTableLocation_, '\0', sizeof(hiveTableLocation_));
 
-  char * outputPath =  ((ComTdbExeUtilFastDelete&)tdb).getHiveTableLocation();
-
-  ex_assert(strncmp(outputPath, "hdfs://", 7) == 0, "Not a valid hdfs location");
-  outputPath = &outputPath[str_len("hdfs://")];
-
-  char *  colonPtr = strchr(outputPath , ':');
-  char * slashPtr = strchr(outputPath , '/');
-  assert(slashPtr);
-  if (colonPtr)
-  {
-    assert(colonPtr -  outputPath < sizeof(hdfsHost_));
-    strncpy(hdfsHost_, outputPath, colonPtr -  outputPath);
-    outputPath = colonPtr + 1;
-    assert(slashPtr - outputPath < sizeof(hdfsPort_));
-    strncpy(hdfsPort_, outputPath, slashPtr - outputPath);
-  }
-  else
-  {
-    assert(slashPtr -  outputPath < sizeof(hdfsHost_));
-    strncpy(hdfsHost_, outputPath, slashPtr -  outputPath);
-  }
-  outputPath = slashPtr;
-
+  strncpy(hdfsHost_, fdTdb().getHiveHdfsHost(), sizeof(hdfsHost_));
+  hdfsPort_ = fdTdb().getHiveHdfsPort();
+  char * outputPath =  fdTdb().getHiveTableLocation();
   strncpy(hiveTableLocation_, outputPath, 512);
-
-
   step_ = INITIAL_;
 }
 
@@ -2308,7 +2285,7 @@ short ExExeUtilHiveTruncateTcb::work()
                                     hiveTableLocation_,
                                     Lob_HDFS_File,
                                     hdfsHost_,
-                                    atoi(hdfsPort_),
+                                    hdfsPort_,
                                     0 ,
                                     1 ,
                                     0);

@@ -772,7 +772,9 @@ RelExpr * ExeUtilFastDelete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap
 					     isPurgedata_,
 					     outHeap,
 					     isHiveTable_,
-					     &hiveTableLocation_);
+					     &hiveTableLocation_,
+                                             &hiveHostName_,
+                                             hiveHdfsPort_);
   else
     result = (ExeUtilFastDelete *) derivedNode;
 
@@ -785,6 +787,8 @@ RelExpr * ExeUtilFastDelete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap
   result->lobNumArray_ = lobNumArray_;
   result->isHiveTable_ = isHiveTable_;
   result->hiveTableLocation_= hiveTableLocation_;
+  result->hiveHostName_ = hiveHostName_;
+  result->hiveHdfsPort_ = hiveHdfsPort_;
 
 
   return ExeUtilExpr::copyTopNode(result, outHeap);

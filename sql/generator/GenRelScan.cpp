@@ -705,9 +705,12 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
         {
           // determine connection info (host and port) from the first file
           NAString dummy, hostName;
-          ((HHDFSTableStats*)hTabStats)->splitLocation
+          NABoolean result;
+          result = ((HHDFSTableStats*)hTabStats)->splitLocation
             (hFileStats->getFileName().data(), hostName, hdfsPort, dummy) ;
-          //NAString hostName ((const char *) HHDFSMasterHostList::getHostName(0));
+          
+          GenAssert(result, "Invalid Hive directory name");
+
           hdfsHostName = 
             space->AllocateAndCopyToAlignedSpace(hostName, 0);
         }

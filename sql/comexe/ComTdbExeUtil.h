@@ -2606,8 +2606,9 @@ public:
 			  Lng32 num_buffers,
 			  ULng32 buffer_size,
 			  NABoolean ishiveTruncate = FALSE,
-			  char * hiveTableLocation = NULL
-
+			  char * hiveTableLocation = NULL,
+                          char * hiveHostName = NULL,
+                          Lng32 hivePortNum = 0
 			  );
 
   Long pack(void *);
@@ -2643,9 +2644,19 @@ public:
 
   Int64 getObjectUID() { return objectUID_; }
 
-  char * getHiveTableLocation()
+  char * getHiveTableLocation() const
   {
     return hiveTableLocation_;
+  }
+
+  char * getHiveHdfsHost() const
+  {
+    return hiveHdfsHost_;
+  }
+
+  Lng32 getHiveHdfsPort() const
+  {
+    return hiveHdfsPort_;
   }
 
   // ---------------------------------------------------------------------
@@ -2722,7 +2733,9 @@ private:
   Int64 objectUID_;                                  // 48-55
   // hiveTable loaction will be extended for partitions later
   NABasicPtr  hiveTableLocation_;                    // 56-63
-  char fillersComTdbExeUtilFastDelete_[64];          // 64-127
+  NABasicPtr hiveHdfsHost_;                          // 64-71
+  Int32 hiveHdfsPort_;                               // 72-75
+  char fillersComTdbExeUtilFastDelete_[52];          // 76-127
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
