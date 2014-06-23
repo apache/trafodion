@@ -173,7 +173,7 @@ OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
 #==============================================
 # display license text and get acceptance
 echo "=== $timestamp ==="
-cat $( cd "$( dirname "$0" )" && pwd )/trafodion_beta_license
+cat $( cd "$( dirname "$0" )" && pwd )/trafodion_license
 read -p "BY TYPING “ACCEPT” YOU AGREE TO THE TERMS OF THIS AGREEMENT: " answer
 answer=${answer,,}
 if [ "$answer" != "accept" ]; then
