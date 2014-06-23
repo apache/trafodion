@@ -3,7 +3,7 @@
  *
  * Copyright 2001, Glen Scott. All rights reserved.
  *
- * Modified 2010-2014 by Hewlett-Packard Development Company, L.P.
+ * (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
  *
  * See the COPYING file for the terms of usage and distribution.
  */
