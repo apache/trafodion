@@ -2430,6 +2430,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   
     {  "USER",   "INDEXES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_IN_SCHEMA_ },
     {  "USER",   "VIEWS",     "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_ },
+    {  "USER",   "LIBRARIES", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_ },
+    {  "USER",   "FUNCTIONS", "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_ },
+    {  "USER",   "TABLE_FUNCTIONS", "","",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_ },
     {  "USER",   "MVS",       "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_IN_SCHEMA_ },
     {  "USER",   "MVGROUPS",  "",      "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_IN_SCHEMA_ },
     {  "USER",   "PROCEDURES","",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_ },
@@ -2554,6 +2557,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 
     {  "ALL",    "PROCEDURES","FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
     {  "USER",   "PROCEDURES","FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_ },
+    {  "ALL",   "FUNCTIONS", "FOR",   "LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_ },
+    {  "ALL",   "TABLE_FUNCTIONS","FOR","LIBRARY",  0,      3,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_ },
  
     {  "ALL",    "CATALOGS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::CATALOGS_FOR_USER_ },
     {  "ALL",    "INDEXES",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::INDEXES_FOR_USER_ },
@@ -2746,9 +2751,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       (infoType_ == "ROLES") ||
       (infoType_ == "MVS") ||
       (infoType_ == "MVGROUPS") ||
-      (infoType_ == "PROCEDURES") ||
       (infoType_ == "SYNONYMS") ||
-      (infoType_ == "LIBRARIES") ||
       (infoType_ == "PRIVILEGES") ||
       (infoType_ == "PARTITIONS") ||
       (infoType_ == "TRIGGERS") ||
@@ -5040,8 +5043,14 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
    }
 
   char * schemaName = NULL;
-  const CorrName& name = getTableDesc()->getNATable()->getTableName();
-  NAString schemaNameInt = name.getQualifiedNameObj().getSchemaName();
+  NAString schemaNameInt ;
+  if (schemaName_.getSchemaName().isNull()) {
+    const CorrName& name = getTableDesc()->getNATable()->getTableName();
+    schemaNameInt = name.getQualifiedNameObj().getSchemaName();
+  }
+  else {
+    schemaNameInt = schemaName_.getSchemaName();
+  }
   schemaNameInt.toLower();
   schemaName = space->allocateAlignedSpace(schemaNameInt.length() + 1);
   strcpy(schemaName, schemaNameInt.data());

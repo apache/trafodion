@@ -356,6 +356,8 @@ language c parameter style sql external name 'errOrWarn'
 library TEST107
 deterministic no sql final call allow any parallelism state area size 1024 ;
 
+get functions for library TEST107;
+
 ?section tests
 --------------------------------------------------------------------------
 prepare S from values(add2(1,2));

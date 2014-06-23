@@ -439,6 +439,51 @@
 
 --- SQL operation complete.
 >>
+>>get functions for library TEST107;
+
+Functions for Library SCH.TEST107
+=================================
+
+SCH.ADD2
+SCH.ADDDAYS2DATE
+SCH.CURRENT_ROLE_NAME
+SCH.CURRENT_USER_NAME
+SCH.ECHOBNUM0
+SCH.ECHOBNUM32
+SCH.ECHOCHAR
+SCH.ECHOCHAR2
+SCH.ECHODATE
+SCH.ECHODEC
+SCH.ECHODEC0
+SCH.ECHOINT
+SCH.ECHOLARGE
+SCH.ECHONUM0
+SCH.ECHONUM12
+SCH.ECHONUM4
+SCH.ECHONUM8
+SCH.ECHOSMALL
+SCH.ECHOTIME0
+SCH.ECHOTIME6
+SCH.ECHOTS0
+SCH.ECHOTS6
+SCH.ECHOUDEC
+SCH.ECHOUINT
+SCH.ECHOUNUM0
+SCH.ECHOUNUM4
+SCH.ECHOUNUM8
+SCH.ECHOUSMALL
+SCH.ECHOVC
+SCH.ECHOVC2
+SCH.ERRORWARN
+SCH.GETCOLLATION
+SCH.GETMXV
+SCH.SESSION_USER_NAME
+SCH.VALIDATE_CURRENT_ROLE_NAME
+SCH.VALIDATE_CURRENT_USER_NAME
+SCH.VALIDATE_SESSION_USER_NAME
+
+--- SQL operation complete.
+>>
 >>obey TEST107(tests);
 >>--------------------------------------------------------------------------
 >>prepare S from values(add2(1,2));
@@ -451,13 +496,13 @@
 TNAME                                                         (EXPR)
 ------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-TRAFODION.SCH.ADD2                                            routine_name: TRAFODION.SCH.ADD2 parameter_modes: I I O  sql_access_mode: NO SQL external_name: add2 library: TRAFODION.SCH.ADD2 external_file: TEST107.dll signature: (none) language: C parameter_style: SQL external_security: INVOKER max_result_sets: 0 parameters: cast(%(1)), cast(%(2))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+TRAFODION.SCH.ADD2                                            routine_name: TRAFODION.SCH.ADD2 parameter_modes: I I O  sql_access_mode: NO SQL external_name: add2 library: TRAFODION.SCH.ADD2 external_file: TEST107.dll signature: (none) language: C parameter_style: SQL external_security: INVOKER max_result_sets: 0 parameters: cast(%(1)), cast(%(2))
 
 --- 1 row(s) selected.
 >>
 >>execute S;
 
-ADD2       
+ADD2
 -----------
 
           3
@@ -466,42 +511,42 @@ ADD2
 >>
 >>select add2(a,b) from t10;
 
-ADD2       
+ADD2
 -----------
 
           2
-         10
-         11
-          5
-          9
           3
           4
-          7
+          5
           6
+          7
           8
+          9
+         10
+         11
 
 --- 10 row(s) selected.
 >>select add2(a,c) from t10;
 
-ADD2       
+ADD2
 -----------
 
           ?
           ?
+          ?
+          ?
+          ?
          -9
-        -41
-          ?
-          ?
         -17
-          ?
         -25
         -33
+        -41
 
 --- 10 row(s) selected.
 >>
 >>values(adddays2date(date'2000-01-01',2));
 
-NEWDATE   
+NEWDATE
 ----------
 
 2000-01-03
@@ -509,25 +554,25 @@ NEWDATE
 --- 1 row(s) selected.
 >>select adddays2date(date'2000-01-01', a) from t10;
 
-NEWDATE   
+NEWDATE
 ----------
 
-2000-01-11
-2000-01-05
 2000-01-02
-2000-01-10
-2000-01-04
-2000-01-07
-2000-01-09
 2000-01-03
+2000-01-04
+2000-01-05
 2000-01-06
+2000-01-07
 2000-01-08
+2000-01-09
+2000-01-10
+2000-01-11
 
 --- 10 row(s) selected.
 >>
 >>values(getMXV());
 
-MXV   
+MXV
 ------
 
   2600
@@ -541,7 +586,7 @@ MXV
 >>-- INTEGER
 >>values(echoINT(1));
 
-(EXPR)     
+(EXPR)
 -----------
 
           1
@@ -549,7 +594,7 @@ MXV
 --- 1 row(s) selected.
 >>values(echoUINT(1));
 
-(EXPR)    
+(EXPR)
 ----------
 
          1
@@ -573,7 +618,7 @@ MXV
 --- 1 row(s) selected.
 >>values(echoLARGE(1));
 
-(EXPR)              
+(EXPR)
 --------------------
 
                    1
@@ -583,7 +628,7 @@ MXV
 >>-- CHARACTER
 >>values(echoCHAR('abc') || 'x');
 
-(EXPR)                           
+(EXPR)
 ---------------------------------
 
 abc                             x
@@ -591,33 +636,33 @@ abc                             x
 --- 1 row(s) selected.
 >>values(echoVC('abc') || 'x');
 
-(EXPR)                           
+(EXPR)
 ---------------------------------
 
-abcx                             
+abcx
 
 --- 1 row(s) selected.
 >>values(echoCHAR2(_ucs2'abc') || _ucs2'x');
 
-(EXPR)                                                            
+(EXPR)
 ------------------------------------------------------------------
 
-abc                             x                                 
+abc                             x
 
 --- 1 row(s) selected.
 >>values(echoVC2(_ucs2'abc') || _ucs2'x');
 
-(EXPR)                                                            
+(EXPR)
 ------------------------------------------------------------------
 
-abcx                                                              
+abcx
 
 --- 1 row(s) selected.
 >>
 >>-- DATETIME
 >>values(echoDATE(date'2009-01-01'));
 
-(EXPR)    
+(EXPR)
 ----------
 
 2009-01-01
@@ -625,7 +670,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoTIME0(time'01:01:01'));
 
-(EXPR)  
+(EXPR)
 --------
 
 01:01:01
@@ -633,7 +678,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoTIME6(time'02:03:04.5'));
 
-(EXPR)         
+(EXPR)
 ---------------
 
 02:03:04.500000
@@ -641,7 +686,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoTS0(timestamp'2009-01-01 01:01:01'));
 
-(EXPR)             
+(EXPR)
 -------------------
 
 2009-01-01 01:01:01
@@ -649,7 +694,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoTS6(timestamp'2009-02-02 02:02:02.123'));
 
-(EXPR)                    
+(EXPR)
 --------------------------
 
 2009-02-02 02:02:02.123000
@@ -659,7 +704,7 @@ abcx
 >>-- NUMERIC SIGNED
 >>values(echoNUM4(12.34));
 
-(EXPR) 
+(EXPR)
 -------
 
   12.34
@@ -667,7 +712,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM4(-56.78));
 
-(EXPR) 
+(EXPR)
 -------
 
  -56.78
@@ -675,7 +720,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM8(1234.5678));
 
-(EXPR)      
+(EXPR)
 ------------
 
    1234.5678
@@ -683,7 +728,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM8(-1111.2222));
 
-(EXPR)      
+(EXPR)
 ------------
 
   -1111.2222
@@ -691,7 +736,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM12(12341234.5678));
 
-(EXPR)               
+(EXPR)
 ---------------------
 
         12341234.5678
@@ -699,7 +744,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM12(-11112222.3333));
 
-(EXPR)               
+(EXPR)
 ---------------------
 
        -11112222.3333
@@ -707,7 +752,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM0(12345));
 
-(EXPR)     
+(EXPR)
 -----------
 
       12345
@@ -715,7 +760,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoNUM0(-54321));
 
-(EXPR)     
+(EXPR)
 -----------
 
      -54321
@@ -733,7 +778,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoUNUM8(1234.5678));
 
-(EXPR)     
+(EXPR)
 -----------
 
   1234.5678
@@ -741,7 +786,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoUNUM0(12345));
 
-(EXPR)    
+(EXPR)
 ----------
 
      12345
@@ -751,7 +796,7 @@ abcx
 >>-- BIGNUM
 >>values(echoBNUM32(1234567890.1234));
 
-(EXPR)                            
+(EXPR)
 ----------------------------------
 
                    1234567890.1234
@@ -759,7 +804,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoBNUM0(1234567890));
 
-(EXPR)                   
+(EXPR)
 -------------------------
 
                1234567890
@@ -767,7 +812,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoBNUM0(-123456789012345678901234));
 
-(EXPR)                   
+(EXPR)
 -------------------------
 
 -123456789012345678901234
@@ -777,7 +822,7 @@ abcx
 >>-- DECIMAL SIGNED
 >>values(echoDEC(-9));
 
-(EXPR)    
+(EXPR)
 ----------
 
      -9.00
@@ -785,7 +830,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoDEC(-123456.78));
 
-(EXPR)    
+(EXPR)
 ----------
 
 -123456.78
@@ -793,7 +838,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoUDEC(123));
 
-(EXPR)   
+(EXPR)
 ---------
 
    123.00
@@ -801,7 +846,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoUDEC(123456.78));
 
-(EXPR)   
+(EXPR)
 ---------
 
 123456.78
@@ -809,7 +854,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoDEC0(123));
 
-(EXPR)  
+(EXPR)
 --------
 
      123
@@ -817,7 +862,7 @@ abcx
 --- 1 row(s) selected.
 >>values(echoDEC0(12345678));
 
-(EXPR)  
+(EXPR)
 --------
 
 12345678
@@ -862,10 +907,10 @@ NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  CURRENT_CACHE_SIZE  HIGH_WATERMARK  MA
 >>
 >>values(getCollation('abc'));
 
-(EXPR)                          
+(EXPR)
 --------------------------------
 
-DEFAULT                         
+DEFAULT
 
 --- 1 row(s) selected.
 >>
@@ -937,7 +982,7 @@ DEFAULT
 >>-----------------------------------------------------------------------------
 >>-- UDRINFO fields SESSION_USER, CURRENT_USER, CURRENT_ROLE
 >>-----------------------------------------------------------------------------
->>-- adding another number at the end of values() to prevent 
+>>-- adding another number at the end of values() to prevent
 >>-- logsort from stripping trailing spaces
 >>values(session_user_name(), 1);
 
@@ -949,22 +994,22 @@ DB__ROOT                                                                        
 --- 1 row(s) selected.
 >>values (validate_session_user_name(session_user));
 
-STATUS                          
+STATUS
 --------------------------------
 
-PASS                            
+PASS
 
 --- 1 row(s) selected.
 >>values (validate_session_user_name('xxxxxxxxxx'));
 
-STATUS                          
+STATUS
 --------------------------------
 
-FAIL                            
+FAIL
 
 --- 1 row(s) selected.
 >>
->>-- adding another number at the end of values() to prevent 
+>>-- adding another number at the end of values() to prevent
 >>-- logsort from stripping trailing spaces
 >>values(current_user_name(),1);
 
@@ -976,18 +1021,18 @@ DB__ROOT                                                                        
 --- 1 row(s) selected.
 >>values (validate_current_user_name(current_user));
 
-STATUS                          
+STATUS
 --------------------------------
 
-PASS                            
+PASS
 
 --- 1 row(s) selected.
 >>values (validate_current_user_name('xxxxxxxxxx'));
 
-STATUS                          
+STATUS
 --------------------------------
 
-FAIL                            
+FAIL
 
 --- 1 row(s) selected.
 >>

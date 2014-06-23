@@ -1256,7 +1256,8 @@ public:
 
   //! HiveMDaccessFunc Constructor
   HiveMDaccessFunc(NAString *mdt = NULL,
-	     CollHeap *oHeap = CmpCommon::statementHeap());
+                   SchemaName* schName = NULL,
+                   CollHeap *oHeap = CmpCommon::statementHeap());
 
   // destructors
 
@@ -1328,6 +1329,9 @@ private:
 			       Generator * generator);
 
   NAString mdType_;
+  // Hive schema to be accessed
+  // If this is passed in as NULL, then the current default is used.
+  SchemaName schemaName_;
 
 }; // class HiveMDaccessFunc
 
@@ -1348,7 +1352,7 @@ public:
 
   //! PhysicalHiveMD Constructor
   PhysicalHiveMD(CollHeap *oHeap = CmpCommon::statementHeap())
-  : HiveMDaccessFunc(NULL, oHeap)
+       : HiveMDaccessFunc(NULL, NULL, oHeap)
   {}
 
 

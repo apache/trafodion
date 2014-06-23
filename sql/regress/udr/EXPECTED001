@@ -32,20 +32,29 @@
 >>--------------------------------------------------------------------------
 >>--cqd attempt_esp_parallelism 'off' ;
 >>
+>>get table_mapping functions for library TEST001 ;
+
+Table_mapping Functions for Library #SCH.TEST001
+===============================================
+
+#SCH.SESSIONIZE
+
+--- SQL operation complete.
+>>
 >>SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
 +>FROM UDF(sessionize
 +>(TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
-+>       FROM clicks
-+>       PARTITION BY userid ORDER BY ts),
++> FROM clicks
++> PARTITION BY userid ORDER BY ts),
 +>cast('TS' as char(2)),
 +>60000000)) XO(userid,ts,session_id);
 
-(EXPR)           USERID                            SESSION_ID          
----------------  --------------------------------  --------------------
+(EXPR) USERID SESSION_ID
+----------
 
-23:59:59.500000  super-services                                       1
-21:59:59.500000  super-user                                           1
-23:59:59.500000  super-user                                           2
+23:59:59.500000 super-services 1
+21:59:59.500000 super-user 1
+23:59:59.500000 super-user 2
 
 --- 3 row(s) selected.
 >>log;

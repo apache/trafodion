@@ -75,6 +75,8 @@ library TEST001;
 --------------------------------------------------------------------------
 --cqd attempt_esp_parallelism 'off' ;
 
+get table_mapping functions for library TEST001 ;
+
 SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id
 FROM UDF(sessionize
 (TABLE(SELECT userid, JULIANTIMESTAMP(ts) as TS
