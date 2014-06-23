@@ -340,7 +340,8 @@ class CmpSeabaseDDL
                      const char * objName,
                      const char * inObjType,
                      char * outObjType = NULL,
-		     Int32 * objectOwner =NULL);
+		     Int32 * objectOwner = NULL,
+		     NABoolean reportErrorNow = TRUE );
   
   short getBaseTable(ExeCliInterface *cliInterface,
 		     const NAString &indexCatName,

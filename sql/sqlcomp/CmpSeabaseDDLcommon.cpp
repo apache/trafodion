@@ -2180,7 +2180,8 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwner(
 				   const char * objName,
 				   const char * inObjType,
 				   char * outObjType,
-				   Int32 * objectOwner)
+				   Int32 * objectOwner,
+				   NABoolean reportErrorNow )
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -2217,7 +2218,8 @@ Int64 CmpSeabaseDDL::getObjectUIDandOwner(
 
   if (cliRC == 100) // did not find the row
     {
-      *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
+      if ( reportErrorNow )
+         *CmpCommon::diags() << DgSqlCode(-1389) << DgString0(objName);
 
       return -1;
     }

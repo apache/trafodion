@@ -5223,28 +5223,51 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
   desc_struct * tableDesc = NULL;
 
-  cliRC = existsInSeabaseMDTable(&cliInterface, 
+  Int32 objectOwner =  0 ;
+  Int64 objUID      = -1 ;
+
+  //
+  // For performance reasons, whenever possible, we want to issue only one
+  // "select" to the OBJECTS metadata table to determine both the existence
+  // of the specified table and the objUID for the table.  Since it is more
+  // likely that a user query refers to tables (directly or indirectly) that
+  // are already in existence, this optimization can save the cost of the
+  // existence check for all such user objects.  In the less likely case that
+  // an object does not exist we must drop back and re-issue the metadata
+  // query for the existence check in order to ensure we get the proper error
+  // reported.
+  //
+  if ( objType ) // Must have objType
+  {
+    objUID = getObjectUIDandOwner(&cliInterface,
+			      catName.data(), schName.data(), objName.data(),
+				      objType, NULL, &objectOwner, FALSE /*no error now */);
+  }
+  // If we didn't call getObjectUIDandOwner() above OR if it gave an error, then:
+  if ( objUID < 0 )
+  {
+    cliRC = existsInSeabaseMDTable(&cliInterface, 
 				 catName.data(), schName.data(), objName.data(),
 				 NULL,
 				 (NAString(objType) != COM_INDEX_OBJECT_LIT ? TRUE : FALSE));
-  if (cliRC < 0)
-    {
-      processReturn();
+    if (cliRC < 0)
+      {
+        processReturn();
 
-      return NULL;
-    }
+        return NULL;
+      }
 
-  if (cliRC == 0) // doesn't exist
-    {
-      processReturn();
+    if (cliRC == 0) // doesn't exist
+      {
+        processReturn();
 
-      return NULL;
-    }
+        return NULL;
+      }
 
-  Int32 objectOwner;
-  Int64 objUID = getObjectUIDandOwner(&cliInterface,
+    objUID = getObjectUIDandOwner(&cliInterface,
 			      catName.data(), schName.data(), objName.data(),
 				      objType, NULL, &objectOwner);
+  }
   if (objUID < 0)
   {
      if ((!objType) || (objType && (strcmp(objType, "BT") != 0)))
