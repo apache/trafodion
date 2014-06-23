@@ -935,6 +935,75 @@ static const QueryString getTrafIndexesInSchemaQuery[] =
   {"  ; "}
 };
 
+static const QueryString getTrafProceduresInSchemaQuery[] =
+{
+  {" select object_name  from "},
+  {"   %s.\"%s\".%s T, %s.\"%s\".%s R "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.schema_name = '%s'  and "},
+  {"        T.object_type = 'UR'  and "},
+  {"        T.object_uid = R.udr_uid  and "},
+  {"        R.udr_type = 'P ' "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafLibrariesInSchemaQuery[] =
+{
+  {" select object_name  from "},
+  {"   %s.\"%s\".%s T "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.schema_name = '%s'  and "},
+  {"        T.object_type = 'LB' "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafFunctionsInSchemaQuery[] =
+{
+  {" select object_name  from "},
+  {"   %s.\"%s\".%s T, %s.\"%s\".%s R "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.schema_name = '%s'  and "},
+  {"        T.object_type = 'UR'  and "},
+  {"        T.object_uid = R.udr_uid  and "},
+  {"        R.udr_type = 'F ' "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafTableFunctionsInSchemaQuery[] =
+{
+  {" select object_name  from "},
+  {"   %s.\"%s\".%s T, %s.\"%s\".%s R "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.schema_name = '%s'  and "},
+  {"        T.object_type = 'UR'  and "},
+  {"        T.object_uid = R.udr_uid  and "},
+  {"        R.udr_type = 'T ' "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafProceduresForLibraryQuery[] =
+{
+  {" select T.schema_name || '.' || T.object_name  from "},
+  {"   %s.\"%s\".%s T, %s.\"%s\".%s R, %s.\"%s\".%s LU "},
+  {"where T.object_uid = R.udr_uid  and "},
+  {"      T.object_uid = LU.used_udr_uid  and "},
+  {"      LU.using_library_uid = (select object_uid from %s.\"%s\".%s T1 "},
+  {"      where T1.object_type = 'LB' and T1.catalog_name = '%s' and "},
+  {"            T1.schema_name = '%s' and T1.object_name = '%s') and "},
+  {"      %s  "}, // fot udr_type: procedure, function, or table_mapping fn.
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
 static const QueryString getTrafViewsInCatalogQuery[] =
 {
   {" select T.schema_name || '.' || "},
@@ -1432,6 +1501,20 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
+    case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_:
+      {
+	str_sprintf(headingBuf_, "Functions in Schema %s.%s",
+		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_:
+      {
+	str_sprintf(headingBuf_, "Table_mapping functions in Schema %s.%s",
+		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
     case ComTdbExeUtilGetMetadataInfo::SYNONYMS_IN_SCHEMA_:
       {
 	str_sprintf(headingBuf_, "Synonyms in Schema %s.%s",
@@ -1648,7 +1731,15 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     break;
 
     case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_:
-        str_sprintf(headingBuf_,"Procedures for Library %s",getMItdb().getParam1());
+        str_sprintf(headingBuf_,"Procedures for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_:
+        str_sprintf(headingBuf_,"Functions for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_:
+        str_sprintf(headingBuf_,"Table_mapping Functions for Library %s.%s",getMItdb().getSch(), getMItdb().getObj());
     break;
 
     case ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_:
@@ -2193,6 +2284,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    char view[100];
 	    char view_usage[100];
             char auths[100];
+            char routine[100];
+            char library_usage[100];
 
 	    cliInterface()->getCQDval("SEABASE_CATALOG", cat);
 
@@ -2202,6 +2295,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    strcpy(view, SEABASE_VIEWS);
 	    strcpy(view_usage, SEABASE_VIEWS_USAGE);
             strcpy(auths, SEABASE_AUTHS);
+            strcpy(routine, SEABASE_ROUTINES);
+            strcpy(library_usage, SEABASE_LIBRARIES_USAGE);
 
 	    switch (getMItdb().queryType_)
 	      {
@@ -2335,8 +2430,95 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   param_[2] = auths;
                   param_[3] = (char *)&type;
 		}
-              break;
-	      
+                break;
+              case ComTdbExeUtilGetMetadataInfo::PROCEDURES_IN_SCHEMA_:
+                {
+                  qs = getTrafProceduresInSchemaQuery;
+                  sizeOfqs = sizeof(getTrafProceduresInSchemaQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+                  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = routine;
+		  param_[6] = getMItdb().cat_;
+		  param_[7] = getMItdb().sch_;
+                }
+                break ;
+              case ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_:
+                {
+                  qs = getTrafLibrariesInSchemaQuery;
+                  sizeOfqs = sizeof(getTrafLibrariesInSchemaQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = getMItdb().cat_;
+		  param_[4] = getMItdb().sch_;
+                }
+                break ;
+              case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_:
+                {
+                  qs = getTrafFunctionsInSchemaQuery;
+                  sizeOfqs = sizeof(getTrafFunctionsInSchemaQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+                  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = routine;
+		  param_[6] = getMItdb().cat_;
+		  param_[7] = getMItdb().sch_;
+                }
+                break ;
+	      case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_:
+                {
+                  qs = getTrafTableFunctionsInSchemaQuery;
+                  sizeOfqs = sizeof(getTrafTableFunctionsInSchemaQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+                  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = routine;
+		  param_[6] = getMItdb().cat_;
+		  param_[7] = getMItdb().sch_;
+                }
+                break ;
+              case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_:
+              case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_:
+              case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_FOR_LIBRARY_:
+                {
+                  qs = getTrafProceduresForLibraryQuery;
+                  sizeOfqs = sizeof(getTrafProceduresForLibraryQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+                  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = routine;
+                  param_[6] = cat;
+		  param_[7] = sch;
+		  param_[8] = library_usage;
+                  param_[9] = cat;
+		  param_[10] = sch;
+		  param_[11] = tab;
+                  param_[12] = getMItdb().cat_;
+		  param_[13] = getMItdb().sch_;
+		  param_[14] = getMItdb().obj_;
+                  if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_)
+		    strcpy(ausStr, " R.udr_type = 'P ' ");
+                  else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::FUNCTIONS_FOR_LIBRARY_)
+		    strcpy(ausStr, " R.udr_type = 'F ' ");
+                   else
+		    strcpy(ausStr, " R.udr_type = 'T ' ");
+		  param_[15] = ausStr;
+                }
+                break ;
 	      default:
 		{
 		  ExHandleErrors(qparent_,
@@ -2362,7 +2544,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	     str_sprintf(queryBuf_, gluedQuery,
 			 param_[0], param_[1], param_[2], param_[3], param_[4],
 			 param_[5], param_[6], param_[7], param_[8], param_[9],
-			 param_[10], param_[11], param_[12], param_[13], param_[14]);
+			 param_[10], param_[11], param_[12], param_[13], param_[14], param_[15]);
 	     
 	     step_ = FETCH_ALL_ROWS_;
 	  }
@@ -3686,7 +3868,7 @@ short ExExeUtilGetHiveMetadataInfoTcb::fetchAllHiveRows(Queue * &infoList,
   rc = 0;
 
   char buf[2000];
-  strcpy(buf, "select rtrim(table_name) from table(hivemd(tables))");
+  str_sprintf(buf, "select rtrim(table_name) from table(hivemd(tables, %s.%s))", getMItdb().getCat(), getMItdb().getSch());
   cliRC = fetchAllRows(infoList, buf, 1, TRUE, rc, FALSE);
 
   return cliRC;

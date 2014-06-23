@@ -446,6 +446,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("FROM",               TOK_FROM,        ANS_|RESWORD_|MPWORD_),
   ParKeyWord("FULL",               TOK_FULL,        ANS_|RESWORD_),
   ParKeyWord("FUNCTION",           TOK_FUNCTION,    COMPAQ_|RESWORD_),
+  ParKeyWord("FUNCTIONS",          TOK_FUNCTIONS,   NONRESTOKEN_),
   ParKeyWord("G",                  TOK_G,           NONRESTOKEN_),
   ParKeyWord("GENERAL",            IDENTIFIER,      POTANS_|RESWORD_),
   ParKeyWord("GENERATE",           TOK_GENERATE,    NONRESTOKEN_),

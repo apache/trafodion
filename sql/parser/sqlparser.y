@@ -1453,6 +1453,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 
 %token <tokval> TOK_FREE
 %token <tokval> TOK_FUNCTION
+%token <tokval> TOK_FUNCTIONS
 %token <tokval> TOK_GROUPING
 %token <tokval> TOK_HOST
 
@@ -2226,6 +2227,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval>               optional_logon_clause
 %type <stringval> 		external_user_identifier
 %type <tokval>	 		user_or_role
+%type <tokval>                  procedure_or_function
 %type <stringval>               schema_subvolume
 %type <stringval>               schema_location_clause
 %type <boolean>                 schema_location_reuse_clause
@@ -5946,6 +5948,10 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 | TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ')' ')'
 				{
 				    $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
+				}
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' schema_name ')' ')'
+				{
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7);
 				}
 | TOK_TABLE '(' TOK_QUERY_CACHE '(' ')' ')'
   {
@@ -15227,6 +15233,9 @@ get_statistics_optional_options : /* empty */
                                 | ',' TOK_OPTIONS QUOTED_STRING
                                   /* DEFAULT_CHARSET has no effect on QUOTED_STRING in this context */
                                   { $$ = $3; }
+procedure_or_function : TOK_PROCEDURES 
+                        | TOK_FUNCTIONS 
+                        | TOK_TABLE_MAPPING TOK_FUNCTIONS {$$ = $1; }
 
 exe_util_get_metadata_info : 
           TOK_GET get_info_aus_clause objects_identifier 
@@ -15310,10 +15319,10 @@ exe_util_get_metadata_info :
 
             $$ = gmi;
           }
-        | TOK_GET get_info_aus_clause TOK_PROCEDURES TOK_FOR TOK_LIBRARY table_name
+        | TOK_GET get_info_aus_clause procedure_or_function TOK_FOR TOK_LIBRARY table_name
         {
            NAString aus("ALL");    
-           NAString infoType("PROCEDURES");
+           NAString infoType;
            NAString iof("FOR");
            NAString objType("LIBRARY"); 
            CorrName cn("");
@@ -15321,6 +15330,13 @@ exe_util_get_metadata_info :
            // production symetric with other GET statements and please the parser
            if (*$2 != "NONE")
              YYERROR;
+           if ($3 == TOK_PROCEDURES)
+             infoType = "PROCEDURES" ;
+           else if ($3 == TOK_FUNCTIONS)
+             infoType = "FUNCTIONS" ;
+           else
+             infoType = "TABLE_FUNCTIONS" ;
+
            ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP ()) 
                     ExeUtilGetMetadataInfo(
                              aus,            // NAString &
@@ -15334,7 +15350,7 @@ exe_util_get_metadata_info :
                              NULL,             // param1 -- the library name
                              PARSERHEAP ()); // ColHeap  * oHeap 
                      
-           gmi->setNoHeader(TRUE);
+           //gmi->setNoHeader(TRUE);
            $$ = gmi;          
         } 
         | TOK_GET TOK_CURRENT_USER
@@ -15666,6 +15682,8 @@ objects_identifier :
                   | TOK_USERS    { $$ = new (PARSERHEAP()) NAString("USERS"); }  // get users
                   | TOK_VIEWS    { $$ = new (PARSERHEAP()) NAString("VIEWS"); }
                   | TOK_INVALID TOK_VIEWS { $$ = new (PARSERHEAP()) NAString("INVALID_VIEWS"); }
+                  | TOK_FUNCTIONS { $$ = new (PARSERHEAP()) NAString("FUNCTIONS"); }
+                  | TOK_TABLE_MAPPING TOK_FUNCTIONS { $$ = new (PARSERHEAP()) NAString("TABLE_FUNCTIONS"); }
 
 privileges_identifier :
                     TOK_PRIVILEGES { $$ = new (PARSERHEAP()) NAString("PRIVILEGES"); }

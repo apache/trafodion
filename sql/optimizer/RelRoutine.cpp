@@ -1189,11 +1189,14 @@ const NAString ExplainFunc::getText() const
 // -----------------------------------------------------------------------
 
 HiveMDaccessFunc::HiveMDaccessFunc(NAString *mdt,
-		       CollHeap *oHeap)
+                                   SchemaName* schName,
+                                   CollHeap *oHeap)
   : BuiltinTableValuedFunction(NULL,REL_HIVEMD_ACCESS,oHeap)
 {
   if (mdt)
     mdType_ = *mdt;
+  if (schName)
+    schemaName_ = *schName;
 }
 
 //! HiveMDaccessFunc::~HiveMDaccessFunc Destructor 
@@ -1207,11 +1210,13 @@ RelExpr * HiveMDaccessFunc::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   HiveMDaccessFunc *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) HiveMDaccessFunc(NULL,outHeap);
+    result = new (outHeap) HiveMDaccessFunc(NULL,NULL,outHeap);
   else
     result = (HiveMDaccessFunc *) derivedNode;
 
   result->mdType_ = mdType_;
+  result->schemaName_ = schemaName_;
+  
 
   return BuiltinTableValuedFunction::copyTopNode(result, outHeap);
 }

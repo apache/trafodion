@@ -555,7 +555,7 @@ void CreateImplementationRules(RuleSet* set)
   r = new(CmpCommon::contextHeap()) PhysicalHiveMDRule
     ("Implement HiveMDaccessFunc by a PhysicalExplain",
      new(CmpCommon::contextHeap())
-      HiveMDaccessFunc(NULL, CmpCommon::contextHeap()),
+     HiveMDaccessFunc(NULL, NULL, CmpCommon::contextHeap()),
      new(CmpCommon::contextHeap())
        PhysicalHiveMD(CmpCommon::contextHeap()));
   set->insert(r);
