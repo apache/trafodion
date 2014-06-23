@@ -740,8 +740,9 @@ short SessionDefaults::getNextSessionDefault(char* &attributeString,
 //////////////////////////////////////////////////////////////////////
 static const QueryString cqdInfo[] =
 {
-  {"unique_hash_joins"}, {"OFF"},
-  {"transform_to_sidetree_insert"}, {"OFF"}
+  {"unique_hash_joins"}, {"OFF"}
+, {"transform_to_sidetree_insert"}, {"OFF"}
+, {"METADATA_CACHE_SIZE"}, {"0"}
 };
 
 static const AQRInfo::AQRErrorMap aqrErrorMap[] = 
@@ -749,7 +750,9 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   //      SQLCODE NSKCODE  RETRIES   DELAY   TYPE NUM  CQD   CMP  INTERNAL
   //                                              CQDS STR   INFO
   // =====================================================================
-  
+
+  // object does not exist in Trafodion
+  AQREntry(   1389,      0,      1,     0,      1,   1, "03",  1,     0),  
   // process could not be created (40)
   AQREntry(   2012,      0,      3,    60,      0,   0, "",    0,     0),  
 
