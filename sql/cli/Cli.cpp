@@ -2778,49 +2778,24 @@ Lng32 SQLCLI_ProcessRetryQuery(
 
   if (numRetries > 0)
     {
-      ComDiagsArea * tempDiags = NULL;
-      if ((numCQDs > 0) || (aqrCmpInfo == 1))
-	{
-	 
-	  if (isERROR(retcode))
-	    {
-	      // save the current diags area before resetting cqd/cqs.
-	      // Those calls will clear the diags area.
-	      tempDiags = ComDiagsArea::allocate(currContext->exHeap());
-	      tempDiags->mergeAfter(diags);
-	    }
-	  
-	  if (numCQDs > 0)
-	    {
-	      // reset the desired cqds after recompiling the query.
-	      Lng32 rc = aqr->resetCQDs(numCQDs, cqdStr, currContext);
-	      
-	      if (rc < 0)
-		{
-		  return rc;
-		}
-	    }
-	  
-	  if (aqrCmpInfo == 1)
-	    {
-	      // reset the control session stmt.
-	      Lng32 rc =
-		aqr->resetCompilerInfo(stmt->getUniqueStmtId(),
-				       errCond,
-				       currContext);
-	      if (rc < 0)
-		{
-		  return rc;
-		}
-	    }
+      if (numCQDs > 0)
+        {
+          // reset the desired cqds after recompiling the query.
+          Lng32 rc = aqr->resetCQDs(numCQDs, cqdStr, currContext);
 
-	  // restore the saved diags area
-	  if (tempDiags)
-	    {
-	      diags.mergeAfter(*tempDiags);
-	      tempDiags->deAllocate();
-	    }
-	}	  
+          if (rc < 0)
+            return rc;
+        }
+	  
+      if (aqrCmpInfo == 1)
+        {
+          // reset the control session stmt.
+          Lng32 rc = aqr->resetCompilerInfo(stmt->getUniqueStmtId(),
+                                            errCond,
+                                            currContext);
+          if (rc < 0)
+            return rc;
+        }
 
       // if recomp warnings are to be returned, then add a warning.
       // Also return the error which was previously returned to the caller 

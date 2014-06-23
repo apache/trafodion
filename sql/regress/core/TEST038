@@ -39,6 +39,10 @@
 --     (10/12/06) - Changed PAD tests for New LPAD and RPAD algorithms
 
 obey TEST038(clnup);
+obey TEST038(tests);
+obey TEST038(aqr);
+obey TEST038(clnup);
+exit;
 
 ?section tests
 log LOG038 clear;
@@ -1195,6 +1199,25 @@ select nvl(b,a) from T038nvl;
 
 log;
 
+?section aqr
+log LOG038;
+
+create table t038aqr( a int not null, b int not null, primary key(a) );
+insert into t038aqr values(1, 1);
+select a, b from t038aqr;
+-- let aqr_other_session drop and recreate the t038aqr
+log;
+sh sqlci -i "TEST038(aqr_other_session)" ;
+log LOG038;
+drop table t038aqr;
+log;
+
+?section aqr_other_session;
+log LOG038;
+drop table t038aqr;
+create table t038aqr( a int not null, b int not null, primary key(a) );
+log;
+
 ?section clnup
 -- CLEANUP database
 drop table T038edat;
@@ -1209,6 +1232,7 @@ drop table T038tsf;
 drop table T038empt;
 drop table T038dept;
 drop table T038corp;
+drop table t038aqr;
 
 -- Test constant folding
 
