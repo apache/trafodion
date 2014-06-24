@@ -296,9 +296,8 @@ PKG_TAR ?= "../${PKG_PROD}_$(PKG_TYPE).tgz"
 PKG_TAR_UN = "${PKG_PROD}_${SQ_BUILD_TYPE}.tar"
 SRC_PKG_BIN ?= "../${PKG_PROD}-src.bin"
 SRC_PKG_TAR ?= "../${PKG_PROD}-src.tgz"
-OPEN_SOURCE_LICENSES = ../open-source-licenses
 
-PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/limited-support-tools $(OPEN_SOURCE_LICENSES) export/share $(UNSUPPORTED_TOOLS) gdb sql/scripts $(EMBEDDED8) sqenvcom.sh opt seapilot/export seapilot/scripts seapilot/spenv.sh seapilot/sp_path.sh tools orig_config src/seatrans/hbase-trx conf
+PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/limited-support-tools export/share $(UNSUPPORTED_TOOLS) gdb sql/scripts $(EMBEDDED8) sqenvcom.sh opt seapilot/export seapilot/scripts seapilot/spenv.sh seapilot/sp_path.sh tools orig_config src/seatrans/hbase-trx conf
 
 PKG_BIN_OBJS += trafci
 
