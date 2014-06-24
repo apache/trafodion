@@ -77,7 +77,7 @@ smstub:
 
 
 make_sql: $(SEAMONSTER_TARGET) win seapilot-standalone
-	cd sql; $(MAKE) WROOT=$(SQL_W) -f makefile.newtse  2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
+	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 	cd $(MY_SQROOT)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
 make_monitor: seapilot stfs make_sqevlog seabed
@@ -112,7 +112,7 @@ clean: setupdir_clean
 	-cd src/stfs; $(MAKE) -f Makefile.stub clean
 	-cd src/win; $(MAKE) clean
 	-cd src/tm; $(MAKE) clean
-	-cd sql; $(MAKE) WROOT=$(SQL_W) -f makefile.newtse clean
+	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd src/sp_proxy; $(MAKE) clean
 	-cd sqevlog; $(MAKE) clean
 	# from genverhdr.ksh
@@ -128,7 +128,7 @@ cleanall: setupdir_clean
 	-cd src/stfs; $(MAKE) -f Makefile.stub cleanall
 	-cd src/win; $(MAKE) cleanall
 	-cd src/tm; $(MAKE) cleanall
-	-cd sql; $(MAKE) WROOT=$(SQL_W) -f makefile.newtse clean
+	-cd sql; $(MAKE) WROOT=$(SQL_W) clean
 	-cd src/sp_proxy; $(MAKE) cleanall
 	-cd sqevlog; $(MAKE) cleanall
 	# from genverhdr.ksh
@@ -142,7 +142,7 @@ cleaner:
 	-cd src/stfs; $(MAKE) -f Makefile.stub cleaner
 	-cd src/win; $(MAKE) cleaner
 	-cd src/tm; $(MAKE) cleaner
-	-cd sql; $(MAKE) WROOT=$(SQL_W) -f makefile.newtse cleaner
+	-cd sql; $(MAKE) WROOT=$(SQL_W) cleaner
 	-cd src/sp_proxy; $(MAKE) cleaner
 	-cd sqevlog; $(MAKE) cleaner
 
@@ -184,7 +184,7 @@ setupdir:
 	-cd src/win; $(MAKE) setup
 	-cd src/seabed; $(MAKE) setup
 	-cd src/tm; $(MAKE) setup
-	-cd sql; $(MAKE) WROOT=$(SQL_W) -f makefile.newtse setup
+	-cd sql; $(MAKE) WROOT=$(SQL_W) setup
 	-cd sqevlog; $(MAKE) setup
 	-@./makelink ../../mondump $(EXPORTBIN_DIR)
 	-@./makelink ../../sqid $(EXPORTBIN_DIR)
