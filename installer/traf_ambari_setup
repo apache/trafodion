@@ -11,7 +11,6 @@
 #==============================================
 # Default values
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-typeset TOOLS_TAR="$TRAF_WORKDIR/traf_other_tools.tgz"
 typeset TRAF_USER="trafodion"
 typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
 typeset NODE_LIST="$HOSTNAME"

@@ -34,7 +34,6 @@ Options:
     --build <file>        Full pathname to the Trafodion build tar file.
     --dcs_build <file>    Full pathname to the DCS build tar file.
     --install_path <dir>  Full pathname to the install directory location.
-    --tools_tar <file>    Full pathname to the Trafodion tools tar file.
     --nostart             This will install but not start Trafodion
     --init_trafodion      Run init_trafodion after sqstart (ignored for --nostart)
     --config <file>       Full pathname of sqconfig. (default $HOME/sqconfig)
@@ -62,7 +61,6 @@ typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 typeset BUILD_FILE=""
 typeset SQ_ROOT="$HOME/trafodion"
 typeset NODES="$HOSTNAME"
-typeset TOOLS_TAR="$HOME/traf_other_tools.tgz"
 typeset DCS_BUILD="$HOME/dcs_build.tgz"
 typeset INIT_TRAFODION="N"
 typeset NOSTART="N"
@@ -110,15 +108,6 @@ while [[ $# -gt 0 ]]; do
                 exit -1
             fi
             DCS_BUILD="$( readlink -f $2 )"
-            shift
-            ;;
-        --tools_tar)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            TOOLS_TAR="$( readlink -f $2 )"
             shift
             ;;
         --config)
@@ -253,21 +242,6 @@ echo "***INFO: untarring build file $BUILD_FILE to $SQ_ROOT"
 tar -xzf $BUILD_FILE
 if [ "$?" != "0" ]; then
     echo "***ERROR: There was a problem untarring the Trafodion build file.  Check install log files for details."
-    exit -1;
-fi
-
-# untar the Trafodion tools
-TRAF_TOOLSDIR=$SQ_ROOT/traf_other_tools
-echo "***INFO: untarring Trafodion tools file $TOOLS_TAR to $TRAF_TOOLSDIR"
-cd $SQ_ROOT
-tar -xzf $TOOLS_TAR
-if [ "$?" != "0" ]; then
-    echo "***ERROR: There was a problem untarring the Trafodion tools file.  Check install log files for details."
-    exit -1;
-fi
-chmod +w -R $TRAF_TOOLSDIR
-if [ "$?" != "0" ]; then
-    echo "***ERROR: Can't chmod +w -R $TRAF_TOOLSDIR"
     exit -1;
 fi
 
