@@ -17,7 +17,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-dbToMove=hmon
+dbToMove="hmon smon"
 while getopts 'd:' parmOpt
 do
     case $parmOpt in
@@ -125,14 +125,18 @@ trap cleanPASSFILE ERR INT
 phost=$(echo ${hostPort} | awk -F: '{print $1}')
 pport=$(echo ${hostPort} | awk -F: '{print $2}')
 
-if [ $(psql -h ${phost} -p ${pport} -U ${clouderaUser} -l -q -t | grep -c ${dbToMove}) -eq 0 ] ; then
-	echo "Db ${dbToMove} was not found in the PostgreSQL."
-	cleanPASSFILE
-	exit 0
-fi
+for currDB in ${dbToMove}
+do
+    if [ $(psql -h ${phost} -p ${pport} -U ${clouderaUser} -l -q -t | grep -c ${currDB}) -eq 0 ] ; then
+        echo "Db ${currDB} was not found in the PostgreSQL."
+        cleanPASSFILE
+        exit 0
+    fi
+done
 
 dataSpace="data_space"
-psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${dbToMove} -q -t -c \\db > ${tempFile}
+currDB=$(echo ${dbToMove} | awk '{print $1}')
+psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${currDB} -q -t -c \\db > ${tempFile}
 
 if [ $(grep -c ${dataSpace} ${tempFile}) -gt 0 ] ; then
 	if [ $(grep ${dataSpace} ${tempFile} | awk '{print $5}') != ${newLocation} ] ; then
@@ -142,7 +146,7 @@ if [ $(grep -c ${dataSpace} ${tempFile}) -gt 0 ] ; then
 		exit 0
 	fi
 else
-	psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${dbToMove} <<-EOT > ${tempFile}
+	psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${currDB} <<-EOT > ${tempFile}
 		CREATE TABLESPACE ${dataSpace} LOCATION '${newLocation}';
 		GRANT ALL ON TABLESPACE ${dataSpace} TO PUBLIC;
 		\q
@@ -160,21 +164,25 @@ fi
 # Tablespace exists.
 # Now get list of tables and indexes and setup move.
 #
-echo "ALTER DATABASE ${dbToMove} SET default_tablespace = ${dataSpace};" > ${tempFile}
-while read -r parm1 parm2 objectName parmRest ; do
-	if [ ${#objectName} -gt 0 ] ; then
-		echo "ALTER TABLE ${objectName} set tablespace ${dataSpace};" >> ${tempFile}
-	fi
-done <<< "$(psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${dbToMove} -q -t -c \\dt)"
-while read -r parm1 parm2 objectName parmRest ; do
-	if [ ${#objectName} -gt 0 ] ; then
-		echo "ALTER INDEX ${objectName} set tablespace ${dataSpace};" >> ${tempFile}
-	fi
-done <<< "$(psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${dbToMove} -q -t -c \\di)"
+for currDB in ${dbToMove}
+do
+    echo "ALTER DATABASE ${currDB} SET default_tablespace = ${dataSpace};" > ${tempFile}
+    while read -r parm1 parm2 objectName parmRest ; do
+        if [ ${#objectName} -gt 0 ] ; then
+            echo "ALTER TABLE ${objectName} set tablespace ${dataSpace};" >> ${tempFile}
+        fi
+    done <<< "$(psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${currDB} -q -t -c \\dt)"
+    while read -r parm1 parm2 objectName parmRest ; do
+        if [ ${#objectName} -gt 0 ] ; then
+            echo "ALTER INDEX ${objectName} set tablespace ${dataSpace};" >> ${tempFile}
+        fi
+    done <<< "$(psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${currDB} -q -t -c \\di)"
 
-#
-# Ready to apply changes.
-#
-psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${dbToMove} -a -f ${tempFile}
-#cat ${tempFile}
+    #
+    # Ready to apply changes.
+    #
+    psql -h ${phost} -p ${pport} -U ${clouderaUser} -d ${currDB} -a -f ${tempFile}
+    #cat ${tempFile}
+done
+
 cleanPASSFILE
