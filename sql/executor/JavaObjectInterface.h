@@ -33,6 +33,8 @@
 #include "ex_god.h"
 #endif
 
+extern __thread JNIEnv *jenv_;
+
 // This structure defines the information needed for each java method used.
 struct JavaMethodInit {
     std::string   jm_name;       // The method name.
@@ -68,7 +70,6 @@ protected:
   // Default constructor - for creating a new JVM		
   JavaObjectInterface(NAHeap *heap , int debugPort = 0, int debugTimeout = 0)
     :  heap_(heap)
-      ,jenv_(NULL)
       ,javaObj_(NULL)
       ,needToDetach_(false)
       ,isInitialized_(false)
@@ -80,9 +81,8 @@ protected:
   }
 
   // Constructor for reusing an existing JVM.
-  JavaObjectInterface(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
+  JavaObjectInterface(NAHeap *heap, jobject jObj)
     :  heap_(heap)
-      ,jenv_(NULL)
       ,javaObj_(NULL)
       ,needToDetach_(false)
       ,isInitialized_(false)
@@ -91,7 +91,6 @@ protected:
       ,debugTimeout_(0)
   {
     tid_ = syscall(SYS_gettid);
-    jenv_ = jenv;
     // When jObj is not null in the constructor
     // it is assumed that the object is created on the Java side and hence
     // just create a Global Reference in the JNI side
@@ -161,7 +160,6 @@ protected:
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
 
-  JNIEnv*   jenv_;
   jobject   javaObj_;
   bool      needToDetach_;
   bool      isInitialized_;

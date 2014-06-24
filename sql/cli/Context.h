@@ -422,7 +422,6 @@ Lng32 processWarningOrError(
   StmtStats *prevStmtStats_;
   
   CLISemaphore *cliSemaphore_;
-  pid_t tid_;
   Lng32 numCliCalls_;
   IpcEnvironment *env_;
   NAHeap *ipcHeap_;
@@ -572,8 +571,6 @@ public:
   { 
      return cliSemaphore_;
   }
-  inline pid_t getContextTid() { return tid_; }
-  void  setContextTid(pid_t tid) { tid_ = tid; }
   inline Lng32 incrNumOfCliCalls()  { return ++numCliCalls_; }
   inline Lng32 decrNumOfCliCalls()
   {
@@ -985,6 +982,19 @@ public:
   void initializeUserInfoFromOS();
 
 }; // class ContextCli
+
+class ContextTidMap 
+{
+public:
+   ContextTidMap(pid_t tid, ContextCli *context)
+   {
+     tid_ = tid;
+     context_ = context;
+   }
+public:
+   pid_t tid_;
+   ContextCli *context_;
+};
 
 #pragma warn(1506)   // warning elimination 
 #pragma warning( default : 4244 )  // warning elimination

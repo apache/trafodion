@@ -32,6 +32,7 @@ NABoolean loggerStatus = HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config
 // ===========================================================================
 
 JavaVM* JavaObjectInterface::jvm_  = NULL;
+__thread JNIEnv* jenv_ = NULL;
 jclass JavaObjectInterface::gThrowableClass = NULL;
 jclass JavaObjectInterface::gStackTraceClass = NULL;
 jmethodID JavaObjectInterface::gGetStackTraceMethodID = NULL;
@@ -67,7 +68,6 @@ JavaObjectInterface::~JavaObjectInterface()
   HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "JavaObjectInterface destructor called.");
   jenv_->DeleteGlobalRef(javaObj_);
   javaObj_ = NULL;
-  jenv_ = NULL;
   isInitialized_ = FALSE;
 }
  
@@ -207,6 +207,8 @@ JOI_RetCode JavaObjectInterface::initJVM()
       HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "Created a new JVM.");
     }
   }
+  if (jenv_  == NULL)
+  {
   // We found a JVM, can we use it?
   result = jvm_->GetEnv((void**) &jenv_, JNI_VERSION_1_6);
   switch (result)
@@ -235,6 +237,7 @@ JOI_RetCode JavaObjectInterface::initJVM()
       GetCliGlobals()->setJniErrorStr(getErrorText(JOI_ERROR_ATTACH_JVM));
       return JOI_ERROR_ATTACH_JVM;
       break;
+  }
   }
   jclass lJavaClass;
   if (gThrowableClass == NULL)

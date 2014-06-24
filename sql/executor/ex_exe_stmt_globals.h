@@ -39,6 +39,8 @@
 
 // -----------------------------------------------------------------------
 
+#include <sys/types.h>
+#include <sys/syscall.h>
 #include "Platform.h"
 
 #include "Globals.h"
@@ -544,7 +546,9 @@ public:
  pid_t getPid() 
  { return (cliGlobals_ ?  cliGlobals_->myPin() : (short)0);}
  pid_t getTid() 
- { return (cliGlobals_ ?  cliGlobals_->myTid() : (short)0);}
+ {
+    return syscall(SYS_gettid);
+ }
 
  Lng32 myNodeNumber() { return (cliGlobals_ ?  cliGlobals_->myNodeNumber() : (short)0);}
 

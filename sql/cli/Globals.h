@@ -89,9 +89,9 @@ class CLISemaphore;
 class HBaseClient_JNI;
 class HiveClient_JNI;
 class TransMode;
-
+class ContextTidMap;
 extern CliGlobals *cli_globals;
-static __thread ContextCli *tsCurrentContext = NULL;
+static __thread ContextTidMap *tsCurrentContextMap = NULL;
 static  pthread_key_t thread_key;
 
 // A cleanup function when thread exits
@@ -277,7 +277,7 @@ SQLCLI_LIB_FUNC
   Lng32 createContext(ContextCli* &newContext);
   Lng32 dropContext(ContextCli* context);
   ContextCli * getContext(SQLCTX_HANDLE context_handle);
-  ContextCli * getThreadContext(pid_t tid);
+  ContextTidMap * getThreadContext(pid_t tid);
   Lng32 switchContext(ContextCli*newContext);
   Lng32 switchTransaction(ContextCli *newContext);
 
@@ -370,7 +370,6 @@ inline
   char * myNodeName() { return myNodeName_; }
   Int32 myCpu() { return myCpu_; };
   Int32 myPin() { return myPin_; };
-  pid_t myTid();
 
   Lng32 myNodeNumber() { return myNodeNumber_; };
   Int64 myStartTime() { return myStartTime_; };
