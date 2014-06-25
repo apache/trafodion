@@ -825,6 +825,12 @@ private:
     NABoolean checkExePreds,
     NABoolean mdamTypeIsCommon,
     MdamKey *&sharedMdamKeyPtr );
+
+  Cost* scmComputeMDAMCostForHbase
+    ( CostScalar& totalRows
+      ,CostScalar& seeks
+      ,CostScalar& sequential_io
+      ,CostScalar& incomingProbes );
   
 #ifndef NDEBUG
   void runMdamTests

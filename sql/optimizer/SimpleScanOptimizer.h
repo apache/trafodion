@@ -242,6 +242,7 @@ private:
   //
   Cost* scmComputeCostVectors();
   Cost* scmComputeCostVectorsMultiProbes(); 
+  Cost* scmComputeCostVectorsForHbase();
 
   // Compute the sequential KBytes accessed to produce the first and
   // last rows. 

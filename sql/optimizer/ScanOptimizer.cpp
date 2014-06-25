@@ -3004,6 +3004,15 @@ CollIndex ScanOptimizer::getEstNumActivePartitionsAtRuntime() const
 	}
     }
   }
+  else if ( getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable() &&
+            (CmpCommon::getDefault(NCM_USE_HBASE_REGIONS) == DF_ON) )
+  {
+    PartitioningFunction * physicalPartFunc = getIndexDesc()->getPartitioningFunction();
+  if (physicalPartFunc == NULL) // single region
+   return 1;
+  else // multi-region case
+    return ((NodeMap *)(physicalPartFunc->getNodeMap()))->getNumActivePartitions();
+  }
 
   return actParts;
 }
@@ -8455,42 +8464,49 @@ void MDAMCostWA::compute()
       // Compute the cost of all the disjuncts analyzed so far:
       if (CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON)
       {
-	const CostScalar activePartitions = optimizer_.getEstNumActivePartitionsAtRuntime();
-	CostScalar totalRowsInResultTable = (CostScalar)optimizer_.getResultSetCardinality();
+        if (optimizer_.getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable())
+        {
+          scmCost_ = optimizer_.scmComputeMDAMCostForHbase(totalRows, totalSeeks, 
+                                                           totalSeqKBRead, incomingProbes_);
 
-	// Patch for Sol.10-031024-0755 (Case 10-031024-9406).
-	totalRowsInResultTable = MINOF(totalRowsInResultTable,totalRows);
+        }
+        else 
+        {
+	  CostScalar activePartitions = optimizer_.getEstNumActivePartitionsAtRuntime();
+	  CostScalar totalRowsInResultTable = (CostScalar)optimizer_.getResultSetCardinality();
 
-	CostScalar
-	  rowsPerScan = CostScalar(totalRows/activePartitions).getCeiling()
-	  ,selectedRowsPerScan =
-	  CostScalar(totalRowsInResultTable/activePartitions).getCeiling()
-	  //	  ,requestsPerScan = CostScalar(subsetRequests/activePartitions).getCeiling()
-	  //	  ,successfulRequestsPerScan =
-	  //	  CostScalar(successfulSubsetRequests/activePartitions).getCeiling()
-	  ,seeksPerScan = CostScalar(totalSeeks/activePartitions).getCeiling()
-	  ,seqKBPerScan = CostScalar(MAXOF(totalSeqKBRead/activePartitions,4.0))
-	  ,probesPerScan = CostScalar(incomingProbes_/activePartitions).getCeiling();
+	  // Patch for Sol.10-031024-0755 (Case 10-031024-9406).
+	  totalRowsInResultTable = MINOF(totalRowsInResultTable,totalRows);
 
-	// Factor in row sizes.
-	CostScalar rowSize = recordSizeInKb * csOneKiloBytes;
-	CostScalar outputRowSize = optimizer_.getRelExpr().getGroupAttr()->getRecordLength();
-	CostScalar rowSizeFactor = optimizer_.scmRowSizeFactor(rowSize);
-	CostScalar outputRowSizeFactor = optimizer_.scmRowSizeFactor(outputRowSize);
-	rowsPerScan *= rowSizeFactor;
-	selectedRowsPerScan *= outputRowSizeFactor;
+	  CostScalar
+	    rowsPerScan = CostScalar(totalRows/activePartitions).getCeiling()
+	    ,selectedRowsPerScan =
+	    CostScalar(totalRowsInResultTable/activePartitions).getCeiling()
+	    ,seeksPerScan = CostScalar(totalSeeks/activePartitions).getCeiling()
+	    ,seqKBPerScan = CostScalar(MAXOF(totalSeqKBRead/activePartitions,4.0))
+	    ,probesPerScan = CostScalar(incomingProbes_/activePartitions).getCeiling();
 
-        CostScalar rowSizeFactorSeqIO = optimizer_.scmRowSizeFactor(rowSize,
-                                    ScanOptimizer::SEQ_IO_ROWSIZE_FACTOR);
-        CostScalar rowSizeFactorRandIO = optimizer_.scmRowSizeFactor(rowSize,
-                                    ScanOptimizer::RAND_IO_ROWSIZE_FACTOR);
+	  // Factor in row sizes.
+	  CostScalar rowSize = recordSizeInKb * csOneKiloBytes;
+	  CostScalar outputRowSize = optimizer_.getRelExpr().getGroupAttr()->getRecordLength();
+	  CostScalar rowSizeFactor = optimizer_.scmRowSizeFactor(rowSize);
+	  CostScalar outputRowSizeFactor = optimizer_.scmRowSizeFactor(outputRowSize);
+	  rowsPerScan *= rowSizeFactor;
+	  selectedRowsPerScan *= outputRowSizeFactor;
 
-	CostScalar ioSeqPerScan = (seqKBPerScan/blockSizeInKb).getCeiling() * rowSizeFactorSeqIO;
-	CostScalar ioRandPerScan = seeksPerScan * rowSizeFactorRandIO;
+          CostScalar rowSizeFactorSeqIO = optimizer_.scmRowSizeFactor
+                                                       (rowSize, ScanOptimizer::SEQ_IO_ROWSIZE_FACTOR);
+          CostScalar rowSizeFactorRandIO = optimizer_.scmRowSizeFactor
+                                                       (rowSize, ScanOptimizer::RAND_IO_ROWSIZE_FACTOR);
 
-	scmCost_ =  
-	  optimizer_.scmCost(rowsPerScan, selectedRowsPerScan, csZero, ioRandPerScan, ioSeqPerScan, probesPerScan,
-	    rowSize, csZero, outputRowSize, csZero);
+	  CostScalar ioSeqPerScan = (seqKBPerScan/blockSizeInKb).getCeiling() * rowSizeFactorSeqIO;
+	  CostScalar ioRandPerScan = seeksPerScan * rowSizeFactorRandIO;
+
+	  scmCost_ =  
+	    optimizer_.scmCost(rowsPerScan, selectedRowsPerScan, csZero, ioRandPerScan, 
+                               ioSeqPerScan, probesPerScan, rowSize, csZero, outputRowSize, csZero);
+        }
+
         // scale up mdam cost by factor of NCM_MDAM_COST_ADJ_FACTOR --default is 1
         CostScalar costAdj = (ActiveSchemaDB()->getDefaults()).getAsDouble(NCM_MDAM_COST_ADJ_FACTOR);
         scmCost_->cpScmlr().scaleByValue(costAdj);
@@ -9491,10 +9507,9 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
     scmPrefixIORand /= numActivePartitions;
     scmPrefixIOSeq /= numActivePartitions;
 
-
     scmCost =  
-      optimizer_.scmCost(scmPrefixRows, scmPrefixOutputRows, csZero, scmPrefixIORand, scmPrefixIOSeq, incomingProbes_,
-			 rowSize, csZero, outputRowSize, csZero);
+      optimizer_.scmCost(scmPrefixRows, scmPrefixOutputRows, csZero, scmPrefixIORand, 
+                         scmPrefixIOSeq, incomingProbes_, rowSize, csZero, outputRowSize, csZero);
     MDAM_DEBUG1(MTL2, "NCM cost for prefix: %f:", scmCost->convertToElapsedTime(NULL).value());
   }
   else
