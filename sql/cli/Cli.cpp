@@ -1214,38 +1214,17 @@ Lng32 SQLCLI_AllocStmtForRS(/*IN*/ CliGlobals *cliGlobals,
   }
   //LCOV_EXCL_STOP
 
-  // The parent statement must be a CALL. For plans compiled in
-  // release 2.3 we can determine this from the root TDB's query
-  // type. For plans compiled prior to release 2.3 we can look at the
-  // root's UDR count because the only statement with a positive UDR
-  // count will be a CALL.
+  // The parent statement must be a CALL. This can be determine 
+  // from the root TDB's query type
 
-  // $$$$ SPJ RESULT SETS: WE DO NOT HAVE R2.3 VERSIONING CONSTANTS ON
-  // THE SPJ RESULT SETS FEATURE THREAD YET. WE SHOULD BE CHECKING THE
-  // ROOT NODE'S PLAN VERSION AGAINST A CONSTANT SUCH AS
-  // "COM_VERS_R2_3" FROM common/ComVersionPublic.h. FOR NOW WE WILL
-  // ONLY LOOK AT THE UDR COUNT. WE MUST ADD THE R2.3 CHECK BEFORE WE
-  // RELEASE THE PRODUCT.
   NABoolean parentIsCall = FALSE;
   ex_root_tdb *parentRoot = callStmt->getRootTdb();
   if (parentRoot)
   {
-    ULng32 planVersion = parentRoot->getPlanVersion();
-    // $$$$ SPJ RESULT SETS: ENABLE THIS CHECK (OR SOMETHING LIKE IT)
-    // IN THE PRODUCT:
-    //    if (planVersion >= COM_VERS_R2_3)
-    if (0)
-    {
-      Lng32 queryType = parentRoot->getQueryType();
-      if (queryType == SQL_CALL_NO_RESULT_SETS ||
-          queryType == SQL_CALL_WITH_RESULT_SETS)
-        parentIsCall = TRUE;
-    }
-    else
-    {
-      if (parentRoot->getUdrCount() > 0)
-        parentIsCall = TRUE;
-    }
+    Lng32 queryType = parentRoot->getQueryType();
+    if (queryType == SQL_CALL_NO_RESULT_SETS ||
+        queryType == SQL_CALL_WITH_RESULT_SETS)
+      parentIsCall = TRUE;
   }
 
   if (!parentIsCall)

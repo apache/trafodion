@@ -1,0 +1,868 @@
+>>obey TEST101(make_patterns);
+>>---------------------------------------------------------------------
+>>log;
+>>
+>>obey TEST101(java_compile);
+>>--------------------------------------------------------------------------
+>>log;
+------------------------------------------------------------------------------
+-- Compiling Java source files: TEST101.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/TEST101.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Archiving Java class files:
+--    TEST101.class
+-- Archive will be written to: TEST101.jar
+-- Executing: $jar cMf TEST101.jar TEST101.class
+-- $jar returned 0
+------------------------------------------------------------------------------
+>>
+>>---------------------------------------------------------------------
+>>obey TEST101(tests);
+>>--------------------------------------------------------------------------
+>>obey TEST101(create_library);
+>>--------------------------------------------------------------------------
+>>create library TEST101 file $$JARFILE_Q$$;
+
+--- SQL operation complete.
+>>
+>>obey TEST101(create_rs);
+>>--------------------------------------------------------------------------
+>>create table trafodion.sch.udrproxy(a int not null not droppable,
++>                              b int, c int, primary key (a));
+
+--- SQL operation complete.
+>>-- Grant privileges to the SPJ user. In the runregr environment all SPJs
+>>-- run with the sql_user1 database identity.
+>>insert into trafodion.sch.udrproxy values (1,2,3), (4,5,6), (7,8,9);
+
+--- 3 row(s) inserted.
+>>
+>>create table trafodion.sch.t10 (a int, b int);
+
+--- SQL operation complete.
+>>insert into trafodion.sch.t10 (
++>  select *
++>  from   (values(1)) T(a)
++>         transpose 1,2,3,4,5,6,7,8,9,10 as b
++>);
+
+--- 10 row(s) inserted.
+>>
+>>create table trafodion.sch.test101_t1(a int no heading, b int, c char(10));
+
+--- SQL operation complete.
+>>insert into trafodion.sch.test101_t1 values (1, 100, 'first'), (2, 200, 'second'),
++>                                      (3, 300, 'third'), (4, 400, 'fourth'),
++>                                      (0, 500, 'fifth'), (6, 600, 'sixth');
+
+--- 6 row(s) inserted.
+>>
+>>set schema trafodion.sch;
+
+--- SQL operation complete.
+>>
+>>create table interval_columns
++>  (
++>    INT1 INT NOT NULL
++>  , IVYR                             INTERVAL YEAR(2)
++>  , IVMN                             INTERVAL MONTH(2) NOT NULL
++>  , IVDY                             INTERVAL DAY(2)
++>  , IVHR                             INTERVAL HOUR(2) NOT NULL
++>  , IVMT                             INTERVAL MINUTE(2)
++>  , IVSC                             INTERVAL SECOND(2,6) NOT NULL
++>  , IVSC6                            INTERVAL SECOND(2,6)
++>  , INT2 INT NOT NULL
++>  ) ;
+
+--- SQL operation complete.
+>>
+>>prepare S from insert into interval_columns values
++>(   ?
++>  , cast (? as INTERVAL YEAR(2))
++>  , cast (? as INTERVAL MONTH(2))
++>  , cast (? as INTERVAL DAY(2))
++>  , cast (? as INTERVAL HOUR(2))
++>  , cast (? as INTERVAL MINUTE(2))
++>  , cast (? as INTERVAL SECOND(2,6))
++>  , cast (? as INTERVAL SECOND(2,6))
++>  , ?
++>);
+
+--- SQL command prepared.
+>>
+>>delete from interval_columns;
+
+--- 0 row(s) deleted.
+>>execute S using 1, 97, 2, 11, 15, 45, 14, 23.123456, -1;
+
+--- 1 row(s) inserted.
+>>execute S using 2, 0, 0, 0, 0, 0, 0, 0, -2;
+
+--- 1 row(s) inserted.
+>>execute S using 3, -30, -12, -31, -24, -60, -59, -59.999999, -3;
+
+--- 1 row(s) inserted.
+>>
+>>create table varchar_columns
++>  (
++>    INT1 INT NOT NULL
++>  , a varchar(5) NOT NULL
++>  , b varchar(10)
++>  , c varchar(25) NOT NULL
++>  , d varchar(50)
++>  , e varchar(100) NOT NULL
++>  , f varchar(255)
++>  , INT2 INT NOT NULL
++>  ) ;
+
+--- SQL operation complete.
+>>
+>>prepare S from insert into varchar_columns values (
++>  ?,
++>  repeat(?,4) || ']',
++>  repeat('b',9) || ']',
++>  repeat('c',24) || ']',
++>  repeat('d',49) || ']',
++>  repeat('e',99) || ']',
++>  repeat('f',254) || ']',
++>  ?
++>);
+
+--- SQL command prepared.
+>>
+>>delete from varchar_columns;
+
+--- 0 row(s) deleted.
+>>execute S using 1, '1', -1;
+
+--- 1 row(s) inserted.
+>>execute S using 2, '2', -2;
+
+--- 1 row(s) inserted.
+>>execute S using 3, '3', -3;
+
+--- 1 row(s) inserted.
+>>
+>>create table ucs2_columns
++>  (
++>    a varchar(5) character set ucs2
++>  , b varchar(10) character set ucs2 not null
++>  , c varchar(25) character set ucs2
++>  , d varchar(50) character set ucs2 not null
++>  , e varchar(100) character set ucs2
++>  , f varchar(255) character set ucs2 not null
++>  )
++>#ifNT
++>  attribute blocksize 4096
++>#ifNT
++>  ;
+
+*** WARNING[3250] The specified blocksize is not valid. Blocksize of 32768 is used instead.
+
+--- SQL operation completed with warnings.
+>>
+>>prepare S from insert into ucs2_columns values (
++>  repeat(cast(? as char(1) character set ucs2), 4) || _ucs2']',
++>  repeat(_ucs2'b', 9)   || _ucs2']',
++>  repeat(_ucs2'c', 24)  || _ucs2']',
++>  repeat(_ucs2'd', 49)  || _ucs2']',
++>  repeat(_ucs2'e', 99)  || _ucs2']',
++>  repeat(_ucs2'f', 254) || _ucs2']'
++>);
+
+--- SQL command prepared.
+>>
+>>delete from ucs2_columns;
+
+--- 0 row(s) deleted.
+>>execute S using _ucs2'1';
+
+--- 1 row(s) inserted.
+>>execute S using _ucs2'2';
+
+--- 1 row(s) inserted.
+>>execute S using _ucs2'3';
+
+--- 1 row(s) inserted.
+>>
+>>set schema trafodion.spjrs;
+
+--- SQL operation complete.
+>>
+>>create procedure order_summary (
++>  in onOrAfterDate char(20),
++>  out Num_Orders largeint
++>)
++>language java parameter style java reads sql data dynamic result sets 2
++>external name 'TEST101.orderSummary' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure part_data (
++>  in partNum int,
++>  out Part_Description char(18),
++>  out Unit_Price float,
++>  out Qty_Avail int
++>)
++>language java parameter style java reads sql data dynamic result sets 4
++>external name 'TEST101.partData' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure rs(in cmd char(1000), out status char(70))
++>language java parameter style java reads sql data dynamic result sets 1
++>external name 'TEST101.lmRSGateway' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure rs3(in query1 char(1000),
++>                     in query2 char(1000),
++>                     in query3 char(1000),
++>                     out status char(70))
++>language java parameter style java reads sql data dynamic result sets 3
++>external name 'TEST101.rs3' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure utils(in cmd char(1000),
++>                       out status char(70))
++>language java parameter style java modifies sql data
++>external name 'TEST101.lmGateway' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure xact(in cmd char(1000),
++>                                  out status char(60))
++>language java parameter style java modifies sql data
++>external name 'TEST101.Xact' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure Test101_2rs_errwarn(in rs1_cmd char(10), in rs2_cmd char(10))
++>external name 'TEST101.test101_2rs_errwarn' library TEST101
++>language java parameter style java reads sql data dynamic result sets 2;
+
+--- SQL operation complete.
+>>
+>>create procedure Test101_singleRowFetch(in enable char(10))
++>external name 'TEST101.test101_singleRowFetch'
++>library TEST101
++>language java parameter style java;
+
+--- SQL operation complete.
+>>
+>>-- Used for parallel plan testing
+>>create procedure rs0p(in query1 char(1000),
++>                     in query2 char(1000),
++>                     in query3 char(1000),
++>                     out status char(70))
++>language java parameter style java reads sql data dynamic result sets 0
++>external name 'TEST101.rs0p' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure rs1p(in query1 char(1000),
++>                     out status char(70))
++>language java parameter style java reads sql data dynamic result sets 1
++>external name 'TEST101.rs1p' library TEST101;
+
+--- SQL operation complete.
+>>
+>>create procedure rs3p(in query1 char(1000),
++>                     in query2 char(1000),
++>                     in query3 char(1000),
++>                     out status char(70))
++>language java parameter style java reads sql data dynamic result sets 3
++>external name 'TEST101.rs3p' library TEST101;
+
+--- SQL operation complete.
+>>
+>>obey TEST101(basic_test);
+>>--------------------------------------------------------------------------
+>>call order_summary('04/01/2003', ?);
+
+NUM_ORDERS          
+--------------------
+
+                   6
+
+ORDERNUM    NUM_PARTS             AMOUNT                 ORDER_DATE  LAST_NAME
+----------  --------------------  ---------------------  ----------  --------------------
+
+    100210                     4               19020.00  2003-04-10  HUGHES              
+    101220                     4               45525.00  2003-07-21  SCHNABL             
+    500450                     5              124240.00  2003-04-20  HUGHES              
+    600480                     8              370400.00  2003-05-12  WEIGL               
+    700510                     3               18135.00  2003-06-01  STRICKER            
+    800660                    19              192460.00  2003-10-09  CRINER              
+
+--- 6 row(s) selected.
+
+ORDERNUM    PARTNUM  UNIT_PRICE    QTY_ORDERED  PARTDESC          
+----------  -------  ------------  -----------  ------------------
+
+    100210      244       3500.00            3  PC GOLD, 30 MB    
+    100210     2001       1100.00            3  GRAPHIC PRINTER,M1
+    100210     2403        620.00            6  DAISY PRINTER,T2  
+    100210     5100        150.00           10  MONITOR BW, TYPE 1
+    101220      255       3900.00           10  PC DIAMOND, 60 MB 
+    101220     5103        400.00            3  MONITOR COLOR, M1 
+    101220     7102        275.00            7  SMART MODEM, 1200 
+    101220     7301        425.00            8  SMART MODEM, 2400 
+    500450      212       2500.00            8  PC SILVER, 20 MB  
+    500450      255       3900.00           12  PC DIAMOND, 60 MB 
+    500450     2001       1100.00           16  GRAPHIC PRINTER,M1
+    500450     2002       1500.00           16  GRAPHIC PRINTER,M2
+    500450     2402        330.00           48  DAISY PRINTER,T1  
+    600480     2001       1000.00           60  GRAPHIC PRINTER,M1
+    600480     2002       1450.00           20  GRAPHIC PRINTER,M2
+    600480     2003       1900.00           40  GRAPHIC PRINTER,M3
+    600480     3103       4000.00           40  LASER PRINTER, X1 
+    600480     3205        625.00           20  HARD DISK 30 MB   
+    600480     5100        135.00           60  MONITOR BW, TYPE 1
+    600480     5103        390.00           20  MONITOR COLOR, M1 
+    600480     7301        425.00           40  SMART MODEM, 2400 
+    700510      255       4000.00            4  PC DIAMOND, 60 MB 
+    700510     6500         95.00            8  DISK CONTROLLER   
+    700510     7102        275.00            5  SMART MODEM, 1200 
+    800660      244       3000.00            6  PC GOLD, 30 MB    
+    800660     2001       1000.00           30  GRAPHIC PRINTER,M1
+    800660     2403        600.00           48  DAISY PRINTER,T2  
+    800660     2405        795.00           10  DAISY PRINTER, T3 
+    800660     3201        525.00            6  HARD DISK 20 MB   
+    800660     3205        600.00           18  HARD DISK 30 MB   
+    800660     3210        715.00            6  HARD DISK 40 MB   
+    800660     4102         26.00          130  DISKETTE HD, BOX  
+    800660     5100        150.00           12  MONITOR BW, TYPE 1
+    800660     5101        200.00            6  MONITOR BW, TYPE 2
+    800660     5110        490.00           48  MONITOR COLOR, M2 
+    800660     5504        165.00           18  MEMORY CARD, 512KB
+    800660     6201        195.00            6  GRAPHIC CARD, LR  
+    800660     6301        235.00           24  GRAPHIC CARD, HR  
+    800660     6400        525.00           30  STREAMING TAPE,M20
+    800660     6401        700.00           36  STREAMING TAPE,M60
+    800660     6500         95.00           22  DISK CONTROLLER   
+    800660     7102        275.00            6  SMART MODEM, 1200 
+    800660     7301        425.00           12  SMART MODEM, 2400 
+
+--- 43 row(s) selected.
+
+--- SQL operation complete.
+>>call order_summary('04/01/2003', ?);
+
+NUM_ORDERS          
+--------------------
+
+                   6
+
+ORDERNUM    NUM_PARTS             AMOUNT                 ORDER_DATE  LAST_NAME
+----------  --------------------  ---------------------  ----------  --------------------
+
+    100210                     4               19020.00  2003-04-10  HUGHES              
+    101220                     4               45525.00  2003-07-21  SCHNABL             
+    500450                     5              124240.00  2003-04-20  HUGHES              
+    600480                     8              370400.00  2003-05-12  WEIGL               
+    700510                     3               18135.00  2003-06-01  STRICKER            
+    800660                    19              192460.00  2003-10-09  CRINER              
+
+--- 6 row(s) selected.
+
+ORDERNUM    PARTNUM  UNIT_PRICE    QTY_ORDERED  PARTDESC          
+----------  -------  ------------  -----------  ------------------
+
+    100210      244       3500.00            3  PC GOLD, 30 MB    
+    100210     2001       1100.00            3  GRAPHIC PRINTER,M1
+    100210     2403        620.00            6  DAISY PRINTER,T2  
+    100210     5100        150.00           10  MONITOR BW, TYPE 1
+    101220      255       3900.00           10  PC DIAMOND, 60 MB 
+    101220     5103        400.00            3  MONITOR COLOR, M1 
+    101220     7102        275.00            7  SMART MODEM, 1200 
+    101220     7301        425.00            8  SMART MODEM, 2400 
+    500450      212       2500.00            8  PC SILVER, 20 MB  
+    500450      255       3900.00           12  PC DIAMOND, 60 MB 
+    500450     2001       1100.00           16  GRAPHIC PRINTER,M1
+    500450     2002       1500.00           16  GRAPHIC PRINTER,M2
+    500450     2402        330.00           48  DAISY PRINTER,T1  
+    600480     2001       1000.00           60  GRAPHIC PRINTER,M1
+    600480     2002       1450.00           20  GRAPHIC PRINTER,M2
+    600480     2003       1900.00           40  GRAPHIC PRINTER,M3
+    600480     3103       4000.00           40  LASER PRINTER, X1 
+    600480     3205        625.00           20  HARD DISK 30 MB   
+    600480     5100        135.00           60  MONITOR BW, TYPE 1
+    600480     5103        390.00           20  MONITOR COLOR, M1 
+    600480     7301        425.00           40  SMART MODEM, 2400 
+    700510      255       4000.00            4  PC DIAMOND, 60 MB 
+    700510     6500         95.00            8  DISK CONTROLLER   
+    700510     7102        275.00            5  SMART MODEM, 1200 
+    800660      244       3000.00            6  PC GOLD, 30 MB    
+    800660     2001       1000.00           30  GRAPHIC PRINTER,M1
+    800660     2403        600.00           48  DAISY PRINTER,T2  
+    800660     2405        795.00           10  DAISY PRINTER, T3 
+    800660     3201        525.00            6  HARD DISK 20 MB   
+    800660     3205        600.00           18  HARD DISK 30 MB   
+    800660     3210        715.00            6  HARD DISK 40 MB   
+    800660     4102         26.00          130  DISKETTE HD, BOX  
+    800660     5100        150.00           12  MONITOR BW, TYPE 1
+    800660     5101        200.00            6  MONITOR BW, TYPE 2
+    800660     5110        490.00           48  MONITOR COLOR, M2 
+    800660     5504        165.00           18  MEMORY CARD, 512KB
+    800660     6201        195.00            6  GRAPHIC CARD, LR  
+    800660     6301        235.00           24  GRAPHIC CARD, HR  
+    800660     6400        525.00           30  STREAMING TAPE,M20
+    800660     6401        700.00           36  STREAMING TAPE,M60
+    800660     6500         95.00           22  DISK CONTROLLER   
+    800660     7102        275.00            6  SMART MODEM, 1200 
+    800660     7301        425.00           12  SMART MODEM, 2400 
+
+--- 43 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>prepare S from call order_summary('04/01/2003', ?);
+
+--- SQL command prepared.
+>>execute S;
+
+NUM_ORDERS          
+--------------------
+
+                   6
+
+ORDERNUM    NUM_PARTS             AMOUNT                 ORDER_DATE  LAST_NAME
+----------  --------------------  ---------------------  ----------  --------------------
+
+    100210                     4               19020.00  2003-04-10  HUGHES              
+    101220                     4               45525.00  2003-07-21  SCHNABL             
+    500450                     5              124240.00  2003-04-20  HUGHES              
+    600480                     8              370400.00  2003-05-12  WEIGL               
+    700510                     3               18135.00  2003-06-01  STRICKER            
+    800660                    19              192460.00  2003-10-09  CRINER              
+
+--- 6 row(s) selected.
+
+ORDERNUM    PARTNUM  UNIT_PRICE    QTY_ORDERED  PARTDESC          
+----------  -------  ------------  -----------  ------------------
+
+    100210      244       3500.00            3  PC GOLD, 30 MB    
+    100210     2001       1100.00            3  GRAPHIC PRINTER,M1
+    100210     2403        620.00            6  DAISY PRINTER,T2  
+    100210     5100        150.00           10  MONITOR BW, TYPE 1
+    101220      255       3900.00           10  PC DIAMOND, 60 MB 
+    101220     5103        400.00            3  MONITOR COLOR, M1 
+    101220     7102        275.00            7  SMART MODEM, 1200 
+    101220     7301        425.00            8  SMART MODEM, 2400 
+    500450      212       2500.00            8  PC SILVER, 20 MB  
+    500450      255       3900.00           12  PC DIAMOND, 60 MB 
+    500450     2001       1100.00           16  GRAPHIC PRINTER,M1
+    500450     2002       1500.00           16  GRAPHIC PRINTER,M2
+    500450     2402        330.00           48  DAISY PRINTER,T1  
+    600480     2001       1000.00           60  GRAPHIC PRINTER,M1
+    600480     2002       1450.00           20  GRAPHIC PRINTER,M2
+    600480     2003       1900.00           40  GRAPHIC PRINTER,M3
+    600480     3103       4000.00           40  LASER PRINTER, X1 
+    600480     3205        625.00           20  HARD DISK 30 MB   
+    600480     5100        135.00           60  MONITOR BW, TYPE 1
+    600480     5103        390.00           20  MONITOR COLOR, M1 
+    600480     7301        425.00           40  SMART MODEM, 2400 
+    700510      255       4000.00            4  PC DIAMOND, 60 MB 
+    700510     6500         95.00            8  DISK CONTROLLER   
+    700510     7102        275.00            5  SMART MODEM, 1200 
+    800660      244       3000.00            6  PC GOLD, 30 MB    
+    800660     2001       1000.00           30  GRAPHIC PRINTER,M1
+    800660     2403        600.00           48  DAISY PRINTER,T2  
+    800660     2405        795.00           10  DAISY PRINTER, T3 
+    800660     3201        525.00            6  HARD DISK 20 MB   
+    800660     3205        600.00           18  HARD DISK 30 MB   
+    800660     3210        715.00            6  HARD DISK 40 MB   
+    800660     4102         26.00          130  DISKETTE HD, BOX  
+    800660     5100        150.00           12  MONITOR BW, TYPE 1
+    800660     5101        200.00            6  MONITOR BW, TYPE 2
+    800660     5110        490.00           48  MONITOR COLOR, M2 
+    800660     5504        165.00           18  MEMORY CARD, 512KB
+    800660     6201        195.00            6  GRAPHIC CARD, LR  
+    800660     6301        235.00           24  GRAPHIC CARD, HR  
+    800660     6400        525.00           30  STREAMING TAPE,M20
+    800660     6401        700.00           36  STREAMING TAPE,M60
+    800660     6500         95.00           22  DISK CONTROLLER   
+    800660     7102        275.00            6  SMART MODEM, 1200 
+    800660     7301        425.00           12  SMART MODEM, 2400 
+
+--- 43 row(s) selected.
+
+--- SQL operation complete.
+>>execute S;
+
+NUM_ORDERS          
+--------------------
+
+                   6
+
+ORDERNUM    NUM_PARTS             AMOUNT                 ORDER_DATE  LAST_NAME
+----------  --------------------  ---------------------  ----------  --------------------
+
+    100210                     4               19020.00  2003-04-10  HUGHES              
+    101220                     4               45525.00  2003-07-21  SCHNABL             
+    500450                     5              124240.00  2003-04-20  HUGHES              
+    600480                     8              370400.00  2003-05-12  WEIGL               
+    700510                     3               18135.00  2003-06-01  STRICKER            
+    800660                    19              192460.00  2003-10-09  CRINER              
+
+--- 6 row(s) selected.
+
+ORDERNUM    PARTNUM  UNIT_PRICE    QTY_ORDERED  PARTDESC          
+----------  -------  ------------  -----------  ------------------
+
+    100210      244       3500.00            3  PC GOLD, 30 MB    
+    100210     2001       1100.00            3  GRAPHIC PRINTER,M1
+    100210     2403        620.00            6  DAISY PRINTER,T2  
+    100210     5100        150.00           10  MONITOR BW, TYPE 1
+    101220      255       3900.00           10  PC DIAMOND, 60 MB 
+    101220     5103        400.00            3  MONITOR COLOR, M1 
+    101220     7102        275.00            7  SMART MODEM, 1200 
+    101220     7301        425.00            8  SMART MODEM, 2400 
+    500450      212       2500.00            8  PC SILVER, 20 MB  
+    500450      255       3900.00           12  PC DIAMOND, 60 MB 
+    500450     2001       1100.00           16  GRAPHIC PRINTER,M1
+    500450     2002       1500.00           16  GRAPHIC PRINTER,M2
+    500450     2402        330.00           48  DAISY PRINTER,T1  
+    600480     2001       1000.00           60  GRAPHIC PRINTER,M1
+    600480     2002       1450.00           20  GRAPHIC PRINTER,M2
+    600480     2003       1900.00           40  GRAPHIC PRINTER,M3
+    600480     3103       4000.00           40  LASER PRINTER, X1 
+    600480     3205        625.00           20  HARD DISK 30 MB   
+    600480     5100        135.00           60  MONITOR BW, TYPE 1
+    600480     5103        390.00           20  MONITOR COLOR, M1 
+    600480     7301        425.00           40  SMART MODEM, 2400 
+    700510      255       4000.00            4  PC DIAMOND, 60 MB 
+    700510     6500         95.00            8  DISK CONTROLLER   
+    700510     7102        275.00            5  SMART MODEM, 1200 
+    800660      244       3000.00            6  PC GOLD, 30 MB    
+    800660     2001       1000.00           30  GRAPHIC PRINTER,M1
+    800660     2403        600.00           48  DAISY PRINTER,T2  
+    800660     2405        795.00           10  DAISY PRINTER, T3 
+    800660     3201        525.00            6  HARD DISK 20 MB   
+    800660     3205        600.00           18  HARD DISK 30 MB   
+    800660     3210        715.00            6  HARD DISK 40 MB   
+    800660     4102         26.00          130  DISKETTE HD, BOX  
+    800660     5100        150.00           12  MONITOR BW, TYPE 1
+    800660     5101        200.00            6  MONITOR BW, TYPE 2
+    800660     5110        490.00           48  MONITOR COLOR, M2 
+    800660     5504        165.00           18  MEMORY CARD, 512KB
+    800660     6201        195.00            6  GRAPHIC CARD, LR  
+    800660     6301        235.00           24  GRAPHIC CARD, HR  
+    800660     6400        525.00           30  STREAMING TAPE,M20
+    800660     6401        700.00           36  STREAMING TAPE,M60
+    800660     6500         95.00           22  DISK CONTROLLER   
+    800660     7102        275.00            6  SMART MODEM, 1200 
+    800660     7301        425.00           12  SMART MODEM, 2400 
+
+--- 43 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>call part_data(244, ?, ?, ?);
+
+PART_DESCRIPTION    UNIT_PRICE                 QTY_AVAIL  
+------------------  -------------------------  -----------
+
+PC GOLD, 30 MB       3.00000000000000000E+003         4426
+
+ORDERNUM    ORDER_DATE  DELIV_DATE  SALESREP  CUSTNUM  QTY_ORDERED
+----------  ----------  ----------  --------  -------  --------------------
+
+    100210  2003-04-10  2003-04-10       220     1234                     3
+    100250  2003-01-23  2003-06-15       220     7777                     4
+    200300  2003-02-06  2003-07-01       222      926                     8
+    300350  2003-03-03  2003-08-10       231      543                    20
+    300380  2003-03-19  2003-08-20       226      123                     6
+    800660  2003-10-09  2003-11-01       568     3210                     6
+
+--- 6 row(s) selected.
+
+LOC_CODE  PARTNUM  QTY_ON_HAND
+--------  -------  -----------
+
+A78           244           43
+P78           244           23
+
+--- 2 row(s) selected.
+
+PARTNUM  SUPPNUM  PARTCOST      QTY_RECEIVED
+-------  -------  ------------  ------------
+
+    244        1       2400.00            50
+    244        2       2200.00            66
+
+--- 2 row(s) selected.
+
+EMPNUM  FIRST_NAME       LAST_NAME             DEPTNUM  JOBCODE  SALARY
+------  ---------------  --------------------  -------  -------  -----------
+
+   220  JOHN             HUGHES                   3200      300     33000.10
+   222  MARTIN           SCHAEFFER                3200      300     31000.00
+   226  HEIDI            WEIGL                    3200      300     22000.00
+   231  HERB             ALBERT                   3300      300     33000.00
+   568  JESSICA          CRINER                   3500      300     39500.00
+
+--- 5 row(s) selected.
+
+--- SQL operation complete.
+>>call part_data(244, ?, ?, ?);
+
+PART_DESCRIPTION    UNIT_PRICE                 QTY_AVAIL  
+------------------  -------------------------  -----------
+
+PC GOLD, 30 MB       3.00000000000000000E+003         4426
+
+ORDERNUM    ORDER_DATE  DELIV_DATE  SALESREP  CUSTNUM  QTY_ORDERED
+----------  ----------  ----------  --------  -------  --------------------
+
+    100210  2003-04-10  2003-04-10       220     1234                     3
+    100250  2003-01-23  2003-06-15       220     7777                     4
+    200300  2003-02-06  2003-07-01       222      926                     8
+    300350  2003-03-03  2003-08-10       231      543                    20
+    300380  2003-03-19  2003-08-20       226      123                     6
+    800660  2003-10-09  2003-11-01       568     3210                     6
+
+--- 6 row(s) selected.
+
+LOC_CODE  PARTNUM  QTY_ON_HAND
+--------  -------  -----------
+
+A78           244           43
+P78           244           23
+
+--- 2 row(s) selected.
+
+PARTNUM  SUPPNUM  PARTCOST      QTY_RECEIVED
+-------  -------  ------------  ------------
+
+    244        1       2400.00            50
+    244        2       2200.00            66
+
+--- 2 row(s) selected.
+
+EMPNUM  FIRST_NAME       LAST_NAME             DEPTNUM  JOBCODE  SALARY
+------  ---------------  --------------------  -------  -------  -----------
+
+   220  JOHN             HUGHES                   3200      300     33000.10
+   222  MARTIN           SCHAEFFER                3200      300     31000.00
+   226  HEIDI            WEIGL                    3200      300     22000.00
+   231  HERB             ALBERT                   3300      300     33000.00
+   568  JESSICA          CRINER                   3500      300     39500.00
+
+--- 5 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>prepare S from call part_data(244, ?, ?, ?);
+
+--- SQL command prepared.
+>>execute S;
+
+PART_DESCRIPTION    UNIT_PRICE                 QTY_AVAIL  
+------------------  -------------------------  -----------
+
+PC GOLD, 30 MB       3.00000000000000000E+003         4426
+
+ORDERNUM    ORDER_DATE  DELIV_DATE  SALESREP  CUSTNUM  QTY_ORDERED
+----------  ----------  ----------  --------  -------  --------------------
+
+    100210  2003-04-10  2003-04-10       220     1234                     3
+    100250  2003-01-23  2003-06-15       220     7777                     4
+    200300  2003-02-06  2003-07-01       222      926                     8
+    300350  2003-03-03  2003-08-10       231      543                    20
+    300380  2003-03-19  2003-08-20       226      123                     6
+    800660  2003-10-09  2003-11-01       568     3210                     6
+
+--- 6 row(s) selected.
+
+LOC_CODE  PARTNUM  QTY_ON_HAND
+--------  -------  -----------
+
+A78           244           43
+P78           244           23
+
+--- 2 row(s) selected.
+
+PARTNUM  SUPPNUM  PARTCOST      QTY_RECEIVED
+-------  -------  ------------  ------------
+
+    244        1       2400.00            50
+    244        2       2200.00            66
+
+--- 2 row(s) selected.
+
+EMPNUM  FIRST_NAME       LAST_NAME             DEPTNUM  JOBCODE  SALARY
+------  ---------------  --------------------  -------  -------  -----------
+
+   220  JOHN             HUGHES                   3200      300     33000.10
+   222  MARTIN           SCHAEFFER                3200      300     31000.00
+   226  HEIDI            WEIGL                    3200      300     22000.00
+   231  HERB             ALBERT                   3300      300     33000.00
+   568  JESSICA          CRINER                   3500      300     39500.00
+
+--- 5 row(s) selected.
+
+--- SQL operation complete.
+>>execute S;
+
+PART_DESCRIPTION    UNIT_PRICE                 QTY_AVAIL  
+------------------  -------------------------  -----------
+
+PC GOLD, 30 MB       3.00000000000000000E+003         4426
+
+ORDERNUM    ORDER_DATE  DELIV_DATE  SALESREP  CUSTNUM  QTY_ORDERED
+----------  ----------  ----------  --------  -------  --------------------
+
+    100210  2003-04-10  2003-04-10       220     1234                     3
+    100250  2003-01-23  2003-06-15       220     7777                     4
+    200300  2003-02-06  2003-07-01       222      926                     8
+    300350  2003-03-03  2003-08-10       231      543                    20
+    300380  2003-03-19  2003-08-20       226      123                     6
+    800660  2003-10-09  2003-11-01       568     3210                     6
+
+--- 6 row(s) selected.
+
+LOC_CODE  PARTNUM  QTY_ON_HAND
+--------  -------  -----------
+
+A78           244           43
+P78           244           23
+
+--- 2 row(s) selected.
+
+PARTNUM  SUPPNUM  PARTCOST      QTY_RECEIVED
+-------  -------  ------------  ------------
+
+    244        1       2400.00            50
+    244        2       2200.00            66
+
+--- 2 row(s) selected.
+
+EMPNUM  FIRST_NAME       LAST_NAME             DEPTNUM  JOBCODE  SALARY
+------  ---------------  --------------------  -------  -------  -----------
+
+   220  JOHN             HUGHES                   3200      300     33000.10
+   222  MARTIN           SCHAEFFER                3200      300     31000.00
+   226  HEIDI            WEIGL                    3200      300     22000.00
+   231  HERB             ALBERT                   3300      300     33000.00
+   568  JESSICA          CRINER                   3500      300     39500.00
+
+--- 5 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>--
+>>-- Produce a 0-row result set
+>>--
+>>call rs('select * from trafodion.sch.udrproxy where a <> a', ?);
+
+STATUS                                                                
+----------------------------------------------------------------------
+
+OK                                                                    
+
+--- 0 row(s) selected.
+
+--- SQL operation complete.
+>>prepare S from call rs('select * from trafodion.sch.udrproxy where a <> a', ?);
+
+--- SQL command prepared.
+>>execute S;
+
+STATUS                                                                
+----------------------------------------------------------------------
+
+OK                                                                    
+
+--- 0 row(s) selected.
+
+--- SQL operation complete.
+>>execute S;
+
+STATUS                                                                
+----------------------------------------------------------------------
+
+OK                                                                    
+
+--- 0 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>--
+>>-- Test resulset involving a column with no heading (bug 2758 test)
+>>--
+>>prepare S from call rs('select * from trafodion.sch.test101_t1', ?);
+
+--- SQL command prepared.
+>>execute S;
+
+STATUS                                                                
+----------------------------------------------------------------------
+
+OK                                                                    
+
+A            B            C         
+-----------  -----------  ----------
+
+          1          100  first     
+          2          200  second    
+          3          300  third     
+          4          400  fourth    
+          0          500  fifth     
+          6          600  sixth     
+
+--- 6 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>-- Test a few more datatypes  not covered by the sample DB. This 
+>>-- section also covers NOT NULL result set columns.
+>>call rs('select * from sch.varchar_columns', ?);
+
+STATUS                                                                
+----------------------------------------------------------------------
+
+OK                                                                    
+
+INT1         A      B           C                          D                                                   E                                                                                                     F                                                                                                                                                                                                                                                                INT2
+-----------  -----  ----------  -------------------------  --------------------------------------------------  ----------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------
+
+          1  1111]  bbbbbbbbb]  cccccccccccccccccccccccc]  ddddddddddddddddddddddddddddddddddddddddddddddddd]  eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]           -1
+          2  2222]  bbbbbbbbb]  cccccccccccccccccccccccc]  ddddddddddddddddddddddddddddddddddddddddddddddddd]  eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]           -2
+          3  3333]  bbbbbbbbb]  cccccccccccccccccccccccc]  ddddddddddddddddddddddddddddddddddddddddddddddddd]  eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]           -3
+
+--- 3 row(s) selected.
+
+--- SQL operation complete.
+>>call rs('select * from sch.ucs2_columns', ?);
+
+STATUS                                                                
+----------------------------------------------------------------------
+
+OK                                                                    
+
+A           B                     C                                                   D                                                                                                     E                                                                                                                                                                                                         F
+----------  --------------------  --------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1111]       bbbbbbbbb]            cccccccccccccccccccccccc]                           ddddddddddddddddddddddddddddddddddddddddddddddddd]                                                    eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]                                                                                                      ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]                                                                                                                                                                                                                                                               
+2222]       bbbbbbbbb]            cccccccccccccccccccccccc]                           ddddddddddddddddddddddddddddddddddddddddddddddddd]                                                    eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]                                                                                                      ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]                                                                                                                                                                                                                                                               
+3333]       bbbbbbbbb]            cccccccccccccccccccccccc]                           ddddddddddddddddddddddddddddddddddddddddddddddddd]                                                    eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee]                                                                                                      ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]                                                                                                                                                                                                                                                               
+
+--- 3 row(s) selected.
+
+--- SQL operation complete.
+>>
+>>--obey TEST101(explain_test);
+>>--obey TEST101(dnr_change);
+>>--obey TEST101(rs_autocommit);
+>>--obey TEST101(rs_errors_warnings);
+>>--obey TEST101(rs_parallel_plan);
+>>#ifNSK
+>>obey TEST101(udr_memory_leak);
+>>#ifNSK
+>>
+>>log;
