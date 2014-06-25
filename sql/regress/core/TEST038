@@ -1206,14 +1206,15 @@ create table t038aqr( a int not null, b int not null, primary key(a) );
 insert into t038aqr values(1, 1);
 select a, b from t038aqr;
 -- let aqr_other_session drop and recreate the t038aqr
-log;
 sh sqlci -i "TEST038(aqr_other_session)" ;
+log;
+sh cat OTHER_SESSION_LOG038 >> LOG038;
 log LOG038;
 drop table t038aqr;
 log;
 
 ?section aqr_other_session;
-log LOG038;
+log OTHER_SESSION_LOG038 clear;
 drop table t038aqr;
 create table t038aqr( a int not null, b int not null, primary key(a) );
 log;
