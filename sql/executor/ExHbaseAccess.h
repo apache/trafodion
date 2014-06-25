@@ -1142,7 +1142,10 @@ public:
       NOT_STARTED
     , LOAD_CLEANUP
     , COMPLETE_LOAD
+    , LOAD_CLOSE
+    , LOAD_CLOSE_AND_DONE
     , HANDLE_ERROR
+    , HANDLE_ERROR_AND_CLOSE
     , DONE
   } step_;
 

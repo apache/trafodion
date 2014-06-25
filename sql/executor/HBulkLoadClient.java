@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Iterator;
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
@@ -39,12 +40,20 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.security.access.AccessController;
 import org.apache.hadoop.hbase.security.access.UserPermission;
 import org.apache.hadoop.hbase.security.access.Permission;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
+import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
+import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
+import org.apache.hadoop.hbase.snapshot.RestoreSnapshotException;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -62,6 +71,8 @@ import org.trafodion.sql.HBaseAccess.StringArrayList;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 //import org.trafodion.sql.HBaseAccess.HBaseClient;
 import org.trafodion.sql.HBaseAccess.HTableClient.QualifiedColumn;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
 
 import java.nio.ByteBuffer;
 
@@ -185,21 +196,144 @@ public class HBulkLoadClient
     return true;
   }
 
-  public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure) throws Exception
+  private boolean createSnapshot( String tableName, String snapshotName)
+  throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException
   {
-    logger.debug("HbulkClient.doBulkLoad() - start");
+    HBaseAdmin admin = new HBaseAdmin(config);
+    
+    List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+    if (! lstSnaps.isEmpty())
+    {
+      for (SnapshotDescription snpd : lstSnaps) 
+      {
+          //System.out.println("here 1: " + snapshotName + snpd.getName());
+          if (snpd.getName().compareTo(snapshotName) == 0)
+          {
+            System.out.println("deleting: " + snapshotName + " : " + snpd.getName());
+            admin.deleteSnapshot(snapshotName);
+          }
+      }
+    }
+
+    admin.snapshot(snapshotName, tableName);
+
+    admin.close();
+    
+    return true;
+  }
+  
+  private boolean restoreSnapshot( String snapshotName, String tableName)
+  throws IOException, RestoreSnapshotException
+  {
+    
+    HBaseAdmin admin = new HBaseAdmin(config);
+
+    if (! admin.isTableDisabled(tableName))
+        admin.disableTable(tableName);
+    
+    admin.restoreSnapshot(snapshotName);
+
+    admin.enableTable(tableName);
+    
+    admin.close();
+
+    return true;
+  }
+  private boolean deleteSnapshot( String snapshotName, String tableName)
+      throws IOException
+      {
+        
+        HBaseAdmin admin = new HBaseAdmin(config);
+        boolean snapshotExists = false;
+        
+        List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+        if (! lstSnaps.isEmpty())
+        {
+          for (SnapshotDescription snpd : lstSnaps) 
+          {
+              //System.out.println("here 1: " + snapshotName + snpd.getName());
+              if (snpd.getName().compareTo(snapshotName) == 0)
+              {
+                //System.out.println("deleting: " + snapshotName + " : " + snpd.getName());
+                snapshotExists = true;
+              }
+          }
+        }
+        if (!snapshotExists)
+          return true;
+
+        if (admin.isTableDisabled(tableName))
+            admin.enableTable(tableName);
+        
+        admin.deleteSnapshot(snapshotName);
+
+        admin.close();
+
+        return true;
+      }
+  
+  private void doSnapshotNBulkLoad(Path hFilePath, String tableName, HTable table, LoadIncrementalHFiles loader, boolean snapshot)
+  throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException
+  {
+    HBaseAdmin admin = new HBaseAdmin(config);
+    String snapshotName= null;
+    if (snapshot)
+    {
+      snapshotName = tableName + "_SNAPSHOT";
+      createSnapshot(tableName, snapshotName);
+      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot created: " + snapshotName);
+    }
+    try
+    {
+      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - bulk load started ");
+      loader.doBulkLoad(hFilePath, table);
+      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - bulk load is done ");
+    }
+    catch (IOException e)
+    {
+      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: " + e.toString());
+      if (snapshot)
+      {
+        restoreSnapshot(snapshotName, tableName);
+        logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot restored: " + snapshotName);
+        deleteSnapshot(snapshotName, tableName);
+        logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
+        throw e;
+      }
+    }
+    finally
+    {
+      if  (snapshot)
+        deleteSnapshot(snapshotName, tableName);
+      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
+    }
+    
+  }
+  public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure, boolean snapshot) throws Exception
+  {
+    logger.debug("HBulkLoadClient.doBulkLoad() - start");
+    logger.debug("HBulkLoadClient.doBulkLoad() - Prep Location: " + prepLocation + 
+                                             ", Table Name:" + tableName + 
+                                             ", quasisecure : " + quasiSecure +
+                                             ", snapshot: " + snapshot);
+
+      
     HTable table = new HTable(config, tableName);
     LoadIncrementalHFiles loader = new LoadIncrementalHFiles(config);    
     Path prepPath = new Path(prepLocation );
     prepPath = prepPath.makeQualified(prepPath.toUri(), null);
     FileSystem prepFs = FileSystem.get(prepPath.toUri(),config);
+    
+    Path[] hFams = FileUtil.stat2Paths(prepFs.listStatus(prepPath));
 
     if (quasiSecure)
     {
+      logger.debug("HbulkLoadClient.doBulkLoad() - quasi secure bulk load");
       //we need to add few lines of code to support secure hbase later 
       TrafBulkLoadClient client = new TrafBulkLoadClient(table) ;
   
       String hiddenToken = client.prepareBulkLoad(table.getTableDescriptor().getName());
+      logger.debug("HBulkLoadClient.doBulkLoad() - hiddenToken: " + hiddenToken);
       
       Path hiddenPath = new Path(hiddenToken);
       hiddenPath = hiddenPath.makeQualified(hiddenPath.toUri(), null);
@@ -208,36 +342,49 @@ public class HBulkLoadClient
       if ( hiddenFs.getScheme().compareTo(prepFs.getScheme()) == 0 &&
           hiddenFs.getScheme().toUpperCase().compareTo(new String("HDFS")) == 0)
       {
-        hiddenFs.setPermission(hiddenPath,PERM_ALL_ACCESS );
-        Path[] hFams = FileUtil.stat2Paths(prepFs.listStatus(prepPath));
-        logger.debug("HbulkLoadClient.doBulkLoad() - moving hfiles from preparation directory to hidden directory");
+        logger.debug("HBulkLoadClient.doBulkLoad() - moving hfiles from preparation directory to hidden directory");
         for (Path hfam : hFams) 
+          prepFs.rename(hfam,hiddenPath);
+
+        logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hidden hfiles permissions");
+        Path[] hiddenHFams = FileUtil.stat2Paths(hiddenFs.listStatus(hiddenPath));
+        for (Path hiddenHfam : hiddenHFams) 
         {
-           Path[] hfiles = FileUtil.stat2Paths(prepFs.listStatus(hfam));
-           for (Path hfile : hfiles)
-             prepFs.setPermission(hfile,PERM_ALL_ACCESS);
-           
-           prepFs.setPermission(hfam,PERM_ALL_ACCESS );
-           prepFs.rename(hfam,hiddenPath);
+           Path[] hiddenHfiles = FileUtil.stat2Paths(prepFs.listStatus(hiddenHfam));
+           hiddenFs.setPermission(hiddenHfam,PERM_ALL_ACCESS );
+           for (Path hiddehfile : hiddenHfiles)
+           {
+             logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hidden hfile permissions:" + hiddehfile);
+             hiddenFs.setPermission(hiddehfile,PERM_ALL_ACCESS);
+           }
         }
-        
-        loader.doBulkLoad(hiddenPath, table);
-        logger.debug("HbulkLoadClient.doBulkLoad() - bulk load is done ");
+        logger.debug("HBulkLoadClient.doBulkLoad() - quasi secure bulk load started ");
+        doSnapshotNBulkLoad(hiddenPath,tableName,  table,  loader,  snapshot);
+        logger.debug("HBulkLoadClient.doBulkLoad() - quasi secure bulk load is done ");
         client.cleanupBulkLoad(hiddenToken);
-        logger.debug("HbulkLoadClient.doBulkLoad() - hidden directory cleanup done ");
+        logger.debug("HBulkLoadClient.doBulkLoad() - hidden directory cleanup done ");
       }
       else
-        throw new Exception("HbulkLoadClient.doBulkLoad() - cannot perform load. source and target file systems are diffrent");
+        throw new Exception("HBulkLoadClient.doBulkLoad() - cannot perform load. source and target file systems are diffrent");
     }
     else
     {
-      logger.debug("HbulkLoadClient.doBulkLoad() - loading directly from preparation directory");
-      loader.doBulkLoad(prepPath, table);
-      logger.debug("HbulkLoadClient.doBulkLoad() - bulk load is done ");
+      logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hfiles permissions");
+      for (Path hfam : hFams) 
+      {
+         Path[] hfiles = FileUtil.stat2Paths(prepFs.listStatus(hfam));
+         prepFs.setPermission(hfam,PERM_ALL_ACCESS );
+         for (Path hfile : hfiles)
+         {
+           logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hfile permissions:" + hfile);
+           prepFs.setPermission(hfile,PERM_ALL_ACCESS);
+           
+         }
+      }
+      logger.debug("HBulkLoadClient.doBulkLoad() - bulk load started. Loading directly from preparation directory");
+      doSnapshotNBulkLoad(prepPath,tableName,  table,  loader,  snapshot);
+      logger.debug("HBulkLoadClient.doBulkLoad() - bulk load is done ");
     }
-    
-   
-    
     return true;
   }
 
@@ -251,4 +398,5 @@ public class HBulkLoadClient
       return true;
 
   }
+
 }

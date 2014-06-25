@@ -970,12 +970,15 @@ EOF
   $MY_SW_SCRIPTS_DIR/swstophadoop   >>${MY_LOG_FILE} 2>&1
   $MY_SW_SCRIPTS_DIR/swstarthadoop  >>${MY_LOG_FILE} 2>&1
 
-  bin/hdfs dfs -mkdir /user/$USER                >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/hive                 >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/hive/warehouse       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /tmp                       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /tmp                   >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /user/hive/warehouse   >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/$USER                   >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/hive                    >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion               >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/bulkload      >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/hive/warehouse          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /tmp                          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /tmp                      >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/hive/warehouse      >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/trafodion/bulkload  >>${MY_LOG_FILE} 2>&1  
 
 
 fi
@@ -1228,7 +1231,7 @@ else
   HBASE_ENV_FILE=hbase/conf/hbase-env.sh
   
   # For HBase_Trx (for now)
-  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/${HBASE_TRX_JAR}" >> ${HBASE_ENV_FILE}
+  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/${HBASE_TRX_JAR}:${MY_SQROOT}/export/lib/${HBASE_HBL_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
 
@@ -1244,11 +1247,11 @@ else
 <configuration>
   <property>
     <name>hbase.rootdir</name>
-    <value>file://${MY_HBASE_DATA_DIR}/hbase</value>
+    <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/hbase</value>
   </property>
   <property>
     <name>hbase.zookeeper.property.dataDir</name>
-    <value>${MY_HBASE_DATA_DIR}/zookeeper</value>
+    <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/zookeeper</value>
   </property>
   <property>
     <name>hbase.master.port</name>
@@ -1291,8 +1294,12 @@ else
 	<value>60000</value>
   </property>
   <property>
+     <name>hbase.bulkload.staging.dir</name>
+     <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/hbase-staging</value>
+  </property>  
+  <property>
     <name>hbase.coprocessor.region.classes</name>
-    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl</value>
+    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl,org.trafodion.sql.extensions.TrafBulkLoadEndpoint</value>
   </property>
   <property>
     <name>hbase.coprocessor.master.classes</name>

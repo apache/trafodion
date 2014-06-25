@@ -3653,8 +3653,6 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
     {
     //initial state
       INITIAL_,
-      //if required (no rollback is false) check if table is empty
-      CHECK_FOR_EMPTINESS_,
       //cleanup leftover files
       PRE_LOAD_CLEANUP_,
       LOAD_START_,

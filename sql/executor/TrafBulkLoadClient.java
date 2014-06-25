@@ -42,9 +42,9 @@ public class TrafBulkLoadClient {
   public TrafBulkLoadClient(HTable table, byte[] startRow) throws IOException {
     try {
       protocolClazz = protocolClazz!=null?protocolClazz:
-          Class.forName("org.trafodion.sql.HBaseAccess.TrafBulkLoadProtocol");
+          Class.forName("org.trafodion.sql.extensions.TrafBulkLoadProtocol");
       endpointClazz = endpointClazz!=null?endpointClazz:
-          Class.forName("org.trafodion.sql.HBaseAccess.TrafBulkLoadEndpoint");
+          Class.forName("org.trafodion.sql.extensions.TrafBulkLoadEndpoint");
       proxy = table.coprocessorProxy(protocolClazz, startRow);
       this.table = table;  
     } catch (ClassNotFoundException e) {

@@ -5438,6 +5438,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setTruncateTable(this->truncateTable_);
   exe_util_tdb->setNoRollback(this->noRollback_);
   exe_util_tdb->setLogErrors(this->logErrors_);
+  exe_util_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
 
   generator->initTdbFields(exe_util_tdb);
 
@@ -5514,6 +5515,8 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   load_tdb->setLoadPrepLocation(tlpTmpLocation);
 
   load_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
+  load_tdb->setTakeSnapshot((CmpCommon::getDefault(TRAF_LOAD_TAKE_SNAPSHOT) == DF_ON));
+
   if (taskType_ == PRE_LOAD_CLEANUP_)
     load_tdb->setIsTrafLoadCleanup(TRUE);
   else   if (taskType_ == COMPLETE_BULK_LOAD_ || taskType_ == COMPLETE_BULK_LOAD_N_KEEP_HFILES_)

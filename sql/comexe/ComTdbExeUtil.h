@@ -4605,6 +4605,10 @@ public:
   void setLogErrors(NABoolean v)
   {(v ? flags_ |= LOG_ERRORS : flags_ &= ~LOG_ERRORS); };
   NABoolean getLogErrors() { return (flags_ & LOG_ERRORS) != 0; };
+
+  void setQuasiSecure(NABoolean v)
+  {(v ? flags_ |= QUASI_SECURE : flags_ &= ~QUASI_SECURE); };
+  NABoolean getQuasiSecure() { return (flags_ & QUASI_SECURE) != 0; };
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -4618,7 +4622,8 @@ private:
     KEEP_HFILES      = 0x0004,
     TRUNCATE_TABLE   = 0x0008,
     NO_ROLLBACK      = 0x0010,
-    LOG_ERRORS       = 0x0020
+    LOG_ERRORS       = 0x0020,
+    QUASI_SECURE     = 0x0040
   };
 
   // load stmt
