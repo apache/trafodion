@@ -83,7 +83,7 @@ public class LobSample
   }
 
   try {
-	Class.forName("org.trafodion.sql.T2Driver");
+	Class.forName("org.trafodion.jdbc.t2.T2Driver");
   }
   catch (Exception e) {
 	e.printStackTrace();
@@ -92,7 +92,7 @@ public class LobSample
   }
 
   try {
-    conn1 = DriverManager.getConnection("jdbc:sql:");
+    conn1 = DriverManager.getConnection("jdbc:t2jdbc:");
     Statement stmt = conn1.createStatement();
 
     try {

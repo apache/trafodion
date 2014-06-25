@@ -20,15 +20,15 @@
 //
 // MODULE: JdbcDebug.cpp
 //
-#include "org_trafodion_sql_JdbcDebug.h"
+#include "org_trafodion_jdbc_t2_JdbcDebug.h"
 #include "Debug.h"
 
 /*
- * Class:     org_trafodion_sql_JdbcDebug
+ * Class:     org_trafodion_jdbc_t2_JdbcDebug
  * Method:    getDebugHandle
  * Signature: (I)I
  */
-JNIEXPORT jlong JNICALL Java_org_trafodion_sql_JdbcDebug_getDebugHandle(JNIEnv *jenv, jclass jcls,
+JNIEXPORT jlong JNICALL Java_org_trafodion_jdbc_t2_JdbcDebug_getDebugHandle(JNIEnv *jenv, jclass jcls,
 																	  jlong method_name_handle)
 {
 	jlong handle = 0;
@@ -39,11 +39,11 @@ JNIEXPORT jlong JNICALL Java_org_trafodion_sql_JdbcDebug_getDebugHandle(JNIEnv *
 }
 
 /*
- * Class:     org_trafodion_sql_JdbcDebug
+ * Class:     org_trafodion_jdbc_t2_JdbcDebug
  * Method:    getMethodNameHandle
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jlong JNICALL Java_org_trafodion_sql_JdbcDebug_getMethodNameHandle(JNIEnv *jenv, jclass jcls,
+JNIEXPORT jlong JNICALL Java_org_trafodion_jdbc_t2_JdbcDebug_getMethodNameHandle(JNIEnv *jenv, jclass jcls,
 																		   jstring method_name)
 {
 	jlong rc = 0;
@@ -55,11 +55,11 @@ JNIEXPORT jlong JNICALL Java_org_trafodion_sql_JdbcDebug_getMethodNameHandle(JNI
 }
 
 /*
- * Class:     org_trafodion_sql_JdbcDebug
+ * Class:     org_trafodion_jdbc_t2_JdbcDebug
  * Method:    methodEntry
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_methodEntry(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_JdbcDebug_methodEntry(JNIEnv *jenv, jclass jcls,
 																   jlong debug_handle,
 																   jint debug_level,
 																   jlong method_name_handle)
@@ -73,11 +73,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_methodEntry(JNIEnv *jenv
 }
 
 /*
- * Class:     org_trafodion_sql_JdbcDebug
+ * Class:     org_trafodion_jdbc_t2_JdbcDebug
  * Method:    methodReturn
  * Signature: (ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_methodReturn(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_JdbcDebug_methodReturn(JNIEnv *jenv, jclass jcls,
 																	jlong debug_handle,
 																	jstring comment)
 {
@@ -91,11 +91,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_methodReturn(JNIEnv *jen
 }
 
 /*
- * Class:     org_trafodion_sql_JdbcDebug
+ * Class:     org_trafodion_jdbc_t2_JdbcDebug
  * Method:    methodExit
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_methodExit(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_JdbcDebug_methodExit(JNIEnv *jenv, jclass jcls,
 																  jlong debug_handle)
 {
 #if defined(_DEBUG)
@@ -108,11 +108,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_methodExit(JNIEnv *jenv,
 }
 
 /*
- * Class:     org_trafodion_sql_JdbcDebug
+ * Class:     org_trafodion_jdbc_t2_JdbcDebug
  * Method:    traceOut
  * Signature: (IILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_trafodion_sql_JdbcDebug_traceOut(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_JdbcDebug_traceOut(JNIEnv *jenv, jclass jcls,
 																	jlong debug_handle,
 																	jint debug_level,
 																	jstring comment)

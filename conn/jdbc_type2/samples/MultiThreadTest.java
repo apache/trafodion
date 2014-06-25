@@ -30,7 +30,7 @@ public class MultiThreadTest
             noOfThreads = 2;
         try
         {
-            Class.forName("org.trafodion.sql.T2Driver");
+            Class.forName("org.trafodion.jdbc.t2.T2Driver");
         }
         catch (ClassNotFoundException e1)
         {
@@ -50,7 +50,7 @@ public class MultiThreadTest
             "Emp_Salary decimal(10,2), " +
             "Dept_ID int, primary key (Emp_ID))";
 
-            Connection con = DriverManager.getConnection("jdbc:sql:");
+            Connection con = DriverManager.getConnection("jdbc:t2jdbc:");
             Statement stmt1 = con.createStatement();
 
             try
@@ -168,7 +168,7 @@ class jdbcThread extends Thread
         try
         {
             System.out.println("Establishing connection - " + getName());
-            conn1 = DriverManager.getConnection("jdbc:sql:");
+            conn1 = DriverManager.getConnection("jdbc:t2jdbc:");
             System.out.println("Established connection - " + getName());
 
             System.out.println("Preparing a query - " + getName());

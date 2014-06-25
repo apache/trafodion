@@ -22,7 +22,7 @@
  *
  * File:         LmT2Driver.java
  * Description:  A driver class servicing the following URLs
- *		 - "jdbc:sql:"    (Trafodion Type2 driver connection)
+ *		 - "jdbc:t2jdbc:"    (Trafodion Type2 driver connection)
  *		 - "jdbc:default:connection"	(Default connection)
  *
  * Created:      03/14/2014
@@ -87,7 +87,7 @@ public class LmT2Driver implements java.sql.Driver
   static String password_ = null;
   static final int DEFAULT_MXCS_PORT_NUMBER = 18650;
 
-  static String[] acceptedURLs = { "jdbc:sql:",
+  static String[] acceptedURLs = { "jdbc:t2jdbc:",
 				   "jdbc:default:connection" };
   static  Method joinUDRTransMethodId_ = null;
   
@@ -136,7 +136,7 @@ public class LmT2Driver implements java.sql.Driver
 		          int portNumber)
       throws SQLException, java.net.UnknownHostException, Exception
   {
-    type2URL_ = "jdbc:sql:";
+    type2URL_ = "jdbc:t2jdbc:";
 
     if (mapDefConnToType2)
       mapDefaultConnToType2_ = true;
@@ -144,7 +144,7 @@ public class LmT2Driver implements java.sql.Driver
     if (jdbcType2Enabled)
     {
       // Get the object reference of the currently loaded JDBC/MX T2 driver
-      jdbcMxDrvr_ = DriverManager.getDriver( "jdbc:sql:" );
+      jdbcMxDrvr_ = DriverManager.getDriver( "jdbc:t2jdbc:" );
 
       if( jdbcMxDrvr_ == null ) {
           String msg = "The SQL/MX language manager encountered an unexpected"
@@ -178,7 +178,7 @@ public class LmT2Driver implements java.sql.Driver
     for( int i = 0; i < acceptedURLs.length; i++ ) {
       if( acceptedURLs[ i ].equals( url ) )
       {
-        if (url.equals("jdbc:sql:"))
+        if (url.equals("jdbc:t2jdbc:"))
 	{
 	  // If the requested URL is Type 2, then return TRUE
 	  // only if we have loaded Type2 driver.

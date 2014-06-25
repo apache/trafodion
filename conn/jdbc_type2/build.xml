@@ -28,7 +28,7 @@
     <property name="vproc.str" value="Traf_JDBC_Type2_Build_${bldId}"/>
     <property name="my_sqroot" value="../../sqf"/>
 
-    <property name="dest.src" value="${base.dir}/java"/>
+    <property name="dest.src" value="${base.dir}/src/main/java"/>
     <property name="native.src" value="${base.dir}/native"/>
     <property name="dest.classes" value="${base.dir}/classes"/>
     <tstamp>
@@ -65,23 +65,23 @@
     </target>
 
     <target name="compile" depends="init">
-      <copy file="java/org/trafodion/sql/DriverInfo.java-tmpl" tofile="java/org/trafodion/sql/DriverInfo.java"/>
-      <copy todir="${dest.classes}" overwrite="yes" file="java/SQLMXT2Messages_en.properties"/>
-      <replace file="java/org/trafodion/sql/DriverInfo.java" token="@@@" value="${vproc.str}" />
+      <copy file="src/main/java/org/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="src/main/java/org/trafodion/jdbc/t2/DriverInfo.java"/>
+      <copy todir="${dest.classes}" overwrite="yes" file="src/main/java/SQLMXT2Messages_en.properties"/>
+      <replace file="src/main/java/org/trafodion/jdbc/t2/DriverInfo.java" token="@@@" value="${vproc.str}" />
 
       <javac destdir="${dest.classes}" srcdir="${dest.src}" debug="on" includes="**/*.java" classpath="${java.home}/lib/tools.jar:${dest.classes}" includeAntRuntime="false"/>
     </target>
 
     <target name="jni" depends="compile">
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.JdbcDebug" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.DataWrapper" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.SQLMXCallableStatement" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.SQLMXConnection" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.SQLMXDatabaseMetaData" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.T2Driver" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.SQLMXPreparedStatement" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.SQLMXResultSet" destdir="${native.src}" />
-       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.sql.SQLMXStatement" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.JdbcDebug" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.DataWrapper" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXCallableStatement" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXConnection" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXDatabaseMetaData" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.T2Driver" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXPreparedStatement" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXResultSet" destdir="${native.src}" />
+       <javah verbose="no" classpath="${dest.classes}" class="org.trafodion.jdbc.t2.SQLMXStatement" destdir="${native.src}" />
     </target>
 
     <target name="native" depends="jni" >
