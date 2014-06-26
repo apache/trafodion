@@ -234,6 +234,9 @@ class Generator : public NABasicObject
 
     // if trafodion/hbase IUD operation is using RI inlining
     , RI_INLINING_FOR_TRAF_IUD = 0x00000200
+
+    // If Hive tables are accessed at runtime
+    , HIVE_ACCESS              = 0x00000400
   };
  
   // Each operator node receives some tupps in its input atp and
@@ -1247,6 +1250,11 @@ public:
     { return (flags2_ & HDFS_ACCESS) != 0; }
   void setHdfsAccess(NABoolean v)
     { (v ? flags2_ |= HDFS_ACCESS : flags2_ &= ~HDFS_ACCESS); }	
+
+  NABoolean hiveAccess()
+    { return (flags2_ & HIVE_ACCESS) != 0; }
+  void setHiveAccess(NABoolean v)
+    { (v ? flags2_ |= HIVE_ACCESS : flags2_ &= ~HIVE_ACCESS); }	
 
   NABoolean mayNotCancel()
     { return (flags2_ & MAY_NOT_CANCEL) != 0; }

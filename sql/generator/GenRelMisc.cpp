@@ -3023,6 +3023,9 @@ short RelRoot::codeGen(Generator * generator)
   if (hdfsAccess())
     root_tdb->setHdfsAccess(TRUE);
 
+  if(generator->hiveAccess())
+    root_tdb->setHiveAccess(TRUE);
+
 
   if (!generator->explainDisabled())
     {

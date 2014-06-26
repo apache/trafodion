@@ -34,6 +34,7 @@
 #include "GroupAttr.h"
 #include "OptHints.h"
 #include "QRDescGenerator.h"
+#include "HDFSHook.h"
 
 // append an ascii-version of GenericUpdate into cachewa.qryText_
 void GenericUpdate::generateCacheKey(CacheWA& cwa) const
@@ -1151,6 +1152,20 @@ void Scan::generateCacheKey(CacheWA &cwa) const
     convertInt64ToAscii(tbl->getRedefTime(), redefTime);
     cwa += " redef:";
     cwa += redefTime;
+
+    if (tbl->isHiveTable()) {
+      char lastModTime[40];
+      Int64 mTime = tbl->getClusteringIndex()->getHHDFSTableStats()->getModificationTS();
+      convertInt64ToAscii(mTime, lastModTime);
+      cwa += " lastMod:";
+      cwa += lastModTime;
+
+      cwa += " numFiles:";
+      char numFiles[20];
+      Int64 numberOfFiles = tbl->getClusteringIndex()->getHHDFSTableStats()->getNumFiles();
+      sprintf(numFiles, " %ld", numberOfFiles); 
+      cwa += numFiles ;
+    }
     if ((tbl->getSchemaLabelFileName()) &&
         (str_len(tbl->getSchemaLabelFileName()) > 0)) 
     {

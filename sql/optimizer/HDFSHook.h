@@ -95,6 +95,7 @@ public:
   HHDFSStatsBase() : numBlocks_(0),
                      numFiles_(0),
                      totalSize_(0),
+                     modificationTS_(0),
                      sampledBytes_(0),
                      sampledRows_(0) {}
 
@@ -106,6 +107,7 @@ public:
   Int64 getNumBlocks() const { return numBlocks_; }
   Int64 getSampledBytes() const { return sampledBytes_; }
   Int64 getSampledRows() const { return sampledRows_; }
+  time_t getModificationTS() const { return modificationTS_; }
   Int64 getEstimatedBlockSize() const;
   Int64 getEstimatedRowCount() const;
   Int64 getEstimatedRecordLength() const;
@@ -115,6 +117,7 @@ protected:
   Int64 numBlocks_;
   Int64 numFiles_;
   Int64 totalSize_;
+  time_t modificationTS_; // last modification time of this object (file, partition/directory, bucket or table)
   Int64 sampledBytes_;
   Int64 sampledRows_;
 };
@@ -136,7 +139,6 @@ public:
   const NAString & getFileName() const                   { return fileName_; }
   Int32 getReplication() const                        { return replication_; }
   Int64 getBlockSize() const                            { return blockSize_; }
-  time_t getModificationTS() const                 { return modificationTS_; }
   NABoolean isSequenceFile() const                 { return isSequenceFile_; }
   HostId getHostId(Int32 replicate, Int64 blockNum) const
                         { return blockHosts_[replicate*numBlocks_+blockNum]; }
@@ -147,7 +149,6 @@ private:
   NAString fileName_;
   Int32 replication_;
   Int64 blockSize_;
-  time_t modificationTS_;
   NABoolean isSequenceFile_;
 
   // list of blocks for this file
