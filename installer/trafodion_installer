@@ -172,17 +172,20 @@ done
 timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion installer ($timestamp)"
 
-#===========================================
-# Check that Cloudera username, password, and url are correct. Will not get a cluster
-# name if these are not correct.
+if [ $CLOUDERA -ne 0 -o $AMBARI -ne 0 ]; then
+  #===========================================
+  # Check that Cloudera or Ambari username, password, and url are correct.
+  # Will not get a cluster name if these are not correct. Skip this for
+  # MapR and other clusters.
 
-CLUSTER_NAME=$(curl -su $USER_NAME:$PASSWORD http://$URL_PORT/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+  CLUSTER_NAME=$(curl -su $USER_NAME:$PASSWORD http://$URL_PORT/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
-if [ -z $CLUSTER_NAME ]; then
-  echo
-  echo "***ERROR: Please check userid, password, and url and try again. "
-  echo
-  exit -1
+  if [ -z $CLUSTER_NAME ]; then
+    echo
+    echo "***ERROR: Please check userid, password, and url and try again. "
+    echo
+    exit -1
+  fi
 fi
 
 node_count=$(echo $NODE_LIST | wc -w)
