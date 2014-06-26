@@ -82,7 +82,7 @@ static void convertVirtTableColumnInfoToDescStruct(
   else
     column_desc->body.columns_desc.datetimefractprec = 0;
   if (DFS2REC::isInterval(colInfo->datatype))
-    column_desc->body.columns_desc.intervalleadingprec = colInfo->scale;
+    column_desc->body.columns_desc.intervalleadingprec = colInfo->precision;
   else
     column_desc->body.columns_desc.intervalleadingprec = 0 ;
   column_desc->body.columns_desc.null_flag = colInfo->nullable;
