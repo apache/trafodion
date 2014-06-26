@@ -17,7 +17,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-RELEASE_VER ?= 0.8.1
+RELEASE_VER ?= 0.8.2
 
 all: pkg-installer 
 
