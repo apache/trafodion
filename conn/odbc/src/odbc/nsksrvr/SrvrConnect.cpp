@@ -750,14 +750,6 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 
 	if(srvrGlobal->bSkipASTimer == false && (srvrGlobal->srvrState == SRVR_AVAILABLE || srvrGlobal->srvrState == SRVR_UNINITIALIZED))
 	{
-
-		// Add for testing to disable ZK checks during AS timer
-//		if(srvrGlobal->stopTypeFlag != STOP_WHEN_DISCONNECTED)
-//		{
-//			srvrGlobal->mutex->unlock();
-//			return;
-//		}
-
 		// Shutdown if DCS stops.
 		// Look for nodes under master and server and determine if DCS has stopped
 		int rc = ZOK;
@@ -782,6 +774,9 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 		if( !shutdownThisThing )
 		{
 			static long long timeout = JULIANTIMESTAMP();
+			static long prevDialogueId = 0;
+			static short clientConnErrorTimeOut = 10;	// secs
+			long currDialogueId = 0;
 			char zkData[256];
 			int zkDataLen = sizeof(zkData);
 
@@ -790,36 +785,63 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 			{
 				// The first token should be state
 				char *tkn = NULL;
+				char state[32];
+				bool zkStatus = true;
 				tkn = strtok(zkData, ":");
+
+				if( tkn == NULL )
+					goto HandleNoTokens;
+
 				if( stricmp(tkn, "CONNECTING") && stricmp(tkn, "CONNECT_FAILED") && stricmp(tkn, "CONNECT_REJECTED") )	// Not in CONNECTING state
+				{
 					timeout = JULIANTIMESTAMP();
+					prevDialogueId = 0;
+				}
 				else
-				if (JULIANTIMESTAMP() - timeout > (clientConnTimeOut * 1000000)){	// In CONNECTING state and timeout > clientConnTimeOut
-					if (stricmp(tkn, "CONNECTING") == 0){
-						if( !updateZKState(CONNECTING, AVAILABLE) )
-						{
-							srvrGlobal->mutex->unlock();
-							zookeeper_close(zh);
-							exitServerProcess();
+				{
+					strcpy( state, tkn );
+
+					// Skip second token - Timestamp
+					tkn = strtok(NULL, ":");
+					if( tkn == NULL )
+						goto HandleNoTokens;
+
+					// Third token is dialogue ID
+					tkn = strtok(NULL, ":");
+					if( tkn == NULL )
+						goto HandleNoTokens;
+
+					currDialogueId = atoi(tkn);
+
+					if( prevDialogueId == 0 || prevDialogueId != currDialogueId )
+					{
+						prevDialogueId = currDialogueId;
+						timeout = JULIANTIMESTAMP();
+					}
+
+					if ( prevDialogueId == currDialogueId ) {
+						// In CONNECTING state and timeout > clientConnTimeOut
+						if( ((JULIANTIMESTAMP() - timeout) > (clientConnTimeOut * 1000000)) && stricmp(state, "CONNECTING") == 0 )
+							zkStatus = updateZKState(CONNECTING, AVAILABLE);
+						else
+						if( (JULIANTIMESTAMP() - timeout) > (clientConnErrorTimeOut * 1000000)) {
+							// In CONNECT_FAILED or CONNECT_REJECTED state and timeout > clientConnErrorTimeOut
+							if (stricmp(state, "CONNECT_FAILED") == 0)
+								zkStatus = updateZKState(CONNECT_FAILED, AVAILABLE);
+							else
+							if (stricmp(state, "CONNECT_REJECTED") == 0)
+								zkStatus = updateZKState(CONNECT_REJECTED, AVAILABLE);
 						}
 					}
-					else if (stricmp(tkn, "CONNECT_FAILED") == 0){
-						if( !updateZKState(CONNECT_FAILED, AVAILABLE) )
-						{
-							srvrGlobal->mutex->unlock();
-							zookeeper_close(zh);
-							exitServerProcess();
-						}
-					}
-					else if (stricmp(tkn, "CONNECT_REJECTED") == 0){
-						if( !updateZKState(CONNECT_REJECTED, AVAILABLE) )
-						{
-							srvrGlobal->mutex->unlock();
-							zookeeper_close(zh);
-							exitServerProcess();
-						}
+					if( !zkStatus )
+					{
+						srvrGlobal->mutex->unlock();
+						zookeeper_close(zh);
+						exitServerProcess();
 					}
 				}
+HandleNoTokens:
+				;	// Cannot retrieve tokens from ZK entry at this time.
 			}
 			else
 				shutdownThisThing = 1;
@@ -8181,6 +8203,7 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				   << ":"
 				   << JULIANTIMESTAMP()
 				   << ":"					// Dialogue ID
+				   << srvrGlobal->dialogueId
 				   << ":"
 				   << regSrvrData
 				   << ":"					// Client computer name
@@ -8193,6 +8216,7 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				   << ":"
 				   << JULIANTIMESTAMP()
 				   << ":"					// Dialogue ID
+				   << srvrGlobal->dialogueId
 				   << ":"
 				   << regSrvrData
 				   << ":"					// Client computer name
