@@ -2697,10 +2697,6 @@ Lng32 SQLCLI_ProcessRetryQuery(
 
 		  if (type == AQRInfo::RETRY_WITH_DECACHE)
 		    flags |= PREPARE_WITH_DECACHE;
-                  if (errCond->getSQLCODE() == -2031) // embedded arkcmp error
-		    {
-		      flags &= ~PREPARE_USE_EMBEDDED_ARKCMP;
-		    }
                    		 
 		  //LCOV_EXCL_START
 		  // log an ems event, unless disabled or if regressions
