@@ -1772,7 +1772,6 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 	      // request is nowaited if noWaitOpEnabled and not recompile
 	      NABoolean waited = TRUE;
 
-#ifdef NA_CMPDLL
               // Use the embedded compiler first
               if (context_->getSessionDefaults()->callEmbeddedArkcmp() && 
 		  canUseEmbeddedArkcmp && 
@@ -1807,25 +1806,12 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
                     }
                   else
 		    {
-		      // any other case would mean fail to use embeddd compiler
-		      // instead of this try to use AQR
-                      if (!aqRetry) 
-			{
-			  diagsArea << DgSqlCode(- CLI_STMT_NOT_PREPARED);
-			}
-		      else//already retried with embedded compiler now try the regular compiler.
-			{
-			  diagsArea << DgSqlCode(embArkcmpError);
-			  diagsArea << DgString0(source);
-			  diagsArea << DgSqlCode(- CLI_STMT_NOT_PREPARED);
-			}
-		       if (diagsArea.getRollbackTransaction())
+		      diagsArea << DgSqlCode(- CLI_STMT_NOT_PREPARED);
+		      if (diagsArea.getRollbackTransaction())
 		     	rollbackTransaction(diagsArea);
 		      return prepareReturn (ERROR);
 		    }
                 }
-
-#endif // NA_CMPDLL
 
 	      ExSqlComp::ReturnStatus sendStatus = 
 		cliGlobals_->getArkcmp(indexIntoCompilerArray)->sendRequest(

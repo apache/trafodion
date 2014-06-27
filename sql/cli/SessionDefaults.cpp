@@ -865,8 +865,6 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // memory condition  in compiler - kill compiler
   // only valid after prepare errors.
   AQREntry(  2008,       0,      1,     0,      4,   0, "",    0,     0),
-  //No generated plan 
-   AQREntry(   2031,      0,      1,     0,      1,   0, "",    0,     1), 
   // UNLOAD failed to open file
   // all three UNLOAD errors are retried only in NO APPEND mode
   AQREntry(  8960,      0,      1,     0,      2,   0, "",    0,     0),
