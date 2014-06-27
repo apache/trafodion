@@ -146,16 +146,16 @@ pdsh $MY_NODES sudo yum --assumeyes erase jdk.x86_84
 #==============================================
 #Remove all directories
 echo "***INFO: Removing directories"
-pdsh $MY_NODES sudo yum remove hcatalog\*
-pdsh $MY_NODES sudo yum remove hive\*
-pdsh $MY_NODES sudo yum remove tez
-pdsh $MY_NODES sudo yum remove hbase\*
-pdsh $MY_NODES sudo yum remove zookeeper\*
-pdsh $MY_NODES sudo yum remove pig\*
-pdsh $MY_NODES sudo yum remove snappy\*
-pdsh $MY_NODES sudo yum remove hadoop-lzo\*
-pdsh $MY_NODES sudo yum remove hadoop\*
-pdsh $MY_NODES sudo yum remove extjs-2.2-1 mysql-connector-java-5.0.8-1\*
+pdsh $MY_NODES sudo yum --assumeyes remove hcatalog\*
+pdsh $MY_NODES sudo yum --assumeyes remove hive\*
+pdsh $MY_NODES sudo yum --assumeyes remove tez
+pdsh $MY_NODES sudo yum --assumeyes remove hbase\*
+pdsh $MY_NODES sudo yum --assumeyes remove zookeeper\*
+pdsh $MY_NODES sudo yum --assumeyes remove pig\*
+pdsh $MY_NODES sudo yum --assumeyes remove snappy\*
+pdsh $MY_NODES sudo yum --assumeyes remove hadoop-lzo\*
+pdsh $MY_NODES sudo yum --assumeyes remove hadoop\*
+pdsh $MY_NODES sudo yum --assumeyes remove extjs-2.2-1 mysql-connector-java-5.0.8-1\*
 
 pdsh $MY_NODES sudo rm -rf /usr/sbin/ambari*
 pdsh $MY_NODES sudo rm -rf /usr/lib/hcatalog
