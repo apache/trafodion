@@ -17,7 +17,7 @@
 // @@@ END COPYRIGHT @@@
 
 
-package  org.trafodion.sql.HBaseAccess;
+package   org.trafodion.sql.extensions;
 
 import org.apache.hadoop.hbase.ipc.CoprocessorProtocol;
 import org.apache.hadoop.hbase.security.TokenInfo;

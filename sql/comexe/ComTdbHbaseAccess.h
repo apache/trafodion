@@ -617,6 +617,11 @@ public:
      {(v ? flags2_ |= TRAF_LOAD_QUASI_SECURE : flags2_ &= ~TRAF_LOAD_QUASI_SECURE); };
    NABoolean getUseQuasiSecure() { return (flags2_ & TRAF_LOAD_QUASI_SECURE) != 0; };
 
+   void setTakeSnapshot(NABoolean v)
+     {(v ? flags2_ |= TRAF_LOAD_TAKE_SNAPSHOT : flags2_ &= ~TRAF_LOAD_TAKE_SNAPSHOT); };
+   NABoolean getTakeSnapshot() { return (flags2_ & TRAF_LOAD_TAKE_SNAPSHOT) != 0; };
+
+
 
  protected:
   enum
@@ -639,14 +644,15 @@ public:
 
   enum
   {
-      TRAF_UPSERT_ADJUST_PARAMS        = 0x0001,
-      TRAF_UPSERT_AUTO_FLUSH           = 0x0002,
-      TRAF_UPSERT_WRITE_TO_WAL         = 0x0004,
-      TRAF_LOAD_PREP                   = 0x0008,
-      TRAF_LOAD_COMPLETION             = 0x0010,
-      TRAF_LOAD_CLEANUP                = 0x0020,
-      TRAF_LOAD_KEEP_HFILES            = 0x0040,
-      TRAF_LOAD_QUASI_SECURE           = 0x0080
+    TRAF_UPSERT_ADJUST_PARAMS        = 0x0001,
+    TRAF_UPSERT_AUTO_FLUSH           = 0x0002,
+    TRAF_UPSERT_WRITE_TO_WAL         = 0x0004,
+    TRAF_LOAD_PREP                   = 0x0008,
+    TRAF_LOAD_COMPLETION             = 0x0010,
+    TRAF_LOAD_CLEANUP                = 0x0020,
+    TRAF_LOAD_KEEP_HFILES            = 0x0040,
+    TRAF_LOAD_QUASI_SECURE           = 0x0080,
+    TRAF_LOAD_TAKE_SNAPSHOT          = 0x0100
   };
 
   UInt16 accessType_;

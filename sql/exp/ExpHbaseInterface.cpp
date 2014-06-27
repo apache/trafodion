@@ -1309,7 +1309,8 @@ Lng32 ExpHbaseInterface_Thrift::createHFile(HbaseStr &tblName,
  Lng32 ExpHbaseInterface_Thrift::doBulkLoad(HbaseStr &tblName,
                           Text& location,
                           Text& tableName,
-                          NABoolean quasiSecure)
+                          NABoolean quasiSecure,
+                          NABoolean snapshot)
  {
    assert(0);
    return 0;
@@ -2089,14 +2090,15 @@ Lng32 ExpHbaseInterface_JNI::createHFile(HbaseStr &tblName,
  Lng32 ExpHbaseInterface_JNI::doBulkLoad(HbaseStr &tblName,
                           Text& location,
                           Text& tableName,
-                          NABoolean quasiSecure)
+                          NABoolean quasiSecure,
+                          NABoolean snapshot)
  {
    if (hblc_ == NULL || client_ == NULL)
    {
      return -HBASE_ACCESS_ERROR;
    }
 
-   retCode_ = hblc_->doBulkLoad(tblName, location, tableName, quasiSecure);
+   retCode_ = hblc_->doBulkLoad(tblName, location, tableName, quasiSecure,snapshot);
 
    if (retCode_ == HBLC_OK)
      return HBASE_ACCESS_SUCCESS;

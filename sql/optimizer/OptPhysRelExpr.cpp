@@ -3468,14 +3468,20 @@ NABoolean NestedJoin::genLeftChildPartReq(
     {
       if (adjustPFForTrafBulkLoadPrep )
       {
-        if (baseNumPartsOnAP && numActivePartitions >1 &&
-            !updateTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())
+        if (baseNumPartsOnAP && numActivePartitions >1 )
         {
+          // this case will use base number of parts on Active Partitions and handle the case
+          //of partitioned table. Condition on syskey is removed based on comment from
+          //previous delivery
           childNumPartsRequirement = numActivePartitions;
         }
-        else if (numActivePartitions ==1 && childNumPartsRequirement > 1 &&
-                !updateTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())
+        else if (numActivePartitions ==1 && childNumPartsRequirement > 1 )
         {
+          //if table is not partitioned we use the clustering index to produce a hash2 partition
+          //function based on the clustering key. one thing to mention and is useful here
+          //is that rows with same keys will go to the same esp --> can be used for deduping
+          //Condition on syskey is removed based on comment from
+          //previous delivery
           pkList.insert(updateTableDesc()->getClusteringIndex()->getClusteringKeyCols());
           physicalPartFunc = new(CmpCommon::statementHeap())
                 Hash2PartitioningFunction(pkList, pkList,childNumPartsRequirement);
@@ -3483,6 +3489,7 @@ NABoolean NestedJoin::genLeftChildPartReq(
         }
         else
         {
+          //if none of the 2 cases apply then used the default random partitioning
           ValueIdSet partKey;
           ItemExpr *randNum =
             new(CmpCommon::statementHeap()) RandomNum(NULL, TRUE);

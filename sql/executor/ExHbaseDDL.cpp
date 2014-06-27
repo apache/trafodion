@@ -548,7 +548,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadTaskTcb::work()
         retcode = ehi_->initHBLC();
         if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
         {
-          step_ = HANDLE_ERROR;
+          step_ = HANDLE_ERROR_AND_CLOSE;
           break;
         }
 
@@ -571,51 +571,68 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadTaskTcb::work()
 
         if (setupError(retcode, "ExpHbaseInterface::bulkLoadCleanup"))
         {
-          step_ = HANDLE_ERROR;
+          step_ = HANDLE_ERROR_AND_CLOSE;
           break;
         }
-
-        step_ = DONE;
+        step_ = LOAD_CLOSE;
       }
         break;
 
       case COMPLETE_LOAD:
       {
-
         Text tabName = ((ExHbaseAccessTdb&) hbaseAccessTdb()).getTableName();
-        retcode = ehi_->doBulkLoad(table_, hBulkLoadPrepPath_, tabName,hbaseAccessTdb().getUseQuasiSecure());
+        retcode = ehi_->doBulkLoad(table_,
+                                   hBulkLoadPrepPath_,
+                                   tabName,
+                                   hbaseAccessTdb().getUseQuasiSecure(),
+                                   hbaseAccessTdb().getTakeSnapshot());
 
         if (setupError(retcode, "ExpHbaseInterface::doBulkLoad"))
         {
-          step_ = HANDLE_ERROR;
+          step_ = HANDLE_ERROR_AND_CLOSE;
           break;
         }
 
         if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getIsTrafLoadKeepHFiles())
         {
-          step_ = DONE;
+          step_ = LOAD_CLOSE;
           break;
         }
 
         step_ = LOAD_CLEANUP;
       }
         break;
+
+      case LOAD_CLOSE:
+      {
+        retcode = ehi_->close();
+        if (setupError(retcode, "ExpHbaseInterface::close"))
+        {
+          step_ = HANDLE_ERROR;
+          break;
+        }
+        step_ = DONE;
+      }
+      break;
+
       case HANDLE_ERROR:
+      case HANDLE_ERROR_AND_CLOSE:
       {
         if (handleError(rc))
           return rc;
-
+        if (step_==HANDLE_ERROR_AND_CLOSE)
+        {
+          step_ = LOAD_CLOSE;
+          break;
+        }
         step_ = DONE;
       }
         break;
 
       case DONE:
       {
-
         if (handleDone(rc))
           return rc;
-
-        retcode = ehi_->close();
 
         step_ = NOT_STARTED;
 

@@ -3713,18 +3713,13 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = TRUNCATE_TABLE_;
           break;
         }
-        // if no truncate table and rollback then check for emptiness
-        if (!hblTdb().getNoRollback())
-        {
-          step_ = CHECK_FOR_EMPTINESS_;
-          break;
-        }
         step_ = LOAD_START_;
       }
         break;
 
       case TRUNCATE_TABLE_:
       {
+        //for now the purgedata does not keep the partitions -- check to see if it was fixed
         char * ttQuery =
           new(getMyHeap()) char[strlen("PURGEDATA  ; ") +
                                strlen(hblTdb().getTableName()) +
@@ -3748,45 +3743,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         step_ = LOAD_START_;
       }
         break;
-
-      case CHECK_FOR_EMPTINESS_:
-      {
-        char * cfeQuery =
-          new(getMyHeap()) char[strlen("SELECT COUNT(1) FROM   ; ") +
-                               strlen(hblTdb().getTableName()) +
-                               100];
-        strcpy(cfeQuery, "SELECT COUNT(*) FROM ");
-        strcat(cfeQuery, hblTdb().getTableName());
-        strcat(cfeQuery, ";");
-
-        Lng32 len = 0;
-        Int64 rowCount = 0;
-        cliRC = cliInterface()->executeImmediate(cfeQuery,
-                                                 (char*)&rowCount,
-                                                 &len, NULL);
-        NADELETEBASIC(cfeQuery, getHeap());
-        cfeQuery = NULL;
-
-        if (cliRC < 0)
-        {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
-          break;
-        }
-        if (rowCount != 0)
-        {
-          //generate an error for now. later we may  use snapshot or other mechanism to recover data
-          //if something goes wrong
-          ComDiagsArea * da = getDiagsArea();
-          *da << DgSqlCode(-8964);
-          step_ = LOAD_ERROR_;
-          break;
-        }
-
-        step_ = LOAD_START_;
-      }
-        break;
-
 
       case LOAD_START_:
       {
@@ -3875,7 +3831,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           break;
         }
 
-        if (hblTdb().getKeepHFiles())
+        //this case is mainly for debugging
+        if (hblTdb().getKeepHFiles() &&
+            !hblTdb().getQuasiSecure() )
         {
           cliRC = holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON");
           if (cliRC < 0)
