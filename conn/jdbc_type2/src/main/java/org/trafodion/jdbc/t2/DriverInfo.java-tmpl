@@ -1,4 +1,4 @@
-package org.trafodion.sql;
+package org.trafodion.jdbc.t2;
 
 class DriverInfo {
 

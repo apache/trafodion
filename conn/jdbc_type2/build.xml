@@ -50,7 +50,7 @@
     <target name="clean">
       <delete dir="${dest.classes}"/>
       <delete>
-        <fileset dir="${native.src}" includes="org_*.h"/>
+        <fileset dir="${native.src}" includes="org_*.h,Vproc.h,Vproc.cpp"/>
       </delete>
       <delete dir="dist"/>
       <exec dir="." executable="/usr/bin/make">
