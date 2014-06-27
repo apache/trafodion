@@ -1,10 +1,10 @@
 
 Compiling the Java files
 ========================
-On Windows2000/WindowsXP:
+On Windows Platform:
 %JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
 
-On Solaris/HPUX/NSK:
+On Linux:
 $JAVA_HOME/bin/javac -classpath ../../lib/jdbcT4.jar *.java ../common/*.java
 
 Note: Make sure there are no compilation errors displayed on
@@ -13,16 +13,16 @@ Note: Make sure there are no compilation errors displayed on
 
 Executing PreparedStatementSample
 =========================
-On Windows2000/WindowsXP:
+On Windows Platform:
 %JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties PreparedStatementSample
 
-On Solaris/HPUX/NSK:
+On Linux:
 $JAVA_HOME/bin/java -classpath ../../lib/jdbcT4.jar:..:. -Dt4jdbc.properties=../t4jdbc.properties PreparedStatementSample
 
 
 Output of the execution would look like:
 ========================================
-Apr 14, 2004 5:45:59 PM common.sampleUtils getPropertiesConnection
+<DATE, TITME> common.sampleUtils getPropertiesConnection
 INFO: DriverManager.getConnection(url, props) passed
 
 Inserting TimeStamp

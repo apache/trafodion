@@ -1,9 +1,9 @@
 Compiling the Java files
 ========================
-On Windows2000/WindowsXP:
+On Windows Platform:
 %JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
 
-On Solaris/HPUX/NSK:
+On Linux:
 $JAVA_HOME/bin/javac -classpath ../../lib/jdbcT4.jar *.java ../common/*.java
 
 Note: Make sure there are no compilation errors displayed on
@@ -12,16 +12,16 @@ Note: Make sure there are no compilation errors displayed on
 
 Executing DBMetaSample
 ======================
-On Windows2000/WindowsXP:
+On Windows Platform:
 %JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties DBMetaSample
 
-On Solaris/HPUX/NSK:
+On Linux:
 $JAVA_HOME/bin/java -classpath ../../lib/jdbcT4.jar:..:. -Dt4jdbc.properties=../t4jdbc.properties DBMetaSample
 
 
 Output of the execution would look like:
 ========================================
-Apr 14, 2004 6:33:34 PM common.sampleUtils getPropertiesConnection
+<DATE, TIME> common.sampleUtils getPropertiesConnection
 INFO: DriverManager.getConnection(url, props) passed
 
 Inserting TimeStamp

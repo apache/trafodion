@@ -1,47 +1,41 @@
 This sample demostrates the invocation of a stored procedure in java (SPJ).
 
-Pre-requisites for running CallableStatementSample
-==================================================
-  1. The target NSK system must have the appropriate SQL/MX SPJ software installed.
-  2. The target NSK system must have NSJ4 installed.
-
-
 Compiling the Java files
 ========================
-  On Windows2000/WindowsXP:
+  On Windows Platform:
     %JAVA_HOME%\bin\javac -classpath ..\..\lib\jdbcT4.jar *.java ..\common\*.java
 
-  On Solaris/HPUX/NSK:
+  On Linux/:
     $JAVA_HOME/bin/javac -classpath ../../lib/jdbcT4.jar *.java ../common/*.java
 
   Note: Make sure there are no compilation errors displayed on
         the screen.
 
 
-Copy the stored procedure's class code to NSK
+Copy the stored procedure's class code
 =============================================
   Use ftp to copy the class file located in
 
      samples/CallableStatementSample/IntegerSPJ.class
 
-  to the target NSK system at the following location
+  to the target system at the following location
 
      /tmp/IntegerSPJ.class
 
-  NOTE: The sample will create and drop the SPJ via the SQL/MX CREATE/DROP PROCEDURE statement.
+  NOTE: The sample will create and drop the SPJ via the CREATE/DROP PROCEDURE statement.
 
 
 Executing CallableStatementSample
 =================================
-  On Windows2000/WindowsXP:
+  On Windows Platform:
     %JAVA_HOME%\bin\java -classpath ..\..\lib\jdbcT4.jar;..;. -Dt4jdbc.properties=..\t4jdbc.properties CallableStatementSample
 
-  On Solaris/HPUX/NSK:
+  On Linux:
     $JAVA_HOME/bin/java -classpath ../../lib/jdbcT4.jar:..:. -Dt4jdbc.properties=../t4jdbc.properties CallableStatementSample
 
-  A successfull execution of the sample wil produce output similar to the following:
+  A successfull execution of the sample will produce output similar to the following:
 
-    Apr 14, 2004 6:49:22 PM common.sampleUtils getPropertiesConnection
+    <DATE, TIME> common.sampleUtils getPropertiesConnection
     INFO: DriverManager.getConnection(url, props) passed
     The Callable Statement org.trafodion.jdbc.t4.TrafT4CallableStatement@e3b895
     Out parameter is 100
