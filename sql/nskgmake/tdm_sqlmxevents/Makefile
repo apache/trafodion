@@ -33,6 +33,8 @@ endif
 
 ifeq ($(TARGTYPE),linux)
 EXTERN_LIBS := $(XMPIROOT)/libevlsq.so
+ifneq ($(SP_DIS),)
 EXTERN_LIBS += $(SP_EXPORT_LIB)/libwrappersq.so
+endif
 CPPSRC += vers_libtdm_sqlmxevents.cpp
 endif

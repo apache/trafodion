@@ -169,6 +169,8 @@ void HHDFSStatsBase::add(const HHDFSStatsBase *o)
   numBlocks_ += o->numBlocks_;
   numFiles_ += o->numFiles_; 
   totalSize_ += o->totalSize_;
+  if (o->modificationTS_ > modificationTS_)
+    modificationTS_ = o->modificationTS_ ;
   sampledBytes_ += o->sampledBytes_;
   sampledRows_ += o->sampledRows_;
 }
@@ -553,7 +555,6 @@ NABoolean HHDFSListPartitionStats::populate(hdfsFS fs,
         if (! bucketStats->addFile(fs, &fileInfos[f], doEstimation, recordTerminator, isSequenceFile))
           result = FALSE;
       }
-
   hdfsFreeFileInfo(fileInfos, numFiles);
 
   // aggregate statistics over all buckets

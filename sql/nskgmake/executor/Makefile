@@ -133,7 +133,9 @@ CPPSRC += vers_libexecutor.cpp \
 
 INCLUDE_DIRS := sqlutils/SQ_tseInterface
 
+ifneq ($(SP_DIS),)
 EXTERN_LIBS := $(SP_EXPORT_LIB)/libwrappersq.so
+endif
 SYS_LIBS := -lrt -lpthread
 SRCPATH := bin executor runtimestats porting_layer qmscommon
 #DEP_LIBS += tdm_sqlcli log4cpp

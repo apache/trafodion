@@ -305,7 +305,8 @@ class ComTdbRoot : public ComTdb
     DDL                                 = 0x00000004,
     HDFS_ACCESS                 = 0x00000008,
     EXE_UTIL_RWRS              = 0x00000010,
-    EMBEDDED_COMPILER          = 0x00000020
+    EMBEDDED_COMPILER          = 0x00000020,
+    HIVE_ACCESS                = 0x00000040
   };
 
   // Use these values in 16-bit rtFlags3_
@@ -909,7 +910,7 @@ public:
   { return (rtFlags1_ & AQR_ENABLED) != 0; }
   void setAqrEnabled(NABoolean v)
   { (v ? rtFlags1_ |= AQR_ENABLED : rtFlags1_ &= ~AQR_ENABLED); }
-  
+
   void setLRUOperation(short value)
   {
     if (value)
@@ -934,7 +935,12 @@ public:
     { 
       (v ? rtFlags2_ |= HDFS_ACCESS : rtFlags2_ &= ~HDFS_ACCESS); 
     }
-
+  
+  NABoolean hiveAccess()
+  { return (rtFlags2_ & HIVE_ACCESS) != 0; }
+  void setHiveAccess(NABoolean v)
+  { (v ? rtFlags2_ |= HIVE_ACCESS : rtFlags2_ &= ~HIVE_ACCESS); }
+  
   NABoolean exeUtilRwrs() const
     {return ((rtFlags2_ & EXE_UTIL_RWRS) != 0);};
  

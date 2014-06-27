@@ -1279,7 +1279,7 @@ NABoolean CmpMain::compileFromCache
 		(tdata->getPlan()->getPlanLen() > 0))
 	      {
 		ComTdbRoot * rootTdb = (ComTdbRoot *)tdata->getPlan()->getPlan();
-		if (NOT rootTdb->aqrEnabled())
+		if ((NOT rootTdb->aqrEnabled())||(rootTdb->hiveAccess()))
 		  {
 		    bPatchOK = FALSE;
 		    return FALSE;
@@ -1347,7 +1347,7 @@ NABoolean CmpMain::compileFromCache
 		  (cdata->getPlan()->getPlanLen() > 0))
 	      {
 		  ComTdbRoot * rootTdb = (ComTdbRoot *)cdata->getPlan()->getPlan();
-		  if (NOT rootTdb->aqrEnabled())
+		  if ((NOT rootTdb->aqrEnabled())||(rootTdb->hiveAccess()))
 		  {
 		    bPatchOK = FALSE;
 		    return FALSE;
@@ -1359,7 +1359,7 @@ NABoolean CmpMain::compileFromCache
               // make room for and add this query's preparser cache entry.
               if (CURRENTQCACHE->isPreparserCachingOn()) {
 		ComTdbRoot * rootTdb = (ComTdbRoot *)*plan;
-		if (rootTdb->aqrEnabled()) {
+		if ((rootTdb->aqrEnabled())&&(!(rootTdb->hiveAccess()))) {
                 CURRENTQCACHE->addPreParserEntry
                   (cachewa.getTextKey(sText, charset, getStmtAttributes()),
                    params, parmSize, entry, begTime);
@@ -2181,7 +2181,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 	  ComTdbRoot * rootTdb =
 	    (ComTdbRoot *) generator.getFragmentDir()->getTopObj(0);
 	  
-	  if (NOT rootTdb->aqrEnabled())
+	  if ((NOT rootTdb->aqrEnabled())||(rootTdb->hiveAccess()))
 	    CURRENTQCACHE->deCachePreParserEntry(tkey);
 	}
 

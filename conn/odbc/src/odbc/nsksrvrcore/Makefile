@@ -56,8 +56,11 @@ CODEGEN = -fPIC
 
 # Produce libmxocore.so
 libmxocore.so: $(OBJS)
-	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -levlsq -lqpidclient -L$(PROTOBUFS_LIB) -lprotobuf -L$(SP_EXPORT_LIB) -lwrappersq -lpublications -lsqauth -lsqcert $(OBJS)
+	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -levlsq -lqpidclient  -lsqauth -lsqcert $(OBJS)
 	cp -up $@ $(LIBEXPDIR)
+
+# Please add the following line when SeaPilot is enabled
+# -L$(PROTOBUFS_LIB) -lprotobuf -L$(SP_EXPORT_LIB) -lwrappersq  -lpublications
 
 $(OUTDIR)/libmxocore_version.o: $(MY_SQROOT)/export/include/SCMBuildStr.h
 

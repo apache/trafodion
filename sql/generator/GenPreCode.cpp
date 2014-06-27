@@ -4179,8 +4179,10 @@ RelExpr * DP2Scan::preCodeGen(Generator * generator,
 	(Cardinality)getEstRowsAccessed().getValue();
     }
 
-  if (getTableDesc()->getNATable()->isHiveTable())
-    generator->setHdfsAccess(TRUE);
+  if (getTableDesc()->getNATable()->isHiveTable()) {
+    generator->setHdfsAccess(TRUE); // hive and hbase access
+    generator->setHiveAccess(TRUE);
+  }
 
   // Done.
   return rvp;
@@ -5758,6 +5760,7 @@ RelExpr * HiveInsert::preCodeGen(Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
+  generator->setHiveAccess(TRUE);
   return GenericUpdate::preCodeGen(generator, externalInputs, pulledNewInputs);
 }
 
