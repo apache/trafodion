@@ -67,8 +67,6 @@
 // ----------------------------------------------------------------------
 // forward declarations
 // ----------------------------------------------------------------------
-// used in RelExpr.cpp, GroupAttr.cpp, initialized in opt.cpp
-extern THREAD_P EstLogPropSharedPtr *GLOBAL_EMPTY_INPUT_LOGPROP;
 
 // -----------------------------------------------------------------------
 // methods for class ExprGroupId

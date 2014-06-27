@@ -46,6 +46,7 @@
 
 #include "ComOperators.h"
 #include "ComSmallDefs.h"
+#include "CmpContext.h"
 #include "ElemDDLConstraintCheck.h"
 #include "StmtDDLCreateView.h"
 #include "StmtDDLCreateTrigger.h"

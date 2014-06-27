@@ -119,6 +119,7 @@ using namespace std;
 #include "NumericType.h"
 #include "ItemNAType.h"
 #include "MiscType.h"
+#include "CmpContext.h"
 
 #include "AllElemDDL.h"
 #include "AllItemExpr.h"
@@ -129,7 +130,6 @@ using namespace std;
 #include "ComMPLoc.h"
 #include "ComTransInfo.h"
 #include "ControlDB.h"
-#include "CmpContext.h"
 #include "CmpStatement.h"
 #include "GroupAttr.h"
 #include "HeapLog.h"

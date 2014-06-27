@@ -217,9 +217,7 @@ Int32 arkcmp_main_entry()
       ArkcmpFatalError(ARKCMP_ERROR_PREFIX "Fatal exception.");
     }
 
-   ENDTRANSACTION();
-
-  return 0;
+  return 0;  
 }
 
 

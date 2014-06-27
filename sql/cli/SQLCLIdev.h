@@ -1059,7 +1059,22 @@ Lng32 SQL_EXEC_GetStatisticsArea_Internal
  /* IN */    Lng32 statsReqStrLen,
  /* IN */    short activeQueryNum,
  /* IN */    short statsMergeType,
- /*INOUT*/ const ExStatisticsArea* &exStatsArea);
+ /*INOUT*/ const ExStatisticsArea* &exStatsArea
+ );
+
+Int32 SQL_EXEC_SWITCH_TO_COMPILER_TYPE
+(
+ /*IN*/ Int32 cmpCntxtType
+ );
+
+Int32 SQL_EXEC_SWITCH_TO_COMPILER
+(
+ /*IN*/ void * cmpCntxt
+ );
+
+Int32 SQL_EXEC_SWITCH_BACK_COMPILER
+(
+ );
 
 #ifdef __cplusplus
 /* end of C linkage */

@@ -96,7 +96,6 @@ extern THREAD_P CmpMemoryMonitor *cmpMemMonitor;
 
 // Global classes/structs initialized when CmpContext is constructed
 extern THREAD_P NABoolean GU_DEBUG;
-extern THREAD_P EstLogPropSharedPtr *GLOBAL_EMPTY_INPUT_LOGPROP;
 extern THREAD_P const SqlParser_NADefaults *SqlParser_NADefaults_Glob;
 
 
@@ -284,6 +283,8 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   // create global dynamic metadata descriptors
   CmpSeabaseDDL cmpSeabaseDDL(heap_);
   cmpSeabaseDDL.createMDdescs();
+
+  emptyInLogProp_ = NULL;
 }
 
 // MV

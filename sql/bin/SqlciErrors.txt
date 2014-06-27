@@ -519,8 +519,8 @@
 2028 ZZZZZ 99999 ADVANCED MAJOR DIALOUT OSS server process $0~string0 could not be created on $1~string1 - insufficient resources.
 2029 ZZZZZ 99999 BEGINNER MINOR DBADMIN The new min value is greater than the current max value $0~int0.
 2030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The new max value is less than the current min value $0~int0.
-2031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Could not use embedded compiler for to compile statement: $0~string0 Switching to use regular compiler process. 
-2032 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 03/17/04 --- 
+2031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Could not use embedded compiler to compile statement: $0~string0 Switching to use regular compiler process. 
+2032 ZZZZZ 99999 BEGINNER MINOR DBADMIN Could not switch to embedded compiler type: $0~string0.
 2033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~string0: Operating system error $1~int0 while communicating with process $2~string1.
 2034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~string0: Operating system error $1~int0 while communicating with server process $2~string1.
 2035 ZZZZZ 99999 ADVANCED MAJOR DBADMIN $0~string0: Open of process $1~string1 failed - error = $2~int0.

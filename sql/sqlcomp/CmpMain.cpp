@@ -55,6 +55,7 @@
 
 #define NA_LINUX_QT
 
+#include "CmpContext.h"
 #include "Analyzer.h"
 #include "AllRelExpr.h"
 #include "BindWA.h"
@@ -62,7 +63,6 @@
 #include "catapirequest.h"
 #include "ComDiags.h"
 #include "CmpCommon.h"
-#include "CmpContext.h"
 #include "CmpErrors.h"
 #include "CmpMain.h"
 #include "CmpMemoryMonitor.h"

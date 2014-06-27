@@ -46,10 +46,6 @@
 #include "RelGrby.h" /// temproray, delete after ASM testing
 #include "CmpStatement.h" 
 
-// This global is used by GroupAttributes to represent empty input logical
-// properties.
-THREAD_P EstLogPropSharedPtr *GLOBAL_EMPTY_INPUT_LOGPROP;
-
 // return hash value of a ValueId; this is called (and required) by
 // NAHashDictionary<K,V>::getHashCode() to compute a key's hash address.
 

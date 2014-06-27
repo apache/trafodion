@@ -5362,6 +5362,7 @@ Int32 ContextCli::switchToCmpContext(Int32 cmpCntxtType)
   if (embeddedArkcmpContext_)
     cmpContextInUse_.insert(embeddedArkcmpContext_);
   embeddedArkcmpContext_ = cmpCntxt;
+  cmpCurrentContext = cmpCntxt;  // restore the thread global
 
   return 0;  // success
 }
@@ -5398,23 +5399,27 @@ Int32 ContextCli::switchToCmpContext(void *cmpCntxt)
   if (embeddedArkcmpContext_)
     cmpContextInUse_.insert(embeddedArkcmpContext_);
   embeddedArkcmpContext_ = (CmpContext*) cmpCntxt;
+  cmpCurrentContext = (CmpContext*) cmpCntxt;  // restore the thread global
 
   return (cmpCntxtInfo->getUseCount() == 1? 0: 1); // success
 }
 
 Int32 ContextCli::switchBackCmpContext(void)
 {
-  if (!cmpContextInUse_.entries())
-    return -1;  // no previous CmpContext instance to switch back
+  ex_assert(cmpContextInUse_.entries(), "Invalid use of switch back call");
 
   // switch back
   CmpContext *curr = embeddedArkcmpContext_;
   CmpContext *prevCmpCntxt;
 
-  if (cmpContextInUse_.getLast(prevCmpCntxt))
-    return -1;  // should not have happened.
+  if (cmpContextInUse_.getLast(prevCmpCntxt) == FALSE)
+    return -1;  // failed to get previous CmpContext, should not have happened.
 
   embeddedArkcmpContext_ = prevCmpCntxt;
+  cmpCurrentContext = prevCmpCntxt;  // restore the thread global
+
+  // merge diags to previous CmpContext
+  prevCmpCntxt->diags()->mergeAfter(*curr->diags());
 
   // book keeping
   CmpContextInfo *cmpCntxtInfo;
