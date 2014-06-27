@@ -267,13 +267,13 @@ A            B            C            D
 >>
 >>select * from volatile_schema_a.t;
 
-*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select * from $$TEST_CATALOG$$.volatile_schema_a.t;
 
-*** ERROR[4082] Object TRAFODION.VOLATILE_SCHEMA_A.T does not exist or is inaccessible.
+*** ERROR[4193] The schema name prefix VOLATILE_SCHEMA_ is reserved and cannot be used.
 
 *** ERROR[8822] The statement was not prepared.
 

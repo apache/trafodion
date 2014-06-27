@@ -1575,18 +1575,17 @@ QueryAnalysis* CmpStatement::initQueryAnalysis()
   // initialization work fits in the constructor)
 
   // Initialize the global "empty input logprop".
-  if (GLOBAL_EMPTY_INPUT_LOGPROP == NULL)
-      GLOBAL_EMPTY_INPUT_LOGPROP = new (GetCliGlobals()->exCollHeap()) EstLogPropSharedPtr();
-    (*GLOBAL_EMPTY_INPUT_LOGPROP) = EstLogPropSharedPtr(new (STMTHEAP)
-                    EstLogProp(1,
-                               NULL,
-                               EstLogProp::NOT_SEMI_TSJ,
-                               new (STMTHEAP) CANodeIdSet(),
-                               TRUE));
+  context_->setGEILP(EstLogPropSharedPtr(new (STMTHEAP)
+                              EstLogProp(1,
+                                         NULL,
+                                         EstLogProp::NOT_SEMI_TSJ,
+                                         new (STMTHEAP) CANodeIdSet(),
+                                         TRUE)));
+
     //++MV
     // This input cardinality is not estimated , so we keep this knowledge
     // in a special attribute.
-    (*GLOBAL_EMPTY_INPUT_LOGPROP)->setCardinalityEqOne();
+  (*GLOBAL_EMPTY_INPUT_LOGPROP)->setCardinalityEqOne();
 
 #ifdef _DEBUG
   NABoolean debug_code = TRUE;

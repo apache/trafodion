@@ -83,6 +83,7 @@
 
 #include "dtm/tm.h"
 
+#include "CmpContext.h"
 
 
 #define DISPLAY_DONE_WARNING 1032
@@ -10430,7 +10431,21 @@ Int32 SQLCLI_SWITCH_TO_COMPILER_TYPE (
 {
   ContextCli *currContext = GetCliGlobals()->currContext();
 
-  return (currContext->switchToCmpContext(cmpClassType));
+  Int32 retCode = currContext->switchToCmpContext(cmpClassType);
+ 
+  if (retCode == 0)
+    return retCode;  // success
+
+  ComDiagsArea &diagsArea = currContext->diags();
+  if (retCode == -1)
+    diagsArea << DgSqlCode(2032)
+              << DgString0(CmpContextInfo::getCmpContextClassName(cmpClassType))
+              ;
+  else
+    diagsArea << DgSqlCode(2032)
+              << DgString0("(invalid type)");  // give warning
+
+  return retCode;
 }  
 
 /*
@@ -10449,12 +10464,18 @@ Int32 SQLCLI_SWITCH_TO_COMPILER (
  /*IN*/     void * cmpCntxt
 )  
 {
-  if (!cmpCntxt)
-    return -1;
-
   ContextCli *currContext = cliGlobals->currContext();
 
-  return (currContext->switchToCmpContext(cmpCntxt));
+  Int32 retCode = currContext->switchToCmpContext(cmpCntxt);
+
+  if (retCode >= 0)
+    return retCode;  // success
+
+  ComDiagsArea &diagsArea = currContext->diags();
+  diagsArea << DgSqlCode(2032)
+            << DgString0("invalid compiler pointer");  // give warning
+
+  return retCode;
 }
 
 /*

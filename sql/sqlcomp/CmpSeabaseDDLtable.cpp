@@ -5935,13 +5935,42 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
 	}
       else
 	{
+          // use metadata compiler
+          NABoolean switched = FALSE;
+          if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+            if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(
+                                     CmpContextInfo::CMPCONTEXT_TYPE_META))
+              {
+                // failed to switch/create metadata CmpContext
+                // continue using current compiler
+              }
+             else
+              switched = TRUE;
+
           if (sendAllControlsAndFlags())
             return NULL;
 
 	  tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
 					  objType, includeInvalidDefs);
 
+          // save existing diags info
+          ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
+
+          tempDiags->mergeAfter(*CmpCommon::diags());
+
           restoreAllControlsAndFlags();
+
+          // ignore new (?) and restore old diags
+          CmpCommon::diags()->clear();
+          CmpCommon::diags()->mergeAfter(*tempDiags);
+          tempDiags->clear();
+          tempDiags->deAllocate();
+
+          // switch back the internal commpiler, ignore error for now
+          if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER &&
+              switched == TRUE)
+            SQL_EXEC_SWITCH_BACK_COMPILER();
+
 	}
     }
 

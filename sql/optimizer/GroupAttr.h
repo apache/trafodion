@@ -61,9 +61,6 @@ class GroupAttributes;
 ////////////////////
 class GroupAnalysis;
 ///////////////////
-// used in GroupAttr.cpp, initialized in opt.cpp
-extern THREAD_P EstLogPropSharedPtr *GLOBAL_EMPTY_INPUT_LOGPROP;
-
 
 /*
 *************************************************************************

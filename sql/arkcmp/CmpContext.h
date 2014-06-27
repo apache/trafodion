@@ -63,6 +63,7 @@
 #include "CmpMessage.h"
 #endif // NA_CMPDLL
 
+#include "SharedPtr.h"
 
 class ReadTableDef;
 class SchemaDB;
@@ -79,6 +80,9 @@ class QueryCache;
 class HistogramCache;
 class CompilerTrackingInfo;
 class OptDefaults;
+
+class EstLogProp;
+typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
 
 // Template changes for Yosemite compiler incompatible with others
 typedef HASHDICTIONARY(NAString, CollIndex) CursorSelectColumns;
@@ -340,6 +344,10 @@ public :
   // optimizer cached defaults
   OptDefaults* getOptDefaults() { return optDefaults_; }
 
+  // context global empty input logical property
+  EstLogPropSharedPtr* getGEILP() { return &emptyInLogProp_; }
+  void setGEILP(EstLogPropSharedPtr inLogProp)
+                             { emptyInLogProp_ = inLogProp; }
     
 // MV
 private:
@@ -471,6 +479,8 @@ private:
   // query defaults using during a statement compilation
   OptDefaults* optDefaults_;
 
+  // context global empty input logical property
+  EstLogPropSharedPtr emptyInLogProp_;
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 
 

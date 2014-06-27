@@ -54,8 +54,6 @@ typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
 // Forward class declaration
 class CANodeIdSet;
 
-extern THREAD_P EstLogPropSharedPtr *GLOBAL_EMPTY_INPUT_LOGPROP;
-
 // -----------------------------------------------------------------------
 //  Estimated Logical Properties
 // -----------------------------------------------------------------------

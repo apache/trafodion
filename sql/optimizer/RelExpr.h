@@ -35,6 +35,7 @@
 */
 
 #include "ObjectNames.h"
+#include "CmpContext.h"
 #include "RETDesc.h"
 #include "ValueDesc.h"
 #include "Rule.h"
@@ -96,7 +97,6 @@ class Hint;
 class CANodeIdSet;
 class QueryAnalysis;
 class GroupAnalysis;
-extern THREAD_P EstLogPropSharedPtr *GLOBAL_EMPTY_INPUT_LOGPROP;
 ////////////////////
 
 // used in hueristics to limit VSBB and SIDETREE inserts only if number rows
