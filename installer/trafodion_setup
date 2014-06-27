@@ -275,6 +275,9 @@ fi
 echo "$NODE_LIST" > $TRAF_WORKDIR/node_list
 echo "$MY_NODES" > $TRAF_WORKDIR/my_nodes
 
+# create working directory on all nodes
+$TRAF_PDSH mkdir -p $TRAF_WORKDIR
+
 #================================
 echo "***INFO: installing required packages"
 YUM_LOG=$TRAF_WORKDIR/logs/trafodion_yum_$timestamp.log
@@ -388,7 +391,7 @@ sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_installer $HOME_DIR/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/trafodion_beta_license $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_license $HOME_DIR/$TRAF_USER
 if [[ $HBASE_TRX_JAR != '' ]]; then
    sudo cp $HBASE_TRX_JAR/hbase_*.jar $HOME_DIR/$TRAF_USER
 fi
