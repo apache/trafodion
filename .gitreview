@@ -1,4 +1,4 @@
 [gerrit]
-host=sea-review.hpl.hp.com
+host=review.trafodion.org
 port=29418
 project=trafodion/core.git
