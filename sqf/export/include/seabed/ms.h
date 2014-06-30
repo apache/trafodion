@@ -1063,6 +1063,15 @@ SB_Export int msg_mon_process_startup2(int sysmsgs, int eventmsgs)
 SB_THROWS_FATAL SB_DIAG_UNUSED;
 
 //
+// Call this to handle process startup
+//
+// sysmsgs: want system messages?
+// pipeio: want pipe io?
+//
+SB_Export int msg_mon_process_startup3(int sysmsgs, int pipeio)
+SB_THROWS_FATAL SB_DIAG_UNUSED;
+
+//
 // Call this to process shutdown
 //
 SB_Export int msg_mon_process_shutdown()

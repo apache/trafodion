@@ -232,7 +232,7 @@ Int32 main (Int32 argc, char *argv[])
   {
     file_init_attach(&argc, &argv, TRUE, (char *)"");
     msg_debug_hook("sqlci", "sqlci.hook");
-    file_mon_process_startup(true);
+    file_mon_process_startup2(true, false);
     atexit(my_mpi_fclose);
   }
   catch (...)

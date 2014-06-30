@@ -410,6 +410,14 @@ SB_THROWS_FATAL {
 }
 
 //
+// Purpose: handle process startup
+//
+SB_Export int file_mon_process_startup2(int pv_sysmsgs, int pv_pipeio)
+SB_THROWS_FATAL {
+    return msg_mon_process_startup3(pv_sysmsgs, pv_pipeio);
+}
+
+//
 // Purpose: enable assert
 //
 SB_Export void file_test_assert_enable(File_AS_Type *pp_state) {

@@ -213,6 +213,7 @@ int                           gv_ms_su_pnid             = -1;
 int                           gv_ms_su_nid              = -1;
 pthread_t                     gv_ms_su_pthread_self     = 0;
 int                           gv_ms_su_pid              = -1;
+bool                          gv_ms_su_pipeio           = true;
 int                           gv_ms_su_ptype            = ProcessType_Undefined;
 MS_Md_Type                   *gp_ms_rsvd_md             = NULL;
 SB_Trans::Sock_Stream        *gp_ms_su_sock_stream      = NULL;
@@ -302,7 +303,8 @@ static int            msg_mon_open_self(char            *pp_name,
                                         bool             pv_ic);
 static int            msg_mon_process_startup_com(bool pv_sysmsgs,
                                                   bool pv_attach,
-                                                  bool pv_eventmsgs)
+                                                  bool pv_eventmsgs,
+                                                  bool pv_pipeio)
 SB_THROWS_FATAL;
 static int            msg_mon_process_startup_ph1(bool pv_attach)
 SB_THROWS_FATAL;
@@ -4593,7 +4595,10 @@ SB_THROWS_FATAL {
     SB_API_CTR (lv_zctr, MSG_MON_PROCESS_STARTUP);
 
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP, 0);
-    return msg_mon_process_startup_com(pv_sysmsgs, gv_ms_attach, true);
+    return msg_mon_process_startup_com(pv_sysmsgs,
+                                       gv_ms_attach,
+                                       true,  // eventmsgs
+                                       true); // pipeio
 }
 
 //
@@ -4604,7 +4609,24 @@ SB_THROWS_FATAL {
     SB_API_CTR (lv_zctr, MSG_MON_PROCESS_STARTUP2);
 
     SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP2, 0);
-    return msg_mon_process_startup_com(pv_sysmsgs, gv_ms_attach, pv_eventmsgs);
+    return msg_mon_process_startup_com(pv_sysmsgs,
+                                       gv_ms_attach,
+                                       pv_eventmsgs,
+                                       true);
+}
+
+//
+// Purpose: handle process startup
+//
+SB_Export int msg_mon_process_startup3(int pv_sysmsgs, int pv_pipeio)
+SB_THROWS_FATAL {
+    SB_API_CTR (lv_zctr, MSG_MON_PROCESS_STARTUP3);
+
+    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_PROCESS_STARTUP3, 0);
+    return msg_mon_process_startup_com(pv_sysmsgs,
+                                       gv_ms_attach,
+                                       true,       // eventmsgs
+                                       pv_pipeio);
 }
 
 //
@@ -4612,7 +4634,8 @@ SB_THROWS_FATAL {
 //
 int msg_mon_process_startup_com(bool pv_sysmsgs,
                                 bool pv_attach,
-                                bool pv_eventmsgs)
+                                bool pv_eventmsgs,
+                                bool pv_pipeio)
 SB_THROWS_FATAL {
     const char   *WHERE = "msg_mon_process_startup";
     char         *lp_s;
@@ -4640,7 +4663,7 @@ SB_THROWS_FATAL {
     gv_ms_su_called = true;
     gv_ms_su_sysmsgs = pv_sysmsgs;
     gv_ms_su_eventmsgs = pv_eventmsgs;
-
+    gv_ms_su_pipeio = pv_pipeio;
 
     int lv_fserr = msg_mon_process_startup_ph1(pv_attach);
     if (gp_local_mon_io != NULL)
@@ -4829,7 +4852,8 @@ SB_THROWS_FATAL {
                                           gv_ms_su_pid);
                 if (pv_attach) {
                     // Connect to monitor via pipes and remap stdout and stderr
-                    ms_fifo_setup(1, lp_msg->msg.u.reply.u.startup_info.fifo_stdout);
+                    if (gv_ms_su_pipeio)
+                        ms_fifo_setup(1, lp_msg->msg.u.reply.u.startup_info.fifo_stdout);
                     ms_fifo_setup(2, lp_msg->msg.u.reply.u.startup_info.fifo_stderr);
                 }
                 if (gv_ms_trace_name) {

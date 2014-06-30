@@ -290,6 +290,8 @@ SB_DIAG_UNUSED;
 SB_Export void  file_mon_process_shutdown_now();
 SB_Export int   file_mon_process_startup(int sysmsgs)
 SB_THROWS_FATAL SB_DIAG_UNUSED;
+SB_Export int   file_mon_process_startup2(int sysmsgs, int pipeio)
+SB_THROWS_FATAL SB_DIAG_UNUSED;
 
 SB_Export void  file_test_assert_disable(File_AS_Type *state);
 SB_Export void  file_test_assert_enable(File_AS_Type *state);
