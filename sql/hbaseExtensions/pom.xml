@@ -23,12 +23,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.trafodion.sql</groupId>
-	<artifactId>hbase-extensions</artifactId>
+	<artifactId>trafodion-hbase-extensions</artifactId>
         <!-- obey sqenv.sh to get the value of TRAFODION_VER -->
 	<version>${env.TRAFODION_VER}</version>
 	<packaging>jar</packaging>
-	<name>hbase-extensions</name>
-	<description>hbase-extensions is an HBase extension......</description>
+	<name>trafodion-hbase-extensions</name>
+	<description>trafodion-hbase-extensions is for HBase extensions used by Trafodion</description>
 	
 	<properties>
 	  <hadoop.version>1.2.0</hadoop.version>
@@ -153,14 +153,6 @@
               </configuration>
             </plugin>
           </plugins>
-          <resources>
-            <resource>
-              <directory>${basedir}/src/main/java</directory>
-              <includes>
-                <!-- include all the Java sources in the jar -->
-                <include>**/*.java</include>
-              </includes>
-            </resource>
-          </resources>
+
         </build>
 </project>
