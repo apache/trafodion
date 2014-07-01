@@ -21,10 +21,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifdef USE_SEAPILOT
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
+#include <qpid/messaging/Connection.h>
+#include <qpid/messaging/Session.h>
+#include <qpid/messaging/Message.h>
+#include <qpid/messaging/Address.h>
+#include <qpid/messaging/Sender.h>
+#include <qpid/messaging/Receiver.h>
+#include <qpid/types/Variant.h>
+
 #include  "common/monitor.instance_down.pb.h"
 #include  "common/monitor.instance_up.pb.h"
 #include  "common/monitor.node_down.pb.h"
@@ -47,8 +51,6 @@ using namespace qpid;
 using std::stringstream;
 using std::string;
 
-extern qpid::client::Connection connection;
-extern qpid::client::Session session;
 extern bool amqp_initialized;
 #endif
 

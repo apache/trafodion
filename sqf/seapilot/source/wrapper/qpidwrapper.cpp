@@ -34,6 +34,7 @@
 #include <errno.h>
 
 #include "qpidwrapper.h"
+#include "common/sp_errors.h"
 #include "common/evl_sqlog_eventnum.h"
 
 #ifndef WIN32 // Linux
@@ -50,14 +51,11 @@ extern "C" const char* sp_libwrapper_vers_str();
 // ----------------------------------------------------------------------
 qpidWrapper::qpidWrapper()
 {
-    activeConnection = activeSession = false;
-    connection = NULL;
-    session = NULL;
+    activeConnection = activeSession = activeSender=false;
     sequenceNumber_ = 0;
-    session = NULL;
 
-    iPAddress[0] = '\0';
-    portNumber = -1;
+    iPAddress_[0] = '\0';
+    portNumber_ = -1;	
 
     pthread_mutex_init(&mutex, NULL);
 
@@ -98,26 +96,18 @@ qpidWrapper::~qpidWrapper()
 
 #ifndef MONITOR_PROCESS
         try
-        {
-            if (connection)
-            {
-                if (connection->isOpen())
+        {            
+                 if ((activeConnection)&& (connection.isOpen()) )   
                 {
-                    connection->close();
-                }
-            }
+                    connection.close();
+                }          
         }
         catch(const std::exception& error)
         {
             // ignore the exception, we're in a destructor!
         }
-#endif
-
-        connection = NULL;    // let qpid connection object leak
-        activeConnection = false;
-        session = NULL;       // let qpid session object leak
-        activeSession = false;
-
+#endif       
+        activeConnection = activeSession = activeSender=false;
         pthread_mutex_unlock( &mutex );
 
     pthread_mutex_destroy(&mutex);
@@ -137,15 +127,16 @@ int qpidWrapper::closeQpidConnection()
     int retries = 0;
 
     pthread_mutex_lock( &mutex );
-    while ((activeConnection) &&
-          (retries <= MAX_RETRIES))
+    while ((activeConnection) && (retries <= MAX_RETRIES))
     {
         try
-        {
-            if ((connection) && (activeConnection))
-                if (connection->isOpen())
-                    connection->close();
-            activeSession = activeConnection = false;
+        {//All a connections sessions can be closed by a call to Connection::close().
+            if ((activeConnection)&& (connection.isOpen()) )   
+            {
+                    connection.close();
+            }        
+	    activeConnection = activeSession = activeSender=false;  
+	    receiver_map_.clear();
         }
         catch(const std::exception& error)
         {
@@ -159,7 +150,6 @@ int qpidWrapper::closeQpidConnection()
 			   random = random/1000;  //micro to milli
 			   Sleep(random);
 #endif
-
            }
         }
     }
@@ -184,22 +174,15 @@ int qpidWrapper::createQpidConnection(const char *ipAddress, int portNumber,
    // probably don't have the configuration yet, so
    // we'll shoot out of createConnection if
    // sp is disabled
-
    int error = SP_SUCCESS;  // assume success
 #ifndef MONITOR_PROCESS
-   bool allocateMem = false;
-
    pthread_mutex_lock( &mutex );
-   if ((connection) && (activeConnection))
+   if (activeConnection)
    {
        pthread_mutex_unlock( &mutex );
        return SP_SUCCESS;
-   }
-
-   if (!connection)
-      allocateMem = true;
-
-   error = createConnection(true, allocateMem, ipAddress, portNumber, user, password, mode);
+   } 
+   error = createConnection(true,  ipAddress, portNumber, user, password, mode);
    pthread_mutex_unlock( &mutex );
 #endif
 
@@ -644,9 +627,9 @@ int qpidWrapper::setQpidHeaderSequenceNumber (void *header)
 // Purpose - create a qpid connection and open a session.
 //
 // --------------------------------------------------------------------
-int qpidWrapper::createConnection (bool retry, bool allocateMem, 
-								   const char *ipAddressParam,
-                                   int portNumberParam,
+int qpidWrapper::createConnection (bool retry, 
+								   const char *ipAddress,
+                                   int portNumber,
 								   const char *user,
 								   const char *password,
 								   const char *mode)
@@ -659,51 +642,38 @@ int qpidWrapper::createConnection (bool retry, bool allocateMem,
     int retries = 0;
     const char *user_fn = user;
     const char *password_fn = password;
-    const char *mode_fn = mode;
     if (!user) user_fn = "";         // Must set to empty string for assignment to std::string.
     if (!password) password_fn = ""; // Must set to empty string for assignment to std::string.
-    if (!mode) mode_fn = "tcp";      // Default is TCP if not specified.   However, if it is not 
-	                                 // set at this point, then the connection cannot be recovered
-	                                 // if it fails later on, because the mode stored will not have
-	                                 // tcp.
-    const char *lp_ip;
-    int   lv_pn;
 
-    if (ipAddressParam)
-       lp_ip = ipAddressParam;
-    else
-       lp_ip = iPAddress;
-
-    if (portNumberParam != -1)
-       lv_pn = portNumberParam;
-    else
-       lv_pn = portNumber;
-
-    // only the first time through
-    if (allocateMem)
-        connection = new qpid::client::Connection();
-
-    // Force mode to be TCP only if both user and PW were not set.
-    // if (strcmp(user_fn, "")==0 && strcmp(password_fn, "")==0) mode_fn="tcp";
-
+        
+    if (ipAddress)
+    {       
+      	strcpy(iPAddress_, ipAddress);
+    }
+    
+    if (portNumber != -1)
+    {
+	portNumber_ = portNumber;
+    }
+    
+    //url should in such format:"127.0.0.1:5672"
+   char url[MAX_SP_BUFFER];
+   memset(url,0,sizeof(url));
+   sprintf(url,"%s:%d",iPAddress_,portNumber_);
+   connection=qpid::messaging::Connection(string(url));
+    
     // when this while loop is exited, either there will be an active connection AND session
     // or neither.  If createSession fails, it will close the active connection and force the
     // connection to be retried.
     while(!(activeConnection) && (retries <= MAX_RETRIES))
     {
-      if(!activeConnection)
-      {
         try 
         {
           // Attempt to connect with authentication.
-          qpid::client::ConnectionSettings settings;
-          settings.protocol=mode_fn;
-          settings.host=lp_ip;
-          settings.port=lv_pn;
-          settings.username=user_fn;
-          settings.password=password_fn;
-		  settings.tcpNoDelay=true;
-          connection->open(settings);
+          connection.setOption("username",user_fn);
+          connection.setOption("password",password_fn);
+          connection.setOption("tcp_nodelay",true);
+          connection.open();
           activeConnection = true;
         }
         catch (const std::exception &error)
@@ -733,7 +703,7 @@ int qpidWrapper::createConnection (bool retry, bool allocateMem,
         {
           printf("createConnection: Unknown exception caught." );
         }
-       }
+       
         //if connected, try to create a session, the active data member will
         // get set in this method.
         if(activeConnection && !activeSession)
@@ -762,18 +732,15 @@ int qpidWrapper::createSession()
     { 
        try
        {
-            if (NULL == session)
-            {
-                session = new qpid::client::Session();
-            }
-            *session = connection->newSession();
+            session = connection.createSession();            
             activeSession = true;
+	     activeSender=false;
        }
        catch (const std::exception &error)
        {
             //if we fail, close connection
-            connection->close();
-            activeConnection = activeSession = false;
+            connection.close();
+            activeConnection = activeSession = activeSender=false;            
         }
     }
 
@@ -783,6 +750,33 @@ int qpidWrapper::createSession()
 #endif
     return SP_SUCCESS;
 }
+
+int qpidWrapper::createProducer(std::string &exchange)
+{
+	//address should be in following 2 formats:
+	//"my-new-topic/usa.new;{create: always, node:{type:topic}}"
+	//"my-new-topic/"+ routingkey_str+";{create: always, node:{type:topic}}";
+	//or "my-new-topic; {create: always, node:{type:topic}}"
+	int ret=SP_SUCCESS;
+	string address=exchange+address_option;
+    try
+    { 
+        /*@exception ResolutionError if there is an error in resolving
+         * the address
+         *
+         * @exception MalformedAddress if the syntax of address is not
+         * valid*/
+	  	sender = session.createSender(address);
+		activeSender=true;
+		ret=SP_SUCCESS;
+     }
+	 catch(const std::exception& error)
+	 {	 
+		ret=SP_BAD_PARAM;
+		activeSender=false;
+	 }  
+         return ret;
+}           
 
 
 // --------------------------------------------------------------------------
@@ -797,43 +791,53 @@ int qpidWrapper::sendMessage(bool retry, const std::string& messageText, const s
     int  error = SP_SUCCESS;
 #ifndef MONITOR_PROCESS
     bool done = false;
-    client::Message message;
+    qpid::messaging::Message message;
     int  random = 0;
     int  retries = 0;
+    string routingkey_str=routingKey.GetAsString();  
 
     pthread_mutex_lock( &mutex );
 
     // retry logic is within the connection logic, return if we can't get a connection
     // or a session
-    if((!connection) || (!connection->isOpen()) || (!activeSession))
+    if( (!connection.isOpen()) || (!activeSession))
     {
-        if (!connection)
-             error = createConnection (retry, true /*allocate memory*/);
-        else
-             error = createConnection (retry, false /*allocate memory*/);
-
+        error = createConnection (retry);
         if (error != SP_SUCCESS)
         {
             pthread_mutex_unlock( &mutex );
             return error;
         }
     }
+    // Only the first time to create sender as a procuder/sender 
+    // Only producer need to call this, so put it in sendMessage, not in createSession
+    if(!activeSender)
+    {
+    	error=createProducer(exchange);
+	if(error!= SP_SUCCESS)
+		return error;	
+    }
 
     // create and initialize a qpid message object
-    message.getDeliveryProperties().setRoutingKey(routingKey.GetAsString());
-    message.getMessageProperties().setContentType(contentType);
-    message.setData(messageText);
+    message.setSubject(routingkey_str);
+    message.setContentType(contentType);
+    message.setContent(messageText);	
 
     while ((retries <= MAX_RETRIES) && (!done))
     {
          try
          {
-           if (asyncMsg)
-               async(*session).messageTransfer(client::arg::content=message,
-                                               client::arg::destination=exchange);
-           else
-               session->messageTransfer(client::arg::content=message, client::arg::destination=exchange);
-
+           /**
+     		* Sends a message
+     		* 
+     		* @param message the message to send	 	
+     		* @param sync if true the call will block until the server
+     		* confirms receipt of the messages; if false will only block for
+     		* available capacity (i.e. pending == capacity)
+			  QPID_MESSAGING_EXTERN void send(const Message& message, bool sync=false);
+     		*/
+           	if (asyncMsg)	sender.send(message);  
+	   	else sender.send(message,true);
            done = true;
            error = SP_SUCCESS;
          }
@@ -843,7 +847,7 @@ int qpidWrapper::sendMessage(bool retry, const std::string& messageText, const s
 
              // lost our connection, try again, otherwise just
              // retry the message
-             if (!connection->isOpen())
+             if (!connection.isOpen())
                  activeConnection = false;
 
              if ((retry) && (++retries <= MAX_RETRIES))
@@ -860,7 +864,7 @@ int qpidWrapper::sendMessage(bool retry, const std::string& messageText, const s
                 // us this information, but for now we just dispose and
                 // assume.  WE only retry the connection 1 time here.  If it succeeds
                 // we'll retry the message.  If not, then we exit the while loop.
-                error = createConnection (retry, false /* allocate memory */);
+                error = createConnection (retry);
                 if (error != SP_SUCCESS)
                 {
                       done = true;
@@ -897,21 +901,21 @@ int qpidWrapper::syncMessages()
     int  retries = 0;
 
     // no need to sync if our connection was lost
-    if((!connection) || (!activeConnection))
+    if(!activeConnection)
         return SP_CONNECTION_CLOSED;
 
     pthread_mutex_lock( &mutex );
     while ((retries <= MAX_RETRIES) && (!done))
     try
     {
-        session->sync();
+        session.sync();
         done = true;
         error = SP_SUCCESS;
     }
     catch (const std::exception& excep)
     {
         error = SP_SYNC_FAILED;
-        if ((!connection) || (!connection->isOpen()))
+        if (!connection.isOpen())
         {
            error = SP_CONNECTION_CLOSED;
            done = true;
@@ -931,106 +935,111 @@ int qpidWrapper::syncMessages()
 #endif
     return error;
 }
-
-// -------------------------------------------------------------------------------
-//
-// declareQueue
-// Purpose : create a queue..
-//
-// -------------------------------------------------------------------------------
-int qpidWrapper::declareQueue(std::string queue,  bool exclusive_q, int message_depth)
+string qpidWrapper::createAddress(std::string exchange,std::string routingkey)
 {
-    int error = SP_SUCCESS;
-#ifndef MONITOR_PROCESS
-    pthread_mutex_lock( &mutex );
+	//address should be in following 2 formats:
+	//"my-new-topic/usa.new;{create: always, node:{type:topic}}"
+	//"my-new-topic/"+ routingkey+";{create: always, node:{type:topic}}";
+	//or "my-new-topic; {create: always, node:{type:topic}}"
+	string address=exchange+"/"+routingkey+address_option;
+	return address;
+}
 
-    // do not retry the connection, let the higher levels do it 
-    if((!connection) || (!connection->isOpen()) || (!activeSession))
-    {
+//If the program need to read messages from many sources,it can create multiple Consumer/receivers ,
+//Every consumer/receiver bind to an unique address=exchange +routingkey.
+int qpidWrapper::createConsumer(std::string exchange,std::string routingkey,uint32_t capacity)
+{	
+	string address=createAddress( exchange,routingkey);
+        try
+        {
+       	 /**
+     		* Create a new receiver through which messages can be received
+     		* from the specified address.
+     		*
+     		* @exception ResolutionError if there is an error in resolving
+     		* the address
+     		*
+     		* @exception MalformedAddress if the syntax of address is not
+     		* valid
+     		*/
+	  	receiver_= session.createReceiver(address);		
+	       receiver_.setCapacity(CAPACITY);
+		string name=receiver_.getName();
+		receiver_map_[address]=name;
+		//receiver_map_.insert(valType(address,receiver));
+        }
+        catch(const std::exception& error)
+        {
+		return SP_BAD_PARAM;		
+        }
+        return SP_SUCCESS;
+}   
+int qpidWrapper::deleteConsumer(std::string exchange,std::string routingkey)
+{
+	 string address=createAddress( exchange,routingkey);
+	  if (receiver_map_.count( address))  
+	  {
+	  	string name=receiver_map_[address];
+		receiver_=session.getReceiver(name);
+		receiver_.close();
+		receiver_map_.erase (address);
+		return SP_SUCCESS;
+          }
+	 return SP_BAD_PARAM;		
+ }
 
-        // in case its just our session that closed, just close the whole connection
-        // since it will only actually close it if it's open
-        pthread_mutex_unlock(&mutex);
-        closeQpidConnection();
-        return SP_CONNECTION_CLOSED;
-    }
-
-   try
-   {
-
-	   message_depth = 5000;
-	   if (message_depth == 0)
-	   {
-           session->queueDeclare(client::arg::queue=queue, client::arg::exclusive=exclusive_q,
-                              client::arg::autoDelete=true);
-	   }
-	   else
-	   {
-		   qpid::client::QueueOptions qo;
-           qo.setSizePolicy(qpid::client::RING,0,message_depth);
-		   session->queueDeclare(client::arg::queue=queue, client::arg::exclusive=false,
-                              client::arg::autoDelete=true ,client::arg::arguments=qo);
-	   }
-
-
-  //   session->queueDeclare(client::arg::queue=queue, client::arg::exclusive=false,
-  //                         client::arg::autoDelete=true);
-
-   }
-   catch (const std::exception &ex)
+//If the program have multiple Consumers/receivers,call this retrieve method
+//A receiver can only read from one source, but many programs need to be able to read messages from many sources. 
+//In the Qpid Messaging API, a program can ask a session for the ¡°next receiver¡±; 
+//that is, the receiver that is responsible for the next available message. 
+bool qpidWrapper::retrieveNextMessage(qpid::messaging::Message &message,qpid::messaging::Duration timeout)
    { 
-          // presume that session is lost.  Someday qpid will give
-          // us this information, but for now we just dispose and
-          // assume.
+     /**
+     * Returns the receiver for the next available message. If there
+     * are no available messages at present the call will block for up
+     * to the specified timeout waiting for one to arrive.     
+     */
+    //QPID_MESSAGING_EXTERN Receiver nextReceiver(Duration timeout=Duration::FOREVER);
+    /**
+     * Retrieves a message for this receivers subscription or waits
+     * for up to the specified timeout for one to become
+     * available. 
+     * @return false if there is no message to give after
+     * waiting for the specified timeout, or if the Receiver is
+     * closed, in which case isClose() will be true.
+     */
+     //receiver.fetch(Message& message, Duration timeout=Duration::FOREVER);
+     //currently ,use the default timeout =Duration::FOREVER,if need ,developer can set the timeout in new feature in future.	        
 
-         activeSession = false;
-         closeQpidConnection();
-         error = SP_CONNECTION_CLOSED;
+    bool ret= session.nextReceiver().fetch(message,RECEIVER_TIMEOUT) ;	    
+    session.acknowledge();
+    return ret;
    }
 
-      pthread_mutex_unlock( &mutex );
-#endif
-      return error;   
-}
-
-// -------------------------------------------------------------------------------
-//
-// bindQueue
-// Purpose : bind a given queue with the routing key provided.
-//
-// -------------------------------------------------------------------------------
-int qpidWrapper::bindQueue(std::string queue, std::string exchange, std::string &bindingKey)
+void qpidWrapper::getMessageData(qpid::messaging::Message& message,string & content,string &routingkey)
 {
-    int error = SP_SUCCESS;
-#ifndef MONITOR_PROCESS
-    pthread_mutex_lock( &mutex );
-
-    // do not retry the connection, let the higher levels do it 
-    if((!connection) || (!connection->isOpen()) || (!activeSession))
-    {
-        // in case its just our session that closed, just close the whole connection
-        // since it will only actually close it if it's open
-        pthread_mutex_unlock(&mutex);
-        closeQpidConnection();
-        return SP_CONNECTION_CLOSED;
+	content=message.getContent();
+	routingkey=message.getSubject();
+	return;
     }
 
-   try
+//Currently,the acknowledge method won't be used externally.
+void qpidWrapper::acknowledge(qpid::messaging::Message &message)
    {
-        session->exchangeBind(client::arg::exchange=exchange, client::arg::queue=queue,
-		   	      client::arg::bindingKey=bindingKey);
+	/**
+     * Acknowledges the specified message.
+     */
+    session.acknowledge(message, false);	
     }
-    catch (const std::exception &ex)
+void qpidWrapper::acknowledge()
     {
-          // presume that session is lost.  Someday qpid will give
-          // us this information, but for now we just dispose and
-          // assume.
-          activeSession = false;
-          closeQpidConnection();
-          error = SP_CONNECTION_CLOSED;
+	/**
+     * Acknowledges the specified message.
+     */
+    session.acknowledge(false);	
     }
 
-      pthread_mutex_unlock( &mutex );
-#endif
-      return error;   
-}
+
+
+
+

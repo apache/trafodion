@@ -25,6 +25,6 @@ FINALOBJ 	:=  wrapper_test
 
 PROTOSRC        := ../../publications/wrapper.test.proto
 
-LIBS =  -lqpidclient -lprotobuf  -L$(SP_EXPORT_LIB) -lwrapper -lpublications
+LIBS = -lprotobuf -L$(SP_EXPORT_LIB) -lwrapper -lpublications
 
 include ../../../build.gmk

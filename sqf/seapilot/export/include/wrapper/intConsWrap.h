@@ -19,13 +19,6 @@
 #ifndef __CONSUMERWRAPPER_H
 #define __CONSUMERWRAPPER_H
 
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
-#include <qpid/client/MessageListener.h>
-#include <qpid/client/SubscriptionManager.h>
-
 #ifndef WIN32
 #include <syslog.h>
 #endif
@@ -34,6 +27,10 @@
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/text_format.h>
+#include <qpid/messaging/Message.h>
+#include "../wrapper/qpidwrapper.h"
+#include "../wrapper/config.h"
+
 
 #ifdef SEAQUEST_PROCESS
 #include "seabed/ms.h"
@@ -44,7 +41,6 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-#include <list>
 
 #ifndef WIN32
 #include "wrapper/routingkey.h"
@@ -60,83 +56,49 @@ using namespace std;
 #define MAX_RAND      5
 #define MAX_SP_BUFFER 256
 
-class sub_wrapper
-{
-public:
-	sub_wrapper(qpid::client::Session* session) : subscriptions(*session){};
-	~sub_wrapper(){};
 
-	void run() {subscriptions.run();}
-	void subscribe(client::MessageListener &listener, const std::string &queue) {subscriptions.subscribe(listener, queue);}
-
-	client::SubscriptionManager subscriptions;
-};
-
-// class will hold an exchange/binding_key pairs
-class LIST_ELEM
-{
-    public:
-    LIST_ELEM(std::string &exchange, std::string &key)
-              {exchange_name = exchange; binding_key = key;}
-    ~LIST_ELEM(){}
-    std::string exchange_name;
-    std::string binding_key;
-};
-
-// class hold hold a queue name with a list of exchange/binding_key pairs
-class QUEUES
-{
-    public:
-    QUEUES(std::string &name, bool exclusive) 
-       {queue_name = name; 
-        queue_exclusive=exclusive;}
-    ~QUEUES() {list.clear();}
-
-    std::string queue_name;
-    bool queue_exclusive;
-    std::list<LIST_ELEM> list;
-};
-
-// --------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //
 // Internal Wrapper class to send qpid messages
 //
-// -------------------------------------------------------------------------------------
-class SP_DLL_EXPORT ConsumerWrapper : public client::MessageListener
+// ---------------------------------------------------------------------------
+class SP_DLL_EXPORT ConsumerWrapper 
 
 {
     public:
 
     ConsumerWrapper();
     ConsumerWrapper(const char *ipAddress, int portNumber, 
-		            const char *user=NULL, const char *password=NULL, const char *mode="tcp");
+                    const char *user=NULL, const char *password=NULL, 
+                    const char *mode="tcp");
     ~ConsumerWrapper();
 
     // entry points
-    int           bindQueue(std::string queue, std::string exchange,
-                            std::string routing_key);
-    int           closeAMQPConnection();
-    int           createAMQPConnection(const char *ipAddress, int portNumber, 
-		                               const char *user=NULL, const char *password=NULL, const char *mode="tcp");
-    int           declareQueue(std::string queue, bool exclusive = false); 
-    const char *  session_name();
-    int           listen() ;
-    virtual void  received(client::Message& message) = 0;
-    int           subscribeQueue(std::string queue);
-	bool          get_queue_name(const char *subscription_key, char *queue_name, unsigned int queue_length);
+   
+    int          closeAMQPConnection();
+    int          createAMQPConnection(const char *ipAddress, int portNumber, 
+                                      const char *user=NULL, 
+                                      const char *password=NULL, 
+                                      const char *mode="tcp");
+    int          createConsumer(std::string exchange, std::string routing_key);
+    int          deleteConsumer(std::string exchange, std::string routing_key);
 
-    private:
-    int          addToQueue(std::string &queue, std::string &exchange, std::string &key);
-    int          recoverSession();
+    int          bindQueue(std::string queue, std::string exchange, 
+                           std::string routing_key);
+    int          listen() ;
+    virtual void received(std::string & content ,std::string & routingkey) = 0;
+
+    void         getMessageData(qpid::messaging::Message& message,
+                                string& content,string& routingkey);
+    int          declareQueue(std::string queue, bool exclusive = false){ return SP_SUCCESS;}
+    int          subscribeQueue(std::string queue){ return SP_SUCCESS;} 
 
 private:
-    void *                       config_;
-    bool                         initialized_;
-    void *                       qpidWrapper_;
-    bool                         recoverymode_;
-    sub_wrapper                  *subscriptions_;
-	bool                         connection_closed_;
-    std::list <QUEUES>           queue_keys_;
+    void        *config_;
+    bool         initialized_;
+    qpidWrapper *qpidWrapper_;
+    bool         connection_closed_;
+
 };
 
 #endif

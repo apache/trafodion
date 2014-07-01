@@ -29,8 +29,7 @@ INCLUDES  = -I$(SP_EXPORT_INC) \
 	    -I$(MY_SPROOT)/export/include \
 	    -I$(PROTOBUFS_INC)
 
-LIBS      =	-lqpidclient \
-		-L$(PROTOBUFS_LIB) -lprotobuf \
+LIBS      =     -L$(PROTOBUFS_LIB) -lprotobuf \
 		-L$(MY_SQROOT)/export/lib$(SQ_MBTYPE) -lsbms \
 		-L$(SP_EXPORT_LIB) -lpublications -lspptcommon 
 

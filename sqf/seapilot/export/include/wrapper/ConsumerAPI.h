@@ -19,10 +19,10 @@
 #ifndef __CONSUMERAPI_H
 #define __CONSUMERAPI_H
 
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
+#include <qpid/messaging/Connection.h>
+#include <qpid/messaging/Message.h>
+#include <qpid/messaging/Session.h>
+
 #include "intConsWrap.h"
 
 #include <cstdlib>
@@ -49,6 +49,7 @@ class SP_DLL_EXPORT ConsumerListener :  public ConsumerWrapper
     // entry points
     int  bindQueue(std::string queue, std::string exchange,
                    std::string routing_key);
+    int  deleteConsumer(std::string exchange, std::string routing_key);
     int  closeAMQPConnection();
     int  createAMQPConnection(const char *ipAddress, int portNumber, 
 		                      const char *user=NULL, const char *password=NULL, const char *mode="tcp");
@@ -56,12 +57,10 @@ class SP_DLL_EXPORT ConsumerListener :  public ConsumerWrapper
     int  listen() ;
     int  subscribeQueue(std::string queue);
 
-    // client helper method
-    const char * get_session_name();
-	bool get_queue_name(const char *subscription_key, char *queue_name, unsigned int queue_length);
-
     // client must implement the below method
-    virtual void received(client::Message& message) = 0;
+    //change the parameters to hide qpid::messaging::message
+    virtual void  received(std::string & content ,std::string &routingkey) = 0;
+    void getMessageData(qpid::messaging::Message& message,string & content,string &routingkey);
 };
 
 #endif

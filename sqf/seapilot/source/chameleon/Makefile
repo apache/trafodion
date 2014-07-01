@@ -25,7 +25,7 @@ INCLUDES :=     -I$(MY_SPROOT)/source/publications \
                 -I./inc \
 		-I$(PROTOBUFS_INC)
 
-LIBS        := -lqpidclient -lxerces-c \
+LIBS        := -lxerces-c \
 	       -L$(PROTOBUFS_LIB) -lprotobuf \
                -L$(SP_EXPORT_LIB) -lpublications -lwrappersq \
                -L$(MY_SQROOT)/export/lib$(SQ_MBTYPE)
