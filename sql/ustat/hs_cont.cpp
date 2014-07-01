@@ -35,9 +35,6 @@
 
 #define HS_FILE "hs_cont"
 
-#include "CmpCommon.h"
-#include "CmpContext.h"
-
 #include "hs_globals.h"
 #include "hs_cont.h"
 

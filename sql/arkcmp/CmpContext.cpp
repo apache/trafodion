@@ -537,6 +537,15 @@ void CmpContext::switchContext()
   cmpMemMonitor = cmpMemMonitor_;
 }
 
+void CmpContext::switchBackContext()
+{
+  SqlParser_NADefaults_Glob =
+      ActiveSchemaDB()->getDefaults().getSqlParser_NADefaults_Ptr();
+  gpClusterInfo = clusterInfo_;
+  SqlParser_Diags = diags();
+  cmpMemMonitor = cmpMemMonitor_;
+}
+
 void CmpContext::resetContext()
 {
   SqlParser_NADefaults_Glob = NULL;

@@ -1138,11 +1138,23 @@ NAString getHistogramsTableLocation(
 //==========================================================================
 double getRowCountForFetchFuncs(HSTableDef *tabDef, NABoolean &isEstimate)
 {
+  NABoolean isHbaseTable = HSGlobalsClass::isHbaseCat(tabDef->getCatName());
+  NABoolean isHiveTable  = HSGlobalsClass::isHiveCat(tabDef->getCatName());
+
+  // getRowCount below does not use SQL for Hbase and Hive tables, so there
+  // is no need to set the CQD for these tables
+  if (!isHbaseTable && !isHiveTable)
+     HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_FETCHCOUNT_ACTIVE 'ON'");
+
   isEstimate = FALSE;
   Int64 rows=-1;
   // On NSK and Linux, getRowCount() will return an accurate count
   // (from DP2 file label), in all testing environments (and in almost
   //  all other cases).
   rows = tabDef->getRowCount(isEstimate);
+
+  if (!isHbaseTable && !isHiveTable)
+    HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_FETCHCOUNT_ACTIVE 'OFF'");
+
   return convertInt64ToDouble(rows);
 }

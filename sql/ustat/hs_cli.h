@@ -787,7 +787,7 @@ class HSCursor :public NABasicObject
 
 public:
 
-  HSCursor(const char* stmtName = HS_STMTID);
+  HSCursor(NAHeap *h=STMTHEAP, const char* stmtName = HS_STMTID);
   ~HSCursor();
 
   // open the cursor.
@@ -938,6 +938,8 @@ private:
   Int32 closeStmtNeeded_;
 
   Lng32 retcode_;
+  
+  NAHeap *heap_;
 
   // prepare a dynamic sql statement.
   Lng32 prepare(const char *cliStr, const Lng32 outDescEntries = 500);

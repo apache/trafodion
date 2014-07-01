@@ -490,6 +490,7 @@ public:
                   , ComUID tableUID
                   , ComDiskFileFormat fileType
                   , NABoolean updatable
+                  , NAHeap *h=STMTHEAP
                   );
   ~HSHistogrmCursor();
 
@@ -510,6 +511,7 @@ public:
             // the tmp trigger table. See HSHistogrmCursor::fetch below for more details.
             , Lng32 offset
             , HSTableDef *tabDef
+            , NABoolean cmpContextSwitched=FALSE
             );
 
   Lng32 get();
@@ -568,6 +570,7 @@ private:
   NABoolean updatable_;
 
   ULng32 maxHistid_;
+  NAHeap *heap_;
 
   HSHistogrmCursor(const HSHistogrmCursor &other);
   HSHistogrmCursor& operator=(const HSHistogrmCursor &other);
@@ -584,6 +587,7 @@ public:
                   , const char *histintsTableName
                   , const ComUID tableUID
                   , const ComDiskFileFormat fileType
+                  , NAHeap *h=STMTHEAP
                   );
   ~HSHistintsCursor();
 
@@ -622,6 +626,7 @@ private:
 
   SQLDESC_ID *desc_;
   Lng32 retcode_;
+  NAHeap *heap_;
 
   HSCursor* cursor201_;  // Used for dynamic version of query that reads intervals
 
@@ -1149,9 +1154,7 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
                   if (!specialTable &&
                       CmpCommon::getDefault(USTAT_FETCHCOUNT_ACTIVE) != DF_ON)
                     {
-                      HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_FETCHCOUNT_ACTIVE 'ON'");
                       rowCount=getRowCountForFetchFuncs(tabDef, isEstimate);
-                      HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_FETCHCOUNT_ACTIVE 'OFF'");
                     }
                 }
             }
@@ -1254,6 +1257,7 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
   LM->LogTimeDiff("\nExiting FetchHistograms() ---------------------------------");
   // to prevent false alarms for statement heap memory allocation "tabDef"
   // coverity[leaked_storage]
+
   return 0;
 }
 #pragma warn(770)  // warning elimination
@@ -1342,19 +1346,35 @@ Lng32 readHistograms(HSTableDef *tabDef
       NAString histogramsName = histogramTableName; // It points to Histogram or Histints table name. soln#:10-030910-9505 
       histogramRowCount = -1;
 
+      // save the statement heap from the current context so it can be used to allocate memory
+      // for the cursor attributes
+      NAHeap *curStmtHeap = STMTHEAP;
+      NABoolean switched = FALSE;
+      // switch to another context to avoid spawning an arkcmp processing when compiling
+      // the user metadara queries on the histograms tables
+      if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+         if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
+         {
+            //failed to switch/create metadata CmpContext,  continue using current compiler context
+         }
+         else
+           switched = TRUE;
+
       HSHistogrmCursor cursor(fullQualName /*in*/,
                               histogramTableName /*in*/,
                               tabDef->getObjectUID() /*in*/,
                               tabDef->getObjectFormat()  /*in*/,
                               (HSGlobalsClass::autoInterval > 0 && /*in*/
                                (!tabDef->isVolatile() || 
-                                CmpCommon::getDefault(USTAT_AUTO_FOR_VOLATILE_TABLES) == DF_ON)));
+                                CmpCommon::getDefault(USTAT_AUTO_FOR_VOLATILE_TABLES) == DF_ON)),
+                                curStmtHeap /*in*/);
       if ((retcode = cursor.open()) == 0)
         {
           HSHistintsCursor cursor2(fullQualName /*in*/,
                                    histintsTableName /*in*/,
                                    tabDef->getObjectUID() /*in*/,
-                                   tabDef->getObjectFormat() /*in*/);
+                                   tabDef->getObjectFormat() /*in*/,
+                                   curStmtHeap /*in*/);
           histogramsName = histintsTableName;
           LM->LogTimeDiff("START FETCH EXISTING HISTOGRAMS");
           retcode = cursor.fetch( *cs
@@ -1370,11 +1390,18 @@ Lng32 readHistograms(HSTableDef *tabDef
                                 , preFetch
                                 , offset
                                 , tabDef
+                                , switched
                                 );
           LM->LogTimeDiff("END FETCH EXISTING HISTOGRAMS");
           maxHistid = cursor.getMaxHistid();
         }
-
+       else
+        {
+           // switch back to previous compiler context in case cursor.open above failed
+           // if open succeeds, we switch back in the cursor.fetch method above
+           if (switched == TRUE)
+               SQL_EXEC_SWITCH_BACK_COMPILER();
+        }
     }
     return 0;
 }
@@ -1429,8 +1456,10 @@ HSHistogrmCursor::HSHistogrmCursor
                    , ComUID tableUID
                    , ComDiskFileFormat fileType
                    , NABoolean updatable
+                   , NAHeap *heap
                    )
- : validCursor_(FALSE),
+ : heap_(heap),
+   validCursor_(FALSE),
    histogramTableName_(histogramTableName),
    fileType_(fileType),
    tableUID_(tableUID),
@@ -1442,7 +1471,7 @@ HSHistogrmCursor::HSHistogrmCursor
    // |-----|------------|-----|------------|
    // | len | low value  | len | high value |
    // |-----|------------|-----|------------|
-   buf1_(new(STMTHEAP) NAWchar[HS_MAX_BOUNDARY_LEN * 2 + 2]),
+   buf1_(new(heap) NAWchar[HS_MAX_BOUNDARY_LEN * 2 + 2]),
    buf2_(&buf1_[HS_MAX_BOUNDARY_LEN + 1]),
 //#ifndef SQ_LINUX
    lowval_(&buf1_[1]), highval_(&buf2_[1]),
@@ -1478,7 +1507,7 @@ HSHistogrmCursor::HSHistogrmCursor
 
 HSHistogrmCursor::~HSHistogrmCursor()
 {
-  NADELETEBASIC(buf1_, STMTHEAP);
+  NADELETEBASIC(buf1_, heap_);
   buf1_ = NULL;
 
   if (desc_)
@@ -1525,6 +1554,7 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
                             , const NABoolean preFetch
                             , Lng32 offset // MV
                             , HSTableDef *tabDef
+                            , NABoolean cmpContextSwitched
                             )
 {
   Int32 i = 0; // index for multi-column histograms
@@ -1539,7 +1569,12 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
   // the fakeHistograms loop earlier.
   NABoolean needHistints = FALSE, needHistogram = FALSE;
 
+  // prepare and open the cursor for the histInt query
   NABoolean cursor2Failed = (cursor2.open() != 0);
+
+  // switch back to previous compiler context
+  if (cmpContextSwitched == TRUE)
+      SQL_EXEC_SWITCH_BACK_COMPILER();
 
   // If it weren't for the possibility of multi-column histograms,
   // we could stop fetching rows as soon as we'd processed the n'th
@@ -1551,6 +1586,7 @@ Lng32 HSHistogrmCursor::fetch( HSColStats &cs
   // may get HS_EOF if there isn't any histogram
   if (retcode_)
     return retcode_;
+
 
   do
     {
@@ -1898,7 +1934,7 @@ Lng32 HSHistogrmCursor::open()
 
   if (cursor101_)
     delete cursor101_;
-  cursor101_ = new HSCursor;
+  cursor101_ = new HSCursor(heap_); 
   Lng32 retcode = cursor101_->prepareQuery(qry.data(), 0, 18);
   HSHandleError(retcode);
 
@@ -2040,8 +2076,10 @@ HSHistintsCursor::HSHistintsCursor
                     , const char *histintsTableName
                     , const ComUID tableUID
                     , const ComDiskFileFormat fileType
+                    , NAHeap *heap
                     )
  : validCursor_(FALSE),
+   heap_(heap),
    histintsTableName_(histintsTableName),
    tableUID_(tableUID),
    fileType_(fileType),
@@ -2052,7 +2090,7 @@ HSHistintsCursor::HSHistintsCursor
    //   |--------|-----------------|
    //   | length | boundary value  |
    //   |--------|-----------------|
-   buf_(new(STMTHEAP) NAWchar[ HS_MAX_BOUNDARY_LEN * 2 + 2 ]),
+   buf_(new(heap) NAWchar[ HS_MAX_BOUNDARY_LEN * 2 + 2 ]),
    buf_mfv_(&buf_[HS_MAX_BOUNDARY_LEN + 1]),
    //buf_v6_(&buf_v5_[HS_MAX_BOUNDARY_LEN + 1]),
 
@@ -2081,7 +2119,7 @@ HSHistintsCursor::HSHistintsCursor
 
 HSHistintsCursor::~HSHistintsCursor()
 {
-  NADELETEBASIC(buf_, STMTHEAP);
+  NADELETEBASIC(buf_, heap_);
   buf_ = NULL;
   if (desc_)
     {
@@ -2144,7 +2182,7 @@ Lng32 HSHistintsCursor::open()
 
   if (cursor201_)
     delete cursor201_;
-  cursor201_ = new HSCursor("HIST_INTS");
+  cursor201_ = new HSCursor(heap_, "HIST_INTS"); 
   Lng32 retcode = cursor201_->prepareQuery(qry.data(), 0, 9);
   HSHandleError(retcode);
 
@@ -2495,8 +2533,8 @@ void HSColStats::addHistogram
 #pragma warn(1506)  // warning elimination
       charBuf* isoLowVal = NULL;
       charBuf* isoHiVal = NULL;
-      isoLowVal = unicodeToISO88591(wLowBuf, STMTHEAP, isoLowVal);
-      isoHiVal = unicodeToISO88591(wHiBuf, STMTHEAP, isoHiVal);
+      isoLowVal = unicodeToISO88591(wLowBuf, heap_, isoLowVal);
+      isoHiVal = unicodeToISO88591(wHiBuf, heap_, isoHiVal);
 
       sprintf(LM->msg, "\tAdd to ColStats histogram(%s, %d, %d, %d, %f, %f, %s, %s )",
                           nac->getColName().data(),
@@ -2508,8 +2546,8 @@ void HSColStats::addHistogram
                           isoLowVal->data(),
                           isoHiVal->data());
       LM->Log(LM->msg);
-      NADELETEBASIC(isoLowVal, STMTHEAP);
-      NADELETEBASIC(isoHiVal, STMTHEAP);
+      NADELETEBASIC(isoLowVal, heap_);
+      NADELETEBASIC(isoHiVal, heap_);
     }
 }
 
@@ -2607,8 +2645,8 @@ void HSColStats::addHistint( NABoolean needHistints
 #pragma warn(1506)  // warning elimination
           charBuf* isoBoundVal = NULL;
           charBuf* isoMfvVal = NULL;
-          isoBoundVal = unicodeToISO88591(wBoundBuf, STMTHEAP, isoBoundVal);
-          isoMfvVal = unicodeToISO88591(wMfvBuf, STMTHEAP, isoMfvVal);
+          isoBoundVal = unicodeToISO88591(wBoundBuf, heap_, isoBoundVal);
+          isoMfvVal = unicodeToISO88591(wMfvBuf, heap_, isoMfvVal);
 
           sprintf(LM->msg, "\t\tinterval(%d, %f, %f, %s, %f, %f, %f, %s )",
                               intnum,
@@ -2620,8 +2658,8 @@ void HSColStats::addHistint( NABoolean needHistints
                               stdDevOfFreq,
                               isoMfvVal->data());
           LM->Log(LM->msg);
-          NADELETEBASIC(isoBoundVal, STMTHEAP);
-          NADELETEBASIC(isoMfvVal, STMTHEAP);
+          NADELETEBASIC(isoBoundVal, heap_);
+          NADELETEBASIC(isoMfvVal, heap_);
 
         }
     }
@@ -2718,7 +2756,8 @@ void getPreviousUECRatios(HSColGroupStruct *groupList)
                           hsGlobals->hstogram_table->data(),
                           hsGlobals->objDef->getObjectUID(),
                           hsGlobals->tableFormat,
-                          FALSE);                       // is not updatable
+                          FALSE,   // is not updatable
+                          STMTHEAP);     
 
   // Stores rowcount/uec info collected from the query on the histogram table.
   struct PrevUecInfo : public NABasicObject

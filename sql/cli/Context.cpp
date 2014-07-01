@@ -5433,6 +5433,9 @@ Int32 ContextCli::switchBackCmpContext(void)
         }
     }
 
+  // switch back to a previous context
+  cmpCurrentContext->switchBackContext();
+
   deinitializeArkcmp();
 
   return 0;  // success

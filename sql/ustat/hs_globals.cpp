@@ -9311,7 +9311,7 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
        .append(   "   AND REASON <> ' '")
        .append(   " ORDER BY TABLE_UID, HISTOGRAM_ID, COL_POSITION");
 
-    HSCursor histData("DISPLAY_HIST");
+    HSCursor histData(STMTHEAP, "DISPLAY_HIST");
     retcode = histData.prepareQuery(qry.data(), 0, 7);
     HSHandleError(retcode);
 
@@ -9431,7 +9431,7 @@ Lng32 HSGlobalsClass::DisplayHistograms(NAString& displayData, Space& space,
     qry.append(" ORDER BY TABLE_UID, HISTOGRAM_ID, INTERVAL_NUMBER"
                " FOR READ UNCOMMITTED ACCESS");
 
-    HSCursor intData("DISPLAY_HISTINT");
+    HSCursor intData(STMTHEAP, "DISPLAY_HISTINT");
     retcode = intData.prepareQuery(qry.data(), 0, 8);
     HSHandleError(retcode);
 

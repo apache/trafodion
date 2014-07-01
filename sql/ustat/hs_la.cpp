@@ -150,14 +150,33 @@ void HSSqTableDef::GetLabelInfo(labelDetail detail)
     }
   }
 
-
-
-Lng32 HSTableDef::getColumnNames()
+Lng32 HSSqTableDef::getColumnNames()
   {
-    HSErrorCatcher errorCatcher(retcode_, - UERR_UNABLE_TO_DESCRIBE_COLUMN_NAMES, "DescribeColumnNames()", TRUE);
+    HSErrorCatcher errorCatcher(retcode_, - UERR_UNABLE_TO_DESCRIBE_COLUMN_NAMES, "HSSqTableDef::DescribeColumnNames", TRUE);
     HSFuncExecQuery("CONTROL QUERY DEFAULT DISPLAY_DIVISION_BY_COLUMNS 'ON'"); 
+
     Lng32 retcode = DescribeColumnNames();
+
     HSFuncExecQuery("CONTROL QUERY DEFAULT DISPLAY_DIVISION_BY_COLUMNS RESET");
+
+    return retcode;
+  }
+
+Lng32 HSHiveTableDef::getColumnNames()
+  {
+    HSErrorCatcher errorCatcher(retcode_, - UERR_UNABLE_TO_DESCRIBE_COLUMN_NAMES, "HSHiveTableDef::DescribeColumnNames", TRUE);
+
+    Lng32 retcode = DescribeColumnNames();
+
+    return retcode;
+  }
+
+Lng32 HSHbaseTableDef::getColumnNames()
+  {
+    HSErrorCatcher errorCatcher(retcode_, - UERR_UNABLE_TO_DESCRIBE_COLUMN_NAMES, "HSHbaseTableDef::DescribeColumnNames", TRUE);
+
+    Lng32 retcode = DescribeColumnNames();
+
     return retcode;
   }
 
