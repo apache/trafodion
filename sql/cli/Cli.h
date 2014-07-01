@@ -596,9 +596,7 @@ Lng32 SQLCLI_SetAuthID(
    const char * authToken,	      /*IN*/
    Int32        authTokenLen,	      /*IN*/
    Int32        effectiveUserID,      /*IN*/
-   Int32        sessionUserID,	      /*IN*/
-   Int32        error,		      /*IN*/
-   Int32        errorDetail);	      /*IN*/
+   Int32        sessionUserID);	      /*IN*/
                     
 /* temporary functions -- for use by sqlcat simulator only */
 

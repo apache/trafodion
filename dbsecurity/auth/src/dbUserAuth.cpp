@@ -1090,7 +1090,7 @@ int64_t startTime = JULIANTIMESTAMP();
    if (retCode != 0)
    {
 // LCOV_EXCL_START
-      self.bb.error = ZFIL_ERR_SECVIOL;
+      authenticationInfo.error = self.bb.error = ZFIL_ERR_SECVIOL;
       // Error 100 (NOT FOUND) means user isn't a registered SQ user.
       // For now this is an error, in the future there could be an
       // option to auto-register users.
@@ -1099,6 +1099,8 @@ int64_t startTime = JULIANTIMESTAMP();
       else//ACH Should we log other SQL errors here?
          self.bb.errorDetail = UA_STATUS_ERR_SYSTEM;
 
+      authenticationInfo.errorDetail = self.bb.errorDetail;
+      
       logAuthenticationOutcome(usersInfo.externalUsername,
                                usersInfo.databaseUsername,
                                usersInfo.sessionUserID,clientInfo,"F ");
@@ -1114,8 +1116,8 @@ int64_t startTime = JULIANTIMESTAMP();
 
    if (!isValid)
    {
-      self.bb.error = ZFIL_ERR_SECVIOL;
-      self.bb.errorDetail = UA_STATUS_ERR_INVALID;
+      authenticationInfo.error = self.bb.error = ZFIL_ERR_SECVIOL;
+      authenticationInfo.errorDetail = self.bb.errorDetail = UA_STATUS_ERR_INVALID;
 
       logAuthenticationOutcome(usersInfo.externalUsername,
                                usersInfo.databaseUsername,
@@ -1147,8 +1149,8 @@ int64_t startTime = JULIANTIMESTAMP();
    {
       // zero len password is a non-auth bind in LDAP, so we treat it
       // as a failed authorization
-      self.bb.error = ZFIL_ERR_SECVIOL;
-      self.bb.errorDetail = UA_STATUS_ERR_INVALID;
+      authenticationInfo.error = self.bb.error = ZFIL_ERR_SECVIOL;
+      authenticationInfo.errorDetail = self.bb.errorDetail = UA_STATUS_ERR_INVALID;
       logAuthenticationOutcome(usersInfo.externalUsername,
                                usersInfo.databaseUsername,
                                usersInfo.sessionUserID,clientInfo,"F ");
