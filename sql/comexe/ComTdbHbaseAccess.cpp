@@ -93,7 +93,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     char * port,
 				     char * interface,
                                      char * zkPort,
-				     HbasePerfAttributes * hbasePerfAttributes
+				     HbasePerfAttributes * hbasePerfAttributes,
+				     Float32 samplingRate
 				     )
 : ComTdb( ComTdb::ex_HBASE_ACCESS,
 	  eye_HBASE_ACCESS,
@@ -170,7 +171,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   interface_(interface),
   zkPort_(zkPort),
   hbasePerfAttributes_(hbasePerfAttributes),
-  LoadPrepLocation_ (NULL)
+  LoadPrepLocation_ (NULL),
+  samplingRate_(samplingRate)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -269,7 +271,8 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   zkPort_(zkPort),
 
   hbasePerfAttributes_(NULL),
-  LoadPrepLocation_(NULL)
+  LoadPrepLocation_(NULL),
+  samplingRate_(-1)
 {
 }
 
@@ -735,6 +738,15 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 	  str_sprintf(buf, "accessDetail_ = %s", accessDetail);
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 	}
+
+      if (samplingRate_ > 0)
+        {
+          // str_printf does not handle %f correctly, format as string first.
+          char sbuf[20];
+          snprintf(sbuf, sizeof(sbuf), "%f", samplingRate_);
+          str_sprintf(buf, "samplingRate_ = %s", sbuf);
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
 
       if (tableName_)
 	{

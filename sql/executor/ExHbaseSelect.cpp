@@ -426,7 +426,8 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					   (tcb_->hbaseFilterOps_.size() > 0 ?
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.size() > 0 ?
-					    &tcb_->hbaseFilterValues_ : NULL));
+					    &tcb_->hbaseFilterValues_ : NULL),
+					    tcb_->getSamplePercentage());
 
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
@@ -1134,6 +1135,7 @@ ExHbaseAccessSelectTcb::ExHbaseAccessSelectTcb(
   getSQTaskTcb_ = NULL;
 
   ExHbaseAccessTdb &hbaseTdb = (ExHbaseAccessTdb&)hbaseAccessTdb;
+  samplePercentage_ = hbaseTdb.samplingRate_;
 
   if ((hbaseTdb.listOfScanRows()) ||
       ((hbaseTdb.keySubsetGen()) &&

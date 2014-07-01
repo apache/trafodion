@@ -2156,7 +2156,8 @@ short HbaseAccess::codeGen(Generator * generator)
 		      port,
 		      interface,
                       zkPort,
-		      hbpa
+		      hbpa,
+		      samplePercent()
 		      );
 
   generator->initTdbFields(hbasescan_tdb);

@@ -1015,7 +1015,8 @@ Lng32 ExpHbaseInterface_Thrift::scanOpen(
 				  const Lng32 numCacheRows,
 				  const TextVec *inColNamesToFilter, 
 				  const TextVec *inCompareOpList,
-				  const TextVec *inColValuesToCompare)
+				  const TextVec *inColValuesToCompare,
+                                  Float32 samplePercent)  // not used in this override
 {
   const std::map<Text, Text>  dummyAttributes; // see HBASE-6806 HBASE-4658
   std::string t(tblName.val);
@@ -1569,7 +1570,8 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      const Lng32 numCacheRows,
 				      const TextVec *inColNamesToFilter, 
 				      const TextVec *inCompareOpList,
-				      const TextVec *inColValuesToCompare)
+				      const TextVec *inColValuesToCompare,
+                                      Float32 samplePercent)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
   if (htc_ == NULL)
@@ -1587,7 +1589,8 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 					  cacheBlocks, numCacheRows, 
 					  inColNamesToFilter,
 					  inCompareOpList,
-					  inColValuesToCompare);
+					  inColValuesToCompare,
+					  samplePercent);
                                           //NULL, NULL, NULL);
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;

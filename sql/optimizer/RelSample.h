@@ -148,7 +148,7 @@ public:
 
   NABoolean isSimpleRandomRelative() const;
 
-  float getSamplePercent() const;
+  Float32 getSamplePercent() const;
 
   Lng32 getClusterSize() const;
 

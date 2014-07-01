@@ -158,6 +158,12 @@ public:
        Lng32 &pstateLength); // out, length of one element
 #endif
 
+  // Overridden by ExHbaseAccessSelectTcb, for which sampling may be used.
+  virtual Float32 getSamplePercentage() const
+  {
+    return -1.0f;
+  }
+
 protected:
 
   /////////////////////////////////////////////////////
@@ -549,6 +555,12 @@ public:
 			  ex_globals *glob );
   
   virtual ExWorkProcRetcode work(); 
+
+  virtual Float32 getSamplePercentage() const
+    {
+      return samplePercentage_;
+    }
+
  private:
   enum {
     NOT_STARTED
@@ -571,6 +583,8 @@ public:
   } step_;
 
  protected:
+  Float32 samplePercentage_;    // -1.0 if sampling not used
+
   ExHbaseScanTaskTcb * scanTaskTcb_;
   ExHbaseScanRowwiseTaskTcb * scanRowwiseTaskTcb_;
   ExHbaseGetTaskTcb * getTaskTcb_;

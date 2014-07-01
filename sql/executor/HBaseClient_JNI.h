@@ -507,7 +507,8 @@ public:
   HTC_RetCode startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const TextVec& cols, Int64 timestamp, bool cacheBlocks, Lng32 numCacheRows,
 			const TextVec *inColNamesToFilter, 
 			const TextVec *inCompareOpList,
-			const TextVec *inColValuesToCompare);
+			const TextVec *inColValuesToCompare,
+			Float32 samplePercent = -1.0f);
   HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, Int64 timestamp);
   HTC_RetCode scanFetch();

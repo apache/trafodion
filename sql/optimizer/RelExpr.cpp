@@ -9850,24 +9850,28 @@ const NAString HbaseAccess::getText() const
   NAString op(CmpCommon::statementHeap());
   NAString tname(getTableName().getText(),CmpCommon::statementHeap());
 
+  NAString sampleOpt(CmpCommon::statementHeap());
+  if (isSampleScan())
+    sampleOpt = "sample_";
+
   if (getIndexDesc() == NULL OR getIndexDesc()->isClusteringIndex())
     {
       if (isSeabaseTable())
 	{
 	  if (uniqueRowsetHbaseOper())
-	    op += "trafodion_vsbb_scan ";
+	    (op += "trafodion_vsbb_") += sampleOpt += "scan ";
 	  else
-	    op += "trafodion_scan ";	    
+	    (op += "trafodion_") += sampleOpt += "scan ";
 	}
       else
-	op += "hbase_scan ";
+	(op += "hbase_") += sampleOpt += "scan ";
     }
   else 
     {
       if (isSeabaseTable())
-	op += "trafodion_index_scan ";
+	(op += "trafodion_index_") += sampleOpt += "scan ";
       else
-	op += "hbase_index_scan ";
+	(op += "hbase_index_") += sampleOpt += "scan ";
  
       tname = getIndexDesc()->getIndexName().getQualifiedNameAsString() +
 	"(" + tname + ")";

@@ -348,7 +348,8 @@ public:
 		    char * port,
 		    char * interface,
 		    char * zkPort,
-		    HbasePerfAttributes * hbasePerfAttributes
+		    HbasePerfAttributes * hbasePerfAttributes,
+		    Float32 samplingRate = -1
 	       );
   
   ComTdbHbaseAccess(
@@ -737,6 +738,7 @@ public:
 
 
  HbasePerfAttributesPtr hbasePerfAttributes_;
+  Float32 samplingRate_;
 
   NABasicPtr LoadPrepLocation_;
   UInt32 flags2_;

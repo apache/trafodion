@@ -51,6 +51,7 @@ import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.RandomRowFilter;
 
 public class HTableClient {
 	private boolean useTRex;
@@ -166,7 +167,8 @@ public class HTableClient {
 				 boolean cacheBlocks, int numCacheRows,
 				 ByteArrayList colNamesToFilter, 
 				 ByteArrayList compareOpList, 
-				 ByteArrayList colValuesToCompare) 
+				 ByteArrayList colValuesToCompare,
+				 float samplePercent) 
            throws IOException {
 
 	    logger.trace("Enter startScan() " + tableName);
@@ -223,8 +225,12 @@ public class HTableClient {
 				    list.addFilter(filter1);
 			    }
 
+			    if (samplePercent > 0.0f)
+			      list.addFilter(new RandomRowFilter(samplePercent));
 			    scan.setFilter(list);
-			}
+			} else if (samplePercent > 0.0f) {
+			    scan.setFilter(new RandomRowFilter(samplePercent));
+                        }
 
 			if (useTRex && (transID != 0)) {
 			    scanner = table.getScanner(transID, scan);
