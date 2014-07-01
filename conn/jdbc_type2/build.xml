@@ -29,6 +29,7 @@
     <property name="my_sqroot" value="../../sqf"/>
 
     <property name="dest.src" value="${base.dir}/src/main/java"/>
+    <property name="package.src" value="${dest.src}/org/trafodion/jdbc/t2"/>
     <property name="native.src" value="${base.dir}/native"/>
     <property name="dest.classes" value="${base.dir}/classes"/>
     <tstamp>
@@ -52,6 +53,7 @@
       <delete>
         <fileset dir="${native.src}" includes="org_*.h,Vproc.h,Vproc.cpp"/>
       </delete>
+      <delete file="${package.src}/DriverInfo.java"/>
       <delete dir="dist"/>
       <exec dir="." executable="/usr/bin/make">
             <arg line="clean"/>
@@ -65,9 +67,9 @@
     </target>
 
     <target name="compile" depends="init">
-      <copy file="src/main/java/org/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="src/main/java/org/trafodion/jdbc/t2/DriverInfo.java"/>
-      <copy todir="${dest.classes}" overwrite="yes" file="src/main/java/SQLMXT2Messages_en.properties"/>
-      <replace file="src/main/java/org/trafodion/jdbc/t2/DriverInfo.java" token="@@@" value="${vproc.str}" />
+      <copy file="${package.src}/DriverInfo.java-tmpl" tofile="${package.src}/DriverInfo.java" overwrite="yes"/>
+      <copy todir="${dest.classes}" overwrite="yes" file="${dest.src}/SQLMXT2Messages_en.properties"/>
+      <replace file="${package.src}/DriverInfo.java" token="@@@" value="${vproc.str}" />
 
       <javac destdir="${dest.classes}" srcdir="${dest.src}" debug="on" includes="**/*.java" classpath="${java.home}/lib/tools.jar:${dest.classes}" includeAntRuntime="false"/>
     </target>
@@ -85,11 +87,11 @@
     </target>
 
     <target name="native" depends="jni" >
-         <copy file="native/Vproc.cpp-tmpl" tofile="native/Vproc.cpp"/>
-         <copy file="native/Vproc.h-tmpl" tofile="native/Vproc.h"/>
+         <copy file="${native.src}/Vproc.cpp-tmpl" tofile="${native.src}/Vproc.cpp" overwrite="yes"/>
+         <copy file="${native.src}/Vproc.h-tmpl" tofile="${native.src}/Vproc.h" overwrite="yes"/>
 
-         <replace file="native/Vproc.cpp" token="@@@" value="${vproc.str}" />
-         <replace file="native/Vproc.h" token="@@@" value="${vproc.str}" />
+         <replace file="${native.src}/Vproc.cpp" token="@@@" value="${vproc.str}" />
+         <replace file="${native.src}/Vproc.h" token="@@@" value="${vproc.str}" />
 <!--
          <exec dir="." executable="/usr/bin/make">
             <arg line="clean"/>
