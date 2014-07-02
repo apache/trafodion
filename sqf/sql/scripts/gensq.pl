@@ -337,8 +337,6 @@ sub printInitialLines {
     }
 
     print ETC "CLASSPATH=$ENV{'CLASSPATH'}:\n";
-
-	print ETC "ESP_PARALLEL_STARTUP=0\n";
     close (ETC);
 
     if ($gbLunmgrOn == 1) {

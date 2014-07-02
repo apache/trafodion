@@ -1207,9 +1207,6 @@ insert into t038aqr values(1, 1);
 select a, b from t038aqr;
 -- let aqr_other_session drop and recreate the t038aqr
 sh sqlci -i "TEST038(aqr_other_session)" ;
-log;
-sh cat OTHER_SESSION_LOG038 >> LOG038;
-log LOG038;
 drop table t038aqr;
 log;
 
