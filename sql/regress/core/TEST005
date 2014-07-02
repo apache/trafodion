@@ -614,11 +614,19 @@ select min(distinct a) from t005t1; -- should return ?
 select count(distinct a) from t005t1; -- should return 0
 
 -- verify fix for case 10-081203-5622, soln 10-081203-7701
+
+-- update stats so that the single partitioned table can be stasts-split
+update statistics for table t005t1 on every column;
 control query shape groupby(esp_exchange(groupby(cut))); -- force parallel plan
+
+-- make sure at least we can get 2 partitions
+cqd hbase_min_bytes_per_esp_partition '10';
 
 -- used to get error 8421 NULL cannot be assigned to a NOT NULL column.
 select count(distinct c), count(d) from t005t1; 
 -- should now get 0 0
+
+cqd hbase_min_bytes_per_esp_partition reset;
 
 control query shape cut;
 

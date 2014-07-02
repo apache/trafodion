@@ -182,6 +182,13 @@ public:
   double	   getAsDouble	(Int32 attrEnum) const;
   Lng32		   getAsLong	(Int32 attrEnum) const;
   ULng32	   getAsULong	(Int32 attrEnum) const;
+
+  // get the number of configured ESPs per node.
+  ULng32           getNumOfESPsPerNode() const;
+
+  // get the number of configured ESPs per cluster.
+  ULng32           getTotalNumOfESPsInCluster() const;
+
   NABoolean	   domainMatch	(Int32 attrEnum,
   				 Int32 expectedDefaultValidatorType,
 				 float *flt = NULL) const;
@@ -372,6 +379,8 @@ private:
   					 Provenance overwriteIfNotYet);
   void		   deleteMe();
 
+  // get the number of configured ESPs (in float) per node.
+  float            getNumOfESPsPerNodeInFloat() const;
 
   static const char *keywords_[];	// attr_VALUE keywords (ON, OFF, ANSI...
 

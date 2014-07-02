@@ -798,30 +798,8 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
   //---------------------------------------------------------------------
   NADefaults &defs            = ActiveSchemaDB()->getDefaults();
 
-  CollIndex numOfCPUSPerNode = 1;
-  if(OSIM_isNSKbehavior())
-  {
-    numOfCPUSPerNode = defs.getAsLong(DEF_NUM_SMP_CPUS);
-  }
-  else{
-    // On Linux/nt, MAX_ESPS_PER_CPU_PER_OP specifies the total number of
-    // ESPs per node. We need to set cpusPerNode to 1.  // BGZ471
-    numOfCPUSPerNode = 1;
-    
-    if (CURRSTMT_OPTDEFAULTS->isFakeHardware())
-      numOfCPUSPerNode = defs.getAsLong(DEF_NUM_SMP_CPUS);
-  }
 
-  const CollIndex cpusPerNode = numOfCPUSPerNode;
-  
-  CollIndex activeNodesInClusters =  gpClusterInfo->numOfSMPs();
-  if(CURRSTMT_OPTDEFAULTS->isFakeHardware())
-  {
-    activeNodesInClusters = defs.getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
-  }
-
-  const CollIndex pipelinesPerCPU 
-                              = defs.getAsLong(MAX_ESPS_PER_CPU_PER_OP);
+  CollIndex totalESPs = defs.getTotalNumOfESPsInCluster();
 
   //-----------------------------------------------------------------------
   //  Ensure that number of logical entries is positive and does not exceed
@@ -834,9 +812,7 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
 	  CURRCONTEXT_OPTDEBUG->stream()
 	    << "NodeMap::" << endl
 	    << "logicalNumEntries = " << logicalNumEntries << endl
-	    << "activeNodesInClusters = " << activeNodesInClusters << endl
-	    << "cpusPerNode = " << cpusPerNode << endl
-	    << "pipelinesPerCPU = " << pipelinesPerCPU << endl;
+	    << "totalESPs= " << totalESPs << endl;
     }
 // LCOV_EXCL_STOP
 #endif
@@ -847,8 +823,7 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
 
   if ( requiredESPs == -1 && forESP && type() == NodeMap::SQ )
      CMPASSERT(logicalNumEntries >= 1 
-                && logicalNumEntries 
-                   <= activeNodesInClusters * cpusPerNode * pipelinesPerCPU);
+                && logicalNumEntries <= totalESPs );
 
 
   // If requiredESPs is not -1, it means we are dealing with IUDs that require
@@ -1026,10 +1001,13 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
         NAList<CollIndex> * ptrCpuForCluster = new(HEAP) NAList<CollIndex>(*((*cpuList)[i]),HEAP);
         cpuCount->insertAt(i,ptrCpuForCluster);
       }
+
+      CollIndex numESPsPerNode = defs.getNumOfESPsPerNode();
+
       //easy way of keeping track if a cluster is available
       for( i=0;i<clusterList->entries();i++)
       {
-        availNodesPerCluster[i]= ((*cpuList)[i])->entries() *cpusPerNode*pipelinesPerCPU;
+        availNodesPerCluster[i]= ((*cpuList)[i])->entries() * numESPsPerNode;
       }
 
       //Need to keep count of CPUs available
@@ -1037,7 +1015,7 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
       {
         for(CollIndex k=0;k<(*cpuList)[j]->entries();k++)
         {
-          for(CollIndex m=0;m<(cpusPerNode*pipelinesPerCPU)-1;m++)
+          for(CollIndex m=0;m<(numESPsPerNode)-1;m++)
           {
             (*cpuCount)[j]->insertAt((*cpuCount)[j]->entries(),(*((*cpuList)[j]))[k]);
           }

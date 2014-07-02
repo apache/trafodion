@@ -12111,40 +12111,16 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
     // Get the maximum number of processes per cpu for a given operator
     // from the defaults table.
-    pipelinesPerCPU = defs.getAsLong(MAX_ESPS_PER_CPU_PER_OP);
+    pipelinesPerCPU = 1;
 
     // -------------------------------------------------------------------
     // Extract number of cpus per node and number of nodes in cluster from
     //  defaults table.
     // -------------------------------------------------------------------
-    Lng32 cpusPerNode = 0;
-    
-    if(OSIM_isNSKbehavior())
-    {
-      cpusPerNode = defs.getAsLong(DEF_NUM_SMP_CPUS);
-    }
-    else{
-      // On Linux/NT, MAX_ESPS_PER_CPU_PER_OP is # of ESPs in a node allocated
-      // for all CPU cores in that node. We do not need the value of
-      // DEF_NUM_SMP_CPUS here which is # of CPU cores per node.
-      // BGZ451
-      cpusPerNode = 1;
-      if (CURRSTMT_OPTDEFAULTS->isFakeHardware())
-        cpusPerNode = defs.getAsLong(DEF_NUM_SMP_CPUS);
-    }
-
-    Lng32 nodesInActiveClusters =  gpClusterInfo->numOfSMPs();
-
 
     NABoolean canAdjustDoP = TRUE;
 
-    if(CURRSTMT_OPTDEFAULTS->isFakeHardware())
-    {
-      nodesInActiveClusters = defs.getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
-      canAdjustDoP = FALSE;
-    }
-
-    countOfCPUs = cpusPerNode * nodesInActiveClusters;
+    countOfCPUs = defs.getTotalNumOfESPsInCluster();
 
     // Get the value as a token code, no errmsg if not a keyword.
     if (CmpCommon::getDefault(PARALLEL_NUM_ESPS, 0) != DF_SYSTEM)
@@ -12153,17 +12129,11 @@ Context* RelRoot::createContextForAChild(Context* myContext,
       // A value for PARALLEL_NUM_ESPS exists.  Use it for the count of cpus
       // but don't exceed the number of cpus available in the cluster.
       // On SQ, include the number of ESPs allowed per cpu.
-      // On SQ, include the number of ESPs allowed per cpu.
       // -------------------------------------------------------------------
 
       Lng32 pne = defs.getAsLong(PARALLEL_NUM_ESPS);
 
       countOfCPUs = MINOF(countOfCPUs,pne);
-
-      if ( pne < countOfCPUs * pipelinesPerCPU ) {
-
-         pipelinesPerCPU = pne / countOfCPUs;
-      }
 
       canAdjustDoP = FALSE;
     }
@@ -12328,18 +12298,16 @@ Context* RelRoot::createContextForAChild(Context* myContext,
           CostScalar tableSize = tAnalysis->getCardinalityOfBaseTable() *
                                  tAnalysis->getRecordSizeOfBaseTable() ;
    
-          CostScalar esps = tableSize / CostScalar(minBytesPerESP);
+          CostScalar espsInCS = tableSize / CostScalar(minBytesPerESP);
    
-          countOfCPUs = (Lng32)(esps.getCeiling().getValue());
+          Lng32 esps = (Lng32)(espsInCS.getCeiling().getValue());
    
-          if ( countOfCPUs < 1 )
+          if ( esps < 1 )
              countOfCPUs = 1;
           else {
    
-            Lng32 maxCPUs =  cpusPerNode * nodesInActiveClusters;
-   
-            if ( countOfCPUs >  maxCPUs * pipelinesPerCPU )
-               countOfCPUs = maxCPUs * pipelinesPerCPU;
+            if ( esps < countOfCPUs )
+               countOfCPUs = esps;
           }
    
           pipelinesPerCPU = 1;
@@ -12356,7 +12324,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
         (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON))
     {
-      CURRCONTEXT_OPTDEBUG->stream() << endl << "countOfCPUs = " << countOfCPUs << endl;
+      CURRCONTEXT_OPTDEBUG->stream() << endl << "countOfCPUs= " << countOfCPUs << endl;
     }
 #endif
   } // end if parallel execution is enabled
@@ -12846,39 +12814,12 @@ computeDP2CostDataThatDependsOnSPP(
 
   NABoolean isHbaseTable = indexDesc.getPrimaryTableDesc()->getNATable()->isHbaseTable();
 
-  Lng32 smpVal  = defs.getAsLong(DEF_NUM_SMP_CPUS);
-  Lng32 nodeVal=gpClusterInfo->numOfSMPs();
-  if(CURRSTMT_OPTDEFAULTS->isFakeHardware())
+  CostScalar totalCPUsExecutingDP2s = defs.getTotalNumOfESPsInCluster();
+  if(!isHbaseTable && !OSIM_isNSKbehavior())
   {
-    nodeVal = defs.getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
-  }
-
-  CostScalar totalCPUsExecutingDP2s = 1;
-  if (isHbaseTable)
-  {
-    CollIndex activeNodes = gpClusterInfo->numOfSMPs();
-    const CollIndex espsPerNode = defs.getAsLong(MAX_ESPS_PER_CPU_PER_OP);
-    totalCPUsExecutingDP2s = espsPerNode * activeNodes;
-  }
-  else
-  {
-
-    totalCPUsExecutingDP2s = MAXOF((smpVal*nodeVal),1.);
-    if(!OSIM_isNSKbehavior())
-    {
-      //BGZ451
-      // On linux/NT, we get the total number of DP2s directly from 
-      // global NAClusterInfo, and assume DP2s are running on separate
-      // CPU cores.
-      Lng32 totalDP2s = 0;
-      if (NOT CURRSTMT_OPTDEFAULTS->isFakeHardware())
-      {
-        totalDP2s = gpClusterInfo->getTotalNumberOfDP2s();
-  // seabed api doesn't return audit count
-        totalDP2s--; // do not count the system volume
-        totalCPUsExecutingDP2s = MAXOF(totalDP2s,1.);
-     }
-    }
+     // seabed api doesn't return audit count
+     totalCPUsExecutingDP2s--; // do not count the system volume
+     totalCPUsExecutingDP2s = MAXOF(totalCPUsExecutingDP2s,1.);
   }
 
   CostScalar activePartitions =
@@ -14767,17 +14708,18 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
    
    
      Lng32 maxESPs = 1;
+     NADefaults &defs = ActiveSchemaDB()->getDefaults();
    
      // check for ATTEMPT_ESP_PARALLELISM CQD
      if ( !(CURRSTMT_OPTDEFAULTS->attemptESPParallelism() == DF_OFF) ) {
         // CQDs related to # of ESPs for a HBase table scan
         maxESPs = getDefaultAsLong(HBASE_MAX_ESPS);
-        Lng32 numESPsPerDataNode = getDefaultAsLong(MAX_ESPS_PER_CPU_PER_OP);
-        Lng32 numSQNodes = gpClusterInfo->getTotalNumberOfCPUs();
+
+
+        CollIndex totalESPsAllowed = defs.getTotalNumOfESPsInCluster();
    
-        // limit the number of ESPs to 
-        // max(MAX_ESPS_PER_CPU_PER_OP * nodes, HBASE_MAX_ESPS)
-        maxESPs = MAXOF(MINOF(numSQNodes*numESPsPerDataNode, maxESPs),1);
+        // limit the number of ESPs to max(totalESPsAllowed, HBASE_MAX_ESPS)
+        maxESPs = MAXOF(MINOF(totalESPsAllowed, maxESPs),1);
 
         if (!partReq && minESPs == 1) {
           minESPs = rppForMe->getCountOfPipelines();

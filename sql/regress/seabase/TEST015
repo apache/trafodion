@@ -35,9 +35,13 @@ obey TEST015(setup);
 cqd COMPRESSED_INTERNAL_FORMAT 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
 cqd query_cache '0';
-CQD ATTEMPT_ESP_PARALLELISM 'On';
 cqd HIVE_NUM_ESPS_PER_DATANODE '3';
-cqd MAX_ESPS_PER_CPU_PER_OP '2';
+
+control query default ARKCMP_FAKE_HW 'ON';
+control query default DEF_NUM_SMP_CPUS '2' ;
+control query default MAX_ESPS_PER_CPU_PER_OP '1';
+control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '2' ;
+
 
 
 
@@ -229,6 +233,8 @@ select [first 20] * from customer_demographics order by cd_demo_sk  ;
 select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;;
 select count(*) from customer_demographics_salt;
 
+-- reset cluster settings 
+control query default ARKCMP_FAKE_HW reset;
 cqd MAX_ESPS_PER_CPU_PER_OP reset;
 CQD ATTEMPT_ESP_PARALLELISM reset;
 prepare s from 
