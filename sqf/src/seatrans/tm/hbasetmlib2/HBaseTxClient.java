@@ -69,6 +69,7 @@ public class HBaseTxClient {
    private static int stallWhere;
 
    boolean useTlog;
+   boolean useForgotten;
    boolean useRecovThread;
 
    Configuration config;
@@ -124,9 +125,30 @@ public class HBaseTxClient {
       this.useRecovThread = false;
       this.stallWhere = 0;
 
-      String useAudit = System.getenv("TM_ENABLE_TLOG_WRITES");
-      if (useAudit != null)
-         useTlog = (Integer.parseInt(useAudit) != 0);
+      useForgotten = true;
+      try {
+         String useAuditRecords = System.getenv("TM_ENABLE_FORGOTTEN_RECORDS");
+         if (useAuditRecords != null) {
+            useForgotten = (Integer.parseInt(useAuditRecords) != 0);
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is not in ms.env");
+      }
+      LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is " + useForgotten);
+
+      useTlog = false;
+      useRecovThread = false;
+      try {
+         String useAudit = System.getenv("TM_ENABLE_TLOG_WRITES");
+         if (useAudit != null) {
+            useTlog = useRecovThread = (Integer.parseInt(useAudit) != 0);
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_ENABLE_TLOG_WRITES is not in ms.env");
+      }
+
       if (useTlog) {
          try {
             tLog = new TmAuditTlog(config);
@@ -142,11 +164,6 @@ public class HBaseTxClient {
             throw new RuntimeException(e);
       }
 
-      String useRecov = System.getenv("TM_ENABLE_TLOG_WRITES");
-      if (useRecov != null) {
-         useRecovThread = (Integer.parseInt(useRecov) != 0);
-         LOG.debug("useRecov != null");
-      }
       if (useRecovThread) {
          LOG.debug("Entering recovThread Usage");
           try {                                                                          
@@ -180,9 +197,29 @@ public class HBaseTxClient {
       this.useRecovThread = false;
       this.stallWhere = 0;
 
-      String useAudit = System.getenv("TM_ENABLE_TLOG_WRITES");
-      if (useAudit != null)
-         useTlog = (Integer.parseInt(useAudit) != 0);
+      useForgotten = true;
+      try {
+         String useAuditRecords = System.getenv("TM_ENABLE_FORGOTTEN_RECORDS");
+         if (useAuditRecords != null) {
+            useForgotten = (Integer.parseInt(useAuditRecords) != 0);
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is not in ms.env");
+      }
+      LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is " + useForgotten);
+
+      useTlog = false;
+      useRecovThread = false;
+      try {
+         String useAudit = System.getenv("TM_ENABLE_TLOG_WRITES");
+         if (useAudit != null){
+            useTlog = useRecovThread = (Integer.parseInt(useAudit) != 0);
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_ENABLE_TLOG_WRITES is not in ms.env");
+      }
       if (useTlog) {
          try {
             tLog = new TmAuditTlog(config);
@@ -197,10 +234,7 @@ public class HBaseTxClient {
             LOG.error("Unable to create TransactionManager, Exception: " + e + "throwing new RuntimeException");
             throw new RuntimeException(e);
       }
-      String useRecov = System.getenv("TM_ENABLE_TLOG_WRITES");
-      if (useRecov != null)
-         useRecovThread = (Integer.parseInt(useRecov) != 0);
-         LOG.debug("useRecov != null");
+
       if (useRecovThread) {
          LOG.debug("Entering recovThread Usage");
           try {                                                                          
@@ -250,7 +284,7 @@ public class HBaseTxClient {
       try {
          ts.setStatus(TM_TX_STATE_ABORTED);
          if (useTlog) {
-            tLog.putRecord(transactionID, "ABORTED", ts.getParticipatingRegions(), false);
+            tLog.putSingleRecord(transactionID, "ABORTED", ts.getParticipatingRegions(), false);
          }
       } catch(Exception e) {
          LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " tLog.putRecord: EXCEPTION");
@@ -269,8 +303,8 @@ public class HBaseTxClient {
           LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: EXCEPTION");
           return RET_EXCEPTION;
       }
-      if (useTlog) {
-         tLog.putRecord(transactionID, "FORGOTTEN", null, false);
+      if (useTlog && useForgotten) {
+         tLog.putSingleRecord(transactionID, "FORGOTTEN", null, false);
       }
  //     mapTransactionStates.remove(transactionID);
 
@@ -326,7 +360,7 @@ public class HBaseTxClient {
        try {
           ts.setStatus(TM_TX_STATE_COMMITTED);
           if (useTlog) {
-             tLog.putRecord(transactionId, "COMMITTED", ts.getParticipatingRegions(), true);
+             tLog.putSingleRecord(transactionId, "COMMITTED", ts.getParticipatingRegions(), true);
           }
        } catch(Exception e) {
           LOG.error("Returning from HBaseTxClient:doCommit, txid: " + transactionId + " tLog.putRecord: EXCEPTION " + e);
@@ -344,9 +378,8 @@ public class HBaseTxClient {
           LOG.error("Returning from HBaseTxClient:doCommit, retval: " + RET_EXCEPTION + " IOException" + " txid: " + transactionId);
           return RET_EXCEPTION;
        }
-       if (useTlog) {
-
-          tLog.putRecord(transactionId, "FORGOTTEN", null, true);
+       if (useTlog && useForgotten) {
+          tLog.putSingleRecord(transactionId, "FORGOTTEN", null, false);
        }
 //       mapTransactionStates.remove(transactionId);
 
@@ -440,8 +473,6 @@ public class HBaseTxClient {
    public boolean addControlPoint() throws Exception {
       LOG.trace("Enter addControlPoint");
       try {
-//         Callable<Boolean> writerCall = new TmAuditTlogControlPointWriter(tLog, mapTransactionStates);
-//         tLog.addControlPoint(writerCall, mapTransactionStates);
          LOG.trace("HBaseTxClient calling tLog.addControlPoint with mapsize " + mapTransactionStates.size());
          tLog.addControlPoint(mapTransactionStates);
       }
