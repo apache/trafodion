@@ -199,78 +199,111 @@ public class HBulkLoadClient
   private boolean createSnapshot( String tableName, String snapshotName)
   throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException
   {
-    HBaseAdmin admin = new HBaseAdmin(config);
-    
-    List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-    if (! lstSnaps.isEmpty())
+    HBaseAdmin admin = null;
+    try 
     {
-      for (SnapshotDescription snpd : lstSnaps) 
+      admin = new HBaseAdmin(config);
+      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+      if (! lstSnaps.isEmpty())
       {
-          //System.out.println("here 1: " + snapshotName + snpd.getName());
-          if (snpd.getName().compareTo(snapshotName) == 0)
-          {
-            System.out.println("deleting: " + snapshotName + " : " + snpd.getName());
-            admin.deleteSnapshot(snapshotName);
-          }
+        for (SnapshotDescription snpd : lstSnaps) 
+        {
+            if (snpd.getName().compareTo(snapshotName) == 0)
+            {
+              logger.debug("HbulkLoadClient.createSnapshot() -- deleting: " + snapshotName + " : " + snpd.getName());
+              admin.deleteSnapshot(snapshotName);
+            }
+        }
       }
+      admin.snapshot(snapshotName, tableName);
+   }
+    catch (Exception e)
+    {
+      //log exeception and throw the exception again to teh parent
+      logger.debug("HbulkLoadClient.createSnapshot() - Exception: " + e);
+      throw e;
     }
-
-    admin.snapshot(snapshotName, tableName);
-
-    admin.close();
-    
+    finally
+    {
+      //close HBaseAdmin instance 
+      if (admin !=null)
+        admin.close();
+    }
     return true;
   }
   
   private boolean restoreSnapshot( String snapshotName, String tableName)
   throws IOException, RestoreSnapshotException
   {
-    
-    HBaseAdmin admin = new HBaseAdmin(config);
-
-    if (! admin.isTableDisabled(tableName))
-        admin.disableTable(tableName);
-    
-    admin.restoreSnapshot(snapshotName);
-
-    admin.enableTable(tableName);
-    
-    admin.close();
+    HBaseAdmin admin = null;
+    try
+    {
+      admin = new HBaseAdmin(config);
+      if (! admin.isTableDisabled(tableName))
+          admin.disableTable(tableName);
+      
+      admin.restoreSnapshot(snapshotName);
+  
+      admin.enableTable(tableName);
+    }
+    catch (Exception e)
+    {
+      //log exeception and throw the exception again to the parent
+      logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
+      throw e;
+    }
+    finally
+    {
+      //close HBaseAdmin instance 
+      if (admin != null) 
+        admin.close();
+    }
 
     return true;
   }
   private boolean deleteSnapshot( String snapshotName, String tableName)
       throws IOException
+  {
+    
+    HBaseAdmin admin = null;
+    boolean snapshotExists = false;
+    try
+    {
+      admin = new HBaseAdmin(config);
+      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+      if (! lstSnaps.isEmpty())
       {
-        
-        HBaseAdmin admin = new HBaseAdmin(config);
-        boolean snapshotExists = false;
-        
-        List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-        if (! lstSnaps.isEmpty())
+        for (SnapshotDescription snpd : lstSnaps) 
         {
-          for (SnapshotDescription snpd : lstSnaps) 
+          //System.out.println("here 1: " + snapshotName + snpd.getName());
+          if (snpd.getName().compareTo(snapshotName) == 0)
           {
-              //System.out.println("here 1: " + snapshotName + snpd.getName());
-              if (snpd.getName().compareTo(snapshotName) == 0)
-              {
-                //System.out.println("deleting: " + snapshotName + " : " + snpd.getName());
-                snapshotExists = true;
-              }
+            //System.out.println("deleting: " + snapshotName + " : " + snpd.getName());
+            snapshotExists = true;
+            break;
           }
         }
-        if (!snapshotExists)
-          return true;
-
-        if (admin.isTableDisabled(tableName))
-            admin.enableTable(tableName);
-        
-        admin.deleteSnapshot(snapshotName);
-
-        admin.close();
-
-        return true;
       }
+      if (!snapshotExists)
+        return true;
+      if (admin.isTableDisabled(tableName))
+          admin.enableTable(tableName);
+      admin.deleteSnapshot(snapshotName);
+    }
+    catch (Exception e)
+    {
+      //log exeception and throw the exception again to the parent
+      logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
+      throw e;
+    }
+    finally 
+    {
+      //close HBaseAdmin instance 
+      if (admin != null) 
+        admin.close();
+    }
+    return true;
+  }
   
   private void doSnapshotNBulkLoad(Path hFilePath, String tableName, HTable table, LoadIncrementalHFiles loader, boolean snapshot)
   throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException, RestoreSnapshotException

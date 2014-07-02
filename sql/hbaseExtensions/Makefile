@@ -18,7 +18,7 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
-BLD_HBASE_EXT_JARNAME       =hbase-extensions-$(TRAFODION_VER).jar
+BLD_HBASE_EXT_JARNAME       =trafodion-hbase-extensions-$(TRAFODION_VER).jar
 
 # We also build the same code again with Java 6, to be loaded into
 # HBase distros that are compiled with Java6. Note that this jar, if
@@ -26,7 +26,7 @@ BLD_HBASE_EXT_JARNAME       =hbase-extensions-$(TRAFODION_VER).jar
 # objects are built with Java 7
 JAVA6_VERSION               =1.6
 JAVA6_SUFFIX                =-java6
-BLD_HBASE_EXT_JARNAME_1_6   =hbase-extensions-$(TRAFODION_VER)$(JAVA6_SUFFIX).jar
+BLD_HBASE_EXT_JARNAME_1_6   =trafodion-hbase-extensions-$(TRAFODION_VER)$(JAVA6_SUFFIX).jar
 
 .NOTPARALLEL: all
 

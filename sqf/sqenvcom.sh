@@ -374,7 +374,7 @@ export HBASE_TRXDIR=$MY_SQROOT/export/lib
 export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
 
 export HBASE_HBLDIR=$MY_SQROOT/export/lib
-export HBASE_HBL_JAR=hbase-extensions-${TRAFODION_VER}.jar
+export HBASE_HBL_JAR=trafodion-hbase-extensions-${TRAFODION_VER}.jar
 
 export ZOOKEEPER_DIR=$TOOLSDIR/zookeeper-3.4.5
 export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4

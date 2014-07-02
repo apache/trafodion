@@ -67,7 +67,7 @@ public class TrafBulkLoadClient {
       Methods.call(protocolClazz, proxy,
           "cleanupBulkLoad", new Class[]{String.class},new Object[]{bulkToken});
     } catch (Exception e) {
-      throw new IOException("Failed to prepareBulkLoad", e);
+      throw new IOException("Failed to cleanupBulkLoad", e);
     }
   }
 
