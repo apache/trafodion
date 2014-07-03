@@ -16,7 +16,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class testrun
+PROGS          = $(LIBEXPDIR)/libshbasetmlib.so $(TMCLASS_FULL)/HBaseAuditControlPoint.class $(TMCLASS_FULL)/TmAuditTlog.class $(TMCLASS_FULL)/HBaseTxClient.class $(TMCLASS_FULL)/HashMapArray.class $(TMCLASS_FULL)/TrafInfo.class testrun
 ###########################################################################
 
 include ../../../../macros.gmk
@@ -80,6 +80,9 @@ $(TMCLASS_FULL)/TmAuditTlog.class: TmAuditTlog.java
 
 $(TMCLASS_FULL)/HBaseTmZK.class: HBaseTmZK.java
 	$(JAVAC) HBaseTmZK.java -d $(TMCLASS_DIR)
+
+$(TMCLASS_FULL)/TrafInfo.class: TrafInfo.java
+	$(JAVAC) TrafInfo.java -d $(TMCLASS_DIR)
 
 $(TMCLASS_FULL)/HashMapArray.class: HashMapArray.java
 	$(JAVAC) HashMapArray.java -d $(TMCLASS_DIR)

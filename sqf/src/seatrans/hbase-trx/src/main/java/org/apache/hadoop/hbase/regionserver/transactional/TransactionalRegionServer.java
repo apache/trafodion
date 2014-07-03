@@ -13,6 +13,7 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -556,4 +557,31 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
                 throw e;
             }		
 	}
+
+    /**
+    * Pending Transactions request
+    */ 
+    @Override
+    public List<Long> getPendingTrans(byte [] regionName)
+            throws IOException {
+        return getTransactionalRegion(regionName).doPendingTransRequest();
+    }
+
+    /**
+    * Committed Transactions request
+    */ 
+    @Override
+    public List<Long> getCommittedTrans(byte [] regionName)
+            throws IOException {
+        return getTransactionalRegion(regionName).doCommittedTransRequest();
+    }
+
+    /**
+    * In-doubt Transactions request
+    */
+    @Override
+    public List<Long> getInDoubtTrans(byte [] regionName)
+            throws IOException {
+        return getTransactionalRegion(regionName).doInDoubtTransRequest();
+    }
 }
