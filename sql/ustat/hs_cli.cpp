@@ -2669,7 +2669,7 @@ Lng32 HSCliStatement::execFetch(const char *dml, NABoolean hideError)
 // -----------------------------------------------------------------------
 // Constructor and destructor for HSCursor.
 // -----------------------------------------------------------------------
-HSCursor::HSCursor(const char* stmtName)
+HSCursor::HSCursor(NAHeap *heap, const char* stmtName)
  : stmtAllocated_(FALSE),
    srcDescAllocated_(FALSE),
    outputDescAllocated_(FALSE),
@@ -2679,15 +2679,15 @@ HSCursor::HSCursor(const char* stmtName)
    colDesc_(NULL), numEntries_(0),
    ptrNAType_(NULL), dataBuf_(NULL), outputDataLen_(0),
    group_(NULL), boundaryRowSet_(NULL), rowset_fields_(NULL),
-   closeStmtNeeded_(FALSE), retcode_(0)
+   closeStmtNeeded_(FALSE), retcode_(0), heap_(heap)
 {
   static SQLMODULE_ID module;
   static NABoolean moduleSet = FALSE;
 
-  stmt_ = new(STMTHEAP) SQLSTMT_ID;
-  srcDesc_ = new(STMTHEAP) SQLDESC_ID;
-  outputDesc_ = new(STMTHEAP) SQLDESC_ID;
-  inputDesc_ = new(STMTHEAP) SQLDESC_ID;
+  stmt_ = new(heap_) SQLSTMT_ID;
+  srcDesc_ = new(heap_) SQLDESC_ID;
+  outputDesc_ = new(heap_) SQLDESC_ID;
+  inputDesc_ = new(heap_) SQLDESC_ID;
 
   if (!moduleSet)
     {
@@ -2764,31 +2764,31 @@ HSCursor::~HSCursor()
       HSLogError(retcode);
     }
 
-  NADELETEBASIC(stmt_, STMTHEAP);
+  NADELETEBASIC(stmt_, heap_);
   stmt_ = NULL;
-  NADELETEBASIC(srcDesc_,STMTHEAP);
+  NADELETEBASIC(srcDesc_,heap_);
   srcDesc_ = NULL;
-  NADELETEBASIC(outputDesc_,STMTHEAP);
+  NADELETEBASIC(outputDesc_,heap_);
   outputDesc_ = NULL;
-  NADELETEBASIC(inputDesc_,STMTHEAP);
+  NADELETEBASIC(inputDesc_,heap_);
   inputDesc_ = NULL;
-  NADELETEBASIC(dataBuf_, STMTHEAP);
+  NADELETEBASIC(dataBuf_, heap_);
   dataBuf_ = NULL;
 
   delete cursorName_;
 
-  NADELETEBASIC(boundaryRowSet_, STMTHEAP);
+  NADELETEBASIC(boundaryRowSet_, heap_);
   boundaryRowSet_ = NULL;
 
-//  NADELETEBASIC(colDesc_, STMTHEAP);
+//  NADELETEBASIC(colDesc_, heap_);
 //  delete colDesc_;
-//  NADELETEARRAY(colDesc_, this->numEntries_, HSColDesc, STMTHEAP);
+//  NADELETEARRAY(colDesc_, this->numEntries_, HSColDesc, heap_);
 //  colDesc_ = NULL;
 
-//  NADELETEBASIC(ptrNAType_, STMTHEAP);
+//  NADELETEBASIC(ptrNAType_, heap_);
 //  ptrNAType_ = NULL;
 
-//  NADELETEBASIC(group_, STMTHEAP);
+//  NADELETEBASIC(group_, heap_);
 //  group_ = NULL;
 }
 
@@ -2941,11 +2941,11 @@ Lng32 HSCursor::prepareRowsetInternal
     retcode_ = SQL_EXEC_DescribeStmt(stmt_, 0, outputDesc_);
     HSHandleError(retcode_);
 
-    rowset_fields_  = new(STMTHEAP) SQLCLI_QUAD_FIELDS[numResults];
+    rowset_fields_  = new(heap_) SQLCLI_QUAD_FIELDS[numResults];
 
     if (orderAndGroup)
       {
-        boundaryRowSet_ = new (STMTHEAP) boundarySet<myVarChar>;
+        boundaryRowSet_ = new (heap_) boundarySet<myVarChar>;
         rowset_fields_[0].var_layout = HS_MAX_BOUNDARY_LEN;
         rowset_fields_[0].var_ptr = (void *)&boundaryRowSet_->data[0];
         rowset_fields_[0].ind_layout = sizeof(short);
@@ -3145,7 +3145,7 @@ Lng32 HSCursor::prepare( const char *clistr
   HSHandleError(retcode_);
 
   delete [] colDesc_;
-  colDesc_ = new(STMTHEAP) HSColDesc[numEntries_];
+  colDesc_ = new(heap_) HSColDesc[numEntries_];
   outputDataLen_ = 0;
 
   Int32 i = 0;
@@ -3232,7 +3232,7 @@ Lng32 HSCursor::prepare( const char *clistr
 #pragma warn(1506)  // warning elimination
 
   // Make sure dataBuf_ starts at a 4-byte boundary.
-  dataBuf_ = (char *)(new(STMTHEAP) Lng32[(outputDataLen_ >> 2) + 1]);
+  dataBuf_ = (char *)(new(heap_) Lng32[(outputDataLen_ >> 2) + 1]);
   Long addr;
 
   for (i = 0; i < numEntries_; i++)
@@ -3349,6 +3349,7 @@ NAType* ConstructNumericType( Long addr
                                    , Lng32 scale
                                    , NABoolean allowNeg
                                    , NABoolean nullflag
+                                   , NAHeap *currHeap
                                    )
 {
   NAType *type;
@@ -3356,38 +3357,38 @@ NAType* ConstructNumericType( Long addr
   case 2:
     if (!ALIGN2(addr))
       {
-        type = new(STMTHEAP) SQLSmall(allowNeg, nullflag, STMTHEAP);
+        type = new(currHeap) SQLSmall(allowNeg, nullflag, currHeap);
         break;
       }
     if (allowNeg)  // 2-byte aligned
-      type = new(STMTHEAP) HSBin<short>(id);
+      type = new(currHeap) HSBin<short>(id);
     else
-      type = new(STMTHEAP) HSBin<unsigned short>(id);
+      type = new(currHeap) HSBin<unsigned short>(id);
     break;
   case 4:
     if (!ALIGN4(addr))
       {
-        type = new(STMTHEAP) SQLInt(allowNeg, nullflag, STMTHEAP);
+        type = new(currHeap) SQLInt(allowNeg, nullflag, currHeap);
         break;
       }
     if (allowNeg)  // 4-byte aligned
-      type = new(STMTHEAP) HSBin<Lng32>(id);
+      type = new(currHeap) HSBin<Lng32>(id);
     else
-      type = new(STMTHEAP) HSBin<ULng32>(id);
+      type = new(currHeap) HSBin<ULng32>(id);
     break;
   case 8:
     if (!ALIGN8(addr))
       {
-        type = new(STMTHEAP) SQLLargeInt(allowNeg, nullflag);
+        type = new(currHeap) SQLLargeInt(allowNeg, nullflag);
         break;
       }
     if (allowNeg)  // 8-byte aligned
-      type = new(STMTHEAP) HSLargeint(id);
+      type = new(currHeap) HSLargeint(id);
     else
-      type = new(STMTHEAP) SQLLargeInt(allowNeg, nullflag);
+      type = new(currHeap) SQLLargeInt(allowNeg, nullflag);
     break;
   default:
-    type = new(STMTHEAP) SQLNumeric(length, precision, scale, allowNeg, nullflag, STMTHEAP);
+    type = new(currHeap) SQLNumeric(length, precision, scale, allowNeg, nullflag, currHeap);
     break;
   }
   return type;
@@ -3411,7 +3412,7 @@ Lng32 HSCursor::buildNAType()
 
   if (ptrNAType_ != NULL)
     delete [] ptrNAType_;
-  ptrNAType_ = new(STMTHEAP) HSPtrObj<NAType>[numEntries_];
+  ptrNAType_ = new(heap_) HSPtrObj<NAType>[numEntries_];
 
   for (Lng32 i = 0; i < numEntries_; i++)
     {
@@ -3436,7 +3437,7 @@ Lng32 HSCursor::buildNAType()
             length = 2;
 #pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
-                                      TRUE, nullflag);
+                                      TRUE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
         case REC_BPINT_UNSIGNED:
@@ -3445,7 +3446,7 @@ Lng32 HSCursor::buildNAType()
             length = 2;
 #pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
-                                      FALSE, nullflag);
+                                      FALSE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
         //
@@ -3455,7 +3456,7 @@ Lng32 HSCursor::buildNAType()
             length = 4;
 #pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
-                                      TRUE, nullflag);
+                                      TRUE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
         case REC_BIN32_UNSIGNED:
@@ -3463,7 +3464,7 @@ Lng32 HSCursor::buildNAType()
             length = 4;
 #pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
-                                      FALSE, nullflag);
+                                      FALSE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
         //
@@ -3473,7 +3474,7 @@ Lng32 HSCursor::buildNAType()
             length = 8;
 #pragma nowarn(1506)   // warning elimination
           type = ConstructNumericType(addr, i, length, precision, scale,
-                                      TRUE, nullflag);
+                                      TRUE, nullflag, heap_);
 #pragma warn(1506)  // warning elimination
           break;
         //
@@ -3489,29 +3490,29 @@ Lng32 HSCursor::buildNAType()
 	  //datatype = ((precision <= SQL_REAL_PRECISION) ?
 	  //           REC_FLOAT32 : REC_FLOAT64);
 	  if (datatype == REC_FLOAT32)
-	    type = new(STMTHEAP) SQLReal(nullflag, NULL, precision);
+	    type = new(heap_) SQLReal(nullflag, NULL, precision);
 	  else  if (datatype == REC_FLOAT64)
-	    type = new(STMTHEAP) SQLDoublePrecision(nullflag, NULL, precision);
+	    type = new(heap_) SQLDoublePrecision(nullflag, NULL, precision);
 	  break;
         //
         //
         case REC_DECIMAL_UNSIGNED:
-          type = new(STMTHEAP) SQLDecimal(length, scale, FALSE, nullflag, STMTHEAP);
+          type = new(heap_) SQLDecimal(length, scale, FALSE, nullflag, heap_);
           break;
         case REC_DECIMAL_LSE:
-          type = new(STMTHEAP) SQLDecimal(length, scale, TRUE, nullflag, STMTHEAP);
+          type = new(heap_) SQLDecimal(length, scale, TRUE, nullflag, heap_);
           break;
         case REC_NUM_BIG_UNSIGNED:
-          type = new(STMTHEAP) SQLBigNum(precision, scale, FALSE, FALSE, nullflag, STMTHEAP);
+          type = new(heap_) SQLBigNum(precision, scale, FALSE, FALSE, nullflag, heap_);
           break;
         case REC_NUM_BIG_SIGNED:
-          type = new(STMTHEAP) SQLBigNum(precision, scale, FALSE, TRUE, nullflag, STMTHEAP);
+          type = new(heap_) SQLBigNum(precision, scale, FALSE, TRUE, nullflag, heap_);
           break;
          //
         //
         case REC_BYTE_F_ASCII:
         case REC_NCHAR_F_UNICODE:
-          type = new(STMTHEAP) SQLChar(    length
+          type = new(heap_) SQLChar(    length
                              ,   nullflag
                              #ifdef FULL_CHARSET_SUPPORT  //##NCHAR: to be done!
                              ,   colDesc_[i].upshifted
@@ -3524,7 +3525,7 @@ Lng32 HSCursor::buildNAType()
           break;
         case REC_BYTE_V_ASCII:
         case REC_NCHAR_V_UNICODE:
-          type = new(STMTHEAP) SQLVarChar( length
+          type = new(heap_) SQLVarChar( length
                              ,   nullflag
                              #ifdef FULL_CHARSET_SUPPORT  //##NCHAR: to be done!
                              ,   colDesc_[i].upshifted
@@ -3540,7 +3541,7 @@ Lng32 HSCursor::buildNAType()
 	  // be encoded correctly.
 	case REC_DATETIME:
 	case REC_INTERVAL:
-          type = new(STMTHEAP) SQLChar(    length
+          type = new(heap_) SQLChar(    length
                              ,   nullflag
                             );
 
@@ -3697,7 +3698,7 @@ Lng32 HSCursor::fetchBoundaries(HSColGroupStruct *group,
                                                        singleIntervalPerUec,
                                                        gapIntCount,
                                                        highFreqIntCount);
-    group->groupHist = new(STMTHEAP) HSHistogram(adjIntCount, rowCount,
+    group->groupHist = new(heap_) HSHistogram(adjIntCount, rowCount,
                                                  gapIntCount, highFreqIntCount,
                                                  sampleUsed, singleIntervalPerUec);
 
@@ -3866,11 +3867,11 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
 #else
     "Neither NA_LITTLE_ENDIAN or NA_BIG_ENDIAN is defined."
 #endif
-    char *tmp1 = new (STMTHEAP) char[length + 1];
+    char *tmp1 = new (heap_) char[length + 1];
     memcpy(tmp1, colDesc_[0].data+2, length);
     tmp1[length] = '\0';
     value1 = tmp1;
-    NADELETEBASIC(tmp1, STMTHEAP);
+    NADELETEBASIC(tmp1, heap_);
 
     Int64 tmp2;
     memcpy((char *) &tmp2, colDesc_[1].data, sizeof(Int64));
@@ -3888,7 +3889,7 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
       ex_expr::exp_return_type rc =
         convDoIt(colDesc_[2].data, colDesc_[2].length, REC_TDM_FLOAT64, 0, 0,
                  (char *)&tmp3,    sizeof(double),     REC_IEEE_FLOAT64, 0, 0,
-                 NULL, 0, STMTHEAP, &diagsAreaPtr, CONV_FLOAT64TDM_FLOAT64IEEE,
+                 NULL, 0, heap_, &diagsAreaPtr, CONV_FLOAT64TDM_FLOAT64IEEE,
                  &dataConversionErrorFlag, 0);
       if (rc != ex_expr::EXPR_OK) return -1;
     }
@@ -3897,6 +3898,7 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
   else value1="";
   return 0;
 }
+
 // LCOV_EXCL_STOP
 
 // Constructor used for static interface.
@@ -5936,7 +5938,7 @@ Lng32 printPlan(SQLSTMT_ID *stmt)
     NAString ppStmtStr = ppStmtText;
     ppStmtStr.append((char *)stmt->identifier).append("')) ORDER BY SEQ_NUM DESC;");
 
-    HSCursor ppCursor("HS_CLI_PPSTMT");
+    HSCursor ppCursor(STMTHEAP, "HS_CLI_PPSTMT");
     retcode = ppCursor.prepareQuery(ppStmtStr.data(), 0, 9);
     HSHandleError(retcode);
     SQLSTMT_ID* ppStmtId = ppCursor.getStmt();
@@ -6204,6 +6206,8 @@ void profileGaps(HSColGroupStruct *, boundarySet<MCWrapper>*, double&, Int64&,
 Lng32 HSCursor::prepareQuery(const char *cliStr, Lng32 numParams, Lng32 numResults)
 {
     HSLogMan *LM = HSLogMan::Instance();
+    LM->Log("In HSCursor::prepareQuery: Query Text ");
+    LM->Log(cliStr);
     LM->StartTimer("HSCursor::prepareQuery()");
 
     retcode_ = SQL_EXEC_ClearDiagnostics(stmt_);
@@ -6252,7 +6256,12 @@ Lng32 HSCursor::prepareQuery(const char *cliStr, Lng32 numParams, Lng32 numResul
 
 
     LM->StartTimer("SQL_EXEC_Prepare2()");
+    // SQL_EXEC_Prepare2 is executed in an embedded compiler which might change the value
+    // of HSGlobalsClass::schemaVersion so we need to save it here and then restore it after
+    // the execution of SQL_EXEC_Prepare2
+    COM_VERSION    schemaVersion_sav = HSGlobalsClass::schemaVersion;
     retcode_ = SQL_EXEC_Prepare2(stmt_, srcDesc_,NULL,0,NULL,&query_cost_info, &comp_stats_info,NULL,0,0);
+    HSGlobalsClass::schemaVersion = schemaVersion_sav;
     LM->StopTimer();
     if (retcode_ < 0)
       {

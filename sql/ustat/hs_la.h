@@ -71,7 +71,7 @@ class HSTableDef : public NABasicObject
     NAString getCatName(formatType format = INTERNAL_FORMAT) const;
     NAString getSchemaName(formatType format = INTERNAL_FORMAT) const;
     NAString getObjectName(formatType format = INTERNAL_FORMAT) const;
-    Lng32  getColumnNames();
+    virtual Lng32  getColumnNames() = 0;
     ComObjectType getObjectType() const {return objectType_;}
     virtual Lng32 getFileType() const = 0;
     Lng32  getErrorCode() const {return retcode_;}
@@ -171,6 +171,8 @@ class HSSqTableDef : public HSTableDef
 
     NABoolean isVolatile() const {return isVolatile_;}
 
+    virtual Lng32 getColumnNames();
+
     void getRowChangeCounts(Int64 &inserts, Int64 &deletes, Int64 &updates);
     void resetRowCounts();
     Int64 getRowCount(NABoolean &isEstimate);
@@ -259,6 +261,8 @@ class HSHiveTableDef : public HSTableDef
       {
         return FALSE;
       }
+
+    virtual Lng32 getColumnNames();
 
     void getRowChangeCounts(Int64 &inserts, Int64 &deletes, Int64 &updates)
       {
@@ -376,6 +380,8 @@ class HSHbaseTableDef : public HSTableDef
       {
         return FALSE;
       }
+
+    virtual Lng32  getColumnNames();
 
     void getRowChangeCounts(Int64 &inserts, Int64 &deletes, Int64 &updates)
       {

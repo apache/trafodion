@@ -5967,8 +5967,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
           tempDiags->deAllocate();
 
           // switch back the internal commpiler, ignore error for now
-          if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER &&
-              switched == TRUE)
+          if (switched == TRUE)
             SQL_EXEC_SWITCH_BACK_COMPILER();
 
 	}

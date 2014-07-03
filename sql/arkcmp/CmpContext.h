@@ -278,6 +278,7 @@ public :
 
   Lng32 &uninitializedSeabaseErrNum() { return uninitializedSeabaseErrNum_;}
   void switchContext();
+  void switchBackContext();
   void resetContext();
 
 #ifdef NA_CMPDLL
