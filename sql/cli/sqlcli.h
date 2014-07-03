@@ -1901,9 +1901,7 @@ Int32 SQL_EXEC_SetAuthID(
    const char * authToken,	   /*IN*/
    Int32        authTokenLen,	   /*IN*/
    Int32        effectiveUserID,   /*IN*/
-   Int32        sessionUserID,	   /*IN*/
-   Int32        error,		   /*IN*/
-   Int32        errorDetail);	   /*IN*/
+   Int32        sessionUserID);	   /*IN*/
 
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_SETAUTHID(
 		/*IN*/                        char   * authID,

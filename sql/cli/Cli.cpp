@@ -7479,12 +7479,6 @@ Lng32 SQLCLI_Xact(/*IN*/ CliGlobals * cliGlobals,
 // *  <sessionUserID>                 Int32                           In       *
 // *    is the user ID to record for accountability.                           *
 // *                                                                           *
-// *  <error>                         Int32                           In       *
-// *    is the error code associated with the authentication.                  *
-// *                                                                           *
-// *  <errorDetail>                   Int32                           In       *
-// *    is the error detail code associated with the authentication.           *
-// *                                                                           *
 // *****************************************************************************
 Lng32 SQLCLI_SetAuthID(
    CliGlobals * cliGlobals,
@@ -7493,9 +7487,7 @@ Lng32 SQLCLI_SetAuthID(
    const char * authToken,
    Int32        authTokenLen,
    Int32        effectiveUserID,
-   Int32        sessionUserID,
-   Int32        error,
-   Int32        errorDetail)
+   Int32        sessionUserID)
    
 {
   
@@ -7519,9 +7511,7 @@ Lng32 SQLCLI_SetAuthID(
                                   authToken,
                                   authTokenLen,
                                   effectiveUserID,
-                                  sessionUserID,
-                                  error,
-                                  errorDetail);
+                                  sessionUserID);
   
   return SQLCLI_ReturnCode(&currContext,retcode);
   

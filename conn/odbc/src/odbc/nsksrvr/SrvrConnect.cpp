@@ -1699,14 +1699,28 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	else
 		outContext.outContextOptionStringLen = 0;
 
+        // For performance reasons, SQL statements to setup the initial context are executed
+        // after responding back to client
+        //
+        // If there is an exception, do not proceed to set the server initial context
+        if (exception_.exception_nr != 0)
+        {
+           if (exception_.exception_nr != odbc_SQLSvc_InitializeDialogue_SQLError_exn_ ||   // maintain connection in case of password expiry warnings
+               (exception_.exception_detail >= 4400 && exception_.exception_detail < 4499)) // reject connection in case of security error
+           {
+              odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
+              updateSrvrState(SRVR_CONNECT_REJECTED);
+              if (outContext.outContextOptionStringLen > 0)
+                 delete [] outContext.outContextOptionString;
 
-	if (outContext.outContextOptionStringLen > 0)
-		delete [] outContext.outContextOptionString;
+              if (srvrGlobal->traceLogger != NULL)
+              {
+                 srvrGlobal->traceLogger->TraceConnectExit(exception_, outContext);
+              }
 
-	if (srvrGlobal->traceLogger != NULL)
-	{
-		srvrGlobal->traceLogger->TraceConnectExit(exception_, outContext);
-	}
+              return;
+           }
+        }
 
 	//  +++ Fix for update stats problem on volatile table. This code was earlier
 	//  just before SET_ODBC_PROCESS connection attr above.
@@ -1769,26 +1783,20 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 		}
 	}
 
-	// For performance reasons, SQL statements to setup the initial context are executed
-	// after responding back to client
-	//
-	// If there is an execption, do not proceed to set the server initial context
-	if (exception_.exception_nr != 0)
-	{
-		if (exception_.exception_nr != odbc_SQLSvc_InitializeDialogue_SQLError_exn_ ||   // maintain connection in case of password expiry warnings
-			(exception_.exception_detail >= 4400 && exception_.exception_detail < 4499)) // reject connection in case of security error
-		{
-			updateSrvrState(SRVR_CONNECT_REJECTED);
-			return;
-		}
-	}
-
 	if (srvrGlobal->srvrState == SRVR_CONNECTING)
 	{
 	   updateSrvrState(SRVR_CONNECTED);
 	}
 
 	odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
+
+	if (outContext.outContextOptionStringLen > 0)
+		delete [] outContext.outContextOptionString;
+
+	if (srvrGlobal->traceLogger != NULL)
+	{
+		srvrGlobal->traceLogger->TraceConnectExit(exception_, outContext);
+	}
 
 	odbc_SQLSvc_SetConnectionOption_sme_(objtag_,
 										call_id_,

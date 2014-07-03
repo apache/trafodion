@@ -120,15 +120,6 @@
 #endif  // NA_CMPDLL
 // forward declarations
 
-static void formatTimestamp(
-   char          *buffer,    // Output
-   Int64          GMT_Time); // Input
-   
-static void setAuthIDTestpointValues(
-   char      *testPoint,
-   Int32     &status,
-   UA_Status &statusCode);
-
 static
 SQLSTMT_ID* getStatementId(plt_entry_struct * plte,
                            char * start_stmt_name,
@@ -2582,12 +2573,6 @@ void ContextCli::closeAllCursorsFor(SQLSTMT_ID * statement_id)
 // *  <sessionUserID>                 Int32                           In       *
 // *    is the user ID to record for accountability.                           *
 // *                                                                           *
-// *  <error>                         Int32                           In       *
-// *    is the error code associated with the authentication.                  *
-// *                                                                           *
-// *  <errorDetail>                   Int32                           In       *
-// *    is the error detail code associated with the authentication.           *
-// *                                                                           *
 // *****************************************************************************
 
 Lng32 ContextCli::setAuthID(
@@ -2596,9 +2581,7 @@ Lng32 ContextCli::setAuthID(
    const char * authToken,
    Int32        authTokenLen,
    Int32        effectiveUserID,
-   Int32        sessionUserID,
-   Int32        error,
-   Int32        errorDetail)
+   Int32        sessionUserID)
    
 {
    validAuthID_ = FALSE;  // Gets to TRUE only if a valid user found.
@@ -2637,41 +2620,6 @@ bool resetCQDs = true;
   
 bool eraseCQDs = false;
 bool dropVolatileSchema = false;
-
-// This testpoint simulates a non-existent username
-
-char *e1 = getCliGlobals()->getEnv("SQLMX_AUTHID_TESTPOINT");
-
-   if (e1 && strcmp(e1,"2") == 0)
-   {
-      diagsArea_ << DgSqlCode(-CLI_INVALID_USERID);
-      diagsArea_ << DgInt0(1000);
-      diagsArea_ << DgInt1(0);
-      diagsArea_ << DgString0(externalUsername);
-      diagsArea_ << DgString1("Internal error occurred");
-      return diagsArea_.mainSQLCODE(); 
-   }
-   
-Int32 authError = error;
-UA_Status authStatus = static_cast<UA_Status>(errorDetail);
-   
-//
-// If testpoints have been enable, set various testpoint values
-//
-
-   if (e1 != NULL)
-      setAuthIDTestpointValues(e1,authError,authStatus);
-      
-//
-// Check for errors or warnings, either from authentication, or inserted
-// by testpoints.
-//    
-
-Lng32 errcode = processWarningOrError(authError,authStatus,
-                                      externalUsername);
-
-   if (errcode < 0)
-      return diagsArea_.mainSQLCODE();
 
 // Get the external user name
 char logonUserName[ComSqlId::MAX_LDAP_USER_NAME_LEN + 1];
@@ -2712,11 +2660,8 @@ char logonUserName[ComSqlId::MAX_LDAP_USER_NAME_LEN + 1];
                      dropVolatileSchema,
                      resetCQDs);
 
-   if (errcode > 0)
-      return errcode;
-
    // allow setOnce cqds.
-   setSqlParserFlags(0x400000); // Solution 10-100818-2588
+   setSqlParserFlags(0x400000); 
    return SUCCESS;
 
 }
@@ -2827,11 +2772,6 @@ void ContextCli::completeSetAuthID(
       dropSession();
    }
 
-// 
-// When MX servers can be shared by different users we will no
-// longer need to delete them here. We can send the new authID to
-// the servers instead.
-
    if (releaseUDRServers)
    {
       // Release all ExUdrServer references
@@ -2845,19 +2785,7 @@ void ContextCli::completeSetAuthID(
                                                                      ,this,NULL);   
       cliInterface->executeImmediate((char *) "control query default * reset;", NULL, NULL, TRUE, NULL, 0,&diagsArea_);
    }
-
   
-//Begin Solution Number : 10-050429-7264 
-//If both the previously connected user and currently connected user has 
-//the same guardian user id (role) then set the flag reuseMcmp to TRUE, 
-// so that the 
-// same compiler is used for this connection also.
-// User IDs are same for even safeguard aliases also.
-// The user id for previously connected user is stored in databaseUserID_.
-// Here an assumption is made that SECURITY_PSB_GET always returns the 
-// currently connected user id
-// Also check for name change here
-
    if ((userID != databaseUserID_) ||
        (sessionUserID != sessionUserID_))
       recreateMXCMP = true;
@@ -2865,7 +2793,6 @@ void ContextCli::completeSetAuthID(
       //don't need to recreate mxcmp if it's the same user
       if (!recreateMXCMP) 
          return;
-//End Solution Number : 10-050429-7264 
 
    // save userid in context.
    databaseUserID_ = userID;
@@ -2876,7 +2803,6 @@ void ContextCli::completeSetAuthID(
 // probably a better way than just deleting it, but it should work until
 // we find a better way...
 
-//Begin Solution Number : 10-050429-7264 
 // Recreate MXCMP if previously connected and currently connected user id's 
 // are different.
    if ( recreateMXCMP )
@@ -2890,117 +2816,10 @@ void ContextCli::completeSetAuthID(
       // create a fresh one 
       controlArea_ = new(exCollHeap()) ExControlArea(this, exCollHeap()); 
    }
-  
-//End Solution Number : 10-050429-7264 
 
 }
 //******************* End of ContextCli::completeSetAuthID *********************
 
-
-
-#pragma page "setAuthIDTestpointValues"
-// *****************************************************************************
-// *                                                                           *
-// * Function: setAuthIDTestpointValues                                        *
-// *                                                                           *
-// *    Sets values for specific testpoints.                                   *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <testPoint>                     char *                          In       *
-// *    is the name of the test point.                                         *
-// *                                                                           *
-// *  <status>                        Int32 &                         Out      *
-// *    returns the status (error) value for the testpoint.                    *
-// *                                                                           *
-// *  <statusCode>                    UA_Status &                     Out      *
-// *    returns the status code (error/warning subcode) value for the testpoint*
-// *                                                                           *
-// *****************************************************************************
-static void setAuthIDTestpointValues(
-   char      *testPoint,
-   Int32     &status,
-   UA_Status &statusCode)
-
-{
-
-int32 e1 = atoi(testPoint);
-
-   switch (e1)
-   {
-      case 8:
-      case 11:
-      {
-         status = 0;
-         break;
-      }
-      case 1:
-      case 10:
-      case 20:
-      case 30:
-      case 31:
-      {
-         status = 48;
-         break;
-      }
-      case 1000:
-      {
-         status = 48;
-         statusCode = (UA_Status)1000;
-         return;
-      }
-      // Testcode not recognized, return without changing any values.
-      default:
-         return;
-   }
-   
-   statusCode = (UA_Status)e1;
-   
-}
-//************************ End of setAuthIDTestpoints **************************
-Lng32 ContextCli::processWarningOrError(
-   Int32        returncode,
-   Int32        status, 
-   const char * username)
-   
-{
-
-   if (returncode == 0)
-      return 0;
-     
-   if (returncode != 48)
-   {
-      diagsArea_ << DgSqlCode(-CLI_INVALID_USERID);
-      diagsArea_ << DgInt0(returncode);
-      diagsArea_ << DgInt1(status);
-      diagsArea_ << DgString0(username); 
-      diagsArea_ << DgString1(" could not authenticate");
-      return -CLI_INVALID_USERID;
-   }
-     
-   if (status == UA_STATUS_ERR_INVALID/*1 */)
-   {
-      // Username or password are invalid
-
-      diagsArea_ << DgSqlCode(-CLI_INVALID_USERID);
-      diagsArea_ << DgString0(username);
-      char detailString[200] ;
-      str_sprintf(detailString, " invalid username or password");
-      diagsArea_ << DgString1(detailString);
-      return -CLI_INVALID_USERID;
-   }
-  
-//internal system error 
-   diagsArea_ << DgSqlCode(-CLI_INVALID_USERID);
-   diagsArea_ << DgString0(username);
-   diagsArea_ << DgString1(" internal error occurred");
-   return -CLI_INVALID_USERID;
-
-}
-
-// End of Seaquest specific authentication routines
 
 Lng32 ContextCli::boundsCheckMemory(void *startAddress,
                                    ULng32 length)
@@ -4538,82 +4357,6 @@ Lng32 ContextCli::resetCS(const char * csName)
   ExeCliInterface cliInterface(exHeap(), 0, this);
 
   return ExExeUtilTcb::resetCS(csName, &cliInterface,&this->diags());
-}
-
-// *****************************************************************************
-// *  
-// *   Julian timestamp is converted to standard format:  
-// *      YYYY-MM-DD HH:MM:SS.MMM.MMM 
-// *
-// * @Param  buffer                     | char *                | OUT       |
-// *   NUll-terminated char array in which result is returned.
-// *
-// * @Param  GMT_Time                   | short *               | IN        |
-// *   is the julian timestamp to be converted.
-// *
-// * @End
-// *****************************************************************************
-static void formatTimestamp(
-   char          *buffer,   // Output
-   Int64          GMT_Time) // Input
-
-{
-
-short    Date_and_Time[8];
-short  & Year = *((short  *)&(Date_and_Time[0]));
-short  & Month = *((short  *)&(Date_and_Time[1]));
-short  & Day = *((short  *)&(Date_and_Time[2]));
-short  & Hour = *((short  *)&(Date_and_Time[3]));
-short  & Minute = *((short  *)&(Date_and_Time[4]));
-short  & Second = *((short  *)&(Date_and_Time[5]));
-short  & Millisecond = *((short  *)&(Date_and_Time[6]));
-short  & Microsecond = *((short  *)&(Date_and_Time[7]));
-short    errorNumber;
-bool     isGMT = false;
-Int64    julianTime;
-
-
-//Convert to local time
-   julianTime = CONVERTTIMESTAMP(GMT_Time,0,-1,&errorNumber);
-
-// If we can't convert, just show GMT
-   if (errorNumber)
-      isGMT = true;
-
-// Decompose timestamp
-   INTERPRETTIMESTAMP(julianTime,Date_and_Time);
-
-// 0123456789012345678901234567
-//"YYYY-MM-DD HH:MM:SS.mmm.mmm"
-
-   NUMOUT(buffer,Year,10,4);
-   buffer[4] = '-';
-   NUMOUT(&buffer[5],Month,10,2);
-   buffer[7] = '-';
-   NUMOUT(&buffer[8],Day,10,2);
-   buffer[10] = ' ';
-   NUMOUT(&buffer[11],Hour,10,2);
-   buffer[13] = ':';
-   NUMOUT(&buffer[14],Minute,10,2);
-   buffer[16] = ':';
-   NUMOUT(&buffer[17],Second,10,2);
-   buffer[19] = '.';
-   NUMOUT(&buffer[20],Millisecond,10,3);
-   buffer[23] = '.';
-   NUMOUT(&buffer[24],Microsecond,10,3);
-
-   if (isGMT)
-   {
-      buffer[27] = ' ';
-      buffer[28] = 'G';
-      buffer[29] = 'M';
-      buffer[30] = 'T';
-      buffer[31] = 0;
-   }
-   else
-      buffer[27] = 0;
-      
-
 }
 
 Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,

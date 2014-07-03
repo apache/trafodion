@@ -391,12 +391,6 @@ private:
 
   // Release all ExUdrServer references currently held
   void releaseUdrServers();
-//CR 10-040206-6442 -helper method to get detailed error messages  
-Lng32 processWarningOrError(
-   Int32 returncode,
-   Int32 status, 
-   const char * username);
-  
 
   // Remove a child statement such as a clone or a stored procedure
   // result set proxy from the context's statement lists. Do not call
@@ -789,9 +783,7 @@ Lng32 setAuthID(
    const char * authToken,
    Int32        authTokenLen,
    Int32        effectiveUserID,
-   Int32        sessionUserID,
-   Int32        error,
-   Int32        errorDetail);
+   Int32        sessionUserID);
    
   void completeSetAuthID(
      Int32        userID,

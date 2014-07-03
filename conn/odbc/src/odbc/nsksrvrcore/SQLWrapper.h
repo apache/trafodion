@@ -351,9 +351,7 @@ Int32 WSQL_EXEC_SetAuthID(
    const char * authToken,
    Int32        authTokenLen,
    Int32        effectiveUserID,
-   Int32        sessionUserID,
-   Int32        error,
-   Int32        errorDetail);
+   Int32        sessionUserID);
 
 Int32 WSQL_EXEC_GetUniqueQueryIdAttrs(
         /*IN*/    char * uniqueQueryId,

@@ -103,6 +103,12 @@ void AllocateAdaptiveSegment(SRVR_STMT_HDL *pSrvrStmt);
 void DeallocateAdaptiveSegment(SRVR_STMT_HDL *pSrvrStmt);
 void ClearAdaptiveSegment(short adapiveSeg = -1);
 
+static void setAuthenticationError(
+   bool & bSQLMessageSet, 
+   odbc_SQLSvc_SQLError * SQLError,
+   const char * externalUsername,
+   bool isInternalError);
+
 //#define SRVR_PERFORMANCE
 
 SMD_SELECT_TABLE SQLCommitStmt[] = {
@@ -5006,39 +5012,33 @@ AUTHENTICATION_INFO authenticationInfo;
 			return;
 		}
 
-
-		retcode = WSQL_EXEC_SetAuthID(userDesc->userName,
-                                              authenticationInfo.usersInfo.databaseUsername, 
-                                              authenticationInfo.tokenKey,
-                                              authenticationInfo.tokenKeySize,
-                                              authenticationInfo.usersInfo.effectiveUserID,
-                                              authenticationInfo.usersInfo.sessionUserID,
-                                              authenticationInfo.error,
-                                              authenticationInfo.errorDetail);
-                                                  
-
 		tempEndTime = JULIANTIMESTAMP();
 		setinit.totalLoginTime = tempEndTime - loginStartTime;
-
-		if (retcode != SQL_SUCCESS)
+                
+		if (authenticationInfo.error == 0)
+          		retcode = WSQL_EXEC_SetAuthID(userDesc->userName,
+                                                      authenticationInfo.usersInfo.databaseUsername, 
+                                                      authenticationInfo.tokenKey,
+                                                      authenticationInfo.tokenKeySize,
+                                                      authenticationInfo.usersInfo.effectiveUserID,
+                                                      authenticationInfo.usersInfo.sessionUserID);
+                else
 		{
 			bool bSQLMessageSet;
-			GETSQLERROR(bSQLMessageSet, &(exception_->u.SQLError));
-			exception_->exception_detail = retcode;
-			if (retcode == SQL_INVALID_USER_CODE)
-				exception_->exception_nr = odbc_SQLSvc_InitializeDialogue_InvalidUser_exn_;
+			exception_->exception_detail = -8837;
+			if (authenticationInfo.errorDetail == 1)
+                        {
+                           setAuthenticationError(bSQLMessageSet,&(exception_->u.SQLError),userDesc->userName,false);
+			   exception_->exception_nr = odbc_SQLSvc_InitializeDialogue_InvalidUser_exn_;
+                        }
 			else
 			{
-				exception_->exception_nr = odbc_SQLSvc_InitializeDialogue_SQLError_exn_;
-				if (retcode <0)
-				{
-					ERROR_DESC_def *sqlError = exception_->u.SQLError.errorList._buffer;
-					SendEventMsg(MSG_SQL_ERROR, EVENTLOG_ERROR_TYPE,
-						srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
-						3, ODBCMX_SERVER, sqlError->sqlstate, sqlError->errorText);
-				}
-				else
-					WSQL_EXEC_ClearDiagnostics(NULL); // Need to clear diags since we are in warnings
+                           setAuthenticationError(bSQLMessageSet,&(exception_->u.SQLError),userDesc->userName,true);
+			   exception_->exception_nr = odbc_SQLSvc_InitializeDialogue_SQLError_exn_;
+			   ERROR_DESC_def *sqlError = exception_->u.SQLError.errorList._buffer;
+			   SendEventMsg(MSG_SQL_ERROR, EVENTLOG_ERROR_TYPE,
+			     	srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+			     	3, ODBCMX_SERVER, sqlError->sqlstate, sqlError->errorText);
 			}
 		}
 	}
@@ -6273,3 +6273,45 @@ void ClearAdaptiveSegment(short adapiveSeg)
 }
 //LCOV_EXCL_STOP
 //==========================================================
+
+static void setAuthenticationError(
+   bool & bSQLMessageSet, 
+   odbc_SQLSvc_SQLError * SQLError,
+   const char * externalUsername,
+   bool isInternalError)
+
+{
+
+const char authErrorMessageHeader[] = "*** ERROR[8837] Invalid username or password";
+const char authInternalErrorMessageHeader[] = "*** ERROR[8837] Internal error occurred";
+char  strNow[TIMEBUFSIZE + 1];
+
+   kdsCreateSQLErrorException(bSQLMessageSet,SQLError,1);
+   
+size_t messageHeaderLength;
+
+   if (isInternalError)
+      messageHeaderLength = strlen(authInternalErrorMessageHeader);
+   else
+      messageHeaderLength = strlen(authErrorMessageHeader);
+
+size_t messageLength = (messageHeaderLength + 1) * 4 + TIMEBUFSIZE;
+
+char *message = new char[messageLength];
+
+   if (isInternalError)
+      strcpy(message,authInternalErrorMessageHeader);
+   else   
+      strcpy(message,authErrorMessageHeader);
+      
+   strcat(message,".  User: ");
+   strcat(message,externalUsername);
+   time_t now = time(NULL);
+   bzero(strNow,sizeof(strNow));
+   strftime(strNow,sizeof(strNow)," [%Y-%m-%d %H:%M:%S]", localtime(&now));
+   strcat(message,strNow);
+
+   kdsCopySQLErrorExceptionAndRowCount(SQLError,message,-8837,"    ",-1);
+   delete message;
+
+}

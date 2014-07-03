@@ -1028,9 +1028,7 @@ Int32 SRVR::WSQL_EXEC_SetAuthID(
    const char * authToken,
    Int32        authTokenLen,
    Int32        effectiveUserID,
-   Int32        sessionUserID,
-   Int32        error,
-   Int32        errorDetail)
+   Int32        sessionUserID)
    
 { 
 	SRVRTRACE_ENTER(WSQL_SetAuthID);
@@ -1041,9 +1039,7 @@ Int32 SRVR::WSQL_EXEC_SetAuthID(
                            authToken,
                            authTokenLen,
                            effectiveUserID,
-                           sessionUserID,
-                           error,
-                           errorDetail);
+                           sessionUserID);
 	SRVRTRACE_EXIT(WSQL_SetAuthID);
 	RETURN 
 }
