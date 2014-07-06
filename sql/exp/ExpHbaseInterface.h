@@ -137,7 +137,8 @@ class ExpHbaseInterface : public NABasicObject
 			 const Lng32 numCacheRows,
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
-			 const TextVec *inColValuesToCompare) = 0;
+			 const TextVec *inColValuesToCompare,
+			 Float32 samplePercent = -1.0f) = 0;
   
   virtual Lng32 scanFetch(
 		  HbaseStr &rowId,
@@ -382,7 +383,8 @@ class ExpHbaseInterface_Thrift : public ExpHbaseInterface
 			 const Lng32 numCacheRows,
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
-			 const TextVec *inColValuesToCompare);
+			 const TextVec *inColValuesToCompare,
+                         Float32 samplePercent = -1.0f);
   
   virtual Lng32 scanFetch(
 		  HbaseStr &rowId,
@@ -586,7 +588,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 const Lng32 numCacheRows,
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
-			 const TextVec *inColValuesToCompare);
+			 const TextVec *inColValuesToCompare,
+                         Float32 samplePercent = -1.0f);
 
   virtual Lng32 scanFetch(
 		  HbaseStr &rowId,

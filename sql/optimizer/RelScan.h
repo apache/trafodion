@@ -505,8 +505,8 @@ public:
   OptSqlTableOpenInfo *getOptStoi() const               { return stoi_; };
   void setOptStoi(OptSqlTableOpenInfo *stoi)            { stoi_ = stoi; };
 
-  float samplePercent() const               { return samplePercent_; };
-  void samplePercent(float sp)              { samplePercent_ = sp; };
+  Float32 samplePercent() const               { return samplePercent_; };
+  void samplePercent(Float32 sp)              { samplePercent_ = sp; };
 
   CostScalar getScanSelectivityFactor() const     { return selectivityFactor_ ; };
   void setScanSelectivityFactor(CostScalar sf) { selectivityFactor_ = sf; };
@@ -662,7 +662,7 @@ private:
   // Sample size in percentage (of the table size). Set to > 0.0 if sampling
   // and -1.0 otherwise.
   //
-  float samplePercent_;
+  Float32 samplePercent_;
 
   // Cluster size for sampling (in number of blocks). Set to > 0 if cluster
   // sampling, 0 otherwise.

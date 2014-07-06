@@ -89,7 +89,7 @@ RelSample::removeRequiredOrderTree()
 }
 
 
-float RelSample::getSamplePercent() const
+Float32 RelSample::getSamplePercent() const
 {
   // Call ONLY if: RANDOM or CLUSTER sampling and relative size
   // and NOT stratified sampling
@@ -898,6 +898,20 @@ RelExpr *RelSample::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return this;
   
+  // If this is a random sample on an HBase table, push the sampling down into
+  // the Scan node and remove the Sample node from the tree. For HBase, we
+  // unconditionally perform sampling via a row filter on the HBase side.
+  //
+  RelExpr* myChild = child(0);
+  if (myChild->getOperatorType() == REL_SCAN &&
+      (static_cast<Scan*>(myChild))->isHbaseTable() &&
+      myChild->selectionPred().entries() == 0 &&
+      isSimpleRandomRelative())
+    {
+      (static_cast<Scan*>(myChild))->samplePercent(getSamplePercent());
+      return myChild;
+    }
+
   ItemExpr *requiredOrderTree = removeRequiredOrderTree();
   
   if(requiredOrderTree) {
