@@ -63,14 +63,8 @@ typedef enum {
 class StringArrayList : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
-  StringArrayList(NAHeap *heap)
-  :  JavaObjectInterface(heap) 
-  {}
-
-  // Constructor for reusing an existing JVM.
-  StringArrayList(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
-       :  JavaObjectInterface(heap, jvm, jenv, jObj)
+  StringArrayList(NAHeap *heap, jobject jObj = NULL)
+       :  JavaObjectInterface(heap, jObj)
   {}
 
   // Destructor
@@ -129,14 +123,8 @@ typedef enum {
 class ByteArrayList : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
-  ByteArrayList(NAHeap *heap)
-  :  JavaObjectInterface(heap) 
-  {}
-
-  // Constructor for reusing an existing JVM.
-  ByteArrayList(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jvm, jenv, jObj)
+  ByteArrayList(NAHeap *heap, jobject jObj = NULL)
+    :  JavaObjectInterface(heap, jObj)
   {}
 
   // Destructor
@@ -196,14 +184,8 @@ typedef enum {
 class RowToInsert : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
   RowToInsert(NAHeap *heap)
   :  JavaObjectInterface(heap) 
-  {}
-
-  // Constructor for reusing an existing JVM.
-  RowToInsert(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv)
-    :  JavaObjectInterface(heap, jvm, jenv)
   {}
 
   // Destructor
@@ -239,14 +221,8 @@ private:
 class RowsToInsert : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
   RowsToInsert(NAHeap *heap)
   :  JavaObjectInterface(heap) 
-  {}
-
-  // Constructor for reusing an existing JVM.
-  RowsToInsert(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv)
-    :  JavaObjectInterface(heap, jvm, jenv)
   {}
 
   // Destructor
@@ -294,14 +270,8 @@ typedef enum {
 class KeyValue : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
-  KeyValue(NAHeap *heap)
-  :  JavaObjectInterface(heap) 
-  {}
-
-  // Constructor for reusing an existing JVM.
-  KeyValue(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jvm, jenv, jObj)
+  KeyValue(NAHeap *heap, jobject jObj = NULL)
+    :  JavaObjectInterface(heap, jObj)
   {}
   
   // Destructor
@@ -367,14 +337,8 @@ typedef enum {
 class ResultKeyValueList : public JavaObjectInterface
 {
 public:
-  // Default constructor - for creating a new JVM		
-  ResultKeyValueList(NAHeap *heap)
-  :  JavaObjectInterface(heap) 
-  {}
-
-  // Constructor for reusing an existing JVM.
-  ResultKeyValueList(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jvm, jenv, jObj)
+  ResultKeyValueList(NAHeap *heap, jobject jObj = NULL)
+    :  JavaObjectInterface(heap, jObj)
   {}
 
   // Destructor
@@ -492,9 +456,8 @@ typedef enum {
 class HTableClient_JNI : public JavaObjectInterface
 {
 public:
-  // Constructor for reusing an existing JVM.
-  HTableClient_JNI(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
-  :  JavaObjectInterface(heap, jvm, jenv, jObj)
+  HTableClient_JNI(NAHeap *heap, jobject jObj = NULL)
+  :  JavaObjectInterface(heap, jObj)
   {
      heap_ = heap;
   }
@@ -834,8 +797,8 @@ class HBulkLoadClient_JNI : public JavaObjectInterface
 {
 public:
 
-  HBulkLoadClient_JNI(NAHeap *heap,JavaVM *jvm, JNIEnv *jenv, jobject jObj = NULL)
-  :  JavaObjectInterface(heap, jvm, jenv, jObj)
+  HBulkLoadClient_JNI(NAHeap *heap,jobject jObj = NULL)
+  :  JavaObjectInterface(heap, jObj)
   {
     heap_= heap;
   }

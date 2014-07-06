@@ -52,7 +52,7 @@ public:
 
   // Constructor for reusing an existing JVM.
   SequenceFileReader(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv)
-    :  JavaObjectInterface(heap, jvm, jenv)
+    :  JavaObjectInterface(heap)
   {}
 
   // Destructor
@@ -157,7 +157,7 @@ public:
 
   // Constructor for reusing an existing JVM.
   SequenceFileWriter(NAHeap *heap, JavaVM *jvm, JNIEnv *jenv)
-    :  JavaObjectInterface(heap, jvm, jenv)
+    :  JavaObjectInterface(heap)
   {}
 
   // Destructor

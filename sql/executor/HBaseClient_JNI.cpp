@@ -1162,7 +1162,7 @@ KeyValue* ResultKeyValueList::getEntry(Int32 i)
     return NULL;
   }
 
-  KeyValue* kv = new (heap_) KeyValue(heap_, jvm_, jenv_, jKeyValue);
+  KeyValue* kv = new (heap_) KeyValue(heap_, jKeyValue);
   if (kv->init() != KYV_OK)
      return NULL;
   return kv;
@@ -1462,7 +1462,7 @@ jstring HBaseClient_JNI::getLastJavaError()
 //////////////////////////////////////////////////////////////////////////////
 StringArrayList* HBaseClient_JNI::newStringArrayList(const TextVec& vec)
 {
-  StringArrayList* sal = new (heap_) StringArrayList(heap_, jvm_, jenv_);
+  StringArrayList* sal = new (heap_) StringArrayList(heap_);
   if ( sal->init() != SAL_OK)
   {
     HdfsLogger::log(CAT_HBASE, LL_ERROR, "StringArrayList::init() error.");
@@ -1483,7 +1483,7 @@ StringArrayList* HBaseClient_JNI::newStringArrayList(const TextVec& vec)
 //////////////////////////////////////////////////////////////////////////////
 StringArrayList* HBaseClient_JNI::newStringArrayList(const HBASE_NAMELIST& nameList)
 {
-  StringArrayList* sal = new (heap_) StringArrayList(heap_, jvm_, jenv_);
+  StringArrayList* sal = new (heap_) StringArrayList(heap_);
   if ( sal->init() != SAL_OK)
   {
     HdfsLogger::log(CAT_HBASE, LL_ERROR, "StringArrayList::init() error.");
@@ -1504,7 +1504,7 @@ StringArrayList* HBaseClient_JNI::newStringArrayList(const HBASE_NAMELIST& nameL
 //////////////////////////////////////////////////////////////////////////////
 StringArrayList* HBaseClient_JNI::newStringArrayList(const NAText* nameList)
 {
-  StringArrayList* sal = new (heap_) StringArrayList(heap_, jvm_, jenv_);
+  StringArrayList* sal = new (heap_) StringArrayList(heap_);
   if ( sal->init() != SAL_OK)
   {
     HdfsLogger::log(CAT_HBASE, LL_ERROR, "StringArrayList::init() error.");
@@ -1525,7 +1525,7 @@ StringArrayList* HBaseClient_JNI::newStringArrayList(const NAText* nameList)
 //////////////////////////////////////////////////////////////////////////////
 ByteArrayList* HBaseClient_JNI::newByteArrayList()
 {
-  ByteArrayList* bal = new (heap_) ByteArrayList(heap_, jvm_, jenv_);
+  ByteArrayList* bal = new (heap_) ByteArrayList(heap_);
   if ( bal->init() != BAL_OK)
   {
     HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::init() error.");
@@ -1621,18 +1621,7 @@ HBC_RetCode HBaseClient_JNI::cleanup()
 HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tableName, bool useTRex)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::getHTableClient(%s) called.", tableName);
-  pid_t tid = syscall(SYS_gettid);
-  if (tid != getTid())
-    {
-      Lng32 ij = 0;
-      while (ij)
-	{
-	  ij = 2 - ij;
-	}
-    }
 
-  ex_assert((tid == getTid()),
-               "Possibly calling JNI froma  different thread\n");
   if (javaObj_ == NULL || (!isInitialized()))
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HTC_EXCEPTION));
@@ -1663,7 +1652,7 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
     logError(CAT_HBASE, "HBaseClient_JNI::getHTableClient()", getLastError());
     return NULL;
   }
-  HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, jvm_, jenv_, j_htc);
+  HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, j_htc);
   if (htc->init() != HTC_OK)
      return NULL;
   return htc;
@@ -1696,9 +1685,6 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
 HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::getHBulkLoadClient() called.");
-  pid_t tid = syscall(SYS_gettid);
-  ex_assert((tid == getTid()),
-               "Possibly calling JNI froma  different thread\n");
   if (javaObj_ == NULL || (!isInitialized()))
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HBLC_EXCEPTION));
@@ -1722,7 +1708,7 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
     logError(CAT_HBASE, "HBaseClient_JNI::getHTableClient()", getLastError());
     return NULL;
   }
-  HBulkLoadClient_JNI *hblc = new HBulkLoadClient_JNI(heap, jvm_, jenv_, j_hblc);
+  HBulkLoadClient_JNI *hblc = new HBulkLoadClient_JNI(heap, j_hblc);
   hblc->init();
   return hblc;
 }
@@ -2425,7 +2411,7 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( const HbaseStr &tblName,
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::addToHFile called.");
 
-  RowsToInsert* rowsData = new RowsToInsert(heap_,jvm_, jenv_);
+  RowsToInsert* rowsData = new RowsToInsert(heap_);
   RTI_RetCode result = rowsData->init();
   if (result != RTI_OK)
   {
@@ -2853,7 +2839,7 @@ jstring HTableClient_JNI::getLastJavaError()
 //////////////////////////////////////////////////////////////////////////////
 ByteArrayList* HTableClient_JNI::newByteArrayList(jobject jObj)
 {
-  ByteArrayList* bal = new (heap_) ByteArrayList(heap_, jvm_, jenv_, jObj);
+  ByteArrayList* bal = new (heap_) ByteArrayList(heap_, jObj);
   if ( bal->init() != BAL_OK)
   {
     HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::init() error.");
@@ -2868,7 +2854,7 @@ ByteArrayList* HTableClient_JNI::newByteArrayList(jobject jObj)
 //////////////////////////////////////////////////////////////////////////////
 ByteArrayList* HTableClient_JNI::newByteArrayList(const TextVec& vec)
 {
-  ByteArrayList* bal = new (heap_) ByteArrayList(heap_, jvm_, jenv_);
+  ByteArrayList* bal = new (heap_) ByteArrayList(heap_);
   if ( bal->init() != BAL_OK)
   {
     HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::init() error.");
@@ -3230,7 +3216,7 @@ HTC_RetCode HTableClient_JNI::fetchRowVec(TRowResult& rowResult)
     return HTC_DONE_RESULT;
   } 
 
-  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jvm_, jenv_, jResult);
+  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jResult);
   if (result->init() != RKL_OK)
      return HTC_ERROR_FETCHROWVEC_EXCEPTION;
   bool gotData = result->toTRowResult(rowResult);
@@ -3266,7 +3252,7 @@ HTC_RetCode HTableClient_JNI::fetchRowVec(jbyte **rowResult,
     return HTC_DONE_RESULT;
   } 
 
-  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jvm_, jenv_, jResult);
+  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jResult);
   if (result->init() != RKL_OK)
      return HTC_ERROR_FETCHROWVEC_EXCEPTION;
   bool gotData = result->toJbyte(rowResult, jRowResult, isCopy);
@@ -3311,7 +3297,7 @@ KeyValue* HTableClient_JNI::getLastFetchedCell()
   if (jKeyValue == NULL)
     return NULL;
     
-  KeyValue* kv = new (heap_) KeyValue(heap_, jvm_, jenv_, jKeyValue);
+  KeyValue* kv = new (heap_) KeyValue(heap_, jKeyValue);
   if (kv->init() != KYV_OK)
      return NULL;
 ;
@@ -3381,7 +3367,7 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, std::vector<BatchMutatio
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRows() called.");
 
-  RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_, jvm_, jenv_);
+  RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_);
   RTI_RetCode result = rowsData->init();
   if (result != RTI_OK)
   {
@@ -3507,7 +3493,7 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
-  RowToInsert* rowData = new (heap_) RowToInsert(heap_, jvm_, jenv_);
+  RowToInsert* rowData = new (heap_) RowToInsert(heap_);
   RTI_RetCode result = rowData->init();
   if (result != RTI_OK)
   {
@@ -3555,7 +3541,7 @@ HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, std::vector<BatchMutatio
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRows() called.");
 
-  RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_, jvm_, jenv_);
+  RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_);
   RTI_RetCode result = rowsData->init();
   if (result != RTI_OK)
   {
@@ -3671,7 +3657,7 @@ HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, HbaseStr &rowID,
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
-  RowToInsert* rowData = new (heap_) RowToInsert(heap_, jvm_, jenv_);
+  RowToInsert* rowData = new (heap_) RowToInsert(heap_);
   RTI_RetCode result = rowData->init();
   if (result != RTI_OK)
   {
@@ -3722,7 +3708,7 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
-  RowToInsert* rowData = new (heap_) RowToInsert(heap_, jvm_, jenv_);
+  RowToInsert* rowData = new (heap_) RowToInsert(heap_);
   RTI_RetCode result = rowData->init();
   if (result != RTI_OK)
   {
@@ -3960,7 +3946,7 @@ ByteArrayList* HTableClient_JNI::getEndKeys()
   if (jByteArrayList == NULL)
     return NULL;
 
-  ByteArrayList* endKeys = new (heap_) ByteArrayList(heap_, jvm_, jenv_, jByteArrayList);
+  ByteArrayList* endKeys = new (heap_) ByteArrayList(heap_, jByteArrayList);
   if (endKeys->init() != BAL_OK)
      return NULL;
   return endKeys;
@@ -4332,8 +4318,8 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
     return HVC_ERROR_GET_ALLSCH_EXCEPTION;
   }
 
-   StringArrayList* schNames_SAL = new (heap_) StringArrayList(heap_, jvm_, 
-                                jenv_, jStringArrayList);
+   StringArrayList* schNames_SAL = new (heap_) StringArrayList(heap_, 
+                     jStringArrayList);
    if (schNames_SAL == NULL)
      return HVC_DONE;
 
@@ -4384,7 +4370,7 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
     return HVC_ERROR_GET_ALLTBL_EXCEPTION;
   }
 
-   StringArrayList* tabNames_SAL = new (heap_) StringArrayList(heap_, jvm_, jenv_, 
+   StringArrayList* tabNames_SAL = new (heap_) StringArrayList(heap_, 
                                                        jStringArrayList);
    if (tabNames_SAL == NULL)
      return HVC_DONE;

@@ -164,7 +164,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL)
 #endif // NA_CMPDLL
-    , tid_(-1)
     , numCliCalls_(0)
    , jniErrorStr_(&exHeap_)
    , hbaseClientJNI_(NULL)
@@ -267,7 +266,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
   espReleaseTimeout_ = atol(envVar);
  else
   espReleaseTimeout_ = 5;
-  tid_ = syscall(SYS_gettid);
   processStats_ = cliGlobals_->getExProcessStats();
   //if we are in ESP, this espManager_ has to be NULL, see "else" part
   if (cliGlobals_->isESPProcess())
