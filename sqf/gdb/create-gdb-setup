@@ -1,0 +1,107 @@
+#!/bin/sh
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+if [ $# -lt 2 ]; then
+	echo "usage: $0 <target> <install>"
+	echo "create gdb setup files for off-target core analysis"
+	exit 1
+fi
+
+target=$1
+shift
+install=$1
+shift
+
+if [ ! -d "$target" ]; then
+	echo "<target>=$target is not a directory"
+	exit 1
+fi
+
+if [ ! -d "$install" ]; then
+	echo "<install>=$install is not a directory"
+	exit 1
+fi
+
+# change to absolute
+if [ `expr "$target" : '/.*'` -eq 0 ]; then
+	target="$PWD/$target"
+fi
+if [ `expr "$install" : '/.*'` -eq 0 ]; then
+	install="$PWD/$install"
+fi
+
+cwd=$PWD
+cd $install
+. ./sqenv.sh
+if [[ $SQ_MTYPE -eq 64 ]]; then
+   MPI_DIR="opt/hpmpi/lib/linux_amd64"
+else
+   MPI_DIR="opt/hpmpi/lib/linux_ia32"
+fi
+
+SQLIB_DIRS="\
+$MPI_DIR \
+export/lib$SQ_MBTYPE \
+seapilot/export/lib \
+seapilot/thirdparty_export/lib\
+"
+
+branch=`sqid | grep Release | sed -e 's|^.*branch ||' -e 's|,.*||' -e 's|\/|-|'`
+OUT=zgdb-`basename $target`-$branch
+cd $cwd
+
+
+rm -f $OUT
+echo "Creating output file=$OUT"
+
+# setup solib-absolute-prefix
+solib_abs_prefix="set solib-absolute-prefix $target"
+
+# setup solib-search-path
+solib_search_path="set solib-search-path "
+
+# add SQ standard libs
+for dir in $SQLIB_DIRS; do
+	solib_search_path="$solib_search_path$install/$dir:"
+done
+
+cwd=$PWD
+cd $target
+tcwd=$PWD
+tmpdirlist=`find . -type d`
+tgtdirlist=""
+for dir in $tmpdirlist; do
+	cd $tcwd/$dir
+	cnt=`ls -R | grep ':' | wc -l`
+	if [ $cnt -eq 1 ]; then
+		tgtdirlist="$tgtdirlist $dir"
+	fi
+done
+cd $cwd
+
+# add target libs
+for dir in $tgtdirlist; do
+	solib_search_path="$solib_search_path$target/$dir:"
+done
+
+# generate output file
+echo "$solib_abs_prefix" >> $OUT
+echo "$solib_search_path" >> $OUT

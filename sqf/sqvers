@@ -121,7 +121,6 @@ find_elfs("seapilot/export/lib" . $sq_mbtype, 0);
 
 # deal with jars
 find_jars("export/lib");
-find_jars("seapilot/export/lib" . $sq_mbtype);
 
 if ($utt) {
 	utt_print();

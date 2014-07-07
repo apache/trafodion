@@ -130,8 +130,9 @@ sub version {
 		$ver =~ s/_sl_/\//g;
 		$ver =~ s/_dt_/\./g;
 		$ver =~ s/_dh_/-/g;
-		if ($ver =~ /([a-zA-Z0-9_]*)_CV(\d*)_(\d*)_(\d*)_PV(\d*)_(\d*)_(\d*)_BV(\w*)_BR([a-zA-Z0-9\/_-]*)_DT(\d*)([a-zA-Z]*)(\d*)_SV(.*)/) {
-			print "Release $5.$6.$7 (Build $8 [$13], branch $9, date $10$11$12)\n";
+printf "ver=$ver\n";
+		if ($ver =~ /([a-zA-Z0-9_]*)_CV(\d*)_(\d*)_(\d*)_PV(\d*)_(\d*)_(\d*)_BV(\w*)_BR([a-zA-Z0-9\/_-]*)_DT(\d*)_(\d*)_SV(.*)/) {
+			print "Release $5.$6.$7 (Build $8 [$12], branch $9, date $10_$11)\n";
 		}
 	}
 }

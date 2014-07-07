@@ -1,0 +1,270 @@
+#!/usr/bin/perl
+#
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+
+# forwards
+sub find_elfs ($);
+
+my $detail = 0;
+my %lib_table;
+my $res;
+my $verbose = 0;
+
+# main start
+$res = GetOptions(
+	'd' => \$detail,
+	'v' => \$verbose,
+	);
+if (!$res) {
+	my $prog = $0;
+	$prog =~ s/^.*\///;
+	printf "usage: $prog [-d] [-v]\n";
+	printf "  -d: detail\n";
+	printf "  -v: verbose\n";
+	printf "create a tar file of host libraries\n";
+	exit(1);
+}
+
+# get MY_SQROOT/who/host
+my $sq_pdsh = defined $ENV{'SQ_PDSH'} ? $ENV{'SQ_PDSH'} : '';
+my $my_sqroot = defined $ENV{'MY_SQROOT'} ? $ENV{'MY_SQROOT'} : '';
+my $sq_mbtype = defined $ENV{'SQ_MBTYPE'} ? $ENV{'SQ_MBTYPE'} : '';
+my $host;
+gethost();
+
+if ($verbose) {
+	printf "v: cmd:whoami\n";
+}
+my $w = `whoami`;
+$w =~ s/\s+$//;
+
+print "MY_SQROOT=$my_sqroot\n";
+print "who\@host=$w\@$host\n";
+
+# deal with elfs
+find_elfs("export/bin$sq_mbtype");
+
+# add 'well known libs'
+add_well_known_libs();
+
+lib_tar();
+
+sub add_well_known_libs {
+	libdepstd("/lib/libnss_dns.so.2");
+	libdepstd("/lib/libnss_files.so.2");
+	libdepstd("/usr/lib/libcxgb3-rdmav2.so");
+	libdepstd("/usr/lib/libibverbs.so");
+	libdepstd("/usr/lib/libipathverbs-rdmav2.so");
+	libdepstd("/usr/lib/libmlx4-rdmav2.so");
+	libdepstd("/usr/lib/libmthca-rdmav2.so");
+	libdepstd("/usr/lib/libnes-rdmav2.so");
+	libdepstd("/usr/lib/sasl2/libanonymous.so.2");
+	libdepstd("/usr/lib/sasl2/liblogin.so.2");
+	libdepstd("/usr/lib/sasl2/libplain.so.2");
+	libdepstd("/usr/lib/sasl2/libsasldb.so.2");
+}
+
+sub find_elfs ($) {
+	my ($dir) = @_;
+	my $chdir = "$my_sqroot/$dir";
+	chdir($chdir) or die "can't chdir to $chdir $!";
+	my $ls = `ls`;
+	my @files = split(/\n/, $ls);
+	my $file;
+	foreach $file (@files) {
+		my $chk = `file -L $file`;
+		if ($chk =~ /ELF/) {
+			libdep($file);
+		}
+	}
+}
+
+#
+# gethost
+#   default to hostname
+#   search /etc/pdsh/machines | /opt/hptc/pdsh/nodes for non 'n[0-9][0-9]*'
+#
+sub gethost {
+	if ($verbose) {
+		printf "v: cmd:hostname\n";
+	}
+	$host = `hostname`;
+	$host =~ s/\s+$//;
+	if (-x ($sq_pdsh)) {
+		# find head node
+		if ($verbose) {
+			printf "v: cmd:cat /etc/pdsh/machines\n";
+		}
+		my $mach;
+		if (-r "/etc/pdsh/machines") {
+			$mach = `cat /etc/pdsh/machines`;
+                } elsif (-r "/etc/machines") {
+                        $mach = `cat /etc/machines`;
+		} else {
+			$mach = `cat /opt/hptc/pdsh/nodes`;
+		}
+		my @nstrs = split(/\n/, $mach);
+		my $nstr;
+		foreach $nstr (@nstrs) {
+			my $hno = $nstr;
+			$hno =~ s/\s+$//;
+			if ($verbose) {
+				print "v: /etc/pdsh/machines, rec=$hno\n";
+			}
+			if ($hno !~ /^n[0-9][0-9]*/) {
+				$host = $hno;
+				last;
+			}
+		}
+	}
+	if ($verbose) {
+		print "v: *host=$host\n";
+	}
+	$host =~ s/\s+$//;
+}
+
+sub libdep ($) {
+	my ($elf) = @_;
+
+	if ($verbose) {
+		printf "v: cmd:ldd $elf\n";
+	}
+	my $ldd = `ldd $elf`;
+	my @libs = split(/\n/, $ldd);
+	my $lib;
+	foreach $lib (@libs) {
+		$lib =~ s/^\t//;
+		if ($detail) {
+			printf "ldd: $lib\n";
+		}
+		my $ok = 0;
+		if ($lib =~ /^linux-gate\.so/) {
+			# forget linux-gate
+		} else {
+			if ($lib =~ /\/ld-linux\.so/) {
+				# forget ld-linux
+			} else {
+				if ($lib =~ /^.*.so.* => (.*) \(0x[0-9a-f][0-9a-f]*\)/) {
+					if ($1 =~ /$my_sqroot(\/\w)*/) {
+						# forget SQ
+					} else {
+						$ok = 1;
+						$lib = $1;
+					}
+				}
+			}
+		}
+		if ($ok) {
+			lib_add($lib);
+		}
+	}
+}
+
+sub libdepstd ($) {
+	my ($lib) = @_;
+
+	if ($sq_mbtype =~ /64/) {
+		$lib =~ s/lib/lib64/;
+	}
+	if (-r "$lib") {
+		lib_add($lib);
+	}
+}
+
+sub lib_add ($) {
+	my ($lib) = @_;
+
+	my $node;
+	if (exists $lib_table{$lib}) {
+		$node = $lib_table{$lib};
+		$node->add($lib);
+	} else {
+		$node = new Node($lib);
+		$lib_table{$lib} = $node;
+	}
+
+}
+
+sub lib_print {
+	my $lib_key;
+	foreach $lib_key (sort keys %lib_table) {
+		my $node = $lib_table{$lib_key};
+		lib_print_node($lib_key);
+	}
+}
+
+sub lib_tar {
+	my $lib_key;
+	my $lib_list = "";
+	foreach $lib_key (sort keys %lib_table) {
+		my $node = $lib_table{$lib_key};
+		$lib_list = "$lib_list $lib_key";
+	}
+	my $cmd = "tar -chvf $my_sqroot/zlibs-$host.tar $lib_list";
+	if ($verbose) {
+		printf "v: cmd:$cmd\n";
+	}
+	system "$cmd";
+	print "\n";
+	print "Created $my_sqroot/zlibs-$host.tar\n";
+}
+
+#
+# Print UTT node
+#
+sub lib_print_node ($) {
+	my ($lib_key) = @_;
+	my $node = $lib_table{$lib_key};
+	my $lib = $node->get_lib();
+	print "$lib\n";
+}
+
+#
+# Node object
+#
+package Node;
+sub new {
+	my $class = shift;
+	my @list = ();
+	my $list_r = \@list;
+	my $self = {
+		_lib => shift,
+		_list => $list_r,
+	};
+	my $lib = $self->{_lib};
+	my $list = $self->{_list};
+	push(@{$list}, "$lib");
+	bless $self, $class;
+	return $self;
+}
+sub add {
+	my ($self, $lib) = @_;
+	my $list = $self->{_list};
+	push(@{$list}, "$lib");
+}
+sub get_lib {
+	my ($self) = @_;
+	return $self->{_lib};
+}
