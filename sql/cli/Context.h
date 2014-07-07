@@ -975,6 +975,13 @@ public:
 
 }; // class ContextCli
 
+/* ContextTidMap - Maps contextCli to  a thread id
+ * 1. Only one mapping entry is possible for a given thread id.
+ * 2. A thread can work on only one ContextCli object at a time. 
+ * 3. Multiple threads in the same process can work on the same ContextCli. 
+ * `
+*/
+
 class ContextTidMap 
 {
 public:

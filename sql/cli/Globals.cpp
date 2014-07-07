@@ -726,6 +726,12 @@ ContextTidMap * CliGlobals::getThreadContext(pid_t tid)
   {
       if (contextTidMap->tid_ == tid)
       {
+         if (contextTidMap->context_ == NULL)
+         {
+             NADELETE(contextTidMap, ContextTidMap, getExecutorMemory());
+             tidList_->remove((char*)&tid, sizeof(pid_t), contextTidMap);
+             contextTidMap = NULL;
+         }
          cliSemaphore_->release();
          return contextTidMap;
       }
@@ -759,17 +765,22 @@ Lng32 CliGlobals::switchContext(ContextCli * newContext)
   cliSemaphore_->get();
   tidList_->position((char*)&tid, sizeof(pid_t));
   ContextTidMap *contextTidMap;
+  NABoolean tidFound = FALSE;
   while ((contextTidMap = (ContextTidMap *)tidList_->getNext()) != NULL)
   {
      if (tid == contextTidMap->tid_)
      {
-        NADELETE(contextTidMap, ContextTidMap, getExecutorMemory());
-        tidList_->remove((char*)&tid, sizeof(pid_t), contextTidMap);
+        contextTidMap->context_ = newContext;
+        tidFound = TRUE;
+        break;
      }
   } 
-  contextTidMap = new  (getExecutorMemory()) ContextTidMap(tid, newContext);
-  tidList_->insert((char *)&tid, sizeof(pid_t), (void *)contextTidMap);
-  tsCurrentContextMap = contextTidMap;
+  if (! tidFound)
+  {
+     contextTidMap = new  (getExecutorMemory()) ContextTidMap(tid, newContext);
+     tidList_->insert((char *)&tid, sizeof(pid_t), (void *)contextTidMap);
+     tsCurrentContextMap = contextTidMap;
+  }
   cliSemaphore_->release();
   retcode = switchTransaction(newContext);
   return retcode;
@@ -1349,7 +1360,7 @@ void CliGlobals::initMyProgName()
 void SQ_CleanupThread(void *arg)
 {
   if (tsCurrentContextMap != NULL && tsCurrentContextMap->context_ != NULL)
-     cli_globals->dropContext(tsCurrentContextMap->context_);
+     cli_globals->switchTransaction(NULL);
   HBaseClient_JNI::deleteInstance();
   HiveClient_JNI::deleteInstance();
 }
