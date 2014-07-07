@@ -752,7 +752,6 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
 
       defs->validateAndInsert(attrName, attrValue, FALSE, errOrWarn, overwriteIfNotYet);
     }
-
  label_return:
   deallocEHI(ehi);
 
@@ -908,11 +907,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       retcode = -1394;
       goto label_return;
     }
-
  label_return:
   if (! inEHI)
     deallocEHI(ehi);
-
   return retcode;
 }   
 

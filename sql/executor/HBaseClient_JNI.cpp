@@ -1171,88 +1171,6 @@ KeyValue* ResultKeyValueList::getEntry(Int32 i)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-bool ResultKeyValueList::toTRowResult(TRowResult& rowResult)
-{
-  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
-  Int32 familyLength, familyOffset;
-  long timestamp;
-
-  jbyteArray jba_kvs = static_cast<jbyteArray>(jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_KVS].methodID));
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return NULL;
-  }
-
-  if (jba_kvs == NULL)
-    return NULL;
-
-  jbyte* p_kvs = jenv_->GetByteArrayElements(jba_kvs, 0);
-
-  char *kvBuf = (char *) p_kvs;
-
-  Int32 numCols = *(Int32 *)kvBuf;
-  kvBuf += sizeof(numCols);
-
-  if (numCols == 0)
-    return false;
-
-  Int32 rowIDLen = *(Int32 *)kvBuf;
-  kvBuf += sizeof(rowIDLen);
-
-  Text *rowID;
-  if (rowIDLen == 0)
-    rowID = new (heap_) Text("<Empty>");
-  else
-    rowID = new (heap_) Text(kvBuf, rowIDLen);
-  rowResult.__set_row(*rowID);
-
-  kvBuf += rowIDLen;
-  NADELETE(rowID, Text, heap_);
-
-  std::map<Text, TCell> columns;
-
-  for (int i=0; i<numCols; i++)
-  {
-    Int32 *temp = (Int32 *)kvBuf;
-    kvLength = *temp++;
-    valueLength = *temp++;
-    valueOffset = *temp++;
-    qualLength = *temp++;
-    qualOffset = *temp++;
-    familyLength = *temp++;
-    familyOffset = *temp++;
-    timestamp = *(long *)temp;
-    temp += 2; 
-
-    char *buffer = (char *)temp;
-    TCell *cell = new (heap_) TCell();
-    const Bytes value(buffer + valueOffset, valueLength);
-    cell->__set_value(value);
-    cell->__set_timestamp(timestamp);
-
-    const Text colName(buffer + qualOffset, qualLength);
-    const Text family(buffer + familyOffset, familyLength);
-    const Text fullColName = family + ":" + colName;
-
-    std::pair<const Text, TCell> colPair(fullColName.data(), *cell);
-    columns.insert(colPair);
-
-    kvBuf = (char *)temp + kvLength;
-    NADELETE(cell, TCell, heap_);
-  }
-
-  rowResult.__set_columns(columns);
-  jenv_->ReleaseByteArrayElements(jba_kvs, p_kvs, JNI_ABORT);
-  jenv_->DeleteLocalRef(jba_kvs);
-
-  return true;
-} 
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
 bool ResultKeyValueList::toJbyte(jbyte **rowResult, jbyteArray &jRowResult,
                                      jboolean *isCopy)
 {
@@ -1655,6 +1573,7 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
   HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, j_htc);
   if (htc->init() != HTC_OK)
      return NULL;
+  htc->setTableName(tableName);
   return htc;
 }
 
@@ -2746,6 +2665,10 @@ char* HTableClient_JNI::getErrorText(HTC_RetCode errEnum)
 HTableClient_JNI::~HTableClient_JNI()
 {
   //HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "HTableClient destructor called.");
+  if (tableName_ != NULL)
+  {
+     NADELETEBASIC(tableName_, heap_);
+  }
 }
  
 //////////////////////////////////////////////////////////////////////////////
@@ -3195,41 +3118,6 @@ HTC_RetCode HTableClient_JNI::fetchNextRow()
       return HTC_DONE;
   }
   return HTC_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::fetchRowVec(TRowResult& rowResult)
-{
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::fetchRowVec() called.");
-
-  // public org.trafodion.sql.HBaseAccess.ResultKeyValueList fetchRowVec();
-  jobject jResult = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCH_ROWV].methodID);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "HTableClient_JNI::fetchRowVec()", getLastError());
-    return HTC_ERROR_FETCHROWVEC_EXCEPTION;
-  }
-
-  if (jResult == NULL)
-  {
-    return HTC_DONE_RESULT;
-  } 
-
-  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jResult);
-  if (result->init() != RKL_OK)
-     return HTC_ERROR_FETCHROWVEC_EXCEPTION;
-  bool gotData = result->toTRowResult(rowResult);
-  jenv_->DeleteLocalRef(jResult);  
-  NADELETE(result, ResultKeyValueList, result->getHeap());
-  
-  if (gotData)
-    return HTC_OK;
-  else
-    return HTC_DONE_DATA;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3776,25 +3664,13 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
   }
   return HTC_OK;
 }
-
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-std::string* HTableClient_JNI::getTableName()
+const char *HTableClient_JNI::getTableName()
 {
-  jstring js_name = (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_NAME].methodID);
-  
-  if (js_name == NULL)
-    return NULL;
-    
-  const char* char_result = jenv_->GetStringUTFChars(js_name, 0);
-  std::string* tableName = new (heap_) std::string(char_result);
-  jenv_->ReleaseStringUTFChars(js_name, char_result);
-  jenv_->DeleteLocalRef(js_name);  
-  
-  return tableName;
+  return tableName_;
 }
-
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////

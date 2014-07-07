@@ -295,31 +295,7 @@ protected:
   Lng32 setupListOfColNames(Queue * listOfColNames, TextVec &columns);
 
   short setupHbaseFilterPreds();
-  void setRowID(char *rowId, Lng32 rowIdLen)
-  {
-     if (rowAllocated_)
-        NADELETEBASIC(row_.val, getHeap()); 
-     if (rowId == NULL)
-     {
-        row_.val = NULL;
-        row_.len = 0;
-        rowAllocated_ = FALSE;
-        return;
-     }
-     if (rowIdLen > INLINE_ROWID_LEN)
-     {
-        row_.val = new (getHeap()) char[rowIdLen];
-        row_.len = rowIdLen;
-        rowAllocated_ = TRUE;
-     }
-     else
-     {
-        row_.val = inlineRow_;
-        row_.len = rowIdLen;
-        rowAllocated_ = FALSE;
-     }
-     memcpy(row_.val, rowId, rowIdLen);
-  }
+  void setRowID(char *rowId, Lng32 rowIdLen);
 
   /////////////////////////////////////////////////////
   //
@@ -337,8 +313,6 @@ protected:
   HBASE_NAMELIST hnl_;
   HbaseStr table_;
   HbaseStr rowId_;
-
-  //TRowResult rowResult_;
 
   jbyte  *jbRowResult_;
   jbyteArray jbaRowResult_;
@@ -392,8 +366,8 @@ protected:
 
   MutationVec mutations_;
   HbaseStr row_;
-  NABoolean rowAllocated_;
-  char inlineRow_[INLINE_ROWID_LEN + 1];
+  Lng32 rowAllocatedLen_;
+  char *rowAllocatedVal_;
 };
 
 class ExHbaseTaskTcb : public ExGod

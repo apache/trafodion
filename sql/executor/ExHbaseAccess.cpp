@@ -403,8 +403,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   isEOD_ = FALSE;
   row_.val = NULL;
   row_.len = 0;
-  rowAllocated_ = FALSE;
-  inlineRow_[0] = '\0';
+  rowAllocatedLen_ = 0;
+  rowAllocatedVal_ = NULL;
 }
     
 ExHbaseAccessTcb::~ExHbaseAccessTcb()
@@ -436,8 +436,8 @@ void ExHbaseAccessTcb::freeResources()
     qparent_.down = NULL;
   }
   delete ehi_;
-  if (rowAllocated_)
-     NADELETEBASIC(row_.val, getHeap());
+  if (rowAllocatedVal_)
+     NADELETEBASIC(rowAllocatedVal_, getHeap());
 }
 
 NABoolean ExHbaseAccessTcb::needStatsEntry()
@@ -1092,7 +1092,6 @@ short ExHbaseAccessTcb::createSQRow()
    return retcode;
 }
 
-#define INLINE_COLNAME_LEN 256
 short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 {
   // no columns are being fetched from hbase, do not create a row.
@@ -1145,6 +1144,7 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
   char *colVal; 
   Lng32 colValLen;
   Lng32  colNameLen;
+  Int32 allocatedLength = 0;
 
   for (int i= 0; i< numCols; i++)
   {
@@ -1165,10 +1165,20 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
      family = (char *)buffer + familyOffset;
      colNameLen = familyLength + qualLength + 1; // 1 for ':'
 
-     if (colNameLen > INLINE_COLNAME_LEN)
-        fullColName = new (getHeap()) char[colNameLen + 1];
-     else
+     if (allocatedLength == 0 && colNameLen < INLINE_COLNAME_LEN)
         fullColName = inlineColName;
+     else
+     {
+        if (colNameLen > allocatedLength)
+        {
+           if (allocatedLength > 0)
+           {
+               NADELETEBASIC(fullColName, getHeap());
+           }
+           fullColName = new (getHeap()) char[colNameLen + 1];
+           allocatedLength = colNameLen;
+        }
+     }
      strncpy(fullColName, family, familyLength);
      fullColName[familyLength] = '\0';
      strcat(fullColName, ":");
@@ -1182,7 +1192,7 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 
       if (! getColPos(colName, colNameLen, idx)) // not found
 	{
-          if (colNameLen > INLINE_COLNAME_LEN)
+          if (allocatedLength  > 0)
              NADELETEBASIC(fullColName, getHeap());
 	  // error
 	  return -HBASE_CREATE_ROW_ERROR;
@@ -1196,7 +1206,7 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
       Attributes * attr = asciiSourceTD->getAttr(idx);
       if (! attr)
 	{
-          if (colNameLen > INLINE_COLNAME_LEN)
+          if (allocatedLength  > 0)
               NADELETEBASIC(fullColName, getHeap());
 	  // error
 	  return -HBASE_CREATE_ROW_ERROR;
@@ -1233,11 +1243,12 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
               str_cpy_all(srcPtr, colVal, copyLen);
             }
         }
-    if (colNameLen > INLINE_COLNAME_LEN)
-       NADELETEBASIC(fullColName, getHeap());
     kvBuf = (char *)temp + kvLength;
   }
-
+  if (allocatedLength > 0)
+  {
+     NADELETEBASIC(fullColName, getHeap());
+  }
   // fill in null or default values for missing cols.
   for (idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
     {
@@ -2016,6 +2027,29 @@ short ExHbaseAccessTcb::setupHbaseFilterPreds()
     }
 
   return 0;
+}
+
+void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
+{
+   if (rowId == NULL)
+   {
+      row_.val = NULL;
+      row_.len = 0;
+      return;
+   }
+   if (rowIdLen > rowAllocatedLen_) 
+   {
+      if (rowAllocatedVal_)
+      {
+         NADELETEBASIC(rowAllocatedVal_, getHeap());
+      }
+      rowAllocatedVal_ = new (getHeap()) char[rowIdLen];
+      rowAllocatedLen_ = rowIdLen;
+
+   }
+   row_.val = rowAllocatedVal_;
+   row_.len = rowIdLen;
+   memcpy(row_.val, rowId, rowIdLen);
 }
 
 ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb)
