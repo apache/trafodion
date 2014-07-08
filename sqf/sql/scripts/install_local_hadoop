@@ -67,9 +67,15 @@ function check_ssh {
     # try some simpler measures and give up if those don't work
     echo "Problems encountered with ssh, trying to fix some common issues..."
     if [ -d ~/.ssh ]; then
-      HOST_CFG_SET=`grep -q NoHostAuthenticationForLocalhost ~/.ssh/config`
+      grep -q NoHostAuthenticationForLocalhost ~/.ssh/config
       if [ $? -ne 0 ]; then
         # configure ssh to omit host check for localhost
+        grep -qi ^host ~/.ssh/config
+        if [ $? -eq 0 ]; then
+          # make sure this applies to all hosts, even if
+          # there are host directives in the file
+          echo "host *"  >>~/.ssh/config
+        fi
         echo "NoHostAuthenticationForLocalhost=yes" >>~/.ssh/config
         chmod go-w ~/.ssh/config
       fi
