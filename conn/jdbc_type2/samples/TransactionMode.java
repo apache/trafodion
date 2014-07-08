@@ -132,17 +132,17 @@ public class TransactionMode
 				case 1:
 					System.out.println(PROLOG + "Testing 'internal' transactionMode");
 					ds = (DataSource)ctx.lookup("jdbc/TestDataSource");
-					((org.trafodion.sql.SQLMXDataSource)ds).setTransactionMode("internal");
+					((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setTransactionMode("internal");
 					break;
 				case 2:
 					System.out.println(PROLOG + "Testing 'mixed' transactionMode");
 					ds = (DataSource)ctx.lookup("jdbc/TestDataSource");
-					((org.trafodion.sql.SQLMXDataSource)ds).setTransactionMode("mixed");
+					((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setTransactionMode("mixed");
 					break;
 				case 3:
 					System.out.println(PROLOG + "Testing 'external' transactionMode");
 					ds = (DataSource)ctx.lookup("jdbc/TestDataSource");
-					((org.trafodion.sql.SQLMXDataSource)ds).setTransactionMode("external");
+					((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setTransactionMode("external");
 					break;
 				default:
 					System.out.println(PROLOG + "Invalid test type.");
