@@ -30,7 +30,8 @@ CPPSRC= xmlparse.cpp \
         QRQueries.cpp \
         QRQueriesImpl.cpp \
         Range.cpp \
-        QueryRewriteServer.cpp
+        QueryRewriteServer.cpp \
+	vers_libqmscommon.cpp
         
 SRCPATH := common qmscommon qmscommon/expat qms sqlmsg \
 	tdm_sqlerrormsg tdm_sqlexp tdm_sqlexport

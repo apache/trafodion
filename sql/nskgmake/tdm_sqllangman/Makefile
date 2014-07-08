@@ -45,7 +45,8 @@ CPPSRC := \
 	LmRoutineC.cpp \
 	LmRoutineCSql.cpp \
 	LmRoutineCSqlRow.cpp \
-	LmRoutineCSqlRowTM.cpp
+	LmRoutineCSqlRowTM.cpp \
+	vers_libtdm_sqllangman.cpp
 
 SRCPATH := langman bin
 

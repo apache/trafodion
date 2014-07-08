@@ -56,7 +56,8 @@ CPPSRC := GenBitMuxFunction.cpp \
         GenFastTransport.cpp \
         CmUtil.cpp \
 	LmExpr.cpp \
-	LmGenUtil.cpp
+	LmGenUtil.cpp \
+	vers_libgenerator.cpp
 
 DEFS := -DNDEBUG
 

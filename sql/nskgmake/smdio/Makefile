@@ -18,4 +18,5 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC += CmUtil.cpp
+CPPSRC += CmUtil.cpp \
+	vers_libsmdio.cpp

@@ -22,4 +22,7 @@
 #define VERS_CV_MAJ 1
 #define VERS_CV_MIN 0
 #define VERS_CV_UPD 1
-VERS_LIB(libtdm_sqlcli_globals)
+
+// LCOV_EXCL_START
+VERS_LIB(libsqlcomp)
+// LCOV_EXCL_STOP

@@ -22,6 +22,10 @@ CPPSRC := CliDll.cpp \
 	StoredProcInterface.cpp \
 	rtdu.cpp
 
+ifeq ($(TARGTYPE),linux)
+CPPSRC += vers_libcli.cpp
+endif
+
 
 
 ifneq (,$(findstring $(TARGTYPE), oss yos))

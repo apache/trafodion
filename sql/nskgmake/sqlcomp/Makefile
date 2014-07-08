@@ -32,7 +32,8 @@ CPPSRC := CmpDescribe.cpp \
 	NewDel.cpp \
 	parser.cpp \
 	CmpISPInterface.cpp \
-	QCache.cpp
+	QCache.cpp \
+	vers_libsqlcomp.cpp
 
 # Define the correct compilation and linking flags depending on whether
 # this is a debug or release build.

@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 //
 // @@@ END COPYRIGHT @@@
 
-#include "SCMVersHelp.h"
+#include "verslib.h"
 
-// component version
-#define VERS_CV_MAJ 1
-#define VERS_CV_MIN 0
-#define VERS_CV_UPD 1
-VERS_LIB(libtdm_sqlcli_globals)
+VERS_LIB(libsm)
+
+extern const char *seamonster_vers();
+
+DEFINE_EXTERN_COMP_GETVERS2(libsm)
+
+const char *seamonster_vers() {
+    return CALL_COMP_GETVERS2(libsm);
+}
+

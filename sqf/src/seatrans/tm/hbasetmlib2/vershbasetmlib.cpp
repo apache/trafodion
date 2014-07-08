@@ -16,6 +16,6 @@
 //
 // @@@ END COPYRIGHT @@@
 
-#include "tm/verslib.h"
+#include "verslib.h"
 
 VERS_LIB(tm_libshbasetmlib2)

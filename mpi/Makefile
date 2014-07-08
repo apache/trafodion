@@ -23,7 +23,7 @@ MPI_LIBEXPDIR=$(MPI_ROOT)/lib/linux_amd64
 MPI_INCEXPDIR=$(MPI_ROOT)/include
 MPI_BINEXPDIR=$(MPI_ROOT)/bin
 
-#SM library files
+#MPI library files
 LIBSRC=libmtmpi.c
 LIBOBJ=$(LIBSRC:.c=.o)
 CCFLAGS += -fpic

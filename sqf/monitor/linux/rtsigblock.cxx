@@ -19,8 +19,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include "vers.h"
 
 #define SQ_LIO_SIGNAL_REQUEST_REPLY (SIGRTMAX - 4)
+
+VERS_LIB(libseabasesig)
 
 static int monitor_rtsigblock_proc() {
     sigset_t lv_sig_set;
