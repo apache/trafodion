@@ -20,8 +20,8 @@
 #include "odbcMsg.h"
 #include "nlsfunctions.h"
 
-#define DRVRMSGDLL_NAME	"hp_odbcDrvMsg_intl0300.DLL"
-#define SRVRMSGDLL_NAME "hp_odbcSrvrMsg_intl0200.DLL"
+#define DRVRMSGDLL_NAME	"traf_odbcDrvMsg_intl0100.DLL"
+#define SRVRMSGDLL_NAME "traf_odbcSrvrMsg_intl0100.DLL"
 #define MSG_NOT_FOUND "Message for ID[%d] not found"
 #define MSG_INCOMPLETE "Message for ID[%d] is incomplete"
 #define GENERAL_SQLSTATE	"HY000"
