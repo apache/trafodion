@@ -2056,9 +2056,13 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // default value of maximum dp2 groups for a hash-groupby
   DDui1__(MAX_DP2_HASHBY_GROUPS, "1000"),
 
+  //
   // The max number of ESPs per cpu for a given operator.
   // i.e. this number times the number of available CPUs is "max pipelines".
-  DDui1__(MAX_ESPS_PER_CPU_PER_OP,	"1"),
+  // 
+  // On Linux, "CPU" means cores.
+  //
+  DDflt__(MAX_ESPS_PER_CPU_PER_OP,	"0.5"),
 
   DDui1__(MAX_EXPRS_USED_FOR_CONST_FOLDING,  "1000"),
 
@@ -3969,9 +3973,17 @@ enum DefaultConstants NADefaults::lookupAttrName(const char *name,
   return __INVALID_DEFAULT_ATTRIBUTE;	// negative
 }
 
+#define WIDEST_CPUARCH_VALUE 30	// also wider than any utoa_() result
+
 static void utoa_(UInt32 val, char *buf)  { sprintf(buf, "%u", val); }
 
 static void itoa_(Int32 val, char *buf)	   { sprintf(buf, "%d", val); }
+
+static void ftoa_(float val, char *buf)
+{
+   snprintf(buf, WIDEST_CPUARCH_VALUE, "%0.2f", val);
+}
+
 
 // Updates the system parameters in the defaultDefaults table.
 void NADefaults::updateSystemParameters(NABoolean reInit)
@@ -3997,7 +4009,6 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
       , "USTAT_IUS_PERSISTENT_CBF_PATH"
    }; //returned in KB not bytes
 
-  #define WIDEST_CPUARCH_VALUE 30	// also wider than any utoa_() result
   char valuestr[WIDEST_CPUARCH_VALUE];
 
   //  Set up global cluster information.
@@ -4144,7 +4155,11 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
     case MAX_ESPS_PER_CPU_PER_OP:
       {
-        Lng32 numESPsPerNode = 1;
+        // set 2 ESPs per node, as a starting point.
+        #define DEFAULT_ESPS_PER_NODE 2
+
+        Lng32 numESPsPerNode = DEFAULT_ESPS_PER_NODE;
+        Lng32 coresPerNode = 1;
         if(!OSIM_isNSKbehavior())
         {
           // Make sure the gpClusterInfo points at an NAClusterLinux object.
@@ -4162,7 +4177,7 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
           Lng32 TSEsPerNode = numTSEsPerCluster/nodesdPerCluster;
 
           // cores per node
-          Lng32 coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
+          coresPerNode = gpClusterInfo->numberOfCpusPerSMP();
 
           // For Linux/nt, we conservatively allocate ESPs per node as follows
           // - 1 ESP per 2 cpu cores if cores are equal or less than TSEs
@@ -4178,7 +4193,7 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
           if ((coresPerNode <= TSEsPerNode) || (TSEsPerNode == 0))
           {
              if (coresPerNode > 1)
-                numESPsPerNode = coresPerNode/2;
+                numESPsPerNode = DEFAULT_ESPS_PER_NODE; 
           }
           else if (coresPerNode > (TSEsPerNode*2))
           {
@@ -4190,11 +4205,11 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
           }
           else // not really needed since numESPsPerNode is set to 1 from above
           {
-             numESPsPerNode = 1;
+             numESPsPerNode = DEFAULT_ESPS_PER_NODE;
           }
         }
 
-        utoa_(numESPsPerNode, valuestr);
+        ftoa_((float)(numESPsPerNode)/(float)(coresPerNode), valuestr);
         strcpy(newValue, valuestr);
         if(reInit)
           ActiveSchemaDB()->
@@ -4727,6 +4742,39 @@ ULng32 NADefaults::getAsULong(Int32 attrEnum) const
   getFloat(attrEnum, flt);
   if (!domainMatch(attrEnum, VALID_UINT, &flt)) { CMPBREAK; }
   return (ULng32)(flt);
+}
+
+ULng32 NADefaults::getNumOfESPsPerNode() const
+{
+  return (ULng32)MAXOF(ceil(getNumOfESPsPerNodeInFloat()), 1); 
+}
+
+float NADefaults::getNumOfESPsPerNodeInFloat() const
+{
+   double maxEspPerCpuPerOp = getAsDouble(MAX_ESPS_PER_CPU_PER_OP);
+
+   CollIndex cores =
+     (OSIM_isNSKbehavior() || 
+      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
+     ) ?  
+        getAsLong(DEF_NUM_SMP_CPUS) :
+        gpClusterInfo->numberOfCpusPerSMP();
+
+   return float(maxEspPerCpuPerOp * cores);
+}
+
+ULng32 NADefaults::getTotalNumOfESPsInCluster() const
+{
+   float espsPerNode = getNumOfESPsPerNodeInFloat();
+
+   CollIndex numOfNodes = 
+     (OSIM_isNSKbehavior() || 
+      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
+     ) ?  
+     getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS) :  // fake or NSK
+     gpClusterInfo->numOfSMPs();                    // non-fake
+   
+   return MAXOF(ceil(espsPerNode * numOfNodes), 1);
 }
 
 NABoolean NADefaults::domainMatch(Int32 attrEnum,

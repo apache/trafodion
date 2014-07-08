@@ -100,15 +100,23 @@
 >>cqd query_cache '0';
 
 --- SQL operation complete.
->>CQD ATTEMPT_ESP_PARALLELISM 'On';
-
---- SQL operation complete.
 >>cqd HIVE_NUM_ESPS_PER_DATANODE '3';
 
 --- SQL operation complete.
->>cqd MAX_ESPS_PER_CPU_PER_OP '2';
+>>
+>>control query default ARKCMP_FAKE_HW 'ON';
 
 --- SQL operation complete.
+>>control query default DEF_NUM_SMP_CPUS '2' ;
+
+--- SQL operation complete.
+>>control query default MAX_ESPS_PER_CPU_PER_OP '1';
+
+--- SQL operation complete.
+>>control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '2' ;
+
+--- SQL operation complete.
+>>
 >>
 >>
 >>
@@ -496,6 +504,10 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 
 --- 1 row(s) selected.
 >>
+>>-- reset cluster settings 
+>>control query default ARKCMP_FAKE_HW reset;
+
+--- SQL operation complete.
 >>cqd MAX_ESPS_PER_CPU_PER_OP reset;
 
 --- SQL operation complete.

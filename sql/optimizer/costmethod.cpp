@@ -3052,6 +3052,7 @@ CostMethodExchange::categorizeMessages(
   // If faked hardware, then set the number of nodes per cluster based on a
   // CQD, otherwise get the number of nodes per cluster from gpClusterInfo.
   //-------------------------------------------------------------------------
+
   CollIndex numOfNodesInActiveClusters =
       ( CURRSTMT_OPTDEFAULTS->isFakeHardware() ?
             defs.getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS)
@@ -3153,20 +3154,9 @@ CostMethodExchange::categorizeMessages(
       && NOT CURRSTMT_OPTDEFAULTS->isFakeHardware())
     {
 
-      const CollIndex pipelinesPerCPU  = defs.getAsLong(MAX_ESPS_PER_CPU_PER_OP);
-      
-      CollIndex numOfCPUSPerNode = 0;
-      
-      if(OSIM_isNSKbehavior())
-      {
-        numOfCPUSPerNode = defs.getAsLong(DEF_NUM_SMP_CPUS);
-      }
-      else{ // Linux and NT
-        numOfCPUSPerNode = 1;
-      }
 
-      CMPASSERT(parentNodeMap->getNumEntries() <= numOfCPUSPerNode * pipelinesPerCPU
-                * numOfNodesInActiveClusters);//here it needs to be all clusters
+      CollIndex totalEsps = defs.getTotalNumOfESPsInCluster();
+      CMPASSERT(parentNodeMap->getNumEntries() <= totalEsps ); //here it needs to be all clusters
 
       //--------------------------------------------------------------------       
       // Derive the implicit grouping for the parent node map.

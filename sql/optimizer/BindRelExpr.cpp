@@ -5670,19 +5670,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     // Check the number of requested streams
     NADefaults &defs = bindWA->getSchemaDB()->getDefaults();
 
-    // Linux BGZ451 work: compute the total # of ESPs allowed and compare
-    // it aginst the # of extract streams.
-    const CollIndex espsPerNode = defs.getAsLong(MAX_ESPS_PER_CPU_PER_OP);
-    CollIndex activeNodes = gpClusterInfo->numOfSMPs();
-
-    ComUInt32 numConfiguredESPs = espsPerNode * activeNodes;
-
-    if(CURRSTMT_OPTDEFAULTS->isFakeHardware())
-    {
-      const CollIndex cpusPerNode = defs.getAsLong(DEF_NUM_SMP_CPUS);
-      activeNodes = defs.getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
-      numConfiguredESPs = espsPerNode * cpusPerNode * activeNodes;
-    }
+    ComUInt32 numConfiguredESPs = defs.getTotalNumOfESPsInCluster();
     
     if ((numExtractStreams == 1) || (numExtractStreams > numConfiguredESPs))
     {
