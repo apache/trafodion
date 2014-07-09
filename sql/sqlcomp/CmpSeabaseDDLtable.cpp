@@ -4210,6 +4210,16 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
 	    isPkeyConstr = TRUE;
 
 	  isUniqConstr = TRUE;
+          
+          if (uniqueConstr->hasRefConstraintsReferencingMe())
+          {
+             *CmpCommon::diags()
+             << DgSqlCode(-1050);
+
+             deallocEHI(ehi);
+             processReturn();
+             return;
+          }
 	}
     } // for
 
