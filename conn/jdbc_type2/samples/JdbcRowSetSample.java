@@ -18,7 +18,7 @@
 
 import java.sql.*;
 import java.math.BigDecimal;
-import org.trafodion.sql.*;
+import org.trafodion.jdbc.t2.*;
 
 public class JdbcRowSetSample
 {

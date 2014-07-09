@@ -27,7 +27,7 @@
  * Created:      October 2002
  * Language:     Java
  * @deprecated   As of SPJ Result Sets feature implementation, moved to 
- *               org.trafodion.sql.LmUtility
+ *               org.trafodion.sql.udr.LmUtility
  *
  *
  ******************************************************************************

@@ -41,7 +41,7 @@
 //
 import java.util.*;
 import javax.naming.*;
-import org.trafodion.sql.SQLMXDataSource;
+import org.trafodion.jdbc.t2.SQLMXDataSource;
 
 public class CreateDataSource {
 
