@@ -29,6 +29,7 @@
         </exec>
         <property file="buildId"/>
 	<property name="vproc.str" value="Traf_JDBC_Type4_Build_${bldId}" />
+	<property name="my_sqroot" value="../../sqf"/>
 	<property id="basedir" name="basedir" value="."/>
 	<property name="src.root" value="${basedir}" />
 	<property name="target.dir" value="${basedir}/../../sqf/export/lib" />
@@ -92,6 +93,8 @@
 
 	<!-- LIB -->
 	<target name="lib" depends="compile">
+		<property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
+		<property file="jdbct4.jar.version"/>
 		<jar destfile="${jdbcT4.jar}" basedir="${temp.classes}">
 			<include name="**/*.class" />
 			<include name="**/*.properties" />
@@ -99,6 +102,12 @@
 			<manifest>
 				<attribute name="Main-Class" value="${vproc.class}" />
 				<attribute name="Vproc" value="${vproc.str}" />
+				<attribute name="Implementation-Version-1" value="${Implementation-Version-1}"/>
+				<attribute name="Implementation-Version-2" value="${Implementation-Version-2}"/>
+				<attribute name="Implementation-Version-3" value="${Implementation-Version-3}"/>
+				<attribute name="Implementation-Version-4" value="${Implementation-Version-4}"/>
+				<attribute name="Implementation-Version-5" value="${Implementation-Version-5}"/>
+				<attribute name="Implementation-Version-6" value="${Implementation-Version-6}"/>
 			</manifest>
 		</jar>
 		<copy file="${jdbcT4.jar}" todir="${target.dir}"/>
