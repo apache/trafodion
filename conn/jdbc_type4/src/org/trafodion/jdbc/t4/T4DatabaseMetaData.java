@@ -140,7 +140,7 @@ public class T4DatabaseMetaData extends HPT4Handle implements java.sql.DatabaseM
 			String temp = lf.format(lr);
 			connection_.props_.getLogWriter().println(temp);
 		}
-		return connection_.getServerHandle().getUrl();
+		return connection_.getT4Properties().getUrl();
 	}
 
 	/*
