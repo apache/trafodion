@@ -577,9 +577,9 @@ EOF
 #!/bin/sh
 echo "Stopping Hadoop, MySQL, HBase..."
 cd ${MY_SW_SCRIPTS_DIR}
+./swstophbase
 ./swstophadoop
 ./swstopmysql
-./swstophbase
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swstarthadoop
