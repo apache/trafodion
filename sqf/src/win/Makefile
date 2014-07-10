@@ -46,7 +46,8 @@ LIBS		= $(LIBEXPDIR)/libevlsq.so \
 LIBS_TO_LINK	= -L$(LIBEXPDIR) -levlsq \
 		  -L$(LIBEXPDIR) -lsbms
 
-OBJS	        = $(OUTDIR)/traf_misc.o
+OBJS	        = $(OUTDIR)/traf_misc.o \
+		  $(OUTDIR)/traf_misc_vers.o
 
 SRC	= $(OBJS:.o=.cpp)
 

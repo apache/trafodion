@@ -23,7 +23,8 @@ CPPSRC := HvRoles_templ.cpp \
 	SqlParserAux.cpp \
 	ulexer.cpp \
 	vprocpar.cpp \
-	ParAll.cpp
+	ParAll.cpp \
+	vers_libparser.cpp
 
 YSRC := sqlparser.y
 LEX_PREFIX := yy

@@ -26,7 +26,8 @@ CPPSRC := hs_cli.cpp \
 	hs_parser.cpp \
 	hs_read.cpp \
 	hs_update.cpp \
-	hs_util.cpp
+	hs_util.cpp \
+	vers_libustat.cpp
 
 JSRC := ChgAutoList.java \
 	UstatUtil.java

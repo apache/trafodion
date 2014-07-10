@@ -18,6 +18,17 @@
 
 #include "mpi.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include "SCMVersHelp.h"
+
+// component version for libraries
+#define VERS_CV_MAJ 1
+#define VERS_CV_MIN 0
+#define VERS_CV_UPD 1
+
+VERS_LIB(mpi_libmtmpi)
+
 static int initialized = 0;
 static int finalized = 0;
 

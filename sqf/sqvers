@@ -110,13 +110,6 @@ my $dir_lib = "export/lib" . $sq_mbtype;
 find_elfs($dir_lib, 0);
 my $dir_bin = "export/bin" . $sq_mbtype;
 find_elfs($dir_bin, 0);
-my $dir_mpilib;
-if ($mtype =~ /64/) {
-	$dir_mpilib = "opt/hpmpi/lib/linux_amd64";
-} else {
-	$dir_mpilib = "opt/hpmpi/lib/linux_ia32";
-}
-find_elfs($dir_mpilib, 1);
 find_elfs("seapilot/export/lib" . $sq_mbtype, 0);
 
 # deal with jars
@@ -164,6 +157,9 @@ sub find_elfs ($$) {
 		if ($file =~ /libhdfs.so|libmysql|libthrift|libzookeeper/) {
 			$dochk = 0;
 		}
+		if ($file =~ /mpirun|hydra_pmi_proxy/) {
+			$dochk = 0;
+		}
 		if ($dochk) {
 			my $chk = `file -L $file`;
 			if ($chk =~ /ELF/) {
@@ -181,7 +177,19 @@ sub find_jars ($) {
 	my @files = split(/\n/, $ls);
 	my $file;
 	foreach $file (@files) {
-		version_jar($dir, $file);
+		my $dochk = 1;
+		if ($file =~ /jdbcT2.jar|jdbcT4.jar/) {
+			$dochk = 0;
+		}
+		if ($file =~ /hbase-trx-/) {
+			$dochk = 0;
+		}
+		if ($file =~ /trafodion-hbase-extensions-/) {
+			$dochk = 0;
+		}
+		if ($dochk) {
+			version_jar($dir, $file);
+		}
 	}
 }
 

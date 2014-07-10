@@ -1,6 +1,6 @@
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 //
 // @@@ END COPYRIGHT @@@
 
+#include <stdlib.h>
+#include <string.h>
 #include "SCMVersHelp.h"
 
-// component version
-#define VERS_CV_MAJ 1
+// component version for libraries
+#define VERS_CV_MAJ 3
 #define VERS_CV_MIN 0
 #define VERS_CV_UPD 1
-VERS_LIB(libtdm_sqlcli_globals)
+

@@ -22,7 +22,7 @@ include ./macros.gmk
 SQINSTALL=$(MY_SQROOT)/export
 
 #SM library files
-LIBSRC=libsm.c
+LIBSRC=libsm.c verssm.c
 LIBOBJ=$(LIBSRC:.c=.o)
 CCFLAGS += -fpic
 INCSRC=sm.h

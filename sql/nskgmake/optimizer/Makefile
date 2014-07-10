@@ -145,5 +145,6 @@ CPPSRC := \
 	TriggerDB.cpp \
 	Triggers.cpp \
 	VEGTable.cpp \
-	HbaseSearchSpec.cpp 
+	HbaseSearchSpec.cpp \
+	vers_liboptimizer.cpp
 

@@ -48,7 +48,8 @@ DEFINES += -DTMOS_TRACE
 endif
 
 LIBSTMOBJS	= $(OUTDIR)/hbasetm.o \
-              $(OUTDIR)/javaobjectinterfacetm.o
+              $(OUTDIR)/javaobjectinterfacetm.o \
+	      $(OUTDIR)/vershbasetmlib.o
 
 CFILES		= `ls *.c`
 
