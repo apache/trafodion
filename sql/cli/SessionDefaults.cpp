@@ -752,12 +752,17 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // =====================================================================
 
   // object does not exist in Trafodion
-  AQREntry(   1389,      0,      1,     0,      1,   1, "03",  1,     0),  
+  AQREntry(   1009,      0,      1,     0,      1,   1, "03",  0,     0),
+  AQREntry(   1389,      0,      1,     0,      1,   1, "03",  0,     0),
   // process could not be created (40)
   AQREntry(   2012,      0,      3,    60,      0,   0, "",    0,     0),  
 
   // comm failure with esp (201, 246, 249)
   AQREntry(   2034,      0,      1,     0,      2,   0, "",    0,     0), 
+  AQREntry(   2235,      0,      1,     0,      1,   1, "03",  0,     0),
+  AQREntry(   4001,      0,      1,     0,      1,   1, "03",  0,     0),
+  AQREntry(   4023,      0,      1,     0,      1,   1, "03",  0,     0),
+  AQREntry(   4039,      0,      1,     0,      1,   1, "03",  0,     0),
 
   // ReadTableDef mismatch transaction, transaction state needs to be cleaned up in compiler - kill compiler
   // only valid after prepare errors
@@ -816,7 +821,7 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   AQREntry(   8580,      0,      1,     0,      0,   0, "",    0,     0),
 
   // in-memory join out of memory
-  AQREntry(   8581,      0,      1,     0,      1,   1, "01",    1,     0), 
+  AQREntry(   8581,      0,      1,     0,      1,   1, "01",  0,     0), 
 
  // No generated plan 
   AQREntry(   8583,      0,      1,     0,      1,   0, "",    0,     1), 
