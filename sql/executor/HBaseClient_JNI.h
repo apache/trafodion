@@ -352,7 +352,6 @@ public:
   Int32 getSize();
   KeyValue* getEntry(Int32 i);
   
-  bool toTRowResult(TRowResult& rowResult);
   bool toJbyte(jbyte **rowResult, jbyteArray &jRowResult, jboolean *isCopy);
 
     
@@ -460,6 +459,7 @@ public:
   :  JavaObjectInterface(heap, jObj)
   {
      heap_ = heap;
+     tableName_ = NULL;
   }
 
   // Destructor
@@ -477,7 +477,6 @@ public:
   HTC_RetCode scanFetch();
   HTC_RetCode getFetch();
   HTC_RetCode fetchNextRow();
-  HTC_RetCode fetchRowVec(TRowResult& rowResult);
   HTC_RetCode fetchRowVec(jbyte **rowResult, jbyteArray &jRowResult,
                              jboolean *isCopy);
   HTC_RetCode freeRowResult(jbyte *rowResult, jbyteArray &jRowResult);
@@ -503,7 +502,7 @@ public:
     
   //  HTC_RetCode codeProcAggrGetResult();
 
-  std::string* getTableName();
+  const char *getTableName();
   std::string* getHTableName();
 
   // Get the error description.
@@ -512,6 +511,13 @@ public:
   ByteArrayList* getEndKeys();
 
   HTC_RetCode flushTable(); 
+  void setTableName(const char *tableName)
+  {
+    Int32 len = strlen(tableName);
+
+    tableName_ = new (heap_) char[len+1];
+    strcpy(tableName_, tableName);
+  } 
 
 private:
   jstring getLastJavaError();
@@ -547,7 +553,7 @@ private:
    ,JM_SET_WRITE_TO_WAL
    ,JM_LAST
   };
-  
+  char *tableName_; 
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
 };

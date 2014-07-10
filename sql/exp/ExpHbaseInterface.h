@@ -53,6 +53,8 @@
 #include "Hbase.h"
 #include "HBaseClient_JNI.h"
 
+#define INLINE_COLNAME_LEN 256
+
 class ex_globals;
 class CliGlobals;
 
@@ -185,9 +187,7 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 fetchNextRow() = 0;
  
-  virtual Lng32 fetchRowVec(
-		 TRowResult  &rowResult
-		 ) = 0;
+  virtual Lng32 fetchRowVec(HbaseStr &rowID) = 0;
 
   virtual Lng32 fetchRowVec(jbyte **jbRowResult,
                             jbyteArray &jbaRowResult,
@@ -204,12 +204,6 @@ class ExpHbaseInterface : public NABasicObject
     return 0;
   };
  
-  virtual Lng32 getRowInfo(
-		   HbaseStr &tblName,
-		   const Text& row, 
-		   NAList<char*> &colNames,
-		   NAList<char*> &colVals) = 0;
-		   
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
@@ -332,213 +326,6 @@ protected:
 char * getHbaseErrStr(Lng32 errEnum);
 
 // ===========================================================================
-class ExpHbaseInterface_Thrift : public ExpHbaseInterface
-{
- public:
-
-  ExpHbaseInterface_Thrift(CollHeap * heap, const char * server = NULL, 
-                           const char * port = NULL);
-  
-  virtual ~ExpHbaseInterface_Thrift()
-  {}
-  
-  virtual Lng32 init();
-  
-  virtual Lng32 cleanup();
-
-  virtual Lng32 close();
-
-  virtual Lng32 create(HbaseStr &tblName,
-	               HBASE_NAMELIST& colFamNameList);
-
-  virtual Lng32 create(HbaseStr &tblName,
-		       NAText * hbaseCreateOptionsArray,
-                       int numSplits, int keyLength,
-                       const char** splitValues);
-
-  virtual Lng32 drop(HbaseStr &tblName, NABoolean async);
-  virtual Lng32 dropAll(const char * pattern, NABoolean async)
-  {return 0;}
-
-  virtual Lng32 exists(HbaseStr &tblName);
-
-  // returns the next tablename. 100, at EOD.
-  virtual Lng32 getTable(HbaseStr &tblName);
-
-  void updateReturnValues(
-			HbaseStr &rowId, 
-			HbaseStr &colFamName,
-			HbaseStr &colName,
-			HbaseStr &colVal,
-			Int64 &timestamp);
-
-  virtual Lng32 scanOpen(
-			 HbaseStr &tblName,
-			 const Text& startRow, 
-			 const Text& stopRow, 
-			 const std::vector<Text> & columns,
-			 const int64_t timestamp,
-			 const NABoolean readUncommitted,
-			 const NABoolean cacheBlocks,
-			 const Lng32 numCacheRows,
-			 const TextVec *inColNamesToFilter, 
-			 const TextVec *inCompareOpList,
-			 const TextVec *inColValuesToCompare,
-                         Float32 samplePercent = -1.0f);
-  
-  virtual Lng32 scanFetch(
-		  HbaseStr &rowId,
-		  HbaseStr &colFamName,
-		  HbaseStr &colName,
-		  HbaseStr &colVal,
-		  Int64 &timestamp);
-  
-  virtual Lng32 scanClose();
-
-  virtual Lng32 getRowOpen(
-		HbaseStr &tblName,
-		const Text &row, 
-		const std::vector<Text> & columns,
-		const int64_t timestamp);
-
-  // return 1 if row exists, 0 if does not exist. -ve num in case of error.
-  virtual Lng32 rowExists(
-			  HbaseStr &tblName,
-			  HbaseStr  &row);
- 
- virtual Lng32 getRowsOpen(
-		HbaseStr &tblName,
-		const std::vector<Text> & rows, 
-		const std::vector<Text> & columns,
-		const int64_t timestamp);
-  
-  virtual Lng32 getFetch(
-		 HbaseStr &rowId,
-		 HbaseStr &colFamName,
-		 HbaseStr &colName,
-		 HbaseStr &colVal,
-		 Int64 &timestamp);
-
-  virtual Lng32 fetchNextRow();
- 
-  virtual Lng32 fetchRowVec(
-		 TRowResult  &rowResult
-		 );
- 
-  virtual Lng32 getRowInfo(
-		   HbaseStr &tblName,
-		   const Text& row, 
-		   NAList<char*> &colNames,
-		   NAList<char*> &colVals);
- 
-  virtual Lng32 deleteRow(
-		  HbaseStr &tblName,
-		  HbaseStr& row, 
-		  const std::vector<Text> & columns,
-		  const int64_t timestamp);
- 
-  virtual Lng32 insertRow(
-		  HbaseStr &tblName,
-		  HbaseStr& row, 
-		  MutationVec & mutations,
-		  const int64_t timestamp);
- 
-  virtual Lng32 insertRows(
-		  HbaseStr &tblName,
-		  std::vector<BatchMutation> & rowBatches,
-		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE); // by default, flush rows after put
-
-  virtual Lng32 setWriteBufferSize(
-                  HbaseStr &tblName,
-                  Lng32 size);
-
-  virtual Lng32 setWriteToWAL(
-                  HbaseStr &tblName,
-                  NABoolean v);
-
- virtual  Lng32 initHBLC();
- virtual Lng32 createHFile(HbaseStr &tblName,
-                           Text& hFileLoc,
-                           Text& hfileName);
-
- virtual Lng32 addToHFile( HbaseStr &tblName,
-                           std::vector<BatchMutation> & rows);
-
- virtual Lng32 closeHFile(HbaseStr &tblName);
-
- virtual Lng32 doBulkLoad(HbaseStr &tblName,
-                          Text& location,
-                          Text& tableName,
-                          NABoolean quasiSecure,
-                          NABoolean snapshot);
-
- virtual Lng32 bulkLoadCleanup(HbaseStr &tblName,
-                          Text& location);
-
-  virtual Lng32 getClose();
-
-  virtual Lng32 grant(
-		      const Text& user, 
-		      const Text& tblName,
-		      const std::vector<Text> & actionCodes);
-
-  virtual Lng32 revoke(
-		      const Text& user, 
-		      const Text& tblName,
-		      const std::vector<Text> & actionCodes);
-
-  virtual ByteArrayList* getRegionInfo(const char*) ;
-  virtual Lng32 flushTable();
- private:
-  char errText_[1000];
-
-  char tblNameBuf_[100];
-  char colFamNameBuf_[100];
-  char colNameBuf_[100];
-  char colValBuf_[100];
-
-  NABoolean isEod_;
-  size_t currRowIndex_;
-
-  boost::shared_ptr<TTransport> * socket_;
-  boost::shared_ptr<TTransport> * transport_;
-  boost::shared_ptr<TProtocol>  * protocol_;
-
-  HbaseClient * client_;
-
-  int scanner_;
-
-  // state for GetTable command
-  enum
-    {
-      GET_TABLE_INIT_,
-      GET_TABLE_OPEN_,
-      GET_TABLE_FETCH_,
-      GET_TABLE_CLOSE_
-    } getTableStep_;
-  TextVec tables_;
-  TextVec::const_iterator it_;
-  ColNames colNames_;
-
-  // state for scanFetch 
-  enum
-    {
-      SCAN_FETCH_INIT_,
-      SCAN_FETCH_NEXT_ROW_,
-      SCAN_FETCH_NEXT_COL_,
-      SCAN_FETCH_COL_END_,
-      SCAN_FETCH_ERROR_,
-      SCAN_FETCH_CLOSE_,
-      SCAN_FETCH_DONE_
-    } scanFetchStep_;
-  std::vector<TRowResult>  rowResultVec_;
-  CellMap::const_iterator colIter_;
-
-  Lng32 scanFetchErr_;
-};
-
-// ===========================================================================
 class ExpHbaseInterface_JNI : public ExpHbaseInterface
 {
  public:
@@ -626,9 +413,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 fetchNextRow();
  
-  virtual Lng32 fetchRowVec(
-		 TRowResult  &rowResult
-		 );
+  virtual Lng32 fetchRowVec(HbaseStr &rowID);
 
   virtual Lng32 fetchRowVec(jbyte **jbRowResult,
                       jbyteArray &jbaRowResult,
@@ -637,12 +422,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
   virtual Lng32 freeRowResult(jbyte *jbRowResult,
                       jbyteArray &jbaRowResult);
  
-  virtual Lng32 getRowInfo(
-		   HbaseStr &tblName,
-		   const Text& row, 
-		   NAList<char*> &colNames,
-		   NAList<char*> &colVals);
-		   
   virtual Lng32 deleteRow(
 		  HbaseStr &tblName,
 		  HbaseStr &row, 

@@ -74,14 +74,46 @@ ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                                   int debugPort,
                                                   int debugTimeout)
 {
-  if (interface==NULL || !strcmp(interface, "THRIFT"))
-    return new (heap) ExpHbaseInterface_Thrift(heap, server, port);
-  else if (!strcmp(interface, "JNI"))
-    return new (heap) ExpHbaseInterface_JNI(heap, server, port, FALSE,
-                                            zkPort, debugPort, debugTimeout);
-  else  
-    return new (heap) ExpHbaseInterface_JNI(heap, server, port, TRUE,
+   return new (heap) ExpHbaseInterface_JNI(heap, server, port, TRUE,
                                             zkPort, debugPort, debugTimeout); // This is the transactional interface
+}
+
+Lng32 ExpHbaseInterface_JNI::fetchRowVec(HbaseStr &rowID)
+{
+   Lng32 retcode;
+   jbyte *jbRowResult; 
+   jbyteArray jbaRowResult;
+   jboolean isCopy;
+   Int32 numCols;
+   Int32 rowIDLen;
+   char *kvBuf;
+
+   retcode = fetchRowVec(&jbRowResult, jbaRowResult, &isCopy);
+   if (retcode == HBASE_ACCESS_SUCCESS)
+   {
+     kvBuf = (char *) jbRowResult;
+     numCols = *(Int32 *)kvBuf;
+     kvBuf += sizeof(numCols);
+     if (numCols == 0)
+     {
+        rowID.val = NULL;
+        rowID.len = 0;
+     }
+     else
+     {
+        rowIDLen = *(Int32 *)kvBuf;
+        kvBuf += sizeof(rowIDLen);
+        rowID.val = kvBuf;
+        rowID.len = rowIDLen;
+     }
+     freeRowResult(jbRowResult, jbaRowResult);
+  }
+  else
+  {
+     rowID.val = NULL;
+     rowID.len = 0;
+  }
+  return retcode;
 }
 
 Lng32 ExpHbaseInterface::deleteColumns(
@@ -122,12 +154,11 @@ Lng32 ExpHbaseInterface::deleteColumns(
 	  return retcode;
 	}
       
-      TRowResult rowResult;
-      
       NABoolean done2 = FALSE;
+      HbaseStr rowID;
       while (NOT done2)
 	{
-	  retcode = fetchRowVec(rowResult);
+	  retcode = fetchRowVec(rowID);
 	  if (retcode == HBASE_ACCESS_EOD)
 	    {
 	      done2 = TRUE;
@@ -143,9 +174,6 @@ Lng32 ExpHbaseInterface::deleteColumns(
 
 	      return retcode;
 	    }
-          HbaseStr rowID;
-          rowID.val = (char *)rowResult.row.data();	  
-          rowID.len = rowResult.row.size();
 	  retcode = deleteRow(tblName, rowID, columns, -1);
 	  if (retcode != HBASE_ACCESS_SUCCESS)
 	    {
@@ -304,7 +332,7 @@ Lng32 ExpHbaseInterface::deleteRows(
 
 Lng32  ExpHbaseInterface::fetchAllRows(
 				       HbaseStr &tblName,
-				       Lng32 numCols,
+				       Lng32 numInCols,
 				       Text &col1NameStr,
 				       Text &col2NameStr,
 				       Text &col3NameStr,
@@ -321,48 +349,129 @@ Lng32  ExpHbaseInterface::fetchAllRows(
   col1ValueList.resize(0);
   col2ValueList.resize(0);
 
+  jbyte *jbRowResult;
+  jbyteArray jbaRowResult;
+  jboolean isCopy;
+  char *kvBuf;
+  Int32 numCols; 
+  HbaseStr rowID;
+  Int32 rowIDLen;
+  Int32 *temp;
+  char *value;
+  char *buffer;
+  char *colName;
+  char *family;
+  char inlineColName[INLINE_COLNAME_LEN+1];
+  char *fullColName;
+  Lng32 colNameLen;
+  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
+  Int32 familyLength, familyOffset;
+  long timestamp;
+  Lng32 filledCols = 0;
+  Int32 allocatedLength = 0;
+
   const std::vector<Text> columns;
-  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, NULL, NULL, NULL);
+  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, NULL, 
+       NULL, NULL);
   while (retcode == HBASE_ACCESS_SUCCESS)
-    {
-      retcode = fetchNextRow();
-      if (retcode != HBASE_ACCESS_SUCCESS)
+  {
+     retcode = fetchNextRow();
+     if (retcode != HBASE_ACCESS_SUCCESS)
 	continue;
 
-      TRowResult rowResult;
-      retcode = fetchRowVec(rowResult);
-      if (retcode == HBASE_ACCESS_EOD)
+     retcode = fetchRowVec(&jbRowResult, jbaRowResult, &isCopy);
+     if (retcode == HBASE_ACCESS_EOD)
 	{
 	  retcode = HBASE_ACCESS_SUCCESS;
 	  continue;
 	}
       
-      if (retcode != HBASE_ACCESS_SUCCESS)
+     if (retcode != HBASE_ACCESS_SUCCESS)
 	continue;
 
-      CellMap::const_iterator colIter = rowResult.columns.begin();
-      for (Lng32 j = 0; j < numCols; j++)
+     kvBuf = (char *) jbRowResult;
+     numCols = *(Int32 *)kvBuf;
+     kvBuf += sizeof(numCols);
+     if (numCols == 0)
+     {
+        rowID.val = NULL;
+        rowID.len = 0;
+     }
+     else
+     {
+        rowIDLen = *(Int32 *)kvBuf;
+        kvBuf += sizeof(rowIDLen);
+        rowID.val = kvBuf;
+        rowID.len = rowIDLen;
+        kvBuf += rowIDLen;
+     }
+     filledCols = 0; 
+     for (Lng32 j = 0; j < numCols && filledCols != numInCols; j++)
+     {
+        temp = (Int32 *)kvBuf;
+        kvLength = *temp++;
+        valueLength = *temp++;
+        valueOffset = *temp++;
+        qualLength = *temp++;
+        qualOffset = *temp++;
+        familyLength = *temp++;
+        familyOffset = *temp++;
+        timestamp = *(long *)temp;
+        temp += 2;
+        buffer = (char *)temp;
+        value = buffer + valueOffset;
+
+        colName = (char*)buffer + qualOffset;
+        family = (char *)buffer + familyOffset;
+        colNameLen = familyLength + qualLength + 1; // 1 for ':'
+
+        if (allocatedLength == 0 && colNameLen < INLINE_COLNAME_LEN)
+           fullColName = inlineColName;
+        else
+        {
+           if (colNameLen > allocatedLength)
+           {
+               if (allocatedLength > 0)
+               {
+                  NADELETEBASIC(fullColName, heap_);
+               }
+               fullColName = new (heap_) char[colNameLen + 1];
+               allocatedLength = colNameLen;
+           }
+        }
+        strncpy(fullColName, family, familyLength);
+        fullColName[familyLength] = '\0';
+        strcat(fullColName, ":");
+        strncat(fullColName, colName, qualLength);
+        fullColName[colNameLen] = '\0';
+
+        colName = fullColName;
+
+	Text colValue((char*)value, valueLength);
+	if (colName == col1NameStr)
 	{
-	  Text colName((char*)colIter->first.data(), colIter->first.length());
-	  Text colValue((char*)colIter->second.value.data(), colIter->second.value.length());
-	  if (colName == col1NameStr)
-	    {
-	      col1ValueList.insert(colValue);
-	    }
-	  else if (colName == col2NameStr)
-	    {
-	      col2ValueList.insert(colValue);
-	    }
-	  else if (colName == col3NameStr)
-	    {
-	      col3ValueList.insert(colValue);
-	    }
-
-	  colIter++;
+           filledCols++;
+	   col1ValueList.insert(colValue);
 	}
-
-    } // while
-
+	else if (colName == col2NameStr)
+	{
+	   col2ValueList.insert(colValue);
+           filledCols++;
+	}
+	else if (colName == col3NameStr)
+	{
+	   col3ValueList.insert(colValue);
+           filledCols++;
+	}
+        kvBuf = (char *)temp + kvLength;
+     }
+     freeRowResult(jbRowResult, jbaRowResult);
+     if (allocatedLength > 0)
+     {
+         NADELETEBASIC(fullColName, heap_);
+     }
+  } // while
+  
   if (retcode == HBASE_ACCESS_EOD)
     retcode = HBASE_ACCESS_SUCCESS;
 
@@ -418,911 +527,6 @@ Lng32 ExpHbaseInterface::flushAllTables()
   
   return HBASE_ACCESS_SUCCESS;
 }
-
-// ===========================================================================
-// ===== Class ExpHbaseInterface_Thrift
-// ===========================================================================
-
-ExpHbaseInterface_Thrift::ExpHbaseInterface_Thrift(CollHeap * heap, const char * server, const char * port)
-  : ExpHbaseInterface(heap, server, port)
-{
-  bool isFramed = false;
-
-  transport_ = new  boost::shared_ptr<TTransport>;
-
-  socket_ = new boost::shared_ptr<TTransport>(new TSocket(server, boost::lexical_cast<int>(port_)));
-
-  if (isFramed) {
-    transport_->reset(new TFramedTransport(*socket_));
-  } else {
-    transport_->reset(new TBufferedTransport(*socket_));
-  }
-
-  protocol_ = new boost::shared_ptr<TProtocol> (new TBinaryProtocol(*transport_));
-
-  client_ = new HbaseClient(*protocol_);
-}
-  
-Lng32 ExpHbaseInterface_Thrift::init()
-{
-  try {
-    (*transport_)->open();
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_OPEN_ERROR;
-  }
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::close()
-{
-  try {
-    (*transport_)->close();
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_CLOSE_ERROR;
-  }
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::flushTable()
-{
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::cleanup()
-{
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::create(HbaseStr &tblName,
-				       HBASE_NAMELIST& colFamNameList)
-{
-  Lng32 rc;
-  std::string t(tblName.val);
-  
-  rc = init();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  ColVec columns;
-  for (Lng32 i = 0; i < colFamNameList.entries(); i++)
-    {
-      columns.push_back(ColumnDescriptor());
-
-      columns.back().name = colFamNameList[i].val;
-      columns.back().maxVersions = 1;
-    }
-
-  try {
-    
-    try {
-      client_->createTable(t, columns);
-    } catch (const AlreadyExists &ae) {
-      std::strcpy(errText_, ae.message.c_str());
-      return -HBASE_CREATE_ERROR;
-    }
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_CREATE_ERROR;
-  }
-
-  rc = close();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-  
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::create(HbaseStr &tblName,
-				       NAText * hbaseCreateOptionsArray,
-                                       int numSplits, int keyLength,
-                                       const char ** splitValues)
-{
-  Lng32 rc;
-  std::string t(tblName.val);
-  
-  rc = init();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  ColVec columns;
-  columns.push_back(ColumnDescriptor());
-  
-  // not all HBase create options are supported through the thrift interface
-  if (! hbaseCreateOptionsArray[HBASE_NAME].empty())
-    columns.back().name = hbaseCreateOptionsArray[HBASE_NAME];
-
-  if (! hbaseCreateOptionsArray[HBASE_MAX_VERSIONS].empty())
-    columns.back().maxVersions = 
-      str_atoi(hbaseCreateOptionsArray[HBASE_MAX_VERSIONS].data(),
-	       hbaseCreateOptionsArray[HBASE_MAX_VERSIONS].length());
-
-  if (! hbaseCreateOptionsArray[HBASE_COMPRESSION].empty())
-    columns.back().compression = hbaseCreateOptionsArray[HBASE_COMPRESSION];
-  
-  if (! hbaseCreateOptionsArray[HBASE_TTL].empty())
-    columns.back().timeToLive = 
-      str_atoi(hbaseCreateOptionsArray[HBASE_TTL].data(),
-	       hbaseCreateOptionsArray[HBASE_TTL].length());
-
-  if (! hbaseCreateOptionsArray[HBASE_IN_MEMORY].empty())
-    {
-      if (hbaseCreateOptionsArray[HBASE_IN_MEMORY] == "TRUE")
-	columns.back().inMemory = true;
-    }
-
-  if (! hbaseCreateOptionsArray[HBASE_BLOCKCACHE].empty())
-    {
-      if (hbaseCreateOptionsArray[HBASE_BLOCKCACHE] == "TRUE")
-	columns.back().blockCacheEnabled = true;
-    }
-
-  try {
-    
-    try {
-      client_->createTable(t, columns);
-    } catch (const AlreadyExists &ae) {
-      std::strcpy(errText_, ae.message.c_str());
-      return -HBASE_CREATE_ERROR;
-    }
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_CREATE_ERROR;
-  }
-
-  rc = close();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-  
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::drop(HbaseStr &tblName, NABoolean async)
-{
-  Lng32 rc;
-
-  std::string t(tblName.val);
-
-  rc = init();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  try {
-    StrVec tables;
-    client_->getTableNames(tables);
-    bool found = false;
-    for (StrVec::const_iterator it = tables.begin(); it != tables.end(); ++it) 
-      {
-	if (t == *it) 
-	  {
-	    found = true;
-	    if (client_->isTableEnabled(*it)) 
-	      {
-		client_->disableTable(*it);
-	      }
-	    client_->deleteTable(*it);
-	  }
-      }
-    if (not found)
-      {
-	strcpy(errText_, "table does not exist");
-	return -HBASE_DROP_ERROR;
-      }
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_DROP_ERROR;
-  }
-
-  rc = close();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-    
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::exists(HbaseStr &tblName)
-{
-  Lng32 rc;
-
-  std::string t(tblName.val);
-
-  rc = init();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  bool found = false;
-  try {
-    StrVec tables;
-    client_->getTableNames(tables);
-    for (StrVec::const_iterator it = tables.begin(); 
-	 ((not found) && (it != tables.end())); ++it) 
-      {
-	if (t == *it) 
-	  {
-	    found = true;
-	  }
-      }
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  rc = close();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-   
-  if (found)
-    return -1; // table exists
-  else
-    return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::getTable(HbaseStr &tblName)
-{
-  Lng32 rc = 0;
-  while (1)
-    {
-      switch (getTableStep_)
-	{
-	case GET_TABLE_INIT_:
-	  {
-	    rc = init();
-	    if (rc != HBASE_ACCESS_SUCCESS)
-	      return rc;
-
-	    getTableStep_ = GET_TABLE_OPEN_;
-	  }
-	  break;
-
-	case GET_TABLE_OPEN_:
-	  {
-	    try {
-	      client_->getTableNames(tables_);
-	    } catch (const TException &tx) {
-	      std::strcpy(errText_, tx.what());
-	      return -HBASE_ACCESS_ERROR;
-	    }
-	    it_ = tables_.begin();
-	    getTableStep_ = GET_TABLE_FETCH_;
-	  }
-	  break;
-	  
-	case GET_TABLE_FETCH_:
-	  {
-	    if (it_ == tables_.end())
-	      {
-		getTableStep_ = GET_TABLE_CLOSE_;
-		break;
-	      }
-	    
-	    tblName.val = (char*)(*it_).c_str();
-	    tblName.len = strlen(tblName.val);
-
-	    it_++;
-	    return HBASE_ACCESS_SUCCESS;
-	  }
-	  break;
-	  
-	case GET_TABLE_CLOSE_:
-	  {
-	    rc = close();
-	    if (rc != HBASE_ACCESS_SUCCESS)
-	      return rc;
- 
-	    getTableStep_ = GET_TABLE_INIT_;
-
-	    return HBASE_ACCESS_EOD;
-	  }
-	} // switch
-
-    } // while
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-void ExpHbaseInterface_Thrift::updateReturnValues(
-					   HbaseStr &rowId, 
-					   HbaseStr &colFamName,
-					   HbaseStr &colName,
-					   HbaseStr &colVal,
-					   Int64 &timestamp)
-{
-
-  rowId.val = (char*)rowResultVec_[currRowIndex_].row.data();
-  rowId.len = rowResultVec_[currRowIndex_].row.length();
-  
-  colName.val = (char*)colIter_->first.data();
-  colName.len = colIter_->first.length();
-  
-  char * colFamEnd = strchr(colName.val, ':');
-  if (colFamEnd)
-    {
-      colFamName.val = colName.val;
-      colFamName.len = (colFamEnd - colFamName.val);
-    }
-  else
-    {
-      colFamName.val = NULL;
-      colFamName.len = 0;
-    }
-  
-  colVal.val = (char*)colIter_->second.value.data();
-  colVal.len = colIter_->second.value.length();
-
-  timestamp = colIter_->second.timestamp;
-}
-
-Lng32 ExpHbaseInterface_Thrift::getRowOpen(
-	     HbaseStr &tblName,
-	     const Text &row, 
-	     const std::vector<Text> & columns,
-	     const int64_t timestamp)
-{
-  std::string t(tblName.val);
-  const std::map<Text, Text>  dummyAttributes; 
-
-  try {
-    try {
-      if (timestamp == -1)
-	{
-	  if (columns.size() == 0)
-	    client_->getRow(rowResultVec_, t, row, dummyAttributes);
-	  else
-	    client_->getRowWithColumns(rowResultVec_, t, row, columns, dummyAttributes);
-	}
-      else
-	{
-	  if (columns.size() == 0)
-	    client_->getRowTs(rowResultVec_, t, row, timestamp, dummyAttributes);
-	  else
-	    client_->getRowWithColumnsTs(rowResultVec_, t, row, columns, timestamp, dummyAttributes);
-	}
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: getRow raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  currRowIndex_ = 0;
-  if (rowResultVec_.size() > 0)
-    {
-      colIter_ = rowResultVec_[currRowIndex_].columns.begin();
-    }
-
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::rowExists(
-	     HbaseStr &tblName,
-	     HbaseStr &row)
-{
-  Lng32 rc = 0;
-  StrVec columns;
-  
-  rc = getRowOpen(tblName, row.val, columns, -1);
-  if (rc < 0)
-    return rc;
-
-  if (rowResultVec_.size() > 0)
-    return 1; // exists
-  else
-    return 0; // does not exist
-}
-
-Lng32 ExpHbaseInterface_Thrift::getRowsOpen(
-	     HbaseStr &tblName,
-	     const std::vector<Text> & rows, 
-	     const std::vector<Text> & columns,
-	     const int64_t timestamp)
-{
-  std::string t(tblName.val);
-  const std::map<Text, Text>  dummyAttributes; 
-
-  try {
-    try {
-      if (timestamp == -1)
-	{
-	  if (columns.size() == 0)
-	    client_->getRows(rowResultVec_, t, rows, dummyAttributes);
-	  else
-	    client_->getRowsWithColumns(rowResultVec_, t, rows, columns, dummyAttributes);
-	}
-      else
-	{
-	  if (columns.size() == 0)
-	    client_->getRowsTs(rowResultVec_, t, rows, timestamp, dummyAttributes);
-	  else
-	    client_->getRowsWithColumnsTs(rowResultVec_, t, rows, columns, timestamp, dummyAttributes);
-	}
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: getRow raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  currRowIndex_ = 0;
-  if (rowResultVec_.size() > 0)
-    {
-      colIter_ = rowResultVec_[currRowIndex_].columns.begin();
-    }
-
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::getFetch(
-				  HbaseStr &rowId,
-				  HbaseStr &colFamName,
-				  HbaseStr &colName,
-				  HbaseStr &colVal,
-				  Int64 &timestamp)
-{
-  if (rowResultVec_.size() == 0) //if (isEod_)
-    {
-      return HBASE_ACCESS_EOD;
-    }
-
-  if (colIter_ == rowResultVec_[currRowIndex_].columns.end())
-    {
-      currRowIndex_++;
-
-      if (currRowIndex_ == rowResultVec_.size())
-	return HBASE_ACCESS_EOD;
-      else
-	{
-	  colIter_ = rowResultVec_[currRowIndex_].columns.begin();
-	}
-    }
-
-  updateReturnValues(rowId, colFamName, colName, colVal, timestamp);
-
-  colIter_++;
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::fetchNextRow()
-{
-  try {
-    try {
-      client_->scannerGet(rowResultVec_, scanner_);
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: ScannerGet raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  if (rowResultVec_.size() == 0) //if (isEod_) 
-    {
-      return HBASE_ACCESS_EOD;
-    }
-
-  currRowIndex_ = 0;
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::fetchRowVec(
-				     TRowResult  &rowResult
-				     )
-{
-  if (currRowIndex_ == rowResultVec_.size())
-    return HBASE_ACCESS_EOD;
- 
-  rowResult = rowResultVec_[currRowIndex_];
-  currRowIndex_++;
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::getClose()
-{
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::grant(
-				      const Text& user, 
-				      const Text& tblName,
-				      const std::vector<Text> & actionCodes)
-{
-  // thrift doesn't support this method. Just say that it is granted :)
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::revoke(
-				      const Text& user, 
-				      const Text& tblName,
-				      const std::vector<Text> & actionCodes)
-{
-  // thrift doesn't support this method. Just say that it is revoked :)
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::getRowInfo(
-	     HbaseStr &tblName,
-	     const Text& row, 
-	     NAList<char*> &colNameList,
-	     NAList<char*> &colValList)
-{
-  Lng32 rc = 0;
-  std::string t(tblName.val);
-  const std::map<Text, Text>  dummyAttributes; 
-
-  rc = init();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  try {
-    try {
-      client_->getRow(rowResultVec_, t, row, dummyAttributes);
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: getRow raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  if (rowResultVec_.size() == 1) // only one row should exist
-    {
-      colIter_ = rowResultVec_[0].columns.begin();
-
-      while (colIter_ != rowResultVec_[0].columns.end())
-	{
-	  char * colName = (char*)colIter_->first.c_str();
-	  char * colVal = (char*)colIter_->second.value.c_str();
-
-	  char * colNameNAS = new(heap_) char[strlen(colName) + 1];
-	  char * colValNAS = new(heap_) char[strlen(colVal) + 1];
-
-	  strcpy(colNameNAS, colName);
-	  strcpy(colValNAS, colVal);
-
-	  colNameList.insert(colNameNAS);
-	  colValList.insert(colValNAS);
-	  
-	  colIter_++;
-	}
-    }
-
-  rc = close();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::scanOpen(
-				  HbaseStr &tblName,
-				  const Text& startRow, 
-				  const Text& stopRow, 
-				  const std::vector<Text> & columns,
-				  const int64_t timestamp,
-				  const NABoolean readUncommitted,
-				  const NABoolean cacheBlocks,
-				  const Lng32 numCacheRows,
-				  const TextVec *inColNamesToFilter, 
-				  const TextVec *inCompareOpList,
-				  const TextVec *inColValuesToCompare,
-                                  Float32 samplePercent)  // not used in this override
-{
-  const std::map<Text, Text>  dummyAttributes; // see HBASE-6806 HBASE-4658
-  std::string t(tblName.val);
-  try {
-      if (timestamp == -1)
-	{
-	  if (stopRow == "")
-	    scanner_ = client_->scannerOpen(t, startRow, columns, 
-					    dummyAttributes);
-	  else
-	    scanner_ = client_->scannerOpenWithStop(t, startRow, stopRow, columns, 
-						    dummyAttributes);
-	}
-      else
-	{
-	  if (stopRow == "")
-	    scanner_ = client_->scannerOpenTs(t, startRow, columns, 
-					      timestamp, dummyAttributes);
-	  else
-	    scanner_ = client_->scannerOpenWithStopTs(t, startRow, stopRow, columns, 
-						      timestamp, dummyAttributes);
-	}
-    
-  } catch (const TException &tx) {
-    std::strcpy(errText_, tx.what());
-    return -HBASE_OPEN_ERROR;
-  }
-
-  scanFetchStep_ = SCAN_FETCH_INIT_;
-  scanFetchErr_ = 0;
-
-  currRowIndex_ = 0;
-
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::scanFetch(
-				   HbaseStr &rowId,
-				   HbaseStr &colFamName,
-				   HbaseStr &colName,
-				   HbaseStr &colVal,
-				   Int64 &timestamp)
-{
-  while (1)
-    {
-      switch (scanFetchStep_)
-	{
-	case SCAN_FETCH_INIT_:
-	  {
-	    try {
-	      try {
-		client_->scannerGet(rowResultVec_, scanner_);
-	      } catch (const TException &tx) {
-		std::strcpy(errText_, tx.what());
-		return -HBASE_ACCESS_ERROR;
-	      }
-	    } catch (const IOError &ioe) {
-	      std::strcpy(errText_, "FATAL: ScannerGet raised IOError");
-	      return -HBASE_ACCESS_ERROR;
-	    }
-
-	    if (rowResultVec_.size() == 0)
-	      {
-		scanFetchStep_ = SCAN_FETCH_CLOSE_;
-		break;
-	      }
-
-	    currRowIndex_ = 0;
-	    scanFetchStep_ = SCAN_FETCH_NEXT_ROW_;
-	  } // case
-	  break;
-	  
-	case SCAN_FETCH_NEXT_ROW_:
-	  {
-	    if (currRowIndex_ == rowResultVec_.size())
-	      {
-		scanFetchStep_ = SCAN_FETCH_INIT_;
-		break;
-	      }
-
-	    colIter_ = rowResultVec_[currRowIndex_].columns.begin();
-	    
-	    scanFetchStep_ = SCAN_FETCH_NEXT_COL_;
-	  }
-	  break;
-	  
-	case SCAN_FETCH_NEXT_COL_:
-	  {
-	    if (colIter_ == rowResultVec_[currRowIndex_].columns.end())
-	      {
-		scanFetchStep_ = SCAN_FETCH_COL_END_;
-		break;
-	      }
-
-	    updateReturnValues(rowId, colFamName, colName, colVal, timestamp);
-
-	    colIter_++;
-	    
-	    return HBASE_ACCESS_SUCCESS;
-	  }
-	  break;
-	  
-	case SCAN_FETCH_COL_END_:
-	  {
-	    currRowIndex_++;
-	    
-	    scanFetchStep_ = SCAN_FETCH_NEXT_ROW_;
-	  }
-	  break;
-	  
-	case SCAN_FETCH_ERROR_:
-	  {
-	    return scanFetchErr_;
-	  }
-	  break;
-	  
-	case SCAN_FETCH_CLOSE_:
-	  {
-	    scanFetchStep_ = SCAN_FETCH_DONE_;
-	  }
-	  break;
-	  
-	case SCAN_FETCH_DONE_:
-	  {
-	    return HBASE_ACCESS_EOD;
-	  }
-
-	}// switch
-    } // while
-}
-
-Lng32 ExpHbaseInterface_Thrift::scanClose()
-{
-  try {
-    try {
-      client_->scannerClose(scanner_);
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-      
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: ScannerGet raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-  
-  return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_Thrift::deleteRow(
-	     HbaseStr &tblName,
-	     HbaseStr &row, 
-	     const std::vector<Text> & columns,
-	     const int64_t timestamp)
-{
-  std::string t(tblName.val);
-  const std::map<Text, Text>  dummyAttributes; 
-
-  const Text column;
-
-  try {
-    try {
-      if (timestamp == -1)
-	{
-	  if (column == "")
-	    client_->deleteAllRow(t, row.val, dummyAttributes);
-	  else
-	    client_->deleteAll(t, row.val, column, dummyAttributes);
-	}
-      else
-	{
-	  if (column == "")
-	    client_->deleteAllRowTs(t, row.val, timestamp, dummyAttributes);
-	  else
-	    client_->deleteAllTs(t, row.val, column, timestamp, dummyAttributes);
-	}
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: deleteAll raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::insertRow(
-				   HbaseStr &tblName,
-				   HbaseStr &row, 
-				   MutationVec & mutations,
-				   const int64_t timestamp)
-{
-  std::string t(tblName.val);
-  const std::map<Text, Text>  dummyAttributes; 
-
-  try {
-    try {
-      if (timestamp == -1)
-	{
-	  client_->mutateRow(t, row.val, mutations, dummyAttributes);
-	}
-      else
-	{
-	  client_->mutateRowTs(t, row.val, mutations, timestamp, dummyAttributes);
-	}
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: mutateRow raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::insertRows(
-				   HbaseStr &tblName,
-				   std::vector<BatchMutation> & rows,
-				   const int64_t timestamp,
-				   NABoolean autoFlush)
-{
-  std::string t(tblName.val);
-  const std::map<Text, Text>  dummyAttributes; 
-
-  try {
-    try {
-      if (timestamp == -1)
-	{
-	  client_->mutateRows(t, rows, dummyAttributes);
-	}
-      else
-	{
-	  client_->mutateRowsTs(t, rows, timestamp, dummyAttributes);
-	}
-    } catch (const TException &tx) {
-      std::strcpy(errText_, tx.what());
-      return -HBASE_ACCESS_ERROR;
-    }
-  } catch (const IOError &ioe) {
-    std::strcpy(errText_, "FATAL: mutateRows raised IOError");
-    return -HBASE_ACCESS_ERROR;
-  }
-
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::setWriteBufferSize(
-                HbaseStr &tblName,
-                Lng32 size)
-{
-  return 0;
-}
-Lng32 ExpHbaseInterface_Thrift::setWriteToWAL(
-                HbaseStr &tblName,
-                NABoolean v)
-{
-  return 0;
-}
-
-Lng32 ExpHbaseInterface_Thrift::initHBLC()
-{
-
-  assert(0);
-  return 0;
-}
-Lng32 ExpHbaseInterface_Thrift::createHFile(HbaseStr &tblName,
-                           Text& hFileLoc,
-                           Text& hfileName)
-{
-   assert(0);
-   return 0;
-}
-
- Lng32 ExpHbaseInterface_Thrift::addToHFile( HbaseStr &tblName,
-                                             std::vector<BatchMutation> & rows)
- {
-   assert(0);
-   return 0;
- }
-
- Lng32 ExpHbaseInterface_Thrift::closeHFile(HbaseStr &tblName)
- {
-   assert(0);
-   return 0;
- }
-
- Lng32 ExpHbaseInterface_Thrift::doBulkLoad(HbaseStr &tblName,
-                          Text& location,
-                          Text& tableName,
-                          NABoolean quasiSecure,
-                          NABoolean snapshot)
- {
-   assert(0);
-   return 0;
- }
-
- Lng32 ExpHbaseInterface_Thrift::bulkLoadCleanup(HbaseStr &tblName,
-                          Text& location)
- {
-   assert(0);
-   return 0;
- }
 
 char * getHbaseErrStr(Lng32 errEnum)
 {
@@ -1755,20 +959,6 @@ Lng32 ExpHbaseInterface_JNI::fetchNextRow()
     return -HBASE_ACCESS_ERROR;
 }
 
-//----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::fetchRowVec(TRowResult& rowResult)
-{
-  retCode_ = htc_->fetchRowVec(rowResult);
-  if (retCode_ == HBC_OK)
-    return HBASE_ACCESS_SUCCESS;
-  if (retCode_ == HTC_DONE_DATA)
-    return HBASE_ACCESS_EOD;
-  else if (retCode_ == HTC_DONE_RESULT)
-    return HBASE_ACCESS_EOR;
-  else
-    return -HBASE_ACCESS_ERROR;
-}
-
 Lng32 ExpHbaseInterface_JNI::fetchRowVec(jbyte **jbRowResult,
                             jbyteArray &jbaRowResult,
                             jboolean *isCopy)
@@ -1793,56 +983,7 @@ Lng32 ExpHbaseInterface_JNI::freeRowResult(jbyte *jbRowResult,
   else
     return -HBASE_ACCESS_ERROR;
 }
-   
-//----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::getRowInfo(
-	     HbaseStr &tblName,
-	     const Text& row, 
-	     NAList<char*> &colNameList,
-	     NAList<char*> &colValList)
-{
-  Lng32 rc = 0;
 
-  rc = init();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  std::vector<Text> columns;
-  rc = getRowOpen(tblName, row, columns, -1);
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  TRowResult rowResult;
-  rc = fetchRowVec(rowResult);
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  CellMap::const_iterator colIter_ = rowResult.columns.begin();
-  while (colIter_ != rowResult.columns.end())
-  {
-    char * colName = (char*)colIter_->first.c_str();
-    char * colVal = (char*)colIter_->second.value.c_str();
-  
-    char * colNameNAS = new(heap_) char[strlen(colName) + 1];
-    char * colValNAS = new(heap_) char[strlen(colVal) + 1];
-  
-    strcpy(colNameNAS, colName);
-    strcpy(colValNAS, colVal);
-  
-    colNameList.insert(colNameNAS);
-    colValList.insert(colValNAS);
-    
-    colIter_++;
-  }
-
-  rc = close();
-  if (rc != HBASE_ACCESS_SUCCESS)
-    return rc;
-
-  return 0;
-}
-
-//----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr &tblName,
 	  HbaseStr& row, 
@@ -2146,13 +1287,16 @@ Lng32 ExpHbaseInterface_JNI::rowExists(
   if (retCode_ != HBC_OK)
     return -HBASE_OPEN_ERROR;
 
-  TRowResult rowResult;
-  retCode_ = htc->fetchRowVec(rowResult);
+  jbyte *jbRowResult;
+  jbyteArray jbaRowResult;
+  jboolean isCopy;
+  retCode_ = htc->fetchRowVec(&jbRowResult, jbaRowResult, &isCopy);
+  freeRowResult(jbRowResult, jbaRowResult);
   client_->releaseHTableClient(htc);
 
-  if (retCode_ == HBC_OK)
+  if (retCode_ == HTC_OK)
     return 1; // exists
-  else if (retCode_ == HTC_DONE)
+  else if (retCode_ == HTC_DONE_DATA || retCode_ == HTC_DONE_RESULT)
     return 0; // does not exist
   else
     return -HBASE_ACCESS_ERROR;
@@ -2289,20 +1433,6 @@ Lng32 ExpHbaseInterface_JNI::revoke(
   else
     return HBASE_ACCESS_SUCCESS;
 }
-
-ByteArrayList* ExpHbaseInterface_Thrift::getRegionInfo(const char* tblName)
-{ 
-/*
-  HTableClient* htc = client_->getHTableClient((NAHeap *)heap_, tblName, useTRex_);
-  if (htc == NULL)
-    return NULL;
-
-   ByteArrayList* bal = htc_->getEndKeys();
-   return bal;
-*/
-  return NULL;
-}
-
 
 ByteArrayList* ExpHbaseInterface_JNI::getRegionInfo(const char* tblName)
 { 
