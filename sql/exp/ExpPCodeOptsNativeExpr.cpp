@@ -2320,11 +2320,24 @@ jit_value_t PCodeOperand::getJitValue( PCodeCfg        * cfg
           jit_value_t vcLen = cfg->IR_LoadRelativeWithType( Bldr, param,
                                                     voaOffset_,  MyTy );
 
+          //
+          // NOTE: The 16-bit or 32-bit offset that we just "loaded" should be
+          // treated as an *unsigned* value so that we don't reference some 
+          // negative offset from the beginning of the string/object/structure.
+          // So, here we generate a Zero-Extend instruction to get the offset
+          // extended out to 64 bits before it is added to the address of the object.
+          //
+          jit_value_t unsignedVcLen ;
+
+          CDPT0( "VV0334: ", VV_BD,
+         "unsignedVcLen  = Bldr->CreateZExt( vcLen, cfg->getInt64Ty() , 'ZExtVcLen' )\n" );
+          unsignedVcLen  = Bldr->CreateZExt( vcLen, cfg->getInt64Ty() , "ZExtVcLen" );
+
 ////      jitValuePtr_ = jit_insn_add(f, param, v);
 
           CDPT0( "VV0335: ", VV_BD,
-         "jitValuePtr_ = Bldr->CreateGEP( param, vcLen )\n" );
-          jitValuePtr_ = Bldr->CreateGEP( param, vcLen );
+         "jitValuePtr_ = Bldr->CreateGEP( param, unsignedVcLen )\n" );
+          jitValuePtr_ = Bldr->CreateGEP( param, unsignedVcLen );
 
           // Now set up pointer, moving past null indicator if required.
           if (vcNullIndicatorLen_)
