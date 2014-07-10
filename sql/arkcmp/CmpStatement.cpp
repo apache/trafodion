@@ -145,6 +145,7 @@ CmpStatement::CmpStatement(CmpContext* context,
   isDDL_ = FALSE;
   isSMDRecompile_ = FALSE;
   isParallelLabelOp_ = FALSE;
+  displayGraph_ = FALSE;
 
 #ifndef NDEBUG
   if ( getenv("ARKCMP_NO_STATEMENTHEAP") )

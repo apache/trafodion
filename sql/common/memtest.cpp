@@ -41,8 +41,6 @@
 
 typedef void* voidPtr;
 
-THREAD_P NABoolean DisplayGraph;
-
 void memtest_vers2_print() {};
 
 #include "seabed/ms.h"

@@ -50,14 +50,6 @@
 
 #include <math.h>
 
-
-// -----------------------------------------------------------------------
-// The flag DisplayGraph is used for sensing whether the user wants
-// to display the query tree during optimization. Certain methods
-// on RelExpr are enabled only when it is set.
-// -----------------------------------------------------------------------
-extern THREAD_P NABoolean DisplayGraph ;
-
 // -----------------------------------------------------------------------
 // member functions for class RelExpr
 // -----------------------------------------------------------------------

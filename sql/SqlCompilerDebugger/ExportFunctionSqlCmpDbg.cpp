@@ -24,9 +24,15 @@
  
 extern MainWindow *mainWindow_;
 extern SqlcmpdbgExpFuncs exportFunctions_;
+extern QApplication* application_;
+static int argc = 1;
+static char **argv;	
 
 SqlcmpdbgExpFuncs * GetSqlcmpdbgExpFuncs(void) 
 {
+  if (application_ == NULL)
+     application_ = new QApplication(argc, argv);
+     
   if(mainWindow_)
     delete mainWindow_;
   mainWindow_ = new MainWindow();

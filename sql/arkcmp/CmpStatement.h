@@ -194,6 +194,11 @@ public:
   TaskMonitor* getSimpleFSOMonPtr() { return simpleFSOTaskMonitor_;}
   TaskMonitor* getComplexFSOMonPtr()  { return complexFSOTaskMonitor_; }
 
+  // controls for the compiler graphical debugging tool
+  NABoolean displayGraph () { return displayGraph_; }
+  void setDisplayGraph (NABoolean val) { displayGraph_ = val; }
+  void clearDisplayGraph () { displayGraph_ = FALSE; }
+  
 protected:
   // CmpStatement(const CmpStatement&); please remove this line
   CmpStatement& operator=(const CmpStatement&);
@@ -282,6 +287,11 @@ private:
 
   TaskMonitor* simpleFSOTaskMonitor_;
   TaskMonitor* complexFSOTaskMonitor_;
+
+  // The attribute displayGraph_ is used for sensing whether the user wants
+  // to display the query tree during optimization. Certain methods
+  // on RelExpr are enabled only when it is set.
+  NABoolean displayGraph_;
 }; // end of CmpStatement
 
 class CmpStatementISP: public CmpStatement

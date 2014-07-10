@@ -77,14 +77,7 @@ DEFINE_DOVERS(tdm_arkcmp)
 #include "Globals.h"
 #include "CliSemaphore.h"
 
-
-
-
-
-THREAD_P NABoolean DisplayGraph = FALSE;
-
 ostream &operator<<(ostream &dest, const ComDiagsArea& da);
-
 
 // mainNewHandler_CharSave and mainNewHandler are used in the error
 // handling when running out of virtual memory for the main program.

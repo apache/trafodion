@@ -96,8 +96,6 @@ extern void my_mpi_fclose();
 THREAD_P jmp_buf ExportJmpBuf;
 extern THREAD_P jmp_buf* ExportJmpBufPtr;
 
-THREAD_P NABoolean   DisplayGraph = FALSE;
-
 SqlciEnv * global_sqlci_env = NULL ; // Global sqlci_env for break key handling purposes.
 
 // This processes options of the form:

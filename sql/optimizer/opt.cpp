@@ -323,7 +323,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
 
 #ifdef NA_DEBUG_GUI
   CMPASSERT(gpClusterInfo != NULL);
-  if (CmpMain::msGui_ && DisplayGraph )
+  if (CmpMain::msGui_ && CURRENTSTMT->displayGraph() )
     CmpMain::pExpFuncs_->fpSqldbgSetPointers(CURRSTMT_OPTGLOBALS->memo
                                              ,CURRSTMT_OPTGLOBALS->task_list
                                              ,QueryAnalysis::Instance()
@@ -503,8 +503,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
               //                                                // for GUI display
 
 #ifdef NA_DEBUG_GUI
-              if (DisplayGraph) {
-                if (CmpMain::msGui_) {
+                if (CmpMain::msGui_ && CURRENTSTMT->displayGraph()) {
                   CmpMain::pExpFuncs_->fpDoMemoStep(
                        (Int32)GlobalRuleSet->getCurrentPassNumber(),
                        (Int32) next_task->getGroupId(),
@@ -513,7 +512,6 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
                        next_task->getExpr(),
                        next_task->getPlan());
                 }
-              } // end if (DisplayGraph)
 #endif
 
 #ifdef _DEBUG
@@ -581,7 +579,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
           // GSH : Hide the Sqlcmpdbg display if it is not hidden. This is possible
           // if you were steping through the memo optimization.
           //---------------------------------------------------------------------
-          if (CmpMain::msGui_) {
+          if (CmpMain::msGui_ && CURRENTSTMT->displayGraph()) {
             CmpMain::pExpFuncs_->fpHideQueryTree(TRUE);
           }
 #endif
@@ -639,7 +637,7 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
           case 2:	optPass = Sqlcmpdbg::AFTER_OPT2; break;
           default:	break;
           }
-          if (CmpMain::msGui_)
+          if (CmpMain::msGui_ && CURRENTSTMT->displayGraph())
             {
               CMPASSERT(gpClusterInfo != NULL);
               CmpMain::pExpFuncs_->fpSqldbgSetPointers(CURRSTMT_OPTGLOBALS->memo, CURRSTMT_OPTGLOBALS->task_list,
@@ -654,10 +652,6 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
                                                       (void*) context->getSolution());
             }
 
-          // If done displaying query tree after last optimization pass,
-          // turn off DisplayGraph
-          if (GlobalRuleSet->inLastPass())
-            DisplayGraph = FALSE;
 #endif
 
           if ( context->getSolution() && ( CmpCommon::getDefault( NSK_DBG ) == DF_ON ) )
@@ -6947,7 +6941,7 @@ void QueryOptimizerDriver::DEBUG_SHOW_TASK(CascadesTask * task)
 void QueryOptimizerDriver::DEBUG_GUI_DO_MEMO_STEP(CascadesTask *task)
 {
 #ifdef NA_DEBUG_GUI
-  if (DisplayGraph && CmpMain::msGui_) {
+  if (CmpMain::msGui_ && CURRENTSTMT->displayGraph()) {
     CmpMain::pExpFuncs_->
       fpDoMemoStep( (Int32)GlobalRuleSet->getCurrentPassNumber(),
 		    (Int32) task->getGroupId(),
@@ -6963,7 +6957,7 @@ void QueryOptimizerDriver::DEBUG_GUI_SET_POINTERS()
 {
 #ifdef NA_DEBUG_GUI
   CMPASSERT(gpClusterInfo != NULL);
-  if (CmpMain::msGui_ && DisplayGraph )
+  if (CmpMain::msGui_ && CURRENTSTMT->displayGraph() )
     CmpMain::pExpFuncs_->fpSqldbgSetPointers( CURRSTMT_OPTGLOBALS->memo
 					      ,CURRSTMT_OPTGLOBALS->task_list
 					      ,QueryAnalysis::Instance()
@@ -6995,7 +6989,7 @@ void QueryOptimizerDriver::DEBUG_GUI_HIDE_QUERY_TREE()
   // GSH : Hide the Sqlcmpdbg display if it is not hidden. This is possible
   // if you were steping through the memo optimization.
   //---------------------------------------------------------------------
-  if (CmpMain::msGui_) {
+  if (CmpMain::msGui_ && CURRENTSTMT->displayGraph()) {
     CmpMain::pExpFuncs_->fpHideQueryTree(TRUE);
   }
 #endif
@@ -7013,7 +7007,7 @@ DEBUG_GUI_DISPLAY_AFTER_OPTIMIZATION(Context *context)
   default:	break;
   }
 
-  if (CmpMain::msGui_)
+  if (CmpMain::msGui_ && CURRENTSTMT->displayGraph())
     {
       CMPASSERT(gpClusterInfo != NULL);
       CmpMain::pExpFuncs_->fpSqldbgSetPointers( CURRSTMT_OPTGLOBALS->memo,
@@ -7029,10 +7023,6 @@ DEBUG_GUI_DISPLAY_AFTER_OPTIMIZATION(Context *context)
 					       (void*) context->getSolution());
     }
 
-  // If done displaying query tree after last optimization pass,
-  // turn off DisplayGraph
-  if (GlobalRuleSet->inLastPass())
-    DisplayGraph = FALSE;
 #endif
 }
 

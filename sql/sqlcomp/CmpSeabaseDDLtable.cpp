@@ -44,6 +44,7 @@
 
 #include "CmpDDLCatErrorCodes.h"
 #include "Globals.h"
+#include "CmpMain.h"
 
 // defined in CmpDescribe.cpp
 extern short CmpDescribeSeabaseTable ( 
@@ -6111,7 +6112,39 @@ desc_struct* CmpSeabaseDDL::assembleRegionDescs(ByteArrayList* bal, desc_nodetyp
    return result;
 }
 
+// a wrapper method to getSeabaseRoutineDescInternal so 
+// CmpContext context switching can take place. 
+// getSeabaseRoutineDescInternal prepares and executes
+// several queries on metadata tables
 desc_struct *CmpSeabaseDDL::getSeabaseRoutineDesc(const NAString &catName,
+                                      const NAString &schName,
+                                      const NAString &objName)
+{
+   desc_struct *result = NULL;
+   NABoolean switched = FALSE;
+
+   // use metadata compiler
+   if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+     if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(
+                              CmpContextInfo::CMPCONTEXT_TYPE_META))
+       {
+          // failed to switch/create metadata CmpContext
+          // continue using current compiler 
+       }
+      else
+       switched = TRUE;
+
+   result = getSeabaseRoutineDescInternal(catName, schName, objName);
+
+   // switch back the internal commpiler, ignore error for now
+   if (switched == TRUE)
+     SQL_EXEC_SWITCH_BACK_COMPILER();
+
+   return result;
+}
+
+
+desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catName,
                                       const NAString &schName,
                                       const NAString &objName)
 {

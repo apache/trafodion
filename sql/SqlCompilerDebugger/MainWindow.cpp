@@ -32,9 +32,7 @@
   The QApplication should be constructed before any UI control variables, e.g. the MainWindow.
   Otherwise, the UI cannot be launch due to errors.
 */
-static int argc = 1;
-static char **argv;
-QApplication application_(argc, argv);
+QApplication* application_ = NULL;
 
 /*
   The MainWindow must be constucted after the QApplication.
@@ -44,10 +42,11 @@ QApplication application_(argc, argv);
   MainWindow one object will be created when GetSqlcmpdbgExpFuncs is called,
   and delete at end of DisplayTDBTree
 */
-extern THREAD_P NABoolean DisplayGraph;
+
 MainWindow *mainWindow_ = NULL;
 SqlcmpdbgExpFuncs exportFunctions_;
 NABoolean MainWindow::IsQuiting = false;
+
 
 MainWindow::MainWindow(QWidget * parent):QMainWindow(parent), ui(new Ui::MainWindow),
 m_popMenu(NULL)
@@ -56,7 +55,6 @@ m_popMenu(NULL)
     //Initialize
     m_FinishAllOptimizePass = FALSE;
     IsQuiting = FALSE;
-    DisplayGraph = TRUE;
     // Set center screen
     QDesktopWidget *desktop = QApplication::desktop();
     move((desktop->width() - this->width()) / 2,
@@ -90,7 +88,7 @@ NABoolean MainWindow::Run()
     {
         if (!IsQuiting)
         {
-            application_.processEvents(QEventLoop::WaitForMoreEvents |
+            application_->processEvents(QEventLoop::WaitForMoreEvents |
                                        QEventLoop::EventLoopExec);
         }
         else
@@ -103,7 +101,6 @@ NABoolean MainWindow::Run()
 
 MainWindow::~MainWindow()
 {
-    delete ui;
     delete m_querydata;
     delete aboutBox;
     delete breakpointDialog;

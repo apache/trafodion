@@ -577,6 +577,7 @@ void HistogramCache::createColStatsList
                     preFetch,
                     (Int64) CURRSTMT_OPTDEFAULTS->histDefaultSampleSize()
                     );   
+     
   }
 
   //check if we are using the cache

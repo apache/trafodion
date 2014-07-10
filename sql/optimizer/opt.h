@@ -130,14 +130,6 @@ class QueryComplexityVector;
   #define DBGLOGPLAN(plan)
 #endif
 
-// -----------------------------------------------------------------------
-// global variables (defined in opt.C)
-// -----------------------------------------------------------------------
-
-
-extern  THREAD_P NABoolean         DisplayGraph;
-
-
 // This is a double epsilon being defined to make sure the selectivity
 // always has some minimum. We did not want to do it in DefaultValidator.h,
 // as that would have been too general.

@@ -56,12 +56,6 @@
   #include "SqlciEnv.h"		    // only reason why we need sqlcilib in DLL.
   #include "StoredProcInterface.h"  // to export the interface.
 
-  #ifdef NA_DEBUG_GUI
-    THREAD_P NABoolean DisplayGraph = TRUE;
-  #else
-    THREAD_P NABoolean DisplayGraph = FALSE;
-  #endif
-
     #include <setjmp.h>
     SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
     extern "C"

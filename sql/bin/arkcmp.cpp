@@ -90,7 +90,6 @@ DEFINE_DOVERS(tdm_arkcmp)
 
 //  extern SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
 THREAD_P jmp_buf ExportJmpBuf;
-THREAD_P NABoolean DisplayGraph = FALSE;
 
 ostream &operator<<(ostream &dest, const ComDiagsArea& da);
 

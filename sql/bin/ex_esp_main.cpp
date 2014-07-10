@@ -74,13 +74,6 @@ DEFINE_DOVERS(tdm_arkesp)
 
 #include "Context.h"
 
-// -----------------------------------------------------------------------
-// Some global variables an ARK program (Unix flavor) needs
-// -----------------------------------------------------------------------
-THREAD_P NABoolean DisplayGraph = FALSE;
-
-
-
 #if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
 // -----------------------------------------------------------------------
 // ESP control connection, handle system messages

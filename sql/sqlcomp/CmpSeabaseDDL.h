@@ -242,6 +242,10 @@ class CmpSeabaseDDL
   void getColName(const char * colFam, const char * colQual,
 		  NAString &colName);
 
+  desc_struct *getSeabaseRoutineDescInternal(const NAString &catName,
+                                             const NAString &schName,
+                                             const NAString &objName);
+
   short createHbaseTable(ExpHbaseInterface *ehi, 
 			 HbaseStr *table,
 			 const char * cf1, const char * cf2, const char * cf3,
