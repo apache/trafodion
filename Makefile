@@ -17,14 +17,22 @@
 #
 # @@@ END COPYRIGHT @@@
 
-RELEASE_VER ?= 0.8.2
+# Default version number
+# daily, pre-release, & release builds are named based on build ID (tag or date)
+# Version identifier is two parts:
+#  * Trafodion version supported
+#  * Installer version number (starting from 1 for each Trafodion version)
+#
+# "v000" indicates an internal/development version of installer
+RELEASE_VER ?= 0.8.3_v000
 
 all: pkg-installer 
 
 pkg-installer: 
-	chmod -R a+x installer
-	tar czf installer-$(RELEASE_VER).tgz installer
+	tar czf installer-$(RELEASE_VER).tar.gz installer
 
 version:
 	@echo "$(RELEASE_VER)"
 
+clean:
+	rm installer-$(RELEASE_VER).tar.gz
