@@ -152,8 +152,14 @@ rm dcs-env.temp 2>/dev/null
 
 echo "***INFO: modifying $DCS_DIR/conf/dcs-site.xml"
 # get zookeeper quorum
-ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
-ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+
+if [ "$node_count" -ne "1" ]; then 
+   ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
+   ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+else
+    ZOOKEEPER_NODES=$(ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
+   ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+fi
 
 # add property to end of configuration
 rm dcs-site.temp 2>/dev/null

@@ -101,6 +101,7 @@ pdsh $MY_NODES sudo rm -Rf /usr/share/cmf /var/lib/cloudera* /var/cache/yum/clou
 pdsh $MY_NODES sudo rm -Rf /var/lib/flume-ng /var/lib/hadoop* /var/lib/hue /var/lib/oozie /var/lib/solr /var/lib/sqoop*
 pdsh $MY_NODES sudo rm -Rf /dfs /mapred /yarn
 
+pdsh $MY_NODES sudo rm -Rf /var/run/hdfs-sockets
 #==============================================
 echo "***INFO: Kill any running Cloudera Manager and CDH processes that might still be running"
 for u in hdfs mapred cloudera-scm hbase hue zookeeper oozie hive impala flume; do

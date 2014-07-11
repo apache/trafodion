@@ -64,7 +64,7 @@ typeset NODES="$HOSTNAME"
 typeset DCS_BUILD="$HOME/dcs_build.tgz"
 typeset INIT_TRAFODION="N"
 typeset NOSTART="N"
-typeset SQCONFIG="$HOME/sqconfig"
+typeset SQCONFIG=""
 typeset DCS_SERVERS_PARM=""
 typeset USER_NAME="admin"
 typeset PASSWORD="admin"
@@ -305,8 +305,13 @@ fi
 #=================================================
 echo "***INFO: modifying $SQ_ROOT/conf/hbase-site.xml to add ZooKeeper Quorum"
 # get current zookeeper quorum
-ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -U zookeeper -o pid 2>/dev/null | awk '{print $1}' | sort)
-ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+if [ "$node_count" -ne "1" ]; then
+   ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -U zookeeper -o pid 2>/dev/null | awk '{print $1}' | sort)
+   ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+else
+   ZOOKEEPER_NODES=$(ps --no-header -U zookeeper -o pid 2>/dev/null | awk '{print $1}' | sort)
+   ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
+fi
 
 # add property to end of configuration
 cd $SQ_ROOT/conf
@@ -317,8 +322,10 @@ rm hbase-site.temp 2>/dev/null
 
 #=================================================
 
-echo "***INFO: Creating $SQ_ROOT directory on all nodes"
-pdsh $MY_NODES -x $HOSTNAME mkdir -p $SQ_ROOT
+if [ "$node_count" -ne "1" ]; then
+   echo "***INFO: Creating $SQ_ROOT directory on all nodes"
+   pdsh $MY_NODES -x $HOSTNAME mkdir -p $SQ_ROOT
+fi
 
 echo "***INFO: starting sqgen"
 cd $MY_SQROOT/sql/scripts
@@ -363,11 +370,15 @@ if [ "$?" != "0" ]; then
 fi
 
 #==========================================
-echo "***INFO: copying install to all nodes"
-pdcp $MY_NODES -x $HOSTNAME -r $SQ_ROOT $SQ_ROOT/..
-if [ "$?" != "0" ]; then
-    echo "***ERROR: Unable to copy Trafodion install to all machines in this cluster.  Check install log files for details."
-    exit -1;
+
+if [ "$node_count" -ne "1" ]; then
+   echo "***INFO: copying install to all nodes"
+   pdcp $MY_NODES -x $HOSTNAME -r $SQ_ROOT $SQ_ROOT/..
+
+   if [ "$?" != "0" ]; then
+      echo "***ERROR: Unable to copy Trafodion install to all machines in this cluster.  Check install log files for details."
+      exit -1;
+   fi
 fi
 
 if [ "$NOSTART" == "Y" ]; then

@@ -46,7 +46,7 @@ function displayHelp
   echo 
   echo "Options:"
   echo "    --help               Print this message and exit."
-  echo "    --trafodion_build    The Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz)"
+  echo "    --trafodion_build    The Trafodion build tar file path (defaults to $TRAF_WORKDIR/trafodion_build.tgz)"
   echo "    --cloudera_userid    Cloudera username if not chosen will default to admin" 
   echo "    --cloudera_password  Cloudera password if not chosen will default to admin" 
   echo "    --cloudera_url       Cloudera url:port if not chosen will default to hostname:7180"
