@@ -154,6 +154,8 @@ private:
 // A generic item expression node.
 // -----------------------------------------------------------------------
 
+
+
 class ItemExpr : public ExprNode
 {
 
@@ -784,6 +786,19 @@ public:
   // item expression tree
   void findAll(OperatorTypeEnum wantedType,
 	       ValueIdSet & result,
+	       NABoolean visitVEGMembers = FALSE,
+	       NABoolean visitIndexColDefs = FALSE);
+
+  template <class Result>
+  void findAllT(OperatorTypeEnum wantedType,
+	       Result& result,
+	       NABoolean visitVEGMembers = FALSE,
+	       NABoolean visitIndexColDefs = FALSE);
+
+  // A variation of the above method that saves the matching ItemExprs in a
+  // ItemExprList. The order of occurences of these ItemExprs is maintained.
+  void findAll(OperatorTypeEnum wantedType,
+	       ItemExprList& result,
 	       NABoolean visitVEGMembers = FALSE,
 	       NABoolean visitIndexColDefs = FALSE);
 

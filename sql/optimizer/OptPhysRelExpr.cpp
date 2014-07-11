@@ -1260,23 +1260,30 @@ void RelExpr::replacePivs()
         myMappedPartKeyPreds,
         myMappedPartExpr);
 
-      if (childLppf != NULL)
+      OperatorTypeEnum ot = child(0)->castToRelExpr()->getOperatorType();
+
+      NABoolean modifyScan = (ot == REL_HBASE_ACCESS);
+
+      if (!modifyScan && childLppf != NULL ) {
+         LogPhysPartitioningFunction::logPartType logPartType =
+           childLppf->getLogPartType();
+
+        if ((logPartType ==
+              LogPhysPartitioningFunction::LOGICAL_SUBPARTITIONING) OR
+            (logPartType ==
+              LogPhysPartitioningFunction::HORIZONTAL_PARTITION_SLICING))
+            modifyScan = TRUE;
+      }
+
+      if ( modifyScan )
       {
         // Child must be executing in DP2.
 
-        LogPhysPartitioningFunction::logPartType logPartType =
-          childLppf->getLogPartType();
-
-        /************** NOT SUPPORTED ON SQ **************************
         // If we are doing logical subpartitioning and the child is a
         // File scan, then the partitioning key predicates were added
         // to the selection predicates. We need to get rid of the old
         // version of the part key preds and replace them with the new
         // version.
-        if ((logPartType ==
-              LogPhysPartitioningFunction::LOGICAL_SUBPARTITIONING) OR
-            (logPartType ==
-              LogPhysPartitioningFunction::HORIZONTAL_PARTITION_SLICING))
         {
           // Get rid of the old part key preds if they are there.
           child(childIndex)->selectionPred() -= childPartKeyPreds;
@@ -1284,7 +1291,8 @@ void RelExpr::replacePivs()
           // nothing unless the child is a file scan.
           child(childIndex)->addPartKeyPredsToSelectionPreds(
                                myMappedPartKeyPreds,myMappedPivs);
-          if ((child(childIndex)->getOperatorType() == REL_FILE_SCAN  OR
+          if (( child(childIndex)->getOperatorType() == REL_HBASE_ACCESS OR
+               child(childIndex)->getOperatorType() == REL_FILE_SCAN  OR
                child(childIndex)->getOperatorType() == REL_DP2_SCAN  OR
                child(childIndex)->getOperatorType() == REL_DP2_SCAN_UNIQUE)   AND
               ((FileScan *)(RelExpr *)(child(childIndex)))->getSearchKeyPtr() != NULL)
@@ -1302,7 +1310,6 @@ void RelExpr::replacePivs()
             }
         }
 
-        ************** NOT SUPPORTED ON SQ *************************/
         if ((sppOfChild->getPartSearchKey() != NULL) AND NOT
             sppOfChild->getPartSearchKey()->isUnique())
         {

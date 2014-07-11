@@ -1391,15 +1391,16 @@ void ItemExpr::getLeafPredicates(ValueIdSet& leafPredicates)
 // temp. method to collect basecolumns, used in FileScanRule
 // -----------------------------------------------------------------------
 
-void ItemExpr::findAll(OperatorTypeEnum wantedType,
-		       ValueIdSet & result,
+template <class Result>
+void ItemExpr::findAllT(OperatorTypeEnum wantedType,
+		       Result& result,
 		       NABoolean visitVEGMembers,
 		       NABoolean visitIndexColDefs)
 {
   OperatorTypeEnum myType = getOperatorType();
 
   if (myType == wantedType)
-    result += getValueId();
+    result.addMember(this);
 
   // for VEGReferences and VEGPredicates (both having arity 0),
   // look at all the VEG members as well, if requested by the caller
@@ -1421,7 +1422,7 @@ void ItemExpr::findAll(OperatorTypeEnum wantedType,
 			 veg->getAllValues().next(x);
 			 veg->getAllValues().advance(x))
 
-	      x.getItemExpr()->findAll(wantedType,
+	      x.getItemExpr()->findAllT(wantedType,
 			       result,
 			       visitVEGMembers,
 			       visitIndexColDefs);
@@ -1435,7 +1436,7 @@ void ItemExpr::findAll(OperatorTypeEnum wantedType,
   if (visitIndexColDefs AND myType == ITM_INDEXCOLUMN)
     {
       ((IndexColumn *) this)->getDefinition().getItemExpr()->
-	findAll(wantedType,
+	findAllT(wantedType,
 		result,
 		visitVEGMembers,
 		visitIndexColDefs);
@@ -1445,7 +1446,7 @@ void ItemExpr::findAll(OperatorTypeEnum wantedType,
   Int32 nc = getArity();
 
   for (Lng32 i = 0; i < (Lng32)nc; i++)
-    child(i)->findAll(wantedType,
+    child(i)->findAllT(wantedType,
 		      result,
 		      visitVEGMembers,
 		      visitIndexColDefs);
@@ -1460,7 +1461,7 @@ void ItemExpr::findAll(OperatorTypeEnum wantedType,
           for (Lng32 i = 0; i < (Lng32)tempUnion->entries(); i++)
             {
               tempUnion->getSource(i).getItemExpr()->
-                findAll (wantedType,
+                findAllT(wantedType,
                          result,
                          visitVEGMembers,
                          visitIndexColDefs);
@@ -1472,7 +1473,25 @@ void ItemExpr::findAll(OperatorTypeEnum wantedType,
 	break;
       }
 
+} // ItemExpr::findAllT, Template version
+
+void ItemExpr::findAll(OperatorTypeEnum wantedType,
+                       ValueIdSet & result,
+                       NABoolean visitVEGMembers,
+                       NABoolean visitIndexColDefs)
+{
+  findAllT(wantedType, result, visitVEGMembers, visitIndexColDefs);
+}
+
+void ItemExpr::findAll(OperatorTypeEnum wantedType,
+		       ItemExprList& result,
+		       NABoolean visitVEGMembers,
+		       NABoolean visitIndexColDefs)
+{
+  // Collect all ItemExprs into a list.
+  findAllT(wantedType, result, visitVEGMembers, visitIndexColDefs);
 } // ItemExpr::findAll
+
 
 Lng32 ItemExpr::getTreeSize(Lng32& maxDepth, NABoolean giveUpThreshold)
 {

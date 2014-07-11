@@ -528,26 +528,26 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 6    .    7    root                                                  8.96E+005
-5    .    6    esp_exchange                    1:4(range)            8.96E+005
+5    .    6    esp_exchange                    1:5(hash2)            8.96E+005
 3    4    5    tuple_flow                                            8.96E+005
 .    .    4    trafodion_load_prepa            CUSTOMER_DEMOGRAPHIC  1.00E+000
 2    .    3    sort                                                  8.96E+005
-1    .    2    esp_exchange                    4(range):2(hash2)     8.96E+005
+1    .    2    esp_exchange                    5(hash2):2(hash2)     8.96E+005
 .    .    1    hive_scan                       CUSTOMER_DEMOGRAPHIC  8.96E+005
 
 --- SQL operation complete.
 >>
 >>log LOG015_plan.log clear;
 ESP_EXCHANGE ==============================  SEQ_NO 6        ONLY CHILD 5
-  child_partitioning_func  range partitioned 4 ways on
+  child_partitioning_func  hash2 partitioned 5 ways on
                              ((HashDistPartHash(cast(HIVE.CUSTOMER_DEMOGRAPHICS
                              .CD_DEMO_SK)) Hash2Distrib cast(4)),
-                             HIVE.HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK) with
+                             HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-  parent_partitioning_fun  range partitioned 4 ways on
+  parent_partitioning_fun  hash2 partitioned 5 ways on
                              ((HashDistPartHash(cast(HIVE.CUSTOMER_DEMOGRAPHICS
                              .CD_DEMO_SK)) Hash2Distrib cast(4)),
-                             HIVE.HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK) with
+                             HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 >>
 >>load  into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
