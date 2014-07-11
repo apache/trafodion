@@ -181,12 +181,6 @@ sub find_jars ($) {
 		if ($file =~ /jdbcT2.jar|jdbcT4.jar/) {
 			$dochk = 0;
 		}
-		if ($file =~ /hbase-trx-/) {
-			$dochk = 0;
-		}
-		if ($file =~ /trafodion-hbase-extensions-/) {
-			$dochk = 0;
-		}
 		if ($dochk) {
 			version_jar($dir, $file);
 		}

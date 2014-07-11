@@ -107,6 +107,11 @@
               <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3</version>
+                <configuration>
+                  <archive>
+                    <manifestFile>trafodion-hbase-extensions.jar.versions</manifestFile>
+                  </archive>
+                </configuration>
               </plugin>
               <plugin>
                 <artifactId>maven-source-plugin</artifactId>

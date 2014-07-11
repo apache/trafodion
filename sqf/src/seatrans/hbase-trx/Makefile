@@ -28,17 +28,24 @@ JAVA6_VERSION               =1.6
 JAVA6_SUFFIX                =-java6
 BLD_HBASE_TRX_JARNAME_1_6   =hbase-trx-$(TRAFODION_VER)$(JAVA6_SUFFIX).jar
 
+VFILE			    =hbase-trx.jar.versions
+GENVERS			    =./genvers
+
 .NOTPARALLEL: all
 
 all: build_all
 
 jdk_1_7:
+	$(GENVERS) > $(VFILE)
 	set -o pipefail && $(MAVEN) package -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME) $(MY_SQROOT)/export/lib
+	$(RM) $(VFILE)
 
 jdk_1_6:
+	$(GENVERS) > $(VFILE)
 	set -o pipefail && JAVA_HOME=$(JAVAJDK16) $(MAVEN) package -Djava.version=$(JAVA6_VERSION) -Dtrx-suffix=$(JAVA6_SUFFIX) -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME_1_6) $(MY_SQROOT)/export/lib
+	$(RM) $(VFILE)
 
 build_all: jdk_1_6 jdk_1_7
 
@@ -47,3 +54,4 @@ clean:
 	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_TRX_JARNAME_1_6)
 	$(MAVEN) clean
 	$(RM) build_trx.log
+	$(RM) $(VFILE)
