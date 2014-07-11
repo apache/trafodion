@@ -526,7 +526,7 @@ ${DCS_HOME}/bin/dcs-daemons.sh {start,stop} zookeeper
           <para>Below we use a <command>diff</command> to show the differences
           from default in the <filename>dcs-env.sh</filename> file. Here we
           are setting the DCS heap to be 4G instead of the default
-          1G.</para>
+          128M.</para>
 
           <programlisting>
     
@@ -538,8 +538,8 @@ index e70ebc6..96f8c27 100644
 @@ -31,7 +31,7 @@ export JAVA_HOME=/usr/lib//jvm/java-6-sun/
  # export DCS_CLASSPATH=
  
- # The maximum amount of heap to use, in MB. Default is 1000.
--# export DCS_HEAPSIZE=1000
+ # The maximum amount of heap to use, in MB. Default is 128.
+-# export DCS_HEAPSIZE=128
 +export DCS_HEAPSIZE=4096
  
  # Extra Java runtime options.

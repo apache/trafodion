@@ -163,11 +163,10 @@
   </property> 
   <property>
     <name>dcs.server.info.port.auto</name>
-    <value>false</value>
+    <value>true</value>
     <description>Whether or not the DcsServer
     UI should search for a port to bind to. Enables automatic port
     search if dcs.server.info.port.auto is already in use.
-    Useful for testing, turned off by default.
     </description>
   </property>
   <property>

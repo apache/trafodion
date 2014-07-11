@@ -41,7 +41,7 @@
 #
 #   DCS_CONF_DIR   Alternate DCS conf dir. Default is ${DCS_HOME}/conf.
 #   DCS_LOG_DIR    Where log files are stored.  PWD by default.
-#   DCS_PID_DIR    The pid files are stored. /tmp by default.
+#   DCS_PID_DIR    The pid files are stored. ${DCS_HOME}/tmp by default.
 #   DCS_IDENT_STRING   A string representing this instance. $USER by default
 #   DCS_NICENESS The scheduling priority for daemons. Defaults to 0.
 #
@@ -116,7 +116,7 @@ fi
 mkdir -p "$DCS_LOG_DIR"
 
 if [ "$DCS_PID_DIR" = "" ]; then
-  DCS_PID_DIR=/tmp
+  DCS_PID_DIR="$DCS_HOME/tmp"
 fi
 
 #if [ "$DCS_IDENT_STRING" = "" ]; then

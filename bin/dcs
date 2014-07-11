@@ -43,7 +43,7 @@
 #   DCS_CLASSPATH  Extra Java CLASSPATH entries.
 #
 #   DCS_HEAPSIZE   The maximum amount of heap to use, in MB. 
-#                    Default is 1000.
+#                    Default is 128.
 #
 #   DCS_LIBRARY_PATH  DCS additions to JAVA_LIBRARY_PATH for adding
 #                    native libaries.
@@ -101,7 +101,7 @@ COMMAND=$1
 shift
 
 JAVA=$JAVA_HOME/bin/java
-JAVA_HEAP_MAX=-Xmx1000m 
+JAVA_HEAP_MAX=-Xmx128m 
 
 MVN="mvn"
 if [ "$MAVEN_HOME" != "" ]; then

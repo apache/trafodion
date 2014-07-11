@@ -46,8 +46,8 @@
 # Extra Java CLASSPATH elements.  Optional.
 # export DCS_CLASSPATH=
 
-# The maximum amount of heap to use, in MB. Default is 1000.
-# export DCS_HEAPSIZE=1000
+# The maximum amount of heap to use, in MB. Default is 128.
+# export DCS_HEAPSIZE=128
 
 # Extra Java runtime options.
 # Below are what we set by default.  May only work with SUN JVM.
@@ -103,7 +103,7 @@ export DCS_OPTS="-XX:+UseConcMarkSweepGC"
 # The scheduling priority for daemon processes.  See 'man nice'.
 # export DCS_NICENESS=10
 
-# The directory where pid files are stored. /tmp by default.
+# The directory where pid files are stored. $DCS_HOME/tmp by default.
 # export DCS_PID_DIR=/var/dcs/pids
 
 # Tell DCS whether it should manage it's own instance of Zookeeper or not.

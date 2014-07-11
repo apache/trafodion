@@ -70,7 +70,7 @@ public final class Constants {
   public static final String DCS_MASTER_PORT = "dcs.master.port";
 
   /** Default value for DCS master port */
-  public static final int DEFAULT_DCS_MASTER_PORT = 18650;
+  public static final int DEFAULT_DCS_MASTER_PORT = 37800;
   
   /** Configuration key for DCS master port range */
   public static final String DCS_MASTER_PORT_RANGE = "dcs.master.port.range";
@@ -244,7 +244,7 @@ public final class Constants {
   /** Default value for DCS server info port */
   public static final int DEFAULT_DCS_SERVER_INFO_PORT = 40030;
   
-  /** A flag that enables automatic selection of regionserver info port */
+  /** A flag that enables automatic selection of DCS server info port */
   public static final String DCS_SERVER_INFO_PORT_AUTO =
     "dcs.server.info.port.auto";
   

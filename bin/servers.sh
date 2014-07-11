@@ -14,7 +14,7 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 # */
-# 
+#
 # Run a shell command on all server hosts.
 #
 # Environment Variables
@@ -37,7 +37,7 @@ bin=`cd "$bin">/dev/null; pwd`
 . "$bin"/dcs-config.sh
 
 # If the servers file is specified in the command line,
-# then it takes precedence over the definition in 
+# then it takes precedence over the definition in
 # dcs-env.sh. Save it here.
 HOSTLIST=$DCS_SERVERS
 
@@ -55,12 +55,12 @@ while read server count
 do
   if [ "$server" == "localhost" ] || [ "$server" == "$HOSTNAME" ] ; then
     eval $"${@// /\\ } $instance $count" 2>&1 | sed "s/^/$server: /" &
-  else 
-    if ${DCS_SLAVE_PARALLEL:-true}; then 
-      ssh $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count"\
+  else
+    if ${DCS_SLAVE_PARALLEL:-true}; then
+      ssh -n $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count"\
         2>&1 | sed "s/^/$server: /" &
-    else # run each command serially 
-      ssh $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count" \
+    else # run each command serially
+      ssh -n $DCS_SSH_OPTS $server $"${@// /\\ } $instance $count" \
         2>&1 | sed "s/^/$server: /" &
     fi
   fi
@@ -69,7 +69,7 @@ do
     sleep $DCS_SLAVE_SLEEP
   fi
   
-  let instance++ 
+  let instance++
 
 done < "$HOSTLIST"
 

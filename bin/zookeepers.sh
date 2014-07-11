@@ -70,10 +70,10 @@ if [ "$DCS_MANAGES_ZK" = "true" ]; then
     if [ "$zookeeper" == "localhost" ] || [ "$zookeeper" == "$HOSTNAME" ] ; then
       eval $cmd $instance 2>&1 | sed "s/^/$zookeeper: /" &
     else 
-      ssh $DCS_SSH_OPTS $zookeeper $cmd $instance 2>&1 | sed "s/^/$zookeeper: /" &
+      ssh -n $DCS_SSH_OPTS $zookeeper $cmd $instance 2>&1 | sed "s/^/$zookeeper: /" &
     fi
     
-    let instance++ 
+    let instance++
     
     if [ "$DCS_SLAVE_SLEEP" != "" ]; then
       sleep $DCS_SLAVE_SLEEP
