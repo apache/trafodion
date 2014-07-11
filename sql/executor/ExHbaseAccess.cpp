@@ -1931,7 +1931,15 @@ short ExHbaseAccessTcb::createRowwiseMutations(MutationVec &mutations,
   short numEntries;
   str_cpy_all((char*)&numEntries, inputRow, sizeof(short));
   inputRow += sizeof(short);
-  
+
+  short colNameMaxLen;
+  str_cpy_all((char*)&colNameMaxLen, inputRow, sizeof(short));
+  inputRow += sizeof(short);
+ 
+  short colValMaxLen;
+  str_cpy_all((char*)&colValMaxLen, inputRow, sizeof(short));
+  inputRow += sizeof(short);
+ 
   Text insColNam;
   Text insColVal;
   for (Lng32 ij = 0; ij < numEntries; ij++)
@@ -1939,7 +1947,8 @@ short ExHbaseAccessTcb::createRowwiseMutations(MutationVec &mutations,
       short colNameLen = *(short*)inputRow;
       inputRow += sizeof(short);
       insColNam.assign(inputRow, colNameLen);
-      inputRow += ROUND2(colNameLen);
+      //      inputRow += ROUND2(colNameLen);
+      inputRow += ROUND2(colNameMaxLen);
       
       short nullable = *(short*)inputRow;
       inputRow += sizeof(short);
@@ -1947,7 +1956,8 @@ short ExHbaseAccessTcb::createRowwiseMutations(MutationVec &mutations,
       short colValLen = *(short*)inputRow;
       inputRow += sizeof(short);
       insColVal.assign(inputRow, colValLen);
-      inputRow += ROUND2(colValLen);
+      //      inputRow += ROUND2(colValLen);
+      inputRow += ROUND2(colValMaxLen);
 
       if (! nullable)
 	{

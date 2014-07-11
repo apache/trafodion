@@ -2324,6 +2324,12 @@ public:
   void setSrcIsVarcharPtr(NABoolean v)
        { (v ? flags_ |= SRC_IS_VARCHAR_PTR : flags_ &= ~SRC_IS_VARCHAR_PTR); }
 
+  NA_EIDPROC NABoolean allowSignInInterval()
+    { return ((flags_ & ALLOW_SIGN_IN_INTERVAL) != 0); };
+
+  NA_EIDPROC void setAllowSignInInterval(NABoolean v)
+    { (v) ? flags_ |= ALLOW_SIGN_IN_INTERVAL : flags_ &= ~ALLOW_SIGN_IN_INTERVAL; }
+
   const NAType * pushDownType(NAType& desiredType,
                       enum NABuiltInTypeEnum defaultQualifier);
 
@@ -2349,7 +2355,10 @@ private:
     TGT_CHAR_SET_SPECIFIED = 0x0004,
 
     // source is a varchar value which is a pointer to the actual data.
-    SRC_IS_VARCHAR_PTR = 0x0008
+    SRC_IS_VARCHAR_PTR = 0x0008,
+
+    ALLOW_SIGN_IN_INTERVAL             = 0x0010
+  
   };
 
   const NAType *type_;
@@ -4871,7 +4880,9 @@ public:
     : BuiltinFunction(ITM_HBASE_COLUMN_CREATE, 
 		      CmpCommon::statementHeap(), 0, NULL),
     resultType_(NULL),
-    hccol_(hccol)
+    hccol_(hccol),
+    colNameMaxLen_(0),
+    colValMaxLen_(0)
     {}
 
   virtual ~HbaseColumnCreate();
@@ -4897,6 +4908,9 @@ public:
  private:
   NAString hbaseCol_;
   const NAType *resultType_;
+
+  short colNameMaxLen_;
+  short colValMaxLen_;
 
   NAList<HbaseColumnCreateOptions*> * hccol_;
 }; // class HbaseColumnCreate

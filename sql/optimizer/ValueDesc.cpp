@@ -6002,6 +6002,12 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 		       if (end > 0)
 			 {
 			   *mmVal = (*mmVal)(start+1, (end-start-1));
+
+			    if (type.getTypeQualifier() == NA_INTERVAL_TYPE)
+			      {
+				// prepend '-' to the output
+				(*mmVal).prepend('-', 1);
+			      }
 			 }
 		     }
 		 }

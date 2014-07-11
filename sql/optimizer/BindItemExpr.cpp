@@ -12276,13 +12276,13 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 
   ItemExpr * boundExpr = NULL;
 
-  Lng32 numEntries = hccol_->entries();
-  Lng32 resultLen = 0;
+  short numEntries = hccol_->entries();
+  colValMaxLen_ = 0;
   NAType * firstType = NULL;
   NAType * resultType = NULL;
   NABoolean resultNull = FALSE;
-  Lng32 colNameLen = 0;
-  for (Lng32 i = 0; i < numEntries; i++)
+  colNameMaxLen_ = 0;
+  for (short i = 0; i < numEntries; i++)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
       HbaseColumnCreate::HbaseColumnCreateOptions::ConvType co;
@@ -12297,8 +12297,8 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
       const NAType &type0 = 
 	colValue->castToItemExpr()->getValueId().getType();
 
-      if (colNameLen < hcco->hbaseCol().length())
-	colNameLen = hcco->hbaseCol().length();
+      if (colNameMaxLen_ < hcco->hbaseCol().length())
+	colNameMaxLen_ = hcco->hbaseCol().length();
 
       if (i == 0) // first entry
 	{
@@ -12317,7 +12317,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 	      return NULL;
 	    }
 
-	  resultLen = resultType->getNominalSize();
+	  colValMaxLen_ = resultType->getNominalSize();
 	  resultNull = resultType->supportsSQLnull();
 	} // if first entry
       else
@@ -12338,8 +12338,8 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 
       if (co == HbaseColumnCreate::HbaseColumnCreateOptions::NONE)
 	{
-	  if (resultLen < type0.getNominalSize())
-	    resultLen = type0.getNominalSize();
+	  if (colValMaxLen_ < type0.getNominalSize())
+	    colValMaxLen_ = type0.getNominalSize();
 
 	  if (type0.supportsSQLnull())
 	    resultNull = TRUE;
@@ -12347,20 +12347,18 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     } // for
 
   resultNull = TRUE;
-  NAType * childResultType = new(bindWA->wHeap()) SQLVarChar(resultLen,
+  NAType * childResultType = new(bindWA->wHeap()) SQLVarChar(colValMaxLen_,
 							     resultNull);
   
-  //  resultType_ = new(bindWA->wHeap()) SQLVarChar(resultLen, FALSE);
-  
   Lng32 totalLen = 0;
-  totalLen += sizeof(Lng32);
+  totalLen += sizeof(numEntries) + sizeof(colNameMaxLen_) + sizeof(colValMaxLen_);
   
   for (Lng32 i = 0; i < numEntries; i++)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
 
       ConstValue * cv = new(bindWA->wHeap()) ConstValue(hcco->hbaseCol());
-      NAType * cnType = new(bindWA->wHeap()) SQLVarChar(colNameLen, FALSE);
+      NAType * cnType = new(bindWA->wHeap()) SQLVarChar(colNameMaxLen_, FALSE);
       ItemExpr * cnChild =
 	new (bindWA->wHeap()) Cast(cv, cnType);
       cnChild = cnChild->bindNode(bindWA);

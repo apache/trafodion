@@ -188,6 +188,18 @@ short CmpSeabaseDDL::convertColAndKeyInfoArrays(
   return 0;
 }
 
+static short resetCQD(NABoolean cqdWasSet, short retval)
+{
+  if (cqdWasSet)
+    {
+      NAString value("ON");
+      ActiveSchemaDB()->getDefaults().validateAndInsert(
+							"hbase_serialization", value, FALSE);
+    }
+
+  return retval;
+}
+
 short CmpSeabaseDDL::processDDLandCreateDescs(
 					      Parser &parser,
 					      const QString *ddl,
@@ -226,11 +238,20 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   Lng32 gluedQuerySize;
   glueQueryFragments(qryArraySize,  qs,
 		     gluedQuery, gluedQuerySize);
-  
+
+  NABoolean cqdWasSet = FALSE;
+  if (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON)
+    {
+      NAString value("OFF");
+      ActiveSchemaDB()->getDefaults().validateAndInsert(
+							"hbase_serialization", value, FALSE);
+      cqdWasSet = TRUE;
+    }
+
   exprNode = parser.parseDML((const char*)gluedQuery, strlen(gluedQuery), 
 			     CharInfo::ISO88591);
   if (! exprNode)
-    return -1;
+    return resetCQD(cqdWasSet, -1);
   
   RelExpr * rRoot = NULL;
   if (exprNode->getOperatorType() EQU STM_QUERY)
@@ -243,7 +264,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
     }
   
   if (! rRoot)
-    return -1;
+    return resetCQD(cqdWasSet, -1);
   
   ExprNode * ddlNode = NULL;
   DDLExpr * ddlExpr = NULL;
@@ -251,7 +272,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   ddlExpr = (DDLExpr*)rRoot->getChild(0);
   ddlNode = ddlExpr->getDDLNode();
   if (! ddlNode)
-    return -1;
+    return resetCQD(cqdWasSet, -1);
   
   if (ddlNode->getOperatorType() == DDL_CREATE_TABLE)
     {
@@ -272,13 +293,13 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       
       if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, CTXTHEAP))
 	{
-	  return -1;
+	  return resetCQD(cqdWasSet, -1);
 	}
 
       if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
 			    CTXTHEAP))
 	{
-	  return -1;
+	  return resetCQD(cqdWasSet, -1);
 	}
 
       // if index table defn, append "@" to the hbase col qual.
@@ -330,7 +351,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       if (convertColAndKeyInfoArrays(btNumCols, btColInfoArray,
 				     btNumKeys, btKeyInfoArray,
 				     &btNAColArray, &btNAKeyArr))
-	return -1;
+	return resetCQD(cqdWasSet, -1);
 
       Lng32 keyColCount = 0;
       Lng32 nonKeyColCount = 0;
@@ -354,7 +375,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 					 indexColInfoArray, indexKeyInfoArray,
 					 selColList,
 					 CTXTHEAP))
-	return -1;
+	return resetCQD(cqdWasSet, -1);
 
       numIndexNonKeys = numIndexCols - numIndexKeys;
       
@@ -413,9 +434,9 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = NULL;
     }
   else
-    return -1;
+    return resetCQD(cqdWasSet, -1);
 
-  return 0;
+  return resetCQD(cqdWasSet, 0);
 }
 
 // RETURN: -1, error.  0, all ok.
@@ -451,7 +472,7 @@ short CmpSeabaseDDL::createMDdescs()
 				   numKeys, keyInfoArray,
 				   indexInfo))
 	return -1;
-      
+
       mddi.numNewCols = numCols;
       mddi.newColInfo = colInfoArray;
       
@@ -503,7 +524,7 @@ short CmpSeabaseDDL::createMDdescs()
 	  mddi.indexInfo = indexInfo;
 	}
     } // for
-  
+
   return 0;
 }
 					      
@@ -3850,6 +3871,17 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
     {
       processReturn();
 
+      return;
+    }
+
+  // cannot purgedata a view
+  if (naTable->getViewText())
+    {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1010);
+      
+      processReturn();
+      
       return;
     }
 

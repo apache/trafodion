@@ -3727,6 +3727,8 @@ public:
   NA_EIDPROC ExFunctionHbaseColumnCreate(OperatorTypeEnum oper_type,
 					 Attributes ** attr,
 					 short numEntries,
+					 short colNameMaxLen,
+					 short colValMaxLen,
 					 Space * space);
   NA_EIDPROC ExFunctionHbaseColumnCreate();
 
@@ -3741,6 +3743,8 @@ public:
   Lng32 flags_;
 
   short numEntries_;
+  short colNameMaxLen_;
+  short colValMaxLen_;
   char filler1_[2];
 };
 

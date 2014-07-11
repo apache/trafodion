@@ -115,6 +115,7 @@ private:
   Lng32 exec(char * inputBuf = NULL, Lng32 inputBufLen = 0);
   Lng32 fetch();
   Lng32 close();
+  Lng32 dealloc();
 
   short clearExecFetchClose(char * inputBuf, Lng32 inputBufLen);
 
@@ -173,6 +174,9 @@ private:
                      Lng32 *indOffset, Lng32 *varOffset);
   Lng32 getDataOffsets(short entry, Lng32 forInput,
 		       Lng32 *indOffset, Lng32 *varOffset);
+
+  Lng32 getStmtAttr(char * stmtName, Lng32 attrName, 
+		    Lng32 * numeric_value, char * string_value);
 
   short fetchRowsPrologue(const char  * sqlStrBuf, NABoolean noExec = FALSE,
 			  NABoolean monitorThis = FALSE,

@@ -1712,10 +1712,7 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
     {
       char buf [1000];
 
-      str_sprintf(buf, "drop table if exists \"%s\".\"%s\".\"%s\" cascade",
-		  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
-      
-      cliRC = cliInterface.executeImmediate(buf);
+      cliRC = cliInterface.holdAndSetCQD("TRAF_RELOAD_NATABLE_CACHE", "ON");
       if (cliRC < 0)
 	{
 	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -1724,6 +1721,24 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
 	  
 	  return;
 	}
+
+      str_sprintf(buf, "drop table if exists \"%s\".\"%s\".\"%s\" cascade",
+		  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
+      
+      cliRC = cliInterface.executeImmediate(buf);
+
+      if (cliRC < 0)
+	{
+	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+	  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+	  
+	  processReturn();
+	  
+	  return;
+	}
+
+      cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
     }
 }
 
@@ -2085,9 +2100,9 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
 	      if (cliRC < 0)
 		{
-		  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
-		  
 		  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+		  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
 		  
 		  processReturn();
 		  
@@ -3619,12 +3634,56 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
 	{
 	  NAColumn * nac = naf->getIndexKeyColumns()[i];
 
+	  const NAString &colName = nac->getColName();
+	  refdKeyColList.insert(colName);
+
 	  refdColListForValidation += "\"";
 	  refdColListForValidation += nac->getColName();
 	  refdColListForValidation += "\"";
 	  if (i < (naf->getIndexKeyColumns().entries() - 1))
 	    refdColListForValidation += ", ";
 	}
+    }
+
+  if (ringKeyColList.entries() != refdKeyColList.entries())
+    {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1046)
+	<< DgConstraintName(addConstrName);
+      
+      processReturn();
+      
+      return;
+    }
+
+  const NAColumnArray &ringNACarr = ringNaTable->getNAColumnArray();
+  const NAColumnArray &refdNACarr = refdNaTable->getNAColumnArray();
+  for (Int32 i = 0; i < ringKeyColList.entries(); i++)
+    {
+      const NAString &ringColName = ringKeyColList[i];
+      const NAString &refdColName = refdKeyColList[i];
+
+      const NAColumn * ringNAC = ringNACarr.getColumn(ringColName);
+      const NAColumn * refdNAC = refdNACarr.getColumn(refdColName);
+
+      //      if (NOT(*ringNAC->getType() == *refdNAC->getType()))
+      if (NOT (ringNAC->getType()->equalIgnoreNull(*refdNAC->getType())))
+	{
+	  *CmpCommon::diags()
+	    << DgSqlCode(-1046)
+	    << DgConstraintName(addConstrName);
+      
+	  processReturn();
+	  
+	  return;
+	}
+    }
+
+  // method getCorrespondingConstraint expects an empty input list if there are no
+  // user specified columns. Clear the refdKeyColList before calling it.
+  if (referencedColNode.entries() == 0)
+    {
+      refdKeyColList.clear();
     }
 
   NAString constrName;
@@ -4469,11 +4528,9 @@ void CmpSeabaseDDL::dropSeabaseSchema(
   Lng32 cliRC = 0;
 
   ComSchemaName schemaName (dropSchemaNode->getSchemaName());
-  ComString catSchema (schemaName.getExternalName());
-  ComString catName = schemaName.getCatalogNamePartAsAnsiString();
-  ComAnsiNamePart catNameAsComAnsi = schemaName.getCatalogNamePart();
-  ComString schName = schemaName.getSchemaNamePartAsAnsiString();
+  NAString catName = schemaName.getCatalogNamePartAsAnsiString();
   ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
+  NAString schName = schNameAsComAnsi.getInternalName();
   
   ExeCliInterface cliInterface(STMTHEAP);
 

@@ -1260,7 +1260,8 @@ short Cast::codeGen(Generator * generator)
     conv_clause->setAllowSignInInterval(TRUE);
     conv_clause->setNoDatetimeValidation(TRUE);
   }
-
+  
+  conv_clause->setAllowSignInInterval(allowSignInInterval());
   conv_clause->setSrcIsVarcharPtr(srcIsVarcharPtr());
 
   generator->getExpGenerator()->linkClause(this, conv_clause); 
@@ -2738,7 +2739,9 @@ short HbaseColumnCreate::codeGen(Generator * generator)
 						 attr[0]->getAtpIndex(),
 						 NULL,
 						 ExpTupleDesc::SHORT_FORMAT,
-						 attr[0]->getOffset() + sizeof(numEntries));
+						 attr[0]->getOffset() + 
+						 (sizeof(numEntries) + sizeof(colNameMaxLen_) +
+						  sizeof(colValMaxLen_)));
 			
   //  ne->codeGen(generator);
   for (Lng32 i = 0; i < numEntries; i++)
@@ -2754,6 +2757,8 @@ short HbaseColumnCreate::codeGen(Generator * generator)
     (getOperatorType(), 
      attr, 
      numEntries,
+     colNameMaxLen_,
+     colValMaxLen_,
      generator->getSpace());
 
   generator->getExpGenerator()->linkClause(this, cl);

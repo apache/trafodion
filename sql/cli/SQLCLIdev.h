@@ -1028,7 +1028,17 @@ enum SECliQueryType
     SE_CLI_GET_DATA_OFFSETS,
     SE_CLI_GET_PTR_AND_LEN,
 
-    SE_CLI_GET_IO_LEN
+    SE_CLI_GET_IO_LEN,
+
+    // get attributes of the statement.
+    SE_CLI_GET_STMT_ATTR,
+
+    // deallocate the statement
+    SE_CLI_DEALLOC,
+
+    // queue of TrafSE specific info maintained in context
+    SE_CLI_TRAFQ_INSERT,
+    SE_CLI_TRAFQ_GET
   };
 
 SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SEcliInterface

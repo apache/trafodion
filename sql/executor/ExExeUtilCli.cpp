@@ -162,14 +162,6 @@ Lng32 ExeCliInterface::deallocStuff(SQLMODULE_ID * &module,
       module = NULL;
     }
 
-  /*
-  if (outputBuf)
-    {
-      NADELETEBASIC(outputBuf_, heap_);
-      outputBuf_ = NULL;
-    }
-    */
-
   if (rsInputBuffer_)
     {
       NADELETEBASIC(rsInputBuffer_, heap_);
@@ -177,6 +169,11 @@ Lng32 ExeCliInterface::deallocStuff(SQLMODULE_ID * &module,
     }
 
   return 0;
+}
+
+Lng32 ExeCliInterface::dealloc()
+{
+  return deallocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
 }
 
 void ExeCliInterface::clearGlobalDiags()
@@ -579,6 +576,11 @@ Lng32 ExeCliInterface::exec(char * inputBuf, Lng32 inputBufLen)
 {
   Lng32 retcode = 0;
 
+  if (! stmt_)
+    {
+      return -CLI_STMT_NOT_EXSISTS;
+    }
+
   // set parserflags to indicate that this is an internal query from exeutil
   NABoolean flagWasSetHere = FALSE;
   if (currContext_)
@@ -774,6 +776,27 @@ Lng32 ExeCliInterface::getDataOffsets(short entry, Lng32 forInput,
 			   indOffset, varOffset);
     }
   return 0;
+}
+
+Lng32 ExeCliInterface::getStmtAttr(char * stmtName, Lng32 attrName, 
+				   Lng32 * numeric_value, char * string_value)
+{
+  Lng32 retcode = 0;
+  
+  SQLMODULE_ID module;
+  init_SQLMODULE_ID(&module);
+  
+  char stmtNameBuf[400];
+  SQLSTMT_ID stmt;
+  init_SQLSTMT_ID(&stmt, SQLCLI_CURRENT_VERSION, stmt_name, &module);
+  stmt.identifier = stmtNameBuf;
+  strcpy((char*)stmt.identifier, stmtName);
+  stmt.identifier_len = (Lng32)strlen(stmtName);
+  
+  retcode = SQL_EXEC_GetStmtAttr(&stmt, attrName, numeric_value, string_value,
+				  0, NULL);
+  
+  return retcode;
 }
 
 Lng32 ExeCliInterface::close()

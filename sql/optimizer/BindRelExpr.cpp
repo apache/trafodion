@@ -9893,8 +9893,12 @@ RelExpr *Update::bindNode(BindWA *bindWA)
 	       (getTableDesc()->getNATable()->hasSecondaryIndexes()))
 	{
 	  xnsfrmHbaseUpdate = TRUE;
-	}	   
-    }  
+	}
+      else if (avoidHalloween())
+	{
+	  xnsfrmHbaseUpdate = TRUE;
+	}
+     }  
   
   if (xnsfrmHbaseUpdate)
     {

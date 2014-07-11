@@ -225,7 +225,13 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
       castValue = new(h) Cast(asciiValue, newGivenType); 
 
       if (castValue)
-	((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
+	{
+	  ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
+
+	  if (newGivenType->getTypeQualifier() == NA_INTERVAL_TYPE)
+	    ((Cast*)castValue)->setAllowSignInInterval(TRUE);
+	}
+
     }
 
   if (castValue && asciiValue)

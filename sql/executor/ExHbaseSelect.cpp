@@ -36,6 +36,11 @@ ExHbaseScanTaskTcb::ExHbaseScanTaskTcb(
 {
 }
 
+void ExHbaseScanTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
+}
+
 ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
@@ -170,6 +175,11 @@ ExHbaseScanRowwiseTaskTcb::ExHbaseScanRowwiseTaskTcb(ExHbaseAccessSelectTcb * tc
   :  ExHbaseTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+}
+
+void ExHbaseScanRowwiseTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
 }
 
 ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
@@ -385,6 +395,11 @@ ExHbaseScanSQTaskTcb::ExHbaseScanSQTaskTcb(
   :  ExHbaseTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+}
+
+void ExHbaseScanSQTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
 }
 
 ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
@@ -618,6 +633,11 @@ ExHbaseGetTaskTcb::ExHbaseGetTaskTcb(
 {
 }
 
+void ExHbaseGetTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
+}
+
 ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
@@ -769,6 +789,11 @@ ExHbaseGetRowwiseTaskTcb::ExHbaseGetRowwiseTaskTcb(
   :  ExHbaseTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+}
+
+void ExHbaseGetRowwiseTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
 }
 
 ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
@@ -967,6 +992,11 @@ ExHbaseGetSQTaskTcb::ExHbaseGetSQTaskTcb(
   :  ExHbaseTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+}
+
+void ExHbaseGetSQTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
 }
 
 ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
@@ -1237,6 +1267,12 @@ ExWorkProcRetcode ExHbaseAccessSelectTcb::work()
 	    if (hbaseAccessTdb().listOfGetRows())
 	      hbaseAccessTdb().listOfGetRows()->position();
 
+	    if (scanTask_)
+	      scanTask_->init();
+
+	    if (getTask_)
+	      getTask_->init();
+	    
 	    step_ = SETUP_SCAN;
 	  }
 	  break;
@@ -1411,6 +1447,7 @@ ExWorkProcRetcode ExHbaseAccessSelectTcb::work()
 	case SELECT_CLOSE_NO_ERROR:
 	  {
 	    retcode = ehi_->close();
+
 	    if (step_ == SELECT_CLOSE)
 	      {
 		if (setupError(retcode, "ExpHbaseInterface::close"))
@@ -1442,6 +1479,12 @@ ExWorkProcRetcode ExHbaseAccessSelectTcb::work()
 	    if (handleDone(rc))
 	      return rc;
 
+	    if (scanTask_)
+	      scanTask_->init();
+
+	    if (getTask_)
+	      getTask_->init();
+	    
 	    step_ = NOT_STARTED;
 	  }
 	  break;

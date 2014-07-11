@@ -10669,6 +10669,33 @@ Lng32 SQLCLI_SEcliInterface
       }
       break;
 
+    case SE_CLI_GET_STMT_ATTR:
+      {
+
+	rc = cliInterface->getStmtAttr((char*)inStrParam1, (Lng32)inIntParam1, 
+				       (Lng32*)outIntParam1, *outStrParam1);
+      }
+      break;
+
+   case SE_CLI_DEALLOC:
+      {
+	rc = cliInterface->dealloc();
+      }
+      break;
+
+    case SE_CLI_TRAFQ_INSERT:
+      {
+	currContext.trafSElist()->insert(inStrParam1, inIntParam1, (void*)inStrParam2);
+      }
+      break;
+
+    case SE_CLI_TRAFQ_GET:
+      {
+	currContext.trafSElist()->position(inStrParam1, inIntParam1);
+	*outStrParam1 = (char*)currContext.trafSElist()->getNext();
+      }
+      break;
+
     } // switch
 
   return rc;
