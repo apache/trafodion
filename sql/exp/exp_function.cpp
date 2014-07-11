@@ -582,9 +582,13 @@ ExFunctionHbaseColumnsDisplay::ExFunctionHbaseColumnsDisplay(OperatorTypeEnum op
 ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate(OperatorTypeEnum oper_type,
 							 Attributes ** attr, 
 							 short numEntries,
+							 short colNameMaxLen,
+							 short colValMaxLen,
 							 Space * space)
   : ex_function_clause(oper_type, 1, attr, space),
-    numEntries_(numEntries)
+    numEntries_(numEntries),
+    colNameMaxLen_(colNameMaxLen),
+    colValMaxLen_(colValMaxLen)
 {
 };
 
@@ -6901,31 +6905,35 @@ ExFunctionHbaseColumnCreate::eval(char *op_data[], CollHeap *heap,
 				  ComDiagsArea **diagsArea)
 {
   // op_data[0] points to result. The result is a varchar.
-  // Values in result have already bee populated by clauses evaluated
+  // Values in result have already been populated by clauses evaluated
   // before this clause is reached.
   Attributes *resultAttr   = getOperand(0);
   char * resultStart = op_data[0];
   char * result = resultStart;
   
-  //  short numEntries = 0;
-  //  str_cpy_all((char*)&numEntries, result, sizeof(short));
   str_cpy_all(result, (char*)&numEntries_, sizeof(numEntries_));
+  result += sizeof(short);
+
+  str_cpy_all(result, (char*)&colNameMaxLen_, sizeof(colNameMaxLen_));
+  result += sizeof(short);
+
+  str_cpy_all(result, (char*)&colValMaxLen_, sizeof(colValMaxLen_));
   result += sizeof(short);
   
   for (Lng32 i = 0; i < numEntries_; i++)
     {
       short colNameLen;
-      str_cpy_all((char*)&colNameLen, result, sizeof(short));
+      //      str_cpy_all((char*)&colNameLen, result, sizeof(short));
       result += sizeof(short);
-      result += ROUND2(colNameLen);
+      result += ROUND2(colNameMaxLen_);
 
       // skip the nullable bytes
       result += sizeof(short);
 
       short colValLen;
-      str_cpy_all((char*)&colValLen, result, sizeof(short));
+      //      str_cpy_all((char*)&colValLen, result, sizeof(short));
       result += sizeof(short);
-      result += ROUND2(colValLen);
+      result += ROUND2(colValMaxLen_);
     }  
 
   resultAttr->setVarLength(result - resultStart, op_data[-MAX_OPERANDS]);

@@ -7328,6 +7328,15 @@ RelExpr * ExeUtilFastDelete::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return this;
 
+  if ((! getTableName().isSeabase()) &&
+      (! getTableName().isHbase()) &&
+      (! getTableName().isHive()))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("PURGEDATA");
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
   NATable *naTable = NULL;
 
   if (NOT doPurgedataCat_)
@@ -7362,7 +7371,7 @@ RelExpr * ExeUtilFastDelete::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
 
-  if (!naTable->isHiveTable())
+  if (naTable && (!naTable->isHiveTable()))
     {
       *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("PURGEDATA");
       bindWA->setErrStatus();

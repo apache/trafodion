@@ -138,6 +138,8 @@ public:
 
   LOBglobals* &currLobGlobals() { return lobGlobals_; }
 
+  HashQueue * trafSElist() { return trafSElist_; }
+
   inline void incStmtReclaimCount()
   {
     stmtReclaimCount_++;
@@ -448,7 +450,12 @@ private:
   NAString jniErrorStr_; 
   HBaseClient_JNI *hbaseClientJNI_;
   HiveClient_JNI *hiveClientJNI_;
-  
+
+  // this points to data used by trafSE (traf storage engine) that is context specific.
+  // It points to a list of 'black box' of data allocated by user and is returned
+  // back whenever this context is in use.
+  HashQueue * trafSElist_;
+
   NABoolean deleteStats()
   {
     return (flags_ & DELETE_MERGED_STATS_) != 0; 

@@ -13039,12 +13039,15 @@ HbaseColumnCreate::~HbaseColumnCreate()
 
 ItemExpr * HbaseColumnCreate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
-  ItemExpr *result;
+  HbaseColumnCreate *result;
 
   if (derivedNode == NULL)
     result = new (outHeap) HbaseColumnCreate(hccol_);
   else
-    result = derivedNode;
+    result = (HbaseColumnCreate*)derivedNode;
+
+  result->colNameMaxLen_ = colNameMaxLen_;
+  result->colValMaxLen_ = colValMaxLen_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 

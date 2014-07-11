@@ -1648,6 +1648,11 @@ ExHbaseUMDtrafUniqueTaskTcb::ExHbaseUMDtrafUniqueTaskTcb
 {
 }
 
+void ExHbaseUMDtrafUniqueTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
+}
+
 ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
@@ -2272,6 +2277,11 @@ ExHbaseUMDnativeUniqueTaskTcb::ExHbaseUMDnativeUniqueTaskTcb
 {
 }
 
+void ExHbaseUMDnativeUniqueTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
+}
+
 ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 {
   Lng32 retcode = 0;
@@ -2579,6 +2589,11 @@ ExHbaseUMDtrafSubsetTaskTcb::ExHbaseUMDtrafSubsetTaskTcb
   :  ExHbaseTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+}
+
+void ExHbaseUMDtrafSubsetTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
 }
 
 ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
@@ -2919,6 +2934,11 @@ ExHbaseUMDnativeSubsetTaskTcb::ExHbaseUMDnativeSubsetTaskTcb
   :  ExHbaseUMDtrafSubsetTaskTcb(tcb)
   , step_(NOT_STARTED)
 {
+}
+
+void ExHbaseUMDnativeSubsetTaskTcb::init() 
+{
+  step_ = NOT_STARTED;
 }
 
 ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
@@ -3359,6 +3379,12 @@ ExWorkProcRetcode ExHbaseAccessUMDTcb::work()
 	    table_.val = hbaseAccessTdb().getTableName();
 	    table_.len = strlen(hbaseAccessTdb().getTableName());
 
+	    if (umdSQSubsetTaskTcb_)
+	      umdSQSubsetTaskTcb_->init();
+
+	    if (umdSQUniqueTaskTcb_)
+	      umdSQUniqueTaskTcb_->init();
+
 	    step_ = SETUP_SUBSET;
 	  }
 	  break;
@@ -3563,6 +3589,12 @@ ExWorkProcRetcode ExHbaseAccessUMDTcb::work()
 	    if (handleDone(rc, matches_))
 	      return rc;
 
+	    if (umdSQSubsetTaskTcb_)
+	      umdSQSubsetTaskTcb_->init();
+
+	    if (umdSQUniqueTaskTcb_)
+	      umdSQUniqueTaskTcb_->init();
+
 	    step_ = NOT_STARTED;
 	  }
 	  break;
@@ -3746,8 +3778,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
            if (getHbaseAccessStats())
 	     getHbaseAccessStats()->getTimer().start();
-	   
-	   //	   retcode = ehi_->getRows(table_, rowIds_, columns_, -1);
 	   
 	   rc = 0;
 	   retcode = getSQTaskTcb_->work(rc);

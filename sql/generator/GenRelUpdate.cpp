@@ -1649,6 +1649,14 @@ short HbaseUpdate::codeGen(Generator * generator)
 	 &returnedFetchedTupleDesc,
 	 ExpTupleDesc::SHORT_FORMAT,
 	 &returnedFetchedMapTable);
+
+      // assign location attributes to columns referenced in scanIndex and index.
+      // If any of these columns/value_ids are being updated, the updated location
+      // will be assigned later in this code.
+      expGen->assignAtpAndAtpIndex(getScanIndexDesc()->getIndexColumns(),
+				   0, returnedFetchedTuppIndex); 
+      expGen->assignAtpAndAtpIndex(getIndexDesc()->getIndexColumns(),
+				   0, returnedFetchedTuppIndex); 
       
       ValueIdList updatedOutputs;
 
@@ -1765,9 +1773,11 @@ short HbaseUpdate::codeGen(Generator * generator)
       returnedDesc->setTupleDescriptor(returnedUpdatedTuppIndex, 
 				       returnedUpdatedTupleDesc);
       
+      /*
       expGen->assignAtpAndAtpIndex(getScanIndexDesc()->getIndexColumns(),
 				   0, returnedFetchedTuppIndex); 
-  
+      */
+
       if (isMerge())
 	{
 	  ValueIdList mergeInsertOutputs;

@@ -211,6 +211,8 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
   // hash table
   nonAuditedLockedTableList_ = new(exCollHeap()) HashQueue(exCollHeap(), 23);
 
+  trafSElist_     = new(exCollHeap()) HashQueue(exCollHeap());
+
   authID_       = 0;
   authToken_    = 0;
   authIDType_   = SQLAUTHID_TYPE_INVALID;

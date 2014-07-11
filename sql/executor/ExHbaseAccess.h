@@ -377,8 +377,10 @@ class ExHbaseTaskTcb : public ExGod
 
   virtual ExWorkProcRetcode work(short &retval);
 
+  virtual void init() {};
+
  protected:
-  //  ExHbaseAccessSelectTcb * tcb_;
+
   ExHbaseAccessTcb * tcb_;
 };
 
@@ -388,6 +390,8 @@ public:
   ExHbaseScanTaskTcb(ExHbaseAccessSelectTcb * tcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
 
  private:
   enum {
@@ -410,6 +414,8 @@ public:
   ExHbaseScanRowwiseTaskTcb(ExHbaseAccessSelectTcb * tcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
 
  private:
   enum {
@@ -436,6 +442,8 @@ public:
 
   Lng32 getProbeResult(char* &keyData);
 
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -459,6 +467,9 @@ public:
   ExHbaseGetTaskTcb(ExHbaseAccessSelectTcb * tcb);
 
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -481,6 +492,9 @@ public:
   ExHbaseGetRowwiseTaskTcb(ExHbaseAccessSelectTcb * tcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -505,6 +519,9 @@ public:
   ExHbaseGetSQTaskTcb(ExHbaseAccessTcb * tcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -771,6 +788,8 @@ public:
   
   virtual ExWorkProcRetcode work(short &retval); 
 
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -805,6 +824,8 @@ public:
   
   virtual ExWorkProcRetcode work(short &retval); 
 
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -831,6 +852,9 @@ public:
   ExHbaseUMDtrafUniqueTaskTcb(ExHbaseAccessUMDTcb * tcb);
 
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
+
  private:
   enum {
     NOT_STARTED
@@ -870,6 +894,8 @@ public:
   ExHbaseUMDnativeUniqueTaskTcb(ExHbaseAccessUMDTcb * tcb);
   
   virtual ExWorkProcRetcode work(short &retval); 
+
+  virtual void init();
 
  private:
   enum {
