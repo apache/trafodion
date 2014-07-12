@@ -1559,6 +1559,7 @@ public class TransactionalRegion extends HRegion {
 		}
 		return transactionsById.get(transactionId);
 	}
+
         public boolean isMoveable() {
                 LOG.trace("isMoveable -- ENTRY");
                 if(!commitPendingTransactions.isEmpty() || !transactionsById.isEmpty()) {
@@ -1573,4 +1574,56 @@ public class TransactionalRegion extends HRegion {
                 LOG.trace("isMoveable -- EXIT -- returning true");
                 return true;
         }
+
+    /**
+    * Request for collection of active pending transactions
+    * @return list of active pending transactions
+    * @throws IOException
+    */
+    public List<Long> doPendingTransRequest() throws IOException {
+        List<Long> pendingTrans = new ArrayList<Long>();
+        Long key;
+
+        for(Map.Entry<Long, TransactionState> entry : transactionsById.entrySet()){
+             key = entry.getKey();
+             pendingTrans.add(key);
+        }
+        return  pendingTrans;
+    }
+
+    /**
+    * Request for collection of committed transactions by sequence number
+    * @return list of committed transactions
+    * @throws IOException
+    */
+    public List<Long> doCommittedTransRequest() throws IOException {
+        List<Long> committedTrans = new ArrayList<Long>();
+        TransactionState tstate;
+        Long transid;
+
+        for(Map.Entry<Integer, TransactionState> entry : commitedTransactionsBySequenceNumber.entrySet()){
+            tstate = entry.getValue();
+            transid = tstate.getTransactionId();
+            committedTrans.add(transid);
+        }
+        return committedTrans;
+    }
+
+    /**
+    * Request for collection of in doubt transactions
+    * @return list of indoubt transactions
+    * @throws IOException
+    */
+    public List<Long> doInDoubtTransRequest() {
+        List<Long> inDoubtTrans = new ArrayList<Long>();
+        Long key;
+
+        if(indoubtTransactionsById != null){
+            for(Entry<Long, WALEdit> entry : indoubtTransactionsById.entrySet()){
+                key = entry.getKey();
+                inDoubtTrans.add(key);
+            }
+        }
+        return  inDoubtTrans;
+    }
 }

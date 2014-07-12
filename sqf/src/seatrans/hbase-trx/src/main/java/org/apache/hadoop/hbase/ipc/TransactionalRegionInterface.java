@@ -21,6 +21,7 @@ package org.apache.hadoop.hbase.ipc;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.client.Delete;
@@ -28,6 +29,9 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.client.transactional.TransactionState;
+
 
 /**
  * Interface for transactional region servers.
@@ -209,12 +213,34 @@ public interface TransactionalRegionInterface extends HRegionInterface {
 			byte[] family, byte[] qualifier, byte[] value, Delete delete)
 			throws NotServingRegionException, IOException;
 	
-	  /**
-	   * Checks if transactions are present on region
-	   * 
-	   * @param regionName	  
-	   * @throws IOException
-	   */
 	boolean isMoveable(final byte[] regionName)
 	      throws IOException;
+
+    /**
+    * Checks if active transactions are present in regions
+    *
+    * @param regionName
+    * @throws IOException
+    */
+    List<Long> getPendingTrans(byte [] regionName)
+            throws IOException;
+
+    /**
+    * Checks committed transactions per region
+    * 
+    * @param regionName
+    * @throws IOException
+    */
+    List<Long> getCommittedTrans(byte [] regionName)
+            throws IOException;
+
+    /**
+    * Checks for in-doubt transactiosn per region
+    *
+    * @param regionName
+    * @throws IOException
+    */
+    List<Long> getInDoubtTrans(byte [] regionName)
+           throws IOException;
+
 }
