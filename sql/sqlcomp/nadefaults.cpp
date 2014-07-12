@@ -2727,7 +2727,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(PCODE_NE_DBG_LEVEL, "-1" ),  // Native Expression Debug Level
   DD_____(PCODE_NE_LOG_PATH, ""   ),  // Pathname of log file for Native Expression work
 
-  DDint__(PCODE_OPT_FLAGS,                      "60"),
+  DDint__(PCODE_OPT_FLAGS,                      "28"),
   DDkwd__(PCODE_OPT_LEVEL,		"MAXIMUM"),
 
   DDint__(PHY_MEM_CONTINGENCY_MB,     "3072"),
