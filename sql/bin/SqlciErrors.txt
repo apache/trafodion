@@ -199,7 +199,7 @@
 1197 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The salt column list (implicit or explicit) is too long.
 1198 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU View text is too long to fit into the metadata.
 1199 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The PARTITION BY clause is not allowed for a Trafodion table.
-1200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 ---
+1200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while reading HDFS file statistics for Hive table $1~TableName. Cause: $0~string0.
 1220 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 04/1/04 ---
 1221 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 --- 
 1222 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 ---

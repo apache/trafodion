@@ -3846,6 +3846,13 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
 
       // create file-level statistics and estimate total row count and record length
       hiveHDFSTableStats->populate(hvt_desc);
+      if (hiveHDFSTableStats->hasError())
+        {
+          *CmpCommon::diags() << DgSqlCode(-1200)
+                              << DgString0(hiveHDFSTableStats->getDiags().getErrMsg())
+                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+          return TRUE;
+        }
 
 #ifndef NDEBUG
       NAString logFile = 
@@ -4474,7 +4481,7 @@ NATable::NATable(BindWA *bindWA,
 		      colArray_ /*OUT*/,
 		      heap_))
     //coverity[leaked_storage]
-    return;
+    return; // colcount_ == 0 indicates an error
 
   //
   // Add view information, if this is a view
@@ -4534,7 +4541,7 @@ NATable::NATable(BindWA *bindWA,
                            heap_,
                            bindWA,
 			   maxIndexLevelsPtr)) {
-        return;
+        return; // colcount_ == 0 indicates an error
       }
 
       if ((!bindWA->inDDL()) || bindWA->isBindingMvRefresh())
@@ -5130,7 +5137,8 @@ NATable::NATable(BindWA *bindWA,
                            heap_,
                            bindWA
                            )) {
-        return;
+    colcount_ = 0; // indicates failure
+    return;
   }
 
   // HIVE-TBD ignore constraint info creation for now
