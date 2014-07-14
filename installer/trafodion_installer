@@ -266,6 +266,20 @@ sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOM
 # Create NODE_LIST and MY_NODES variable.
 # These variables will contain the list of nodes from the sqconfig file.
 NODES=$(grep "node-name=" $SQCONFIG_MASTER | sed -e "s@^.*node-name=\(.*\);cores.*@\1@" | sort)
+if [[ -z $NODES ]]; then
+   # single node case
+   NODES=$(hostname)
+   
+   # since sqgen uses the existence of /usr/bin/pdsh to determine multi-node cluster
+   # we will check for it here and warn the user to remove/rename it to head-off the
+   # confusing errors when running sqgen
+   if [ -f /usr/bin/pdsh ]; then
+      echo "***ERROR: This is a single node cluster yet, /usr/bin/pdsh is installed on it."
+      echo "***       Please uninstall or rename /usr/bin/pdsh temporarily."
+      exit -1
+   fi
+fi
+
 NODE_LIST=$(echo $NODES)
 MY_NODES=$(echo $NODES | sed 's@^@ @g' | sed 's@ @ -w @g' | sed 's@$@ @')
 cp .bashrc bashrc_temp
