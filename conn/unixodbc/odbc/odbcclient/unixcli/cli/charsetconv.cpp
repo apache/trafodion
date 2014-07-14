@@ -1831,83 +1831,74 @@ SQLINTEGER ICUConverter::FindStrLength(const char* inStr, SQLINTEGER strLen)
 {
 	int actualLen;
 	if(inStr == NULL) return 0;
-
-	if((m_AppUnicodeType == APP_UNICODE_TYPE_UTF16) && (strLen == SQL_NTS))
-	{
-		actualLen = u_strlen((UChar*)inStr);
-		if(actualLen == 0)
+		if((m_AppUnicodeType == APP_UNICODE_TYPE_UTF16) && (strLen == SQL_NTS))
 		{
-			return 0;
+			if(m_AppType == APP_TYPE_UNICODE){
+				actualLen = u_strlen((UChar*)inStr);
+				if(actualLen == 0)	return 0;
+				return actualLen * 2;
+			}
+			else goto mbcs_nts;
 		}
-		return actualLen * 2;
-	}
-	else if((m_AppUnicodeType == APP_UNICODE_TYPE_UTF16) && (strLen != SQL_NTS))
-	{
-		actualLen = u_strlen((UChar*)inStr);
-		if(actualLen == 0)
+		else if((m_AppUnicodeType == APP_UNICODE_TYPE_UTF16) && (strLen != SQL_NTS))
 		{
-			return 0;
+			if(m_AppType == APP_TYPE_UNICODE){
+				actualLen = u_strlen((UChar*)inStr);
+				if(actualLen == 0)	return 0;
+				return strLen * 2;
+			}
+			else goto mbcs_with_len;
 		}
-		return strLen * 2;
-	}
-	else if((m_AppUnicodeType != APP_UNICODE_TYPE_UTF16) && (strLen == SQL_NTS))
-	{
-		actualLen = strlen(inStr);
-		if(actualLen == 0)
+		else if((m_AppUnicodeType != APP_UNICODE_TYPE_UTF16) && (strLen == SQL_NTS))
 		{
-			return 0;
-		}
-		return actualLen;
-	}
-	else if((m_AppUnicodeType != APP_UNICODE_TYPE_UTF16) && (strLen != SQL_NTS))
-	{ // For UTF8 and Multibyte character sets, non-fixed width, need to determine the
-	  // number of bytes within the indicated number of characters.
-		if(*inStr== 0)
-		{
-			return 0;
-		}
-
-		int actualLen = strlen(inStr);
-		if(strLen >= actualLen)
-		{
+mbcs_nts:
+			actualLen = strlen(inStr);
+			if(actualLen == 0)	return 0;
 			return actualLen;
 		}
-		else
-		{
-			// For now, we convert the source string into UTF16 and intercept the leading
-			// charcaters indicated by strLen, and convert it back to the souce character
-			// set, and then calculate the length in bytes. This is not a efficient, but
-			// only the simplest solution we have right now.
-			DWORD lastError;
-			UINT CodePage;
-			UConverter *ucnv;
-			UErrorCode Uerr = U_ZERO_ERROR;	
-			int transLen; 
+		else if((m_AppUnicodeType != APP_UNICODE_TYPE_UTF16) && (strLen != SQL_NTS))
+		{ // For UTF8 and Multibyte character sets, non-fixed width, need to determine the
+			// number of bytes within the indicated number of characters.
+mbcs_with_len:
+			if(*inStr== 0)	return 0;
 
-			if(m_AppType == APP_TYPE_ANSI)
+			int actualLen = strlen(inStr);
+			if(strLen >= actualLen)
 			{
-				ucnv = cp_acp_replace;
+				return actualLen;
 			}
-			else // UTF8 Translation
+			else
 			{
-				ucnv = cp_utf8_replace;
+				// For now, we convert the source string into UTF16 and intercept the leading
+				// charcaters indicated by strLen, and convert it back to the souce character
+				// set, and then calculate the length in bytes. This is not a efficient, but
+				// only the simplest solution we have right now.
+				DWORD lastError;
+				UINT CodePage;
+				UConverter *ucnv;
+				UErrorCode Uerr = U_ZERO_ERROR;	
+				int transLen; 
+
+				if(m_AppType == APP_TYPE_ANSI)
+					ucnv = cp_acp_replace;
+				else // UTF8 Translation
+					ucnv = cp_utf8_replace;
+
+				int destULen = actualLen + 1;
+				UChar *tmpUStr = new UChar[destULen];
+				transLen = ucnv_toUChars(ucnv, tmpUStr, destULen, inStr, -1, &Uerr);
+
+				int destMBcsLen = UCNV_GET_MAX_BYTES_FOR_STRING(strLen, ucnv_getMaxCharSize(ucnv));
+				char *tmpMBcs = new char[destMBcsLen+1];
+				transLen = ucnv_fromUChars(ucnv, tmpMBcs, destMBcsLen+1, tmpUStr, strLen, &Uerr);
+				actualLen = strlen(tmpMBcs);
+
+				delete[] tmpUStr;
+				delete[] tmpMBcs;
+
+				return actualLen;
 			}
-
-			int destULen = actualLen + 1;
-			UChar *tmpUStr = new UChar[destULen];
-			transLen = ucnv_toUChars(ucnv, tmpUStr, destULen, inStr, -1, &Uerr);
-
-			int destMBcsLen = UCNV_GET_MAX_BYTES_FOR_STRING(strLen, ucnv_getMaxCharSize(ucnv));
-			char *tmpMBcs = new char[destMBcsLen+1];
-			transLen = ucnv_fromUChars(ucnv, tmpMBcs, destMBcsLen+1, tmpUStr, strLen, &Uerr);
-			actualLen = strlen(tmpMBcs);
-
-			delete[] tmpUStr;
-			delete[] tmpMBcs;
-
-			return actualLen;
 		}
-	}
 }
 
 
