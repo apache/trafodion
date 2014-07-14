@@ -634,7 +634,19 @@ class CmpSeabaseDDL
   void alterSeabaseTableDisableOrEnableIndex(
 					     ExprNode * ddlNode,
 					     NAString &currCatName, NAString &currSchName);
-  
+
+  void alterSeabaseTableDisableOrEnableAllIndexes(
+                                               ExprNode * ddlNode,
+                                               NAString &currCatName,
+                                               NAString &currSchName,
+                                               NAString &tableName);
+  short alterSeabaseTableDisableOrEnableIndex(
+                                              const char * catName,
+                                              const char * schName,
+                                              const char * idxName,
+                                              const char * tabName,
+                                               NABoolean isDisable);
+
   void createSeabaseView(
 			 StmtDDLCreateView                  * createViewNode,
 			 NAString &currCatName, NAString &currSchName);

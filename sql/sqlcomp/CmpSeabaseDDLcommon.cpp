@@ -42,6 +42,8 @@
 #include "CmpSeabaseDDLauth.h"
 #include "NAUserId.h"
 #include "StmtDDLCreateView.h"
+#include "StmtDDLAlterTableDisableIndex.h"
+#include "StmtDDLAlterTableEnableIndex.h"
 
 static __thread MDDescsInfo * trafMDDescsInfo_ = NULL;
 
@@ -4280,8 +4282,33 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       else if ((ddlNode->getOperatorType() == DDL_ALTER_TABLE_DISABLE_INDEX) ||
 	       (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ENABLE_INDEX))
 	{
-	  alterSeabaseTableDisableOrEnableIndex(ddlNode,
-						currCatName, currSchName);
+
+          NABoolean allIndexes = FALSE;
+          StmtDDLAlterTableDisableIndex * disableIdx = ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableDisableIndex();
+          NAString tabNameNAS ;
+          if (disableIdx)
+          {
+            allIndexes = disableIdx->getAllIndexes();
+            tabNameNAS = disableIdx->getTableName();
+          }
+          else
+          {
+            StmtDDLAlterTableEnableIndex * enableIdx = ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableEnableIndex();
+            allIndexes = enableIdx->getAllIndexes();
+            tabNameNAS = enableIdx->getTableName();
+          }
+
+          if (!allIndexes)
+            alterSeabaseTableDisableOrEnableIndex(ddlNode,
+						currCatName,
+						currSchName);
+          else
+          {
+            alterSeabaseTableDisableOrEnableAllIndexes(ddlNode,
+                                                     currCatName,
+                                                     currSchName,
+                                                     (NAString &) tabNameNAS);
+          }
 	}
      else if (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)
 	{

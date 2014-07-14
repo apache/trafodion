@@ -1,0 +1,188 @@
+-- Tests for Hbase - Populate all indexes and Load/Extract 
+-- Added April 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set schema trafodion.hbase;
+
+prepare indexInfo from
+select left(o1.object_name,20),o1.object_type  , o1.valid_def Index_valid_def, o2.valid_def     table_valid_def
+from trafodion."_MD_".objects o1 
+join  trafodion."_MD_".indexes i on  o1.object_uid=i.index_uid
+join   trafodion."_MD_".objects o2 on i.base_table_uid=o2.object_uid
+where o1.object_type='IX' and o2.Object_Name=? and o2.schema_name='HBASE' and O2.catalog_name='TRAFODION';
+
+
+cqd comp_bool_226 'on';
+
+obey TEST017(clnup);
+log LOG017 clear;
+obey TEST017(setup);
+
+obey TEST017(tests_simple);
+
+log;
+obey TEST017(clnup);
+exit;
+
+?section clnup
+--------------
+drop index T017TTBIDXb;
+drop  index T017TTBIDXc;
+drop  index T017TTCIDXb;
+drop  index T017TTCIDXc;
+drop  index T017TTDIDXb;
+drop  index T017TTDIDXc;
+drop  index T017TTEIDXb;
+
+drop table T017TTB cascade;
+drop table T017TTA cascade;
+drop table T017TTC cascade;
+drop table T017TTD cascade;
+drop table T017TTE cascade;
+drop table "T017_Delimit" cascade;
+
+?section setup
+--------------
+create  table T017TTB ( a int not null primary key, b int, c int);
+
+create  table T017TTA ( a int not null primary key, b int, c int);
+
+create  table T017TTC ( a int not null primary key, b int, c int) SALT using 2 partitions on (a);
+
+create  table T017TTD ( a int not null not droppable, b int, c int) store by (a); 
+
+create  table T017TTE ( a int , b int, c int); 
+
+create table "T017_Delimit" ( a int not null primary key, b int, c int);
+
+load  into T017TTA
+  select
+    0 +   (10 * x10) + x1,
+    1000 +   (10 * x10) + x1,
+    10000 +   (10 * x10) + x1
+  from (values(1)) as starter
+    transpose 0,1,2,3,4,5,6,7,8,9 as x10
+    transpose 0,1,2,3,4,5,6,7,8,9 as x1 ;
+
+?section  tests_simple
+----------------------
+create index T017TTBIDXb on T017TTB(b) no populate;
+create unique index T017TTBIDXc on T017TTB(c) no populate;
+
+create index T017TTCIDXb on T017TTC(b) no populate;
+create unique index T017TTCIDXc on T017TTC(c) no populate;
+
+create index T017TTDIDXb on T017TTD(b) no populate;
+create unique index T017TTDIDXc on T017TTD(c) no populate;
+
+create index T017TTEIDXb on T017TTE(b) no populate;
+
+execute indexinfo using 'T017TTB';
+execute indexinfo using 'T017TTC';
+execute indexinfo using 'T017TTD';
+execute indexinfo using 'T017TTE';
+
+set parserflags 1;
+select count(*) from table(index_table T017TTBIDXb);
+select count(*) from table(index_table T017TTBIDXc);
+select count(*) from table(index_table T017TTCIDXb);
+select count(*) from table(index_table T017TTCIDXc);
+
+alter table T017TTB enable all indexes;
+alter table T017TTC enable all indexes;
+alter table T017TTD enable all indexes;
+
+execute indexinfo using 'T017TTB';
+execute indexinfo using 'T017TTC';
+execute indexinfo using 'T017TTD';
+
+alter table T017TTB disable all indexes;
+alter table T017TTC disable all indexes;
+alter table T017TTD disable all indexes;
+
+execute indexinfo using 'T017TTB';
+execute indexinfo using 'T017TTC';
+execute indexinfo using 'T017TTD';
+
+load into T017TTB select * from T017TTA;
+load into T017TTC select * from T017TTA;
+load into T017TTD select * from T017TTA;
+load into T017TTE select * from T017TTA;
+---------------------------------------------------
+populate all indexes on T017TTB;
+execute indexinfo using 'T017TTB';
+set parserflags 1;
+select count(*) from table(index_table T017TTBIDXb);
+select count(*) from table(index_table T017TTBIDXc);
+
+
+populate all indexes on T017TTC;
+execute indexinfo using 'T017TTC';
+set parserflags 1;
+select count(*) from table(index_table T017TTCIDXb);
+select count(*) from table(index_table T017TTCIDXc);
+--verify contents of index table defined on table with Salt column 
+showddl table(index_table T017TTcIDXb);
+select  "B@" , I.A ,t.b,t.c ,case when I."_SALT_"<>T."_SALT_" THEN 1 else 0 end  from table(index_table T017TTcIDXb) I join T017TTc t on I.A=t.A order by "B@";
+
+populate all indexes on T017TTD;
+execute indexinfo using 'T017TTD';
+set parserflags 1;
+select count(*) from table(index_table T017TTDIDXb);
+select count(*) from table(index_table T017TTDIDXc);
+--verify contents of index table defined on table with syskey and store by clause
+showddl table(index_table T017TTdIDXb);
+select  "B@" , I.A ,t.b,t.c ,case when I.SYSKEY<>T.SYSKEY THEN 1 else 0 end  from table(index_table T017TTdIDXb) I join T017TTd t on I.A=t.A order by "B@";
+
+populate all indexes on T017TTE;
+execute indexinfo using 'T017TTE';
+set parserflags 1;
+select count(*) from table(index_table T017TTEIDXb);
+--verify contents of index table defined on table with syskey 
+showddl table(index_table T017TTeIDXb);
+select  "B@" , t.b,t.c ,case when I.SYSKEY<>T.SYSKEY THEN 1 else 0 end  from table(index_table T017TTeIDXb) I join T017TTe t on I."B@"=t.B order by "B@";
+
+--case where no indexes
+drop index T017TTBIDXb;
+drop index T017TTBIDXc;
+drop table T017TTB;
+create  table T017TTB ( a int not null primary key, b int, c int);
+
+load into T017TTB select * from T017TTA;
+
+populate all indexes on T017TTB;
+alter table T017TTB enable all indexes;
+
+--shoud give error
+update T017TTB set c = 1 ;
+create unique index T017TTBIDXc on T017TTB(c) no populate;
+populate all indexes on T017TTB;
+
+--delimited table name
+
+insert into "T017_Delimit" values (1,1,1),(2,2,2); 
+
+create index idxdelim on "T017_Delimit"(b) no populate;
+populate all indexes on "T017_Delimit";
+-------
+
+ 
+
+

@@ -229,6 +229,9 @@ public:
   inline NABoolean isSystemColumn() const       { return columnClass_ == SYSTEM_COLUMN;}
   inline NABoolean isSyskeyColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "SYSKEY" &&
                                                          defaultClass_ == COM_NO_DEFAULT;}
+  inline NABoolean isSaltColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "_SALT_" &&
+                                                          defaultClass_ == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;}
+
   inline NABoolean isIdentityColumn() const {return (defaultClass_ == COM_IDENTITY_GENERATED_BY_DEFAULT ||
                                                      defaultClass_ == COM_IDENTITY_GENERATED_ALWAYS);}
   inline NABoolean isIdentityColumnByDefault() const {return defaultClass_ == COM_IDENTITY_GENERATED_BY_DEFAULT;}

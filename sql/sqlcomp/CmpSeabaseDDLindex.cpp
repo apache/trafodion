@@ -828,7 +828,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 
   const NAString catalogNamePart = indexName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = indexName.getSchemaNamePartAsAnsiString(TRUE);
-  const NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
+  NAString objectNamePart = indexName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extIndexName = indexName.getExternalName(TRUE);
   const NAString extNameForHbase = 
     catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
@@ -890,6 +890,11 @@ void CmpSeabaseDDL::populateSeabaseIndex(
       if ((populateIndexNode->populateAll()) ||
 	  (extIndexName == nafIndexName))
 	{
+          if (populateIndexNode->populateAll())
+          {
+            objectNamePart= qn.getObjectName().data();
+          }
+
 	  // check if nafIndexName is a valid index. Is so, it has already been
 	  // populated. Skip it.
 	  NABoolean isValid =
@@ -903,16 +908,12 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	  if (isValid)
 	    continue;
 
+
 	  NAList<NAString> selColList;
 
 	  for (Lng32 ii = 0; ii < naf->getAllColumns().entries(); ii++)
 	    {
 	      NAColumn * nac = naf->getAllColumns()[ii];
-
-	      if (nac->isSystemColumn())
-		{
-		  continue;
-		}
 	      
 	      const NAString &colName = nac->getColName();
 
@@ -1333,4 +1334,101 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   //  processReturn();
 
   return;
+}
+
+short CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
+                                             const char * catName,
+                                             const char * schName,
+                                             const char * idxName,
+                                             const char * tabName,
+                                             NABoolean isDisable)
+{
+  char buf[4000];
+ Lng32 cliRC = 0;
+
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  sprintf (buf, " ALTER TABLE \"%s\".\"%s\".\"%s\"  %s INDEX %s ;", catName, schName, tabName,
+      isDisable ? "DISABLE" : "ENABLE",idxName);
+
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  return 0;
+
+}
+void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
+                                             ExprNode * ddlNode,
+                                             NAString &currCatName,
+                                             NAString &currSchName,
+                                             NAString &tabName)
+{
+  Lng32 cliRC = 0;
+  char buf[4000];
+
+  NABoolean isDisable =
+    (ddlNode->getOperatorType() == DDL_ALTER_TABLE_DISABLE_INDEX);
+
+  ComObjectName tableName(tabName);
+
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+
+  CMPASSERT (catalogNamePart == currCatName);
+  CMPASSERT (schemaNamePart == currSchName);
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  str_sprintf(buf,
+      " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \
+      " where object_uid in ( select i.index_uid from " \
+      " %s.\"%s\".%s i " \
+      " join    %s.\"%s\".%s  o2 on i.base_table_uid=o2.object_uid " \
+      " where  o2.catalog_name= '%s' AND o2.schema_name='%s' AND o2.Object_Name='%s') " \
+      " and object_type='IX' ; ",
+      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+      catalogNamePart.data(),schemaNamePart.data(), objectNamePart.data()  //table name in this case
+      );
+
+  Queue * indexes = NULL;
+  cliRC = cliInterface.fetchAllRows(indexes, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return ;
+    }
+
+  if (indexes)
+  {
+    //table has no index -- return
+    if (indexes->numEntries() == 0)
+      return;
+
+    char * catName = NULL;
+    char * schName = NULL;
+    indexes->position();
+    for (int idx = 0; idx < indexes->numEntries(); idx++)
+    {
+      OutputInfo * idx = (OutputInfo*) indexes->getNext();
+
+      catName = idx->get(0);
+      schName = idx->get(1);
+      char * idxName = idx->get(2);
+
+      if (alterSeabaseTableDisableOrEnableIndex ( catName, schName, idxName, objectNamePart, isDisable))
+        return;
+    }
+    CorrName cn( objectNamePart, STMTHEAP, NAString(schName), NAString(catName));
+    ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  }
+
+  return ;
 }
