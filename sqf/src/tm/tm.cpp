@@ -594,20 +594,7 @@ void tm_process_req_doomtx(CTmTxMessage * pp_msg)
    int16 lv_error = lp_tx->doom_txn();
    pp_msg->reply(lv_error);
 
-   /*bug 1422 TODO - SQL has removed wait after doomtxn call
-     which causes a problem where endtransaction can return FEOK*/
-   if (lv_error == FEOK) {
-     if (!gv_tm_info.multithreaded()) {
-       lp_tx->req_end(pp_msg);
-       lp_tx->req_forget(pp_msg);
-       gv_tm_info.cleanup(lp_tx);
-       delete pp_msg;
-     }
-     else
-       lp_tx->queueToTransaction(lp_transid, pp_msg);
-   }
-   else
-      delete pp_msg;
+   delete pp_msg;
 
    TMTrace(2, ("tm_process_req_doomtx EXIT\n"));
 } //process_req_doomtx
