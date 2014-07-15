@@ -80,6 +80,7 @@ class QueryCache;
 class HistogramCache;
 class CompilerTrackingInfo;
 class OptDefaults;
+struct MDDescsInfo;
 
 class EstLogProp;
 typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
@@ -350,6 +351,8 @@ public :
   void setGEILP(EstLogPropSharedPtr inLogProp)
                              { emptyInLogProp_ = inLogProp; }
     
+  MDDescsInfo *getTrafMDDescsInfo() { return trafMDDescsInfo_; }
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -482,6 +485,8 @@ private:
 
   // context global empty input logical property
   EstLogPropSharedPtr emptyInLogProp_;
+
+  MDDescsInfo * trafMDDescsInfo_;
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 
 

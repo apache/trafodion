@@ -43,8 +43,6 @@
 #include "NAUserId.h"
 #include "StmtDDLCreateView.h"
 
-static __thread MDDescsInfo * trafMDDescsInfo_ = NULL;
-
 CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
   savedCmpParserFlags_ = 0;
@@ -74,7 +72,8 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
   for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
-      MDDescsInfo &mddi = trafMDDescsInfo_[i];
+      
+      MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
 
       if (mdti.newName && (objName == mdti.newName))
 	{
@@ -440,19 +439,19 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 }
 
 // RETURN: -1, error.  0, all ok.
-short CmpSeabaseDDL::createMDdescs()
+short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
 {
-  if (trafMDDescsInfo_) // already initialized
+  if (trafMDDescsInfo)
     return 0;
 
   Lng32 numTables = sizeof(allMDtablesInfo) / sizeof(MDTableInfo);
-  trafMDDescsInfo_ = (MDDescsInfo*) 
+  trafMDDescsInfo = (MDDescsInfo*) 
     new(CTXTHEAP) char[numTables * sizeof(MDDescsInfo)];
   Parser parser(CmpCommon::context());
   for (Lng32 i = 0; i < numTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
-      MDDescsInfo &mddi = trafMDDescsInfo_[i];
+      MDDescsInfo &mddi = trafMDDescsInfo[i];
       
       if (!mdti.newDDL)
 	continue;
@@ -3603,7 +3602,7 @@ void CmpSeabaseDDL::initSeabaseMD()
   for (Lng32 i = 0; i < numTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
-      MDDescsInfo &mddi = trafMDDescsInfo_[i];
+      MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
 
       if (mdti.isIndex)
 	continue;
@@ -3639,7 +3638,7 @@ void CmpSeabaseDDL::initSeabaseMD()
   for (Lng32 i = 0; i < numTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
-      MDDescsInfo &mddi = trafMDDescsInfo_[i];
+      MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
 
       if (NOT mdti.isIndex)
 	continue;
