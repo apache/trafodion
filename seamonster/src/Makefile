@@ -60,3 +60,5 @@ $(LIBSM): $(LIBOBJ)
 $(INCSM): $(INCSRC)
 	-mkdir -p $(INCEXPDIR)
 	cp $(INCSRC) $(INCEXPDIR)
+
+verssm.o: verssm.c $(INCEXPDIR)/SCMBuildStr.h

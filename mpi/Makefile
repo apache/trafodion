@@ -73,7 +73,7 @@ $(BINEXPDIR)/hydra_pmi_proxy: $(MPICH_ROOT)/bin/hydra_pmi_proxy
 	rm -f $(BINEXPDIR)/hydra_pmi_proxy
 	cp $(MPICH_ROOT)/bin/hydra_pmi_proxy $(BINEXPDIR)/hydra_pmi_proxy
 
-$(MPI_LIBEXPDIR)/libmtmpi.so: libmtmpi.c $(MPI_INCEXPDIR)/mpi.h
+$(MPI_LIBEXPDIR)/libmtmpi.so: libmtmpi.c $(MPI_INCEXPDIR)/mpi.h $(MY_SQROOT)/export/include/SCMBuildStr.h
 	-mkdir -p $(MPI_LIBEXPDIR) $(LIBEXPDIR)
 	$(CC) $(CCFLAGS) $(INCLUDES) $(LIBSRC) $(LDFLAGS) -c
 	$(CC) $(LDFLAGS) $(CCFLAGS) -Wall -Werror -shared \
