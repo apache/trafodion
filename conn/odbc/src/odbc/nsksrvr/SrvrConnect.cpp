@@ -111,15 +111,6 @@ extern int sdconn;
 extern int clientConnTimeOut;
 extern short stopOnDisconnect;
 
-typedef enum _DCS_SERVER_STATE
-{
-	AVAILABLE = 1,
-	CONNECTING,
-	CONNECTED,
-	CONNECT_FAILED,
-	CONNECT_REJECTED
-} DCS_SERVER_STATE;
-
 bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState);
 
 void sync_string_completion(int rc, const char *name, const void *data)
@@ -8119,6 +8110,8 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				sprintf(zkErrStr, "***** zoo_set() failed for %s with error %d", dcsRegisteredNode.c_str(), rc);
 				goto bailout;
 			}
+			else
+				srvrGlobal->dcsCurrState = CONNECTED;
 		}
 		else
 		{
@@ -8155,6 +8148,8 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				sprintf(zkErrStr, "***** zoo_set() failed for %s with error %d", dcsRegisteredNode.c_str(), rc);
 				goto bailout;
 			}
+			else
+				srvrGlobal->dcsCurrState = AVAILABLE;
 		}
 		else
 		{
@@ -8166,6 +8161,10 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 	else
 	if( currState == CONNECTED && newState == AVAILABLE)	// Move from connected to available
 	{
+		// Fix for bug #1315537 - ZK dialogue ID mismatch.
+		// Added check to not set to AVAILABLE if already in that state in case a break dialogue is called after a terminate dialogue.
+		if( srvrGlobal->dcsCurrState == AVAILABLE )
+			return true;
 		rc = zoo_exists(zh, dcsRegisteredNode.c_str(), 0, &stat);
 		if( rc == ZOK )
 		{
@@ -8191,6 +8190,8 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				sprintf(zkErrStr, "***** zoo_set() failed for %s with error %d", dcsRegisteredNode.c_str(), rc);
 				goto bailout;
 			}
+			else
+				srvrGlobal->dcsCurrState = AVAILABLE;
 		}
 		else
 		{
@@ -8242,6 +8243,14 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				sprintf(zkErrStr, "***** zoo_set() failed for %s with error %d", dcsRegisteredNode.c_str(), rc);
 				goto bailout;
 			}
+			else
+			{
+				if (newState == CONNECT_FAILED)
+					srvrGlobal->dcsCurrState = CONNECT_FAILED;
+				else
+				if (newState == CONNECT_REJECTED)
+					srvrGlobal->dcsCurrState = CONNECT_REJECTED;
+			}
 		}
 		else
 		{
@@ -8278,6 +8287,8 @@ bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState)
 				sprintf(zkErrStr, "***** zoo_set() failed for %s with error %d", dcsRegisteredNode.c_str(), rc);
 				goto bailout;
 			}
+			else
+				srvrGlobal->dcsCurrState = AVAILABLE;
 		}
 		else
 		{

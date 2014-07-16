@@ -554,6 +554,15 @@ typedef enum _TCP_ADDRESS
 	SEGMENT_NAME
 } TCP_ADDRESS;
 
+typedef enum _DCS_SERVER_STATE
+{
+	INITIAL = 0,
+	AVAILABLE = 1,
+	CONNECTING,
+	CONNECTED,
+	CONNECT_FAILED,
+	CONNECT_REJECTED
+} DCS_SERVER_STATE;
 // Parameter errors for error messages (from the server)
 #define SRVR_ERROR_MSGBOX_TITLE	"ODBC/MX Server Wrapper Error"
 #define REG_REJECT			"Registration Rejected By Association Server"
@@ -933,6 +942,7 @@ typedef struct _SRVR_GLOBAL_Def
 
 		bspjTxnJoined = FALSE;
 		spjTxnId = 0;
+		dcsCurrState = INITIAL;
 	}
 
 	long				debugFlag;
@@ -1140,6 +1150,7 @@ typedef struct _SRVR_GLOBAL_Def
 
 	long				portNumber;
 
+	DCS_SERVER_STATE dcsCurrState;		// Contains current DCS state
 #ifdef __TIME_LOGGER
 	TimeLogger timeLogger;
 	bool timeLoggerFlag;
