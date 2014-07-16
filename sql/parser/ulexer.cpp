@@ -44,7 +44,8 @@
 #include <string.h>
 
 #pragma warning (disable : 4005)   //warning elimination
-#define WEOF (NAWchar)(0xFFFF)
+// Use a reserved UCS-2 character (but not the last one) as EOF substitute
+#define WEOF (NAWchar)(0xFFEF)
 #pragma warning (default : 4005)   //warning elimination
 #include  "arkcmp_parser_defs.h"
 #undef    SQLPARSERGLOBALS_CONTEXT_AND_DIAGS

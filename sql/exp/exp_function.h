@@ -1143,16 +1143,8 @@ class SQLEXP_LIB_FUNC  ex_function_encode : public ex_function_clause {
 					 char *source,
 					 char *varlen_ptr,
 					 char *target,
+                                         char *target_varlen_ptr,
 					 NABoolean handleNullability);
-
-  NA_EIDPROC static short decodeAndFormatKeys(
-       ex_expr_base * keyEncodeExpr,
-       char * keyBuf,
-       Lng32 keyLength,
-       char * decodedKeyBuf,
-       char * formatterKeyBuf,
-       Lng32 formattedKeyBufLen,
-       Lng32 * NeededKeyBufLen);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.

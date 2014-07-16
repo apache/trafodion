@@ -67,25 +67,24 @@ NAString * getMinMaxValue(desc_struct * column,
   char * buf = new char[buflen]; // deleted at the end of this method
 
   NABoolean nullValue = FALSE;
-  NAString * inDataAsNAString = NULL;
   if (highKey == FALSE)
     {
       // low key needed
       if (key->body.keys_desc.ordering == 0) // ascending
 	type->minRepresentableValue(buf, &buflen, 
-				    &inDataAsNAString,
+				    &minMaxValue,
 				    h) ;
       else
 	{
 	  if (type->supportsSQLnull())
 	    {
-	      inDataAsNAString = new (h) NAString("NULL");
+	      minMaxValue = new (h) NAString("NULL");
 	      nullValue = TRUE;
 	    }
 	  else
 	    {
 	      type->maxRepresentableValue(buf, &buflen, 
-					  &inDataAsNAString,
+					  &minMaxValue,
 					  h) ;
 	    }
 	}
@@ -97,45 +96,20 @@ NAString * getMinMaxValue(desc_struct * column,
 	{
 	  if (type->supportsSQLnull())
 	    {
-	      inDataAsNAString = new (h) NAString("NULL");
+	      minMaxValue = new (h) NAString("NULL");
 	      nullValue = TRUE;
 	    }
 	  else
 	    type->maxRepresentableValue(buf, &buflen, 
-					&inDataAsNAString,
+					&minMaxValue,
 					h) ;
 	}
       else
 	type->minRepresentableValue(buf, &buflen, 
-				    &inDataAsNAString,
+				    &minMaxValue,
 				    h) ;
     }
     
-  if ((NOT nullValue) &&
-      (type->getTypeQualifier() == NA_CHARACTER_TYPE))
-    {
-      // if varchar, skip the length bytes.
-      if (type->getVarLenHdrSize() > 0)
-	{
-	  // remove length bytes from position 0 (start of NAString).
-	  //	  inDataAsNAString = 
-	  inDataAsNAString->remove(0, type->getVarLenHdrSize());
-	}
-
-      // First insert the character set identifier
-      NAString* result = new (h) NAString(((CharType*)type)->getCharSetAsPrefix());
-
-      // put leading and training single quotes around the min/max value.
-      *result += "'";
-      *result += *inDataAsNAString;
-      *result += "\'";
-      minMaxValue = result; //convertNAString(result, NULL);
-
-      delete inDataAsNAString;
-    }
-  else
-    minMaxValue = inDataAsNAString; //convertNAString(*inDataAsNAString, NULL);
-  
   delete [] buf;
   delete type;
 
@@ -212,6 +186,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
       nullConst->synthTypeAndValueId();
 
       itemExpr = expGen->createExprTree(ns,
+                                        CharInfo::UTF8,
 					ns.length(),
 					1, nullConst);
     }
@@ -224,6 +199,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
       ns += ");";
   
       itemExpr = expGen->createExprTree(ns,
+                                        CharInfo::UTF8,
 					ns.length());
     }
 
@@ -239,7 +215,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
   srcval = "";
   srcval += *dataBuffer;
   srcval += ";";
-  ItemExpr * srcNode = expGen->createExprTree(srcval, srcval.length());
+  ItemExpr * srcNode = expGen->createExprTree(srcval, CharInfo::UTF8, srcval.length());
   CMPASSERT(srcNode != NULL);
   srcNode->synthTypeAndValueId();
   if ((NOT nullValue) &&
@@ -289,7 +265,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
       vc += CharInfo::getCharSetName(column->body.columns_desc.character_set);
       vc += ");";
 
-      itemExpr = expGen->createExprTree(vc, vc.length(), 1, itemExpr);
+      itemExpr = expGen->createExprTree(vc, CharInfo::UTF8, vc.length(), 1, itemExpr);
       itemExpr->synthTypeAndValueId();
 
       ((NAType *)&(itemExpr->getValueId().getType()))->

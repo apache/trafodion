@@ -6011,6 +6011,13 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 			 }
 		     }
 		 }
+               else if (type.getTypeQualifier() == NA_CHARACTER_TYPE)
+                 {
+                   // string literal looks like _ISO88591'abc' and is
+                   // in UTF-8, what we want here is the actual character
+                   // values in the type's character set
+                   *mmVal = NAString(buf, bufLen);
+                 }
 	     }
 	   else
 	     {
@@ -6033,6 +6040,13 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
 			 }
 		     }
 		 }
+               else if (type.getTypeQualifier() == NA_CHARACTER_TYPE)
+                 {
+                   // string literal looks like _ISO88591'abc' and is
+                   // in UTF-8, what we want here is the actual character
+                   // values in the type's character set
+                   *mmVal = NAString(buf, bufLen);
+                 }
 	     }
 	   
 	   short vLen = 0;
