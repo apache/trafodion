@@ -1083,6 +1083,14 @@ void CmpSeabaseDDL::createSeabaseTable(
               if (!colType->supportsSQLnull())
                 saltExprText += " NOT NULL";
               saltExprText += ")";
+              if (colType->getTypeQualifier() == NA_NUMERIC_TYPE &&
+                  !(((NumericType *) colType)->isExact()))
+                {
+                  *CmpCommon::diags() << DgSqlCode(-1120);
+                  deallocEHI(ehi); 
+                  processReturn();
+                  return;
+                }
             }
           else if (saltArray != &keyArray || saltArray->entries() == 1)
             {
@@ -1136,8 +1144,9 @@ void CmpSeabaseDDL::createSeabaseTable(
       ElemDDLColRef * edcrs = 
         new(STMTHEAP) ElemDDLColRef(saltColName, COM_ASCENDING_ORDER);
 
-      // add this new column as column 0 and also as key column 0
-      colArray.insertAt(0, saltColDef);
+      // add this new salt column before user columns but after SYSKEY
+      // and also as key column 0
+      colArray.insertAt(numSysCols, saltColDef);
       keyArray.insertAt(0, edcrs);
       numSysCols++;
       numSplits = numSaltPartns - 1;

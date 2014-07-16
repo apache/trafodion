@@ -119,7 +119,7 @@
 1117 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping the only partition of an object is not allowed. At least two partitions must exist to perform the drop.
 1118 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creating object $0~TableName is not allowed in metadata schema.
 1119 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping metadata object $0~TableName is not allowed.
-1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of float datatype in a partitioning key is not allowed.
+1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of float datatype in a partitioning key or salt clause is not allowed.
 1121 0A000 99999 BEGINNER MINOR DBADMIN Partitions cannot be added or dropped on table $0~TableName.  These partition operations are not allowed on tables whose clustering key consists only of the SYSKEY.
 1122 ZZZZZ 99999 BEGINNER MINOR DBADMIN The number of specified partition key values ($0~String0) for object $1~TableName exceeds the number of user defined key columns, $2~Int0.
 1123 42000 99999 BEGINNER MINOR DBADMIN Not all of the partition key values ($0~String0) for object $1~TableName could be processed.  Please verify that the correct key value data types were specified.
