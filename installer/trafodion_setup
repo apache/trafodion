@@ -300,6 +300,20 @@ if [ $node_count -ne 1 ]; then
         fi
     done
 fi
+
+echo "***INFO: ... EPEL rpm"
+epel_rpm="http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm"
+$TRAF_PDSH sudo rpm -Uvh $epel_rpm 2>> $YUM_LOG >> $YUM_LOG
+if [ $? != 0 ]; then
+    echo "***ERROR: Can't install EPEL rpm $epel_rpm"
+    exit -1
+fi
+
+# to handle the case where the EPEL rpm was already
+# installed but disabled, we enable it here
+# it doesn't hurt if it was already enabled and we try to enable it again
+$TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
+
 package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite "
 package_list+=" expect perl-DBD-SQLite* protobuf xerces-c "
 package_list+=" libiodbc unixODBC tigervnc-server firefox "
