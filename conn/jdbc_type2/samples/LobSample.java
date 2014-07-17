@@ -49,7 +49,7 @@ public class LobSample
   if ((catalog == null) || (schema == null) ) {
 	System.out.println("");
 	System.out.println("The LobSample demo requires a valid and existing user catalog and schema");
-	System.out.println("for the creation of the BLOB and CLOB SQL/MX data tables");
+	System.out.println("for the creation of the BLOB and CLOB Trafodion data tables");
 	System.out.println("");
 	System.out.println("Ensure the -Djdbcmx.catalog and -Djdbcmx.schema properties are used.");
 	System.out.println("");

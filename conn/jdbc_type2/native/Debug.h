@@ -56,7 +56,7 @@
 // DEBUG_LEVEL_ALL      - All debug levels active.  When used in DEBUG_OUT(), logs no matter what levels are set
 // DEBUG_LEVEL_ENTRY    - Function entry and exits are logged.
 // DEBUG_LEVEL_MEM      - Memory allocation and deallocations are logged
-// DEBUG_LEVEL_CLI      - SQL/MX CLI calls are logged
+// DEBUG_LEVEL_CLI      - Trafodion CLI calls are logged
 // DEBUG_LEVEL_DATA     - Data handling is logged
 // DEBUG_LEVEL_TXN      - Transaction handling is logged
 // DEBUG_LEVEL_ROWSET   - SQL Rowset handling is logged
@@ -109,7 +109,7 @@
 #include <stdio.h>
 #include <map>
 #include <CSrvrStmt.h>
-// Changes for downward compatability with SQL/MX (earlier than 2.3.2)
+// Changes for downward compatability with Trafodion (earlier than 2.3.2)
 
 #define CLI_VERSION_R2 90L
 
@@ -126,7 +126,7 @@
 					result set failed because stored procedure result sets are not \
 					supported.\n"); } \
 			} \
-        else { printf("\n SQL/MX installation not found on the system. \n"); exit; } \
+        else { printf("\n Trafodion installation not found on the system. \n"); exit; } \
 		}
 
 #if defined(_DEBUG) || defined(_BENCHMARK)
