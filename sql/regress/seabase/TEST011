@@ -35,6 +35,7 @@ cqd query_cache '0';
 ?section clnup
 drop table T011T1;
 drop table t011tT3;
+drop table T011T2;
 
 ?section tests
 
@@ -168,6 +169,28 @@ upsert using load into t011t3
   ;
 explain options 'f' s;
 execute s;
+
+-- singleton plan test LP bug 1342141
+create table T011T2 (a int not null, b char(500), 
+                     c int not null, primary key(a))
+salt using 4 partitions;
+
+insert into T011T2 values (1, 'a', 11), (2, 'b', 22), (3, 'c', 33);
+insert into T011T2 values (10, 'aa', 110), (20, 'bb', 220), (30, 'cc', 330);
+insert into T011T2 values (11, 'aaa', 111), (22, 'bbb', 222), (33, 'ccc', 333);
+update statistics for table T011T2 on every column;
+
+-- should get serial plans
+explain options 'f' 
+select b, c 
+from T011T2 
+where a = ?;
+
+-- try with cardinality hint, still should see serial plan 
+explain options 'f'
+select b, c
+from T011T2 << cardinality 1e7 >>
+where a = ?;
 
 -- transaction optimization tests
 delete from t011t1;
