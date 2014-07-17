@@ -108,6 +108,7 @@ class Parser;
 class NAColumnArray;
 
 struct routine_desc_struct;
+struct MDDescsInfo;
 
 #include "CmpSeabaseDDLmd.h"
 
@@ -161,7 +162,7 @@ class CmpSeabaseDDL
                                       const NAString &schName,
                                       const NAString &objName);
 
-  short createMDdescs();
+  short createMDdescs(MDDescsInfo *&);
 
   static NAString getSystemCatalogStatic();
 
@@ -752,7 +753,6 @@ class CmpSeabaseDDL
 				 ComTdbVirtTableColumnInfo* &colInfoArray,
 				 Lng32 &numKeys,
 				 ComTdbVirtTableKeyInfo* &keyInfoArray,
-				 
 				 ComTdbVirtTableIndexInfo* &indexInfo);
 
   short createIndexColAndKeyInfoArrays(
