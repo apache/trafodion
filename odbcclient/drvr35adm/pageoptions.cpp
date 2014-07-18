@@ -83,7 +83,7 @@ BOOL PageOptions::OnInitDialog()
 	}
 	
 	char szStaticText[]="Schema is used to qualify Trafodion object names.\
-The default value is USR.";
+The default value is SEABASE.";
 
 	m_static_options.SetWindowText(szStaticText);
 

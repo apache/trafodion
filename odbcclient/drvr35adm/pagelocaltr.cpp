@@ -21,6 +21,7 @@
 #include "stdafx.h"
 #include "drvr35adm.h"
 #include "PageLocalTr.h"
+#include "TestDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -135,14 +136,14 @@ Client/Server Character Set Interaction default is the client local character se
 
 BOOL PageLocalTr::OnSetActive() 
 {
-	m_ppropsheet->SetWizardButtons(PSWIZB_BACK | PSWIZB_NEXT);	
+	m_ppropsheet->SetWizardButtons(PSWIZB_BACK | PSWIZB_FINISH);
 	return CPropertyPage::OnSetActive();
 }
-
-LRESULT PageLocalTr::OnWizardNext() 
+BOOL PageLocalTr::OnWizardFinish()  
 {
 	CString cTmp;
 	int nCurSel; 
+	CTestDialog dlgTest;
 	
 	m_dllname.GetWindowText( aAttr[ KEY_TRANSLATION_DLL].szAttr,sizeof( aAttr[ KEY_TRANSLATION_DLL].szAttr));
 	m_translationoption.GetWindowText( aAttr[ KEY_TRANSLATION_OPTION].szAttr,sizeof( aAttr[ KEY_TRANSLATION_OPTION].szAttr));
@@ -157,9 +158,11 @@ LRESULT PageLocalTr::OnWizardNext()
 
 	m_replacementchar.GetWindowText( aAttr[ KEY_REPLACEMENT_CHAR].szAttr,sizeof( aAttr[ KEY_REPLACEMENT_CHAR].szAttr));
 
-	return CPropertyPage::OnWizardNext();
-}
+	if(IDCANCEL==dlgTest.DoModal()) return FALSE;
+	if(FALSE==m_ppropsheet->UpdateDSN()) return FALSE;
 
+	return CPropertyPage::OnWizardFinish();
+}
 void PageLocalTr::OnDllBrowse() 
 {
 	char BASED_CODE szFilter[] = "DLL Files (*.dll)|*.dll|All Files (*.*)|*.*||";

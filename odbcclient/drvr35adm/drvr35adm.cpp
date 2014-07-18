@@ -328,25 +328,25 @@ extern "C" BOOL WINAPI EXPORT ConfigDSN (HWND    hwnd,
 				PageNetwork pageNetwork;
 				PageOptions pageOptions;
 				PageLocalTr pageLocalTr;
-				PageTracing pageTracing;
+				//PageTracing pageTracing;
 
 				pageGeneral.m_ppropsheet = &dlgPropSheet;
 				pageNetwork.m_ppropsheet = &dlgPropSheet;
 				pageOptions.m_ppropsheet = &dlgPropSheet;
-				pageTracing.m_ppropsheet = &dlgPropSheet;
+				//pageTracing.m_ppropsheet = &dlgPropSheet;
 				pageLocalTr.m_ppropsheet = &dlgPropSheet;
 
 				pageGeneral.m_psp.dwFlags |= PSP_HASHELP ;
 				pageNetwork.m_psp.dwFlags |= PSP_HASHELP ;
 				pageOptions.m_psp.dwFlags |= PSP_HASHELP ;
 				pageLocalTr.m_psp.dwFlags |= PSP_HASHELP ;
-				pageTracing.m_psp.dwFlags |= PSP_HASHELP ;
+				//pageTracing.m_psp.dwFlags |= PSP_HASHELP ;
 
 				dlgPropSheet.AddPage(&pageGeneral);
 				dlgPropSheet.AddPage(&pageNetwork);
 				dlgPropSheet.AddPage(&pageOptions);
 				dlgPropSheet.AddPage(&pageLocalTr);
-				dlgPropSheet.AddPage(&pageTracing);
+				//dlgPropSheet.AddPage(&pageTracing);
 
 				dlgPropSheet.SetWizardMode();
 
@@ -362,20 +362,20 @@ extern "C" BOOL WINAPI EXPORT ConfigDSN (HWND    hwnd,
 				TabPageNetwork pageNetwork;
 				TabPageOptions pageOptions;
 				TabPageLocalTr pageLocalTr;
-				TabPageTracing pageTracing;
+				//TabPageTracing pageTracing;
 				TabPageTesting pageTesting;
 
 				pageGeneral.m_psp.dwFlags |= PSP_HASHELP ;
 				pageNetwork.m_psp.dwFlags |= PSP_HASHELP ;
 				pageOptions.m_psp.dwFlags |= PSP_HASHELP ;
 				pageLocalTr.m_psp.dwFlags |= PSP_HASHELP ;
-				pageTracing.m_psp.dwFlags |= PSP_HASHELP ;
+				//pageTracing.m_psp.dwFlags |= PSP_HASHELP ;
 				pageTesting.m_psp.dwFlags |= PSP_HASHELP ;
 
 				pageGeneral.m_ppropsheet = &dlgPropSheet;
 				pageNetwork.m_ppropsheet = &dlgPropSheet;
 				pageOptions.m_ppropsheet = &dlgPropSheet;
-				pageTracing.m_ppropsheet = &dlgPropSheet;
+				//pageTracing.m_ppropsheet = &dlgPropSheet;
 				pageLocalTr.m_ppropsheet = &dlgPropSheet;
 				pageTesting.m_ppropsheet = &dlgPropSheet;
 
@@ -383,7 +383,7 @@ extern "C" BOOL WINAPI EXPORT ConfigDSN (HWND    hwnd,
 				dlgPropSheet.AddPage(&pageNetwork);
 				dlgPropSheet.AddPage(&pageOptions);
 				dlgPropSheet.AddPage(&pageLocalTr);
-				dlgPropSheet.AddPage(&pageTracing);
+				//dlgPropSheet.AddPage(&pageTracing);
 				dlgPropSheet.AddPage(&pageTesting);
 
 				if(dlgPropSheet.DoModal()==IDOK)

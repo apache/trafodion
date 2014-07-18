@@ -96,7 +96,7 @@ extern char* VprocString;
 //#define CODEPAGE_SIMPLIFIED_CHINESE       936
 //#define CODEPAGE_TRADITIONAL_CHINESE      950
 
-#define ODBC_RESOURCE_DLL     "hp_ores0300.dll"
+#define ODBC_RESOURCE_DLL     "traf_ores0100.dll"
 
 #define STRICT_SCHEMA_ENV_VAL_SIZE 100
 
