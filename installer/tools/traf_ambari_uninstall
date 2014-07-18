@@ -198,6 +198,8 @@ pdsh $MY_NODES sudo rm -rf /var/run/oozie
 pdsh $MY_NODES sudo rm -rf /var/run/zookeeper
 pdsh $MY_NODES sudo rm -rf /var/run/webhcat
 pdsh $MY_NODES sudo rm -rf /var/run/nagios
+pdsh $MY_NODES sudo rm -rf /var/run/hbase
+pdsh $MY_NODES sudo rm -rf /var/run/hive
 
 pdsh $MY_NODES sudo rm -rf /usr/lib/hadoop
 pdsh $MY_NODES sudo rm -rf /usr/lib/hbase

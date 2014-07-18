@@ -165,6 +165,18 @@ if [ "$?" = "0" ]; then
    exit
 fi
 
+#==============================================
+#Test if home directory is on a NFS disk
+
+diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
+
+if [ $diskType == "nfs" ]; then
+   echo "***ERROR: Home directory is on an NFS disk: $HOME_DIR"
+   echo "***ERROR: Please choose a different directory to install on."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
 timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion environment setup ($timestamp)"
 mkdir -p $TRAF_WORKDIR/logs
@@ -385,6 +397,7 @@ fi
 # Put build tar files in user's $HOME
 sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs-*.tgz $HOME_DIR/$TRAF_USER/dcs_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER
