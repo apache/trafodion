@@ -351,9 +351,6 @@ ScanOptimizer::scmCost(CostScalar tuplesProcessed,
   // assert if called by OCM .
   DCMPASSERT(CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON);
 
-  CostScalar numActivePartitions = getNumActivePartitions();
-  CostScalar countOfCPUsExecutingDP2s = getContext().getPlan()->getPhysicalProperty()->getCurrentCountOfCPUs();
-  
   SimpleCostVector scmLR ( csZero,    		/* CPUTime */
 			   csZero,    		/* IOTime */
 			   csZero,    		/* MSGTime */
@@ -365,10 +362,6 @@ ScanOptimizer::scmCost(CostScalar tuplesProcessed,
 			   ioSeq,    		/* ioSeq */
 			   noOfProbes );	/* num probes */
 
-  if (countOfCPUsExecutingDP2s < numActivePartitions)
-  {
-    scmLR = scmLR.scaleByValue(numActivePartitions/countOfCPUsExecutingDP2s);
-  }
 
   NABoolean scmDebugOn = (CmpCommon::getDefault(NCM_PRINT_ROWSIZE) == DF_ON);
   if (scmDebugOn == TRUE)

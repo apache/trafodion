@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Sat Apr 19 10:55:24 2014
+-- Definition current  Thu Jul 17 16:39:24 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -679,6 +679,54 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>execute s;
 
 --- 10000 row(s) inserted.
+>>
+>>-- singleton plan test LP bug 1342141
+>>create table T011T2 (a int not null, b char(500), 
++>                     c int not null, primary key(a))
++>salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>insert into T011T2 values (1, 'a', 11), (2, 'b', 22), (3, 'c', 33);
+
+--- 3 row(s) inserted.
+>>insert into T011T2 values (10, 'aa', 110), (20, 'bb', 220), (30, 'cc', 330);
+
+--- 3 row(s) inserted.
+>>insert into T011T2 values (11, 'aaa', 111), (22, 'bbb', 222), (33, 'ccc', 333);
+
+--- 3 row(s) inserted.
+>>update statistics for table T011T2 on every column;
+
+--- SQL operation complete.
+>>
+>>-- should get serial plans
+>>explain options 'f' 
++>select b, c 
++>from T011T2 
++>where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               5.00E+001
+.    .    1    trafodion_scan                  T011T2                5.00E+001
+
+--- SQL operation complete.
+>>
+>>-- try with cardinality hint, still should see serial plan 
+>>explain options 'f'
++>select b, c
++>from T011T2 << cardinality 1e7 >>
++>where a = ?;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                  o                               5.00E+001
+.    .    1    trafodion_scan                  T011T2                5.00E+001
+
+--- SQL operation complete.
 >>
 >>-- transaction optimization tests
 >>delete from t011t1;
