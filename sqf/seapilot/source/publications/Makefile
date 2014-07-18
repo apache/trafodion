@@ -58,6 +58,7 @@ PROTO_COM_OBJS := $(patsubst %.proto, $(OUTDIR)/%.pb.o, $(notdir $(PRO_COMMON)))
 PROTO_OTH_OBJS := $(patsubst %.proto, $(OUTDIR)/%.pb.o, $(notdir $(PRO_OTHER)))
 $(PROTO_OTH_OBJS): $(PROTO_COM_OBJS)
 
+$(OUTDIR)/accesslayer.level_1_check.pb.o: $(OUTDIR)/health.layer_check.pb.cc
 
 INCLUDES 	= -I$(OUTDIR) \
 		  -I$(MY_SPROOT)/export/include \
