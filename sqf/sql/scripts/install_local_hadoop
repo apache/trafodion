@@ -1330,12 +1330,6 @@ else
   <property>
     <name>hbase.master.distributed.log.splitting</name>
     <value>false</value> </property>
-  <property>
-    <name>hbase.regionserver.region.transactional.hlog</name>
-    <value>false</value> </property>
-  <property>
-    <name>hbase.regionserver.region.transactional.tlog</name>
-    <value>true</value> </property>
 </configuration>
 EOF
 
