@@ -12,8 +12,11 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,6 +28,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.RemoteExceptionHandler;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.catalog.CatalogTracker;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -44,10 +48,10 @@ import org.apache.hadoop.hbase.regionserver.wal.HLogSplitter;
 import org.apache.hadoop.hbase.regionserver.wal.WALActionsListener;
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Threads;
+import org.apache.hadoop.hbase.zookeeper.ZKUtil;
+import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.zookeeper.KeeperException;
-import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
-import org.apache.hadoop.hbase.zookeeper.ZKUtil;
    
 /**
  * RegionServer with support for transactions. Transactional logic is at the region level, so we mostly just delegate to
@@ -69,6 +73,8 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
     private final CleanOldTransactionsChore cleanOldTransactionsThread;
 
     private THLog trxHLog;
+    private Set<Long> transIDSet = new HashSet<Long>();
+    private Random random = new Random();
 
     /**
      * @param conf
@@ -190,11 +196,10 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
     private void initializeTHLog() throws IOException {
         // We keep in the same directory as the core HLog.
     	
-        Path oldLogDir = new Path(getRootDir(), HConstants.HREGION_OLDLOGDIR_NAME);       
+	Path oldLogDir = new Path(getRootDir(), HConstants.HREGION_OLDLOGDIR_NAME);
 
         Path logdir = new Path(getRootDir(), HLog.getHLogDirectoryName(this.getServerName().getServerName()));
-
-        trxHLog = THLog.createTHLog(getFileSystem(), logdir, oldLogDir, conf, null);        
+	trxHLog = THLog.createTHLog(getFileSystem(), logdir, oldLogDir, conf, null);
     }
 
     @Override
@@ -487,10 +492,28 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
      */
     @Override
     public void delete(final long transactionId, final byte[] regionName, final Delete delete) throws IOException {
-
-        SingleVersionDeleteNotSupported.validateDelete(delete);
-
-        getTransactionalRegion(regionName).delete(transactionId, delete);
+    	SingleVersionDeleteNotSupported.validateDelete(delete);
+    	TransactionalRegion transRegion = getTransactionalRegion(regionName);
+    	if(transactionId == 0L){
+			long id = this.createNewTransactionID();
+			try {
+				transRegion.beginTransaction(id);
+				transRegion.delete(id, delete);
+				this.commit(transRegion, id);
+			} catch (IOException e) {
+				try {
+					transRegion.abort(id);
+				} catch (IOException e1) {
+					LOG.error("delete, autocommit is true, ABORT failed, transID:" + id, e1);
+					throw e1;
+				}
+			}finally{
+				this.transIDSet.remove(id);
+			}
+		} else {
+			transRegion.delete(transactionId, delete);
+		}
+    	transRegion = null;
     }
 
     /**
@@ -498,7 +521,12 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
      */
     @Override
     public Result get(final long transactionId, final byte[] regionName, final Get get) throws IOException {
-    	return getTransactionalRegion(regionName).get(transactionId, get);
+    	TransactionalRegion transRegion = getTransactionalRegion(regionName);
+    	if(transactionId == 0L){
+    		return transRegion.get(get);
+		}else{
+			return transRegion.get(transactionId, get);
+		}
     }
 
     /**
@@ -507,33 +535,122 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
     @Override
     public void put(final long transactionId, final byte[] regionName, final Put put) throws IOException {
 	LOG.trace("put, txid: " + transactionId);
-    	getTransactionalRegion(regionName).put(transactionId, put);
+		TransactionalRegion transRegion = getTransactionalRegion(regionName);
+		if(transactionId == 0L){
+			long id = this.createNewTransactionID();
+			try {
+				transRegion.beginTransaction(id);
+				transRegion.put(id, put);
+				this.commit(transRegion, id);
+			} catch (IOException e) {
+				try {
+					transRegion.abort(id);
+				} catch (IOException e1) {
+					LOG.error("put, autocommit is true, ABORT failed, transID:" + id, e1);
+					throw e1;
+				}
+			}finally{
+				this.transIDSet.remove(id);
+			}
+		}else{
+			transRegion.put(transactionId, put);
+		}
+		transRegion = null;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public int put(final long transactionId, final byte[] regionName, final Put[] puts) throws IOException {
-	LOG.trace("puts[], txid: " + transactionId);
-        getTransactionalRegion(regionName).put(transactionId, puts);
-        return puts.length; // ??
-    }
-
-	@Override
-	public int delete(long transactionId, byte[] regionName, final Delete[] deletes) throws NotServingRegionException, IOException {
-		LOG.trace("Enter TransactionalRegionServer.deletes[], txid: " + transactionId);
-        getTransactionalRegion(regionName).delete(transactionId, deletes);
-        return deletes.length; // ??
+	public int put(final long transactionId, final byte[] regionName,
+			final Put[] puts) throws IOException {
+		LOG.trace("puts[], txid: " + transactionId);
+		TransactionalRegion transRegion = getTransactionalRegion(regionName);
+		if (transactionId == 0L) {
+			long id = this.createNewTransactionID();
+			try {
+				transRegion.beginTransaction(id);
+				transRegion.put(id, puts);
+				this.commit(transRegion, id);
+			} catch (IOException e) {
+				try {
+					transRegion.abort(id);
+				} catch (IOException e1) {
+					LOG.error("puts, autocommit is true, ABORT failed, transID:" + id, e1);
+					throw e1;
+				}
+			} finally {
+				this.transIDSet.remove(id);
+			}
+		} else {
+			transRegion.put(transactionId, puts);
+		}
+		transRegion = null;
+		return puts.length; // ??
 	}
 
 	@Override
-	public boolean checkAndPut(long transactionId, byte[] regionName, byte[] row,
-			byte[] family, byte[] qualifier, byte[] value, Put put)
+	public int delete(long transactionId, byte[] regionName,
+			final Delete[] deletes) throws NotServingRegionException,
+			IOException {
+		LOG.trace("Enter TransactionalRegionServer.deletes[], txid: "
+				+ transactionId);
+		TransactionalRegion transRegion = getTransactionalRegion(regionName);
+		if (transactionId == 0L) {
+			long id = this.createNewTransactionID();
+			try {
+				transRegion.beginTransaction(id);
+				transRegion.delete(id, deletes);
+				this.commit(transRegion, id);
+			} catch (IOException e) {
+				try {
+					transRegion.abort(id);
+				} catch (IOException e1) {
+					LOG.error("deletes, autocommit is true, ABORT failed, transID:" + id, e1);
+					throw e1;
+				}
+			} finally {
+				this.transIDSet.remove(id);
+			}
+		} else {
+			transRegion.delete(transactionId, deletes);
+		}
+		transRegion = null;
+		return deletes.length; // ??
+	}
+
+	@Override
+	public boolean checkAndPut(long transactionId, byte[] regionName,
+			byte[] row, byte[] family, byte[] qualifier, byte[] value, Put put)
 			throws IOException {
-		LOG.trace("Enter TransactionalRegionServer.checkAndPut, txid: " + transactionId);
-		return getTransactionalRegion(regionName).checkAndPut(transactionId, row,
-								      family, qualifier, value, put);
+		LOG.trace("Enter TransactionalRegionServer.checkAndPut, txid: "
+				+ transactionId);
+		TransactionalRegion transRegion = getTransactionalRegion(regionName);
+		boolean flag = true;
+		if (transactionId == 0L) {
+			long id = this.createNewTransactionID();
+			try {
+				transRegion.beginTransaction(id);
+				flag = transRegion.checkAndPut(id, row, family, qualifier,
+						value, put);
+				this.commit(transRegion, id);
+			} catch (IOException e) {
+				flag = false;
+				try {
+					transRegion.abort(id);
+				} catch (IOException e1) {
+					LOG.error("checkAndPut, autocommit is true, ABORT failed, transID:" + id, e1);
+					throw e1;
+				}
+			} finally {
+				this.transIDSet.remove(id);
+			}
+		} else {
+			flag = transRegion.checkAndPut(
+					transactionId, row, family, qualifier, value, put);
+		}
+		transRegion = null;
+		return flag;
 	}
 
 	@Override
@@ -541,8 +658,52 @@ public class TransactionalRegionServer extends HRegionServer implements Transact
 			byte[] row, byte[] family, byte[] qualifier, byte[] value,
 			Delete delete) throws IOException {
 		LOG.trace("Enter checkAndDelete.checkAndPut, txid: " + transactionId);
-		return getTransactionalRegion(regionName).checkAndDelete(transactionId, row,
-									 family, qualifier, value, delete);
+		TransactionalRegion transRegion = getTransactionalRegion(regionName);
+		boolean flag = true;
+		if (transactionId == 0L) {
+			long id = this.createNewTransactionID();
+			try {
+				transRegion.beginTransaction(id);
+				flag = transRegion.checkAndDelete(transactionId, row, family,
+						qualifier, value, delete);
+				this.commit(transRegion, id);
+			} catch (IOException e) {
+				flag = false;
+				try {
+					transRegion.abort(id);
+				} catch (IOException e1) {
+					LOG.error("checkAnddelete, autocommit is true, ABORT failed, transID:" + id, e1);
+					throw e1;
+				}
+			} finally {
+				this.transIDSet.remove(id);
+			}
+		} else {
+			flag = transRegion.checkAndDelete(
+					transactionId, row, family, qualifier, value, delete);
+		}
+		transRegion = null;
+		return flag;
+	}
+	
+	/** Trying commit
+	 * @param transRegion
+	 * @param transId
+	 * @throws IOException
+	 */
+	private void commit(TransactionalRegion transRegion, long transId) throws IOException{
+		if (transRegion.commitRequest(transId) == TransactionalRegionInterface.COMMIT_OK) {
+			transRegion.commit(transId);
+		}
+	}
+	
+	private synchronized long createNewTransactionID() {
+		long id = 0L;
+		do {
+			id = this.random.nextInt()|0x6000000000000000L;
+		} while (this.transIDSet.contains(id));
+		this.transIDSet.add(id);
+		return id;
 	}
 	
 	@Override
