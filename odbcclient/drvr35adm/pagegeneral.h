@@ -66,7 +66,6 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(PageGeneral)
 	virtual BOOL OnInitDialog();
-	afx_msg void OnGetsvrdsn();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

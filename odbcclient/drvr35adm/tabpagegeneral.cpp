@@ -87,8 +87,6 @@ BOOL TabPageGeneral::OnInitDialog()
 	m_service_name.LimitText(MAXSN-1);
 	m_service_name.SetWindowText( aAttr[ KEY_SERVICE_NAME].szAttr);
 	char szStaticText[]="Enter the name of the new data source; maximum of 32 characters.\n\
-NOTE: If the specified data source cannot be found on the server, the client connects to the default data source.\n\
-NOTE: Although data source names on the server may be greater than 32 characters, TRAF ODBC only allows a maximum of 32 characters.\n\
 The Description field is optional; maximum of 255 characters.";
 
 	m_static_general.SetWindowText(szStaticText);
