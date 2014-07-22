@@ -2456,6 +2456,7 @@ short HbaseInsert::codeGen(Generator *generator)
         char * tlpTmpLocation = space->allocateAlignedSpace(tlpTmpLocationNAS.length() + 1);
         strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
         hbasescan_tdb->setLoadPrepLocation(tlpTmpLocation);
+        hbasescan_tdb->setNoDuplicates(CmpCommon::getDefault(TRAF_LOAD_PREP_SKIP_DUPLICATES) == DF_OFF);
       }
 
       // setting parameters for upsert statement// not related to the hbase bulk load intergration

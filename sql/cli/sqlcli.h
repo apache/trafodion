@@ -830,7 +830,9 @@ enum SQLATTR_SUBQUERY_TYPE
   SQL_STMT_REPLICATE = 2,
   SQL_STMT_GET_STATISTICS = 3,
   /* describe type of statements like showcontrol, showplan */
-  SQL_DESCRIBE_QUERY = 4
+  SQL_DESCRIBE_QUERY = 4,
+  SQL_DISPLAY_EXPLAIN = 5,
+  SQL_STMT_HBASE_LOAD = 6
 };
 
 

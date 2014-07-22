@@ -1365,13 +1365,12 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb,
           ex_globals * glob ) :
-    ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob)
-
+    ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
+    prevRowId_ (NULL)
 {
    hFileCreated_ = false;  ////temporary-- need better mechanism later
    //sortedListOfColNames_ = NULL;
    posVec_.clear();
-
 }
 
 
@@ -1386,255 +1385,285 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
   NABoolean eodSeen = false;
 
   while (!qparent_.down->isEmpty())
-    {
-      nextRequest_ = qparent_.down->getHeadIndex();
+  {
+    nextRequest_ = qparent_.down->getHeadIndex();
 
-      ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+    ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+    if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+      step_ = ALL_DONE;
+    else if (pentry_down->downState.request == ex_queue::GET_EOD && step_ != HANDLE_ERROR)
+      if (currRowNum_ > rowsInserted_)
+      {
+        step_ = PROCESS_INSERT;
+      }
+      else
+      {
+        if (lastHandledStep_ == ALL_DONE)
+          matches_ = 0;
         step_ = ALL_DONE;
-      else if (pentry_down->downState.request == ex_queue::GET_EOD)
-        if (currRowNum_ > rowsInserted_)
+        eodSeen = true;
+      }
+
+    switch (step_)
+    {
+      case NOT_STARTED:
+      {
+
+        matches_ = 0;
+        currRowNum_ = 0;
+        numRetries_ = 0;
+
+        prevTailIndex_ = 0;
+        lastHandledStep_ = NOT_STARTED;
+
+        nextRequest_ = qparent_.down->getHeadIndex();
+
+        ex_assert(getHbaseAccessStats(), "hbase stats cannot be null");
+
+        //      if (getHbaseAccessStats())
+        //        getHbaseAccessStats()->init();
+
+        rowsInserted_ = 0;
+        step_ = INSERT_INIT;
+      }
+        break;
+
+      case INSERT_INIT:
+      {
+        retcode = ehi_->initHBLC();
+
+        if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
         {
-          step_ = PROCESS_INSERT;
+          step_ = HANDLE_ERROR;
+          break;
+        }
+
+        table_.val = hbaseAccessTdb().getTableName();
+        table_.len = strlen(hbaseAccessTdb().getTableName());
+
+        if (!hFileCreated_)
+        {
+              importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
+                                        ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
+          familyLocation_ = std::string(importLocation_ + "/#1");
+          Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
+          hFileName_ = std::string("hfile");
+          char hFileName[50];
+          snprintf(hFileName, 50, "hfile%d", fileNum);
+          hFileName_ = hFileName;
+
+          retcode = ehi_->createHFile(table_, familyLocation_, hFileName_);
+          hFileCreated_ = true;
+
+//              sortedListOfColNames_ = new  Queue(); //delete wehn done
+          posVec_.clear();
+          hbaseAccessTdb().listOfUpdatedColNames()->position();
+          while (NOT hbaseAccessTdb().listOfUpdatedColNames()->atEnd())
+          {
+            UInt32 pos = *(UInt32*) hbaseAccessTdb().listOfUpdatedColNames()->getCurr();
+            posVec_.push_back(pos);
+            hbaseAccessTdb().listOfUpdatedColNames()->advance();
+          }
+//              sortQualifiers(hbaseAccessTdb().listOfUpdatedColNames(),sortedListOfColNames_, posVec_);
+        }
+        if (setupError(retcode, "ExpHbaseInterface::createHFile"))
+        {
+          step_ = HANDLE_ERROR;
+          break;
+        }
+        rowBatches_.clear();
+
+        step_ = SETUP_INSERT;
+      }
+        break;
+
+      case SETUP_INSERT:
+      {
+        step_ = EVAL_INSERT_EXPR;
+      }
+        break;
+
+      case EVAL_INSERT_EXPR:
+      {
+        workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
+          .setDataPointer(convertRow_);
+
+        if (convertExpr())
+        {
+                ex_expr::exp_return_type evalRetCode =
+                  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+          if (evalRetCode == ex_expr::EXPR_ERROR)
+          {
+            step_ = HANDLE_ERROR;
+            break;
+          }
+        }
+
+        if (hbaseAccessTdb().addSyskeyTS())
+        {
+          *(Int64*) convertRow_ = generateUniqueValueFast();
+        }
+
+        if (getHbaseAccessStats())
+        {
+          getHbaseAccessStats()->incAccessedRows();
+        }
+
+        step_ = EVAL_ROWID_EXPR;
+      }
+        break;
+
+      case EVAL_ROWID_EXPR:
+      {
+        if (evalRowIdExpr(TRUE) == -1)
+        {
+          step_ = HANDLE_ERROR;
+          break;
+        }
+
+        if (getHbaseAccessStats())
+        {
+          getHbaseAccessStats()->incUsedRows();
+        }
+
+        // duplicates (same rowid) are not allowed in Hfiles. adding duplicates causes Hfiles to generate
+        // errors
+        if (prevRowId_ == NULL)
+        {
+          prevRowId_ = new char[rowId_.len + 1];
+          memmove(prevRowId_, rowId_.val, rowId_.len);
         }
         else
         {
-          if (lastHandledStep_ == ALL_DONE)
-             matches_=0;
-          step_ = ALL_DONE;
-          eodSeen = true;
+          // rows are supposed to sorted by rowId and to detect duplicates
+          // compare the current rowId to the previous one
+          if (memcmp(prevRowId_, rowId_.val, rowId_.len) == 0)
+          {
+            if (((ExHbaseAccessTdb&) hbaseAccessTdb()).getNoDuplicates())
+           {
+              //8110 Duplicate rows detected.
+              ComDiagsArea * diagsArea = NULL;
+              ExRaiseSqlError(getHeap(), &diagsArea,
+                              (ExeErrorCode)(8110));
+              pentry_down->setDiagsArea(diagsArea);
+              step_ = HANDLE_ERROR;
+              break;
+           }
+            else
+            {
+              //skip duplicate
+              step_ = DONE;
+              break;
+            }
+          }
+          memmove(prevRowId_, rowId_.val, rowId_.len);
         }
 
-      switch (step_)
-        {
-        case NOT_STARTED:
-          {
-            matches_ = 0;
-            currRowNum_ = 0;
-            numRetries_ = 0;
+        step_ = CREATE_MUTATIONS;
+      }
+      break;
 
-            prevTailIndex_ = 0;
-            lastHandledStep_ = NOT_STARTED;
-
-            nextRequest_ = qparent_.down->getHeadIndex();
-
-            ex_assert(getHbaseAccessStats(), "hbase stats cannot be null");
-
-            //      if (getHbaseAccessStats())
-            //        getHbaseAccessStats()->init();
-
-            rowsInserted_ = 0;
-            step_ = INSERT_INIT;
-          }
-          break;
-
-        case INSERT_INIT:
-          {
-            retcode = ehi_->initHBLC();
-
-            if (setupError(retcode, "ExpHbaseInterface::initHBLC"))
-            {
-              step_ = HANDLE_ERROR;
-              break;
-            }
-
-            table_.val = hbaseAccessTdb().getTableName();
-            table_.len = strlen(hbaseAccessTdb().getTableName());
-
-            if (!hFileCreated_)
-            {
-              importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
-                                        ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
-              familyLocation_ = std::string(importLocation_ + "/#1");
-              Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
-              hFileName_ =  std::string("hfile");
-              char hFileName[50];
-              snprintf(hFileName,50, "hfile%d", fileNum);
-              hFileName_ = hFileName;
-
-              retcode = ehi_->createHFile(table_, familyLocation_, hFileName_ );
-              hFileCreated_ = true;
-
-//              sortedListOfColNames_ = new  Queue(); //delete wehn done
-                posVec_.clear();
-                hbaseAccessTdb().listOfUpdatedColNames()->position();
-                while(NOT hbaseAccessTdb().listOfUpdatedColNames()->atEnd())
-                {
-                  UInt32  pos = *(UInt32*)hbaseAccessTdb().listOfUpdatedColNames()->getCurr();
-                  posVec_.push_back(pos);
-                  hbaseAccessTdb().listOfUpdatedColNames()->advance();
-                }
-//              sortQualifiers(hbaseAccessTdb().listOfUpdatedColNames(),sortedListOfColNames_, posVec_);
-            }
-            if (setupError(retcode, "ExpHbaseInterface::createHFile"))
-            {
-              step_ = HANDLE_ERROR;
-              break;
-            }
-            rowBatches_.clear();
-
-            step_ = SETUP_INSERT;
-          }
-          break;
-
-        case SETUP_INSERT:
-          {
-            step_ = EVAL_INSERT_EXPR;
-          }
-          break;
-
-        case EVAL_INSERT_EXPR:
-          {
-            workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
-              .setDataPointer(convertRow_);
-
-            if (convertExpr())
-              {
-                ex_expr::exp_return_type evalRetCode =
-                  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
-                if (evalRetCode == ex_expr::EXPR_ERROR)
-                  {
-                    step_ = HANDLE_ERROR;
-                    break;
-                  }
-              }
-
-            if (hbaseAccessTdb().addSyskeyTS())
-              {
-                *(Int64*)convertRow_ = generateUniqueValueFast();
-              }
-
-          if (getHbaseAccessStats())
-            {
-              getHbaseAccessStats()->incAccessedRows();
-            }
-
-            step_ = CREATE_MUTATIONS;
-          }
-          break;
-
-        case CREATE_MUTATIONS:
-          {
-            rowBatches_.push_back(BatchMutation());
+      case CREATE_MUTATIONS:
+      {
+        rowBatches_.push_back(BatchMutation());
             retcode = createMutations(rowBatches_[currRowNum_].mutations,
                                       hbaseAccessTdb().convertTuppIndex_,
                                       convertRow_,
                                       hbaseAccessTdb().listOfUpdatedColNames(),
                                       TRUE,
                                       &posVec_);
-            if (retcode == -1)
-              {
-                //need to re-verify error handling
-                step_ = HANDLE_ERROR;
-                break;
-              }
-
-            insColTSval_ = -1;
-
-          if (getHbaseAccessStats())
-            {
-              getHbaseAccessStats()->incUsedRows();
-            }
-
-            step_ = EVAL_ROWID_EXPR;
-          }
+        if (retcode == -1)
+        {
+          //need to re-verify error handling
+          step_ = HANDLE_ERROR;
           break;
+        }
 
-        case EVAL_ROWID_EXPR:
-          {
-            if (evalRowIdExpr(TRUE) == -1)
-              {
-                step_ = HANDLE_ERROR;
-                break;
-              }
+        //insColTSval_ = -1;
 
-            rowBatches_[currRowNum_].row.assign(rowId_.val, rowId_.len);
-
-            currRowNum_++;
-            matches_++;
-
-            if (currRowNum_ < 1000)
-              {
-                step_ = DONE;
-                break;
-              }
-
-            step_ = PROCESS_INSERT;
-          }
+        rowBatches_[currRowNum_].row.assign(rowId_.val, rowId_.len);
+        currRowNum_++;
+        matches_++;
+        if (currRowNum_ < 1000)
+        {
+          step_ = DONE;
           break;
+        }
+        step_ = PROCESS_INSERT;
+      }
+        break;
 
-        case PROCESS_INSERT:
-          {
-            if (getHbaseAccessStats())
-              getHbaseAccessStats()->getTimer().start();
+      case PROCESS_INSERT:
+      {
+        if (getHbaseAccessStats())
+          getHbaseAccessStats()->getTimer().start();
 
             retcode = ehi_->addToHFile(table_,
                                        rowBatches_);
 
-            if (setupError(retcode, "ExpHbaseInterface::addToHFile"))
-              {
-                step_ = HANDLE_ERROR;
-                break;
-              }
-            rowsInserted_ += rowBatches_.size();
-
-            if (getHbaseAccessStats())
-              {
-                getHbaseAccessStats()->getTimer().stop();
-
-                getHbaseAccessStats()->lobStats()->numReadReqs++;
-              }
-
-            step_ = ALL_DONE;
-          }
+        if (setupError(retcode, "ExpHbaseInterface::addToHFile"))
+        {
+          step_ = HANDLE_ERROR;
           break;
+        }
+        rowsInserted_ += rowBatches_.size();
 
-        case HANDLE_ERROR:
+        if (getHbaseAccessStats())
+        {
+          getHbaseAccessStats()->getTimer().stop();
+
+          getHbaseAccessStats()->lobStats()->numReadReqs++;
+        }
+
+        step_ = ALL_DONE;
+      }
+        break;
+
+      case HANDLE_ERROR:
+      {
+        // maybe we can continue if error is not fatal and logs the execptions-- will be done later
+        //
+        if (handleError(rc))
+          return rc;
+
+        retcode = ehi_->close();
+
+        step_ = ALL_DONE;
+      }
+        break;
+
+      case HANDLE_EXCEPTION:
+      {
+        // -- log the exception rows in a hdfs
+        //rows that don't pass the check constarints criteria and others
+        ex_assert(0, " state not handled yet")
+        step_ = SETUP_INSERT;
+      }
+        break;
+      case DONE:
+      case ALL_DONE:
+      {
+        if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
+          return rc;
+        lastHandledStep_ = step_;
+
+        if (step_ == DONE)
+          step_ = SETUP_INSERT;
+        else
+        {
+          step_ = NOT_STARTED;
+          if (eodSeen)
           {
-            // maybe we can continue if error is not fatal and logs the execptions-- will be done later
-            //
-            if (handleError(rc))
-              return rc;
-
-            retcode = ehi_->close();
-
-            step_ = ALL_DONE;
+            ehi_->closeHFile(table_);
+            hFileCreated_ = false;
           }
-          break;
+        }
+      }
+        break;
 
-        case HANDLE_EXCEPTION:
-          {
+    } // switch
 
-            // -- log the exception rows in a hdfs
-            //rows that don't pass the check constarints criteria and others
-            ex_assert(0, " state not handled yet")
-            step_ = SETUP_INSERT;
-          }
-          break;
-        case DONE:
-        case ALL_DONE:
-          {
-            if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
-              return rc;
-            lastHandledStep_ = step_;
-
-            if (step_ == DONE)
-              step_ = SETUP_INSERT;
-            else
-            {
-              step_ = NOT_STARTED;
-              if (eodSeen)
-              {
-                ehi_->closeHFile(table_);
-                hFileCreated_ = false;
-              }
-            }
-          }
-          break;
-
-        } // switch
-
-    } // while
+  } // while
 
   return WORK_OK;
 }

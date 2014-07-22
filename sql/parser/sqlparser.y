@@ -608,6 +608,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_DOUBLE
 %token <tokval> TOK_DOUBLE_IEEE
 %token <tokval> TOK_DOUBLE_TANDEM
+%token <tokval> TOK_DUPLICATE
 %token <tokval> TOK_DYNAMIC
 %token <tokval> TOK_DYNAMIC_FUNCTION    /* ANSI SQL non-reserved word */
 %token <tokval> TOK_D_RANK             /* Tandem extension non-reserved word */
@@ -939,6 +940,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RECOMPUTE             
 %token <tokval> TOK_RECORD_SEPARATOR
 %token <tokval> TOK_RECOVER
+%token <tokval> TOK_RECOVERY
 %token <tokval> TOK_REFERENCING        
 %token <tokval> TOK_REFRESH               
 %token <tokval> TOK_RELATED
@@ -2785,8 +2787,12 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOptionsList> optional_hbbload_options
 %type <hBaseBulkLoadOptionsList> hbbload_option_list
 %type <hBaseBulkLoadOption>      hbbload_option
-%type <hBaseBulkLoadOption>      hbb_no_rollback_option
+%type <hBaseBulkLoadOption>      hbb_no_recovery_option
 %type <hBaseBulkLoadOption>      hbb_truncate_option
+%type <hBaseBulkLoadOption>      hbb_no_duplicate_check
+%type <hBaseBulkLoadOption>      hbb_no_populate_indexes
+%type <hBaseBulkLoadOption>      hbb_constraints
+%type <hBaseBulkLoadOption>      hbb_no_output
 %type <hBaseBulkLoadOption>      hbb_log_errors_option
 %type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
 %type <pSchemaName>             optional_from_schema
@@ -19727,10 +19733,6 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                     }
                    | TOK_LOAD optional_hbbload_options TOK_INTO table_name query_expression
                     {
-                      //disabled by default in 0.8.0 release 
-                      if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
-                        YYERROR;   
-                        
                       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
                       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
                                                       , PARSERHEAP() // in  - NAMemory * 
@@ -19825,14 +19827,18 @@ hbbload_option_list : hbbload_option
                           $$ = $3;
                       }
 
-hbbload_option :   hbb_no_rollback_option
+hbbload_option :   hbb_no_recovery_option
                 | hbb_truncate_option
                 | hbb_log_errors_option
                 | hbb_stop_after_n_errors
+                | hbb_no_duplicate_check
+                | hbb_no_output
+                | hbb_no_populate_indexes
+                | hbb_constraints
                 
                 /* need to add execptions table and number of erros before stopping*/
 
-hbb_no_rollback_option : TOK_NO TOK_ROLLBACK
+hbb_no_recovery_option : TOK_NO TOK_RECOVERY
                     {
                     //NO ROLLBACK
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
@@ -19842,7 +19848,7 @@ hbb_no_rollback_option : TOK_NO TOK_ROLLBACK
                                           NULL);
                       $$ = op;
                     }
-hbb_truncate_option : TOK_TRUNCATE
+hbb_truncate_option : TOK_TRUNCATE TOK_TABLE
                     {
                       //TRUNCATE
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
@@ -19852,28 +19858,60 @@ hbb_truncate_option : TOK_TRUNCATE
                                           NULL);
                       $$ = op;
                     }
-                
+                    
+hbb_no_duplicate_check   : TOK_NO TOK_DUPLICATE TOK_CHECK
+                    { //NO DUPLICATES
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::NO_DUPLICATE_CHECK_, 
+                                          0, 
+                                          NULL);
+                      $$ = op;
+                    }
 hbb_log_errors_option : TOK_LOG TOK_ERROR   //will need to add hdfs location for errors
-                    {
-                    //LOG_ERRORS
+                    { //LOG_ERRORS
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
                                           (ExeUtilHBaseBulkLoad::LOG_ERRORS_,
-                                          0,
+                                          0, 
                                           NULL);
                       $$ = op;
                     }
 hbb_stop_after_n_errors: TOK_STOP TOK_AFTER unsigned_integer TOK_ERROR TOK_ROWS                
-                    {
-                    //LOG_ERRORS
+                    { //LOG_ERRORS
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
                               new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
-                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERRORS_,
-                                          0,
-                                          NULL);
+                                          (ExeUtilHBaseBulkLoad::STOP_AFTER_N_ERRORS_, 0, NULL);
                       $$ = op;
-                    }                                      
-                      
+                    }      
+hbb_no_output :  TOK_NO TOK_OUTPUT
+                    { //INDEXES
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::NO_OUTPUT_, 
+                                           0, 
+                                           NULL);
+                      $$ = op;
+                    }                     
+hbb_no_populate_indexes   : TOK_NO TOK_POPULATE TOK_INDEXES
+                    { //INDEXES
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::NO_POPULATE_INDEXES_,
+                                           0, 
+                                           NULL);
+                      $$ = op;
+                    } 
+hbb_constraints   : TOK_CONSTRAINTS
+                    {//CONSTRAINTS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::CONSTRAINTS_,
+                                           0,
+                                           NULL);
+                      $$ = op;
+                    }    
+                   
 unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_options simple_table  
 				{
                                   // UNLOAD is disabled by default in M9.
@@ -19890,10 +19928,6 @@ unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_opt
                                   delete $3;
                                   delete $4;
 				}
-
-                
-                
-                
                 
 ///////////////////////////////                
 optional_unload_options : TOK_WITH unload_option_list
@@ -34748,6 +34782,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_DROP_VIEW
                       | TOK_DROPPABLE
                       | TOK_DSLACK
+                      | TOK_DUPLICATE
                       | TOK_DYNAMIC_FUNCTION
                       | TOK_EID
                       | TOK_ENABLE         
@@ -34986,6 +35021,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RECOMPUTE // MV 
                       | TOK_RECORD_SEPARATOR
                       | TOK_RECOVER
+                      | TOK_RECOVERY
                       | TOK_REFRESH // MV
                       | TOK_REGISTER
                       | TOK_REINITIALIZE

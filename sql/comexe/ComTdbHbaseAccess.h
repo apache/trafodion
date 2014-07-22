@@ -622,6 +622,10 @@ public:
      {(v ? flags2_ |= TRAF_LOAD_TAKE_SNAPSHOT : flags2_ &= ~TRAF_LOAD_TAKE_SNAPSHOT); };
    NABoolean getTakeSnapshot() { return (flags2_ & TRAF_LOAD_TAKE_SNAPSHOT) != 0; };
 
+   void setNoDuplicates(NABoolean v)
+     {(v ? flags2_ |= TRAF_LOAD_NO_DUPLICATTES : flags2_ &= ~TRAF_LOAD_NO_DUPLICATTES); };
+   NABoolean getNoDuplicates() { return (flags2_ & TRAF_LOAD_NO_DUPLICATTES) != 0; };
+
 
 
  protected:
@@ -638,8 +642,8 @@ public:
     VSBB_INSERT                      = 0x0100,
     ROWSET_OPER                      = 0x0200,
     CHECK_AND_UPDEL                  = 0x0400,
-    READ_UNCOMMITTED_SCAN = 0x0800,
-    UPDEL_COLNAME_IS_STR      = 0x1000
+    READ_UNCOMMITTED_SCAN            = 0x0800,
+    UPDEL_COLNAME_IS_STR             = 0x1000
 
   };
 
@@ -653,7 +657,8 @@ public:
     TRAF_LOAD_CLEANUP                = 0x0020,
     TRAF_LOAD_KEEP_HFILES            = 0x0040,
     TRAF_LOAD_QUASI_SECURE           = 0x0080,
-    TRAF_LOAD_TAKE_SNAPSHOT          = 0x0100
+    TRAF_LOAD_TAKE_SNAPSHOT          = 0x0100,
+    TRAF_LOAD_NO_DUPLICATTES         = 0x0200
   };
 
   UInt16 accessType_;

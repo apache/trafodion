@@ -3640,10 +3640,21 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   virtual short work();
 
   ExExeUtilHBaseBulkLoadTdb & hblTdb() const
-    {
-      return (ExExeUtilHBaseBulkLoadTdb &) tdb;
-    };
+  {
+    return (ExExeUtilHBaseBulkLoadTdb &) tdb;
+  };
 
+  virtual short moveRowToUpQueue(const char * row, Lng32 len = -1,
+                                 short * rc = NULL, NABoolean isVarchar = TRUE);
+
+  void setEndStatusMsg(const char * operation,
+                                       int bufPos = 0,
+                                       NABoolean   withtime= FALSE);
+
+  short setStartStatusMsgAndMoveToUpQueue(const char * operation,
+                                       short * rc,
+                                       int bufPos = 0,
+                                       NABoolean   withtime = FALSE);
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
@@ -3660,6 +3671,9 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
       COMPLETE_BULK_LOAD_, //load incremental
       POST_LOAD_CLEANUP_,
       TRUNCATE_TABLE_,
+      DISABLE_INDEXES_,
+      POPULATE_INDEXES_, 
+      RETURN_STATUS_MSG_,
       DONE_,
       HANDLE_ERROR_, DELETE_DATA_AND_ERROR_,
       LOAD_ERROR_
@@ -3667,8 +3681,12 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
 
 
   Step step_;
+  Step nextStep_;
 
+  Int64 startTime_;
+  Int64 endTime_;
 
+  char statusMsgBuf_[BUFFER_SIZE];
 };
 
 class ExExeUtilHbaseLoadPrivateState : public ex_tcb_private_state

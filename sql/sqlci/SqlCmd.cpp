@@ -1992,6 +1992,7 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
   
   NABoolean doCEFC = FALSE;  // do ClearExecFetchClose
   NABoolean doCTAS = FALSE;
+  NABoolean doHBL = FALSE;
   if (((queryType != SQL_OTHER) &&
        (queryType != SQL_UNKNOWN) &&
        (queryType != SQL_CAT_UTIL) &&
@@ -2024,7 +2025,10 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
     if (getenv("DISPLAY_CTAS_OUTPUT"))
       noScreenOutput = FALSE;
   }
-    
+
+  if (queryType == SQL_EXE_UTIL && subqueryType == SQL_STMT_HBASE_LOAD)
+    doHBL = TRUE;
+
   if (NOT doCEFC)
   {
     retcode = doExec(sqlci_env,
@@ -2058,7 +2062,8 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
 	if (stmt_type != DML_DESCRIBE_TYPE && 
 	    stmt_type != DML_SHOWSHAPE_TYPE &&
 	    stmt_type != DML_DISPLAY_NO_ROWS_TYPE &&
-            NOT doCTAS)
+            NOT doCTAS &&
+            NOT doHBL)
 	  displayHeading(sqlci_env, prep_stmt);
       }
     
@@ -2079,7 +2084,8 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
 		stmt_type == DML_SHOWSHAPE_TYPE ||
 		stmt_type == DML_DISPLAY_NO_ROWS_TYPE ||
                 stmt_type == DML_DISPLAY_NO_HEADING_TYPE ||
-                (doCTAS && NOT noScreenOutput))
+                (doCTAS && NOT noScreenOutput) ||
+                (doHBL && NOT noScreenOutput))
 	      {
 		useCout = -1; // use COUT for output versus using COUT.WRITE.
 		

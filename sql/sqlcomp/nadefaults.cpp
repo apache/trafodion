@@ -3192,10 +3192,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
-  DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,    "ON"),
-  DDkwd__(TRAF_LOAD_PREP_CLEANUP,           "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,      "ON"),
+  DDkwd__(TRAF_LOAD_PREP_CLEANUP,               "OFF"),
   DDkwd__(TRAF_LOAD_PREP_KEEP_HFILES,           "OFF"),
   DDkwd__(TRAF_LOAD_PREP_PHASE_ONLY,                 "OFF"),
+  DDkwd__(TRAF_LOAD_PREP_SKIP_DUPLICATES ,        "OFF"),
   //need add code to check if folder exists or not. if not issue an error and ask
   //user to create it
   DD_____(TRAF_LOAD_PREP_TMP_LOCATION, "/user/trafodion/bulkload/" ),
