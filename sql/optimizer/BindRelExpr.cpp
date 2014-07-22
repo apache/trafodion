@@ -6770,9 +6770,17 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
       (naTable->isPartitionNameSpecified() ||
        naTable->isPartitionRangeSpecified()))
     {
-      // find the salt column and apply a predicate on the salt column
-      const NAColumnArray &ccCols = naTable->getClusteringIndex()->getPartitioningKeyColumns();
       PartitioningFunction * partFunc = naTable->getClusteringIndex()->getPartitioningFunction();
+
+      // find the salt column and apply a predicate on the salt column.
+      // For Hash2, since the partittion key columns are columns used to build
+      // the _SALT_ column, we need to search all columns for the _SALT_ column.
+      const NAColumnArray &ccCols = 
+           (partFunc && partFunc->castToHash2PartitioningFunction())?
+            naTable->getClusteringIndex()->getAllColumns()
+              :
+            naTable->getClusteringIndex()->getPartitioningKeyColumns();
+
       NABoolean saltColFound = FALSE;
 
       for (CollIndex i=0; i<ccCols.entries() && !saltColFound; i++)

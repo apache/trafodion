@@ -3178,6 +3178,8 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       NABoolean isNotAvailable =
 	indexes_desc->body.indexes_desc.notAvailable;
 
+      ItemExprList hbaseSaltColumnList(heap);
+
       // ---------------------------------------------------------------------
       // loop over the clustering key columns of the index
       // ---------------------------------------------------------------------
@@ -3277,6 +3279,26 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                                  DESCENDING : ASCENDING;
 	    indexKeyColumns.setAscending(indexKeyColumns.entries() - 1,
 	  			   order == ASCENDING);
+
+            if ( table->isHbaseTable() && 
+                 indexColumn->isComputedColumnAlways() ) 
+            {
+
+               // examples of the saltClause string:
+               // 1. HASH2PARTFUNC(CAST(L_ORDERKEY AS INT NOT NULL) FOR 4)
+               // 2. HASH2PARTFUNC(CAST(A AS INT NOT NULL),CAST(B AS INT NOT NULL) FOR 4) 
+               const char* saltClause = indexColumn->getComputedColumnExprString();
+
+               Parser parser(CmpCommon::context());
+               ItemExpr* saltExpr = parser.getItemExprTree(saltClause, 
+                                                           strlen(saltClause), 
+                                                           CharInfo::ISO88591);
+
+
+               // collect all ColReference objects into hbaseSaltColumnList.
+               saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
+
+            }
           }
 
 	  if (isTheClusteringKey)
@@ -3400,6 +3422,9 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       const desc_struct *partitioning_keys_desc =
                          indexes_desc->body.indexes_desc.partitioning_keys_desc;
 
+      // the key columns that build the salt column for HBase table
+      NAColumnArray hbaseSaltOnColumns(CmpCommon::statementHeap());
+
       if (partitioning_keys_desc)
         {
 	  keys_desc = partitioning_keys_desc;
@@ -3418,8 +3443,21 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
               keys_desc = keys_desc->header.next;
             } // end while (keys_desc)
         }
-      else
+      else {
         partitioningKeyColumns = indexKeyColumns;
+
+        // compute the partition key columns for HASH2 partitioning scheme
+         // for a salted HBase table. Later on, we will replace 
+         // partitioningKeyColumns with the column list computed here if
+         // the desired partitioning schema is HASH2.
+         for (CollIndex i=0; i<hbaseSaltColumnList.entries(); i++ )
+         {
+            ColReference* cRef = (ColReference*)hbaseSaltColumnList[i];
+            const NAString& colName = (cRef->getColRefNameObj()).getColName();
+            NAColumn *col = allColumns.getColumn(colName.data()) ;
+            hbaseSaltOnColumns.insert(col);
+         }
+      }
 
       // Create DP2 node map for partitioning function.
       NodeMap* nodeMap = new (heap) NodeMap(heap);
@@ -3485,6 +3523,9 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 	       partitioningKeyColumns,
 	       nodeMap,
 	       heap);
+
+          partitioningKeyColumns = hbaseSaltOnColumns;
+
 	  break;
 
 	case COM_UNSPECIFIED_PARTITIONING :
@@ -3499,11 +3540,14 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
               desc_struct* hbd = 
                    ((table_desc_struct*)table_desc)->hbase_regionkey_desc;
 
-              if ( hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE )
+              if ( hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE ) {
 	           partFunc = createHash2PartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,
 		      heap);
-              else
+
+                   partitioningKeyColumns = hbaseSaltOnColumns;
+
+              } else
                 if (hbd && hbd->header.nodetype == DESC_HBASE_RANGE_REGION_TYPE)
 	           partFunc = createRangePartitioningFunctionForHBase(
 	    	      ((table_desc_struct*)table_desc)->hbase_regionkey_desc,

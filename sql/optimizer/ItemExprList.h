@@ -86,6 +86,8 @@ public:
 		  NABoolean flattenSubqueries = TRUE,
 		  NABoolean flattenUDFs = TRUE);
 
+  void addMember(ItemExpr* x) { insert(x); };
+
   // convert the list to an ItemExpr *. if there is more then one node in the 
   // list, the result will be an ItemList that can be either a 
   // LEFT_LINEAR_TREE or a RIGHT_LINEAR_TREE

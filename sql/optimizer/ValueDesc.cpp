@@ -6344,3 +6344,13 @@ NABoolean ValueIdSet::isNotNullable(const ValueId& opd)
   }
   return FALSE;
 }
+
+void ValueIdList::addMember(ItemExpr* x) 
+{ 
+   insert(x->getValueId()); 
+}
+
+void ValueIdSet::addMember(ItemExpr* x) 
+{ 
+   (*this) += (x->getValueId()); 
+}
