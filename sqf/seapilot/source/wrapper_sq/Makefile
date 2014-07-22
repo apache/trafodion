@@ -27,7 +27,7 @@ INCLUDES :=	-I$(MY_SPROOT)/source/publications \
 
 LIBS            := -L$(PROTOBUFS_LIB) -lprotobuf \
 		   -L$(SP_EXPORT_LIB) -lpublications \
-		   -lqpidclient
+		   -lqpidmessaging
 
 CPPSRC		:= ../wrapper/qpidwrapper.cpp ../wrapper/config.cpp \
 		   ../wrapper/ProducerApi.cpp ../wrapper/ProducerWrapper.cpp \

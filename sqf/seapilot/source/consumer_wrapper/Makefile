@@ -25,7 +25,7 @@ INCLUDES :=	-I$(MY_SPROOT)/source/publications \
 
 LIBS            := -L$(PROTOBUFS_LIB) -lprotobuf \
 		   -L$(SP_EXPORT_LIB) -lpublications \
-		   -L$(QPIDLIB_DIR) -lqpidclient
+		   -L$(QPIDLIB_DIR) -lqpidmessaging
 
 CPPSRC		:=../wrapper/qpidwrapper.cpp \
 		  ../wrapper/routingkey.cpp \

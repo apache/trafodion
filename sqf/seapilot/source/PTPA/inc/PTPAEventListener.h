@@ -15,18 +15,11 @@
 //  limitations under the License.
 //
 // @@@ END COPYRIGHT @@@
-
 #ifndef PTPA_EVENT_LISTENER_H_
 #define PTPA_EVENT_LISTENER_H_
 
 #include <string>
 #include <ConsumerAPI.h>
-
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/Message.h>
-#include <qpid/client/SubscriptionManager.h>
-#include <qpid/client/LocalQueue.h>
 
 #include "PTPATokenizedEventHandler.h"
 
@@ -70,7 +63,7 @@ public:
 public:
     //! This function receives the event from qpid broker.
     //! \param [in] message - The message received.
-    virtual void received(client::Message& message);
+    virtual void received(std::string & content ,std::string &routingkey);
 
     //! Creates and binds to an exclusive queue.
     //! \param [in] queue - Declared queue name.
@@ -83,7 +76,7 @@ private:
     //! Translate the tokenized message to text message.
     // \param [in] message - Message received.
     // \return true if the translation suceed, false if not.
-    bool processMsg(const client::Message &message);
+    bool processMsg(std::string & content ,std::string &routingkey);
     
 private:
     PTPATokenizedEventHandler eventHandler_;

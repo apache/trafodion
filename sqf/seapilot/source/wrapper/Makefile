@@ -25,14 +25,12 @@ INCLUDES :=	-I$(MY_SPROOT)/source/publications \
 
 LIBS            := -L$(PROTOBUFS_LIB) -lprotobuf \
 		   -L$(SP_EXPORT_LIB) -lpublications \
-		   -lqpidclient
+		   -L$(QPIDLIB_DIR) -lqpidmessaging 
 
 CPPSRC		:= qpidwrapper.cpp \
 		   config.cpp \
 		   ProducerApi.cpp \
 		   ProducerWrapper.cpp \
-		   ../consumer_wrapper/ConsumerAPI.cpp \
-		   ../consumer_wrapper/ConsumerWrapper.cpp \
 		   routingkey.cpp \
 		   externroutingkey.cpp \
 		   vers_wrapper.cpp

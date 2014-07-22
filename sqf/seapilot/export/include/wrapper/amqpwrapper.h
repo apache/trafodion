@@ -19,10 +19,9 @@
 #ifndef __AMQPWRAPPER_H
 #define __AMQPWRAPPER_H
 
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
+#include <qpid/messaging/Connection.h>
+#include <qpid/messaging/Session.h>
+#include <qpid/messaging/Message.h>
 
 #include <cstdlib>
 #include <ctime>
@@ -33,6 +32,7 @@
 #include "routingkey.h"
 
 using namespace qpid;
+using namespace qpid::messaging;
 using std::stringstream;
 using std::string;
 
@@ -45,7 +45,7 @@ using std::string;
 // -------------------------------------------------------------------------
 SP_DLL_EXPORT int   closeAMQPConnection();
 SP_DLL_EXPORT int   createAMQPConnection(const char *ipAddress = NULL, int portNumber = -1,
-                                         const char *user=NULL, const char *password=NULL,
+                                         const char *user=NULL, const char *password=NULL, 
                                          const char *mode="tcp");
 SP_DLL_EXPORT int   initAMQPHeader (void *header, int componentId);
 SP_DLL_EXPORT int   initAMQPHeaderReflecting (void *header, int componentId, const void *field);
@@ -53,7 +53,7 @@ SP_DLL_EXPORT int   initAMQPInfoHeader (void *header, int componentId);
 SP_DLL_EXPORT int   initAMQPInfoHeaderReflecting (void *header, int componentId, const void *field);
 SP_DLL_EXPORT int   setAMQPHeaderSequenceNumber (void *header);
 SP_DLL_EXPORT int   setAMQPInfoHeaderSequenceNumber (void *header);
-SP_DLL_EXPORT int   sendAMQPMessage(bool retry, const std::string& messageText,
+SP_DLL_EXPORT int   sendAMQPMessage(bool retry, const std::string& messageText, 
                       const std::string& ContentType,
                       AMQPRoutingKey &routingKey,
                       bool async = false,

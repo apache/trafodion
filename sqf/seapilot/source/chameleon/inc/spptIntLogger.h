@@ -23,7 +23,6 @@
 #include <string>
 #include <nl_types.h>
 
-#include <qpid/client/Session.h>
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
 #include "wrapper/amqpwrapper.h"

@@ -78,6 +78,10 @@ int ConsumerListener::bindQueue(std::string queue, std::string exchange, std::st
 
     return  ConsumerWrapper::bindQueue(queue, exchange, routing_key);
 }
+int  ConsumerListener:: deleteConsumer(std::string exchange, std::string routing_key)
+{
+    return ConsumerWrapper::deleteConsumer(exchange,routing_key);
+}
 
 int ConsumerListener::subscribeQueue(std::string queue)
 {
@@ -88,13 +92,8 @@ int ConsumerListener::listen()
 {
     return ConsumerWrapper::listen();
 }
-
-const char * ConsumerListener::get_session_name()
+void ConsumerListener::getMessageData(qpid::messaging::Message& message,string & content,string &routingkey)
 {
-   return ConsumerWrapper::session_name();
+	return ConsumerWrapper::getMessageData(message, content,routingkey);	
 }
 
-bool ConsumerListener::get_queue_name(const char *subscription_key, char *queue_name, unsigned int queue_length)
-{
-	return ConsumerWrapper::get_queue_name (subscription_key, queue_name, queue_length);
-}

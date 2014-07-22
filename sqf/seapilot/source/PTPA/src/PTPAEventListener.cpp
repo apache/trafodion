@@ -19,7 +19,6 @@
 #include "PTPAEventListener.h"
 
 #include <string>
-#include <qpid/client/Message.h>
 
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
@@ -30,7 +29,6 @@
 #include "wrapper/routingkey.h"
 #include "wrapper/externroutingkey.h"
 
-using namespace qpid;
 using namespace google;
 using namespace std;
 using namespace Trinity;
@@ -56,14 +54,13 @@ PTPAEventListener::~PTPAEventListener()
 {
 }
 
-void PTPAEventListener::received(client::Message& message)
+void PTPAEventListener:: received(std::string & content ,std::string &routingKey) 
 {
-    processMsg(message);
+    processMsg(content , routingKey);
 }
 
-bool PTPAEventListener::processMsg(const client::Message &message)
+bool PTPAEventListener::processMsg(std::string & content ,std::string &routingKey)
 {
-    string routingKey = message.getDeliveryProperties().getRoutingKey();
     if (verbose_)
         sp_cout << "Received event with routing key: " << routingKey << endl;
 
@@ -84,7 +81,7 @@ bool PTPAEventListener::processMsg(const client::Message &message)
     const protobuf::Descriptor *desc = importer_.pool()->FindMessageTypeByName(publicationName);
     const protobuf::Message *prototype = messageFactory_.GetPrototype(desc);
     protobuf::Message *msg = prototype->New();
-    if(!msg->ParseFromString(message.getData()))
+    if(!msg->ParseFromString(content))
     {
         spptErrorVar errVar;
         errVar.setErrorString("Proto buffer parse from string error!");

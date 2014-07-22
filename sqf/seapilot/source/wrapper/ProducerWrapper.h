@@ -18,10 +18,9 @@
 #ifndef __PRODUCERWRAPPER_H
 #define __PRODUCERWRAPPER_H
 
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
+#include <qpid/messaging/Connection.h>
+#include <qpid/messaging/Session.h>
+#include <qpid/messaging/Message.h>
 
 #ifndef WIN32 //TRW
 #include <syslog.h>
@@ -46,6 +45,7 @@
 #include <sstream>
 
 using namespace qpid;
+using namespace qpid::messaging;
 using std::stringstream;
 using std::string;
 

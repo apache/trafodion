@@ -18,10 +18,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#include <qpid/client/Connection.h>
-#include <qpid/client/Session.h>
-#include <qpid/client/AsyncSession.h>
-#include <qpid/client/Message.h>
 
 #ifndef WIN32 // TRW
 #include <syslog.h>
@@ -45,7 +41,6 @@
 #include <iostream>
 #include <sstream>
 
-using namespace qpid;
 using std::stringstream;
 using std::string;
 

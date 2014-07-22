@@ -35,10 +35,9 @@
 #include "win/common.info_header.pb.h"
 #endif
 
+#include "common/sp_errors.h"
 #include "common/evl_sqlog_eventnum.h"
 #include "wrapper/intConsWrap.h"
-#include "../wrapper/qpidwrapper.h"
-#include "../wrapper/config.h"
 
 // -------------------------------------------------------------------------
 //
@@ -47,9 +46,8 @@
 // -------------------------------------------------------------------------
 ConsumerWrapper::ConsumerWrapper() 
 {
-	connection_closed_ = false;
-    subscriptions_ = NULL;
-    initialized_ = recoverymode_ = false;
+    connection_closed_ = false;
+    initialized_ =  false;
     config_ = new spConfig();
     qpidWrapper_ = new qpidWrapper();
 
@@ -77,9 +75,8 @@ ConsumerWrapper::ConsumerWrapper(const char *ipAddress, int portNumber,
 {
     int error = SP_SUCCESS;
 
-	connection_closed_ = false;
-    subscriptions_ = NULL;
-    initialized_ = recoverymode_ = false;
+    connection_closed_ = false;
+    initialized_ = false;
     config_ = new spConfig();
     qpidWrapper_ = new qpidWrapper();
 
@@ -107,14 +104,13 @@ ConsumerWrapper::ConsumerWrapper(const char *ipAddress, int portNumber,
 // -------------------------------------------------------------------------
 ConsumerWrapper::~ConsumerWrapper()
 {
-    closeAMQPConnection();
+   if(!connection_closed_)    closeAMQPConnection();
 	// why does this cause an exception??
-    if (subscriptions_)
-        delete subscriptions_;
+    
     if (config_)
         delete (spConfig *)config_;
     if (qpidWrapper_)
-        delete (qpidWrapper *)qpidWrapper_;   
+        delete qpidWrapper_;   
 }
 
 // -------------------------------------------------------------------------
@@ -129,9 +125,8 @@ int  ConsumerWrapper::closeAMQPConnection()
     if ((!initialized_) || (!((spConfig*)config_)->get_activeConfig()) ||
        (((spConfig*)config_)->get_spDisabled()))
        return SP_SUCCESS;
-
 	connection_closed_ = true;
-    return ((qpidWrapper *)qpidWrapper_)->closeQpidConnection();
+    return qpidWrapper_->closeQpidConnection();
 }
 
 // -------------------------------------------------------------------------
@@ -146,7 +141,6 @@ int  ConsumerWrapper::createAMQPConnection(const char *ipAddress, int portNumber
     int error = SP_SUCCESS;
 
     connection_closed_ = false;
-
     if (ipAddress != NULL)
         ((spConfig*)config_)->set_iPAddress (ipAddress);
     if (portNumber > 0)
@@ -166,151 +160,45 @@ int  ConsumerWrapper::createAMQPConnection(const char *ipAddress, int portNumber
     if (((spConfig*)config_)->get_spDisabled())
        return SP_SUCCESS;
 
-	if (subscriptions_)
-    {
-        delete subscriptions_;
-        subscriptions_ = NULL;
-    }
-	
-	if (!recoverymode_)
-		queue_keys_.clear();
-
-    error = ((qpidWrapper *)qpidWrapper_)->createQpidConnection(((spConfig*)config_)->get_iPAddress(),  ((spConfig*)config_)->get_portNumber(),
+    error = qpidWrapper_->createQpidConnection(((spConfig*)config_)->get_iPAddress(),  ((spConfig*)config_)->get_portNumber(),
 		                                                         user, password, mode);
   
-    // if the connection succeeded, get a session and set up the subscription manager
-    if (!error)
-    {
-        client::Session* session = ((qpidWrapper *)qpidWrapper_)->get_session();
-        if (session)
-           subscriptions_ = new sub_wrapper(session);
-        else
-        {
-           // an error being returned will alert the user that this method failed, hence
-           // a failed connection in that this whole operation did not complete, 
-           // so even if we successfully created the connection, 
-           // close it to allow them to retry the full operation.
-           closeAMQPConnection();
-           error = SP_CONFIG_NOT_AVAILABLE;  // TODO CONNECTION_CLOSED
-        }
-    }
-    
     // if connection failed in the constructor, consider us initialited 
     // if the connection succeeded here
     if ((!error) && (!initialized_))
 	{
        initialized_ = true;
 	}
-
-
     return error;
 }
-
-// -------------------------------------------------------------------------
-//
-// ConsumerWrapper::declareQueue - declare a queue, and remember the queue name
-//
-// -------------------------------------------------------------------------
-int ConsumerWrapper::declareQueue(std::string queue, bool exclusive)
+//To create a consumer ,don't need to call del
+int ConsumerWrapper::createConsumer(std::string exchange, std::string routing_key)
 {
-    bool done    = false;
-    int  error   = SP_SUCCESS;
-    int  retries = 0;
+	int  ret   = SP_SUCCESS;
 
     // in case the user passed in bad data and that is why we couldn't connect,
     // we don't want to keep retrying, so bounce it back up to them.
     if (!initialized_)
        return SP_CONNECTION_CLOSED;
-
-    while ((!done) && (retries++ < MAX_RETRIES))
-    {
-        error = ((qpidWrapper *)qpidWrapper_)->declareQueue(queue, exclusive);
-        if (!error)
-        {
-           // remember this as an active queue
-           queue_keys_.push_back(QUEUES(queue, exclusive));
-           done = true;
-        } 
-        else 
-        {
-           return error;
-        }
-    }
-
-    return error;
+    ret=qpidWrapper_->createConsumer(exchange,routing_key);
+    return ret;
+}
+int ConsumerWrapper::deleteConsumer(std::string exchange, std::string routing_key)
+{
+	int  ret   = SP_SUCCESS;
+	ret=qpidWrapper_->deleteConsumer(exchange,routing_key);     
+	return ret;
 }
 
 // -------------------------------------------------------------------------
 //
-// ConsumerWrapper::bindQueue - bind a routing key to a queue
+// ConsumerWrapper::bindQueue - Remain bindQueue here for compatibility with the old qpid::client APIs
+// Suggest new consumer call CreateConsumer method directly and dont need to call declareQueue and subscribeQueue
 //
 // -------------------------------------------------------------------------
 int ConsumerWrapper::bindQueue(std::string queue, std::string exchange, std::string routing_key)
 {
-    bool done    = false;
-    int  error   = SP_SUCCESS;
-    int  retries = 0;
-
-    // in case the user passed in bad data and that is why we couldn't connect,
-    // we don't want to keep retrying, so bounce it back up to them.
-    if (!initialized_)
-       return SP_CONNECTION_CLOSED;
-
-    while ((!done) && (retries++ < MAX_RETRIES))
-    {
-        error = ((qpidWrapper *)qpidWrapper_)->bindQueue(queue, exchange, routing_key);
-        if (!error)
-        {
-           // add exchange and routing_key to the queue's list
-           error = addToQueue(queue, exchange, routing_key);
-           if (error)
-           {
-               closeAMQPConnection();
-               error = SP_CONNECTION_CLOSED;
-           }
-           done = true;     
-        }
-        else 
-        {
-           done = true; 
-        }
-    }
-
-    return error;
-}
-
-// -------------------------------------------------------------------------
-//
-// ConsumerWrapper::subscribeQueue - subscribe
-//
-// -------------------------------------------------------------------------
-int ConsumerWrapper::subscribeQueue(std::string queue)
-{
-    int error = SP_SUCCESS;
-    int retries = 0;
-    bool done = false;
-
-    // in case the user passed in bad data and that is why we couldn't connect,
-    // we don't want to keep retrying, so bounce it back up to them.
-    if (!initialized_)
-       return SP_CONNECTION_CLOSED;
-
-    // subscribe to the queue using the subscription manager.
-    while ((!done) && (retries++ < MAX_RETRIES))
-    {
-        try
-        {
-           subscriptions_->subscribe(*this, queue);
-           done = true;
-        } catch (const std::exception &ex)
-        {
-            closeAMQPConnection();
-            error = SP_CONNECTION_CLOSED;
-			done = true;
-        }        
-    }
-
-    return error;
+    return createConsumer(exchange,routing_key);
 }
 
 // -------------------------------------------------------------------------
@@ -320,9 +208,9 @@ int ConsumerWrapper::subscribeQueue(std::string queue)
 // -------------------------------------------------------------------------
 int ConsumerWrapper::listen() 
 {
-    bool done = false;
-    int error = SP_SUCCESS;
-    int random = 0;
+    int ret = SP_SUCCESS;   
+    qpid::messaging::Message message;  
+    string content,routingkey;
 
     // in case the user passed in bad data and that is why we couldn't connect,
     // we don't want to keep retrying, so bounce it back up to them.
@@ -330,187 +218,19 @@ int ConsumerWrapper::listen()
        return SP_CONNECTION_CLOSED;
 
     // Receive messages
-    while (!done)
+   while (qpidWrapper_->retrieveNextMessage(message)) 
     {
-        try
-        {
-            subscriptions_->run();
-            done = true;  // will it get here?
+   		qpidWrapper_->getMessageData(message,content,routingkey);   
+	 	this->received(content,routingkey);		
+   }; 
+    return ret;
         }
-        catch (const std::exception& ex)
-        {
-			if (connection_closed_) // by user
-				done = true;
-			else
-			{
-                 random = (rand()%(1+MAX_RAND))*100000; //sleep between 100 and 500 ms)
-#ifndef WIN32
-                 usleep(random);
-#else
-		         random = random/1000;  //micro to milli
-		         Sleep(random);
-#endif
-                 closeAMQPConnection();
 
-                 // if we can't recover, exit
-                 error = recoverSession();
-                 if (error)
-                    done = true;
-			}
-        }
-    }
-
-    return error;
-}
-
-// -------------------------------------------------------------------------
-//
-// ConsumerWrapper::recoverSession - create a new connection and rebuild
-//                                   the queues
-//
-// -------------------------------------------------------------------------
-int ConsumerWrapper::recoverSession()
+//add this method to hide message.getContent();message.getSubject();
+void ConsumerWrapper::getMessageData(qpid::messaging::Message& message,string & content,string &routingkey)
 {
-    recoverymode_ = true;
-    int done = false;
-    int error = SP_SUCCESS;
-    int random;
-    int retries = 0;
-  
-    // Cannot recover SSL connections.
-    if (!strcmp(((spConfig*)config_)->get_mode(), "ssl")) return SP_CONNECTION_CLOSED;
-
-    while ((!done) && (retries++ < MAX_RETRIES))
-    {
-        random = (rand()%(1+MAX_RAND))*10000; //sleep between 10 and 50 ms)
-#ifndef WIN32
-        usleep(random);
-#else
-		random = random/1000;  //micro to milli
-	    Sleep(random);
-#endif
-		// We don't store username, password, mode cannot recover.
-    error = createAMQPConnection(((spConfig*)config_)->get_iPAddress(),
-	                             ((spConfig*)config_)->get_portNumber(), NULL, NULL, "tcp");
-		if (!error)
-			done = true;
+	 qpidWrapper_->getMessageData(message, content,routingkey);
+	 return;
     }
 
-    if (!error)
-    {
-        list<QUEUES>::iterator iter1 = queue_keys_.begin();
-        // walk through the iterators of queues
-        while(iter1 != queue_keys_.end()) 
-        {
-            std::string name = iter1->queue_name;
-            bool exclusive = iter1->queue_exclusive;
-            error = ((qpidWrapper *)qpidWrapper_)->declareQueue(name, exclusive);
-            // now walk the list of routing keys associated with that queue
-            if (!error)
-            {
-               list<LIST_ELEM>::iterator iter2 = iter1->list.begin();
-               while(iter2 != iter1->list.end())
-               {
-                   error = ((qpidWrapper *)qpidWrapper_)->bindQueue(iter1->queue_name, iter2->exchange_name,
-                                                  iter2->binding_key);
-                   if (error)
-                      break;
-                   iter2++;
-               }
-            }
-            // if we got through everyone ok, then subscribe the queue
-            if (!error)
-                error = subscribeQueue(iter1->queue_name);
-
-            if (error)
-               break;
-            iter1++;
-        }
-    }  
-
-    recoverymode_ = false;
-
-    // just a little cleanup if we can't recover
-    if (error)
-    {
-        closeAMQPConnection();
-    }
-
-    return error;
-}
-
-// -------------------------------------------------------------------------
-//
-// ConsumerWrapper::session_name - get name of session
-//
-// -------------------------------------------------------------------------
-const char * ConsumerWrapper::session_name()
-{
-   qpid::client::Session *session = ((qpidWrapper *)qpidWrapper_)->get_session();
-   if (session)
-   {
-      std::string name = session->getId().getName();
-      return name.c_str();
-   }
-   else 
-      return NULL;
-}
-
-// -------------------------------------------------------------------------
-//
-// ConsumerWrapper::addToQueue - add a routing key to the queue's list
-//
-// -------------------------------------------------------------------------
-int ConsumerWrapper::addToQueue(std::string &queue, std::string &exchange, std::string &key)
-{
-    bool done = false;
-    list<QUEUES>::iterator iter = queue_keys_.begin();
-
-    // first find the queue in our list, then add the info to it. 
-    while((iter != queue_keys_.end()) & (!done)) 
-    {
-        if (iter->queue_name == queue)
-        {
-           iter->list.push_back(LIST_ELEM(exchange, key));
-           done = true;
-        }
-        else
-           iter++;
-    }
-
-    if (done == false)
-    {
-        queue_keys_.clear();
-        return SP_BAD_PARAM;
-    }
-
-    return SP_SUCCESS;
-}
-
-bool ConsumerWrapper::get_queue_name(const char *subscription_key, char *queue_name, unsigned int queue_length)
-{
-	bool success = false;
-	list<QUEUES>::iterator iter1 = queue_keys_.begin();
-
-	while(iter1 != queue_keys_.end()) 
-    {
-       list<LIST_ELEM>::iterator iter2 = iter1->list.begin();
-       while(iter2 != iter1->list.end())
-       {
-		   std::string key = iter2->binding_key;
-		   if (strcmp(subscription_key, key.c_str()) == 0)
-		   {
-			   if (iter1->queue_name.length() < queue_length)
-			   {
-				   strcpy (queue_name, iter1->queue_name.c_str());
-				   success = true;
-				   break;
-			   }
-		   }
-           iter2++;
-        }
-       iter1++;
-    }
-	return success;
-}
 

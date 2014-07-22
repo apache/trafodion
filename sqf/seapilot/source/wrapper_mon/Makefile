@@ -25,7 +25,8 @@ INCLUDES :=	-I$(MY_SPROOT)/source/publications \
 		-I$(MY_SQROOT)/export/include \
 		-I$(PROTOBUFS_INC)
 
-LIBS            := -L$(PROTOBUFS_LIB) -lprotobuf \
+LIBS            := -lqpidmessaging \
+                   -L$(PROTOBUFS_LIB) -lprotobuf \
 		   -L$(SP_EXPORT_LIB) -lpublications
 CPPSRC		:= ../wrapper/qpidwrapper.cpp \
 		   ../wrapper/config.cpp \
