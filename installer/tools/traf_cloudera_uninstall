@@ -97,11 +97,27 @@ pdsh $MY_NODES sudo yum --assumeyes clean all
 
 #==============================================
 echo "***INFO: Remove Cloudera Manager and CDH data"
-pdsh $MY_NODES sudo rm -Rf /usr/share/cmf /var/lib/cloudera* /var/cache/yum/cloudera* /var/log/cloudera* /var/run/cloudera*
-pdsh $MY_NODES sudo rm -Rf /var/lib/flume-ng /var/lib/hadoop* /var/lib/hue /var/lib/oozie /var/lib/solr /var/lib/sqoop*
+pdsh $MY_NODES sudo rm -Rf /usr/share/cmf '/var/lib/cloudera*' '/var/cache/yum/cloudera*' '/var/log/cloudera*' '/var/run/cloudera*' '/opt/cloudera*' '/tmp/scm_prepare_node*' '/etc/cloudera*'
+
+pdsh $MY_NODES sudo rm -Rf /var/lib/flume-ng '/var/lib/hadoop*' /var/lib/hue /var/lib/oozie /var/lib/solr '/var/lib/sqoop*' '/var/lib/zookeeper*'
+
 pdsh $MY_NODES sudo rm -Rf /dfs /mapred /yarn
 
-pdsh $MY_NODES sudo rm -Rf /var/run/hdfs-sockets
+pdsh $MY_NODES sudo rm -Rf /var/run/hdfs-sockets '/var/run/zookeeper*' '/var/run/sqoop*' '/var/run/flume*' '/var/run/sqoop*'
+
+pdsh $MY_NODES sudo rm -Rf '/var/log/zookeeper*' '/var/log/hadoop*' '/var/log/hive*' '/var/log/sqoop*' '/var/log/flume*' '/var/log/hbase*' '/var/log/hue*'
+
+pdsh $MY_NODES sudo rm -Rf '/etc/zookeeper*' '/etc/hadoop*' '/etc/hive*' '/etc/sqoop*' '/etc/flume*' '/etc/hbase*' '/etc/hcatalog*' '/etc/webhcat*' '/etc/pig*' '/etc/oozie*'  
+pdsh $MY_NODES sudo rm -Rf '/usr/lib/hadoop*' '/usr/lib/hive*' '/usr/lib/oozie*' '/usr/lib/hcatalog*' '/usr/lib/parquet*' 
+
+pdsh $MY_NODES sudo rm -Rf '/usr/lib/alternatives/hadoop*'
+
+pdsh $MY_NODES sudo rm -Rf '/tmp/hadoop*'
+
+pdsh $MY_NODES sudo rm -Rf '/etc/alternatives/hadoop*' '/etc/alternatives/hive*' '/etc/alternatives/hbase*' 
+
+pdsh $MY_NODES sudo rm -Rf '/var/tmp/sqoop*' '/var/lib/alternatives/hbase*' '/etc/run/webhcat*' '/usr/share/hue*' '/tmp/hadoop*' /tmp/hsperfdata_zookeeper  
+
 #==============================================
 echo "***INFO: Kill any running Cloudera Manager and CDH processes that might still be running"
 for u in hdfs mapred cloudera-scm hbase hue zookeeper oozie hive impala flume; do
@@ -143,6 +159,7 @@ do
 
 done
 
+pdsh $MY_NODES sudo pkill cloudera-scm
 #==============================================
 echo "***INFO: Removing Cloudera symbolic directory links"
 

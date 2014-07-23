@@ -168,7 +168,17 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+#============================================
+# Check if logged in as trafodion
 
+userId=$(whoami)
+
+if [[ "$userId" != "trafodion" ]]; then
+   echo "***ERROR: Logged in as user '$userId'"
+   echo "***ERROR: Must be logged in as user 'trafodion'"
+   echo "***ERROR: Exiting..."
+fi
+#============================================
 timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion installer ($timestamp)"
 
