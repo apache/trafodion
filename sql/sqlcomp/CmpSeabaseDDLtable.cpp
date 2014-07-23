@@ -5947,13 +5947,14 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       //   i.  Single region: map to single partition function
       //   ii. Multi-region <n> :  map to <k> partitions, 
       //       where k = min(<n>, #nodes * MAX_ESPS_PER_CPU_PER_OP). 
-      if (tableIsSalted)
-        ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-          assembleRegionDescs(bal, DESC_HBASE_HASH2_REGION_TYPE);
-      else
-       ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
-          assembleRegionDescs(bal, DESC_HBASE_RANGE_REGION_TYPE);
 
+        if (tableIsSalted &&
+            (CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF))
+          ((table_desc_struct*)tableDesc)->hbase_regionkey_desc =
+            assembleRegionDescs(bal, DESC_HBASE_HASH2_REGION_TYPE);
+        else
+         ((table_desc_struct*)tableDesc)->hbase_regionkey_desc =
+            assembleRegionDescs(bal, DESC_HBASE_RANGE_REGION_TYPE);
 
       delete bal;
       CmpSeabaseDDL::deallocEHI(ehi);

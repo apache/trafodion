@@ -3556,8 +3556,7 @@ enum DefaultConstants
   TRAF_LOAD_PREP_ADJUST_PART_FUNC,
   TRAF_LOAD_PREP_TMP_LOCATION,
   TRAF_LOAD_PREP_PHASE_ONLY,
-
-  //log only the overall time of a compilation.
+    //log only the overall time of a compilation.
   COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY,
 
   TRAF_LOAD_PREP_KEEP_HFILES,
@@ -3577,6 +3576,7 @@ enum DefaultConstants
   LIMIT_HBASE_SCAN_DOP,
   TRAF_LOAD_TAKE_SNAPSHOT,
   TRAF_LOAD_PREP_SKIP_DUPLICATES,
+  HBASE_HASH2_PARTITIONING,
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

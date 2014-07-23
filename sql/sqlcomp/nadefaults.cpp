@@ -1723,6 +1723,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDkwd__(HBASE_CREATE_OLD_MD_FOR_UPGRADE_TESTING,   "OFF"),
 
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
+ DDkwd__(HBASE_HASH2_PARTITIONING,                  "ON"),
  DDkwd__(HBASE_INTERFACE,                       "JNI_TRX"),
  DDui___(HBASE_MAX_COLUMN_INFO_LENGTH,                "10000"),
  DDui___(HBASE_MAX_COLUMN_NAME_LENGTH,               "100"),
