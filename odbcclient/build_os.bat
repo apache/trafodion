@@ -23,7 +23,7 @@ set ODBCCP32_64_PATH="E:\Program Files (x86)\Microsoft Visual Studio 8\VC\Platfo
 set MSBUILD_PATH=C:\Windows\Microsoft.NET\Framework64\v4.0.30319
 set BUILDDIR=E:
 
-set SRCDIR=%BUILDDIR%\opensea_datalake_winodbc_open
+set SRCDIR=%BUILDDIR%\win-odbc64
 set LIBDIR=%BUILDDIR%\lib 
 set PATH=%MSBUILD_PATH%\;%PATH%
 set DATE=

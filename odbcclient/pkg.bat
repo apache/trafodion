@@ -17,7 +17,7 @@ REM
 REM @@@ END COPYRIGHT @@@
 
 set PACKDRIVER=E:
-set SRCDIR=%PACKDRIVER%\opensea_datalake_winodbc_open
+set SRCDIR=%PACKDRIVER%\win-odbc64
 set LIBDIR=%PACKDRIVER%\lib
 set ISCMDBLD_PATH="E:\Program Files (x86)\Installshield\2012\System"
 set INSTALLDIR=%SRCDIR%\Install
