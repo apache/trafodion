@@ -83,6 +83,18 @@
 >>create table t015t2 (a int) ;
 
 --- SQL operation complete.
+>>create table t015t3 ( a int not null primary key, b int, c int);
+
+--- SQL operation complete.
+>>create table t015t4 ( a int not null primary key, b int, c int) salt using 2 partitions on (a);
+
+--- SQL operation complete.
+>>create table t015t5 ( a int not null , b int, c int) store by (a);
+
+--- SQL operation complete.
+>>create table t015t6 ( a int not null , b int, c int);
+
+--- SQL operation complete.
 >>
 >>insert into t015t1 values (1),(2),(3),(4),(5);
 
@@ -189,7 +201,7 @@ A
 
 --- 5 row(s) selected.
 >>
->>prepare s from load into t015t2 select * from t015t1;
+>>prepare s from load with no populate indexes into t015t2 select * from t015t1;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -202,10 +214,16 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>execute s;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
+       Rows Processed: 5 
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.064
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.305
 
 --- SQL operation complete.
 >>
->>prepare s from load with no rollback into t015t2 select * from t015t1;
+>>prepare s from load with no recovery,  no populate indexes  into t015t2 select * from t015t1;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -218,20 +236,168 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>execute s;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
+       Rows Processed: 5 
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.062
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.227
 
 --- SQL operation complete.
 >>
->>--truncate and log errors are not implemented yet .
->>prepare s from load with truncate,log error into t015t2 select * from t015t1;
+>>--log errors are not implemented yet .
+>>prepare s from load with log error into t015t2 select * from t015t1;
 
-*** ERROR[4485] Bulk Load:  Error logging option is not supported yet
+*** ERROR[4485] Bulk Load option  Error logging  is not supported yet.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>--explain options 'f' s;
 >>--execute s;
 >>
+>>delete from t015t2;
+
+--- 15 row(s) deleted.
+>>insert into t015t2 values (100),(200),(300);
+
+--- 3 row(s) inserted.
+>>select * from t015t2 order by a;
+
+A          
+-----------
+
+        100
+        200
+        300
+
+--- 3 row(s) selected.
+>>load with truncate table, no populate indexes  into t015t2 select * from t015t1;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  PURGE DATA      Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  PURGE DATA      Status: Ended      Object: TRAFODION.HBASE.T015T2
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
+       Rows Processed: 5 
+Task:  PREPARATION     Status: Ended      ET: 00:00:00.358
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.216
+
+--- SQL operation complete.
 >>
+>>select * from t015t2 order by a;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+
+--- 5 row(s) selected.
+>>
+>>
+>>load transform into t015t3 select a,a,a from t015t1;
+
+--- 5 row(s) inserted.
+>>
+>>create index t015t3idx on t015t3(b);
+
+--- SQL operation complete.
+>>
+>>load transform into t015t3 select a,a,a from t015t1;
+
+*** ERROR[4484] Indexes are not supported yet with bulk load. Disable the indexes and try again.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop index t015t3idx ;
+
+--- SQL operation complete.
+>>
+>>alter table t015t3  add  constraint t015t3_cnst check (b>100);
+
+--- SQL operation complete.
+>>
+>>load transform into t015t3 select a,a,a from t015t1;
+
+*** ERROR[4486] Constraints are not supported with bulk load. Disable the constraints and try again.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>alter table t015t3  drop  constraint t015t3_cnst;
+
+--- SQL operation complete.
+>>
+>>prepare s3 from load transform into t015t3 select a,a,a from t015t1  <<+ cardinality 10e0 >> ;
+
+--- SQL command prepared.
+>>explain options 'f' s3;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+001
+2    3    4    tuple_flow                                            1.00E+001
+.    .    3    trafodion_load_prepa            T015T3                1.00E+000
+1    .    2    sort                                                  1.00E+001
+.    .    1    trafodion_scan                  T015T1                1.00E+001
+
+--- SQL operation complete.
+>>log LOG015_plan.log clear;
+  sort_key ............... TRAFODION.HBASE.T015T1.A
+>>prepare s4 from load transform into t015t4 select a,a,a from t015t1  <<+ cardinality 10e0 >> ;
+
+--- SQL command prepared.
+>>explain options 'f' s4;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+001
+2    3    4    tuple_flow                                            1.00E+001
+.    .    3    trafodion_load_prepa            T015T4                1.00E+000
+1    .    2    sort                                                  1.00E+001
+.    .    1    trafodion_scan                  T015T1                1.00E+001
+
+--- SQL operation complete.
+>>log;
+  sort_key ............... (HashDistPartHash(cast(TRAFODION.HBASE.T015T1.A))
+                             Hash2Distrib cast(2)), TRAFODION.HBASE.T015T1.A
+
+>>prepare s5 from load transform into t015t5 select a,a,a from t015t1  <<+ cardinality 10e0 >> ;
+
+--- SQL command prepared.
+>>explain options 'f' s5;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+001
+2    3    4    tuple_flow                                            1.00E+001
+.    .    3    trafodion_load_prepa            T015T5                1.00E+000
+1    .    2    sort                                                  1.00E+001
+.    .    1    trafodion_scan                  T015T1                1.00E+001
+
+--- SQL operation complete.
+>>log;
+  sort_key ............... TRAFODION.HBASE.T015T1.A
+>>prepare s6 from load transform into t015t6 select a,a,a from t015t1;
+
+--- SQL command prepared.
+>>explain options 'f' s6;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T015T6                1.00E+000
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
 >>
 >>--------------------------------------------------------------------------
 >>cqd TRAF_LOAD_USE_QUASI_SECURE 'off';
@@ -274,8 +440,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>load into customer_address 
+>>load  with no populate indexes  into customer_address 
 +>select * from hive.hive.customer_address;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+       Rows Processed: 50000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.748
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.230
 
 --- SQL operation complete.
 >>
@@ -346,8 +518,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>load into customer_address_NOPK 
+>>load  with no populate indexes  into customer_address_NOPK 
 +>select * from hive.hive.customer_address;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
+       Rows Processed: 50000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:02.021
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.117
 
 --- SQL operation complete.
 >>
@@ -441,8 +619,14 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
   parent_partitioning_fun  hash2 partitioned 4 ways on
                              (HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 >>
->>load into customer_demographics 
+>>load  with no populate indexes  into customer_demographics 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+       Rows Processed: 500000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:11.039
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.322
 
 --- SQL operation complete.
 >>
@@ -549,8 +733,14 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
                              .CD_DEMO_SK)) Hash2Distrib cast(4)),
                              HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 >>
->>load  into customer_demographics_salt 
+>>load  with no populate indexes  into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+       Rows Processed: 500000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:11.601
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.320
 
 --- SQL operation complete.
 >>
@@ -594,19 +784,547 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 >>
 >>----------------
 >>
+>>-- with no duplicats option 
 >>
 >>
+>>cqd  comp_bool_226 'on';
+
+--- SQL operation complete.
+>>drop table t015t3 cascade;
+
+--- SQL operation complete.
+>>drop table t015t4 cascade;
+
+--- SQL operation complete.
+>>drop table t015t5 cascade;
+
+--- SQL operation complete.
+>>drop table t015t6 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t015t3 ( a int not null primary key, b int, c int);
+
+--- SQL operation complete.
+>>create table t015t4 ( a int not null primary key, b int, c int) salt using 2 partitions on (a);
+
+--- SQL operation complete.
+>>create table t015t5 ( a int not null , b int, c int) store by (a);
+
+--- SQL operation complete.
+>>create table t015t6 ( a int not null , b int, c int);
+
+--- SQL operation complete.
+>>delete from t015t1;
+
+--- 5 row(s) deleted.
+>>insert into  t015t1 values (25),(24),(23),(7),(5),(5),(2),(10),(11),(12),(13),(14),(15);
+
+--- 13 row(s) inserted.
 >>
 >>
+>>----produces error 
+>>prepare s from load transform into t015t3 select a,a,a from t015t1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+002
+2    3    4    tuple_flow                                            1.00E+002
+.    .    3    trafodion_load_prepa            T015T3                1.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+*** ERROR[8110] Duplicate rows detected.
+
+--- 0 row(s) inserted.
+>>load with no output into t015t3 select a,a,a from t015t1;
+
+*** ERROR[8110] Duplicate rows detected.
+
+--- SQL operation failed with errors.
+>>select * from t015t3 order by a;
+
+--- 0 row(s) selected.
+>>---produces eror
+>>prepare s from load transform into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+009
+5    .    6    esp_exchange                    1:2(range)            1.00E+009
+3    4    5    tuple_flow                                            1.00E+009
+.    .    4    trafodion_load_prepa            T015T4                1.00E+000
+2    .    3    sort                                                  1.00E+009
+1    .    2    esp_exchange                    2(range):1            1.00E+009
+.    .    1    trafodion_scan                  T015T1                1.00E+009
+
+--- SQL operation complete.
+>>execute s;
+
+*** ERROR[8110] Duplicate rows detected.
+
+--- 1 row(s) inserted.
+>>load with no output into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
+
+*** ERROR[8110] Duplicate rows detected.
+
+--- SQL operation failed with errors.
+>>select * from t015t4 order by a;
+
+--- 0 row(s) selected.
+>>---
+>>prepare s from load transform into t015t5 select a,a,a from t015t1 ;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+002
+2    3    4    tuple_flow                                            1.00E+002
+.    .    3    trafodion_load_prepa            T015T5                1.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+--- 13 row(s) inserted.
+>>load with no output into t015t5 select a,a,a from t015t1 ;
+
+--- SQL operation complete.
+>>select * from t015t5 order by a;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2            2            2
+          5            5            5
+          5            5            5
+          7            7            7
+         10           10           10
+         11           11           11
+         12           12           12
+         13           13           13
+         14           14           14
+         15           15           15
+         23           23           23
+         24           24           24
+         25           25           25
+
+--- 13 row(s) selected.
+>>---
+>>prepare s from load transform into t015t6 select a,a,a from t015t1 ;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T015T6                1.00E+000
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+--- 13 row(s) inserted.
+>>load with no output into t015t6 select a,a,a from t015t1 ;
+
+--- SQL operation complete.
+>>select * from t015t6 order by a;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2            2            2
+          5            5            5
+          5            5            5
+          7            7            7
+         10           10           10
+         11           11           11
+         12           12           12
+         13           13           13
+         14           14           14
+         15           15           15
+         23           23           23
+         24           24           24
+         25           25           25
+
+--- 13 row(s) selected.
+>>------------------------------
+>>
+>>----
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+
+--- SQL operation complete.
+>>prepare s from load transform into t015t3 select a,a,a from t015t1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+002
+2    3    4    tuple_flow                                            1.00E+002
+.    .    3    trafodion_load_prepa            T015T3                1.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+--- 12 row(s) inserted.
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+
+--- SQL operation complete.
+>>load with no output, no duplicate check  into t015t3 select a,a,a from t015t1;
+
+--- SQL operation complete.
+>>select * from t015t3 order by a;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2            2            2
+          5            5            5
+          7            7            7
+         10           10           10
+         11           11           11
+         12           12           12
+         13           13           13
+         14           14           14
+         15           15           15
+         23           23           23
+         24           24           24
+         25           25           25
+
+--- 12 row(s) selected.
+>>---
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+
+--- SQL operation complete.
+>>prepare s from load transform into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+009
+5    .    6    esp_exchange                    1:2(range)            1.00E+009
+3    4    5    tuple_flow                                            1.00E+009
+.    .    4    trafodion_load_prepa            T015T4                1.00E+000
+2    .    3    sort                                                  1.00E+009
+1    .    2    esp_exchange                    2(range):1            1.00E+009
+.    .    1    trafodion_scan                  T015T1                1.00E+009
+
+--- SQL operation complete.
+>>execute s;
+
+--- 12 row(s) inserted.
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+
+--- SQL operation complete.
+>>load with no output, no duplicate check ,  no populate indexes into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
+
+--- SQL operation complete.
+>>select * from t015t4 order by a;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2            2            2
+          5            5            5
+          7            7            7
+         10           10           10
+         11           11           11
+         12           12           12
+         13           13           13
+         14           14           14
+         15           15           15
+         23           23           23
+         24           24           24
+         25           25           25
+
+--- 12 row(s) selected.
+>>---
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+
+--- SQL operation complete.
+>>prepare s from load transform into t015t5 select a,a,a from t015t1 ;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+002
+2    3    4    tuple_flow                                            1.00E+002
+.    .    3    trafodion_load_prepa            T015T5                1.00E+000
+1    .    2    sort                                                  1.00E+002
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+--- 13 row(s) inserted.
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+
+--- SQL operation complete.
+>>load with no output, no duplicate check into t015t5 select a,a,a from t015t1 ;
+
+--- SQL operation complete.
+>>select * from t015t5 order by a;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2            2            2
+          2            2            2
+          5            5            5
+          5            5            5
+          5            5            5
+          5            5            5
+          7            7            7
+          7            7            7
+         10           10           10
+         10           10           10
+         11           11           11
+         11           11           11
+         12           12           12
+         12           12           12
+         13           13           13
+         13           13           13
+         14           14           14
+         14           14           14
+         15           15           15
+         15           15           15
+         23           23           23
+         23           23           23
+         24           24           24
+         24           24           24
+         25           25           25
+         25           25           25
+
+--- 26 row(s) selected.
+>>---
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+
+--- SQL operation complete.
+>>prepare s from load transform into t015t6 select a,a,a from t015t1 ;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T015T6                1.00E+000
+.    .    1    trafodion_scan                  T015T1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+--- 13 row(s) inserted.
+>>cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+
+--- SQL operation complete.
+>>load with no output, no duplicate check into t015t6 select a,a,a from t015t1 ;
+
+--- SQL operation complete.
+>>select * from t015t4 order by a;
+
+A            B            C          
+-----------  -----------  -----------
+
+          2            2            2
+          5            5            5
+          7            7            7
+         10           10           10
+         11           11           11
+         12           12           12
+         13           13           13
+         14           14           14
+         15           15           15
+         23           23           23
+         24           24           24
+         25           25           25
+
+--- 12 row(s) selected.
 >>
 >>
+>>--Add  tests with indexes on bulloaded tables
+>>drop table customer_demographics_salt cascade;
+
+--- SQL operation complete.
+>>drop table customer_demographics cascade;
+
+--- SQL operation complete.
+>>create table customer_demographics
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>);
+
+--- SQL operation complete.
 >>
+>>create table customer_demographics_salt
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>)
++>salt using 4 partitions on (cd_demo_sk);
+
+--- SQL operation complete.
+>>create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
+
+--- SQL operation complete.
+>>create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
+
+--- SQL operation complete.
 >>
+>>load  into customer_demographics 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.594
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.339
+Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:04.759
+
+--- SQL operation complete.
 >>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>select count(*) from customer_demographics;
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_count_IDX);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_college_count_IDX);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
 >>
+>>drop index cd_dep_count_IDX;
+
+--- SQL operation complete.
+>>drop index cd_dep_college_count_IDX;
+
+--- SQL operation complete.
 >>
+>>create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
+
+--- SQL operation complete.
+>>create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
+
+--- SQL operation complete.
+>>---------------------------
+>>load  into customer_demographics_salt 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+       Rows Processed: 5000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:03.199
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  COMPLETION      Status: Ended      ET: 00:00:00.331
+Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:05.262
+
+--- SQL operation complete.
 >>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>select count(*) from customer_demographics_salt;
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_count_IDX2);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_college_count_IDX2);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
 >>
+>>drop index cd_dep_count_IDX2;
+
+--- SQL operation complete.
+>>drop index cd_dep_college_count_IDX2;
+
+--- SQL operation complete.
 >>
 >>
 >>

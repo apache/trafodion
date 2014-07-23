@@ -9498,10 +9498,19 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
    
   if (getIsTrafLoadPrep() && getTableDesc()->hasSecondaryIndexes())
   {
-    //no support yet for indexes and constraints
-    //4484--Indexes and constarints are not supported yet with bulk load.
+   //this is safe guard. Indexes are supposed to be disabled alrrady before reaching this point from the bulk load utility
+    //4484--Indexes not supported yet with bulk load. Disable the indexes and try again.
     *CmpCommon::diags() << DgSqlCode(-4484);
   }
+  if (getIsTrafLoadPrep() &&
+      (getTableDesc()->getCheckConstraints().entries() != 0 ||
+          getTableDesc()->getNATable()->getRefConstraints().entries() != 0  ))
+  {
+    // enabling/disabling constraints is not supported yet
+    //4486--Constraints not supported with bulk load. Disable the constraints and try again.
+    *CmpCommon::diags() << DgSqlCode(-4486);
+  }
+
   if (NOT isMerge())
     boundExpr = handleInlining(bindWA, boundExpr);
 

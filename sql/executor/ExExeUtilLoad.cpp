@@ -3670,7 +3670,8 @@ ExExeUtilHBaseBulkLoadTcb::ExExeUtilHBaseBulkLoadTcb(
      const ComTdbExeUtil & exe_util_tdb,
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob),
-       step_(INITIAL_)
+       step_(INITIAL_),
+       nextStep_(INITIAL_)
 {
   qparent_.down->allocatePstate(this);
 }
@@ -3682,6 +3683,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 {
   Lng32 cliRC = 0;
   short retcode = 0;
+  short rc;
   Int64 rowsAffected = 0;
 
   // if no parent request, return
@@ -3693,13 +3695,13 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   if (qparent_.up->isFull())
     return WORK_OK;
 
+
+
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
 
-  ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
-  ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
-  ContextCli *currContext = masterGlob->getStatement()->getContext();
-
+  ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
+    castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
 
   while (1)
   {
@@ -3707,6 +3709,17 @@ short ExExeUtilHBaseBulkLoadTcb::work()
     {
       case INITIAL_:
       {
+        NABoolean xnAlreadyStarted = ta->xnInProgress();
+        if (xnAlreadyStarted)
+        {
+          //8111 - Transactions are not allowd with Bulk load.
+          ComDiagsArea * da = getDiagsArea();
+          *da << DgSqlCode(-8111);
+          step_ = LOAD_ERROR_;
+        }
+
+        if (setStartStatusMsgAndMoveToUpQueue("LOAD", &rc))
+          return rc;
 
         if (hblTdb().getTruncateTable())
         {
@@ -3719,7 +3732,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       case TRUNCATE_TABLE_:
       {
-        //for now the purgedata does not keep the partitions -- check to see if it was fixed
+        if (setStartStatusMsgAndMoveToUpQueue(" PURGE DATA",&rc))
+          return rc;
+
+        //for now the purgedata statement does not keep the partitions
         char * ttQuery =
           new(getMyHeap()) char[strlen("PURGEDATA  ; ") +
                                strlen(hblTdb().getTableName()) +
@@ -3741,21 +3757,13 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           break;
         }
         step_ = LOAD_START_;
+
+        setEndStatusMsg(" PURGE DATA");
       }
         break;
 
       case LOAD_START_:
       {
-        if (hblTdb().getPreloadCleanup())
-          step_ = PRE_LOAD_CLEANUP_;
-        else
-          step_ = PREPARATION_;
-      }
-      break;
-
-      case PRE_LOAD_CLEANUP_:
-      {
-        //Cleanup files
         cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
         if (cliRC < 0)
         {
@@ -3763,6 +3771,23 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_ERROR_;
           break;
         }
+        if (hblTdb().getPreloadCleanup())
+          step_ = PRE_LOAD_CLEANUP_;
+        else
+        {
+          step_ = PREPARATION_;
+          if (hblTdb().getIndexes())
+            step_ = DISABLE_INDEXES_;
+        }
+      }
+      break;
+
+      case PRE_LOAD_CLEANUP_:
+      {
+        if (setStartStatusMsgAndMoveToUpQueue(" CLEANUP", &rc))
+          return rc;
+
+        //Cleanup files
         char * clnpQuery =
           new(getMyHeap()) char[strlen("LOAD CLEANUP FOR TABLE  ; ") +
                                strlen(hblTdb().getTableName()) +
@@ -3784,13 +3809,55 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         }
 
         step_ = PREPARATION_;
+
+        if (hblTdb().getIndexes())
+          step_ = DISABLE_INDEXES_;
+
+        setEndStatusMsg(" CLEANUP");
+      }
+        break;
+      case DISABLE_INDEXES_:
+      {
+         if (setStartStatusMsgAndMoveToUpQueue(" DISABLE INDEXES", &rc))
+          return rc;
+
+         // disable indexes before starting the load preparation. load preparation phase will
+         // give an error if indexes are not disabled
+         // For constarints --disabling/enabling constarints is not supported yet. in this case the user
+         // needs to disable or drop the constraints manually before starting load. If constarints
+         // exist load preparation will give an error
+        char * diQuery =
+          new(getMyHeap()) char[strlen("ALTER TABLE DISABLE ALL INDEXES   ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               100];
+        strcpy(diQuery, "ALTER TABLE  ");
+        strcat(diQuery, hblTdb().getTableName());
+        strcat(diQuery, " DISABLE ALL INDEXES ;");
+        cliRC = cliInterface()->executeImmediate(diQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+        NADELETEBASIC(diQuery, getMyHeap());
+        diQuery = NULL;
+        if (cliRC < 0)
+        {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_ERROR_;
+          break;
+        }
+        step_ = PREPARATION_;
+
+        setEndStatusMsg(" DISABLE INDEXES");
       }
         break;
 
       case PREPARATION_:
-
       {
-        cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
+        if (setStartStatusMsgAndMoveToUpQueue(" PREPARATION", &rc, 0, TRUE))
+          return rc;
+
+        if (hblTdb().getNoDuplicates())
+          cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "OFF");
+        else
+          cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "ON");
         if (cliRC < 0)
         {
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
@@ -3799,7 +3866,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         }
 
         char * transQuery =hblTdb().ldQuery_;
-
         cliRC = cliInterface()->executeImmediate(transQuery,
                                                  NULL,
                                                  NULL,
@@ -3812,18 +3878,28 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_ERROR_;
           break;
         }
-        else
-        {
-          masterGlob->setRowsAffected(rowsAffected);
-        }
 
         step_ = COMPLETE_BULK_LOAD_;
+
+        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
+        int len = strlen(statusMsgBuf_);
+        setEndStatusMsg(" PREPARATION", len, TRUE);
       }
         break;
 
+
       case COMPLETE_BULK_LOAD_:
       {
-        cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
+        if (setStartStatusMsgAndMoveToUpQueue(" COMPLETION", &rc,0, TRUE))
+          return rc;
+
+
+        //TRAF_LOAD_TAKE_SNAPSHOT
+        if (hblTdb().getNoRollback() )
+          cliRC = holdAndSetCQD("TRAF_LOAD_TAKE_SNAPSHOT", "OFF");
+        else
+          cliRC = holdAndSetCQD("TRAF_LOAD_TAKE_SNAPSHOT", "ON");
+
         if (cliRC < 0)
         {
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
@@ -3863,10 +3939,55 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_ERROR_;
           break;
         }
-
         step_ = DONE_;
+
+        if (hblTdb().getIndexes())
+          step_ = POPULATE_INDEXES_;
+
+        setEndStatusMsg(" COMPLETION", 0, TRUE);
       }
         break;
+
+      case POPULATE_INDEXES_:
+      {
+        if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc))
+          return rc;
+
+        char * piQuery =
+           new(getMyHeap()) char[strlen("POPULATE ALL INDEXES ON  ; ") +
+                                strlen(hblTdb().getTableName()) +
+                                100];
+         strcpy(piQuery, "POPULATE ALL INDEXES ON   ");
+         strcat(piQuery, hblTdb().getTableName());
+         strcat(piQuery, ";");
+
+         cliRC = cliInterface()->executeImmediate(piQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+         NADELETEBASIC(piQuery, getHeap());
+         piQuery = NULL;
+
+         if (cliRC < 0)
+         {
+           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+           step_ = LOAD_ERROR_;
+           break;
+         }
+
+        step_ = DONE_;
+
+        setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
+      }
+        break;
+
+      case RETURN_STATUS_MSG_:
+      {
+        if (moveRowToUpQueue(statusMsgBuf_,0,&rc))
+          return rc;
+
+        step_ = nextStep_;
+      }
+      break;
+
       case DONE_:
       {
         if (qparent_.up->isFull())
@@ -3882,11 +4003,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         // insert into parent
         qparent_.up->insert();
-
-
         step_ = INITIAL_;
         qparent_.down->removeHead();
-
         return WORK_OK;
       }
         break;
@@ -3921,6 +4039,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         pstate.matches_ = 0;
 
+
+
         step_ = DONE_;
       }
         break;
@@ -3929,6 +4049,60 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   } // while
 
   return WORK_OK;
+
+}
+
+short ExExeUtilHBaseBulkLoadTcb::moveRowToUpQueue(const char * row, Lng32 len,
+                                                  short * rc, NABoolean isVarchar)
+{
+  if (hblTdb().getNoOutput())
+    return 0;
+
+  return ExExeUtilTcb::moveRowToUpQueue(row, len, rc, isVarchar);
+}
+
+
+
+
+short ExExeUtilHBaseBulkLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char * operation,
+                                     short * rc,
+                                     int bufPos,
+                                     NABoolean   withtime)
+{
+
+  if (hblTdb().getNoOutput())
+     return 0;
+
+  if (withtime)
+    startTime_ = NA_JulianTimestamp();
+
+  getStatusString(operation, "Started",hblTdb().getTableName(), &statusMsgBuf_[bufPos]);
+  return moveRowToUpQueue(statusMsgBuf_,0,rc);
+}
+
+
+void ExExeUtilHBaseBulkLoadTcb::setEndStatusMsg(const char * operation,
+                                     int bufPos,
+                                     NABoolean   withtime)
+{
+
+  if (hblTdb().getNoOutput())
+     return ;
+
+  char timeBuf[200];
+
+  nextStep_ = step_;
+  step_ = RETURN_STATUS_MSG_;
+
+  if (withtime)
+  {
+    endTime_ = NA_JulianTimestamp();
+    Int64 elapsedTime = endTime_ - startTime_;
+
+    getTimeAsString(elapsedTime, timeBuf);
+  }
+
+  getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], withtime ? timeBuf : NULL);
 
 }
 

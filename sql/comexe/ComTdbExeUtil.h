@@ -4609,6 +4609,23 @@ public:
   void setQuasiSecure(NABoolean v)
   {(v ? flags_ |= QUASI_SECURE : flags_ &= ~QUASI_SECURE); };
   NABoolean getQuasiSecure() { return (flags_ & QUASI_SECURE) != 0; };
+
+  void setNoDuplicates(NABoolean v)
+    {(v ? flags_ |= NO_DUPLICATES : flags_ &= ~NO_DUPLICATES); };
+  NABoolean getNoDuplicates() { return (flags_ & NO_DUPLICATES) != 0; };
+
+  void setIndexes(NABoolean v)
+    {(v ? flags_ |= INDEXES : flags_ &= ~INDEXES); };
+  NABoolean getIndexes() { return (flags_ & INDEXES) != 0; };
+
+  void setConstraints(NABoolean v)
+    {(v ? flags_ |= CONSTRAINTS : flags_ &= ~CONSTRAINTS); };
+  NABoolean getConstraints() { return (flags_ & CONSTRAINTS) != 0; };
+
+  void setNoOutput(NABoolean v)
+    {(v ? flags_ |= NO_OUTPUT : flags_ &= ~NO_OUTPUT); };
+  NABoolean getNoOutput() { return (flags_ & NO_OUTPUT) != 0; };
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -4623,7 +4640,11 @@ private:
     TRUNCATE_TABLE   = 0x0008,
     NO_ROLLBACK      = 0x0010,
     LOG_ERRORS       = 0x0020,
-    QUASI_SECURE     = 0x0040
+    QUASI_SECURE     = 0x0040,
+    NO_DUPLICATES    = 0x0080,
+    INDEXES          = 0x0100,
+    CONSTRAINTS      = 0x0200,
+    NO_OUTPUT        = 0x0400
   };
 
   // load stmt

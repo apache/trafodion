@@ -5416,7 +5416,53 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
 #pragma warn(1506)  // warning elimination
 
-  char * tablename = space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
+    ////ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+    const Int32 work_atp = 1;
+    const Int32 exe_util_row_atp_index = 2;
+
+    // Assumption (for now): retrievedCols contains ALL columns from
+    // the table/index. This is because this operator does
+    // not support projection of columns. Add all columns from this table
+    // to the map table.
+    //
+    // The row retrieved from filesystem is returned as the last entry in
+    // the returned atp.
+
+    Attributes ** attrs =
+      new(generator->wHeap())
+      Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+
+    for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+      {
+        ItemExpr * col_node
+          = (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
+            getItemExpr();
+
+        attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
+          getAttr();
+      }
+
+    ExpTupleDesc *tupleDesc = 0;
+    ULng32 tupleLength = 0;
+    expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
+                              attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+                              tupleLength,
+                              work_atp, exe_util_row_atp_index,
+                              &tupleDesc, ExpTupleDesc::LONG_FORMAT);
+
+    // delete [] attrs;
+    // NADELETEBASIC is used because compiler does not support delete[]
+    // operator yet. Should be changed back later when compiler supports
+    // it.
+    NADELETEBASIC(attrs, generator->wHeap());
+
+    // The stats row will be returned as the last entry of the returned atp.
+    // Change the atp and atpindex of the returned values to indicate that.
+    expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+                                 0, returnedDesc->noTuples()-1);
+
+    char * tablename =
+      space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
 
   ComTdbExeUtilHBaseBulkLoad * exe_util_tdb = new(space)
   ComTdbExeUtilHBaseBulkLoad(
@@ -5428,17 +5474,23 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
          (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
          (queue_index)getDefault(GEN_DDL_SIZE_UP),
 #pragma nowarn(1506)   // warning elimination
-         2, //getDefault(GEN_DDL_NUM_BUFFERS),
+         getDefault(GEN_DDL_NUM_BUFFERS),
          1024); //getDefault(GEN_DDL_BUFFER_SIZE));
 #pragma warn(1506)  // warning elimination
 
-  exe_util_tdb->setPreloadCleanup(this->preLoadCleanup_);
+  exe_util_tdb->setPreloadCleanup(preLoadCleanup_);
   exe_util_tdb->setPreparation(TRUE);
-  exe_util_tdb->setKeepHFiles(this->keepHFiles_);
-  exe_util_tdb->setTruncateTable(this->truncateTable_);
-  exe_util_tdb->setNoRollback(this->noRollback_);
-  exe_util_tdb->setLogErrors(this->logErrors_);
+  exe_util_tdb->setKeepHFiles(keepHFiles_);
+  exe_util_tdb->setTruncateTable(truncateTable_);
+  exe_util_tdb->setNoRollback(noRollback_);
+  exe_util_tdb->setLogErrors(logErrors_);
+  exe_util_tdb->setNoDuplicates(noDuplicates_);
+  exe_util_tdb->setIndexes(indexes_);
+  exe_util_tdb->setConstraints(constraints_);
+  exe_util_tdb->setNoOutput(noOutput_);
+
   exe_util_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
+
 
   generator->initTdbFields(exe_util_tdb);
 

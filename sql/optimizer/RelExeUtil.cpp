@@ -8368,6 +8368,10 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->truncateTable_ = truncateTable_;
   result->noRollback_= noRollback_;
   result->logErrors_ = logErrors_ ;
+  result->noDuplicates_= noDuplicates_;
+  result->indexes_= indexes_;
+  result->constraints_= constraints_;
+  result->noOutput_= noOutput_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -8394,35 +8398,97 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
     {
       case NO_ROLLBACK_:
       {
+        if (getNoRollback())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("NO ROLLBACK");
+          return 1;
+        }
         setNoRollback(TRUE);
       }
       break;
       case TRUNCATE_TABLE_:
       {
+        if (getTruncateTable())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("TRUNCATE TABLE");
+          return 1;
+        }
         setTruncateTable(TRUE);
       }
 
       break;
+      case NO_DUPLICATE_CHECK_:
+      {
+        if (!getNoDuplicates())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("SKIP DUPLICATES");
+          return 1;
+        }
+        setNoDuplicates(FALSE);
+      }
+      break;
+      case NO_POPULATE_INDEXES_:
+      {
+        if (!getIndexes())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("NO POPULATE INDEXES");
+          return 1;
+        }
+        setIndexes(FALSE);
+      }
+      break;
+      case CONSTRAINTS_:
+      {
+        *da << DgSqlCode(-4485)
+        << DgString0(" Constraints ");
+        return 1;
+      }
+      break;
+      case NO_OUTPUT_:
+      {
+        if (getNoOutput())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0(" NO OUTPUT  ");
+          return 1;
+        }
+        setNoOutput(TRUE);
+      }
+      break;
       case STOP_AFTER_N_ERRORS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(" Stop after N Erros option is not supported yet");
+        << DgString0(" Stop after N Errors ");
         return 1;
       }
-
       break;
       case LOG_ERRORS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(" Error logging option is not supported yet");
+        << DgString0(" Error logging ");
         return 1;
       }
       break;
 
       default:
+      {
+        //Not a valid bulk laod option.
+        *da << DgSqlCode(-4487);
         return 1;
+      }
+
     }
   }
+
   return 0;
 
 };

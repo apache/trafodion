@@ -62,7 +62,7 @@ drop table "T017_Delimit" cascade;
 --------------
 create  table T017TTB ( a int not null primary key, b int, c int);
 
-create  table T017TTA ( a int not null primary key, b int, c int);
+create  table T017TTA ( a int , b int, c int);
 
 create  table T017TTC ( a int not null primary key, b int, c int) SALT using 2 partitions on (a);
 
@@ -72,7 +72,7 @@ create  table T017TTE ( a int , b int, c int);
 
 create table "T017_Delimit" ( a int not null primary key, b int, c int);
 
-load  into T017TTA
+load with no output into T017TTA
   select
     0 +   (10 * x10) + x1,
     1000 +   (10 * x10) + x1,
@@ -121,10 +121,10 @@ execute indexinfo using 'T017TTB';
 execute indexinfo using 'T017TTC';
 execute indexinfo using 'T017TTD';
 
-load into T017TTB select * from T017TTA;
-load into T017TTC select * from T017TTA;
-load into T017TTD select * from T017TTA;
-load into T017TTE select * from T017TTA;
+load with no output into T017TTB select * from T017TTA;
+load with no output into T017TTC select * from T017TTA;
+load with no output into T017TTD select * from T017TTA;
+load with no output into T017TTE select * from T017TTA;
 ---------------------------------------------------
 populate all indexes on T017TTB;
 execute indexinfo using 'T017TTB';
@@ -165,7 +165,7 @@ drop index T017TTBIDXc;
 drop table T017TTB;
 create  table T017TTB ( a int not null primary key, b int, c int);
 
-load into T017TTB select * from T017TTA;
+load with no output into T017TTB select * from T017TTA;
 
 populate all indexes on T017TTB;
 alter table T017TTB enable all indexes;

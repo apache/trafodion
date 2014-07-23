@@ -4,7 +4,7 @@
 
 --- SQL operation complete.
 >>
->>create  table T017TTA ( a int not null primary key, b int, c int);
+>>create  table T017TTA ( a int , b int, c int);
 
 --- SQL operation complete.
 >>
@@ -24,7 +24,7 @@
 
 --- SQL operation complete.
 >>
->>load  into T017TTA
+>>load with no output into T017TTA
 +>  select
 +>    0 +   (10 * x10) + x1,
 +>    1000 +   (10 * x10) + x1,
@@ -211,16 +211,16 @@ T017TTDIDXC                                                                     
 
 --- 2 row(s) selected.
 >>
->>load into T017TTB select * from T017TTA;
+>>load with no output into T017TTB select * from T017TTA;
 
 --- SQL operation complete.
->>load into T017TTC select * from T017TTA;
+>>load with no output into T017TTC select * from T017TTA;
 
 --- SQL operation complete.
->>load into T017TTD select * from T017TTA;
+>>load with no output into T017TTD select * from T017TTA;
 
 --- SQL operation complete.
->>load into T017TTE select * from T017TTA;
+>>load with no output into T017TTE select * from T017TTA;
 
 --- SQL operation complete.
 >>---------------------------------------------------
@@ -718,7 +718,7 @@ B@           B            C            (EXPR)
 
 --- SQL operation complete.
 >>
->>load into T017TTB select * from T017TTA;
+>>load with no output into T017TTB select * from T017TTA;
 
 --- SQL operation complete.
 >>

@@ -779,6 +779,8 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     //Queue * sortedListOfColNames_;
     std::vector<UInt32> posVec_;
 
+    char * prevRowId_;
+
 };
 // UMD SQ: UpdMergeDel on Trafodion table
 class ExHbaseUMDtrafSubsetTaskTcb  : public ExHbaseTaskTcb

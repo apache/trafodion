@@ -2710,6 +2710,10 @@ short RelRoot::codeGen(Generator * generator)
 	}
        else if (exeUtil->getExeUtilType() == ExeUtilExpr::HBASE_COPROC_AGGR_)
           root_tdb->setQueryType(ComTdbRoot::SQL_SELECT_NON_UNIQUE);
+       else if (exeUtil->getExeUtilType() == ExeUtilExpr::HBASE_LOAD_)
+       {
+         root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_HBASE_LOAD);
+       }
       else if (exeUtil->isExeUtilQueryType())
 	{
 	   root_tdb->setQueryType(ComTdbRoot::SQL_EXE_UTIL);

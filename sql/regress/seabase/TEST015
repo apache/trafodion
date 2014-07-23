@@ -51,12 +51,21 @@ log;
 exit;
 
 ?section clean_up
-drop table customer_demographics;
-drop table customer_demographics_salt;
-drop table customer_address;
-drop table customer_address_NOPK;
-drop table t015t1;
-drop table t015t2;
+drop index cd_dep_count_IDX;
+drop index cd_dep_college_count_IDX;
+drop index cd_dep_count_IDX2;
+drop index cd_dep_college_count_IDX2;
+drop table customer_demographics cascade;
+drop table customer_demographics_salt cascade;
+drop table customer_address cascade;
+drop table customer_address_NOPK cascade;
+drop table t015t1 cascade ;
+drop table t015t2 cascade;
+drop table t015t3 cascade;
+drop table t015t4 cascade;
+drop table t015t5 cascade;
+drop table t015t6 cascade;
+
 ?section setup
 --------------------------------------------------------------------------
 create table customer_demographics
@@ -128,6 +137,10 @@ create table customer_address_NOPK
 
 create table t015t1 (a int) ;
 create table t015t2 (a int) ;
+create table t015t3 ( a int not null primary key, b int, c int);
+create table t015t4 ( a int not null primary key, b int, c int) salt using 2 partitions on (a);
+create table t015t5 ( a int not null , b int, c int) store by (a);
+create table t015t6 ( a int not null , b int, c int);
 
 insert into t015t1 values (1),(2),(3),(4),(5);
 
@@ -153,20 +166,66 @@ execute s;
 
 select * from t015t2 order by a;
 
-prepare s from load into t015t2 select * from t015t1;
+prepare s from load with no populate indexes into t015t2 select * from t015t1;
 explain options 'f' s;
 execute s;
 
-prepare s from load with no rollback into t015t2 select * from t015t1;
+prepare s from load with no recovery,  no populate indexes  into t015t2 select * from t015t1;
 explain options 'f' s;
 execute s;
 
---truncate and log errors are not implemented yet .
-prepare s from load with truncate,log error into t015t2 select * from t015t1;
+--log errors are not implemented yet .
+prepare s from load with log error into t015t2 select * from t015t1;
 --explain options 'f' s;
 --execute s;
 
+delete from t015t2;
+insert into t015t2 values (100),(200),(300);
+select * from t015t2 order by a;
+load with truncate table, no populate indexes  into t015t2 select * from t015t1;
 
+select * from t015t2 order by a;
+
+
+load transform into t015t3 select a,a,a from t015t1;
+
+create index t015t3idx on t015t3(b);
+
+load transform into t015t3 select a,a,a from t015t1;
+
+drop index t015t3idx ;
+
+alter table t015t3  add  constraint t015t3_cnst check (b>100);
+
+load transform into t015t3 select a,a,a from t015t1;
+
+alter table t015t3  drop  constraint t015t3_cnst;
+
+prepare s3 from load transform into t015t3 select a,a,a from t015t1  <<+ cardinality 10e0 >> ;
+explain options 'f' s3;
+log LOG015_plan.log clear;
+explain s3;
+log;
+sh grep "sort_key" LOG015_PLAN.LOG  >> LOG015 ;
+log LOG015;
+prepare s4 from load transform into t015t4 select a,a,a from t015t1  <<+ cardinality 10e0 >> ;
+explain options 'f' s4;
+log;
+log LOG015_plan.log clear;
+explain s4;
+log;
+sh grep -A 2 "sort_key" LOG015_PLAN.LOG  >> LOG015 ;
+log LOG015;
+prepare s5 from load transform into t015t5 select a,a,a from t015t1  <<+ cardinality 10e0 >> ;
+explain options 'f' s5;
+log;
+log LOG015_plan.log clear;
+explain s5;
+log;
+sh grep "sort_key" LOG015_PLAN.LOG  >> LOG015 ;
+log LOG015;
+prepare s6 from load transform into t015t6 select a,a,a from t015t1;
+explain options 'f' s6;
 
 --------------------------------------------------------------------------
 cqd TRAF_LOAD_USE_QUASI_SECURE 'off';
@@ -178,7 +237,7 @@ load transform into customer_address
 select * from hive.hive.customer_address;                                                                                              
 explain options 'f' s;
 
-load into customer_address 
+load  with no populate indexes  into customer_address 
 select * from hive.hive.customer_address;                                                                                                   
 
 select count(*) from customer_address;
@@ -194,7 +253,7 @@ load transform into customer_address_NOPK
 select * from hive.hive.customer_address;                                                                                              
 explain options 'f' s;
 
-load into customer_address_NOPK 
+load  with no populate indexes  into customer_address_NOPK 
 select * from hive.hive.customer_address;                                                                                                   
 
 select count(*) from customer_address_NOPK;
@@ -221,7 +280,7 @@ sh grep -A 18  "ESP_EXCHANGE.*2" LOG015_PLAN.LOG  | grep parent_partitioning -A 
 
 log LOG015;
 
-load into customer_demographics 
+load  with no populate indexes  into customer_demographics 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;                                                                                            
 
 select count(*) from customer_demographics;
@@ -252,7 +311,7 @@ sh grep "ESP_EXCHANGE.*2" LOG015_PLAN.LOG  >> LOG015 ;
 sh grep -A 18  "ESP_EXCHANGE.*2" LOG015_PLAN.LOG  | grep parent_partitioning -A 3 >> LOG015 ;
 log LOG015;
 
-load  into customer_demographics_salt 
+load  with no populate indexes  into customer_demographics_salt 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;;                                                                                              
 
 select count(*) from customer_demographics_salt;
@@ -261,19 +320,141 @@ select [first 20] * from customer_demographics_salt order by cd_demo_sk  ;
 
 ----------------
 
+-- with no duplicats option 
 
 
+cqd  comp_bool_226 'on';
+drop table t015t3 cascade;
+drop table t015t4 cascade;
+drop table t015t5 cascade;
+drop table t015t6 cascade;
+
+create table t015t3 ( a int not null primary key, b int, c int);
+create table t015t4 ( a int not null primary key, b int, c int) salt using 2 partitions on (a);
+create table t015t5 ( a int not null , b int, c int) store by (a);
+create table t015t6 ( a int not null , b int, c int);
+delete from t015t1;
+insert into  t015t1 values (25),(24),(23),(7),(5),(5),(2),(10),(11),(12),(13),(14),(15);
 
 
+----produces error 
+prepare s from load transform into t015t3 select a,a,a from t015t1;
+explain options 'f' s;
+execute s;
+load with no output into t015t3 select a,a,a from t015t1;
+select * from t015t3 order by a;
+---produces eror
+prepare s from load transform into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
+explain options 'f' s;
+execute s;
+load with no output into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>; 
+select * from t015t4 order by a;
+---
+prepare s from load transform into t015t5 select a,a,a from t015t1 ;
+explain options 'f' s;
+execute s;
+load with no output into t015t5 select a,a,a from t015t1 ; 
+select * from t015t5 order by a;
+---
+prepare s from load transform into t015t6 select a,a,a from t015t1 ;
+explain options 'f' s;
+execute s;
+load with no output into t015t6 select a,a,a from t015t1 ; 
+select * from t015t6 order by a;
+------------------------------
+
+----
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+prepare s from load transform into t015t3 select a,a,a from t015t1;
+explain options 'f' s;
+execute s;
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+load with no output, no duplicate check  into t015t3 select a,a,a from t015t1;
+select * from t015t3 order by a;
+---
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+prepare s from load transform into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
+explain options 'f' s;
+execute s;
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+load with no output, no duplicate check ,  no populate indexes into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>; 
+select * from t015t4 order by a;
+---
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+prepare s from load transform into t015t5 select a,a,a from t015t1 ;
+explain options 'f' s;
+execute s;
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+load with no output, no duplicate check into t015t5 select a,a,a from t015t1 ; 
+select * from t015t5 order by a;
+---
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES 'ON';
+prepare s from load transform into t015t6 select a,a,a from t015t1 ;
+explain options 'f' s;
+execute s;
+cqd TRAF_LOAD_PREP_SKIP_DUPLICATES reset;
+load with no output, no duplicate check into t015t6 select a,a,a from t015t1 ; 
+select * from t015t4 order by a;
 
 
+--Add  tests with indexes on bulloaded tables
+drop table customer_demographics_salt cascade;
+drop table customer_demographics cascade;
+create table customer_demographics
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+); 
 
+create table customer_demographics_salt
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+)
+salt using 4 partitions on (cd_demo_sk);
+create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
+create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
 
+load  into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
+set parserflags 1;
+select count(*) from customer_demographics;
+select count(*) from table(index_table cd_dep_count_IDX);
+select count(*) from table(index_table cd_dep_college_count_IDX);
 
+drop index cd_dep_count_IDX;
+drop index cd_dep_college_count_IDX;
 
+create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
+create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
+---------------------------
+load  into customer_demographics_salt 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
+set parserflags 1;
+select count(*) from customer_demographics_salt;
+select count(*) from table(index_table cd_dep_count_IDX2);
+select count(*) from table(index_table cd_dep_college_count_IDX2);
 
+drop index cd_dep_count_IDX2;
+drop index cd_dep_college_count_IDX2;
 
 
 

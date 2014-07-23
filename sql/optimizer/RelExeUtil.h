@@ -2613,7 +2613,16 @@ class ExeUtilHBaseBulkLoad : public ExeUtilExpr
 public:
 
 
-  enum HBaseBulkLoadOptionType {NO_ROLLBACK_, TRUNCATE_TABLE_, LOG_ERRORS_, STOP_AFTER_N_ERRORS_};
+  enum HBaseBulkLoadOptionType {
+    NO_ROLLBACK_,
+    TRUNCATE_TABLE_,
+    LOG_ERRORS_,
+    STOP_AFTER_N_ERRORS_,
+    NO_DUPLICATE_CHECK_,
+    NO_POPULATE_INDEXES_,
+    CONSTRAINTS_,
+    NO_OUTPUT_
+  };
 
     class HBaseBulkLoadOption
     {
@@ -2621,8 +2630,7 @@ public:
     public:
       HBaseBulkLoadOption(HBaseBulkLoadOptionType option, Lng32 numericVal, char * stringVal )
       : option_(option), numericVal_(numericVal), stringVal_(stringVal)
-    {
-    } ;
+    {} ;
 
         private:
           HBaseBulkLoadOptionType option_;
@@ -2641,9 +2649,12 @@ public:
     keepHFiles_(FALSE),
     truncateTable_(FALSE),
     noRollback_(FALSE),
-    logErrors_(FALSE)
+    logErrors_(FALSE),
+    noDuplicates_(TRUE),
+    indexes_(TRUE),
+    constraints_(FALSE),
+    noOutput_(FALSE)
   {
-
   };
 
   virtual const NAString getText() const;
@@ -2689,6 +2700,7 @@ public:
 
   void setNoRollback(NABoolean noRollback)
   {
+    //4489 bulk load option $0~String0 cannot be specified more than once.
     noRollback_ = noRollback;
   }
 
@@ -2701,7 +2713,47 @@ public:
   {
     truncateTable_ = truncateTable;
   }
+
+  NABoolean getNoDuplicates() const
+  {
+    return noDuplicates_;
+  }
+
+  void setNoDuplicates(NABoolean v)
+  {
+    noDuplicates_ = v;
+  }
+  NABoolean getConstraints() const
+  {
+    return constraints_;
+  }
+
+  void setConstraints(NABoolean constraints)
+  {
+   constraints_ = constraints;
+  }
+
+  NABoolean getIndexes() const
+  {
+   return indexes_;
+  }
+
+  void setIndexes(NABoolean indexes)
+  {
+   indexes_ = indexes;
+  }
+
+  NABoolean getNoOutput() const
+  {
+   return noOutput_;
+  }
+
+  void setNoOutput(NABoolean noOutput)
+  {
+   noOutput_ = noOutput;
+  }
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
+  virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
 
   short setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> *
       hBaseBulkLoadOptionList,
@@ -2713,6 +2765,10 @@ private:
   NABoolean truncateTable_;
   NABoolean noRollback_;
   NABoolean logErrors_;
+  NABoolean noDuplicates_;
+  NABoolean indexes_;
+  NABoolean constraints_;
+  NABoolean noOutput_;
 
 };
 
