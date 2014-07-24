@@ -88,35 +88,36 @@ echo $MY_NODES
 sudo /usr/share/cmf/uninstall-cloudera-manager.sh
 
 echo "***INFO: Shutdown Cloudera Manager agents on all nodes"
-pdsh $MY_NODES sudo /sbin/service cloudera-scm-agent hard_stop
+pdsh $MY_NODES 'sudo /sbin/service cloudera-scm-agent hard_stop'
 
 #==============================================
 echo "***INFO: Uninstall packages"
-pdsh $MY_NODES sudo yum --assumeyes remove 'cloudera-manager-*' hadoop hue-common 'bigtop-*' sqoop2-client
-pdsh $MY_NODES sudo yum --assumeyes clean all
+pdsh $MY_NODES 'sudo yum --assumeyes remove cloudera-manager-* hadoop hue-common bigtop-* sqoop2-client'
+pdsh $MY_NODES 'sudo yum --assumeyes clean all'
 
 #==============================================
 echo "***INFO: Remove Cloudera Manager and CDH data"
-pdsh $MY_NODES sudo rm -Rf /usr/share/cmf '/var/lib/cloudera*' '/var/cache/yum/cloudera*' '/var/log/cloudera*' '/var/run/cloudera*' '/opt/cloudera*' '/tmp/scm_prepare_node*' '/etc/cloudera*'
+pdsh $MY_NODES 'sudo rm -Rf /usr/share/cmf /var/lib/cloudera* /var/cache/yum/cloudera* /var/log/cloudera* /var/run/cloudera* /opt/cloudera* /tmp/scm_prepare_node*  /etc/cloudera*'
 
-pdsh $MY_NODES sudo rm -Rf /var/lib/flume-ng '/var/lib/hadoop*' /var/lib/hue /var/lib/oozie /var/lib/solr '/var/lib/sqoop*' '/var/lib/zookeeper*'
+pdsh $MY_NODES 'sudo rm -Rf /var/lib/flume-ng /var/lib/hadoop* /var/lib/hue /var/lib/oozie /var/lib/solr /var/lib/sqoop* /var/lib/zookeeper*'
 
-pdsh $MY_NODES sudo rm -Rf /dfs /mapred /yarn
+pdsh $MY_NODES 'sudo rm -Rf /dfs /mapred /yarn'
 
-pdsh $MY_NODES sudo rm -Rf /var/run/hdfs-sockets '/var/run/zookeeper*' '/var/run/sqoop*' '/var/run/flume*' '/var/run/sqoop*'
+pdsh $MY_NODES 'sudo rm -Rf /var/run/hdfs-sockets /var/run/zookeeper* /var/run/sqoop* /var/run/flume* /var/run/sqoop*'
 
-pdsh $MY_NODES sudo rm -Rf '/var/log/zookeeper*' '/var/log/hadoop*' '/var/log/hive*' '/var/log/sqoop*' '/var/log/flume*' '/var/log/hbase*' '/var/log/hue*'
+pdsh $MY_NODES 'sudo rm -Rf /var/log/zookeeper* /var/log/hadoop* /var/log/hive* /var/log/sqoop* /var/log/flume* /var/log/hbase* /var/log/hue*'
 
-pdsh $MY_NODES sudo rm -Rf '/etc/zookeeper*' '/etc/hadoop*' '/etc/hive*' '/etc/sqoop*' '/etc/flume*' '/etc/hbase*' '/etc/hcatalog*' '/etc/webhcat*' '/etc/pig*' '/etc/oozie*'  
-pdsh $MY_NODES sudo rm -Rf '/usr/lib/hadoop*' '/usr/lib/hive*' '/usr/lib/oozie*' '/usr/lib/hcatalog*' '/usr/lib/parquet*' 
+pdsh $MY_NODES 'sudo rm -Rf /etc/zookeeper* /etc/hadoop* /etc/hive* /etc/sqoop* /etc/flume* /etc/hbase* /etc/hcatalog* /etc/webhcat* /etc/pig* /etc/oozie*'
+  
+pdsh $MY_NODES 'sudo rm -Rf /usr/lib/hadoop* /usr/lib/hive* /usr/lib/oozie* /usr/lib/hcatalog* /usr/lib/parquet*' 
 
-pdsh $MY_NODES sudo rm -Rf '/usr/lib/alternatives/hadoop*'
+pdsh $MY_NODES 'sudo rm -Rf /usr/lib/alternatives/hadoop*'
 
-pdsh $MY_NODES sudo rm -Rf '/tmp/hadoop*'
+pdsh $MY_NODES 'sudo rm -Rf /tmp/hadoop*'
 
-pdsh $MY_NODES sudo rm -Rf '/etc/alternatives/hadoop*' '/etc/alternatives/hive*' '/etc/alternatives/hbase*' 
+pdsh $MY_NODES 'sudo rm -Rf /etc/alternatives/hadoop* /etc/alternatives/hive* /etc/alternatives/hbase*' 
 
-pdsh $MY_NODES sudo rm -Rf '/var/tmp/sqoop*' '/var/lib/alternatives/hbase*' '/etc/run/webhcat*' '/usr/share/hue*' '/tmp/hadoop*' /tmp/hsperfdata_zookeeper  
+pdsh $MY_NODES 'sudo rm -Rf /var/tmp/sqoop* /var/lib/alternatives/hbase* /etc/run/webhcat* /usr/share/hue* /tmp/hadoop* /tmp/hsperfdata_zookeeper'  
 
 #==============================================
 echo "***INFO: Kill any running Cloudera Manager and CDH processes that might still be running"
@@ -159,30 +160,30 @@ do
 
 done
 
-pdsh $MY_NODES sudo pkill cloudera-scm
+pdsh $MY_NODES 'sudo pkill cloudera-scm'
 #==============================================
 echo "***INFO: Removing Cloudera symbolic directory links"
 
 for node in $my_node_list
 do
-  fileFound=$(pdsh -w $node find / -wholename /etc/alternatives/hadoop-conf | wc -l)
+  fileFound=$(pdsh -w $node 'find / -wholename /etc/alternatives/hadoop-conf' | wc -l)
 
   if [[ $fileFound -eq 1 ]]; then
-     pdsh -w $node command rm -r /etc/alternatives/hadoop-conf
+     pdsh -w $node 'command rm -r /etc/alternatives/hadoop-conf'
      fileFound=0
   fi
 
-  fileFound=$(pdsh -w $node find / -wholename /etc/alternatives/hbase-conf | wc -l)
+  fileFound=$(pdsh -w $node 'find / -wholename /etc/alternatives/hbase-conf' | wc -l)
 
   if [[ $fileFound -eq 1 ]]; then
-     pdsh -w $node command rm -r /etc/alternatives/hbase-conf
+     pdsh -w $node 'command rm -r /etc/alternatives/hbase-conf'
      fileFound=0
   fi
 
-  fileFound=$(pdsh -w $node find / -wholename /etc/alternatives/hive-conf | wc -l)
+  fileFound=$(pdsh -w $node 'find / -wholename /etc/alternatives/hive-conf' | wc -l)
 
   if [[ $fileFound -eq 1 ]]; then
-     pdsh -w command rm -r /etc/alternatives/hive-conf
+     pdsh -w $node 'command rm -r /etc/alternatives/hive-conf'
      fileFound=0
   fi
 done

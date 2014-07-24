@@ -137,15 +137,15 @@ else
         sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
         sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
     else
-        pdsh $MY_NODES  sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
+        pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_selinux_config_ORIGINAL /etc/selinux/config
         pdsh $MY_NODES sudo cp $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL /etc/security/limits.conf
-        pdsh $MY_NODES sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null
+        pdsh $MY_NODES "sudo rm /usr/share/cmf/lib/plugins/$HBASE_TRX 2>/dev/null"
     fi
 
     echo "***INFO remove the Trafodion userid and group"
     $TRAF_PDSH sudo rm -rf $TRAF_WORKDIR/$TRAF_USER
     $TRAF_PDSH sudo /usr/sbin/userdel --force --remove $TRAF_USER
-    $TRAF_PDSH sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null
+    $TRAF_PDSH "sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null"
 
     # remove all download files
     echo "***DEBUG: skipping deleting downloaded directory"
