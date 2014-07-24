@@ -1,3 +1,25 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
 // todo:
 //   make sure monitor deletes death notice interest for $SERV0
 //   use semaphore or other instead of delay while waiting for notice
@@ -75,7 +97,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
             printf("[%s] Process death notice received for %s (%d, %d),"
-                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
@@ -99,7 +121,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find procList object for (%d, %d)\n", 
+            printf("[%s] Could not find procList object for (%d, %d)\n",
                    MyName, recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid);
         }
@@ -193,7 +215,7 @@ bool testUnregister ()
         else
         {
             printf ("[%s] error starting deathUnreg process\n", MyName);
-            
+
             testSuccess = false;
         }
     }
@@ -223,7 +245,7 @@ bool testDeathNotices ()
 
         if ( workerStartProcess[i] )
         {
-            util.requestNewProcess ( 1, ProcessType_Generic, false, 
+            util.requestNewProcess ( 1, ProcessType_Generic, false,
                                      workerName[i], "server", "", "",
                                      ((tracing) ? 1: 0), serverArgs,
                                      workerNid[i], workerPid[i], procName);
@@ -238,7 +260,7 @@ bool testDeathNotices ()
                                       workerExpNotices[i] );
             if ( tracing )
                 printf ("[%s] Worker #%d: %s is (%d, %d)\n", MyName,
-                        procListCount, 
+                        procListCount,
                         workerName[i], workerNid[i], workerPid[i] );
 
             ++procListCount;
@@ -401,7 +423,7 @@ bool testMultipleDeathNotices ()
                                       "deathWatch", "", "", ((tracing) ? 1: 0),
                                       serverArgs, deathWatcherNid[i],
                                       deathWatcherPid[i], deathWatcherName[i]))
-        {  // Failed to create process.  
+        {  // Failed to create process.
             testSuccess = false;
             break;
         }
@@ -448,7 +470,7 @@ bool testMultipleDeathNotices ()
             break;
         }
     }
-    
+
     if (!testSuccess)
     {
         // Clean up and return.
@@ -524,10 +546,6 @@ int main (int argc, char *argv[])
 
     bool testSuccess;
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 

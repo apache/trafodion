@@ -1,3 +1,21 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
 setup:
 1.  Make sure sqconfig is set up correctly and sqgen run.
     (some tests require a minimum number of nodes.  Tests should check
@@ -159,7 +177,7 @@ Discussion:
    interest.  A debugger can be attached to the monitor to verify this
    and this was done during test development.
 
-   Part 2 of the test also registers interest in death notices.  It 
+   Part 2 of the test also registers interest in death notices.  It
    does this by using the "death notice" flag during an "open" request
    and by using the "notice" request.   It verifies correct behavior
    by ensuring that the expected death notices are delivered by the monitor.
@@ -210,7 +228,7 @@ Discussion:
       - Expects $ABC to be restarted on the other PERSISTENT_ZONES configured
       - Kills $ABC again - it should not be restarted
 
-   When the last shell exits, there should be no Seaquest processes running
+   When the last shell exits, there should be no Trafodion processes running
 
 How to run:
    sqshell
@@ -229,7 +247,7 @@ Relationship to original monitor tests:
 Additional test ideas:
    - verify "number of retries" counter gets reset if wait longer than
      the configured "retry reset time"
-   - exercise additional variations on restarting 
+   - exercise additional variations on restarting
 
 -----------------------------------
 tmSync
@@ -288,7 +306,7 @@ Discussion:
 To do:
 1) need to verify on real cluster
 2) add real-cluster tests (as run originally using test8.sub.sn,
-   test8-8.sub.sn, test8-10.sub.sn) [1/6/12: waiting for fix from Zalo for
+   test8-8.sub.sn, test8-10.sub.sn) [1/6/12: waiting for fix for
    spare node startup problem]
 
 -----------------------------------
@@ -300,7 +318,7 @@ Description:
 
 Discussion:
    The test performs the following steps:
-   1.  Verifies that the configuration of Seaquest nodes is sufficient
+   1.  Verifies that the configuration of Trafodion nodes is sufficient
        for the test.
    2.  Verify ability to start an SPX process on each of the physical nodes
    3.  Verify that if an SPX process dies each of the other SPX

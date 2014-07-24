@@ -1,3 +1,25 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
 // controller:
 //    create process A on node 0
 //    after children created
@@ -70,7 +92,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
 {
     if ( recv_msg->type == MsgType_ProcessDeath )
     {
-        printf("[%s] Process death notice received for (%d, %d)\n", 
+        printf("[%s] Process death notice received for (%d, %d)\n",
                MyName,
                recv_msg->u.request.u.death.nid,
                recv_msg->u.request.u.death.pid);
@@ -89,7 +111,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find procList object for (%d, %d)\n", 
+            printf("[%s] Could not find procList object for (%d, %d)\n",
                    MyName, recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid);
         }
@@ -191,10 +213,6 @@ int main (int argc, char *argv[])
 
     if ( tracing ) util.setTrace (tracing);
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
@@ -216,7 +234,7 @@ int main (int argc, char *argv[])
     char procName[25];
     childDeathParent = NULL;
     if (util.requestNewProcess (1, ProcessType_Generic, false,
-                                (char *) "$PROCA", "childExitParent", "", "", 
+                                (char *) "$PROCA", "childExitParent", "", "",
                                 0, childArgs, nid, pid, procName))
     {
         procList[0] = new CreatedProcess ( "$PROCA", nid, pid );
@@ -226,7 +244,7 @@ int main (int argc, char *argv[])
     {
         printf ("[%s] error starting childExitParent process\n", MyName);
         printf ("[%s] test failed\n", MyName);
-        
+
         printf("[%s] Test FAILED\n", MyName);
 
         cleanup();

@@ -1,3 +1,25 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -91,7 +113,7 @@ void recv_change_msg(struct message_def *recv_msg, int )
 {
     if ( recv_msg->type == MsgType_Change )
     {
-        if ( tracing ) 
+        if ( tracing )
         {
             printf("[%s] Got Change notice: type=%d, group=%s, key=%s, "
                    "value=%s\n",
@@ -148,10 +170,10 @@ bool setRegValues()
         if ( tracing )
         {
             printf("[%s] Setting type=%d, group=%s, key=%s, value=%s\n",
-                   MyName, regVals[i].type, regVals[i].group, 
+                   MyName, regVals[i].type, regVals[i].group,
                    regVals[i].key, regVals[i].value);
         }
-        if (!util.requestSet ( regVals[i].type, regVals[i].group, 
+        if (!util.requestSet ( regVals[i].type, regVals[i].group,
                                regVals[i].key, regVals[i].value ))
         {
             result = false;
@@ -251,7 +273,7 @@ bool checkChangeNotices()
             if ( tracing )
             {
                 printf("[%s] Not expecting configuration change notice "
-                       "for type=%d, group=%s\n", MyName, regVals[i].type, 
+                       "for type=%d, group=%s\n", MyName, regVals[i].type,
                        regVals[i].group);
             }
         }
@@ -323,7 +345,7 @@ bool getAllRegValues( ConfigType type, const char *group)
             strcpy ( nextKey, regData->list[regData->num_returned-1].key);
             if ( tracing )
             {
-                printf("[%s] Getting more reg values following %s\n", MyName, 
+                printf("[%s] Getting more reg values following %s\n", MyName,
                        nextKey);
             }
         }
@@ -357,10 +379,6 @@ int main (int argc, char *argv[])
 
     if ( tracing ) util.setTrace (tracing);
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
@@ -373,7 +391,7 @@ int main (int argc, char *argv[])
     // Set trace flag in case command line argument specified tracing.
     tracing = util.getTrace ();
 
-    // Set local io callback function for "open", "change" and 
+    // Set local io callback function for "open", "change" and
     // "process created".
     gp_local_mon_io->set_cb(recv_change_msg, "recv");
 

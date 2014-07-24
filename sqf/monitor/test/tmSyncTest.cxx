@@ -135,13 +135,13 @@ void unlock_notice()
     }
 }
 
-int signal_notice() 
+int signal_notice()
 {
     int rc = 0;
 
     notice_signaled = true;
     rc = pthread_cond_broadcast(&notice_cv);
-    if ( rc != 0) 
+    if ( rc != 0)
     {
         errno = rc;
         printf("[%s] - Unable to signal notice: %s (%d)\n",
@@ -152,14 +152,14 @@ int signal_notice()
     return( rc );
 }
 
-int wait_on_notice( void ) 
+int wait_on_notice( void )
 {
     int rc = 0;
 
-    if ( ! notice_signaled ) 
+    if ( ! notice_signaled )
     {
         rc = pthread_cond_wait(&notice_cv, &notice_mutex);
-        if ( rc != 0) 
+        if ( rc != 0)
         {
             errno = rc;
             printf("[%s] - Unable to signal notice: %s (%d)\n",
@@ -195,13 +195,13 @@ void unlock_event()
     }
 }
 
-int signal_event() 
+int signal_event()
 {
     int rc = 0;
 
     event_signaled = true;
     rc = pthread_cond_broadcast(&event_cv);
-    if ( rc != 0) 
+    if ( rc != 0)
     {
         errno = rc;
         printf("[%s] - Unable to signal event: %s (%d)\n",
@@ -212,14 +212,14 @@ int signal_event()
     return( rc );
 }
 
-int wait_on_event( void ) 
+int wait_on_event( void )
 {
     int rc = 0;
 
-    if ( ! event_signaled ) 
+    if ( ! event_signaled )
     {
         rc = pthread_cond_wait(&event_cv, &event_mutex);
-        if ( rc != 0) 
+        if ( rc != 0)
         {
             errno = rc;
             printf("[%s] - Unable to signal event: %s (%d)\n",
@@ -278,13 +278,13 @@ void unlock_unsolicited()
     }
 }
 
-int signal_unsolicited() 
+int signal_unsolicited()
 {
     int rc = 0;
 
     unsolicited_signaled = true;
     rc = pthread_cond_broadcast(&unsolicited_cv);
-    if ( rc != 0) 
+    if ( rc != 0)
     {
         errno = rc;
         printf("[%s] - Unable to signal unsolicited: %s (%d)\n",
@@ -295,14 +295,14 @@ int signal_unsolicited()
     return( rc );
 }
 
-int wait_on_unsolicited( void ) 
+int wait_on_unsolicited( void )
 {
     int rc = 0;
 
-    if ( ! unsolicited_signaled ) 
+    if ( ! unsolicited_signaled )
     {
         rc = pthread_cond_wait(&unsolicited_cv, &unsolicited_mutex);
-        if ( rc != 0) 
+        if ( rc != 0)
         {
             errno = rc;
             printf("[%s] - Unable to signal unsolicited: %s (%d)\n",
@@ -514,10 +514,10 @@ void process_unsolicited_msg( struct message_def *msg )
                 buf->seq_number,
                 buf->length,
                 buf->string);
-            seq_number = buf->seq_number;    
+            seq_number = buf->seq_number;
             trans_count++;
             trans_active++;
-            // sending reply    
+            // sending reply
             reply->type = MsgType_UnsolicitedMessage;
             reply->noreply = true;
             reply->u.reply.type = ReplyType_TmSync;
@@ -548,13 +548,13 @@ void process_unsolicited_msg( struct message_def *msg )
         {
             printf("[%s] Invalid TmSync Notice received - msgtype=%d, noreply=%d, reqtype=%d\n",
                 MyName, msg->type, msg->noreply, msg->u.request.type);
-        }     
+        }
     }
     else
     {
         printf("[%s] Invalid TmSync Notice received - msgtype=%d, noreply=%d, reqtype=%d\n",
             MyName, msg->type, msg->noreply, msg->u.request.type);
-    }    
+    }
 }
 
 void process_event( struct message_def *msg )
@@ -565,8 +565,8 @@ void process_event( struct message_def *msg )
     {
         if( msg->type == MsgType_Event )
         {
-            printf("[%s] Event %d (%s) received\n", 
-                   MyName, 
+            printf("[%s] Event %d (%s) received\n",
+                   MyName,
                    msg->u.request.u.event_notice.event_id,
                    msg->u.request.u.event_notice.data);
             event_id = msg->u.request.u.event_notice.event_id;
@@ -579,13 +579,13 @@ void process_event( struct message_def *msg )
         {
             printf("[%s] Invalid Event received - msgtype=%d, noreply=%d, reqtype=%d\n",
                 MyName, msg->type, msg->noreply, msg->u.request.type);
-        }     
+        }
     }
     else
     {
         printf("[%s] Invalid Event received - msgtype=%d, noreply=%d, reqtype=%d\n",
             MyName, msg->type, msg->noreply, msg->u.request.type);
-    }    
+    }
 }
 
 void request_to_become_TmLeader(void)
@@ -672,7 +672,7 @@ bool process_notice( struct message_def *msg )
                 seq=completed_request(msg->u.request.u.tm_sync_notice.nid[j],
                                       msg->u.request.u.tm_sync_notice.handle[j],
                                       true);
-                printf("[%s] TmSyncAbort seq#=%d, handle=%d\n", 
+                printf("[%s] TmSyncAbort seq#=%d, handle=%d\n",
                     MyName,
                     seq,
                     msg->u.request.u.tm_sync_notice.handle[j]);
@@ -699,7 +699,7 @@ bool process_notice( struct message_def *msg )
                 {
                     trans_active--;
                     assert( trans_active >= 0 );
-                    printf("[%s] TmSyncCommit seq#=%d, handle=%d\n", 
+                    printf("[%s] TmSyncCommit seq#=%d, handle=%d\n",
                         MyName,
                         seq,
                         msg->u.request.u.tm_sync_notice.handle[j]);
@@ -716,7 +716,7 @@ bool process_notice( struct message_def *msg )
                 ( msg->u.request.u.death.trans_id.txid[2] == 0 ) &&
                 ( msg->u.request.u.death.trans_id.txid[3] == 0 )   )
             {
-                if ( tmProcess[msg->u.request.u.death.nid].pid == 
+                if ( tmProcess[msg->u.request.u.death.nid].pid ==
                      msg->u.request.u.death.pid                   )
                 {
                     tmProcess[msg->u.request.u.death.nid].dead = true;
@@ -729,9 +729,9 @@ bool process_notice( struct message_def *msg )
             else
             {
                 printf("[%s] Transaction Process Death Notification for Nid=%d, Pid=%d, Trans_id=%lld.%lld.%lld.%lld\n",
-                    MyName, 
-                    msg->u.request.u.death.nid, 
-                    msg->u.request.u.death.pid, 
+                    MyName,
+                    msg->u.request.u.death.nid,
+                    msg->u.request.u.death.pid,
                     msg->u.request.u.death.trans_id.txid[0],
                     msg->u.request.u.death.trans_id.txid[1],
                     msg->u.request.u.death.trans_id.txid[2],
@@ -742,7 +742,7 @@ bool process_notice( struct message_def *msg )
         {
             node_down=true;
             printf("[%s] Node %d (%s) is DOWN, Transactions aborted\n",
-                MyName, 
+                MyName,
                 msg->u.request.u.down.nid,
                 msg->u.request.u.down.node_name);
             node_up[msg->u.request.u.down.nid]=false;
@@ -752,7 +752,7 @@ bool process_notice( struct message_def *msg )
         else if ( msg->type == MsgType_NodeUp )
         {
             printf("[%s] Node %d (%s) is UP\n",
-                MyName, 
+                MyName,
                 msg->u.request.u.up.nid,
                 msg->u.request.u.up.node_name);
             up_node_count++;
@@ -767,7 +767,7 @@ bool process_notice( struct message_def *msg )
     {
         printf("[%s] Invalid TmSync Notice received - msgtype=%d, noreply=%d, reqtype=%d\n",
             MyName, msg->type, msg->noreply, msg->u.request.type);
-    }    
+    }
     return completed;
 }
 
@@ -880,7 +880,7 @@ void recv_localio_msg(struct message_def *recv_msg, int )
         case MsgType_Service:
             printf("Service Reply: Type=%d, ReplyType=%d\n",recv_msg->type, recv_msg->u.reply.type);
             break;
-        
+
         case MsgType_Event:
             printf("Event - %d\n",recv_msg->u.request.u.event_notice.event_id);
             process_event( recv_msg );
@@ -966,7 +966,7 @@ MPI_Status tm_sync( int seq_number )
     buf.seq_number = seq_number;
     sprintf(buf.string,"Master TmSync start #%d from Node %d",trans_starts,util.getNid());
     buf.length = strlen(buf.string);
-    
+
     // build monitor request
     msg->type = MsgType_Service;
     msg->noreply = false;
@@ -977,7 +977,7 @@ MPI_Status tm_sync( int seq_number )
     msg->u.request.u.tm_sync.length = sizeof(struct sync_buf_def);
     memmove(msg->u.request.u.tm_sync.data,&buf,msg->u.request.u.tm_sync.length);
     printf ("[%s] tm_sync data length=%d\n",MyName,msg->u.request.u.tm_sync.length);
- 
+
     gp_local_mon_io->send_recv( msg );
     status.MPI_TAG = msg->reply_tag;
 
@@ -998,13 +998,13 @@ MPI_Status tm_sync( int seq_number )
             request[util.getNid()][seq_number].handle = msg->u.reply.u.tm_sync.handle;
             trans_count++;
             trans_active++;
-            status.MPI_ERROR = msg->u.reply.u.tm_sync.return_code;        
+            status.MPI_ERROR = msg->u.reply.u.tm_sync.return_code;
         }
         else
         {
             printf ("[%s] tm_sync request failed, rc=%d\n", MyName,
                     msg->u.reply.u.tm_sync.return_code);
-            status.MPI_ERROR = msg->u.reply.u.tm_sync.return_code;        
+            status.MPI_ERROR = msg->u.reply.u.tm_sync.return_code;
         }
     }
     else
@@ -1057,7 +1057,7 @@ bool wait_for_unsolicited_msg()
 {
     int rc = -1;
     printf ("[%s] Waiting for unsolicited message.\n", MyName);
-    
+
     lock_unsolicited();
     rc = wait_on_unsolicited();
     if ( rc == -1 )
@@ -1150,7 +1150,7 @@ void doTest1(  )
                 else if( status.MPI_ERROR == MPI_ERR_PENDING )
                 {
                     printf("[%s] Test1(%d) - Sync already started ... waiting for TM Sync data.\n",MyName,trans_starts);
-                }  
+                }
                 else
                 {
                     printf("[%s] Test1 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
@@ -1216,7 +1216,7 @@ void doTest3()
                     fflush (stdout);
                     MPI_Abort( MPI_COMM_WORLD, 99 );
                 }
-            }    
+            }
             printf("[%s] Test3 - Wait to commit or abort TM sync data.\n",MyName);
             while( !wait_for_notice() )
             {
@@ -1268,7 +1268,7 @@ void doTest4()
                     fflush (stdout);
                     MPI_Abort( MPI_COMM_WORLD, 99 );
                 }
-            }    
+            }
             printf("[%s] Test4 - Wait to commit or abort TM sync data.\n",MyName);
             while( !wait_for_notice() )
             {
@@ -1406,7 +1406,7 @@ void doTest7()
                 else if( status.MPI_ERROR == MPI_ERR_PENDING )
                 {
                     printf("[%s] TM Test7(%d) - Sync already started ... waiting for TM Sync data.\n",MyName,trans_starts);
-                }  
+                }
                 else
                 {
                     printf("[%s] Test7 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
@@ -1460,7 +1460,7 @@ void doTest8()
                 sleep(3);
                 // delay to allow at least three sync cycles
                 // and die in the middle of a TmSync
-                usleep(SYNC_DELAY*3); 
+                usleep(SYNC_DELAY*3);
                 printf("[%s] - Test8 - Stopping to halt node\n",MyName);
                 fflush (stdout);
                 util_set_core_free();
@@ -1472,11 +1472,11 @@ void doTest8()
                 {
                     // delay to allow nid 2 to abort
                     sleep(3);
-                    usleep(SYNC_DELAY*3); 
+                    usleep(SYNC_DELAY*3);
                     if ( !VirtualNodes )
                     {
-                        // on a real cluster the watchdog process 
-                        // does not know about the testtm program 
+                        // on a real cluster the watchdog process
+                        // does not know about the testtm program
                         usleep(SYNC_DELAY*3);
                         util_set_core_free();
                         MPI_Abort (MPI_COMM_WORLD, 99);
@@ -1535,7 +1535,7 @@ void doTest8()
                  unlock_test();
              }
              sleep(2);
-             
+
              while ( !completed_test() )
              {
                 fflush (stdout);
@@ -1614,14 +1614,14 @@ void doTest10()
 
             // *** test 10 -- failed TM test w/out restart of TMs
             // This test must be performed after test1, so that there is no spare node
-            // and TmSyncs are in processs when a node goes down
+            // and TmSyncs are in process when a node goes down
             printf("[%s] Test10 - Collision Abort TM process death test w/ node failure - Waiting to start test.\n",MyName);
             // suppress processing of other TmSyncs
             lock_test();
             TestWait = true;
             // abort processing of other TmSyncs
             Abort_transaction = false;
-            
+
             if ( get_tm_processes( MAX_TEST_NODES ) )
             {
                abort();
@@ -1632,7 +1632,7 @@ void doTest10()
                sleep(3);
                // delay to allow at least three sync cycles
                // and die in the middle of a TmSync
-               usleep(SYNC_DELAY*3); 
+               usleep(SYNC_DELAY*3);
                printf("[%s] - Test10 - Stopping to halt node\n",MyName);
                fflush (stdout);
                util_set_core_free();
@@ -1644,7 +1644,7 @@ void doTest10()
                {
                    // delay to allow nid 2 to abort
                    sleep(3);
-                   usleep(SYNC_DELAY*3); 
+                   usleep(SYNC_DELAY*3);
                }
                else
                {
@@ -1699,7 +1699,7 @@ void doTest10()
                 unlock_test();
             }
             sleep(2);
-            
+
             while ( !completed_test() )
             {
                fflush (stdout);
@@ -1781,10 +1781,6 @@ int main (int argc, char *argv[])
 {
     int MyRank = -1;
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
@@ -1802,7 +1798,7 @@ int main (int argc, char *argv[])
                      MyName, strerror(errno), errno);
         exit(1);
     }
-    
+
     rc = pthread_mutex_init( &test_mutex, NULL );
     if (rc)
     {
@@ -1810,7 +1806,7 @@ int main (int argc, char *argv[])
                      MyName, strerror(errno), errno);
         exit(1);
     }
-    
+
     rc = pthread_mutex_init( &unsolicited_mutex, NULL );
     if (rc)
     {
@@ -1818,7 +1814,7 @@ int main (int argc, char *argv[])
                MyName, strerror(errno), errno);
         exit(1);
     }
-    
+
     // Check if we are using virtual nodes
     char *cmd_buffer = getenv("SQ_VIRTUAL_NODES");
     if (cmd_buffer && isdigit(cmd_buffer[0]))
@@ -1871,24 +1867,24 @@ int main (int argc, char *argv[])
             // *** test 3 - No collision Commit test
             doTest3();
             break;
-            
+
         case 4:
             // *** test 4 -- No collision Abort test
             doTest4();
             break;
-        
+
         case 5:
             // *** test 5 -- Collision Commit test
             doTest5();
             break;
-            
+
         case 6:
             // *** test 6 -- Collision Abort test
             doTest6();
             break;
-            
+
         case 7:
-            doTest7(); 
+            doTest7();
             break;
 
         case 8:
@@ -1942,7 +1938,7 @@ int main (int argc, char *argv[])
             }
         }
     }
-    while (!done);    
+    while (!done);
 
     // tell monitor we are exiting
     util.requestExit ( );

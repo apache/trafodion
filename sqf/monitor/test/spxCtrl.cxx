@@ -1,3 +1,25 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
 // Test SPX process behavior
 //   1.  Verify ability to start an SPX process on each of the physical nodes
 //   2.  Verify that if an SPX process dies each of the other SPX
@@ -51,7 +73,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
             printf("[%s] Process death notice received for %s (%d, %d),"
-                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
@@ -157,7 +179,7 @@ bool SPX_test1 ()
         if (nodeData->node[i].pnid != prevPnid)
         {  // Found new physical node, start an SPX process
 
-            if ( tracing ) 
+            if ( tracing )
             {
                 printf("[%s] Will start SPX process on nid=%d, pnid=%d\n",
                        MyName, nodeData->node[i].nid, nodeData->node[i].pnid);
@@ -285,7 +307,7 @@ bool SPX_test3 ()
                                 ((tracing) ? 1: 0), childArgs,
                                 nid, pid, procName))
     {
-        printf("[%s] *** Error *** sucessfully started second SPX process %s "
+        printf("[%s] *** Error *** successfully started second SPX process %s "
                "(%d, %d) on node 0.\n", MyName, procName, nid, pid);
 
         testSuccess = false;
@@ -335,7 +357,7 @@ bool SPX_test4 ()
                                         ((tracing) ? 1: 0), childArgs,
                                         nid, pid, procName))
             {
-                printf("[%s] *** Error *** sucessfully started second SPX "
+                printf("[%s] *** Error *** successfully started second SPX "
                        "process %s (%d, %d) on physical node %d / logical "
                        "node %d.\n", MyName,
                        procName, nid, pid, nodeData->node[i].pnid,
@@ -353,7 +375,7 @@ bool SPX_test4 ()
                             nodeData->node[i].nid);
                 }
             }
-            
+
             break;
         }
 
@@ -368,10 +390,6 @@ int main (int argc, char *argv[])
 
     bool testSuccess = true;
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
@@ -424,7 +442,7 @@ int main (int argc, char *argv[])
         }
         else
         {
-            printf("[%s] SPX sub-test 4 skipped because current Seaquest "
+            printf("[%s] SPX sub-test 4 skipped because current Trafodion "
                    "configuration does not contain multiple logical nodes "
                    "per physical node.\n", MyName);
         }

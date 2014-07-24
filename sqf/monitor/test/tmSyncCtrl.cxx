@@ -1,4 +1,26 @@
-// Test TM sync requests with and without collisions 
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Test TM sync requests with and without collisions
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +56,7 @@ const char * tmStateViewable [] = { "Unknown", "Up", "Down" };
 
 
 typedef struct
-{ 
+{
     const char * procName;
     const char * outFile;
     pid_t pid;
@@ -139,8 +161,8 @@ int expectedInitialTms[MAX_TESTS+2] =
       4  // Test 11
     };
 
-expectedResults_t expectedResults[MAX_TESTS+1][MAX_TEST_NODES] = 
-    { 
+expectedResults_t expectedResults[MAX_TESTS+1][MAX_TEST_NODES] =
+    {
         { // Test 0 -- unused
             {0, 0, 0, 0},
             {0, 0, 0, 0},
@@ -231,8 +253,8 @@ expectedResults_t expectedResults[MAX_TESTS+1][MAX_TEST_NODES] =
         }
     };
 
-expectedResults_t expectedVirtualResults[MAX_TESTS+1][MAX_TEST_NODES] = 
-    { 
+expectedResults_t expectedVirtualResults[MAX_TESTS+1][MAX_TEST_NODES] =
+    {
         { // Test 0 -- unused
             {0, 0, 0, 0},
             {0, 0, 0, 0},
@@ -332,7 +354,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         if ( tracing )
         {
             printf("[%s] Process death notice received for %s (%d, %d),"
-                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
@@ -347,7 +369,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     }
     else if ( recv_msg->type == MsgType_NodeDown )
     {
-        printf("[%s] Node %d (%s) is DOWN.\n", MyName, 
+        printf("[%s] Node %d (%s) is DOWN.\n", MyName,
                recv_msg->u.request.u.down.nid,
                recv_msg->u.request.u.down.node_name);
     }
@@ -434,7 +456,7 @@ bool checkConfig(int testNum)
                 MyName, nodeData->num_nodes);
         result = false;
     }
- 
+
     return result;
 }
 
@@ -503,7 +525,7 @@ void initChildRecv()
 
 void checkChildComm ( )
 {
-    
+
     int rc;
     int outcount;
     int completedOp[MAX_TEST_NODES];
@@ -636,7 +658,7 @@ bool getTmProcStatus( int expectedTms )
     {
         tmProcess[i].state = Down;
     }
-    
+
     msg->type = MsgType_Service;
     msg->noreply = false;
     msg->reply_tag = REPLY_TAG;
@@ -783,7 +805,7 @@ bool doTmSyncTest ( int test )
                            "but it was %s.\n", MyName, test, i,
                            tmStateViewable[expectedState[test][i]],
                            tmStateViewable[tmProcess[i].state] );
-    
+
                     result = false;
                 }
             }
@@ -795,7 +817,7 @@ bool doTmSyncTest ( int test )
                            "but it was %s.\n", MyName, test, i,
                            tmStateViewable[expectedVirtualState[test][i]],
                            tmStateViewable[tmProcess[i].state] );
-    
+
                     result = false;
                 }
             }
@@ -824,10 +846,6 @@ int main (int argc, char *argv[])
     int MyRank = -1;
     bool testSuccess;
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
@@ -1022,7 +1040,7 @@ int main (int argc, char *argv[])
             }
         }
     }
-        
+
     printf("TmSync Test:\t\t\t%s\n", (testSuccess) ? "PASSED" : "FAILED");
 
     // tell monitor we are exiting

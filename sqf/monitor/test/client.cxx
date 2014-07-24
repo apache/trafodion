@@ -79,7 +79,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
         {
-            printf("[%s] Process death notice received for (%d, %d)\n", 
+            printf("[%s] Process death notice received for (%d, %d)\n",
                    MyName,
                    recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid);
@@ -99,7 +99,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find worker for (%d, %d)\n", 
+            printf("[%s] Could not find worker for (%d, %d)\n",
                    MyName, recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid);
         }
@@ -133,10 +133,6 @@ int main (int argc, char *argv[])
     int workerChildren = 0;
     char procName[25];
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
@@ -259,7 +255,7 @@ int main (int argc, char *argv[])
         {
             printf ("[%s] for worker %d, expecting %d messages but got %d\n",
                     MyName, i, ( MAX_CYCLES + 1 ), workerMsgCount[i]);
-            testSuccess = false;            
+            testSuccess = false;
         }
     }
 

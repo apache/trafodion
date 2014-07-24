@@ -34,7 +34,7 @@
 
 // turn all printfs to trace_printf
 #ifdef TRACEPRINTF
-#define printf trace_printf 
+#define printf trace_printf
 #endif
 
 #include "montestutil.h"
@@ -45,7 +45,7 @@ extern FILE *shell_locio_trace_file;
 const char *MessageTypeString( MSGTYPE type )
 {
     const char *str = NULL;
-    
+
     switch( type )
     {
         case MsgType_Change:
@@ -134,7 +134,7 @@ void MonTestUtil::processArgs( int argc, char *argv[] )
     strcpy( processName_, argv[5] );
 
     MPI_Open_port( MPI_INFO_NULL, port_ );
-    
+
     if ( trace_ )
     {
         printf( "[%s] port=%s\n", processName_, port_);
@@ -158,7 +158,7 @@ void MonTestUtil::processArgs( int argc, char *argv[] )
             {   // Encountered non-numeric argument
                 break;
             }
-         
+
             if ( trace_ )
             {
                 printf("MonTestUtil::processArgs:  test #%d specified\n", num);
@@ -239,7 +239,7 @@ void MonTestUtil::requestStartup ( )
 
     if ( trace_ )
     {
-        printf ("[%s] processing startup, my_nid: %d, lio: %p\n", 
+        printf ("[%s] processing startup, my_nid: %d, lio: %p\n",
                 processName_, nid_, (void *)gp_local_mon_io );
     }
 
@@ -320,30 +320,30 @@ void MonTestUtil::flush_incoming_msgs( bool *TestShutdown )
                         if ( msg->u.request.u.death.aborted )
                         {
                             printf( "[%s] Process %s abnormally terminated. Nid=%d, Pid=%d\n",
-                                    processName_, msg->u.request.u.death.process_name, 
+                                    processName_, msg->u.request.u.death.process_name,
                                     msg->u.request.u.death.nid, msg->u.request.u.death.pid );
                         }
                         else
                         {
-                            printf( "[%s] Process %s terminated normally. Nid=%d, Pid=%d\n", 
-                                    processName_, msg->u.request.u.death.process_name, 
+                            printf( "[%s] Process %s terminated normally. Nid=%d, Pid=%d\n",
+                                    processName_, msg->u.request.u.death.process_name,
                                     msg->u.request.u.death.nid, msg->u.request.u.death.pid );
                         }
                         break;
 
                     case MsgType_NodeDown:
-                        printf( "[%s] Node %d (%s) is DOWN\n", 
+                        printf( "[%s] Node %d (%s) is DOWN\n",
                                 processName_, msg->u.request.u.down.nid, msg->u.request.u.down.node_name );
                         break;
 
                     case MsgType_NodeUp:
-                        printf( "[%s] Node %d (%s) is UP\n", 
+                        printf( "[%s] Node %d (%s) is UP\n",
                                 processName_, msg->u.request.u.up.nid, msg->u.request.u.up.node_name );
                         break;
 
                     case MsgType_Change:
-                        printf( "[%s] Configuration Change Notice for Group: %s Key: %s\n", 
-                                processName_, 
+                        printf( "[%s] Configuration Change Notice for Group: %s Key: %s\n",
+                                processName_,
                                 msg->u.request.u.change.group,
                                 msg->u.request.u.change.key );
                         break;
@@ -523,10 +523,10 @@ void MonTestUtil::InitLocalIO( int MyPNid )
     if (cmd_buffer && *cmd_buffer == '1')
     {
         gp_local_mon_io->cv_trace = true;
-        
+
         char tracefile[MAX_SEARCH_PATH];
         char *tmpDir;
-    
+
         tmpDir = getenv( "MPI_TMPDIR" );
         if (tmpDir)
         {
@@ -536,7 +536,7 @@ void MonTestUtil::InitLocalIO( int MyPNid )
         {
             sprintf( tracefile, "./shell.trace.%d", getpid() );
         }
-        
+
         shell_locio_trace_file = fopen(tracefile, "w+");
         gp_local_mon_io->cp_trace_cb = shell_locio_trace;
     }
@@ -545,7 +545,7 @@ void MonTestUtil::InitLocalIO( int MyPNid )
 
 int mon_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *pp_string)
 {
-    
+
     pv_event_type = pv_event_type;
     pv_severity = pv_severity;
     int lv_err = 0;
@@ -842,7 +842,7 @@ bool MonTestUtil::requestProcInfo( const char *processName, int &nid, int &pid )
                 {
                     if ( trace_ )
                     {
-                        printf ( "[%s] Got process status for %s (%d, %d), state=%s\n", 
+                        printf ( "[%s] Got process status for %s (%d, %d), state=%s\n",
                              processName_,
                              msg->u.reply.u.process_info.process[0].process_name,
                              msg->u.reply.u.process_info.process[0].nid,
@@ -900,8 +900,8 @@ bool MonTestUtil::requestProcInfo( const char *processName, int &nid, int &pid )
 // lastPNid: when resumeFlag = true, last pnid returned on previous request
 //
 // results:
-//    return value = true if node info obtained successfully, 
-//         In this case nodeData points to the NodeInfo data.  Caller 
+//    return value = true if node info obtained successfully,
+//         In this case nodeData points to the NodeInfo data.  Caller
 //         must "free" this to avoid memory leaks.
 //    return value = false if could not obtain node data.
 
@@ -1032,10 +1032,10 @@ bool MonTestUtil::requestNotice( int nid, int pid, bool cancelFlag,
             }
             else
             {
-                printf ("[%s] Notify request failed for (%d, %d), rc=%d\n", 
+                printf ("[%s] Notify request failed for (%d, %d), rc=%d\n",
                         processName_,
                         msg->u.reply.u.generic.return_code,
-                        msg->u.reply.u.generic.nid, 
+                        msg->u.reply.u.generic.nid,
                         msg->u.reply.u.generic.pid);
             }
         }
@@ -1234,7 +1234,7 @@ bool MonTestUtil::requestGet ( ConfigType type,
     /*  ReqType_Get arguments:
       type: ConfigType_Cluster, ConfigType_Node, or ConfigType_Process
       next: false if start from beginning, true if start from key
-      group: name of group, if NULL and type=ConfigNode assume local node 
+      group: name of group, if NULL and type=ConfigNode assume local node
       key: name of the item to be returned, empty string for all in group
     */
 
@@ -1289,7 +1289,7 @@ bool MonTestUtil::requestGet ( ConfigType type,
                 "(expected %d)\n", processName_, msg->reply_tag, count,
                 (int) sizeof (struct message_def));
     }
-    
+
     gp_local_mon_io->release_msg(msg);
 
     return result;
@@ -1547,7 +1547,7 @@ int MonTestUtil::getNodeCount ( void )
     return nodeCount;
 }
 
-bool MonTestUtil::openProcess (const char * procName, int deathNotice, 
+bool MonTestUtil::openProcess (const char * procName, int deathNotice,
                                MPI_Comm &comm)
 {
     char procPort[MPI_MAX_PORT_NAME];
@@ -1625,7 +1625,7 @@ bool MonTestUtil::closeProcess ( MPI_Comm &comm )
 //       testspx.cxx
 //    variation in:
 //       testtm.cxx (calls trace_printf)
-// process_startup 
+// process_startup
 //    => I used testspx.cxx variation, added parameters, removed #ifdef
 //       client.cxx
 //       getseq.cxx
@@ -1679,7 +1679,7 @@ bool MonTestUtil::closeProcess ( MPI_Comm &comm )
 //    variation in:
 //       nsserver.cxx (mostly formatting differences)
 //    variation in:
-//       testspx.cxx  (mostly formatting differences (Zalo's standard)) + global var
+//       testspx.cxx  (mostly formatting differences (standard)) + global var
 //    variation in:
 //       testtm.cxx (uses trace_printf)
 
