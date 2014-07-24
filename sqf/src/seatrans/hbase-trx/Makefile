@@ -36,18 +36,28 @@ GENVERS			    =./genvers
 all: build_all
 
 jdk_1_7:
-	$(GENVERS) > $(VFILE)
+	$(MAKE) build_chk_1_7
 	set -o pipefail && $(MAVEN) package -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
 jdk_1_6:
-	$(GENVERS) > $(VFILE)
+	$(MAKE) build_chk_1_6
 	set -o pipefail && JAVA_HOME=$(JAVAJDK16) $(MAVEN) package -Djava.version=$(JAVA6_VERSION) -Dtrx-suffix=$(JAVA6_SUFFIX) -DskipTests | tee -a build_trx.log
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME_1_6) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
 build_all: jdk_1_6 jdk_1_7
+
+build_chk_1_6:
+	$(GENVERS) > $(VFILE)
+	@if [ $(GENVERS) -nt target/$(BLD_HBASE_TRX_JARNAME_1_6) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_TRX_JARNAME_1_6); fi
+	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_TRX_JARNAME_1_6) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_TRX_JARNAME_1_6); fi
+
+build_chk_1_7:
+	$(GENVERS) > $(VFILE)
+	@if [ $(GENVERS) -nt target/$(BLD_HBASE_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_TRX_JARNAME); fi
+	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_TRX_JARNAME); fi
 
 clean:
 	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_TRX_JARNAME)

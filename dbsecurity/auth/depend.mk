@@ -21,6 +21,14 @@ $(OUTDIR)/verssqauth.o: ../shared/inc/verslib.h
 $(OUTDIR)/verssqauth.o: $(INCEXPDIR)/SCMBuildStr.h
 $(OUTDIR)/verssqauth.o: $(INCEXPDIR)/SCMVersHelp.h
 
+$(OUTDIR)/versldapcheck.o: ../shared/inc/verslib.h
+$(OUTDIR)/versldapcheck.o: $(INCEXPDIR)/SCMBuildStr.h
+$(OUTDIR)/versldapcheck.o: $(INCEXPDIR)/SCMVersHelp.h
+
+$(OUTDIR)/verssqldapconfigcheck.o: ../shared/inc/verslib.h
+$(OUTDIR)/verssqldapconfigcheck.o: $(INCEXPDIR)/SCMBuildStr.h
+$(OUTDIR)/verssqldapconfigcheck.o: $(INCEXPDIR)/SCMVersHelp.h
+
 $(OUTDIR)/dbUserAuth.o: inc/dbUserAuth.h
 
 $(OUTDIR)/dbUserAuth.o: inc/auth.h
