@@ -164,6 +164,19 @@ NABoolean HHDFSMasterHostList::initializeWithSeaQuestNodes()
   return result;
 }
 
+void HHDFSDiags::recordError(const char *errMsg,
+                             const char *errLoc)
+{
+  // don't overwrite the original error
+  if (success_)
+    {
+      success_ = FALSE;
+      errMsg_ = errMsg;
+      if (errLoc)
+        errLoc_ = errLoc;
+    }
+}
+
 void HHDFSStatsBase::add(const HHDFSStatsBase *o)
 {
   numBlocks_ += o->numBlocks_;
@@ -270,13 +283,13 @@ static void sortHostArray(HostId *blockHosts,
     } // replication between 2 and 10
 } // sortHostArray
 
-NABoolean HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo, 
-                                   Int32& samples,
-                                   NABoolean doEstimation, char recordTerminator, 
-                                   NABoolean isSequenceFile)
+void HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo, 
+                              Int32& samples,
+                              HHDFSDiags &diags,
+                              NABoolean doEstimation,
+                              char recordTerminator, 
+                              NABoolean isSequenceFile)
 {
-  NABoolean result = TRUE;
-
   // copy fields from fileInfo
   fileName_       = fileInfo->mName;
   replication_    = (Int32) fileInfo->mReplication;
@@ -369,7 +382,8 @@ NABoolean HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
    
        hdfsCloseFile(fs, file);
      } else {
-       // can not do hdfs open on the file. Assume the file is empty.
+       diags.recordError(NAString("Unable to open HDFS file ") + fileInfo->mName,
+                         "HHDFSFileStats::populate");
      }
   }
 
@@ -381,12 +395,11 @@ NABoolean HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
     }
   else
     {
-      CMPASSERT(blockSize_);
-      // TBD:DIAGS
-      result = FALSE;
+      diags.recordError(NAString("Could not determine block size of HDFS file ") + fileInfo->mName,
+                        "HHDFSFileStats::populate");
     }
 
-  if ( totalSize_ > 0 )
+  if ( totalSize_ > 0 && diags.isSuccess())
     {
 
       blockHosts_ = new(heap_) HostId[replication_*numBlocks_];
@@ -394,7 +407,7 @@ NABoolean HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
       // walk through blocks and record their locations
       tOffset o = 0;
       Int64 blockNum;
-      for (blockNum=0; blockNum < numBlocks_ && result; blockNum++)
+      for (blockNum=0; blockNum < numBlocks_ && diags.isSuccess(); blockNum++)
         {
           char*** blockHostNames = hdfsGetHosts(fs,
                                                 fileInfo->mName, 
@@ -405,9 +418,8 @@ NABoolean HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
 
           if (blockHostNames == NULL)
             {
-              CMPASSERT(blockHostNames);
-              // TBD:DIAGS
-              result = FALSE;
+              diags.recordError(NAString("Could not determine host of blocks for HDFS file ") + fileInfo->mName,
+                                "HHDFSFileStats::populate");
             }
           else
             {
@@ -431,7 +443,6 @@ NABoolean HHDFSFileStats::populate(hdfsFS fs, hdfsFileInfo *fileInfo,
           hdfsFreeHosts(blockHostNames);
         }
     }
-  return result;
 }
 
 void HHDFSFileStats::print(FILE *ofd)
@@ -461,11 +472,12 @@ HHDFSBucketStats::~HHDFSBucketStats()
     delete fileStatsList_[i];
 }
 
-NABoolean HHDFSBucketStats::addFile(hdfsFS fs, hdfsFileInfo *fileInfo, 
-                                    NABoolean doEstimate, 
-                                    char recordTerminator,
-                                    NABoolean isSequenceFile,
-                                    CollIndex pos)
+void HHDFSBucketStats::addFile(hdfsFS fs, hdfsFileInfo *fileInfo, 
+                               HHDFSDiags &diags,
+                               NABoolean doEstimate, 
+                               char recordTerminator,
+                               NABoolean isSequenceFile,
+                               CollIndex pos)
 {
   HHDFSFileStats *fileStats = new(heap_) HHDFSFileStats(heap_);
 
@@ -474,19 +486,20 @@ NABoolean HHDFSBucketStats::addFile(hdfsFS fs, hdfsFileInfo *fileInfo,
 
   Int32 sampledRecords = 0;
 
-  NABoolean result = fileStats->populate(fs, fileInfo, sampledRecords,
-                                         doEstimate, recordTerminator, isSequenceFile);
+  fileStats->populate(fs, fileInfo, sampledRecords, diags,
+                      doEstimate, recordTerminator, isSequenceFile);
 
-  if ( sampledRecords > 0 )
-     scount_++;
+  if (diags.isSuccess())
+    {
+      if ( sampledRecords > 0 )
+        scount_++;
 
-  if (pos == NULL_COLL_INDEX)
-    fileStatsList_.insert(fileStats);
-  else
-    fileStatsList_.insertAt(pos, fileStats);
-  add(fileStats);
-
-  return result;
+      if (pos == NULL_COLL_INDEX)
+        fileStatsList_.insert(fileStats);
+      else
+        fileStatsList_.insertAt(pos, fileStats);
+      add(fileStats);
+    }
 }
 
 void HHDFSBucketStats::removeAt(CollIndex i)
@@ -511,14 +524,14 @@ HHDFSListPartitionStats::~HHDFSListPartitionStats()
       delete bucketStatsList_[b];
 }
 
-NABoolean HHDFSListPartitionStats::populate(hdfsFS fs,
-                                            const NAString &dir,
-                                            Int32 numOfBuckets, 
-                                            NABoolean doEstimation,
-                                            char recordTerminator,
-                                            NABoolean isSequenceFile)
+void HHDFSListPartitionStats::populate(hdfsFS fs,
+                                       const NAString &dir,
+                                       Int32 numOfBuckets,
+                                       HHDFSDiags &diags,
+                                       NABoolean doEstimation,
+                                       char recordTerminator,
+                                       NABoolean isSequenceFile)
 {
-  NABoolean result = TRUE;
   int numFiles = 0;
 
   // remember parameters
@@ -528,44 +541,54 @@ NABoolean HHDFSListPartitionStats::populate(hdfsFS fs,
   recordTerminator_ = recordTerminator;
   isSequenceFile_   = isSequenceFile;
 
-  // list all the files in this directory, they all belong
-  // to this partition and either belong to a specific bucket
-  // or to the default bucket
-  hdfsFileInfo *fileInfos = hdfsListDirectory(fs,
-                                              dir.data(),
-                                              &numFiles);
+  // to avoid a crash, due to lacking permissions, check the directory
+  // itself first
+  hdfsFileInfo *dirInfo = hdfsGetPathInfo(fs, dir.data());
 
-  // populate partition stats
-  for (int f=0; f<numFiles && result; f++)
-    if (fileInfos[f].mKind == kObjectKindFile)
-      {
-        // the default (unbucketed) bucket number is
-        // defaultBucketIdx_
-        Int32 bucketNum = determineBucketNum(fileInfos[f].mName);
-        HHDFSBucketStats *bucketStats = NULL;
+  if (!dirInfo)
+    {
+      diags.recordError(NAString("Could not access HDFS directory ") + dir,
+                        "HHDFSListPartitionStats::populate");
+    }
+  else
+    {
+      // list all the files in this directory, they all belong
+      // to this partition and either belong to a specific bucket
+      // or to the default bucket
+      hdfsFileInfo *fileInfos = hdfsListDirectory(fs,
+                                                  dir.data(),
+                                                  &numFiles);
 
-        if (! bucketStatsList_.used(bucketNum))
+      // populate partition stats
+      for (int f=0; f<numFiles && diags.isSuccess(); f++)
+        if (fileInfos[f].mKind == kObjectKindFile)
           {
-            bucketStats = new(heap_) HHDFSBucketStats(heap_);
-            bucketStatsList_.insertAt(bucketNum, bucketStats);
+            // the default (unbucketed) bucket number is
+            // defaultBucketIdx_
+            Int32 bucketNum = determineBucketNum(fileInfos[f].mName);
+            HHDFSBucketStats *bucketStats = NULL;
+
+            if (! bucketStatsList_.used(bucketNum))
+              {
+                bucketStats = new(heap_) HHDFSBucketStats(heap_);
+                bucketStatsList_.insertAt(bucketNum, bucketStats);
+              }
+            else
+              bucketStats = bucketStatsList_[bucketNum];
+
+            bucketStats->addFile(fs, &fileInfos[f], diags, doEstimation, recordTerminator, isSequenceFile);
           }
-        else
-          bucketStats = bucketStatsList_[bucketNum];
 
-        if (! bucketStats->addFile(fs, &fileInfos[f], doEstimation, recordTerminator, isSequenceFile))
-          result = FALSE;
-      }
-  hdfsFreeFileInfo(fileInfos, numFiles);
+      hdfsFreeFileInfo(fileInfos, numFiles);
 
-  // aggregate statistics over all buckets
-  for (Int32 b=0; b<=defaultBucketIdx_; b++)
-    if (bucketStatsList_.used(b))
-      add(bucketStatsList_[b]);
-
-  return result;
+      // aggregate statistics over all buckets
+      for (Int32 b=0; b<=defaultBucketIdx_; b++)
+        if (bucketStatsList_.used(b))
+          add(bucketStatsList_[b]);
+    }
 }
 
-NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, NABoolean refresh)
+NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, HHDFSDiags &diags, NABoolean refresh)
 {
   NABoolean result = TRUE;
 
@@ -578,10 +601,19 @@ NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, NABoolean refre
   for (CollIndex i=0; i<=getLastValidBucketIndx(); i++)
     fileNumInBucket.insertAt(i, (Int32) -1);
 
-  // recursively call processDirectory() for each subdirectory
+  // to avoid a crash, due to lacking permissions, check the directory
+  // itself first
+  hdfsFileInfo *dirInfo = hdfsGetPathInfo(fs, partitionDir_.data());
+
+  if (!dirInfo)
+    // don't set diags, let caller re-read the entire stats
+    return FALSE;
+
+  // list directory contents and compare with cached statistics
   hdfsFileInfo *fileInfos = hdfsListDirectory(fs,
                                               partitionDir_.data(),
                                               &numFiles);
+  CMPASSERT(fileInfos || numFiles == 0);
 
   // populate partition stats
   for (int f=0; f<numFiles && result; f++)
@@ -678,14 +710,19 @@ NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, NABoolean refre
         if (result && !fileStats)
           {
             // add this file
-            if (! bucketStats->addFile(fs,
-                                       &fileInfos[f],
-                                       doEstimation_,
-                                       recordTerminator_,
-                                       isSequenceFile_,
-                                       fileNumInBucket[bucketNum]))
-              result = FALSE;
-            add((*bucketStats)[fileNumInBucket[bucketNum]]);
+            bucketStats->addFile(fs,
+                                 &fileInfos[f],
+                                 diags,
+                                 doEstimation_,
+                                 recordTerminator_,
+                                 isSequenceFile_,
+                                 fileNumInBucket[bucketNum]);
+            if (!diags.isSuccess())
+              {
+                result = FALSE;
+              }
+            else
+              add((*bucketStats)[fileNumInBucket[bucketNum]]);
           }
       } // loop over actual files in the directory
 
@@ -776,8 +813,8 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   // 11. Aggregate bucket stats for all buckets of the partition
   // 12. Aggregate partition stats for all partitions of the table
 
-  NABoolean result = TRUE;
   struct hive_sd_desc *hsd = htd->getSDs();
+  diags_.reset();
   tableDir_ = hsd->location_;
   numOfPartCols_ = htd->getNumOfPartCols();
   recordTerminator_ = hsd->getRecordTerminator();
@@ -786,22 +823,23 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   Int32 hdfsPort = -1;
   NAString tableDir;
 
-  while (hsd)
+  while (hsd && diags_.isSuccess())
     {
       // split table URL into host, port and filename
-      result = splitLocation(hsd->location_, hdfsHost, hdfsPort, tableDir);
-      CMPASSERT(result);
+      if (! splitLocation(hsd->location_, hdfsHost, hdfsPort, tableDir))
+        return FALSE;
+
       if (! connectHDFS(hdfsHost, hdfsPort))
-        CMPASSERT(fs_);
+        return FALSE; // diags_ is set
 
       // put back fully qualified URI
       tableDir = hsd->location_;
 
       // visit the directory
-      result = processDirectory(tableDir, hsd->buckets_, 
-                                hsd->isTrulyText(), 
-                                hsd->getRecordTerminator(),
-                                hsd->isSequenceFile());
+      processDirectory(tableDir, hsd->buckets_, 
+                       hsd->isTrulyText(), 
+                       hsd->getRecordTerminator(),
+                       hsd->isSequenceFile());
 
       hsd = hsd->next_;
     }
@@ -809,7 +847,7 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   disconnectHDFS();
   validationJTimestamp_ = JULIANTIMESTAMP();
 
-  return result;
+  return diags_.isSuccess();
 }
 
 NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABoolean refresh)
@@ -817,6 +855,8 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
   NABoolean result = TRUE;
   // initial heap allocation size
   Int32 initialSize = heap_->getAllocSize();
+
+  diags_.reset();
 
   // check only once within a specified time interval
   if (expirationJTimestamp == -1 ||
@@ -827,7 +867,7 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
   // if partitions get added or deleted, that gets
   // caught in the Hive metadata, so no need to check for
   // that here
-  for (int p=0; p<totalNumPartitions_ && result; p++)
+  for (int p=0; p<totalNumPartitions_ && result && diags_.isSuccess(); p++)
     {
       HHDFSListPartitionStats *partStats = listPartitionStatsList_[p];
       NAString hdfsHost;
@@ -836,14 +876,16 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
 
       result = splitLocation(partStats->getDirName(), hdfsHost, hdfsPort, 
                              partDir);
-      CMPASSERT(result);
+      if (! result)
+        break;
 
       if (! connectHDFS(hdfsHost, hdfsPort))
-        CMPASSERT(fs_);
+        return FALSE;
 
       subtract(partStats);
-      result = partStats->validateAndRefresh(fs_, refresh);
-      add(partStats);
+      result = partStats->validateAndRefresh(fs_, diags_, refresh);
+      if (result)
+        add(partStats);
     }
 
   disconnectHDFS();
@@ -869,13 +911,17 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
   // One of these two tokens must appear at the the start of tableLocation
 
   // hdfs://localhost:35000/hive/tpcds/customer
- if (fileSysTypeTok = strstr(tableLocation, "hdfs:"))
+  if (fileSysTypeTok = strstr(tableLocation, "hdfs:"))
     tableLocation = fileSysTypeTok + 5; 
   // maprfs:/user/hive/warehouse/f301c7af0-2955-4b02-8df0-3ed531b9abb/select
   else if (fileSysTypeTok = strstr(tableLocation, "maprfs:"))
     tableLocation = fileSysTypeTok + 7; 
   else
-    return FALSE;
+    {
+      diags_.recordError(NAString("Expected hdfs: or maprfs: in the HDFS URI ") + tableLocation,
+                         "HHDFSTableStats::splitLocation");
+      return FALSE;
+    }
 
   
   // The characters that  come after "//" is the hostName.
@@ -886,8 +932,12 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
       hostMark = hostMark + 2;
       
       dirMark = strchr(hostMark, '/');
-      if (!dirMark)
-        return FALSE;
+      if (dirMark == NULL)
+        {
+          diags_.recordError(NAString("Could not find slash in HDFS directory name ") + tableLocation,
+                             "HHDFSTableStats::splitLocation");
+          return FALSE;
+        }
 
       // if there is a hostName there could be a hostPort too.
       // It is not not an error if there is a hostName but no hostPort
@@ -903,7 +953,11 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
       hostMark = NULL;
       portMark = NULL;
       if (*tableLocation != '/') 
-        return FALSE;
+        {
+          diags_.recordError(NAString("Expected a maprfs:/<filename> URI: ") + tableLocation,
+                             "HHDFSTableStats::splitLocation");
+          return FALSE;
+        }
       dirMark = tableLocation;
     }
 
@@ -925,19 +979,18 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
   return TRUE;
 }
 
-NABoolean HHDFSTableStats::processDirectory(const NAString &dir, Int32 numOfBuckets, NABoolean doEstimate, char recordTerminator, NABoolean isSequenceFile)
+void HHDFSTableStats::processDirectory(const NAString &dir, Int32 numOfBuckets, NABoolean doEstimate, char recordTerminator, NABoolean isSequenceFile)
 {
-  NABoolean result = TRUE;
-
   HHDFSListPartitionStats *partStats = new(heap_) HHDFSListPartitionStats(heap_);
-  partStats->populate(fs_, dir, numOfBuckets, doEstimate, recordTerminator, isSequenceFile);
+  partStats->populate(fs_, dir, numOfBuckets, diags_, doEstimate, recordTerminator, isSequenceFile);
 
-  listPartitionStatsList_.insertAt(listPartitionStatsList_.entries(), partStats);
-  totalNumPartitions_++;
-  // aggregate stats
-  add(partStats);
-
-  return TRUE;
+  if (diags_.isSuccess())
+    {
+      listPartitionStatsList_.insertAt(listPartitionStatsList_.entries(), partStats);
+      totalNumPartitions_++;
+      // aggregate stats
+      add(partStats);
+    }
 }
 
 Int32 HHDFSTableStats::getNumOfConsistentBuckets() const
@@ -1011,8 +1064,12 @@ NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
       
       if (fs_ == NULL)
         {
-          CMPASSERT(fs_);
-          // TBD:DIAGS
+          NAString errMsg("hdfsConnect to ");
+          errMsg += host;
+          errMsg += ":";
+          errMsg += port;
+          errMsg += " failed";
+          diags_.recordError(errMsg, "HHDFSTableStats::connectHDFS");
           result = FALSE;
         }
       currHdfsHost_ = host;
