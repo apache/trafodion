@@ -60,10 +60,7 @@ Implementation files:
   lmap.cpp              - Long Map Object (no STL)
   log.cpp               - Logging API
   loopstream.cpp        - Loop Transport Stream Object
-  mal.cpp               - Malloc hooks
-  malmpi.cpp            - Malloc with MPI hooks
   map64.cpp             - 64-bit map Object (no STL)
-  med.cpp               - MPI error decoder program
   monclio.cpp           - Monitor client local-io
   mpitmsg.cpp           - MPI Transport Message Object
   msaggr.cpp            - Message-System Aggregation API
@@ -78,10 +75,8 @@ Implementation files:
   pctl.cpp              - Process Control API
   props.cpp             - Properties Object (no STL)
   queue.cpp             - Queue Object (no STL)
-  queuedbl.cpp          - Queue Double-lock Object (no STL)
   queuemd.cpp           - Queue (MD) Object (no STL)
   recvq.cpp             - Receive-Queue Object (no STL)
-  seabedinfo.cpp        - Seabed-info program
   slotmgr.cpp           - Slot Manager Object (no STL)
   smap.cpp              - String Map Object (no STL)
   sock.cpp              - Socket Objects
@@ -94,7 +89,7 @@ Implementation files:
   timer.cpp             - Timer API
   trace.cpp             - Trace API
   util.cpp              - Utilities
-  vproc.cpp             - Vproc
+
 
 Header files:
   array.h               - Array Template (no STL)
@@ -114,7 +109,6 @@ Header files:
   monclio.h             - Monitor Client Local-IO
   mondef.h              - Monitor Definitions
   msaggr.h              - Message-System Aggregation
-  mseqlx.h              - Message-System External-link Manager Exchange
   mserr.h               - Message-System Errors
   mseventmgr.h          - Message-System Event Manager
   msic.h                - Message-System Interceptor
@@ -128,7 +122,6 @@ Header files:
   phan.h                - Phandle
   props.h               - Properties Object (no STL)
   qid.h                 - Queue Ids
-  queuedbl.h            - Queue Double-lock
   queue.h               - Queue Object (no STL)
   queuemd.h             - Queue MD (no STL)
   recvq.h               - Receive-Queue (no STL)
@@ -140,4 +133,3 @@ Header files:
   trans.h               - Transactions
   transport.h           - Transport
   util.h                - Utilities
-  vproc.h               - Generated vproc info
