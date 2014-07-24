@@ -3733,6 +3733,7 @@ ex_expr::exp_return_type ex_function_encode::evalDecode(char *op_data[],
 		 op_data[1],
 		 op_data[-MAX_OPERANDS+1],
 		 result,
+                 op_data[-MAX_OPERANDS],
 		 FALSE);
   
   return ex_expr::EXPR_OK;
@@ -7056,6 +7057,7 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
 					 char *inSource,
 					 char *varlen_ptr,
 					 char *target,
+                                         char *target_varlen_ptr,
 					 NABoolean handleNullability
 					 )
 {
@@ -7083,7 +7085,8 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
   if ((handleNullability) &&
       (attr->getNullFlag()))
     {
-      str_cpy_all(target, source, attr->getNullIndicatorLength());
+      if (target != source)
+        str_cpy_all(target, source, attr->getNullIndicatorLength());
 
       source += attr->getNullIndicatorLength();
       target += attr->getNullIndicatorLength();
@@ -7412,23 +7415,24 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     // Copy the source to the target.
     //
     short vc_len;
+    assert(attr->getVCIndicatorLength() == sizeof(vc_len));
     str_cpy_all((char *) &vc_len, varlen_ptr, attr->getVCIndicatorLength());
     
-    str_cpy_all(&target[attr->getVCIndicatorLength()],
-		source, vc_len);
+    if (target != source)
+      str_cpy_all(target, source, vc_len);
     //
     // Blankpad the target (if needed).
     //
     if (vc_len < length)
-      str_pad(&target[attr->getVCIndicatorLength() + vc_len],
-	      (Int32) (length - vc_len), ' ');
+      str_pad(&target[vc_len], (Int32) (length - vc_len), ' ');
     //
     // Make the length bytes to be the maximum length for this field.  This
     // will make all encoded varchar keys to have the same length and so the
     // comparison will depend on the fixed part of the varchar buffer.
     //
     vc_len = (short) length;
-    str_cpy_all(target, (char *) &vc_len, attr->getVCIndicatorLength());
+    if (target_varlen_ptr)
+      str_cpy_all(target_varlen_ptr, (char *) &vc_len, attr->getVCIndicatorLength());
     break;
   }
 
@@ -7440,8 +7444,8 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     short vc_len;
     str_cpy_all((char *) &vc_len, varlen_ptr, attr->getVCIndicatorLength());
     
-    str_cpy_all(&target[attr->getVCIndicatorLength()],
-		source, vc_len);
+    if (target != source)
+      str_cpy_all(target, source, vc_len);
     //
     // Blankpad the target (if needed).
     //
@@ -7458,7 +7462,8 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
     // comparison will depend on the fixed part of the varchar buffer.
     //
     vc_len = (short) length;
-    str_cpy_all(target, (char *) &vc_len, attr->getVCIndicatorLength());
+    if (target_varlen_ptr)
+      str_cpy_all(target_varlen_ptr, (char *) &vc_len, attr->getVCIndicatorLength());
     break;
   }
 
@@ -7623,240 +7628,6 @@ static Lng32 convAsciiLength(Attributes * attr)
   return d_len;
 }
 
-#pragma nowarn(1506)  // warning elimination 
-short ex_function_encode::decodeAndFormatKeys(
-     ex_expr_base * keyEncodeExpr,
-     char * keyBuf,
-     Lng32 keyLength,
-     char * decodedKeyBuf,
-     char * formattedKeyBuf,
-     Lng32 formattedKeyBufLen,
-     Lng32 * neededKeyBufLen)
-{
-  short rc = 0;
-
-  *neededKeyBufLen = 0;
-
-  char * target = formattedKeyBuf;
-  Int32 curTgtPos = 0;
-  Int32 targetLen = 0;
-  Int32 curSrcPos = 0;
-  // temporary buffer to decode a key, max length 255.
-  char decodedKeyBuffer[300];
-  char * decodedKey = NULL;
-  if (decodedKeyBuf)
-    decodedKey = decodedKeyBuf;
-  else
-    decodedKey = decodedKeyBuffer;
-
-  // the key encode expression contains FUNC_ENCODE_ID clauses
-  // which encode the key data. Each clause contains information
-  // about the key data attributes as well as its asc/desc info.
-  // Loop over the encode key claues to extract this information
-  // and use it to decode the passed in encoded values.
-  Int32 keyNum = 0;
-  ex_clause * clause = keyEncodeExpr->getClauses();
-  NABoolean notEnoughSpace = FALSE;
-  while (clause)
-    { 
-      if (clause->getOperType() == ITM_COMP_ENCODE)
-        {
-	  //decodedKey = decodedKeyBuf;
-	  if (decodedKeyBuf)
-	    decodedKey = &decodedKeyBuf[curSrcPos];
-	  else
-	    decodedKey = &decodedKeyBuffer[curSrcPos];
-
-	  // operand(1) points to the data attributes of the key column.
-          Attributes * attr = clause->getOperand(1);
-
-	  // compute length of encoded key, including null bytes.
-	  // What about varchar? They are encoded as fixed chars with
-	  // max varchar len. 
-	  Lng32 encodedKeyLen = attr->getLength();
-	  if (attr->getNullFlag())
-	    encodedKeyLen += attr->getNullIndicatorLength();
-
-	  char * source = &keyBuf[curSrcPos];
-	    
-	  // decode key
-	  rc = 
-	    ex_function_encode::decodeKeyValue(attr,
-					       ((ex_function_encode*)clause)->isDesc(),
-					       source,
-					       NULL,
-					       decodedKey,
-					       TRUE);
-	  if (rc)
-	    {
-	      // error. TBD
-	      return -1;
-	    }
-
-	  targetLen = convAsciiLength(attr);
-
-	  if (keyNum == 0)
-	    {
-	      if (*neededKeyBufLen + 2 > formattedKeyBufLen)
-		{
-		  notEnoughSpace = TRUE;
-		  curTgtPos = 0;
-		}
-
-	      str_cpy_all(&target[curTgtPos], "( ", 2);
-	      curTgtPos += 2;
-	      *neededKeyBufLen += 2;
-	    }
-	  else
-	    {
-	      if (*neededKeyBufLen + 2 > formattedKeyBufLen)
-		{
-		  notEnoughSpace = TRUE;
-		  curTgtPos = 0;
-		}
-
-	      str_cpy_all(&target[curTgtPos], ", ", 2);
-	      curTgtPos += 2;
-	      *neededKeyBufLen += 2;
-	    }
-
-	  // if null value, return "NULL"
-	  if (attr->getNullFlag())
-	    {
-	      Lng32 temp;
-	      str_cpy_all((char*)&temp, decodedKey,
-			  attr->getNullIndicatorLength());
-	      if (((attr->getNullIndicatorLength() == sizeof(short)) &&
-		   (*(short*)&temp != 0)) ||
-		  ((attr->getNullIndicatorLength() == sizeof(Lng32)) &&
-		   (temp != 0)))
-		{
-		  // output NULL. 
-		  if (*neededKeyBufLen + (Lng32)strlen("NULL ") > formattedKeyBufLen)
-		    {
-		      notEnoughSpace = TRUE;
-		      curTgtPos = 0;
-		    }
-		  
-		  strcpy(&target[curTgtPos], "NULL ");
-		  curTgtPos += strlen("NULL ");
-		  *neededKeyBufLen += strlen("NULL ");
-		  goto next_clause;
-		}
-	      //	      decodedKey += attr->getNullIndicatorLength();
-	    }
-
-	  if (DFS2REC::isAnyCharacter(attr->getDatatype()))
-	    {
-	      if (*neededKeyBufLen + 1 > formattedKeyBufLen)
-		{
-		  notEnoughSpace = TRUE;
-		  curTgtPos = 0;
-		}
-
-	      str_cpy_all(&target[curTgtPos], "'", 1);
-	      curTgtPos += 1;
-	      *neededKeyBufLen += 1;
-	    }
-
-	  if (*neededKeyBufLen + targetLen > formattedKeyBufLen)
-	    {
-	      notEnoughSpace = TRUE;
-	      curTgtPos = 0;
-	    }
-
-	  // and convert to ascii
-	  rc = convDoIt((attr->getNullFlag() ? (decodedKey + attr->getNullIndicatorLength()) : decodedKey),
-			attr->getLength(),
-			attr->getDatatype(),
-			attr->getPrecision(),
-			attr->getScale(),
-			&target[curTgtPos],
-			targetLen,
-			REC_BYTE_F_ASCII,
-			0, // precision
-			0, // scale
-			NULL,
-			0,
-			NULL);
-	  if (rc)
-	    {
-	      return -1;  // error TBD
-	    }
-
-	  if ((DFS2REC::isAnyCharacter(attr->getDatatype())) ||
-	      (DFS2REC::isDateTime(attr->getDatatype())))
-	    {
-	      // convert any unprintable characters to '?'. An unprintable char
-	      // could be present, for example, to represent the low key
-	      // of the first(or last, in case of descending) partition.
-	      // If they are not converted, they will not be displayed
-	      // correctly on the screen.
-	      for (Int32 i = curTgtPos; i < curTgtPos + targetLen; i++)
-		{
-		  if ((target[i] < 32) ||
-		      (target[i] > 126))
-		    target[i] = '?';
-		}
-	      curTgtPos += targetLen;
-	      *neededKeyBufLen += targetLen;
-	      
-	      if (DFS2REC::isAnyCharacter(attr->getDatatype()))
-		{
-		  if (*neededKeyBufLen + 1 > formattedKeyBufLen)
-		    {
-		      notEnoughSpace = TRUE;
-		      curTgtPos = 0;
-		    }
-		  
-		  str_cpy_all(&target[curTgtPos], "'", 1);
-		  curTgtPos += 1;
-		  *neededKeyBufLen += 1;
-		}
-	    }
-	  else
-	    {
-	      curTgtPos += targetLen;
-	      *neededKeyBufLen += targetLen;
-	    }
-
-	  // remove trailing blanks from the formatted key
-	  while (target[curTgtPos-1] == ' ')
-	    {
-	      curTgtPos--;
-	      (*neededKeyBufLen)--;
-	    }
-	    
-next_clause:
-	  curSrcPos += attr->getLength();
-	  if (attr->getNullFlag())
-	    curSrcPos += attr->getNullIndicatorLength();
-
-	  keyNum++;
-	} // ITM_COMP_ENCODE
-
-      clause = clause->getNextClause();
-    }
-
-  if (keyNum > 0)
-    {
-      if (*neededKeyBufLen + 2 > formattedKeyBufLen)
-	{
-	  notEnoughSpace = TRUE;
-	  curTgtPos = 0;
-	}
-
-      str_cpy_all(&target[curTgtPos], " )", 2);
-      curTgtPos += 2;
-      *neededKeyBufLen += 2;
-    }
-
-  //  *neededKeyBufLen = curTgtPos;
-  if (notEnoughSpace)
-    return -1;
-
-  return rc;
-}
 // LCOV_EXCL_START
 // This is a function clause used by INTERPRET_AS_ROW to extract specific
 // columns as specified by an extraction column list from an audit row image

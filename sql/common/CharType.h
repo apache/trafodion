@@ -280,6 +280,8 @@ virtual NAType *newCopy(NAMemory* h=0) const { return new(h) CharType(*this,h); 
 // A virtual function to return a varchar equivalent of this type
 virtual NAType *equivalentVarCharType
   (NAMemory *h, NABoolean quantizeLen=FALSE) { return this; }
+virtual NAType *equivalentCharType
+  (NAMemory *h, NABoolean quantizeLen=FALSE) { return this; }
 
 // ---------------------------------------------------------------------
 // Need encoding for Unicode charset. // 7/27/98
@@ -328,6 +330,14 @@ static const CharType* desiredCharType(enum CharInfo::CharSet);
 void generateTextThenSetDisplayDataType ( CharInfo::CharSet cs                   // in
                                         , NAString & ddt                         // in/out
                                         );
+
+// create a string literal from a binary buffer
+// returns whether it was able to create a valid string literal
+NABoolean createStringLiteral(
+     char * buf,
+     NAString** stringLiteral,
+     CollHeap* h,
+     CharInfo::CharSet targetCS = CharInfo::UTF8) const;
 
 private:
 
@@ -531,6 +541,9 @@ virtual NABoolean isEncodingNeeded() const	{ return TRUE; }
 // A virtual function to return a copy of the type.
 // ---------------------------------------------------------------------
 virtual NAType *newCopy(NAMemory* h=0) const { return new(h) SQLVarChar(*this,h); }
+// A virtual function to return a char equivalent of this type
+virtual NAType *equivalentCharType
+(NAMemory *h, NABoolean quantizeLen=FALSE);
 
 NAString getClientDataTypeName() const
 { return clientDataType_.isNull() ? getSimpleTypeName() : clientDataType_; }
@@ -583,6 +596,8 @@ NAType * equivalentType(CollHeap* h=0) const
 // A virtual function to return a varchar equivalent of this type
 virtual NAType *equivalentVarCharType
   (NAMemory *h, NABoolean quantizeLen=FALSE);
+virtual NAType *equivalentCharType
+  (NAMemory *h, NABoolean quantizeLen=FALSE) { return NULL; }
 
 // ---------------------------------------------------------------------
 // Methods that returns the binary form of the minimum and the maximum

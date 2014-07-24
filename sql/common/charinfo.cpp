@@ -81,8 +81,8 @@ struct mapCS {
 
 // Arranged as an array, starting with CHARSET_MIN and ending with CHARSET_MAX
 static const struct mapCS mapCSArray[] = {
-  // CharSet enum value              string value of charset    name  supp.    fully   min / max
-  //                                                            len            supp.   bytes/char
+  // CharSet enum value              string value of charset    name  supp.    fully   min / max  rep.
+  //                                                            len            supp.   bytes/char char
   { /*-2*/ CharInfo::KSC5601_MP,     SQLCHARSETSTRING_KSC5601,     7, IF_NSK,  IF_NSK, 2,    2, NULL },
   { /*-1*/ CharInfo::KANJI_MP,       SQLCHARSETSTRING_KANJI,       5, IF_NSK,  IF_NSK, 2,    2, NULL },
   { /* 0*/ CharInfo::UnknownCharSet, SQLCHARSETSTRING_UNKNOWN,     9, FALSE,   FALSE,  1,    1, "?" },

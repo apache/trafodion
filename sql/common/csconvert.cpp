@@ -1177,3 +1177,65 @@ int lightValidateUTF8StrAndPad(char *bufr,
   return trunc;
 }
 #endif /* Not currently called anywhere.*/
+
+int fillWithMaxUTF8Chars(char *bufr,
+                         int in_len,
+                         int max_chars)
+{
+  // max values that fit into 4,3,2 and 1 byte(s):
+
+  // Unicode RFC 3629 limits Unicode to values up to U+10FFFF.
+  // See http://en.wikipedia.org/wiki/UTF-8
+
+  const char *max4 = "\xF4\x8F\xBF\xBF"; // U+10FFFF
+  const char *max3 = "\xEF\xBF\xBF";     // U+FFFF
+  const char *max2 = "\xDF\xBF";         // U+07FF
+  const char *max1 = "\x7F";             // U+7F
+
+  int result = 0;
+  int c = 0;
+
+  if (max_chars <= 0)
+    max_chars = in_len;
+
+  // the highest UTF8 character has 4 bytes, fill up with
+  // those as much as possible
+  for (c=0; c<in_len/4 && c<max_chars; c++)
+    {
+      for (int j=0; j<4; j++)
+        bufr[4*c+j] = max4[j];
+      result += 4;
+    }
+
+  c *= 4;
+
+  // then add a single 3, 2 or 1 byte character, if needed
+  if (c < in_len && c/4 < max_chars)
+    {
+      switch (in_len - c)
+        {
+        case 3:
+          bufr[c++] = max3[0];
+          bufr[c++] = max3[1];
+          bufr[c++] = max3[2];
+          break;
+
+        case 2:
+          bufr[c++] = max2[0];
+          bufr[c++] = max2[1];
+          break;
+
+        case 1:
+          bufr[c++] = max1[0];
+          break;
+        }
+      result = in_len;
+    }
+
+  // pad with blanks beyond max_chars, if needed
+  if (result < in_len)
+    for (int b=result; b<in_len; b++)
+      bufr[b] = ' ';
+
+  return result;
+}

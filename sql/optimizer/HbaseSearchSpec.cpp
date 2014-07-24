@@ -94,10 +94,10 @@ static NABoolean extractKeyValuePairs(const NAString& source, NAString& result)
    NABoolean hasData = ( data < end);
 
    while ( data < end ) {
-       short len = 0;
-       strncpy((char*)&len, data, sizeof(short));
+       UInt16 len = 0;
+       memcpy((char*)&len, data, sizeof(len));
 
-       strcpy(buf, data+sizeof(len));
+       memcpy(buf, data+sizeof(len), len);
        buf[len] = NULL;
 
        result.append(buf);

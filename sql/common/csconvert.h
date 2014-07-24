@@ -255,4 +255,14 @@ int lightValidateUTF8StrAndPad(char *bufr,
                                int max_chars = 0,
                                int ignore_trailing_blanks = 1);
 
+/* A method to create the maximum valid UTF-8 character
+   string that fits into a given buffer. Used to form high keys.
+   If max_chars is > 0, generates at most max_chars and pads
+   the remaining bytes with blanks. Returns the space occupied
+   by actual characters, not padding (same as in_len if max_chars == 0).
+*/
+int fillWithMaxUTF8Chars(char *bufr,
+                         int in_len, // in bytes
+                         int max_chars);
+
 #endif /* CSCONVERT_H */
