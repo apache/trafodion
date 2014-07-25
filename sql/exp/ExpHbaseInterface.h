@@ -212,8 +212,9 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 deleteRows(
 		  HbaseStr &tblName,
-		  std::vector<BatchMutation> & rows,
-		  const int64_t timestamp);
+                  short rowIDLen,
+		  HbaseStr &rowIDs,
+		  const int64_t timestamp) = 0;
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
@@ -232,12 +233,27 @@ class ExpHbaseInterface : public NABasicObject
 		  MutationVec & mutations,
 		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
+
+  virtual Lng32 insertRow(
+		  HbaseStr &tblName,
+		  HbaseStr& rowID, 
+		  HbaseStr& row,
+		  NABoolean noXn,
+		  const int64_t timestamp) = 0;
  
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
 		  std::vector<BatchMutation> & rows,
 		  const int64_t timestamp,
-		  NABoolean autoFlush = TRUE); // by default, flush rows after put
+		  NABoolean autoFlush = TRUE);// by default, flush rows after put
+
+ virtual Lng32 insertRows(
+		  HbaseStr &tblName,
+                  short rowIDLen,
+                  HbaseStr &rowIDs,
+                  HbaseStr &rows,
+		  const int64_t timestamp,
+		  NABoolean autoFlush = TRUE) = 0; // by default, flush rows after put
  
  virtual Lng32 setWriteBufferSize(
                  HbaseStr &tblName,
@@ -272,11 +288,17 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr& row, 
 				  MutationVec & mutations,
 				  const int64_t timestamp);
+
+  virtual Lng32 checkAndInsertRow(
+				  HbaseStr &tblName,
+				  HbaseStr& rowID, 
+				  HbaseStr& row,
+				  const int64_t timestamp) = 0;
   
   virtual Lng32 checkAndUpdateRow(
 				  HbaseStr &tblName,
-				  HbaseStr& row, 
-				  MutationVec & mutations,
+				  HbaseStr& rowID, 
+				  HbaseStr& row,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
 				  const int64_t timestamp);
@@ -431,7 +453,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 deleteRows(
 		  HbaseStr &tblName,
-		  std::vector<BatchMutation> & rowBatches,
+                  short rowIDLen,
+		  HbaseStr &rowIDs,
 		  const int64_t timestamp);
 
   virtual Lng32 checkAndDeleteRow(
@@ -446,10 +469,25 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  MutationVec & mutations,
 		  NABoolean noXn,
 		  const int64_t timestamp);
+
+  virtual Lng32 insertRow(
+		  HbaseStr &tblName,
+		  HbaseStr& rowID, 
+                  HbaseStr& row,
+		  NABoolean noXn,
+		  const int64_t timestamp);
  
   virtual Lng32 insertRows(
 		  HbaseStr &tblName,
 		  std::vector<BatchMutation> & rows,
+		  const int64_t timestamp,
+		  NABoolean autoFlush = TRUE); // by default, flush rows after put
+
+ virtual Lng32 insertRows(
+		  HbaseStr &tblName,
+                  short rowIDLen,
+                  HbaseStr &rowIDs,
+                  HbaseStr &rows,
 		  const int64_t timestamp,
 		  NABoolean autoFlush = TRUE); // by default, flush rows after put
   
@@ -487,10 +525,17 @@ virtual Lng32 createHFile(HbaseStr &tblName,
 				  MutationVec & mutations,
 				  const int64_t timestamp);
 
+  virtual Lng32 checkAndInsertRow(
+				  HbaseStr &tblName,
+				  HbaseStr& rowID, 
+				  HbaseStr& row,
+				  const int64_t timestamp);
+
+
   virtual Lng32 checkAndUpdateRow(
 				  HbaseStr &tblName,
-				  HbaseStr& row, 
-				  MutationVec & mutations,
+				  HbaseStr& rowID, 
+				  HbaseStr& row,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
 				  const int64_t timestamp);

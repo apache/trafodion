@@ -665,8 +665,6 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 		      case HBASE_ROW_ID_INDEX:
 			{
 			  insRowId_.assign(&convertRow_[attr->getOffset()], len);
-
-			  mutations_.clear();
 			}
 			break;
 			
@@ -674,7 +672,7 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 			{
 			  char * convRow = &convertRow_[attr->getOffset()];
 
-			  retcode = createRowwiseMutations(mutations_,  convRow);
+			  retcode = createDirectRowwiseBuffer(convRow);
 			}
 			break;
 			
@@ -690,14 +688,14 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 
 	case PROCESS_INSERT:
 	  {
-	    if (mutations_.size() > 0)
+	    if (numColsInDirectBuffer() > 0)
 	      {
-                HbaseStr row;
-                row.val = (char *)insRowId_.data();
-                row.len = insRowId_.size();
-		retcode = ehi_->insertRow(table_,
-					  row,
-					  mutations_,
+                HbaseStr rowID;
+                rowID.val = (char *)insRowId_.data();
+                rowID.len = insRowId_.size();
+                retcode = ehi_->insertRow(table_,
+					  rowID,
+					  row_,
 					  FALSE,
 					  -1); //*insColTS_);
 		if (setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -845,8 +843,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case CREATE_MUTATIONS:
 	  {
-	    retcode = createMutations(mutations_,
-				      hbaseAccessTdb().convertTuppIndex_,
+	    retcode = createDirectRowBuffer( hbaseAccessTdb().convertTuppIndex_,
 				      convertRow_,
 				      hbaseAccessTdb().listOfUpdatedColNames(),
 				      (hbaseAccessTdb().hbaseSqlIUD() ? FALSE : TRUE));
@@ -882,14 +879,13 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case CHECK_AND_INSERT:
 	  {
-            HbaseStr row;
-            row.val = (char *)insRowId_.data();
-            row.len = insRowId_.size();
-	    retcode = ehi_->checkAndInsertRow(table_,
-                                              row,
-				              mutations_,
-				              insColTSval_);
-				              
+            HbaseStr rowID;
+            rowID.val = (char *)insRowId_.data();
+            rowID.len = insRowId_.size();
+            retcode = ehi_->checkAndInsertRow(table_,
+                                              rowID,
+	                                      row_,
+                                              insColTSval_);
 	    if (retcode == HBASE_DUP_ROW_ERROR) // row exists, return error
 	      {
 		ComDiagsArea * diagsArea = NULL;
@@ -922,12 +918,12 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	  {
            if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
-            HbaseStr row;
-            row.val = (char *)insRowId_.data();
-            row.len = insRowId_.size();
-	    retcode = ehi_->insertRow(table_,
-				      row, //rowId_.val, 
-				      mutations_,
+            HbaseStr rowID;
+            rowID.val = (char *)insRowId_.data();
+            rowID.len = insRowId_.size();
+            retcode = ehi_->insertRow(table_,
+				      rowID,
+				      row_,
 				      FALSE,
 				      insColTSval_);
 
@@ -1077,7 +1073,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
       if (pentry_down->downState.request == ex_queue::GET_NOMORE)
 	step_ = ALL_DONE;
-      else if (pentry_down->downState.request == ex_queue::GET_EOD)
+     else if (pentry_down->downState.request == ex_queue::GET_EOD)
           if (currRowNum_ > rowsInserted_)
 	{
 	  step_ = PROCESS_INSERT_FLUSH_AND_CLOSE;
@@ -1125,7 +1121,11 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    table_.val = hbaseAccessTdb().getTableName();
 	    table_.len = strlen(hbaseAccessTdb().getTableName());
 
-	    rowBatches_.clear();
+            ExpTupleDesc * rowTD =
+    		hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                (hbaseAccessTdb().convertTuppIndex_);
+            allocateDirectRowBufferForJNI(rowTD->numAttrs(), ROWSET_MAX_NO_ROWS);
+            allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
             if (hbaseAccessTdb().getCanAdjustTrafParams())
             {
               if (hbaseAccessTdb().getWBSize() > 0)
@@ -1201,8 +1201,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
 	case CREATE_MUTATIONS:
 	  {
-	    rowBatches_.push_back(BatchMutation());
-	    retcode = createMutations(rowBatches_[currRowNum_].mutations,
+	    retcode = createDirectRowBuffer(
 				      hbaseAccessTdb().convertTuppIndex_,
 				      convertRow_,
 				      hbaseAccessTdb().listOfUpdatedColNames(),
@@ -1232,12 +1231,12 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		break;
 	      }
 
-	    rowBatches_[currRowNum_].row.assign(rowId_.val, rowId_.len);
+	    copyRowIDToDirectBuffer(currRowNum_, rowId_);
 
 	    currRowNum_++;
 	    matches_++;
 
-	    if (currRowNum_ < 1000)
+	    if (currRowNum_ < ROWSET_MAX_NO_ROWS)
 	      {
 		step_ = DONE;
 		break;
@@ -1251,11 +1250,14 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	case PROCESS_INSERT_AND_CLOSE:
 	case PROCESS_INSERT_FLUSH_AND_CLOSE:
 	  {
+            patchDirectRowBuffers();
 	    if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
 	    
 	    retcode = ehi_->insertRows(table_,
-				       rowBatches_,
+                                       hbaseAccessTdb().rowIdLen(),
+				       rowIDs_,
+                                       rows_,
                                        insColTSval_,
                                        hbaseAccessTdb().getIsTrafLoadAutoFlush());
 	    
@@ -1271,7 +1273,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-            rowsInserted_ += rowBatches_.size();
+            rowsInserted_ += currRowNum_; 
 	    if (step_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
 	      step_ = FLUSH_BUFFERS;
 	    else if (step_ == PROCESS_INSERT_AND_CLOSE)
@@ -1587,7 +1589,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         rowBatches_[currRowNum_].row.assign(rowId_.val, rowId_.len);
         currRowNum_++;
         matches_++;
-        if (currRowNum_ < 1000)
+        if (currRowNum_ < ROWSET_MAX_NO_ROWS)
         {
           step_ = DONE;
           break;
@@ -1606,8 +1608,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         if (setupError(retcode, "ExpHbaseInterface::addToHFile"))
         {
-          step_ = HANDLE_ERROR;
-          break;
+           step_ = HANDLE_ERROR;
+           break;
         }
         rowsInserted_ += rowBatches_.size();
 
@@ -1885,9 +1887,20 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	case CREATE_MUTATIONS:
 	  {
 	    rowUpdated_ = TRUE;
+            // Merge can result in inserting rows
+            // Use Number of columns in insert rather number
+            // of columns in update if an insert is involved in this tcb
+            if (tcb_->hbaseAccessTdb().getAccessType() 
+                  == ComTdbHbaseAccess::MERGE_)
+            {
+               ExpTupleDesc * rowTD =
+                  tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor(
+                       tcb_->hbaseAccessTdb().mergeInsertTuppIndex_);
+               if (rowTD->numAttrs() > 0)
+                  tcb_->allocateDirectRowBufferForJNI(rowTD->numAttrs());
+            } 
 
-	    retcode = tcb_->createMutations(tcb_->mutations_,
-					    tcb_->hbaseAccessTdb().updateTuppIndex_,
+	    retcode = tcb_->createDirectRowBuffer( tcb_->hbaseAccessTdb().updateTuppIndex_,
 					    tcb_->updateRow_, 
 					    tcb_->hbaseAccessTdb().listOfUpdatedColNames(),
 					    TRUE);
@@ -1931,8 +1944,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    if (tcb_->hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::MERGE_)
 	      rowUpdated_ = FALSE;
 
-	    retcode = tcb_->createMutations(tcb_->mutations_,
-					    tcb_->hbaseAccessTdb().mergeInsertTuppIndex_,
+	    retcode = tcb_->createDirectRowBuffer( tcb_->hbaseAccessTdb().mergeInsertTuppIndex_,
 					    tcb_->mergeInsertRow_,
 					    tcb_->hbaseAccessTdb().listOfMergedColNames());
 	    if (retcode == -1)
@@ -1950,12 +1962,12 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case UPDATE_ROW:
 	  {
-            HbaseStr row;
-            row.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
-            row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
-	    retcode =  tcb_->ehi_->insertRow(tcb_->table_,
-                                             row,
-					     tcb_->mutations_,
+             HbaseStr rowID;
+            rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
+            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+            retcode =  tcb_->ehi_->insertRow(tcb_->table_,
+                                             rowID,
+	                                     tcb_->row_,
 					     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
 					     -1); //colTS_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -1983,12 +1995,12 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-            HbaseStr row;
-            row.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
-            row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+            HbaseStr rowID;
+            rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
+            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
 	    retcode =  tcb_->ehi_->checkAndUpdateRow(tcb_->table_,
-                                                     row,
-						     tcb_->mutations_,
+                                                     rowID,
+						     tcb_->row_,
 						     columnToCheck,
 						     colValToCheck,
 						     -1); //colTS_);
@@ -2031,21 +2043,21 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 		rowIdRow.assign(tcb_->rowIdRow_, tcb_->hbaseAccessTdb().rowIdLen_);
 	      }
-            HbaseStr row;
+            HbaseStr rowID;
             if (tcb_->mergeInsertRowIdExpr())
             {
-               row.val = (char *)rowIdRow.data();
-               row.len = rowIdRow.size();
+               rowID.val = (char *)rowIdRow.data();
+               rowID.len = rowIdRow.size();
             }
             else
             {
-               row.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].data();
-               row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+               rowID.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].data();
+               rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
             }
 	    retcode =  tcb_->ehi_->checkAndInsertRow(tcb_->table_,
-                                                     row,
-						     tcb_->mutations_,
-						     -1); //colTS_);
+                                                     rowID,
+                                                     tcb_->row_,
+                                                      -1); //colTS_);
 	    if (retcode == HBASE_DUP_ROW_ERROR)
 	      {
 		ComDiagsArea * diagsArea = NULL;
@@ -2086,13 +2098,13 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	case DELETE_ROW:
 	  {
 	    TextVec columns;
-            HbaseStr row;
-            row.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
-            row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
-	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
-                                             row,
-					     columns, //tcb_->columns_
-					     -1); //colTS_);
+            HbaseStr rowID;
+            rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
+            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+            retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
+                                             rowID,
+	                                     columns,
+                                             -1); //colTS_);
 
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
@@ -2125,11 +2137,11 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		break;
 	      }
 
-            HbaseStr row;
-            row.val = (char *)(tcb_->rowIds_[tcb_->currRowidIdx_].data());
-            row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+            HbaseStr rowID;
+            rowID.val = (char *)(tcb_->rowIds_[tcb_->currRowidIdx_].data());
+            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
 	    retcode =  tcb_->ehi_->checkAndDeleteRow(tcb_->table_,
-                                                     row,
+                                                     rowID,
 						     columnToCheck, 
 						     colValToCheck,
 						     -1); //colTS_);
@@ -2523,9 +2535,8 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 	    Attributes * attr = rowTD->getAttr(0);
  
 	    rowUpdated_ = TRUE;
-	    retcode = tcb_->createRowwiseMutations(tcb_->mutations_,  
-						   &tcb_->updateRow_[attr->getOffset()]);
-
+	    retcode = tcb_->createDirectRowwiseBuffer(
+			   &tcb_->updateRow_[attr->getOffset()]);
 	    if (retcode == -1)
 	      {
 		step_ = HANDLE_ERROR;
@@ -2538,13 +2549,13 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 
 	case DELETE_ROW:
 	  {
-            HbaseStr row;
-            row.val = (char *)(tcb_->rowIds_[tcb_->currRowidIdx_].data());
-            row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
-	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
-                                             row,
-					     tcb_->deletedColumns_,
-					     -1); //colTS_);
+            HbaseStr rowID;
+            rowID.val = (char *)(tcb_->rowIds_[tcb_->currRowidIdx_].data());
+            rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+            retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
+                                             rowID,
+                                             tcb_->deletedColumns_,
+                                              -1); //colTS_);
 
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
 	      {
@@ -2562,18 +2573,16 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 
 	case UPDATE_ROW:
 	  {
-	    if (tcb_->mutations_.size() > 0)
+	    if (tcb_->numColsInDirectBuffer() > 0)
 	      {
-                HbaseStr row;
-                row.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].data();
-                row.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
-
-
-		retcode =  tcb_->ehi_->insertRow(tcb_->table_,
-                                                 row,
-						 tcb_->mutations_,
+                HbaseStr rowID;
+                rowID.val = (char *)tcb_->rowIds_[tcb_->currRowidIdx_].data();
+                rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
+                retcode =  tcb_->ehi_->insertRow(tcb_->table_,
+                                                 rowID,
+                                                 tcb_->row_,
 						 FALSE,
-						 -1); //colTS_);
+                                                 -1); //colTS_);
 		if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
 		    step_ = HANDLE_ERROR;
@@ -2775,11 +2784,11 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case CREATE_MUTATIONS:
 	  {
-	    retcode = tcb_->createMutations(tcb_->mutations_,
-					    tcb_->hbaseAccessTdb().updateTuppIndex_,
-					    tcb_->updateRow_,
-					    tcb_->hbaseAccessTdb().listOfUpdatedColNames(),
-					    TRUE);
+	    retcode = tcb_->createDirectRowBuffer(
+				 tcb_->hbaseAccessTdb().updateTuppIndex_,
+				 tcb_->updateRow_,
+				 tcb_->hbaseAccessTdb().listOfUpdatedColNames(),
+				 TRUE);
 	    if (retcode == -1)
 	      {
 		step_ = HANDLE_ERROR;
@@ -2793,8 +2802,8 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	case UPDATE_ROW:
 	  {
 	    retcode = tcb_->ehi_->insertRow(tcb_->table_,
+					    tcb_->rowID_,
 					    tcb_->row_,
-					    tcb_->mutations_,
 					    FALSE,
 					    -1); //colTS_);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -2819,7 +2828,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	  {
 	    TextVec columns;
 	    retcode =  tcb_->ehi_->deleteRow(tcb_->table_,
-					     tcb_->row_,
+					     tcb_->rowID_,
 					     columns,
 					     -1); //colTS_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::deleteRow"))
@@ -3117,8 +3126,8 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 	    pos += sizeof(short);
 
 	    memcpy(pos, tcb_->colName_.val, colNameLen);
-	    pos += colNameLen;
-
+	    pos += (colNameLen);
+            
 	    Lng32 colValueLen = tcb_->colVal_.len;
 	    memcpy(pos, (char*)&colValueLen, sizeof(Lng32));
 	    pos += sizeof(Lng32);
@@ -3200,7 +3209,7 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 	    
 	    Attributes * attr = rowTD->getAttr(0);
  
-	    retcode = tcb_->createRowwiseMutations(tcb_->mutations_,  
+	    retcode = tcb_->createDirectRowwiseBuffer(
 						   &tcb_->updateRow_[attr->getOffset()]);
 
 	    if (retcode == -1)
@@ -3215,11 +3224,11 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 
 	case UPDATE_ROW:
 	  {
-	    if (tcb_->mutations_.size() > 0)
+	    if (tcb_->numColsInDirectBuffer() > 0)
 	      {
 		retcode = tcb_->ehi_->insertRow(tcb_->table_,
 						tcb_->prevRowId_,
-						tcb_->mutations_,
+						tcb_->row_,
 						FALSE,
 						-1); //colTS_);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -3707,7 +3716,16 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    table_.val = hbaseAccessTdb().getTableName();
 	    table_.len = strlen(hbaseAccessTdb().getTableName());
 
-	    rowBatches_.clear();
+            if (!(hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_))
+            {
+               ExpTupleDesc * rowTD =
+    		hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                (hbaseAccessTdb().updateTuppIndex_);
+                allocateDirectRowBufferForJNI(rowTD->numAttrs(),
+                                   ROWSET_MAX_NO_ROWS);
+            }
+            allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
+
 	    rowIds_.clear();
 
 	    setupListOfColNames(hbaseAccessTdb().listOfFetchedColNames(),
@@ -3743,8 +3761,10 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		break;
 	      }
 
-	    rowBatches_.push_back(BatchMutation());
-	    rowBatches_[currRowNum_].row.assign(rowIds_[0].data(), rowIds_[0].length());
+	    HbaseStr rowId;
+            rowId.val = (char *)rowIds_[0].data();
+            rowId.len = rowIds_[0].length();
+	    copyRowIDToDirectBuffer(currRowNum_, rowId);
 
 	    if ((hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_) ||
 		(hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_))
@@ -3762,7 +3782,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    currRowNum_++;
 	    matches_++;
 
-	    if (currRowNum_ < 1000)
+	    if (currRowNum_ < ROWSET_MAX_NO_ROWS)
 	      {
 		step_ = DONE;
 		break;
@@ -3782,11 +3802,14 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	case PROCESS_DELETE:
 	case PROCESS_DELETE_AND_CLOSE:
 	  {
-           if (getHbaseAccessStats())
+            if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
 
+            patchDirectRowIDBuffers();
 	    retcode = ehi_->deleteRows(table_,
-				       rowBatches_,
+               (hbaseAccessTdb().keyLen_ > 0 ? hbaseAccessTdb().keyLen_ :
+                            hbaseAccessTdb().rowIdLen()),
+                                       rowIDs_,
 				       -1);
 
 	    if (setupError(retcode, "ExpHbaseInterface::deleteRows"))
@@ -3855,7 +3878,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 		  }
 	      }
 
-	    retcode = createMutations(rowBatches_[currRowNum_].mutations,
+	    retcode = createDirectRowBuffer(
 				      hbaseAccessTdb().updateTuppIndex_,
 				      updateRow_,
 				      hbaseAccessTdb().listOfUpdatedColNames(),
@@ -3875,9 +3898,12 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
            if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
+            patchDirectRowBuffers();
 
 	    retcode = ehi_->insertRows(table_,
-				       rowBatches_,
+				        hbaseAccessTdb().rowIdLen(),
+                                       rowIDs_,
+                                       rows_,
 				       -1);
 	    
 	    if (setupError(retcode, "ExpHbaseInterface::insertRows"))

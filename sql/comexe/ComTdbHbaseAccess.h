@@ -604,7 +604,37 @@ public:
   {
     LoadPrepLocation_ = loadPrepLocation;
   }
+ 
+  UInt32 getRowLen()
+  {
+    UInt32 rowLen;
 
+    switch (accessType_)
+    {
+       case MERGE_:
+          if (mergeInsertRowLen_ > 0)
+             rowLen =  mergeInsertRowLen_;
+          else
+             rowLen = convertRowLen_;
+          break;
+       case UPDATE_:
+          rowLen =  updateRowLen_;
+          break;
+       default:
+          rowLen = convertRowLen_;
+          break;
+    }
+    assert(rowLen > 0);
+    return rowLen;
+  }
+
+  UInt32 getRowIDLen()
+  {
+     if (keyLen_  > 0)
+        return keyLen_;
+     else
+        return rowIdLen_;
+  } 
 
   void setIsTrafLoadCleanup(NABoolean v)
    {(v ? flags2_ |= TRAF_LOAD_CLEANUP : flags2_ &= ~TRAF_LOAD_CLEANUP); };

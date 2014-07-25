@@ -34,6 +34,8 @@
 #include "key_single_subset.h"
 #include "ex_mdam.h"
 
+#define ROWSET_MAX_NO_ROWS     1000
+
 // -----------------------------------------------------------------------
 // Classes defined in this file
 // -----------------------------------------------------------------------
@@ -258,7 +260,6 @@ protected:
   short createRowwiseRow();
   short fetchRowVec();
   short createSQRow();
-  short createSQRow(TRowResult &rowResult);
   short createSQRow(jbyte *rowResult);
   short getColPos(char * colName, Lng32 colNameLen, Lng32 &idx);
   short applyPred(ex_expr * expr,UInt16 tuppIndex = 0,
@@ -282,9 +283,15 @@ protected:
 			UInt16 tuppIndex, char * tuppRow, Queue * listOfColNames,
 			NABoolean isUpdate = FALSE,
 			std::vector<UInt32> * posVec = NULL);
+  short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
+                        Queue * listOfColNames,
+			NABoolean isUpdate = FALSE,
+			std::vector<UInt32> * posVec = NULL);
 
   short createRowwiseMutations(MutationVec &mutations,
 			       char * inputRow);
+
+  short createDirectRowwiseBuffer(char * inputRow);
 
   Lng32 initNextKeyRange(sql_buffer_pool *pool = NULL, atp_struct * atp = NULL);
   Lng32 setupUniqueKeyAndCols(NABoolean doInit);
@@ -296,7 +303,25 @@ protected:
 
   short setupHbaseFilterPreds();
   void setRowID(char *rowId, Lng32 rowIdLen);
+  void allocateDirectBufferForJNI(UInt32 rowLen);
+  void allocateDirectRowBufferForJNI(short numCols, 
+                          short maxRows = 1);
+  void patchDirectRowBuffers();
+  void patchDirectRowIDBuffers();
+  void allocateDirectRowIDBufferForJNI(short maxRows = 1);
+  short copyColToDirectBuffer( BYTE *rowCurPtr, 
+                char *colName, short colNameLen,
+                NABoolean prependNullVal, char nullVal, 
+                char *colVal, short colValLen);
+  short copyRowIDToDirectBuffer(short currRowNum, HbaseStr &rowID);
 
+  short numColsInDirectBuffer()
+  {
+    if (row_.val != NULL)
+        return bswap_16(*(short *)row_.val);
+    else
+        return 0;
+  }
   /////////////////////////////////////////////////////
   //
   // Private data.
@@ -365,9 +390,45 @@ protected:
   Lng32 currRowidIdx_;
 
   MutationVec mutations_;
+
+  HbaseStr rowID_;
+
+  Lng32 rowIDAllocatedLen_;
+  char *rowIDAllocatedVal_;
+  // Direct Buffer to store multiple rowIDs
+  // Format for rowID direct buffer
+  // numRowIds + rowId + rowId + …
+  // rowId len is passed as a parameter to Java functions
+  //
+  BYTE *directRowIDBuffer_;
+  Lng32 directRowIDBufferLen_;
+  // Current row num in the Direct Buffers
+  short directBufferRowNum_;
+  // rowID of the current row
+  HbaseStr dbRowID_;
+  // Structure to keep track of current position in the rowIDs direct buffer
+  HbaseStr rowIDs_;
+  // Direct buffer for one or more rows containing the column names and
+  // values
+  //  Format for Row direct buffer
+  //   numCols
+  //                __
+  //    colNameLen    |
+  //    colName       |   For each non-null column value
+  //    colValueLen   |
+  //    colValue   __ |
+  //                                
+  // The colValue will have one byte null indicator 0 or -1 if column is nullabl
+  // The numRowIds, numCols, colNameLen and colValueLen are byte swapped because
+  // Java always use BIG_ENDIAN format. But, the column value need not be byte
+  // swapped because column value is always interpreted in the JNI side.
+  //
+  BYTE *directRowBuffer_;
+  Lng32 directRowBufferLen_;
+  // Structure to keep track of current row
   HbaseStr row_;
-  Lng32 rowAllocatedLen_;
-  char *rowAllocatedVal_;
+  // Structure to keep track of current position in direct row buffer
+  HbaseStr rows_;
 };
 
 class ExHbaseTaskTcb : public ExGod
