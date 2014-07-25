@@ -5670,7 +5670,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     // Check the number of requested streams
     NADefaults &defs = bindWA->getSchemaDB()->getDefaults();
 
-    ComUInt32 numConfiguredESPs = defs.getTotalNumOfESPsInCluster();
+    NABoolean fakeEnv = FALSE;
+    ComUInt32 numConfiguredESPs = defs.getTotalNumOfESPsInCluster(fakeEnv);
     
     if ((numExtractStreams == 1) || (numExtractStreams > numConfiguredESPs))
     {
@@ -9672,7 +9673,13 @@ RelExpr *HBaseBulkLoadPrep::bindNode(BindWA *bindWA)
 
   newInsert->setInsertType(UPSERT_LOAD);
   newInsert->setIsTrafLoadPrep(true);
+
+  // Pass the flag to bindWA to guarantee that a range partitioning is 
+  // always used for all source and target tables.
+  bindWA->setIsTrafLoadPrep(TRUE);
+
   RelExpr *boundNewInsert = newInsert->bindNode(bindWA);
+
   if (bindWA->errStatus())
     return NULL;
 

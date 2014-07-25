@@ -187,7 +187,7 @@ public:
   ULng32           getNumOfESPsPerNode() const;
 
   // get the number of configured ESPs per cluster.
-  ULng32           getTotalNumOfESPsInCluster() const;
+  ULng32           getTotalNumOfESPsInCluster(NABoolean& fakeEnv) const;
 
   NABoolean	   domainMatch	(Int32 attrEnum,
   				 Int32 expectedDefaultValidatorType,

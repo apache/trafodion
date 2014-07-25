@@ -3489,6 +3489,7 @@ enum DefaultConstants
 
   HBASE_USE_FAKED_REGIONS,
 
+  // turn on/off range partitioning for Hbase tables
   HBASE_RANGE_PARTITIONING,
 
   // use MC stats to decide on the partitioning function range splits
@@ -3556,7 +3557,8 @@ enum DefaultConstants
   TRAF_LOAD_PREP_ADJUST_PART_FUNC,
   TRAF_LOAD_PREP_TMP_LOCATION,
   TRAF_LOAD_PREP_PHASE_ONLY,
-    //log only the overall time of a compilation.
+
+  //log only the overall time of a compilation.
   COMPILE_TIME_MONITOR_LOG_ALLTIME_ONLY,
 
   TRAF_LOAD_PREP_KEEP_HFILES,
@@ -3567,10 +3569,6 @@ enum DefaultConstants
   TRAF_NUM_OF_SALT_PARTNS,
   TRAF_LOAD_PREP_CLEANUP,
 
-  // controls whether to compute the DoP based on the table sizes 
-  // for a query. 
-  HBASE_COMPUTE_DOP_USING_TABLE_SIZES,
-
   TRAF_LOAD_USE_QUASI_SECURE,
   HBASE_SALTED_TABLE_MAX_FILE_SIZE,
   HBASE_SALTED_TABLE_SET_SPLIT_POLICY,
@@ -3579,6 +3577,45 @@ enum DefaultConstants
   LIMIT_HBASE_SCAN_DOP,
   TRAF_LOAD_TAKE_SNAPSHOT,
   TRAF_LOAD_PREP_SKIP_DUPLICATES,
+
+ // Control the partitioning representation of a HBase trafodion table
+  // as follows.
+  //
+  // OFF:
+  //           non-salted table
+  //                    hosted on single region server:
+  //                                                   . single partitioned
+  //                    hosted on multiple region servers:
+  //                                                   . range partitioned
+  //           salted table:
+  //                    hosted on multiple region servers:
+  //                                                   . hash2 partitioned
+  //
+  // SYSTEM (default):
+  //           non-salted table
+  //                    hosted on single region server:
+  //                                            . single partitioned, if no stats
+  //                                            . stats splited, with stats
+  //                    hosted on multiple region servers:
+  //                                            . range partitioned, if no stats
+  //                                            . stats splited, with stats
+  //
+  //           salted table:
+  //                    hosted on multiple region servers:
+  //                                            . hash2 partitioned
+  //
+  // ON:
+  //
+  //           non-salted table         same as 'SYSTEM'
+  //
+  //           salted table:
+  //                    hosted on multiple region servers:
+  //                                            . hash2 partitioned, if no stats
+  //                                            . stats splited, with stats
+  //
+  HBASE_PARTITIONING,
+
+  // turn on/off hash2 partitioning for Hbase tables
   HBASE_HASH2_PARTITIONING,
 
   // This enum constant must be the LAST one in the list; it's a count,

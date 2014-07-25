@@ -1717,13 +1717,12 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HBASE_CATALOG,                        "HBASE"),
   DDkwd__(HBASE_CHECK_AND_UPDEL_OPT,		"ON"),
 
- DDkwd__(HBASE_COMPUTE_DOP_USING_TABLE_SIZES,        "ON"),
  DDkwd__(HBASE_COPROCESSORS,		             "ON"),
 
  DDkwd__(HBASE_CREATE_OLD_MD_FOR_UPGRADE_TESTING,   "OFF"),
 
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
- DDkwd__(HBASE_HASH2_PARTITIONING,                  "ON"),
+ DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
  DDkwd__(HBASE_INTERFACE,                       "JNI_TRX"),
  DDui___(HBASE_MAX_COLUMN_INFO_LENGTH,                "10000"),
  DDui___(HBASE_MAX_COLUMN_NAME_LENGTH,               "100"),
@@ -1734,6 +1733,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(HBASE_NATIVE_IUD,		"OFF"),
 
+  DDkwd__(HBASE_PARTITIONING,           	"SYSTEM"),
  DDkwd__(HBASE_RANGE_PARTITIONING,		"ON"),
 
  DDkwd__(HBASE_RANGE_PARTITIONING_MC_SPLIT,	"ON"),
@@ -4767,17 +4767,26 @@ float NADefaults::getNumOfESPsPerNodeInFloat() const
    return float(maxEspPerCpuPerOp * cores);
 }
 
-ULng32 NADefaults::getTotalNumOfESPsInCluster() const
+ULng32 NADefaults::getTotalNumOfESPsInCluster(NABoolean& fakeEnv) const
 {
+   fakeEnv = FALSE;
+
+   if (getToken(PARALLEL_NUM_ESPS, 0) != DF_SYSTEM ) {
+     fakeEnv = TRUE;
+     return getAsLong(PARALLEL_NUM_ESPS);
+   }
+
    float espsPerNode = getNumOfESPsPerNodeInFloat();
 
-   CollIndex numOfNodes = 
-     (OSIM_isNSKbehavior() || 
-      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())
-     ) ?  
-     getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS) :  // fake or NSK
-     gpClusterInfo->numOfSMPs();                    // non-fake
-   
+   CollIndex numOfNodes = gpClusterInfo->numOfSMPs();
+
+   if (OSIM_isNSKbehavior() ||
+      (CmpCommon::context() && CURRSTMT_OPTDEFAULTS->isFakeHardware())) {
+
+     fakeEnv = TRUE;
+     numOfNodes = getAsLong(DEF_NUM_NODES_IN_ACTIVE_CLUSTERS);
+   }
+
    return MAXOF(ceil(espsPerNode * numOfNodes), 1);
 }
 

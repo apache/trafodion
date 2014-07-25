@@ -218,7 +218,7 @@ CmpStatement::~CmpStatement()
       (*GLOBAL_EMPTY_INPUT_LOGPROP)->collHeap() == heap_)
     (*GLOBAL_EMPTY_INPUT_LOGPROP).reset();
 
-  
+
   delete heap_;
 
   context_->unsetStatement(this,exceptionRaised_);

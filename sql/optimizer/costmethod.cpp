@@ -3155,7 +3155,8 @@ CostMethodExchange::categorizeMessages(
     {
 
 
-      CollIndex totalEsps = defs.getTotalNumOfESPsInCluster();
+      NABoolean fakeEnv = FALSE;
+      CollIndex totalEsps = defs.getTotalNumOfESPsInCluster(fakeEnv);
       CMPASSERT(parentNodeMap->getNumEntries() <= totalEsps ); //here it needs to be all clusters
 
       //--------------------------------------------------------------------       

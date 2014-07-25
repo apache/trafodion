@@ -36,7 +36,7 @@ exit;
 ?section mcStatsPart_CQDs
 set schema Trafodion.hbase;
 
-cqd HBASE_COMPUTE_DOP_USING_TABLE_SIZES 'OFF';
+cqd HBASE_PARTITIONING 'SYSTEM';
 cqd query_cache '0';
 cqd cache_histograms 'off';
 cqd HBASE_MIN_BYTES_PER_ESP_PARTITION '1';

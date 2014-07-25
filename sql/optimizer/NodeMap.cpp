@@ -799,7 +799,8 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
   NADefaults &defs            = ActiveSchemaDB()->getDefaults();
 
 
-  CollIndex totalESPs = defs.getTotalNumOfESPsInCluster();
+  NABoolean fakeEnv = FALSE;
+  CollIndex totalESPs = defs.getTotalNumOfESPsInCluster(fakeEnv);
 
   //-----------------------------------------------------------------------
   //  Ensure that number of logical entries is positive and does not exceed

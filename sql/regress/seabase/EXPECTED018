@@ -1,0 +1,146 @@
+>>
+>>
+>>create table t018_orders(o_orderkey integer not null primary key,
++>                    o_col2 integer)
++>                      salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>create table t018_orders_ns(o_orderkey integer not null primary key,
++>                    o_col2 integer);
+
+--- SQL operation complete.
+>>
+>>create table t018_lineitem(l_orderkey integer not null,
++>                      l_linenum integer not null,
++>                      l_col3 integer,
++>                      primary key (l_orderkey))
++>                      salt using 4 partitions;
+
+--- SQL operation complete.
+>>
+>>create table t018_lineitem_ns(l_orderkey integer not null,
++>                      l_linenum integer not null,
++>                      l_col3 integer,
++>                      primary key (l_orderkey));
+
+--- SQL operation complete.
+>>
+>>control query default PARALLEL_NUM_ESPS '2' ;
+
+--- SQL operation complete.
+>>
+>>----------------------------------------------------------------------
+>>-- should see a co-located hash join 
+>>cqd hbase_partitioning 'system';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t018_orders /*+ cardinality 1e6 */
++>     join t018_lineitem /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  1.00E+000
+5    .    6    sort_partial_aggr_ro                                  1.00E+000
+4    .    5    esp_exchange                    1:2(hash2)            1.00E+000
+3    .    4    sort_partial_aggr_le                                  1.00E+000
+2    1    3    hybrid_hash_join                                      5.00E+012
+.    .    2    trafodion_scan                  T018_LINEITEM         1.00E+007
+.    .    1    trafodion_scan                  T018_ORDERS           1.00E+006
+
+--- SQL operation complete.
+>>
+>>-- force range partition of the two tables
+>>cqd hbase_partitioning 'ON';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t018_orders /*+ cardinality 1e6 */
++>     join t018_lineitem /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+7    .    8    root                                                  1.00E+000
+6    .    7    sort_partial_aggr_ro                                  1.00E+000
+5    .    6    esp_exchange                    1:2(range)            1.00E+000
+4    .    5    sort_partial_aggr_le                                  1.00E+000
+3    2    4    hybrid_hash_join                                      5.00E+012
+.    .    3    trafodion_scan                  T018_LINEITEM         1.00E+007
+1    .    2    esp_exchange                    2(rep-b):4(range)     1.00E+006
+.    .    1    trafodion_scan                  T018_ORDERS           1.00E+006
+
+--- SQL operation complete.
+>>
+>>-- non-salted tables should be single partitioned
+>>cqd hbase_partitioning 'OFF';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t018_orders_ns /*+ cardinality 1e6 */
++>     join t018_lineitem_ns /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:2(hash2)            1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join      u                               1.00E+011
+3    .    4    esp_exchange                    2(hash2):1 (m)        1.00E+007
+.    .    3    trafodion_scan                  T018_LINEITEM_NS      1.00E+007
+1    .    2    esp_exchange                    2(hash2):1 (m)        1.00E+006
+.    .    1    trafodion_scan                  T018_ORDERS_NS        1.00E+006
+
+--- SQL operation complete.
+>>
+>>--test CQD PARALLEL_NUM_ESPS
+>>control query default PARALLEL_NUM_ESPS '98';
+
+--- SQL operation complete.
+>>
+>>prepare xx from
++>select count(*) from t018_orders /*+ cardinality 1e6 */
++>     join t018_lineitem /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+--- SQL command prepared.
+>>
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+8    .    9    root                                                  1.00E+000
+7    .    8    sort_partial_aggr_ro                                  1.00E+000
+6    .    7    esp_exchange                    1:98(hash2)           1.00E+000
+5    .    6    sort_partial_aggr_le                                  1.00E+000
+4    2    5    hybrid_hash_join                                      5.00E+012
+3    .    4    esp_exchange                    98(hash2):4(hash2)    1.00E+007
+.    .    3    trafodion_scan                  T018_LINEITEM         1.00E+007
+1    .    2    esp_exchange                    98(hash2):4(hash2)    1.00E+006
+.    .    1    trafodion_scan                  T018_ORDERS           1.00E+006
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+

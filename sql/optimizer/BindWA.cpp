@@ -183,6 +183,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
      , volatileTableFound_(FALSE)
      , outerAggScope_(NULL)
      , hasCallStmts_(FALSE)
+     , isTrafLoadPrep_(FALSE)
 {
   // get current default schema, using NAMETYPE NSK or ANSI rules
   defaultSchema_ = schemaDB_->getDefaultSchema(SchemaDB::APPLY_NAMETYPE_RULES);

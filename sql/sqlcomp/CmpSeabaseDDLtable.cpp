@@ -5975,43 +5975,22 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
  // reset the SMD table flag
   tableDesc->body.table_desc.issystemtablecode = 0;
 
-  if ( tableDesc &&
-       CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) != DF_OFF) {
+  if ( tableDesc ) {
 
        // request the default
       ExpHbaseInterface* ehi =CmpSeabaseDDL::allocEHI();
       ByteArrayList* bal = ehi->getRegionInfo(extTableName->data());
 
-      // Salted tables always get a HASH2 partitioning function, until
-      // hbase scan can access some regions of the hbase table. For unsalted
-      // table, it will get either single or range partition as follows.
-      //
-      // OFF:  map to single partition function, regardless of #regions
-      //
-      // SYSTEM:
-      //   i. Single region
-      //      1. When stats present, stats-map to <m> partitions. 
-      //         The size of each partition is defined by 
-      //         CQD HBASE_MIN_BYTES_PER_ESP_PARTITION;
-      //      2. When stats is not present, mapped via method ON.i
-      //   ii. Multi-region <n>
-      //      1. When stats present, stats-map to <m> partitions. 
-      //         The size of each partition is defined by 
-      //         CQD HBASE_MIN_BYTES_PER_ESP_PARTITION;
-      //      2. When stats is not present, mapped via method ON.ii
-      //
-      // ON: 
-      //   i.  Single region: map to single partition function
-      //   ii. Multi-region <n> :  map to <k> partitions, 
-      //       where k = min(<n>, #nodes * MAX_ESPS_PER_CPU_PER_OP). 
-
-        if (tableIsSalted &&
-            (CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF))
-          ((table_desc_struct*)tableDesc)->hbase_regionkey_desc =
-            assembleRegionDescs(bal, DESC_HBASE_HASH2_REGION_TYPE);
-        else
-         ((table_desc_struct*)tableDesc)->hbase_regionkey_desc =
+      // Set the header.nodetype to either HASH2 or RANGE based on whether
+      // the table is salted or not.  
+      if (tableIsSalted && CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_ON) 
+        ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
+          assembleRegionDescs(bal, DESC_HBASE_HASH2_REGION_TYPE);
+      else
+       if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_ON ) 
+         ((table_desc_struct*)tableDesc)->hbase_regionkey_desc = 
             assembleRegionDescs(bal, DESC_HBASE_RANGE_REGION_TYPE);
+
 
       delete bal;
       CmpSeabaseDDL::deallocEHI(ehi);

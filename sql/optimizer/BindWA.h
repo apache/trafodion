@@ -1231,6 +1231,9 @@ public:
   void setIsFastExtract() { isFastExtract_ = TRUE; }
   NABoolean isFastExtract() { return isFastExtract_; }
 
+  void setIsTrafLoadPrep(NABoolean x) { isTrafLoadPrep_ = x; }
+  NABoolean isTrafLoadPrep() { return isTrafLoadPrep_; }
+
   // The following method returns the BindScope* with which we determine
   // correctly whether we're in a subquery (for the purposes to
   // determining a certain syntax error).  This involves checking the
@@ -1918,6 +1921,8 @@ private:
 
   // True if this a UNLOAD query
   NABoolean isFastExtract_;
+
+  NABoolean isTrafLoadPrep_;
 
   NABoolean failedForPrivileges_;
   NABoolean shouldLogAccessViolations_;

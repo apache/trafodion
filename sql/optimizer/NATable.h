@@ -541,6 +541,8 @@ public:
 
   const char *getViewCheck() const              { return viewCheck_; }
 
+  NABoolean hasSaltedColumn();
+
   void setUpdatable( NABoolean value )
   {  value ? flags_ |= IS_UPDATABLE : flags_ &= ~IS_UPDATABLE; }
 
@@ -789,6 +791,8 @@ public:
    { resetHDFSStatsAfterStmt_ = x; };
 
   NABoolean getClearHDFSStatsAfterStmt() { return resetHDFSStatsAfterStmt_; };
+
+  NATableHeapType getHeapType() { return heapType_; }
 
 private:
 

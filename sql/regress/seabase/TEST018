@@ -1,0 +1,86 @@
+-- Tests for Hbase - hash2 partitioning
+-- Added July 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop table t018_orders;
+drop table t018_orders_ns;
+drop table t018_lineitem;
+drop table t018_lineitem_ns;
+
+log LOG018 clear;
+
+
+create table t018_orders(o_orderkey integer not null primary key,
+                    o_col2 integer)
+                      salt using 4 partitions;
+
+create table t018_orders_ns(o_orderkey integer not null primary key,
+                    o_col2 integer);
+
+create table t018_lineitem(l_orderkey integer not null,
+                      l_linenum integer not null,
+                      l_col3 integer,
+                      primary key (l_orderkey))
+                      salt using 4 partitions;
+
+create table t018_lineitem_ns(l_orderkey integer not null,
+                      l_linenum integer not null,
+                      l_col3 integer,
+                      primary key (l_orderkey));
+
+control query default PARALLEL_NUM_ESPS '2' ;
+
+----------------------------------------------------------------------
+-- should see a co-located hash join 
+cqd hbase_partitioning 'system';
+
+prepare xx from
+select count(*) from t018_orders /*+ cardinality 1e6 */
+     join t018_lineitem /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+explain options 'f' xx;
+
+-- force range partition of the two tables
+cqd hbase_partitioning 'ON';
+
+prepare xx from
+select count(*) from t018_orders /*+ cardinality 1e6 */
+     join t018_lineitem /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+explain options 'f' xx;
+
+-- non-salted tables should be single partitioned
+cqd hbase_partitioning 'OFF';
+
+prepare xx from
+select count(*) from t018_orders_ns /*+ cardinality 1e6 */
+     join t018_lineitem_ns /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+explain options 'f' xx;
+
+--test CQD PARALLEL_NUM_ESPS
+control query default PARALLEL_NUM_ESPS '98';
+
+prepare xx from
+select count(*) from t018_orders /*+ cardinality 1e6 */
+     join t018_lineitem /*+ cardinality 1e7 */ on o_orderkey = l_orderkey;
+
+explain options 'f' xx;
+

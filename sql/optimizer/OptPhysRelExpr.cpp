@@ -12131,7 +12131,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
     NABoolean canAdjustDoP = TRUE;
 
-    countOfCPUs = defs.getTotalNumOfESPsInCluster();
+    NABoolean fakeEnv = FALSE;
+    countOfCPUs = defs.getTotalNumOfESPsInCluster(fakeEnv);
 
     // Get the value as a token code, no errmsg if not a keyword.
     if (CmpCommon::getDefault(PARALLEL_NUM_ESPS, 0) != DF_SYSTEM)
@@ -12141,10 +12142,6 @@ Context* RelRoot::createContextForAChild(Context* myContext,
       // but don't exceed the number of cpus available in the cluster.
       // On SQ, include the number of ESPs allowed per cpu.
       // -------------------------------------------------------------------
-
-      Lng32 pne = defs.getAsLong(PARALLEL_NUM_ESPS);
-
-      countOfCPUs = MINOF(countOfCPUs,pne);
 
       canAdjustDoP = FALSE;
     }
@@ -12297,7 +12294,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
                                
     Lng32 minBytesPerESP = defs.getAsLong(HBASE_MIN_BYTES_PER_ESP_PARTITION);
 
-    if ( CmpCommon::getDefault(HBASE_COMPUTE_DOP_USING_TABLE_SIZES) != DF_ON )
+    if ( CmpCommon::getDefault(HBASE_PARTITIONING) == DF_OFF )
       canAdjustDoP = FALSE;
 
     // Adjust DoP based on table size, if possible
@@ -12825,7 +12822,8 @@ computeDP2CostDataThatDependsOnSPP(
 
   NABoolean isHbaseTable = indexDesc.getPrimaryTableDesc()->getNATable()->isHbaseTable();
 
-  CostScalar totalCPUsExecutingDP2s = defs.getTotalNumOfESPsInCluster();
+  NABoolean fakeEnv = FALSE; // do not care
+  CostScalar totalCPUsExecutingDP2s = defs.getTotalNumOfESPsInCluster(fakeEnv);
   if(!isHbaseTable && !OSIM_isNSKbehavior())
   {
      // seabed api doesn't return audit count
@@ -14726,23 +14724,28 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         // CQDs related to # of ESPs for a HBase table scan
         maxESPs = getDefaultAsLong(HBASE_MAX_ESPS);
 
-
-        CollIndex totalESPsAllowed = defs.getTotalNumOfESPsInCluster();
+        NABoolean fakeEnv = FALSE; 
+        CollIndex totalESPsAllowed = defs.getTotalNumOfESPsInCluster(fakeEnv);
    
-        // limit the number of ESPs to max(totalESPsAllowed, HBASE_MAX_ESPS)
-        maxESPs = MAXOF(MINOF(totalESPsAllowed, maxESPs),1);
+        if ( !fakeEnv ) {
+           // limit the number of ESPs to max(totalESPsAllowed, HBASE_MAX_ESPS)
+           maxESPs = MAXOF(MINOF(totalESPsAllowed, maxESPs),1);
 
-        if (!partReq && minESPs == 1) {
-          minESPs = rppForMe->getCountOfPipelines();
+           if (!partReq && minESPs == 1) {
+             minESPs = rppForMe->getCountOfPipelines();
 
-          if (ixDescPartFunc && (CmpCommon::getDefault(LIMIT_HBASE_SCAN_DOP) == DF_ON)) {
-             minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
-          }
-        }
+             if (ixDescPartFunc && (CmpCommon::getDefault(LIMIT_HBASE_SCAN_DOP) == DF_ON)) {
+                minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
+             }
+           }
+        } else 
+           maxESPs = totalESPsAllowed;
      }
    
      numESPs = MINOF(minESPs, maxESPs);
    
+     NABoolean performStatsSplit = CmpCommon::getDefault(HBASE_PARTITIONING) != DF_OFF;
+
      if (partReq && partReq->castToRequireReplicateNoBroadcast()) {
        myPartFunc = 
          partReq->castToRequireReplicateNoBroadcast()->
@@ -14763,7 +14766,7 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
 
           RangePartitioningFunction* newPartFunc = NULL;
 
-          if (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_ON)
+          if (performStatsSplit)
              newPartFunc = 
                createRangePartFuncForHbaseTableUsingStats(partns,
                        myPartFuncAsRange->getPartitioningKey(),
@@ -14789,41 +14792,45 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         // A NULL ixDescPartFunc implies the table is single partitioned 
         // (1 region only).
 
-        Lng32 partns = numESPs;
-
-        const ValueIdList& keyColumnList = indexDesc_->getPartitioningKey();
-
-        const ValueIdList& orderOfKeyValues = indexDesc_->getOrderOfKeyValues();
-        ValueIdSet keyColumnSet(keyColumnList);
-
-        RangePartitioningFunction* newPartFunc =
-               createRangePartFuncForHbaseTableUsingStats(partns,
-                       keyColumnSet,
-                       keyColumnList,
-                       orderOfKeyValues);
-
-        if ( newPartFunc ) {
-           myPartFunc = newPartFunc;
-
-           // setup partKeys_
-           ValueIdSet externalInputs = getGroupAttr()->getCharacteristicInputs();
-           ValueIdSet dummySet;
-
-           // Create and set the Searchkey for the partitioning key:
-           partKeys_ =  new (CmpCommon::statementHeap())
-                   SearchKey(keyColumnList, 
-                             orderOfKeyValues, 
-                             externalInputs,
-                             NOT getReverseScan(),
-                             selectionPred(),
-                             *disjunctsPtr_,
-                             dummySet, // needed by interface but not used here
-                             indexDesc_
-                             );
-
-           partnsScaled = TRUE;
-
-        } else
+        if ( performStatsSplit ) {
+          Lng32 partns = numESPs;
+  
+          const ValueIdList& keyColumnList = indexDesc_->getPartitioningKey();
+  
+          const ValueIdList& orderOfKeyValues = indexDesc_->getOrderOfKeyValues();
+          ValueIdSet keyColumnSet(keyColumnList);
+  
+          RangePartitioningFunction* newPartFunc =
+                 createRangePartFuncForHbaseTableUsingStats(partns,
+                         keyColumnSet,
+                         keyColumnList,
+                         orderOfKeyValues);
+  
+          if ( newPartFunc ) {
+             myPartFunc = newPartFunc;
+  
+             // setup partKeys_
+             ValueIdSet externalInputs = getGroupAttr()->getCharacteristicInputs();
+             ValueIdSet dummySet;
+  
+             // Create and set the Searchkey for the partitioning key:
+             partKeys_ =  new (CmpCommon::statementHeap())
+                     SearchKey(keyColumnList, 
+                               orderOfKeyValues, 
+                               externalInputs,
+                               NOT getReverseScan(),
+                               selectionPred(),
+                               *disjunctsPtr_,
+                               dummySet, // needed by interface but not used here
+                               indexDesc_
+                               );
+  
+             partnsScaled = TRUE;
+  
+          } else
+             myPartFunc = new(CmpCommon::statementHeap())
+                 SinglePartitionPartitioningFunction();
+        } else 
            myPartFunc = new(CmpCommon::statementHeap())
                SinglePartitionPartitioningFunction();
 
