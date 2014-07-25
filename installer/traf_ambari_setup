@@ -136,6 +136,9 @@ wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.5.1/ambar
 sudo cp ambari.repo /etc/yum.repos.d
 sudo yum --assumeyes install ambari-server
 sudo ambari-server setup
+sudo ambari-server stop
+#This will reset the database so that any previous installs will be deleted.
+sudo ambari-server reset
 sudo ambari-server start
 
 echo "***INFO: Complete Hortonworks/Ambari setup from http://localhost:8080"

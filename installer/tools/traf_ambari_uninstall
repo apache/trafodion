@@ -89,7 +89,7 @@ pdsh $MY_NODES 'sudo service nagios stop'
 pdsh $MY_NODES 'sudo /etc/init.d/hdp-gmetad stop'
 pdsh $MY_NODES 'sudo /etc/init.d/hdp-gmond stop'
 pdsh $MY_NODES 'sudo su -l hcat -c "/usr/lib/hcatalog/sbin/webhcat_server.sh  stop"'
-pdsh $MY_NODES sudo ps aux | awk '{print $1,$2}' | grep hive | awk '{print $2}' | xargs kill >/dev/null 2>&1
+pdsh $MY_NODES sudo ps aux | awk '{print $1,$2}' | grep hive | awk '{print $2}' | xargs kill >/dev/null 2>&1 
 
 pdsh $MY_NODES 'sudo su - zookeeper -c "export ZOOCFGDIR=/etc/zookeeper/conf ; export ZOOCFG=zoo.cfg ;source /etc/zookeeper/conf/zookeeper-env.sh ; /usr/lib/zookeeper/bin/zkServer.sh stop"' 
 
@@ -154,8 +154,12 @@ pdsh $MY_NODES 'sudo yum --assumeyes remove snappy\*'
 pdsh $MY_NODES 'sudo yum --assumeyes remove hadoop-lzo\*'
 pdsh $MY_NODES 'sudo yum --assumeyes remove hadoop\*'
 pdsh $MY_NODES 'sudo yum --assumeyes remove extjs-2.2-1 mysql-connector-java-5.0.8-1\*'
+
 pdsh $MY_NODES 'sudo rm -rf /usr/sbin/ambari*'
 pdsh $MY_NODES 'sudo rm -rf /usr/lib/hcatalog'
+pdsh $MY_NODES 'sudo rm -rf /usr/lib64/nagios'
+pdsh $MY_NODES 'sudo rm -rf /usr/share/hdp/nagios'
+pdsh $MY_NODES 'sudo rm -rf /usr/include/hadoop'
 pdsh $MY_NODES 'sudo rm -rf /hadoop'
 pdsh $MY_NODES 'sudo rm -rf /mnt/hadoop*'
 pdsh $MY_NODES 'sudo rm -rf /etc/yum.repos.d/ambari* /etc/yum.repos.d/HDP*'
@@ -173,6 +177,7 @@ pdsh $MY_NODES 'sudo rm -rf /etc/hcatalog'
 pdsh $MY_NODES 'sudo rm -rf /etc/ganglia'
 pdsh $MY_NODES 'sudo rm -rf /etc/nagios'
 pdsh $MY_NODES 'sudo rm -rf /etc/webhcat'
+
 pdsh $MY_NODES 'sudo rm -rf /var/log/ambari*'
 pdsh $MY_NODES 'sudo rm -rf /var/log/flume*'
 pdsh $MY_NODES 'sudo rm -rf /var/log/hadoop*'
@@ -201,6 +206,7 @@ pdsh $MY_NODES 'sudo rm -rf /usr/lib/hive'
 pdsh $MY_NODES 'sudo rm -rf /usr/lib/oozie'
 pdsh $MY_NODES 'sudo rm -rf /usr/lib/zookeeper'
 pdsh $MY_NODES 'sudo rm -rf /usr/lib/nagios'
+pdsh $MY_NODES 'sudo rm -rf /usr/lib/ambari*'
 
 pdsh $MY_NODES 'sudo rm -rf /var/lib/ambari-agent'
 pdsh $MY_NODES 'sudo rm -rf /var/lib/ambari-server'
@@ -208,10 +214,20 @@ pdsh $MY_NODES 'sudo rm -rf /var/lib/ganglia'
 pdsh $MY_NODES 'sudo rm -rf /var/lib/oozie'
 pdsh $MY_NODES 'sudo rm -rf /var/lib/zookeeper'
 pdsh $MY_NODES 'sudo rm -rf /var/lib/hadoop-hdfs'
+pdsh $MY_NODES 'sudo rm -rf /var/lib/mysql/hive*'
 
 pdsh $MY_NODES 'sudo rm -rf /var/nagios'
 pdsh $MY_NODES 'sudo rm -rf /var/tmp/oozie'
 pdsh $MY_NODES 'sudo rm -rf /tmp/hive'
+pdsh $MY_NODES 'sudo rm -rf /var/cache/yum/x86_64/6/Updates-ambari*'
+pdsh $MY_NODES 'sudo rm -rf /var/cache/yum/x86_64/6/ambari*'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/zookeeper'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/hive'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/hbase'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/hdfs'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/hcat'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/nagios'
+pdsh $MY_NODES 'sudo rm -rf /var/spool/mail/mapred'
 
 #==============================================
 #Deleting all userids
@@ -231,6 +247,14 @@ pdsh $MY_NODES 'sudo /usr/sbin/userdel --force pulse'
 pdsh $MY_NODES 'sudo /usr/sbin/userdel --force nagios'
 pdsh $MY_NODES 'sudo /usr/sbin/userdel --force yarn'
 
+pdsh $MY_NODES 'sudo rm -rf /home/nagios*'
+pdsh $MY_NODES 'sudo rm -rf /home/mapred*'
+pdsh $MY_NODES 'sudo rm -rf /home/ambari-qa*'
+pdsh $MY_NODES 'sudo rm -rf /home/hcat*'
+pdsh $MY_NODES 'sudo rm -rf /home/hbase*'
+pdsh $MY_NODES 'sudo rm -rf /home/hive*'
+pdsh $MY_NODES 'sudo rm -rf /home/zookeeper*'
+pdsh $MY_NODES 'sudo rm -rf /home/hdfs*'
 #==============================================
 echo "***INFO: Hortonworks/Amabari is uninstalled."
 
