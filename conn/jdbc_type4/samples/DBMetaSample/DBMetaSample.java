@@ -31,7 +31,7 @@ public class DBMetaSample
     ResultSet           rs;
     DatabaseMetaData    dbMeta;
     int                 rowNo;
-    String              table = "DBMetaSample";
+    String              table = "DBMETASAMPLE";
 
     try
     {
@@ -64,13 +64,13 @@ public class DBMetaSample
                 System.out.println("");
                 System.out.println("getTables() ");
                 dbMeta = connection.getMetaData();
-                rs = dbMeta.getTables(connection.getCatalog(), sampleUtils.props.getProperty("schema"), "DBMetaSample", null);
+                rs = dbMeta.getTables(connection.getCatalog(), sampleUtils.props.getProperty("schema"), "DBMETASAMPLE", null);
                 break;
             case 4:
                 System.out.println("");
                 System.out.println("getColumns()");
                 dbMeta = connection.getMetaData();
-                rs = dbMeta.getColumns(connection.getCatalog(), sampleUtils.props.getProperty("schema"), "DBMetaSample", "C1");
+                rs = dbMeta.getColumns(connection.getCatalog(), sampleUtils.props.getProperty("schema"), "DBMETASAMPLE", "C1");
                 break;
             case 5:
                 System.out.println("");
