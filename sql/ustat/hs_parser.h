@@ -46,6 +46,7 @@ Lng32 AddTableName( const hs_table_type type,
 Lng32 AddEveryColumn(const char *startColumn = NULL, 
                     const char *endColumn   = NULL);
 Lng32 AddKeyGroups();
+Lng32 AddSaltToIndexPrefixes();
 Lng32 AddColumnSet(HSColSet &colSet);
 Lng32 AddExistingColumns();
 NABoolean ColumnExists(const Lng32 colNumber);

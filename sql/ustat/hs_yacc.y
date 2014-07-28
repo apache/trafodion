@@ -379,12 +379,12 @@ histogram_options : CLEAR
                       {
                         hs_globals_y->optFlags |= REMOVE_SAMPLE_OPT;
                       }
-                 |  on_clause
+                 |  on_clause_wrapper
                  |  on_clause CLEAR
                       {
                         hs_globals_y->optFlags |= CLEAR_OPT;
                       }
-                 |  on_clause interval_clause
+                 |  on_clause_wrapper interval_clause
                  |  incremental_clause
                       {
                          if (CmpCommon::getDefault(USTAT_IUS_SIMPLE_SYNTAX) == DF_OFF) {
@@ -393,7 +393,7 @@ histogram_options : CLEAR
                            return -1;
                          }
                       }
-                 |  on_clause incremental_clause
+                 |  on_clause_wrapper incremental_clause
                       {
                          if (CmpCommon::getDefault(USTAT_IUS_SIMPLE_SYNTAX) == DF_ON) {
                            HSFuncMergeDiags(- UERR_IUS_ON_CLAUSE,
@@ -401,10 +401,10 @@ histogram_options : CLEAR
                            return -1;
                          }
                       }
-                 |  on_clause sample_clause
-                 |  on_clause interval_clause sample_clause
-                 |  on_clause sample_clause interval_clause
-                 |  on_clause with_skewed_values_clause
+                 |  on_clause_wrapper sample_clause
+                 |  on_clause_wrapper interval_clause sample_clause
+                 |  on_clause_wrapper sample_clause interval_clause
+                 |  on_clause_wrapper with_skewed_values_clause
                  |  VIEWONLY
                     {
                       hs_globals_y->optFlags |= VIEWONLY_OPT;
@@ -449,7 +449,23 @@ on_clause :         ON predefined_groups
                  |  ON regular_group_list
 ;
 
-
+on_clause_wrapper : on_clause
+                    {
+                      // If neither "on every key" nor "on every column" (which includes
+                      // every key) is specified, and the table is salted, we check to see
+                      // if there are any groups (SC or MC) that constitute a (possibly
+                      // improper) prefix of the primary key minus its initial "_SALT_" column.
+                      // If so, we add a group consisting of that group prefixed by "_SALT_".
+                      // Also, if the column(s) of an MC group constitute a leading prefix of
+                      // the primary key including "_SALT_", we make sure the group is added
+                      // with the columns in index order.
+                      if (!(hs_globals_y->optFlags & (EVERYKEY_OPT | EVERYCOL_OPT)) &&
+                          hs_globals_y->objDef->getColNum("_SALT_", FALSE) >= 0)
+                        {
+                          AddSaltToIndexPrefixes();
+                        }
+                    }
+;
 
 incremental_clause :   INCREMENTAL WHERE WHERE_CONDITION
                 { 

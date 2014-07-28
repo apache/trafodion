@@ -617,6 +617,7 @@ Lng32 AddColumnSet(HSColSet &colSet)
             else                  // append to front of list
               {
                 newGroup->next = hs_globals->multiGroup;
+                hs_globals->multiGroup->prev = newGroup;
                 hs_globals->multiGroup = newGroup;
               }
 
@@ -648,7 +649,7 @@ void showColSet(HSColSet &colSet, const char *title)
 // to what we want to add now (colSet); i.e. we will not add duplicates.
 NABoolean GroupExists(HSColSet &colSet)
   {
-    HSGlobalsClass *hs_globals = GetHSContext();
+  HSGlobalsClass *hs_globals = GetHSContext();
     NABoolean         found = FALSE;
     HSColGroupStruct *mgroup;
 
@@ -664,9 +665,169 @@ NABoolean GroupExists(HSColSet &colSet)
     return FALSE;
   }
 
+// Returns TRUE iff the n columns of the group match, without regard to order,
+// columns 1 through n of the index (column 0 of the index being "_SALT_"),
+// or columns 0 through n-1 of the index. The saltMatched output parameter is
+// set to indicate which of these is the case (if the function returns TRUE).
+// Duplicate columns have been removed from the group, so it is enough to
+// check that each one matches one of the target columns of the index.
+NABoolean MatchesIndexPrefix(HSColGroupStruct* group,
+                             NAFileSet* index,
+                             NABoolean& saltMatched)
+{
+  const NAColumnArray& inxCols = index->getIndexKeyColumns();
+  CollIndex numInxCols = inxCols.entries();
+  Lng32 numGrpCols = group->colCount;
+  CollIndex lastColInxToCheck;
+
+  if (numGrpCols < numInxCols)
+    lastColInxToCheck = numGrpCols;
+  else if (numGrpCols == numInxCols)
+    lastColInxToCheck = numGrpCols - 1;
+  else  // more group cols than index cols; no chance of match
+    return FALSE;
+
+  HSColumnStruct* col;
+  NABoolean match;
+  NABoolean firstInxColMatched = FALSE;
+  NABoolean lastInxColMatched = FALSE;
+  saltMatched = FALSE;
+  for (Int32 grpColInx=0; grpColInx<numGrpCols; grpColInx++)
+    {
+      Lng32 grpColPosInTable = group->colSet[grpColInx].colnum;
+      match = FALSE;
+      for (CollIndex inxColInx=0; inxColInx<=lastColInxToCheck && !match; inxColInx++)
+        {
+          if (grpColPosInTable == inxCols[inxColInx]->getPosition())
+            {
+              match = TRUE;
+              if (inxCols[inxColInx]->isSaltColumn())
+                saltMatched = TRUE;
+              if (inxColInx == 0)
+                firstInxColMatched = TRUE;
+              else if (inxColInx == lastColInxToCheck)
+                lastInxColMatched = TRUE;
+            }
+        }
+
+      if (!match)
+        return FALSE;
+    }
+
+  // If _SALT_ alone is specified, no action is needed.
+  if (numGrpCols == 1 && saltMatched)
+    return FALSE;
+
+  // Each of the n group columns matched one of the initial n+1 index columns.
+  // If both the first and last index columns were matched and the index has more
+  // columns than the group, then something in the middle was left out, and we
+  // can not say the group matches the index.
+  if (numGrpCols < numInxCols && firstInxColMatched && lastInxColMatched)
+    return FALSE;
+  else
+    return TRUE;
+}
+
+// This is called by AddSaltToIndexPrefixes() when a group (SC or MC) is found
+// that coincides with the first n columns of an index (possibly excluding _SALT_),
+// where n is the number of columns in the group. The function adds an MC group
+// that adds _SALT_ (if missing) to the columns of the index contained in matchedGroup,
+// in index order.
+Lng32 AddSaltedIndexPrefix(NAFileSet* index,
+                           HSColGroupStruct* matchedGroup,
+                           NABoolean groupHasSalt)
+{
+  HSLogMan *LM = HSLogMan::Instance();
+  HSGlobalsClass *hs_globals = GetHSContext();
+  const NAColumnArray& inxCols = index->getIndexKeyColumns();
+  HSColSet* saltedColSet = new(STMTHEAP) HSColSet(STMTHEAP);
+  HSColumnStruct* colStruct;
+
+  // If the group already contains _SALT_, there will be 1 less column of the
+  // index to include.
+  CollIndex lastColInxToInclude = matchedGroup->colCount;
+  if (groupHasSalt)
+    lastColInxToInclude--;
+
+  // Create an MC that includes the columns of the matching MC with the columns
+  // in index order, adding _SALT_ at the beginning if it wasn't present in the
+  // original MC.
+  for (CollIndex inxColInx=0; inxColInx<=lastColInxToInclude; inxColInx++)
+    {
+      colStruct = new(STMTHEAP) HSColumnStruct;
+      *colStruct =  hs_globals->objDef
+                              ->getColInfo(inxCols[inxColInx]->getPosition());
+      colStruct->position = inxColInx;  // position in MC
+      saltedColSet->insert(*colStruct);
+    }
+
+  if (!groupHasSalt && LM->LogNeeded())
+    {
+      snprintf(LM->msg, sizeof(LM->msg),
+               "Adding an MC to duplicate index subset (%s) with \"_SALT_\" prefix added.",
+               matchedGroup->colNames->data());
+      LM->Log(LM->msg);
+    }
+
+  // If we formed the new, index-ordered group and had to add _SALT_, we leave
+  // the original group in place. However, if the new group has the same cols
+  // and only the order was changed, delete the original first, or the new one
+  // will be rejected as a duplicate when we try to add it.
+  if (groupHasSalt)
+    hs_globals->removeGroup(matchedGroup);
+
+  return AddColumnSet(*saltedColSet);
+}
+
+// Look for groups that constitute a leading prefix of the primary key, possibly
+// excluding the "_SALT_" column. For each such group that omits "_SALT_", add
+// another group consisting of that group plus "_SALT_", with the columns in index
+// order. For each such group that already includes "_SALT_", replace it with a
+// group containing the same set of columns, but in index order. This function
+// should only be called for a salted table.
+Lng32 AddSaltToIndexPrefixes()
+{
+  Lng32 retcode = 0;
+  HSGlobalsClass *hs_globals = GetHSContext();
+  NATable* naTbl = hs_globals->objDef->getNATable();
+  NAFileSet* clusteringIndex = naTbl->getClusteringIndex();
+  NABoolean groupHasSalt;
+  HSColGroupStruct* nextGroup;
+
+  NABoolean doingSingles = TRUE;
+  HSColGroupStruct* group = hs_globals->singleGroup;
+  if (!group)
+    {
+      group = hs_globals->multiGroup;
+      doingSingles = FALSE;
+    }
+
+  while (group)
+    {
+      // AddSaltedIndexPrefix may remove the group it is passed from the group
+      // list and deallocate it, so we grab the link to the next one from it first.
+      nextGroup = group->next;
+
+      // See if the group matches a prefix of the key, allowing _SALT_ to not
+      // be present. groupHasSalt will indicate whether it was present. If it
+      // matches, add the appropriate group.
+      if (MatchesIndexPrefix(group, clusteringIndex, groupHasSalt))
+        retcode = AddSaltedIndexPrefix(clusteringIndex, group, groupHasSalt);
+
+      group = nextGroup;
+      if (!group && doingSingles)
+        {
+          doingSingles = FALSE;
+          group = hs_globals->multiGroup;
+        }
+    }
+
+  return retcode;
+}
+
 Lng32 AddKeyGroups()
   {
-    HSGlobalsClass *hs_globals = GetHSContext();
+  HSGlobalsClass *hs_globals = GetHSContext();
     if (HSGlobalsClass::isHiveCat(hs_globals->objDef->getCatName()))
       {
         // HSHiveTableDef::getKeyList()/getIndexArray() not yet implemented.
@@ -728,37 +889,47 @@ Lng32 AddKeyGroups()
         ULng32 minMCGroupSz = 2;
         ULng32 maxMCGroups  = (ULng32)
           CmpCommon::getDefaultNumeric(USTAT_NUM_MC_GROUPS_FOR_KEYS);
-        if (numKeys > maxMCGroups) numKeys = maxMCGroups;
-        while (numKeys >= 2)  // Create only MC groups not single cols
+
+        // Generate no MCs with more cols than specified by the cqd.
+        if (numKeys > maxMCGroups)
+          numKeys = maxMCGroups;
+
+        // For salted table, generate only the longest MC for the key (subject
+        // to max cols determined above) unless a cqd is set to gen all MCs of
+        // allowable sizes.
+        if (CmpCommon::getDefault(USTAT_ADD_SALTED_KEY_PREFIXES_FOR_MC) == DF_OFF &&
+            hs_globals->objDef->getColNum("_SALT_", FALSE) >= 0)
+          minMCGroupSz = numKeys;
+
+        while (numKeys >= minMCGroupSz)  // Create only MC groups not single cols
           {
-          HSColSet colSet;
+            HSColSet colSet;
 
-          autoGroup = "(";
-          for (j = 0; j < numKeys; j++)
-            {
-              colPos = keyCols[j]->getPosition();
-              col = hs_globals->objDef->getColInfo(colPos);
-              col.colnum = colPos;
-              colSet.insert(col);
-              autoGroup += col.colname->data();
-              autoGroup += ",";
-            }
+            autoGroup = "(";
+            for (j = 0; j < numKeys; j++)
+              {
+                colPos = keyCols[j]->getPosition();
+                col = hs_globals->objDef->getColInfo(colPos);
+                col.colnum = colPos;
+                colSet.insert(col);
+                autoGroup += col.colname->data();
+                autoGroup += ",";
+              }
 
-          if (LM->LogNeeded())
-            {
-              autoGroup.replace(autoGroup.length()-1,1,")");    // replace comma with close parenthesis
-              sprintf(LM->msg, "\t\tKEY:\t\t%s", autoGroup.data());
-              LM->Log(LM->msg);
-            }
+            if (LM->LogNeeded())
+              {
+                autoGroup.replace(autoGroup.length()-1,1,")");    // replace comma with close parenthesis
+                sprintf(LM->msg, "\t\tKEY:\t\t%s", autoGroup.data());
+                LM->Log(LM->msg);
+              }
 
-          if (retcode = AddColumnSet(colSet))
-            {
-              HSHandleError(retcode);
-            }
-          numKeys--;
+            if (retcode = AddColumnSet(colSet))
+              {
+                HSHandleError(retcode);
+              }
+            numKeys--;
           }
       }
-  
   
     // ----------------------------------------------------------
     // Generate histograms for all INDEXES

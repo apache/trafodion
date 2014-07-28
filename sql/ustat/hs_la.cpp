@@ -636,7 +636,7 @@ Lng32 HSSqTableDef::setHasSyskeyFlag()
     return retcode_;
   }
 
-Lng32 HSTableDef::getColNum(const char *colName) const
+Lng32 HSTableDef::getColNum(const char *colName, NABoolean errIfNotFound) const
   {
     Lng32 retcode = -1;
     NAString ansiForm(colName);
@@ -651,7 +651,9 @@ Lng32 HSTableDef::getColNum(const char *colName) const
           }
       }
 
-    // LCOV_EXCL_START :rfi
+    if (!errIfNotFound)
+      return -1;
+
     if (LM->LogNeeded())
       {
         sprintf(LM->msg, "***[ERROR]:  Column (%s) does not exist.", colName);
@@ -664,7 +666,6 @@ Lng32 HSTableDef::getColNum(const char *colName) const
                     );
     HSHandleError(retcode);
     return retcode;
-    // LCOV_EXCL_STOP
   }
 
 char* HSTableDef::getColName(Lng32 colNum) const
@@ -1065,6 +1066,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
   colInfo_ = new(STMTHEAP) HSColumnStruct[numCols_];
   for (CollIndex i=0; i<numCols_; i++)
     {
+      colInfo_[i].colnum = i;  // position of col in table
       *(colInfo_[i].colname) = colArr[i]->getColName();
       natype = colArr[i]->getType();
       colInfo_[i].datatype = natype->getFSDatatype();

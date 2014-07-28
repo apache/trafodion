@@ -7847,6 +7847,44 @@ void HSGlobalsClass::addGroup(HSColGroupStruct *group)
     groupCount++;                  // overall group count
   }
 
+// Remove the passed group from the appropriate group list, and deallocate it.
+void HSGlobalsClass::removeGroup(HSColGroupStruct* groupToRemove)
+{
+  if (!groupToRemove)
+    return;
+
+  HSColGroupStruct* group = (groupToRemove->colCount == 1 ? singleGroup : multiGroup);
+  while (group && group != groupToRemove)
+    group = group->next;
+
+  // If the group was found, unlink it from list and deallocate.
+  if (group)
+    {
+      if (group->next)
+        group->next->prev = group->prev;
+
+      if (group->prev)
+        group->prev->next = group->next;
+      else if (group->colCount == 1)
+        {
+          HS_ASSERT(singleGroup == group);
+          singleGroup = group->next;
+        }
+      else
+        {
+          HS_ASSERT(multiGroup == group);
+          multiGroup = group->next;
+        }
+
+      // Make group isolated from list, or deleting it will cause further
+      // deletions.
+      group->next = group->prev = NULL;
+
+      // Group has been detached from list, now delete it.
+      delete group;
+    }
+}
+
 /****************************************************************************/
 /* METHOD:  removeGroups()                                                  */
 /* PURPOSE: Remove groups from the front (most recently added) of both the  */
