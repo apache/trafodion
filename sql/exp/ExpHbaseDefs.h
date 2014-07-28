@@ -59,6 +59,7 @@ enum HbaseOptionEnum
     HBASE_COMPACT,
     HBASE_DURABILITY,
     HBASE_MEMSTORE_FLUSH_SIZE,
+    HBASE_SPLIT_POLICY,
     HBASE_MAX_OPTIONS
   };
 
@@ -66,7 +67,13 @@ enum HbaseOptionEnum
 class HbaseCreateOption
 {
  public:
-  HbaseCreateOption(NAText &key, NAText &val)
+  HbaseCreateOption(const NAText &key, const NAText &val)
+    {
+      key_ = key;
+      val_ = val;
+    }
+  
+  HbaseCreateOption(const char *key, const char *val)
     {
       key_ = key;
       val_ = val;

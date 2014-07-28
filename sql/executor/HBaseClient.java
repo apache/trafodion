@@ -89,6 +89,7 @@ public class HBaseClient {
     public static final int HBASE_COMPACT = 19;
     public static final int HBASE_DURABILITY = 20;
     public static final int HBASE_MEMSTORE_FLUSH_SIZE = 21;
+    public static final int HBASE_SPLIT_POLICY = 22;
 
     
     
@@ -348,6 +349,11 @@ public class HBaseClient {
                 case HBASE_MEMSTORE_FLUSH_SIZE:
                     desc.setMemStoreFlushSize
                         (Long.parseLong(tableOptions.get(i)));
+                    break ;
+                case HBASE_SPLIT_POLICY:
+                    // This method not yet available in earlier versions
+                    // desc.setRegionSplitPolicyClassName(tableOptions.get(i));
+                    desc.setValue(desc.SPLIT_POLICY, tableOptions.get(i));
                     break ;
                 default:
                     break;

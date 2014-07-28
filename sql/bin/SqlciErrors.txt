@@ -119,7 +119,7 @@
 1117 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping the only partition of an object is not allowed. At least two partitions must exist to perform the drop.
 1118 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creating object $0~TableName is not allowed in metadata schema.
 1119 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping metadata object $0~TableName is not allowed.
-1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of float datatype in a partitioning key or salt clause is not allowed.
+1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of approximate numeric datatype (float, real, double precision) in a partitioning key or salt clause is not allowed.
 1121 0A000 99999 BEGINNER MINOR DBADMIN Partitions cannot be added or dropped on table $0~TableName.  These partition operations are not allowed on tables whose clustering key consists only of the SYSKEY.
 1122 ZZZZZ 99999 BEGINNER MINOR DBADMIN The number of specified partition key values ($0~String0) for object $1~TableName exceeds the number of user defined key columns, $2~Int0.
 1123 42000 99999 BEGINNER MINOR DBADMIN Not all of the partition key values ($0~String0) for object $1~TableName could be processed.  Please verify that the correct key value data types were specified.
@@ -1508,6 +1508,7 @@ $1~String1 --------------------------------
 8446 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs buffer fetch. Error Detail: $0~string0 
 8447 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs SequenceFile access. Error Detail: $0~string0 
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
+8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
