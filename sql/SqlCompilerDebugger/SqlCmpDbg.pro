@@ -121,3 +121,4 @@ INCLUDEPATH += ../../sqf/sql/inc \
                ../../sqf/sql/nsk/inc/seaquest \
                ../../sqf/seapilot/export/include \
 
+DEPENDPATH = ../../sqf/export/include
