@@ -287,7 +287,7 @@ PKG_PROD = trafodion
 ifeq ($(SQ_BUILD_TYPE),release)
   PKG_TYPE="server-$(TRAFODION_VER)"
 else
-  PKG_TYPE="debug-$(TRAFODION_VER)"
+  PKG_TYPE="server-$(TRAFODION_VER)-debug"
 endif
 
 
