@@ -932,7 +932,7 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   return retcode;
 }   
 
-short CmpSeabaseDDL::sendAllControlsAndFlags()
+short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
 {
   const NAString * val =
     ActiveControlDB()->getControlSessionValue("SHOWPLAN");
@@ -949,8 +949,7 @@ short CmpSeabaseDDL::sendAllControlsAndFlags()
   savedCmpParserFlags_ = Get_SqlParser_Flags (0xFFFFFFFF);
   SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedCliParserFlags_);
 
-  if (sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION,
-		      sendCSs) < 0)
+  if (sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, sendCSs, prevContext) < 0)
     return -1;
 
   Lng32 cliRC;

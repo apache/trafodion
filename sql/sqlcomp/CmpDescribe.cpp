@@ -1059,7 +1059,8 @@ short sendAllControls(NABoolean copyCQS,
                       NABoolean sendAllCQDs,
 		      NABoolean sendUserCQDs,
                       enum COM_VERSION versionOfCmplrRcvCntrlInfo,
-		      NABoolean sendUserCSs)
+		      NABoolean sendUserCSs,
+                      CmpContext* prevContext)
 {
   // -----------------------------------------------------------------------
   //  Given a SQL query, this procedure invokes the appropriate
@@ -1093,7 +1094,15 @@ short sendAllControls(NABoolean copyCQS,
     }
 
   CollIndex i;
-  ControlDB *cdb = ActiveControlDB();
+  ControlDB *cdb = NULL;
+
+  // if prevContext is defined, get the controlDB from the previous context so the 
+  // defaults are copied from the previous cmp context to the new cmp context. This is only 
+  // required for embedded compilers where a SWITCH is taking place
+  if (prevContext)
+     cdb = prevContext->getControlDB();
+  else
+     cdb = ActiveControlDB();
 
   if ((sendAllCQDs) ||
       (sendUserCQDs))

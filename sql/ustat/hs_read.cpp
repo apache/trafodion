@@ -76,6 +76,7 @@
 #include "ComCextdecs.h"
 #include "OptimizerSimulator.h"
 #include "CmpStatement.h"
+#include "CmpDescribe.h"
 
 
 // Global pointer to OptimizerSimulator
@@ -1350,6 +1351,7 @@ Lng32 readHistograms(HSTableDef *tabDef
       // for the cursor attributes
       NAHeap *curStmtHeap = STMTHEAP;
       NABoolean switched = FALSE;
+      CmpContext* prevContext = CmpCommon::context();
       // switch to another context to avoid spawning an arkcmp processing when compiling
       // the user metadara queries on the histograms tables
       if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
@@ -1358,7 +1360,11 @@ Lng32 readHistograms(HSTableDef *tabDef
             //failed to switch/create metadata CmpContext,  continue using current compiler context
          }
          else
-           switched = TRUE;
+         {
+            switched = TRUE;
+            // send controls to the context we are switching to
+            sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, TRUE, prevContext);
+         }
 
       HSHistogrmCursor cursor(fullQualName /*in*/,
                               histogramTableName /*in*/,

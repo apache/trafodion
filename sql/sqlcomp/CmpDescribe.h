@@ -45,10 +45,11 @@ short exeImmedOneStmt(const char *stmt);
 
 short sendAllControls(NABoolean copyCQS,
                       NABoolean sendAllCQDs,
-		      NABoolean sendUserCQDs,
-		      enum COM_VERSION versionOfCmplrRcvCntrlInfo 
-		      = COM_VERS_COMPILER_VERSION,
-		      NABoolean sendUserCSs = TRUE);
+                      NABoolean sendUserCQDs,
+                      enum COM_VERSION versionOfCmplrRcvCntrlInfo 
+                           = COM_VERS_COMPILER_VERSION,
+                      NABoolean sendUserCSs = TRUE,
+                      CmpContext* prevContext = NULL);
 
 void sendParserFlag (ULng32 flag);
 
