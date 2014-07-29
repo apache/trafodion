@@ -531,6 +531,7 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 	    retcode = ehi_->insertRow(table_,
 				      row, //rowId_.val, 
 				      mutations_,
+				      FALSE,
 				      *insColTS_);
 	    if (setupError(retcode, "ExpHbaseInterface::insertRow"))
 	      {
@@ -697,6 +698,7 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 		retcode = ehi_->insertRow(table_,
 					  row,
 					  mutations_,
+					  FALSE,
 					  -1); //*insColTS_);
 		if (setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
@@ -926,6 +928,7 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	    retcode = ehi_->insertRow(table_,
 				      row, //rowId_.val, 
 				      mutations_,
+				      FALSE,
 				      insColTSval_);
 
           if (getHbaseAccessStats())
@@ -1953,6 +1956,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    retcode =  tcb_->ehi_->insertRow(tcb_->table_,
                                              row,
 					     tcb_->mutations_,
+					     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
 					     -1); //colTS_);
 	    if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	      {
@@ -2568,6 +2572,7 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 		retcode =  tcb_->ehi_->insertRow(tcb_->table_,
                                                  row,
 						 tcb_->mutations_,
+						 FALSE,
 						 -1); //colTS_);
 		if ( tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {
@@ -2790,6 +2795,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	    retcode = tcb_->ehi_->insertRow(tcb_->table_,
 					    tcb_->row_,
 					    tcb_->mutations_,
+					    FALSE,
 					    -1); //colTS_);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 	      {
@@ -3214,6 +3220,7 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 		retcode = tcb_->ehi_->insertRow(tcb_->table_,
 						tcb_->prevRowId_,
 						tcb_->mutations_,
+						FALSE,
 						-1); //colTS_);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::insertRow"))
 		  {

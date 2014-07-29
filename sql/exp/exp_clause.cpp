@@ -486,6 +486,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CAST_TYPE:
 	  setClassID(FUNC_CAST_TYPE);
 	  break;
+	case ITM_SEQUENCE_VALUE:
+	  setClassID(FUNC_SEQUENCE_VALUE);
+	  break;
 	case ITM_HEADER:
 	  setClassID(FUNC_HEADER);
 	  break;
@@ -934,6 +937,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_CAST_TYPE:
       GetVTblPtr(vtblPtr, ExFunctionCastType);
+      break;
+    case ex_clause::FUNC_SEQUENCE_VALUE:
+      GetVTblPtr(vtblPtr, ExFunctionSequenceValue);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1419,6 +1425,9 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
     case ITM_HBASE_COLUMNS_DISPLAY: return "ITM_HBASE_COLUMNS_DISPLAY";
     case ITM_HBASE_COLUMN_CREATE: return "ITM_HBASE_COLUMN_CREATE";
+
+    case ITM_SEQUENCE_VALUE: return "ITM_SEQUENCE_VALUE";
+
     // LCOV_EXCL_STOP
     // Note, this list is arranged in the same order as the types
     // appear in common/OperTypeEnum.h, please keep the same order

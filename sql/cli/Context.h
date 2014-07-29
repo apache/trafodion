@@ -57,6 +57,7 @@
 #include "CmpCommon.h"
 #endif // NA_CMPDLL
 #include "ExStats.h"
+#include "ExpSeqGen.h"
 
 class CliGlobals;
 class HashQueue;
@@ -67,6 +68,7 @@ class ExControlArea;
 class ExUdrServer;
 class UdrContextMsg;
 class LOBglobals;
+class SequenceValueGenerator;
 
 #pragma warning( disable : 4244 )  // warning elimination
 #pragma nowarn(1506)   // warning elimination 
@@ -137,6 +139,8 @@ public:
   }
 
   LOBglobals* &currLobGlobals() { return lobGlobals_; }
+
+  SequenceValueGenerator* &seqGen() { return seqGen_; }
 
   HashQueue * trafSElist() { return trafSElist_; }
 
@@ -410,7 +414,9 @@ private:
   HashQueue * volTabList_;
 
   LOBglobals * lobGlobals_;
-  
+
+  SequenceValueGenerator * seqGen_;
+
   NABoolean sessionInUse_;
   NABoolean mxcmpSessionInUse_;
   NABoolean volatileSchemaCreated_;

@@ -41,6 +41,7 @@
 #include "StmtDDLCreateLibrary.h"
 #include "StmtDDLCreateRoutine.h"
 #include "StmtDDLCreateSchema.h"
+#include "StmtDDLCreateDropSequence.h"
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateTableArray.h"
 #include "StmtDDLCreateMVRGroup.h" 

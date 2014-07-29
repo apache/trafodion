@@ -46,6 +46,7 @@ class ElemDDLSGOptionStartValue;
 class ElemDDLSGOptionIncrement;
 class ElemDDLSGOptionMinValue;
 class ElemDDLSGOptionMaxValue;
+class ElemDDLSGOptionCacheOption;
 class ElemDDLSGOptionCycleOption;
 
 // -----------------------------------------------------------------------
@@ -271,6 +272,46 @@ private:
   NABoolean cycle_;
 
 }; // class ElemDDLSGOptionCycleOption
+
+// -----------------------------------------------------------------------
+// definition of class ElemDDLSGOptionCacheOption
+// -----------------------------------------------------------------------
+class ElemDDLSGOptionCacheOption : public ElemDDLSGOption
+{
+
+public:
+
+  // constructor
+  ElemDDLSGOptionCacheOption(NABoolean cache, Int64 cacheSize);
+  ElemDDLSGOptionCacheOption();
+
+  // virtual destructor
+  virtual ~ElemDDLSGOptionCacheOption();
+
+  // cast
+  virtual ElemDDLSGOptionCacheOption * castToElemDDLSGOptionCacheOption();
+
+  // accessors
+  inline NABoolean isCache()   const { return cache_ == TRUE; };
+  inline NABoolean isNoCache() const { return cache_ == FALSE; };
+  inline Int64 getCacheSize()  const { return cacheSize_; };
+
+  // methods for tracing
+  virtual const NAString displayLabel1() const;
+  virtual const NAString getText() const;
+
+  // method for building text
+  virtual NAString getSyntax() const;
+
+private:
+
+  //
+  // data member(s)
+  //
+  NABoolean cache_;
+  Int64 cacheSize_;
+
+}; // class ElemDDLSGOptionCacheOption
 
 // -----------------------------------------------------------------------
 // definitions of inline methods for class ElemDDLSGOptionStartValue

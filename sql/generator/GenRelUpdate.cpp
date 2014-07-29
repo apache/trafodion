@@ -30,6 +30,11 @@
 ******************************************************************************
 */
 
+#define   SQLPARSERGLOBALS_FLAGS   // must precede all #include's
+#define   SQLPARSERGLOBALS_NADEFAULTS
+
+#include "Platform.h"
+
 #include "Sqlcomp.h"
 #include "GroupAttr.h"
 #include "RelMisc.h"
@@ -49,6 +54,7 @@
 #include "CmpSeabaseDDL.h"
 #include "NAExecTrans.h"
 #include <algorithm>
+#include "SqlParserGlobals.h"      // must be last #include
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -1992,7 +1998,23 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
 
   if (generator->isTransactionNeeded())
-    setTransactionRequired(generator);
+    {
+      setTransactionRequired(generator);
+    }
+  else
+    {
+      // if internal update of the sequence generator table, then do not do the update
+      // within the user Xn. Use hbase xn instead.
+      // This allows seqgen updates to complete without being part of an enclosing
+      // transaction.
+      // See cli/Cli.cpp, method  SeqGenCliInterfaceUpdAndValidate for details.
+      if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
+	  (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
+	  (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+	{
+	  hbasescan_tdb->setUseHbaseXn(TRUE);
+	}
+    }
 
   generator->setFoundAnUpdate(TRUE);
 

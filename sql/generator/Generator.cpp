@@ -753,6 +753,9 @@ desc_struct* Generator::createColDescs(
   Int16 numCols,
   UInt32 &offset)
 {
+  if (! columnInfo)
+    return NULL;
+
   desc_struct * first_col_desc = NULL;
   desc_struct * prev_desc = NULL;
   for (Int16 colNum = 0; colNum < numCols; colNum++)
@@ -1028,7 +1031,8 @@ desc_struct * Generator::createVirtualTableDesc(
 						ComTdbVirtTableIndexInfo * indexInfo,
 						Int32 numViews,
 						ComTdbVirtTableViewInfo * viewInfo,
-						ComTdbVirtTableTableInfo * tableInfo)
+						ComTdbVirtTableTableInfo * tableInfo,
+						ComTdbVirtTableSequenceInfo * seqInfo)
 {
   // readtabledef_allocate_desc() requires that HEAP (STMTHEAP)
   // be used for operator new herein
@@ -1062,6 +1066,8 @@ desc_struct * Generator::createVirtualTableDesc(
 
   if (numViews > 0)
     table_desc->body.table_desc.objectType = COM_VIEW_OBJECT;
+  else if (seqInfo)
+    table_desc->body.table_desc.objectType = COM_SEQUENCE_GENERATOR_OBJECT;
   else
     table_desc->body.table_desc.objectType = COM_BASE_TABLE_OBJECT;
 
@@ -1242,6 +1248,27 @@ desc_struct * Generator::createVirtualTableDesc(
       view_desc->body.view_desc.insertable = viewInfo[0].isInsertable;
     }
 
+  desc_struct * seq_desc = NULL;
+  if (seqInfo)
+    {
+      seq_desc = readtabledef_allocate_desc(DESC_SEQUENCE_GENERATOR_TYPE);
+      
+      seq_desc->body.sequence_generator_desc.sgType = (ComSequenceGeneratorType)seqInfo->seqType;
+
+      seq_desc->body.sequence_generator_desc.fsDataType = (ComFSDataType)seqInfo->datatype;
+      seq_desc->body.sequence_generator_desc.startValue = seqInfo->startValue;
+      seq_desc->body.sequence_generator_desc.increment = seqInfo->increment;
+
+      seq_desc->body.sequence_generator_desc.maxValue = seqInfo->maxValue;
+      seq_desc->body.sequence_generator_desc.minValue = seqInfo->minValue;
+      seq_desc->body.sequence_generator_desc.cycleOption = 
+	(seqInfo->cycleOption ? TRUE : FALSE);
+      seq_desc->body.sequence_generator_desc.cache = seqInfo->cache;      
+      seq_desc->body.sequence_generator_desc.objectUID = seqInfo->seqUID;
+      
+      seq_desc->body.sequence_generator_desc.nextValue = seqInfo->nextValue;
+    }
+
   // cannot simply point to same files desc as the table one,
   // because then ReadTableDef::deleteTree frees same memory twice (error)
   desc_struct * i_files_desc = readtabledef_allocate_desc(DESC_FILES_TYPE);
@@ -1255,6 +1282,7 @@ desc_struct * Generator::createVirtualTableDesc(
   table_desc->body.table_desc.views_desc = view_desc;
   table_desc->body.table_desc.constrnts_desc = first_constr_desc;
   table_desc->body.table_desc.constr_count = numConstrs; 
+  table_desc->body.table_desc.sequence_generator_desc = seq_desc;
 
   return table_desc;
 }

@@ -598,6 +598,87 @@ StmtDDLDropSchema::getText() const
 }
 
 // -----------------------------------------------------------------------
+// methods for class StmtDDLDropSequence
+// -----------------------------------------------------------------------
+
+//
+// constructor
+//
+StmtDDLDropSequence::StmtDDLDropSequence(const QualifiedName & seqQualName,
+                                       ElemDDLNode * pSequenceOptionList,
+                                       CollHeap    * heap)
+  : StmtDDLNode(DDL_DROP_SEQUENCE),
+    seqQualName_(seqQualName, heap)
+{
+
+}
+
+StmtDDLDropSequence::~StmtDDLDropSequence()
+{
+}
+  
+//
+// cast virtual function
+//
+StmtDDLDropSequence *
+StmtDDLDropSequence::castToStmtDDLDropSequence()
+{
+  return this;
+}
+
+//
+// accessors
+//
+
+Int32
+StmtDDLDropSequence::getArity() const
+{
+  return 0;
+}
+
+ExprNode *
+StmtDDLDropSequence::getChild(Lng32 index)
+{
+  return NULL;
+}
+
+//
+// methods for tracing
+//
+
+const NAString
+StmtDDLDropSequence::displayLabel1() const
+{
+  return NAString("Sequence name: ") + seqQualName_.getQualifiedNameAsAnsiString();
+}
+
+NATraceList
+StmtDDLDropSequence::getDetailInfo() const
+{
+  NAString        detailText;
+  NATraceList detailTextList;
+
+  //
+  // table name
+  //
+
+  detailTextList.append(displayLabel1());
+  
+  return detailTextList;
+}
+
+const NAString
+StmtDDLDropSequence::getText() const
+{
+  return "StmtDDLDropSequence";
+}
+
+// method for collecting information
+void StmtDDLDropSequence::synthesize()
+{
+}
+
+// -----------------------------------------------------------------------
 // methods for class StmtDDLDropSQL
 // -----------------------------------------------------------------------
 

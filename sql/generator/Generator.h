@@ -1401,7 +1401,9 @@ public:
 					     ComTdbVirtTableIndexInfo * indexInfo = NULL,
 					     Int32 numViews = 0,
 					     ComTdbVirtTableViewInfo * viewInfo = NULL,
-					     ComTdbVirtTableTableInfo * tableInfo = NULL);
+					     ComTdbVirtTableTableInfo * tableInfo = NULL,
+					     ComTdbVirtTableSequenceInfo * seqInfo = NULL);
+
   static desc_struct *createVirtualRoutineDesc(
                                   const char *routineName,
                                   ComTdbVirtTableRoutineInfo *routineInfo,

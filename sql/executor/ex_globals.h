@@ -55,6 +55,7 @@ class ExMeasStmtCntrs;
 class StatsGlobals;
 class sql_buffer_pool;
 class LOBglobals;
+class SequenceValueGenerator;
 
 /////////////////////////////////////////////////////////////
 // class ex_globals
@@ -189,6 +190,8 @@ NA_EIDPROC
   LOBglobals * lobGlobals() { return lobGlobals_; }
   
   void initLOBglobal();
+  
+  SequenceValueGenerator * seqGen();
 
 private:
   enum FlagsTypeEnum 
@@ -270,6 +273,7 @@ private:
 
 };
 
+//SequenceValueGenerator * ExExeStmtGlobals_seqGen(ex_globals * g);
 
 #endif
 

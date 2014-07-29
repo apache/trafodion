@@ -64,6 +64,7 @@
 #include "StmtDDLCreateIndex.h"
 #include "StmtDDLPopulateIndex.h"
 #include "StmtDDLDropIndex.h"
+#include "StmtDDLCreateDropSequence.h"
 #include "StmtDDLGrant.h"
 #include "StmtDDLRevoke.h"
 #include "ElemDDLConstraintPK.h"
@@ -197,6 +198,7 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->initHbase_ = initHbase_;
   result->dropHbase_ = dropHbase_;
   result->purgedataHbase_ = purgedataHbase_;
+  result->addSeqTable_ = addSeqTable_;
   result->flags_ = flags_;
 
   return GenericUtilExpr::copyTopNode(result, outHeap);
@@ -6441,6 +6443,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   isNative_ = FALSE;
   hbaseDDLNoUserXn_ = FALSE;
 
+  NABoolean isSeq = FALSE;
+
   NABoolean alterAddCol = FALSE;
   NABoolean alterDropCol = FALSE;
   NABoolean alterDisableIndex = FALSE;
@@ -6457,7 +6461,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean specialType = FALSE;
   if (isUstat())  // special DDLExpr node for an Update Stats statement
     return boundExpr;
-  if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews())
+  if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews() ||
+      addSeqTable())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
@@ -6627,6 +6632,40 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropView()->
         getViewNameAsQualifiedName();
     }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSequence())
+    {
+      StmtDDLCreateSequence * createSeq =
+	getExprNode()->castToElemDDLNode()->castToStmtDDLCreateSequence();
+      
+      isCreate_ = TRUE;
+      isSeq = TRUE;
+      isHbase_ = TRUE;
+
+      objName_ =
+	getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateSequence()->
+	getSeqName();
+      
+      qualObjName_ =
+	getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateSequence()->
+	getSeqNameAsQualifiedName();
+    } // createSequence
+   else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropSequence())
+    {
+      StmtDDLDropSequence * dropSeq =
+	getExprNode()->castToElemDDLNode()->castToStmtDDLDropSequence();
+      
+      isDrop_ = TRUE;
+      isSeq = TRUE;
+      isHbase_ = TRUE;
+
+      objName_ =
+	getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropSequence()->
+	getSeqName();
+      
+      qualObjName_ =
+	getDDLNode()->castToStmtDDLNode()->castToStmtDDLDropSequence()->
+	getSeqNameAsQualifiedName();
+    } // dropSequence
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRegisterUser())
     {
       isAuth = TRUE; 
@@ -6699,7 +6738,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     
 
     if ((isCreateSchema || isDropSchema) ||
-        ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_) &&
+        ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable || otherAlters)) ||

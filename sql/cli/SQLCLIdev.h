@@ -1086,6 +1086,14 @@ Int32 SQL_EXEC_SWITCH_BACK_COMPILER
 (
  );
 
+SQLCLI_LIB_FUNC Lng32 SQL_EXEC_SeqGenCliInterface
+(
+ void* *cliInterface,  /* IN: if passed in and not null, use it.
+			        OUT: if returned, save it and pass it back in */
+
+ void * seqGenAttrs
+ );
+
 #ifdef __cplusplus
 /* end of C linkage */
 }

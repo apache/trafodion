@@ -117,8 +117,14 @@ private:
   Lng32 close();
   Lng32 dealloc();
 
-  short clearExecFetchClose(char * inputBuf, Lng32 inputBufLen);
+  short clearExecFetchClose(char * inputBuf, Lng32 inputBufLen,
+			    char * outputBuf = NULL,
+			    Lng32 * outputBufLen = 0);
 
+  short clearExecFetchCloseOpt(char * inputBuf, Lng32 inputBufLen,
+			       char * outputBuf = NULL,
+			       Lng32 * outputBufLen = 0);
+  
   Lng32 executeImmediateCEFC(const char * stmtStr,
 			     char * outputBuf = NULL,
 			     Lng32 * outputBufLen = 0,

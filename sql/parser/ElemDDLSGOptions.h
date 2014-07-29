@@ -100,6 +100,7 @@ public:
   inline Int64 getMaxValue()    const { return maxValue_; }
 
   inline NABoolean getCycle()   const { return cycle_; }
+  inline Int64 getCache()   const { return cache_; }
 
   inline SG_IE_TYPE getIEType()      const { return ieType_; }
 
@@ -112,11 +113,14 @@ public:
   inline NABoolean isMinValueSpecified()    const { return isMinValueSpec_; }
   inline NABoolean isMaxValueSpecified()    const { return isMaxValueSpec_; }
   inline NABoolean isCycleSpecified()       const { return isCycleSpec_; }
+  inline NABoolean isCacheSpecified()       const { return isCacheSpec_; }
   
   inline NABoolean isNoMinValue()    const { return isNoMinValue_; }
   inline NABoolean isNoMaxValue()    const { return isNoMaxValue_; }
   inline NABoolean isCycle()         const { return cycle_ == TRUE; }
   inline NABoolean isNoCycle()       const { return cycle_ == FALSE; }
+  inline NABoolean isCache()         const { return cache_ > 0; }
+  inline NABoolean isNoCache()       const { return isNoCache_; }
 
   inline NABoolean isInternalSG()      const { return ieType_ == SG_INTERNAL; }
   inline NABoolean isExternalSG()      const { return ieType_ == SG_EXTERNAL; }
@@ -144,10 +148,12 @@ public:
   inline void setMinValueSpec(NABoolean minValue)       { isMinValueSpec_ = minValue; }
   inline void setMaxValueSpec(NABoolean maxValue)       { isMaxValueSpec_ = maxValue; }
   inline void setCycleSpec(NABoolean cycle)             { isCycleSpec_ = cycle; }
+  inline void setCacheSpec(NABoolean cache)             { isCacheSpec_ = cache; }
  
   inline void setNoMinValue(NABoolean minValue)       { isNoMinValue_ = minValue; }
   inline void setNoMaxValue(NABoolean maxValue)       { isNoMaxValue_ = maxValue; }
   inline void setCycle(NABoolean cycle)               { cycle_ = cycle; }
+  inline void setCache(Int64 cache)               { cache_ = cache; }
 
   //
   // method for binding
@@ -205,6 +211,11 @@ private:
   // Cycle
   NABoolean isCycleSpec_;
   NABoolean cycle_;
+
+  // Cache
+  NABoolean isCacheSpec_;
+  NABoolean isNoCache_;
+  Int64 cache_;
 
   // Internal or External SG
   SG_IE_TYPE ieType_;

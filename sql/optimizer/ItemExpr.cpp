@@ -7289,6 +7289,8 @@ const NAString BuiltinFunction::getText() const
       return "hbase_columns_display";
     case ITM_HBASE_COLUMN_CREATE:
       return "hbase_column_create";
+    case ITM_SEQUENCE_VALUE:
+      return "sequence_value";
     case ITM_USER:
       return "user";
     case ITM_UNIQUE_EXECUTE_ID:
@@ -13071,6 +13073,25 @@ ItemExpr * HbaseColumnCreate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHe
   return BuiltinFunction::copyTopNode(result, outHeap);
 
 } // HbaseColumnLookup::copyTopNode()
+                                                  
+SequenceValue::~SequenceValue()
+{
+}
+
+ItemExpr * SequenceValue::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  SequenceValue *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) SequenceValue(seqCorrName_, currVal_, nextVal_);
+  else
+    result = (SequenceValue*)derivedNode;
+
+  result->naTable_ = naTable_;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+
+} // SequenceValue::copyTopNode()
                                                   
                                                   
 // -----------------------------------------------------------------------

@@ -361,6 +361,70 @@ NAString ElemDDLSGOptionCycleOption::getSyntax() const
   return syntax; 
 } // getSyntax
 
+// -----------------------------------------------------------------------
+// methods for class ElemDDLSGOptionCacheOption
+// -----------------------------------------------------------------------
+
+// constructor
+
+ElemDDLSGOptionCacheOption::ElemDDLSGOptionCacheOption(NABoolean cache,
+						       Int64 cacheSize)
+: ElemDDLSGOption(ELM_SG_OPT_CACHE_OPTION_ELEM),
+  cache_(cache),
+  cacheSize_(cacheSize)
+{
+} // ElemDDLSGOptionCacheOption::ElemDDLSGOptionCacheOption()
+
+ElemDDLSGOptionCacheOption::ElemDDLSGOptionCacheOption()
+: ElemDDLSGOption(ELM_SG_OPT_CACHE_OPTION_ELEM),
+  cache_(FALSE), cacheSize_(0)
+{
+} // ElemDDLSGOptionCacheOption::ElemDDLSGOptionCacheOption()
+
+// virtual destructor
+ElemDDLSGOptionCacheOption::~ElemDDLSGOptionCacheOption()
+{
+}
+
+// casting
+ElemDDLSGOptionCacheOption *
+ElemDDLSGOptionCacheOption::castToElemDDLSGOptionCacheOption()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString
+ElemDDLSGOptionCacheOption::displayLabel1() const
+{
+  if (cache_)
+    return (NAString("CACHE "));
+  else
+    return (NAString("NO CACHE "));;
+}
+
+const NAString
+ElemDDLSGOptionCacheOption::getText() const
+{
+  return "ElemDDLSGOptionCacheOption";
+}
+
+// method for building text
+// virtual 
+NAString ElemDDLSGOptionCacheOption::getSyntax() const
+{
+  NAString syntax = "CacheOption: ";
+  if (cache_ > 0)
+    syntax  += "CACHE";
+  else
+    syntax  += "NO CACHE";
+   
+  return syntax; 
+} // getSyntax
+
 //
 // End of File
 //

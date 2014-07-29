@@ -12382,3 +12382,28 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
   return boundExpr;
 }
 
+//---------------------------------------------------------------------------
+//
+// member functions for class SequenceValue
+//
+//---------------------------------------------------------------------------
+ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  // Binds self; Binds children; SequenceValue::synthesize();
+  boundExpr = Function::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+
+  // Obtain the NATable for the seq object.
+  naTable_ = bindWA->getNATable(seqCorrName_);
+  if (bindWA->errStatus())
+    return this;
+
+  return boundExpr;
+}
+

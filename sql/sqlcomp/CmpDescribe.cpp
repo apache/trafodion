@@ -179,6 +179,11 @@ short CmpDescribeSeabaseTable (
 			     NABoolean withPartns = FALSE,
 			     NABoolean noTrailingSemi = FALSE);
 
+short CmpDescribeSequence ( 
+			     const CorrName  &dtName,
+			     char* &outbuf,
+			     ULng32 &outbuflen,
+			     CollHeap *heap);
 
 // The real Ark catalog manager returns all object names as three-part
 // identifiers, properly delimited where necessary.
@@ -773,6 +778,14 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
     {
       short rc = 
 	CmpDescribeHiveTable(d->getDescribedTableName(), outbuf, outbuflen, heap);
+      return rc;
+    }
+
+  if (d->getLabelAnsiNameSpace() == COM_SEQUENCE_GENERATOR_NAME)
+    {
+      short rc = 
+	CmpDescribeSequence(d->getDescribedTableName(), 
+			    outbuf, outbuflen, heap);
       return rc;
     }
 
@@ -2808,3 +2821,95 @@ short CmpDescribeSeabaseTable (
 
   return 0;
 }
+
+short CmpDescribeSequence(
+			       const CorrName  &dtName,
+			       char* &outbuf,
+			       ULng32 &outbuflen,
+			       CollHeap *heap)
+{
+  CorrName cn(dtName, heap);
+
+  cn.setSpecialType(ExtendedQualName::SG_TABLE);
+
+  // remove NATable for this table so latest values in the seq table could be read.
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  NATable *naTable = bindWA.getNATable(cn); 
+  TableDesc *tdesc = NULL;
+  if (naTable == NULL || bindWA.errStatus())
+    return -1;
+
+  const SequenceGeneratorAttributes* sga = naTable->getSGAttributes();
+
+  const NAString& seqName =
+    cn.getQualifiedNameObj().getQualifiedNameAsAnsiString(TRUE);
+ 
+  Space space;
+
+  char * buf = new (heap) char[15000];
+  CMPASSERT(buf);
+
+  outputShortLine(space, " ");
+
+  char seqType[40];
+  if (sga->getSGSGType() == COM_INTERNAL_SG)
+    {
+      strcpy(seqType, "/* INTERNAL */ ");
+    }
+  else
+    strcpy(seqType, " ");
+
+  sprintf(buf,  "CREATE SEQUENCE %s %s",
+	  seqName.data(), seqType);
+  outputShortLine(space, buf);
+
+  sprintf(buf, "  START WITH %li /* NEXT AVAILABLE VALUE %li */", 
+	  sga->getSGStartValue(), sga->getSGNextValue());
+  outputShortLine(space, buf);
+
+  sprintf(buf, "  INCREMENT BY %li", 
+	  sga->getSGIncrement());
+  outputShortLine(space, buf);
+
+  if (sga->getSGMaxValue() == 0)
+    sprintf(buf, "  NO MAXVALUE");
+  else
+    sprintf(buf, "  MAXVALUE %li", 
+	    sga->getSGMaxValue());
+  outputShortLine(space, buf);
+
+  if (sga->getSGMinValue() == 0)
+    sprintf(buf, "  NO MINVALUE");
+  else
+    sprintf(buf, "  MINVALUE %li", 
+	    sga->getSGMinValue());
+  outputShortLine(space, buf);
+
+  if (sga->getSGCache() == 0)
+    sprintf(buf, "  NO CACHE");
+  else
+    sprintf(buf, "  CACHE %li", 
+	    sga->getSGCache());
+  outputShortLine(space, buf);
+
+  if (sga->getSGCycleOption())
+    sprintf(buf, "  CYCLE");
+  else
+    sprintf(buf, "  NO CYCLE");
+  outputShortLine(space, buf);
+
+  outputShortLine(space, ";");
+
+  outbuflen = space.getAllocatedSpaceSize();
+  outbuf = new (heap) char[outbuflen];
+  space.makeContiguous(outbuf, outbuflen);
+  
+  NADELETEBASIC(buf, heap);
+
+  return 0;
+}
+
+  
+  

@@ -7457,6 +7457,43 @@ Lng32 SQL_EXEC_SEcliInterface
   return retcode;
 }
 
+Lng32 SQL_EXEC_SeqGenCliInterface
+(
+ void* *cliInterface,
+ void * seqGenAttrs
+  )
+{
+  Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+  CLI_NONPRIV_PROLOGUE(retcode);
+  try
+    {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode = SQLCLI_SeqGenCliInterface(GetCliGlobals(),
+					  cliInterface,
+					  seqGenAttrs);
+    }
+  catch(...)
+    {
+      retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+      if (cliWillThrow())
+	{
+          threadContext->decrNumOfCliCalls();
+	  tmpSemaphore->release();
+	  throw;
+	}
+#endif
+    }
+  threadContext->decrNumOfCliCalls();
+  tmpSemaphore->release();
+  RecordError(NULL, retcode);
+  return retcode;
+}
+
 #ifdef __cplusplus
 }
 #endif

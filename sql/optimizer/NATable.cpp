@@ -4702,7 +4702,9 @@ NATable::NATable(BindWA *bindWA,
 						 sg_desc->sqlDataType,
 						 sg_desc->fsDataType,
 						 sg_desc->cycleOption,
-						 sg_desc->objectUID);
+						 sg_desc->objectUID,
+						 sg_desc->cache,
+						 sg_desc->nextValue);
       }
   }
 #ifndef NDEBUG
@@ -7026,6 +7028,15 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 				       "IX");
 	  isSeabase = TRUE;
 	}
+      else if (corrName.isSpecialTable() && corrName.getSpecialType() == ExtendedQualName::SG_TABLE)
+	{
+	  tableDesc = 
+	    cmpSBD.getSeabaseTableDesc(
+				       corrName.getQualifiedNameObj().getCatalogName(),
+				       corrName.getQualifiedNameObj().getSchemaName(),
+				       corrName.getQualifiedNameObj().getObjectName(),
+				       "SG");
+	}
       else 
 	{
 	  tableDesc = 
@@ -7152,8 +7163,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
     CMPASSERT(table);
     
     //if there was a problem in creating the NATable object
-    if (table->getColumnCount() == 0) {
-
+    if (NOT ((table->getExtendedQualName().isSpecialTable()) &&
+	     (table->getExtendedQualName().getSpecialType() == 
+	      ExtendedQualName::SG_TABLE)) &&
+	(table->getColumnCount() == 0)) {
+      
       bindWA->setErrStatus();
 
       //Delete the NATable object by deleting the naTableHeap

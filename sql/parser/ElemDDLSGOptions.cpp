@@ -135,10 +135,13 @@ ElemDDLSGOptions::initializeDataMembers()
   isMinValueSpec_        = FALSE;
   isMaxValueSpec_        = FALSE;
   isCycleSpec_           = FALSE;
+  isCacheSpec_           = FALSE;
   
   isNoMinValue_        = FALSE;
   isNoMaxValue_        = FALSE;
   cycle_               = FALSE;
+  cache_               = 0;
+  isNoCache_        = FALSE;
 
   startValue_      = 0;
   increment_       = 0;
@@ -286,6 +289,26 @@ ElemDDLSGOptions::setSGOpt(ElemDDLNode * pSGOpt)
       pSGOpt->castToElemDDLSGOptionCycleOption()->getValue();
     break;
 
+    case ELM_SG_OPT_CACHE_OPTION_ELEM :
+    if (isCacheSpec_)
+    {
+      // cout << "*** Error *** Duplicate options in sg option list.
+      if (ieType_ == SG_INTERNAL)
+        *SqlParser_Diags << DgSqlCode(-3427)
+                         << DgString0("CACHE")
+		         << DgString1("IDENTITY column");
+      else
+        *SqlParser_Diags << DgSqlCode(-3427)
+                         << DgString0("CACHE")
+		         << DgString1("sequence generator");
+    }
+    isCacheSpec_ = TRUE;
+    cache_ =
+      pSGOpt->castToElemDDLSGOptionCacheOption()->getCacheSize();
+    isNoCache_ =
+      pSGOpt->castToElemDDLSGOptionCacheOption()->isNoCache();
+    break;
+
   default :
     ABORT("internal logic error");
     break;
@@ -395,6 +418,21 @@ ElemDDLSGOptions::getDetailInfo() const
   else
   {
     detailText = "    Cycle Option:  CYCLE      ";
+    detailTextList.append(detailText);
+  }
+
+  detailText = "    Cache specified?   ";
+  detailText += YesNo(isCacheSpecified());
+  detailTextList.append(detailText);
+
+  if (isNoCache())
+  {
+    detailText = "    Cache Option:  NO CACHE      ";
+    detailTextList.append(detailText);
+  }
+  else
+  {
+    detailText = "    Cache Option:  CACHE      ";
     detailTextList.append(detailText);
   }
 

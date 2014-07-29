@@ -2742,7 +2742,7 @@ NABoolean validateSGOption(NABoolean positive,
   Int64  theValue;
   Lng32 convErrFlag = ex_conv_clause::CONV_RESULT_OK;
 
-  // if the option is a negative number,
+  // if the option is a negative number and negative numbers are not allowed,
   // prepare a diagnostic and return.
   // In the future, negatives may be allowed.
   if (!positive && !negAllowed)

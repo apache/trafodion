@@ -1074,6 +1074,12 @@ ElemDDLNode::castToElemDDLSGOptionCycleOption()
   return NULL;
 }
  
+ElemDDLSGOptionCacheOption *
+ElemDDLNode::castToElemDDLSGOptionCacheOption()
+{
+  return NULL;
+}
+ 
 ElemDDLStoreOpt *
 ElemDDLNode::castToElemDDLStoreOpt()
 {
@@ -1495,6 +1501,12 @@ ElemDDLNode::castToStmtDDLCreateSchema()
   return NULL;
 }
 
+StmtDDLCreateSequence *
+ElemDDLNode::castToStmtDDLCreateSequence()
+{
+  return NULL;
+}
+
 StmtDDLCreateTable *
 ElemDDLNode::castToStmtDDLCreateTable()
 {
@@ -1578,6 +1590,12 @@ ElemDDLNode::castToStmtDDLDropRoutine()
 
 StmtDDLDropSchema *
 ElemDDLNode::castToStmtDDLDropSchema()
+{
+  return NULL;
+}
+
+StmtDDLDropSequence *
+ElemDDLNode::castToStmtDDLDropSequence()
 {
   return NULL;
 }

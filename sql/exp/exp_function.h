@@ -40,6 +40,7 @@
 #include "exp_clause_derived.h"
 #include "dfs2rec.h"
 #include "exp_dp2_expr.h"
+#include "SequenceGeneratorAttributes.h"
 
 #pragma warning ( disable : 4251 )
 
@@ -3740,7 +3741,6 @@ public:
   char filler1_[2];
 };
 
-
 class SQLEXP_LIB_FUNC  ExFunctionCastType : public ex_function_clause {
 public:
   NA_EIDPROC ExFunctionCastType(OperatorTypeEnum oper_type,
@@ -3755,6 +3755,43 @@ public:
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
 
  private:
+};
+
+class SQLEXP_LIB_FUNC  ExFunctionSequenceValue : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionSequenceValue(OperatorTypeEnum oper_type,
+				     Attributes ** attr,
+				     const SequenceGeneratorAttributes &sga,
+				     Space * space);
+  NA_EIDPROC ExFunctionSequenceValue();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  //  NA_EIDPROC Long pack(void *);
+  
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // This clause handles all NULL processing in the eval() method.
+  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+
+  void setIsCurr(NABoolean v)
+  {
+    (v) ? flags_ |= IS_CURR: flags_ &= ~IS_CURR;
+  };
+
+  NABoolean isCurr() { return ((flags_ & IS_CURR) != 0); }
+
+ private:
+enum
+  {
+    IS_CURR = 0x0001
+  };
+
+  SequenceGeneratorAttributes sga_;
+
+  UInt32 flags_;
+  char filler1_[4];
+  // ---------------------------------------------------------------------
 };
 
 class SQLEXP_LIB_FUNC  ExHeaderClause : public ex_function_clause

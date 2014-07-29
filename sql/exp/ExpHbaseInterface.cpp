@@ -215,6 +215,7 @@ Lng32 ExpHbaseInterface::checkAndInsertRow(
   retcode = insertRow(tblName,
 		      row,
 		      mutations,
+		      FALSE,
 		      timestamp);
   
   return retcode;
@@ -244,6 +245,7 @@ Lng32 ExpHbaseInterface::checkAndUpdateRow(
   retcode = insertRow(tblName,
 		      row,
 		      mutations,
+		      FALSE,
 		      timestamp);
   
   return retcode;
@@ -296,7 +298,7 @@ Lng32 ExpHbaseInterface::insertRows(
       HbaseStr insRow;
       insRow.val = (char *)row.data();
       insRow.len = row.size();
-      retcode = insertRow(tblName, insRow, mutations, timestamp);
+      retcode = insertRow(tblName, insRow, mutations, FALSE, timestamp);
       if (retcode != HBASE_ACCESS_SUCCESS)
 	return retcode;
     }
@@ -1070,6 +1072,7 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
 	  HbaseStr &tblName,
 	  HbaseStr &row, 
 	  MutationVec & mutations,
+	  NABoolean noXn,
 	  const int64_t timestamp)
 {
   HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
@@ -1080,6 +1083,8 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
   }
   
   Int64 transID = getTransactionIDFromContext();
+  if (noXn)
+    transID = 0;
   retCode_ = htc->insertRow(transID, row, mutations, timestamp);
 
   client_->releaseHTableClient(htc);

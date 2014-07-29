@@ -1517,3 +1517,20 @@ void ExExeStmtGlobals::initSMGlobals()
   else
     smQueryIDRegistered_ = true;
 }
+
+SequenceValueGenerator * ExExeStmtGlobals::seqGen()
+{
+  if (! getContext())
+    return NULL;
+
+  return getContext()->seqGen();
+}
+
+SequenceValueGenerator * ex_globals::seqGen()
+{
+  if (! castToExExeStmtGlobals())
+    return NULL;
+
+  return castToExExeStmtGlobals()->seqGen();
+}
+

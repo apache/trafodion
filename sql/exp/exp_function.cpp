@@ -62,9 +62,7 @@
 
 #include "NAUserId.h"
 #include "ComUser.h"
-
-
-
+#include "ExpSeqGen.h"
 
 #undef DllImport
 #define DllImport __declspec ( dllimport )
@@ -181,6 +179,7 @@ ExFunctionHbaseColumnLookup::ExFunctionHbaseColumnLookup() {};
 ExFunctionHbaseColumnsDisplay::ExFunctionHbaseColumnsDisplay() {};
 ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate() {};
 ExFunctionCastType::ExFunctionCastType() {};
+ExFunctionSequenceValue::ExFunctionSequenceValue() {};
 ExFunctionSVariance::ExFunctionSVariance(){};
 ExFunctionSStddev::ExFunctionSStddev(){};
 ExpRaiseErrorFunction::ExpRaiseErrorFunction(){};
@@ -592,6 +591,15 @@ ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate(OperatorTypeEnum oper_t
 {
 };
 
+ExFunctionSequenceValue::ExFunctionSequenceValue(OperatorTypeEnum oper_type,
+						 Attributes ** attr, 
+						 const SequenceGeneratorAttributes &sga,
+						 Space * space)
+  : ex_function_clause(oper_type, 1, attr, space),
+    sga_(sga),
+    flags_(0)
+{
+};
 
 ExFunctionCastType::ExFunctionCastType(OperatorTypeEnum oper_type,
 							 Attributes ** attr, 
@@ -6969,7 +6977,34 @@ ExFunctionCastType::eval(char *op_data[], CollHeap *heap,
 
   return ex_expr::EXPR_OK;
 }
-  
+
+ex_expr::exp_return_type 
+ExFunctionSequenceValue::eval(char *op_data[], CollHeap *heap, 
+			      ComDiagsArea **diagsArea)
+{
+  short rc = 0;
+
+  // op_data[0] points to result. The result is a varchar.
+  Attributes *resultAttr   = getOperand(0);
+  char * result =  op_data[0];
+
+  SequenceValueGenerator * seqValGen = getExeGlobals()->seqGen();
+  Int64 seqVal = 0;
+  if (isCurr())
+    rc = seqValGen->getCurrSeqVal(sga_, seqVal);
+  else
+    rc = seqValGen->getNextSeqVal(sga_, seqVal);
+  if (rc)
+    {
+      ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)ABS(rc));
+      return ex_expr::EXPR_ERROR;
+    }
+
+  *(Int64*)result = seqVal;
+
+  return ex_expr::EXPR_OK;
+}
+
 /////////////////////////////////////////////////////////////////
 // ExAuditImage::eval() 
 // The ExAuditImage clause evaluates the auditRowImageExpr_ and

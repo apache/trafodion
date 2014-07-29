@@ -741,6 +741,9 @@ enum OperatorTypeEnum {
 
                        ITM_HBASE_COLUMN_CREATE = 2510,
 
+                        // generate sequence numbers
+                        ITM_SEQUENCE_VALUE = 2511,
+
                         // list of item expressions
                         ITM_ITEM_LIST = 2550,
 
@@ -878,6 +881,7 @@ enum OperatorTypeEnum {
                         DDL_CREATE_MV, // MV
                         DDL_CREATE_SCHEMA,
                         DDL_CREATE_ROUTINE,
+                        DDL_CREATE_SEQUENCE,
                         DDL_CREATE_TABLE,
                         DDL_CREATE_HBASE_TABLE,
                         DDL_CREATE_MV_REFRESH_GROUP,  // MV  - ( refresh groups )
@@ -892,6 +896,7 @@ enum OperatorTypeEnum {
                         DDL_DROP_MODULE,
                         DDL_DROP_MV, // MV
                         DDL_DROP_ROUTINE,
+                        DDL_DROP_SEQUENCE,
                         DDL_DROP_SCHEMA,
                         DDL_DROP_SQL,
                         DDL_DROP_TABLE,
@@ -1141,6 +1146,7 @@ enum OperatorTypeEnum {
                         ELM_SG_OPT_MIN_VALUE_ELEM,
                         ELM_SG_OPT_MAX_VALUE_ELEM,
                         ELM_SG_OPT_CYCLE_OPTION_ELEM,
+                        ELM_SG_OPT_CACHE_OPTION_ELEM,
                         ELM_SG_OPTS_DEFAULT_ELEM,
 
                         ELM_STORE_OPT_DEFAULT_ELEM,

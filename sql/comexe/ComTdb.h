@@ -991,6 +991,21 @@ struct ComTdbVirtTableRoutineInfo
   Int32 library_version;
   const char * signature;
 };
+
+struct ComTdbVirtTableSequenceInfo
+{
+  Lng32                seqType; // ComSequenceGeneratorType 
+  Lng32                datatype;
+  Int64                 startValue;
+  Int64                 increment;
+  Int64                 maxValue;
+  Int64                 minValue;
+  Lng32                 cycleOption;
+  Int64                  cache;
+  Int64                  seqUID;
+  Int64                  nextValue;
+};
+
 #endif /* COMTDB_H */
 
 
