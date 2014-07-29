@@ -72,17 +72,16 @@ enum {
     MD_STATE_MSG_LOW_OPEN_ACK      = 45,
     MD_STATE_MSG_LOW_REPLY_NACK    = 46,
     MD_STATE_MSG_MON_MSG           = 47,
-    MD_STATE_MSG_MON_MSG_MPI       = 48,
-    MD_STATE_MSG_MON_OPEN          = 49,
-    MD_STATE_MSG_REOPEN_FAIL       = 50,
-    MD_STATE_MSG_SEND_SELF         = 51,
-    MD_STATE_MSG_START_STREAM      = 52,
-    MD_STATE_MSG_TIMER             = 53,
-    MD_STATE_SM_INT_MSG            = 54,
-    MD_STATE_CONN_SENDING          = 55,
-    MD_STATE_CONN_ACK_SENDING      = 56,
-    MD_STATE_CONN_FIN              = 57,
-    MD_STATE_ZLAST                 = 58
+    MD_STATE_MSG_MON_OPEN          = 48,
+    MD_STATE_MSG_REOPEN_FAIL       = 49,
+    MD_STATE_MSG_SEND_SELF         = 50,
+    MD_STATE_MSG_START_STREAM      = 51,
+    MD_STATE_MSG_TIMER             = 52,
+    MD_STATE_SM_INT_MSG            = 53,
+    MD_STATE_CONN_SENDING          = 54,
+    MD_STATE_CONN_ACK_SENDING      = 55,
+    MD_STATE_CONN_FIN              = 56,
+    MD_STATE_ZLAST                 = 57
 };
 
 #endif // !__SB_SBCONST_H_

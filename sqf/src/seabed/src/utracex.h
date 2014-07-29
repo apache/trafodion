@@ -160,16 +160,6 @@ typedef enum {
     SB_UTRACE_API_OP_ZLAST
 } SB_Utrace_API_Op_Type;
 
-typedef enum {
-    SB_UTRACE_MPI_OP_AFIRST          =  0,
-    SB_UTRACE_MPI_OP_ACCEPT          =  1,
-    SB_UTRACE_MPI_OP_CONNECT         =  2,
-    SB_UTRACE_MPI_OP_CONNECT_ERR     =  3,
-    SB_UTRACE_MPI_OP_DISCONNECT      =  4,
-    SB_UTRACE_MPI_OP_DISCONNECT_ERR  =  5,
-    SB_UTRACE_MPI_OP_ZLAST           =  6
-} SB_Utrace_MPI_Op_Type;
-
 #ifdef USE_SB_UTRACE_API
 #if __WORDSIZE == 64
 typedef long SB_Utrace_API_Info_Type;
@@ -188,21 +178,9 @@ typedef struct SB_Utrace_API_Type {
 } SB_Utrace_API_Type;
 #endif // USE_SB_UTRACE_API
 
-#ifdef USE_SB_UTRACE_MPI
-typedef struct SB_Utrace_MPI_Type {
-    int                     iv_tid;         // tid
-    SB_Utrace_MPI_Op_Type   iv_op;          // operation
-    int                     iv_id1;         // nid
-    int                     iv_id2;         // pid
-} SB_Utrace_MPI_Type;
-#endif // USE_SB_UTRACE_MPI
-
 #ifdef USE_SB_UTRACE_API
 extern SB_Utrace<SB_Utrace_API_Type> sb_utrace_api;
 #endif // USE_SB_UTRACE_API
-#ifdef USE_SB_UTRACE_MPI
-extern SB_Utrace<SB_Utrace_MPI_Type> sb_utrace_mpi;
-#endif // USE_SB_UTRACE_MPI
 
 #ifdef USE_SB_UTRACE_API
 #define SB_UTRACE_API_ADD2(pv_op,pv_id) \
@@ -239,31 +217,11 @@ extern SB_Utrace<SB_Utrace_MPI_Type> sb_utrace_mpi;
 #define SB_UTRACE_API_ADDC(pv_op,pp_name)
 #endif // USE_SB_UTRACE_API
 
-#ifdef USE_SB_UTRACE_MPI
-#define SB_UTRACE_MPI_ADD3(pv_op,pv_id1,pv_id2) \
-{ \
-  SB_Utrace_MPI_Type *lp_entry = sb_utrace_mpi.get_entry(); \
-  lp_entry->iv_tid = sb_utrace_gettid(); \
-  lp_entry->iv_op = pv_op; \
-  lp_entry->iv_id1 = pv_id1; \
-  lp_entry->iv_id2 = pv_id2; \
-}
-#else
-#define SB_UTRACE_MPI_ADD3(pv_op,pv_id1,pv_id2)
-#endif // USE_SB_UTRACE_MPI
-
 #ifdef USE_SB_UTRACE_API
 extern const char *sb_get_utrace_api_op(int);
 #define SB_UTRACE_API_TEST() sb_get_utrace_api_op(SB_UTRACE_API_OP_AFIRST + 1)
 #else
 #define SB_UTRACE_API_TEST()
 #endif // USE_SB_UTRACE_API
-
-#ifdef USE_SB_UTRACE_MPI
-extern const char *sb_get_utrace_mpi_op(int);
-#define SB_UTRACE_MPI_TEST() sb_get_utrace_mpi_op(SB_UTRACE_MPI_OP_AFIRST + 1)
-#else
-#define SB_UTRACE_MPI_TEST()
-#endif // USE_SB_UTRACE_MPI
 
 #endif // __SB_UTRACEX_H_
