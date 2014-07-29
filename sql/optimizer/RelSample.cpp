@@ -159,7 +159,8 @@ Lng32 RelSample::getClusterSize() const
 NABoolean RelSample::isSimpleRandomRelative() const
 {
   // True only if: RANDOM sampling and relative size
-  // and NOT stratified sampling and NOT oversampling
+  // and NOT stratified sampling (except for random
+  // sample of a single stratum).
   if (getSamplePercent() == -1.0)
     return FALSE;
   else
@@ -900,13 +901,16 @@ RelExpr *RelSample::bindNode(BindWA *bindWA)
   
   // If this is a random sample on an HBase table, push the sampling down into
   // the Scan node and remove the Sample node from the tree. For HBase, we
-  // unconditionally perform sampling via a row filter on the HBase side.
+  // perform sampling via a row filter on the HBase side.
+  // Avoid pushdown for oversampling (sampling rate > 100%); the HBase filter
+  // we use can not return >1 copy of a row.
   //
   RelExpr* myChild = child(0);
   if (myChild->getOperatorType() == REL_SCAN &&
       (static_cast<Scan*>(myChild))->isHbaseTable() &&
       myChild->selectionPred().entries() == 0 &&
-      isSimpleRandomRelative())
+      isSimpleRandomRelative() &&
+      getSamplePercent() <= 1.0f)
     {
       (static_cast<Scan*>(myChild))->samplePercent(getSamplePercent());
       return myChild;
