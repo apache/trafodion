@@ -46,7 +46,7 @@
   <groupId>org.trafodion</groupId>
   <artifactId>dcs</artifactId>
   <packaging>jar</packaging>
-  <version>0.8.3</version>
+  <version>0.8.4</version>
   <name>dcs</name>
   <url>http://dcs.trafodion.org</url>
   
@@ -398,7 +398,7 @@
   	<jython-standalone.version>2.5.3</jython-standalone.version>
 
   	<!-- also must update this when we bump version -->
-  	<package.version>0.8.3</package.version>
+  	<package.version>0.8.4</package.version>
   	<final.name>${project.artifactId}-${project.version}</final.name>
   	
   	<!-- Test inclusion patterns used by failsafe configuration -->
