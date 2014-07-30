@@ -21,11 +21,11 @@
 #include <errno.h>
 #include <string.h>
 
+#include <mpi.h>
+
 #include "seabed/fserr.h"
 #include "seabed/trace.h"
 
-
-#include "mpiw.h"
 #include "mserr.h"
 #include "mstrace.h"
 #include "util.h"

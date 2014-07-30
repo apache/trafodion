@@ -21,7 +21,7 @@
 #ifndef __SB_MSERR_H_
 #define __SB_MSERR_H_
 
-#include "mpiw.h"
+#include <mpi.h>
 
 extern int   ms_err_errno_to_mpierr(const char *pp_where);
 extern short ms_err_mpi_to_fserr(const char *pp_where, int pv_mpierr);

@@ -53,7 +53,6 @@
 #include "env.h"
 #include "mserr.h"
 #include "mserrmsg.h"
-#include "msflowx.h"
 #include "mslabelmapsx.h"
 #include "msmon.h"
 #include "mstrace.h"

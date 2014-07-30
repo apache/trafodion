@@ -83,7 +83,6 @@ OBJSBMS		= $(OUTDIR)/apictr.o \
 		  $(OUTDIR)/monclio.o \
 		  $(OUTDIR)/mpitmsg.o \
 		  $(OUTDIR)/ms.o \
-		  $(OUTDIR)/msaggr.o \
 		  $(OUTDIR)/mserr.o \
 		  $(OUTDIR)/mseventmgr.o \
 		  $(OUTDIR)/msi.o \
@@ -104,7 +103,6 @@ OBJSBMS		= $(OUTDIR)/apictr.o \
 		  $(OUTDIR)/sock.o \
 		  $(OUTDIR)/sockstream.o \
 		  $(OUTDIR)/stream.o \
-		  $(OUTDIR)/time.o \
 		  $(OUTDIR)/timer.o \
 		  $(OUTDIR)/timermap.o \
 		  $(OUTDIR)/tmap.o \
