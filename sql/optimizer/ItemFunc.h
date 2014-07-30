@@ -4915,4 +4915,53 @@ public:
   NAList<HbaseColumnCreateOptions*> * hccol_;
 }; // class HbaseColumnCreate
 
+// generate a sequence number in a dml query.
+class SequenceValue : public BuiltinFunction
+{
+public:
+  SequenceValue(
+		const CorrName &seqCorrName,
+		NABoolean currVal = FALSE,
+		NABoolean nextVal = TRUE)
+    : BuiltinFunction(ITM_SEQUENCE_VALUE,
+		      CmpCommon::statementHeap(), 0, NULL),
+    seqCorrName_(seqCorrName),
+    nextVal_(nextVal),
+    currVal_(currVal),
+    naTable_(NULL)
+    {}
+
+  virtual ~SequenceValue();
+
+  virtual const NAType * synthesizeType();
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  ItemExpr *bindNode(BindWA *bindWA);
+
+  virtual short codeGen(Generator*);
+
+  // get a printable string that identifies the operator
+  virtual const NAString getText() const
+  {
+    return "SEQUENCE_VALUE";
+  };
+
+  CorrName &seqCorrName() { return seqCorrName_; }
+
+  inline const NATable  *getNATable()           const { return naTable_; }
+  void setNATable (NATable *naTable) {naTable_ = naTable;}
+
+ private:
+  CorrName seqCorrName_;
+  NABoolean currVal_;
+  NABoolean nextVal_;
+
+  // natable for the sequence object
+  const NATable *naTable_;
+
+}; // class SequenceValue
+
+
 #endif /* ITEMFUNC_H */

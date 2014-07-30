@@ -32,6 +32,7 @@
 #include "SqlParserGlobalsCmn.h"
 
 #include "ComObjectName.h"
+#include "ComUser.h"
 
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLDropTable.h"
@@ -48,11 +49,17 @@
 #include "StmtDDLRevoke.h"
 #include "StmtDDLDropSchema.h"
 #include "StmtDDLRegisterUser.h"
+#include "StmtDDLCreateView.h"
+#include "StmtDDLAlterTableDisableIndex.h"
+#include "StmtDDLAlterTableEnableIndex.h"
+#include "StmtDDLCreateDropSequence.h"
+
 #include "ElemDDLHbaseOptions.h"
 #include "ElemDDLParamDefArray.h"
 #include "ElemDDLParamDef.h"
 #include "ElemDDLConstraintPK.h"
 #include "StmtDDLDropConstraint.h"
+#include "ElemDDLSGOptions.h"
 
 #include "CmpDDLCatErrorCodes.h"
 

@@ -6322,4 +6322,13 @@ const NAType * HbaseColumnCreate::synthesizeType()
   return type;
 }
 
+const NAType * SequenceValue::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE, FALSE);
+
+  return type;
+}
+
 

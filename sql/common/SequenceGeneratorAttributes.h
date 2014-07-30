@@ -57,35 +57,44 @@ public:
                               const ComFSDataType             psgFSDataType,
                               const NABoolean                 psgCycleOption,
 			      const ComUID                    psgObjectUID,
+			      const Int64                         psgCache,
+			      const Int64                         psgNextValue,
+			      const Int64                         psgEndValue = 0,
                               CollHeap * h=0)
-              : sgStartValue_(psgStartValue),
-	        sgIncrement_(psgIncrement),
-                sgMaxValue_(psgMaxValue),
-                sgMinValue_(psgMinValue),
-                sgSGType_(psgSGType),
-                sgSQLDataType_(psgSQLDataType),
-                sgFSDataType_(psgFSDataType),
-                sgCycleOption_(psgCycleOption),
-		sgObjectUID_(psgObjectUID)
+    : sgStartValue_(psgStartValue),
+    sgIncrement_(psgIncrement),
+    sgMaxValue_(psgMaxValue),
+    sgMinValue_(psgMinValue),
+    sgSGType_(psgSGType),
+    sgSQLDataType_(psgSQLDataType),
+    sgFSDataType_(psgFSDataType),
+    sgCycleOption_(psgCycleOption),
+    sgObjectUID_(psgObjectUID),
+    sgCache_(psgCache),
+    sgNextValue_(psgNextValue),
+    sgEndValue_(psgEndValue)
   {}
 
       
-  SequenceGeneratorAttributes(CollHeap * h=0)
-              : sgStartValue_(0),
-                sgIncrement_(0),
-                sgMaxValue_(0),
-                sgMinValue_(0),
-                sgSGType_(COM_UNKNOWN_SG),
-                sgSQLDataType_(COM_UNKNOWN_SDT),
-                sgFSDataType_(COM_UNKNOWN_FSDT),
-                sgCycleOption_(FALSE),
-		sgObjectUID_(0)
-  {}
-
+ SequenceGeneratorAttributes(CollHeap * h=0)
+   : sgStartValue_(0),
+    sgIncrement_(0),
+    sgMaxValue_(0),
+    sgMinValue_(0),
+    sgSGType_(COM_UNKNOWN_SG),
+    sgSQLDataType_(COM_UNKNOWN_SDT),
+    sgFSDataType_(COM_UNKNOWN_FSDT),
+    sgCycleOption_(FALSE),
+    sgObjectUID_(0),
+    sgCache_(0),
+    sgNextValue_(0),
+    sgEndValue_(0)
+      {}
+  
   // copy ctor
   SequenceGeneratorAttributes (const SequenceGeneratorAttributes & sga, CollHeap * h=0) 
-       : 
-    sgStartValue_(sga.sgStartValue_),
+    : 
+  sgStartValue_(sga.sgStartValue_),
     sgIncrement_(sga.sgIncrement_),
     sgMaxValue_(sga.sgMaxValue_),
     sgMinValue_(sga.sgMinValue_),
@@ -93,9 +102,12 @@ public:
     sgSQLDataType_(sga.sgSQLDataType_),
     sgFSDataType_(sga.sgFSDataType_),
     sgCycleOption_(sga.sgCycleOption_),
-    sgObjectUID_(sga.sgObjectUID_)
-  {}
-
+    sgObjectUID_(sga.sgObjectUID_),
+    sgCache_(sga.sgCache_),
+    sgNextValue_(sga.sgNextValue_),
+    sgEndValue_(sga.sgEndValue_)
+      {}
+  
   // ---------------------------------------------------------------------
   // Sequence generator functions
   // ---------------------------------------------------------------------
@@ -107,8 +119,11 @@ public:
   const ComSequenceGeneratorType   &getSGSGType()       const     { return sgSGType_; }
   const ComSQLDataType             &getSGSQLDataType()  const     { return sgSQLDataType_; }
   const ComFSDataType              &getSGFSDataType()   const     { return sgFSDataType_; }
-  const NABoolean                   getSGCycleOption()  const	  { return sgCycleOption_; }
+  const NABoolean                   &getSGCycleOption()  const	  { return sgCycleOption_; }
   const ComUID                     &getSGObjectUID()    const     { return sgObjectUID_; }
+  const Int64                        &getSGCache()   const     { return sgCache_; }
+  const Int64                      &getSGNextValue()   const     { return sgNextValue_; }
+  const Int64                      &getSGEndValue()   const     { return sgEndValue_; }
   
   void setSGStartValue(const Int64 psgStartValue)
   { sgStartValue_= psgStartValue; }
@@ -137,6 +152,15 @@ public:
  void setSGObjectUID(const ComUID psgObjectUID)
   { sgObjectUID_ = psgObjectUID; }
   
+  void setSGCache(const Int64 psgCache)
+  { sgCache_= psgCache; }
+
+  void setSGNextValue(const Int64 psgNextValue)
+  { sgNextValue_= psgNextValue; }
+
+  void setSGEndValue(const Int64 psgEndValue)
+  { sgEndValue_= psgEndValue; }
+
 private:
 
   // Sequence generator
@@ -150,7 +174,9 @@ private:
   ComFSDataType             sgFSDataType_;
   NABoolean                 sgCycleOption_;
   ComUID                    sgObjectUID_;
-
+  Int64                        sgCache_;
+  Int64                        sgNextValue_;
+  Int64                        sgEndValue_;
 }; // class SequenceGeneratorAttributes
 #pragma warn(1506)  // warning elimination 
 

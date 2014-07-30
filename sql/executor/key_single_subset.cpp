@@ -57,13 +57,13 @@ keySingleSubsetEx::keySingleSubsetEx(const keyRangeGen & tdb_key,
 
   // mode = 0;  // 0 = PCODE_NONE
   if (bkPred())
-    (void) bkPred()->fixup(0, mode, tcb, space, heap, g->computeSpace());
+    (void) bkPred()->fixup(0, mode, tcb, space, heap, g->computeSpace(), g);
   if (ekPred())
-    (void) ekPred()->fixup(0, mode, tcb, space, heap, g->computeSpace());
+    (void) ekPred()->fixup(0, mode, tcb, space, heap, g->computeSpace(), g);
   if (bkExcludedExpr())
-    (void) bkExcludedExpr()->fixup(0, mode, tcb, space, heap, g->computeSpace());
+    (void) bkExcludedExpr()->fixup(0, mode, tcb, space, heap, g->computeSpace(), g);
   if (ekExcludedExpr())
-    (void) ekExcludedExpr()->fixup(0, mode, tcb, space, heap, g->computeSpace());
+    (void) ekExcludedExpr()->fixup(0, mode, tcb, space, heap, g->computeSpace(), g);
 };
 
 keySingleSubsetEx::~keySingleSubsetEx()

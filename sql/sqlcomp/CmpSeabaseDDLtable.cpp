@@ -916,9 +916,14 @@ void CmpSeabaseDDL::createSeabaseTable(
       createTableNode->getKeyColumnArray() :
       createTableNode->getPrimaryKeyColRefArray()));
 
+  NABoolean trustedCaller = FALSE;
+  if ((isSeabaseMD(tableName)) &&
+      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    trustedCaller = TRUE;
+
   // Verify that the current user has authority to perform operation
   ComUserVerifyObj verifyAuth(tableName, ComUserVerifyObj::OBJ_OBJ_TYPE);
-  if (!verifyAuth.isAuthorized(ComUser::CREATE_TABLE))
+  if (!verifyAuth.isAuthorized(ComUser::CREATE_TABLE, trustedCaller))
   {
     *CmpCommon::diags() << DgSqlCode(-1017);
     return;
@@ -933,7 +938,8 @@ void CmpSeabaseDDL::createSeabaseTable(
       return;
     }
 
-  if (isSeabaseMD(tableName))
+  if ((isSeabaseMD(tableName)) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CREATE_TABLE_NOT_ALLOWED_IN_SMD)
 			  << DgTableName(extTableName);
@@ -1969,8 +1975,14 @@ void CmpSeabaseDDL::dropSeabaseTable(
      verifyName = volTabName;
   else
      verifyName = tableName;
+
+  NABoolean trustedCaller = FALSE;
+  if ((isSeabaseMD(tableName)) &&
+      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    trustedCaller = TRUE;
+
   ComUserVerifyObj verifyAuth(verifyName, ComUserVerifyObj::OBJ_OBJ_TYPE);
-  if (!verifyAuth.isAuthorized(ComUser::DROP_TABLE))
+  if (!verifyAuth.isAuthorized(ComUser::DROP_TABLE, trustedCaller))
   {
     *CmpCommon::diags() << DgSqlCode(-1017);
 
@@ -5343,6 +5355,97 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
    return *numCols;
 }
 
+desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName, 
+						    const NAString &schName, 
+						    const NAString &seqName)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  desc_struct * tableDesc = NULL;
+
+  NAString schNameL = "\"";
+  schNameL += schName;
+  schNameL += "\"";
+
+  ComObjectName coName(catName, schNameL, seqName);
+  NAString extSeqName = coName.getExternalName(TRUE);
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  Int32 objectOwner =  0 ;
+  Int64 seqUID = -1;
+  seqUID = getObjectUIDandOwner(&cliInterface,
+				catName.data(), schName.data(), seqName.data(),
+				(char*)COM_SEQUENCE_GENERATOR_OBJECT_LIT, NULL, 
+				&objectOwner, TRUE/*report error*/);
+  if (seqUID == -1)
+    return NULL;
+
+ char buf[4000];
+
+ str_sprintf(buf, "select fs_data_type, start_value, increment, max_value, min_value, cycle_option, cache_size, next_value, seq_type from %s.\"%s\".%s  where seq_uid = %Ld",
+	     getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
+	     seqUID);
+
+  Queue * seqQueue = NULL;
+  cliRC = cliInterface.fetchAllRows(seqQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return NULL;
+    }
+ 
+  if ((seqQueue->numEntries() == 0) ||
+      (seqQueue->numEntries() > 1))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4082)
+			  << DgTableName(extSeqName);
+      
+      return NULL;
+    }
+
+  ComTdbVirtTableSequenceInfo *seqInfo =
+     (ComTdbVirtTableSequenceInfo *)new (STMTHEAP) 
+             ComTdbVirtTableSequenceInfo;
+
+  seqQueue->position();
+  OutputInfo * vi = (OutputInfo*)seqQueue->getNext(); 
+ 
+  seqInfo->datatype = *(Lng32*)vi->get(0);
+  seqInfo->startValue = *(Int64*)vi->get(1);
+  seqInfo->increment = *(Int64*)vi->get(2);
+  seqInfo->maxValue = *(Int64*)vi->get(3);
+  seqInfo->minValue = *(Int64*)vi->get(4);
+  seqInfo->cycleOption = (memcmp(vi->get(5), "Y", 1) == 0 ? 1 : 0);
+  seqInfo->cache  = *(Int64*)vi->get(6);
+  seqInfo->nextValue  = *(Int64*)vi->get(7);
+  seqInfo->seqType = (memcmp(vi->get(8), "E", 1) == 0 ? COM_EXTERNAL_SG : COM_INTERNAL_SG);
+  seqInfo->seqUID = seqUID;
+
+  ComTdbVirtTableTableInfo tableInfo;
+  tableInfo.tableName = extSeqName.data();
+  tableInfo.createTime = 0;
+  tableInfo.redefTime = 0;
+  tableInfo.objUID = seqUID;
+  tableInfo.isAudited = 0;
+  tableInfo.validDef = 1;
+  tableInfo.objOwner = objectOwner;
+
+  tableDesc =
+    Generator::createVirtualTableDesc
+    ((char*)extSeqName.data(),
+     0, NULL, // colInfo
+     0, NULL, // keyInfo
+     0, NULL,
+     0, NULL, //indexInfo
+     0, NULL, // viewInfo
+     &tableInfo,
+     seqInfo);
+
+  return tableDesc;
+}
+
 desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName, 
 						     const NAString &schName, 
 						     const NAString &objName,
@@ -6059,8 +6162,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
           if (sendAllControlsAndFlags())
             return NULL;
 
-	  tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
-					  objType, includeInvalidDefs);
+	  if ((objType) && (strcmp(objType, COM_SEQUENCE_GENERATOR_OBJECT_LIT) == 0))
+	    tDesc = getSeabaseSequenceDesc(catName, schName, objName);
+	  else
+	    tDesc = getSeabaseUserTableDesc(catName, schName, objName, 
+					    objType, includeInvalidDefs);
 
           // save existing diags info
           ComDiagsArea * tempDiags = ComDiagsArea::allocate(heap_);
@@ -6082,10 +6188,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
 	}
     }
 
-
   return tDesc;
 }
-
 
 //
 // Produce a list of desc_struct objects. In each object, the body_struct

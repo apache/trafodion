@@ -147,6 +147,8 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_VALIDATE_SPJ      "VALIDATEROUTINE"
 #define SEABASE_VALIDATE_LIBRARY  "UDR_LIBRARY"
 
+#define SEABASE_SEQ_GEN  "SEQ_GEN"
+
 /******    *****/
 enum ComActivationTime { COM_UNKNOWN_TIME, COM_BEFORE , COM_AFTER };
 #define COM_BEFORE_LIT         "B "

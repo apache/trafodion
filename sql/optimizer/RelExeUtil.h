@@ -195,6 +195,7 @@ public:
     initHbase_(FALSE),
     dropHbase_(FALSE),
     purgedataHbase_(FALSE),
+    addSeqTable_(FALSE),
     flags_(0)
   {
     if (explObjName)
@@ -203,6 +204,7 @@ public:
 
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
 	 NABoolean createMDviews, NABoolean dropMDviews,
+	 NABoolean addSeqTable,
 	 char * ddlStmtText,
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
@@ -224,6 +226,7 @@ public:
     initHbase_(initHbase), 
     dropHbase_(dropHbase),
     purgedataHbase_(FALSE),
+    addSeqTable_(addSeqTable),
     flags_(0)
   {
     if (createMDviews)
@@ -255,6 +258,7 @@ public:
     initHbase_(FALSE), 
     dropHbase_(FALSE),
     purgedataHbase_(purgedataHbase),
+    addSeqTable_(FALSE),
     flags_(0)
   {
     qualObjName_ = purgedataTableName.getQualifiedNameObj();
@@ -314,6 +318,7 @@ public:
   NABoolean initHbase() { return initHbase_; }
   NABoolean dropHbase() { return dropHbase_; }
   NABoolean purgedataHbase() { return purgedataHbase_; }
+  NABoolean addSeqTable() { return addSeqTable_; }
 
   NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
 
@@ -372,6 +377,7 @@ public:
   NABoolean initHbase_;	  
   NABoolean dropHbase_;	
   NABoolean purgedataHbase_;
+  NABoolean addSeqTable_;
 
   // if set, this ddl cannot run under a user transaction. It must run in autocommit
   // mode.

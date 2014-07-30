@@ -557,6 +557,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CURRNT_USR_INTN
 %token <tokval> TOK_CURSOR
 %token <tokval> TOK_CURTIME             /* ODBC extension  */
+%token <tokval> TOK_CACHE
 %token <tokval> TOK_CYCLE
 %token <tokval> TOK_D                   /* ODBC extension  */
 %token <tokval> TOK_DATABASE
@@ -997,7 +998,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SELECT
 %token <tokval> TOK_SEL
 %token <tokval> TOK_SELECTIVITY
+%token <tokval> TOK_SEQNUM
 %token <tokval> TOK_SEQUENCE            /* Tandem extension non-reserved word */
+%token <tokval> TOK_SEQUENCES            
 %token <tokval> TOK_SEQUENCE_BY         /* Tandem extension non-reserved word */
 %token <tokval> TOK_SESSION
 %token <tokval> TOK_SESSIONS
@@ -1015,6 +1018,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SHOWDDL_ROLE
 %token <tokval> TOK_SHOWDDL_COMPONENT
 %token <tokval> TOK_SHOWDDL_LIBRARY
+%token <tokval> TOK_SHOWDDL_SEQUENCE
 %token <tokval> TOK_SHOWDDL             /* Tandem extension non-reserved word */
 %token <tokval> TOK_SHOWLABEL           /* Tandem extension     reserved word */
 %token <tokval> TOK_SHOWLEAKS           /* Tandem extension non-reserved word*/
@@ -2415,6 +2419,10 @@ static void enableMakeQuotedStringISO88591Mechanism()
 
 %type <pStmtDDL>		grant_schema_statement
 
+%type <pStmtDDL>		create_sequence_statement
+%type <pStmtDDL>		alter_sequence_statement
+%type <pStmtDDL>		drop_sequence_statement
+
 %type <pStmtDDL>  		catalog_definition
 %type <pStmtDDL>  		catalog_definition2
 %type <stringval>               catalog_name
@@ -2538,6 +2546,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		increment_option
 %type <pElemDDL>  		max_value_option
 %type <pElemDDL>  		min_value_option
+%type <pElemDDL>  		cache_option
 %type <pElemDDL>  		cycle_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
@@ -9325,10 +9334,11 @@ sequence_generator_option_list :   sequence_generator_option
         }
 /* type pElemDDL */
 sequence_generator_option : start_with_option
+                      | increment_option
 		      | max_value_option
                       | min_value_option
-                      | increment_option
                       | cycle_option
+                      | cache_option
 
 /* type pElemDDL */
 start_with_option : TOK_START TOK_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
@@ -9337,7 +9347,7 @@ start_with_option : TOK_START TOK_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
       // Also validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
          
-      NABoolean result = validateSGOption($3, FALSE,(char *)$4->data(), "START WITH", "IDENTITY column");
+      NABoolean result = validateSGOption($3, FALSE,(char *)$4->data(), "START WITH", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
@@ -9356,7 +9366,7 @@ max_value_option : TOK_MAXVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
       // Also validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
          
-      NABoolean result = validateSGOption($2, FALSE, (char *)$3->data(), "MAXVALUE", "IDENTITY column");
+      NABoolean result = validateSGOption($2, FALSE, (char *)$3->data(), "MAXVALUE", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
@@ -9381,7 +9391,7 @@ max_value_option : TOK_MAXVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
       // Also validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
          
-      NABoolean result = validateSGOption($2, FALSE, (char *)$3->data(), "MINVALUE", "IDENTITY column");
+      NABoolean result = validateSGOption($2, FALSE, (char *)$3->data(), "MINVALUE", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
@@ -9406,12 +9416,15 @@ max_value_option : TOK_MAXVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
       // Also validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
          
-      NABoolean result = validateSGOption($3, FALSE,(char *)$4->data(), "INCREMENT BY", "IDENTITY column");
+      NABoolean result = validateSGOption($3, TRUE, (char *)$4->data(), "INCREMENT BY", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
        
       Int64 value = atoInt64($4->data()); 
+      if (NOT $3)
+	value = -value;
+
       $$ = new (PARSERHEAP())
 	ElemDDLSGOptionIncrement(value /*Int64*/); 
      }
@@ -9430,6 +9443,25 @@ cycle_option : TOK_CYCLE
         // NO CYCLE Option
         $$ = new (PARSERHEAP())
         ElemDDLSGOptionCycleOption(FALSE);
+  
+     }
+
+/* type pElemDDL */
+cache_option : TOK_CACHE NUMERIC_LITERAL_EXACT_NO_SCALE
+     {
+       Int64 value = atoInt64($2->data()); 
+
+        // CACHE Option
+        $$ = new (PARSERHEAP())
+	  ElemDDLSGOptionCacheOption(TRUE, value);
+  
+     } 
+                                          
+   | TOK_NO TOK_CACHE               
+     {
+        // NO CACHE Option
+        $$ = new (PARSERHEAP())
+	  ElemDDLSGOptionCacheOption(FALSE, 0);
   
      }
       
@@ -10000,6 +10032,27 @@ misc_function :
 
 				  $$ = new (PARSERHEAP()) 
 				    HbaseColumnsDisplay($3, $6, longIntVal);
+			      }
+        | TOK_SEQNUM '(' ddl_qualified_name  ')'
+	                      {
+				CorrName cn(*$3);
+				cn.setSpecialType(ExtendedQualName::SG_TABLE);
+
+				$$ = new(PARSERHEAP()) SequenceValue(cn);
+			      }
+        | TOK_SEQNUM '(' ddl_qualified_name ',' TOK_CURRENT ')'
+	                      {
+				CorrName cn(*$3);
+				cn.setSpecialType(ExtendedQualName::SG_TABLE);
+
+				$$ = new(PARSERHEAP()) SequenceValue(cn, TRUE, FALSE);
+			      }
+        | TOK_SEQNUM '(' ddl_qualified_name ',' TOK_NEXT ')'
+	                      {
+				CorrName cn(*$3);
+				cn.setSpecialType(ExtendedQualName::SG_TABLE);
+
+				$$ = new(PARSERHEAP()) SequenceValue(cn, FALSE, TRUE);
 			      }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
@@ -14267,7 +14320,12 @@ sql_schema_definition_statement :
 	      | create_role_statement
                                 {
                                 }
-                        
+              | create_sequence_statement
+	                        {
+				}                        
+              | alter_sequence_statement
+	                        {
+				}                        
 
 /* type pStmtDDL */
 sql_schema_manipulation_statement :
@@ -14403,6 +14461,9 @@ sql_schema_manipulation_statement :
               | drop_role_statement
                                 {
                                 }
+              | drop_sequence_statement
+	                        {
+				}                        
 
 /* type item */
 item_signal_statement : 
@@ -15682,6 +15743,7 @@ objects_identifier :
                   | TOK_PROCEDURES { $$ = new (PARSERHEAP()) NAString("PROCEDURES"); }
                   | TOK_ROLES    { $$ = new (PARSERHEAP()) NAString("ROLES"); }  // get roles
                   | TOK_SCHEMAS  { $$ = new (PARSERHEAP()) NAString("SCHEMAS"); }
+                  | TOK_SEQUENCES  { $$ = new (PARSERHEAP()) NAString("SEQUENCES"); }
                   | TOK_SYNONYMS { $$ = new (PARSERHEAP()) NAString("SYNONYMS"); }
                   | TOK_TABLES   { $$ = new (PARSERHEAP()) NAString("TABLES"); }
                   | TOK_TRIGGERS { $$ = new (PARSERHEAP()) NAString("TRIGGERS"); }
@@ -15920,6 +15982,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
+							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15935,6 +15998,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, FALSE, FALSE,
+							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15950,6 +16014,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE, FALSE, TRUE,
+							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15965,6 +16030,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, TRUE, FALSE,
+							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15980,6 +16046,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, TRUE,
+							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -15992,6 +16059,22 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 		 ExeUtilMetadataUpgrade * mu =
 		   new(PARSERHEAP()) ExeUtilMetadataUpgrade(PARSERHEAP());
 		 $$ = mu;
+	       }
+
+             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_SEQUENCE
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
+							  TRUE,
+							  (char*)stmt->data(),
+							  stmtCharSet,
+							  PARSERHEAP());
+
+		 $$ = de;
 	       }
 
 /*
@@ -24212,6 +24295,17 @@ show_statement:
   	         delete $2; // CorrName * qualified_name
   	       }	  
 
+          | TOK_SHOWDDL_SEQUENCE table_name optional_showddl_object_options_list
+	     {
+	       $$ = new (PARSERHEAP())
+		 RelRoot(new (PARSERHEAP())
+			 Describe(SQLTEXT(), *$2, Describe::LONG_, 
+			          COM_SEQUENCE_GENERATOR_NAME, $3),
+			 REL_ROOT,	
+			 new (PARSERHEAP())
+			 ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
+	     }
+
           | TOK_SHOWDDL TOK_PROCEDURE actual_routine_name 
              optional_showddl_object_options_list
 	     {
@@ -31747,6 +31841,45 @@ optional_location_clause : empty
                       | location_clause
 
 /* type pStmtDDL */
+create_sequence_statement : TOK_CREATE TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+		      {
+			ElemDDLSGOptions *sgOptions = 
+			  new (PARSERHEAP()) ElemDDLSGOptions(
+							      2, /* SG_EXTERNAL */
+							      $4 /*sequence_generator_option_list*/);
+			
+			$$ = new (PARSERHEAP())
+			  StmtDDLCreateSequence(
+					      *$3 /*seq_name_clause*/,
+					      sgOptions /*seq gen options*/);
+			delete $3 /*seq_name*/;
+		      }
+
+alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+		      {
+			ElemDDLSGOptions *sgOptions = 
+			  new (PARSERHEAP()) ElemDDLSGOptions(
+							      2, /* SG_EXTERNAL */
+							      $4 /*sequence_generator_option_list*/);
+			
+			$$ = new (PARSERHEAP())
+			  StmtDDLCreateSequence(
+					      *$3 /*seq_name_clause*/,
+					      sgOptions /*seq gen options*/,
+					      TRUE /*alter*/);
+			delete $3 /*seq_name*/;
+		      }
+
+/* type pStmtDDL */
+drop_sequence_statement : TOK_DROP TOK_SEQUENCE ddl_qualified_name 
+		      {
+			$$ = new (PARSERHEAP())
+			  StmtDDLDropSequence(
+					      *$3 /*seq_name_clause*/);
+			delete $3 /*seq_name*/;
+		      }
+
+/* type pStmtDDL */
 drop_schema_statement : TOK_DROP TOK_SCHEMA schema_name_clause optional_cleanup 
                         optional_drop_behavior 
                                 {
@@ -34744,6 +34877,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_CREATE_VIEW
                       | TOK_CQD
                       | TOK_CURSOR_NAME
+                      | TOK_CACHE
                       | TOK_CYCLE
                       | TOK_D                   /* ODBC extension  */
                       | TOK_DATA
@@ -35174,6 +35308,7 @@ nonreserved_word :      TOK_ABORT
                         // New words for Sequence Functions
                       | TOK_INCLUSIVE
                       | TOK_SEQUENCE
+                      | TOK_SEQUENCES
                       | TOK_SINCE
 //		      | TOK_MAINTAIN
 		      | TOK_MANUAL
@@ -35311,6 +35446,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RSUM
                       | TOK_RTRIM
                       | TOK_RVARIANCE
+                      | TOK_SEQNUM
                       | TOK_SIGN
                       | TOK_SIN
                       | TOK_SINH

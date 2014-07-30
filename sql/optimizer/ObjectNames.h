@@ -470,10 +470,10 @@ public:
 			  GHOST_INDEX_TABLE,
 			  GHOST_MV_TABLE,
 			  GHOST_TRIGTEMP_TABLE,
-        EXCEPTION_TABLE,
+			  EXCEPTION_TABLE,
 			  GHOST_IUD_LOG_TABLE,
-        SG_TABLE,
-        LIBRARY_TABLE                  
+			  SG_TABLE,
+			  LIBRARY_TABLE                  
                         };
 
   // constructors

@@ -170,6 +170,16 @@ ExEidStmtGlobals * ex_globals::castToExEidStmtGlobals()
   return NULL;
 }
 
+/*
+void * ex_globals::seqGen()
+{
+  if (castToExExeStmtGlobals())
+    return castToExExeStmtGlobals()->seqGen();
+
+  return NULL;
+}
+*/
+
 void ex_globals::cleanupTcbs()
 {
   const CollIndex numTcbs = tcbList_.entries();

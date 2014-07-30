@@ -3060,6 +3060,12 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                             TOK_SHOWDDL_LIBRARY,
                             keyWordEntry1->getTokenCode(),
                             end1, holdChar1, lvalp);
+                      else if (keyWordEntry2->getTokenCode() == TOK_SEQUENCE)
+                        return eitherCompoundOrSimpleKeyword
+                          ( keyWordEntry2->getTokenCode() == TOK_SEQUENCE,
+                            TOK_SHOWDDL_SEQUENCE,
+                            keyWordEntry1->getTokenCode(),
+                            end1, holdChar1, lvalp);
                       break;
                     case TOK_SERIALIZABLE:
                       return eitherCompoundOrSimpleKeyword

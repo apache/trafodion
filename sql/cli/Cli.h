@@ -945,6 +945,16 @@ Lng32 SQLCLI_SEcliInterface
 
  );
 
+  Lng32 SQLCLI_SeqGenCliInterface
+  (
+   CliGlobals *cliGlobals,
+   
+   void* *cliInterface,  /* IN: if passed in and not null, use it.
+			    OUT: if returned, save it and pass it back in */
+   
+   void * seqGenAttrs
+   );
+  
 } // end extern "C"
 
 class StrTarget {

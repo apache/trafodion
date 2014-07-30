@@ -68,6 +68,9 @@ class StmtDDLDropLibrary;
 class StmtDDLCreateRoutine;
 class StmtDDLDropRoutine;
 
+class StmtDDLCreateSequence;
+class StmtDDLDropSequence;
+
 class StmtDDLDropSchema;
 
 // Classes for user management
@@ -552,6 +555,7 @@ class CmpSeabaseDDL
 
   short createMetadataViews(ExeCliInterface * cliInterface);
   short dropMetadataViews(ExeCliInterface * cliInterface);
+  short createSeqTable(ExeCliInterface * cliInterface);
 
   void createSeabaseTable(
 			  StmtDDLCreateTable                  * createTableNode,
@@ -676,6 +680,15 @@ class CmpSeabaseDDL
   void dropSeabaseRoutine(StmtDDLDropRoutine  * dropRoutineNode,
                           NAString &currCatName, NAString &currSchName);
 
+  void createSeabaseSequence(StmtDDLCreateSequence  * createSequenceNode,
+			     NAString &currCatName, NAString &currSchName);
+
+  void alterSeabaseSequence(StmtDDLCreateSequence  * alterSequenceNode,
+			     NAString &currCatName, NAString &currSchName);
+  
+  void dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode,
+			   NAString &currCatName, NAString &currSchName);
+  
   void seabaseGrantRevoke(
 			  StmtDDLNode                  * stmtDDLNode,
 			  NABoolean isGrant,
@@ -697,6 +710,7 @@ class CmpSeabaseDDL
   void dropSeabaseMD();
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
+  void createSeabaseSeqTable();
 
   short dropSeabaseObjectsFromHbase(const char * pattern);
   short updateSeabaseAuths(ExeCliInterface * cliInterface, const char * sysCat);
@@ -716,6 +730,10 @@ class CmpSeabaseDDL
 					const NAString &schName, 
 					const NAString &objName);
 
+  desc_struct * getSeabaseSequenceDesc(const NAString &catName, 
+				       const NAString &schName, 
+				       const NAString &seqName);
+    
   Lng32 getSeabaseColumnInfo(ExeCliInterface *cliInterface,
                                    Int64 objUID,
                                    char *direction,

@@ -218,6 +218,7 @@ class ElemDDLSGOptionStartValue;
 class ElemDDLSGOptionMaxValue;
 class ElemDDLSGOptionMinValue;
 class ElemDDLSGOptionIncrement;
+class ElemDDLSGOptionCacheOption;
 class ElemDDLSGOptionCycleOption;
 class ElemDDLStoreOpt;
 class ElemDDLStoreOptDefault;
@@ -288,6 +289,7 @@ class StmtDDLPopulateIndex;
 class StmtDDLCreateLibrary;
 class StmtDDLCreateRoutine;
 class StmtDDLCreateSchema;
+class StmtDDLCreateSequence;
 class StmtDDLCreateTable;
 class StmtDDLCreateHbaseTable;
 class StmtDDLCreateMvRGroup;
@@ -299,6 +301,7 @@ class StmtDDLDropComponentPrivilege;
 class StmtDDLDropIndex;
 class StmtDDLDropLibrary;
 class StmtDDLDropRoutine;
+class StmtDDLDropSequence;
 class StmtDDLDropSchema;
 class StmtDDLDropSQL;
 class StmtDDLDropTable;
@@ -528,6 +531,7 @@ public:
   virtual ElemDDLSGOptionMinValue       * castToElemDDLSGOptionMinValue();
   virtual ElemDDLSGOptionMaxValue       * castToElemDDLSGOptionMaxValue();
   virtual ElemDDLSGOptionIncrement      * castToElemDDLSGOptionIncrement();
+  virtual ElemDDLSGOptionCacheOption    * castToElemDDLSGOptionCacheOption();
   virtual ElemDDLSGOptionCycleOption    * castToElemDDLSGOptionCycleOption();
   
   virtual ElemDDLStoreOpt               * castToElemDDLStoreOpt();
@@ -612,6 +616,7 @@ public:
   virtual StmtDDLCreateLibrary          * castToStmtDDLCreateLibrary();
   virtual StmtDDLCreateRoutine          * castToStmtDDLCreateRoutine();
   virtual StmtDDLCreateSchema           * castToStmtDDLCreateSchema();
+  virtual StmtDDLCreateSequence            * castToStmtDDLCreateSequence();
   virtual StmtDDLCreateTable            * castToStmtDDLCreateTable();
   virtual StmtDDLCreateHbaseTable            * castToStmtDDLCreateHbaseTable();
   virtual StmtDDLCreateMvRGroup         * castToStmtDDLCreateMvRGroup();
@@ -625,6 +630,7 @@ public:
   virtual StmtDDLDropModule             * castToStmtDDLDropModule();
   virtual StmtDDLDropRoutine            * castToStmtDDLDropRoutine();
   virtual StmtDDLDropSchema             * castToStmtDDLDropSchema();
+  virtual StmtDDLDropSequence            * castToStmtDDLDropSequence();
   virtual StmtDDLDropSQL                * castToStmtDDLDropSQL();
   virtual StmtDDLDropTable              * castToStmtDDLDropTable();
   virtual StmtDDLDropHbaseTable              * castToStmtDDLDropHbaseTable();

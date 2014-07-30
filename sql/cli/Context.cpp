@@ -160,6 +160,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     volatileSchemaCreated_(FALSE),
     prevStmtStats_(NULL),
     lobGlobals_(NULL),
+    seqGen_(NULL),
 #ifdef NA_CMPDLL
     isEmbeddedArkcmpInitialized_(FALSE),
     embeddedArkcmpContext_(NULL)
@@ -275,6 +276,8 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
   else
      espManager_ = new(ipcHeap_) ExEspManager(env_, cliGlobals_);
   udrServerManager_ = new (ipcHeap_) ExUdrServerManager(env_);
+
+  seqGen_ = new(exCollHeap()) SequenceValueGenerator(exCollHeap());
 
   // For CmpContext switch
   cmpContextInfo_.setHeap(exCollHeap());

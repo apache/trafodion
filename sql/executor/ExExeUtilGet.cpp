@@ -1004,6 +1004,29 @@ static const QueryString getTrafProceduresForLibraryQuery[] =
   {"  ; "}
 };
 
+static const QueryString getTrafSequencesInSchemaQuery[] =
+{
+  {" select object_name  from "},
+  {"   %s.\"%s\".%s T "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.schema_name = '%s'  and "},
+  {"        T.object_type = 'SG' "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafSequencesInCatalogQuery[] =
+{
+  {" select trim(schema_name) || '.' || object_name  from "},
+  {"   %s.\"%s\".%s T "},
+  {"  where T.catalog_name = '%s' and "},
+  {"        T.object_type = 'SG' "},
+  {"  for read uncommitted access "},
+  {"  order by 1 "},
+  {"  ; "}
+};
+
 static const QueryString getTrafViewsInCatalogQuery[] =
 {
   {" select T.schema_name || '.' || "},
@@ -1665,6 +1688,20 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       {
 	str_sprintf(headingBuf_, "Trigger temp tables in schema %s.%s",
 		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_:
+      {
+	str_sprintf(headingBuf_, "Sequences in schema %s.%s",
+		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Sequences in catalog %s",
+		    getMItdb().getCat());
       }
     break;
 
@@ -2519,6 +2556,32 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[15] = ausStr;
                 }
                 break ;
+
+              case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_:
+                {
+                  qs = getTrafSequencesInCatalogQuery;
+                  sizeOfqs = sizeof(getTrafSequencesInCatalogQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = getMItdb().cat_;
+                }
+                break ;
+
+              case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_SCHEMA_:
+                {
+                  qs = getTrafSequencesInSchemaQuery;
+                  sizeOfqs = sizeof(getTrafSequencesInSchemaQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = getMItdb().cat_;
+		  param_[4] = getMItdb().sch_;
+                }
+                break ;
+
 	      default:
 		{
 		  ExHandleErrors(qparent_,

@@ -56,6 +56,9 @@
 #include "ex_esp_frag_dir.h"
 #endif
 
+// forward
+class SequenceValueGenerator;
+
 // Comment in and build to trace an ESPAccess ESP process
 // 
 //#define TRACE_ESP_ACCESS 1
@@ -237,6 +240,8 @@ public:
 
   inline ContextCli *getContext() const
     { return cliGlobals_->currContext(); }
+
+  SequenceValueGenerator * seqGen();
 
   // the IPC environment is used by the IPC routines and contains useful
   // information (such as a dynamic heap) for other code as well

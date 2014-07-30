@@ -887,7 +887,6 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
   retcode = exec();
   if (retcode < 0)
     {
-//      close();  // ignore close() error
       deallocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
       return retcode;
     }
@@ -895,7 +894,6 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
   retcode = fetch();
   if (retcode < 0)
     {
-      //      close();  // ignore close() error
       deallocStuff(module_, stmt_, sql_src_, input_desc_, output_desc_);
       return retcode;
     }
@@ -933,7 +931,7 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
         &tmpRowsAffected, NULL,
         0, NULL);
 
-      if(retcode == EXE_NUMERIC_OVERFLOW) // rowsAffected > LONG_MAX
+      if(retcode == EXE_NUMERIC_OVERFLOW) 
       {
         GetRowsAffected(rowsAffected);
       }
@@ -1190,7 +1188,12 @@ short ExeCliInterface::fetchAllRows(Queue * &infoList,
 }
 
 short ExeCliInterface::clearExecFetchClose(char * inputBuf,
-					   Lng32 inputBufLen)
+					   Lng32 inputBufLen,
+
+					   // ptr to buf where output values will be copied to. 
+					   // Caller need to allocate this.
+					   char * outputBuf, 
+					   Lng32 * outputBufLen)
 {
   Lng32 retcode = 0;
 
@@ -1211,7 +1214,74 @@ short ExeCliInterface::clearExecFetchClose(char * inputBuf,
       return (short)retcode;
     }
 
+  if ((outputBuf) &&
+      (outputBufLen))
+    {
+      *outputBufLen = 0;
+      if (retcode != 100)
+	{
+	  char * currPtr = outputBuf;
+	  for (Int32 j = 0; j < numOutputEntries_; j++)
+	    {
+	      char * ptr;
+	      Lng32   len;
+	      getPtrAndLen(j+1, ptr, len);
+	      
+	      str_cpy_all(currPtr, ptr, len);
+	      currPtr += len;
+
+	      *outputBufLen += len;
+	    }
+	}
+    }
+
   close();
+
+  return (short)retcode;
+}
+
+short ExeCliInterface::clearExecFetchCloseOpt(char * inputBuf,
+					      Lng32 inputBufLen,
+					      
+					      // ptr to buf where output values will be copied to. 
+					      // Caller need to allocate this.
+					      char * outputBuf, 
+					      Lng32 * outputBufLen)
+{
+  Lng32 retcode = 0;
+
+  if (inputBuf)
+    str_cpy_all(inputBuf_, inputBuf, inputDatalen_);
+
+  retcode = SQL_EXEC_ClearExecFetchClose(
+					 stmt_, 
+					 (numInputEntries_ > 0 ? input_desc_ : NULL),
+					 (numOutputEntries_ > 0 ? output_desc_ : NULL),
+					 0, 0, 0);
+  
+  if (((retcode == 0) ||
+       ((retcode >= 0) && (retcode != 100))) &&
+      (numOutputEntries_ > 0) &&
+      (outputBuf) &&
+      (outputBufLen))
+    {
+      *outputBufLen = 0;
+      if (retcode != 100)
+	{
+	  char * currPtr = outputBuf;
+	  for (Int32 j = 0; j < numOutputEntries_; j++)
+	    {
+	      char * ptr;
+	      Lng32   len;
+	      getPtrAndLen(j+1, ptr, len);
+	      
+	      str_cpy_all(currPtr, ptr, len);
+	      currPtr += len;
+
+	      *outputBufLen += len;
+	    }
+	}
+    }
 
   return (short)retcode;
 }

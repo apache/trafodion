@@ -230,6 +230,7 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
 		  MutationVec & mutations,
+		  NABoolean noXn,
 		  const int64_t timestamp) = 0;
  
  virtual Lng32 insertRows(
@@ -443,6 +444,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
 		  MutationVec & mutations,
+		  NABoolean noXn,
 		  const int64_t timestamp);
  
   virtual Lng32 insertRows(

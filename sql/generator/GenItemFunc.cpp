@@ -2766,3 +2766,28 @@ short HbaseColumnCreate::codeGen(Generator * generator)
   return 0;
 }
 
+short SequenceValue::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExFunctionSequenceValue * sv =
+    new(generator->getSpace()) ExFunctionSequenceValue
+    (getOperatorType(), 
+     attr, 
+     *naTable_->getSGAttributes(),
+     space);
+
+  if (sv)
+    generator->getExpGenerator()->linkClause(this, sv);
+  
+  if (currVal_)
+    sv->setIsCurr(TRUE);
+
+  return 0;
+}
+

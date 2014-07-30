@@ -570,6 +570,10 @@ public:
  void setUpdelColnameIsStr(NABoolean v)
   {(v ? flags_ |= UPDEL_COLNAME_IS_STR : flags_ &= ~UPDEL_COLNAME_IS_STR); };
   NABoolean updelColnameIsStr() { return (flags_ & UPDEL_COLNAME_IS_STR) != 0; };
+
+  void setUseHbaseXn(NABoolean v)
+  {(v ? flags_ |= USE_HBASE_XN : flags_ &= ~USE_HBASE_XN); };
+  NABoolean useHbaseXn() { return (flags_ & USE_HBASE_XN) != 0; };
  
   void setCanAdjustTrafParams(NABoolean v)
    {(v ? flags2_ |= TRAF_UPSERT_ADJUST_PARAMS : flags2_ &= ~TRAF_UPSERT_ADJUST_PARAMS); };
@@ -642,9 +646,9 @@ public:
     VSBB_INSERT                      = 0x0100,
     ROWSET_OPER                      = 0x0200,
     CHECK_AND_UPDEL                  = 0x0400,
-    READ_UNCOMMITTED_SCAN            = 0x0800,
-    UPDEL_COLNAME_IS_STR             = 0x1000
-
+    READ_UNCOMMITTED_SCAN = 0x0800,
+    UPDEL_COLNAME_IS_STR      = 0x1000,
+    USE_HBASE_XN                     = 0x2000
   };
 
   enum

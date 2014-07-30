@@ -5715,8 +5715,23 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
 
+  // if seq gen metadata is being updated through an internal query 
+  // and we are running under a user Xn,
+  // do not mark this stmt as a transactional stmt.
+  // This is done so those updates can run in its own transaction and not be
+  // part of the enclosing user Xn.
+  // When we have support for local transactions and repeatable read, we
+  // will then run this update in local transactional mode.
+  NABoolean seqGenUpd = FALSE;
+  if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
+      (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
+      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      seqGenUpd = TRUE;
+    }
+
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a trnsaction. Hbase guarantees single row consistency.
+  // do not require a transaction. Hbase guarantees single row consistency.
   Int64 transId = -1;
   if ((uniqueHbaseOper()) &&
       (NOT isMerge()) &&
@@ -5724,7 +5739,7 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
       (NOT uniqueRowsetHbaseOper()) &&
       (NOT inlinedActions) &&
       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-      (! NAExecTrans(0, transId)) &&
+      ((! NAExecTrans(0, transId)) || (seqGenUpd)) &&
       (NOT generator->oltOptInfo()->multipleRowsReturned()))
     {
       // no transaction needed
@@ -6962,7 +6977,7 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
     // table.  In other words, unless COMP_BOOL_166 is used, this
     // is dead code.
   }
-	  if ( CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_SYSTEM)
+  if ( CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_SYSTEM)
   {
     NABoolean resize = FALSE;
     NABoolean defrag = FALSE;

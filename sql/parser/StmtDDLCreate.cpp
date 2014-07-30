@@ -3890,6 +3890,91 @@ StmtDDLCreateSchema::getText() const
 }
 
 // -----------------------------------------------------------------------
+// methods for class StmtDDLCreateSequence
+// -----------------------------------------------------------------------
+
+//
+// constructor
+//
+StmtDDLCreateSequence::StmtDDLCreateSequence(const QualifiedName & seqQualName,
+					     ElemDDLSGOptions * pSGOptions,
+					     ComBoolean alter,
+					     CollHeap    * heap)
+  : StmtDDLNode(DDL_CREATE_SEQUENCE),
+    seqQualName_(seqQualName, heap),
+    pSGOptions_(pSGOptions),
+    alter_(alter)
+{
+
+}
+
+StmtDDLCreateSequence::~StmtDDLCreateSequence()
+{
+}
+  
+//
+// cast virtual function
+//
+StmtDDLCreateSequence *
+StmtDDLCreateSequence::castToStmtDDLCreateSequence()
+{
+  return this;
+}
+
+//
+// accessors
+//
+
+Int32
+StmtDDLCreateSequence::getArity() const
+{
+  return 0;
+}
+
+ExprNode *
+StmtDDLCreateSequence::getChild(Lng32 index)
+{
+  return NULL;
+}
+
+//
+// methods for tracing
+//
+
+const NAString
+StmtDDLCreateSequence::displayLabel1() const
+{
+  return NAString("Sequence name: ") + seqQualName_.getQualifiedNameAsAnsiString();
+}
+
+NATraceList
+StmtDDLCreateSequence::getDetailInfo() const
+{
+  NAString        detailText;
+  NATraceList detailTextList;
+
+  //
+  // table name
+  //
+
+  detailTextList.append(displayLabel1());
+  
+  return detailTextList;
+}
+
+const NAString
+StmtDDLCreateSequence::getText() const
+{
+  return "StmtDDLCreateSequence";
+}
+
+// method for collecting information
+void StmtDDLCreateSequence::synthesize()
+{
+}
+
+
+// -----------------------------------------------------------------------
 // methods for class StmtDDLCreateTable
 // -----------------------------------------------------------------------
 

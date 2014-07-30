@@ -41,9 +41,6 @@
 #include "Globals.h"
 #include "CmpSeabaseDDLauth.h"
 #include "NAUserId.h"
-#include "StmtDDLCreateView.h"
-#include "StmtDDLAlterTableDisableIndex.h"
-#include "StmtDDLAlterTableEnableIndex.h"
 
 CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
@@ -2870,19 +2867,32 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
     }
 
   if (strcmp(objType, COM_LIBRARY_OBJECT_LIT) == 0) 
-  {
-    str_sprintf(buf, "delete from %s.\"%s\".%s where library_uid = %Ld",
-                getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
-                objUID);
-    cliRC = cliInterface->executeImmediate(buf);
-    if (cliRC < 0)
-      {
-        cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-        return -1;
-      }
-    return 0; // nothing else to do for libraries
-  }
-
+    {
+      str_sprintf(buf, "delete from %s.\"%s\".%s where library_uid = %Ld",
+		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_LIBRARIES,
+		  objUID);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+	{
+	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+	  return -1;
+	}
+      return 0; // nothing else to do for libraries
+    }
+  
+  if (strcmp(objType, COM_SEQUENCE_GENERATOR_OBJECT_LIT) == 0) 
+    {
+      str_sprintf(buf, "delete from %s.\"%s\".%s where seq_uid = %Ld",
+		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
+		  objUID);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+	{
+	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+	  return -1;
+	}
+    }
+  
   str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
 	      objUID);
@@ -3708,6 +3718,11 @@ void CmpSeabaseDDL::initSeabaseMD()
   CmpCommon::context()->setIsUninitializedSeabase(FALSE);
   CmpCommon::context()->uninitializedSeabaseErrNum() = 0;
 
+  if (createSeqTable(&cliInterface))
+    {
+      goto label_error;
+    }
+
   if (createMetadataViews(&cliInterface))
     {
       goto label_error;
@@ -3764,6 +3779,391 @@ void CmpSeabaseDDL::dropSeabaseMDviews()
       return;
     }
 
+}
+
+void CmpSeabaseDDL::createSeabaseSeqTable()
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  if ((CmpCommon::context()->isUninitializedSeabase()) &&
+      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1393))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1393);
+      return;
+    }
+
+  if (createSeqTable(&cliInterface))
+    {
+      return;
+    }
+
+}
+
+short CmpSeabaseDDL::createSeqTable(ExeCliInterface *cliInterface)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char queryBuf[5000];
+
+  const QString * qs = NULL;
+  Int32 sizeOfqs = 0;
+  
+  qs = seabaseSeqGenDDL;
+  sizeOfqs = sizeof(seabaseSeqGenDDL);
+  
+  Int32 qryArraySize = sizeOfqs / sizeof(QString);
+  char * gluedQuery;
+  Lng32 gluedQuerySize;
+  glueQueryFragments(qryArraySize,  qs,
+		     gluedQuery, gluedQuerySize);
+  
+  param_[0] = getSystemCatalog();
+  param_[1] = SEABASE_MD_SCHEMA;
+
+  str_sprintf(queryBuf, gluedQuery,
+	      param_[0], param_[1]);
+
+  NABoolean xnWasStartedHere = FALSE;
+  if (NOT xnInProgress(cliInterface))
+    {
+      cliRC = cliInterface->beginXn();
+      if (cliRC < 0)
+	{
+	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+	  return -1;
+	}
+      
+      xnWasStartedHere = TRUE;
+    }
+  
+  cliRC = cliInterface->executeImmediate(queryBuf);
+  if (cliRC == -1390)  // already exists
+    {
+      // ignore the error.
+    }
+  else if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+  
+  if (xnWasStartedHere)
+    {
+      cliRC = cliInterface->commitXn();
+      if (cliRC < 0)
+	{
+	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+	  return -1;
+	}
+    }
+  
+  return 0;
+}
+
+void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequenceNode,
+					   NAString &currCatName, NAString &currSchName)
+{
+  Lng32 cliRC;
+  Lng32 retcode;
+
+  char buf[4000];
+
+  NAString sequenceName = (NAString&)createSequenceNode->getSeqName();
+
+  ComObjectName seqName(sequenceName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  seqName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  NAString catalogNamePart = seqName.getCatalogNamePartAsAnsiString();
+  NAString schemaNamePart = seqName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString seqNamePart = seqName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extSeqName = seqName.getExternalName(TRUE);
+
+  ElemDDLSGOptions * sgo = createSequenceNode->getSGoptions();
+
+  ExeCliInterface cliInterface(STMTHEAP);
+  
+  NABoolean trustedCaller = FALSE;
+  trustedCaller = TRUE;
+
+  // Verify that the current user has authority to perform operation
+  ComUserVerifyObj verifyAuth(seqName, ComUserVerifyObj::OBJ_OBJ_TYPE);
+  if (!verifyAuth.isAuthorized(ComUser::CREATE_TABLE, trustedCaller))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1017);
+      return;
+    }
+
+  if (isSeabaseMD(seqName))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_CREATE_TABLE_NOT_ALLOWED_IN_SMD)
+			  << DgTableName(extSeqName);
+      processReturn();
+
+      return;
+    }
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+				   catalogNamePart, schemaNamePart, seqNamePart, NULL);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+  
+  if (retcode == 1) // already exists
+    {
+      *CmpCommon::diags() << DgSqlCode(-1390)
+				<< DgString0(extSeqName);
+      
+      processReturn();
+      
+      return;
+    }
+
+  ComUID seqUID;
+  seqUID.make_UID();
+  Int64 seqObjUID = seqUID.get_value();
+  
+  Int64 createTime = NA_JulianTimestamp();
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, schemaNamePart, FALSE);
+  NAString quotedSeqObjName;
+  ToQuotedString(quotedSeqObjName, seqNamePart, FALSE);
+
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+	      catalogNamePart.data(), quotedSchName.data(), quotedSeqObjName.data(),
+	      COM_SEQUENCE_GENERATOR_OBJECT_LIT,
+	      seqObjUID,
+	      createTime, 
+	      createTime,
+	      "Y",
+              SUPER_USER);
+  cliRC = cliInterface.executeImmediate(buf);
+  
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', %Ld, %d, %Ld, %Ld, %Ld, %Ld, '%s', %Ld, %Ld, %Ld)",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
+	      (sgo->isExternalSG() ? COM_EXTERNAL_SG_LIT : COM_INTERNAL_SG_LIT),
+	      seqObjUID, 
+	      REC_BIN64_SIGNED, 
+	      sgo->getStartValue(),
+	      sgo->getIncrement(),
+	      sgo->getMaxValue(),
+	      sgo->getMinValue(),
+	      (sgo->getCycle() ? "Y" : "N"), 
+	      sgo->getCache(),
+	      sgo->getStartValue(),
+	      0LL);
+
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
+  return;
+}
+
+void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequenceNode,
+					  NAString &currCatName, NAString &currSchName)
+{
+  Lng32 cliRC;
+  Lng32 retcode;
+
+  char buf[4000];
+
+  NAString sequenceName = (NAString&)alterSequenceNode->getSeqName();
+
+  ComObjectName seqName(sequenceName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  seqName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  NAString catalogNamePart = seqName.getCatalogNamePartAsAnsiString();
+  NAString schemaNamePart = seqName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString seqNamePart = seqName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extSeqName = seqName.getExternalName(TRUE);
+
+  ElemDDLSGOptions * sgo = alterSequenceNode->getSGoptions();
+
+  ExeCliInterface cliInterface(STMTHEAP);
+  
+  NABoolean trustedCaller = FALSE;
+  trustedCaller = TRUE;
+
+  // Verify that the current user has authority to perform operation
+  ComUserVerifyObj verifyAuth(seqName, ComUserVerifyObj::OBJ_OBJ_TYPE);
+  if (!verifyAuth.isAuthorized(ComUser::CREATE_TABLE, trustedCaller))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1017);
+      return;
+    }
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+				   catalogNamePart, schemaNamePart, seqNamePart, NULL);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+  
+  if (retcode == 0) // does not exist
+    {
+      CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-1389)
+			  << DgString0(extSeqName);
+
+      processReturn();
+
+      return;
+    }
+
+  Int64 seqUID = 
+    getObjectUID(&cliInterface,
+		 catalogNamePart.data(), schemaNamePart.data(), seqNamePart.data(),
+		 COM_SEQUENCE_GENERATOR_OBJECT_LIT);
+  
+  char setOptions[2000];
+  char tmpBuf[1000];
+
+  strcpy(setOptions, " set ");
+  if (sgo->isIncrementSpecified())
+    {
+      str_sprintf(tmpBuf, " increment = %Ld,", sgo->getIncrement());
+      strcat(setOptions, tmpBuf);
+    }
+
+  if (sgo->isMaxValueSpecified())
+    {
+      str_sprintf(tmpBuf, " max_value = %Ld,", sgo->getMaxValue());
+      strcat(setOptions, tmpBuf);
+    }
+
+  if (sgo->isMinValueSpecified())
+    {
+      str_sprintf(tmpBuf, " min_value = %Ld,", sgo->getMinValue());
+      strcat(setOptions, tmpBuf);
+    }
+
+  if (sgo->isCacheSpecified())
+    {
+      str_sprintf(tmpBuf, " cache_size = %Ld,", sgo->getCache());
+      strcat(setOptions, tmpBuf);
+    }
+
+ if (sgo->isCycleSpecified())
+    {
+      str_sprintf(tmpBuf, " cycle_option = '%s',", (sgo->getCycle() ? "Y" : "N"));
+      strcat(setOptions, tmpBuf);
+    }
+
+  // remove last comma
+  setOptions[strlen(setOptions)-1] = 0;
+
+  str_sprintf(buf, "update %s.\"%s\".%s %s where seq_uid = %Ld",
+	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
+	      setOptions,
+	      seqUID);
+
+  cliRC = cliInterface.executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
+  CorrName cn(seqNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+  cn.setSpecialType(ExtendedQualName::SG_TABLE);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+
+  return;
+}
+
+void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode,
+					 NAString &currCatName, NAString &currSchName)
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  NAString sequenceName = (NAString&)dropSequenceNode->getSeqName();
+
+  ComObjectName seqName(sequenceName, COM_TABLE_NAME);
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  seqName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  NAString catalogNamePart = seqName.getCatalogNamePartAsAnsiString();
+  NAString schemaNamePart = seqName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString objectNamePart = seqName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extSeqName = seqName.getExternalName(TRUE);
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  retcode = existsInSeabaseMDTable(&cliInterface, 
+				   catalogNamePart, schemaNamePart, objectNamePart,
+				   NULL);
+  if (retcode < 0)
+    {
+      processReturn();
+
+      return;
+    }
+  
+  if (retcode == 0) // does not exist
+    {
+      CmpCommon::diags()->clear();
+      
+      *CmpCommon::diags() << DgSqlCode(-1389)
+			  << DgString0(extSeqName);
+
+      processReturn();
+
+      return;
+    }
+
+  // Check to see if the user has the authority to drop the table
+  NABoolean trustedCaller = FALSE;
+  trustedCaller = TRUE;
+
+  ComObjectName verifyName;
+  verifyName = seqName;
+  ComUserVerifyObj verifyAuth(verifyName, ComUserVerifyObj::OBJ_OBJ_TYPE);
+  if (!verifyAuth.isAuthorized(ComUser::DROP_TABLE, trustedCaller))
+  {
+    *CmpCommon::diags() << DgSqlCode(-1017);
+
+    processReturn ();
+
+    return;
+  }
+
+  if (deleteFromSeabaseMDTable(&cliInterface, 
+			       catalogNamePart, schemaNamePart, objectNamePart, 
+			       COM_SEQUENCE_GENERATOR_OBJECT_LIT))
+    return;
+
+  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+  cn.setSpecialType(ExtendedQualName::SG_TABLE);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+ 
+  return;
 }
 
 short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern)
@@ -4090,7 +4490,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   if ((ddlExpr->dropHbase()) ||
       (ddlExpr->initHbase()) ||
       (ddlExpr->createMDViews()) ||
-      (ddlExpr->dropMDViews()))
+      (ddlExpr->dropMDViews()) ||
+      (ddlExpr->addSeqTable()))
     ignoreUninitTrafErr = TRUE;
 
   // if metadata views are being created during initialize trafodion, then this
@@ -4102,7 +4503,23 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 	ddlNode->castToStmtDDLNode()->castToStmtDDLCreateView();
       
       ComObjectName viewName(createViewParseNode->getViewName());
-       if ((isSeabaseMD(viewName)) &&
+      if ((isSeabaseMD(viewName)) &&
+	  (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+	  (CmpCommon::context()->isUninitializedSeabase()))
+	{
+	  ignoreUninitTrafErr = TRUE;
+	}
+    }
+  // if metadata tables are being created during initialize trafodion, then this
+  // context will be uninitialized.
+  // Check for that and ignore uninitialize traf error.
+  else if ((ddlNode) && (ddlNode->getOperatorType() == DDL_CREATE_TABLE))
+    {
+      StmtDDLCreateTable * createTableParseNode =
+	ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable();
+      
+      ComObjectName tableName(createTableParseNode->getTableName());
+      if ((isSeabaseMD(tableName)) &&
 	  (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
 	  (CmpCommon::context()->isUninitializedSeabase()))
 	{
@@ -4129,6 +4546,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->initHbase()) ||
       (ddlExpr->createMDViews()) ||
       (ddlExpr->dropMDViews()) ||
+      (ddlExpr->addSeqTable()) ||
       ((ddlNode) &&
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
 	(ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
@@ -4137,7 +4555,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 	  (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintRIArray().entries() > 0) ||
 	  (ddlNode->castToStmtDDLNode()->castToStmtDDLCreateTable()->getAddConstraintCheckArray().entries() > 0))))))
     {
-      // transaction will be started and commited in dropSeabaseMD method.
+      // transaction will be started and commited in called methods.
       startXn = FALSE;
     }
 
@@ -4169,6 +4587,10 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->dropMDViews())
     {
       dropSeabaseMDviews();
+    }
+  else if (ddlExpr->addSeqTable())
+    {
+      createSeabaseSeqTable();
     }
   else if (ddlExpr->purgedataHbase())
     {
@@ -4428,9 +4850,30 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 	  
 	  dropSeabaseRoutine(dropRoutineParseNode, currCatName, currSchName);
 	}
+       else if (ddlNode->getOperatorType() == DDL_CREATE_SEQUENCE)
+	{
+	  // create seabase sequence
+	  StmtDDLCreateSequence * createSequenceParseNode =
+	    ddlNode->castToStmtDDLNode()->castToStmtDDLCreateSequence();
+	  
+	  if (createSequenceParseNode->isAlter())
+	    alterSeabaseSequence(createSequenceParseNode, currCatName, 
+				 currSchName);
+	  else
+	    createSeabaseSequence(createSequenceParseNode, currCatName, 
+				  currSchName);
+	}
+       else if (ddlNode->getOperatorType() == DDL_DROP_SEQUENCE)
+	 {
+	   // drop seabase sequence
+	   StmtDDLDropSequence * dropSequenceParseNode =
+	     ddlNode->castToStmtDDLNode()->castToStmtDDLDropSequence();
+	   
+	   dropSeabaseSequence(dropSequenceParseNode, currCatName, currSchName);
+	 }
       
     } // else
-
+  
 label_return:
   restoreAllControlsAndFlags();
 

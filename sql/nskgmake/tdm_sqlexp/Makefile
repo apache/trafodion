@@ -65,6 +65,7 @@ CPPSRC := BigNumHelper.cpp \
 	ExpPCodeOptsPeeling.cpp \
 	ExpPCodeOptsRuntime.cpp \
 	ExpPCodeOptsNativeExpr.cpp \
+	ExpSeqGen.cpp \
 	ExpSequenceFunction.cpp \
 	ExpSqlTupp.cpp \
 	Hbase_constants.cpp \

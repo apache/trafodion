@@ -422,6 +422,39 @@ static const QString seabaseHistogramIntervalsDDL[] =
   {" ; "}
 };
 
+static const QString seabaseSeqGenDDL[] =
+{
+  {" create table %s.\"%s\"."SEABASE_SEQ_GEN" "},
+  {" ( "},
+  {"   seq_type char(2) not null, "},
+  {"   seq_uid largeint not null, "},
+  {"   fs_data_type integer not null, "},
+
+  {"   start_value largeint not null, "},
+  //  {"   start_value numeric(30) not null, "},
+
+  {"   increment largeint not null, "},
+
+  {"   max_value largeint not null, "},
+  //  {"   max_value numeric(30) not null, "},
+
+  {"   min_value largeint not null, "},
+  //  {"   min_value numeric(30) not null, "},
+
+  {"   cycle_option char(2) not null, "},
+  {"   cache_size largeint not null, "},
+
+  // next value that seq generator will return
+  {"   next_value largeint not null, "},
+  //  {"   curr_value numeric(30) not null, "},
+
+  // number of seq generator calls accessing this metadata table
+  {"   num_calls largeint not null "},
+
+  {" ) "},
+  {" primary key (seq_uid) salt using 8 partitions "},
+  {" ; "}
+};
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -586,6 +619,7 @@ static const QString seabaseOldMDv11ViewsDDL[] =
 #define TRAF_INDEXES_VIEW "INDEXES_VIEW"
 #define TRAF_KEYS_VIEW "KEYS_VIEW"
 #define TRAF_REF_CONSTRAINTS_VIEW "REF_CONSTRAINTS_VIEW"
+#define TRAF_SEQUENCES_VIEW "SEQUENCES_VIEW"
 #define TRAF_TABLES_VIEW "TABLES_VIEW"
 #define TRAF_VIEWS_VIEW "VIEWS_VIEW"
 
@@ -709,6 +743,24 @@ static const QString createTrafRefConstraintsViewQuery[] =
   {"  ; "}
 };
 
+static const QString createTrafSequencesViewQuery[] =
+{
+  {" create view %s.\"%s\"."TRAF_SEQUENCES_VIEW" as "},
+  {" select O.catalog_name, O.schema_name, O.object_name seq_name, "},
+  {"           S.start_value, S.increment, S.max_value, S.min_value, "},
+  {"           S.cycle_option, case when S.cache_size = 0 then 'N' else 'Y' end cache_option, "},
+  {"           S.cache_size, S.next_value, S.num_calls "},
+  {"   from %s.\"%s\".\"%s\" O, "},
+  {"   %s.\"%s\".\"%s\" S "},
+  {"  where O.catalog_name = '%s' "},
+  {"        and O.schema_name != '%s' "},
+  {"        and O.object_uid = S.seq_uid "},
+  {"        and O.object_type = '%s' "},
+  {"  for read uncommitted access "},
+  {"  order by 1,2,3 "},
+  {"  ; "}
+};
+
 static const QString createTrafTablesViewQuery[] =
 {
   {" create view %s.\"%s\"."TRAF_TABLES_VIEW" as "},
@@ -767,6 +819,11 @@ static const MDViewInfo allMDviewsInfo[] = {
     TRAF_REF_CONSTRAINTS_VIEW,
     createTrafRefConstraintsViewQuery,
     sizeof(createTrafRefConstraintsViewQuery)
+  },
+  {
+    TRAF_SEQUENCES_VIEW,
+    createTrafSequencesViewQuery,
+    sizeof(createTrafSequencesViewQuery)
   },
   {
     TRAF_TABLES_VIEW,
