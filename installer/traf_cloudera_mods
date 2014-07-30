@@ -202,7 +202,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $CLOUDERA_ADMIN:$CLOUDERA_PASS
                 "value" : "org.apache.hadoop.hbase.ipc.TransactionalRegionInterface"
 		}, {
 		"name" : "hbase_regionserver_config_safety_valve", 
-		"value" : "<property>\r\n   <name>hbase.regionserver.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer</value>\r\n</property>\r\n<property>\r\n  <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n<property>\r\n   <name>hbase.hlog.splitter.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value>\r\n</property>\r\n<property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n"
+		"value" : "<property>\r\n   <name>hbase.regionserver.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer</value>\r\n</property>\r\n<property>\r\n  <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n<property>\r\n   <name>hbase.hlog.splitter.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value>\r\n</property>\r\n<property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n "
 		} ] 
 	} ] 
 }' \
