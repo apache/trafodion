@@ -5422,13 +5422,23 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                 // Process terminated so handle the exit processing.
                 // Termination detected through a child death signal or
                 // a broken stderr pipe for an attached process.
-                if (trace_settings & TRACE_PROCESS)
-                    trace_printf("%s@%d Setting State_Stopped for process %s(%d,%d)\n",
-                                 method_name, __LINE__, process->GetName(), process->GetNid(), process->GetPid() );
+
+                // Note: Exit_Process() will delete the process object, so
+                //       save the process information needed before the call
+                PROCESSTYPE processType = process->GetType();
+                string      processName = process->GetName();
+                int         processNid  = process->GetNid();
+                int         processPid  = process->GetPid();
                 Exit_Process( process, abend, downNode );
+                if (trace_settings & TRACE_PROCESS)
+                    trace_printf( "%s@%d Set State_Stopped for process %s(%d,%d), abend=%d, down=%d, "
+                                  "killingMyNode=%d,DTM aborted=%d, SMS aborted=%d\n"
+                                , method_name, __LINE__
+                                , processName.c_str(), processNid, processPid, abend, downNode
+                                , MyNode->IsKillingNode(), MyNode->IsDTMAborted(), MyNode->IsSMSAborted());
                 if ( !MyNode->IsKillingNode() )
                 {
-                    switch ( process->GetType() )
+                    switch ( processType )
                     {
                     case ProcessType_DTM:
                         if ( MyNode->IsDTMAborted() )
@@ -5436,12 +5446,12 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                             char buf[MON_STRING_BUF_SIZE];
                             snprintf(buf, sizeof(buf),
                                      "[%s], DTM (%s) aborted, Node %s going down\n",
-                                     method_name, process->GetName(), MyNode->GetName());
+                                     method_name, processName.c_str(), MyNode->GetName());
                             mon_log_write(MON_PROCESS_SETSTATE_1, SQ_LOG_INFO, buf);
         
                             snprintf( buf, sizeof(buf), 
                                       "DTM (%s) aborted, Node %s going down\n", 
-                                      process->GetName(), MyNode->GetName());
+                                      processName.c_str(), MyNode->GetName());
                             genSnmpTrap( buf );
         
                             // DTM just died unexpectedly, so bring the node down
@@ -5454,12 +5464,12 @@ void CProcessContainer::SetProcessState( CProcess *process, STATE state, bool ab
                             char buf[MON_STRING_BUF_SIZE];
                             snprintf(buf, sizeof(buf),
                                      "[%s], SMS (%s) aborted, Node %s going down\n",
-                                     method_name, process->GetName(), MyNode->GetName());
+                                     method_name, processName.c_str(), MyNode->GetName());
                             mon_log_write(MON_PROCESS_SETSTATE_2, SQ_LOG_INFO, buf);
         
                             snprintf( buf, sizeof(buf), 
                                       "SMS (%s) aborted, Node %s going down\n", 
-                                      process->GetName(), MyNode->GetName());
+                                      processName.c_str(), MyNode->GetName());
                             genSnmpTrap( buf );
         
                             // SMS just died unexpectedly, so bring the node down
