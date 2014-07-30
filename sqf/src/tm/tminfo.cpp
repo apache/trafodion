@@ -509,18 +509,34 @@ void TM_Info::initialize()
     }
 
     // Configure threadPool
-    lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 
-                          (char *) CLUSTER_GROUP, (char *) DTM_MAX_NUM_THREADS, 
-                          la_value);
-    lv_max_num_threads = ((lv_error == 0)?atoi(la_value):-1);
-    lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 
-                          (char *) CLUSTER_GROUP, (char *) DTM_STEADYSTATE_LOW_THREADS, 
-                          la_value);
-    lv_ss_low_threads = ((lv_error == 0)?atoi(la_value):-1);
-    lv_error = tm_reg_get(MS_Mon_ConfigType_Cluster, 
-                          (char *) CLUSTER_GROUP, (char *) DTM_STEADYSTATE_HIGH_THREADS, 
-                          la_value);
-    lv_ss_high_threads = ((lv_error == 0)?atoi(la_value):-1);
+    ms_getenv_int ("DTM_MAX_NUM_THREADS", &lv_max_num_threads);
+    if (lv_max_num_threads)
+    {   
+      TMTrace (1, ("Enabling DTM_MAX_NUM_THREADS from env variable\n"));
+    }
+    else 
+    {
+      lv_max_num_threads = MAX_NUM_THREADS;
+    }
+    ms_getenv_int ("DTM_STEADYSTATE_LOW_THREADS", &lv_ss_low_threads);
+    if (lv_ss_low_threads)
+    {
+      TMTrace (1, ("Enabling DTM_STEADYSTATE_LOW_THREADS from env variable\n"));
+    }
+    else 
+    {
+      lv_ss_low_threads = STEADYSTATE_LOW_THREADS;
+    }
+    ms_getenv_int ("DTM_STEADYSTATE_HIGH_THREADS", &lv_ss_high_threads);
+    if (lv_ss_high_threads)
+    {
+      TMTrace (1, ("Enabling DTM_STEADYSTATE_HIGH_THREADS from env variable\n"));
+    }
+    else 
+    {
+      lv_ss_high_threads = STEADYSTATE_HIGH_THREADS;
+    }
+    
     lv_success = ip_threadPool->setConfig(tm_stats(), lv_max_num_threads, 
                                           lv_ss_low_threads, lv_ss_high_threads);
     if (lv_success)

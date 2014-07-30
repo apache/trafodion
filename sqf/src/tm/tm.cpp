@@ -203,10 +203,10 @@ void tm_start_timerThread()
    {
       gv_tm_info.tmTimer(lp_timer);
       gv_startTime = lp_timer->startTime();
+      lp_timer->addControlpointEvent(gv_tm_info.cp_interval());
       if (gv_tm_info.lead_tm())
       {
           TMTrace(2, ("tm_start_timerThread lead DTM, adding timer events\n")); 
-         lp_timer->addControlpointEvent(gv_tm_info.cp_interval());
          lp_timer->addStatsEvent(gv_tm_info.stats_interval());
       }
      lp_timer->addRMRetryEvent(gv_tm_info.RMRetry_interval());
@@ -1756,8 +1756,8 @@ void tm_get_leader_info()
             gv_tm_info.lead_tm_takeover(true);
             gv_tm_info.open_other_tms();
             // Add a Checkpoint event to drive cp processing
-            gv_tm_info.tmTimer()->cancelControlpointEvent();
-            gv_tm_info.tmTimer()->addControlpointEvent(gv_tm_info.cp_interval());
+//            gv_tm_info.tmTimer()->cancelControlpointEvent();
+//            gv_tm_info.tmTimer()->addControlpointEvent(gv_tm_info.cp_interval());
             // Add a stats event
             gv_tm_info.tmTimer()->cancelStatsEvent();
             gv_tm_info.tmTimer()->addStatsEvent(gv_tm_info.stats_interval());
@@ -2280,11 +2280,8 @@ void tm_process_registry_change(MS_Mon_Change_def *pp_change )
           // Cancel the TmTimer control point event and re-add with the
           // new interval.
           gv_tm_info.cp_interval(lv_value);
-          if (gv_tm_info.lead_tm())
-          {
-            gv_tm_info.tmTimer()->cancelControlpointEvent();
-            gv_tm_info.tmTimer()->addControlpointEvent(lv_value);
-          }
+          gv_tm_info.tmTimer()->cancelControlpointEvent();
+          gv_tm_info.tmTimer()->addControlpointEvent(lv_value);
         }
     }
     else if (strcmp(pp_change->key, DTM_STATS_INTERVAL) == 0)

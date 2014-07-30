@@ -75,7 +75,7 @@ public class TransactionManager {
         try {
 	    transactionRS.commit(regionName,transactionId);
 	}catch (Exception e) { 
-	        LOG.error("exception in doCommitX: " + e);
+	        LOG.error("exception in doCommitX for transaciton: " + transactionId + ": " + e);
 		// We have received our reply in the form of an exception,
 	        // so decrement outstanding count and wake up waiters to avoid
 	        // getting hung forever
@@ -113,6 +113,7 @@ public class TransactionManager {
         }
         catch(IOException e) {
            LOG.warn("Received IOException " + e + " from commitRequest for transaction " + transactionId + " rethrowing exception");
+           e.printStackTrace();
            throw e;
         }
 

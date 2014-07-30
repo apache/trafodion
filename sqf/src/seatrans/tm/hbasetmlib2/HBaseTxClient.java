@@ -70,11 +70,13 @@ public class HBaseTxClient {
 
    boolean useTlog;
    boolean useForgotten;
+   boolean forceForgotten;
    boolean useRecovThread;
 
    Configuration config;
    TransactionManager trxManager;
-   ConcurrentHashMap<Long, TransactionState> mapTransactionStates = new ConcurrentHashMap<Long, TransactionState>();
+   Map<Long, TransactionState> mapTransactionStates = new HashMap<Long, TransactionState>();
+   private final Object mapLock = new Object();
 
    public static final int RET_OK = 0;
    public static final int RET_EXCEPTION = 4;
@@ -136,6 +138,19 @@ public class HBaseTxClient {
          LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is not in ms.env");
       }
       LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is " + useForgotten);
+
+      forceForgotten = false;
+      try {
+         String forgottenForce = System.getenv("TM_TLOG_FORCE_FORGOTTEN");
+         if (forgottenForce != null){
+            forceForgotten = (Integer.parseInt(forgottenForce) != 0);
+            LOG.debug("forgottenForce != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_FORCE_FORGOTTEN is not in ms.env");
+      }
+      LOG.info("forceForgotten is " + forceForgotten);
 
       useTlog = false;
       useRecovThread = false;
@@ -209,6 +224,19 @@ public class HBaseTxClient {
       }
       LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is " + useForgotten);
 
+      forceForgotten = false;
+      try {
+         String forgottenForce = System.getenv("TM_TLOG_FORCE_FORGOTTEN");
+         if (forgottenForce != null){
+            forceForgotten = (Integer.parseInt(forgottenForce) != 0);
+            LOG.debug("forgottenForce != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_FORCE_FORGOTTEN is not in ms.env");
+      }
+      LOG.info("forceForgotten is " + forceForgotten);
+
       useTlog = false;
       useRecovThread = false;
       try {
@@ -224,7 +252,8 @@ public class HBaseTxClient {
          try {
             tLog = new TmAuditTlog(config);
          } catch (Exception e ){
-            LOG.error("Unable to create TmAuditTlog, throwing exception");
+            LOG.error("Unable to create TmAuditTlog, throwing exception " + e);
+            e.printStackTrace();
             throw new RuntimeException(e);
          }
       }
@@ -266,7 +295,9 @@ public class HBaseTxClient {
     	  throw new Exception("TransactionState is null");
       }
 
-      mapTransactionStates.put(tx.getTransactionId(), tx);
+      synchronized(mapLock) {
+         mapTransactionStates.put(tx.getTransactionId(), tx);
+      }
 
       LOG.debug("Exit beginTransaction, Transaction State: " + tx + " mapsize: " + mapTransactionStates.size());
      return tx.getTransactionId();
@@ -299,12 +330,19 @@ public class HBaseTxClient {
       try {
          trxManager.abort(ts);
       } catch(IOException e) {
-          mapTransactionStates.remove(transactionID);
+          synchronized(mapLock) {
+             mapTransactionStates.remove(transactionID);
+          }
           LOG.error("Returning from HBaseTxClient:abortTransaction, txid: " + transactionID + " retval: EXCEPTION");
           return RET_EXCEPTION;
       }
       if (useTlog && useForgotten) {
-         tLog.putSingleRecord(transactionID, "FORGOTTEN", null, false);
+         if (forceForgotten) {
+            tLog.putSingleRecord(transactionID, "FORGOTTEN", null, true);
+         }
+         else {
+            tLog.putSingleRecord(transactionID, "FORGOTTEN", null, false);
+         }
       }
  //     mapTransactionStates.remove(transactionID);
 
@@ -329,7 +367,9 @@ public class HBaseTxClient {
               LOG.trace("Exit OK prepareCommit, txid: " + transactionId);
               return RET_OK;
           case TransactionalRegionInterface.COMMIT_OK_READ_ONLY:
-             mapTransactionStates.remove(transactionId);
+             synchronized(mapLock) {
+                mapTransactionStates.remove(transactionId);
+             }
              LOG.trace("Exit OK_READ_ONLY prepareCommit, txid: " + transactionId);
              return RET_READONLY;
           case TransactionalRegionInterface.COMMIT_CONFLICT:
@@ -345,6 +385,10 @@ public class HBaseTxClient {
      } catch (CommitUnsuccessfulException e) {
   	   LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + RET_NOCOMMITEX + " CommitUnsuccessfulException");
   	   return RET_NOCOMMITEX;
+     }
+     catch (Exception e) {
+           LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + RET_NOCOMMITEX + " Exception " + e);
+           return RET_NOCOMMITEX;
      }
    }
 
@@ -379,7 +423,12 @@ public class HBaseTxClient {
           return RET_EXCEPTION;
        }
        if (useTlog && useForgotten) {
-          tLog.putSingleRecord(transactionId, "FORGOTTEN", null, false);
+          if (forceForgotten) {
+             tLog.putSingleRecord(transactionId, "FORGOTTEN", null, true);
+          }
+          else {
+             tLog.putSingleRecord(transactionId, "FORGOTTEN", null, false);
+          }
        }
 //       mapTransactionStates.remove(transactionId);
 
@@ -404,7 +453,9 @@ public class HBaseTxClient {
        throw new Exception("Exception during completeRequest, unable to commit.");
        }
 
-     mapTransactionStates.remove(transactionId);
+     synchronized(mapLock) {
+        mapTransactionStates.remove(transactionId);
+     }
 
      LOG.debug("Exit completeRequest txid: " + transactionId + " mapsize: " + mapTransactionStates.size());
      return RET_OK;
@@ -451,7 +502,8 @@ public class HBaseTxClient {
        LOG.debug("RegisterRegion adding table name " + regionTableName);
        ts.addTableName(regionTableName);
 
-       mapTransactionStates.put(ts.getTransactionId(), ts); 
+       // Removing unnecessary put back into the map
+       // mapTransactionStates.put(ts.getTransactionId(), ts);
 
        LOG.trace("Exit callRegisterRegion, txid: [" + transactionId + "] with mapsize: "
                   + mapTransactionStates.size());
@@ -470,18 +522,19 @@ public class HBaseTxClient {
        return (ts.getParticipantCount() - ts.getRegionsToIgnoreCount());
    }
 
-   public boolean addControlPoint() throws Exception {
+   public long addControlPoint() throws Exception {
       LOG.trace("Enter addControlPoint");
+      long result = 0L;
       try {
          LOG.trace("HBaseTxClient calling tLog.addControlPoint with mapsize " + mapTransactionStates.size());
-         tLog.addControlPoint(mapTransactionStates);
+         result = tLog.addControlPoint(mapTransactionStates);
       }
       catch(IOException e){
           LOG.error("addControlPoint IOException " + e);
           throw e;
       }
-      LOG.trace("Exit addControlPoint, returning: ");
-      return true;
+      LOG.trace("Exit addControlPoint, returning: " + result);
+      return result;
    }
    
      /**

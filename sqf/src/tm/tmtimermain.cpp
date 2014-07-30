@@ -38,8 +38,7 @@ void tmTimer_initiate_cp ()
     if (gv_tm_info.state() != TM_STATE_UP && 
         gv_tm_info.state() != TM_STATE_TX_DISABLED &&
         gv_tm_info.state() != TM_STATE_QUIESCE &&
-        gv_tm_info.state() != TM_STATE_DRAIN &&
-        gv_tm_info.allTMsOpen())
+        gv_tm_info.state() != TM_STATE_DRAIN)
     {
         TMTrace (2, ("tmTimer_inititate_cp: EXIT - TM state %d disallows cp.\n",
             gv_tm_info.state()));
@@ -54,8 +53,7 @@ void tmTimer_initiate_cp ()
 
         // write our records
        gv_tm_info.write_all_trans_state();
-       // now write control point
-       gv_tm_info.write_control_point(false);
+
        gv_system_tx_count = 0;
    }
    TMTrace(2, ("tmTimer_initiate_cp : EXIT.\n"));

@@ -778,7 +778,7 @@ public class TransactionalRegion extends HRegion {
                 int lv_timeIndex;
                 synchronized (totalCommits){
                    lv_totalCommits = totalCommits.incrementAndGet();
-                   lv_timeIndex = timeIndex.getAndIncrement();
+                   lv_timeIndex = (timeIndex.getAndIncrement() % 500);
                 }
 
                 long commitCheckStartTime = 0;
@@ -793,7 +793,7 @@ public class TransactionalRegion extends HRegion {
 
                 LOG.debug("commitRequest timeIndex is " + lv_timeIndex);
                 commitCheckStartTime = System.nanoTime();
-		synchronized (commitCheckLock) {
+               synchronized (commitCheckLock) {
                         commitCheckStartTime = System.nanoTime();
                         state = getTransactionState(transactionId);
                         // may change to indicate a NOTFOUND case  then depends on the TM ts state, if reinstated tx, ignore the exception
@@ -835,7 +835,7 @@ public class TransactionalRegion extends HRegion {
                         commitCheckEndTime = putBySequenceEndTime = System.nanoTime();
                 } // exit sync block of commitCheckLock
                 
-	        if (state.hasWrite()) {
+               if (state.hasWrite()) {
        			transactionLog.writeCommitRequestToLog(getRegionInfo(), state);
                         writeToLogEndTime = System.nanoTime();
                         writeToLogTimes[lv_timeIndex] = writeToLogEndTime - commitCheckEndTime;
@@ -843,7 +843,7 @@ public class TransactionalRegion extends HRegion {
                         LOG.debug("commitRequest COMMIT_OK -- EXIT txId: " + transactionId);
                         returnPending = true;
 //			return TransactionalRegionInterface.COMMIT_OK;
-		}
+               }
                 else {
                    writeToLogTimes[lv_timeIndex] = 0;
                 }
@@ -881,7 +881,7 @@ public class TransactionalRegion extends HRegion {
                    minWriteToLogTime = writeToLogTimes[lv_timeIndex];
                 }
 
-                if ((lv_timeIndex % 500) == 0) {
+                if (lv_timeIndex == 499) {
                    avgCommitCheckTime = (double) (totalCommitCheckTime/lv_totalCommits);
                    avgConflictTime = (double) (totalConflictTime/lv_totalCommits);
                    avgPutTime = (double) (totalPutTime/lv_totalCommits);
@@ -962,18 +962,18 @@ public class TransactionalRegion extends HRegion {
 	public boolean commitIfPossible(final long transactionId)
 			throws IOException {
                 LOG.trace("commitIfPossible -- ENTRY txId: " + transactionId);
-		int status = commitRequest(transactionId);
+                int status = commitRequest(transactionId);
 
-		if (status == TransactionalRegionInterface.COMMIT_OK) {
+                if (status == TransactionalRegionInterface.COMMIT_OK) {
 			commit(transactionId);
                         LOG.trace("commitIfPossible -- ENTRY txId: " + transactionId + " COMMIT_OK");
 			return true;
-		} else if (status == TransactionalRegionInterface.COMMIT_OK_READ_ONLY) {
+                } else if (status == TransactionalRegionInterface.COMMIT_OK_READ_ONLY) {
                         LOG.trace("commitIfPossible -- ENTRY txId: " + transactionId + " COMMIT_OK_READ_ONLY");
 			return true;
-		}
+                }
                 LOG.trace("commitIfPossible -- ENTRY txId: " + transactionId + " Commit Unsuccessful");
-		return false;
+                return false;
 	}
 
 	private boolean hasConflict(final TransactionState state) {

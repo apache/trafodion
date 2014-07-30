@@ -206,7 +206,7 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_PARREGION  ].jm_name      = "participatingRegions";
   JavaMethods_[JM_PARREGION  ].jm_signature = "(J)I";
   JavaMethods_[JM_CNTPOINT   ].jm_name      = "addControlPoint";
-  JavaMethods_[JM_CNTPOINT   ].jm_signature = "()Z";
+  JavaMethods_[JM_CNTPOINT   ].jm_signature = "()J";
   JavaMethods_[JM_STALL      ].jm_name      = "stall";
   JavaMethods_[JM_STALL      ].jm_signature = "(I)S";
   JavaMethods_[JM_RQREGINFO  ].jm_name      = "callRequestRegionInfo";
@@ -251,11 +251,16 @@ short CHbaseTM::addControlPoint(){
     abort();
   }
 
-  _tlp_jenv->CallBooleanMethod(javaObj_, JavaMethods_[JM_CNTPOINT].methodID);
+  jlong jresult = _tlp_jenv->CallLongMethod(javaObj_, JavaMethods_[JM_CNTPOINT].methodID);
   exc = _tlp_jenv->ExceptionOccurred();
   if(exc) {
+    printf("JavaObjectInterfaceTM::JavaMethods_[JM_CNTPOINT].methodID returned Exception\n");
+    fflush(stdout);
     _tlp_jenv->ExceptionDescribe();
     _tlp_jenv->ExceptionClear();
+    return RET_EXCEPTION;
+  }
+  if (jresult == 0L) {
     return RET_EXCEPTION;
   }
   return RET_OK;
