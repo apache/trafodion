@@ -58,7 +58,7 @@ class HSTableDef : public NABasicObject
     ~HSTableDef();
     virtual NABoolean objExists(labelDetail detail = MIN_INFO) = 0;
     virtual NABoolean publicSchemaExists() = 0;
-    Lng32 getColNum(const char *colName) const;
+    Lng32 getColNum(const char *colName, NABoolean errIfNotFound = TRUE) const;
     char* getColName(Lng32 colNum) const;
     HSColumnStruct& getColInfo(Lng32 colNum) const;
     virtual NAString getNodeName() const = 0;

@@ -1425,6 +1425,9 @@ public:
     //Add specified group to the singleGroup or multiGroup list as appropriate.
     void addGroup(HSColGroupStruct *group);
 
+    // Remove a single group.
+    void removeGroup(HSColGroupStruct* groupToRemove);
+
     // Remove the most recently added groups.
     NABoolean removeGroups(Lng32 numGroupsToRemove,
                            HSColGroupStruct* oldSingle,
