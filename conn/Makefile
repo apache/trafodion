@@ -21,7 +21,12 @@
 include $(MY_SQROOT)/macros.gmk #top level
 
 RM      = /bin/rm
-CLIENT_TAR	?= $(MY_SQROOT)/../trafodion_clients-$(TRAFODION_VER).tgz
+ifeq ($(SQ_BUILD_TYPE),release)
+  CLIENT_TAR	?= $(MY_SQROOT)/../trafodion_clients-$(TRAFODION_VER).tgz
+else
+  CLIENT_TAR	?= $(MY_SQROOT)/../trafodion_clients-$(TRAFODION_VER)-debug.tgz
+endif
+
 
 .PHONY: all
 all: pkg-clients
