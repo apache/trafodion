@@ -682,6 +682,12 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
   description += keyInfo;
 
+  description += "cache_size: ";
+  char cacheBuf[12];
+  snprintf(cacheBuf, 12, "%u", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->numCacheRows());
+  description += cacheBuf ;
+  description += " " ;
+
   /*
   // now get columns_retrieved
   description += "columns_retrieved: ";

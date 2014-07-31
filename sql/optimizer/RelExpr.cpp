@@ -12923,7 +12923,8 @@ Update::Update(const CorrName &name,
                ItemExpr *newRecExpr,
                ItemExpr *currOfCursorName,
                CollHeap *oHeap)
-  : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap)
+     : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
+       estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
 }
@@ -12950,6 +12951,8 @@ RelExpr * Update::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 				  outHeap);
   else
     result = (Update *) derivedNode;
+
+  result->setEstRowsAccessed(getEstRowsAccessed());
 
   return GenericUpdate::copyTopNode(result, outHeap);
 }
@@ -13013,7 +13016,7 @@ Delete::Delete(const CorrName &name, TableDesc *tabId, OperatorTypeEnum otype,
 	       CollHeap *oHeap)
   : GenericUpdate(name,tabId,otype,child,newRecExpr,currOfCursorName,oHeap),
     isFastDelete_(FALSE), noIMneeded_(FALSE),
-    csl_(csl)
+    csl_(csl),estRowsAccessed_(0)
 {
   setCacheableNode(CmpMain::BIND);
 }
@@ -13044,6 +13047,7 @@ RelExpr * Delete::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->isFastDelete_       = isFastDelete_;
   result->csl() = csl();
+  result->setEstRowsAccessed(getEstRowsAccessed());
 
   return GenericUpdate::copyTopNode(result, outHeap);
 }

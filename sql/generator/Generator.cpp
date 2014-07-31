@@ -2239,3 +2239,26 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
 
   return considerDefrag;
 }
+
+void Generator::setHBaseNumCacheRows(double estRowsAccessed, ComTdbHbaseAccess::HbasePerfAttributes * hbpa)
+{
+  // compute the number of rows accessed per scan node instance and use it
+  // to set HBase scan cache size (in units of number of rows). This cache
+  // is in the HBase client, i.e. in the java side of 
+  // master executor or esp process. Using this cache avoids RPC calls to the
+  // region server for each row, however setting the value too high consumes 
+  // memory and can lead to timeout errors as the RPC call that gets a 
+  // big chunk of rows can take longer to complete.
+  CollIndex myId = getFragmentDir()->getCurrentId();
+  Lng32 numProcesses = getFragmentDir()->getNumESPs(myId);
+  if (numProcesses == 0)
+    numProcesses++;
+  UInt32 rowsAccessedPerProcess = ceil(estRowsAccessed/numProcesses) ;
+  if (rowsAccessedPerProcess < CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN))
+    hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN));
+  else if (rowsAccessedPerProcess < CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MAX))
+    hbpa->setNumCacheRows(rowsAccessedPerProcess);
+  else
+      hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MAX));
+
+}
