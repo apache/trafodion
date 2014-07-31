@@ -439,10 +439,12 @@ if [ $? != 0 ]; then
     exit -1
 fi
 
+echo $TRAF_WORKDIR
 # Put build tar files in user's $HOME
 sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs-*.tgz $HOME_DIR/$TRAF_USER/dcs_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER

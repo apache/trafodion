@@ -29,6 +29,8 @@ typeset NODE_LIST="$HOSTNAME"
 typeset CLUSTERNAME="$HOSTNAME"
 typeset HBASE_TRX_JAR=""
 typeset HOME_DIR="/home"
+typeset timestamp=$(date +%F-%H-%M-%S)
+typeset SETUP_LOG="$TRAF_WORKDIR/logs/trafodion_setup_$timestamp.log"
 
 CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
 #==============================================
@@ -126,6 +128,18 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+#==============================================
+#Info for log file
+
+echo "***Log File: trafodion_cloudera_setup script***" >> $SETUP_LOG
+echo >> $SETUP_LOG
+echo "Working directory: $TRAF_WORKDIR" >> $SETUP_LOG
+echo "User Id: $TRAF_USER" >> $SETUP_LOG
+echo "User password: $TRAF_USER_PASSWORD" >> $SETUP_LOG
+echo "Nodes: $NODE_LIST" >> $SETUP_LOG
+echo "Cluster: $CLUSTERNAME" >> $SETUP_LOG
+echo "Home directory: $HOME_DIR" >> $SETUP_LOG
+echo >> $SETUP_LOG
 
 #==============================================
 echo "***INFO: Checking the size of /var for Cloudera DB"
@@ -150,28 +164,28 @@ if [ -d ${var_file} ] ; then
 fi
 
 if [ -d ${clouderadb_varfile} ] ; then
-   echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists."
+   echo "*** WARNING: /var/lib/cloudera-scm-server-db already exists." | tee -a $SETUP_LOG
    if [ -h ${clouderadb_varfile} ] ; then
-      echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory."
+      echo "*** WARNING: The /var/lib/cloudera-scm-server-db is a symbolic link to a cloudera-scm-server-db directory." | tee -a $SETUP_LOG
       if ! [ -L ${clouderadb_varfile} ] ; then
-         echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not."
-         echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory."
+         echo "*** WARNING: The /var/lib/cloudera-scm-server-db exists but the matching cloudera-scm-server-db directory does not." | tee -a $SETUP_LOG
+         echo "*** WARNING: Check the desired location for cloudera-scm-servera-db directory and either establish a valid symbolic link to an existing directory or create the directory." | tee -a $SETUP_LOG
       fi
    elif [ ${var_on_root} -eq 0 ] ; then
         if [ ${var_size} -lt ${var_min} ] ; then
-           echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
-           echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space."
+           echo "*** WARNING: There is insufficient space available for the Cloudera database on /var." | tee -a $SETUP_LOG
+           echo "*** WARNING: It is recommended to review the 'installer/unsupported_tools/clouderaMoveDB.sh script to move the database to a disk with more available space." | tee -a $SETUP_LOG
         fi
    else
-        echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /."
-        echo "*** WARNING: No additional movement of the file is recommended."
+        echo "*** WARNING: /var/lib/cloudera-scm-server-db is already located directly on /." | tee -a $SETUP_LOG
+        echo "*** WARNING: No additional movement of the file is recommended." | tee -a $SETUP_LOG
    fi
 else
    if [ ${var_size} -lt ${var_min} ] ; then
-      echo "*** WARNING: There is insufficient space available for the Cloudera database on /var."
-      echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory."
+      echo "*** WARNING: There is insufficient space available for the Cloudera database on /var." | tee -a $SETUP_LOG
+      echo "*** WARNING: An attempt will be made to soft link the cloudera-scm-server-db directory to the / directory." | tee -a $SETUP_LOG
       if [ $UID -ne 0 ] ; then
-         echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access."
+         echo "*** WARNING: The cloudera-scm-server-db directory creation and soft linking must have root access." | tee -a $SETUP_LOG
       else
          if [ ! -d ${root}${clouderadb_file} ] ; then
             mkdir ${root}${clouderadb_file}
@@ -181,7 +195,7 @@ else
          fi
          ln -s ${root}${clouderadb_file} ${var_lib_file}
          if [ $? -ne 0 ] ; then
-            echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib."
+            echo "*** WARNING: The cloudera-scm-server-db directory was not successfully soft linked to /var/lib." | tee -a $SETUP_LOG
          fi
       fi
    fi
@@ -189,30 +203,55 @@ fi
 
 #==============================================
 
-echo "***INFO: Installing Cloudera, will need browser access to complete"
+echo "***INFO: Installing Cloudera, will need browser access to complete" | tee -a $SETUP_LOG
 
-wget ftp://sqstaf1.houston.hp.com/trafodion/cloudera-manager-installer.bin
+wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin
+
+if [ $? -ne 0 ]; then
+   echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
+   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   echo
+   exit -1
+fi
+
+wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
+
+if [ $? -ne 0 ]; then
+   echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
+   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   echo
+   exit -1
+fi
+
+sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
 
 chmod +x cloudera-manager-installer.bin
 
 sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme
 
+if [ $? -ne 0 ]; then
+   echo "***ERROR: Error while installing Cloudera" | tee -a $SETUP_LOG
+   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   echo
+   exit -1
+fi
+
+echo "**INFO: Complete Cloudera setup from http://localhost:7180" | tee -a $SETUP_LOG 
 
 #==============================================
 echo "***INFO: Running Trafodion Setup"
 if [[ $HBASE_TRX_JAR == "" ]]; then
 
-   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR
-
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR | tee -a $SETUP_LOG
 else
 
-   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR | tee -a $SETUP_LOG
 
 fi
 
-if [ $? != 0 ]; then
-   echo "***ERROR: Unable to run Trafodion Setup successfully"
+if [ ${PIPESTATUS[0]} != 0 ]; then
+   echo "***ERROR: Unable to run Trafodion Setup successfully" | tee -a $SETUP_LOG
    exit -1
 fi
 
-echo "***INFO: Cloudera and Trafodion setup complete"
+echo "***INFO: Cloudera and Trafodion setup complete" | tee -a $SETUP_LOG

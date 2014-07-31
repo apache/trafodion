@@ -29,6 +29,8 @@ typeset NODE_LIST="$HOSTNAME"
 typeset CLUSTERNAME="$HOSTNAME"
 typeset HBASE_TRX_JAR=""
 typeset HOME_DIR="/home"
+typeset timestamp=$(date +%F-%H-%M-%S)
+typeset SETUP_LOG="$TRAF_WORKDIR/logs/trafodion_setup_$timestamp.log"
 
 AMBARI=$(rpm -qa | grep ambari | wc -l)
 #==============================================
@@ -128,38 +130,63 @@ while [[ $# -gt 0 ]]; do
 done
 
 #==============================================
+#Info for log file
 
-echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete"
+echo "***Log File: trafodion_ambari_setup script***" >> $SETUP_LOG
+echo >> $SETUP_LOG
+echo "Working directory: $TRAF_WORKDIR" >> $SETUP_LOG
+echo "User Id: $TRAF_USER" >> $SETUP_LOG
+echo "User password: $TRAF_USER_PASSWORD" >> $SETUP_LOG
+echo "Nodes: $NODE_LIST" >> $SETUP_LOG
+echo "Cluster: $CLUSTERNAME" >> $SETUP_LOG
+echo "Home directory: $HOME_DIR" >> $SETUP_LOG
+echo >> $SETUP_LOG
+
+#==============================================
+
+echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete" | tee -a $SETUP_LOG
 
 wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.5.1/ambari.repo
+
+if [ $? -ne 0 ]; then
+   echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
+   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   echo
+   exit -1
+fi
 
 sudo cp ambari.repo /etc/yum.repos.d
 sudo yum --assumeyes install ambari-server
 sudo ambari-server setup
-sudo ambari-server stop
-#This will reset the database so that any previous installs will be deleted.
-sudo ambari-server reset
 sudo ambari-server start
 
-echo "***INFO: Complete Hortonworks/Ambari setup from http://localhost:8080"
+if [ $? -ne 0 ]; then
+   echo "***ERROR: Error while installing Hortonworks/Ambari" | tee -a $SETUP_LOG
+   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   echo
+   exit -1
+fi
+
+
+echo "***INFO: Complete Hortonworks/Ambari setup from http://localhost:8080" | tee -a $SETUP_LOG
 
 #==============================================
 
 echo "***INFO: Running Trafodion Setup"
 if [[ $HBASE_TRX_JAR == "" ]]; then
 
-   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR | tee -a $SETUP_LOG
 
 else
 
-   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR
+   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR | tee -a $SETUP_LOG
 
 fi
 
-if [ $? != 0 ]; then
-   echo "***ERROR: Unable to run Trafodion Setup successfully"
+if [ ${PIPESTATUS[0]} != 0 ]; then
+   echo "***ERROR: Unable to run Trafodion Setup successfully" | tee -a $SETUP_LOG
    exit -1
 fi
 
-echo "***INFO: Hortonworks/Ambari and Trafodion setup complete"
+echo "***INFO: Hortonworks/Ambari and Trafodion setup complete" | tee -a $SETUP_LOG
 

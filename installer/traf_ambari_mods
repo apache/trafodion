@@ -31,87 +31,10 @@ NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
 MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
 node_count=$(echo $NODE_LIST | wc -w)
 
-AMBARI_ADMIN="admin"
-AMBARI_PASSWORD="admin"
-AMBARI_URL=$(hostname --long):8080
-TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
-
-function displayHelp
-{
-  echo
-  echo "This script will configure HBase with Hbase-trx and co-processors needed"
-  echo "for Trafodion."
-  echo
-  echo "Usage: $(basename $0) [options]"
-  echo
-  echo "Options:"
-  echo "    --help             Print this message and exit."
-  echo "    --trafodion_build  Full path to the Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz)"
-  echo "    --ambari_userid    Ambari username if not chosen will default to admin"
-  echo "    --ambari_password  Ambari password if not chosen will default to admin"
-  echo "    --ambari_url       Ambari url:port if not chosen will default to hostname:7180"
-  echo
-}
-
-while [ $# -gt 0 ]; do
-
-  case $1 in
-   --trafodion_build)
-     shift
-     TRAF_BUILD=$1
-     ;;
-
-   --ambari_userid)
-     shift
-     AMBARI_ADMIN=$1
-     ;;
-
-   --ambari_password)
-     shift
-     AMBARI_PASSWORD=$1
-     ;;
-
-   --ambari_url)
-     shift
-     AMBARI_URL=$1
-     ;;
-
-   --help)
-     shift
-     displayHelp
-     exit
-     ;;
-
-   **)
-     echo "***ERROR: Incorrect Command."
-     displayHelp
-     exit
-     ;;
-
-  esac
-  shift
-done
-
-CLUSTER_NAME=$(curl -su $AMBARI_ADMIN:$AMBARI_PASSWORD http://$AMBARI_URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-
-if [ -z $CLUSTER_NAME ]; then
-  echo
-  echo "***ERROR: Please check input parameters"
-  echo
-  exit -1
-fi
-
-# make sure we're on a Ambari system
-ambari_installed=$(rpm -qa | grep ambari | wc -l )
-if [ $ambari_installed -eq 0 ]; then
-    echo "***ERROR: Ambari not detected.  This script is for Ambari distro only."
-    exit -1
-fi
-
-if [ -z "$MY_NODES" ]; then
-   echo "***ERROR: $TRAF_WORKDIR/my_nodes not found.  Unable to determine list of nodes."
-   exit -1
-fi
+TRAF_BUILD=$1
+AMBARI_ADMIN=$2
+AMBARI_PASSWORD=$3
+AMBARI_URL=$4
 
 #=====================================
 # copy Trafodion hbase trx jar to /usr/lib/hbase/lib

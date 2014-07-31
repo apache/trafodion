@@ -31,87 +31,10 @@ NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
 MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
 node_count=$(echo $NODE_LIST | wc -w)
 
-CLOUDERA_ADMIN="admin"
-CLOUDERA_PASSWORD="admin"
-CLOUDERA_MANAGER_URL=$(hostname --long):7180
-TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
-
-function displayHelp
-{
-  echo
-  echo "This script will configure HBase with Hbase-trx and co-processors needed" 
-  echo "for Trafodion."
-  echo
-  echo "Usage: $(basename $0) [options]"
-  echo 
-  echo "Options:"
-  echo "    --help               Print this message and exit."
-  echo "    --trafodion_build    The Trafodion build tar file path (defaults to $TRAF_WORKDIR/trafodion_build.tgz)"
-  echo "    --cloudera_userid    Cloudera username if not chosen will default to admin" 
-  echo "    --cloudera_password  Cloudera password if not chosen will default to admin" 
-  echo "    --cloudera_url       Cloudera url:port if not chosen will default to hostname:7180"
-  echo
-}
-
-while [ $# -gt 0 ]; do
-
-  case $1 in 
-   --trafodion_build)
-     shift
-     TRAF_BUILD=$1
-     ;;
-
-   --cloudera_userid)
-     shift
-     CLOUDERA_ADMIN=$1
-     ;;
-   
-   --cloudera_password)
-     shift
-     CLOUDERA_PASSWORD=$1
-     ;;
-  
-   --cloudera_url)
-     shift
-     CLOUDERA_MANAGER_URL=$1
-     ;;
-
-   --help)
-     shift
-     displayHelp
-     exit
-     ;;
-   
-   **)
-     echo "***ERROR: Incorrect Command."
-     displayHelp
-     exit
-     ;;
-
-  esac
-  shift
-done
-
-CLUSTER_NAME=$(curl -su $CLOUDERA_ADMIN:$CLOUDERA_PASSWORD http://$CLOUDERA_MANAGER_URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
-
-if [ -z $CLUSTER_NAME ]; then
-  echo
-  echo "***ERROR: Please check input parameters"
-  echo
-  exit -1 
-fi
-
-# make sure we're on a Cloudera system
-cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
-if [ $cloudera_installed -eq 0 ]; then
-    echo "***ERROR: Cloudera not detected.  This script is for Cloudera distro only."
-    exit -1
-fi
-
-if [ -z "$MY_NODES" ]; then
-   echo "***ERROR: $TRAF_WORKDIR/my_nodes not found.  Unable to determine list of nodes."
-   exit -1
-fi
+TRAF_BUILD=$1
+CLOUDERA_ADMIN=$2
+CLOUDERA_PASSWORD=$3
+CLOUDERA_MANAGER_URL=$4
 
 #=====================================
 # copy Trafodion trx jar to Cloudera's plugins directory on all nodes

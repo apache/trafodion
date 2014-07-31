@@ -1,0 +1,175 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#
+# This script will configure HBase with HBase-trx
+# and co-processors needed for Trafodion.  It uses
+# Cloudera Manager's REST api to do this.
+#
+# NOTE: Only for Cloudera installations
+
+###Default Values###
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+NODE_LIST=$(cat $TRAF_WORKDIR/node_list)
+MY_NODES=$(cat $TRAF_WORKDIR/my_nodes)
+node_count=$(echo $NODE_LIST | wc -w)
+
+ADMIN="admin"
+PASSWORD="admin"
+TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
+HADOOP_TYPE=""
+timestamp=$(date +%F-%H-%M-%S)
+MODS_LOG="$TRAF_WORKDIR/logs/trafodion_mods_$timestamp.log"
+
+#============================================
+#Look for type of hadoop distro installed
+
+ambari_installed=$(rpm -qa | grep ambari | wc -l )
+
+if [[ $ambari_installed -gt 0 ]]; then
+   HADOOP_TYPE="ambari"
+   URL=$(hostname --long):8080
+fi 
+
+cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
+
+if [[ $cloudera_installed -gt 0 ]]; then
+   HADOOP_TYPE="cloudera"
+   URL=$(hostname --long):7180
+fi
+
+if [[ $HADOOP_TYPE == "" ]]; then
+   echo "***ERROR: Please install a hadoop distribution." 2>&1 | tee -a $MODS_LOG
+   echo "***ERROR: Exiting..." 2>&1 | tee -a $MODS_LOG 
+   exit -1
+fi
+
+function displayHelp
+{
+  echo
+  echo "This script will configure HBase with Hbase-trx and co-processors needed"
+  echo "for Trafodion."
+  echo
+  echo "Usage: $(basename $0) [options]"
+  echo
+  echo "Options:"
+  echo "    --help             Print this message and exit."
+  echo "    --trafodion_build  Full path to the Trafodion build tar file (defaults to $TRAF_WORKDIR/trafodion_build.tgz)"
+  echo "    --userid           If not chosen username will default to admin"
+  echo "    --password         If not chosen password will default to admin"
+  echo "    --url              If not chosen url:port will default to distro default"
+  echo
+}
+
+while [ $# -gt 0 ]; do
+
+  case $1 in
+   --trafodion_build)
+     shift
+     TRAF_BUILD=$1
+     ;;
+
+   --userid)
+     shift
+     ADMIN=$1
+     ;;
+
+   --password)
+     shift
+     PASSWORD=$1
+     ;;
+
+   --url)
+     shift
+     URL=$1
+     ;;
+
+   --help)
+     shift
+     displayHelp
+     exit
+     ;;
+
+   **)
+     echo "***ERROR: Incorrect Command." 2>&1 | tee -a $MODS_LOG
+     displayHelp
+     exit
+     ;;
+
+  esac
+  shift
+done
+
+#============================================
+#Info for log file
+
+echo "***Log File: trafodion_mods script***" >> $MODS_LOG
+echo >> $MODS_LOG
+echo "Trafodion Build: $TRAF_BUILD" >> $MODS_LOG
+echo "User Id: $ADMIN" >> $MODS_LOG
+echo "Password: $PASSWORD" >> $MODS_LOG
+echo "url: $URL" >> $MODS_LOG
+echo >> $MODS_LOG
+
+#============================================
+#Check for errors
+
+CLUSTER_NAME=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+
+if [ -z $CLUSTER_NAME ]; then
+  echo
+  echo "***ERROR: Please check input parameters" 2>&1 | tee -a $MODS_LOG 
+  echo
+  exit -1
+fi
+
+if [ -z "$MY_NODES" ]; then
+   echo "***ERROR: $TRAF_WORKDIR/my_nodes not found.  Unable to determine list of nodes." 2>&1 | tee -a $MODS_LOG
+   exit -1
+fi
+
+#=====================================
+#Run correct mods script
+
+if [[ $HADOOP_TYPE == "cloudera" ]]; then
+   echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $MODS_LOG
+   echo "***INFO: Log file located at: $MODS_LOG"
+   $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL 2>&1 | tee -a $MODS_LOG
+   if [ ${PIPESTATUS[0]} != 0 ]; then
+      echo "***ERROR: Please check log files." | tee -a $MODS_LOG
+      echo "***ERROR: Exiting...." | tee -a $MODS_LOG
+      exit -1
+   fi
+fi
+
+if [[ $HADOOP_TYPE == "ambari" ]]; then
+   echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
+   echo "***INFO: Log file located at: $MODS_LOG"
+   $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL 2>&1 | tee -a $MODS_LOG
+   if [ ${PIPESTATUS[0]}  != 0 ]; then
+      echo "***ERROR: traf_amabari_mods exited with an error." | tee -a $MODS_LOG
+      echo "***ERROR: Please check log files." | tee -a $MODS_LOG
+      echo "***ERROR: Exiting...." | tee -a $MODS_LOG
+      exit -1
+   fi
+fi
+
+echo "***INFO: trafodion_mods ran successfully."
+
