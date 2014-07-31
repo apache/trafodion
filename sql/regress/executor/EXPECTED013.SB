@@ -18,7 +18,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Wed May 14 06:03:20 2014
+-- Definition current  Tue Jul 29 14:20:11 2014
 
   (
     A                                INT DEFAULT NULL
@@ -44,7 +44,7 @@ A
 *** ERROR[8448] Unable to access Hbase interface. Call to ExpHbaseInterface::grant() returned error HBASE_ACCESS_ERROR(705). Cause: 
 org.apache.hadoop.hbase.coprocessor.CoprocessorException: Coprocessor [org.apache.hadoop.hbase.security.access.AccessController]: This method can only execute at _acl_ table.
 org.apache.hadoop.hbase.security.access.AccessController.grant(AccessController.java:1094)
-org.trafodion.sql.HBaseAccess.HBaseClient.grant(HBaseClient.java:530)
+org.trafodion.sql.HBaseAccess.HBaseClient.grant(HBaseClient.java:544)
 .
 
 --- SQL operation failed with errors.
@@ -55,7 +55,7 @@ org.trafodion.sql.HBaseAccess.HBaseClient.grant(HBaseClient.java:530)
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Wed May 14 06:03:30 2014
+-- Definition current  Tue Jul 29 14:20:19 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -117,7 +117,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Wed May 14 06:03:50 2014
+-- Definition current  Tue Jul 29 14:20:39 2014
 
   (
     A                                INT DEFAULT NULL
@@ -142,7 +142,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Wed May 14 06:03:56 2014
+-- Definition current  Tue Jul 29 14:20:45 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -181,7 +181,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Wed May 14 06:04:05 2014
+-- Definition current  Tue Jul 29 14:20:54 2014
 
   (
     A                                INT DEFAULT NULL
@@ -203,7 +203,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Wed May 14 06:04:08 2014
+-- Definition current  Tue Jul 29 14:20:56 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -421,6 +421,7 @@ CREATE VIEW TRAFODION.T013_SCH.TEMPV AS
 >>showcontrol defaults;
 
 CONTROL QUERY DEFAULT
+  SHOWCONTROL_SHOW_ALL          	OFF
   TARGET_CODE                   	DEBUG
   TARGET_CPU_FREQUENCY          	199.
   TARGET_IO_SEEK_TIME           	0.020147
@@ -442,6 +443,7 @@ CONTROL QUERY DEFAULT
   SEABASE_VOLATILE_TABLES       	ON
   POS                           	OFF
   SCHEMA                        	TRAFODION.T013_SCH
+  METADATA_CACHE_SIZE           	20
 
 --- SQL operation complete.
 >>
@@ -450,7 +452,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Wed May 14 06:04:37 2014
+-- Definition current  Tue Jul 29 14:21:29 2014
 
   (
     A                                INT DEFAULT NULL
@@ -470,7 +472,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Wed May 14 06:04:42 2014
+-- Definition current  Tue Jul 29 14:21:34 2014
 
   (
     A                                INT DEFAULT NULL
@@ -568,7 +570,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Wed May 14 06:05:05 2014
+-- Definition current  Tue Jul 29 14:22:03 2014
 
   (
     A                                INT DEFAULT NULL
@@ -585,7 +587,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Wed May 14 06:05:07 2014
+-- Definition current  Tue Jul 29 14:22:05 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -600,7 +602,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Wed May 14 06:05:11 2014
+-- Definition current  Tue Jul 29 14:22:10 2014
 
   (
     A                                INT DEFAULT NULL
@@ -665,7 +667,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Wed May 14 06:05:27 2014
+-- Definition current  Tue Jul 29 14:22:28 2014
 
   (
     A                                INT DEFAULT NULL
@@ -1287,7 +1289,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Wed May 14 06:08:31 2014
+-- Definition current  Tue Jul 29 14:25:30 2014
 
   (
     A                                INT DEFAULT NULL

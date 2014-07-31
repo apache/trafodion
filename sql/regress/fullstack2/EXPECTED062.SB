@@ -111,7 +111,8 @@ SET CATALOG C.S;
 >>		-- 8009
 >>showcontrol query default showcontrol;
 
-No CONTROL QUERY DEFAULT SHOWCONTROL settings are in effect.
+CONTROL QUERY DEFAULT
+  SHOWCONTROL_SHOW_ALL          	OFF
 
 No externalized DEFAULTS attribute SHOWCONTROL exists.
 
@@ -574,6 +575,7 @@ CONTROL QUERY DEFAULT
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
   SCHEMA                        	SEABASE.SCH
+  TIMEOUT                       	6000
 
 --- SQL operation complete.
 >>showcontrol defaults readonly_cursor;

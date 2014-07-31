@@ -219,6 +219,7 @@ public :
 
   ControlDB* controlDB_;		      
   void initControlDB();
+  ControlDB* getControlDB() { return controlDB_; }
 
   // ustat globals
   UstatContextID uStatID_;

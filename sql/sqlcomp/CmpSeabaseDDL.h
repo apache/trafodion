@@ -231,7 +231,10 @@ class CmpSeabaseDDL
   
   void deallocEHI(ExpHbaseInterface* &ehi);
   
-  short sendAllControlsAndFlags();
+  // if prevContext is defined, get the controlDB from the previous context so the
+  // defaults are copied from the previous cmp context to the new cmp context. This is only
+  // required for embedded compilers where a SWITCH is taking place
+  short sendAllControlsAndFlags(CmpContext* prevContext=NULL);
 
   void restoreAllControlsAndFlags();
   

@@ -1230,7 +1230,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   for (CollIndex i = 0; i < cdb->getCQDList().entries(); i++)
   {
     ControlQueryDefault * cqd = cdb->getCQDList()[i];
-    if (NOT isInternalCQD(cqd->getAttrEnum()))
+    if ((NOT isInternalCQD(cqd->getAttrEnum())) && !cqd->reset())
     {
       statement += cqd->getToken().data();
       statement += ": ";
