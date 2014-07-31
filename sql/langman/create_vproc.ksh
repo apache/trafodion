@@ -77,7 +77,7 @@ echo  "  static String vproc_str = $VPROC;"
 echo
 echo  "  public static void main(String[] args)"
 echo  "  {"
-echo  "    System.out.println(\"VPROC for NonStop(TM) SQL/MX Language Manager : \" + vproc_str);"
+echo  "    System.out.println(\"VPROC for Trafodion Language Manager : \" + vproc_str);"
 echo  "  }"
 echo  "}"
 

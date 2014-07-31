@@ -332,7 +332,7 @@ inline static Int32 U_isAsciiAlNumUndHyphen(NAWchar c)
 //   _[Ii][Ss][Oo]8859[1-9]'([^']|"''")*'
 
 /////////////////////////////////////////////////////////////////////
-// The SQL/MX keyword table has move to parser/ParKeyWords.{h,cpp}.
+// The Trafodion keyword table has move to parser/ParKeyWords.{h,cpp}.
 // See this file for instructions on how to add new key words.
 /////////////////////////////////////////////////////////////////////
 
@@ -551,7 +551,7 @@ static NAString *removeHostVarQuotes(const NAWchar *s, Int32 len)
 
 
 // encapsulate lexer actions associated with recognizing one of
-// {IDENTIFIER, SQL/MX keyword, compound keyword, compound Cobol token,
+// {IDENTIFIER, Trafodion keyword, compound keyword, compound Cobol token,
 //  approx numeric, exact numeric with scale, exact numeric no scale}:
 //  - updating the ParScannedToken queue
 //  - setting the yylval token value
@@ -849,7 +849,7 @@ inline Int32 yyULexer::constructStringLiteralWithCharSet(NABoolean isHex,
   return prematureEOF(lvalp);
 }
 
-// Use this method when a SQL/MX Reserved word which is reserved for
+// Use this method when a Trafodion Reserved word which is reserved for
 // future use is encountered as an identifier.
 //
 inline Int32 yyULexer::anSQLMXReservedWord(YYSTYPE *lvalp)
@@ -867,7 +867,7 @@ inline Int32 yyULexer::anIdentifier(YYSTYPE *lvalp)
 
 inline Int32 yyULexer::anSQLMXKeyword(Int32 tokCod, YYSTYPE *lvalp)
 { 
-  return setTokval(tokCod, DBGMSG("SQL/MX keyword %s\n"), lvalp);
+  return setTokval(tokCod, DBGMSG("Trafodion keyword %s\n"), lvalp);
 }
 
 inline Int32 yyULexer::aCompoundKeyword(Int32 tokCod, YYSTYPE *lvalp)
@@ -1053,7 +1053,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           do { advance(); } while (U_isalnumund(cc=peekChar()));
           doBeforeAction();
 
-          // In SQL/MX the only valid quote characters is '\''
+          // In Trafodion the only valid quote characters is '\''
           //
           NAWchar quote = NAWchar('\'');
 
@@ -1080,7 +1080,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
           if (cc == L'\'' || cc == quote)
             {
-              // The leading quote character encountered.  For SQL/MX
+              // The leading quote character encountered.  For Trafodion
               // text, this will always be a single quote.
               //
               quote = cc;
@@ -1194,7 +1194,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
           if (tokIfNotCompound=notCompoundKeyword(keyWordEntry1, holdChar1, lvalp))
             return tokIfNotCompound;
-          // else, a possible compound SQL/MX Cobol token
+          // else, a possible compound Trafodion Cobol token
           // save first token end
           end1 = mark();
           // skip whitespace
@@ -1363,7 +1363,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
           if (tokIfNotCompound=notCompoundKeyword(keyWordEntry1, holdChar1, lvalp))
             return tokIfNotCompound;
-          // else, a possible compound SQL/MX Cobol token
+          // else, a possible compound Trafodion Cobol token
           // save first token end
           end1 = mark();
           // skip whitespace
@@ -1372,7 +1372,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           if (!U_isAsciiAlpha(cc))
             {
               // 2nd part is not a keyword. 
-              // return 1st token as a SQL/MX keyword.
+              // return 1st token as a Trafodion keyword.
               return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
             }
           else if (keyWordEntry1->getTokenCode() == TOK_GO)
@@ -1431,7 +1431,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           advance();
           end1 = mark();
 
-          // In SQL/MX the only valid quote characters is '\''
+          // In Trafodion the only valid quote characters is '\''
           //
           NAWchar quote = NAWchar('\'');
 
@@ -1459,7 +1459,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
               // N'string' specified by N'([^']|"''")*', or
               // N X'hex digit string'
 
-              // The leading quote character encountered.  For SQL/MX
+              // The leading quote character encountered.  For Trafodion
               // text, this will always be a single quote.
               //
               quote = peekChar();
@@ -1486,7 +1486,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
               if (tokIfNotCompound=notCompoundKeyword(keyWordEntry1, holdChar1, lvalp))
                 return tokIfNotCompound;
-              // else, a possible compound SQL/MX keyword 
+              // else, a possible compound Trafodion keyword
               // save first token end
               end1 = mark();
               // skip whitespace
@@ -1495,7 +1495,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
               if (!U_isAsciiAlpha(cc))
                 {
                   // 2nd part is not a keyword. 
-                  // return 1st token as a SQL/MX keyword.
+                  // return 1st token as a Trafodion keyword.
                   return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
                 }
               else // 2nd part may be a keyword
@@ -1589,7 +1589,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
               else
                 return tokIfNotCompound;
             }
-          // else, a possible compound SQL/MX Cobol token
+          // else, a possible compound Trafodion Cobol token
           // save first token end
           end1 = mark();
           // skip whitespace
@@ -1960,7 +1960,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           else
             {
               // it's not part of a compound Cobol token.
-              // return 1st token as a SQL/MX identifier.
+              // return 1st token as a Trafodion identifier.
               return anIdentifier(lvalp);
             }
           break;
@@ -1979,7 +1979,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                 else
                   {
                     doBeforeAction();
-                      // In SQL/MX text, double quoted strings are
+                      // In Trafodion text, double quoted strings are
                       // delimited identifiers.
                       //
                       return setStringval(DELIMITED_IDENTIFIER, 
@@ -2814,7 +2814,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
 
           if (tokIfNotCompound=notCompoundKeyword(keyWordEntry1, holdChar1, lvalp))
             return tokIfNotCompound;
-          // else, a possible compound SQL/MX keyword 
+          // else, a possible compound Trafodion keyword
           // save first token end
           end1 = mark();
           // skip whitespace
@@ -2823,7 +2823,7 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
           if (!U_isAsciiAlpha(cc))
             {
               // 2nd part is not a keyword. 
-              // return 1st token as a SQL/MX keyword.
+              // return 1st token as a Trafodion keyword.
               return anSQLMXKeyword(keyWordEntry1->getTokenCode(), lvalp);
             }
           else // 2nd part may be a keyword

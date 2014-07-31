@@ -281,7 +281,7 @@ free(newstr);
     This function defines which contexts we expect statistics output may
     occur in.
 
-    In SQL/MX SQLCI, there are two kinds of statistics output. These can
+    In Trafodion SQLCI, there are two kinds of statistics output. These can
     be classed as DISPLAY STATISTICS type vs. optimizer internal statistics.
     The first type appear after any DISPLAY STATISTICS statement. They also
     appear after the output of any DML statement if a SET STATISTICS ON
@@ -353,7 +353,7 @@ if ((argc < 3) || (argc > 4) ||
    printf("The -d option is a debug option:  If specified, internal parse ");
    printf("states are\ndisplayed.\n\n");
    printf("The -s option tells logsort to strip out statistics generated ");
-   printf("by DISPLAY\nSTATISTICS and by the SQL/MX optimizer.\n\n");
+   printf("by DISPLAY\nSTATISTICS and by the Trafodion optimizer.\n\n");
    }
 else if ((in = fopen(argv[1],"r")) == NULL)
    {
@@ -442,7 +442,7 @@ else
             if (line_isignore(linebuf))
                {
                saved_state = state;
-               state = 7;  /*  saw a SQL/MX sqlci ?ignore directive  */
+               state = 7;  /*  saw a Trafodion sqlci ?ignore directive  */
                }
             else if (line_isstmt(linebuf))
                {
@@ -456,7 +456,7 @@ else
             if (line_isignore(linebuf))
                {
                saved_state = state;
-               state = 7;  /*  saw a SQL/MX sqlci ?ignore directive  */
+               state = 7;  /*  saw a Trafodion sqlci ?ignore directive  */
                }
             else if (line_isstmt(linebuf))
                {
@@ -535,14 +535,14 @@ else
                   state = 5;
                   }
                }
-            /* 0 rows selected after a blank line can happen with SQL/MX sqlci */
+            /* 0 rows selected after a blank line can happen with Trafodion sqlci */
             else if (line_is0rows(linebuf))
-               state = 0;  /* for SQL/MX */
-            /* error message after a blank line can happen with SQL/MX sqlci */
+               state = 0;  /* for Trafodion */
+            /* error message after a blank line can happen with Trafodion sqlci */
             else if (line_iserror(linebuf))
-               state = 0;  /* for SQL/MX */
+               state = 0;  /* for Trafodion */
             else if (line_isoptstats(linebuf))
-               state = 8;  /* must be SQL/MX Optimizer stats output */
+               state = 8;  /* must be Trafodion Optimizer stats output */
             else
                {
                printf("Unexpected line after a SELECT statement:\n");
@@ -652,7 +652,7 @@ else
                }
             break;
             }
-         case 7:   /*  within a SQL/MX sqlci ?ignore block  */
+         case 7:   /*  within a Trafodion sqlci ?ignore block  */
             {
             if (line_isignore(linebuf))
                {
@@ -662,13 +662,13 @@ else
             myFputs(linebuf,out,strip_stats_option,mightbestats(state));
             break;
             }
-         case 8:   /*  within SQL/MX Optimizer stats output  */
+         case 8:   /*  within Trafodion Optimizer stats output  */
             {
             if (line_isblank(linebuf))
                state = 3;
             else if (!line_isoptstats(linebuf))
                {
-               printf("Unexpected line after SQL/MX Optimizer stats:");
+               printf("Unexpected line after Trafodion Optimizer stats:");
                printf("%s",linebuf);
                state = 0;
                }

@@ -229,7 +229,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 	/**
 	 * Retrieves the name of this database product.
 	 * 
-	 * @return NonStop SQL/MX
+	 * @return Trafodion
 	 * @throws SQLException
 	 *             - if a database access error occurs
 	 **/
@@ -238,7 +238,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_getDatabaseProductName].methodEntry();
 		try {
-			return new String("NonStop SQL/MX");
+			return new String("Trafodion");
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_getDatabaseProductName].methodExit();
@@ -248,7 +248,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 	/**
 	 * Retrieves the version number of this database product.
 	 * 
-	 * @return NonStop SQL/MX release number
+	 * @return Trafodion release number
 	 * @throws SQLException
 	 *             - if a database access error occurs
 	 **/
@@ -296,7 +296,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_getDriverVersion].methodEntry();
 		try {
-			return new String("HP JDBC driver for NonStop(TM) SQL/MX Version "
+			return new String("Trafodion JDBC T2 driver Version "
 					+ DriverInfo.driverVproc);
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -1117,7 +1117,6 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 		if (JdbcDebugCfg.entryActive)
 			debug[methodId_supportsMultipleTransactions].methodEntry();
 		try {
-			// Need to change it 'true' once sql/mx fixes this problem
 			return true;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
@@ -4988,7 +4987,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 	/**
 	 * Retrieves the major version number of the underlying database.
 	 * 
-	 * @return NonStop SQL/MX release major number
+	 * @return Trafodion release major number
 	 * @throws SQLException
 	 *             - if a database access error occurs
 	 * @since 1.4
@@ -5007,7 +5006,7 @@ public class SQLMXDatabaseMetaData extends SQLMXHandle implements
 	/**
 	 * Retrieves the minor version number of the underlying database.
 	 * 
-	 * @return NonStop SQL/MX release minor number
+	 * @return Trafodion release minor number
 	 * @throws SQLException
 	 *             - if a database access error occurs
 	 * @since 1.4

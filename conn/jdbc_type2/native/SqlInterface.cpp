@@ -335,7 +335,7 @@ SQLRETURN GetJDBCValues( SQLItemDesc_def *SQLItemDesc,
 	case SQLTYPECODE_BITVAR:
 	case SQLTYPECODE_IEEE_FLOAT:
 	case SQLTYPECODE_FLOAT:
-		// SQLTYPECODE_FLOAT is also considered an error, Since SQL/MX will never
+		// SQLTYPECODE_FLOAT is also considered an error, Since Trafodion will never
 		// return SQLTYPECODE_FLOAT. It returns either SQLTYPECODE_IEEE_REAL or SQLTYPECODE_IEEE_DOUBLE
 		// depending upon the precision for FLOAT fields
 	case SQLTYPECODE_BPINT_UNSIGNED:
@@ -967,9 +967,9 @@ static SQLRETURN ReadRow(SRVR_STMT_HDL *pSrvrStmt,
 *              information available and, if results are present, position the implicit cursor
 *              before the first row of the result set.
 *
-*			For V2.1+ SQL their are four classes of SQL/MX query stmt types:
+*			For V2.1+ SQL their are four classes of Trafodion query stmt types:
 *			1) Unique_selects (1 row) call ClearExecFetchClose() SQL/CLI (w/ a valid outputDesc).
-*			2) Non_unique selects (multiple rows) statement types call SQL/MX CLI Exec (not chg'd from V2.0 SQL).
+*			2) Non_unique selects (multiple rows) statement types call Trafodion CLI Exec (not chg'd from V2.0 SQL).
 *			3) UID (unique and non_unique) stmt types call SQL/CLI ClearExecFetchClose() (w/ a NULL outputDesc).
 *			4) All other statements (SQL_CONTROL, SQL_SET_TRANSACTION, SQL_SET_CATALOG, SQL_SET_SCHEMA)
 *			call SQL/CLI ClearExecFetchClose() (w/ a NULL outputDesc).
@@ -1021,7 +1021,7 @@ SQLRETURN EXECUTE(SRVR_STMT_HDL* pSrvrStmt)
 		{
 			cursorName = pSrvrStmt->cursorName;
 			// If cursor name is not specified, use the stmt name as cursor name
-			// due to bug in SQL/MX, though it should default automatically
+			// due to bug in Trafodion, though it should default automatically
 			if (*cursorName == '\0')
 				cursorName = pSrvrStmt->stmtName;
 
@@ -1531,17 +1531,17 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt)
 
 	/* *****************************************************************************
 	* The call to CLI_GetStmtAttr to query the statement type was added as a
-	* performance enhancement. Previous versions of the SQL/MX database will not return
+	* performance enhancement. Previous versions of the Trafodion database will not return
 	* a statement type, but will return a 0 which is SQL_OTHER. In the case were
 	* SQL_OTHER is returned and JDBC/MX knows what the statement type is, then the
 	* JDBC/MX statement type will be used. This will allow the JDBC/MX driver to
-	* run with an older version of the SQL/MX.
+	* run with an older version of the Trafodion.
 	* ***************************************************************************** */
 
 
 	DEBUG_OUT(DEBUG_LEVEL_CLI,( "getSQLMX_Version: returned %i", GlobalInformation::getSQLMX_Version()));
 
-	if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of SQL/MX is version R2
+	if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of Trafodion is version R2
 		if (pSrvrStmt->sqlStmtType != TYPE_UNKNOWN)                    //If this is a SELECT, INVOKE, or SHOWSHAPE
 			SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;              //then force an execute with no fetch
 		else SqlQueryStatementType = SQL_OTHER;                         //else allow an executeFetch
@@ -1756,7 +1756,7 @@ SQLRETURN GETSQLERROR(SRVR_STMT_HDL *pSrvrStmt,
 	if (total_conds == 0)
 	{
 		kdsCreateSQLErrorException(SQLError, 1);
-		kdsCopySQLErrorException(SQLError, "No error message in SQL/MX diagnostics area, but sqlcode is non-zero", retcode, "");
+		kdsCopySQLErrorException(SQLError, "No error message in Trafodion diagnostics area, but sqlcode is non-zero", retcode, "");
 		CLI_DEBUG_RETURN_SQL(SQL_SUCCESS);
 	}
 
@@ -2252,17 +2252,17 @@ SQLRETURN PREPARE_FROM_MODULE(SRVR_STMT_HDL* pSrvrStmt)
 
 	/* *****************************************************************************
 	* The call to SQL_EXEC_GetStmtAttr to query the statement type was added as a
-	* performance enhancement. Previous version of the SQL/MX database will not return
+	* performance enhancement. Previous version of the Trafodion database will not return
 	* a statement type, but will return a 0 which is SQL_OTHER. In the case were
 	* SQL_OTHER is returned and JDBC/MX knows what the statement type is, then the
 	* JDBC/MX statement type will be used. This will allow the JDBC/MX driver to
-	* run with an older version of the SQL/MX.
+	* run with an older version of the Trafodion.
 	* ***************************************************************************** */
 
 
 	DEBUG_OUT(DEBUG_LEVEL_CLI,( "getSQLMX_Version: returned %i", GlobalInformation::getSQLMX_Version()));
 
-	if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of SQL/MX is version R2
+	if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of Trafodion is version R2
 		if (pSrvrStmt->sqlStmtType != TYPE_UNKNOWN)                     //If this is a SELECT, INVOKE, or SHOWSHAPE
 			SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;              //then force an execute with no fetch
 		else SqlQueryStatementType = SQL_OTHER;                         //else allow an executeFetch
@@ -3086,17 +3086,17 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 
 	/* *****************************************************************************
 	* The call to CLI_GetStmtAttr to query the statement type was added as a
-	* performance enhancement. Previous versions of the SQL/MX database will not return
+	* performance enhancement. Previous versions of the Trafodion database will not return
 	* a statement type, but will return a 0 which is SQL_OTHER. In the case were
 	* SQL_OTHER is returned and JDBC/MX knows what the statement type is, then the
 	* JDBC/MX statement type will be used. This will allow the JDBC/MX driver to
-	* run with an older version of the SQL/MX.
+	* run with an older version of the Trafodion.
 	* ***************************************************************************** */
 
 
 	DEBUG_OUT(DEBUG_LEVEL_CLI,( "getSQLMX_Version: returned %i", GlobalInformation::getSQLMX_Version()));
 
-	if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of SQL/MX is version R2
+	if (GlobalInformation::getSQLMX_Version() == CLI_VERSION_R2 ) {    //If this version of Trafodion is version R2
 		if (pSrvrStmt->sqlStmtType != TYPE_UNKNOWN)                    //If this is a SELECT, INVOKE, or SHOWSHAPE
 			SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;              //then force an execute with no fetch
 		else SqlQueryStatementType = SQL_OTHER;                         //else allow an executeFetch
@@ -3179,7 +3179,7 @@ InputDescInfo::~InputDescInfo()
 	IntLeadPrec =0;
 }
 
-// MFC - method to map JDBC data types to SQL/MX data types
+// MFC - method to map JDBC data types to Trafodion data types
 
 void InputDescInfo::setData(int countPosition, long dataType, long length, long scale,long nullable,
 							long dateTimeCode, long precision,long intLeadPrec, long sQLCharset, SRVR_GLOBAL_Def *srvrGlobal)
