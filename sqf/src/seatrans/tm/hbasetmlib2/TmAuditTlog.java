@@ -126,6 +126,7 @@ public class TmAuditTlog {
    private static int     tlogNumLogs;
    private static boolean distributedFS;
    private static boolean useAutoFlush;
+   private static boolean forceControlPoint;
  
    private static AtomicLong asn;  // Audit sequence number is the monotonic increasing value of the tLog write
 
@@ -227,6 +228,7 @@ public class TmAuditTlog {
       this.dtmid = Integer.parseInt(config.get("dtmid"));
       LOG.trace("Enter TmAuditTlog constructor for dtmid " + dtmid);
       TLOG_TABLE_NAME = config.get("TLOG_TABLE_NAME");
+      int fillerSize = 2;
 
       if (LocalHBaseCluster.isLocal(config)) {
          distributedFS = false;
@@ -234,7 +236,20 @@ public class TmAuditTlog {
       else {
          distributedFS = true;
       }
-      LOG.debug("distributedFS is " + distributedFS);
+      LOG.info("distributedFS is " + distributedFS);
+
+      forceControlPoint = false;
+      try {
+         String controlPointFlush = System.getenv("TM_TLOG_FLUSH_CONTROL_POINT");
+         if (controlPointFlush != null){
+            forceControlPoint = (Integer.parseInt(controlPointFlush) != 0);
+            LOG.debug("controlPointFlush != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_FLUSH_CONTROL_POINT is not in ms.env");
+      }
+      LOG.info("forceControlPoint is " + forceControlPoint);
 
       useAutoFlush = true;
       try {
@@ -247,6 +262,7 @@ public class TmAuditTlog {
       catch (Exception e) {
          LOG.debug("TM_TLOG_AUTO_FLUSH is not in ms.env");
       }
+      LOG.info("useAutoFlush is " + useAutoFlush);
 
       versions = 5;
       try {
@@ -305,7 +321,13 @@ public class TmAuditTlog {
       hcol.setMaxVersions(versions);
       admin = new HBaseAdmin(config);
 
-      filler = new byte[4097];
+      if (distributedFS) {
+         fillerSize = 2;
+      }
+      else {
+         fillerSize = 4097;
+      }
+      filler = new byte[fillerSize];
       Arrays.fill(filler, (byte) ' ');
       startTimes      =    new long[1000];
       endTimes        =    new long[1000];
@@ -415,8 +437,8 @@ public class TmAuditTlog {
       long lvAsn;
       long startSynch = 0;
       long endSynch = 0;
-      int lockIndex = 0;
-      int lv_TimeIndex = timeIndex.getAndIncrement();
+      int lv_lockIndex = 0;
+      int lv_TimeIndex = (timeIndex.getAndIncrement() % 500 );
       long lv_TotalWrites = totalWrites.incrementAndGet();
       long lv_TotalRecords = totalRecords.incrementAndGet();
       if (regions != null) {
@@ -439,37 +461,46 @@ public class TmAuditTlog {
 
       //create our own hashed key
       long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-      lockIndex = (int)(lvTransid & tLogHashKey);
-      LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
+      lv_lockIndex = (int)(lvTransid & tLogHashKey);
+      LOG.debug("key: " + key + ", hex: " + Long.toHexString(key) + ", transid: " +  lvTransid);
       p = new Put(Bytes.toBytes(key));
  
       lvAsn = asn.getAndIncrement();
       LOG.debug("transid: " + lvTransid + " state: " + lvTxState + " ASN: " + lvAsn);
       p.add(TLOG_FAMILY, ASN_STATE, Bytes.toBytes(String.valueOf(lvAsn) + "," 
                        + transidString + "," + lvTxState 
-                       + (distributedFS == false ? "," + Bytes.toString(filler) : "," ) 
+                       + "," + Bytes.toString(filler)  
                        +  "," + tableString.toString()));
 
-      LOG.debug("TLOG putSingleRecord synchronizing tlogAuditLock[" + lockIndex + "] in thread " + threadId );
+      LOG.debug("TLOG putSingleRecord synchronizing tlogAuditLock[" + lv_lockIndex + "] in thread " + threadId );
       startSynch = System.nanoTime();
-      synchronized (tlogAuditLock[lockIndex]) {
-         endSynch = System.nanoTime();
-         try {
-            LOG.debug("try table.put " + p );
-            startTimes[lv_TimeIndex] = System.nanoTime();
-            table[lockIndex].put(p);
-            if ((forced) && (useAutoFlush == false)) {
-               LOG.debug("flushing commits");
-               table[lockIndex].flushCommits();
+      try {
+         synchronized (tlogAuditLock[lv_lockIndex]) {
+            endSynch = System.nanoTime();
+            try {
+               LOG.debug("try table.put " + p );
+               startTimes[lv_TimeIndex] = System.nanoTime();
+               table[lv_lockIndex].put(p);
+               if ((forced) && (useAutoFlush == false)) {
+                  LOG.debug("flushing commits");
+                  table[lv_lockIndex].flushCommits();
+               }
+               endTimes[lv_TimeIndex] = System.nanoTime();
             }
-            endTimes[lv_TimeIndex] = System.nanoTime();
-         }
-         catch (Exception e){
-           // create record of the exception
-            LOG.error("putSingleRecord Exception " + e);
-            throw e;
-         }
-      } // End global synchronization
+            catch (Exception e2){
+               // create record of the exception
+               LOG.error("putSingleRecord Exception " + e2);
+               e2.printStackTrace();
+               throw e2;
+            }
+         } // End global synchronization
+      }
+      catch (Exception e) {
+         // create record of the exception
+         LOG.error("Synchronizing on tlogAuditLock[" + lv_lockIndex + "] Exception " + e);
+         e.printStackTrace();
+         throw e;
+      }
       LOG.debug("TLOG putSingleRecord synchronization copmplete in thread " + threadId );
 
       synchTimes[lv_TimeIndex] = endSynch - startSynch;
@@ -487,7 +518,7 @@ public class TmAuditTlog {
       if ((endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]) < minWriteTime) {
          minWriteTime = (endTimes[lv_TimeIndex] - startTimes[lv_TimeIndex]);
       }
-      if ((lv_TimeIndex % 500) == 0) {
+      if (lv_TimeIndex == 499) {
          avgWriteTime = (double) (totalWriteTime/lv_TotalWrites);
          avgSynchTime = (double) (totalSynchTime/lv_TotalWrites);
          LOG.info("TLog Audit Write Report\n" + 
@@ -565,7 +596,7 @@ public class TmAuditTlog {
       return p;
    }
 
-   public boolean putBuffer(ArrayList<Put> buffer, int lockIndex) throws Exception {
+   public boolean putBuffer(ArrayList<Put> buffer, int lv_lockIndex) throws Exception {
       long threadId = Thread.currentThread().getId();
       LOG.trace("putBuffer start in thread " + threadId);
       boolean lvResult = true;
@@ -575,13 +606,13 @@ public class TmAuditTlog {
       long totalRecords = 0;
 
       try {
-         LOG.trace("putBuffer synchronizing on tlogAuditLock[lockIndex] " + lockIndex + " in thread " + threadId);
-         synchronized(tlogAuditLock[lockIndex]) {
+         LOG.trace("putBuffer synchronizing on tlogAuditLock[lv_lockIndex] " + lv_lockIndex + " in thread " + threadId);
+         synchronized(tlogAuditLock[lv_lockIndex]) {
             synchTime = System.nanoTime() - prepTime;
-            table[lockIndex].put(buffer);
+            table[lv_lockIndex].put(buffer);
             writeTime = System.nanoTime() - synchTime;
          }
-         LOG.trace("putBuffer tlogAuditLock[lockIndex] " + lockIndex + " synchronization complete in thread " + threadId);
+         LOG.trace("putBuffer tlogAuditLock[lv_lockIndex] " + lv_lockIndex + " synchronization complete in thread " + threadId);
          LOG.info("TLog Control Point Write Report\n" + 
                   "                        Total records: " + buffer.size() + "\n" +
                   "                        Prep time: " + prepTime + "\n" +
@@ -602,7 +633,7 @@ public class TmAuditTlog {
       LOG.trace("getRecord start");
       int lvTxState = -1;
       String stateString;
-      int lockIndex = (int)(lvTransid & tLogHashKey);
+      int lv_lockIndex = (int)(lvTransid & tLogHashKey);
       try {
          String transidString = new String(String.valueOf(lvTransid));
          Get g;
@@ -611,7 +642,7 @@ public class TmAuditTlog {
          LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
          g = new Get(Bytes.toBytes(key));
          try {
-            Result r = table[lockIndex].get(g);
+            Result r = table[lv_lockIndex].get(g);
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
             stateString =  new String (Bytes.toString(value));
             LOG.debug("stateString is " + stateString);
@@ -696,7 +727,7 @@ public class TmAuditTlog {
    public static String getRecord(final String transidString) throws IOException {
       LOG.trace("getRecord start");
       long lvTransid = Long.parseLong(transidString, 10);
-      int lockIndex = (int)(lvTransid & tLogHashKey);
+      int lv_lockIndex = (int)(lvTransid & tLogHashKey);
       String lvTxState = new String("NO RECORD");
       try {
          Get g;
@@ -705,7 +736,7 @@ public class TmAuditTlog {
          LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
          g = new Get(Bytes.toBytes(key));
          try {
-            Result r = table[lockIndex].get(g);
+            Result r = table[lv_lockIndex].get(g);
             byte [] value = r.getValue(TLOG_FAMILY, ASN_STATE);
             StringTokenizer st = new StringTokenizer(value.toString(), ",");
             String asnToken = st.nextElement().toString();
@@ -728,7 +759,7 @@ public class TmAuditTlog {
    public static boolean deleteRecord(final long lvTransid) throws IOException {
       LOG.trace("deleteRecord start " + lvTransid);
       String transidString = new String(String.valueOf(lvTransid));
-      int lockIndex = (int)(lvTransid & tLogHashKey);
+      int lv_lockIndex = (int)(lvTransid & tLogHashKey);
       try {
          Delete d;
          //create our own hashed key
@@ -736,7 +767,7 @@ public class TmAuditTlog {
          LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
          d = new Delete(Bytes.toBytes(key));
          LOG.debug("deleteRecord  (" + lvTransid + ") ");
-         table[lockIndex].delete(d);
+         table[lv_lockIndex].delete(d);
       }
       catch (Exception e) {
          LOG.error("deleteRecord Exception " + e );
@@ -824,56 +855,46 @@ public class TmAuditTlog {
      return true;
    }
 
-   public long addControlPoint (final ConcurrentHashMap<Long, TransactionState> map) throws IOException, Exception {
-      LOG.trace("addControlPoint start with map size " + map.size());
+   public long addControlPoint (final Map<Long, TransactionState> map) throws IOException, Exception {
+      ConcurrentHashMap<Long, TransactionState> lv_map = new ConcurrentHashMap<Long, TransactionState>(map);
+      LOG.trace("addControlPoint start with map size " + lv_map.size());
       long startTime = System.nanoTime();
       long endTime;
-      long lvCtrlPt;
+      long lvCtrlPt = 0L;
       long agedAsn;  // Writes older than this audit seq num will be deleted
       long lvAsn;    // local copy of the asn
       long key;
       boolean success = false;
       int cpWrites = 0;
       int lv_lockIndex;
-      AuditBuffer cpBuffer[] = new AuditBuffer[tlogNumLogs];   // Each Put is an audit record
-      for ( int i = 0; i < tlogNumLogs; i ++) {
-         cpBuffer[i] = new AuditBuffer();               // One buffer per table
-      }
 
-      for (Map.Entry<Long, TransactionState> e : map.entrySet()) {
+      for (Map.Entry<Long, TransactionState> e : lv_map.entrySet()) {
          try {
             Long transid = e.getKey();
             lv_lockIndex = (int)(transid & tLogHashKey);
             TransactionState value = e.getValue();
-            Put p = formatRecord(transid, value);
-            LOG.debug("addControlPoint adding record for trans (" + transid + ") : state is " + value.getStatus());
-            cpBuffer[lv_lockIndex].bufferAdd(p);
-         }
-         catch (Exception ex) {
-            LOG.error("formatRecord Exception");
-            throw ex;
-         }
-      }
-
-      // Now we need to put all the buffers
-      for ( int i = 0; i < tlogNumLogs; i ++) {
-         synchronized(tlogAuditLock[i]) {
-            if (cpBuffer[i].bufferSize() > 0) {
-               try {
-                  cpWrites++;
-                  table[i].put(cpBuffer[i].getBuffer());  
+            if (value.getStatus().equals("COMMITTED")){
+               LOG.debug("addControlPoint adding record for trans (" + transid + ") : state is " + value.getStatus());
+               cpWrites++;
+               if (forceControlPoint) {
+                  putSingleRecord(transid, value.getStatus(), value.getParticipatingRegions(), true);
                }
-               catch (Exception e){
-                  LOG.debug("addControlPoint - exception putting buffer " + cpBuffer[i] + " " + e);
+               else {
+                  putSingleRecord(transid, value.getStatus(), value.getParticipatingRegions(), false);
                }
             }
+         }
+         catch (Exception ex) {
+            LOG.error("formatRecord Exception " + ex);
+            ex.printStackTrace();
+            throw ex;
          }
       }
 
       endTime = System.nanoTime();
       LOG.info("TLog Control Point Write Report\n" + 
                    "                        Total records: " 
-                       +  map.size() + " in " + cpWrites + " write operations\n" +
+                       +  lv_map.size() + " in " + cpWrites + " write operations\n" +
                    "                        Write time: " + (endTime - startTime) / 1000 + " microseconds\n" );
 
       try {
@@ -890,8 +911,8 @@ public class TmAuditTlog {
                      LOG.debug("Attempting to remove TLOG writes older than asn " + agedAsn);
                      deleteAgedEntries(agedAsn);
                   }
-                  catch (IOException e){
-                     LOG.error("deleteAgedEntries IOException");
+                  catch (Exception e){
+                     LOG.error("deleteAgedEntries Exception " + e);
                      throw e;
                   }
                }
@@ -905,11 +926,13 @@ public class TmAuditTlog {
             }
             catch (IOException e){
                LOG.error("addControlPoint IOException");
+               e.printStackTrace();
                throw e;
             }
          }
       } catch (IOException e){
-          LOG.error("addControlPoint IOException");
+          LOG.error("addControlPoint IOException 2");
+          e.printStackTrace();
           throw e;
       }
       LOG.trace("addControlPoint returning " + lvCtrlPt);
@@ -924,7 +947,7 @@ public class TmAuditTlog {
          String transidString = new String(String.valueOf(lvTransid));
          Get g;
          long key = (((lvTransid & tLogHashKey) << tLogHashShiftFactor) + (lvTransid & 0xFFFFFFFF));
-         LOG.debug("key: " + key + " hex: " + Long.toHexString(key));
+         LOG.debug("key: " + key + ", hexkey: " + Long.toHexString(key) + ", transid: " +  lvTransid);
          g = new Get(Bytes.toBytes(key));
          int lvTxState = TM_TX_STATE_NOTX;
          String recordString;
@@ -932,9 +955,9 @@ public class TmAuditTlog {
          String stateString = new String();
          String transidToken = new String();
          String tableNameToken = new String();
-         int    lockIndex = (int)(lvTransid & tLogHashKey);
+         int    lv_lockIndex = (int)(lvTransid & tLogHashKey);
          try {
-            Result r = table[lockIndex].get(g);
+            Result r = table[lv_lockIndex].get(g);
             if (r == null) {
                LOG.debug("getTransactionState: tLog result is null: " + transidString);
             }
@@ -981,7 +1004,7 @@ public class TmAuditTlog {
                String keyS = new String(r.getRow());
                Get get = new Get(r.getRow());
                get.setMaxVersions(versions);  // will return last n versions of row
-               Result lvResult = table[lockIndex].get(get);
+               Result lvResult = table[lv_lockIndex].get(get);
                // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
                List<KeyValue> list = lvResult.getColumn(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
                for (KeyValue element : list) {
