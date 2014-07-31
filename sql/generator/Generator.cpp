@@ -807,6 +807,24 @@ desc_struct* Generator::createColDescs(
       col_desc->body.columns_desc.datetimeend = (rec_datetime_field)info->dtEnd;
 
       col_desc->body.columns_desc.upshift = (info->upshifted ? 1 : 0);
+      col_desc->body.columns_desc.caseinsensitive = (short)FALSE;
+
+      col_desc->body.columns_desc.pictureText = new HEAP char[340];
+      NAType::convertTypeToText(col_desc->body.columns_desc.pictureText,//OUT
+				col_desc->body.columns_desc.datatype,
+				col_desc->body.columns_desc.length,
+				col_desc->body.columns_desc.precision,
+				col_desc->body.columns_desc.scale,
+				col_desc->body.columns_desc.datetimestart,
+				col_desc->body.columns_desc.datetimeend,
+				col_desc->body.columns_desc.datetimefractprec,
+				col_desc->body.columns_desc.intervalleadingprec,
+				col_desc->body.columns_desc.upshift,
+				col_desc->body.columns_desc.caseinsensitive,
+				(CharInfo::CharSet)col_desc->body.columns_desc.character_set,
+				(CharInfo::Collation)col_desc->body.columns_desc.collation_sequence,
+				NULL
+				);
 
       col_desc->body.columns_desc.defaultClass  = info->defaultClass;
       if (info->defaultClass == COM_NO_DEFAULT)
@@ -1041,17 +1059,26 @@ desc_struct * Generator::createVirtualTableDesc(
   table_desc->body.table_desc.tablename = new HEAP char[strlen(tableName)+1];
   strcpy(table_desc->body.table_desc.tablename, tableName);
   
+  table_desc->body.table_desc.hbaseCreateOptions  = NULL;
   if (tableInfo)
     {
       convertInt64ToUInt32Array(tableInfo->createTime, table_desc->body.table_desc.createtime);
       convertInt64ToUInt32Array(tableInfo->redefTime, table_desc->body.table_desc.redeftime);
       convertInt64ToUInt32Array(tableInfo->objUID, table_desc->body.table_desc.objectUID);
+      table_desc->body.table_desc.numSaltPartns = tableInfo->numSaltPartns;
+      if (tableInfo->hbaseCreateOptions)
+	{
+	  table_desc->body.table_desc.hbaseCreateOptions  = 
+	    new HEAP char[strlen(tableInfo->hbaseCreateOptions) + 1];
+	  strcpy(table_desc->body.table_desc.hbaseCreateOptions, tableInfo->hbaseCreateOptions);
+	}
     }
   else
     {
       *(Int64*)&table_desc->body.table_desc.createtime = 0;
       *(Int64*)&table_desc->body.table_desc.redeftime = 0;
       *(Int64*)&table_desc->body.table_desc.objectUID = 0;
+      table_desc->body.table_desc.numSaltPartns = 0;
     }
 
   table_desc->body.table_desc.issystemtablecode = 1;

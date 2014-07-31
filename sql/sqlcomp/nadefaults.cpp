@@ -4549,7 +4549,10 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
       tablesRead_.insert(confFile);           
 
       CmpSeabaseDDL cmpSBD((NAHeap *)heap_, FALSE);
-      Lng32 errNum = cmpSBD.validateVersions(this);
+      Lng32 hbaseErr = 0;
+      NAString hbaseErrStr;
+      Lng32 errNum = cmpSBD.validateVersions(this, NULL, NULL, NULL, 
+					     &hbaseErr, &hbaseErrStr);
       if (errNum == 0) // seabase is initialized properly
 	{
 	  // read from seabase defaults table
@@ -4560,6 +4563,8 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
 	{
 	  CmpCommon::context()->setIsUninitializedSeabase(TRUE);
 	  CmpCommon::context()->uninitializedSeabaseErrNum() = errNum;
+	  CmpCommon::context()->hbaseErrNum() = hbaseErr;
+	  CmpCommon::context()->hbaseErrStr() = hbaseErrStr;
 	}
     }
 

@@ -1962,6 +1962,23 @@ short HbaseAccess::codeGen(Generator * generator)
 			   &scanExpr);
     }
 
+  if (getOptStoi() && getOptStoi()->getStoi())
+    generator->addSqlTableOpenInfo(getOptStoi()->getStoi());
+
+  LateNameInfo* lateNameInfo = new(generator->wHeap()) LateNameInfo();
+  char * compileTimeAnsiName = (char*)getOptStoi()->getStoi()->ansiName();
+
+  lateNameInfo->setCompileTimeName(compileTimeAnsiName, space);
+  lateNameInfo->setLastUsedName(compileTimeAnsiName, space);
+  lateNameInfo->setNameSpace(COM_TABLE_NAME);
+  if (getIndexDesc()->getNAFileSet()->getKeytag() != 0)
+    // is an index.
+    {
+      lateNameInfo->setIndex(TRUE);
+      lateNameInfo->setNameSpace(COM_INDEX_NAME);
+    }
+  generator->addLateNameInfo(lateNameInfo);
+
  // generate filter value expression, if present
   Queue * hbaseFilterColNames = NULL;
   Queue * hbaseCompareOpList = NULL;

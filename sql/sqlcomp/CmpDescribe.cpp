@@ -1039,6 +1039,24 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
 } // SHOWDDL
 
 
+short exeImmedCQD(const char *cqd, NABoolean hold)
+{
+  Int32 retcode = 0;
+
+  ExeCliInterface cliInterface(CmpCommon::statementHeap());
+  if (hold)
+    retcode = cliInterface.holdAndSetCQD(cqd, "ON");
+  else
+    retcode = cliInterface.restoreCQD(cqd);
+  if (retcode < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+      return retcode;
+    }
+      
+  return 0;
+}
 
 short exeImmedOneStmt(const char *controlStmt)
 {
@@ -1551,6 +1569,14 @@ static short CmpDescribePlan(
   SQLMODULE_ID module;
   SQLDESC_ID sql_src;
 
+  Space space;
+  ULng32 originalParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+
+  char *genCodeBuf = NULL;
+  Lng32 genCodeSize = 0;
+  char uniqueStmtId[ComSqlId::MAX_QUERY_ID_LEN+1];
+  Lng32 uniqueStmtIdLen = ComSqlId::MAX_QUERY_ID_LEN;
+
   init_SQLCLI_OBJ_ID(&stmt_id);
   init_SQLMODULE_ID(&module);
   init_SQLCLI_OBJ_ID(&sql_src);
@@ -1569,9 +1595,7 @@ static short CmpDescribePlan(
   stmt_id.handle = 0;
   retcode = SQL_EXEC_AllocStmt(&stmt_id, 0);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 	
   // Allocate a descriptor which will hold the SQL statement source
   sql_src.name_mode = desc_handle;
@@ -1581,17 +1605,13 @@ static short CmpDescribePlan(
   sql_src.handle = 0;
   retcode = SQL_EXEC_AllocDesc(&sql_src, (SQLDESC_ID *)0);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_CHAR_SET,
                                  SQLCHARSETCODE_UTF8
                                  , 0);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   // The arkcmp that will be used to compile this query does not
   // know about the control statements that were issued.
@@ -1599,43 +1619,38 @@ static short CmpDescribePlan(
   retcode = sendAllControls(TRUE, FALSE, TRUE);
   if (retcode)
     return (short)retcode;
-  
+
+  retcode = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", TRUE);
+  if (retcode)
+    return (short)retcode;
+
   // send control session to indicate showplan is being done
   retcode = exeImmedOneStmt("CONTROL SESSION SET 'SHOWPLAN' 'ON';");
   if (retcode)
-    return (short)retcode;
+    goto label_error;
+  //    return (short)retcode;
 
   // Now prepare the query to be 'showplan'ed
   retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_VAR_PTR,
 				 (Long)query, 0);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
   {
     resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-    return ((retcode < 0) ? -1 : (short)retcode);
+    goto label_error;
+    //    return ((retcode < 0) ? -1 : (short)retcode);
   }
-#pragma warn(1506)  // warning elimination 
 
   retcode = SQL_EXEC_SetDescItem(&sql_src, 1, SQLDESC_LENGTH,
-#pragma nowarn(1506)   // warning elimination 
 				 strlen(query) + 1, 0);
-#pragma warn(1506)  // warning elimination 
   if (retcode)
   {
     resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-#pragma nowarn(1506)   // warning elimination 
-    return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
+    goto label_error;
   }
 
-  ULng32 originalParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal (originalParserFlags);
 
   // prepare it and get the generated code size
-  char *genCodeBuf = NULL;
-  Lng32 genCodeSize = 0;
-  char uniqueStmtId[ComSqlId::MAX_QUERY_ID_LEN+1];
-  Lng32 uniqueStmtIdLen = ComSqlId::MAX_QUERY_ID_LEN;
   strcpy(uniqueStmtId, "    ");
   retcode = SQL_EXEC_Prepare2(&stmt_id, &sql_src, 
 			      NULL, 0, 
@@ -1662,10 +1677,9 @@ static short CmpDescribePlan(
     resetRetcode = SQL_EXEC_MergeDiagnostics_Internal(*CmpCommon::diags());
 
     resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-    return -1;
-  }
 
-  Space space;
+    goto label_error;
+  }
 
   retcode = CmpFormatPlan(stmt_id, flags, 
 			  genCodeBuf, genCodeSize, 
@@ -1675,7 +1689,7 @@ static short CmpDescribePlan(
   if (retcode)
   {
     resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
-    return (short)retcode;
+    goto label_error;
   }
 
   outbuflen = space.getAllocatedSpaceSize();
@@ -1684,8 +1698,10 @@ static short CmpDescribePlan(
 
   retcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
   if (retcode)
-    return (short) retcode;
+    goto label_error;
 	
+  resetRetcode  = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", FALSE);
+
    // free up resources
   retcode = SQL_EXEC_DeallocDesc(&sql_src);
   if (retcode)
@@ -1695,11 +1711,16 @@ static short CmpDescribePlan(
 
   retcode = SQL_EXEC_DeallocStmt(&stmt_id);
   if (retcode)
-#pragma nowarn(1506)   // warning elimination 
     return ((retcode < 0) ? -1 : (short)retcode);
-#pragma warn(1506)  // warning elimination 
 
   return 0;
+
+ label_error:
+    resetRetcode = exeImmedOneStmt("CONTROL SESSION RESET 'SHOWPLAN';");
+
+    resetRetcode  = exeImmedCQD("TRAF_RELOAD_NATABLE_CACHE", FALSE);
+
+    return ((retcode < 0) ? -1 : (short)retcode);
 } // CmpDescribePlan
 
 
@@ -2565,8 +2586,14 @@ short CmpDescribeSeabaseTable (
       
       if ((isSalted) && (withPartns))
         {
-          Lng32 numPartitions = naf->getCountOfPartitions();
-	  sprintf(buf,  "  SALT USING %d PARTITIONS", numPartitions);
+	  Lng32 currPartitions = naf->getCountOfPartitions();
+          Lng32 numPartitions = naTable->numSaltPartns();
+
+	  if (numPartitions != currPartitions)
+	    sprintf(buf,  "  SALT USING %d PARTITIONS /* ACTUAL PARTITIONS %d */", numPartitions, currPartitions);
+	  else
+	    sprintf(buf,  "  SALT USING %d PARTITIONS", numPartitions);
+	    
           outputShortLine(space, buf);
 
           ValueIdList saltCols;
@@ -2612,9 +2639,42 @@ short CmpDescribeSeabaseTable (
               outputShortLine(space, sc.data());
             }
         }
+      else if ((NOT isSalted) && (withPartns))
+        {
+	  Lng32 currPartitions = naf->getCountOfPartitions();
+
+	  if (currPartitions > 1)
+	    {
+	      sprintf(buf,  "  /* ACTUAL PARTITIONS %d */", currPartitions);
+	      
+	      outputShortLine(space, buf);
+	    }
+	}
 
       if (NOT isAudited)
 	outputShortLine(space, " attributes no audit");
+
+      if ((naTable->hbaseCreateOptions()) &&
+	  (naTable->hbaseCreateOptions()->entries() > 0))
+	{
+	  outputShortLine(space, "  HBASE_OPTIONS ");
+	  outputShortLine(space, "  ( ");
+	  
+	  for (Lng32 i = 0; i < naTable->hbaseCreateOptions()->entries(); i++)
+	    {
+	      HbaseCreateOption * hco = (*naTable->hbaseCreateOptions())[i];
+
+	      NABoolean comma = FALSE;
+	      if (i < naTable->hbaseCreateOptions()->entries() - 1)
+		comma = TRUE;
+	      sprintf(buf, "    %s = '%s'%s", hco->key().data(), hco->val().data(),
+		      (comma ? "," : " "));
+	      outputShortLine(space, buf);
+	    }
+
+	  outputShortLine(space, "  ) ");
+	}
+
       if (NOT noTrailingSemi)
 	outputShortLine(space, ";");
     }

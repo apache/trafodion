@@ -5977,12 +5977,12 @@ void ValueIdList::convertToTextKey(const ValueIdList& keyList, NAString& result)
        else if ((val == "<min>") ||
 		(val == "<max>"))
 	 {
-	   char buf[1000];
-	   Lng32 bufLen = 1001;
-	   bufLen = MINOF(1000, 
-			  (type.isVaryingLen() ? 
-			   (type.getNominalSize() + type.getVarLenHdrSize()) :
-			   type.getNominalSize())); //type.getTotalSize());
+	   Lng32 bufLen = 
+	     (type.isVaryingLen() ? 
+	      (type.getNominalSize() + type.getVarLenHdrSize()) :
+	      type.getNominalSize());
+	   char * buf = new(CmpCommon::statementHeap()) char[bufLen+10];
+
 	   NAString *mmVal = NULL;
 	   if (val == "<min>")
 	     {

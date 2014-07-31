@@ -9922,6 +9922,10 @@ RelExpr *Update::bindNode(BindWA *bindWA)
 	{
 	  xnsfrmHbaseUpdate = TRUE;
 	}
+      else if (getCheckConstraints().entries())
+	{
+	  xnsfrmHbaseUpdate = TRUE;
+	}
      }  
   
   if (xnsfrmHbaseUpdate)

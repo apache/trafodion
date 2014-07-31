@@ -279,6 +279,9 @@ public :
   const char *getCompilerId() const { return compilerId_; }
 
   Lng32 &uninitializedSeabaseErrNum() { return uninitializedSeabaseErrNum_;}
+  Lng32 &hbaseErrNum() { return hbaseErrNum_;}
+  NAString &hbaseErrStr() { return hbaseErrStr_;}
+
   void switchContext();
   void switchBackContext();
   void resetContext();
@@ -452,6 +455,10 @@ private:
   char compilerId_[COMPILER_ID_LEN];
   Int16 recursionLevel_;
   Lng32 uninitializedSeabaseErrNum_;
+  // underlying hbase error and detail info, if returned.
+  // valid when uninitializedSeabaseErrNum_ is set.
+  Lng32 hbaseErrNum_; 
+  NAString hbaseErrStr_;
   ARRAY(const char *) hosts_;
   NAClusterInfo *clusterInfo_;
   RuleSet *ruleSet_;

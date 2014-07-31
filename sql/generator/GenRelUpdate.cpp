@@ -1087,6 +1087,33 @@ short HbaseDelete::codeGen(Generator * generator)
 	}
     }
 
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      if ((keyInfo && getSearchKey() && getSearchKey()->isUnique()) ||
+	  (tdbListOfUniqueRows))
+	{
+	  // Save node for later use by RelRoot in the case of UPDATE CURRENT OF.
+	  generator->updateCurrentOfRel() = (void*)this;
+	}
+    }
+
+  if (getOptStoi() && getOptStoi()->getStoi())
+    generator->addSqlTableOpenInfo(getOptStoi()->getStoi());
+
+  LateNameInfo* lateNameInfo = new(generator->wHeap()) LateNameInfo();
+  char * compileTimeAnsiName = (char*)getOptStoi()->getStoi()->ansiName();
+
+  lateNameInfo->setCompileTimeName(compileTimeAnsiName, space);
+  lateNameInfo->setLastUsedName(compileTimeAnsiName, space);
+  lateNameInfo->setNameSpace(COM_TABLE_NAME);
+  if (getIndexDesc()->getNAFileSet()->getKeytag() != 0)
+    // is an index.
+    {
+      lateNameInfo->setIndex(TRUE);
+      lateNameInfo->setNameSpace(COM_INDEX_NAME);
+    }
+  generator->addLateNameInfo(lateNameInfo);
+ 
   if (returnRow)
     {
       // The hbase row will be returned as the last entry of the returned atp.
@@ -1604,29 +1631,38 @@ short HbaseUpdate::codeGen(Generator * generator)
 			   ex_expr::exp_SCAN_PRED,
 			   &mergeUpdScanExpr);
     }
-  else if (0) //getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
+  else if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
     {
-      const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
-      CollIndex jj = 0;
-      for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
-	{
-	  const ItemExpr *assignExpr = newRecExprArray()[ii].getItemExpr();
-	  const ValueId &tgtValueId = assignExpr->child(0)->castToItemExpr()->getValueId();
-	  Attributes * colAttr = (generator->addMapInfo(tgtValueId, 0))->getAttr();
-	  Attributes * castAttr = (generator->getMapInfo(tgtValueId, 0))->getAttr();
-	  
-	  colAttr->copyLocationAttrs(castAttr);
-	}
-
-      ItemExpr *constrTree = 
-	getCheckConstraints().rebuildExprTree(ITM_AND, TRUE, TRUE);
-      
-      if (getTableDesc()->getNATable()->hasSerializedColumn())
-	constrTree = generator->addCompDecodeForDerialization(constrTree);
-
-      expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
-			   &mergeUpdScanExpr);
+      GenAssert(FALSE, "Should not reach here. This update should have been transformed to delete/insert");
     }
+ 
+  if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
+      (NOT isMerge()))
+    {
+      if ((keyInfo && getSearchKey() && getSearchKey()->isUnique()) ||
+	  ( tdbListOfUniqueRows))
+	{
+	  // Save node for later use by RelRoot in the case of UPDATE CURRENT OF.
+	  generator->updateCurrentOfRel() = (void*)this;
+	}
+    }
+
+  if (getOptStoi() && getOptStoi()->getStoi())
+    generator->addSqlTableOpenInfo(getOptStoi()->getStoi());
+
+  LateNameInfo* lateNameInfo = new(generator->wHeap()) LateNameInfo();
+  char * compileTimeAnsiName = (char*)getOptStoi()->getStoi()->ansiName();
+
+  lateNameInfo->setCompileTimeName(compileTimeAnsiName, space);
+  lateNameInfo->setLastUsedName(compileTimeAnsiName, space);
+  lateNameInfo->setNameSpace(COM_TABLE_NAME);
+  if (getIndexDesc()->getNAFileSet()->getKeytag() != 0)
+    // is an index.
+    {
+      lateNameInfo->setIndex(TRUE);
+      lateNameInfo->setNameSpace(COM_INDEX_NAME);
+    }
+  generator->addLateNameInfo(lateNameInfo);
  
   ex_expr * returnMergeInsertExpr = NULL;
   ULng32 returnedFetchedRowLen = 0;
@@ -2141,7 +2177,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
   const NATable *naTable = getTableDesc()->getNATable();
 
- // If constraints are present, generate constraint expression.
+  // If constraints are present, generate constraint expression.
   // Only works for base tables because the constraint information is
   // stored with the table descriptor which doesn't exist for indexes.
   //
@@ -2176,8 +2212,55 @@ short HbaseInsert::codeGen(Generator *generator)
       
       colAttr->copyLocationAttrs(castAttr);
       indexAttr->copyLocationAttrs(castAttr);
+
+      // if any of the target column is also an input value to this operator, then
+      // make the value id of that input point to the location of the target column.
+      // This is done as the input column value will become the target after this
+      // insert expr is evaluated.
+      const ValueIdSet& inputSet = getGroupAttr()->getCharacteristicInputs();
+      ValueId inputValId;
+      if (inputSet.entries() > 0)
+	{
+	  NAColumn *inputCol = NULL;
+	  NABoolean found = FALSE;
+	  for (inputValId = inputSet.init();
+	       ((NOT found) && (inputSet.next(inputValId)));
+	       inputSet.advance(inputValId) )
+	    {
+	      if ((inputValId.getItemExpr()->getOperatorType() != ITM_BASECOLUMN) &&
+		  (inputValId.getItemExpr()->getOperatorType() != ITM_INDEXCOLUMN))
+		{
+		  continue;
+		}
+	      
+	      if (inputValId.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+		{
+		  inputCol = ((BaseColumn*)inputValId.getItemExpr())->getNAColumn();
+		}
+	      else
+		{
+		  inputCol = ((IndexColumn*)inputValId.getItemExpr())->getNAColumn();
+		}
+	      
+	      if ((col->getColName() == inputCol->getColName()) &&
+                  (col->getHbaseColFam() == inputCol->getHbaseColFam()) &&
+                  (col->getHbaseColQual() == inputCol->getHbaseColQual()) &&
+                  (col->getNATable()->getTableName().getQualifiedNameAsAnsiString() ==
+                   inputCol->getNATable()->getTableName().getQualifiedNameAsAnsiString()))
+		{
+		  found = TRUE;
+		  break;
+		}
+	    } // for
+
+	  if (found)
+	    {
+	      Attributes * inputValAttr = (generator->addMapInfo(inputValId, 0))->getAttr();
+	      inputValAttr->copyLocationAttrs(castAttr);
+	    }
+	} // if
     }
-  
+
   ULng32 f;
   expGen->generateKeyEncodeExpr(
 				getIndexDesc(),                         // describes the columns

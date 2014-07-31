@@ -144,7 +144,9 @@ class CmpSeabaseDDL
   short validateVersions(NADefaults *defs, 
 			 ExpHbaseInterface * inEHI = NULL,
 			 Int64 * mdMajorVersion = NULL,
-			 Int64 * mdMinorVersion = NULL);
+			 Int64 * mdMinorVersion = NULL,
+			 Lng32 * hbaseErr = NULL,
+			 NAString * hbaseErrStr = NULL);
 
   short executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 			  NAString &currCatName, NAString &currSchName);
@@ -160,6 +162,11 @@ class CmpSeabaseDDL
                         const char * schName,
                         const char * objName,
                         Int32 * objectOwner);
+
+  static short genHbaseCreateOptions(
+				     const char * hbaseCreateOptionsStr,
+				     NAList<HbaseCreateOption*>* &hbaseCreateOptions,
+				     NAMemory * heap);
 
    desc_struct *getSeabaseRoutineDesc(const NAString &catName,
                                       const NAString &schName,
@@ -449,6 +456,12 @@ class CmpSeabaseDDL
 			    const char * objName,
 			    NABoolean audited,
                             const NAString& objType);
+
+  short updateTextTable(ExeCliInterface * cliInterface, Int64 objUID, NAString &text);
+
+  short createEncodedKeysBuffer(char** &encodedKeysBuffer,
+				desc_struct * colDescs, desc_struct * keyDescs,
+				Lng32 numSplits, Lng32 numKeys, Lng32 keyLength);
 
   short validateRoutine( 
                         ExeCliInterface *cliInterface,

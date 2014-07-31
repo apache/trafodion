@@ -320,12 +320,12 @@ CREATE TABLE if not exists TRAFODION.MINOTAUR.EVENTS_LOAD75
   , PRIMARY KEY (EVENT_ID ASC,SRCIP ASC, AGENTRECEIPTTIME ASC)
   )
   SALT USING 75 PARTITIONS
+  hbase_options (blockcache = 'TRUE', TTL = '1000')
 ;
-
---cqd attempt_esp_parallelism 'OFF';
---cqd pcode_opt_level 'OFF';
 
 prepare s from
 select * from minotaur.events_load75<<+ cardinality 10e6 >>  where srcip = '120.120.120.1' and agentreceipttime = timestamp '2014-05-28 15:10:33';
 
 execute s;
+
+showddl TRAFODION.MINOTAUR.EVENTS_LOAD75;

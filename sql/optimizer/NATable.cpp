@@ -4288,7 +4288,10 @@ NATable::NATable(BindWA *bindWA,
     isUserUpdatableSeabaseMD_(FALSE),
     resetHDFSStatsAfterStmt_(FALSE),
     hiveDefaultStringLen_(0),
-    hiveTableId_(-1)
+    hiveTableId_(-1),
+    tableDesc_(inTableDesc),
+    numSaltPartns_(0),
+    hbaseCreateOptions_(NULL)
 {
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
   NAString mmPhase;
@@ -4328,6 +4331,17 @@ NATable::NATable(BindWA *bindWA,
       // Need to initialize the maxIndexLevelsPtr field
       *maxIndexLevelsPtr = 1;
     }
+
+  numSaltPartns_ = table_desc->body.table_desc.numSaltPartns;
+
+  NAList<HbaseCreateOption*>* hbaseCreateOptions = NULL;
+  if ((table_desc->body.table_desc.hbaseCreateOptions) &&
+      (CmpSeabaseDDL::genHbaseCreateOptions
+       (table_desc->body.table_desc.hbaseCreateOptions,
+	hbaseCreateOptions,
+	heap_)))
+    return;
+  hbaseCreateOptions_ = hbaseCreateOptions;
 
   if ((corrName.isHbase()) || (corrName.isSeabase()))
     {
@@ -5051,7 +5065,10 @@ NATable::NATable(BindWA *bindWA,
     isUserUpdatableSeabaseMD_(FALSE),
     resetHDFSStatsAfterStmt_(FALSE),
     hiveDefaultStringLen_(0),
-    hiveTableId_(htbl->tblID_)
+    hiveTableId_(htbl->tblID_),
+    tableDesc_(NULL),
+    numSaltPartns_(0),
+    hbaseCreateOptions_(NULL)
 {
 
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
@@ -6939,6 +6956,17 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       table = NULL;
     }
 
+  if (0) //(table && (corrName.isHbase() || corrName.isSeabase()))
+    {
+      const NAString * val =
+	ActiveControlDB()->getControlSessionValue("SHOWPLAN");
+      if ( ( (val) && (*val == "ON") ) &&
+	   (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
+	{
+	  remove(table->getKey());
+	  table = NULL;
+	}
+    }
 
   // for caching statistics
   if ((cacheMetaData_ && useCache_) && corrName.isCacheable())

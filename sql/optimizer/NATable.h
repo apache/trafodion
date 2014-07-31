@@ -55,6 +55,7 @@ class BindWA;
 class MVInfoForDML;
 class NATableDB;
 struct desc_struct;
+class HbaseCreateOption;
 
 typedef QualifiedName* QualifiedNamePtr;
 typedef ULng32 (*HashFunctionPtr)(const QualifiedName&);
@@ -757,6 +758,10 @@ public:
 
   NABoolean insertMissingStatsWarning(CollIndexSet colsSet) const;
 
+  const desc_struct * getTableDesc() const { return tableDesc_; }
+  Lng32 numSaltPartns() { return numSaltPartns_; }
+  NAList<HbaseCreateOption*> * hbaseCreateOptions() { return hbaseCreateOptions_;}
+
   NABoolean isStatsFetched() const {return statsFetched_; };
 
   void setStatsFetched(NABoolean flag=TRUE) {statsFetched_ = flag; }
@@ -1042,6 +1047,13 @@ private:
   char * parentTableName_;
 
   desc_struct *partnsDesc_;
+
+  desc_struct *tableDesc_;
+
+  // number of salted partitions specified at table create time.
+  Lng32 numSaltPartns_;
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions_;
 
   // hash table to store all the column positions for which missing
   // stats warning has been generated. We are not storing ValueIdSet

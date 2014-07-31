@@ -36,7 +36,6 @@
 #include "CmpSeabaseDDLincludes.h"
 #include "ElemDDLColDefault.h"
 #include "NumericType.h"
-#include "EncodedKeyValue.h"
 #include "ComUser.h"
 #include "keycolumns.h"
 #include "ElemDDLColRef.h"
@@ -1214,6 +1213,27 @@ void CmpSeabaseDDL::createSeabaseTable(
       return;
     }
 
+  char ** encodedKeysBuffer = NULL;
+  if (numSplits > 0) {
+
+    desc_struct * colDescs = 
+      convertVirtTableColumnInfoArrayToDescStructs(&tableName,
+                                                   colInfoArray,
+                                                   numCols) ;
+    desc_struct * keyDescs = 
+      convertVirtTableKeyInfoArrayToDescStructs(keyInfoArray,
+                                                colInfoArray,
+                                                numKeys) ;
+
+    if (createEncodedKeysBuffer(encodedKeysBuffer,
+				colDescs, keyDescs, numSplits, numKeys, keyLength))
+      {
+	processReturn();
+	
+	return;
+      }
+  }
+
   ParDDLFileAttrsCreateTable &fileAttribs =
     createTableNode->getFileAttributes();
 
@@ -1226,6 +1246,7 @@ void CmpSeabaseDDL::createSeabaseTable(
   tableInfo.validDef = 1;
   tableInfo.hbaseCreateOptions = NULL;
   tableInfo.objOwner = objOwner;
+  tableInfo.numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
 
   NAText hbaseOptionsStr;
   NAList<HbaseCreateOption*> hbaseCreateOptions;
@@ -1234,6 +1255,7 @@ void CmpSeabaseDDL::createSeabaseTable(
   const char *maxFileSizeOptionString = "MAX_FILESIZE";
   const char *splitPolicyOptionString = "SPLIT_POLICY";
 
+  Lng32 numHbaseOptions = 0;
   if (createTableNode->getHbaseOptionsClause())
     {
       for (CollIndex i = 0; i < createTableNode->getHbaseOptionsClause()->getHbaseOptions().entries(); i++)
@@ -1249,17 +1271,23 @@ void CmpSeabaseDDL::createSeabaseTable(
             splitPolicyOptionSpecified = TRUE;
 
 	  hbaseOptionsStr += hbaseOption->key();
-	  hbaseOptionsStr += " = ''";
+	  hbaseOptionsStr += "=''";
 	  hbaseOptionsStr += hbaseOption->val();
-	  hbaseOptionsStr += "'' ";
+	  hbaseOptionsStr += "''";
+
+	  hbaseOptionsStr += "|";
 	}
+
+      numHbaseOptions += createTableNode->getHbaseOptionsClause()->getHbaseOptions().entries();
     }
 
   if (numSplits > 0 /* i.e. a salted table */)
     {
       // set table-specific region split policy and max file
       // size, controllable by CQDs, but only if they are not
-      // already set explicitly in the DDL
+      // already set explicitly in the DDL.
+      // Save these options in metadata if they are specified by user through
+      // explicit create option or through a cqd.
       double maxFileSize = 
         CmpCommon::getDefaultNumeric(HBASE_SALTED_TABLE_MAX_FILE_SIZE);
       NABoolean usePerTableSplitPolicy = 
@@ -1267,7 +1295,7 @@ void CmpSeabaseDDL::createSeabaseTable(
       HbaseCreateOption * hbaseOption = NULL;
 
       if (maxFileSize > 0 && !maxFileSizeOptionSpecified)
-        {
+         {
           char fileSizeOption[100];
           Int64 maxFileSizeInt;
 
@@ -1280,8 +1308,12 @@ void CmpSeabaseDDL::createSeabaseTable(
           hbaseOption = new(STMTHEAP) HbaseCreateOption("MAX_FILESIZE", fileSizeOption);
           hbaseCreateOptions.insert(hbaseOption);
 
-          snprintf(fileSizeOption,100,"MAX_FILESIZE = ''%ld'' ", maxFileSizeInt);
-	  hbaseOptionsStr += fileSizeOption;
+         if (ActiveSchemaDB()->getDefaults().userDefault(HBASE_SALTED_TABLE_MAX_FILE_SIZE) == TRUE)
+           {
+             numHbaseOptions += 1;
+             snprintf(fileSizeOption,100,"MAX_FILESIZE=''%ld''|", maxFileSizeInt);
+             hbaseOptionsStr += fileSizeOption;
+           }
         }
 
       if (usePerTableSplitPolicy && !splitPolicyOptionSpecified)
@@ -1292,19 +1324,50 @@ void CmpSeabaseDDL::createSeabaseTable(
                "SPLIT_POLICY", saltedTableSplitPolicy);
           hbaseCreateOptions.insert(hbaseOption);
 
-	  hbaseOptionsStr += "SPLIT_POLICY = ''";
-	  hbaseOptionsStr += saltedTableSplitPolicy;
-          hbaseOptionsStr += "'' ";
-        }
-      
+          if (ActiveSchemaDB()->getDefaults().userDefault(HBASE_SALTED_TABLE_SET_SPLIT_POLICY) == TRUE)
+            {
+              numHbaseOptions += 1;
+              hbaseOptionsStr += "SPLIT_POLICY=''";
+              hbaseOptionsStr += saltedTableSplitPolicy;
+              hbaseOptionsStr += "''|";
+            }
+        }  
     }
-
-  if (hbaseOptionsStr.length() > 0)
+  
+  /////////////////////////////////////////////////////////////////////
+  // update HBASE_CREATE_OPTIONS field in metadata TABLES table.
+  // Format of data stored in this field, if applicable.
+  //    HBASE_OPTIONS=>numOptions(4bytes)option='val'| ...
+  //    NUM_SPLITS=>4_bytes(int)
+  ///////////////////////////////////////////////////////////////////////
+  NAString hco;
+  //  if ((createTableNode->getHbaseOptionsClause()) &&
+  if  (hbaseOptionsStr.size() > 0)
     {
-      tableInfo.hbaseCreateOptions = hbaseOptionsStr.c_str();
+      hco += "HBASE_OPTIONS=>";
+
+      char hbaseOptionsNumCharStr[5];
+      sprintf(hbaseOptionsNumCharStr, "%04d", numHbaseOptions);
+      hco += hbaseOptionsNumCharStr;
+
+      hco += hbaseOptionsStr.data();
+      
+      hco += " "; // separator
+    }
+  
+  if (numSplits > 0)
+    {
+      char splitNumCharStr[5];
+      sprintf(splitNumCharStr, "%04d", numSplits+1);
+ 
+      hco += "NUM_SALT_PARTNS=>";
+      hco+=splitNumCharStr;
+		 
+      hco += " "; // separator
     }
 
-
+  tableInfo.hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
+     
   Int64 objUID = -1;
   if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
     {
@@ -1351,58 +1414,6 @@ void CmpSeabaseDDL::createSeabaseTable(
 	}
     }
 
-  char ** encodedKeysBuffer = NULL;
-  if (numSplits > 0) {
-
-    desc_struct * colDescs = 
-      convertVirtTableColumnInfoArrayToDescStructs(&tableName,
-                                                   colInfoArray,
-                                                   numCols) ;
-    desc_struct * keyDescs = 
-      convertVirtTableKeyInfoArrayToDescStructs(keyInfoArray,
-                                                colInfoArray,
-                                                numKeys) ;
-
-    NAString ** inArray = createInArrayForLowOrHighKeys(colDescs, 
-                                                        keyDescs,
-                                                        numKeys, 
-                                                        FALSE, 
-                                                        STMTHEAP ); 
-
-    char splitNumCharStr[5];
-    NAString splitNumString;
-
-    /* HBase creates 1 more split that than
-     the number of rows in the split array. In the example below we have a 
-     salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
-     encodedKeysBuffer will have 4 elements, each of length 8. When this
-     buffer is given to HBase through the Java API we get a table with 5 
-     splits and begin/end keys as shown below
-  
-Start Key	                      End Key
-		                      \x00\x00\x00\x01\x00\x00\x00\x00
-\x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00	
-\x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
-\x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00	
-\x00\x00\x00\x04\x00\x00\x00\x00	
-    */
-    encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
-    for(int i =0; i < numSplits; i++)
-      encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
-
-    inArray[0] = &splitNumString;
-    
-    for(Int32 i =0; i < numSplits; i++) {
-      sprintf(splitNumCharStr, "%d", i+1);
-      splitNumString = splitNumCharStr;
-      encodeKeyValues(colDescs,
-                      keyDescs,
-                      inArray, // INPUT
-                      encodedKeysBuffer[i],  // OUTPUT
-                      STMTHEAP,
-                      CmpCommon::diags());
-    }
-  }
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
@@ -1804,14 +1815,14 @@ void CmpSeabaseDDL::createSeabaseTableCompound(
 	{
 	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-	  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+	  cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 	  
 	  processReturn();
 	  
 	  return;
 	}
 
-      cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+      cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
     }
 }
 
@@ -2181,7 +2192,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
 		{
 		  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
 
-		  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+		  cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 		  
 		  processReturn();
 		  
@@ -2190,7 +2201,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
 	      
 	    } // for
 	  
-	  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+	  cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 	  
 	} // if
     } // for
@@ -2918,7 +2929,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
 		     alterAddColNode->getAddConstraintRIArray(),
 		     alterAddColNode->getAddConstraintCheckArray());		     
 
-      cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+      cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_))
 	return;
@@ -4240,30 +4251,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
       return;
     }
 
-  char * buf = new(STMTHEAP) char[400+TEXTLEN];
-  Lng32 checkTextLen = checkConstrText.length();
-  Lng32 numRows = (checkTextLen / TEXTLEN) + 1;
-  Lng32 currPos = 0;
-  for (Lng32 i = 0; i < numRows; i++)
+  if (updateTextTable(&cliInterface, checkUID, checkConstrText))
     {
-      NAString temp = 
-	(i < numRows-1 ? checkConstrText(currPos, TEXTLEN)
-	 : checkConstrText(currPos, (checkTextLen - currPos)));
-
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, '%s')",
-		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-		  checkUID,
-		  i,
-		  temp.data());
-      cliRC = cliInterface.executeImmediate(buf);
-      
-      if (cliRC < 0)
-	{
-	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-	  return;
-	}
-
-      currPos += TEXTLEN;
+      processReturn();
+      return;
     }
 
   // remove NATable for this table
@@ -4595,7 +4586,7 @@ static NABoolean dropOneTable(ExeCliInterface &cliInterface,
   CorrName cn(catName, STMTHEAP, schName, objName);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
   
-  cliRC = cliInterface.restoreCQD("TRAF_RESTORE_NATABLE_CACHE");
+  cliRC = cliInterface.restoreCQD("TRAF_RELOAD_NATABLE_CACHE");
 
   return someObjectsCouldNotBeDropped;
 }
@@ -5527,12 +5518,14 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
        }
     }
   }
-  char audit[5];
-  Lng32 len = 0;
-  str_sprintf(query, "select is_audited from %s.\"%s\".%s where table_uid = %Ld for read committed access",
+
+  str_sprintf(query, "select is_audited, hbase_create_options from %s.\"%s\".%s where table_uid = %Ld for read committed access",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
 	      objUID);
-  cliRC = cliInterface.executeImmediate(query, audit, &len, TRUE);
+
+  Queue * tableAttrQueue = NULL;
+  cliRC = cliInterface.fetchAllRows(tableAttrQueue, query, 0, FALSE, FALSE, TRUE);
+
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -5541,10 +5534,25 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
 
       return NULL;
     }
-  
+
   NABoolean isAudited = TRUE;
-  if (cliRC == 0)
-    isAudited = (memcmp(audit, "Y", 1) == 0);
+  char * hbaseCreateOptions = NULL;
+  if (cliRC == 0) // read some rows
+    {
+      if (tableAttrQueue->entries() != 1) // only one row should be returned
+	{
+	  processReturn();
+	  return NULL;                     
+	}
+      
+      tableAttrQueue->position();
+      OutputInfo * vi = (OutputInfo*)tableAttrQueue->getNext();
+      
+      char * audit = vi->get(0);
+      isAudited =  (memcmp(audit, "Y", 1) == 0);
+      
+      hbaseCreateOptions = vi->get(1);
+    }
 
   Lng32 numCols;
   ComTdbVirtTableColumnInfo * colInfoArray;
@@ -5563,6 +5571,24 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
      processReturn();
      return NULL;                     
   } 
+
+  Lng32 numSaltPartns = 0;
+  if ((tableIsSalted) &&
+      (hbaseCreateOptions))
+    {
+      // get num salt partns from hbaseCreateOptions.
+      // It is stored as:  NUM_SALT_PARTNS=>NNNN
+      char * saltStr = strstr(hbaseCreateOptions, "NUM_SALT_PARTNS=>");
+      if (saltStr)
+	{
+	  char  numSaltPartnsCharStr[5];
+	  char * startNumSaltPartns = saltStr + strlen("NUM_SALT_PARTNS=>");
+	  memcpy(numSaltPartnsCharStr, startNumSaltPartns, 4);
+	  numSaltPartnsCharStr[4] = 0;
+
+	  numSaltPartns = str_atoi(numSaltPartnsCharStr, 4);
+	}
+    }
 
   if (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0)
     {
@@ -6058,6 +6084,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   tableInfo.isAudited = (isAudited ? -1 : 0);
   tableInfo.validDef = 1;
   tableInfo.objOwner = objectOwner;
+  tableInfo.numSaltPartns = numSaltPartns;
+  tableInfo.hbaseCreateOptions = hbaseCreateOptions;
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -6143,7 +6171,12 @@ desc_struct * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
     {
       if (CmpCommon::context()->isUninitializedSeabase())
 	{
-	  *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum());
+	  if (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398)
+	    *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
+				<< DgInt0(CmpCommon::context()->hbaseErrNum())
+				<< DgString0(CmpCommon::context()->hbaseErrStr());
+	  else
+	    *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum());
 	}
       else
 	{

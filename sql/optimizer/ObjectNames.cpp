@@ -77,6 +77,7 @@
 // -----------------------------------------------------------------------
 static THREAD_P NABoolean formatAsAnsiIdentifier = FALSE;
 #define FORMAT(s) formatAsAnsiIdentifier ? ToAnsiIdentifier(s) : s
+#define FORMAT_NO_ASSERT(s) formatAsAnsiIdentifier ? ToAnsiIdentifier(s, FALSE) : s
 
 // -----------------------------------------------------------------------
 // Function GetAnsiNameCharSet()
@@ -1197,7 +1198,7 @@ const NAString ColRefName::getColRefAsString(NABoolean debug,
 					     NABoolean formatForDisplay) const
 {
   // Call static method to return "col", "corr.col", or "cat.sch.tbl.col"
-  NAString tmp(FORMAT(getColName()), CmpCommon::statementHeap());
+  NAString tmp(FORMAT_NO_ASSERT(getColName()), CmpCommon::statementHeap());
   return getColRefAsString(tmp, 
 			   corrName_.getExposedNameAsString
 			   (debug,

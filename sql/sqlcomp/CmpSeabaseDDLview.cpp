@@ -493,30 +493,10 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
-  char * buf = new(STMTHEAP) char[400+TEXTLEN];
-  Lng32 viewTextLen = newViewText.length();
-  Lng32 numRows = (viewTextLen / TEXTLEN) + 1;
-  Lng32 currPos = 0;
-  for (Lng32 i = 0; i < numRows; i++)
+  if (updateTextTable(&cliInterface, objUID, newViewText))
     {
-      NAString temp = 
-	(i < numRows-1 ? newViewText(currPos, TEXTLEN)
-	 : newViewText(currPos, (viewTextLen - currPos)));
-
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, '%s')",
-		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
-		  objUID,
-		  i,
-		  temp.data());
-      cliRC = cliInterface.executeImmediate(buf);
-      
-      if (cliRC < 0)
-	{
-	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-	  return;
-	}
-
-      currPos += TEXTLEN;
+      processReturn();
+      return;
     }
 
   if (updateViewUsage(createViewNode, objUID, &cliInterface))

@@ -377,7 +377,7 @@
 1395 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion need to be upgraded on this system due to metadata version mismatch. Do 'initialize trafodion, upgrade' to upgrade metadata. Or do 'initialize trafodion, drop' followed by 'initialize trafodion'. Be aware that the second option would delete all metadata and user objects from trafodion database.
 1396 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion need to be reinitialized on this system due to data format version mismatch.
 1397 ZZZZZ 99999 BEGINNER MINOR DBADMIN Trafodion metadata is not compatible with the version of software running on this system.
-1398 ZZZZZ 99999 BEGINNER MINOR DBADMIN An error occured while accessing the hbase subsystem. Make sure hbase is up and running.
+1398 ZZZZZ 99999 BEGINNER MINOR DBADMIN Error $0~Int0 occured while accessing the hbase subsystem. Fix that error and make sure hbase is up and running. Error Details: $0~String0. 
 1399 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata has already been upgraded. No action is needed.
 1400 ZZZZZ 99999 BEGINNER MINOR LOGONLY The default value of column $0~ColumnName contains characters that cannot be converted to $1~String0.
 1401 ZZZZZ 99999 BEGINNER MINOR DBADMIN The default value of column $0~ColumnName contains characters that cannot be converted to character set $1~String0.

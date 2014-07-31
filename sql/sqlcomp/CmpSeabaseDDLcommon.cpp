@@ -41,6 +41,8 @@
 #include "Globals.h"
 #include "CmpSeabaseDDLauth.h"
 #include "NAUserId.h"
+#include "StmtDDLCreateView.h"
+#include "EncodedKeyValue.h"
 
 CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
@@ -780,7 +782,9 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
 short CmpSeabaseDDL::validateVersions(NADefaults *defs, 
 				      ExpHbaseInterface * inEHI,
 				      Int64 * mdMajorVersion,
-				      Int64 * mdMinorVersion)
+				      Int64 * mdMinorVersion,
+				      Lng32 * hbaseErrNum,
+				      NAString * hbaseErrStr)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -823,9 +827,25 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       const char * interface = defs->getValue(HBASE_INTERFACE);
       const char * zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
       
-      ehi = allocEHI(server, port, interface, zkPort, FALSE);
+      ehi = allocEHI(server, port, interface, zkPort, TRUE);
       if (! ehi)
 	{
+	  // extract error info from diags area.
+	  if ((CmpCommon::diags()) &&
+	      (CmpCommon::diags()->getNumber() > 0))
+	    {
+	      ComCondition &cc = (*CmpCommon::diags())[1];
+	      if (cc.getSQLCODE() == -8448)
+		{
+		  if (hbaseErrNum)
+		    *hbaseErrNum = cc.getOptionalInteger(0);
+		  if (hbaseErrStr)
+		    *hbaseErrStr = cc.getOptionalString(2);
+		}
+
+	      CmpCommon::diags()->clear();
+	    }
+
 	  retcode = -1398;
 	  goto label_return;
 	}
@@ -834,6 +854,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   retcode = isMetadataInitialized(ehi);
   if (retcode < 0)
     {
+      if (hbaseErrNum)
+	*hbaseErrNum = retcode;
+
       retcode = -1398;
       goto label_return;
     }
@@ -860,6 +883,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
 			      col1ValueList, col2ValueList, col3ValueList);
   if (retcode != HBASE_ACCESS_SUCCESS)
     {
+      if (hbaseErrNum)
+	*hbaseErrNum = retcode;
+
       retcode = -1394;
       goto label_return;
     }
@@ -975,6 +1001,13 @@ short CmpSeabaseDDL::sendAllControlsAndFlags(CmpContext* prevContext)
   if (cliRC < 0)
     return -1;
 
+  // this cqd causes problems when internal indexes are created.
+  // disable it here for ddl operations.
+  // Not sure if this cqd is used anywhere or is needed. Maybe we should remove it.
+  cliRC = cliInterface.holdAndSetCQD("hide_indexes", "NONE");
+  if (cliRC < 0)
+    return -1;
+
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
 
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
@@ -994,6 +1027,8 @@ void CmpSeabaseDDL::restoreAllControlsAndFlags()
   cliRC = cliInterface.restoreCQD("volatile_schema_in_use");
 
   cliRC = cliInterface.restoreCQD("hbase_filter_preds");
+
+  cliRC = cliInterface.restoreCQD("hide_indexes");
 
   cliRC = cliInterface.restoreCQD("attempt_esp_parallelism");
 
@@ -1417,7 +1452,8 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
                 isError = TRUE;
               hbaseCreateOptionsArray[HBASE_MIN_VERSIONS] = hbaseOption->val();
             }
-          else if (hbaseOption->key() == "TIME_TO_LIVE")
+          else if ((hbaseOption->key() == "TIME_TO_LIVE") ||
+		   (hbaseOption->key() == "TTL"))
             {
               if (str_atoi(hbaseOption->val().data(), 
                            hbaseOption->val().length()) == -1)
@@ -2523,6 +2559,68 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
   return 0;
 }
 
+// Convert from hbase options string format to list of structs.
+// String format:
+//    HBASE_OPTIONS=>0002COMPRESSION='GZ'|BLOCKCACHE='10'|
+//    
+short CmpSeabaseDDL::genHbaseCreateOptions(
+					   const char * hbaseCreateOptionsStr,
+					   NAList<HbaseCreateOption*>* &hbaseCreateOptions,
+					   NAMemory * heap)
+{
+  hbaseCreateOptions = NULL;
+
+  if (hbaseCreateOptionsStr == NULL)
+    return 0;
+
+  const char * hboStr = strstr(hbaseCreateOptionsStr, "HBASE_OPTIONS=>");
+  if (! hboStr)
+    return 0;
+
+  char  numHBOstr[5];
+  const char * startNumHBO = hboStr + strlen("HBASE_OPTIONS=>");
+  memcpy(numHBOstr, startNumHBO, 4);
+  numHBOstr[4] = 0;
+  
+  Lng32 numHBO = str_atoi(numHBOstr, 4);
+  if (numHBO == 0)
+    return 0;
+
+  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>;
+
+  const char * optionStart = startNumHBO + 4;
+  
+  for (Lng32 i = 0; i < numHBO; i++)
+    {
+      // look for pattern    ='   to find the end of current option.
+      const char * optionEnd = strstr(optionStart, "='");
+      if (! optionEnd) // this is an error
+	{
+	  delete hbaseCreateOptions;
+	  return -1;
+	}
+
+      const char * valStart = optionEnd + strlen("='");
+      const char * valEnd = strstr(valStart, "'|");
+      if (! valEnd) // this is an error
+	{
+	  delete hbaseCreateOptions;
+	  return -1;
+	}
+
+      NAText key(optionStart, (optionEnd-optionStart));
+      NAText val(valStart, (valEnd - valStart));
+
+      HbaseCreateOption * hco = new(heap) HbaseCreateOption(key, val);
+
+      hbaseCreateOptions->insert(hco);
+
+      optionStart = valEnd + strlen("'|");
+    }
+
+  return 0;
+}
+
 short CmpSeabaseDDL::updateSeabaseMDTable(
 					 ExeCliInterface *cliInterface,
 					 const char * catName,
@@ -2596,7 +2694,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s') ",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
 		  objUID, (isAudited ? "Y" : "N"),
-		  (hbaseCreateOptions ? hbaseCreateOptions : " "));
+		  (hbaseCreateOptions ? hbaseCreateOptions : ""));
       cliRC = cliInterface->executeImmediate(buf);
       if (cliRC < 0)
 	{
@@ -3390,6 +3488,92 @@ short CmpSeabaseDDL::buildKeyInfoArray(
   return 0;
 }
 
+short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
+				     Int64 objUID, NAString &text)
+{
+  Lng32 cliRC = 0;
+
+  char * buf = new(STMTHEAP) char[400+TEXTLEN];
+  Lng32 textLen = text.length();
+  Lng32 numRows = (textLen / TEXTLEN) + 1;
+  Lng32 currPos = 0;
+  for (Lng32 i = 0; i < numRows; i++)
+    {
+      NAString temp = 
+	(i < numRows-1 ? text(currPos, TEXTLEN)
+	 : text(currPos, (textLen - currPos)));
+
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, '%s')",
+		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
+		  objUID,
+		  i,
+		  temp.data());
+      cliRC = cliInterface->executeImmediate(buf);
+      
+      if (cliRC < 0)
+	{
+	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+	  return -1;
+	}
+
+      currPos += TEXTLEN;
+    }
+
+  return 0;
+}
+
+short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
+					     desc_struct * colDescs, desc_struct * keyDescs,
+					     Lng32 numSplits, Lng32 numKeys, Lng32 keyLength)
+{
+  encodedKeysBuffer = NULL;
+  
+  if (numSplits <= 0)
+    return 0;
+
+    NAString ** inArray = createInArrayForLowOrHighKeys(colDescs, 
+                                                        keyDescs,
+                                                        numKeys, 
+                                                        FALSE, 
+                                                        STMTHEAP ); 
+
+    char splitNumCharStr[5];
+    NAString splitNumString;
+
+    /* HBase creates 1 more split than
+       the number of rows in the split array. In the example below we have a 
+       salt column and an integer column as the key. KeyLength is 4 + 4 = 8.
+       encodedKeysBuffer will have 4 elements, each of length 8. When this
+       buffer is given to HBase through the Java API we get a table with 5 
+       splits and begin/end keys as shown below
+       
+       Start Key	                                             End Key
+       \x00\x00\x00\x01\x00\x00\x00\x00
+       \x00\x00\x00\x01\x00\x00\x00\x00      \x00\x00\x00\x02\x00\x00\x00\x00	
+       \x00\x00\x00\x02\x00\x00\x00\x00      \x00\x00\x00\x03\x00\x00\x00\x00
+       \x00\x00\x00\x03\x00\x00\x00\x00      \x00\x00\x00\x04\x00\x00\x00\x00	
+       \x00\x00\x00\x04\x00\x00\x00\x00	
+    */
+    encodedKeysBuffer = new (STMTHEAP) char*[numSplits];
+    for(int i =0; i < numSplits; i++)
+      encodedKeysBuffer[i] = new (STMTHEAP) char[keyLength];
+
+    inArray[0] = &splitNumString;
+    
+    for(Int32 i =0; i < numSplits; i++) {
+      sprintf(splitNumCharStr, "%d", i+1);
+      splitNumString = splitNumCharStr;
+      encodeKeyValues(colDescs,
+                      keyDescs,
+                      inArray, // INPUT
+                      encodedKeysBuffer[i],  // OUTPUT
+                      STMTHEAP,
+                      CmpCommon::diags());
+    }
+
+  return 0;
+}
+
 short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
 				       const NAString &objName,
 				       NAString &currCatName, NAString &currSchName,
@@ -3561,15 +3745,25 @@ void CmpSeabaseDDL::initSeabaseMD()
 
   const char* sysCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
 
-  Lng32 errNum = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi);
+  Lng32 hbaseErrNum = 0;
+  NAString hbaseErrStr;
+  Lng32 errNum = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
+				  NULL, NULL, &hbaseErrNum, &hbaseErrStr);
   if (errNum != 0)
     {
       CmpCommon::context()->setIsUninitializedSeabase(TRUE);
       CmpCommon::context()->uninitializedSeabaseErrNum() = errNum;
+      CmpCommon::context()->hbaseErrNum() = hbaseErrNum;
+      CmpCommon::context()->hbaseErrStr() = hbaseErrStr;
 
       if (errNum != -1393) // 1393: metadata is not initialized
 	{
-	  *CmpCommon::diags() << DgSqlCode(errNum);
+	  if (errNum == -1398)
+	    *CmpCommon::diags() << DgSqlCode(errNum)
+				<< DgInt0(hbaseErrNum)
+				<< DgString0(hbaseErrStr);
+	  else
+	    *CmpCommon::diags() << DgSqlCode(errNum);
 
 	  deallocEHI(ehi); 
 	  return;
@@ -4303,27 +4497,6 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
 
-  NAFileSet * naf = naTable->getClusteringIndex();
-  NABoolean isSalted = FALSE;
-  Int32 keyLength = 0;
-  for (Lng32 ii = 0; (ii < naf->getIndexKeyColumns().entries()); ii++)
-    {
-      NAColumn * nac = naf->getIndexKeyColumns()[ii];
-      if (nac->isComputedColumnAlways())
-	{
-	  isSalted = TRUE;
-	}
-
-      const NAType *colType = nac->getType();
-      keyLength += colType->getEncodedKeyLength();
-    }
-
-  Lng32 numSaltedPartitions = 0;
-  if (isSalted)
-    {
-      numSaltedPartitions = naf->getCountOfPartitions();
-    }
-
   if (naTable->getUniqueConstraints().entries() > 0)
     {
       const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
@@ -4386,17 +4559,32 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
     }
 
   // and recreate it.
-  // TBD: get hbaseCreateOption from metadata to recreate it.
-  NAList<HbaseCreateOption*> * hbaseCreateOptions = NULL;
-  Lng32 numSplits = numSaltedPartitions;
-  //  Lng32 keyLength = 0;
-  char * encodedKeysBuffer = NULL;
+  NAFileSet * naf = naTable->getClusteringIndex();
 
-  // Need to fix encodedKeysBuffer before passing in salt related info. TBD.
+  NAList<HbaseCreateOption*> * hbaseCreateOptions = naTable->hbaseCreateOptions();
+  Lng32 numSaltedPartitions = naTable->numSaltPartns();
+  Lng32 numSplits = (numSaltedPartitions ? numSaltedPartitions - 1 : 0);
+  Lng32 numKeys = naf->getIndexKeyColumns().entries();
+  Lng32 keyLength = naf->getKeyLength();
+  char ** encodedKeysBuffer = NULL;
+
+  const desc_struct * tableDesc = naTable->getTableDesc();
+  desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
+  desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
+  if (createEncodedKeysBuffer(encodedKeysBuffer,
+			      colDescs, keyDescs, numSplits, numKeys, keyLength))
+    {
+      deallocEHI(ehi); 
+
+      processReturn();
+      
+      return;
+    }
+  
   retcode = createHbaseTable(ehi, &hbaseTable, SEABASE_DEFAULT_COL_FAMILY, 
 			     NULL, NULL,
-			     hbaseCreateOptions, 0, 0, //numSplits, keyLength, 
-			     NULL);
+			     hbaseCreateOptions, numSplits, keyLength, 
+			     encodedKeysBuffer);
   if (retcode == -1)
     {
       deallocEHI(ehi); 
@@ -4478,9 +4666,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
 
   // error accessing hbase. Return.
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
-      (CmpCommon::context()->uninitializedSeabaseErrNum()== -1398))
+      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1398))
     {
-      *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum());
+      *CmpCommon::diags() << DgSqlCode(CmpCommon::context()->uninitializedSeabaseErrNum())
+			  << DgInt0(CmpCommon::context()->hbaseErrNum())
+			  << DgString0(CmpCommon::context()->hbaseErrStr());
+      
       return -1;
     }
 

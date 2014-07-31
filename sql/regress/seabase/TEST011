@@ -241,4 +241,39 @@ explain options 'f' insert into t011t1 select a,c from t011t3;
 
 
 
+-- test for update/delete where current of
+cqd hbase_sql_iud_semantics reset;
+cqd hbase_rowset_vsbb_opt reset;
+cqd hbase_updel_cursor_opt reset;
+set envvar sqlci_cursor;
+
+delete from t011t1;
+insert into T011T1 values (1, 'a'), (2, 'b');
+
+declare c cursor for select * from t011t1 for update of b;
+open c;
+fetch c;
+update t011t1 set b = 'aa' where current of c;
+fetch c;
+update t011t1 set b = 'bb' where current of c;
+update t011t1 set b = 'bb' where current of c;
+fetch c;
+update t011t1 set b = 'bb' where current of c;
+close c;
+select * from t011t1;
+
+open c;
+fetch c;
+delete from t011t1 where current of c;
+select * from t011t1;
+fetch c;
+delete from t011t1 where current of c;
+fetch c;
+delete from t011t1 where current of c;
+close c;
+
+select * from t011t1;
+
+
+
 

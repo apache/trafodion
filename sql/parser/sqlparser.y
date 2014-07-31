@@ -8588,7 +8588,7 @@ datetime_value_function : TOK_CURDATE '(' ')'
 				    Cast(new (PARSERHEAP())
 					 CurrentTimestamp(),
 					 new (PARSERHEAP())
-					 SQLTimestamp(TRUE, $2, PARSERHEAP()));
+					 SQLTimestamp(FALSE, $2, PARSERHEAP()));
 				}
 
      /* CURRENT for MP DATETIME with start-end fields */
@@ -8619,7 +8619,7 @@ datetime_value_function : TOK_CURDATE '(' ')'
 				    Cast(new (PARSERHEAP())
 					 CurrentTimestamp(),
                                          new (PARSERHEAP())
-					 SQLTime(TRUE,
+					 SQLTime(FALSE,
                                                  SQLTime::DEFAULT_FRACTION_PRECISION,
                                                  PARSERHEAP()));
 				}
@@ -8638,7 +8638,7 @@ datetime_value_function : TOK_CURDATE '(' ')'
 				    Cast(new (PARSERHEAP())
 					 CurrentTimestamp(),
 					 new (PARSERHEAP())
-					 SQLTime(TRUE, $2, PARSERHEAP()));
+					 SQLTime(FALSE, $2, PARSERHEAP()));
 				}
      | TOK_CURRENT_TIMESTAMP
 				{
@@ -8665,7 +8665,7 @@ datetime_value_function : TOK_CURDATE '(' ')'
 				    Cast(new (PARSERHEAP())
 					 CurrentTimestamp(),
 					 new (PARSERHEAP())
-					 SQLTimestamp(TRUE, $2, PARSERHEAP()));
+					 SQLTimestamp(FALSE, $2, PARSERHEAP()));
 				}
      | TOK_CURRENT_RUNNING
 				{
@@ -8693,7 +8693,7 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                     Cast(new (PARSERHEAP())
                                          CurrentTimestamp(),
                                          new (PARSERHEAP())
-                                         SQLTime(TRUE, SQLTime::DEFAULT_FRACTION_PRECISION, PARSERHEAP()));
+                                         SQLTime(FALSE, SQLTime::DEFAULT_FRACTION_PRECISION, PARSERHEAP()));
                                 }
      | TOK_NOW '(' ')'
                                 {
@@ -28866,10 +28866,10 @@ hbase_options_list : hbase_option
 			hbol->insert($1);
 			$$ = hbol;
 		      }
-                  | hbase_option ',' hbase_options_list
+                     | hbase_options_list ',' hbase_option
                       {
-			$3->insert($1);
-			$$ = $3;
+			$1->insert($3);
+			$$ = $1;
 		      }
 ;
 

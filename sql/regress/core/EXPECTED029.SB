@@ -756,10 +756,7 @@ CREATE VIEW TRAFODION.SCH.T29XVRN4 AS
 --- 11 row(s) deleted.
 >>alter table T29x drop constraint " T29x";
 
-*** ERROR[4222] The ALTER feature is not supported in this software version.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation complete.
 >>
 >>insert into T29xvRN1(a,b)   values(1,1);
 
