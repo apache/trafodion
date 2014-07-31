@@ -34,8 +34,8 @@ CLIENTOBJS	+= $(MONOUTDIR)/clusterconf.o
 CLIENTOBJS	+= $(MONOUTDIR)/lnodeconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/pnodeconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/trace.o
-CLIENTOBJS	+= $(MONOUTDIR)/otrace.o 
-CLIENTOBJS	+= $(MONOUTDIR)/threadtls.o 
+CLIENTOBJS	+= $(MONOUTDIR)/otrace.o
+CLIENTOBJS	+= $(MONOUTDIR)/threadtls.o
 
 TEST_PGMS	 = $(OUTDIR)/childExitCtrl
 TEST_PGMS	+= $(OUTDIR)/childExitParent

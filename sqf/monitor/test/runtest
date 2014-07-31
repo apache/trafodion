@@ -1,5 +1,23 @@
 #!/bin/sh
 #
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
 # Execute this test script from $MY_SQROOT/monitor/test.
 #
 # Cluster environment setup:
@@ -7,7 +25,7 @@
 #      cd $MY_SQROOT
 #      pdsh $MY_NODES mkdir $PWD/monitor
 #      pdsh $MY_NODES mkdir $PWD/monitor/test
-#    - copy test files to $MY_SQROOT/monitor/test in all nodes 
+#    - copy test files to $MY_SQROOT/monitor/test in all nodes
 #      cd $MY_SQROOT/monitor/test
 #      pdcp $MY_NODES -p -r /home/sqft2/monitor/test/* $PWD/
 #    - execute runtest -cluster
@@ -100,7 +118,7 @@ export SQ_SHELL_NOCWD=1
 #export SQ_LOCAL_IO_SHELL_TRACE=1
 
 #
-# Cleanup 
+# Cleanup
 #
 if [ "$cluster" = "-cluster" ]; then
     pdsh $MY_NODES "rm -f $MPI_TMPDIR/monitor.port.*"
@@ -130,7 +148,7 @@ if ( [ $test '==' -1 ] || [ $test '==' 1 ] ); then
 echo "***"
 echo "*** Executing Child Exit test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {name \$CTRLR, nid 0, out $MY_SQROOT/monitor/test/childExit.lst} childExitCtrl $trace
  shutdown
@@ -151,7 +169,7 @@ if ( [ $test '==' -1 ] || [ $test '==' 2 ] ); then
 echo "***"
 echo "*** Executing Multi-Node test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  ! General tests for monitor functionality. This includes
  !  Open, Close, NewProcess, ProcessInfo and sync node state
@@ -180,7 +198,7 @@ if ( [ $test '==' -1 ] || [ $test '==' 3 ] ); then
 echo "***"
 echo "*** Executing Registry test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {name \$CTRLR, nid 0, out $MY_SQROOT/monitor/test/regTest.lst} regTestCtrl $trace
  shutdown
@@ -201,7 +219,7 @@ if ( [ $test '==' -1 ] || [ $test '==' 4 ] ); then
 echo "***"
 echo "*** Executing Death Notice test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  ! Test to register and cancel process death
  ! notices from non-parent process.
@@ -234,7 +252,7 @@ if [ "$cluster" = "-cluster" ]; then
 echo "***"
 echo "*** Executing Persistent Process cluster test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  down 2 !
  delay 15
@@ -255,7 +273,7 @@ else
 echo "***"
 echo "*** Executing Persistent Process test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {name \$PPROC, nid 0, out $MY_SQROOT/monitor/test/persistentProc.lst} persistentProc $trace
  shutdown
@@ -277,7 +295,7 @@ if ( [ $test '==' -1 ] || [ $test '==' 6 ] ); then
 echo "***"
 echo "*** Executing SPX Process test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {name \$SPXCTRL, nid 0, out $MY_SQROOT/monitor/test/spxTest.lst} spxCtrl $trace
  shutdown
@@ -298,7 +316,7 @@ if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
 echo "***"
 echo "*** Executing Process Create test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {name \$PCRE8, nid 0, out $MY_SQROOT/monitor/test/procCreate.lst} procCreate $trace
  exit
@@ -320,7 +338,7 @@ if [ "$cluster" = "-cluster" ]; then
 echo "***"
 echo "*** Executing TmSync cluster test (subtest 7 disabled until it's fixed)"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {nowait, nid 0, name \$CTRLR, out $MY_SQROOT/monitor/test/tmSync.lst} tmSyncCtrl -n 1,3,4,5,6 $trace
  wait $CTRLR
@@ -334,7 +352,7 @@ pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
 echo "***"
 echo "*** Executing TmSync cluster test 8"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {nowait, nid 0, name \$CTRLR, out $MY_SQROOT/monitor/test/tmSync8.lst} tmSyncCtrl -n 8 $trace
  wait $CTRLR
@@ -348,7 +366,7 @@ pdsh $MY_NODES grep FAILED $PWD/tmSync8.lst
 echo "***"
 echo "*** Executing TmSync cluster test 10"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  down 2 !
  delay 15
@@ -365,7 +383,7 @@ else
 echo "***"
 echo "*** Executing TmSync test"
 echo "***"
-shell <<eof 
+shell <<eof
  startup
  exec {nowait, nid 0, name \$CTRLR, out $MY_SQROOT/monitor/test/tmSync.lst} tmSyncCtrl -n 3,4,5,6,7 $trace
  wait $CTRLR
@@ -401,4 +419,3 @@ else
     grep FAILED $PWD/*.lst
 fi
 fi
-

@@ -61,7 +61,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                    MyName, recv_msg->u.request.u.shutdown.level);
         shutdownSent = true;
     }
-    else 
+    else
     {
         printf("[%s] unexpected notice, type=%s\n", MyName,
                MessageTypeString( recv_msg->type));
@@ -143,10 +143,6 @@ void server ()
 
 int main (int argc, char *argv[])
 {
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 

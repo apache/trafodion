@@ -1,3 +1,25 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2012-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//
+///////////////////////////////////////////////////////////////////////////////
+
 // Process creation test.
 // Create processes on local and remote nodes using both
 // waited and no-waited create.
@@ -54,7 +76,7 @@ private:
 
 WorkerProcess::WorkerProcess (const char * name, int nid, int pid)
     : name_(name), nid_(nid), pid_(pid),
-      deathNotices_ (0), createdNotices_(0) 
+      deathNotices_ (0), createdNotices_(0)
 {
 }
 
@@ -68,7 +90,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     if ( recv_msg->type == MsgType_Shutdown )
     {
         if ( tracing )
-            printf("[%s] Shutdown notice received, level=%d\n", 
+            printf("[%s] Shutdown notice received, level=%d\n",
                    MyName,
                    recv_msg->u.request.u.shutdown.level);
     }
@@ -76,7 +98,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
             printf("[%s] Process death notice received for %s (%d, %d),"
-                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
@@ -100,7 +122,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find procList object for %s (%d, %d)\n", 
+            printf("[%s] Could not find procList object for %s (%d, %d)\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
@@ -112,7 +134,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
             printf("[%s] Process creation notice received for %s (%d, %d),"
-                   " port=%s, tag=%lld, ret code=%d\n", 
+                   " port=%s, tag=%lld, ret code=%d\n",
                    MyName,
                    recv_msg->u.request.u.process_created.process_name,
                    recv_msg->u.request.u.process_created.nid,
@@ -129,7 +151,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
             {
                 printf("[%s] *** ERROR *** Got process creation notice for "
                        " %s (%d, %d) but process already in list.\n",
-                       MyName, 
+                       MyName,
                        recv_msg->u.request.u.process_created.process_name,
                        recv_msg->u.request.u.process_created.nid,
                        recv_msg->u.request.u.process_created.pid);
@@ -143,17 +165,17 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         if (!found)
         {
             procList[procListCount]
-                = new WorkerProcess ( 
+                = new WorkerProcess (
                           recv_msg->u.request.u.process_created.process_name,
                           recv_msg->u.request.u.process_created.nid,
                           recv_msg->u.request.u.process_created.pid);
             procList[procListCount]->incrCreatedNotice();
 
             ++procListCount;
-                    
+
             if ( tracing )
                 printf ("[%s] Worker #%d: %s (%d, %d)\n", MyName,
-                        procListCount-1, 
+                        procListCount-1,
                         recv_msg->u.request.u.process_created.process_name,
                         recv_msg->u.request.u.process_created.nid,
                         recv_msg->u.request.u.process_created.pid);
@@ -176,10 +198,6 @@ int main (int argc, char *argv[])
     char procName[25];
 
 
-    // Setup HP_MPI software license
-    int key = 413675219; //413675218 to display banner
-    MPI_Initialized(&key);
-    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
@@ -219,7 +237,7 @@ int main (int argc, char *argv[])
                    MyName, workerName[i], workerCreateNid[i],
                    (workerNowait[i] ? "nowait" : "wait"));
 
-            testSuccess = util.requestNewProcess 
+            testSuccess = util.requestNewProcess
                 ( workerCreateNid[i], ProcessType_Generic,
                   workerNowait[i],
                   workerName[i],
@@ -237,10 +255,10 @@ int main (int argc, char *argv[])
                         = new WorkerProcess ( workerName[i], workerNid[i],
                                               workerPid[i] );
                     ++procListCount;
-                    
+
                     if ( tracing )
                         printf ("[%s] Worker #%d: %s (%d, %d)\n", MyName,
-                                procListCount-1, 
+                                procListCount-1,
                                 workerName[i], workerNid[i], workerPid[i] );
                 }
             }
@@ -264,7 +282,7 @@ int main (int argc, char *argv[])
                (workerNowait[(MAX_WORKERS-1)] ? "nowait" : "wait"),
                server5ArgsTrace[0],((tracing)?server5ArgsTrace[1]:"") );
 
-        testSuccess = util.requestNewProcess 
+        testSuccess = util.requestNewProcess
             ( workerCreateNid[(MAX_WORKERS-1)], ProcessType_Generic,
               workerNowait[(MAX_WORKERS-1)],
               workerName[(MAX_WORKERS-1)],
@@ -283,7 +301,7 @@ int main (int argc, char *argv[])
                                         , workerNid[(MAX_WORKERS-1)]
                                         , workerPid[(MAX_WORKERS-1)] );
                 ++procListCount;
-                
+
                 if ( tracing )
                     printf ( "[%s] Worker #%d: %s (%d, %d)\n", MyName
                            , procListCount-1
@@ -297,7 +315,7 @@ int main (int argc, char *argv[])
         sleep(1);
 
         util.requestShutdown ( ShutdownLevel_Normal );
-        
+
         // Wait for a while so can receive notices
         sleep(3);
 
@@ -323,7 +341,7 @@ int main (int argc, char *argv[])
                         testSuccess = false;
                     }
 
-                    if ( workerNowait[i] 
+                    if ( workerNowait[i]
                          && procList[j]->getCreatedNoticeCount() == 0)
                     {
                         printf("[%s] *** ERROR *** For worker %s did not get "
