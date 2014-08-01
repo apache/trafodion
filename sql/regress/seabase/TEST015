@@ -23,10 +23,7 @@ set schema trafodion.hbase;
 CQD COMP_BOOL_226 'ON';
 cqd TRAF_LOAD_USE_QUASI_SECURE 'on';
 cqd TRAF_LOAD_TAKE_SNAPSHOT 'on';
-cqd HBASE_HASH2_PARTITIONING 'off';
 
---turning embedded  compiler off because the cqd HBASE_HASH2_PARTITIONING 'off'; command did not update the cqd value in the embedded compiler
-cqd CALL_EMBEDDED_ARKCMP 'off';
 
 obey TEST015(clean_up);
 

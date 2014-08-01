@@ -2627,7 +2627,8 @@ public:
     NO_DUPLICATE_CHECK_,
     NO_POPULATE_INDEXES_,
     CONSTRAINTS_,
-    NO_OUTPUT_
+    NO_OUTPUT_,
+    INDEX_TABLE_ONLY_
   };
 
     class HBaseBulkLoadOption
@@ -2659,7 +2660,8 @@ public:
     noDuplicates_(TRUE),
     indexes_(TRUE),
     constraints_(FALSE),
-    noOutput_(FALSE)
+    noOutput_(FALSE),
+    indexTableOnly_(FALSE)
   {
   };
 
@@ -2758,6 +2760,15 @@ public:
   {
    noOutput_ = noOutput;
   }
+
+  NABoolean getIndexTableOnly() const {
+   return indexTableOnly_;
+ }
+
+ void setIndexTableOnly(NABoolean indexTableOnly) {
+   indexTableOnly_ = indexTableOnly;
+ }
+
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
 
@@ -2775,6 +2786,8 @@ private:
   NABoolean indexes_;
   NABoolean constraints_;
   NABoolean noOutput_;
+  //target table is index table
+  NABoolean indexTableOnly_;
 
 };
 

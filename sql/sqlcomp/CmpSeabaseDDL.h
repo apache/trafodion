@@ -482,7 +482,8 @@ class CmpSeabaseDDL
 				      ExeCliInterface * cliInterface,
 				      NABoolean uniqueIndex,
 				      const NAString &indexName, const NAString &tableName,
-				      NAList<NAString> &selColList);
+				      NAList<NAString> &selColList,
+				      NABoolean useLoad );
   
   short buildViewText(StmtDDLCreateView * createViewParseNode,
 		      NAString &viewText);

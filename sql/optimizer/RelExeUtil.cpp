@@ -8411,6 +8411,7 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->indexes_= indexes_;
   result->constraints_= constraints_;
   result->noOutput_= noOutput_;
+  result->indexTableOnly_= indexTableOnly_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -8458,7 +8459,19 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         }
         setTruncateTable(TRUE);
       }
+      break;
 
+      case INDEX_TABLE_ONLY_:
+      {
+        if (getIndexTableOnly())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("INDEX TABLE ONLY");
+          return 1;
+        }
+        setIndexTableOnly(TRUE);
+      }
       break;
       case NO_DUPLICATE_CHECK_:
       {
@@ -8526,6 +8539,15 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
       }
 
     }
+  }
+
+  if (getIndexTableOnly())
+  {
+    // target table is index then : no output, no secondary index maintenance
+    // and no constraint maintenance
+    setNoOutput(TRUE);
+    setIndexes(FALSE);
+    setConstraints(FALSE);
   }
 
   return 0;

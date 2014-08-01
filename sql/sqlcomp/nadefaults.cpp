@@ -3204,6 +3204,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   //user to create it
   DD_____(TRAF_LOAD_PREP_TMP_LOCATION, "/user/trafodion/bulkload/" ),
   DDkwd__(TRAF_LOAD_TAKE_SNAPSHOT ,    "ON"),
+  DDkwd__(TRAF_LOAD_USE_FOR_INDEXES, "ON"),
   DDkwd__(TRAF_LOAD_USE_QUASI_SECURE , "OFF"),
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                 "OFF"),
 

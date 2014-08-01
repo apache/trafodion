@@ -5496,6 +5496,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setIndexes(indexes_);
   exe_util_tdb->setConstraints(constraints_);
   exe_util_tdb->setNoOutput(noOutput_);
+  exe_util_tdb->setIndexTableOnly(indexTableOnly_);
 
   exe_util_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
 

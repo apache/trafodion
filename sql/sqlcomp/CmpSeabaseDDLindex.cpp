@@ -691,10 +691,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     {
-      // populate index
+      NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
+    // populate index
       if (populateSeabaseIndexFromTable(&cliInterface,
 					createIndexNode->isUniqueSpecified(),
-					extIndexName, extTableName, selColList))
+					extIndexName, extTableName, selColList,
+                                        useLoad))
 	{
 	  if (dropSeabaseObject(ehi, createIndexNode->getIndexName(),
 				currCatName, currSchName, COM_INDEX_OBJECT_LIT))
@@ -748,11 +750,18 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
 					  ExeCliInterface * cliInterface,
 					  NABoolean isUnique,
 					  const NAString &indexName, const NAString &tableName,
-					  NAList<NAString> &selColList)
+					  NAList<NAString> &selColList,
+					  NABoolean useLoad)
 {
   Lng32 cliRC = 0;
   NAString query = 
     (isUnique ? "insert with no rollback " : "upsert using load ");
+  if (useLoad)
+  {
+    // index table only option is used internally and is used to populate 
+    //the index table
+    query = " Load with no output, no recovery, Index table only ";
+  }
   query += "into table(index_table ";
   query += indexName;
   query += " ) select ";
@@ -930,10 +939,11 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	      
 	      return;
 	    }
-	  
+	  NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
 	  if (populateSeabaseIndexFromTable(&cliInterface,
 					    naf->uniqueIndex(),
-					    nafIndexName, extTableName, selColList))
+					    nafIndexName, extTableName, selColList,
+	                                    useLoad))
 	    {
 	      // need to purgedata seabase index. TBD.
 	      

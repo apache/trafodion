@@ -2804,6 +2804,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOption>      hbb_no_output
 %type <hBaseBulkLoadOption>      hbb_log_errors_option
 %type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
+%type <hBaseBulkLoadOption>      hbb_index_table_only
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
@@ -19918,6 +19919,7 @@ hbbload_option :   hbb_no_recovery_option
                 | hbb_no_output
                 | hbb_no_populate_indexes
                 | hbb_constraints
+                | hbb_index_table_only
                 
                 /* need to add execptions table and number of erros before stopping*/
 
@@ -19941,7 +19943,18 @@ hbb_truncate_option : TOK_TRUNCATE TOK_TABLE
                                           NULL);
                       $$ = op;
                     }
-                    
+hbb_index_table_only :   TOK_INDEX TOK_TABLE TOK_ONLY
+                    {
+                      if (!Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
+                        YYERROR;
+                      //the target table is index table in this case
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::INDEX_TABLE_ONLY_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }                   
 hbb_no_duplicate_check   : TOK_NO TOK_DUPLICATE TOK_CHECK
                     { //NO DUPLICATES
                       ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
