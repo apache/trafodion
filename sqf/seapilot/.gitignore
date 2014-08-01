@@ -1,0 +1,6 @@
+export/bin64*/
+export/lib64*/
+Linux-x86_64/
+export/include/common/*.pb.h
+export/conf/seaquest.cat
+source/event_templates/sql.error_event.template

@@ -1,0 +1,6 @@
+libtrafodbc*.so
+
+package/relfiles/
+package/*.tar.gz
+
+trace/version*.cpp
