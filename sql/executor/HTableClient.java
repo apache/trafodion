@@ -39,6 +39,7 @@ import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.client.transactional.TransactionalAggregationClient;
+import org.apache.hadoop.hbase.client.transactional.TransactionState;
 
 import org.apache.log4j.Logger;
 
@@ -423,7 +424,7 @@ public class HTableClient {
 		logger.trace("Exit deleteRow");
 		return true;
 	}
-
+/*
     public boolean deleteRows(long transID, RowsToInsert rows,
 			      long timestamp) throws IOException {
 
@@ -455,6 +456,7 @@ public class HTableClient {
 			transState = new TransactionState(transID);
 			table.delete(transState, listOfDeletes);
 			*/
+/*
 			table.delete(listOfDeletes);
 		    } else {
 			table.delete(listOfDeletes);
@@ -462,6 +464,38 @@ public class HTableClient {
 		logger.trace("Exit deleteRow");
 		return true;
 	}
+*/
+
+	public boolean deleteRows(long transID, short rowIDLen, Object rowIDs,
+		      long timestamp) throws IOException {
+
+	        logger.trace("Enter deleteRows() ");
+
+		List<Delete> listOfDeletes = new ArrayList<Delete>();
+		listOfDeletes.clear();
+		ByteBuffer bbRowIDs = (ByteBuffer)rowIDs;
+		short numRows = bbRowIDs.getShort();
+                byte[] rowID;		
+       
+		for (short rowNum = 0; rowNum < numRows; rowNum++) {
+			rowID = new byte[rowIDLen];
+			bbRowIDs.get(rowID, 0, rowIDLen);
+
+			Delete del;
+			if (timestamp == -1)
+			    del = new Delete(rowID);
+			else
+			    del = new Delete(rowID, timestamp);
+			listOfDeletes.add(del);
+		}
+		if (useTRex && (transID != 0)) 
+			table.delete(transID, listOfDeletes);
+                 else
+			table.delete(listOfDeletes);
+		logger.trace("Exit deleteRows");
+		return true;
+	}
+
 
          public byte[] intToByteArray(int value) {
 	     return new byte[] {
@@ -507,6 +541,72 @@ public class HTableClient {
 		return true;
 	}
 
+	public boolean putRow(long transID, byte[] rowID, Object row,
+		byte[] columnToCheck, byte[] colValToCheck,
+		boolean checkAndPut) throws IOException 	{
+
+		logger.trace("Enter putRow() ");
+
+		Put put;
+		ByteBuffer bb;
+		short numCols;
+		short colNameLen, colValueLen;
+		QualifiedColumn qc = null;
+		byte[] family = null;
+		byte[] qualifier = null;
+		byte[] colName, colValue;
+
+		bb = (ByteBuffer)row;
+		put = new Put(rowID);
+
+		numCols = bb.getShort();
+		for (short colIndex = 0; colIndex < numCols; colIndex++)
+		{
+			colNameLen = bb.getShort();
+			colName = new byte[colNameLen];
+			bb.get(colName, 0, colNameLen);
+			colValueLen = bb.getShort();	
+			colValue = new byte[colValueLen];
+			bb.get(colValue, 0, colValueLen);
+			qc = new QualifiedColumn(colName);
+			put.add(qc.getFamily(), qc.getName(), colValue); 
+			if (checkAndPut && colIndex == 0) {
+				family = qc.getFamily();
+				qualifier = qc.getName();
+			} 
+		}
+		if (columnToCheck != null && columnToCheck.length > 0) {
+			qc = new QualifiedColumn(columnToCheck);
+			family = qc.getFamily();
+			qualifier = qc.getName();
+		}
+		boolean res = true;
+		if (checkAndPut)
+		{
+			if (useTRex && (transID != 0)) 
+			    res = table.checkAndPut(transID, rowID, 
+				family, qualifier, colValToCheck, put);
+			 else 
+			    res = table.checkAndPut(rowID, 
+				family, qualifier, colValToCheck, put);
+		}
+		else
+		{
+			if (useTRex && (transID != 0)) 
+				table.put(transID, put);
+			else
+				table.put(put);
+		}
+		return res;
+	}
+
+	public boolean insertRow(long transID, byte[] rowID, 
+                         Object row, 
+			 long timestamp) throws IOException {
+		return putRow(transID, rowID, row, null, null, 
+				false);
+	}
+
 	public boolean insertRow(long transID, byte[] rowID, RowToInsert columns,
 			long timestamp) throws IOException {
 
@@ -526,6 +626,56 @@ public class HTableClient {
 			}
 		return true;
 	}
+
+	public boolean putRows(long transID, short rowIDLen, Object rowIDs, 
+                       Object rows,
+                       long timestamp, boolean autoFlush)
+			throws IOException {
+
+		logger.trace("Enter putRows() ");
+
+		Put put;
+		ByteBuffer bbRows, bbRowIDs;
+		short numCols, numRows;
+		short colNameLen, colValueLen;
+		QualifiedColumn qc = null;
+		byte[] colName, colValue, rowID;
+
+		bbRowIDs = (ByteBuffer)rowIDs;
+		bbRows = (ByteBuffer)rows;
+
+                List<Put> listOfPuts = new ArrayList<Put>();
+		numRows = bbRowIDs.getShort();
+		
+		for (short rowNum = 0; rowNum < numRows; rowNum++) {
+			rowID = new byte[rowIDLen];
+			bbRowIDs.get(rowID, 0, rowIDLen);
+			put = new Put(rowID);
+			numCols = bbRows.getShort();
+			for (short colIndex = 0; colIndex < numCols; colIndex++)
+			{
+				colNameLen = bbRows.getShort();
+				colName = new byte[colNameLen];
+				bbRows.get(colName, 0, colNameLen);
+				colValueLen = bbRows.getShort();	
+				colValue = new byte[colValueLen];
+				bbRows.get(colValue, 0, colValueLen);
+				qc = new QualifiedColumn(colName);
+				put.add(qc.getFamily(), qc.getName(), colValue); 
+                        	if (writeToWAL)  
+                          		put.setWriteToWAL(writeToWAL);
+                        	listOfPuts.add(put);
+			}
+		}
+		if (autoFlush == false)
+			table.setAutoFlush(false, true);
+		if (useTRex && (transID != 0)) {
+			table.put(transID, listOfPuts);
+		} else {
+			table.put(listOfPuts);
+		}
+                return true;
+    	}
 
         public boolean insertRows(long transID, RowsToInsert rows,
                        long timestamp, boolean autoFlush)
@@ -557,7 +707,14 @@ public class HTableClient {
 			table.put(listOfPuts);
 		    }
                 return true;
-         }    
+        }    
+
+	public boolean checkAndInsertRow(long transID, byte[] rowID, 
+                         Object row, 
+			 long timestamp) throws IOException {
+		return putRow(transID, rowID, row, null, null, 
+				true);
+	}
 
 	public boolean checkAndInsertRow(long transID, byte[] rowID, 
                          RowToInsert columns, 
@@ -596,54 +753,16 @@ public class HTableClient {
 		return true;
 	}
 
-    public boolean checkAndUpdateRow(long transID, byte[] rowID, 
-             RowToInsert columns, byte[] columnToCheck, byte[] colValToCheck,
+	public boolean checkAndUpdateRow(long transID, byte[] rowID, 
+             Object columns, byte[] columnToCheck, byte[] colValToCheck,
              long timestamp) throws IOException, Throwable  {
-
-		logger.trace("Enter checkAndUpdateRow(" + new String(rowID) + ", "
-			     + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") ");
-
-			Put put = new Put(rowID);
-
-			int colNum = 0;
-			byte[] family = null;
-			byte[] qualifier = null;
-
-			for (RowToInsert.ColToInsert col : columns)
-			{
-				QualifiedColumn qc = new QualifiedColumn(col.qualName);
-				put.add(qc.getFamily(), qc.getName(), col.colValue);
-
-				if (colNum == 0)
-				    {
-					family = qc.getFamily();
-					qualifier = qc.getName();
-				    }
-
-				colNum++;
-			}
-
-			if (columnToCheck.length > 0) {
-				QualifiedColumn qc = new QualifiedColumn(columnToCheck);
-
-				family = qc.getFamily();
-				qualifier = qc.getName();
-			}
-			
-			boolean res;
-			if (useTRex && (transID != 0)) {
-			    res = table.checkAndPut(transID, rowID, family, qualifier, colValToCheck, put);
-			}
-			else  {
-			    res = table.checkAndPut(rowID, family, qualifier, colValToCheck, put);
-			}
-
-			if (res == false)
-			    return false;
-		return true;
+		return putRow(transID, rowID, columns, columnToCheck, 
+			colValToCheck, 
+				true);
 	}
 
-    public boolean coProcAggr(long transID, int aggrType, byte[] startRowID, 
+        public boolean coProcAggr(long transID, int aggrType, 
+		byte[] startRowID, 
               byte[] stopRowID, byte[] colFamily, byte[] colName, 
               boolean cacheBlocks, int numCacheRows) 
                           throws IOException, Throwable {

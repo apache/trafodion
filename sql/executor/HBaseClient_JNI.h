@@ -482,14 +482,19 @@ public:
   HTC_RetCode freeRowResult(jbyte *rowResult, jbyteArray &jRowResult);
   KeyValue*   getLastFetchedCell();
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
-  HTC_RetCode deleteRows(Int64 transID, std::vector<BatchMutation> &rowBatches, Int64 timestamp);
+  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, Int64 timestamp);
+  HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
+       Int64 timestamp);
+  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush);
   HTC_RetCode insertRows(Int64 transID, std::vector<BatchMutation> &rowBatches, Int64 timestamp, bool autoFlush);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
   HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, Int64 timestamp);
-  HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp);
+  HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
+       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 
@@ -537,7 +542,6 @@ private:
    ,JM_FETCH_ROWV
    ,JM_GET_CELL  
    ,JM_DELETE    
-   ,JM_DELETE_ROWS
    ,JM_CHECKANDDELETE
    ,JM_INSERT
    ,JM_INSERT_ROWS
@@ -551,6 +555,10 @@ private:
    ,JM_FLUSHT
    ,JM_SET_WB_SIZE
    ,JM_SET_WRITE_TO_WAL
+   ,JM_DIRECT_INSERT
+   ,JM_DIRECT_CHECKANDINSERT
+   ,JM_DIRECT_INSERT_ROWS
+   ,JM_DIRECT_DELETE_ROWS
    ,JM_LAST
   };
   char *tableName_; 
@@ -848,7 +856,6 @@ private:
   static JavaMethodInit* JavaMethods_;
 
 };
-
 #endif
 
 

@@ -401,10 +401,24 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   prevRowId_.val = NULL;
   prevRowId_.len = 0;
   isEOD_ = FALSE;
+  rowIDAllocatedLen_ = 0;
+  rowIDAllocatedVal_ = NULL;
+  rowID_.val = NULL;
+  rowID_.len = 0;
+
+  directBufferRowNum_ = 0;
+  directRowIDBuffer_ = NULL;
+  directRowIDBufferLen_ = 0;
+  rowIDs_.val = NULL;
+  rowIDs_.len = 0;
+  dbRowID_.val = NULL;
+  dbRowID_.len = 0;
+  directRowBuffer_ = NULL;
+  directRowBufferLen_ = 0;
   row_.val = NULL;
   row_.len = 0;
-  rowAllocatedLen_ = 0;
-  rowAllocatedVal_ = NULL;
+  rows_.val = NULL;
+  rows_.len = 0;
 }
     
 ExHbaseAccessTcb::~ExHbaseAccessTcb()
@@ -436,9 +450,14 @@ void ExHbaseAccessTcb::freeResources()
     qparent_.down = NULL;
   }
   delete ehi_;
-  if (rowAllocatedVal_)
-     NADELETEBASIC(rowAllocatedVal_, getHeap());
+  if (rowIDAllocatedVal_)
+     NADELETEBASIC(rowIDAllocatedVal_, getHeap());
+  if (directRowIDBuffer_)
+     NADELETEBASIC(directRowIDBuffer_, getHeap());
+  if (directRowBuffer_)
+     NADELETEBASIC(directRowBuffer_, getHeap());
 }
+
 
 NABoolean ExHbaseAccessTcb::needStatsEntry()
 {
@@ -908,154 +927,6 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
     return 1;
   else
     return 0;
-}
-
-// return:
-// 0, if all ok.
-// -1, if error.
-short ExHbaseAccessTcb::createSQRow(TRowResult &rowResult)
-{
-  // no columns are being fetched from hbase, do not create a row.
-  if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
-    return 0;
-
-  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-
-  ExpTupleDesc * asciiSourceTD =
-    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-    (hbaseAccessTdb().asciiTuppIndex_);
-
-  ExpTupleDesc * convertTuppTD =
-    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-    (hbaseAccessTdb().convertTuppIndex_);
-  
-  Attributes * attr = NULL;
-
-  // initialize as missing cols.
-  // TBD: can optimize to skip this step if there are no nullable and no added cols
-  memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
-  
-  hbaseAccessTdb().listOfFetchedColNames()->position();
-  Lng32 idx = -1;
-
-  CellMap::const_iterator colIter = rowResult.columns.begin();
-
-  while (colIter != rowResult.columns.end())
-    {
-      char * colName = (char*)colIter->first.data();
-      Lng32 colNameLen = colIter->first.length();
-
-      char * colVal = (char*)colIter->second.value.data();
-      Lng32 colValLen = colIter->second.value.length();
-
-      if (! getColPos(colName, colNameLen, idx)) // not found
-	{
-	  // error
-	  return -HBASE_CREATE_ROW_ERROR;
-	}
-
-      // not missing any more
-      asciiRowMissingCols_[idx] = 0;
-
-      Attributes * attr = asciiSourceTD->getAttr(idx);
-      if (! attr)
-	{
-	  // error
-	  return -HBASE_CREATE_ROW_ERROR;
-	}
-
-      if (attr->getNullFlag())
-	{
-	  if (*colVal)
-	    *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
-	  else
-	    *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
-
-	  colValLen = colValLen - sizeof(char);
-	  colVal += sizeof(char);
-	}
-
-      if (attr->getVCIndicatorLength() > 0)
-	{
-	  if (attr->getVCIndicatorLength() == sizeof(short))
-	    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
-	  else
-	    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
-	  *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)colVal;
-	}
-      else
-	{
-	  char * srcPtr = &asciiRow_[attr->getOffset()];
-	  Lng32 copyLen = MINOF(attr->getLength(), colValLen);
-	  str_cpy_all(srcPtr, colVal, copyLen);
-	}
-
-      colIter++;
-    }
-
-  // fill in null or default values for missing cols.
-  for (idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
-    {
-      if (asciiRowMissingCols_[idx] == 1) // missing
-	{
-	  attr = asciiSourceTD->getAttr(idx);
-	  if (! attr)
-	    {
-	      // error
-	      return -HBASE_CREATE_ROW_ERROR;
-	    }
-	  
-	  char * defVal = attr->getDefaultValue();
-	  char * defValPtr = defVal;
-	  short nullVal = 0;
-	  if (attr->getNullFlag())
-	    {
-	      nullVal = *(short*)defVal;
-	      *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
-	      
-	      defValPtr += 2;
-	    }
-	  
-	  if (! nullVal)
-	    {
-	      if (attr->getVCIndicatorLength() > 0)
-		{
-		  Lng32 vcLen = *(short*)defValPtr;
-		  if (attr->getVCIndicatorLength() == sizeof(short))
-		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = vcLen; 
-		  else
-		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = vcLen;
-		  
-		  defValPtr += attr->getVCIndicatorLength();
-		  
-		  *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)defValPtr;
-		}
-	      else
-		{
-		  char * srcPtr = &asciiRow_[attr->getOffset()];
-		  Lng32 copyLen = attr->getLength();
-		  str_cpy_all(srcPtr, defValPtr, copyLen);
-		}
-	    } // not nullVal
-	} // missing col
-    }
-
-  workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
-    .setDataPointer(convertRow_);
-  workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
-    .setDataPointer(asciiRow_);
-  
-  if (convertExpr())
-    {
-      ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
-      if (evalRetCode == ex_expr::EXPR_ERROR)
-	{
-	  return -1;
-	}
-    }
-
-  return 0;
 }
 
 short ExHbaseAccessTcb::fetchRowVec()
@@ -1923,6 +1794,235 @@ short ExHbaseAccessTcb::createMutations(MutationVec &mutations,
   return 0;
 }
 
+void ExHbaseAccessTcb::allocateDirectBufferForJNI(UInt32 rowLen)
+{
+
+  if (rowLen > directRowBufferLen_)
+  {
+     if (directRowBuffer_ != NULL)
+     {
+        NADELETEBASIC(directRowBuffer_, getHeap());
+        directRowBuffer_ = NULL;
+     }
+  }
+  if (directRowBuffer_ == NULL)
+  {
+     directRowBuffer_ = new (getHeap()) BYTE[rowLen];
+     directRowBufferLen_ = rowLen;
+  }
+  row_.val = (char *)directRowBuffer_;
+  row_.len = 0;
+}
+
+
+void ExHbaseAccessTcb::allocateDirectRowBufferForJNI(
+                      short numCols, short maxRows)
+{
+  UInt32 directBufferOverhead;
+  UInt32 maxRowLen;
+  UInt32 rowLen = hbaseAccessTdb().getRowLen();
+
+  if (directRowBuffer_ == NULL)
+  {
+     directBufferOverhead = sizeof(numCols) + // Number of columns in the row
+                         (numCols * (2 + // for name len 
+                                     (numCols < 256 ? 4 : 5) +  // for colname len
+                                    2 )) // for col value len 
+                        + numCols; // 1 byte null value
+     maxRowLen  = rowLen + directBufferOverhead;
+     directRowBufferLen_ = (maxRowLen * maxRows);
+     directRowBuffer_ = new (getHeap()) BYTE[directRowBufferLen_];
+     rows_.val = (char *)directRowBuffer_;
+     rows_.len = 0;
+  }
+  if (directBufferRowNum_ == 0)
+  {
+     row_.val = rows_.val;
+     row_.len = 0;
+     rows_.len = 0;
+  }
+  else
+  {
+    rows_.len += row_.len;
+    ex_assert(rows_.len < directRowBufferLen_, "Direct row buffer overflow");
+    row_.val = rows_.val + rows_.len;
+    row_.len = 0; 
+  } 
+  return;
+}
+
+void ExHbaseAccessTcb::patchDirectRowBuffers()
+{
+  ex_assert(rows_.val != NULL, "Direct row buffer not allocaed");
+  rows_.len += row_.len;
+  ex_assert(rows_.len < directRowBufferLen_, "Direct row buffer overflow");
+  row_.val = NULL;
+  row_.len = 0; 
+  patchDirectRowIDBuffers();
+}
+
+void ExHbaseAccessTcb::patchDirectRowIDBuffers()
+{
+  ex_assert(rowIDs_.val != NULL, "Direct rowIDs buffer not allocaed");
+  short *numRows = (short *)rowIDs_.val;
+  *numRows = bswap_16(directBufferRowNum_);
+  directBufferRowNum_ = 0;
+}
+
+void ExHbaseAccessTcb::allocateDirectRowIDBufferForJNI(short maxRows)
+{
+   UInt32 rowIDLen;
+   UInt32 maxRowIDLen;
+   rowIDLen = hbaseAccessTdb().getRowIDLen();
+   if (directRowIDBuffer_ == NULL)
+   {
+      directRowIDBufferLen_  = (rowIDLen * maxRows) + sizeof(short); // For no. of Rows
+      directRowIDBuffer_ = new (getHeap()) BYTE[directRowIDBufferLen_];
+      rowIDs_.val = (char *)directRowIDBuffer_; 
+      rowIDs_.len = sizeof(short); // To store num of Rows
+   }
+   if (directBufferRowNum_ == 0)
+   {
+      rowIDs_.len = sizeof(short);  
+      dbRowID_.val = rowIDs_.val + sizeof(short);
+      dbRowID_.len = 0;
+   }
+}
+
+short ExHbaseAccessTcb::copyColToDirectBuffer( BYTE *rowCurPtr, 
+                char *colName, short colNameLen, 
+                NABoolean prependNullVal, char nullVal, 
+                char *colVal, short colValLen)
+{
+   assert(directRowBufferLen_ >= (row_.len+colNameLen+colValLen+4));
+   BYTE *temp = rowCurPtr;
+   *(short *)temp = bswap_16(colNameLen);
+   temp += sizeof(colNameLen);
+   memcpy(temp, colName, colNameLen);
+   temp += colNameLen;
+   *(short *)temp = bswap_16(colValLen+prependNullVal);
+   temp += sizeof(colValLen);
+   if (prependNullVal)
+      *temp++ = nullVal;
+   memcpy(temp, colVal, colValLen);
+   temp += colValLen;
+   
+   return (temp-rowCurPtr);
+}
+
+short ExHbaseAccessTcb::copyRowIDToDirectBuffer(short currRowNum, HbaseStr &rowID)
+{
+   if (directBufferRowNum_ == 0)
+   {
+     rowIDs_.len = sizeof(short);
+     dbRowID_.val = rowIDs_.val + sizeof(short);
+     dbRowID_.len = 0;
+   }
+   memcpy(dbRowID_.val, rowID.val, rowID.len);
+   dbRowID_.val += rowID.len;
+   dbRowID_.len = 0;
+   rowIDs_.len += rowID.len; 
+   directBufferRowNum_++;
+   return 0;
+}
+
+short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex, 
+                 char * tuppRow,
+                  Queue * listOfColNames, 
+                  NABoolean isUpdate,
+                  std::vector<UInt32> * posVec )
+{
+  
+  ExpTupleDesc * rowTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (tuppIndex);
+  
+  short colNameLen;
+  char * colName;
+  short nullVal = 0;
+  short nullValLen = 0;
+  short colValLen;
+  char *colVal;
+  char *str;
+  NABoolean prependNullVal;
+  char nullValChar;
+  Attributes * attr;
+  int numCols = 0;
+
+  allocateDirectRowBufferForJNI(rowTD->numAttrs());
+
+  BYTE *rowCurPtr = (BYTE *)row_.val;
+  row_.len += sizeof(short);
+  rowCurPtr += sizeof(short);
+
+  listOfColNames->position();
+  for (Lng32 i = 0; i <  rowTD->numAttrs(); i++)
+    {
+    Attributes * attr;
+      if (!posVec)
+        attr = rowTD->getAttr(i);
+      else
+      {
+        attr = rowTD->getAttr((*posVec)[i] -1);
+      }
+
+      if (attr)
+	{
+         if (!posVec)
+         {
+	   colNameLen = *(short*)listOfColNames->getCurr();
+	   colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
+         }
+         else
+         {
+           str = (char*)listOfColNames->getCurr();
+           colNameLen = *(short*)(str + sizeof(UInt32));
+           colName = str + sizeof(short) + sizeof(UInt32);
+         }
+
+	  colVal = &tuppRow[attr->getOffset()];
+
+	  prependNullVal = FALSE;
+	  nullVal = 0;
+	  if (attr->getNullFlag())
+	    {
+	      nullVal = *(short*)&tuppRow[attr->getNullIndOffset()];
+
+	      if ((attr->getDefaultClass() != Attributes::DEFAULT_NULL) &&
+		  (nullVal))
+		prependNullVal = TRUE;
+	      else if (isUpdate && nullVal)
+		prependNullVal = TRUE;
+	      else if (! nullVal)
+		prependNullVal = TRUE;
+
+	      if ((NOT prependNullVal) && (nullVal))
+		goto label_end1;
+	    }
+          if (prependNullVal)
+          {
+             nullValChar = 0;
+             if (nullVal)
+                nullValChar = -1;
+          }
+     	  colValLen =  attr->getLength(&tuppRow[attr->getVCLenIndOffset()]);
+          Int32 bytesCopied = copyColToDirectBuffer(rowCurPtr, colName, 
+                colNameLen, prependNullVal, nullValChar, colVal, colValLen);
+          rowCurPtr += bytesCopied;
+          row_.len += bytesCopied;
+          numCols++;
+        }	  
+      else
+	{
+	  return -1;
+	}
+    label_end1:		  
+      listOfColNames->advance();
+    }	// for
+  *(short *)row_.val = bswap_16(numCols);
+  return 0;
+}
+
 short ExHbaseAccessTcb::createRowwiseMutations(MutationVec &mutations,
 					       char * inputRow)
 {
@@ -1969,6 +2069,66 @@ short ExHbaseAccessTcb::createRowwiseMutations(MutationVec &mutations,
   
   return 0;
 }
+
+short ExHbaseAccessTcb::createDirectRowwiseBuffer(char * inputRow)
+{
+  short numEntries;
+  short colNameLen;
+  short colValLen;
+  short nullable;
+  char *colName;
+  char *colVal;
+  Int32 bytesCopied;
+  char nullValChar = 0;
+  Int32 rowLen;
+  char *curPtr;
+  short maxColNameLen;
+  short maxColValLen;
+
+  curPtr = inputRow;
+  numEntries = *((short *)curPtr);
+  curPtr += sizeof(short);
+  maxColNameLen = *((short *)curPtr);
+  curPtr += sizeof(short);
+  maxColValLen = *((short *)curPtr);
+  rowLen = sizeof(short) // For number of columns
+      + (numEntries * (ROUND2(maxColNameLen)+ ROUND2(maxColValLen)
+                     + (2 * sizeof(short)))); // Store colNameLen and colValLen
+  short numCols = 0;
+  allocateDirectBufferForJNI(rowLen);
+  BYTE *rowCurPtr = (BYTE *)row_.val;
+  rowCurPtr += sizeof(short); // To store numCols later
+  row_.len += sizeof(short); 
+  
+  curPtr = inputRow; 
+  curPtr += (3*sizeof(short)); // skip numEntries, maxColNameLen, maxColValLen
+  for (Lng32 ij = 0; ij < numEntries; ij++)
+  {
+      colNameLen = *(short*)curPtr;
+      curPtr += sizeof(short);
+      colName = curPtr;
+      curPtr += ROUND2(maxColNameLen);
+      
+      nullable = *(short*)curPtr;
+      curPtr += sizeof(short);
+      
+      colValLen = *(short*)curPtr;
+      curPtr += sizeof(short);
+      colVal = curPtr;
+      curPtr += ROUND2(maxColValLen);
+
+      if (! nullable)
+      {
+         bytesCopied = copyColToDirectBuffer(rowCurPtr, colName,
+              colNameLen, FALSE, nullValChar, colVal, colValLen);
+         rowCurPtr += bytesCopied;
+         row_.len += bytesCopied;
+         numCols++;
+      }
+   }
+  *(short *)row_.val = bswap_16(numCols);
+   return 0;
+} 
 
 short ExHbaseAccessTcb::setupHbaseFilterPreds()
 {
@@ -2043,23 +2203,23 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
 {
    if (rowId == NULL)
    {
-      row_.val = NULL;
-      row_.len = 0;
+      rowID_.val = NULL;
+      rowID_.len = 0;
       return;
    }
-   if (rowIdLen > rowAllocatedLen_) 
+   if (rowIdLen > rowIDAllocatedLen_) 
    {
-      if (rowAllocatedVal_)
+      if (rowIDAllocatedVal_)
       {
-         NADELETEBASIC(rowAllocatedVal_, getHeap());
+         NADELETEBASIC(rowIDAllocatedVal_, getHeap());
       }
-      rowAllocatedVal_ = new (getHeap()) char[rowIdLen];
-      rowAllocatedLen_ = rowIdLen;
+      rowIDAllocatedVal_ = new (getHeap()) char[rowIdLen];
+      rowIDAllocatedLen_ = rowIdLen;
 
    }
-   row_.val = rowAllocatedVal_;
-   row_.len = rowIdLen;
-   memcpy(row_.val, rowId, rowIdLen);
+   rowID_.val = rowIDAllocatedVal_;
+   rowID_.len = rowIdLen;
+   memcpy(rowID_.val, rowId, rowIdLen);
 }
 
 ExHbaseTaskTcb::ExHbaseTaskTcb(ExHbaseAccessTcb * tcb)

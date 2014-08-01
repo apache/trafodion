@@ -154,6 +154,16 @@ public class RMInterface extends TransactionalTable{
         TransactionState ts = registerTransaction(transactionID, delete.getRow());
         super.delete(ts, delete);
     }
+
+    public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
+        LOG.trace("delete txid: " + transactionID);
+	TransactionState ts;
+        for (Delete del : deletes) {
+            ts = registerTransaction(transactionID, del.getRow());
+        }
+	ts = mapTransactionStates.get(transactionID);
+        super.delete(ts, deletes);
+    }
     
     public synchronized ResultScanner getScanner(final long transactionID, final Scan scan) throws IOException {
         LOG.trace("getScanner txid: " + transactionID);

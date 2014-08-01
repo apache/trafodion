@@ -2710,8 +2710,6 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
     JavaMethods_[JM_DELETE     ].jm_signature = "(J[BLorg/trafodion/sql/HBaseAccess/ByteArrayList;J)Z";
     //    JavaMethods_[JM_DELETE     ].jm_signature = "(J[B[BJ)Z";
-    JavaMethods_[JM_DELETE_ROWS     ].jm_name      = "deleteRows";
-    JavaMethods_[JM_DELETE_ROWS     ].jm_signature = "(JLorg/trafodion/sql/HBaseAccess/RowsToInsert;J)Z";
     JavaMethods_[JM_CHECKANDDELETE     ].jm_name      = "checkAndDeleteRow";
     JavaMethods_[JM_CHECKANDDELETE     ].jm_signature = "(J[B[B[BJ)Z";
     JavaMethods_[JM_INSERT     ].jm_name      = "insertRow";
@@ -2721,7 +2719,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_CHECKANDINSERT     ].jm_name      = "checkAndInsertRow";
     JavaMethods_[JM_CHECKANDINSERT     ].jm_signature = "(J[BLorg/trafodion/sql/HBaseAccess/RowToInsert;J)Z";
     JavaMethods_[JM_CHECKANDUPDATE     ].jm_name      = "checkAndUpdateRow";
-    JavaMethods_[JM_CHECKANDUPDATE     ].jm_signature = "(J[BLorg/trafodion/sql/HBaseAccess/RowToInsert;[B[BJ)Z";
+    JavaMethods_[JM_CHECKANDUPDATE     ].jm_signature = "(J[BLjava/lang/Object;[B[BJ)Z";
     JavaMethods_[JM_COPROC_AGGR     ].jm_name      = "coProcAggr";
     JavaMethods_[JM_COPROC_AGGR     ].jm_signature = "(JI[B[B[B[BZI)Z";
     JavaMethods_[JM_COPROC_AGGR_GET_RESULT     ].jm_name      = "coProcAggrGetResult";
@@ -2738,8 +2736,14 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_SET_WB_SIZE ].jm_signature = "(J)Z";
     JavaMethods_[JM_SET_WRITE_TO_WAL ].jm_name      = "setWriteToWAL";
     JavaMethods_[JM_SET_WRITE_TO_WAL ].jm_signature = "(Z)Z";
-
-   
+    JavaMethods_[JM_DIRECT_INSERT ].jm_name      = "insertRow";
+    JavaMethods_[JM_DIRECT_INSERT ].jm_signature = "(J[BLjava/lang/Object;J)Z";
+    JavaMethods_[JM_DIRECT_CHECKANDINSERT     ].jm_name      = "checkAndInsertRow";
+    JavaMethods_[JM_DIRECT_CHECKANDINSERT     ].jm_signature = "(J[BLjava/lang/Object;J)Z";
+    JavaMethods_[JM_DIRECT_INSERT_ROWS ].jm_name      = "putRows";
+    JavaMethods_[JM_DIRECT_INSERT_ROWS ].jm_signature = "(JSLjava/lang/Object;Ljava/lang/Object;JZ)Z";
+    JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_name      = "deleteRows";
+    JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_signature = "(JSLjava/lang/Object;J)Z";
    
     return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);       
   }
@@ -3250,36 +3254,28 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
 
   return HTC_OK;
 }
-
+//
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, std::vector<BatchMutation> &rows, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRows() called.");
 
-  RowsToInsert* rowsData = new (heap_) RowsToInsert(heap_);
-  RTI_RetCode result = rowsData->init();
-  if (result != RTI_OK)
+  jobject jRowIDs = jenv_->NewDirectByteBuffer(rowIDs.val, rowIDs.len);
+  if (jRowIDs == NULL)
   {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "RowsToInsert::init() error.");
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_DELETEROWS_PARAM));
     return HTC_ERROR_DELETEROWS_PARAM;
   }
-  
-  result = rowsData->addRows(rows);
-  if (result != RTI_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "RowsToInsert::addRows error.");
-    return HTC_ERROR_DELETEROWS_PARAM;
-  }
-  
+  jshort j_rowIDLen = rowIDLen;
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
 
   // public boolean deleteRows(long, org.trafodion.sql.HBaseAccess.RowsToInsert, long);
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DELETE_ROWS].methodID, j_tid, rowsData->getJavaObject(), j_ts);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_DELETE_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, j_ts);
 
-  NADELETE(rowsData, RowsToInsert, rowsData->getHeap());
+  jenv_->DeleteLocalRef(jRowIDs);  
 
   if (jenv_->ExceptionCheck())
   {
@@ -3297,6 +3293,10 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, std::vector<BatchMutatio
 
   return HTC_OK;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+// 
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3420,6 +3420,102 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
   {
     logError(CAT_HBASE, "HTableClient_JNI::insertRow()", getLastError());
     return HTC_ERROR_INSERTROW_EXCEPTION;
+  }
+
+  return HTC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID, 
+     HbaseStr &row, Int64 timestamp)
+{
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRow(%s) direct called.", rowID.val);
+
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
+  if (jba_rowID == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROW_PARAM));
+    return HTC_ERROR_INSERTROW_PARAM;
+  }
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
+
+  jobject jDirectBuffer = jenv_->NewDirectByteBuffer(row.val, row.len);
+  if (jDirectBuffer == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROW_PARAM));
+    return HTC_ERROR_INSERTROW_PARAM;
+  }
+
+  jlong j_tid = transID;  
+  jlong j_ts = timestamp;
+
+  // public boolean insertRow(long, byte[], org.trafodion.sql.HBaseAccess.RowToInsert, long);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
+
+  jenv_->DeleteLocalRef(jba_rowID);  
+  jenv_->DeleteLocalRef(jDirectBuffer);  
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HTableClient_JNI::insertRow()", getLastError());
+    return HTC_ERROR_INSERTROW_EXCEPTION;
+  }
+
+  if (jresult == false) 
+  {
+    logError(CAT_HBASE, "HTableClient_JNI::insertRow()", getLastError());
+    return HTC_ERROR_INSERTROW_EXCEPTION;
+  }
+
+  return HTC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+//////////////////////////////////////////////////////////////////////////////
+HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, 
+      HbaseStr &rows, Int64 timestamp, bool autoFlush)
+{
+  jobject jRowIDs = jenv_->NewDirectByteBuffer(rowIDs.val, rowIDs.len);
+  if (jRowIDs == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROWS_PARAM));
+    return HTC_ERROR_INSERTROWS_PARAM;
+  }
+  
+  jobject jRows = jenv_->NewDirectByteBuffer(rows.val, rows.len);
+  if (jRows == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_INSERTROWS_PARAM));
+    return HTC_ERROR_INSERTROWS_PARAM;
+  }
+  jlong j_tid = transID;  
+  jlong j_ts = timestamp;
+  jshort j_rowIDLen = rowIDLen;
+  jboolean j_af = autoFlush;
+ 
+  // public boolean insertRows(long, org.trafodion.sql.HBaseAccess.RowsToInsert, long);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, jRows, j_ts, j_af);
+
+  jenv_->DeleteLocalRef(jRowIDs);  
+  jenv_->DeleteLocalRef(jRows);  
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HTableClient_JNI::insertRows()", getLastError());
+    return HTC_ERROR_INSERTROWS_EXCEPTION;
+  }
+
+  if (jresult == false) 
+  {
+    logError(CAT_HBASE, "HTableClient_JNI::insertRows()", getLastError());
+    return HTC_ERROR_INSERTROWS_EXCEPTION;
   }
 
   return HTC_OK;
@@ -3585,8 +3681,53 @@ HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, HbaseStr &rowID,
   return HTC_OK;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//   3-way return value!!!
+//////////////////////////////////////////////////////////////////////////////
+HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, HbaseStr &rowID,
+HbaseStr &row, Int64 timestamp)
+{
+  //  return insertRow(transID, rowID, mutations, timestamp);
+
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndInsertRow(%s) called.", rowID.val);
+  jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
+  if (jba_rowID == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_CHECKANDINSERTROW_PARAM));
+    return HTC_ERROR_CHECKANDINSERTROW_PARAM;
+  }
+  jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
+
+  jobject jDirectBuffer = jenv_->NewDirectByteBuffer(row.val, row.len);
+  if (jDirectBuffer == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_CHECKANDINSERTROW_PARAM));
+    return HTC_ERROR_CHECKANDINSERTROW_PARAM;
+  }
+
+  jlong j_tid = transID;  
+  jlong j_ts = timestamp;
+
+  // boolean insertRow(java.lang.String, byte[], org.trafodion.sql.HBaseAccess.RowToInsert, long); 
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_CHECKANDINSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
+
+  jenv_->DeleteLocalRef(jba_rowID);  
+  jenv_->DeleteLocalRef(jDirectBuffer);
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HTableClient_JNI::checkAndInsertRow()", getLastError());
+    return HTC_ERROR_CHECKANDINSERTROW_EXCEPTION;
+  }
+
+  if (jresult == false) 
+     return HTC_ERROR_CHECKANDINSERT_DUP_ROWID;
+  return HTC_OK;
+}
+
 HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
-            MutationVec& mutations, 
+            HbaseStr &row,
 	    const Text &columnToCheck, const Text &colValToCheck, 
             Int64 timestamp)
 {
@@ -3599,18 +3740,10 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
   }
   jenv_->SetByteArrayRegion(jba_rowID, 0, rowID.len, (const jbyte*)rowID.val);
 
-  RowToInsert* rowData = new (heap_) RowToInsert(heap_);
-  RTI_RetCode result = rowData->init();
-  if (result != RTI_OK)
+  jobject jDirectBuffer = jenv_->NewDirectByteBuffer(row.val, row.len);
+  if (jDirectBuffer == NULL)
   {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "RowToUpdate::init() error.");
-    return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
-  }
-
-  result = rowData->addMutations(mutations);
-  if (result != RTI_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "RowToUpdate::addMutations error.");
+    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_CHECKANDUPDATEROW_PARAM));
     return HTC_ERROR_CHECKANDUPDATEROW_PARAM;
   }
   
@@ -3638,16 +3771,15 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
   jlong j_ts = timestamp;
 
   // boolean updateRow(java.lang.String, byte[], org.trafodion.sql.HBaseAccess.RowToInsert, long); 
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CHECKANDUPDATE].methodID, j_tid, jba_rowID, rowData->getJavaObject(), 
-					      jba_columntocheck, jba_colvaltocheck,
-					      j_ts);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+                JavaMethods_[JM_CHECKANDUPDATE].methodID, 
+                j_tid, jba_rowID, jDirectBuffer, 
+	        jba_columntocheck, jba_colvaltocheck, j_ts);
 
   jenv_->DeleteLocalRef(jba_rowID);  
   jenv_->DeleteLocalRef(jba_columntocheck);  
   jenv_->DeleteLocalRef(jba_colvaltocheck);
-
-  NADELETE(rowData, RowToInsert, rowData->getHeap());
-
+  jenv_->DeleteLocalRef(jDirectBuffer);
   
   if (jenv_->ExceptionCheck())
   {
