@@ -27,18 +27,9 @@ enum {
 };
 #endif // USE_SB_UTRACE_API
 
-#ifdef USE_SB_UTRACE_MPI
-enum {
-    SB_UTRACE_MPI_MAX_BUF = 0x400    // must be a multiple of 2
-};
-#endif // USE_SB_UTRACE_MPI
-
 #ifdef USE_SB_UTRACE_API
 SB_Utrace<SB_Utrace_API_Type> sb_utrace_api(SB_UTRACE_API_MAX_BUF);
 #endif // USE_SB_UTRACE_API
-#ifdef USE_SB_UTRACE_MPI
-SB_Utrace<SB_Utrace_MPI_Type> sb_utrace_mpi(SB_UTRACE_MPI_MAX_BUF);
-#endif // USE_SB_UTRACE_MPI
 
 #ifdef USE_SB_UTRACE_API
 const char *sb_get_utrace_api_op(int pv_op) {
@@ -99,40 +90,4 @@ void sb_print_utrace_api_table(int pv_cnt) {
                                       pv_cnt);
 }
 #endif // USE_SB_UTRACE_API
-
-#ifdef USE_SB_UTRACE_MPI
-const char *sb_get_utrace_mpi_op(int pv_op) {
-    const char *lp_label = SB_get_label(&gv_sb_utrace_mpi_op_label_map, pv_op);
-    return lp_label;
-}
-
-const char *sb_print_utrace_mpi_op(int pv_op) {
-    const char *lp_label = sb_get_utrace_mpi_op(pv_op);
-    printf("%s", lp_label);
-    return lp_label;
-}
-
-void sb_print_utrace_mpi_entry(FILE               *pp_f,
-                               SB_Utrace_MPI_Type *pp_rec,
-                               int                 pv_inx) {
-     const char *lp_op_label;
-
-     lp_op_label = SB_get_label(&gv_sb_utrace_mpi_op_label_map, pp_rec->iv_op);
-     fprintf(pp_f,
-             "rec[%05d]: tid=%d, op=%d(%s), id1=%d, id2=%d\n",
-             pv_inx,
-             pp_rec->iv_tid,
-             pp_rec->iv_op,
-             lp_op_label,
-             pp_rec->iv_id1,
-             pp_rec->iv_id2);
-}
-
-void sb_print_utrace_mpi_table(int pv_cnt) {
-    sb_utrace_mpi.print_entries_last("sb_utrace_mpi",
-                                      stdout,
-                                      sb_print_utrace_mpi_entry,
-                                      pv_cnt);
-}
-#endif // USE_SB_UTRACE_MPI
 

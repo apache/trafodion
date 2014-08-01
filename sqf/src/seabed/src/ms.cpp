@@ -1198,8 +1198,6 @@ SB_THROWS_FATAL {
 #endif
 #endif
 
-    SB_UTRACE_MPI_TEST();
-
     setvbuf(stdout, NULL, _IOLBF, 0);
 
     // TODO: remove when evlog gone

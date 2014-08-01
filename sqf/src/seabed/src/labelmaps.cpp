@@ -502,7 +502,6 @@ static const char *ga_sb_stream_md_state_labels[] = {
     "MSG_LOW_OPEN_ACK",
     "MSG_LOW_REPLY_NACK",
     "MSG_MON_MSG",
-    "MSG_MON_MSG_MPI",
     "MSG_MON_OPEN",
     "MSG_REOPEN_FAIL",
     "MSG_SEND_SELF",
@@ -702,15 +701,6 @@ static const char *ga_sb_utrace_api_op_labels[] = {
     "thread_start_disp2",
     "thread_start_err",
     "thread_start_name",
-    SB_LABEL_END
-};
-
-static const char *ga_sb_utrace_mpi_op_labels[] = {
-    "ACCEPT",
-    "CONNECT",
-    "CONNECT_ERR",
-    "DISCONNECT",
-    "DISCONNECT_ERR",
     SB_LABEL_END
 };
 
@@ -952,17 +942,6 @@ SB_Label_Map gv_sb_utrace_api_op_label_map = {
 };
 
 enum {
-    SB_LABEL_LIMIT_UTRACE_MPI_OP_LO = SB_UTRACE_MPI_OP_AFIRST + 1,
-    SB_LABEL_LIMIT_UTRACE_MPI_OP_HI = SB_UTRACE_MPI_OP_ZLAST - 1
-};
-SB_Label_Map gv_sb_utrace_mpi_op_label_map = {
-    SB_LABEL_LIMIT_UTRACE_MPI_OP_LO,
-    SB_LABEL_LIMIT_UTRACE_MPI_OP_HI,
-    "<unknown>",
-    ga_sb_utrace_mpi_op_labels
-};
-
-enum {
     SB_LABEL_LIMIT_TIMER_KIND_LO = TIMER_TLE_KIND_CB,
     SB_LABEL_LIMIT_TIMER_KIND_HI = TIMER_TLE_KIND_COMPQ
 };
@@ -1063,9 +1042,6 @@ void sb_label_map_init() {
     SB_LABEL_CHK(ga_sb_utrace_api_op_labels,
                  SB_LABEL_LIMIT_UTRACE_API_OP_LO,
                  SB_LABEL_LIMIT_UTRACE_API_OP_HI)
-    SB_LABEL_CHK(ga_sb_utrace_mpi_op_labels,
-                 SB_LABEL_LIMIT_UTRACE_MPI_OP_LO,
-                 SB_LABEL_LIMIT_UTRACE_MPI_OP_HI)
     SB_LABEL_CHK(ga_timer_kind_labels,
                  SB_LABEL_LIMIT_TIMER_KIND_LO,
                  SB_LABEL_LIMIT_TIMER_KIND_HI)
