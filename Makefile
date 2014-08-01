@@ -24,8 +24,8 @@
 include macros.gmk
 
 # Make Targets
-.PHONY: all dbsecurity foundation $(MPI_TARGET) mxcs ndcs ci jdbc_jar jdbc_type2_jar package package-nosrc sqroot $(SEAMONSTER_TARGET) verhdr
-.PHONY: pkg-product pkg-sql-regress pkg-seapilot-regress pkg-src sysmdf
+.PHONY: all dbsecurity foundation $(MPI_TARGET) ndcs ci jdbc_jar jdbc_type2_jar sqroot $(SEAMONSTER_TARGET) verhdr
+.PHONY: package package-all pkg-product pkg-sql-regress
 
 ################
 ### Main targets
@@ -33,7 +33,6 @@ include macros.gmk
 
 # Default target (all components)
 all: $(MPI_TARGET) dbsecurity foundation jdbc_jar $(SEAMONSTER_TARGET) ndcs ci jdbc_type2_jar
-
 
 package: pkg-product pkg-client
 
@@ -69,7 +68,7 @@ jdbc_jar: verhdr
 	cd conn/jdbc_type4 && $(ANT) deploy 2>&1 | sed -e "s/$$/	##(JDBCT4)/";exit $${PIPESTATUS[0]}
 
 ndcs: jdbc_jar foundation
-	cd conn/odbc/src/odbc && $(MAKE) ndcs 2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
+	cd conn/odbc/src/odbc && $(MAKE) ndcs        2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
 	cd conn/odbc/src/odbc && $(MAKE) bldlnx_drvr 2>&1 | sed -e "s/$$/	##(NDCS)/";exit $${PIPESTATUS[0]}
 
 ci: trafci
@@ -77,7 +76,7 @@ trafci: jdbc_jar
 	cd conn/trafci && $(ANT) dist 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
 jdbc_type2_jar: ndcs
-	cd conn/jdbc_type2 && $(ANT) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
+	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 
 clean: sqroot
@@ -87,9 +86,9 @@ clean: sqroot
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4 &&	$(ANT) clean
-	cd conn &&	$(MAKE) clean
-	cd conn/jdbc_type2 &&	$(ANT) clean && $(MAKE) clean
+	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn &&			$(MAKE) clean
+	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
 
 cleanall: sqroot
 	cd $(MPI_TARGET) &&		$(MAKE) clean-local
@@ -97,9 +96,11 @@ cleanall: sqroot
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
 	cd conn/trafci        &&	$(ANT) clean
-	cd conn/jdbc_type4 && $(ANT) clean
-	cd conn &&	$(MAKE) clean
+	cd conn/jdbc_type4    &&	$(ANT) clean
+	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
+
+package-all: package pkg-sql-regress
 
 pkg-product: all
 	cd sqf && $(MAKE) package 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
@@ -107,9 +108,7 @@ pkg-product: all
 pkg-client: ci ndcs
 	cd conn &&  make all 2>&1 | sed -e "s/$$/	##(Package clients)/" ; exit $${PIPESTATUS[0]}
 
-
-
-# Package regression tests (all target produces some regress/tool files so do that first)
+# Package SQL regression tests (all target produces some regress/tool files so do that first)
 pkg-sql-regress: all
 	cd sqf && $(MAKE) package-regress 2>&1 | sed -e "s/$$/	##(Package)/";exit $${PIPESTATUS[0]}
 
