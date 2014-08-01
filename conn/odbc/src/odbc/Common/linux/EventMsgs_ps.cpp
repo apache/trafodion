@@ -29,6 +29,7 @@
 #include "smxoevl.h"
 #include "seabed/ms.h"
 #include <string>
+#include <linux/unistd.h>
 
 /***********************
  #include <time.h> 
@@ -197,7 +198,7 @@ void ODBCMXEventMsg::send_to_eventlog (short evt_num, short EventLogType, char *
       sq_header->comp_id = getComponentId();
       sq_header->process_id = getpid();
       sq_header->zone_id = 0;
-      sq_header->thread_id = int((long int)syscall(224));
+      sq_header->thread_id = int((long int)syscall(__NR_gettid));
 
       // Instead of calling the previous function, Monitor and seabed will call the below function to initiate logging buffer
       if ( err = evl_sqlog_init_header(sqleventBuf, szBuf, sq_header) )
@@ -265,5 +266,5 @@ void ODBCMXEventMsg::send_to_eventlog (short evt_num, short EventLogType, char *
    int componentID = SQEVL_NDCS;
    int processID = getpid();
    int zoneID = 0; //fix get zoneId
-   int threadID = int((long int)syscall(224));
+   int threadID = int((long int)syscall(__NR_gettid));
 *******************************************/

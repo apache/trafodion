@@ -21,6 +21,7 @@
 #include "WmsEvents.h"
 
 #include "smxoevl.h"
+#include <linux/unistd.h>
 
 char process_name[MS_MON_MAX_PROCESS_NAME];
 int nid, pid;
@@ -169,7 +170,7 @@ void send_to_eventlog (short evt_num, short EventLogType, char *ComponentName, c
       sq_header->comp_id = getComponentId();
       sq_header->process_id = getpid();
       sq_header->zone_id = 0;
-      sq_header->thread_id = int((long int)syscall(224));
+      sq_header->thread_id = int((long int)syscall(__NR_gettid));
 
       // Instead of calling the previous function, Monitor and seabed will call the below function to initiate logging buffer
       if ( err = evl_sqlog_init_header(sqleventBuf, szBuf, sq_header) )
@@ -232,5 +233,5 @@ void send_to_eventlog (short evt_num, short EventLogType, char *ComponentName, c
    int componentID = SQEVL_NDCS;
    int processID = getpid();
    int zoneID = 0; //fix get zoneId
-   int threadID = int((long int)syscall(224));
+   int threadID = int((long int)syscall(__NR_gettid));
 *******************************************/
