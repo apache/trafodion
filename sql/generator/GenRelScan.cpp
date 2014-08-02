@@ -2105,9 +2105,11 @@ short HbaseAccess::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_SCAN_CACHE_BLOCKS) == DF_ON)
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
     hbpa->setCacheBlocks(TRUE);
-  hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_SCAN_NUM_CACHE_ROWS));
+
+  generator->setHBaseNumCacheRows(MAXOF(getEstRowsAccessed().getValue(),getMaxCardEst().getValue()), 
+                                  hbpa) ;
 
   // create hdfsscan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 
@@ -2354,9 +2356,9 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
-  if (CmpCommon::getDefault(HBASE_SCAN_CACHE_BLOCKS) == DF_ON)
+  if (CmpCommon::getDefault(HBASE_CACHE_BLOCKS) == DF_ON)
     hbpa->setCacheBlocks(TRUE);
-  hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_SCAN_NUM_CACHE_ROWS));
+  hbpa->setNumCacheRows(CmpCommon::getDefaultNumeric(HBASE_NUM_CACHE_ROWS_MIN));
 
   // create hdfsscan_tdb
   ComTdbHbaseAccess *hbasescan_tdb = new(space) 

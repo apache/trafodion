@@ -1307,6 +1307,9 @@ public:
 
   virtual NABoolean isCacheableExpr(CacheWA& cwa);
 
+  inline const CostScalar getEstRowsAccessed() const
+  { return estRowsAccessed_; }
+
 private:
 
   typedef enum {
@@ -1336,6 +1339,11 @@ private:
   // right now, hbase updates are done as cursor update...select followed
   // by deletes.
   RelExpr *transformHbaseUpdate(BindWA *bindWA);
+
+  inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
+
+  // Estimated number of rows accessed by Update operator.
+  CostScalar estRowsAccessed_;
 
 };
 
@@ -1477,6 +1485,12 @@ public:
   ValueIdList    &lobDeleteExpr()          { return lobDeleteExpr_; }
 
   ConstStringList* &csl() { return csl_; }
+
+  inline const CostScalar getEstRowsAccessed() const
+  { return estRowsAccessed_; }
+
+  inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }
+
 private:
   NABoolean isFastDelete_;
   NABoolean noIMneeded_;
@@ -1484,6 +1498,8 @@ private:
   ValueIdList  lobDeleteExpr_;
 
   ConstStringList * csl_;
+  // Estimated number of rows accessed by Delete operator.
+  CostScalar estRowsAccessed_;
 };
 
 // -----------------------------------------------------------------------

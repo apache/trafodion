@@ -3434,12 +3434,17 @@ enum DefaultConstants
 
   HBASE_TRANSFORM_UPDATE_TO_DELETE_INSERT,
 
-  // ON, if blocks should be cached for this scan.
-  HBASE_SCAN_CACHE_BLOCKS,
+  // ON, if blocks should be cached for this scan. This includes subset scans used by Update and Delete 
+  HBASE_CACHE_BLOCKS,
 
-  // number of rows to cache for a scan. Default is 100.
-  HBASE_SCAN_NUM_CACHE_ROWS,
-
+  // minimum number of rows to cache for a scan. Default is 100. 
+  // This includes subset scans used by Update and Delete
+  HBASE_NUM_CACHE_ROWS_MIN,
+  // maximum number of rows to cache for a scan. Default is 10000.
+  // The actual number of cache rows will be in the range [min, max] and
+  // is determined by the cardinality estimate available to the generator.
+  // Without stats the size of the cache will be typically min.
+  HBASE_NUM_CACHE_ROWS_MAX,
   // if ON, create volatile tables in seabase. Otherwise create them in Seaquest.
   // OFF by default, in closed source. ON by default, in open source.
   SEABASE_VOLATILE_TABLES,

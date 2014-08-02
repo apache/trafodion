@@ -47,6 +47,7 @@
 #include "ComTdb.h"
 #include "OptUtilIncludes.h"
 #include "ComTdbStats.h"
+#include "ComTdbHbaseAccess.h"
 
 class ExprNode;
 class ExpGenerator;
@@ -1613,6 +1614,8 @@ public:
   Int64 getPlanExpirationTimestamp() { return planExpirationTimestamp_; }
 
   ItemExpr * addCompDecodeForDerialization(ItemExpr * ie);
+
+  void setHBaseNumCacheRows(double rowsAccessed, ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
 
 }; // class Generator
 #pragma warn(1506)   // warning elimination
