@@ -21,10 +21,11 @@
 #ifndef __SB_MSOD_H_
 #define __SB_MSOD_H_
 
+#include <mpi.h> // for MPI_Request
+
 #include "seabed/ms.h" // MS_MON_MAX_PROCESS_NAME
 
 #include "cap.h"
-#include "mpiw.h" // for MPI_Request
 #include "sbconst.h"
 #include "transport.h"
 
