@@ -55,7 +55,7 @@
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Fri May 30 09:27:09 2014
+-- Definition current  Sun Aug  3 23:27:22 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -67,7 +67,7 @@
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:09 2014
+-- Definition current  Sun Aug  3 23:27:22 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -85,7 +85,7 @@
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:09 2014
+-- Definition current  Sun Aug  3 23:27:22 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -255,7 +255,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227229937746
+PLAN_ID .................. 212273868443027432
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -312,6 +312,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -327,7 +328,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227229952951
+PLAN_ID .................. 212273868443066165
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -383,6 +384,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = %('1'))
   begin_key .............. (A = %(1))
@@ -399,7 +401,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227229971987
+PLAN_ID .................. 212273868443104076
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -457,6 +459,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = %('1'))
 
@@ -471,7 +474,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227229768067
+PLAN_ID .................. 212273868442599860
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -527,6 +530,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
+  cache_size ........... 100
   key_columns ............ A
   begin_key .............. (A = %(2))
   end_key ................ (A = %(2))
@@ -767,7 +771,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212268227230774028
+PLAN_ID .................. 212273868444666091
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -826,6 +830,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -835,7 +840,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212268227230806501
+PLAN_ID .................. 212273868444716456
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -895,6 +900,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -905,7 +911,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212268227230861326
+PLAN_ID .................. 212273868444791679
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -964,6 +970,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -974,7 +981,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212268227230911011
+PLAN_ID .................. 212273868444865201
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1061,6 +1068,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -1072,7 +1080,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212268227231001790
+PLAN_ID .................. 212273868444993903
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1141,7 +1149,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212268227231030200
+PLAN_ID .................. 212273868445045489
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1201,6 +1209,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -1210,7 +1219,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212268227231061480
+PLAN_ID .................. 212273868445096316
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1271,6 +1280,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -1281,7 +1291,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212268227231117972
+PLAN_ID .................. 212273868445167619
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -1341,6 +1351,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -1351,7 +1362,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212268227231166755
+PLAN_ID .................. 212273868445235297
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -1439,6 +1450,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -1450,7 +1462,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212268227231254322
+PLAN_ID .................. 212273868445360254
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -1670,7 +1682,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Fri May 30 09:27:27 2014
+-- Definition current  Sun Aug  3 23:27:44 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1682,7 +1694,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:27 2014
+-- Definition current  Sun Aug  3 23:27:44 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1700,7 +1712,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:27 2014
+-- Definition current  Sun Aug  3 23:27:44 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -1870,7 +1882,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227247120264
+PLAN_ID .................. 212273868464264568
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -1927,6 +1939,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -1942,7 +1955,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227247135133
+PLAN_ID .................. 212273868464303049
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -1999,6 +2012,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   columns ................ all
   unique_rows ............ 1
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -2013,7 +2027,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227247150248
+PLAN_ID .................. 212273868464340330
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -2070,6 +2084,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -2084,7 +2099,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227247164846
+PLAN_ID .................. 212273868464377012
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -2141,6 +2156,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   columns ................ all
   unique_rows ............ 1
+  cache_size ........... 100
   key_columns ............ A
 
 --- SQL operation complete.
@@ -2379,7 +2395,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212268227247733325
+PLAN_ID .................. 212273868465569444
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2439,6 +2455,7 @@ DESCRIPTION
   columns ................ all
   unique_rows ............ 1,a,1
   unique_rows ............ 4,a,1
+  cache_size ........... 100
   key_columns ............ A, B, C
 
 --- SQL operation complete.
@@ -2447,7 +2464,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212268227247742205
+PLAN_ID .................. 212273868465589892
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2521,6 +2538,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl) ....... 4,a,5
   end_keys(incl) ......... 4,a,2147483647
+  cache_size ........... 100
   key_columns ............ A, B, C
 
 --- SQL operation complete.
@@ -2529,7 +2547,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212268227247756044
+PLAN_ID .................. 212273868465615789
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2593,6 +2611,7 @@ DESCRIPTION
   unique_rows ............ 2,a,3
   unique_rows ............ 4,a,1
   unique_rows ............ 4,a,3
+  cache_size ........... 100
   key_columns ............ A, B, C
 
 --- SQL operation complete.
@@ -2601,7 +2620,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212268227247764320
+PLAN_ID .................. 212273868465637639
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -2693,6 +2712,7 @@ DESCRIPTION
   unique_rows ............ 4,a,3
   unique_rows ............ 6,a,1
   unique_rows ............ 6,a,3
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
 
@@ -2702,7 +2722,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212268227247792170
+PLAN_ID .................. 212273868465696520
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -2773,7 +2793,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212268227247823994
+PLAN_ID .................. 212273868465743716
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2834,6 +2854,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (C = 1) and ((A = 1) or (A = 4))
 
@@ -2843,7 +2864,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212268227247833177
+PLAN_ID .................. 212273868465766468
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2905,6 +2926,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (((A = 1) or (A = 2)) or (A = 4)) and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -2915,7 +2937,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212268227247842004
+PLAN_ID .................. 212273868465789203
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -2976,6 +2998,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (((A = 1) or (A = 2)) or (A = 4)) and
                              ((C = 1) or (C = 3))
@@ -2986,7 +3009,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212268227247851123
+PLAN_ID .................. 212273868465815152
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -3075,6 +3098,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a') and (((A = 2) or (A = 4)) or (A = 6)) and
                              ((C = 1) or (C = 3))
@@ -3085,7 +3109,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212268227247877447
+PLAN_ID .................. 212273868465874918
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -3305,7 +3329,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Fri May 30 09:27:43 2014
+-- Definition current  Sun Aug  3 23:28:04 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3317,7 +3341,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:43 2014
+-- Definition current  Sun Aug  3 23:28:04 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3335,7 +3359,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:43 2014
+-- Definition current  Sun Aug  3 23:28:04 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -3505,7 +3529,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227263637419
+PLAN_ID .................. 212273868484790885
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -3562,6 +3586,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -3577,7 +3602,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227263652688
+PLAN_ID .................. 212273868484829655
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -3633,6 +3658,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = %('1'))
   begin_key .............. (A = %(1))
@@ -3649,7 +3675,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227263671897
+PLAN_ID .................. 212273868484867178
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -3707,6 +3733,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = %('1'))
 
@@ -3721,7 +3748,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227263571015
+PLAN_ID .................. 212273868484624703
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -3777,6 +3804,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
+  cache_size ........... 100
   key_columns ............ A
   begin_key .............. (A = %(2))
   end_key ................ (A = %(2))
@@ -4017,7 +4045,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212268227264258430
+PLAN_ID .................. 212273868486122303
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4075,6 +4103,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (C = %(1)) and ((A = 1) or (A = 4))
   begin_key .............. (A = <min>), (B = %('a')), (C = %(1))
@@ -4086,7 +4115,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212268227264268312
+PLAN_ID .................. 212273868486148268
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4145,6 +4174,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -4157,7 +4187,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212268227264277597
+PLAN_ID .................. 212273868486173589
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4215,6 +4245,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and ((C = 1) or (C = 3))
@@ -4227,7 +4258,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212268227264287012
+PLAN_ID .................. 212273868486202062
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4313,6 +4344,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 2) or (A = 4)) or (A = 6))
                              and ((C = 1) or (C = 3))
@@ -4325,7 +4357,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212268227264313873
+PLAN_ID .................. 212273868486261485
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4394,7 +4426,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212268227264339292
+PLAN_ID .................. 212273868486336026
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4453,6 +4485,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (C = %(1)) and ((A = 1) or (A = 4))
   begin_key .............. (A = <min>), (B = %('a')), (C = %(1))
@@ -4464,7 +4497,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212268227264348161
+PLAN_ID .................. 212273868486360987
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4524,6 +4557,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -4536,7 +4570,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212268227264357062
+PLAN_ID .................. 212273868486386341
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -4595,6 +4629,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 1) or (A = 2)) or (A = 4))
                              and ((C = 1) or (C = 3))
@@ -4607,7 +4642,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212268227264366361
+PLAN_ID .................. 212273868486413895
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -4694,6 +4729,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a')) and (((A = 2) or (A = 4)) or (A = 6))
                              and ((C = 1) or (C = 3))
@@ -4706,7 +4742,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212268227264392931
+PLAN_ID .................. 212273868486476375
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -4926,7 +4962,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Fri May 30 09:27:59 2014
+-- Definition current  Sun Aug  3 23:28:24 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -4938,7 +4974,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:59 2014
+-- Definition current  Sun Aug  3 23:28:24 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -4956,7 +4992,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:27:59 2014
+-- Definition current  Sun Aug  3 23:28:24 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -5126,7 +5162,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227280043695
+PLAN_ID .................. 212273868505123536
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -5183,6 +5219,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -5198,7 +5235,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227280059722
+PLAN_ID .................. 212273868505162340
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -5255,6 +5292,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   columns ................ all
   unique_rows ............ 1
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -5269,7 +5307,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227280075414
+PLAN_ID .................. 212273868505199532
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -5326,6 +5364,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -5340,7 +5379,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227280090853
+PLAN_ID .................. 212273868505236339
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -5397,6 +5436,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   columns ................ all
   unique_rows ............ 1
+  cache_size ........... 100
   key_columns ............ A
 
 --- SQL operation complete.
@@ -5635,7 +5675,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212268227280693500
+PLAN_ID .................. 212273868506457379
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5693,6 +5733,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -5702,7 +5743,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212268227280720369
+PLAN_ID .................. 212273868506503275
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5761,6 +5802,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -5771,7 +5813,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212268227280761454
+PLAN_ID .................. 212273868506562516
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -5829,6 +5871,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -5839,7 +5882,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212268227280802597
+PLAN_ID .................. 212273868506620662
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -5925,6 +5968,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -5936,7 +5980,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212268227280869817
+PLAN_ID .................. 212273868506726683
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6007,7 +6051,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212268227280893571
+PLAN_ID .................. 212273868506773510
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6066,6 +6110,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -6075,7 +6120,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212268227280917164
+PLAN_ID .................. 212273868506818076
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6135,6 +6180,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -6145,7 +6191,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212268227280957220
+PLAN_ID .................. 212273868506879437
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -6204,6 +6250,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -6214,7 +6261,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212268227280992977
+PLAN_ID .................. 212273868506938623
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -6301,6 +6348,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -6312,7 +6360,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212268227281053526
+PLAN_ID .................. 212273868507041339
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -6552,7 +6600,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Fri May 30 09:28:16 2014
+-- Definition current  Sun Aug  3 23:28:46 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -6564,7 +6612,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:28:16 2014
+-- Definition current  Sun Aug  3 23:28:46 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -6582,7 +6630,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:28:16 2014
+-- Definition current  Sun Aug  3 23:28:46 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -6752,7 +6800,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227296857998
+PLAN_ID .................. 212273868526397059
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -6809,6 +6857,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -6824,7 +6873,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227296871852
+PLAN_ID .................. 212273868526436150
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -6880,6 +6929,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = %('1'))
   begin_key .............. (A = %(1))
@@ -6896,7 +6946,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227296889893
+PLAN_ID .................. 212273868526473689
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -6954,6 +7004,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = %('1'))
 
@@ -6968,7 +7019,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227296795324
+PLAN_ID .................. 212273868526206580
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a = 2;
@@ -7024,6 +7075,7 @@ DESCRIPTION
   parent_frag ............ (none)
   fragment_type .......... master
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
+  cache_size ........... 100
   key_columns ............ A
   begin_key .............. (A = %(2))
   end_key ................ (A = %(2))
@@ -7264,7 +7316,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212268227297474203
+PLAN_ID .................. 212273868527737051
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7323,6 +7375,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -7332,7 +7385,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212268227297497319
+PLAN_ID .................. 212273868527783500
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7392,6 +7445,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -7402,7 +7456,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212268227297529737
+PLAN_ID .................. 212273868527845499
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7461,6 +7515,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -7471,7 +7526,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212268227297555884
+PLAN_ID .................. 212273868527909004
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -7558,6 +7613,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -7569,7 +7625,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212268227297657475
+PLAN_ID .................. 212273868528020875
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -7638,7 +7694,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212268227297678109
+PLAN_ID .................. 212273868528071186
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7698,6 +7754,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = %('a')) and (C = %(1))
 
@@ -7707,7 +7764,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212268227297701630
+PLAN_ID .................. 212273868528114815
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7768,6 +7825,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = %('a'))
                              and (((C = 1) or (C = 3)) or (C >= 5))
@@ -7778,7 +7836,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212268227297738423
+PLAN_ID .................. 212273868528173273
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -7838,6 +7896,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
@@ -7848,7 +7907,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212268227297771669
+PLAN_ID .................. 212273868528232491
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -7936,6 +7995,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -7947,7 +8007,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212268227297837601
+PLAN_ID .................. 212273868528340723
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -8167,7 +8227,7 @@ _SALT_      A            B           C            D
 >>invoke t010t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T010T1
--- Definition current  Fri May 30 09:28:33 2014
+-- Definition current  Sun Aug  3 23:29:06 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -8179,7 +8239,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_CELL_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_CELL_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:28:33 2014
+-- Definition current  Sun Aug  3 23:29:06 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8197,7 +8257,7 @@ _SALT_      A            B           C            D
 >>invoke hbase."_ROW_"."TRAFODION.SCH.T010T1";
 
 -- Definition of Trafodion table HBASE."_ROW_"."TRAFODION.SCH.T010T1"
--- Definition current  Fri May 30 09:28:33 2014
+-- Definition current  Sun Aug  3 23:29:06 2014
 
   (
     ROW_ID                           VARCHAR(10) CHARACTER SET ISO88591 COLLATE
@@ -8367,7 +8427,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227313434087
+PLAN_ID .................. 212273868546977710
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 or b='1';
@@ -8424,6 +8484,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... ((A = 1) or (B = '1'))
 
@@ -8439,7 +8500,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227313447615
+PLAN_ID .................. 212273868547016070
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1 and b='1';
@@ -8496,6 +8557,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   columns ................ all
   unique_rows ............ 1
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -8510,7 +8572,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227313460668
+PLAN_ID .................. 212273868547052837
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where b='1';
@@ -8567,6 +8629,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
+  cache_size ........... 100
   key_columns ............ A
   executor_predicates .... (B = '1')
 
@@ -8581,7 +8644,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... XX
-PLAN_ID .................. 212268227313473594
+PLAN_ID .................. 212273868547090448
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t010t1 where a=1;
@@ -8638,6 +8701,7 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.SCH.T010T1
   columns ................ all
   unique_rows ............ 1
+  cache_size ........... 100
   key_columns ............ A
 
 --- SQL operation complete.
@@ -8876,7 +8940,7 @@ A            B           C            D
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X1
-PLAN_ID .................. 212268227314010619
+PLAN_ID .................. 212273868548274367
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -8934,6 +8998,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -8943,7 +9008,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X2
-PLAN_ID .................. 212268227314030660
+PLAN_ID .................. 212273868548316235
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9002,6 +9067,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -9012,7 +9078,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X3
-PLAN_ID .................. 212268227314062185
+PLAN_ID .................. 212273868548370545
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9070,6 +9136,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -9080,7 +9147,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X4
-PLAN_ID .................. 212268227314089597
+PLAN_ID .................. 212273868548424116
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9166,6 +9233,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -9177,7 +9245,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... X5
-PLAN_ID .................. 212268227314143595
+PLAN_ID .................. 212273868548522406
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
@@ -9248,7 +9316,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y1
-PLAN_ID .................. 212268227314161660
+PLAN_ID .................. 212273868548567338
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9307,6 +9375,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... ((A = 1) or (A = 4)) and (B = 'a') and (C = 1)
 
@@ -9316,7 +9385,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y2
-PLAN_ID .................. 212268227314180330
+PLAN_ID .................. 212273868548606191
 ROWS_OUT ................. 5
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9376,6 +9445,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and (B = 'a') and
                              (((C = 1) or (C = 3)) or (C >= 5))
@@ -9386,7 +9456,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y3
-PLAN_ID .................. 212268227314211662
+PLAN_ID .................. 212273868548656691
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0
 STATEMENT ................ select *
@@ -9445,6 +9515,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   mdam_disjunct .......... (((A = 1) or (A = 2)) or (A = 4)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
@@ -9455,7 +9526,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y4
-PLAN_ID .................. 212268227314237130
+PLAN_ID .................. 212273868548705409
 ROWS_OUT ................. 4
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ delete from t010t2
@@ -9542,6 +9613,7 @@ DESCRIPTION
   fragment_type .......... master
   scan_type .............. subset scan limited by mdam of table
                              TRAFODION.SCH.T010T2
+  cache_size ........... 100
   key_columns ............ A, B, C
   executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
@@ -9553,7 +9625,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... Y5
-PLAN_ID .................. 212268227314295619
+PLAN_ID .................. 212273868548798287
 ROWS_OUT ................. 2
 EST_TOTAL_COST ........... 0
 STATEMENT ................ update t010t2
