@@ -519,18 +519,13 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 
 	case PROCESS_INSERT:
 	  {
-	    mutations_.clear();
-	    mutations_.push_back(Mutation());
-	    mutations_.back().column.assign(insColFam_);
-	    mutations_.back().column.append(":");
-	    mutations_.back().column.append(insColNam_);	    
-	    mutations_.back().value = insColVal_;
-            HbaseStr row;
-            row.val = (char *)insRowId_.data();
-            row.len = insRowId_.size();
+            createDirectRowBuffer(insColFam_, insColNam_, insColVal_);
+            HbaseStr rowID;
+            rowID.val = (char *)insRowId_.data();
+            rowID.len = insRowId_.size();
 	    retcode = ehi_->insertRow(table_,
-				      row, //rowId_.val, 
-				      mutations_,
+				      rowID, 
+				      row_,
 				      FALSE,
 				      *insColTS_);
 	    if (setupError(retcode, "ExpHbaseInterface::insertRow"))
@@ -1231,7 +1226,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		break;
 	      }
 
-	    copyRowIDToDirectBuffer(currRowNum_, rowId_);
+	    copyRowIDToDirectBuffer(rowId_);
 
 	    currRowNum_++;
 	    matches_++;
@@ -1250,7 +1245,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	case PROCESS_INSERT_AND_CLOSE:
 	case PROCESS_INSERT_FLUSH_AND_CLOSE:
 	  {
-            patchDirectRowBuffers();
+            short numRowsInBuffer = patchDirectRowBuffers();
 	    if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
 	    
@@ -1273,7 +1268,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-            rowsInserted_ += currRowNum_; 
+            rowsInserted_ += numRowsInBuffer; 
 	    if (step_ == PROCESS_INSERT_FLUSH_AND_CLOSE)
 	      step_ = FLUSH_BUFFERS;
 	    else if (step_ == PROCESS_INSERT_AND_CLOSE)
@@ -1445,6 +1440,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         table_.val = hbaseAccessTdb().getTableName();
         table_.len = strlen(hbaseAccessTdb().getTableName());
+        short numCols = 0;
 
         if (!hFileCreated_)
         {
@@ -1468,6 +1464,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
             UInt32 pos = *(UInt32*) hbaseAccessTdb().listOfUpdatedColNames()->getCurr();
             posVec_.push_back(pos);
             hbaseAccessTdb().listOfUpdatedColNames()->advance();
+            numCols++;
           }
 //              sortQualifiers(hbaseAccessTdb().listOfUpdatedColNames(),sortedListOfColNames_, posVec_);
         }
@@ -1476,11 +1473,13 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           step_ = HANDLE_ERROR;
           break;
         }
-        rowBatches_.clear();
-
+        allocateDirectRowBufferForJNI(
+                 numCols,
+                 ROWSET_MAX_NO_ROWS);
+        allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
         step_ = SETUP_INSERT;
-      }
-        break;
+       }
+       break;
 
       case SETUP_INSERT:
       {
@@ -1563,15 +1562,13 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           }
           memmove(prevRowId_, rowId_.val, rowId_.len);
         }
-
         step_ = CREATE_MUTATIONS;
       }
       break;
 
       case CREATE_MUTATIONS:
       {
-        rowBatches_.push_back(BatchMutation());
-            retcode = createMutations(rowBatches_[currRowNum_].mutations,
+          retcode = createDirectRowBuffer(
                                       hbaseAccessTdb().convertTuppIndex_,
                                       convertRow_,
                                       hbaseAccessTdb().listOfUpdatedColNames(),
@@ -1586,7 +1583,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         //insColTSval_ = -1;
 
-        rowBatches_[currRowNum_].row.assign(rowId_.val, rowId_.len);
+        copyRowIDToDirectBuffer( rowId_);
         currRowNum_++;
         matches_++;
         if (currRowNum_ < ROWSET_MAX_NO_ROWS)
@@ -1600,18 +1597,19 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       case PROCESS_INSERT:
       {
+        short numRowsInBuffer = patchDirectRowBuffers();
         if (getHbaseAccessStats())
           getHbaseAccessStats()->getTimer().start();
-
-            retcode = ehi_->addToHFile(table_,
-                                       rowBatches_);
+        retcode = ehi_->addToHFile(hbaseAccessTdb().rowIdLen(),
+                                   rowIDs_,
+                                   rows_);
 
         if (setupError(retcode, "ExpHbaseInterface::addToHFile"))
         {
            step_ = HANDLE_ERROR;
            break;
         }
-        rowsInserted_ += rowBatches_.size();
+        rowsInserted_ += numRowsInBuffer;
 
         if (getHbaseAccessStats())
         {
@@ -3764,7 +3762,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    HbaseStr rowId;
             rowId.val = (char *)rowIds_[0].data();
             rowId.len = rowIds_[0].length();
-	    copyRowIDToDirectBuffer(currRowNum_, rowId);
+	    copyRowIDToDirectBuffer(rowId);
 
 	    if ((hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_) ||
 		(hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::SELECT_))
@@ -3805,7 +3803,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
             if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
 
-            patchDirectRowIDBuffers();
+            short numRowsInBuffer = patchDirectRowIDBuffers();
 	    retcode = ehi_->deleteRows(table_,
                (hbaseAccessTdb().keyLen_ > 0 ? hbaseAccessTdb().keyLen_ :
                             hbaseAccessTdb().rowIdLen()),
@@ -3898,7 +3896,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  {
            if (getHbaseAccessStats())
 	      getHbaseAccessStats()->getTimer().start();
-            patchDirectRowBuffers();
+            short numRowsInBuffer = patchDirectRowBuffers();
 
 	    retcode = ehi_->insertRows(table_,
 				        hbaseAccessTdb().rowIdLen(),

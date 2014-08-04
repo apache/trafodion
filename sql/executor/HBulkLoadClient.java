@@ -143,48 +143,49 @@ public class HBulkLoadClient
     }
     return true;
   }
-  public boolean addToHFile( RowsToInsert rows) throws IOException
+
+  public boolean addToHFile(short rowIDLen, Object rowIDs,
+                Object rows) throws IOException
   {
-    logger.debug("Enter addToHFile() ");
+     logger.debug("Enter addToHFile() ");
+     Put put;
+     ByteBuffer bbRows, bbRowIDs;
+     short numCols, numRows;
+     short colNameLen, colValueLen;
+     HTableClient.QualifiedColumn qc = null;
+     byte[] colName, colValue, rowID;
 
-    if (qualifierMap == null)
-    {
-      qualifierMap = new HashMap<Integer, HTableClient.QualifiedColumn>();
-
-      RowsToInsert.RowInfo firstrow = rows.firstElement();
-      HTableClient htc = new HTableClient();
-
-      //for (RowsToInsert.ColToInsert col : firstrow.columns)
-      for (int pos = 0 ; pos < firstrow.columns.size(); pos++)
-      {
-         HTableClient.QualifiedColumn qc =
-                  htc.new QualifiedColumn(firstrow.columns.get(pos).qualName);
-         qualifierMap.put(pos, qc);
-      }
+     bbRowIDs = (ByteBuffer)rowIDs;
+     bbRows = (ByteBuffer)rows;
+     numRows = bbRowIDs.getShort();
+     HTableClient htc = new HTableClient();
+     long now = System.currentTimeMillis();
+     for (short rowNum = 0; rowNum < numRows; rowNum++) 
+     {
+        rowID = new byte[rowIDLen];
+        bbRowIDs.get(rowID, 0, rowIDLen);
+        numCols = bbRows.getShort();
+        for (short colIndex = 0; colIndex < numCols; colIndex++)
+        {
+            colNameLen = bbRows.getShort();
+            colName = new byte[colNameLen];
+            bbRows.get(colName, 0, colNameLen);
+            colValueLen = bbRows.getShort();
+            colValue = new byte[colValueLen];
+            bbRows.get(colValue, 0, colValueLen);
+            qc = htc.new QualifiedColumn(colName);
+            KeyValue kv = new KeyValue(rowID,
+                                qc.getFamily(), 
+                                qc.getName(), 
+                                now,
+                                colValue);
+            writer.append(kv);
+        } 
     }
-
-    long now = System.currentTimeMillis();
-    for (RowsToInsert.RowInfo row : rows)
-    {
-       byte[] rowId = row.rowId;
-
-       //for (RowsToInsert.ColToInsert col : row.columns)
-       for (int pos = 0 ; pos < row.columns.size(); pos++)
-       {
-          HTableClient.QualifiedColumn qc = qualifierMap.get(pos);
-          //htc.new QualifiedColumn(col.qualName);
-          KeyValue kv = new KeyValue(rowId,
-                                     Arrays.copyOf(qc.getFamily(),qc.getFamily().length) ,
-                                     Arrays.copyOf(qc.getName(),qc.getName().length),
-                                     now,
-                                     row.columns.get(pos).colValue);
-          writer.append(kv);
-       }
-   }
-
     logger.debug("End addToHFile() ");
        return true;
   }
+
   public boolean closeHFile() throws IOException
   {
     String s = "not null";

@@ -33,9 +33,9 @@
 using namespace apache::hadoop::hbase::thrift;
 
 namespace {
-  typedef std::vector<Mutation> MutationVec;
   typedef std::vector<Text> TextVec;
 }
+
 
 class ContextCli;
 
@@ -167,94 +167,6 @@ private:
   static JavaMethodInit* JavaMethods_;
 };
 
-
-// ===========================================================================
-// ===== The RowToInsert class implements access to the Java 
-// ===== RowToInsert class.
-// ===========================================================================
-
-typedef enum {
-  RTI_OK     = JOI_OK
- ,RTI_FIRST  = BAL_LAST
- ,RTI_ERROR_ADD_PARAM = RTI_FIRST
- ,RTI_ERROR_ADD_EXCEPTION
- ,RTI_LAST
-} RTI_RetCode;
-
-class RowToInsert : public JavaObjectInterface
-{
-public:
-  RowToInsert(NAHeap *heap)
-  :  JavaObjectInterface(heap) 
-  {}
-
-  // Destructor
-  virtual ~RowToInsert();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  RTI_RetCode    init();
-  
-  RTI_RetCode addColumn(const Text& name, const Text& value);
-  
-  RTI_RetCode addMutations(MutationVec & mutations);
-    
-  // Get the error description.
-  virtual char* getErrorText(RTI_RetCode errEnum);
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0, 
-    JM_ADD,
-    JM_LAST
-  };
-  
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-};
-
-// ===========================================================================
-// ===== The RowsToInsert class implements access to the Java 
-// ===== RowsToInsert class.
-// ===========================================================================
-
-class RowsToInsert : public JavaObjectInterface
-{
-public:
-  RowsToInsert(NAHeap *heap)
-  :  JavaObjectInterface(heap) 
-  {}
-
-  // Destructor
-  virtual ~RowsToInsert();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  RTI_RetCode    init();
-  
-  RTI_RetCode addRowId(const Text& rowId);
-
-  RTI_RetCode addColumn(const Text& name, const Text& value);
-
-  RTI_RetCode addRow(BatchMutation &batchMutation);
-
-  RTI_RetCode addRows(std::vector<BatchMutation> &rows);
-    
-  // Get the error description.
-  virtual char* getErrorText(RTI_RetCode errEnum);
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0, 
-    JM_ADD_ROWID,
-    JM_ADD_COLUMN,
-    JM_LAST
-  };
-  
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-};
-
 // ===========================================================================
 // ===== The KeyValue class implements access to the Java 
 // ===== KeyValue class.
@@ -262,7 +174,7 @@ private:
 
 typedef enum {
   KYV_OK     = JOI_OK
- ,KYV_FIRST  = RTI_LAST
+ ,KYV_FIRST  = BAL_LAST
  ,KYV_ERROR_GETBUFFER = KYV_FIRST
  ,KYV_LAST
 } KYV_RetCode;
@@ -484,14 +396,11 @@ public:
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
-  HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, Int64 timestamp);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
        Int64 timestamp);
   HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush);
-  HTC_RetCode insertRows(Int64 transID, std::vector<BatchMutation> &rowBatches, Int64 timestamp, bool autoFlush);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, MutationVec& mutations, Int64 timestamp);
   HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp);
   HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
        const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
@@ -543,9 +452,6 @@ private:
    ,JM_GET_CELL  
    ,JM_DELETE    
    ,JM_CHECKANDDELETE
-   ,JM_INSERT
-   ,JM_INSERT_ROWS
-   ,JM_CHECKANDINSERT
    ,JM_CHECKANDUPDATE
    ,JM_COPROC_AGGR
    ,JM_COPROC_AGGR_GET_RESULT
@@ -826,7 +732,7 @@ public:
 
   HBLC_RetCode createHFile(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName);
 
-  HBLC_RetCode addToHFile( const HbaseStr &tblName,std::vector<BatchMutation> &rowBatches);
+  HBLC_RetCode addToHFile( short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows);
 
   HBLC_RetCode closeHFile(const HbaseStr &tblName);
 
@@ -846,10 +752,10 @@ private:
     JM_CTOR = 0
    ,JM_GET_ERROR
    ,JM_CREATE_HFILE
-   ,JM_ADD_TO_HFILE
    ,JM_CLOSE_HFILE
    ,JM_DO_BULK_LOAD
    ,JM_BULK_LOAD_CLEANUP
+   ,JM_ADD_TO_HFILE_DB
    ,JM_LAST
   };
   static jclass          javaClass_;

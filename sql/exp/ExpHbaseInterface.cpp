@@ -194,33 +194,6 @@ Lng32 ExpHbaseInterface::deleteColumns(
   return HBASE_ACCESS_SUCCESS;
 }
 
-Lng32 ExpHbaseInterface::checkAndInsertRow(
-					   HbaseStr &tblName,
-					   HbaseStr &row, 
-					   MutationVec & mutations,
-					   const int64_t timestamp)
-{
-  Lng32 retcode = 0;
-
-  retcode = rowExists(tblName, row);
-  if (retcode == 1) // row exists
-    {
-      // return error
-      return HBASE_DUP_ROW_ERROR;
-    }
-
-  if (retcode != HBASE_ACCESS_SUCCESS)
-    return retcode;
-
-  retcode = insertRow(tblName,
-		      row,
-		      mutations,
-		      FALSE,
-		      timestamp);
-  
-  return retcode;
-}
-
 Lng32 ExpHbaseInterface::checkAndUpdateRow(
 					   HbaseStr &tblName,
 					   HbaseStr &rowID, 
@@ -277,32 +250,6 @@ Lng32 ExpHbaseInterface::checkAndDeleteRow(
 		      columns,
 		      timestamp);
   
-  return retcode;
-}
-
-Lng32 ExpHbaseInterface::insertRows(
-				   HbaseStr &tblName,
-				   std::vector<BatchMutation> & rows,
-				   const int64_t timestamp,
-				   NABoolean autoFlush)
-{
-  Lng32 retcode = 0;
-
-  for (Lng32 i = 0; i < rows.size(); i++)
-    {
-      BatchMutation &bm = rows[i];
-
-      const Text &row = bm.row;
-      MutationVec &mutations = bm.mutations;
-
-      HbaseStr insRow;
-      insRow.val = (char *)row.data();
-      insRow.len = row.size();
-      retcode = insertRow(tblName, insRow, mutations, FALSE, timestamp);
-      if (retcode != HBASE_ACCESS_SUCCESS)
-	return retcode;
-    }
-
   return retcode;
 }
 
@@ -1041,34 +988,6 @@ Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
   else
     return HBASE_ACCESS_SUCCESS;
 }
-
-//----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::insertRow(
-	  HbaseStr &tblName,
-	  HbaseStr &row, 
-	  MutationVec & mutations,
-	  NABoolean noXn,
-	  const int64_t timestamp)
-{
-  HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
-  if (htc == NULL)
-  {
-    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
-    return HBASE_OPEN_ERROR;
-  }
-  
-  Int64 transID = getTransactionIDFromContext();
-  if (noXn)
-    transID = 0;
-  retCode_ = htc->insertRow(transID, row, mutations, timestamp);
-
-  client_->releaseHTableClient(htc);
-
-  if (retCode_ != HBC_OK)
-    return -HBASE_ACCESS_ERROR;
-  else
-    return HBASE_ACCESS_SUCCESS;
-}
 //
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::insertRow(
@@ -1085,39 +1004,13 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+  Int64 transID;
   if (noXn)
     transID = 0;
-  retCode_ = htc->insertRow(transID, rowID, row, timestamp);
-
-  client_->releaseHTableClient(htc);
-
-  if (retCode_ != HBC_OK)
-    return -HBASE_ACCESS_ERROR;
   else
-    return HBASE_ACCESS_SUCCESS;
-}
+    transID = getTransactionIDFromContext();
 
-
-//----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::insertRows(
-	  HbaseStr &tblName,
-	  std::vector<BatchMutation> & rows,
-	  const int64_t timestamp,
-	  NABoolean autoFlush)
-{
-  if (rows.size() == 0)
-    return HBASE_ACCESS_SUCCESS;
-
-  HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
-  if (htc == NULL)
-  {
-    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
-    return HBASE_OPEN_ERROR;
-  }
-  
-  Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc->insertRows(transID, rows, timestamp, autoFlush);
+  retCode_ = htc->insertRow(transID, rowID, row, timestamp);
 
   client_->releaseHTableClient(htc);
 
@@ -1136,11 +1029,6 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
 	  const int64_t timestamp,
 	  NABoolean autoFlush)
 {
-/*
-  if (rows.size() == 0)
-    return HBASE_ACCESS_SUCCESS;
-*/
-
   HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
   if (htc == NULL)
   {
@@ -1241,21 +1129,22 @@ Lng32 ExpHbaseInterface_JNI::createHFile(HbaseStr &tblName,
 
 }
 
- Lng32 ExpHbaseInterface_JNI::addToHFile( HbaseStr &tblName,
-                                          std::vector<BatchMutation> & rows)
+ Lng32 ExpHbaseInterface_JNI::addToHFile( short rowIDLen,
+                                          HbaseStr &rowIDs,
+                                          HbaseStr &rows)
  {
    if (hblc_ == NULL || client_ == NULL)
    {
      return -HBASE_ACCESS_ERROR;
    }
 
-   retCode_ = hblc_->addToHFile(tblName, rows);
-   //close();
+   retCode_ = hblc_->addToHFile(rowIDLen, rowIDs, rows);
    if (retCode_ == HBLC_OK)
      return HBASE_ACCESS_SUCCESS;
    else
      return -HBASE_ADD_TO_HFILE_ERROR;
  }
+
 
  Lng32 ExpHbaseInterface_JNI::closeHFile(HbaseStr &tblName)
  {
@@ -1345,35 +1234,6 @@ Lng32 ExpHbaseInterface_JNI::rowExists(
 
 Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 	  HbaseStr &tblName,
-	  HbaseStr &row, 
-	  MutationVec & mutations,
-	  const int64_t timestamp)
-{
-  HTableClient_JNI* htc = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
-  if (htc == NULL)
-  {
-    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
-    return HBASE_OPEN_ERROR;
-  }
-  
-  Int64 transID = getTransactionIDFromContext();
-  HTC_RetCode rc = htc->checkAndInsertRow(transID, row, mutations, timestamp);
-
-  client_->releaseHTableClient(htc);
-
-  if (rc == HTC_ERROR_CHECKANDINSERT_DUP_ROWID)
-    return HBASE_DUP_ROW_ERROR;
-
-  retCode_ = rc;
-
-   if (retCode_ != HBC_OK)
-    return -HBASE_ACCESS_ERROR;
-  else
-    return HBASE_ACCESS_SUCCESS;
-}
-
-Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
-	  HbaseStr &tblName,
 	  HbaseStr &rowID, 
 	  HbaseStr &row,
 	  const int64_t timestamp)
@@ -1390,15 +1250,14 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 
   client_->releaseHTableClient(htc);
 
-  if (rc == HTC_ERROR_CHECKANDINSERT_DUP_ROWID)
-    return HBASE_DUP_ROW_ERROR;
-
   retCode_ = rc;
 
-   if (retCode_ != HBC_OK)
-    return -HBASE_ACCESS_ERROR;
+  if (rc == HTC_ERROR_CHECKANDINSERT_DUP_ROWID)
+     return HBASE_DUP_ROW_ERROR;
+  if (retCode_ != HBC_OK)
+     return -HBASE_ACCESS_ERROR;
   else
-    return HBASE_ACCESS_SUCCESS;
+     return HBASE_ACCESS_SUCCESS;
 }
 
 Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(

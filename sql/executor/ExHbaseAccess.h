@@ -279,18 +279,14 @@ protected:
     (ComTdbHbaseAccess::HbaseGetRows*hgr);
   Lng32 setupSubsetRowIdsAndCols
     (ComTdbHbaseAccess::HbaseScanRows* hsr);
-  short createMutations(MutationVec &mutations,
-			UInt16 tuppIndex, char * tuppRow, Queue * listOfColNames,
-			NABoolean isUpdate = FALSE,
-			std::vector<UInt32> * posVec = NULL);
+
   short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
                         Queue * listOfColNames,
 			NABoolean isUpdate = FALSE,
 			std::vector<UInt32> * posVec = NULL);
-
-  short createRowwiseMutations(MutationVec &mutations,
-			       char * inputRow);
-
+  short createDirectRowBuffer(Text &colFamily,
+                         Text &colName,
+                         Text &colVal);
   short createDirectRowwiseBuffer(char * inputRow);
 
   Lng32 initNextKeyRange(sql_buffer_pool *pool = NULL, atp_struct * atp = NULL);
@@ -306,19 +302,19 @@ protected:
   void allocateDirectBufferForJNI(UInt32 rowLen);
   void allocateDirectRowBufferForJNI(short numCols, 
                           short maxRows = 1);
-  void patchDirectRowBuffers();
-  void patchDirectRowIDBuffers();
+  short patchDirectRowBuffers();
+  short patchDirectRowIDBuffers();
   void allocateDirectRowIDBufferForJNI(short maxRows = 1);
-  short copyColToDirectBuffer( BYTE *rowCurPtr, 
+  Lng32 copyColToDirectBuffer( BYTE *rowCurPtr, 
                 char *colName, short colNameLen,
                 NABoolean prependNullVal, char nullVal, 
                 char *colVal, short colValLen);
-  short copyRowIDToDirectBuffer(short currRowNum, HbaseStr &rowID);
+  short copyRowIDToDirectBuffer(HbaseStr &rowID);
 
   short numColsInDirectBuffer()
   {
     if (row_.val != NULL)
-        return bswap_16(*(short *)row_.val);
+       return bswap_16(*(short *)row_.val);
     else
         return 0;
   }
@@ -389,8 +385,6 @@ protected:
 
   Lng32 currRowidIdx_;
 
-  MutationVec mutations_;
-
   HbaseStr rowID_;
 
   Lng32 rowIDAllocatedLen_;
@@ -425,6 +419,7 @@ protected:
   //
   BYTE *directRowBuffer_;
   Lng32 directRowBufferLen_;
+  short directBufferMaxRows_;
   // Structure to keep track of current row
   HbaseStr row_;
   // Structure to keep track of current position in direct row buffer
@@ -764,8 +759,6 @@ public:
     , ALL_DONE
   } step_;
 
-  //  MutationVec mutations_;
-  
   //  const char * insRowId_;
   Text insRowId_;
 
@@ -806,9 +799,6 @@ public:
   virtual ExWorkProcRetcode work(); 
  protected:
   Int64 insColTSval_;
-
-  std::vector<BatchMutation> rowBatches_;
-  BatchMutation batchMutation_;
   Lng32 currRowNum_;
 
   queue_index prevTailIndex_;
@@ -1052,8 +1042,6 @@ public:
   
   virtual ExWorkProcRetcode work(); 
  private:
-  std::vector<BatchMutation> rowBatches_;
-  BatchMutation batchMutation_;
   Lng32 currRowNum_;
 
   queue_index prevTailIndex_;
