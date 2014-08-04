@@ -21,8 +21,6 @@ all:
 	cd tools; $(MAKE)
 
 buildall:
-	cd evsim; $(MAKE) all
-	cd mpisim; $(MAKE) all
 	cd src; $(MAKE) all
 
 setup:
@@ -37,8 +35,6 @@ cleaner:
 	cd tools; $(MAKE) cleaner
 
 cleanall:
-	cd evsim; $(MAKE) cleanall
-	cd mpisim; $(MAKE) cleanall
 	cd src; $(MAKE) cleanall
 	cd tools; $(MAKE) cleanall
 
