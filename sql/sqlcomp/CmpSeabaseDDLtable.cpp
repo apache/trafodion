@@ -5422,6 +5422,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
   tableInfo.isAudited = 0;
   tableInfo.validDef = 1;
   tableInfo.objOwner = objectOwner;
+  tableInfo.hbaseCreateOptions = NULL;
 
   tableDesc =
     Generator::createVirtualTableDesc
