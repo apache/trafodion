@@ -74,11 +74,16 @@ prepare s from insert into hive.ins_customer select * from hive.customer;
 execute s;
 select count(*) from hive.customer;
 select count(*) from hive.ins_customer;
+--select from hive table where row delimiter was explicettely specified
+select [first 20] * from hive.ins_customer order by c_customer_sk;
 
 prepare s from insert into hive.ins_promotion select * from hive.promotion;
 execute s;
 select count(*) from hive.promotion;
 select count(*) from hive.ins_promotion;
+--select from hive table where row delimiter was explicettely specified
+select [first 20] * from hive.ins_promotion order by p_promo_sk ;
+
 
 --try new HIVE SYNTAX
 --------------
