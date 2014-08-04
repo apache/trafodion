@@ -1694,16 +1694,6 @@ ExLobGlobals::~ExLobGlobals()
     preOpenList_.clear();
     preOpenListLock_.unlock();
 
-    postfetchBufListLock_.lock();
-    c_it = postfetchBufList_.begin();
-    while (c_it != postfetchBufList_.end()) {
-      buf = *c_it;
-      if (buf->data_) {
-        free(buf->data_);
-      }
-      c_it = postfetchBufList_.erase(c_it);
-    }
-    postfetchBufListLock_.unlock();
     
     if (lobMap_) 
       delete lobMap_;
@@ -1715,7 +1705,21 @@ ExLobGlobals::~ExLobGlobals()
     for (int i=0; i<NUM_WORKER_THREADS; i++) {
       pthread_join(threadId_[i], NULL);
     }
-
+    // Free the post fetch bugf list AFTER the worker threads have left to 
+    // avoid slow worker thread being stuck and master deallocating these 
+    // buffers and not consuming the buffers which could cause a  lock.
+ 
+    postfetchBufListLock_.lock();
+    c_it = postfetchBufList_.begin();
+    while (c_it != postfetchBufList_.end()) {
+      buf = *c_it;
+      if (buf->data_) {
+        free(buf->data_);
+      }
+      c_it = postfetchBufList_.erase(c_it);
+    }
+    postfetchBufListLock_.unlock();
+    
     //msg_mon_close_process(&serverPhandle);
 }
 
@@ -2090,7 +2094,13 @@ void ExLobGlobals::doWorkInThread()
       request = getHdfsRequest(); // will wait until new req arrives
 
       if (request->isShutDown()) { 
-         break; // we are asked to shutdown
+	//we are asked to shutdown
+	//wake up next worker before going away
+	reqQueueLock_.lock();
+	reqQueueLock_.wakeOne();
+	reqQueueLock_.unlock();
+	break; 
+
       }
       else {
          performRequest(request);
