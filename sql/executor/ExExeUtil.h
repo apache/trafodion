@@ -3667,6 +3667,8 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
       //cleanup leftover files
       PRE_LOAD_CLEANUP_,
       LOAD_START_,
+      LOAD_END_,
+      LOAD_END_ERROR_,
       PREPARATION_,
       COMPLETE_BULK_LOAD_, //load incremental
       POST_LOAD_CLEANUP_,

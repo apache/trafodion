@@ -61,6 +61,7 @@ using std::ofstream;
 #include  "ExpLOBexternal.h"
 #include  "str.h"
 
+
 ////////////////////////////////////////////////////////////////
 // Constructor for class ExExeLoadUtilTcb
 ///////////////////////////////////////////////////////////////
@@ -3674,6 +3675,7 @@ ExExeUtilHBaseBulkLoadTcb::ExExeUtilHBaseBulkLoadTcb(
        nextStep_(INITIAL_)
 {
   qparent_.down->allocatePstate(this);
+
 }
 
 //////////////////////////////////////////////////////
@@ -3695,8 +3697,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   if (qparent_.up->isFull())
     return WORK_OK;
 
-
-
   ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
   ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
 
@@ -3710,9 +3710,12 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       case INITIAL_:
       {
         NABoolean xnAlreadyStarted = ta->xnInProgress();
-        if (xnAlreadyStarted)
+
+        if (xnAlreadyStarted  &&
+            //a transaction is active when we load/populate an indexe table
+            !hblTdb().getIndexTableOnly())
         {
-          //8111 - Transactions are not allowd with Bulk load.
+          //8111 - Transactions are not allowed with Bulk load.
           ComDiagsArea * da = getDiagsArea();
           *da << DgSqlCode(-8111);
           step_ = LOAD_ERROR_;
@@ -3764,13 +3767,12 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       case LOAD_START_:
       {
-        cliRC = holdAndSetCQD("COMP_BOOL_226", "ON");
-        if (cliRC < 0)
+        if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
+
         if (hblTdb().getPreloadCleanup())
           step_ = PRE_LOAD_CLEANUP_;
         else
@@ -3800,11 +3802,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         NADELETEBASIC(clnpQuery, getHeap());
         clnpQuery = NULL;
-
         if (cliRC < 0)
         {
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
 
@@ -3840,7 +3841,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         if (cliRC < 0)
         {
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
         step_ = PREPARATION_;
@@ -3860,8 +3861,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "ON");
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
 
@@ -3875,11 +3875,13 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         if (cliRC < 0)
         {
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
 
         step_ = COMPLETE_BULK_LOAD_;
+        if (rowsAffected == 0)
+          step_ = LOAD_END_;
 
         sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
         int len = strlen(statusMsgBuf_);
@@ -3902,8 +3904,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         if (cliRC < 0)
         {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
 
@@ -3911,11 +3912,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         if (hblTdb().getKeepHFiles() &&
             !hblTdb().getQuasiSecure() )
         {
-          cliRC = holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON");
-          if (cliRC < 0)
+          if (holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON") < 0)
           {
-            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-            step_ = LOAD_ERROR_;
+            step_ = LOAD_END_ERROR_;
             break;
           }
         }
@@ -3936,10 +3935,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         if (cliRC < 0)
         {
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_ERROR_;
+          step_ = LOAD_END_ERROR_;
           break;
         }
-        step_ = DONE_;
+        step_ = LOAD_END_;
 
         if (hblTdb().getIndexes())
           step_ = POPULATE_INDEXES_;
@@ -3969,11 +3968,11 @@ short ExExeUtilHBaseBulkLoadTcb::work()
          if (cliRC < 0)
          {
            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-           step_ = LOAD_ERROR_;
+           step_ = LOAD_END_ERROR_;
            break;
          }
 
-        step_ = DONE_;
+        step_ = LOAD_END_;
 
         setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
       }
@@ -3985,6 +3984,28 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           return rc;
 
         step_ = nextStep_;
+      }
+      break;
+
+      case LOAD_END_:
+      case LOAD_END_ERROR_:
+      {
+        cliRC = restoreCQD("COMP_BOOL_226");
+         if (cliRC < 0)
+         {
+           step_ = LOAD_ERROR_;
+           break;
+         }
+         cliRC = restoreCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES");
+          if (cliRC < 0)
+          {
+            step_ = LOAD_ERROR_;
+            break;
+          }
+         if (step_ == LOAD_END_)
+          step_ = DONE_;
+         else
+           step_ = LOAD_ERROR_;
       }
       break;
 

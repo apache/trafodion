@@ -738,7 +738,7 @@ B@           B            C            (EXPR)
 --- SQL operation complete.
 >>populate all indexes on T017TTB;
 
-*** ERROR[8102] The operation is prevented by a unique constraint.
+*** ERROR[8110] Duplicate rows detected.
 
 --- SQL operation failed with errors.
 >>

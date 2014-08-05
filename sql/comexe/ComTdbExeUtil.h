@@ -4628,6 +4628,9 @@ public:
     {(v ? flags_ |= NO_OUTPUT : flags_ &= ~NO_OUTPUT); };
   NABoolean getNoOutput() { return (flags_ & NO_OUTPUT) != 0; };
 
+  void setIndexTableOnly(NABoolean v)
+    {(v ? flags_ |= INDEX_TABLE_ONLY : flags_ &= ~INDEX_TABLE_ONLY); };
+  NABoolean getIndexTableOnly() { return (flags_ & INDEX_TABLE_ONLY) != 0; };
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -4646,7 +4649,8 @@ private:
     NO_DUPLICATES    = 0x0080,
     INDEXES          = 0x0100,
     CONSTRAINTS      = 0x0200,
-    NO_OUTPUT        = 0x0400
+    NO_OUTPUT        = 0x0400,
+    INDEX_TABLE_ONLY = 0x0800
   };
 
   // load stmt
