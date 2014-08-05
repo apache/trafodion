@@ -38,7 +38,7 @@ create external table ins_customer
     c_email_address           string,
     c_last_review_date        string
 )
-row format delimited fields terminated by '|' 
+row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
 location '/user/hive/exttables/ins_customer';
 
 
@@ -65,7 +65,7 @@ create external table ins_promotion
     p_purpose                 string,
     p_discount_active         string 
 )
-row format delimited fields terminated by '|' 
+row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
 location '/user/hive/exttables/ins_promotion';
 
 drop table ins_customer_address;

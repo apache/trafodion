@@ -540,7 +540,7 @@ NABoolean populateSerDeParams(HiveMetaData *md, Int32 serdeID,
   
   foundB = tblStr->find("line.delim=",pos);
   if ((foundB != std::string::npos) && (foundB < foundE))
-    fieldTerminator = tblStr->at(foundB+strlen(lineStr)+1);
+    recordTerminator = tblStr->at(foundB+strlen(lineStr)+1);
   
   pos = foundE;
   
