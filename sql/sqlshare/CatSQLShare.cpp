@@ -86,7 +86,7 @@ generateUniqueValue (void)
   // Generate the highOrderBits for the UID.  They will not change for`
   // the life of the process, so we only need to calculate them once
 
-  if (systemColdLoadTime == -1)
+  if (highOrderBits == -1)
   {
     Int32  rtnCode = -1;
     char monProcessName[MS_MON_MAX_PROCESS_NAME+1];
