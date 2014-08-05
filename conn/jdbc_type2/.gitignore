@@ -1,0 +1,5 @@
+buildId
+classes/
+native/Vproc.*
+native/org_trafodion_jdbc_t2_*.h
+src/main/java/org/trafodion/jdbc/t2/DriverInfo.java
