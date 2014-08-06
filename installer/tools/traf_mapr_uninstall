@@ -20,81 +20,23 @@
 #This script will uninstall MapR
 
 #==============================================
-function print_usage {
-cat << EOF
-This script will uninstall Hortonworks.
-
-Usage: $(basename $0) [options]
-
-Options:
-    --help                 Print this message and exit.
-    --nodes "<node_list>"  -w separated list of nodes (within quotes)
-
-EOF
-}
-#==============================================
-# Parse input parameters
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-         --nodes)
-             if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-             fi
-             MY_NODES=$2
-             shift
-             ;;
-         --help)
-             print_usage
-             exit -1
-             ;;
-         *)
-             echo "***ERROR: unknown parameter '$1'"
-             exit -1
-    esac
-    shift
-done
-#==============================================
-#Check with user if they want to preform the uninstall
-echo -n "Do you want to uninstall MapR (deleting all data) Y/N: "
-read v
-
-if [[ $v != "Y" ]] && [[ $v != "y" ]]; then
-   echo "***INFO: Exiting..."
-   exit
-fi
-
-if [[ $MY_NODES == "" ]]; then
-   MY_NODES=$(cat ../../my_nodes)
-fi
-
-echo $MY_NODES
-exit
-#==============================================
-echo
-echo "***INFO: Uninstalling MapR"
-echo
 #Stop the Warden on all nodes
-pdsh $MY_NODES 'service mapr-warden stop'
+service mapr-warden stop
 
 #Stop ZooKeeper on all nodes
-pdsh $MY_NODES 'service mapr-zookeeper stop'
+service mapr-zookeeper stop
 
 #Delete all mapr-core* files
-pdsh $MY_NODES 'sudo yum --assumeyes erase mapr-core\*'
+sudo yum --assumeyes erase mapr-core\*
 
 #Delete all mapr-zk-internal* files
-pdsh $MY_NODES 'sudo yum --assumeyes erase mapr-zk-internal\*'
+sudo yum --assumeyes erase mapr-zk-internal\*
 
 #Delete /opt/mapr directory and all files within
-pdsh $MY_NODES 'sudo rm -rf /opt/mapr'
+sudo rm -rf /opt/mapr
 
 #Delete /opt/storagefile and /opt/mapr-setup
-pdsh $MY_NODES 'sudo rm -rf /opt/storagefile'
-pdsh $MY_NODES 'sudo rm -rf /opt/mapr-setup'
+sudo rm -rf /opt/storagefile
+sudo rm -rf /opt/mapr-setup
 
 #==============================================
-echo
-echo "***INFO: MapR uninstall complete"
-echo

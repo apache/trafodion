@@ -131,7 +131,7 @@ echo >> $MODS_LOG
 #============================================
 #Check for errors
 
-CLUSTER_NAME=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+export CLUSTER_NAME=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 if [ -z $CLUSTER_NAME ]; then
   echo

@@ -29,6 +29,7 @@ typeset NODE_LIST="$HOSTNAME"
 typeset CLUSTERNAME="$HOSTNAME"
 typeset HBASE_TRX_JAR=""
 typeset HOME_DIR="/home"
+
 #==============================================
 
 function print_usage {
@@ -313,22 +314,27 @@ if [ $node_count -ne 1 ]; then
     done
 fi
 
-echo "***INFO: ... EPEL rpm"
-epel_rpm="epel-release-6-8.noarch.rpm"
-wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
-if [ $? != 0 ]; then
-    echo "***ERROR: Can't download EPEL rpm $epel_rpm"
-    exit -1
-fi
-if [ $node_count -ne 1 ]; then
-    pdcp $MY_NODES $epel_rpm $TRAF_WORKDIR
-else
-    cp $epel_rpm $TRAF_WORKDIR
-fi 
-$TRAF_PDSH sudo rpm -Uvh $TRAF_WORKDIR/$epel_rpm 2>> $YUM_LOG >> $YUM_LOG
-if [ $? != 0 ]; then
-    echo "***ERROR: Can't install EPEL rpm $epel_rpm"
-    exit -1
+#Checking to see if epel package is installed. 
+EPEL_INSTALLED=$( rpm -qa | grep epel | wc -l)
+
+if [[ $EPEL_INSTALLED == 0 ]]; then
+   echo "***INFO: ... EPEL rpm"
+   epel_rpm="epel-release-6-8.noarch.rpm"
+   wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+   if [ $? != 0 ]; then
+      echo "***ERROR: Can't download EPEL rpm $epel_rpm"
+      exit -1
+   fi
+   if [ $node_count -ne 1 ]; then
+      pdcp $MY_NODES $epel_rpm $TRAF_WORKDIR
+   else
+      cp $epel_rpm $TRAF_WORKDIR
+   fi 
+   $TRAF_PDSH sudo rpm -Uvh $TRAF_WORKDIR/$epel_rpm 2>> $YUM_LOG >> $YUM_LOG
+   if [ $? != 0 ]; then
+      echo "***ERROR: Can't install EPEL rpm $epel_rpm"
+      exit -1
+   fi
 fi
 
 # to handle the case where the EPEL rpm was already
@@ -441,10 +447,10 @@ fi
 
 echo $TRAF_WORKDIR
 # Put build tar files in user's $HOME
-sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
-sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
-sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $HOME_DIR/$TRAF_USER/trafodion_build.tgz &> /dev/null
+echo $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
 sudo cp $TRAF_WORKDIR/dcs-*.tgz $HOME_DIR/$TRAF_USER/dcs_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER

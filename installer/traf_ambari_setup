@@ -143,33 +143,36 @@ echo "Home directory: $HOME_DIR" >> $SETUP_LOG
 echo >> $SETUP_LOG
 
 #==============================================
+if [[ $AMBARI -eq 0 ]]; then
+   echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete" | tee -a $SETUP_LOG
 
-echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete" | tee -a $SETUP_LOG
+   wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.5.1/ambari.repo
 
-wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.5.1/ambari.repo
+   if [ $? -ne 0 ]; then
+      echo "***ERROR: Time out error. Please check http_proxy settings." | tee -a $SETUP_LOG
+      echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+      echo
+      exit -1
+   fi
 
-if [ $? -ne 0 ]; then
-   echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
-   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   sudo cp ambari.repo /etc/yum.repos.d
+   sudo yum --assumeyes install ambari-server
+   sudo ambari-server setup
+   sudo ambari-server start
+
+   if [ $? -ne 0 ]; then
+      echo "***ERROR: Error while installing Hortonworks/Ambari" | tee -a $SETUP_LOG
+      echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+      echo
+      exit -1
+   fi
+
+   echo "***INFO: Complete Hortonworks/Ambari setup from http://localhost:8080" | tee -a $SETUP_LOG
+else
    echo
-   exit -1
+   echo "***INFO: Hortonworks/Ambari previously installed." | tee -a $SETUP_LOG
+
 fi
-
-sudo cp ambari.repo /etc/yum.repos.d
-sudo yum --assumeyes install ambari-server
-sudo ambari-server setup
-sudo ambari-server start
-
-if [ $? -ne 0 ]; then
-   echo "***ERROR: Error while installing Hortonworks/Ambari" | tee -a $SETUP_LOG
-   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
-   echo
-   exit -1
-fi
-
-
-echo "***INFO: Complete Hortonworks/Ambari setup from http://localhost:8080" | tee -a $SETUP_LOG
-
 #==============================================
 
 echo "***INFO: Running Trafodion Setup"

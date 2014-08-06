@@ -202,42 +202,48 @@ else
 fi
 
 #==============================================
+cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
 
-echo "***INFO: Installing Cloudera, will need browser access to complete" | tee -a $SETUP_LOG
+if [[ $cloudera_installed -eq 0 ]]; then
 
-wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin
+   echo "***INFO: Installing Cloudera, will need browser access to complete" | tee -a $SETUP_LOG
 
-if [ $? -ne 0 ]; then
-   echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
-   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+   wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin
+
+   if [ $? -ne 0 ]; then
+      echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
+      echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+      echo
+      exit -1
+   fi
+
+   wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
+
+   if [ $? -ne 0 ]; then
+      echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
+      echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+      echo
+      exit -1
+   fi
+
+   sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm 
+
+   chmod +x cloudera-manager-installer.bin
+
+   sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme
+
+   if [ $? -ne 0 ]; then
+      echo "***ERROR: Error while installing Cloudera" | tee -a $SETUP_LOG
+      echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
+      echo
+      exit -1
+   fi
+
+   echo "***INFO: Complete Cloudera setup from http://localhost:7180" | tee -a $SETUP_LOG 
+else
    echo
-   exit -1
+   echo "***INFO: Cloudera previously installed." | tee -a $SETUP_LOG
 fi
-
-wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
-
-if [ $? -ne 0 ]; then
-   echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
-   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
-   echo
-   exit -1
-fi
-
-sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
-
-chmod +x cloudera-manager-installer.bin
-
-sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme
-
-if [ $? -ne 0 ]; then
-   echo "***ERROR: Error while installing Cloudera" | tee -a $SETUP_LOG
-   echo "***ERROR: Exiting..." | tee -a $SETUP_LOG
-   echo
-   exit -1
-fi
-
-echo "**INFO: Complete Cloudera setup from http://localhost:7180" | tee -a $SETUP_LOG 
-
 #==============================================
 echo "***INFO: Running Trafodion Setup"
 if [[ $HBASE_TRX_JAR == "" ]]; then
