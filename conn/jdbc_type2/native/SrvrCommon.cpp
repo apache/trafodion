@@ -54,7 +54,7 @@ SRVR_GLOBAL_Def		*srvrGlobal = NULL;
 //ODBCMXEventMsg		*srvrEventLogger = NULL;
 long				*TestPointArray = NULL;
 SQLMODULE_ID		nullModule;
-SQLDESC_ITEM		gDescItems[NO_OF_DESC_ITEMS];
+__thread SQLDESC_ITEM		gDescItems[NO_OF_DESC_ITEMS];
 char				CatalogNm[MAX_ANSI_NAME_LEN+1];
 char				SchemaNm[MAX_ANSI_NAME_LEN+1];
 char				TableNm[MAX_ANSI_NAME_LEN+1];
