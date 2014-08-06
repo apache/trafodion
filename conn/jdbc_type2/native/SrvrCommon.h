@@ -80,7 +80,7 @@ extern SRVR_SESSION_HDL *pSrvrSession;  // Allocation at the time of ImplInit if
 extern SRVR_GLOBAL_Def		*srvrGlobal;
 //extern ODBCMXEventMsg		*srvrEventLogger;
 extern SQLMODULE_ID		nullModule;
-extern SQLDESC_ITEM		gDescItems[];
+extern __thread SQLDESC_ITEM		gDescItems[];
 extern char				CatalogNm[MAX_ANSI_NAME_LEN+1];
 extern char				SchemaNm[MAX_ANSI_NAME_LEN+1];
 extern char				TableNm[MAX_ANSI_NAME_LEN+1];
