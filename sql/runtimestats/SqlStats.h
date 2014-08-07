@@ -68,7 +68,6 @@ class ExProcessStats;
 #define MAX_PID_ARRAY_SIZE 65536
 
 enum ProcessStatsFlags {
-  NEEDS_DEFERRED_CLEANUP_ = 0x0001,
   ON_DEATHWATCH           = 0x0002
 };
 
@@ -77,6 +76,7 @@ typedef struct GlobalStatsArray
   pid_t  processId_;
   short  processFlags_;
   NABoolean      removedAtAdd_;
+  Int64  creationTime_;
   ProcessStats  *processStats_;
 } GlobalStatsArray;
 
@@ -179,7 +179,6 @@ public:
 
   void setWMSMonitoredCliQuery(NABoolean v)      
   {
-    (v ? flags_ |= WMS_MONITORED_CLI_QUERY_ : flags_ &= ~WMS_MONITORED_CLI_QUERY_); 
   }
 
   
@@ -359,17 +358,12 @@ public:
   void releaseStatsSemaphore(Long &semId, pid_t pid, short savedPriority, 
        short savedStopMode, NABoolean canAssert = TRUE);
 
-  enum CleanupStatus { READY_TO_CLEANUP = 0, DEFER_CLEANUP };
-
-  CleanupStatus releaseAndGetStatsSemaphore(Long &semId, 
+  short releaseAndGetStatsSemaphore(Long &semId, 
        pid_t pid, pid_t releasePid,
        short &savedPriority,
        short &savedStopMode, NABoolean shouldTimeout = FALSE);
   void cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolder);
-  void cleanupDeferredSql();
-  void deferCleanup(pid_t p);
-  void deferredCleanupComplete(pid_t p);
-  void checkForDeadProcesses();
+  void checkForDeadProcesses(pid_t myPid);
   HashQueue *getStmtStatsList() { return stmtStatsList_; }
   ExStatisticsArea *getStatsArea(char *queryId, Lng32 queryIdLen);
   StmtStats *getMasterStmtStats(char *queryId, Lng32 queryIdLen, short activeQueryNum);
@@ -456,6 +450,8 @@ public:
   void setNodesInCluster(short numNodes);
   void incProcessRegd();
   void decProcessRegd();
+  void incProcessStatsHeaps();
+  void decProcessStatsHeaps();
 #endif
   inline short getCpu() { return cpu_; }
   inline short getNodeId() { return nodeId_; }
@@ -493,6 +489,7 @@ public:
   HashQueue *stmtStatsList_;
   short cpu_;
   pid_t semPid_;    // Pid of the process that holds semaphore lock - This element is used for debugging purpose only
+  Int64 semPidCreateTime_; // Creation timestamp - pid recycle workaround. 
   NASegGlobals segGlobals_;
   NAHeap statsHeap_;
   NABoolean isSscpInitialized_;
@@ -507,11 +504,16 @@ public:
   timespec releasingTimestamp_;
   timespec lockingTimestamp_;
   Int32 seabedError_;
+  bool seabedPidRecycle_; //if true, then the most recent call to 
+                          // cleanupDanglingSemaphore detected the semaphore
+                          // holding process is gone, but its pid was 
+                          // recycled.
   HashQueue *recentSikeys_;
   Int64 newestRevokeTimestamp_;  // Allows CLI call w/o use if a semaphore.
-  Lng32 numDeferredCleanups_;
   NABoolean isBeingUpdated_;
+  pid_t pidToCheck_;
   pid_t maxPid_;
+  Int64 ssmpDumpedTimestamp_;
 };
 void cleanup_SQL(StatsGlobals *statsGlobals,
                  Long &semId,
@@ -524,6 +526,7 @@ short getStmtNameInQid(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *stmtName
 NABoolean filterStmtStats(ExMasterStats *masterStats, short activeQueryNum, short &queryNum);
 short getRTSSemaphore();
 void releaseRTSSemaphore();
+SB_Phandle_Type *getMySsmpPhandle();
 #ifdef __EID
 void updateProcessMemStats(size_t alloc,
         size_t used, size_t highWM);

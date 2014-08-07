@@ -244,7 +244,23 @@ done
 #echo ${cfg_dtms[*]}
 rm -f $sq_tmp_dtms_names
 
-
+### CONFIGURED RMSs 
+if [[ $SQ_START_RMS == "1" ]]; then
+    let cfg_sscp_cnt=`grep -i 'exec ' $STARTSSCP_FILE | egrep -i ' mxsscp' | wc -l`
+    let cfg_ssmp_cnt=`grep -i 'exec ' $STARTSSMP_FILE | egrep -i ' mxssmp' | wc -l`
+    let cfg_rms_cnt=$cfg_sscp_cnt+$cfg_ssmp_cnt
+    sq_tmp_rms_names=`mktemp -t`
+    let num_rms=0
+    grep -i 'exec ' $STARTSSCP_FILE | egrep -i 'mxsscp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_rms_names
+    grep -i 'exec ' $STARTSSMP_FILE | egrep -i 'mxssmp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' >> $sq_tmp_rms_names
+    for rms in `cat $sq_tmp_rms_names`; do
+        cfg_rms[num_rms]=$rms
+        let ++num_rms
+    done
+    rm -f $sq_tmp_rms_names
+else
+    let cfg_rms_cnt=0
+fi
 
 sq_tmp_ps=`mktemp -t`
 if [[ $? != 0 ]]; then
@@ -291,7 +307,33 @@ do
       done
   fi
  
+  #RMS
+  let act_rms_cnt=`< $sq_tmp_ps egrep -a -i ' mxssmp| mxsscp' | wc -l`
+  if [ $reset_counter '==' 1 ]; then
+      let lv_cnt_check=(act_rms_cnt '>' last_rms_cnt)
+      if [ $lv_cnt_check '==' 1 ]; then
+	  let num_checks=0
+      fi
+      let last_rms_cnt=act_rms_cnt
+  fi
 
+  let duplicate=0
+  if ( [ $act_rms_cnt '!=' $cfg_rms_cnt ] &&
+         ( [ "$sqck_component" == "all" ] || [ "$sqck_component" == "rms" ] ) ); then
+      for rms in ${cfg_rms[*]}; do
+          if [ -z "`grep -i $rms $sq_tmp_ps`" ]; then
+              for dups in ${down_rms[*]}; do
+                  if [[ "$dups" == "$rms" ]]; then
+                      let duplicate=1
+                  fi
+              done
+              if [ $duplicate '==' 0 ]; then
+                  down_rms[${#down_rms[@]}]=$rms
+              fi
+              let duplicate=0
+          fi
+      done
+  fi
 
   
   if [[ $sqck_component == "all" ]]; then
@@ -392,7 +434,7 @@ fi
        echo -e "-------\t\t----------\t------\t    ----"
     if [[ $sqck_component == "all" ]]; then
 	echo -e "DTM\t\t$cfg_dtm_cnt\t\t$act_dtm_cnt\t    ${down_dtms[*]}"
-
+        echo -e "RMS\t\t$cfg_rms_cnt\t\t$act_rms_cnt\t    ${down_rms[*]}\n"
 elif [[ $sqck_component == "tse" ]]; then
     echo -e "TSE\t\t$cfg_tse_cnt $ft_pair\t\t$act_tse_cnt $ft_pair\t    ${down_tses[*]}\n"
 elif [[ $sqck_component == "dtm" ]]; then

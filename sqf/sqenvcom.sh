@@ -449,7 +449,7 @@ export SP_HEALTH_HARNESSBLALLCFG=$MY_SQROOT/seapilot/export/conf/vili/vili_basel
 export SQ_PIDMAP=1
 
 #Enable RMS (SQL Run time statistics)
-export SQ_START_RMS=1
+export SQ_START_RMS=0
 
 # Enable QVP (Query Validation Process).
 export SQ_START_QVP=1

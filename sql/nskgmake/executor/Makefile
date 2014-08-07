@@ -101,6 +101,7 @@ CPPSRC := Allocator.cpp \
 	MdamRefListEntry.cpp \
 	MdamRefListIterator.cpp \
 	SqlStats.cpp \
+	rts_msg.cpp \
 	sql_buffer.cpp \
 	stubs.cpp \
 	stubs2.cpp \
@@ -117,6 +118,8 @@ CPPSRC := Allocator.cpp \
         HdfsLogger.cpp \
         CommonLogger.cpp 
 CPPSRC += vers_libexecutor.cpp \
+	ssmpipc.cpp \
+	CancelBroker.cpp \
 	ExSMCommon.cpp \
 	ExSMTrace.cpp \
 	ExSMGlobals.cpp \

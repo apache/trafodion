@@ -3539,7 +3539,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (rmsStatsItems_ == NULL)
         {
-          maxRMSStatsItems_ = 32;
+          maxRMSStatsItems_ = 33;
           rmsStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxRMSStatsItems_];
           initSqlStatsItems(rmsStatsItems_, maxRMSStatsItems_, FALSE);
@@ -3557,25 +3557,26 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           rmsStatsItems_[11].statsItem_id = SQLSTATS_STATS_HEAP_ALLOC;
           rmsStatsItems_[12].statsItem_id = SQLSTATS_STATS_HEAP_USED;
           rmsStatsItems_[13].statsItem_id = SQLSTATS_STATS_HEAP_HIGH_WM;
-          rmsStatsItems_[14].statsItem_id = SQLSTATS_PROCESSES_REGD;
-          rmsStatsItems_[15].statsItem_id = SQLSTATS_QUERIES_REGD;
-          rmsStatsItems_[16].statsItem_id = SQLSTATS_RMS_SEMAPHORE_PID;
-          rmsStatsItems_[17].statsItem_id = SQLSTATS_SSCPS_OPENED;
-          rmsStatsItems_[18].statsItem_id = SQLSTATS_SSCPS_DELETED_OPENS;
-          rmsStatsItems_[19].statsItem_id = SQLSTATS_LAST_GC_TIME;
-          rmsStatsItems_[20].statsItem_id = SQLSTATS_QUERIES_GCED_IN_LAST_RUN;
-          rmsStatsItems_[21].statsItem_id = SQLSTATS_TOTAL_QUERIES_GCED;
-          rmsStatsItems_[22].statsItem_id = SQLSTATS_SSMP_REQ_MSG_CNT;
-          rmsStatsItems_[23].statsItem_id = SQLSTATS_SSMP_REQ_MSG_BYTES;
-          rmsStatsItems_[24].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_CNT;
-          rmsStatsItems_[25].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_BYTES;
-          rmsStatsItems_[26].statsItem_id = SQLSTATS_SSCP_REQ_MSG_CNT;
-          rmsStatsItems_[27].statsItem_id = SQLSTATS_SSCP_REQ_MSG_BYTES;
-          rmsStatsItems_[28].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_CNT;
-          rmsStatsItems_[29].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_BYTES;
-          rmsStatsItems_[30].statsItem_id = SQLSTATS_RMS_STATS_RESET_TIMESTAMP;
-          rmsStatsItems_[31].statsItem_id = SQLSTATS_RMS_STATS_NUM_SQL_SIK;
-          // maxRMSStatsItems_ is set to 32
+          rmsStatsItems_[14].statsItem_id = SQLSTATS_PROCESS_STATS_HEAPS;
+          rmsStatsItems_[15].statsItem_id = SQLSTATS_PROCESSES_REGD;
+          rmsStatsItems_[16].statsItem_id = SQLSTATS_QUERIES_REGD;
+          rmsStatsItems_[17].statsItem_id = SQLSTATS_RMS_SEMAPHORE_PID;
+          rmsStatsItems_[18].statsItem_id = SQLSTATS_SSCPS_OPENED;
+          rmsStatsItems_[19].statsItem_id = SQLSTATS_SSCPS_DELETED_OPENS;
+          rmsStatsItems_[20].statsItem_id = SQLSTATS_LAST_GC_TIME;
+          rmsStatsItems_[21].statsItem_id = SQLSTATS_QUERIES_GCED_IN_LAST_RUN;
+          rmsStatsItems_[22].statsItem_id = SQLSTATS_TOTAL_QUERIES_GCED;
+          rmsStatsItems_[23].statsItem_id = SQLSTATS_SSMP_REQ_MSG_CNT;
+          rmsStatsItems_[24].statsItem_id = SQLSTATS_SSMP_REQ_MSG_BYTES;
+          rmsStatsItems_[25].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_CNT;
+          rmsStatsItems_[26].statsItem_id = SQLSTATS_SSMP_REPLY_MSG_BYTES;
+          rmsStatsItems_[27].statsItem_id = SQLSTATS_SSCP_REQ_MSG_CNT;
+          rmsStatsItems_[28].statsItem_id = SQLSTATS_SSCP_REQ_MSG_BYTES;
+          rmsStatsItems_[29].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_CNT;
+          rmsStatsItems_[30].statsItem_id = SQLSTATS_SSCP_REPLY_MSG_BYTES;
+          rmsStatsItems_[31].statsItem_id = SQLSTATS_RMS_STATS_RESET_TIMESTAMP;
+          rmsStatsItems_[32].statsItem_id = SQLSTATS_RMS_STATS_NUM_SQL_SIK;
+          // maxRMSStatsItems_ is set to 33
           rmsStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
             char[MAX_SEGMENT_NAME_LEN+1];
           rmsStatsItems_[0].str_max_len = MAX_SEGMENT_NAME_LEN;
@@ -3667,6 +3668,9 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(statsBuf_, "%30s%s", "Stats Heap High WM", Int64Val);
+            break;
+          case SQLSTATS_PROCESS_STATS_HEAPS:
+            str_sprintf(statsBuf_, "%30s%-d", "No.of Process Stats Heaps",  rmsStatsItems_[i].int64_value);
             break;
           case SQLSTATS_PROCESSES_REGD:
             str_sprintf(statsBuf_, "%30s%-d", "No.of Process Regd.",  rmsStatsItems_[i].int64_value);

@@ -131,7 +131,7 @@ GLOBAL_SYS_LIBS := -L $(LOC_JVMLIBS) $(LIBHDFS_LIB) $(THRIFT_LIB)
 
 # EXECUTABLES defines the executables that are built for release and debug
 # builds.  Any flavor-specific targets can be added later in this makefile.
-EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv
+EXECUTABLES= arkcmp sqlci arkesp tdm_udrserv sscp ssmp
 	# mxCompileUserModule mxsqlcfe mxsqlcofe sqlfe
 
 

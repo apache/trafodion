@@ -186,7 +186,7 @@ public:
 // LCOV_EXCL_START
   IpcNodeName(const GuaProcessHandle &phandle);
   // Return the Guardian node name as a character string, without trailing spaces.
-  inline void getGuardianNodeNameAsString (char * nodeName) const
+  inline void getNodeNameAsString (char * nodeName) const
   {
     nodeName[0] = '\\'; 
     for (Int32 i=0;i<GuaNodeNameMaxLen;i++)

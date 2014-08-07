@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1997-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -10705,6 +10705,7 @@ ExRMSStats::ExRMSStats(NAHeap *heap)
   currGlobalStatsHeapUsage_ = 0;
   globalStatsHeapWatermark_ = 0;
   currNoOfStmtStats_ = 0;
+  currNoOfRegProcesses_ = 0;
   currNoOfProcessStatsHeap_ = 0;
   semPid_ = -1;
   sscpOpens_ = 0;
@@ -10852,7 +10853,7 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
        "sscpPid: %d sscpPri: %d sscpTimestamp: %Ld "
        "ssmpPid: %d ssmpPri: %d ssmpTimestamp: %Ld srcLen: %d rtsEnvType: %d "
         "statsHeapUsed: %Ld "
-        "statsHeapTotal: %Ld statsHeapWM: %Ld noOfProcessRegd: %d "
+        "statsHeapTotal: %Ld statsHeapWM: %Ld noOfProcessRegd: %d  noOfProcessStatsHeaps: %d "
         "noOfQidRegd: %d semPid: %d sscpOpens: %d sscpDeleted: %d "
         "stmtStatsGCed: %d lastGCTime: %Ld "
         "totalStmtStatsGCed: %Ld ssmpReqMsgCnt: %Ld ssmpReqMsgBytes: %Ld ssmpReplyMsgCnt: %Ld ssmpReplyMsgBytes: %Ld "
@@ -10874,6 +10875,7 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
         currGlobalStatsHeapUsage_,
         currGlobalStatsHeapAlloc_,
         globalStatsHeapWatermark_,
+        currNoOfRegProcesses_,
         currNoOfProcessStatsHeap_,
         currNoOfStmtStats_,
         semPid_,
@@ -10966,8 +10968,11 @@ Lng32 ExRMSStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_STATS_HEAP_HIGH_WM:
     sqlStats_item->int64_value = globalStatsHeapWatermark_;
     break;
-  case SQLSTATS_PROCESSES_REGD:
+  case SQLSTATS_PROCESS_STATS_HEAPS:
     sqlStats_item->int64_value = currNoOfProcessStatsHeap_;
+    break;
+  case SQLSTATS_PROCESSES_REGD:
+    sqlStats_item->int64_value = currNoOfRegProcesses_;
     break;
   case SQLSTATS_QUERIES_REGD:
     sqlStats_item->int64_value = currNoOfStmtStats_;

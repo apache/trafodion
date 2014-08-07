@@ -1712,6 +1712,85 @@ sub genSSCPCommand {
                   $l_stdout, "" );
 }
 
+sub generateRMS {
+
+    $RMS_Retries = 10;
+    genSQShellExit();
+
+    #Print out run RMS script
+    printScript(1, "\necho \"SQ_START_RMS: \" \$SQ_START_RMS \n");
+    printScript(1, "if [[ \$SQ_START_RMS == \"1\" ]]; then\n");
+    printScript(1, "echo \"Starting RMS\"\n");
+    
+    #generate rmsstart and rmsstop scripts
+    printRMSScript(0, "#!/bin/sh\n");
+    printRMSScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(0, "\n# Start the RMS processes\n");
+    printRMSScript(0, "sscpstart\n");
+    printRMSScript(0, "ssmpstart\n");
+
+    printRMSStopScript(0, "#!/bin/sh\n");
+    printRMSStopScript(0, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(0, "\n# Stop the RMS processes\n");
+    printRMSStopScript(0, "ssmpstop\n");
+    printRMSStopScript(0, "sscpstop\n");
+
+    #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
+    printRMSScript(1, "#!/bin/sh\n");
+    printRMSScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(2, "\n# Start the SSMP processes\n");
+    printRMSScript(3, "\n# Start the SSCP processes\n");
+
+    printRMSStopScript(1, "#!/bin/sh\n");
+    printRMSStopScript(1, "# SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(1, "sqshell -a << eof\n"); 
+    printRMSStopScript(2, "\n!Stop the SSMP processes\n");
+    printRMSStopScript(3, "\n!Stop the SSCP processes\n");
+
+    printRMSCheckScript(1, "-- SQ config/utility file generated @ ",&ctime(time),"\n");
+    printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
+    printRMSCheckScript(1, "cast('Node' as varchar(5)), \n");
+    printRMSCheckScript(1, "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node, \n");
+    printRMSCheckScript(1, "cast(tokenstr('Status:', variable_info) as varchar(10)) status \n");
+    printRMSCheckScript(1, "from table(statistics(null, ?));\n");
+
+    for ($i=0; $i < $gdNumNodes; $i++) {
+
+        my $l_string =  sprintf("execute rms_check using 'RMS_CHECK=%d' ;\n", $i);
+        printRMSCheckScript(1, $l_string);
+        my $l_string =  sprintf("\ntmp_node_status=`mktemp -t`\n");
+        printRMSScript(1, $l_string);
+        my $l_string =  sprintf("sqshell -c zone nid %d > \$tmp_node_status\n", $i);
+        printRMSScript(1, $l_string);
+        my $l_string =  sprintf("let node_up_value=`grep 'Up' \$tmp_node_status | wc -l`\n");
+        printRMSScript(1, $l_string);
+        my $l_string =  sprintf("if [[ \$node_up_value == 1 ]]; then\n");
+        printRMSScript(1, $l_string);
+
+        printRMSScript(1, "\tsqshell -a << eof\n");
+        genSSCPCommand($i, "ZSC", "mxsscp", $RMS_Retries);
+        genSSMPCommand($i, "ZSM", "mxssmp", $RMS_Retries);
+        printRMSScript(1, "\texit\neof\n");
+
+        my $l_string =  sprintf("fi\n");
+        printRMSScript(1, $l_string);
+        my $l_string =  sprintf("rm -f \$tmp_node_status\n");
+        printRMSScript(1, $l_string);
+    }
+
+    printRMSStopScript(1, "delay 1\n");
+    printRMSStopScript(1, "exit\neof\n");
+    printRMSStopScript(1, "echo RMS Processes Stopped\n");
+   
+    printRMSScript(1, "\n");
+
+    printScript(1, "rmsstart\n");
+
+    #printScript(1, "\n! delay 5\n");
+	
+    printScript(1, "\necho \"Started RMS\"\n");
+    printScript(1, "fi\n");
+}
 
 sub printSQShellCommand {
     printScript(1, substr($_,1));
@@ -2030,6 +2109,27 @@ sub openFiles {
     open (SQC,">$clusterconfFileName")
 	or die("unable to open $clusterconfFileName");
 
+    open (RMS,">$startRMS")
+	or die("unable to open $startRMS");
+
+    open (RMSS,">$stopRMS")
+	or die("unable to open $stopRMS");
+
+    open (RMSC,">$checkRMS")
+	or die("unable to open $checkRMS");
+
+    open (SSMP,">$startSSMP")
+	or die("unable to open $startSSMP");
+
+    open (SSMPS,">$stopSSMP")
+	or die("unable to open $stopSSMP");
+
+    open (SSCP,">$startSSCP")
+	or die("unable to open $startSSCP");
+
+    open (SSCPS,">$stopSSCP")
+	or die("unable to open $stopSSCP");
+
 #    my $dbargs = {AutoCommit => 1,
 #                  PrintError => 1};
     my $dbargs = {AutoCommit => 1,
@@ -2283,6 +2383,13 @@ sub endGame {
     print "Generated SQ startup script file: $warmscriptFileName\n";
     print "Generated SQ cluster config file: $clusterconfFileName\n";
     print "Generated SQ Shell          file: $sqshell\n";
+    print "Generated RMS Startup       file: $startRMS\n";
+    print "Generated RMS Stop          file: $stopRMS\n";
+    print "Generated RMS Check         file: $checkRMS\n";
+    print "Generated SSMP Startup      file: $startSSMP\n";
+    print "Generated SSMP Stop         file: $stopSSMP\n";
+    print "Generated SSCP Startup      file: $startSSCP\n";
+    print "Generated SSCP Stop         file: $stopSSCP\n";
 
     close(SRC);
     close(SQS);
@@ -2396,6 +2503,8 @@ while (<SRC>) {
 
 
     genDTM();
+
+    generateRMS();
 
 
 printScriptEndLines;
