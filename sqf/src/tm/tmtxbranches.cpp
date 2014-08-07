@@ -145,7 +145,7 @@ int32 CTmTxBranches::rollback_branches (CTmTxBase *pp_txn,
    // For situations where the only branches hare in HBase, we can reply to the application which called abort now and
    // then wait for the aborts to complete.  If we had other branches, then we may have already replied!
    if (pp_msg->replyPending())
-      pp_msg->reply(FEOK);
+      pp_msg->reply();
    // Now wait for the HBase library to complete it's work.
    lv_err1 = completeRequest_branches(pp_txn);
    lv_err = (lv_err1!=RET_OK)?XAER_RMERR:XA_OK;
