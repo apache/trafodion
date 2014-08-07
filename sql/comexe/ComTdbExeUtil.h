@@ -4631,6 +4631,10 @@ public:
   void setIndexTableOnly(NABoolean v)
     {(v ? flags_ |= INDEX_TABLE_ONLY : flags_ &= ~INDEX_TABLE_ONLY); };
   NABoolean getIndexTableOnly() { return (flags_ & INDEX_TABLE_ONLY) != 0; };
+  void setUpsertUsingLoad(NABoolean v)
+    {(v ? flags_ |= UPSERT_USING_LOAD : flags_ &= ~UPSERT_USING_LOAD); };
+  NABoolean getUpsertUsingLoad() { return (flags_ & UPSERT_USING_LOAD) != 0; };
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -4650,7 +4654,8 @@ private:
     INDEXES          = 0x0100,
     CONSTRAINTS      = 0x0200,
     NO_OUTPUT        = 0x0400,
-    INDEX_TABLE_ONLY = 0x0800
+    INDEX_TABLE_ONLY = 0x0800,
+    UPSERT_USING_LOAD= 0x1000
   };
 
   // load stmt

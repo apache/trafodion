@@ -2564,6 +2564,7 @@ short HbaseInsert::codeGen(Generator *generator)
         strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
         hbasescan_tdb->setLoadPrepLocation(tlpTmpLocation);
         hbasescan_tdb->setNoDuplicates(CmpCommon::getDefault(TRAF_LOAD_PREP_SKIP_DUPLICATES) == DF_OFF);
+        hbasescan_tdb->setMaxHFileSize(CmpCommon::getDefaultLong(TRAF_LOAD_MAX_HFILE_SIZE));
       }
 
       // setting parameters for upsert statement// not related to the hbase bulk load intergration

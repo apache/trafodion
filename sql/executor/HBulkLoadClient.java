@@ -75,6 +75,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 
 public class HBulkLoadClient
 {
@@ -82,7 +83,7 @@ public class HBulkLoadClient
   private final static FsPermission PERM_ALL_ACCESS = FsPermission.valueOf("-rwxrwxrwx");
   private final static FsPermission PERM_HIDDEN = FsPermission.valueOf("-rwx--x--x");
   private final static String BULKLOAD_STAGING_DIR = "hbase.bulkload.staging.dir";
-  
+  private final static long MAX_HFILE_SIZE = 10737418240L; //10 GB
   
   public static int BLOCKSIZE = 64*1024;
   public static String COMPRESSION = Compression.Algorithm.NONE.getName();
@@ -90,7 +91,12 @@ public class HBulkLoadClient
   static Logger logger = Logger.getLogger(HBulkLoadClient.class.getName());
   Configuration config;
   HFile.Writer writer;
-
+  String hFileLocation;
+  String hFileName;
+  long maxHFileSize = MAX_HFILE_SIZE;
+  FileSystem fileSys = null;
+  
+  
   HashMap< Integer, HTableClient.QualifiedColumn> qualifierMap = null;
 
   public HBulkLoadClient()
@@ -116,39 +122,91 @@ public class HBulkLoadClient
   void setLastError(String err) {
       lastError = err;
   }
-  public boolean createHFile(String hFileLoc, String hfileName) throws IOException, URISyntaxException
+  public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName) 
   {
-    logger.debug("HBulkLoadClient.createHFile() called.");
+    logger.debug("HBulkLoadClient.initHFileParams() called.");
     
-    FileSystem fs = FileSystem.get(config); 
+    hFileLocation = hFileLoc;
+    hFileName = hFileNm;
+    
+    if (userMaxSize == 0)
+    {
+      HTableDescriptor desc = new HTableDescriptor(tblName);
+      if (desc.getMaxFileSize()==-1)
+      {
+        maxHFileSize = MAX_HFILE_SIZE;
+      }
+      else
+      {
+        maxHFileSize = desc.getMaxFileSize();
+      }
+    }
+    else 
+      maxHFileSize = userMaxSize * 1024 *1024;  //maxSize is in MBs
 
-    Path hfilePath = new Path(new Path(hFileLoc ), hfileName);
+    return true;
+  }
+  public boolean doCreateHFile() throws IOException, URISyntaxException
+  {
+    logger.debug("HBulkLoadClient.doCreateHFile() called.");
+    
+    //may chage those assertion later it needed to something else???
+    if (hFileLocation == null )
+      throw new NullPointerException(hFileLocation + " is not set");
+    if (hFileName == null )
+      throw new NullPointerException(hFileName + " is not set");
+    
+    closeHFile();
+    
+    if (fileSys == null)
+     fileSys = FileSystem.get(config); 
+
+    Path hfilePath = new Path(new Path(hFileLocation ), hFileName + "_" +  System.currentTimeMillis());
     hfilePath = hfilePath.makeQualified(hfilePath.toUri(), null);
 
-    logger.debug("HBulkLoadClient.createHFile Path-- ");
+    logger.debug("HBulkLoadClient.createHFile Path: " + hfilePath);
 
     try
     {
-    writer =    HFile.getWriterFactory(config, new CacheConfig(config))
-                     .withPath(fs, hfilePath)
+      writer =    HFile.getWriterFactory(config, new CacheConfig(config))
+                     .withPath(fileSys, hfilePath)
                      .withBlockSize(BLOCKSIZE)
                      .withCompression(COMPRESSION)
                      .withComparator(KeyValue.KEY_COMPARATOR)
                      .create();
+      logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
     }
     catch (IOException e)
     {
-        logger.debug("HBulkLoadClient.createHFile Exception" + e.getMessage());
-        throw e;
+       logger.debug("HBulkLoadClient.doCreateHFile Exception" + e.getMessage());
+       throw e;
     }
     return true;
   }
+  
+  public boolean isNewFileNeeded() throws IOException
+  {
+    if (writer == null)
+      return true;
+    
+    if (fileSys == null)
+      fileSys = FileSystem.get(writer.getPath().toUri(),config);
+    
+    if (fileSys.getFileStatus(writer.getPath()).getLen() > maxHFileSize)
+     return true;
+
+    return false;
+  }
 
   public boolean addToHFile(short rowIDLen, Object rowIDs,
-                Object rows) throws IOException
+                Object rows) throws IOException, URISyntaxException
   {
      logger.debug("Enter addToHFile() ");
      Put put;
+    if (isNewFileNeeded())
+    {
+      doCreateHFile();
+    }
      ByteBuffer bbRows, bbRowIDs;
      short numCols, numRows;
      short colNameLen, colValueLen;
@@ -188,11 +246,11 @@ public class HBulkLoadClient
 
   public boolean closeHFile() throws IOException
   {
-    String s = "not null";
-    if (writer == null)
-        s = "NULL";
-    logger.debug("HBulkLoadClient.closeHFile() called." + s);
+    logger.debug("HBulkLoadClient.closeHFile() called." + ((writer == null) ? "NULL" : "NOT NULL"));
 
+    if (writer == null)
+      return false;
+    
     writer.close();
     return true;
   }

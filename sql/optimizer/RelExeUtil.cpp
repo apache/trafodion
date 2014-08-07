@@ -8401,8 +8401,6 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   else
     result = (ExeUtilHBaseBulkLoad *) derivedNode;
 
-  //result->hFilesPath_ = hFilesPath_;
-  result->preLoadCleanup_ = preLoadCleanup_;
   result->keepHFiles_ = keepHFiles_;
   result->truncateTable_ = truncateTable_;
   result->noRollback_= noRollback_;
@@ -8412,6 +8410,7 @@ RelExpr * ExeUtilHBaseBulkLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outH
   result->constraints_= constraints_;
   result->noOutput_= noOutput_;
   result->indexTableOnly_= indexTableOnly_;
+  result->upsertUsingLoad_= upsertUsingLoad_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -8530,7 +8529,18 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
         return 1;
       }
       break;
-
+      case UPSERT_USING_LOAD_:
+      {
+        if (getUpsertUsingLoad())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("UPSERT USING LOAD");
+          return 1;
+        }
+        setUpsertUsingLoad(TRUE);
+      }
+      break;
       default:
       {
         //Not a valid bulk laod option.

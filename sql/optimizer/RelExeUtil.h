@@ -2628,7 +2628,8 @@ public:
     NO_POPULATE_INDEXES_,
     CONSTRAINTS_,
     NO_OUTPUT_,
-    INDEX_TABLE_ONLY_
+    INDEX_TABLE_ONLY_,
+    UPSERT_USING_LOAD_
   };
 
     class HBaseBulkLoadOption
@@ -2637,7 +2638,8 @@ public:
     public:
       HBaseBulkLoadOption(HBaseBulkLoadOptionType option, Lng32 numericVal, char * stringVal )
       : option_(option), numericVal_(numericVal), stringVal_(stringVal)
-    {} ;
+    {
+    }  ;
 
         private:
           HBaseBulkLoadOptionType option_;
@@ -2652,7 +2654,7 @@ public:
                    CollHeap *oHeap = CmpCommon::statementHeap())
    : ExeUtilExpr(HBASE_LOAD_, hBaseTableName, exprNode, NULL,
                  stmtText, stmtTextCharSet, oHeap),
-    preLoadCleanup_(FALSE),
+    //preLoadCleanup_(FALSE),
     keepHFiles_(FALSE),
     truncateTable_(FALSE),
     noRollback_(FALSE),
@@ -2661,7 +2663,8 @@ public:
     indexes_(TRUE),
     constraints_(FALSE),
     noOutput_(FALSE),
-    indexTableOnly_(FALSE)
+    indexTableOnly_(FALSE),
+    upsertUsingLoad_(FALSE)
   {
   };
 
@@ -2671,16 +2674,6 @@ public:
                                 CollHeap* outHeap = 0);
 
   virtual short codeGen(Generator*);
-
-  NABoolean getCleanOnly() const
-  {
-    return preLoadCleanup_;
-  }
-
-  void setCleanOnly(NABoolean cleanOnly)
-  {
-    preLoadCleanup_ = cleanOnly;
-  }
 
   NABoolean getKeepHFiles() const
   {
@@ -2768,6 +2761,15 @@ public:
  void setIndexTableOnly(NABoolean indexTableOnly) {
    indexTableOnly_ = indexTableOnly;
  }
+  NABoolean getUpsertUsingLoad() const
+  {
+   return upsertUsingLoad_;
+  }
+
+ void setUpsertUsingLoad(NABoolean upsertUsingLoad)
+ {
+   upsertUsingLoad_ = upsertUsingLoad;
+ }
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
@@ -2777,7 +2779,7 @@ public:
       ComDiagsArea * da);
 private:
 
-  NABoolean preLoadCleanup_;
+  //NABoolean preLoadCleanup_;
   NABoolean keepHFiles_;
   NABoolean truncateTable_;
   NABoolean noRollback_;
@@ -2788,6 +2790,7 @@ private:
   NABoolean noOutput_;
   //target table is index table
   NABoolean indexTableOnly_;
+  NABoolean upsertUsingLoad_;
 
 };
 

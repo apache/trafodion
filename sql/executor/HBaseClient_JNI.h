@@ -730,7 +730,7 @@ public:
   // Must be called.
   HBLC_RetCode init();
 
-  HBLC_RetCode createHFile(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName);
+  HBLC_RetCode initHFileParams(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName, Int64 maxHFileSize);
 
   HBLC_RetCode addToHFile( short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows);
 
@@ -751,7 +751,7 @@ private:
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_GET_ERROR
-   ,JM_CREATE_HFILE
+   ,JM_INIT_HFILE_PARAMS
    ,JM_CLOSE_HFILE
    ,JM_DO_BULK_LOAD
    ,JM_BULK_LOAD_CLEANUP

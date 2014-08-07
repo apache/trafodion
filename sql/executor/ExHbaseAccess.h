@@ -821,7 +821,7 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     virtual ExWorkProcRetcode work();
 
    private:
-    NABoolean hFileCreated_;  ////temporary-- need better mechanism later
+    NABoolean hFileParamsInitialized_;  ////temporary-- need better mechanism later
     Text   familyLocation_;
     Text   importLocation_;
     Text   hFileName_;

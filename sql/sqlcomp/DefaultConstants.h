@@ -3585,6 +3585,8 @@ enum DefaultConstants
   TRAF_LOAD_TAKE_SNAPSHOT,
   TRAF_LOAD_PREP_SKIP_DUPLICATES,
 
+  TRAF_LOAD_MAX_HFILE_SIZE,
+
  // Control the partitioning representation of a HBase trafodion table
   // as follows.
   //

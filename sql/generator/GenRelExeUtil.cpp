@@ -5486,7 +5486,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
          1024); //getDefault(GEN_DDL_BUFFER_SIZE));
 #pragma warn(1506)  // warning elimination
 
-  exe_util_tdb->setPreloadCleanup(preLoadCleanup_);
+  exe_util_tdb->setPreloadCleanup(CmpCommon::getDefault(TRAF_LOAD_PREP_CLEANUP) == DF_ON);
   exe_util_tdb->setPreparation(TRUE);
   exe_util_tdb->setKeepHFiles(keepHFiles_);
   exe_util_tdb->setTruncateTable(truncateTable_);
@@ -5497,6 +5497,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setConstraints(constraints_);
   exe_util_tdb->setNoOutput(noOutput_);
   exe_util_tdb->setIndexTableOnly(indexTableOnly_);
+  exe_util_tdb->setUpsertUsingLoad(upsertUsingLoad_);
 
   exe_util_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
 

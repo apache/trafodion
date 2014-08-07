@@ -24,7 +24,6 @@ CQD COMP_BOOL_226 'ON';
 cqd TRAF_LOAD_USE_QUASI_SECURE 'on';
 cqd TRAF_LOAD_TAKE_SNAPSHOT 'on';
 
-
 obey TEST015(clean_up);
 
 
@@ -143,6 +142,7 @@ create table t015t4 ( a int not null primary key, b int, c int) salt using 2 par
 create table t015t5 ( a int not null , b int, c int) store by (a);
 create table t015t6 ( a int not null , b int, c int);
 
+delete from t015t1;
 insert into t015t1 values (1),(2),(3),(4),(5);
 
 
@@ -194,11 +194,15 @@ create index t015t3idx on t015t3(b);
 
 load transform into t015t3 select a,a,a from t015t1;
 
+upsert using load  into t015t3 select a,a,a from t015t1;
+
 drop index t015t3idx ;
 
 alter table t015t3  add  constraint t015t3_cnst check (b>100);
 
 load transform into t015t3 select a,a,a from t015t1;
+
+upsert using load  into t015t3 select a,a,a from t015t1;
 
 alter table t015t3  drop  constraint t015t3_cnst;
 
@@ -447,6 +451,67 @@ create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no po
 create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
 ---------------------------
 load  into customer_demographics_salt 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+
+set parserflags 1;
+select count(*) from customer_demographics_salt;
+select count(*) from table(index_table cd_dep_count_IDX2);
+select count(*) from table(index_table cd_dep_college_count_IDX2);
+
+drop index cd_dep_count_IDX2;
+drop index cd_dep_college_count_IDX2;
+
+
+
+--load with upsert using load
+drop table customer_demographics_salt cascade;
+drop table customer_demographics cascade;
+create table customer_demographics
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+); 
+
+create table customer_demographics_salt
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+)
+salt using 4 partitions on (cd_demo_sk);
+create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
+create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
+
+load with upsert using load into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+
+set parserflags 1;
+select count(*) from customer_demographics;
+select count(*) from table(index_table cd_dep_count_IDX);
+select count(*) from table(index_table cd_dep_college_count_IDX);
+
+drop index cd_dep_count_IDX;
+drop index cd_dep_college_count_IDX;
+
+create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
+create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
+---------------------------
+load with upsert using load into customer_demographics_salt 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 
 set parserflags 1;
