@@ -181,7 +181,6 @@ public:
 
     Queue* colNames()       { return colNames_; }
 
-
     NABasicPtr beginRowId_;
     NABasicPtr endRowId_;
 
@@ -661,7 +660,13 @@ public:
    NABoolean getNoDuplicates() { return (flags2_ & TRAF_LOAD_NO_DUPLICATTES) != 0; };
 
 
+   UInt32 getMaxHFileSize() const {
+     return maxHFileSize_;
+   }
 
+   void setMaxHFileSize(UInt32 maxHFileSize) {
+     maxHFileSize_ = maxHFileSize;
+   }
  protected:
   enum
   {
@@ -781,7 +786,8 @@ public:
 
   NABasicPtr LoadPrepLocation_;
   UInt32 flags2_;
-  char filler2_[4];
+  UInt32 maxHFileSize_;
+  char filler2_[8];
 
 };
 

@@ -1368,7 +1368,7 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
     ExHbaseAccessUpsertVsbbSQTcb( hbaseAccessTdb, glob),
     prevRowId_ (NULL)
 {
-   hFileCreated_ = false;  ////temporary-- need better mechanism later
+   hFileParamsInitialized_ = false;  ////temporary-- need better mechanism later
    //sortedListOfColNames_ = NULL;
    posVec_.clear();
 }
@@ -1442,7 +1442,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         table_.len = strlen(hbaseAccessTdb().getTableName());
         short numCols = 0;
 
-        if (!hFileCreated_)
+        if (!hFileParamsInitialized_)
         {
               importLocation_= std::string(((ExHbaseAccessTdb&)hbaseAccessTdb()).getLoadPrepLocation()) +
                                         ((ExHbaseAccessTdb&)hbaseAccessTdb()).getTableName() ;
@@ -1453,8 +1453,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           snprintf(hFileName, 50, "hfile%d", fileNum);
           hFileName_ = hFileName;
 
-          retcode = ehi_->createHFile(table_, familyLocation_, hFileName_);
-          hFileCreated_ = true;
+          retcode = ehi_->initHFileParams(table_, familyLocation_, hFileName_,hbaseAccessTdb().getMaxHFileSize() );
+          hFileParamsInitialized_ = true;
 
 //              sortedListOfColNames_ = new  Queue(); //delete wehn done
           posVec_.clear();
@@ -1658,7 +1658,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           if (eodSeen)
           {
             ehi_->closeHFile(table_);
-            hFileCreated_ = false;
+            hFileParamsInitialized_ = false;
           }
         }
       }

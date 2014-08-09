@@ -96,6 +96,9 @@
 
 --- SQL operation complete.
 >>
+>>delete from t015t1;
+
+--- 0 row(s) deleted.
 >>insert into t015t1 values (1),(2),(3),(4),(5);
 
 --- 5 row(s) inserted.
@@ -215,6 +218,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>execute s;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
 Task:  PREPARATION     Status: Ended      ET: 00:00:00.123
@@ -237,6 +242,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>execute s;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
 Task:  PREPARATION     Status: Ended      ET: 00:00:00.135
@@ -275,6 +282,8 @@ A
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  PURGE DATA      Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  PURGE DATA      Status: Ended      Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.T015T2
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.T015T2
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.T015T2
        Rows Processed: 5 
 Task:  PREPARATION     Status: Ended      ET: 00:00:01.309
@@ -312,6 +321,13 @@ A
 *** ERROR[8822] The statement was not prepared.
 
 >>
+>>upsert using load  into t015t3 select a,a,a from t015t1;
+
+*** ERROR[4484] Indexes are not supported yet with upsert using load. Disable the indexes and try again.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
 >>drop index t015t3idx ;
 
 --- SQL operation complete.
@@ -323,6 +339,13 @@ A
 >>load transform into t015t3 select a,a,a from t015t1;
 
 *** ERROR[4486] Constraints are not supported with bulk load. Disable the constraints and try again.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>upsert using load  into t015t3 select a,a,a from t015t1;
+
+*** ERROR[4486] Constraints are not supported with upsert using load. Disable the constraints and try again.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -443,6 +466,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>load  with no populate indexes  into customer_address 
 +>select * from hive.hive.customer_address;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
        Rows Processed: 50000 
 Task:  PREPARATION     Status: Ended      ET: 00:00:04.854
@@ -521,6 +546,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>load  with no populate indexes  into customer_address_NOPK 
 +>select * from hive.hive.customer_address;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
        Rows Processed: 50000 
 Task:  PREPARATION     Status: Ended      ET: 00:00:01.973
@@ -622,6 +649,8 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 >>load  with no populate indexes  into customer_demographics 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
        Rows Processed: 500000 
 Task:  PREPARATION     Status: Ended      ET: 00:00:10.599
@@ -736,6 +765,8 @@ ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
 >>load  with no populate indexes  into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
        Rows Processed: 500000 
 Task:  PREPARATION     Status: Ended      ET: 00:00:14.025
@@ -1222,6 +1253,8 @@ A            B            C
 >>load  into customer_demographics 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
@@ -1279,6 +1312,8 @@ Task:  POPULATE INDEX  Status: Ended      ET: 00:00:15.983
 >>load  into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
@@ -1288,6 +1323,157 @@ Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOG
 Task:  COMPLETION      Status: Ended      ET: 00:00:02.448
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  POPULATE INDEX  Status: Ended      ET: 00:00:18.199
+
+--- SQL operation complete.
+>>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>select count(*) from customer_demographics_salt;
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_count_IDX2);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_college_count_IDX2);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>
+>>drop index cd_dep_count_IDX2;
+
+--- SQL operation complete.
+>>drop index cd_dep_college_count_IDX2;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>--load with upsert using load
+>>drop table customer_demographics_salt cascade;
+
+--- SQL operation complete.
+>>drop table customer_demographics cascade;
+
+--- SQL operation complete.
+>>create table customer_demographics
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>);
+
+--- SQL operation complete.
+>>
+>>create table customer_demographics_salt
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>)
++>salt using 4 partitions on (cd_demo_sk);
+
+--- SQL operation complete.
+>>create index cd_dep_count_IDX on customer_demographics(cd_dep_count) no populate ;
+
+--- SQL operation complete.
+>>create index cd_dep_college_count_IDX on customer_demographics(cd_dep_college_count) no populate;
+
+--- SQL operation complete.
+>>
+>>load with upsert using load into customer_demographics 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  UPSERT USING L  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+       Rows Processed: 5000 
+Task:  UPSERT USING L  Status: Ended      ET: 00:00:05.860
+Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.011
+
+--- SQL operation complete.
+>>
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>select count(*) from customer_demographics;
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_count_IDX);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table cd_dep_college_count_IDX);
+
+(EXPR)              
+--------------------
+
+                5000
+
+--- 1 row(s) selected.
+>>
+>>drop index cd_dep_count_IDX;
+
+--- SQL operation complete.
+>>drop index cd_dep_college_count_IDX;
+
+--- SQL operation complete.
+>>
+>>create index cd_dep_count_IDX2 on customer_demographics_salt(cd_dep_count) no populate ;
+
+--- SQL operation complete.
+>>create index cd_dep_college_count_IDX2 on customer_demographics_salt(cd_dep_college_count) no populate;
+
+--- SQL operation complete.
+>>---------------------------
+>>load with upsert using load into customer_demographics_salt 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 5000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  DISABLE INDEXE  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  DISABLE INDEXE  Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  UPSERT USING L  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+       Rows Processed: 5000 
+Task:  UPSERT USING L  Status: Ended      ET: 00:00:05.725
+Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
 
 --- SQL operation complete.
 >>

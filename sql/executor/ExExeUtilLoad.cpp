@@ -3724,6 +3724,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         if (setStartStatusMsgAndMoveToUpQueue("LOAD", &rc))
           return rc;
 
+        if (hblTdb().getUpsertUsingLoad())
+          hblTdb().setPreloadCleanup(FALSE);
+
         if (hblTdb().getTruncateTable())
         {
           step_ = TRUNCATE_TABLE_;
@@ -3852,40 +3855,68 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       case PREPARATION_:
       {
-        if (setStartStatusMsgAndMoveToUpQueue(" PREPARATION", &rc, 0, TRUE))
-          return rc;
-
-        if (hblTdb().getNoDuplicates())
-          cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "OFF");
-        else
-          cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "ON");
-        if (cliRC < 0)
+        if (!hblTdb().getUpsertUsingLoad())
         {
-          step_ = LOAD_END_ERROR_;
-          break;
-        }
+          if (setStartStatusMsgAndMoveToUpQueue(" PREPARATION", &rc, 0, TRUE))
+            return rc;
 
-        char * transQuery =hblTdb().ldQuery_;
-        cliRC = cliInterface()->executeImmediate(transQuery,
-                                                 NULL,
-                                                 NULL,
-                                                 TRUE,
-                                                 &rowsAffected);
-        transQuery = NULL;
-        if (cliRC < 0)
-        {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          if (hblTdb().getNoDuplicates())
+            cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "OFF");
+          else
+            cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "ON");
+          if (cliRC < 0)
+          {
           step_ = LOAD_END_ERROR_;
-          break;
-        }
+            break;
+          }
 
-        step_ = COMPLETE_BULK_LOAD_;
+          char * transQuery =hblTdb().ldQuery_;
+          cliRC = cliInterface()->executeImmediate(transQuery,
+                                                   NULL,
+                                                   NULL,
+                                                   TRUE,
+                                                   &rowsAffected);
+          transQuery = NULL;
+          if (cliRC < 0)
+          {
+            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = LOAD_END_ERROR_;
+            break;
+          }
+
+          step_ = COMPLETE_BULK_LOAD_;
         if (rowsAffected == 0)
           step_ = LOAD_END_;
 
-        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
-        int len = strlen(statusMsgBuf_);
-        setEndStatusMsg(" PREPARATION", len, TRUE);
+          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
+          int len = strlen(statusMsgBuf_);
+          setEndStatusMsg(" PREPARATION", len, TRUE);
+        }
+        else
+        {
+          if (setStartStatusMsgAndMoveToUpQueue(" UPSERT USING LOAD ", &rc, 0, TRUE))
+            return rc;
+
+          char * upsQuery = hblTdb().ldQuery_;
+          cliRC = cliInterface()->executeImmediate(upsQuery, NULL, NULL, TRUE, &rowsAffected);
+
+          upsQuery = NULL;
+          if (cliRC < 0)
+          {
+            cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+            step_ = LOAD_ERROR_;
+            break;
+          }
+
+          step_ = DONE_;
+
+           if (hblTdb().getIndexes())
+             step_ = POPULATE_INDEXES_;
+
+          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
+          int len = strlen(statusMsgBuf_);
+          setEndStatusMsg(" UPSERT USING LOAD ", len, TRUE);
+        }
       }
         break;
 

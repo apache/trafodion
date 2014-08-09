@@ -2805,6 +2805,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOption>      hbb_log_errors_option
 %type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
 %type <hBaseBulkLoadOption>      hbb_index_table_only
+%type <hBaseBulkLoadOption>      hbb_upsert_using_load
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
@@ -19841,7 +19842,14 @@ load_statement : TOK_LOAD TOK_TRANSFORM TOK_INTO table_name query_expression
                                         stmtCharSet,
                                         PARSERHEAP());
                         if (eubl->setOptions($2, SqlParser_Diags))
-                               YYERROR;                                        
+                               YYERROR; 
+                        if (eubl->getUpsertUsingLoad())
+                        {
+                          NAString stmt2 = "UPSERT USING LOAD ";
+                          stmt2.append((char*)&(stmt->data()[pos])); 
+                          eubl->setStmtText((char*)stmt2.data(), stmtCharSet);
+                        
+                        }
                         $$ = finalize(eubl);    
                     
                     }
@@ -19920,6 +19928,7 @@ hbbload_option :   hbb_no_recovery_option
                 | hbb_no_populate_indexes
                 | hbb_constraints
                 | hbb_index_table_only
+                | hbb_upsert_using_load
                 
                 /* need to add execptions table and number of erros before stopping*/
 
@@ -20007,7 +20016,18 @@ hbb_constraints   : TOK_CONSTRAINTS
                                            NULL);
                       $$ = op;
                     }    
-                   
+
+hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD 
+                    {//CONSTRAINTS
+                      ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkLoad::HBaseBulkLoadOption
+                                          (ExeUtilHBaseBulkLoad::UPSERT_USING_LOAD_,
+                                           0,
+                                           NULL);
+                      $$ = op;
+                    }    
+
+
 unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_options simple_table  
 				{
                                   // UNLOAD is disabled by default in M9.

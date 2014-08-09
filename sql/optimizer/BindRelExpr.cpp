@@ -9497,19 +9497,22 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         getOptStoi()->getStoi()->setUpdateColumn(i,scanStoi->getUpdateColumn(i));
   }
    
-  if (getIsTrafLoadPrep() && getTableDesc()->hasSecondaryIndexes())
+  if ((getIsTrafLoadPrep() || getInsertType()== UPSERT_LOAD) && getTableDesc()->hasSecondaryIndexes())
   {
-   //this is safe guard. Indexes are supposed to be disabled alrrady before reaching this point from the bulk load utility
-    //4484--Indexes not supported yet with bulk load. Disable the indexes and try again.
-    *CmpCommon::diags() << DgSqlCode(-4484);
+
+   //this is safe guard. Indexes are supposed to be disabled already before reaching this point from the bulk load utility
+    //4484--Indexes not supported yet with bulk load/upsert using load. Disable the indexes and try again.
+    *CmpCommon::diags() << DgSqlCode(-4484)
+                        << DgString0(getIsTrafLoadPrep()? "bulk load" : "upsert using load");
   }
-  if (getIsTrafLoadPrep() &&
+  if ((getIsTrafLoadPrep() || getInsertType()== UPSERT_LOAD) &&
       (getTableDesc()->getCheckConstraints().entries() != 0 ||
           getTableDesc()->getNATable()->getRefConstraints().entries() != 0  ))
   {
     // enabling/disabling constraints is not supported yet
-    //4486--Constraints not supported with bulk load. Disable the constraints and try again.
-    *CmpCommon::diags() << DgSqlCode(-4486);
+    //4486--Constraints not supported with bulk load/upsert using load. Disable the constraints and try again.
+    *CmpCommon::diags() << DgSqlCode(-4486)
+                        << DgString0(getIsTrafLoadPrep()? "bulk load" : "upsert using load");
   }
 
   if (NOT isMerge())

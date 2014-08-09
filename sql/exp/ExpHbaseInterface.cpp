@@ -1111,16 +1111,17 @@ Lng32 ExpHbaseInterface_JNI::initHBLC()
 
   return HBLC_OK;
 }
-Lng32 ExpHbaseInterface_JNI::createHFile(HbaseStr &tblName,
+Lng32 ExpHbaseInterface_JNI::initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
-                           Text& hfileName)
+                           Text& hfileName,
+                           Int64 maxHFileSize)
 {
   if (hblc_ == NULL)
   {
     return -HBASE_ACCESS_ERROR;
   }
 
-  retCode_ = hblc_->createHFile(tblName, hFileLoc, hfileName);
+  retCode_ = hblc_->initHFileParams(tblName, hFileLoc, hfileName, maxHFileSize);
   //close();
   if (retCode_ == HBLC_OK)
     return HBASE_ACCESS_SUCCESS;
