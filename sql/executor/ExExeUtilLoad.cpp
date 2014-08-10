@@ -3969,6 +3969,12 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_END_ERROR_;
           break;
         }
+        cliRC = restoreCQD("TRAF_LOAD_TAKE_SNAPSHOT");
+         if (cliRC < 0)
+         {
+           step_ = LOAD_END_ERROR_;
+           break;
+         }
         step_ = LOAD_END_;
 
         if (hblTdb().getIndexes())
