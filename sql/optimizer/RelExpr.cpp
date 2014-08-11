@@ -12644,7 +12644,17 @@ void GenericUpdate::pushdownCoveredExpr(const ValueIdSet &outputExpr,
     }
 
   localExprs.insertList(beginKeyPred());
-  localExprs.insertList(updateToSelectMap().getBottomValues());
+
+  // The next line should be unnecessary. Enabling it causes the output
+  // of child (usually a scan) to be larger than needed, particularly when
+  // the source is a hive table and we cast string data to smaller columns
+  // before inserting them into a Trafodion table. With this line both
+  // c1 and cast(c1 as char(10)) are part of scan output while only
+  // cast(c1 as char(10)) is needed by the parent, in the newRecExpr.
+  // The line is being preserved in case there is some query not covered
+  // this logic and this change needs to be revisted.
+
+  //localExprs.insertList(updateToSelectMap().getBottomValues());
   if (setOfValuesReqdByParent)
     localExprs += *setOfValuesReqdByParent ;
   // ---------------------------------------------------------------------

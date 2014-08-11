@@ -42,7 +42,10 @@ class ComTdbHdfsScan : public ComTdb
     // flag to indicate whther we need to use Compressed Internal Format
     USE_CIF       = 0x0008,
     // flag to indicate whther we need to use Defragmentation  with Compressed Internal Format
-    USE_CIF_DEFRAG= 0x0010
+    USE_CIF_DEFRAG= 0x0010,
+
+    // ignore conversion errors and continue reading the next row.
+    CONTINUE_ON_ERROR = 0x0020
   };
 
   // Expression to filter rows.
@@ -215,6 +218,9 @@ public:
    void setUseCifDefrag(NABoolean v)
     {(v ? flags_ |= USE_CIF_DEFRAG : flags_ &= ~USE_CIF_DEFRAG); };
     NABoolean useCifDefrag() { return (flags_ & USE_CIF_DEFRAG) != 0; };
+   void setContinueOnError(NABoolean v)
+    {(v ? flags_ |= CONTINUE_ON_ERROR : flags_ &= ~CONTINUE_ON_ERROR); };
+    NABoolean continueOnError() { return (flags_ & CONTINUE_ON_ERROR) != 0; };
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------

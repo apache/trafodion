@@ -1759,6 +1759,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui___(HDFS_IO_BUFFERSIZE_BYTES,               "0"),
   DDui1__(HDFS_IO_RANGE_TAIL,                     "16384"),
   DDkwd__(HDFS_PREFETCH,                           "ON"),
+  DDkwd__(HDFS_READ_CONTINUE_ON_ERROR,                           "OFF"),
   DDui1__(HDFS_REPLICATION,                            "1"),
   DDkwd__(HDFS_USE_CURSOR_MULTI,                    "OFF"),
 

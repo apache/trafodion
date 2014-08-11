@@ -900,6 +900,9 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
     hdfsPrefetch = TRUE;
   hdfsscan_tdb->setHdfsPrefetch(hdfsPrefetch);
 
+  if (CmpCommon::getDefault(HDFS_READ_CONTINUE_ON_ERROR) == DF_ON)
+    hdfsscan_tdb->setContinueOnError(TRUE);
+
   NABoolean useCIF = (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) != DF_OFF );
   NABoolean useCIFDegrag = useCIF;
 

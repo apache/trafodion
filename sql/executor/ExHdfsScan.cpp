@@ -740,12 +740,24 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    char *startOfNextRow = 
 	      extractAndTransformAsciiSourceToSqlRow(err, transformDiags);
 
+	    bool rowWillBeSelected = true;
 	    if(err)
 	      {
+                if (hdfsScanTdb().continueOnError())
+                  {
+                    if (workAtp_->getDiagsArea())
+                      {
+                        workAtp_->setDiagsArea(NULL);
+                      }
+                    rowWillBeSelected = false;
+                  }
+                else
+                  {
 		if (transformDiags)
 		  pentry_down->setDiagsArea(transformDiags);
 		step_ = HANDLE_ERROR;
 		break;
+                  }
 	      }	    
 	    
 	    if (startOfNextRow == NULL)
@@ -766,8 +778,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    workAtp_->getTupp(hdfsScanTdb().workAtpIndex_) = 
 	      hdfsSqlTupp_;
 
-	    bool rowWillBeSelected = true;
-	    if (selectPred())
+	    if ((rowWillBeSelected) && (selectPred()))
 	      {
 		ex_expr::exp_return_type evalRetCode =
 		  selectPred()->eval(pentry_down->getAtp(), workAtp_);
@@ -775,6 +786,19 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		  rowWillBeSelected = false;
 		else if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
+                    if (hdfsScanTdb().continueOnError())
+                      {
+                        if (pentry_down->getDiagsArea())
+                          {
+                            pentry_down->getDiagsArea()->clear();
+                          }
+                        if (workAtp_->getDiagsArea())
+                          {
+                            workAtp_->setDiagsArea(NULL);
+                          }
+                        rowWillBeSelected = false;
+                        break;
+                      }
 		    step_ = HANDLE_ERROR;
 		    break;
 		  }
@@ -791,6 +815,14 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     moveColsConvertExpr()->eval(workAtp_, workAtp_);
                   if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
+                    if (hdfsScanTdb().continueOnError())
+                      {
+                        if (workAtp_->getDiagsArea())
+                          {
+                            workAtp_->setDiagsArea(NULL);
+                          }
+                        break;
+                      }
 		    step_ = HANDLE_ERROR;
 		    break;
 		  }
