@@ -126,6 +126,7 @@ public class TmAuditTlog {
    private static int     tlogNumLogs;
    private static boolean distributedFS;
    private static boolean useAutoFlush;
+   private static boolean ageCommitted;
    private static boolean forceControlPoint;
  
    private static AtomicLong asn;  // Audit sequence number is the monotonic increasing value of the tLog write
@@ -263,6 +264,19 @@ public class TmAuditTlog {
          LOG.debug("TM_TLOG_AUTO_FLUSH is not in ms.env");
       }
       LOG.info("useAutoFlush is " + useAutoFlush);
+
+      ageCommitted = false;
+      try {
+         String ageCommittedRecords = System.getenv("TM_TLOG_AGE_COMMITTED_RECORDS");
+         if (ageCommittedRecords != null){
+            ageCommitted = (Integer.parseInt(ageCommittedRecords) != 0);
+            LOG.debug("ageCommittedRecords != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_AGE_COMMITTED_RECORDS is not in ms.env");
+      }
+      LOG.info("ageCommitted is " + ageCommitted);
 
       versions = 5;
       try {
@@ -804,30 +818,38 @@ public class TmAuditTlog {
                         }               
                         else if ((Long.parseLong(asnToken) < lvAsn) && 
                                 (stateToken.equals("COMMITTED") || stateToken.equals("ABORTED"))) {
-                           String key = new String(r.getRow());
-                           Get get = new Get(r.getRow());
-                           get.setMaxVersions(versions);  // will return last n versions of row
-                           Result lvResult = table[i].get(get);
-                          // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
-                           List<KeyValue> list = lvResult.getColumn(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
-                           for (KeyValue element : list) {
-                              String value = new String(element.getValue());
-                              StringTokenizer stok = new StringTokenizer(value, ",");
-                              if (stok.hasMoreElements()) {
-                                 LOG.trace("Performing secondary search on (" + transidToken + ")");
-                                 asnToken = stok.nextElement().toString() ;
-                                 transidToken = stok.nextElement().toString() ;
-                                 stateToken = stok.nextElement().toString() ;
-                                 if ((Long.parseLong(asnToken) < lvAsn) && (stateToken.equals("FORGOTTEN"))) {
-                                    String rowKey = new String(r.getRow());
-                                    Delete del = new Delete(r.getRow());
-                                    LOG.trace("Secondary search found new delete - adding (" + transidToken + ") with asn: " + asnToken + " to delete list");
-                                    deleteList.add(del);
-                                    break;
-                                 }
-                                 else {
-                                    LOG.trace("Secondary search skipping entry with asn: " + asnToken + ", state: " 
+                           if (ageCommitted) {
+                              String rowKey = new String(r.getRow());
+                              Delete del = new Delete(r.getRow());
+                              LOG.trace("adding transid: " + transidToken + " to delete list");
+                              deleteList.add(del);
+                           }
+                           else {
+                              String key = new String(r.getRow());
+                              Get get = new Get(r.getRow());
+                              get.setMaxVersions(versions);  // will return last n versions of row
+                              Result lvResult = table[i].get(get);
+                             // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
+                              List<KeyValue> list = lvResult.getColumn(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
+                              for (KeyValue element : list) {
+                                 String value = new String(element.getValue());
+                                 StringTokenizer stok = new StringTokenizer(value, ",");
+                                 if (stok.hasMoreElements()) {
+                                    LOG.trace("Performing secondary search on (" + transidToken + ")");
+                                    asnToken = stok.nextElement().toString() ;
+                                    transidToken = stok.nextElement().toString() ;
+                                    stateToken = stok.nextElement().toString() ;
+                                    if ((Long.parseLong(asnToken) < lvAsn) && (stateToken.equals("FORGOTTEN"))) {
+                                       String rowKey = new String(r.getRow());
+                                       Delete del = new Delete(r.getRow());
+                                       LOG.trace("Secondary search found new delete - adding (" + transidToken + ") with asn: " + asnToken + " to delete list");
+                                       deleteList.add(del);
+                                       break;
+                                    }
+                                    else {
+                                       LOG.trace("Secondary search skipping entry with asn: " + asnToken + ", state: " 
                                                 + stateToken + ", transid: " + transidToken );
+                                    }
                                  }
                               }
                            }
@@ -856,8 +878,7 @@ public class TmAuditTlog {
    }
 
    public long addControlPoint (final Map<Long, TransactionState> map) throws IOException, Exception {
-      ConcurrentHashMap<Long, TransactionState> lv_map = new ConcurrentHashMap<Long, TransactionState>(map);
-      LOG.trace("addControlPoint start with map size " + lv_map.size());
+      LOG.trace("addControlPoint start with map size " + map.size());
       long startTime = System.nanoTime();
       long endTime;
       long lvCtrlPt = 0L;
@@ -868,7 +889,7 @@ public class TmAuditTlog {
       int cpWrites = 0;
       int lv_lockIndex;
 
-      for (Map.Entry<Long, TransactionState> e : lv_map.entrySet()) {
+      for (Map.Entry<Long, TransactionState> e : map.entrySet()) {
          try {
             Long transid = e.getKey();
             lv_lockIndex = (int)(transid & tLogHashKey);
@@ -894,7 +915,7 @@ public class TmAuditTlog {
       endTime = System.nanoTime();
       LOG.info("TLog Control Point Write Report\n" + 
                    "                        Total records: " 
-                       +  lv_map.size() + " in " + cpWrites + " write operations\n" +
+                       +  map.size() + " in " + cpWrites + " write operations\n" +
                    "                        Write time: " + (endTime - startTime) / 1000 + " microseconds\n" );
 
       try {
