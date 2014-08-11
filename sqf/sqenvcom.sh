@@ -178,6 +178,10 @@ export PATH=$MPI_ROOT/bin:$MY_SQROOT/export/bin"$SQ_MBTYPE":$MY_SQROOT/sql/scrip
 
 MPILIB=linux_amd64
 
+# There are minor differences between Hadoop 1 and 2, right now
+# this is visible in the libhdfs interface.
+unset USE_HADOOP_1
+
 
 #-------------------------------------------------------------------------------
 # Setup for Hadoop integration
@@ -256,7 +260,9 @@ elif [ -n "$(ls /usr/lib/hadoop/*HDP* /usr/lib/hbase/*HDP* 2>/dev/null)" ]; then
 
   # native library directories and include directories
   export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native/Linux-*-${SQ_MTYPE}
-  export HADOOP_INC_DIR=/build-not-supported-on-Hortonworks-yet
+  export HADOOP_INC_DIR=/usr/include
+  # The supported HDP version, HDP 1.3 uses Hadoop 1
+  export USE_HADOOP_1=1
 
   ### Thrift not supported on Hortonworks yet (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
@@ -317,6 +323,7 @@ elif [ -d /opt/mapr ]; then
     export HADOOP_LIB_DIR=$MAPR_HADOOPDIR/c++/Linux-amd64-64/lib
   fi
   export HADOOP_INC_DIR=/build-not-supported-on-MapR-yet
+  export USE_HADOOP_1=1
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="$MAPR_HADOOPDIR/lib"

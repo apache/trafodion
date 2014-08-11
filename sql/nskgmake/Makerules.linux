@@ -205,7 +205,9 @@ ifdef M64
   SYS_DEFS += -DNA_64BIT
 endif
 
-
+ifdef USE_HADOOP_1
+  SYS_DEFS += -DUSE_HADOOP_1
+endif
 
 
 

@@ -36,7 +36,7 @@ SRCPATH := cli bin common
 CPPSRC += CliExtern.cpp
 C_INC_OVERRIDE := -I$(MY_SQROOT)/export/include -I$(MY_SQROOT)/export/include/seabed
 
-USER_INCLUDES += $(WMS_INC) $(LIBHDFS_INC) \
+USER_INCLUDES += $(WMS_INC) \
                  $(THRIFT_INC)
 
 ifeq ($(FLAVOR), debug)

@@ -76,5 +76,4 @@ CPPSRC := CmpMessage.cpp \
 
 
 CPPSRC += vers_libcomexe.cpp
-INCLUDE_DIRS := $(LIBHDFS_INC)
 

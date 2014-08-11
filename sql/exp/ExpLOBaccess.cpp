@@ -366,7 +366,11 @@ Ex_Lob_Error ExLob::emptyDirectory()
 
     for (int i = 0; i < numExistingFiles; i++) //do in a loop now -- maybe change it to staties latetr
     {
+#ifdef USE_HADOOP_1
+      int retCode = hdfsDelete(fs_, fileInfos[i].mName);
+#else
       int retCode = hdfsDelete(fs_, fileInfos[i].mName, 0);
+#endif
       if (retCode !=0)
       {
         //ex_assert(retCode == 0, "delete returned error");
@@ -712,7 +716,12 @@ Ex_Lob_Error ExLob::purgeLob()
     err = request_.getError();
 
 #ifdef SQ_USE_HDFS   
-    if (hdfsDelete(fs_, lobDataFile_, 0) != 0) {
+    if (hdfsDelete(fs_, lobDataFile_
+#ifndef USE_HADOOP_1
+                   , 0
+#endif
+                  ) != 0)
+    {
       return LOB_DATA_FILE_DELETE_ERROR;
     }
 #else
