@@ -37,7 +37,12 @@ TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
 HADOOP_TYPE=""
 timestamp=$(date +%F-%H-%M-%S)
 MODS_LOG="$TRAF_WORKDIR/logs/trafodion_mods_$timestamp.log"
-
+TRAF_VERSION="0.8.4"
+HDFS_USER="hdfs"
+HBASE_USER="hbase"
+HBASE_GROUP="hbase"
+TRAF_USER="trafodion"
+ 
 #============================================
 #Look for type of hadoop distro installed
 
@@ -151,8 +156,9 @@ fi
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
    echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $MODS_LOG
    echo "***INFO: Log file located at: $MODS_LOG"
-   $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL 2>&1 | tee -a $MODS_LOG
-   if [ ${PIPESTATUS[0]} != 0 ]; then
+   $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
+if [ ${PIPESTATUS[0]} != 0 ]; then
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
       echo "***ERROR: Exiting...." | tee -a $MODS_LOG
       exit -1
@@ -162,7 +168,8 @@ fi
 if [[ $HADOOP_TYPE == "ambari" ]]; then
    echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
    echo "***INFO: Log file located at: $MODS_LOG"
-   $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL 2>&1 | tee -a $MODS_LOG
+   $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
    if [ ${PIPESTATUS[0]}  != 0 ]; then
       echo "***ERROR: traf_amabari_mods exited with an error." | tee -a $MODS_LOG
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
