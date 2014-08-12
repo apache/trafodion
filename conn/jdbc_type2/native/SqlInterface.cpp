@@ -1561,6 +1561,11 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt)
 	}
 	DEBUG_OUT(DEBUG_LEVEL_CLI,("SQL Query Statement Type=%s",
 		CliDebugSqlQueryStatementType(SqlQueryStatementType)));
+
+        if (SqlQueryStatementType == SQL_EXE_UTIL  &&
+            pSrvrStmt->columnCount > 0)
+          SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;
+
 	pSrvrStmt->setSqlQueryStatementType(SqlQueryStatementType);
 
 	switch (pSrvrStmt->getSqlQueryStatementType())
