@@ -513,13 +513,31 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>execute s;
 
 --- 12768 row(s) inserted.
->>
->>
->>-- hadoop ls should return 2 files
->>-- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
 >>control query shape cut;
 
 --- SQL operation complete.
+>>select [first 12] 'test lp bug # 1355477' from ins_store_sales_summary;
+
+(EXPR)               
+---------------------
+
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+test lp bug # 1355477
+
+--- 12 row(s) selected.
+>>
+>>-- hadoop ls should return 2 files
+>>-- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
 >>log;
 2
 1c1

@@ -155,11 +155,11 @@ control query shape esp_exchange(cut);
 prepare s from insert into table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk; 
 explain options 'f' s;
 execute s;
-
+control query shape cut;
+select [first 12] 'test lp bug # 1355477' from ins_store_sales_summary;
 
 -- hadoop ls should return 2 files
 -- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
-control query shape cut;
 log;
 sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
 log LOG003_orig_store_sales_summary.dat clear;
