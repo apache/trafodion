@@ -214,7 +214,7 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 				  char * lobHdfsServer,
 				  Lng32 lobHdfsPort,
 
-				  Lng32 handleLen,
+				  Int64 handleLen,  
 				  char * lobHandle,
 				  
 				  Int64 &requestTag,

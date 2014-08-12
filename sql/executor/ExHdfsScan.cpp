@@ -434,7 +434,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		       hdfsScanTdb().hostName_,
 		       hdfsScanTdb().port_,
 		       
-		       (Lng32)bytesLeft_, // max bytes
+		       bytesLeft_, // max bytes
 		       cursorId_, 
 		       
 		       requestTag_, 
