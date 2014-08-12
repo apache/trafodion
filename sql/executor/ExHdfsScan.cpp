@@ -1128,10 +1128,16 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		  }
 	      }
 
+            bool satisfiedGetN = 
+              ((pentry_down->downState.request == ex_queue::GET_N) &&
+               (pentry_down->downState.requestValue == matches_));
+
             // if next file is not same as current file, then close the current file. 
             bool closeFile = true;
 
-            if ( (step_ == CLOSE_FILE) && ((currRangeNum_ + 1) < (beginRangeNum_ + numRanges_)) )
+            if ( (step_ == CLOSE_FILE) && 
+                 ((currRangeNum_ + 1) < (beginRangeNum_ + numRanges_))  &&
+                 !satisfiedGetN)
             {   
                 hdfo = (HdfsFileInfo*) hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_ + 1);
                 if (strcmp(hdfsFileName_, hdfo->fileName()) == 0) 
@@ -1163,15 +1169,15 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-            }
-
+            } 
 	    if (step_ == CLOSE_FILE)
 	      {
 		if (NOT hdfsScanTdb().useCursorMulti())
 		  {
 		    currRangeNum_++;
 		    
-		    if (currRangeNum_ < (beginRangeNum_ + numRanges_))
+		    if ((!satisfiedGetN) && 
+                        (currRangeNum_ < (beginRangeNum_ + numRanges_)))
 		      {
 			// move to the next file.
 			step_ = INIT_HDFS_CURSOR;
