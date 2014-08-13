@@ -1,0 +1,438 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+#  Setup Trafodion environment on a Cluster System
+
+#==============================================
+# Default values
+typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
+
+#==============================================
+# Parse input parameters
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --username)
+            TRAF_USER=$2
+            shift
+            ;;
+        --password)
+            TRAF_USER_PASSWORD=$2
+            shift
+            ;;
+        --nodes)
+            NODE_LIST=$2
+            shift
+            ;;
+        --clustername)
+            CLUSTERNAME=$2
+            shift
+            ;;
+        --home_dir)
+            HOME_DIR=$2
+            shift
+            ;;
+        *)
+            echo "***ERROR: unknown parameter '$1'"
+            print_usage
+            exit -1
+    esac
+    shift
+done
+
+#==============================================
+#Test Clustername for any syntax errors.
+
+clusterName=`echo $CLUSTERNAME | grep [A-Z]`
+
+if [ "$?" == "0" ]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not include capital letters. Exiting..."
+   exit -1
+fi
+
+nodeName=`echo $NODE_LIST | grep [A-Z]`
+
+if [ "$?" == "0" ]; then
+   echo "***ERROR: Nodes are not named properly."
+   echo "***ERROR: Node names can not have capital letters. Exiting..."
+   exit -1
+fi
+
+
+clusterName=`echo $CLUSTERNAME | sed 's/[\,\!\@\~\`\#\$\%\^\&\*\(\)\+\=\:\;\<\>\?\/]//g'`
+
+if [[ "$clusterName" != "$CLUSTERNAME" ]]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not include any special characters other than '-'."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
+nodeName=`echo $NODE_LIST | sed 's/[\.\,\!\@\~\%\^\&\*\+\=\:\;\<\>\?\/]//g'`
+
+if [[ "$nodeName" != "$NODE_LIST" ]]; then
+   echo "***ERROR: Nodes are not named properly."
+   echo "***ERROR: Node names can not include any special characters other than '-'."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
+
+clusterName=`echo $CLUSTERNAME | grep [\']`
+
+if [ "$?" == "0" ]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not include any special characters other than '-'."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
+nodeName=`echo $NODE_LIST | grep [\']`
+
+if [ "$?" == "0" ]; then
+   echo "***ERROR: Nodes are not named properly."
+   echo "***ERROR: Node names can not include any special characters other than '-'."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
+
+firstChar="$(echo $CLUSTERNAME | head -c 1)"
+
+clusterName=`echo $firstChar | grep [0-9]`
+
+if [ "$?" == "0" ]; then
+   echo "***ERROR: Cluster name is not named properly."
+   echo "***ERROR: Rename cluster to not begin with a number."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
+#==============================================
+#Test if home directory is on a NFS disk
+
+diskType="$( df -P -T $HOME_DIR | tail -n +2 | awk '{print $2}')"
+
+if [ $diskType == "nfs" ]; then
+   echo "***ERROR: Home directory is on an NFS disk: $HOME_DIR"
+   echo "***ERROR: Please choose a different directory to install on."
+   echo "***ERROR: Exiting..."
+   exit -1
+fi
+
+timestamp=$(date +%F-%H-%M-%S)
+echo "***INFO: Starting Trafodion environment setup ($timestamp)"
+mkdir -p $TRAF_WORKDIR/logs
+OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
+
+#==============================================
+# display license text and get acceptance
+echo "=== $timestamp ==="
+cat $( cd "$( dirname "$0" )" && pwd )/trafodion_license
+read -p "BY TYPING “ACCEPT” YOU AGREE TO THE TERMS OF THIS AGREEMENT: " answer
+answer=${answer,,}
+if [ "$answer" != "accept" ]; then
+    echo "***ERROR: You must accept this license by typing \"accept\" to install."
+    exit -1
+fi
+
+#============================
+# check that we are running from a userid with sudo access
+sudo echo "***INFO: testing sudo access"
+if [ $? -ne 0 ]; then
+    echo "***ERROR: This script must be ran from userid with sudo access."
+    exit -1
+fi
+
+#================================
+# make sure the user didn't specify the sudo userid as the Trafodion userid
+# because we rewrite the .bashrc file and don't want to mess up the user's
+# current environment
+if [ "$USER" == "$TRAF_USER" ]; then
+    echo "***ERROR: The Trafodion username cannot be the same as the install username"
+    exit -1
+fi
+
+#================================
+#Check for private key errors if on HP cloud VM
+if [ $OPENSTACK_VM -ne 0 ]; then
+    echo "***INFO: Checking for private key errors"
+
+    #If file has not been copied over, then script will exit
+
+    fileFound=$(find / -wholename /root/.ssh/id_rsa | wc -l)
+
+    if [[ $fileFound -lt 1 ]]; then
+       echo
+       echo "***ERROR[1]: Private Key file not found"
+       echo "Script exiting..."
+       echo
+       exit -1
+    fi
+
+    #There should be as many begin statements as end statements. If there is not an
+    #equal matching it may be the result of a copy error.
+
+    begin=$(grep "\-\-\-\-\-BEGIN RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
+    end=$(grep "\-\-\-\-\-END RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
+
+    if [[ $begin -ne $end ]]; then
+       echo
+       echo "***ERROR[2]: Private Key file copy error"
+       echo "Script exiting..."
+       echo
+       exit -1
+    fi
+
+    ##If there are no begin or end statements then there is a copy error.
+
+    if [[ $begin -eq 0 ]]; then
+       echo
+       echo "***ERROR[3]: Private Key file copy error"
+       echo "Script exiting..."
+       echo
+       exit -1
+    fi
+fi
+
+#================================
+# validate specified nodes and that we can get to them with passwordless ssh
+echo "***INFO: Checking all nodes in specified node list"
+bad_nodes=""
+MY_NODES=""
+
+for node in $NODE_LIST
+do
+    # use BatchMode so it will just give an error instead of prompting for password
+    ssh -oStrictHostKeyChecking=no -oBatchMode=yes $node hostname
+    if [ $? != 0 ]; then
+        bad_nodes="$bad_nodes $node"
+    fi
+    # build MY_NODES env var to be used for pdsh & pdcp commands
+    MY_NODES="$MY_NODES -w $node"
+done
+if [ -n "$bad_nodes" ]; then
+    echo "***ERROR: unable to access all nodes in the node list with passwordless ssh"
+    echo "***ERROR: problem nodes: $bad_nodes"
+    exit -1
+fi
+node_count=$(echo $NODE_LIST | wc -w)
+echo "***INFO: Total number of nodes = $node_count"
+if [ $node_count -eq 1 ]; then
+    TRAF_PDSH=""
+else
+    # use the -S option to cause pdsh to return largest of
+    # the remote command return values so we can tell if one
+    # or more of the remote commands failed
+    TRAF_PDSH="pdsh -S $MY_NODES"
+fi
+
+echo "$NODE_LIST" > $TRAF_WORKDIR/node_list
+echo "$MY_NODES" > $TRAF_WORKDIR/my_nodes
+
+# create working directory on all nodes
+$TRAF_PDSH mkdir -p $TRAF_WORKDIR
+$TRAF_PDSH mkdir -p $TRAF_WORKDIR/logs
+
+#================================
+echo "***INFO: installing required packages"
+YUM_LOG=$TRAF_WORKDIR/logs/trafodion_yum_$timestamp.log
+
+# first install pdsh on each node so we can use it to install
+# everything else.  don't need pdsh if only a single node
+if [ $node_count -ne 1 ]; then
+    for node in $NODE_LIST
+    do
+        echo "***INFO: ... pdsh on node $node"
+
+        # if not already installed on this node, then install it
+        ssh $node rpm -qa | grep pdsh
+        if [ $? -ne 0 ]; then
+            ssh $node sudo yum --assumeyes install pdsh &>> $YUM_LOG
+            if [ $? != 0 ]; then
+                echo "***ERROR: Can't install pdsh on node $node"
+                exit -1
+            fi
+        fi
+    done
+fi
+
+#Checking to see if epel package is installed. 
+EPEL_INSTALLED=$( rpm -qa | grep epel | wc -l)
+
+if [[ $EPEL_INSTALLED == 0 ]]; then
+   echo "***INFO: ... EPEL rpm"
+   epel_rpm="epel-release-6-8.noarch.rpm"
+   wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
+   if [ $? != 0 ]; then
+      echo "***ERROR: Can't download EPEL rpm $epel_rpm"
+      exit -1
+   fi
+   if [ $node_count -ne 1 ]; then
+      pdcp $MY_NODES $epel_rpm $TRAF_WORKDIR
+   else
+      cp $epel_rpm $TRAF_WORKDIR
+   fi 
+   $TRAF_PDSH sudo rpm -Uvh $TRAF_WORKDIR/$epel_rpm 2>> $YUM_LOG >> $YUM_LOG
+   if [ $? != 0 ]; then
+      echo "***ERROR: Can't install EPEL rpm $epel_rpm"
+      exit -1
+   fi
+fi
+
+# to handle the case where the EPEL rpm was already
+# installed but disabled, we enable it here
+# it doesn't hurt if it was already enabled and we try to enable it again
+$TRAF_PDSH sudo yum-config-manager --enable RedHat-6-x86_64-Fedora-EPEL 2>> $YUM_LOG >> $YUM_LOG
+
+package_list="java-1.7.0-openjdk-devel qpid-cpp-client perl sqlite "
+package_list+=" expect perl-DBD-SQLite* protobuf xerces-c "
+package_list+=" libiodbc unixODBC tigervnc-server firefox "
+package_list+=" pixman libXfont libX11 perl-Params-Validate perl-Time-HiRes "
+for package in $package_list
+do
+    echo "***INFO: ... $package"
+    $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+    if [ $? != 0 ]; then
+        echo "***ERROR: Can't install $package"
+        exit -1
+    fi
+done
+
+#================================
+group_package_list="Desktop Fonts"
+for group_package in $group_package_list
+do
+    echo "***INFO: ... $group_package"
+    $TRAF_PDSH sudo yum --assumeyes groupinstall $group_package 2>> $YUM_LOG >> $YUM_LOG
+    if [ $? != 0 ]; then
+        echo "***WARNING: Can't group install optional group package $group_package"
+    fi
+done
+
+# need to do these separately because they have blanks in their name
+# and won't work properly in a list even if escaped with quotes
+group_package="Desktop Platform"
+echo "***INFO: ... $group_package"
+$TRAF_PDSH sudo yum --assumeyes groupinstall $group_package 2>> $YUM_LOG >> $YUM_LOG
+if [ $? != 0 ]; then
+    echo "***WARNING: Can't group install optional group package $group_package"
+fi
+
+group_package="X Windows System"
+echo "***INFO: ... $group_package"
+$TRAF_PDSH sudo yum --assumeyes groupinstall $group_package 2>> $YUM_LOG >> $YUM_LOG
+if [ $? != 0 ]; then
+    echo "***WARNING: Can't group install optional group package $group_package"
+fi
+
+#=======================================
+# Install additional packages if we are on an OpenStack VM
+OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
+if [ $OPENSTACK_VM -ne 0 ]; then
+    echo "***INFO: OpenStack VM detected"
+    echo "***INFO: Installing additional packages for OpenStack VMs"
+    package_list="python-pip git"
+    for package in $package_list
+    do
+        echo "***INFO: ... $package"
+        $TRAF_PDSH sudo yum --assumeyes install $package 2>> $YUM_LOG >> $YUM_LOG
+        if [ $? != 0 ]; then
+            echo "***WARNING: Can't install VM-only package $package"
+        fi
+    done
+
+fi
+
+#=======================================
+# Set some limits needed by Trafodion
+traf_limits_conf="$TRAF_WORKDIR/trafodion_limits.conf"
+echo "***INFO: modifying limits in /etc/security/limits.conf on all nodes"
+
+# save a copy for uninstaller to restore
+sudo cp /etc/security/limits.conf $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL
+
+# strip out any current settings
+grep --invert-match -E " *memlock | *nofile | *core | *nproc | Trafodion" /etc/security/limits.conf > $traf_limits_conf
+
+# append Trafodion settings to end of file
+echo "# Trafodion settings" >> $traf_limits_conf
+echo "*   soft   core unlimited" >> $traf_limits_conf
+echo "*   hard   core unlimited" >> $traf_limits_conf
+echo "*   soft   memlock unlimited" >> $traf_limits_conf
+echo "*   hard   memlock unlimited" >> $traf_limits_conf
+echo "*   soft   nofile 32768" >> $traf_limits_conf
+echo "*   hard   nofile 65536" >> $traf_limits_conf
+echo "*   soft   nproc 100000" >> $traf_limits_conf
+echo "*   hard   nproc 100000" >> $traf_limits_conf
+
+# copy to all nodes
+if [ $node_count -eq 1 ]; then
+    sudo cp $traf_limits_conf /etc/security/limits.conf
+else
+    pdcp $MY_NODES -x $HOSTNAME $traf_limits_conf $TRAF_WORKDIR
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_security_limits.conf_ORIGINAL $TRAF_WORKDIR
+    pdsh $MY_NODES sudo cp $traf_limits_conf /etc/security/limits.conf
+fi
+
+#=======================================
+echo "***INFO: create Trafodion userid \"$TRAF_USER\" "
+$TRAF_WORKDIR/installer/traf_add_user \
+    --username $TRAF_USER \
+    --password $TRAF_USER_PASSWORD \
+    --nodes "$NODE_LIST" \
+    --clustername "$CLUSTERNAME" \
+    --home_dir "$HOME_DIR"
+if [ $? != 0 ]; then
+    echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
+    exit -1
+fi
+
+echo $TRAF_WORKDIR
+# Put build tar files in user's $HOME
+echo $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
+sudo cp $TRAF_WORKDIR/dcs_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null
+sudo cp $TRAF_WORKDIR/dcs-*.tgz $HOME_DIR/$TRAF_USER/dcs_build.tgz &> /dev/null
+sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_installer $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/traf_install $HOME_DIR/$TRAF_USER
+sudo cp $TRAF_WORKDIR/installer/trafodion_license $HOME_DIR/$TRAF_USER
+sudo chown --recursive $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER
+
+#=======================================
+
+echo "***INFO: Setting SELINUX=disabled in /etc/selinux.config"
+sudo cp /etc/selinux/config $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
+sudo sh -c "sed -e 's@^SELINUX=.*@SELINUX=disabled@' <$TRAF_WORKDIR/etc_selinux_config_ORIGINAL >/etc/selinux/config"
+if [ $node_count -gt 1 ] ; then
+    echo "***INFO: modifying /etc/selinux/config on remaining nodes"
+
+    sudo cp /etc/selinux/config $TRAF_WORKDIR/traf_selinux.conf
+
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/traf_selinux.conf $TRAF_WORKDIR
+    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
+    pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
+
+fi

@@ -18,19 +18,13 @@
 #
 # @@@ END COPYRIGHT @@@
 
-#  Setup Cloudera and Trafodion on a Cluster System
+#  Setup Cloudera
 
 #==============================================
 # Default values
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
-typeset TRAF_USER="trafodion"
-typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
-typeset NODE_LIST="$HOSTNAME"
-typeset CLUSTERNAME="$HOSTNAME"
-typeset HBASE_TRX_JAR=""
-typeset HOME_DIR="/home"
 typeset timestamp=$(date +%F-%H-%M-%S)
-typeset SETUP_LOG="$TRAF_WORKDIR/logs/trafodion_setup_$timestamp.log"
+typeset SETUP_LOG="$TRAF_WORKDIR/../logs/traf_cloudera_setup_$timestamp.log"
 
 CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
 #==============================================
@@ -38,23 +32,14 @@ CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
 function print_usage {
 cat << EOF
 This script will do the one-time setup needed
-to establish the Cloudera and Trafodion environment.
+to install Cloudera.
 
-NOTE: This script does NOT install a Trafodion build
-      it merely sets up everything needed to support
-      Trafodion.
+NOTE: Please refer to the offical Cloudera documentation for questions. 
 
 Usage: $(basename $0) [options]
 
 Options:
     --help                 Print this message and exit.
-    --nodes "<node_list>"  Blank separated list of nodes (within quotes) in this Trafodion environment
-                           From 1 to N nodes, although two is the recommended minimum.
-    --username <user>      Trafodion user name (default "$TRAF_USER")
-    --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
-    --clustername <name>   Name of Trafodion cluster. (default $HOSTNAME)
-    --home_dir <path>      Path to trafodion home directory. (default /home)
-    --hbase_trx_jar <path> Path to a recently built hbase trx jar file.
 
 EOF
 }
@@ -63,60 +48,6 @@ EOF
 # Parse input parameters
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --username)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            TRAF_USER=$2
-            shift
-            ;;
-        --password)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            TRAF_USER_PASSWORD=$2
-            shift
-            ;;
-        --nodes)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            NODE_LIST=$2
-            shift
-            ;;
-        --clustername)
-            if [[ -z "$2" ]]; then
-                echo "***ERROR: No value passed to param $1."
-                print_usage
-                exit -1
-            fi
-            CLUSTERNAME=$2
-            shift
-            ;;
-        --home_dir)
-            if [[ -z "$2" ]]; then
-               echo "***ERROR: No value passed to param $1."
-               print_usage
-               exit -1
-            fi
-            HOME_DIR=$2
-            shift
-            ;;
-        --hbase_trx_jar)
-            if [[ -z "$2" ]]; then
-               echo "****ERROR: NO value passed to param $1."
-               print_usage
-               exit -1
-            fi
-            HBASE_TRX_JAR=$2
-            shift
-            ;;
         --help)
             print_usage
             exit -1
@@ -130,15 +61,10 @@ while [[ $# -gt 0 ]]; do
 done
 #==============================================
 #Info for log file
-
+echo "***INFO: Log file located at $SETUP_LOG"
 echo "***Log File: trafodion_cloudera_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG
 echo "Working directory: $TRAF_WORKDIR" >> $SETUP_LOG
-echo "User Id: $TRAF_USER" >> $SETUP_LOG
-echo "User password: $TRAF_USER_PASSWORD" >> $SETUP_LOG
-echo "Nodes: $NODE_LIST" >> $SETUP_LOG
-echo "Cluster: $CLUSTERNAME" >> $SETUP_LOG
-echo "Home directory: $HOME_DIR" >> $SETUP_LOG
 echo >> $SETUP_LOG
 
 #==============================================
@@ -245,19 +171,3 @@ else
    echo "***INFO: Cloudera previously installed." | tee -a $SETUP_LOG
 fi
 #==============================================
-echo "***INFO: Running Trafodion Setup"
-if [[ $HBASE_TRX_JAR == "" ]]; then
-
-   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR | tee -a $SETUP_LOG
-else
-
-   ./trafodion_setup --username $TRAF_USER --password $TRAF_USER_PASSWORD --nodes "$NODE_LIST" --clustername $CLUSTERNAME --home_dir $HOME_DIR --hbase_trx_jar $HBASE_TRX_JAR | tee -a $SETUP_LOG
-
-fi
-
-if [ ${PIPESTATUS[0]} != 0 ]; then
-   echo "***ERROR: Unable to run Trafodion Setup successfully" | tee -a $SETUP_LOG
-   exit -1
-fi
-
-echo "***INFO: Cloudera and Trafodion setup complete" | tee -a $SETUP_LOG

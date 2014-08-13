@@ -158,7 +158,7 @@ if [[ $HADOOP_TYPE == "cloudera" ]]; then
    echo "***INFO: Log file located at: $MODS_LOG"
    $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
       $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
-if [ ${PIPESTATUS[0]} != 0 ]; then
+if [ ${PIPESTATUS[0]} != "0" ]; then
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
       echo "***ERROR: Exiting...." | tee -a $MODS_LOG
       exit -1
@@ -170,7 +170,7 @@ if [[ $HADOOP_TYPE == "ambari" ]]; then
    echo "***INFO: Log file located at: $MODS_LOG"
    $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
       $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
-   if [ ${PIPESTATUS[0]}  != 0 ]; then
+   if [ ${PIPESTATUS[0]}  != "0" ]; then
       echo "***ERROR: traf_amabari_mods exited with an error." | tee -a $MODS_LOG
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
       echo "***ERROR: Exiting...." | tee -a $MODS_LOG

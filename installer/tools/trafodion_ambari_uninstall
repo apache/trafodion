@@ -106,14 +106,15 @@ do
       echo "***INFO: Stopping all services" | tee -a $LOG
       pdsh -S -w $node 'sudo ambari-agent stop' 
       pdcp -w $node  -x $HOSTNAME $TRAF_WORKDIR/traf_ambari_uninstall $HOME | tee -a $LOG
-      if [ $? -ne 0 ]; then
+      if [ ${PIPESTATUS[0]} != "0" ]; then
          echo "***ERROR: Error copying script to $node" | tee -a $LOG
          echo "***ERROR: Exiting..." | tee -a $LOG
+         exit -1
       fi
       pdsh -S -w $node $HOME/traf_ambari_uninstall | tee -a $LOG
    fi
 
-   if [ $? -ne 0 ]; then
+   if [ ${PIPESTATUS[0]} != "0" ]; then
       echo "***ERROR: Hortonworks/Ambari may not be completely uninstalled on $node" | tee -a $LOG
       echo "***ERROR: Review log files." | tee -a $LOG
    fi

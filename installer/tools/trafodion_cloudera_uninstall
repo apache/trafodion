@@ -102,19 +102,19 @@ do
    echo "***INFO: Uninstalling on node: $node" | tee -a $LOG
    if [ $node == $HOSTNAME ]; then
       $TRAF_WORKDIR/traf_cloudera_uninstall | tee -a $LOG
-      if [ $? -ne 0 ]; then
+      if [ ${PIPESTATUS[0]} != "0" ]; then
          echo "***ERROR: Cloudera may not be completely uninstalled on $node" | tee -a $LOG
          echo "***ERROR: Review log files." | tee -a $LOG
       fi
    else
       pdcp -w $node -x $HOSTNAME traf_cloudera_uninstall $HOME | tee -a $LOG
-      if [ $? -ne 0 ]; then
+      if [ ${PIPESTATUS[0]} != "0" ]; then
          echo "***ERROR: Error copying script to $node" | tee -a $LOG
          echo "***ERROR: Exiting..." | tee -a $LOG
       fi
       pdsh -S -w $node $HOME/traf_cloudera_uninstall | tee -a $LOG
 
-      if [ $? -ne 0 ]; then
+      if [ ${PIPESTATUS[0]} != "0" ]; then
          echo "***ERROR: Cloudera may not be completely uninstalled on $node" | tee -a $LOG
          echo "***ERROR: Review log files." | tee -a $LOG
       fi
