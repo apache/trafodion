@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1996-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -91,8 +91,6 @@ NA_EIDPROC
               CollHeap *heap,
 	      ClusterDB * clusterDb,
               ExeErrorCode * rc);
-
-
 #endif
 
 NA_EIDPROC
@@ -786,7 +784,7 @@ NA_EIDPROC
 				      // allocation is not sucessfull, we die
   ULng32 bufferSize_;          // global size of hash buffers
   NAHeap * bufferHeap_;               // keep the I/O buffers for all the
-                                      // clusters in a seperate heap. This
+                                      // clusters in a separate heap. This
 				      // should help to reduce fragmentation.
   atp_struct * workAtp_;              // global work Atp
   Lng32 explainNodeId_;                // add to any EMS RT messages.
@@ -1134,7 +1132,7 @@ private:
   HashBuffer * lastSqueezedBuffer_ ; // last buffer "squeezed"
   NABoolean dontSplit_; // don't split this cluster (e.g., it's skewed)
 
-  // Normaly every cluster keeps its sequence ID in seqID_[0]. But for HJ
+  // Normally every cluster keeps its sequence ID in seqID_[0]. But for HJ
   // after every split, the cluster gets a new sequence ID (like a stack
   // seqID_[1}, and last seqID_[2]). HGB DISTINCT uses seqID_[1] when it needs
   // to keep seperately 2 sequences, of returned and not-returned rows. 
@@ -1396,15 +1394,3 @@ inline IOTimer::IOTimer () :
   {};
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-

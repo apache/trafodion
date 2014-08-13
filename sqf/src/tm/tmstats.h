@@ -33,7 +33,7 @@
 #endif
 
 
-// Foward declarations
+// Forward declarations
 class CTmTxStats;
 
 // CStatsTimer class definition
@@ -101,14 +101,14 @@ public:
 
 
 // CTmStats class definition
-// This class encapsluates the TMs internal statistics and methods for setting, 
+// This class encapsulates the TM's internal statistics and methods for setting,
 // clearing and retrieving values.
 class CTmStats
 {
 private:
    bool  iv_collectStats;        // True = collect stats.
                                  // Set by DTM_TM_STATS=1 registry value, default is TM_STATS.
-   int32 iv_collectInterval;     // Interval for stats gathering. 
+   int32 iv_collectInterval;     // Interval for stats gathering.
                                  // Registry value DTM_TM_STATS_INTERVAL in minutes.
    CdblTime iv_lastReadTime;
    CStatsTimerTotal iv_txnTotal;
@@ -145,7 +145,7 @@ public:
    CStatsTimerTotal *xa_rollback() {return &iv_xa_rollback;}
    int32 RMParticCount() {return iv_RMParticCount;}
    int32 RMNonParticCount() {return iv_RMNonParticCount;}
-   
+
    void initialize(bool pv_collectStats, int32 pv_collectInterval);
    void clearCounters();
    void readStats(TM_TMSTATS *pp_stats);
