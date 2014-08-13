@@ -451,6 +451,8 @@ public class HBulkLoadClient
              logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hidden hfile permissions:" + hiddehfile);
              hiddenFs.setPermission(hiddehfile,PERM_ALL_ACCESS);
            }
+           //create _tmp dir used as temp space for Hfile processing
+           FileSystem.mkdirs(hiddenFs, new Path(hiddenHfam,"_tmp"), PERM_ALL_ACCESS);
         }
         logger.debug("HBulkLoadClient.doBulkLoad() - quasi secure bulk load started ");
         doSnapshotNBulkLoad(hiddenPath,tableName,  table,  loader,  snapshot);
@@ -474,6 +476,8 @@ public class HBulkLoadClient
            prepFs.setPermission(hfile,PERM_ALL_ACCESS);
            
          }
+         //create _tmp dir used as temp space for Hfile processing
+         FileSystem.mkdirs(prepFs, new Path(hfam,"_tmp"), PERM_ALL_ACCESS);
       }
       logger.debug("HBulkLoadClient.doBulkLoad() - bulk load started. Loading directly from preparation directory");
       doSnapshotNBulkLoad(prepPath,tableName,  table,  loader,  snapshot);

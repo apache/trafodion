@@ -978,13 +978,12 @@ EOF
 
   bin/hdfs dfs -mkdir /user/$USER                   >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -mkdir /user/hive                    >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/trafodion               >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/trafodion/bulkload      >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /bulkload                     >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -mkdir /user/hive/warehouse          >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -mkdir /tmp                          >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /tmp                      >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /user/hive/warehouse      >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /user/trafodion/bulkload  >>${MY_LOG_FILE} 2>&1  
+  bin/hdfs dfs -chmod g+w /bulkload                 >>${MY_LOG_FILE} 2>&1  
 
 
 fi

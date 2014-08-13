@@ -33,11 +33,15 @@ cqd comp_bool_226 'on';
 
 obey TEST017(clnup);
 log LOG017 clear;
+
+
 obey TEST017(setup);
 
 obey TEST017(tests_simple);
 
 log;
+
+
 obey TEST017(clnup);
 exit;
 
@@ -72,7 +76,7 @@ create  table T017TTE ( a int , b int, c int);
 
 create table "T017_Delimit" ( a int not null primary key, b int, c int);
 
-load with no output into T017TTA
+load with no output, no recovery into T017TTA
   select
     0 +   (10 * x10) + x1,
     1000 +   (10 * x10) + x1,
@@ -121,10 +125,10 @@ execute indexinfo using 'T017TTB';
 execute indexinfo using 'T017TTC';
 execute indexinfo using 'T017TTD';
 
-load with no output into T017TTB select * from T017TTA;
-load with no output into T017TTC select * from T017TTA;
-load with no output into T017TTD select * from T017TTA;
-load with no output into T017TTE select * from T017TTA;
+load with no output, no recovery into T017TTB select * from T017TTA;
+load with no output, no recovery into T017TTC select * from T017TTA;
+load with no output, no recovery into T017TTD select * from T017TTA;
+load with no output, no recovery into T017TTE select * from T017TTA;
 ---------------------------------------------------
 populate all indexes on T017TTB;
 execute indexinfo using 'T017TTB';
@@ -165,7 +169,7 @@ drop index T017TTBIDXc;
 drop table T017TTB;
 create  table T017TTB ( a int not null primary key, b int, c int);
 
-load with no output into T017TTB select * from T017TTA;
+load with no output, no recovery into T017TTB select * from T017TTA;
 
 populate all indexes on T017TTB;
 alter table T017TTB enable all indexes;

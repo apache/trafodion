@@ -1,3 +1,5 @@
+>>
+>>
 >>obey TEST017(setup);
 >>--------------
 >>create  table T017TTB ( a int not null primary key, b int, c int);
@@ -24,7 +26,7 @@
 
 --- SQL operation complete.
 >>
->>load with no output into T017TTA
+>>load with no output, no recovery into T017TTA
 +>  select
 +>    0 +   (10 * x10) + x1,
 +>    1000 +   (10 * x10) + x1,
@@ -211,16 +213,16 @@ T017TTDIDXC                                                                     
 
 --- 2 row(s) selected.
 >>
->>load with no output into T017TTB select * from T017TTA;
+>>load with no output, no recovery into T017TTB select * from T017TTA;
 
 --- SQL operation complete.
->>load with no output into T017TTC select * from T017TTA;
+>>load with no output, no recovery into T017TTC select * from T017TTA;
 
 --- SQL operation complete.
->>load with no output into T017TTD select * from T017TTA;
+>>load with no output, no recovery into T017TTD select * from T017TTA;
 
 --- SQL operation complete.
->>load with no output into T017TTE select * from T017TTA;
+>>load with no output, no recovery into T017TTE select * from T017TTA;
 
 --- SQL operation complete.
 >>---------------------------------------------------
@@ -718,7 +720,7 @@ B@           B            C            (EXPR)
 
 --- SQL operation complete.
 >>
->>load with no output into T017TTB select * from T017TTA;
+>>load with no output, no recovery into T017TTB select * from T017TTA;
 
 --- SQL operation complete.
 >>
