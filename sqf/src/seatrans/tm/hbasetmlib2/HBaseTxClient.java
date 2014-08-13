@@ -137,7 +137,7 @@ public class HBaseTxClient {
       catch (Exception e) {
          LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is not in ms.env");
       }
-      LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is " + useForgotten);
+      LOG.info("useForgotten is " + useForgotten);
 
       forceForgotten = false;
       try {
@@ -222,7 +222,7 @@ public class HBaseTxClient {
       catch (Exception e) {
          LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is not in ms.env");
       }
-      LOG.debug("TM_ENABLE_FORGOTTEN_RECORDS is " + useForgotten);
+      LOG.info("useForgotten is " + useForgotten);
 
       forceForgotten = false;
       try {
@@ -373,7 +373,7 @@ public class HBaseTxClient {
              LOG.trace("Exit OK_READ_ONLY prepareCommit, txid: " + transactionId);
              return RET_READONLY;
           case TransactionalRegionInterface.COMMIT_CONFLICT:
-             LOG.trace("Exit RET_HASCONFLICT prepareCommit, txid: " + transactionId);
+             LOG.info("Exit RET_HASCONFLICT prepareCommit, txid: " + transactionId);
              return RET_HASCONFLICT;
           default:
              LOG.trace("Exit RET_PARAMERR prepareCommit, txid: " + transactionId);
