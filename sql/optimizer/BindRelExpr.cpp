@@ -9036,37 +9036,47 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       newRecExpr().insert(assign->getValueId());
     
       const NAType& assignSrcType = assign->getSource().getType();
-      // if ( <we added some type of conversion> AND
-      //      ( <tgt and src are both character> AND
-      //        (<they are big and errors can occur> OR <charsets differ>))
-      //      OR
-      //      ( <we changed the basic type and we allow incompatible types> )
-      //    )
-      //   <then incorporate this added conversion into the updateToSelectMap>
-      if ( source != assign->getSource() && 
-           ((assignSrcType.getTypeQualifier() == NA_CHARACTER_TYPE &&
-             sourceType.getTypeQualifier() == NA_CHARACTER_TYPE &&
-             ((assign->getSource().getItemExpr()->getOperatorType() == ITM_CAST &&
-               sourceType.errorsCanOccur(assignSrcType) && 
-               sourceType.getNominalSize() > 
-               CmpCommon::getDefaultNumeric(LOCAL_MESSAGE_BUFFER_SIZE)*1024) ||
-              // Temporary code to fix QC4395 in M6. For M7, try to set source
-              // to the right child of the assign after calling assign->bindNode.
-              // We should then be able to eliminate this entire if statement
-              // as well as the code to check for TRANSLATE nodes above.
-              ((CharType &) assignSrcType).getCharSet() !=
-              ((CharType &) sourceType).getCharSet()))
-            ||
-            // If we allow incompatible type assignments, also include the
-            // added cast into the updateToSelectMap
-            assignSrcType.getTypeQualifier() !=  sourceType.getTypeQualifier() &&
-            CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON))
+      if (CmpCommon::getDefault(COMP_BOOL_226) == DF_ON)
       {
+        // do this change for bulk loader alone. After some more discussion
+        // we may simply do this line unconditionally and remove the else 
+        // branch below.
         updateToSelectMap().addMapEntry(target,assign->getSource());
       }
-      else
+      else 
       {
-        updateToSelectMap().addMapEntry(target,source);
+        // if ( <we added some type of conversion> AND
+        //      ( <tgt and src are both character> AND
+        //        (<they are big and errors can occur> OR <charsets differ>))
+        //      OR
+        //      ( <we changed the basic type and we allow incompatible types> )
+        //    )
+        //   <then incorporate this added conversion into the updateToSelectMap>
+        if ( source != assign->getSource() && 
+             ((assignSrcType.getTypeQualifier() == NA_CHARACTER_TYPE &&
+               sourceType.getTypeQualifier() == NA_CHARACTER_TYPE &&
+               ((assign->getSource().getItemExpr()->getOperatorType() == ITM_CAST &&
+                 sourceType.errorsCanOccur(assignSrcType) && 
+                 sourceType.getNominalSize() > 
+                 CmpCommon::getDefaultNumeric(LOCAL_MESSAGE_BUFFER_SIZE)*1024) ||
+                // Temporary code to fix QC4395 in M6. For M7, try to set source
+                // to the right child of the assign after calling assign->bindNode.
+                // We should then be able to eliminate this entire if statement
+                // as well as the code to check for TRANSLATE nodes above.
+                ((CharType &) assignSrcType).getCharSet() !=
+                ((CharType &) sourceType).getCharSet()))
+              ||
+              // If we allow incompatible type assignments, also include the
+              // added cast into the updateToSelectMap
+              assignSrcType.getTypeQualifier() !=  sourceType.getTypeQualifier() &&
+              CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON))
+          {
+            updateToSelectMap().addMapEntry(target,assign->getSource());
+          }
+        else
+          {
+            updateToSelectMap().addMapEntry(target,source);
+          }
       }
 
       i2++;
