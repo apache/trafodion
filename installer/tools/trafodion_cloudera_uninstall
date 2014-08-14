@@ -81,7 +81,7 @@ node_count=$(echo $MY_NODES | wc -w)
 #============================================
 
 #Info for log file
-echo "***INFO: Log file located at: $LOG"
+echo "***INFO: Log file located at: $TRAF_DIR/../logs"
 
 echo "***Log File: trafodion_cloudera_uninstall script***" >> $LOG
 echo >> $LOG

@@ -253,6 +253,7 @@ $TRAF_PDSH mkdir -p $TRAF_WORKDIR/logs
 
 #================================
 echo "***INFO: installing required packages"
+echo "***INFO: Log file located in $TRAF_WORKDIR/logs"
 YUM_LOG=$TRAF_WORKDIR/logs/trafodion_yum_$timestamp.log
 
 # first install pdsh on each node so we can use it to install

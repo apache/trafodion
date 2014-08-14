@@ -120,7 +120,7 @@ done
 
 #Info for log file
 echo
-echo "***INFO: Log file located at $SETUP_LOG"
+echo "***INFO: Log file located at $TRAF_WORKDIR/logs"
 echo
 echo "***Log File: trafodion_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG

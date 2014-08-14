@@ -161,7 +161,7 @@ done
 #============================================
 #Info for log file
 
-echo "***INFO: Log file location $INSTALL_LOG"
+echo "***INFO: Log file location $TRAF_WORKDIR/logs"
 
 echo "***Log File: trafodion_installer script***" >> $INSTALL_LOG
 echo >> $INSTALL_LOG

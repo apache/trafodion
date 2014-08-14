@@ -155,7 +155,7 @@ fi
 
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
    echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $MODS_LOG
-   echo "***INFO: Log file located at: $MODS_LOG"
+   echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
    $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
       $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
 if [ ${PIPESTATUS[0]} != "0" ]; then
@@ -167,7 +167,7 @@ fi
 
 if [[ $HADOOP_TYPE == "ambari" ]]; then
    echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
-   echo "***INFO: Log file located at: $MODS_LOG"
+   echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
    $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
       $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
    if [ ${PIPESTATUS[0]}  != "0" ]; then

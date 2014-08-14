@@ -81,7 +81,7 @@ node_count=$(echo $MY_NODES | wc -w)
 #============================================
 
 #Info for log file
-echo "***INFO: Log file is located at $LOG"
+echo "***INFO: Log file is located at $TRAF_DIR/../logs"
 
 echo "***Log File: trafodion_ambari_uninstall script***" >> $LOG
 echo >> $LOG

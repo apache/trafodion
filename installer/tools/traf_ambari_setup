@@ -60,7 +60,7 @@ done
 
 #==============================================
 #Info for log file
-echo "***INFO: Log file located $SETUP_LOG"
+echo "***INFO: Log file located $TRAF_WORKDIR/../logs"
 echo "***Log File: trafodion_ambari_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG
 echo "Working directory: $TRAF_WORKDIR" >> $SETUP_LOG
