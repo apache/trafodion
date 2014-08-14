@@ -1,0 +1,395 @@
+>>obey TEST020(testcases);
+>>
+>>control query default auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>-- TEST 1
+>>create table t020t1
++>(
++>pk4a int unique not null not droppable,
++>pk4b int not null not droppable,
++>pk4c int not null not droppable,
++>v4 varchar(20),
++>primary key(pk4a,pk4b,pk4c)
++>);
+
+--- SQL operation complete.
+>>
+>>create table t020t2
++>(
++>pk3a int unique not null not droppable,
++>pk3b int not null not droppable,
++>pk3c int not null not droppable,
++>fk34a int,
++>fk34b int,
++>fk34c int,
++>v3 varchar(20),
++>primary key(pk3a,pk3b,pk3c),
++>foreign key(fk34a,fk34b,fk34c) references t020t1);
+
+--- SQL operation complete.
+>>
+>>drop table t020t1 cascade;
+
+--- SQL operation complete.
+>>drop table t020t2 cascade;
+
+--- SQL operation complete.
+>>
+>>create table t020t1
++>(
++>pk4a int unique not null not droppable,
++>pk4b int not null not droppable,
++>pk4c int not null not droppable,
++>v4 varchar(20),
++>primary key(pk4a,pk4b,pk4c)
++>);
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[1254] Duplicate unique constraints are not allowed with same set of columns.
+
+--- SQL operation completed with warnings.
+>>
+>>create table t020t2
++>(
++>pk3a int unique not null not droppable,
++>pk3b int not null not droppable,
++>pk3c int not null not droppable,
++>fk34a int,
++>fk34b int,
++>fk34c int,
++>v3 varchar(20),
++>primary key(pk3a,pk3b,pk3c),
++>foreign key(fk34a,fk34b,fk34c) references t020t1);
+
+--- SQL operation complete.
+>>
+>>-- TEST 2
+>>
+>>create table t020t3( a int not null, b int not null, primary key(a) );
+
+--- SQL operation complete.
+>>insert into t020t3 values(1, 1);
+
+--- 1 row(s) inserted.
+>>select a, b from t020t3;
+
+A            B          
+-----------  -----------
+
+          1            1
+
+--- 1 row(s) selected.
+>>-- let aqr_other_session drop and recreate the t020t3
+>>sh sqlci -i "TEST020(aqr_other_session)" ;
+>>
+>>drop table t020t3;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[1389] Object T020T3_122866928_1853 does not exist in Trafodion.
+
+--- SQL operation completed with warnings.
+>>
+>>-- TEST3 
+>>
+>>-- get all aqr entries set by default
+>>get all aqr entries;
+
+
+  SQLCODE    PLATFORMERROR    RETRIES      DELAY       TYPE
+============================================================
+
+     1009              0          1          0          1
+     1254              0          1          0          1
+     1389              0          1          0          1
+     2012              0          3         60          0
+     2034              0          1          0          2
+     2235              0          1          0          1
+     4001              0          1          0          1
+     4023              0          1          0          1
+     4039              0          1          0          1
+     4419              0          1          0          4
+     8550             30          1         60          0
+     8550             31          1         60          0
+     8550             33          1         60          0
+     8550             35          1         60          0
+     8550             73          2          0          0
+     8550             78          1         60          0
+     8551             12          1         60          0
+     8551             30          1         60          0
+     8551             31          1         60          0
+     8551             33          1         60          0
+     8551             35          1         60          0
+     8551             40          1         60          0
+     8551             73          2          0          0
+     8551             78          1         60          0
+     8551            200          1         30          0
+     8551           1054          1         60          0
+     8551           1187          1         60          0
+     8551           3502          1         60          0
+     8574              0          1          0          1
+     8575              0          1          0          1
+     8577              0          1          0          1
+     8579              0          1          0          1
+     8580              0          1          0          0
+     8581              0          1          0          1
+     8585              0          1          0          1
+     8586              0          1         60          2
+     8587              0          1          0          1
+     8596              0          1          0          2
+     8598              0          1          0          1
+     8734              0          1          0          1
+     8814              0          1          0          0
+     8841              0          1          0          4
+     8844              0          1          0          4
+     8951          10001          1         30          0
+     8951          10012          1          0          2
+     8613              0          1          0          4
+     2008              0          1          0          4
+     8960              0          1          0          2
+     8961              0          1          0          2
+     8962              0          1          0          2
+
+--- SQL operation complete.
+>>log;
+>>-- delete one entry
+>>set session default aqr_entries ' - 8551  ,73 ';
+
+--- SQL operation complete.
+>>get all aqr entries;
+
+
+  SQLCODE    PLATFORMERROR    RETRIES      DELAY       TYPE
+============================================================
+
+     1009              0          1          0          1
+     1254              0          1          0          1
+     1389              0          1          0          1
+     2012              0          3         60          0
+     2034              0          1          0          2
+     2235              0          1          0          1
+     4001              0          1          0          1
+     4023              0          1          0          1
+     4039              0          1          0          1
+     4419              0          1          0          4
+     8550             30          1         60          0
+     8550             31          1         60          0
+     8550             33          1         60          0
+     8550             35          1         60          0
+     8550             73          2          0          0
+     8550             78          1         60          0
+     8551             12          1         60          0
+     8551             30          1         60          0
+     8551             31          1         60          0
+     8551             33          1         60          0
+     8551             35          1         60          0
+     8551             40          1         60          0
+     8551             78          1         60          0
+     8551            200          1         30          0
+     8551           1054          1         60          0
+     8551           1187          1         60          0
+     8551           3502          1         60          0
+     8574              0          1          0          1
+     8575              0          1          0          1
+     8577              0          1          0          1
+     8579              0          1          0          1
+     8580              0          1          0          0
+     8581              0          1          0          1
+     8585              0          1          0          1
+     8586              0          1         60          2
+     8587              0          1          0          1
+     8596              0          1          0          2
+     8598              0          1          0          1
+     8734              0          1          0          1
+     8814              0          1          0          0
+     8841              0          1          0          4
+     8844              0          1          0          4
+     8951          10001          1         30          0
+     8951          10012          1          0          2
+     8613              0          1          0          4
+     2008              0          1          0          4
+     8960              0          1          0          2
+     8961              0          1          0          2
+     8962              0          1          0          2
+
+--- SQL operation complete.
+>>
+>>-- add that entry back
+>>set session default aqr_entries '+ 8551, 73 , 2,  120, 1';
+
+--- SQL operation complete.
+>>get all aqr entries;
+
+
+  SQLCODE    PLATFORMERROR    RETRIES      DELAY       TYPE
+============================================================
+
+     1009              0          1          0          1
+     1254              0          1          0          1
+     1389              0          1          0          1
+     2012              0          3         60          0
+     2034              0          1          0          2
+     2235              0          1          0          1
+     4001              0          1          0          1
+     4023              0          1          0          1
+     4039              0          1          0          1
+     4419              0          1          0          4
+     8550             30          1         60          0
+     8550             31          1         60          0
+     8550             33          1         60          0
+     8550             35          1         60          0
+     8550             73          2          0          0
+     8550             78          1         60          0
+     8551             12          1         60          0
+     8551             30          1         60          0
+     8551             31          1         60          0
+     8551             33          1         60          0
+     8551             35          1         60          0
+     8551             40          1         60          0
+     8551             73          2        120          1
+     8551             78          1         60          0
+     8551            200          1         30          0
+     8551           1054          1         60          0
+     8551           1187          1         60          0
+     8551           3502          1         60          0
+     8574              0          1          0          1
+     8575              0          1          0          1
+     8577              0          1          0          1
+     8579              0          1          0          1
+     8580              0          1          0          0
+     8581              0          1          0          1
+     8585              0          1          0          1
+     8586              0          1         60          2
+     8587              0          1          0          1
+     8596              0          1          0          2
+     8598              0          1          0          1
+     8734              0          1          0          1
+     8814              0          1          0          0
+     8841              0          1          0          4
+     8844              0          1          0          4
+     8951          10001          1         30          0
+     8951          10012          1          0          2
+     8613              0          1          0          4
+     2008              0          1          0          4
+     8960              0          1          0          2
+     8961              0          1          0          2
+     8962              0          1          0          2
+
+--- SQL operation complete.
+>>
+>>-- modify an entry
+>>set session default aqr_entries ' . 8551 , 73, 1, 60,  1';
+
+--- SQL operation complete.
+>>get all aqr entries;
+
+
+  SQLCODE    PLATFORMERROR    RETRIES      DELAY       TYPE
+============================================================
+
+     1009              0          1          0          1
+     1254              0          1          0          1
+     1389              0          1          0          1
+     2012              0          3         60          0
+     2034              0          1          0          2
+     2235              0          1          0          1
+     4001              0          1          0          1
+     4023              0          1          0          1
+     4039              0          1          0          1
+     4419              0          1          0          4
+     8550             30          1         60          0
+     8550             31          1         60          0
+     8550             33          1         60          0
+     8550             35          1         60          0
+     8550             73          2          0          0
+     8550             78          1         60          0
+     8551             12          1         60          0
+     8551             30          1         60          0
+     8551             31          1         60          0
+     8551             33          1         60          0
+     8551             35          1         60          0
+     8551             40          1         60          0
+     8551             73          1         60          1
+     8551             78          1         60          0
+     8551            200          1         30          0
+     8551           1054          1         60          0
+     8551           1187          1         60          0
+     8551           3502          1         60          0
+     8574              0          1          0          1
+     8575              0          1          0          1
+     8577              0          1          0          1
+     8579              0          1          0          1
+     8580              0          1          0          0
+     8581              0          1          0          1
+     8585              0          1          0          1
+     8586              0          1         60          2
+     8587              0          1          0          1
+     8596              0          1          0          2
+     8598              0          1          0          1
+     8734              0          1          0          1
+     8814              0          1          0          0
+     8841              0          1          0          4
+     8844              0          1          0          4
+     8951          10001          1         30          0
+     8951          10012          1          0          2
+     8613              0          1          0          4
+     2008              0          1          0          4
+     8960              0          1          0          2
+     8961              0          1          0          2
+     8962              0          1          0          2
+
+--- SQL operation complete.
+>>
+>>showset defaults;
+
+Current SESSION DEFAULTs
+  ALTPRI_ESP                  FALSE
+  ALTPRI_MASTER               TRUE
+  ESP_ASSIGN_DEPTH            -1
+  ESP_ASSIGN_TIME_WINDOW      60
+  ESP_CLOSE_ERROR_LOGGING     FALSE
+  ESP_FIXUP_PRIORITY_DELTA    1
+  ESP_FREEMEM_TIMEOUT         10
+  ESP_IDLE_TIMEOUT            1800
+  ESP_INACTIVE_TIMEOUT        0
+  ESP_PRIORITY                -1
+  ESP_PRIORITY_DELTA          0
+  ESP_STOP_IDLE_TIMEOUT       60
+  ESP_RELEASE_WORK_TIMEOUT    -2
+  EXPLAIN_IN_RMS              FALSE
+  MASTER_PRIORITY
+  MASTER_PRIORITY_DELTA
+  MAX_POLLING_INTERVAL        300
+  MXCMP_PRIORITY              -1
+  MXCMP_PRIORITY_DELTA        6
+  PERSISTENT_OPENS            0
+  RECLAIM_FREE_MEMORY_RATIO   25
+  RECLAIM_FREE_PFS_RATIO      50
+  RECLAIM_MEMORY_AFTER        800
+  RTS_TIMEOUT                 0
+  STATISTICS_VIEW_TYPE        3
+
+--- SQL operation complete.
+>>
+>>obey TEST020(clnup);
+>>drop table t020t1 cascade;
+
+--- SQL operation complete.
+>>drop table t020t2 cascade;
+
+--- SQL operation complete.
+>>drop table t020t3 cascade;
+
+*** ERROR[1389] Object TRAFODION.SCH.T020T3 does not exist in Trafodion.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[1389] Object TRAFODION.SCH.T020T3 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>
+>>log;

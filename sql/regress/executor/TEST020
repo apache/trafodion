@@ -1,0 +1,129 @@
+-- Test: TEST020 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: AQR(Auto Query Retry) feature
+-- Expected files: EXPECTED020
+-- Table created: t020t1, t020t2, t020t3
+-- Limitations:
+-- Revision history:
+
+obey TEST020(clnup);
+log log020 clear;
+obey TEST020(testcases);
+obey TEST020(clnup);
+log;
+exit;
+
+?section clnup
+drop table t020t1 cascade;
+drop table t020t2 cascade;
+drop table t020t3 cascade;
+
+
+?section testcases
+
+control query default auto_query_retry_warnings 'ON';
+
+-- TEST 1
+create table t020t1
+(
+pk4a int unique not null not droppable,
+pk4b int not null not droppable,
+pk4c int not null not droppable,
+v4 varchar(20),
+primary key(pk4a,pk4b,pk4c)
+);
+
+create table t020t2
+(
+pk3a int unique not null not droppable,
+pk3b int not null not droppable,
+pk3c int not null not droppable,
+fk34a int,
+fk34b int,
+fk34c int,
+v3 varchar(20),
+primary key(pk3a,pk3b,pk3c),
+foreign key(fk34a,fk34b,fk34c) references t020t1);
+
+drop table t020t1 cascade;
+drop table t020t2 cascade;
+
+create table t020t1
+(
+pk4a int unique not null not droppable,
+pk4b int not null not droppable,
+pk4c int not null not droppable,
+v4 varchar(20),
+primary key(pk4a,pk4b,pk4c)
+);
+
+create table t020t2
+(
+pk3a int unique not null not droppable,
+pk3b int not null not droppable,
+pk3c int not null not droppable,
+fk34a int,
+fk34b int,
+fk34c int,
+v3 varchar(20),
+primary key(pk3a,pk3b,pk3c),
+foreign key(fk34a,fk34b,fk34c) references t020t1);
+
+-- TEST 2
+
+create table t020t3( a int not null, b int not null, primary key(a) );
+insert into t020t3 values(1, 1);
+select a, b from t020t3;
+-- let aqr_other_session drop and recreate the t020t3
+sh sqlci -i "TEST020(aqr_other_session)" ;
+
+drop table t020t3;
+
+-- TEST3 
+
+-- get all aqr entries set by default
+get all aqr entries;
+log;
+showplan get all aqr entries;
+showplan showset defaults;
+log log020;
+-- delete one entry
+set session default aqr_entries ' - 8551  ,73 ';
+get all aqr entries;
+
+-- add that entry back
+set session default aqr_entries '+ 8551, 73 , 2,  120, 1';
+get all aqr entries;
+
+-- modify an entry
+set session default aqr_entries ' . 8551 , 73, 1, 60,  1';
+get all aqr entries;
+
+showset defaults;
+
+?section aqr_other_session;
+log OTHER_SESSION_LOG020 clear;
+drop table t020t3;
+create table t020t3( a int not null, b int not null, primary key(a) );
+log;
+
+
+
+

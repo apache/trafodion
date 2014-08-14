@@ -753,6 +753,7 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
 
   // object does not exist in Trafodion
   AQREntry(   1009,      0,      1,     0,      1,   1, "03",  0,     0),
+  AQREntry(   1254,      0,      1,     0,      1,   1, "03",  0,     0),
   AQREntry(   1389,      0,      1,     0,      1,   1, "03",  0,     0),
   // process could not be created (40)
   AQREntry(   2012,      0,      3,    60,      0,   0, "",    0,     0),  

@@ -370,6 +370,8 @@ s/nist586\.mdf.*/nist586.mdf/g
 #Added for executor/TEST112
 s/WARNING.8024.*/WARNING 8024 filtered/g
 
+s/WARNING.1389.*/WARNING 1389 Object does not exist in TRAFODION./g
+
 # ... NonStop(TM) SQL/MX Compiler 2.0
 #                                 ^^^
 s:\( NonStop.TM. SQL/MX Compiler \)[0-9][0-9]*\.[0-9][0-9]*:\1@version_id@:
