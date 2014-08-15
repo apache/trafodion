@@ -123,6 +123,9 @@ private:
  
   static jclass javaClass_;
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 // ===========================================================================
@@ -193,6 +196,9 @@ private:
   
   static jclass javaClass_;
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 #endif

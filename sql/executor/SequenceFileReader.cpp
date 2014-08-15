@@ -27,6 +27,8 @@
 
 JavaMethodInit* SequenceFileReader::JavaMethods_ = NULL;
 jclass SequenceFileReader::javaClass_ = 0;
+bool SequenceFileReader::javaMethodsInitialized_ = false;
+pthread_mutex_t SequenceFileReader::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const sfrErrorEnumStr[] = 
 {
@@ -67,11 +69,18 @@ SequenceFileReader::~SequenceFileReader()
 SFR_RetCode SequenceFileReader::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/SequenceFileReader";
-  
-  if (JavaMethods_)
-    return (SFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  SFR_RetCode rc; 
+
+  if (javaMethodsInitialized_)
+    return (SFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_); 
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (SFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
@@ -102,8 +111,11 @@ SFR_RetCode SequenceFileReader::init()
     JavaMethods_[JM_CLOSE     ].jm_signature = "()Ljava/lang/String;";
    
     setHBaseCompatibilityMode(FALSE);
-    return (SFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (SFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
         
 //////////////////////////////////////////////////////////////////////////////
@@ -411,6 +423,8 @@ SFR_RetCode SequenceFileReader::fetchRowsIntoBuffer(Int64   stopOffset,
 
 JavaMethodInit* SequenceFileWriter::JavaMethods_ = NULL;
 jclass SequenceFileWriter::javaClass_ = 0;
+bool SequenceFileWriter::javaMethodsInitialized_ = false;
+pthread_mutex_t SequenceFileWriter::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const sfwErrorEnumStr[] = 
 {
@@ -446,11 +460,18 @@ SequenceFileWriter::~SequenceFileWriter()
 SFW_RetCode SequenceFileWriter::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/SequenceFileWriter";
+  SFW_RetCode rc;
   
-  if (JavaMethods_)
-    return (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
@@ -463,8 +484,11 @@ SFW_RetCode SequenceFileWriter::init()
     JavaMethods_[JM_CLOSE     ].jm_signature = "()Ljava/lang/String;";
    
     setHBaseCompatibilityMode(FALSE);
-    return (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (SFW_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -103,6 +103,9 @@ private:
   
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 
@@ -165,6 +168,9 @@ private:
   
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 // ===========================================================================
@@ -232,6 +238,9 @@ private:
   
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 // ===========================================================================
@@ -281,6 +290,9 @@ private:
 
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 class HBaseClientRequest
@@ -470,6 +482,9 @@ private:
   char *tableName_; 
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 };
 
 // ===========================================================================
@@ -590,6 +605,9 @@ private:
   };
   static jclass          javaClass_; 
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
   bool isConnected_;
 
   pthread_t threadID_[NUM_HBASE_WORKER_THREADS];
@@ -682,6 +700,9 @@ private:
   };
   static jclass          javaClass_; 
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
   bool isConnected_;
 };
 
@@ -760,6 +781,9 @@ private:
   };
   static jclass          javaClass_;
   static JavaMethodInit* JavaMethods_;
+  static bool javaMethodsInitialized_;
+  // this mutex protects both JaveMethods_ and javaClass_ initialization
+  static pthread_mutex_t javaMethodsInitMutex_;
 
 };
 #endif

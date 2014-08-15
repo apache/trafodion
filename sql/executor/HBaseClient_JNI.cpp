@@ -31,6 +31,8 @@
 
 JavaMethodInit* StringArrayList::JavaMethods_ = NULL;
 jclass StringArrayList::javaClass_ = 0;
+bool StringArrayList::javaMethodsInitialized_ = false;
+pthread_mutex_t StringArrayList::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const salErrorEnumStr[] = 
 {
@@ -63,14 +65,21 @@ StringArrayList::~StringArrayList()
 SAL_RetCode StringArrayList::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/StringArrayList";
+  SAL_RetCode rc;
   
   if (isInitialized())
     return SAL_OK;
-    
-  if (JavaMethods_)
-    return (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+
+  if (javaMethodsInitialized_)
+    return (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
@@ -82,8 +91,12 @@ SAL_RetCode StringArrayList::init()
     JavaMethods_[JM_GETSIZE   ].jm_name      = "getSize";
     JavaMethods_[JM_GETSIZE   ].jm_signature = "()I";
  
-    return (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+ 
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -204,6 +217,8 @@ Int32 StringArrayList::getSize()
 
 JavaMethodInit* ByteArrayList::JavaMethods_ = NULL;
 jclass ByteArrayList::javaClass_ = 0;
+bool ByteArrayList::javaMethodsInitialized_ = false;
+pthread_mutex_t ByteArrayList::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const balErrorEnumStr[] = 
 {
@@ -237,14 +252,21 @@ ByteArrayList::~ByteArrayList()
 BAL_RetCode ByteArrayList::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/ByteArrayList";
+  BAL_RetCode rc;
   
   if (isInitialized())
     return BAL_OK;
     
-  if (JavaMethods_)
-    return (BAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (BAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (BAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
@@ -260,8 +282,11 @@ BAL_RetCode ByteArrayList::init()
     JavaMethods_[JM_GETENTRY  ].jm_name      = "getEntry";
     JavaMethods_[JM_GETENTRY].jm_signature = "(I)[B";
     
-    return (BAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (BAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -410,6 +435,8 @@ char* ByteArrayList::getEntry(Int32 i, char* buf, Int32 bufLen, Int32& datalen)
 
 JavaMethodInit* KeyValue::JavaMethods_ = NULL;
 jclass KeyValue::javaClass_ = 0;
+bool KeyValue::javaMethodsInitialized_ = false;
+pthread_mutex_t KeyValue::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const resErrorEnumStr[] = 
 {
@@ -442,14 +469,21 @@ KeyValue::~KeyValue()
 KYV_RetCode KeyValue::init()
 {
   static char className[]="org/apache/hadoop/hbase/KeyValue";
+  KYV_RetCode rc;
   
   if (isInitialized())
     return KYV_OK;
     
-  if (JavaMethods_)
-    return (KYV_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (KYV_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (KYV_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
@@ -479,8 +513,11 @@ KYV_RetCode KeyValue::init()
     JavaMethods_[JM_TS        ].jm_name      = "getTimestamp";
     JavaMethods_[JM_TS        ].jm_signature = "()J";          
    
-    return (KYV_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (KYV_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -768,6 +805,8 @@ TCell* KeyValue::toTCell()
 
 JavaMethodInit* ResultKeyValueList::JavaMethods_ = NULL;
 jclass ResultKeyValueList::javaClass_ = 0;
+bool ResultKeyValueList::javaMethodsInitialized_ = false;
+pthread_mutex_t ResultKeyValueList::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const rklErrorEnumStr[] = 
 {
@@ -799,14 +838,21 @@ ResultKeyValueList::~ResultKeyValueList()
 RKL_RetCode ResultKeyValueList::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/ResultKeyValueList";
+  RKL_RetCode rc;
 
   if (isInitialized())
     return RKL_OK;
     
-  if (JavaMethods_)
-    return (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_ROWID].jm_name      = "getRowID";
@@ -818,8 +864,11 @@ RKL_RetCode ResultKeyValueList::init()
     JavaMethods_[JM_KVS].jm_name    = "getAllKeyValues";
     JavaMethods_[JM_KVS].jm_signature = "()[B";
    
-    return (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -921,6 +970,8 @@ bool ResultKeyValueList::toJbyte(jbyte **rowResult, jbyteArray &jRowResult,
 
 JavaMethodInit* HBaseClient_JNI::JavaMethods_ = NULL;
 jclass HBaseClient_JNI::javaClass_ = 0;
+bool HBaseClient_JNI::javaMethodsInitialized_ = false;
+pthread_mutex_t HBaseClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const hbcErrorEnumStr[] = 
 {
@@ -1036,14 +1087,21 @@ HBaseClient_JNI::~HBaseClient_JNI()
 HBC_RetCode HBaseClient_JNI::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/HBaseClient";
+  HBC_RetCode rc;
   
   if (isInitialized())
     return HBC_OK;
   
-  if (JavaMethods_)
-    return (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
@@ -1082,8 +1140,11 @@ HBC_RetCode HBaseClient_JNI::init()
    
    
    
-    return (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);       
+    rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1938,6 +1999,8 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
 //////////////////////////////////////////////////////////////////////////////
 JavaMethodInit* HBulkLoadClient_JNI::JavaMethods_ = NULL;
 jclass HBulkLoadClient_JNI::javaClass_ = 0;
+bool HBulkLoadClient_JNI::javaMethodsInitialized_ = false;
+pthread_mutex_t HBulkLoadClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 
 static const char* const hblcErrorEnumStr[] = ///need to update content
@@ -1962,14 +2025,21 @@ static const char* const hblcErrorEnumStr[] = ///need to update content
 HBLC_RetCode HBulkLoadClient_JNI::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/HBulkLoadClient";
+  HBLC_RetCode rc;
 
   if (isInitialized())
     return HBLC_OK;
 
-  if (JavaMethods_)
-    return (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);
+  if (javaMethodsInitialized_)
+    return (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
 
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
@@ -1987,8 +2057,11 @@ HBLC_RetCode HBulkLoadClient_JNI::init()
     JavaMethods_[JM_ADD_TO_HFILE_DB  ].jm_name      = "addToHFile";
     JavaMethods_[JM_ADD_TO_HFILE_DB  ].jm_signature = "(SLjava/lang/Object;Ljava/lang/Object;)Z";
 
-    return (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
+    rc = (HBLC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 char* HBulkLoadClient_JNI::getErrorText(HBLC_RetCode errEnum)
@@ -2326,6 +2399,8 @@ void HBaseClient_JNI::logIt(const char* str)
 
 JavaMethodInit* HTableClient_JNI::JavaMethods_ = NULL;
 jclass HTableClient_JNI::javaClass_ = 0;
+bool HTableClient_JNI::javaMethodsInitialized_ = false;
+pthread_mutex_t HTableClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const htcErrorEnumStr[] = 
 {
@@ -2411,14 +2486,21 @@ HTableClient_JNI::~HTableClient_JNI()
 HTC_RetCode HTableClient_JNI::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/HTableClient";
+  HTC_RetCode rc;
   
   if (isInitialized())
     return HTC_OK;
   
-  if (JavaMethods_)
-    return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
@@ -2472,8 +2554,11 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_name      = "deleteRows";
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_signature = "(JSLjava/lang/Object;J)Z";
    
-    return (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);       
+    rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3554,6 +3639,8 @@ HTC_RetCode HTableClient_JNI::flushTable()
 
 JavaMethodInit* HiveClient_JNI::JavaMethods_ = NULL;
 jclass HiveClient_JNI::javaClass_ = 0;
+bool HiveClient_JNI::javaMethodsInitialized_ = false;
+pthread_mutex_t HiveClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* const hvcErrorEnumStr[] = 
 {
@@ -3627,14 +3714,21 @@ HiveClient_JNI::~HiveClient_JNI()
 HVC_RetCode HiveClient_JNI::init()
 {
   static char className[]="org/trafodion/sql/HBaseAccess/HiveClient";
+  HVC_RetCode rc;
   
   if (isInitialized())
     return HVC_OK;
   
-  if (JavaMethods_)
-    return (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, TRUE);       
+  if (javaMethodsInitialized_)
+    return (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
   else
   {
+    pthread_mutex_lock(&javaMethodsInitMutex_);
+    if (javaMethodsInitialized_)
+    {
+      pthread_mutex_unlock(&javaMethodsInitMutex_);
+      return (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    }
     JavaMethods_ = new JavaMethodInit[JM_LAST];
     
     JavaMethods_[JM_CTOR       ].jm_name      = "<init>";
@@ -3656,8 +3750,11 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_GET_ATL    ].jm_name      = "getAllTables";
     JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/HBaseAccess/StringArrayList;";
    
-    return (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);       
+    rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
+    javaMethodsInitialized_ = TRUE;
+    pthread_mutex_unlock(&javaMethodsInitMutex_);
   }
+  return rc;
 }
 
 //////////////////////////////////////////////////////////////////////////////
