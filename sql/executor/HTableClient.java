@@ -600,10 +600,10 @@ public class HTableClient {
 				bbRows.get(colValue, 0, colValueLen);
 				qc = new QualifiedColumn(colName);
 				put.add(qc.getFamily(), qc.getName(), colValue); 
-                        	if (writeToWAL)  
-                          		put.setWriteToWAL(writeToWAL);
-                        	listOfPuts.add(put);
 			}
+                        if (writeToWAL)  
+                        	put.setWriteToWAL(writeToWAL);
+                        listOfPuts.add(put);
 		}
 		if (autoFlush == false)
 			table.setAutoFlush(false, true);
