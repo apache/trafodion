@@ -30,7 +30,7 @@ typeset CLUSTERNAME="$HOSTNAME"
 typeset HOME_DIR="/home"
 typeset timestamp=$(date +%F-%H-%M-%S)
 typeset SETUP_LOG="$TRAF_WORKDIR/logs/trafodion_setup_$timestamp.log"
-
+mkdir -p $TRAF_WORKDIR/logs
 #==============================================
 
 function print_usage {

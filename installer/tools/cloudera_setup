@@ -61,6 +61,7 @@ while [[ $# -gt 0 ]]; do
 done
 #==============================================
 #Info for log file
+mkdir -p $TRAF_WORKDIR/../logs
 echo "***INFO: Log file located at $TRAF_WORKDIR/../logs"
 echo "***Log File: trafodion_cloudera_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG
