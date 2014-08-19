@@ -190,12 +190,9 @@ public class SQLMXConnection extends PreparedStatementManager implements
 			if (isClosed_)
 				throw Messages.createSQLException(locale_,
 						"invalid_connection", null);
-			if (getTxid_() == 0)
-				return;
 			if (autoCommit_)
 				throw Messages.createSQLException(locale_,
 						"invalid_commit_mode", null);
-
 			if (beginTransFlag_) {
 				/*
 				 * Transaction was started using Connection.begintransaction()
@@ -204,11 +201,16 @@ public class SQLMXConnection extends PreparedStatementManager implements
 				autoCommit_ = true;
 				beginTransFlag_ = false;
 			}
+			Statement cs = null;
 			try {
 				// commit the Transaction
-				commit(server_, getDialogueId_(), getTxid_());
+				cs = this.createStatement();
+				cs.execute("commit");
 			} finally {
 				setTxid_(0);
+				if(cs != null ){
+					try{ cs.close(); }catch(Exception ce){}
+				}
 			}
 		} finally {
 			if (JdbcDebugCfg.traceActive)
@@ -1316,8 +1318,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 			if (isClosed_)
 				throw Messages.createSQLException(locale_,
 						"invalid_connection", null);
-			if (getTxid_() == 0)
-				return;
 			if (autoCommit_)
 				throw Messages.createSQLException(locale_,
 						"invalid_commit_mode", null);
@@ -1326,14 +1326,19 @@ public class SQLMXConnection extends PreparedStatementManager implements
 				/*
 				 * Transaction was started using Connection.begintransaction()
 				 * API, set the autoCommit_ flag to true.
-				 */
+				 */ 
 				autoCommit_ = true;
 				beginTransFlag_ = false;
 			}
+			Statement cs = null;
 			try {
 				// commit the Transaction
-				rollback(server_, getDialogueId_(), getTxid_());
+				cs = this.createStatement();
+				cs.execute("rollback");
 			} finally {
+				if(cs != null){
+					try{cs.close();}catch(Exception ee){}
+				}
 				setTxid_(0);
 			}
 		} finally {
@@ -1395,13 +1400,6 @@ public class SQLMXConnection extends PreparedStatementManager implements
 			if(this.getAutoCommit() == autoCommit){
 				return;
 			}
-/*
-			if (getTxid_() != 0 && !getAutoCommit()) {
-				// throw Messages.createSQLException(locale_,
-				// "autocommit_txn_in_progress", null);
-				commit();
-			}
-*/
 			//changes to comply with standards, if autocommit mode is same then NO-OP
 			// Don't allow autoCommit false when internal txn mode
 			if (transactionMode_ == TXN_MODE_INTERNAL)
