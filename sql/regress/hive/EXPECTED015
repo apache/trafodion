@@ -1512,7 +1512,121 @@ Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
 
 --- SQL operation complete.
 >>
+>>-----
+>>drop table customer_address cascade;
+
+--- SQL operation complete.
 >>
+>>create table customer_address
++>(
++>  ca_address_sk        int not null,
++>  ca_address_id        char(16),
++>  ca_street_number     char(10),
++>  ca_street_name       varchar(60),
++>  ca_street_type       char(15),
++>  ca_suite_number      char(10),
++>  ca_city              varchar(60),
++>  ca_county            varchar(30),
++>  ca_state             char(2),
++>  ca_zip               char(10),
++>  ca_country           varchar(30),
++>  ca_gmt_offset        decimal(5,2),
++>  ca_location_type     char(20),
++>  primary key (ca_address_sk)
++>)
++>salt using 4 partitions
++>
++>HBASE_OPTIONS (data_block_encoding = 'FAST_DIFF', compression = 'GZ') 
++>;
+
+--- SQL operation complete.
+>>
+>>select count(*) from hive.hive.customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>select count(*) from customer_address;
+
+(EXPR)              
+--------------------
+
+                   0
+
+--- 1 row(s) selected.
+>>
+>>prepare s from 
++>load transform into customer_address 
++>select * from hive.hive.customer_address;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  5.19E+004
+5    .    6    esp_exchange                    1:4(range)            5.19E+004
+3    4    5    tuple_flow                                            5.19E+004
+.    .    4    trafodion_load_prepa            CUSTOMER_ADDRESS      1.00E+000
+2    .    3    sort                                                  5.19E+004
+1    .    2    esp_exchange                    4(range):1            5.19E+004
+.    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
+
+--- SQL operation complete.
+>>
+>>load  with no populate indexes  into customer_address 
++>select * from hive.hive.customer_address;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+       Rows Processed: 50000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:03.626
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.552
+
+--- SQL operation complete.
+>>
+>>select count(*) from customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>select [first 20] * from customer_address order by ca_address_sk ;
+
+CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME                                                CA_STREET_TYPE   CA_SUITE_NUMBER  CA_CITY                                                       CA_COUNTY                       CA_STATE  CA_ZIP      CA_COUNTRY                      CA_GMT_OFFSET  CA_LOCATION_TYPE
+-------------  ----------------  ----------------  ------------------------------------------------------------  ---------------  ---------------  ------------------------------------------------------------  ------------------------------  --------  ----------  ------------------------------  -------------  --------------------
+
+            1  AAAAAAAABAAAAAAA  18                Jackson                                                       Parkway          Suite 280        Fairfield                                                     Maricopa County                 AZ        86192       United States                           -7.00  condo               
+            2  AAAAAAAACAAAAAAA  362               Washington 6th                                                RD               Suite 80         Fairview                                                      Taos County                     NM        85709       United States                           -7.00  condo               
+            3  AAAAAAAADAAAAAAA  585               Dogwood Washington                                            Circle           Suite Q          Pleasant Valley                                               York County                     PA        12477       United States                           -5.00  single family       
+            4  AAAAAAAAEAAAAAAA  111               Smith                                                         Wy               Suite A          Oak Ridge                                                     Kit Carson County               CO        88371       United States                           -7.00  condo               
+            5  AAAAAAAAFAAAAAAA  31                College                                                       Blvd             Suite 180        Glendale                                                      Barry County                    MO        63951       United States                           -6.00  single family       
+            6  AAAAAAAAGAAAAAAA  59                Williams Sixth                                                Parkway          Suite 100        Lakeview                                                      Chelan County                   WA        98579       United States                           -8.00  single family       
+            7  AAAAAAAAHAAAAAAA  ?                 Hill 7th                                                      Road             Suite U          Farmington                                                    ?                               ?         39145       United States                               ?  ?                   
+            8  AAAAAAAAIAAAAAAA  875               Lincoln                                                       Ct.              Suite Y          Union                                                         Bledsoe County                  TN        38721       United States                           -5.00  apartment           
+            9  AAAAAAAAJAAAAAAA  819               1st Laurel                                                    Ave              Suite 70         New Hope                                                      Perry County                    AL        39431       United States                           -6.00  condo               
+           10  AAAAAAAAKAAAAAAA  851               Woodland Poplar                                               ST               Suite Y          Martinsville                                                  Haines Borough                  AK        90419       United States                           -9.00  condo               
+           11  AAAAAAAALAAAAAAA  189               13th 2nd                                                      Street           Suite 470        Maple Grove                                                   Madison County                  MT        68252       United States                           -7.00  single family       
+           12  AAAAAAAAMAAAAAAA  76                Ash 8th                                                       Ct.              Suite O          Edgewood                                                      Mifflin County                  PA        10069       United States                           -5.00  apartment           
+           13  AAAAAAAANAAAAAAA  424               Main Second                                                   Ln               Suite 130        Greenville                                                    Noxubee County                  MS        51387       United States                           -6.00  single family       
+           14  AAAAAAAAOAAAAAAA  923               Pine Oak                                                      Dr.              Suite 100        ?                                                             Lipscomb County                 TX        77752       ?                                       -6.00  ?                   
+           15  AAAAAAAAPAAAAAAA  314               Spring                                                        Ct.              Suite B          Oakland                                                       Washington County               OH        49843       United States                           -5.00  apartment           
+           16  AAAAAAAAABAAAAAA  576               Adams Center                                                  Street           Suite J          Valley View                                                   Oldham County                   TX        75124       United States                           -6.00  condo               
+           17  AAAAAAAABBAAAAAA  801               Green                                                         Dr.              Suite 0          Montpelier                                                    Richland County                 OH        48930       United States                           -5.00  single family       
+           18  AAAAAAAACBAAAAAA  460               Maple Spruce                                                  Court            Suite 480        Somerville                                                    Potter County                   SD        57783       United States                           -7.00  condo               
+           19  AAAAAAAADBAAAAAA  611               Wilson                                                        Way              Suite O          Oakdale                                                       Tangipahoa Parish               LA        79584       United States                           -6.00  apartment           
+           20  AAAAAAAAEBAAAAAA  675               Elm Wilson                                                    Street           Suite I          Hopewell                                                      Williams County                 OH        40587       United States                           -5.00  condo               
+
+--- 20 row(s) selected.
 >>
 >>
 >>

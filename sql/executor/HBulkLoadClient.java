@@ -64,7 +64,7 @@ import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 //import org.apache.hadoop.hbase.regionserver.BloomType; in v0.97
 import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
 //import org.apache.hadoop.hbase.client.Durability;
-
+import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoderImpl;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.trafodion.sql.HBaseAccess.StringArrayList;
@@ -95,6 +95,11 @@ public class HBulkLoadClient
   String hFileName;
   long maxHFileSize = MAX_HFILE_SIZE;
   FileSystem fileSys = null;
+  String compression = COMPRESSION;
+  int blockSize = BLOCKSIZE;
+  DataBlockEncoding inCacheEncoding = DataBlockEncoding.NONE;
+  DataBlockEncoding onDiskEncoding = DataBlockEncoding.NONE;
+  
   
   
   HashMap< Integer, HTableClient.QualifiedColumn> qualifierMap = null;
@@ -123,27 +128,43 @@ public class HBulkLoadClient
       lastError = err;
   }
   public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName) 
+  throws UnsupportedOperationException, IOException
   {
     logger.debug("HBulkLoadClient.initHFileParams() called.");
     
     hFileLocation = hFileLoc;
     hFileName = hFileNm;
     
+    HTable myHTable = new HTable(config, tblName);
+    HTableDescriptor hTbaledesc = myHTable.getTableDescriptor();
+    HColumnDescriptor[] hColDescs = hTbaledesc.getColumnFamilies();
+    if (hColDescs.length != 1 )
+    {
+      myHTable.close();
+      throw new UnsupportedOperationException ("only one family is supported.");
+    }
+    
+    compression= hColDescs[0].getCompression().getName();
+    blockSize= hColDescs[0].getBlocksize();
+    inCacheEncoding = hColDescs[0].getDataBlockEncoding();
+    onDiskEncoding = hColDescs[0].getDataBlockEncodingOnDisk();
+
     if (userMaxSize == 0)
     {
-      HTableDescriptor desc = new HTableDescriptor(tblName);
-      if (desc.getMaxFileSize()==-1)
+      if (hTbaledesc.getMaxFileSize()==-1)
       {
         maxHFileSize = MAX_HFILE_SIZE;
       }
       else
       {
-        maxHFileSize = desc.getMaxFileSize();
+        maxHFileSize = hTbaledesc.getMaxFileSize();
       }
     }
     else 
       maxHFileSize = userMaxSize * 1024 *1024;  //maxSize is in MBs
 
+    myHTable.close();
+    
     return true;
   }
   public boolean doCreateHFile() throws IOException, URISyntaxException
@@ -170,9 +191,10 @@ public class HBulkLoadClient
     {
       writer =    HFile.getWriterFactory(config, new CacheConfig(config))
                      .withPath(fileSys, hfilePath)
-                     .withBlockSize(BLOCKSIZE)
-                     .withCompression(COMPRESSION)
+                     .withBlockSize(blockSize)
+                     .withCompression(compression)
                      .withComparator(KeyValue.KEY_COMPARATOR)
+                     .withDataBlockEncoder(new HFileDataBlockEncoderImpl(onDiskEncoding,inCacheEncoding))
                      .create();
       logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
     }

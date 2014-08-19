@@ -522,7 +522,45 @@ select count(*) from table(index_table cd_dep_college_count_IDX2);
 drop index cd_dep_count_IDX2;
 drop index cd_dep_college_count_IDX2;
 
+-----
+drop table customer_address cascade;
 
+create table customer_address
+(
+  ca_address_sk        int not null,
+  ca_address_id        char(16),
+  ca_street_number     char(10),
+  ca_street_name       varchar(60),
+  ca_street_type       char(15),
+  ca_suite_number      char(10),
+  ca_city              varchar(60),
+  ca_county            varchar(30),
+  ca_state             char(2),
+  ca_zip               char(10),
+  ca_country           varchar(30),
+  ca_gmt_offset        decimal(5,2),
+  ca_location_type     char(20),
+  primary key (ca_address_sk)
+)
+salt using 4 partitions
+
+HBASE_OPTIONS (data_block_encoding = 'FAST_DIFF', compression = 'GZ') 
+;
+
+select count(*) from hive.hive.customer_address;
+select count(*) from customer_address;
+
+prepare s from 
+load transform into customer_address 
+select * from hive.hive.customer_address;                                                                                              
+explain options 'f' s;
+
+load  with no populate indexes  into customer_address 
+select * from hive.hive.customer_address;                                                                                                   
+
+select count(*) from customer_address;
+
+select [first 20] * from customer_address order by ca_address_sk ;
 
 
 
