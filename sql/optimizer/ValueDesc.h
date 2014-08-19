@@ -182,12 +182,12 @@ public:
   // return TRUE iff I am a ValueId associated with an Index Column, or
   // a base column that is a divisioning column. If I am an index column,
   // get the associated base column.
-  NABoolean isDivisioningColumn();
+  NABoolean isDivisioningColumn() const;
 
   // return TRUE iff I am a ValueId associated with an Index Column, or
   // a base column that is a salted(computed) column. If I am an index column,
   // get the associated base column.
-  NABoolean isSaltedColumn();
+  NABoolean isSaltedColumn() const;
 
   // ---------------------------------------------------------------------
   // change the ValueId's type to the given type

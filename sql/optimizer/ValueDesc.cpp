@@ -4088,7 +4088,7 @@ ValueId::moreThanOneColFromSameTabOrCharDate(TableDesc * tdesc,
   return FALSE;
 }
 
-NABoolean ValueId::isDivisioningColumn()
+NABoolean ValueId::isDivisioningColumn() const
 {
    ItemExpr *ck = getItemExpr();
 
@@ -4104,7 +4104,7 @@ NABoolean ValueId::isDivisioningColumn()
       return FALSE;
 }
 
-NABoolean ValueId::isSaltedColumn()
+NABoolean ValueId::isSaltedColumn() const
 {
    ItemExpr *ck = getItemExpr();
 

@@ -34,32 +34,38 @@ typedef struct
   Lng32 len;
 } HbaseStr;
 
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 // this enum MUST be kept in sync with the Java constants in HBaseClient.java
+// --------------------------------------------------------------------------
+// --------------------------------------------------------------------------
 enum HbaseOptionEnum
   {
-    HBASE_NAME = 0,
-    HBASE_MAX_VERSIONS,
-    HBASE_MIN_VERSIONS,
-    HBASE_TTL,
-    HBASE_BLOCKCACHE,
-    HBASE_IN_MEMORY,
-    HBASE_COMPRESSION,
-    HBASE_BLOOMFILTER,
-    HBASE_BLOCKSIZE,
-    HBASE_DATA_BLOCK_ENCODING,
-    HBASE_CACHE_BLOOMS_ON_WRITE,
-    HBASE_CACHE_DATA_ON_WRITE,
-    HBASE_CACHE_INDEXES_ON_WRITE,
-    HBASE_COMPACT_COMPRESSION,
-    HBASE_ENCODE_ON_DISK,
-    HBASE_EVICT_BLOCKS_ON_CLOSE,
-    HBASE_KEEP_DELETED_CELLS,
-    HBASE_REPLICATION_SCOPE, // items here and above are column family level
-    HBASE_MAX_FILESIZE,  // items below are on a table level
-    HBASE_COMPACT,
-    HBASE_DURABILITY,
-    HBASE_MEMSTORE_FLUSH_SIZE,
-    HBASE_SPLIT_POLICY,
+    // name                          number   level where it is applied
+    // --------------------------    ------   ------------------------------
+    HBASE_NAME                        = 0,    // column family
+    HBASE_MAX_VERSIONS                = 1,    //      "
+    HBASE_MIN_VERSIONS                = 2,    //      "
+    HBASE_TTL                         = 3,    //      "
+    HBASE_BLOCKCACHE                  = 4,    //      "
+    HBASE_IN_MEMORY                   = 5,    //      "
+    HBASE_COMPRESSION                 = 6,    //      "
+    HBASE_BLOOMFILTER                 = 7,    //      "
+    HBASE_BLOCKSIZE                   = 8,    //      "
+    HBASE_DATA_BLOCK_ENCODING         = 9,    //      "
+    HBASE_CACHE_BLOOMS_ON_WRITE       = 10,   //      "
+    HBASE_CACHE_DATA_ON_WRITE         = 11,   //      "
+    HBASE_CACHE_INDEXES_ON_WRITE      = 12,   //      "
+    HBASE_COMPACT_COMPRESSION         = 13,   //      "
+    HBASE_PREFIX_LENGTH_KEY           = 14,   // KeyPrefixRegionSplitPolicy
+    HBASE_EVICT_BLOCKS_ON_CLOSE       = 15,   // column family
+    HBASE_KEEP_DELETED_CELLS          = 16,   //      "
+    HBASE_REPLICATION_SCOPE           = 17,   //      "
+    HBASE_MAX_FILESIZE                = 18,   // table
+    HBASE_COMPACT                     = 19,   //   "
+    HBASE_DURABILITY                  = 20,   //   "
+    HBASE_MEMSTORE_FLUSH_SIZE         = 21,   //   "
+    HBASE_SPLIT_POLICY                = 22,   //   "
     HBASE_MAX_OPTIONS
   };
 
