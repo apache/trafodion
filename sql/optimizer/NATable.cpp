@@ -630,7 +630,7 @@ void HistogramCache::createColStatsList
           (colStatsList, colArray, cachedHistograms, singleColsFound);
       }
   }
-  
+
   if(CURRSTMT_OPTDEFAULTS->reduceBaseHistograms())
     colStatsList.reduceNumHistIntsAfterFetch(table);
 
@@ -2346,6 +2346,17 @@ createRangePartitioningFunctionForMultiRegionHBase(Int32 partns,
 }
 
 
+Int32 findDescEntries(desc_struct* desc)
+{
+   Int32 partns = 0;
+   desc_struct* hrk = desc;
+   while ( hrk ) {
+     partns++;
+     hrk = hrk->header.next;
+   }
+   return partns;
+}
+
 //
 // A single entry point to figure out range partition function for
 // Hbase. 
@@ -2359,15 +2370,8 @@ createRangePartitioningFunctionForHBase(desc_struct* desc,
 
   Int32 partns = 0;
   if (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) != DF_OFF)
-    {
       // First figure out # partns
-      partns = 0;
-      desc_struct* hrk = desc;
-      while ( hrk ) {
-	partns++;
-	hrk = hrk->header.next;
-      }
-    }
+      partns = findDescEntries(desc);
   else
     partns = 1;
 
@@ -3178,6 +3182,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 	indexes_desc->body.indexes_desc.notAvailable;
 
       ItemExprList hbaseSaltColumnList(CmpCommon::statementHeap());
+      Int64 numOfSaltedPartitions = 0;
 
       // ---------------------------------------------------------------------
       // loop over the clustering key columns of the index
@@ -3293,6 +3298,22 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
                                                            strlen(saltClause), 
                                                            CharInfo::ISO88591);
 
+               if ( saltExpr &&
+                    saltExpr->getOperatorType() == ITM_HASH2_DISTRIB) {
+
+                   // get the # of salted partitions from saltClause
+                   ItemExprList csList(CmpCommon::statementHeap());
+                   saltExpr->findAll(ITM_CONSTANT, csList, FALSE, FALSE);
+
+                   // get #salted partitions from last ConstValue in the list
+                   if ( csList.entries() > 0 ) {
+                       ConstValue* ct = (ConstValue*)csList[csList.entries()-1];
+
+                       if ( ct->canGetExactNumericValue() )  {
+                          numOfSaltedPartitions = ct->getExactNumericValue();
+                       }
+                   }
+               }
 
                // collect all ColReference objects into hbaseSaltColumnList.
                saltExpr->findAll(ITM_REFERENCE, hbaseSaltColumnList, FALSE, FALSE);
@@ -3445,7 +3466,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
       else {
         partitioningKeyColumns = indexKeyColumns;
 
-        // compute the partition key columns for HASH2 partitioning scheme
+         // compute the partition key columns for HASH2 partitioning scheme
          // for a salted HBase table. Later on, we will replace 
          // partitioningKeyColumns with the column list computed here if
          // the desired partitioning schema is HASH2.
@@ -3538,6 +3559,14 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 
               desc_struct* hbd = 
                    ((table_desc_struct*)table_desc)->hbase_regionkey_desc;
+
+              // splits will be 1 for single partitioned table.
+              Int32 splits = findDescEntries(hbd);
+
+              // Do Hash2 only if the table is salted orignally 
+              // and the current number of partitions is greater than 1.
+              if ( doHash2 )
+                 doHash2 = (numOfSaltedPartitions > 0 && splits > 1);
 
               if ( doHash2 && hbd && hbd->header.nodetype == DESC_HBASE_HASH2_REGION_TYPE ) {
 	           partFunc = createHash2PartitioningFunctionForHBase(

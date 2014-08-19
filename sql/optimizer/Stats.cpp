@@ -7582,6 +7582,14 @@ void StatsList::reduceNumHistInts(Source invokedFrom,
 //referenced by the ColStats that make up this StatsList
 void StatsList::reduceNumHistIntsAfterFetch(NATable& table)
 {
+
+  NABoolean hbasePartitioning = table.isHbaseTable() &&
+         (CmpCommon::getDefault(HBASE_PARTITIONING) != DF_OFF);
+
+  NAFileSet* nfs = table.getClusteringIndex();
+  const NAColumnArray& ncas = nfs->getAllColumns();
+  Lng32 leadingKeyColPos = ncas[0]->getPosition();
+
   //iterate over all the ColStats invoking the reduction of number
   //of histogram intervals on each of the ColStats
   const NAColumnArray& colArray = table.getNAColumnArray();
@@ -7595,14 +7603,20 @@ void StatsList::reduceNumHistIntsAfterFetch(NATable& table)
       NAColumn * column = colStats->statColumns()[0];
       if (column)
       {
-        //check if this column requires full histograms
-        NABoolean requiresFullHist = column->isReferencedForHistogram();
-        
         //get the position of the column in the table
         short colPos =(short) column->getPosition();
 
         NABoolean isAKeyColumn = (column->isIndexKey() OR 
                                   column->isPrimaryKey());
+
+        // do not reduce the #intervals for the leading primary key 
+        // column of a hbase table when stats-split is possible.
+        if (hbasePartitioning && isAKeyColumn && 
+            colPos == leadingKeyColPos)
+           continue;
+
+        //check if this column requires full histograms
+        NABoolean requiresFullHist = column->isReferencedForHistogram();
 
         if(requiresFullHist) 
         {

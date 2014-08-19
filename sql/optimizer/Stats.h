@@ -2291,7 +2291,9 @@ public:
 
 private:
   NAMemory * heap_;
+
 public:
+
   // these two data members are intentionally left public; otherwise, we
   // need accessor functions, which would be ridiculous for such a small
   // and infrequently-used class

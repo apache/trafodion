@@ -274,11 +274,11 @@ public:
   NABoolean isReferencedForMultiIntHist() const
   { return (referenced_ == REFERENCED_FOR_MULTI_INTERVAL_HISTOGRAM); }
 
-  NABoolean needHistogram() const 
-    { return (needHistogram_==NEED_COMPRESSED) || 
+  NABoolean needHistogram() const
+    { return (needHistogram_==NEED_COMPRESSED) ||
         (needHistogram_==NEED_FULL); }
 
-  NABoolean needFullHistogram() const 
+  NABoolean needFullHistogram() const
     { return needHistogram_==NEED_FULL; }
 
   NABoolean needCompressedHistogram() const 
