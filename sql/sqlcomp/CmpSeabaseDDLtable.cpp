@@ -291,12 +291,16 @@ short CmpSeabaseDDL::genPKeyName(StmtDDLAddConstraintPK *addPKNode,
   ComString constraintName;
   if( !constraintNode || (constraintNode->getConstraintName().isNull()))
     {
-      specifiedConstraint.append( catName); //tableName.getCatalogNamePartAsAnsiString() );
+      specifiedConstraint.append( catName); 
       specifiedConstraint.append(".");
-      specifiedConstraint.append( schName); //tableName.getSchemaNamePartAsAnsiString() );
+      specifiedConstraint.append("\"");
+      specifiedConstraint.append( schName); 
+      specifiedConstraint.append("\"");
       specifiedConstraint.append(".");
 
-      ComString oName = objName; //tableName.getObjectNamePartAsAnsiString() ; 
+      ComString oName = "\"";
+      oName += objName; 
+      oName += "\"";
       Lng32 status = ToInternalIdentifier ( oName // in/out - from external- to internal-format
 					    , TRUE  // in - NABoolean upCaseInternalNameIfRegularIdent
 					    , TRUE  // in - NABoolean acceptCircumflex

@@ -192,6 +192,7 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->isDrop_ = isDrop_;
   result->isAlter_ = isAlter_;
   result->qualObjName_ = qualObjName_;
+  result->purgedataTableName_ = purgedataTableName_;
   result->isHbase_ = isHbase_;
   result->isNative_ = isNative_;
   result->hbaseDDLNoUserXn_ = hbaseDDLNoUserXn_;

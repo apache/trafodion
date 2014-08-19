@@ -261,6 +261,7 @@ public:
     addSeqTable_(FALSE),
     flags_(0)
   {
+    purgedataTableName_ = purgedataTableName;
     qualObjName_ = purgedataTableName.getQualifiedNameObj();
   };
 
@@ -299,6 +300,8 @@ public:
   {
     return getStmtTextCharSet();
   }
+
+  CorrName &purgedataTableName() { return purgedataTableName_; }
 
   NABoolean &specialDDL() { return specialDDL_;}
   NABoolean &isUstat() { return isUstat_; }
@@ -390,6 +393,7 @@ public:
   NABoolean isDrop_;
   NABoolean isAlter_;
 
+  CorrName purgedataTableName_;
   QualifiedName qualObjName_;
 
   UInt32 flags_;

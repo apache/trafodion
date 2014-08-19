@@ -2219,9 +2219,12 @@ short HbaseInsert::codeGen(Generator *generator)
       // make the value id of that input point to the location of the target column.
       // This is done as the input column value will become the target after this
       // insert expr is evaluated.
+      // This is done if this value will be part of an expression that need to
+      // be evaluated on the updated columns.
       const ValueIdSet& inputSet = getGroupAttr()->getCharacteristicInputs();
       ValueId inputValId;
-      if (inputSet.entries() > 0)
+      if ((inputSet.entries() > 0) &&
+          (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries()))
 	{
 	  NAColumn *inputCol = NULL;
 	  NABoolean found = FALSE;

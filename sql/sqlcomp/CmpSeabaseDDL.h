@@ -297,7 +297,7 @@ class CmpSeabaseDDL
 			  ElemDDLColDef   * colNode);
   
   short getTypeInfo(const NAType * naType,
-		    NABoolean isSerialized,
+		    Lng32 serializedOption,
 		    Lng32 &datatype,
 		    Lng32 &length,
 		    Lng32 &precision,

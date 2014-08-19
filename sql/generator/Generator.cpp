@@ -746,6 +746,45 @@ Generator::remapESPAllocation()
    }
 }
 
+Lng32 Generator::getRecordLength(ComTdbVirtTableIndexInfo * indexInfo,
+                                 ComTdbVirtTableColumnInfo * columnInfoArray)
+{
+  Lng32 recLen = 0;
+
+  if ((! indexInfo) && (! columnInfoArray))
+    return recLen;
+
+  Lng32 keyCount = indexInfo->keyColCount;
+  const ComTdbVirtTableKeyInfo * keyInfoArray = indexInfo->keyInfoArray;
+
+  if (! keyInfoArray)
+    return recLen;
+
+  for (Int16 keyNum = 0; keyNum < keyCount; keyNum++)
+    {
+      const ComTdbVirtTableKeyInfo &keyInfo = keyInfoArray[keyNum];
+      
+      const ComTdbVirtTableColumnInfo &colInfo = columnInfoArray[keyInfo.tableColNum];
+      recLen += colInfo.length;
+    }
+  
+  if (indexInfo->nonKeyInfoArray)
+    {
+      keyCount = indexInfo->nonKeyColCount;
+      keyInfoArray = indexInfo->nonKeyInfoArray;
+      
+      for (Int16 keyNum = 0; keyNum < keyCount; keyNum++)
+        {
+          const ComTdbVirtTableKeyInfo &keyInfo = keyInfoArray[keyNum];
+          
+          const ComTdbVirtTableColumnInfo &colInfo = columnInfoArray[keyInfo.tableColNum];
+          recLen += colInfo.length;
+        }
+    }
+  
+  return recLen;
+}
+
 desc_struct* Generator::createColDescs(
   const char * tableName,
   ComTdbVirtTableColumnInfo * columnInfo,
@@ -1227,7 +1266,8 @@ desc_struct * Generator::createVirtualTableDesc(
 	  curr_index_desc->body.indexes_desc.keytag = indexInfo[i].keytag;
 	  curr_index_desc->body.indexes_desc.unique = indexInfo[i].isUnique;
 	  curr_index_desc->body.indexes_desc.isCreatedExplicitly = indexInfo[i].isExplicit;
-	  curr_index_desc->body.indexes_desc.record_length = 0;
+          curr_index_desc->body.indexes_desc.record_length = 
+            getRecordLength(&indexInfo[i], columnInfo);
 	  curr_index_desc->body.indexes_desc.colcount = indexInfo[i].keyColCount + indexInfo[i].nonKeyColCount;
 	  curr_index_desc->body.indexes_desc.isVerticalPartition = 0;
 	  curr_index_desc->body.indexes_desc.blocksize = 32*1024; //100000; //4096; // doesn't matter.

@@ -199,6 +199,7 @@ void setSGOptions(ElemDDLSGOptions * pSGOptions);
   inline LobsStorage getLobStorage() { return lobStorage_; }
   inline void setLobStorage(LobsStorage s) { lobStorage_ = s; }
 
+  NABoolean isSerializedSpecified() { return isSeabaseSerializedSpec_; }
   inline NABoolean isSeabaseSerialized() { return seabaseSerialized_; }
 
   //

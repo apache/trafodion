@@ -78,8 +78,9 @@ class ElemDDLSeabaseSerialized : public ElemDDLNode
 
 public:
 
- ElemDDLSeabaseSerialized()
-   : ElemDDLNode(ELM_SEABASE_SERIALIZED)
+ ElemDDLSeabaseSerialized(NABoolean serialized)
+   : ElemDDLNode(ELM_SEABASE_SERIALIZED),
+    serialized_(serialized)
     {
     }
   
@@ -90,8 +91,10 @@ public:
   // cast
   virtual ElemDDLSeabaseSerialized* castToElemDDLSeabaseSerialized(){return this;}
   
+  ComBoolean serialized() { return serialized_;};
  private:
   
+  ComBoolean serialized_;
 }; // class ElemDDLSeabaseSerialized
 
 

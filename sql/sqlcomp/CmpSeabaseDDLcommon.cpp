@@ -1767,7 +1767,7 @@ short CmpSeabaseDDL::checkDefaultValue(
 }
 
 short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
-				 NABoolean isSerialized,
+				 Lng32 serializedOption,
 				 Lng32 &datatype,
 				 Lng32 &length,
 				 Lng32 &precision,
@@ -1811,17 +1811,15 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 	upshifted = (charType->isUpshifted() ? -1 : 0);
 
 	collationSequence = charType->getCollation();
-	if (isSerialized)
+	if (serializedOption == 1) // option explicitly specified
 	  {
-	    setFlags(colFlags, SEABASE_SERIALIZED);
+            setFlags(colFlags, SEABASE_SERIALIZED);
 	  }
-	else
-	  {
-	    if (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON)
-	      {
-		setFlags(colFlags, SEABASE_SERIALIZED);
-	      }
-	  }
+        else if ((serializedOption == -1) && // not specified
+                 (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
+          {
+            setFlags(colFlags, SEABASE_SERIALIZED);
+          }
        }
       break;
       
@@ -1837,24 +1835,22 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 	else
 	  precision = numericType->getPrecision();
 
-	if (isSerialized)
+	if (serializedOption == 1) // option explicitly specified
 	  {
 	    if (DFS2REC::isBinary(datatype))
 	      setFlags(colFlags, SEABASE_SERIALIZED);
 	    else if (numericType->isEncodingNeeded())
 	      {
-		*CmpCommon::diags() << DgSqlCode(-1191);
-		return -1;
+                *CmpCommon::diags() << DgSqlCode(-1191);
+                return -1;
 	      }
 	  }
-	else
-	  {
-	    if ((CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
-		(DFS2REC::isBinary(datatype)))
-	      {
-		setFlags(colFlags, SEABASE_SERIALIZED);
-	      }
-	  }
+        else if ((serializedOption == -1) && // not specified
+                 (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
+                 (DFS2REC::isBinary(datatype)))
+          {
+            setFlags(colFlags, SEABASE_SERIALIZED);
+          }
       }
       break;
       
@@ -1870,7 +1866,7 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 	dtStart = dtiCommonType->getStartField();
 	dtEnd = dtiCommonType->getEndField();
 
-	if ((isSerialized) &&
+	if ((serializedOption == 1) &&
 	    (dtiCommonType->isEncodingNeeded()))
 	  {
 	    *CmpCommon::diags() << DgSqlCode(-1191);
@@ -1918,12 +1914,16 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   if (colNode->isHeadingSpecified())
     heading = colNode->getHeading();
 
-  NABoolean isSerialized = colNode->isSeabaseSerialized();
+  Lng32 serializedOption = -1; // not specified
+  if (colNode->isSerializedSpecified())
+    {
+      serializedOption = (colNode->isSeabaseSerialized() ? 1 : 0);
+    }
 
   NAType * naType = colNode->getColumnDataType();
 
   CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
-  rc = getTypeInfo(naType, isSerialized,
+  rc = getTypeInfo(naType, serializedOption,
 		   datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
 		   charset, collationSequence, colFlags);
 
@@ -4032,7 +4032,7 @@ short CmpSeabaseDDL::createSeqTable(ExeCliInterface *cliInterface)
       
       xnWasStartedHere = TRUE;
     }
-  
+
   cliRC = cliInterface->executeImmediate(queryBuf);
   if (cliRC == -1390)  // already exists
     {
@@ -4435,6 +4435,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   Lng32 retcode = 0;
   NABoolean xnWasStartedHere = FALSE;
 
+  CorrName &purgedataTableName = ddlExpr->purgedataTableName();
   NAString tabName = ddlExpr->getQualObjName();
 
   ComObjectName tableName(tabName, COM_TABLE_NAME);
@@ -4470,6 +4471,19 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
 
+  // special tables, like index, can only be purged in internal mode with special
+  // flag settings. Otherwise, it can make database inconsistent.
+  if ((purgedataTableName.isSpecialTable()) &&
+     (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags()
+	<< DgSqlCode(-1010);
+      
+      processReturn();
+      
+      return;
+    }
+  
   ActiveSchemaDB()->getNATableDB()->useCache();
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
@@ -4477,7 +4491,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
 	      STMTHEAP,
 	      tableName.getSchemaNamePart().getInternalName(),
 	      tableName.getCatalogNamePart().getInternalName());
-
+  cn.setSpecialType(purgedataTableName);
   NATable *naTable = bindWA.getNATable(cn); 
   if (naTable == NULL || bindWA.errStatus())
     {
