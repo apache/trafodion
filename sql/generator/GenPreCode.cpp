@@ -3707,12 +3707,48 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 
 
   VEGRewritePairs  vegPairs(generator->wHeap());
+  ValueIdSet partKeyPredsHBase;
+  const PartitioningFunction* myPartFunc = getPartFunc();
+
+  if ( isHbaseTable() &&
+       myPartFunc->isPartitioned() &&
+       !myPartFunc->isAReplicationPartitioningFunction())
+    {
+
+      // add the partitioning key predicates to this scan node,
+      // to make sure that each ESP reads only the part of the
+      // data that it is supposed to process
+
+      ValueId saltCol;
+
+      if (myPartFunc->isATableHashPartitioningFunction())
+        {
+          // find the _SALT_ column and make a partitioning key
+          // predicate for it
+          const ValueIdList &keyCols = getIndexDesc()->getIndexKey();
+
+          // the first salt column we find in the key is the one
+          // we are looking for
+          for (CollIndex i=0; i<keyCols.entries(); i++)
+            if (keyCols[i].isSaltedColumn())
+              {
+                saltCol = keyCols[i];
+                break;
+              }
+
+          if (saltCol != NULL_VALUE_ID)
+            ((TableHashPartitioningFunction *) myPartFunc)->
+              createPartitioningKeyPredicatesForSaltedTable(saltCol);
+        }
+
+      pulledNewInputs += myPartFunc->getPartitionInputValues();
+      partKeyPredsHBase = myPartFunc->getPartitioningKeyPredicates();
+    }
 
   if (getMdamKeyPtr() != NULL)
     {
 
       NABoolean replicatePredicates = TRUE;
-      NABoolean partKeyPredsAdded = FALSE;
 
       //      mdamKeyPtr()->print(); // for debugging purposes
 
@@ -3723,6 +3759,8 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
       const LogPhysPartitioningFunction *logPhysPartFunc =
 	getPartFunc()->castToLogPhysPartitioningFunction();
 
+      augmentedPreds += partKeyPredsHBase;
+
       if ( logPhysPartFunc != NULL )
       {
 	LogPhysPartitioningFunction::logPartType logPartType =
@@ -3732,11 +3770,6 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 	  )
 	  augmentedPreds += logPhysPartFunc->getPartitioningKeyPredicates();
       }
-      else if (isHbaseTable() && NOT(getPartFunc()->getPartitioningKeyPredicates().isEmpty()))
-      {
-        augmentedPreds += getPartFunc()->getPartitioningKeyPredicates();
-        partKeyPredsAdded = TRUE; 
-      }
 
       mdamKeyPtr()->preCodeGen(executorPredicates,
 			       augmentedPreds,
@@ -3744,7 +3777,7 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 			       getGroupAttr()->getCharacteristicInputs(),
 			       &vegPairs,
 			       replicatePredicates,
-                               partKeyPredsAdded);
+                               !partKeyPredsHBase.isEmpty());
       setExecutorPredicates(executorPredicates);
 
       //      mdamKeyPtr()->print(); // for debugging purposes
@@ -3762,6 +3795,48 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 
       // $$$ Rewrite SearchKey as a subclass of Key
       // (see how it was done for MdamKey)
+
+      if (!partKeyPredsHBase.isEmpty())
+        {
+          // These predicates can compete with other key predicates;
+          // decide which of them to use as key preds and which as
+          // executor preds:
+
+          // - No search key: Use part key preds as search key
+          // - Search key with non-unique preds: Replace it with
+          //   a new search key with part key preds
+          // - Search key with unique preds (unlikely, this shouldn't
+          //   have been a parallel query): add part key preds as
+          //   executor preds
+
+          ValueIdSet combinedInputs(externalInputs);
+          combinedInputs += pulledNewInputs;
+   
+          // create a new search key that has the partitioning key preds
+          SearchKey * partKeySearchKey = 
+            myPartFunc->createSearchKey(getIndexDesc(),
+                                        combinedInputs);
+          ValueIdSet exePreds(partKeySearchKey->getExecutorPredicates());
+          NABoolean replaceSearchKey = !(getSearchKey() &&
+                                         getSearchKey()->isUnique());
+
+          if (getSearchKey()) 
+            exePreds += getSearchKey()->getExecutorPredicates();
+
+          // pick one search key and add the key predicates from
+          // the other (if any) to exePreds
+          if (replaceSearchKey)
+            {
+              setSearchKey(partKeySearchKey);
+              if (getSearchKey())
+                exePreds += getSearchKey()->getKeyPredicates();
+            }
+          else
+            {
+              exePreds += partKeySearchKey->getKeyPredicates();
+            }
+          searchKey()->setExecutorPredicates(exePreds);
+        }
 
       NABoolean replicatePredicates = TRUE;
 
@@ -12179,48 +12254,16 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
-  const PartitioningFunction* myPartFunc = getPartFunc();
-
-  if ( myPartFunc->isARangePartitioningFunction() ) {
-
-      // Generate a range search key when not present
-      RangePartitioningFunction* myRangePartFunc = 
-                    (RangePartitioningFunction*)myPartFunc;
-
-      ValueIdSet combinedInputs(externalInputs);
-      combinedInputs += pulledNewInputs;
-   
-      SearchKey * skey = 
-           myRangePartFunc->createSearchKey(getIndexDesc(),
-                                            combinedInputs);
-
-      // Supply exec+select predicates to the newly
-      // formed search key. FileScan::preCodeGen() will use
-      // the executor predicate stored in the SearchKey as the
-      // executor predicate for the scan.
-
-      ValueIdSet exePreds = executorPred();
-      exePreds += getSelectionPred();
-
-      if ( getSearchKey() ) 
-         exePreds += getSearchKey()->getExecutorPredicates();
-
-      skey->setExecutorPredicates(exePreds);
-
-      setSearchKey(skey);
-
-  } else {
-    if (!processConstHBaseKeys(
-             generator,
-             this,
-             getSearchKey(),
-             getIndexDesc(),
-             executorPred(),
-             getHbaseSearchKeys(),
-             listOfUniqueRows_,
-             listOfRangeRows_))
-      return NULL;
-  }
+  if (!processConstHBaseKeys(
+           generator,
+           this,
+           getSearchKey(),
+           getIndexDesc(),
+           executorPred(),
+           getHbaseSearchKeys(),
+           listOfUniqueRows_,
+           listOfRangeRows_))
+    return NULL;
 
   if (! FileScan::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;

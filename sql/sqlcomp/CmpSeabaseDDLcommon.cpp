@@ -1485,6 +1485,11 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
             }
           else if (hbaseOption->key() == "DATA_BLOCK_ENCODING")
             {
+              if (hbaseOption->val() != "NONE" &&
+                  hbaseOption->val() != "PREFIX" &&
+                  hbaseOption->val() != "DIFF" &&
+                  hbaseOption->val() != "FAST_DIFF")
+                isError = TRUE;
               hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING] = 
                 hbaseOption->val();
             }
@@ -1508,9 +1513,12 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
               hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION] = 
                 hbaseOption->val();
             }
-          else if (hbaseOption->key() == "ENCODE_ON_DISK")
+          else if (hbaseOption->key() == "PREFIX_LENGTH_KEY")
             {
-              hbaseCreateOptionsArray[HBASE_ENCODE_ON_DISK] = 
+              if (str_atoi(hbaseOption->val().data(), 
+                           hbaseOption->val().length()) == -1)
+                isError = TRUE;
+              hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY] = 
                 hbaseOption->val();
             }
           else if (hbaseOption->key() == "EVICT_BLOCKS_ON_CLOSE")
@@ -1560,7 +1568,9 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
               // values, because specifying an invalid class gets us into
               // a hang situation in the region server
               if (valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
-                  valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy")
+                  valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
+ ||
+                  valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy")
                 hbaseCreateOptionsArray[HBASE_SPLIT_POLICY] = valInOrigCase;
               else
                 {

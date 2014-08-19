@@ -54,6 +54,7 @@ import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 //import org.apache.hadoop.hbase.regionserver.BloomType; in v0.97
 import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
+import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 //import org.apache.hadoop.hbase.client.Durability;
 import org.trafodion.sql.HBaseAccess.StringArrayList;
 import org.trafodion.sql.HBaseAccess.HTableClient;
@@ -81,7 +82,7 @@ public class HBaseClient {
     public static final int HBASE_CACHE_DATA_ON_WRITE = 11;
     public static final int HBASE_CACHE_INDEXES_ON_WRITE = 12;
     public static final int HBASE_COMPACT_COMPRESSION = 13;
-    public static final int HBASE_ENCODE_ON_DISK = 14;
+    public static final int HBASE_PREFIX_LENGTH_KEY = 14;
     public static final int HBASE_EVICT_BLOCKS_ON_CLOSE = 15;
     public static final int HBASE_KEEP_DELETED_CELLS = 16;
     public static final int HBASE_REPLICATION_SCOPE = 17;
@@ -300,11 +301,9 @@ public class HBaseClient {
                     else if (tableOptions.get(i).equalsIgnoreCase("SNAPPY"))
                     colDesc.setCompactionCompressionType(Algorithm.SNAPPY); 
                     break ;
-                case HBASE_ENCODE_ON_DISK:
-                    if (tableOptions.get(i).equalsIgnoreCase(trueStr))
-                        colDesc.setEncodeOnDisk(true);
-                    else
-                        colDesc.setEncodeOnDisk(false);
+                case HBASE_PREFIX_LENGTH_KEY:
+                    desc.setValue(KeyPrefixRegionSplitPolicy.PREFIX_LENGTH_KEY,
+                                  tableOptions.get(i));
                     break ;
                 case HBASE_EVICT_BLOCKS_ON_CLOSE:
                     if (tableOptions.get(i).equalsIgnoreCase(trueStr))

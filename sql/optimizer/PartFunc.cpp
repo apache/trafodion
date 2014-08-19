@@ -1077,30 +1077,58 @@ HashPartitioningFunction::copy() const
 }
 
 // -----------------------------------------------------------------------
-// HashPartitioningFunction::createPartitioningKeyPredicates()
+// PartitioningFunction::createBetweenPartitioningKeyPredicates()
 // -----------------------------------------------------------------------
-void HashPartitioningFunction::createPartitioningKeyPredicatesImp(
-     const char* hostVarLow, const char* hostVarHigh)
+void PartitioningFunction::createBetweenPartitioningKeyPredicates(
+       const char * pivLoName,
+       const char * pivHiName,
+       ItemExpr   * partNumExpr)
 {
-  if (NOT partKeyPredsCreated())
+  if (NOT partKeyPredsCreated() || partNumExpr != NULL)
     {
       ItemExpr * rootPtr;
-      ItemExpr * partFunc = createPartitioningExpression();
-      ItemExpr * loPart = new (CmpCommon::statementHeap())
-	HostVar(hostVarLow,
-		new (CmpCommon::statementHeap()) SQLInt(),
-		TRUE);
-      ItemExpr * hiPart = new (CmpCommon::statementHeap())
-	HostVar(hostVarHigh,
-		new (CmpCommon::statementHeap()) SQLInt(),
-		TRUE);
-      ValueIdSet setOfKeyPredicates;
-      ValueIdList partInputValues;
+      ItemExpr * loPart;
+      ItemExpr * hiPart;
+      ValueIdSet setOfPartKeyPredicates;
+
+      // by default we use the partitioning function's expression
+      // to compute the partition number
+      if (partNumExpr == NULL)
+        partNumExpr = createPartitioningExpression();
+
+      // compute part input values if not already done so
+      if (partitionInputValues_.isEmpty())
+        {
+          ValueIdList partInputValues;
+
+          // must specify PIV names if they need to be created
+          CMPASSERT(pivLoName && pivHiName);
+
+          // the partition input values are two integer values: lo and hi part #
+          loPart = new (CmpCommon::statementHeap())
+            HostVar(pivLoName,
+                    new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE),
+                    TRUE);
+          hiPart = new (CmpCommon::statementHeap())
+            HostVar(pivHiName,
+                    new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE),
+                    TRUE);
+          loPart->synthTypeAndValueId();
+          hiPart->synthTypeAndValueId();
+          partInputValues.insert(loPart->getValueId());
+          partInputValues.insert(hiPart->getValueId());
+          storePartitionInputValues(partInputValues);
+        }
+      else
+        {
+          loPart = getPartitionInputValuesLayout()[0].getItemExpr();
+          hiPart = getPartitionInputValuesLayout()[1].getItemExpr();
+        }
 
       // -----------------------------------------------------------------
       // The partitioning key predicate for a hash partitioning selects
       // a range of hash partitions with the following predicate:
-      //       partFunc >= :loPart AND partFunc < :hiPart
+      //       partNumExpr >= :loPart AND partNumExpr < :hiPart
       // where the hash function is the partitioning function generated
       // by the createPartitioningExpression() method and the host variables
       // are generated here as partition input values.
@@ -1109,32 +1137,28 @@ void HashPartitioningFunction::createPartitioningKeyPredicatesImp(
       rootPtr = new (CmpCommon::statementHeap())
 	BiLogic(ITM_AND,
 		new (CmpCommon::statementHeap())
-		BiRelat(ITM_GREATER_EQ,partFunc,loPart,TRUE),
+		BiRelat(ITM_GREATER_EQ,partNumExpr,loPart,TRUE),
 		new (CmpCommon::statementHeap())
-		BiRelat(ITM_LESS,      partFunc,hiPart,TRUE));
+		BiRelat(ITM_LESS,      partNumExpr,hiPart,TRUE));
 
       // -- Synthesize its type and assign a ValueId to it.
       rootPtr->synthTypeAndValueId();
 
       // add the predicate to the set of key predicates (note that this
       // is a predicate on the partitioning key, not the clustering key)
-      setOfKeyPredicates += rootPtr->getValueId();
-
-      // the partition input values are two integer values: lo and hi part #
-      partInputValues.insert(loPart->getValueId());
-      partInputValues.insert(hiPart->getValueId());
+      setOfPartKeyPredicates += rootPtr->getValueId();
 
       // Store the set of key predicates in the partitioning attributes.
-      storePartitioningKeyPredicates(setOfKeyPredicates);
-      storePartitionInputValues(partInputValues);
+      storePartitioningKeyPredicates(setOfPartKeyPredicates);
     }
-} // HashPartitioningFunction::createPartitioningKeyPredicatesImp()
+} // PartitioningFunction::createBetweenPartitioningKeyPredicates()
 
 void HashPartitioningFunction::createPartitioningKeyPredicates()
 {
-   createPartitioningKeyPredicatesImp(
-                   "_sys_HostVarLoHashPart", "_sys_HostVarHiHashPart"
-                                     );
+  createBetweenPartitioningKeyPredicates(
+       "_sys_HostVarLoHashPart",
+       "_sys_HostVarHiHashPart",
+       NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -1523,50 +1547,30 @@ TableHashPartitioningFunction::normalizePartitioningKeys(NormWA& normWARef)
 void TableHashPartitioningFunction::createPartitioningKeyPredicates()
 {
   if (NOT partKeyPredsCreated())
-    {
-      CollHeap *heap = CmpCommon::statementHeap();
+    createBetweenPartitioningKeyPredicates("_sys_HostVarLoHashPart",
+                                           "_sys_HostVarHiHashPart",
+                                           NULL);
 
-      // Create the partition input values.
-      //
-      ItemExpr *loPart = new (heap)
-        HostVar("_sys_HostVarLoHashPart",
-                new (heap) SQLInt(FALSE, FALSE),
-                TRUE);
+  // Create the partition selection input values (needed by hash2).
+  createPartitionSelectionExprInputs();
+} // TableHashPartitioningFunction::createPartitioningKeyPredicates()
 
-      ItemExpr *hiPart = new (heap)
-        HostVar("_sys_HostVarHiHashPart",
-                new (heap) SQLInt(FALSE, FALSE),
-                TRUE);
+// -----------------------------------------------------------------------
+// For salted tables, since we store the hash partition value, we
+// can generate a range predicate for the _SALT_ column
+// -----------------------------------------------------------------------
+void TableHashPartitioningFunction::createPartitioningKeyPredicatesForSaltedTable(
+     ValueId saltCol)
+{
+  // For now we only allow this call after calling the regular
+  // createPartitioningKeyPredicates() method
+  CMPASSERT(partKeyPredsCreated());
 
-      loPart->synthTypeAndValueId();
-      hiPart->synthTypeAndValueId();
+  // this allows us to specify NULL for the names here
+  createBetweenPartitioningKeyPredicates(NULL,NULL,saltCol.getItemExpr());
 
-      ValueIdSet setOfKeyPredicates;
-      ValueIdList partInputValues;
-
-      // -----------------------------------------------------------------
-      // The partitioning key predicate is never used for a hash dist
-      // partitioning so none is generated.
-      // -----------------------------------------------------------------
-
-      // the partition input values are two integer values: lo and hi part #
-      partInputValues.insert(loPart->getValueId());
-      partInputValues.insert(hiPart->getValueId());
-
-      // Store the empty set of key predicate.  This will set the
-      // boolean 'partKeyPredsCreated' to TRUE.
-      //
-      storePartitioningKeyPredicates(setOfKeyPredicates);
-
-      // Store the partition input values.
-      //
-      storePartitionInputValues(partInputValues);
-
-      // Create the partition selection input values (needed by hash2).
-
-      createPartitionSelectionExprInputs();
-    }
-
+  // and we don't need to call this
+  // createPartitionSelectionExprInputs();
 } // TableHashPartitioningFunction::createPartitioningKeyPredicates()
 
 // -----------------------------------------------------------------------
@@ -1885,24 +1889,44 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
 // -----------------------------------------------------------------------
 SearchKey *
 TableHashPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
-                                              ValueIdSet availInputs) const
+                                               ValueIdSet availInputs) const
 {
   ValueIdSet partKeyPreds(getPartitioningKeyPredicates());
   ValueIdSet nonKeyColumnSet; // empty set
+  SearchKey *partSearchKey = NULL;
 
   availInputs += getPartitionInputValues();
 
-  // Call this special constructor that constructs a search key for a
-  // TableHashPartitioningFunction.
-  //
-  SearchKey *partSearchKey = new (CmpCommon::statementHeap())
-    SearchKey(indexDesc->getPartitioningKey(),
-              indexDesc->getOrderOfPartitioningKeyValues(),
-              availInputs,
-              partKeyPreds,
-              this,
-              nonKeyColumnSet,
-              indexDesc);
+  if (indexDesc->getPrimaryTableDesc()->getNATable()->isHbaseTable())
+    {
+      // The HbaseAccess executor operator doesn't have a separate
+      // place to handle partitioning key predicates. Instead, we can
+      // only use them as regular key or executor predicates.
+      // For salted tables, we have a chance to read a range of salt
+      // values through a begin/end key.
+      partSearchKey = new (CmpCommon::statementHeap())
+        SearchKey(indexDesc->getIndexKey(),
+                  indexDesc->getOrderOfKeyValues(),
+                  availInputs,
+                  partKeyPreds,
+                  this,
+                  nonKeyColumnSet,
+                  indexDesc);
+    }
+  else
+    {
+      // Call this special constructor that constructs a search key for a
+      // TableHashPartitioningFunction.
+      //
+      partSearchKey = new (CmpCommon::statementHeap())
+        SearchKey(indexDesc->getPartitioningKey(),
+                  indexDesc->getOrderOfPartitioningKeyValues(),
+                  availInputs,
+                  partKeyPreds,
+                  this,
+                  nonKeyColumnSet,
+                  indexDesc);
+    }
 
   return partSearchKey;
 } // TableHashPartitioningFunction::createSearchKey()
@@ -5883,8 +5907,9 @@ HivePartitioningFunction::copy() const
 // -----------------------------------------------------------------------
 void HivePartitioningFunction::createPartitioningKeyPredicates()
 {
-  createPartitioningKeyPredicatesImp("_sys_HostVarLoHashPart",
-                                     "_sys_HostVarHiHashPart");
+  createBetweenPartitioningKeyPredicates("_sys_HostVarLoHivePart",
+                                         "_sys_HostVarHiHivePart",
+                                         NULL);
 
 } // HivePartitioningFunction::createPartitioningKeyPredicates()
 

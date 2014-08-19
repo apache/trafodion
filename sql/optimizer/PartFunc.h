@@ -714,6 +714,17 @@ protected:
   // dataConversionErrorFlag_ if it is not null.
   ItemExpr* getCastedItemExpre(ItemExpr* iv, const NAType& otype, CollHeap*) ;
 
+  // Helper function to create a simple partitioning key predicate of the form
+  // <partNum> between <piv1> and <piv2>
+
+  // Can be called a first time with partNumExpr = NULL (e.g. in the
+  // binder) and then a second time with something like _SALT_
+  // specified for partNumExpr (e.g. in preCodeGen).
+  void createBetweenPartitioningKeyPredicates(
+       const char * pivLoName,
+       const char * pivHiName,
+       ItemExpr   * partNumExpr);
+
 private:
 
   // --------------------------------------------------------------------
@@ -1192,7 +1203,6 @@ public:
   UInt32 computeHashValue(char* data, UInt32 flags, Int32 len);
 
 protected:
-  virtual void createPartitioningKeyPredicatesImp(const char*, const char*);
   virtual const NAString getTextImp(const char*) const;
 
   COMPARE_RESULT comparePartKeyToKey(const PartitioningFunction &other) const;
@@ -1298,6 +1308,7 @@ public:
   virtual void normalizePartitioningKeys(NormWA& normWARef);
 
   virtual void createPartitioningKeyPredicates();
+  void createPartitioningKeyPredicatesForSaltedTable(ValueId saltCol);
 
   virtual void replacePivs(
     const ValueIdSet& newPivs,
