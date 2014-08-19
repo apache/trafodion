@@ -314,6 +314,13 @@ public:
             (tdf_ == ExpTupleDesc::SQLMX_FORMAT ) );
   }
 
+  NABoolean isTrafodionDiskFormat()
+  {
+    return( (tdf_ == ExpTupleDesc::SQLMX_ALIGNED_FORMAT ) ||
+            (tdf_ == ExpTupleDesc::SQLARK_EXPLODED_FORMAT ) );
+  }
+
+
   DefaultClass getDefaultClass()
   {  return (DefaultClass)defClass_;}
 

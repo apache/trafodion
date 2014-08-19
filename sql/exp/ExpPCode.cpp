@@ -2425,7 +2425,8 @@ PCIID PCode::zeroFillNullValue(Attributes *dst,
 
     UInt32 len;
     // if going to disk format, clearing vcIndLen is sufficient
-    if (dst->isSQLMXDiskFormat())
+    if (dst->isSQLMXDiskFormat()  ||
+        dst->isTrafodionDiskFormat())
       len = 0;
     else
       len = dst->getLength();
