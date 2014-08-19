@@ -4398,7 +4398,12 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     }
     if ( !nodeInConfig )
     {
-        printf ("[%s] Cannot start monitor from node %s since it is not member of the cluster configuration.\n", MyName, mynode);
+        printf ("[%s] Cannot start monitor from node '%s' since it is not member of the cluster configuration or 'hostname' string does not match configuration string.\n", MyName, mynode);
+        printf ("[%s] Configuration node names:\n", MyName);
+        for ( i = 0; i < NumNodes; i++ )
+        {
+            printf ("[%s]    '%s'\n", MyName, PNode[i]);
+        }
         return true;
     }
 
@@ -4651,6 +4656,17 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
         }
     }
 
+    if ( trace_settings & TRACE_SHELL_CMD )
+    {
+        trace_printf("%s@%d" " - Program='" "%s" "' argc=" "%d" "\n", method_name, __LINE__, argv[0], idx);
+        i = 1;
+        while (argv[i] != NULL)
+        {
+            trace_printf("%s@%d" " - argv[" "%d" "]="  "%s" "\n", method_name, __LINE__, i, argv[i]);
+            i++;
+        }
+    }
+
     os_pid = fork ();
     if (os_pid)
     {
@@ -4671,7 +4687,6 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
         int mpirunStatus;
         pid_t child;
         bool done = false;
-        int retries = 0;
         do
         {
             child = waitpid(os_pid, &mpirunStatus, WNOHANG);
@@ -4698,12 +4713,7 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
             }
             else if (child == 0)
             {  // mpirun has not yet changed state, delay.
-#if 0
-                if ( ++ retries < 15 )
-                    sleep(1);
-                else
-#endif
-                    done = true;
+                done = true;
             }
             else
             {
