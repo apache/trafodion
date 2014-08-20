@@ -321,12 +321,6 @@ A
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>upsert using load  into t015t3 select a,a,a from t015t1;
-
-*** ERROR[4484] Indexes are not supported yet with upsert using load. Disable the indexes and try again.
-
-*** ERROR[8822] The statement was not prepared.
-
 >>
 >>drop index t015t3idx ;
 
@@ -343,12 +337,6 @@ A
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>upsert using load  into t015t3 select a,a,a from t015t1;
-
-*** ERROR[4486] Constraints are not supported with upsert using load. Disable the constraints and try again.
-
-*** ERROR[8822] The statement was not prepared.
-
 >>
 >>alter table t015t3  drop  constraint t015t3_cnst;
 
