@@ -2189,6 +2189,8 @@ short HbaseInsert::codeGen(Generator *generator)
   ex_expr * rowIdExpr = NULL;
   ULng32 rowIdLen = 0;
 
+  ValueIdList savedInputVIDlist;
+  NAList<Attributes*> savedInputAttrsList;
   const ValueIdList &indexVIDlist = getIndexDesc()->getIndexColumns();
   CollIndex jj = 0;
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
@@ -2261,6 +2263,14 @@ short HbaseInsert::codeGen(Generator *generator)
 	  if (found)
 	    {
 	      Attributes * inputValAttr = (generator->addMapInfo(inputValId, 0))->getAttr();
+
+              // save original location attributes. These will be restored back once
+              // constr expr has been generated.
+              Attributes * savedValAttr = new(generator->wHeap()) Attributes();
+              savedValAttr->copyLocationAttrs(inputValAttr);
+              savedInputAttrsList.insert(savedValAttr);
+              savedInputVIDlist.insert(inputValId);
+
 	      inputValAttr->copyLocationAttrs(castAttr);
 	    }
 	} // if
@@ -2289,6 +2299,14 @@ short HbaseInsert::codeGen(Generator *generator)
 
       expGen->generateExpr(constrTree->getValueId(), ex_expr::exp_SCAN_PRED,
 			   &constraintExpr);
+
+      // restore original attribute values
+      for (Lng32 i = 0; i < savedInputVIDlist.entries(); i++)
+        {
+          ValueId inputValId = savedInputVIDlist[i];
+          Attributes * inputValAttr = (generator->getMapInfo(inputValId, 0))->getAttr();
+          inputValAttr->copyLocationAttrs(savedInputAttrsList[i]);
+        }
     }
   
   listOfUpdatedColNames = new(space) Queue(space);
