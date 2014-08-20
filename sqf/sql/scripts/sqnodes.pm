@@ -414,13 +414,10 @@ sub parseStmt
     $stmt = $_;
     resetVars();
     $parse->statement($stmt);
-    verifyParse();
-# todo: this goes in gensq.pl
-#    if ($errors != 0)
-#    {
-#        print "Exiting without generating cluster.conf due to errors.\n";
-#        exit 1;
-#    }
+    sqnodes::verifyParse();
+    if ($errors != 0) { # Had errors
+        return 1;
+    }
 }
 
 

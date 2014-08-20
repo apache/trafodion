@@ -1781,10 +1781,15 @@ sub processNodes {
 	    return;
 	}
 	else {
-	    sqnodes::parseStmt;
-
-	    $bNodeSpecified = 1;
-	    $gdZoneId++;
+		if (sqnodes::parseStmt() == 0) {
+		    $bNodeSpecified = 1;
+		    $gdZoneId++;
+		}
+		else {
+		    print "   Error: not a valid node configuration statement.\n";
+		    print "Exiting without generating cluster.conf due to errors.\n";
+		    exit 1;
+		}
 
 	}
     }
