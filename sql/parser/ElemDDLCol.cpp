@@ -769,7 +769,7 @@ ElemDDLColDef::setColumnAttribute(ElemDDLNode * pColAttr)
 	  }
       
       isSeabaseSerializedSpec_ = TRUE;
-      seabaseSerialized_ = TRUE;
+      seabaseSerialized_ =  pColAttr->castToElemDDLSeabaseSerialized()->serialized();
     }
     break;
 

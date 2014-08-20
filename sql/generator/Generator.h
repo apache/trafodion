@@ -1374,6 +1374,9 @@ public:
   { downrevCompileMXV_ = mxv;}
   COM_VERSION getDownrevCompileMXV() { return downrevCompileMXV_;}
 
+  static Lng32 getRecordLength(ComTdbVirtTableIndexInfo * indexInfo,
+                               ComTdbVirtTableColumnInfo * columnInfoArray);
+
   static desc_struct *createColDescs(
 	const char * tableName,
 	ComTdbVirtTableColumnInfo * columnInfo,

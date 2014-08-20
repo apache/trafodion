@@ -2228,7 +2228,9 @@ short CmpDescribeHiveTable (
   return 0;
 }
 
+// type:  1, invoke. 2, showddl. 3, create_like
 static short cmpDisplayColumns(const NAColumnArray & naColArr,
+			       short type,
 			       Space &space, char * buf, 
 			       NABoolean displaySystemCols,
 			       NABoolean namesOnly)
@@ -2311,6 +2313,18 @@ static short cmpDisplayColumns(const NAColumnArray & naColArr,
 	}
 
       char * sqlmxRegr = getenv("SQLMX_REGRESS");
+      if ((! sqlmxRegr) ||
+          (type == 3))
+	{
+          if (CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
+            attrStr += " SERIALIZED";
+          else if  ((CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) ||
+                    (type == 3))
+            attrStr += " NOT SERIALIZED";
+        }
+
+#ifdef __ignore
+      char * sqlmxRegr = getenv("SQLMX_REGRESS");
       if (! sqlmxRegr)
 	{
 	  if (CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
@@ -2320,18 +2334,21 @@ static short cmpDisplayColumns(const NAColumnArray & naColArr,
 	      else
 		attrStr += " SERIALIZED";
 	    }
-	  else if ((CmpSeabaseDDL::enabledForSerialization(nac)) &&
-		   (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
-	    {
-	      attrStr += " /* is serializable */ ";
-	    }
+	  else 
+            {
+              if ((CmpSeabaseDDL::enabledForSerialization(nac)) &&
+                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
+                {
+                  attrStr += " /* is serializable */ ";
+                }
+            }
 	}
+#endif
 
       if (nac->isAddedColumn())
 	{
 	  attrStr += " /* added col */ ";
 	}
-
 
       sprintf(&buf[strlen(buf)], "%s %s", 
 	      nas.data(), 
@@ -2501,7 +2518,8 @@ short CmpDescribeSeabaseTable (
     }
 
   outputShortLine(space, "  ( ");
-  cmpDisplayColumns(naTable->getNAColumnArray(), space, buf, 
+  cmpDisplayColumns(naTable->getNAColumnArray(), 
+                    type, space, buf, 
 		    displaySystemCols, 
 		    FALSE);
 
@@ -2735,7 +2753,8 @@ short CmpDescribeSeabaseTable (
 	  if (type == 1)
 	    {
 	      outputShortLine(space, "  ( ");
-	      cmpDisplayColumns(naf->getAllColumns(), space, buf,
+	      cmpDisplayColumns(naf->getAllColumns(), 
+                                type, space, buf,
 				displaySystemCols,
 				(type == 2));
 	      outputShortLine(space, "  )");

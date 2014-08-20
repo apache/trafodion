@@ -27877,7 +27877,18 @@ serialized : TOK_SERIALIZED
 				      YYERROR;
 				    }
 
-				  $$ = new (PARSERHEAP()) ElemDDLSeabaseSerialized();
+				  $$ = new (PARSERHEAP()) ElemDDLSeabaseSerialized(TRUE);
+                                }
+                         | TOK_NOT TOK_SERIALIZED
+                                {
+				  if (CmpCommon::getDefault(MODE_SEABASE) == DF_OFF)
+				    {
+				      // Not for non-seabase mode
+				      yyerror("");
+				      YYERROR;
+				    }
+
+				  $$ = new (PARSERHEAP()) ElemDDLSeabaseSerialized(FALSE);
                                 }
 
 /* type pElemDDL */
