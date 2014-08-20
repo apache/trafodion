@@ -3150,7 +3150,7 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
   setUpClusterInfo(CmpCommon::contextHeap());
 
   NABoolean doHash2 = 
-      (CmpCommon::getDefault(HBASE_PARTITIONING) != DF_ON && 
+      (CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF && 
        !(bindWA && bindWA->isTrafLoadPrep())); 
 
   // ---------------------------------------------------------------------
@@ -6509,7 +6509,7 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
 
          if ( pf ) {
             NABoolean rangeSplitSaltedTable = 
-              CmpCommon::getDefault(HBASE_PARTITIONING) == DF_ON ||
+              CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_OFF ||
               (bindWA && bindWA->isTrafLoadPrep());
              
             // if force to range partition a salted table, and the salted table is 
@@ -6522,7 +6522,7 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
             // if force to hash2 partition a salted table, and the cached table is 
             // a range, do not return the cached object.
             if ( 
-                 CmpCommon::getDefault(HBASE_PARTITIONING) != DF_ON &&
+                 CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF &&
                  cachedNATable->hasSaltedColumn() &&
                  pf->castToRangePartitioningFunction() 
                )

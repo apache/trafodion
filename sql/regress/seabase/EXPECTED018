@@ -32,7 +32,7 @@
 >>
 >>----------------------------------------------------------------------
 >>-- should see a co-located hash join 
->>cqd hbase_partitioning 'system';
+>>cqd hbase_hash2_partitioning 'ON';
 
 --- SQL operation complete.
 >>
@@ -58,7 +58,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>
 >>-- force range partition of the two tables
->>cqd hbase_partitioning 'ON';
+>>cqd hbase_hash2_partitioning 'OFF';
 
 --- SQL operation complete.
 >>
@@ -85,7 +85,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>
 >>-- non-salted tables should be single partitioned
->>cqd hbase_partitioning 'OFF';
+>>cqd hbase_range_partitioning 'OFF';
+
+--- SQL operation complete.
+>>cqd hbase_hash2_partitioning 'ON';
 
 --- SQL operation complete.
 >>

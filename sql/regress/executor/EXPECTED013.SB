@@ -534,7 +534,7 @@ CONTROL QUERY DEFAULT
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>create volatile index t013t1i on t013t1(a);
+>>create volatile index t013t1i on t013t1(a desc);
 
 --- SQL operation complete.
 >>
@@ -543,7 +543,7 @@ CONTROL QUERY DEFAULT
 >>--explain options 'f' select * from t013t1;
 >>--explain insert into t013t1 values (1);
 >>--explain options 'f' insert into t013t1 values (1);
->>showshape select * from t013t1;
+>>showshape select * from t013t1 order by a desc;
 control query shape scan(path 'T013T1I', forward, blocks_per_access 1
 , mdam off);
 
