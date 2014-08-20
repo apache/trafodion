@@ -168,7 +168,7 @@ while [[ $sq_stat == 0 ]]; do
 	    lv_msg="SQ Shutdown is taking longer than usual and seems to be stalled at $lv_process_count_curr processes. "
 	    echoLog "$lv_msg"
 	    cstat >> $SQMON_LOG
-	    echoLog "Exitting."
+	    echoLog "Exiting."
 	    let lv_exit_status=1
 	    LogIt "End $script_name $shutdowntype, exit code: $lv_exit_status, $lv_msg"
 	    echo "$lv_exit_status" > $SQSTOP_EXIT_STATUS

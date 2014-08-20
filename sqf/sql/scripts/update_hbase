@@ -33,11 +33,11 @@ if [ -d $MY_SQROOT/sql/local_hadoop/hbase ]; then
     echo -n "Continue? y/n (n): "
     read YN
     if [ "$YN" = "n" -o "$YN" = "N" ]; then
-	echo "N entered. Exitting"
+	echo "N entered. Exiting"
 	exit 0
     fi
 else
-    echo "There isn't any existing HBase installation. Exitting..."
+    echo "There isn't any existing HBase installation. Exiting..."
     exit 1
 fi
 

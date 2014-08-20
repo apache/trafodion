@@ -310,7 +310,7 @@ function sqchkvm {
 
 function sqlscore {
     if [ $# == 0 ]; then
-	echo "Enter a string. Exitting.";
+	echo "Enter a string. Exiting.";
 	return 1;
     fi
 
@@ -322,7 +322,7 @@ function sqlscore {
 
 function sqrmcore {
     if [ $# == 0 ]; then
-	echo "Enter a string. Exitting.";
+	echo "Enter a string. Exiting.";
 	return 1;
     fi
 
@@ -648,7 +648,7 @@ function sqcollectlogs {
     lv_pstacks=""
     if [[ $lv_all == 1 ]]; then
 	# run sqcollectstacks and collect the output in the current directory.
-	# (sqcollectstacks can be run separately - where it creates a new directry for the pstack logs)
+	# (sqcollectstacks can be run separately - where it creates a new directory for the pstack logs)
 	sqcollectstacks here   
 	lv_pstacks="and pstacks"
     fi
