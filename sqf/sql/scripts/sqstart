@@ -263,7 +263,7 @@ declare -i lv_max_mysqroot_len
 lv_max_mysqroot_len=78
 lv_len_mysqroot=${#MY_SQROOT}
 if [ $lv_len_mysqroot '>' $lv_max_mysqroot_len ]; then
-    lv_msg="Length of the string \$MY_SQROOT ($MY_SQROOT) should be less than $lv_max_mysqroot_len. Exitting...";
+    lv_msg="Length of the string \$MY_SQROOT ($MY_SQROOT) should be less than $lv_max_mysqroot_len. Exiting...";
     echoLog "$lv_msg"
     LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
     exit 1;

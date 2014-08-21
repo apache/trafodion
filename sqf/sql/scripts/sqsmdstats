@@ -196,7 +196,7 @@ eof
       printInfo "ERROR: errors occurred while gathering smd tables" 0
       cat $sqlResultsFile | grep -e "\*\*\* ERROR" >> $resultsFile
       printInfo "For details, see log messages in $resultsFile" 0
-      printInfo "Exitting" 1
+      printInfo "Exiting" 1
       exit 3
     fi
     cat $sqlResultsFile | grep "TABLENAME:" | awk '{print $2}' > $fileName
