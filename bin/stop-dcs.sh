@@ -49,6 +49,19 @@ then
   exit $errCode
 fi
 
+master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master`
+if [ "$master" = "" ]; then
+  echo "DcsMaster is not running"
+else
+  if [ "$master" == "$HOSTNAME" ] ; then
+    echo "DcsMaster is running on localhost"
+    "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" stop master 
+  else
+    echo "DcsMaster is running on $master"
+    remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} stop master"
+    ssh -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
+  fi
+fi
+
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_SERVERS}" stop server 
-"$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" stop master 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" stop zookeeper
