@@ -2263,6 +2263,9 @@ NABoolean Generator::considerDefragmentation( const ValueIdList & valIdList,
                                               UInt32 prefixLength)
 
 {
+  if (resizeCifRecord &&  CmpCommon::getDefaultNumeric(COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO) > 1)
+    return TRUE;
+
   if (!resizeCifRecord || !gattr)
     return FALSE;
 
