@@ -5187,3 +5187,10 @@ Int32 ContextCli::switchBackCmpContext(void)
   return 0;  // success
 }
 
+void ContextCli::flushHtableCache()
+{
+    if (hbaseClientJNI_)
+      hbaseClientJNI_->cleanup();
+}
+
+

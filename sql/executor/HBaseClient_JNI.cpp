@@ -1294,7 +1294,7 @@ HBC_RetCode HBaseClient_JNI::cleanup()
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::cleanup() called.");
  
-  if (! isInitialized_)
+  if (! (isInitialized_ && isConnected_))
      return HBC_OK;
 
   // boolean cleanup();
