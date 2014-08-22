@@ -49,7 +49,7 @@ control query default PARALLEL_NUM_ESPS '2' ;
 
 ----------------------------------------------------------------------
 -- should see a co-located hash join 
-cqd hbase_partitioning 'system';
+cqd hbase_hash2_partitioning 'ON';
 
 prepare xx from
 select count(*) from t018_orders /*+ cardinality 1e6 */
@@ -58,7 +58,7 @@ select count(*) from t018_orders /*+ cardinality 1e6 */
 explain options 'f' xx;
 
 -- force range partition of the two tables
-cqd hbase_partitioning 'ON';
+cqd hbase_hash2_partitioning 'OFF';
 
 prepare xx from
 select count(*) from t018_orders /*+ cardinality 1e6 */
@@ -67,7 +67,8 @@ select count(*) from t018_orders /*+ cardinality 1e6 */
 explain options 'f' xx;
 
 -- non-salted tables should be single partitioned
-cqd hbase_partitioning 'OFF';
+cqd hbase_range_partitioning 'OFF';
+cqd hbase_hash2_partitioning 'ON';
 
 prepare xx from
 select count(*) from t018_orders_ns /*+ cardinality 1e6 */

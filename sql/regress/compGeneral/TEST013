@@ -29,35 +29,14 @@ control query default ROBUST_PAR_GRPBY_LEAF_FCTR '1.0';
 
 set schema $$TEST_SCHEMA$$;
 
-prepare explainIt from
-  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
-         substring(operator,1,16) operator,
-         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
-         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
-         substring
-         (substring(tname from (1+locate('.',tname))),
-         (1+locate('.',substring(tname from (1+locate('.',tname))))),
-         10
-        ) tab_name,
-        cast(cardinality as char(11)) cardinal
-         from table (explain(NULL,'XX'))
-         order by 1 desc;
-         
-         
- prepare explainItNoTab from
-  select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
-         substring(operator,1,16) operator,
-         cast(LEFT_CHILD_SEQ_NUM as char(2)) lc,
-         cast(RIGHT_CHILD_SEQ_NUM as char(2)) rc,
-        cast(cardinality as char(11)) cardinal
-         from table (explain(NULL,'XX'))
-         order by 1 desc;
-         
+-- don't care about file scan vs. index scan for this test
+-- same thing about exchanges
 prepare showOperatorsOnly from
 select operator
  from
   (select substring(cast(SEQ_NUM+100 as char(3)),2,2) s,
-         substring(operator,1,16) operator
+         substring(case when operator like '%SCAN%' then 'SCAN'
+                        else operator end,1,16) operator
          from table (explain(NULL,'XX'))
          where operator NOT LIKE 'ESP_EXCHANGE%'
   ) as t

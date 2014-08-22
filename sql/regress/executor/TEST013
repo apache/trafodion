@@ -228,14 +228,14 @@ select b from t013t1;
 select t013t1.b from t013t1;
 select b from $$TEST_CATALOG$$.t013_sch.t013t1;
 
-create volatile index t013t1i on t013t1(a);
+create volatile index t013t1i on t013t1(a desc);
 
 -- explain, showshape...
 --explain select * from t013t1;
 --explain options 'f' select * from t013t1;
 --explain insert into t013t1 values (1);
 --explain options 'f' insert into t013t1 values (1);
-showshape select * from t013t1;
+showshape select * from t013t1 order by a desc;
 showshape insert into t013t1 values (1);
 
 set session default sql_session 'END';

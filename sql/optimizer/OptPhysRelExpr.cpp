@@ -12294,8 +12294,9 @@ Context* RelRoot::createContextForAChild(Context* myContext,
                                
     Lng32 minBytesPerESP = defs.getAsLong(HBASE_MIN_BYTES_PER_ESP_PARTITION);
 
-    if ( CmpCommon::getDefault(HBASE_PARTITIONING) == DF_OFF )
-      canAdjustDoP = FALSE;
+    // To be replaced later by a different CQD
+    //if ( CmpCommon::getDefault(HBASE_PARTITIONING) == DF_OFF )
+    //  canAdjustDoP = FALSE;
 
     // Adjust DoP based on table size, if possible
     if ( canAdjustDoP ) {
@@ -14744,7 +14745,9 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
    
      numESPs = MINOF(minESPs, maxESPs);
    
-     NABoolean performStatsSplit = CmpCommon::getDefault(HBASE_PARTITIONING) != DF_OFF;
+     NABoolean performStatsSplit = 
+       (CmpCommon::getDefault(HBASE_STATS_PARTITIONING) != DF_OFF &&
+        !(ixDescPartFunc && ixDescPartFunc->isAHash2PartitioningFunction()));
 
      if (partReq && partReq->castToRequireReplicateNoBroadcast()) {
        myPartFunc = 

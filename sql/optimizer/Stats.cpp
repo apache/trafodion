@@ -7584,7 +7584,7 @@ void StatsList::reduceNumHistIntsAfterFetch(NATable& table)
 {
 
   NABoolean hbasePartitioning = table.isHbaseTable() &&
-         (CmpCommon::getDefault(HBASE_PARTITIONING) != DF_OFF);
+         (CmpCommon::getDefault(HBASE_STATS_PARTITIONING) != DF_OFF);
 
   NAFileSet* nfs = table.getClusteringIndex();
   const NAColumnArray& ncas = nfs->getAllColumns();

@@ -3496,9 +3496,6 @@ enum DefaultConstants
 
   HBASE_USE_FAKED_REGIONS,
 
-  // turn on/off range partitioning for Hbase tables
-  HBASE_RANGE_PARTITIONING,
-
   // use MC stats to decide on the partitioning function range splits
   HBASE_RANGE_PARTITIONING_MC_SPLIT,
 
@@ -3587,45 +3584,21 @@ enum DefaultConstants
 
   TRAF_LOAD_MAX_HFILE_SIZE,
 
- // Control the partitioning representation of a HBase trafodion table
-  // as follows.
-  //
-  // OFF:
-  //           non-salted table
-  //                    hosted on single region server:
-  //                                                   . single partitioned
-  //                    hosted on multiple region servers:
-  //                                                   . range partitioned
-  //           salted table:
-  //                    hosted on multiple region servers:
-  //                                                   . hash2 partitioned
-  //
-  // SYSTEM (default):
-  //           non-salted table
-  //                    hosted on single region server:
-  //                                            . single partitioned, if no stats
-  //                                            . stats splited, with stats
-  //                    hosted on multiple region servers:
-  //                                            . range partitioned, if no stats
-  //                                            . stats splited, with stats
-  //
-  //           salted table:
-  //                    hosted on multiple region servers:
-  //                                            . hash2 partitioned
-  //
-  // ON:
-  //
-  //           non-salted table         same as 'SYSTEM'
-  //
-  //           salted table:
-  //                    hosted on multiple region servers:
-  //                                            . hash2 partitioned, if no stats
-  //                                            . stats splited, with stats
-  //
-  HBASE_PARTITIONING,
+  // HBASE_HASH2_PARTITIONING (ON - OFF for now):
+  // - OFF: Treat salted table like a non-salted table
+  // - ON: Always use HASH2 for salted table
 
-  // turn on/off hash2 partitioning for Hbase tables
+  // HBASE_RANGE_PARTITIONING (ON):
+  // - OFF: Never use HBase ranges for partitioning
+  // - ON: Use HBase ranges (stats may override)
+
+  // HBASE_STATS_PARTITIONING (ON):
+  // - OFF: Don't use stats split
+  // - ON: Use stats split if possible, except for HASH2
+
   HBASE_HASH2_PARTITIONING,
+  HBASE_RANGE_PARTITIONING,
+  HBASE_STATS_PARTITIONING,
 
   // ignore conversion errors when rows are read from hdfs.
   HDFS_READ_CONTINUE_ON_ERROR,
