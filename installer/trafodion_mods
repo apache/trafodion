@@ -37,7 +37,6 @@ TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
 HADOOP_TYPE=""
 timestamp=$(date +%F-%H-%M-%S)
 MODS_LOG="$TRAF_WORKDIR/logs/trafodion_mods_$timestamp.log"
-TRAF_VERSION="0.8.4"
 HDFS_USER="hdfs"
 HBASE_USER="hbase"
 HBASE_GROUP="hbase"
@@ -149,6 +148,27 @@ if [ -z "$MY_NODES" ]; then
    echo "***ERROR: $TRAF_WORKDIR/my_nodes not found.  Unable to determine list of nodes." 2>&1 | tee -a $MODS_LOG
    exit -1
 fi
+
+#============================================
+# Determine Trafodion version by parsing it 
+# from the hbase-trx jar filename.
+
+cd $TRAF_WORKDIR
+
+# clean up any old files left lying around
+rm -rf export/lib 2>/dev/null
+
+# extract the hbase-trx jar file (and others) from the build tar file
+tar -xzf $TRAF_BUILD export/lib 2>&1 | tee -a $MODS_LOG
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to find export/lib/ directory in $TRAF_BUILD" 2>&1 | tee -a $MODS_LOG
+    exit -1
+fi
+
+# parse the version string from the hbase-trx-n.n.n.jar filename
+TRAF_VERSION=$(ls export/lib | \
+               grep --max-count=1 hbase-trx | \
+               sed -e 's@hbase-trx-\([0-9].*\).jar@\1@')
 
 #=====================================
 #Run correct mods script

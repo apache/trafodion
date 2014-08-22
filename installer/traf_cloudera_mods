@@ -56,16 +56,15 @@ else
 	hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar"
 	bulkload_jar="trafodion-hbase-extensions-${TRAF_VERSION}.jar"
 fi
-tar -xzf $TRAF_BUILD export/lib/$hbase_trx_jar
-if [ $? != 0 ]; then
+if [ ! -f export/lib/$hbase_trx_jar ]; then
     echo "***ERROR: unable to find export/lib/$hbase_trx_jar in $TRAF_BUILD"
     exit -1
 fi
-tar -xzf $TRAF_BUILD export/lib/$bulkload_jar
-if [ $? != 0 ]; then
+if [ ! -f export/lib/$bulkload_jar ]; then
     echo "***ERROR: unable to find export/lib/$bulkload_jar in $TRAF_BUILD"
     exit -1
 fi
+
 
 # if more than one node then copy to all nodes
 echo "***INFO: copying $hbase_trx_jar to all nodes"
