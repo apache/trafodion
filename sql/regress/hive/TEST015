@@ -194,7 +194,6 @@ create index t015t3idx on t015t3(b);
 
 load transform into t015t3 select a,a,a from t015t1;
 
-upsert using load  into t015t3 select a,a,a from t015t1;
 
 drop index t015t3idx ;
 
@@ -202,7 +201,6 @@ alter table t015t3  add  constraint t015t3_cnst check (b>100);
 
 load transform into t015t3 select a,a,a from t015t1;
 
-upsert using load  into t015t3 select a,a,a from t015t1;
 
 alter table t015t3  drop  constraint t015t3_cnst;
 
