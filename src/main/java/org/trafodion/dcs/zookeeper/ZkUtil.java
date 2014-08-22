@@ -39,6 +39,7 @@ import java.io.*;
 import java.util.List;
 import java.util.Scanner;
 import java.nio.charset.Charset;
+import org.apache.zookeeper.data.Stat;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
@@ -86,19 +87,22 @@ public class ZkUtil {
 		    
 			ZkClient zkc = new ZkClient();
 			zkc.connect();
-			List<String> znodes = zkc.getChildren(znode,null);
-			zkc.close();
-			if(znodes.isEmpty()) {
-				System.err.println("No children found for " + znode);
+			Stat stat = zkc.exists(znode,false);
+			if(stat == null) {
 				System.out.println("");
 			} else {
-				Scanner scn = new Scanner(znodes.get(0));
-				scn.useDelimiter(":");
-				String hostName = scn.next();//host name
-				scn.close();
-				System.out.println(hostName);
+				List<String> znodes = zkc.getChildren(znode,null);
+				zkc.close();
+				if(znodes.isEmpty()) {
+					System.out.println("");
+				} else {
+					Scanner scn = new Scanner(znodes.get(0));
+					scn.useDelimiter(":");
+					String hostName = scn.next();//host name
+					scn.close();
+					System.out.println(hostName);
+				}
 			}
-
 		} catch (Exception e) {
 			System.err.println(e);
 			e.printStackTrace();

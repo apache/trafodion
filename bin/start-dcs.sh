@@ -51,5 +51,19 @@ then
 fi
 
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" start zookeeper
-"$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" start master
+
+master=`$bin/dcs --config "${DCS_CONF_DIR}" org.trafodion.dcs.zookeeper.ZkUtil /$USER/dcs/master`
+errCode=$?
+if [ $errCode -ne 0 ]
+then
+  exit $errCode
+fi
+
+if [ "$master" == "" ] || [ "$master" == "$HOSTNAME" ] ; then
+  "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" start master
+else
+  remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} start master"
+  ssh -n $DCS_SSH_OPTS $master $remote_cmd 2>&1 | sed "s/^/$master: /"
+fi
+
 "$bin"/dcs-daemons.sh --config "${DCS_CONF_DIR}" --hosts "${DCS_SERVERS}" start server
