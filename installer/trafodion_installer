@@ -232,9 +232,17 @@ else
     if [ "$node_count" -ne "1" ]; then
         # For clusters this sqconfig file was generated when the Trafodion user was added
         SQCONFIG_MASTER=$HOME/sqconfig
+        if [[ ! -f "$SQCONFIG_MASTER" ]]; then
+           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+           exit -1
+        fi
     else
         # For single node, we use the sqconfig in the build
         SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
+         if [[ ! -f "$SQCONFIG_MASTER" ]]; then
+           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+           exit -1
+        fi
     fi
 fi
 

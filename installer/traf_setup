@@ -418,7 +418,6 @@ sudo cp $TRAF_WORKDIR/installer/dcs_installer $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/traf_create_systemdefaults $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_uninstaller $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_installer $HOME_DIR/$TRAF_USER
-sudo cp $TRAF_WORKDIR/installer/traf_install $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/installer/trafodion_license $HOME_DIR/$TRAF_USER
 sudo chown --recursive $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER
 
