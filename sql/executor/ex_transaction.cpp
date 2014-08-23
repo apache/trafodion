@@ -1065,6 +1065,7 @@ void ExTransaction::createDiagsArea(Int32 error1, Int32 retCode,
 		  (ExeErrorCode)error1, &errorCond_);
   (errorCond_)->setOptionalInteger (0, retCode);
   (errorCond_)->setOptionalString (0, string);
+  (errorCond_)->setNskCode(retCode);
 }
 
 // this method generates a savepoint id. Its a juliantimestamp.

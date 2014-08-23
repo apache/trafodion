@@ -2533,9 +2533,6 @@ Lng32 SQLCLI_ProcessRetryQuery(
   Lng32 cmpInfo = 0;
   ComCondition * cc = NULL;
   ComCondition * errCond = NULL;
-  Lng32 aqrDelay = 0;
-  Lng32 aqrType = 0;
-  Lng32 aqrCmpInfo = 0;
   while (NOT done)
     {
       if (NOT SQLCLI_GetRetryInfo(
@@ -2596,16 +2593,14 @@ Lng32 SQLCLI_ProcessRetryQuery(
 		    }
 		  
 		}
-
-	      aqrDelay = delay;
-	      aqrType = type;
-	      aqrCmpInfo = cmpInfo;
 	    }
 
 	  if (numRetries < retries)
 	    {
 	      if (type == AQRInfo::RETRY_WITH_ESP_CLEANUP)
 		aqr->setEspCleanup(TRUE);
+              else if (type == AQRInfo::RETRY_DECACHE_HTABLE)
+                currContext->flushHtableCache();
 
 	      // Before deallocating the statement, set an indication in the 
 	      // master stats for this query id to indicate that AQR is being 
@@ -2763,7 +2758,7 @@ Lng32 SQLCLI_ProcessRetryQuery(
             return rc;
         }
 	  
-      if (aqrCmpInfo == 1)
+      if (cmpInfo == 1)
         {
           // reset the control session stmt.
           Lng32 rc = aqr->resetCompilerInfo(stmt->getUniqueStmtId(),
@@ -2789,7 +2784,7 @@ Lng32 SQLCLI_ProcessRetryQuery(
 
 	  diags << DgSqlCode(EXE_RECOMPILE_AUTO_QUERY_RETRY)  // a warning only
 		<< DgInt0(numRetries)
-		<< DgInt1(aqrDelay)
+		<< DgInt1(delay)
 		<< DgString0("")
 		<< (errCond
 		    ? DgString1("See next entry for the error that caused this retry.")
