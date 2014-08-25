@@ -160,7 +160,7 @@ rm -rf export/lib 2>/dev/null
 
 # extract the hbase-trx jar file (and others) from the build tar file
 tar -xzf $TRAF_BUILD export/lib 2>&1 | tee -a $MODS_LOG
-if [ $? != 0 ]; then
+if [ ${PIPESTATUS[0]} != 0 ]; then
     echo "***ERROR: unable to find export/lib/ directory in $TRAF_BUILD" 2>&1 | tee -a $MODS_LOG
     exit -1
 fi
