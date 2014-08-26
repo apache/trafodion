@@ -89,7 +89,7 @@ A            B
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[1389] Object T020T3_122866928_1853 does not exist in Trafodion.
+*** WARNING[1389] Object T020T3_127512884_2898 does not exist in Trafodion.
 
 --- SQL operation completed with warnings.
 >>
@@ -141,6 +141,7 @@ A            B
      8587              0          1          0          1
      8596              0          1          0          2
      8598              0          1          0          1
+     8606             97          1          0          5
      8734              0          1          0          1
      8814              0          1          0          0
      8841              0          1          0          4
@@ -203,6 +204,7 @@ A            B
      8587              0          1          0          1
      8596              0          1          0          2
      8598              0          1          0          1
+     8606             97          1          0          5
      8734              0          1          0          1
      8814              0          1          0          0
      8841              0          1          0          4
@@ -266,6 +268,7 @@ A            B
      8587              0          1          0          1
      8596              0          1          0          2
      8598              0          1          0          1
+     8606             97          1          0          5
      8734              0          1          0          1
      8814              0          1          0          0
      8841              0          1          0          4
@@ -329,6 +332,7 @@ A            B
      8587              0          1          0          1
      8596              0          1          0          2
      8598              0          1          0          1
+     8606             97          1          0          5
      8734              0          1          0          1
      8814              0          1          0          0
      8841              0          1          0          4

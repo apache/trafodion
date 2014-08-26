@@ -2536,6 +2536,9 @@ Lng32 SQLCLI_ProcessRetryQuery(
   Lng32 cmpInfo = 0;
   ComCondition * cc = NULL;
   ComCondition * errCond = NULL;
+  Lng32 aqrDelay = 0;
+  Lng32 aqrCmpInfo = 0;
+  
   while (NOT done)
     {
       if (NOT SQLCLI_GetRetryInfo(
@@ -2596,6 +2599,8 @@ Lng32 SQLCLI_ProcessRetryQuery(
 		    }
 		  
 		}
+              aqrDelay = delay;
+              aqrCmpInfo = cmpInfo;
 	    }
 
 	  if (numRetries < retries)
@@ -2761,7 +2766,7 @@ Lng32 SQLCLI_ProcessRetryQuery(
             return rc;
         }
 	  
-      if (cmpInfo == 1)
+      if (aqrCmpInfo == 1)
         {
           // reset the control session stmt.
           Lng32 rc = aqr->resetCompilerInfo(stmt->getUniqueStmtId(),
@@ -2787,7 +2792,7 @@ Lng32 SQLCLI_ProcessRetryQuery(
 
 	  diags << DgSqlCode(EXE_RECOMPILE_AUTO_QUERY_RETRY)  // a warning only
 		<< DgInt0(numRetries)
-		<< DgInt1(delay)
+		<< DgInt1(aqrDelay)
 		<< DgString0("")
 		<< (errCond
 		    ? DgString1("See next entry for the error that caused this retry.")
