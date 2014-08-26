@@ -125,7 +125,6 @@ echo
 echo "***Log File: trafodion_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG
 echo "Username: $TRAF_USER" >> $SETUP_LOG
-echo "Password: $TRAF_USER_PASSWORD" >> $SETUP_LOG
 echo "Nodes: $NODE_LIST" >> $SETUP_LOG
 echo "Clustername $CLUSTERNAME" >> $SETUP_LOG
 echo "Home directory: $HOME_DIR" >> $SETUP_LOG

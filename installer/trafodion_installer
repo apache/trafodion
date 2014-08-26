@@ -174,7 +174,6 @@ echo "Number of DCS Servers: $DCS_SERVERS_PARM" >> $INSTALL_LOG
 echo "Run init_trafodion: $INIT_TRAFODION" >> $INSTALL_LOG
 echo "Start Trafodion: $NOSTART" >> $INSTALL_LOG
 echo "User Id: $USER_NAME" >> $INSTALL_LOG
-echo "Password: $PASSWORD" >> $INSTALL_LOG
 echo "URL: $URL_PORT" >> $INSTALL_LOG
 echo >> $INSTALL_LOG
 

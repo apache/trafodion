@@ -128,7 +128,6 @@ echo "***Log File: trafodion_mods script***" >> $MODS_LOG
 echo >> $MODS_LOG
 echo "Trafodion Build: $TRAF_BUILD" >> $MODS_LOG
 echo "User Id: $ADMIN" >> $MODS_LOG
-echo "Password: $PASSWORD" >> $MODS_LOG
 echo "url: $URL" >> $MODS_LOG
 echo >> $MODS_LOG
 
