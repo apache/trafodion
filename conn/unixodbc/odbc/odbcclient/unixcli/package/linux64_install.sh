@@ -1,4 +1,23 @@
 #!/bin/sh
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2010-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
 #set -vx
 
 # This script installs Linux64 HP hpodbc library: libhpodbc_l64.so.?.*.? (where
@@ -26,7 +45,7 @@ function check_package {
   let i=0
   while [ $i -lt $len ]; do
 	  if [ ! -f ${pkgfiles[$i]} ]; then
-		  echo " error! missing the file "" ${pkgfiles[$i]} ""in pakage!"
+		  echo " error! missing the file "" ${pkgfiles[$i]} ""in package!"
 	     echo " exiting ..."
 	     exit -2
 	  fi
@@ -286,7 +305,7 @@ fi
 }
 
 function display_settings {
-  echo -e "\nHPODBC driver has sucessfully been installed."
+  echo -e "\nHPODBC driver has successfully been installed."
   echo -e "  * Library $LIB_NAME is installed on $LIB_DIR "
   echo -e "  * data source template file MXODSN has been copied onto $ETC_DIR"
   echo -e "  * include files have been copied onto $INCLUDE_DIR"
@@ -300,7 +319,7 @@ ARCH=`uname -a`
 
 case "$ARCH" in
 	Linux*x86_64*)
-		echo -e "Archictecture verified";;	
+		echo -e "Architecture verified";;	
 	Linux*i686*)
 		echo -e "You are installing a 64bit library on a 32bit linux"
 		echo -n "installation. Do you want to proceed(yes/no)?"
@@ -313,7 +332,7 @@ case "$ARCH" in
 			exit -4
 		fi;;
 	*)
-		echo -e "We are unable to determine the archictecture.  This"{
+		echo -e "We are unable to determine the architecture.  This"
 		echo -e "means we could not determine what version of hardware"
 		echo -e "you are using.  This could be problem."
 		echo -n "Do you want to proceed(yes/no)?"
