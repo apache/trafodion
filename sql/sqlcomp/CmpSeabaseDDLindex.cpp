@@ -796,6 +796,12 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
       return -1;
     }
 
+  cliRC = cliInterface->holdAndSetCQD("hide_indexes", "all");
+  if (cliRC < 0)
+    {
+      return -1;
+    }
+
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_SPECIALTABLETYPE);
   SQL_EXEC_SetParserFlagsForExSqlComp_Internal(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
   cliRC = cliInterface->executeImmediate(query);
@@ -809,6 +815,7 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   //  SQL_EXEC_ResetParserFlagsForExSqlComp_Internal(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
   SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedCliParserFlags);
 
+  cliInterface->restoreCQD("hide_indexes");
   cliInterface->restoreCQD("allow_dml_on_nonaudited_table");
   cliInterface->restoreCQD("attempt_esp_parallelism");
 

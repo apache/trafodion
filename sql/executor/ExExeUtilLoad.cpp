@@ -3672,7 +3672,8 @@ ExExeUtilHBaseBulkLoadTcb::ExExeUtilHBaseBulkLoadTcb(
      ex_globals * glob)
      : ExExeUtilTcb( exe_util_tdb, NULL, glob),
        step_(INITIAL_),
-       nextStep_(INITIAL_)
+       nextStep_(INITIAL_),
+       rowsAffected_(0)
 {
   qparent_.down->allocatePstate(this);
 
@@ -3686,7 +3687,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   Lng32 cliRC = 0;
   short retcode = 0;
   short rc;
-  Int64 rowsAffected = 0;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -3870,25 +3870,27 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             break;
           }
 
+          rowsAffected_ = 0;
           char * transQuery =hblTdb().ldQuery_;
           cliRC = cliInterface()->executeImmediate(transQuery,
                                                    NULL,
                                                    NULL,
                                                    TRUE,
-                                                   &rowsAffected);
+                                                   &rowsAffected_);
           transQuery = NULL;
           if (cliRC < 0)
           {
+            rowsAffected_ = 0;
             cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = LOAD_END_ERROR_;
+            step_ = LOAD_END_ERROR_;
             break;
           }
 
           step_ = COMPLETE_BULK_LOAD_;
-        if (rowsAffected == 0)
+        if (rowsAffected_ == 0)
           step_ = LOAD_END_;
 
-          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
+          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
           int len = strlen(statusMsgBuf_);
           setEndStatusMsg(" PREPARATION", len, TRUE);
         }
@@ -3897,8 +3899,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           if (setStartStatusMsgAndMoveToUpQueue(" UPSERT USING LOAD ", &rc, 0, TRUE))
             return rc;
 
+          rowsAffected_ = 0;
           char * upsQuery = hblTdb().ldQuery_;
-          cliRC = cliInterface()->executeImmediate(upsQuery, NULL, NULL, TRUE, &rowsAffected);
+          cliRC = cliInterface()->executeImmediate(upsQuery, NULL, NULL, TRUE, &rowsAffected_);
 
           upsQuery = NULL;
           if (cliRC < 0)
@@ -3913,7 +3916,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
            if (hblTdb().getIndexes())
              step_ = POPULATE_INDEXES_;
 
-          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected, '\n' );
+          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
           int len = strlen(statusMsgBuf_);
           setEndStatusMsg(" UPSERT USING LOAD ", len, TRUE);
         }
@@ -3965,6 +3968,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         if (cliRC < 0)
         {
+          rowsAffected_ = 0;  
+                              
           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
           step_ = LOAD_END_ERROR_;
           break;
@@ -4058,6 +4063,20 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         up_entry->upState.setMatchNo(0);
         up_entry->upState.status = ex_queue::Q_NO_DATA;
+
+        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+        if (diagsArea == NULL)
+          diagsArea = ComDiagsArea::allocate(getMyHeap());
+        else
+          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+        diagsArea->setRowCount(rowsAffected_);
+
+        if (getDiagsArea())
+          diagsArea->mergeAfter(*getDiagsArea());
+
+        up_entry->setDiagsArea(diagsArea);
 
         // insert into parent
         qparent_.up->insert();

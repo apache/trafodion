@@ -3602,6 +3602,7 @@ enum DefaultConstants
 
   // ignore conversion errors when rows are read from hdfs.
   HDFS_READ_CONTINUE_ON_ERROR,
+  TRAF_LOAD_USE_FOR_STATS,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

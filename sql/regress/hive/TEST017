@@ -62,6 +62,12 @@ drop table T017TTD cascade;
 drop table T017TTE cascade;
 drop table "T017_Delimit" cascade;
 
+drop index a5iraea1;
+drop index a5iraee1;
+
+drop table   a5table1;
+
+
 ?section setup
 --------------
 create  table T017TTB ( a int not null primary key, b int, c int);
@@ -84,6 +90,23 @@ load with no output, no recovery into T017TTA
   from (values(1)) as starter
     transpose 0,1,2,3,4,5,6,7,8,9 as x10
     transpose 0,1,2,3,4,5,6,7,8,9 as x1 ;
+
+ 
+create table a5table1
+ ( ref_num largeint
+ , z_text char(3)
+ , emp_num smallint
+ ) no partition
+ ;
+
+insert into a5table1 values
+ (100,'abc',99), (100,'abd',99), (100,'abe',99), (100,'abc',100),
+ (100,'abd',100), (100,'abe',100), (100,'abc',101), (100,'abd',101),
+ (100,'abe',101), (100,'abb',null), (100,'abc',null), (100,'abd',null),
+ (100,'abe',null), (100,null,99), (100,null,100), (100,null,101),
+ (200,'abc',200), (200,'abd',200), (200,'abe',200);                                                                   
+
+
 
 ?section  tests_simple
 ----------------------
@@ -187,6 +210,13 @@ create index idxdelim on "T017_Delimit"(b) no populate;
 populate all indexes on "T017_Delimit";
 -------
 
+--verifying fix for Bug 1359872
+--
+select count(*) from a5table1;
+ create index a5iraea10 on a5table1 (ref_num asc, z_text, emp_num asc) ; 
  
+ create index a5iraey10 on a5table1 (ref_num asc, z_text, emp_num desc) ;
 
+select count(*) from table(index_table a5iraea10);
+select count(*) from table(index_table a5iraey10);
 
