@@ -280,7 +280,7 @@ typedef struct SEGMENT_INFO
   Lng32 cpuStatus_;
   NABoolean nodeDown_;
 } SEGMENT_INFO;
-Lng32 ComRtGetNeoSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs,
+Lng32 ComRtGetSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs,
 		NAHeap *heap);
 NABoolean ComRtGetCpuStatus(char *nodeName, short cpuNum);
 Lng32 ComRtTransIdToText(Int64 transId, char *buf, short len);

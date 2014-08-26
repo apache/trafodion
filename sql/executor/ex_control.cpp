@@ -532,7 +532,6 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CANCEL_UNIQUE_QUERY") != 0) &&
       (strcmp(defaultName, "CANCEL_LOGGING") != 0) &&
       (strcmp(defaultName, "SUSPEND_LOGGING") != 0) &&
-      (strcmp(defaultName, "WMS_PROCESS") != 0) &&
       (strcmp(defaultName, "EXPLAIN_IN_RMS") != 0) &&
       (strcmp(defaultName, "STATISTICS_VIEW_TYPE") != 0) &&
       (strcmp(defaultName, "RECLAIM_MEMORY_AFTER") != 0) &&
@@ -573,7 +572,6 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CANCEL_UNIQUE_QUERY") == 0) ||
       (strcmp(defaultName, "CANCEL_LOGGING") == 0) ||
       (strcmp(defaultName, "SUSPEND_LOGGING") == 0) ||
-      (strcmp(defaultName, "WMS_PROCESS") == 0) ||
       (strcmp(defaultName, "EXPLAIN_IN_RMS") == 0) ||
       (strcmp(defaultName, "CALL_EMBEDDED_ARKCMP") == 0) ||
       (strcmp(defaultName, "STATISTICS_VIEW_TYPE") == 0) ||
@@ -1052,15 +1050,6 @@ short ExSetSessionDefaultTcb::work()
       else if ((strcmp(defaultValue, "OFF") == 0) ||
 	       (strcmp(defaultValue, "DISABLE") == 0))
 	currContext->getSessionDefaults()->setDbtrProcess(FALSE);
-    }
-  else if (strcmp(defaultName, "WMS_PROCESS") == 0)
-    {
-      if ((stricmp(defaultValue, "ON") == 0) ||
-	  (stricmp(defaultValue, "ENABLE") == 0))
-	currContext->getSessionDefaults()->setWmsProcess(TRUE);
-      else if ((stricmp(defaultValue, "OFF") == 0) ||
-	       (stricmp(defaultValue, "DISABLE") == 0))
-	currContext->getSessionDefaults()->setWmsProcess(FALSE);
     }
   else if (strcmp(defaultName, "CANCEL_ESCALATION_SAVEABEND") == 0)
     {

@@ -1,7 +1,7 @@
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 1994-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 1995-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ void CliGlobals::init( NABoolean espProcess,
   myNumSegs_ = 0;
   myNumCpus_ = 0;
   SEGMENT_INFO * segs = new(&executorMemory_) SEGMENT_INFO[MAX_NO_OF_SEGMENTS];
-  ComRtGetNeoSegsInfo(segs, MAX_NO_OF_SEGMENTS, myNumSegs_,
+  ComRtGetSegsInfo(segs, MAX_NO_OF_SEGMENTS, myNumSegs_,
            (NAHeap *)&executorMemory_);
   for (Lng32 i = 0; i < myNumSegs_; i++)
     {

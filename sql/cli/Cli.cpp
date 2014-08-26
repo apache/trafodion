@@ -2252,7 +2252,10 @@ static Lng32 SQLCLI_RetryQuery(
 			    flags
 			    );
 
-  if (isERROR(retcode))        
+  if (savedStmtStats)
+    savedStmtStats->setAqrInProgress(FALSE);
+
+  if (isERROR(retcode))
       return retcode;
       
   if (afterPrepare)

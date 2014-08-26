@@ -156,6 +156,7 @@ extern short getRTSSemaphore();     // Functions implemented in SqlStats.cpp
 extern void releaseRTSSemaphore();
 extern NABoolean checkIfRTSSemaphoreLocked();
 extern void updateMemStats();
+extern SB_Phandle_Type *getMySsmpPhandle();
 #endif
 
 //CollHeap *CTXTHEAP__ = NULL;     // a global, set by CmpContext ctor and used by
@@ -2452,6 +2453,24 @@ NAHeap::allocateBlock(size_t size, NABoolean failureIsFatal)
         if (XZFIL_ERR_OK == msg_mon_get_my_info(&nid, &pid, NULL,
                         0, NULL, NULL, NULL, NULL))
         {
+          // The SSMP is responsible for preventing leaks. So get a 
+          // corefile of it.
+          char ssmpName[MS_MON_MAX_PROCESS_NAME];
+          memset(ssmpName, 0, MS_MON_MAX_PROCESS_NAME);
+          if (XZFIL_ERR_OK == XPROCESSHANDLE_DECOMPOSE_(
+			      getMySsmpPhandle()
+			    , NULL // cpu
+			    , NULL // pin
+			    , NULL // nodenumber
+			    , NULL // nodename
+			    , 0    // nodename_maxlen
+			    , NULL // nodename_length
+			    , ssmpName 
+			    , sizeof(ssmpName)))
+          {
+            char coreFile[1024];
+            msg_mon_dump_process_name(NULL, ssmpName, coreFile);
+          }
           Int32 ndRetcode = msg_mon_node_down(nid);
           sleep(30);
           NAExit(0);    // already made a core.

@@ -808,7 +808,7 @@ NABoolean ComRtIsNeoSystem(void)
    return TRUE;
 }
 
-Lng32 ComRtGetNeoSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs, 
+Lng32 ComRtGetSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs, 
 				NAHeap *heap)
 {
   Int32 nodeCount = 0;
