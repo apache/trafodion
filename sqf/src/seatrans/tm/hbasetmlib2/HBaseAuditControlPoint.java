@@ -226,13 +226,17 @@ public class HBaseAuditControlPoint {
                  + CONTROL_POINT_FAMILY + " ASN_HIGH_WATER_MARK " + ASN_HIGH_WATER_MARK);
       byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
       LOG.debug("Starting asn setting recordString ");
-      String recordString = new String(currValue);
-      if (recordString == null) {
+      String recordString = null;
+      try {
+         recordString = new String(currValue);
+      }
+      catch (NullPointerException e) {
          LOG.debug("getStartingAuditSeqNum recordString is null");
+         lvAsn = 1;
+         LOG.debug("Starting asn is 1");
+         return lvAsn;
       }
-      else {
-         LOG.debug("getStartingAuditSeqNum recordString is good");
-      }
+      LOG.debug("getStartingAuditSeqNum recordString is good");
       LOG.debug("Starting asn is " + recordString);
       lvAsn = Long.valueOf(recordString);
       LOG.trace("getStartingAuditSeqNum - exit returning " + lvAsn);
