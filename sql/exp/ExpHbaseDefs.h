@@ -26,6 +26,8 @@
 #define HBASE_ACCESS_PREEMPT 1
 #define HBASE_ACCESS_EOD 100
 #define HBASE_ACCESS_EOR 101
+#define HBASE_ACCESS_NO_ROW 102
+
 
 typedef struct 
 {

@@ -755,8 +755,8 @@ short ExHbaseAccessTcb::createColumnwiseRow()
 	    case HBASE_ROW_ID_INDEX:
 	      {
 		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = rowId_.len;
-		*(Int64*)&asciiRow_[attr->getOffset()] =
-		  (Int64)rowId_.val;
+                str_cpy_all(&asciiRow_[attr->getOffset()],
+                          rowId_.val, rowId_.len);
 	      }
 	      break;
 	      
@@ -772,8 +772,8 @@ short ExHbaseAccessTcb::createColumnwiseRow()
 		      done = TRUE;
 		  }
 		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = i; //colName_.len;
-		*(Int64*)&asciiRow_[attr->getOffset()] =
-		  (Int64)colName_.val;
+                str_cpy_all(&asciiRow_[attr->getOffset()],
+                          colName_.val, i);
 	      }
 	      break;
 	      
@@ -789,17 +789,18 @@ short ExHbaseAccessTcb::createColumnwiseRow()
 		      done = TRUE;
 		  }
 
-		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = colName_.len - (i+1);
-		*(Int64*)&asciiRow_[attr->getOffset()] =
-		  (Int64)&colName_.val[i+1];
+                short colNameLen = colName_.len - (i+1);
+		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = colNameLen;
+                str_cpy_all(&asciiRow_[attr->getOffset()],
+                          &colName_.val[i+1], colNameLen);
 	      }
 	      break;
 	      
 	    case HBASE_COL_VALUE_INDEX:
 	      {
 		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = colVal_.len;
-		*(Int64*)&asciiRow_[attr->getOffset()] =
-		  (Int64)colVal_.val;
+                str_cpy_all(&asciiRow_[attr->getOffset()],
+                                colVal_.val, colVal_.len);
 	      }
 	      break;
 	      
@@ -852,17 +853,14 @@ short ExHbaseAccessTcb::createRowwiseRow()
 	    case HBASE_ROW_ROWID_INDEX:
 	      {
 		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = prevRowId_.len;
-		*(Int64*)&asciiRow_[attr->getOffset()] =
-		  (Int64)prevRowId_.val;
+	        str_cpy_all(&asciiRow_[attr->getOffset()], prevRowId_.val, prevRowId_.len);
 	      }
 	      break;
 	      
 	    case HBASE_COL_DETAILS_INDEX:
 	      {
-		//		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = strlen(rowwiseRow_);
 		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = rowwiseRowLen_;
-		*(Int64*)&asciiRow_[attr->getOffset()] =
-		  (Int64)rowwiseRow_;
+		str_cpy_all(&asciiRow_[attr->getOffset()], rowwiseRow_, rowwiseRowLen_);
 	      }
 	      break;
 	      
@@ -928,33 +926,6 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
     return 1;
   else
     return 0;
-}
-
-short ExHbaseAccessTcb::fetchRowVec()
-{
-  short retcode;
-  Int32 numCols;
-  Int32 rowIDLen;
-  char *kvBuf;
-
-  retcode = ehi_->fetchRowVec(&jbRowResult_, jbaRowResult_, &isCopy_);
-  if (retcode == HBASE_ACCESS_SUCCESS)
-  {
-     kvBuf = (char *) jbRowResult_;
-     numCols = *(Int32 *)kvBuf;
-     kvBuf += sizeof(numCols);
-     if (numCols == 0)
-     {
-        setRowID(NULL, 0);
-        return retcode;
-     }
-     rowIDLen = *(Int32 *)kvBuf;
-     kvBuf += sizeof(rowIDLen);
-     setRowID(kvBuf, rowIDLen);
-  }
-  else
-     setRowID(NULL, 0);
-  return retcode;
 }
 
 short ExHbaseAccessTcb::createSQRow()
@@ -1102,11 +1073,13 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 
           if (attr->getVCIndicatorLength() > 0)
             {
+              char * srcPtr = &asciiRow_[attr->getOffset()];
+              Lng32 copyLen = MINOF(attr->getLength(), colValLen);
               if (attr->getVCIndicatorLength() == sizeof(short))
-                *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+                *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
               else
-                *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
-              *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)colVal;
+                *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
+              str_cpy_all(srcPtr, colVal, copyLen);
             }
           else
             {
@@ -1144,26 +1117,176 @@ short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
 	      defValPtr += 2;
 	    }
 	  
+          Lng32 copyLen;
 	  if (! nullVal)
 	    {
 	      if (attr->getVCIndicatorLength() > 0)
 		{
-		  Lng32 vcLen = *(short*)defValPtr;
+		  copyLen = *(short*)defValPtr;
 		  if (attr->getVCIndicatorLength() == sizeof(short))
-		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = vcLen; 
+		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
 		  else
-		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = vcLen;
+		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen;
 		  
 		  defValPtr += attr->getVCIndicatorLength();
 		  
-		  *(Int64*)&asciiRow_[attr->getOffset()] = (Int64)defValPtr;
 		}
 	      else
+		  copyLen = attr->getLength();
+		
+               char *destPtr = &asciiRow_[attr->getOffset()];
+               str_cpy_all(destPtr, defValPtr, copyLen);
+	    } // not nullVal
+	} // missing col
+    }
+
+  workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
+    .setDataPointer(convertRow_);
+  workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
+    .setDataPointer(asciiRow_);
+  
+  if (convertExpr())
+    {
+      ex_expr::exp_return_type evalRetCode =
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+      if (evalRetCode == ex_expr::EXPR_ERROR)
+	{
+	  return -1;
+	}
+    }
+
+  return 0;
+}
+
+Lng32 ExHbaseAccessTcb::createSQRowDirect()
+{
+  // no columns are being fetched from hbase, do not create a row.
+  if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
+    return 0;
+
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+
+  ExpTupleDesc * asciiSourceTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().asciiTuppIndex_);
+
+  ExpTupleDesc * convertTuppTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().convertTuppIndex_);
+  
+  Attributes * attr = NULL;
+
+  // initialize as missing cols.
+  // TBD: can optimize to skip this step if there are no nullable and no added cols
+  memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
+    // initialize latest timestamp to 0 for every column
+  memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
+  
+  hbaseAccessTdb().listOfFetchedColNames()->position();
+  Lng32 idx = -1;
+
+  BYTE *colVal; 
+  Lng32 colValLen;
+  long timestamp;
+  char *colName;
+  short colNameLen;
+  BYTE nullVal;
+  Lng32 retcode;
+  int numCols; 
+  retcode = ehi_->getNumCols(numCols);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+     return retcode;
+  for (int colNo= 0; colNo < numCols; colNo++)
+  {
+      retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
+      if (retcode != HBASE_ACCESS_SUCCESS)
+         return retcode;
+      if (colName == NULL) // reached end of columns in the row
+         break;
+      
+      if (! getColPos(colName, colNameLen, idx)) // not found
+         return HBASE_CREATE_ROW_ERROR;
+
+      // not missing any more
+      asciiRowMissingCols_[idx] = 0;
+      if (timestamp > latestTimestampForCols_[idx])
+        latestTimestampForCols_[idx] = timestamp;
+
+      Attributes * attr = asciiSourceTD->getAttr(idx);
+      if (! attr)
+	  return HBASE_CREATE_ROW_ERROR;
+      
+
+      // copy to asciiRow only if this is the latest version seen so far
+      // for this column. On 6/10/2014 we get two versions for a newly
+      // updated column that has not been committed yet.
+      if (timestamp == latestTimestampForCols_[idx]) 
+      {
+         colVal = (BYTE *)&asciiRow_[attr->getOffset()];
+         colValLen = attr->getLength();
+         BYTE nullVal;
+
+         retcode = ehi_->getColVal(colNo, colVal, colValLen, 
+                     attr->getNullFlag(), nullVal);
+         if (retcode != HBASE_ACCESS_SUCCESS)
+            return retcode;
+         if (attr->getNullFlag())
+         {
+            if (nullVal)
+               *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
+            else
+               *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
+         }
+         if (attr->getVCIndicatorLength() > 0)
+         {
+             if (attr->getVCIndicatorLength() == sizeof(short))
+                *(short*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+             else
+                *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
+         }
+      }
+  }
+  // fill in null or default values for missing cols.
+  for (idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
+    {
+      if (asciiRowMissingCols_[idx] == 1) // missing
+	{
+	  attr = asciiSourceTD->getAttr(idx);
+	  if (! attr)
+	    {
+	      // error
+	      return HBASE_CREATE_ROW_ERROR;
+	    }
+	  
+	  char * defVal = attr->getDefaultValue();
+	  char * defValPtr = defVal;
+	  short nullVal = 0;
+	  if (attr->getNullFlag())
+	    {
+	      nullVal = *(short*)defVal;
+	      *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
+	      
+	      defValPtr += 2;
+	    }
+	  
+          Lng32 copyLen;
+	  if (! nullVal)
+	    {
+	      if (attr->getVCIndicatorLength() > 0)
 		{
-		  char * srcPtr = &asciiRow_[attr->getOffset()];
-		  Lng32 copyLen = attr->getLength();
-		  str_cpy_all(srcPtr, defValPtr, copyLen);
+		 copyLen = *(short*)defValPtr;
+		  if (attr->getVCIndicatorLength() == sizeof(short))
+		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
+		  else
+		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen;
+		  defValPtr += attr->getVCIndicatorLength();
 		}
+	        else
+		{
+		  copyLen = attr->getLength();
+                }
+		char *destPtr = &asciiRow_[attr->getOffset()];
+		str_cpy_all(destPtr, defValPtr, copyLen);
 	    } // not nullVal
 	} // missing col
     }

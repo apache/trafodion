@@ -31,6 +31,7 @@
 #include "Platform.h"
 #include "ExpHbaseInterface.h"
 #include "str.h"
+#include "ex_ex.h"
 
 extern Int64 getTransactionIDFromContext();
 
@@ -78,44 +79,6 @@ ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                             zkPort, debugPort, debugTimeout); // This is the transactional interface
 }
 
-Lng32 ExpHbaseInterface_JNI::fetchRowVec(HbaseStr &rowID)
-{
-   Lng32 retcode;
-   jbyte *jbRowResult; 
-   jbyteArray jbaRowResult;
-   jboolean isCopy;
-   Int32 numCols;
-   Int32 rowIDLen;
-   char *kvBuf;
-
-   retcode = fetchRowVec(&jbRowResult, jbaRowResult, &isCopy);
-   if (retcode == HBASE_ACCESS_SUCCESS)
-   {
-     kvBuf = (char *) jbRowResult;
-     numCols = *(Int32 *)kvBuf;
-     kvBuf += sizeof(numCols);
-     if (numCols == 0)
-     {
-        rowID.val = NULL;
-        rowID.len = 0;
-     }
-     else
-     {
-        rowIDLen = *(Int32 *)kvBuf;
-        kvBuf += sizeof(rowIDLen);
-        rowID.val = kvBuf;
-        rowID.len = rowIDLen;
-     }
-     freeRowResult(jbRowResult, jbaRowResult);
-  }
-  else
-  {
-     rowID.val = NULL;
-     rowID.len = 0;
-  }
-  return retcode;
-}
-
 Lng32 ExpHbaseInterface::deleteColumns(
 	     HbaseStr &tblName,
 	     const Text& column)
@@ -136,7 +99,7 @@ Lng32 ExpHbaseInterface::deleteColumns(
   NABoolean done1 = FALSE;
   while (NOT done1)
     {
-      retcode = fetchNextRow();
+      retcode = nextRow();
       if (retcode == HBASE_ACCESS_EOD)
 	{
 	  done1 = TRUE;
@@ -158,7 +121,7 @@ Lng32 ExpHbaseInterface::deleteColumns(
       HbaseStr rowID;
       while (NOT done2)
 	{
-	  retcode = fetchRowVec(rowID);
+	  retcode = getRowID(rowID);
 	  if (retcode == HBASE_ACCESS_EOD)
 	    {
 	      done2 = TRUE;
@@ -292,8 +255,8 @@ Lng32  ExpHbaseInterface::fetchAllRows(
   long timestamp;
   Lng32 filledCols = 0;
   Int32 allocatedLength = 0;
+  TextVec columns;
 
-  const std::vector<Text> columns;
   retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, NULL, 
        NULL, NULL);
   while (retcode == HBASE_ACCESS_SUCCESS)
@@ -811,7 +774,8 @@ Lng32 ExpHbaseInterface_JNI::getRowOpen(
 	HbaseStr &tblName,
 	const Text &row, 
 	const std::vector<Text> & columns,
-	const int64_t timestamp)
+	const int64_t timestamp,
+        NABoolean directRow)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
   if (htc_ == NULL)
@@ -821,7 +785,7 @@ Lng32 ExpHbaseInterface_JNI::getRowOpen(
   }
   
   Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc_->startGet(transID, row, columns, timestamp); 
+  retCode_ = htc_->startGet(transID, row, columns, timestamp, directRow); 
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -833,7 +797,8 @@ Lng32 ExpHbaseInterface_JNI::getRowsOpen(
 	HbaseStr &tblName,
 	const std::vector<Text> & rows, 
 	const std::vector<Text> & columns,
-	const int64_t timestamp)
+	const int64_t timestamp,
+	NABoolean directRow)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
   if (htc_ == NULL)
@@ -843,7 +808,7 @@ Lng32 ExpHbaseInterface_JNI::getRowsOpen(
   }
   
   Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc_->startGets(transID, rows, columns, timestamp); 
+  retCode_ = htc_->startGets(transID, rows, columns, timestamp, directRow); 
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -1214,15 +1179,11 @@ Lng32 ExpHbaseInterface_JNI::rowExists(
   }
   
   Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc->startGet(transID, row.val, columns, -1); 
+  retCode_ = htc->startGet(transID, row.val, columns, -1, TRUE); 
   if (retCode_ != HBC_OK)
     return -HBASE_OPEN_ERROR;
 
-  jbyte *jbRowResult;
-  jbyteArray jbaRowResult;
-  jboolean isCopy;
-  retCode_ = htc->fetchRowVec(&jbRowResult, jbaRowResult, &isCopy);
-  freeRowResult(jbRowResult, jbaRowResult);
+  retCode_ = htc_->nextRow();
   client_->releaseHTableClient(htc);
 
   if (retCode_ == HTC_OK)
@@ -1376,3 +1337,80 @@ ByteArrayList* ExpHbaseInterface_JNI::getRegionInfo(const char* tblName)
    ByteArrayList* bal = htc_->getEndKeys();
    return bal;
 }
+
+Lng32 ExpHbaseInterface_JNI::getColVal(int colNo, BYTE *colVal,
+          Lng32 &colValLen, NABoolean nullable, BYTE &nullVal)
+{
+  HTC_RetCode retCode = HTC_OK;
+  if (htc_ != NULL)
+     retCode = htc_->getColVal(colNo, colVal, colValLen, nullable,
+                    nullVal);
+  else
+     return HBC_ERROR_GET_HTC_EXCEPTION;
+
+  if (retCode != HTC_OK)
+    return HBASE_ACCESS_ERROR;
+  return HBASE_ACCESS_SUCCESS;
+}
+
+Lng32 ExpHbaseInterface_JNI::getRowID(HbaseStr &rowID)
+{
+  HTC_RetCode retCode = HTC_OK;
+  if (htc_ != NULL)
+     retCode = htc_->getRowID(rowID);
+  else
+     return HBC_ERROR_GET_HTC_EXCEPTION;
+
+  if (retCode != HTC_OK)
+    return HBASE_ACCESS_ERROR;
+  return HBASE_ACCESS_SUCCESS;
+}
+
+Lng32 ExpHbaseInterface_JNI::getNumCols(int &numCols)
+{
+  HTC_RetCode retCode = HTC_OK;
+  if (htc_ != NULL)
+     retCode = htc_->getNumCols(numCols);
+  else
+     return HBC_ERROR_GET_HTC_EXCEPTION;
+ 
+  if (retCode == HTC_OK)
+     return HBASE_ACCESS_SUCCESS;
+  else if (retCode == HTC_DONE_DATA)
+     return HBASE_ACCESS_NO_ROW;
+ return HBASE_ACCESS_ERROR;
+}
+
+Lng32 ExpHbaseInterface_JNI::getColName(int colNo,
+              char **outColName,
+              short &colNameLen,
+              Int64 &timestamp)
+{
+  HTC_RetCode retCode = HTC_OK;
+  if (htc_ != NULL)
+     retCode = htc_->getColName(colNo, outColName, colNameLen, timestamp);
+  else
+     return HBC_ERROR_GET_HTC_EXCEPTION;
+
+  if (retCode != HTC_OK)
+    return HBASE_ACCESS_ERROR;
+  return HBASE_ACCESS_SUCCESS;
+}
+
+Lng32 ExpHbaseInterface_JNI::nextRow()
+{
+  if (htc_ != NULL)
+     retCode_ = htc_->nextRow();
+  else
+     return HBC_ERROR_GET_HTC_EXCEPTION;
+
+  if (retCode_ == HTC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else if (retCode_ == HTC_DONE)
+    return HBASE_ACCESS_EOD;
+  else if (retCode_ == HTC_DONE_RESULT)
+    return HBASE_ACCESS_EOR;
+  else
+    return -HBASE_ACCESS_ERROR;
+}
+

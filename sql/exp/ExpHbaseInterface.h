@@ -164,7 +164,8 @@ class ExpHbaseInterface : public NABasicObject
 		HbaseStr &tblName,
 		const Text &row, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp) = 0;
+		const int64_t timestamp,
+                NABoolean directRow) = 0;
 
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
@@ -175,7 +176,8 @@ class ExpHbaseInterface : public NABasicObject
 		HbaseStr &tblName,
 		const std::vector<Text> & rows, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp) = 0;
+		const int64_t timestamp,
+                NABoolean directRow) = 0;
   
   virtual Lng32 getFetch(
 		 HbaseStr &rowId,
@@ -186,16 +188,23 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 fetchNextRow() = 0;
  
-  virtual Lng32 fetchRowVec(HbaseStr &rowID) = 0;
-
   virtual Lng32 fetchRowVec(jbyte **jbRowResult,
                             jbyteArray &jbaRowResult,
-                            jboolean *isCopy)
-  {
-    assert(false); // Not supported
-    return 0; 
-  };
+                            jboolean *isCopy) = 0;
+  virtual Lng32 nextRow() = 0;
 
+  virtual Lng32 getColVal(int colNo, BYTE *colVal,
+          Lng32 &colValLen, NABoolean nullable, BYTE &nullVal) = 0;
+
+  virtual Lng32 getColName(int colNo,
+              char **outColName,
+              short &colNameLen,
+              Int64 &timestamp) = 0;
+ 
+  virtual Lng32 getNumCols(int &numCols) = 0;
+ 
+  virtual Lng32 getRowID(HbaseStr &rowID) = 0;
+  
   virtual Lng32 freeRowResult(jbyte *jbRowResult,
                             jbyteArray &jbaRowResult)
   {
@@ -393,7 +402,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		HbaseStr &tblName,
 		const Text &row, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp);
+		const int64_t timestamp,
+                NABoolean directRow);
  
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
@@ -404,7 +414,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		HbaseStr &tblName,
 		const std::vector<Text> & rows, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp);
+		const int64_t timestamp,
+                NABoolean directRow);
   
   virtual Lng32 getFetch(
 		 HbaseStr &rowId,
@@ -415,11 +426,23 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 
   virtual Lng32 fetchNextRow();
  
-  virtual Lng32 fetchRowVec(HbaseStr &rowID);
-
   virtual Lng32 fetchRowVec(jbyte **jbRowResult,
                       jbyteArray &jbaRowResult,
                       jboolean *isCopy);
+
+  virtual Lng32 nextRow();
+
+  virtual Lng32 getColVal(int colNo, BYTE *colVal,
+          Lng32 &colValLen, NABoolean nullable, BYTE &nullVal);
+
+  virtual Lng32 getColName(int colNo,
+              char **outColName,
+              short &colNameLen,
+              Int64 &timestamp);
+
+  virtual Lng32 getNumCols(int &numCols);
+
+  virtual Lng32 getRowID(HbaseStr &rowID);
 
   virtual Lng32 freeRowResult(jbyte *jbRowResult,
                       jbyteArray &jbaRowResult);

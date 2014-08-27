@@ -109,11 +109,17 @@ void NAExit(Int32 status)
     NAError_stub_for_breakpoints(); // LCOV_EXCL_LINE :dpm
   if (status != 0)
     {
-      if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
-        AssertException("", __FILE__, __LINE__).throwException();
-      else
-        abort();  // this will create core file on Linux
-    }
+#ifndef _DEBUG
+  char *abortOnError = getenv("ABORT_ON_ERROR");
+  if (abortOnError != NULL)
+     abort();
+  else
+  if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+     AssertException("", __FILE__, __LINE__).throwException();
+   else
+#endif
+     abort();  // this will create core file on Linux
+  }
   else
     // Calling my_mpi_fclose explicitly fixes the problem reported in bug 2243
     // for callers of NAExit(0) which is that registering it via the atexit
