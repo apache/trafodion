@@ -380,12 +380,13 @@ public class TmAuditTlog {
          LOG.error("Unable to create new HBaseAuditControlPoint object " + e);
       }
 
-//      boolean lvTlogExists = admin.tableExists(TLOG_TABLE_NAME);
       tlogAuditLock =    new Object[tlogNumLogs];
       table = new HTable[tlogNumLogs];
       for (int i = 0 ; i < tlogNumLogs; i++) {
          tlogAuditLock[i]      = new Object();
          String lv_tLogName = new String(TLOG_TABLE_NAME + "_LOG_" + Integer.toHexString(i));
+         boolean lvTlogExists = admin.tableExists(lv_tLogName);
+         LOG.error("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
          LOG.debug("Creating new Tlog table " + lv_tLogName);
          HTableDescriptor desc = new HTableDescriptor(lv_tLogName);
          desc.addFamily(hcol);
@@ -394,25 +395,30 @@ public class TmAuditTlog {
 //            desc.setValue(HTableDescriptor.SPLIT_POLICY, TmAuditTlogRegionSplitPolicy.class.getName()); // Never split
 //         }
 
-         // Need to prime the asn for future writes
-         try {
-            LOG.debug("Creating the table " + lv_tLogName);
-            admin.createTable(desc);
-            asn.set(1L);  // TLOG didn't exist previously, so start asn at 1
-         }
-         catch (TableExistsException e) {
-            LOG.error("Table " + lv_tLogName + " already exists");
+          if (lvTlogExists == false) {
+            // Need to prime the asn for future writes
             try {
-               // Get the asn from the last control point.  This ignores 
-               // any asn increments between the last control point
-               // write and a system crash and could result in asn numbers
-               // being reused.  However this would just mean that some old 
-               // records are held onto a bit longer before cleanup and is safe.
-               asn.set(tLogControlPoint.getStartingAuditSeqNum());
+               LOG.debug("Creating the table " + lv_tLogName);
+               admin.createTable(desc);
+               asn.set(1L);  // TLOG didn't exist previously, so start asn at 1
             }
-            catch (Exception e2){
-               LOG.debug("Exception setting the ASN " + e2);
+            catch (TableExistsException e) {
+               LOG.error("Table " + lv_tLogName + " already exists");
+               try {
+                  // Get the asn from the last control point.  This ignores 
+                  // any asn increments between the last control point
+                  // write and a system crash and could result in asn numbers
+                  // being reused.  However this would just mean that some old 
+                  // records are held onto a bit longer before cleanup and is safe.
+                  asn.set(tLogControlPoint.getStartingAuditSeqNum());
+               }
+               catch (Exception e2){
+                  LOG.debug("Exception setting the ASN " + e2);
+               }
             }
+         }
+         else {
+            LOG.debug("Did not attempt to create the table " + lv_tLogName);
          }
          try {
             LOG.debug("try new HTable index " + i);
