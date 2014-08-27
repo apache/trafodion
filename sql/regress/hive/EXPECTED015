@@ -226,7 +226,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:00.123
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.300
 
---- SQL operation complete.
+--- 5 row(s) loaded.
 >>
 >>prepare s from load with no recovery,  no populate indexes  into t015t2 select * from t015t1;
 
@@ -250,7 +250,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:00.135
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  COMPLETION      Status: Ended      ET: 00:00:00.234
 
---- SQL operation complete.
+--- 5 row(s) loaded.
 >>
 >>--log errors are not implemented yet .
 >>prepare s from load with log error into t015t2 select * from t015t1;
@@ -290,7 +290,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:01.309
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  COMPLETION      Status: Ended      ET: 00:00:02.305
 
---- SQL operation complete.
+--- 5 row(s) loaded.
 >>
 >>select * from t015t2 order by a;
 
@@ -462,7 +462,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:04.854
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.281
 
---- SQL operation complete.
+--- 50000 row(s) loaded.
 >>
 >>select count(*) from customer_address;
 
@@ -542,7 +542,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:01.973
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS_NOPK
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.222
 
---- SQL operation complete.
+--- 50000 row(s) loaded.
 >>
 >>select count(*) from customer_address_NOPK;
 
@@ -645,7 +645,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:10.599
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.354
 
---- SQL operation complete.
+--- 500000 row(s) loaded.
 >>
 >>select count(*) from customer_demographics;
 
@@ -761,7 +761,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:14.025
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.431
 
---- SQL operation complete.
+--- 500000 row(s) loaded.
 >>
 >>
 >>select count(*) from customer_demographics_salt;
@@ -867,7 +867,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 *** ERROR[8110] Duplicate rows detected.
 
---- SQL operation failed with errors.
+--- 0 row(s) loaded.
 >>select * from t015t3 order by a;
 
 --- 0 row(s) selected.
@@ -898,7 +898,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 *** ERROR[8110] Duplicate rows detected.
 
---- SQL operation failed with errors.
+--- 1 row(s) loaded.
 >>select * from t015t4 order by a;
 
 --- 0 row(s) selected.
@@ -923,7 +923,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- 13 row(s) inserted.
 >>load with no output into t015t5 select a,a,a from t015t1 ;
 
---- SQL operation complete.
+--- 13 row(s) loaded.
 >>select * from t015t5 order by a;
 
 A            B            C          
@@ -964,7 +964,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- 13 row(s) inserted.
 >>load with no output into t015t6 select a,a,a from t015t1 ;
 
---- SQL operation complete.
+--- 13 row(s) loaded.
 >>select * from t015t6 order by a;
 
 A            B            C          
@@ -1014,7 +1014,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>load with no output, no duplicate check  into t015t3 select a,a,a from t015t1;
 
---- SQL operation complete.
+--- 12 row(s) loaded.
 >>select * from t015t3 order by a;
 
 A            B            C          
@@ -1063,7 +1063,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>load with no output, no duplicate check ,  no populate indexes into t015t4 select a,a,a from t015t1 <<+ cardinality 10e8 >>;
 
---- SQL operation complete.
+--- 12 row(s) loaded.
 >>select * from t015t4 order by a;
 
 A            B            C          
@@ -1110,7 +1110,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>load with no output, no duplicate check into t015t5 select a,a,a from t015t1 ;
 
---- SQL operation complete.
+--- 13 row(s) loaded.
 >>select * from t015t5 order by a;
 
 A            B            C          
@@ -1170,7 +1170,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>load with no output, no duplicate check into t015t6 select a,a,a from t015t1 ;
 
---- SQL operation complete.
+--- 13 row(s) loaded.
 >>select * from t015t4 order by a;
 
 A            B            C          
@@ -1253,7 +1253,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:02.444
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  POPULATE INDEX  Status: Ended      ET: 00:00:15.983
 
---- SQL operation complete.
+--- 5000 row(s) loaded.
 >>
 >>set parserflags 1;
 
@@ -1312,7 +1312,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:02.448
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  POPULATE INDEX  Status: Ended      ET: 00:00:18.199
 
---- SQL operation complete.
+--- 5000 row(s) loaded.
 >>
 >>set parserflags 1;
 
@@ -1408,7 +1408,7 @@ Task:  UPSERT USING L  Status: Ended      ET: 00:00:05.860
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
 Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.011
 
---- SQL operation complete.
+--- 5000 row(s) loaded.
 >>
 >>set parserflags 1;
 
@@ -1463,7 +1463,7 @@ Task:  UPSERT USING L  Status: Ended      ET: 00:00:05.725
 Task:  POPULATE INDEX  Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
 Task:  POPULATE INDEX  Status: Ended      ET: 00:00:11.384
 
---- SQL operation complete.
+--- 5000 row(s) loaded.
 >>
 >>set parserflags 1;
 
@@ -1577,7 +1577,7 @@ Task:  PREPARATION     Status: Ended      ET: 00:00:03.626
 Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
 Task:  COMPLETION      Status: Ended      ET: 00:00:01.552
 
---- SQL operation complete.
+--- 50000 row(s) loaded.
 >>
 >>select count(*) from customer_address;
 

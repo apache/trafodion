@@ -85,6 +85,7 @@ const Int32  MAX_OTHERBUF_LEN = ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1+1;
 
 // These should come from a SQL Message Text (immudefs) file! ##
 #define UNLOADED_MESSAGE          "--- %ld row(s) unloaded."
+#define LOADED_MESSAGE          "--- %ld row(s) loaded."
 #define SELECTED_MESSAGE	"--- %d row(s) selected."
 #define SELECTED_BUT_MESSAGE	"--- %d row(s) selected (but none displayed)."
 #define SELECTED_FIRST_ROW_DISPLAY_MESSAGE "--- %d row(s) selected (and first row displayed)."
@@ -2259,8 +2260,9 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
     case DML_DESCRIBE_TYPE:
     case DML_DDL_TYPE:
     {
-	  
-	  if (worstcode == SQL_Success || worstcode == SQL_Eof)
+	if (stmt_type == DML_DDL_TYPE && doHBL )
+	  sprintf(donemsg, LOADED_MESSAGE, rowsAffected);
+	else if (worstcode == SQL_Success || worstcode == SQL_Eof)
 	    sprintf(donemsg, OP_COMPLETE_MESSAGE);
 	  else if (worstcode < 0)
 	    sprintf(donemsg, OP_COMPLETED_ERRORS);

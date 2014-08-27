@@ -35,7 +35,28 @@
 +>    transpose 0,1,2,3,4,5,6,7,8,9 as x10
 +>    transpose 0,1,2,3,4,5,6,7,8,9 as x1 ;
 
+--- 100 row(s) loaded.
+>>
+>>
+>>create table a5table1
++> ( ref_num largeint
++> , z_text char(3)
++> , emp_num smallint
++> ) no partition
++> ;
+
 --- SQL operation complete.
+>>
+>>insert into a5table1 values
++> (100,'abc',99), (100,'abd',99), (100,'abe',99), (100,'abc',100),
++> (100,'abd',100), (100,'abe',100), (100,'abc',101), (100,'abd',101),
++> (100,'abe',101), (100,'abb',null), (100,'abc',null), (100,'abd',null),
++> (100,'abe',null), (100,null,99), (100,null,100), (100,null,101),
++> (200,'abc',200), (200,'abd',200), (200,'abe',200);
+
+--- 19 row(s) inserted.
+>>
+>>
 >>
 >>
 >>obey TEST017(tests_simple);
@@ -215,16 +236,16 @@ T017TTDIDXC                                                                     
 >>
 >>load with no output, no recovery into T017TTB select * from T017TTA;
 
---- SQL operation complete.
+--- 100 row(s) loaded.
 >>load with no output, no recovery into T017TTC select * from T017TTA;
 
---- SQL operation complete.
+--- 100 row(s) loaded.
 >>load with no output, no recovery into T017TTD select * from T017TTA;
 
---- SQL operation complete.
+--- 100 row(s) loaded.
 >>load with no output, no recovery into T017TTE select * from T017TTA;
 
---- SQL operation complete.
+--- 100 row(s) loaded.
 >>---------------------------------------------------
 >>populate all indexes on T017TTB;
 
@@ -722,7 +743,7 @@ B@           B            C            (EXPR)
 >>
 >>load with no output, no recovery into T017TTB select * from T017TTA;
 
---- SQL operation complete.
+--- 100 row(s) loaded.
 >>
 >>populate all indexes on T017TTB;
 
@@ -758,8 +779,40 @@ B@           B            C            (EXPR)
 --- SQL operation complete.
 >>-------
 >>
+>>--verifying fix for Bug 1359872
+>>--
+>>select count(*) from a5table1;
+
+(EXPR)              
+--------------------
+
+                  19
+
+--- 1 row(s) selected.
+>> create index a5iraea10 on a5table1 (ref_num asc, z_text, emp_num asc) ;
+
+--- SQL operation complete.
 >>
+>> create index a5iraey10 on a5table1 (ref_num asc, z_text, emp_num desc) ;
+
+--- SQL operation complete.
 >>
+>>select count(*) from table(index_table a5iraea10);
+
+(EXPR)              
+--------------------
+
+                  19
+
+--- 1 row(s) selected.
+>>select count(*) from table(index_table a5iraey10);
+
+(EXPR)              
+--------------------
+
+                  19
+
+--- 1 row(s) selected.
 >>
 >>
 >>log;

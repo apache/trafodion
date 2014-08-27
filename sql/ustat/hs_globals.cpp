@@ -3661,7 +3661,10 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // INSERTS for better performance. A current bug in the HBase interface
     // requires the use of Upsert.
     if (hs_globals->isHbaseTable)
-      insertType = "UPSERT USING LOAD INTO ";
+      if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
+        insertType = "LOAD WITH NO OUTPUT, NO RECOVERY, NO POPULATE INDEXES, NO DUPLICATE CHECK INTO  ";
+       else
+         insertType = "UPSERT USING LOAD INTO ";
     else if (TM->InTransaction())
       insertType = "INSERT INTO ";
     else

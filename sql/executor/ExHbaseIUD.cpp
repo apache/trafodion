@@ -1391,7 +1391,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
     ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
     if (pentry_down->downState.request == ex_queue::GET_NOMORE)
       step_ = ALL_DONE;
-    else if (pentry_down->downState.request == ex_queue::GET_EOD && step_ != HANDLE_ERROR)
+    else if (pentry_down->downState.request == ex_queue::GET_EOD &&
+             step_ != HANDLE_ERROR && lastHandledStep_ != HANDLE_ERROR)
       if (currRowNum_ > rowsInserted_)
       {
         step_ = PROCESS_INSERT;
@@ -1631,6 +1632,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
         retcode = ehi_->close();
 
+        lastHandledStep_ =HANDLE_ERROR;
         step_ = ALL_DONE;
       }
         break;
