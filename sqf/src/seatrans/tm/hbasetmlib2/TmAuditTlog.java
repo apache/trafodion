@@ -386,8 +386,7 @@ public class TmAuditTlog {
          tlogAuditLock[i]      = new Object();
          String lv_tLogName = new String(TLOG_TABLE_NAME + "_LOG_" + Integer.toHexString(i));
          boolean lvTlogExists = admin.tableExists(lv_tLogName);
-         LOG.error("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
-         LOG.debug("Creating new Tlog table " + lv_tLogName);
+         LOG.debug("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
          HTableDescriptor desc = new HTableDescriptor(lv_tLogName);
          desc.addFamily(hcol);
 
@@ -416,9 +415,6 @@ public class TmAuditTlog {
                   LOG.debug("Exception setting the ASN " + e2);
                }
             }
-         }
-         else {
-            LOG.debug("Did not attempt to create the table " + lv_tLogName);
          }
          try {
             LOG.debug("try new HTable index " + i);
