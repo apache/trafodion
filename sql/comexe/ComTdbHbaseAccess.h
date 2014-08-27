@@ -613,6 +613,8 @@ public:
        case MERGE_:
           if (mergeInsertRowLen_ > 0)
              rowLen =  mergeInsertRowLen_;
+          else if (updateRowLen_ > 0)
+            rowLen = updateRowLen_;
           else
              rowLen = convertRowLen_;
           break;

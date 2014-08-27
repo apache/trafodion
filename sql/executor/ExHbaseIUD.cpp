@@ -1887,15 +1887,22 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	case CREATE_MUTATIONS:
 	  {
 	    rowUpdated_ = TRUE;
-            // Merge can result in inserting rows
+            // Merge can result in inserting rows.
             // Use Number of columns in insert rather number
             // of columns in update if an insert is involved in this tcb
             if (tcb_->hbaseAccessTdb().getAccessType() 
                   == ComTdbHbaseAccess::MERGE_)
             {
-               ExpTupleDesc * rowTD =
-                  tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor(
-                       tcb_->hbaseAccessTdb().mergeInsertTuppIndex_);
+              ExpTupleDesc * rowTD = NULL;
+              if (tcb_->mergeInsertExpr())
+                rowTD = 
+                  tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                  (tcb_->hbaseAccessTdb().mergeInsertTuppIndex_);
+                else
+                  rowTD = 
+                    tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                    (tcb_->hbaseAccessTdb().updateTuppIndex_);
+                  
                if (rowTD->numAttrs() > 0)
                   tcb_->allocateDirectRowBufferForJNI(rowTD->numAttrs());
             } 
