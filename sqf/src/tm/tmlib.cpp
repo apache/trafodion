@@ -130,7 +130,7 @@ void cleanupTransactionLocal(long transactionID)
 
   if (!sv_envvar_checked) {
     const char *envvar_enable_cleanup  = getenv("TMLIB_ENABLE_CLEANUP");
-    if (envvar_enable_cleanup && strcmp(envvar_enable_cleanup, "0")) {
+    if (envvar_enable_cleanup && (strcmp(envvar_enable_cleanup, "0")==0) ) {
       sv_enable_cleanup_rminterface = false;
     }
     sv_envvar_checked = true;
