@@ -52,6 +52,16 @@ static bool driverVersionChecked = false;
 int client_initialization(void);
 #endif
 
+void setTM_enable_cleanup ()
+{
+  static bool sv_envvar_setup = false;
+  if (sv_envvar_setup) {
+    return;
+  }
+  putenv("TMLIB_ENABLE_CLEANUP=0");
+  sv_envvar_setup = true;
+}
+
 JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_T2Driver_getPid (JNIEnv *env, jclass cls)
 {
 	return (jint)getpid();
@@ -334,6 +344,9 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion(J
 
 	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion",("javaVproc=%s",
 		DebugJString(jenv,javaVproc)));
+
+	// Set the TMLIB cleanup 
+	setTM_enable_cleanup();
 
 #ifdef NSK_PLATFORM		// Linux port
   	short status = tmfInit();
