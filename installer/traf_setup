@@ -141,6 +141,7 @@ timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion environment setup ($timestamp)"
 mkdir -p $TRAF_WORKDIR/logs
 OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
+node_count=$(echo $NODE_LIST | wc -w)
 
 #==============================================
 # display license text and get acceptance
@@ -171,47 +172,48 @@ if [ "$USER" == "$TRAF_USER" ]; then
 fi
 
 #================================
-#Check for private key errors if on HP cloud VM
-if [ $OPENSTACK_VM -ne 0 ]; then
-    echo "***INFO: Checking for private key errors"
+if [[ $node_count -gt 1 ]]; then 
+   #Check for private key errors if on HP cloud VM
+   if [ $OPENSTACK_VM -ne 0 ]; then
+      echo "***INFO: Checking for private key errors"
 
-    #If file has not been copied over, then script will exit
+      #If file has not been copied over, then script will exit
 
-    fileFound=$(find / -wholename /root/.ssh/id_rsa | wc -l)
+      fileFound=$(find / -wholename /root/.ssh/id_rsa | wc -l)
 
-    if [[ $fileFound -lt 1 ]]; then
-       echo
-       echo "***ERROR[1]: Private Key file not found"
-       echo "Script exiting..."
-       echo
-       exit -1
-    fi
+      if [[ $fileFound -lt 1 ]]; then
+         echo
+         echo "***ERROR[1]: Private Key file not found"
+         echo "Script exiting..."
+         echo
+         exit -1
+      fi
 
-    #There should be as many begin statements as end statements. If there is not an
-    #equal matching it may be the result of a copy error.
+      #There should be as many begin statements as end statements. If there is not an
+      #equal matching it may be the result of a copy error.
 
-    begin=$(grep "\-\-\-\-\-BEGIN RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
-    end=$(grep "\-\-\-\-\-END RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
+      begin=$(grep "\-\-\-\-\-BEGIN RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
+      end=$(grep "\-\-\-\-\-END RSA PRIVATE KEY\-\-\-\-\-" /root/.ssh/id_rsa | wc -l)
 
-    if [[ $begin -ne $end ]]; then
-       echo
-       echo "***ERROR[2]: Private Key file copy error"
-       echo "Script exiting..."
-       echo
-       exit -1
-    fi
+      if [[ $begin -ne $end ]]; then
+         echo
+         echo "***ERROR[2]: Private Key file copy error"
+         echo "Script exiting..."
+         echo
+         exit -1
+      fi
 
-    ##If there are no begin or end statements then there is a copy error.
+      ##If there are no begin or end statements then there is a copy error.
 
-    if [[ $begin -eq 0 ]]; then
-       echo
-       echo "***ERROR[3]: Private Key file copy error"
-       echo "Script exiting..."
-       echo
-       exit -1
-    fi
+      if [[ $begin -eq 0 ]]; then
+         echo
+         echo "***ERROR[3]: Private Key file copy error"
+         echo "Script exiting..."
+         echo
+         exit -1
+      fi
+  fi
 fi
-
 #================================
 # validate specified nodes and that we can get to them with passwordless ssh
 echo "***INFO: Checking all nodes in specified node list"
@@ -233,7 +235,7 @@ if [ -n "$bad_nodes" ]; then
     echo "***ERROR: problem nodes: $bad_nodes"
     exit -1
 fi
-node_count=$(echo $NODE_LIST | wc -w)
+
 echo "***INFO: Total number of nodes = $node_count"
 if [ $node_count -eq 1 ]; then
     TRAF_PDSH=""

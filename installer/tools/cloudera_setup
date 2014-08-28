@@ -157,7 +157,7 @@ if [[ $cloudera_installed -eq 0 ]]; then
 
    chmod +x cloudera-manager-installer.bin
 
-   sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme
+   sudo ./cloudera-manager-installer.bin --i-agree-to-all-licenses --noreadme --noprompt
 
    if [ $? -ne 0 ]; then
       echo "***ERROR: Error while installing Cloudera" | tee -a $SETUP_LOG
