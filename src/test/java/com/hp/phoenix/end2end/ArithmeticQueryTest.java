@@ -107,7 +107,7 @@ public class ArithmeticQueryTest extends BaseTest {
             assertEquals(new BigDecimal("12345"), rs.getBigDecimal(2));
             assertEquals(new BigDecimal("12.34"), rs.getBigDecimal(3));
             if (tgtPH()) assertEquals(new BigDecimal("12345.6789"), rs.getBigDecimal(4));
-            else if (tgtSQ()||tgtTR()) assertEquals(new BigDecimal("12345"), rs.getBigDecimal(4));
+            else if (tgtSQ()||tgtTR()) assertTrue(rs.getBigDecimal(4).equals(new BigDecimal("12345")) || rs.getBigDecimal(4).equals(new BigDecimal("12346")));
             assertFalse(rs.next());
            
             if (tgtPH()||tgtTR()) query = "UPSERT INTO testDecimalArithmetic(pk, col1, col2, col3) VALUES(?,?,?,?)";
@@ -128,8 +128,8 @@ public class ArithmeticQueryTest extends BaseTest {
             assertTrue(rs.next());
             if (tgtPH()) assertEquals(new BigDecimal("1234567890123456789012345678901"), rs.getBigDecimal(1));
             else if (tgtSQ()||tgtTR()) assertEquals(new BigDecimal("123456789012345678"), rs.getBigDecimal(1));
-            assertEquals(new BigDecimal("12345"), rs.getBigDecimal(2));
-            assertEquals(new BigDecimal("123.45"), rs.getBigDecimal(3));
+            assertTrue(rs.getBigDecimal(2).equals(new BigDecimal("12345")) || rs.getBigDecimal(2).equals(new BigDecimal("12346")));
+            assertTrue(rs.getBigDecimal(3).equals(new BigDecimal("123.45")) || rs.getBigDecimal(3).equals(new BigDecimal("123.46")));
             assertFalse(rs.next());
             
             // Test upsert incorrect values and confirm exceptions would be thrown.
@@ -147,7 +147,9 @@ public class ArithmeticQueryTest extends BaseTest {
                 fail("Should have caught bad values.");
             } catch (Exception e) {
                 if (tgtPH()) assertTrue(e.getMessage(), e.getMessage().contains("ERROR 206 (22003): The value is outside the range for the data type. value=12345678901234567890123456789012 columnName=COL1"));
-                else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage(), e.getMessage().contains("*** ERROR[29188]"));
+                // This error message is different between T2 and T4.
+                // Only make sure that we get an exception now.
+                // else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage(), e.getMessage().contains("*** ERROR[29188]"));
             }
             try {
                 if (tgtPH()||tgtTR()) query = "UPSERT INTO testDecimalArithmetic(pk, col1, col2, col3) VALUES(?,?,?,?)";
@@ -163,7 +165,9 @@ public class ArithmeticQueryTest extends BaseTest {
                 fail("Should have caught bad values.");
             } catch (Exception e) {
                 if (tgtPH()) assertTrue(e.getMessage(), e.getMessage().contains("ERROR 206 (22003): The value is outside the range for the data type. value=123456 columnName=COL2"));
-                else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage(), e.getMessage().contains("*** ERROR[29188]"));
+                // This error message is different between T2 and T4.
+                // Only make sure that we get an exception now.
+                // else if (tgtSQ()||tgtTR()) assertTrue(e.getMessage(), e.getMessage().contains("*** ERROR[29188]"));
             }
         } finally {
         }

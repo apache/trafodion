@@ -801,7 +801,7 @@ public abstract class BaseTest {
                 if (url.contains("t4jdbc"))
                     Class.forName("org.trafodion.jdbc.t4.T4Driver");   // T4 driver
                 else
-                    Class.forName("org.trafodion.sql.T2Driver"); // T2 driver
+                    Class.forName("org.trafodion.jdbc.t2.T2Driver"); // T2 driver
                 driverRegistered = true;
             }
 
