@@ -36,6 +36,7 @@
 #include "ComPackDefs.h"
 #include "dfs2rec.h"
 #include "exp_tuple_desc.h"
+#include "csconvert.h"
 
 // Methods that implement the Explain Tree (ExplainDesc
 // and ExplainTuple nodes).  An Explain Tree consists of an
@@ -345,6 +346,17 @@ ExplainTuple::setCol(Int32 col,
 	  if ((cursor + dataLength) > (UInt32)getColLength(col))
 	  {
 	    //replace the last two characters by the end of line character and the truncation indicator
+	    //NOTE: Must be careful not to damage a multi-byte UTF8 character, so we ensure
+	    //      that *(p-2) [i.e. where the '*' will be put] is either an ASCII character
+	    //      or it is the first byte of a multi-byte UTF8 character.
+	    //
+	    if ( (*(p-2)) & 0x80 ) // If non-ASCII char
+	    { 
+	       char *pSt = findStartOfChar( p-2, explainTuple_ + colOffset + 2 );
+	       // Note: We don't care if pSt -> valid UTF8 or not.
+	       while ( p > (pSt + 2) ) *--p = '\0'; // replace char with zeroes
+	    }
+
 	    *--p = '\0';
 	    *--p = '*';
 	  }
