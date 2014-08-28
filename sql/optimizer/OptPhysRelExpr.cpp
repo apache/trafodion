@@ -1322,10 +1322,11 @@ void RelExpr::replacePivs()
           // partition input variables available
           ValueIdSet availInputs(
               child(childIndex)->getGroupAttr()->getCharacteristicInputs());
+          ValueIdSet dummy;
 
           SearchKey *newPartSearchKey =
             childLppf->getLogPartitioningFunction()->
-            createSearchKey(childIndexDesc, availInputs);
+            createSearchKey(childIndexDesc, availInputs, dummy);
 
           if(newPartSearchKey)
             sppOfChild->setPartSearchKey(newPartSearchKey);
@@ -14248,9 +14249,10 @@ PhysicalProperty * RelExpr::synthDP2PhysicalProperty(
           // partition input variables available
           ValueIdSet
             availInputs(getGroupAttr()->getCharacteristicInputs());
+          ValueIdSet dummy;
 
           SearchKey *newPartSearchKey =
-            logicalPartFunc->createSearchKey(indexDesc, availInputs);
+            logicalPartFunc->createSearchKey(indexDesc, availInputs, dummy);
 
           if(newPartSearchKey)
           {

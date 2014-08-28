@@ -214,6 +214,9 @@ public:
   // SeaMonster: Print routing information
   void dumpSMRouteTable();
 
+  // for debugging
+  void print();
+
 #ifdef IPC_INTEGRITY_CHECKING
   void checkIntegrity(void);
   void checkLocalIntegrity(void);

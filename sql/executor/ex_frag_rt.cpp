@@ -2129,6 +2129,141 @@ void ExRtFragTable::dumpSMRouteTable()
   } // for each fragment
 }
 
+void ExRtFragTable::print()
+{
+  printf("ExRtFragTable:\n");
+  printf("--------------\n");
+  printf("Global State: ");
+
+  switch (state_)
+    {
+    case UNASSIGNED:
+      printf("UNASSIGNED\n");
+      break;
+    case ESP_ASSIGNED:
+      printf("ESP_ASSIGNED\n");
+      break;
+    case DOWNLOADING:
+      printf("DOWNLOADING\n");
+      break;
+    case DOWNLOADED:
+      printf("DOWNLOADED\n");
+      break;
+    case FIXING_UP:
+      printf("FIXING_UP\n");
+      break;
+    case FIXED_UP:
+      printf("FIXED_UP\n");
+      break;
+    case LOST_CONNECTION:
+      printf("LOST_CONNECTION\n");
+      break;
+    default:
+      printf("Invalid state!!\n");
+      break;
+    }
+
+  printf("%d load/fixup, %d work, %d transactional and %d release messages outstanding\n\n",
+         numLoadFixupMsgesOut_,
+         numWorkMsgesOut_,
+         numTransactionalMsgesOut_,
+         numReleaseEspMsgesOut_);
+
+  for (CollIndex i=0; i < fragmentEntries_.entries(); i++)
+    {
+      ExRtFragTableEntry *fragEntry = fragmentEntries_[i];
+      Lng32 partInputDataLength = (fragEntry->partDesc_ ?
+                                   fragEntry->partDesc_->getPartInputDataLength() :
+                                   0);
+      unsigned char *pivBuf = new unsigned char[partInputDataLength];
+      const int pivMaxDisplayChars = 20;
+      char hexPiv[2*pivMaxDisplayChars+1];
+      ExFragDir::ExFragEntryType fragType = fragDir_->getType(i);
+
+      printf("Fragment id  : %d\n", fragEntry->id_);
+      printf("Fragment type: ");
+      switch(fragType)
+        {
+        case ExFragDir::MASTER:
+          printf("MASTER\n");
+          break;
+        case ExFragDir::EXPLAIN:
+          printf("EXPLAIN\n");
+          break;
+        case ExFragDir::ESP:
+          {
+            printf("ESP\n");
+          
+            printf("Num ESPs     : %d\n", fragEntry->numEsps_);
+            if (fragEntry->numEsps_ > 0)
+              {
+                printf("\n");
+                printf("   ESP# Proc id  #c #w PIVs (in hex)\n");
+                printf("   ---- -------- -- -- -------------------------------------------\n");
+              }
+            for (CollIndex e=0; e<fragEntry->numEsps_; e++)
+              {
+                ExRtFragInstance *fragInst = NULL;
+
+                if (fragEntry->assignedEsps_.used(e))
+                  fragInst = fragEntry->assignedEsps_[e];
+
+                // ESP #
+                printf("   %4d ", e);
+                if (fragInst)
+                  {
+                    // Node (desired or actually assigned
+                    if (fragInst->usedEsp_ != NULL)
+                      {
+                        // actual PID
+                        const GuaProcessHandle &phandle =
+                          fragEntry->assignedEsps_[e]->usedEsp_->
+                          getIpcServer()->getServerId().getPhandle();
+                        char pidBuf[9]; // includes trailing NUL
+                        phandle.toAscii(pidBuf, sizeof(pidBuf));
+                        pidBuf[8] = '\0';
+                        printf("%8s ", pidBuf);
+                      }
+                    else if (fragEntry->assignedEsps_.used(e))
+                      printf("CPU %4d ", fragEntry->assignedEsps_[e]->cpuNum_);
+
+                    printf("%2d %2d ",
+                           fragInst->numControlMessages_,
+                           (fragInst->workMessageSent_ ? 1 : 0));
+                  }
+                else
+                  printf("???            ");
+
+                // print partition input data
+                if (partInputDataLength > 0 &&
+                    !fragEntry->dynamicLoadBalancing_ &&
+                    e < fragEntry->partDesc_->getNumPartitions())
+                  {
+                    fragEntry->partDesc_->copyPartInputValue(
+                         e, e, (char *) pivBuf, partInputDataLength);
+                    int displayBytes = partInputDataLength;
+                    NABoolean tooLong =
+                      (displayBytes > pivMaxDisplayChars/2);
+
+                    if (tooLong)
+                      displayBytes = pivMaxDisplayChars/2;
+                    for (int b=0; b<displayBytes; b++)
+                      sprintf(&hexPiv[2*b],"%02x",pivBuf[b]);
+                    hexPiv[2*displayBytes] = 0;
+                    printf("%s%s\n", hexPiv, (tooLong ? "..." : ""));
+                  }
+              }
+            delete pivBuf;
+          }
+          break;
+
+        default:
+          printf("Invalid fragment type: %d\n", (int) fragType);
+        } // switch
+      printf("\n");
+    } // for
+}
+
 #ifdef IPC_INTEGRITY_CHECKING
 
 void ExRtFragTable::checkIntegrity()

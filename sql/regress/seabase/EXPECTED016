@@ -168,7 +168,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART7           1.00E+009
 
 --- SQL operation complete.
@@ -290,14 +290,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART7."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART7.A,
-                             TRAFODION.HBASE.MCSTATPART7.B) with
-                             boundaries(c(<min>) c(<min>) c(<min>) ;c(1) nc(-)
-                             nc(-) ;c(2) nc(-) nc(-) ;c(3) nc(-) nc(-) ;c(4)
-                             nc(-) nc(-) ;c(5) nc(-) nc(-) ;c(6) nc(-) nc(-)
-                             ;c(7) nc(-) nc(-) )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART7.A,
+                             TRAFODION.HBASE.MCSTATPART7.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -318,10 +313,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART7
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = <min>)
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = <max>)
 
 --- SQL operation complete.
 >>
@@ -338,7 +333,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART5           1.00E+009
 
 --- SQL operation complete.
@@ -460,14 +455,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART5."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART5.A,
-                             TRAFODION.HBASE.MCSTATPART5.B) with
-                             boundaries(c(<min>) c(<min>) c(<min>) ;c(1) nc(-)
-                             nc(-) ;c(2) nc(-) nc(-) ;c(3) nc(-) nc(-) ;c(4)
-                             nc(-) nc(-) ;c(5) nc(-) nc(-) ;c(6) nc(-) nc(-)
-                             ;c(7) nc(-) nc(-) )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART5.A,
+                             TRAFODION.HBASE.MCSTATPART5.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -488,10 +478,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART5
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = <min>)
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = <max>)
 
 --- SQL operation complete.
 >>
@@ -508,7 +498,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART3           1.00E+009
 
 --- SQL operation complete.
@@ -630,18 +620,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART3."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART3.A,
-                             TRAFODION.HBASE.MCSTATPART3.B) with
-                             boundaries(c(<min>) c(<min>) c(<min>) ;c(1) nc(-)
-                             c(0001-01-01 00:00:00.000000) ;c(2) nc(-)
-                             c(0001-01-01 00:00:00.000000) ;c(3) nc(-)
-                             c(0001-01-01 00:00:00.000000) ;c(4) nc(-)
-                             c(0001-01-01 00:00:00.000000) ;c(5) nc(-)
-                             c(0001-01-01 00:00:00.000000) ;c(6) nc(-)
-                             c(0001-01-01 00:00:00.000000) ;c(7) nc(-)
-                             c(0001-01-01 00:00:00.000000) )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART3.A,
+                             TRAFODION.HBASE.MCSTATPART3.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -662,10 +643,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART3
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = <min>)
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = <max>)
 
 --- SQL operation complete.
 >>
@@ -682,7 +663,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART6           1.00E+009
 
 --- SQL operation complete.
@@ -804,15 +785,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART6."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART6.A,
-                             TRAFODION.HBASE.MCSTATPART6.B) with
-                             boundaries(c(<min>) c(<min>) c(<min>) ;c(1) nc(-)
-                             c(00:00:00) ;c(2) nc(-) c(00:00:00) ;c(3) nc(-)
-                             c(00:00:00) ;c(4) nc(-) c(00:00:00) ;c(5) nc(-)
-                             c(00:00:00) ;c(6) nc(-) c(00:00:00) ;c(7) nc(-)
-                             c(00:00:00) )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART6.A,
+                             TRAFODION.HBASE.MCSTATPART6.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -833,10 +808,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART6
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = <min>)
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = <max>)
 
 --- SQL operation complete.
 >>
@@ -853,7 +828,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART2           1.00E+009
 
 --- SQL operation complete.
@@ -975,15 +950,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART2."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART2.A,
-                             TRAFODION.HBASE.MCSTATPART2.B) with
-                             boundaries(c(<min>) c(<min>) c(<min>) ;c(1) nc(-)
-                             c(0001-01-01) ;c(2) nc(-) c(0001-01-01) ;c(3)
-                             nc(-) c(0001-01-01) ;c(4) nc(-) c(0001-01-01)
-                             ;c(5) nc(-) c(0001-01-01) ;c(6) nc(-)
-                             c(0001-01-01) ;c(7) nc(-) c(0001-01-01) )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART2.A,
+                             TRAFODION.HBASE.MCSTATPART2.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -1004,10 +973,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART2
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = <min>)
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = <max>)
 
 --- SQL operation complete.
 >>
@@ -1024,7 +993,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART1           1.00E+009
 
 --- SQL operation complete.
@@ -1146,18 +1115,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART1."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART1.A,
-                             TRAFODION.HBASE.MCSTATPART1.B) with
-                             boundaries(c(<min>) c(<min>) c('<min>') ;c(1)
-                             nc(-) c('''<region boundary>''') ;c(2) nc(-)
-                             c('''<region boundary>''') ;c(3) nc(-)
-                             c('''<region boundary>''') ;c(4) nc(-)
-                             c('''<region boundary>''') ;c(5) nc(-)
-                             c('''<region boundary>''') ;c(6) nc(-)
-                             c('''<region boundary>''') ;c(7) nc(-)
-                             c('''<region boundary>''') )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART1.A,
+                             TRAFODION.HBASE.MCSTATPART1.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -1178,10 +1138,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART1
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = '<min>')
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = '<max>')
 
 --- SQL operation complete.
 >>
@@ -1198,7 +1158,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  1.00E+000
 3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
 2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  MCSTATPART8           1.00E+009
 
 --- SQL operation complete.
@@ -1320,21 +1280,9 @@ DESCRIPTION
   parent_processes ....... 4
   child_processes ........ 8
   parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  range partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART8."_SALT_",
-                             TRAFODION.HBASE.MCSTATPART8.A,
-                             TRAFODION.HBASE.MCSTATPART8.B) with
-                             boundaries(c(<min>) c(<min>) c('<min>') ;c(1)
-                             nc(-) c('
-') ;c(2) nc(-) c('
-') ;c(3) nc(-) c('
-')
-                             ;c(4) nc(-) c('
-') ;c(5) nc(-) c('
-') ;c(6) nc(-)
-                             c('
-') ;c(7) nc(-) c('
-') )
+  child_partitioning_func  hash2 partitioned 8 ways on
+                             (TRAFODION.HBASE.MCSTATPART8.A,
+                             TRAFODION.HBASE.MCSTATPART8.B)
   seamonster_query ....... no
   seamonster_exchange .... no
   partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
@@ -1355,10 +1303,10 @@ DESCRIPTION
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART8
   cache_size ........ 10,000
   key_columns ............ _SALT_, A, B
-  begin_key .............. (_SALT_ = \:_sys_HostVarLo0),
-                             (A = \:_sys_HostVarLo1), (B = \:_sys_HostVarLo2)
-  end_key ................ (_SALT_ = \:_sys_HostVarHi0),
-                             (A = \:_sys_HostVarHi1), (B = \:_sys_HostVarHi2)
+  begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
+                             8)), (A = <min>), (B = '<min>')
+  end_key ................ (_SALT_ = (\:_sys_HostVarHiHashPart Hash2Distrib
+                             8)), (A = <max>), (B = '<max>')
 
 --- SQL operation complete.
 >>

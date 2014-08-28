@@ -244,7 +244,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  2.00E+000
 3    .    4    esp_exchange                    1:8(hash2)            2.00E+000
 2    .    3    hash_partial_groupby                                  2.00E+000
-1    .    2    esp_exchange                    8(hash2):12(range)    1.00E+011
+1    .    2    esp_exchange                    8(hash2):12(hash2)    1.00E+011
 .    .    1    trafodion_scan                  NUMERIC10DOT2         1.00E+011
 
 --- SQL operation complete.
@@ -306,7 +306,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    hash_partial_groupby                                  2.00E+000
 3    .    4    esp_exchange                    1:8(hash2)            2.00E+000
 2    .    3    hash_partial_groupby                                  2.00E+000
-1    .    2    esp_exchange                    8(hash2):8(range)     1.00E+009
+1    .    2    esp_exchange                    8(hash2):8(hash2)     1.00E+009
 .    .    1    trafodion_scan                  TIME2                 1.00E+009
 
 --- SQL operation complete.
