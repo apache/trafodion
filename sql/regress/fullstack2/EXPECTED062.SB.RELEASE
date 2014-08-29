@@ -65,15 +65,15 @@ abc"bad
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/EC/10966143/release/REGRS/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/EC/10966143/release/REGRS/export/bin ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-12-10 23:19} 
+MESSAGEFILE VRSN   {2014-08-28 15:32} 
 SQL USER NAME      DB__ROOT
-SQL USER ID        65535
+SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
@@ -111,7 +111,8 @@ SET CATALOG C.S;
 >>		-- 8009
 >>showcontrol query default showcontrol;
 
-No CONTROL QUERY DEFAULT SHOWCONTROL settings are in effect.
+CONTROL QUERY DEFAULT
+  SHOWCONTROL_SHOW_ALL          	OFF
 
 No externalized DEFAULTS attribute SHOWCONTROL exists.
 
@@ -492,9 +493,9 @@ CONTROL QUERY DEFAULT
   POS_ALLOW_NON_PK_TABLES       	ON
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
-  HBASE_ASYNC_DROP_TABLE        	ON
-  HBASE_SERIALIZATION           	OFF
-  HBASE_FILTER_PREDS            	OFF
+  HBASE_ASYNC_DROP_TABLE        	OFF
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
   SHOWCONTROL_SHOW_ALL          	ON
   SCHEMA                        	AAA.BBB
   CATALOG                       	CCC
@@ -534,9 +535,9 @@ CONTROL QUERY DEFAULT
   POS_ALLOW_NON_PK_TABLES       	ON
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
-  HBASE_ASYNC_DROP_TABLE        	ON
-  HBASE_SERIALIZATION           	OFF
-  HBASE_FILTER_PREDS            	OFF
+  HBASE_ASYNC_DROP_TABLE        	OFF
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
@@ -567,13 +568,14 @@ CONTROL QUERY DEFAULT
   POS_ALLOW_NON_PK_TABLES       	ON
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
-  HBASE_ASYNC_DROP_TABLE        	ON
-  HBASE_SERIALIZATION           	OFF
-  HBASE_FILTER_PREDS            	OFF
+  HBASE_ASYNC_DROP_TABLE        	OFF
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
   SCHEMA                        	TRAFODION.SCH
+  TIMEOUT                       	6000
 
 --- SQL operation complete.
 >>showcontrol defaults readonly_cursor;
@@ -918,15 +920,15 @@ No CONTROL SESSION settings are in effect.
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/EC/10966143/release/REGRS/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/EC/10966143/release/REGRS/export/bin ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-12-10 23:19} 
+MESSAGEFILE VRSN   {2014-08-28 15:32} 
 SQL USER NAME      DB__ROOT
-SQL USER ID        65535
+SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
@@ -980,15 +982,15 @@ select TESTABORT;
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/EC/10966143/release/REGRS/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/EC/10966143/release/REGRS/export/bin ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-12-10 23:19} 
+MESSAGEFILE VRSN   {2014-08-28 15:32} 
 SQL USER NAME      DB__ROOT
-SQL USER ID        65535
+SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
@@ -1036,15 +1038,15 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/EC/10966143/release/REGRS/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/EC/10966143/release/REGRS/export/bin ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-12-10 23:19} 
+MESSAGEFILE VRSN   {2014-08-28 15:32} 
 SQL USER NAME      DB__ROOT
-SQL USER ID        65535
+SQL USER ID        99999
 SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     

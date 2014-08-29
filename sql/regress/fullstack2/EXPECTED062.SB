@@ -65,16 +65,16 @@ abc"bad
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64d/mxci ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-09-23 20:02} 
+MESSAGEFILE VRSN   {2014-08-28 15:19} 
 SQL USER NAME      DB__ROOT
 SQL USER ID        99999
-SQL CATALOG        SEABASE
+SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
@@ -146,14 +146,14 @@ No externalized DEFAULTS attribute ZZFOO exists.
 No CONTROL QUERY DEFAULT CATALOG settings are in effect.
 
 Current DEFAULTS
-  CATALOG                       	SEABASE
+  CATALOG                       	TRAFODION
 
 --- SQL operation complete.
 >> -- CAT
 >>showcontrol default schema, match full;
 
 CONTROL QUERY DEFAULT
-  SCHEMA                        	SEABASE.SCH
+  SCHEMA                        	TRAFODION.SCH
 
 Current DEFAULTS
   SCHEMA                        	SCH
@@ -176,7 +176,7 @@ Current DEFAULTS
 >>showcontrol default schema, match full;
 
 CONTROL QUERY DEFAULT
-  SCHEMA                        	SEABASE.SCH
+  SCHEMA                        	TRAFODION.SCH
 
 Current DEFAULTS
   SCHEMA                        	SCH
@@ -494,8 +494,8 @@ CONTROL QUERY DEFAULT
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
-  HBASE_SERIALIZATION           	OFF
-  HBASE_FILTER_PREDS            	OFF
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
   SHOWCONTROL_SHOW_ALL          	ON
   SCHEMA                        	AAA.BBB
   CATALOG                       	CCC
@@ -536,12 +536,12 @@ CONTROL QUERY DEFAULT
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
-  HBASE_SERIALIZATION           	OFF
-  HBASE_FILTER_PREDS            	OFF
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
-  SCHEMA                        	SEABASE.SCH
+  SCHEMA                        	TRAFODION.SCH
   TIMEOUT                       	144
 
 --- SQL operation complete.
@@ -569,12 +569,12 @@ CONTROL QUERY DEFAULT
   MODE_SEABASE                  	ON
   SEABASE_VOLATILE_TABLES       	ON
   HBASE_ASYNC_DROP_TABLE        	OFF
-  HBASE_SERIALIZATION           	OFF
-  HBASE_FILTER_PREDS            	OFF
+  HBASE_SERIALIZATION           	ON
+  HBASE_FILTER_PREDS            	ON
   SHOWCONTROL_SHOW_ALL          	ON
   DEF_CHUNK_SIZE                	1000
   CPUCOST_DM_GET                	.001
-  SCHEMA                        	SEABASE.SCH
+  SCHEMA                        	TRAFODION.SCH
   TIMEOUT                       	6000
 
 --- SQL operation complete.
@@ -920,16 +920,16 @@ No CONTROL SESSION settings are in effect.
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64d/mxci ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-09-23 20:02} 
+MESSAGEFILE VRSN   {2014-08-28 15:19} 
 SQL USER NAME      DB__ROOT
 SQL USER ID        99999
-SQL CATALOG        SEABASE
+SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
@@ -972,7 +972,7 @@ Current DEFAULTS
 >>#ifLINUX
 >>table mxreborn;
 
-*** ERROR[4082] Object SEABASE.SCH.MXREBORN does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.MXREBORN does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -980,16 +980,16 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64d/mxci ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-09-23 20:02} 
+MESSAGEFILE VRSN   {2014-08-28 15:19} 
 SQL USER NAME      DB__ROOT
 SQL USER ID        99999
-SQL CATALOG        SEABASE
+SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
@@ -1036,16 +1036,16 @@ Current DEFAULTS
 ----------------------------------
 Current Environment
 ----------------------------------
-CURRENT DIRECTORY  /opt/home/xxxx/xxxx/sqf/rundir/fullstack2
+CURRENT DIRECTORY  /opt/home/xxxx/xxxx/rundir/fullstack2
 LIST_COUNT         4294967295
 LOG FILE           LOG062
-MESSAGEFILE        /opt/home/xxxx/xxxx/sqf/export/bin64d/mxci ...
+MESSAGEFILE        /opt/home/xxxx/xxxx/export/bin64d/mxci ...
 TERMINAL CHARSET   ISO88591
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2013-09-23 20:02} 
+MESSAGEFILE VRSN   {2014-08-28 15:19} 
 SQL USER NAME      DB__ROOT
 SQL USER ID        99999
-SQL CATALOG        SEABASE
+SQL CATALOG        TRAFODION
 SQL SCHEMA         SCH
 TRANSACTION ID     
 TRANSACTION STATE  not in progress
@@ -1083,7 +1083,7 @@ Current DEFAULTS
 +>tazfoo		-- another embedded cmt
 +>;
 
-*** ERROR[4082] Object SEABASE.SCH.TAZFOO does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.TAZFOO does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1102,7 +1102,7 @@ invoke tazfoo select * from tazfoo;
 
 >>select * from tazfoo;
 
-*** ERROR[4082] Object SEABASE.SCH.TAZFOO does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH.TAZFOO does not exist or is inaccessible.
 
 *** ERROR[8822] The statement was not prepared.
 
