@@ -7062,7 +7062,6 @@ void QueryOptimizerDriver::DEBUG_BREAK_ON_TASK()
 
 void QueryOptimizerDriver::DEBUG_SHOW_TASK(CascadesTask * task)
 {
-#ifdef _DEBUG
   if ( ( CmpCommon::getDefault( NSK_DBG ) == DF_ON ) &&
        ( CmpCommon::getDefault( NSK_DBG_PRINT_TASK ) == DF_ON ) )
     {
@@ -7074,7 +7073,6 @@ void QueryOptimizerDriver::DEBUG_SHOW_TASK(CascadesTask * task)
 		       task->getPlan(),
 		       " " );
     }
-#endif
 }
 
 void QueryOptimizerDriver::DEBUG_GUI_DO_MEMO_STEP(CascadesTask *task)
