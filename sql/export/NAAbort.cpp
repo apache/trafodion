@@ -267,9 +267,15 @@ void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c)
     while (*envvar == '1')
           sleep(10);
   }
+#ifndef _DEBUG
+  char *abortOnError = getenv("ABORT_ON_ERROR");
+  if (abortOnError != NULL)
+     abort();
+  else
   if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
     AssertException(m, f, l).throwException();
   else
+#endif
     abort();
 #else
   assert_botch_in_eid(f, l, m);

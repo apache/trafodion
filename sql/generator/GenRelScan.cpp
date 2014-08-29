@@ -292,25 +292,8 @@ int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
     }
 
   NABoolean encodingNeeded = FALSE;
-  if (newGivenType->isVaryingLen())
-    {
-      // source ascii row is a varchar where the data is a pointer to the source data
-      // in the hbase buffer.
-      NAType *asciiType = 
-	new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull());
-
-      asciiValue = new (h) NATypeToItem(asciiType->newCopy(h));
-      
-      castValue = new(h) Cast(asciiValue, newGivenType); 
-  
-      ((Cast*)castValue)->setSrcIsVarcharPtr(TRUE);
-    }
-  else
-    {
-      asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
-
-      castValue = new(h) Cast(asciiValue, newGivenType); 
-    }
+  asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
+  castValue = new(h) Cast(asciiValue, newGivenType); 
 
   if (HbaseAccess::isEncodingNeededForSerialization(colNode))
     {

@@ -258,8 +258,8 @@ protected:
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
   short createColumnwiseRow();
   short createRowwiseRow();
-  short fetchRowVec();
   short createSQRow();
+  Lng32 createSQRowDirect();
   short createSQRow(jbyte *rowResult);
   short getColPos(char * colName, Lng32 colNameLen, Lng32 &idx);
   short applyPred(ex_expr * expr,UInt16 tuppIndex = 0,

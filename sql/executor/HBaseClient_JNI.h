@@ -19,6 +19,7 @@
 // **********************************************************************
 #ifndef HBASE_CLIENT_H
 #define HBASE_CLIENT_H
+#define INLINE_COLNAME_LEN 256
 
 #include <list>
 #include "Platform.h"
@@ -29,6 +30,7 @@
 #include "Hbase_types.h"
 #include "ExpHbaseDefs.h"
 #include "NAMemory.h"
+#include "HTableClient.h"
 
 using namespace apache::hadoop::hbase::thrift;
 
@@ -373,6 +375,8 @@ typedef enum {
  ,HTC_GETENDKEYS
  ,HTC_ERROR_GETHTABLENAME_EXCEPTION
  ,HTC_ERROR_FLUSHTABLE_EXCEPTION
+ ,HTC_GET_COLNAME_EXCEPTION
+ ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -384,6 +388,39 @@ public:
   {
      heap_ = heap;
      tableName_ = NULL;
+     jKvValLen_ = NULL;
+     jKvValOffset_ = NULL;
+     jKvQualLen_ = NULL;
+     jKvQualOffset_ = NULL;
+     jKvFamLen_ = NULL;
+     jKvFamOffset_ = NULL;
+     jTimestamp_ = NULL;
+     jKvBuffer_ = NULL;
+     jRowIDs_ = NULL;
+     jKvsPerRow_ = NULL;
+     currentRowNum_ = -1;
+     prevRowCellNum_ = 0;
+     numRowsReturned_ = 0;
+     numColsInScan_ = 0;
+     colNameAllocLen_ = 0;
+     inlineColName_[0] = '\0';
+     colName_ = NULL;
+     numReqRows_ = -1;
+     cleanupDone_ = FALSE;
+     p_kvValLen_ = NULL;
+     p_kvValOffset_ = NULL;
+     p_kvFamLen_ = NULL;
+     p_kvFamOffset_ = NULL;
+     p_kvQualLen_ = NULL;
+     p_kvQualOffset_ = NULL;
+     p_timestamp_ = NULL;
+     jba_kvBuffer_ = NULL;
+     jba_rowID_ = NULL;
+     fetchMode_ = UNKNOWN;
+     p_rowID_ = NULL;
+     p_kvsPerRow_ = NULL;
+     numCellsReturned_ = 0;
+     numCellsAllocated_ = 0;
   }
 
   // Destructor
@@ -396,8 +433,10 @@ public:
 			const TextVec *inCompareOpList,
 			const TextVec *inColValuesToCompare,
 			Float32 samplePercent = -1.0f);
-  HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, Int64 timestamp);
-  HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, Int64 timestamp);
+  HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, 
+		Int64 timestamp, NABoolean directRow);
+  HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, 
+		Int64 timestamp, NABoolean directRow);
   HTC_RetCode scanFetch();
   HTC_RetCode getFetch();
   HTC_RetCode fetchNextRow();
@@ -425,6 +464,26 @@ public:
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
 			 Text &aggrVal); // returned value
+  void setResultInfo( jintArray jKvValLen, jintArray jKvValOffset,
+        jintArray jKvQualLen, jintArray jKvQualOffset,
+        jintArray jKvFamLen, jintArray jKvFamOffset,
+        jlongArray jTimestamp, 
+        jobjectArray jKvBuffer, jobjectArray jRowIDs,
+        jintArray jKvsPerRow, jint numCellsReturned);
+  void cleanupResultInfo();
+  HTC_RetCode fetchRows();
+  HTC_RetCode nextRow();
+  HTC_RetCode getColName(int colNo,
+              char **colName,
+              short &colNameLen,
+              Int64 &timestamp);
+  HTC_RetCode getColVal(int colNo,
+              BYTE *colVal,
+              Lng32 &colValLen,
+              NABoolean nullable,
+              BYTE &nullVal);
+  HTC_RetCode getNumCols(int &numCols);
+  HTC_RetCode getRowID(HbaseStr &rowID);
     
   //  HTC_RetCode codeProcAggrGetResult();
 
@@ -477,9 +536,49 @@ private:
    ,JM_DIRECT_CHECKANDINSERT
    ,JM_DIRECT_INSERT_ROWS
    ,JM_DIRECT_DELETE_ROWS
+   ,JM_FETCH_ROWS
    ,JM_LAST
   };
+  enum FETCH_MODE {
+      UNKNOWN = 0
+    , SCAN_FETCH
+    , GET_ROW
+    , BATCH_GET
+  };
   char *tableName_; 
+  jintArray jKvValLen_;
+  jintArray jKvValOffset_;
+  jintArray jKvQualLen_;
+  jintArray jKvQualOffset_;
+  jintArray jKvFamLen_;
+  jintArray jKvFamOffset_;
+  jlongArray jTimestamp_;
+  jobjectArray jKvBuffer_;
+  jobjectArray jRowIDs_;
+  jintArray jKvsPerRow_;
+  jint *p_kvValLen_;
+  jint *p_kvValOffset_;
+  jint *p_kvQualLen_;
+  jint *p_kvQualOffset_;
+  jint *p_kvFamLen_;
+  jint *p_kvFamOffset_;
+  jlong *p_timestamp_;
+  jbyteArray jba_kvBuffer_;
+  jbyteArray jba_rowID_;
+  jbyte *p_rowID_;
+  jint *p_kvsPerRow_;
+  jint numRowsReturned_;
+  int currentRowNum_;
+  int numColsInScan_;
+  int numReqRows_;
+  int numCellsReturned_;
+  int numCellsAllocated_;
+  int prevRowCellNum_;
+  char *colName_;
+  char inlineColName_[INLINE_COLNAME_LEN+1];
+  short colNameAllocLen_;
+  FETCH_MODE fetchMode_; 
+  NABoolean cleanupDone_;
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
   static bool javaMethodsInitialized_;
@@ -488,7 +587,7 @@ private:
 };
 
 // ===========================================================================
-// ===== The HBaseClient_JNI class implements access to the Java 
+// n===== The HBaseClient_JNI class implements access to the Java 
 // ===== HBaseClient_JNI class.
 // ===========================================================================
 

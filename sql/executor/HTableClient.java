@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashMap;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.ByteOrder;
@@ -65,11 +66,21 @@ public class HTableClient {
 	Result[] getResultSet = null;
 	int getResultSetPos;
 	String lastError;
-        RMInterface table = null;
-        ByteArrayList coprocAggrResult = null;
-        private boolean writeToWAL = false;
-
-
+	RMInterface table = null;
+	ByteArrayList coprocAggrResult = null;
+	private boolean writeToWAL = false;
+	int numRowsCached = 1;
+	int numColsInScan = 0;
+	int[] kvValLen = null;
+	int[] kvValOffset = null;
+	int[] kvQualLen = null;
+	int[] kvQualOffset = null;
+	int[] kvFamLen = null;
+	int[] kvFamOffset = null;
+	long[] kvTimestamp = null;
+	byte[][] kvBuffer = null;
+	byte[][] rowIDs = null;
+	int[] kvsPerRow = null;
 	static Logger logger = Logger.getLogger(HTableClient.class.getName());;
 
 	public class QualifiedColumn {
@@ -172,8 +183,7 @@ public class HTableClient {
 				 float samplePercent) 
            throws IOException {
 
-	    logger.trace("Enter startScan() " + tableName);
-	    //	    logger.error("Enter startScan() " + tableName + " txid: " + transID);
+	logger.trace("Enter startScan() " + tableName + " txid: " + transID);
 
 			Scan scan;
 
@@ -193,14 +203,16 @@ public class HTableClient {
 			    scan.setCacheBlocks(false);
 
 			scan.setCaching(numCacheRows);
-
+			numRowsCached = numCacheRows;
 			if (columns != null) {
+				numColsInScan = columns.size();
 				for (byte[] col : columns) {
 					QualifiedColumn qc = new QualifiedColumn(col);
 					scan.addColumn(qc.getFamily(), qc.getName());
 				}
 			}
-			
+			else
+				numColsInScan = 0;
 			if (colNamesToFilter != null) 
 			{
 			    FilterList list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
@@ -246,47 +258,52 @@ public class HTableClient {
 
 	public boolean startGet(long transID, byte[] rowID, 
                      ByteArrayList columns,
-		     long timestamp) throws IOException {
+		     long timestamp, boolean directRow) throws IOException {
 
-	    logger.trace("Enter startGet(" + tableName + " rowID: " + new String(rowID));
+		logger.trace("Enter startGet(" + tableName + " rowID: " + new String(rowID));
 
-			Get get = new Get(rowID);
-			for (byte[] col : columns) {
-			    logger.trace("startGet, col: " + new String(col));
-				QualifiedColumn qc = new QualifiedColumn(col);
-				get.addColumn(qc.getFamily(), qc.getName());
-			}
+		Get get = new Get(rowID);
+		for (byte[] col : columns) {
+			logger.trace("startGet, col: " + new String(col));
+			QualifiedColumn qc = new QualifiedColumn(col);
+			get.addColumn(qc.getFamily(), qc.getName());
+		}
+		numColsInScan = columns.size();
 
-			Result getResult;
-			if (useTRex && (transID != 0)) {
-			    getResult = table.get(transID, get);
-			} else {
-			    getResult = table.get(get);
-			}
-			if (getResult == null) {
-				logger.trace("Exit 1 startGet.  Returning empty.");
-				setLastError(null);
-				return false;
-			}
-
-			logger.trace("startGet, result length: " + getResult.size());
-			logger.trace("startGet, result: " + getResult);
+		Result getResult;
+		if (useTRex && (transID != 0)) {
+			getResult = table.get(transID, get);
+		} else {
+			getResult = table.get(get);
+		}
+		if (getResult == null
+                    || getResult.isEmpty()) {
+			logger.trace("Exit 1 startGet.  Returning empty.");
+			setLastError(null);
+			return false;
+		}
+		logger.trace("startGet, result: " + getResult);
+		if (directRow) {
+			getResultSet = new Result[1];
+			getResultSet[0] = getResult;
+		} else {
 			lastFetchedRow = getResult;
 			resultIterator = new ResultIterator(getResult);
+		}
 		logger.trace("Exit 2 startGet.");
 		return true;
 	}
 
 	// The TransactionalTable class is missing the batch get operation,
 	// so work around it.
-    private Result[] batchGet(long transactionID, List<Get> gets)
+	private Result[] batchGet(long transactionID, List<Get> gets)
 			throws IOException {
 		logger.trace("Enter batchGet(multi-row) " + tableName);
 		Result [] results = new Result[gets.size()];
 		int i=0;
 		for (Get g : gets) {
 			Result r = table.get(transactionID, g);
-			if (r != null)
+			if (r != null && r.isEmpty() == false)
 				results[i++] = r;
 		}
 	
@@ -294,32 +311,38 @@ public class HTableClient {
 	}
 
 	public boolean startGet(long transID, ByteArrayList rows,
-			ByteArrayList columns, long timestamp) 
+			ByteArrayList columns, long timestamp,
+			boolean directRow) 
                         throws IOException {
 
 		logger.trace("Enter startGet(multi-row) " + tableName);
 
-			List<Get> listOfGets = new ArrayList<Get>();
-			for (byte[] rowID : rows) {
-				Get get = new Get(rowID);
-				listOfGets.add(get);
-			}
-			for (byte[] col : columns) {
-				QualifiedColumn qc = new QualifiedColumn(col);
-				for (Get get : listOfGets)
-					get.addColumn(qc.getFamily(), qc.getName());
-			}
-			
-			if (useTRex && (transID != 0)) {
-				getResultSet = batchGet(transID, listOfGets);
-			} else {
-				getResultSet = table.get(listOfGets);
-			}
-			if (getResultSet.length == 0)
-				getResultSet = null;
-			getResultSetPos = 0;
-			lastFetchedRow = getResultSet[getResultSetPos];
-			getResultSetPos++;
+		List<Get> listOfGets = new ArrayList<Get>();
+		for (byte[] rowID : rows) {
+			Get get = new Get(rowID);
+			listOfGets.add(get);
+		}
+		for (byte[] col : columns) {
+			QualifiedColumn qc = new QualifiedColumn(col);
+			for (Get get : listOfGets)
+				get.addColumn(qc.getFamily(), qc.getName());
+		}
+		numColsInScan = columns.size();
+		if (useTRex && (transID != 0)) {
+			getResultSet = batchGet(transID, listOfGets);
+		} else {
+			getResultSet = table.get(listOfGets);
+		}
+		if (directRow) 
+			return true;
+		else {
+			if (getResultSet.length > 0) {
+				getResultSetPos = 0;
+				lastFetchedRow = getResultSet[getResultSetPos];
+				getResultSetPos++;
+			} else
+				lastFetchedRow = null;
+		}
 		return true;
 	}
 
@@ -345,6 +368,101 @@ public class HTableClient {
 		logger.trace("Enter getFetch() " + tableName);
 		return scanFetch();
 	}
+
+	public int fetchRows(long jniObject) throws IOException {
+		int ret;
+		logger.trace("Enter fetcRows(). Table: " + tableName);
+		if (getResultSet != null)
+		{
+			ret = pushRowsToJni(jniObject, getResultSet);
+			getResultSet = null;
+			return ret;
+		}
+		else
+		{
+			if (scanner == null) {
+				String err = "  fetchRows() called before scanOpen().";
+				logger.error(err);
+				setLastError(err);
+				return -1;
+			}
+			Result[] result = scanner.next(numRowsCached);
+			return pushRowsToJni(jniObject, result);
+		}
+	}
+
+	protected int pushRowsToJni(long jniObject, Result[] result) throws IOException
+	{
+		if (result == null || result.length == 0)
+			return 0; 
+		int rowsReturned = result.length;
+		// There can be maximum of 2 versions per kv
+		// So, allocate place holder to keep cell info
+		// for that many KVs
+		int numTotalCells = 2 * rowsReturned * numColsInScan;
+		int numColsReturned;
+		HashMap<String, Integer>  kvMap = null;
+		List<KeyValue> kvList;
+		KeyValue kv;
+
+		if (kvValLen == null ||
+	 		(kvValLen != null && numTotalCells > kvValLen.length))
+		{
+			kvValLen = new int[numTotalCells];
+			kvValOffset = new int[numTotalCells];
+			kvQualLen = new int[numTotalCells];
+			kvQualOffset = new int[numTotalCells];
+			kvFamLen = new int[numTotalCells];
+			kvFamOffset = new int[numTotalCells];
+			kvTimestamp = new long[numTotalCells];
+			kvBuffer = new byte[numTotalCells][];
+		}
+		if (rowIDs == null || (rowIDs != null &&
+				rowsReturned > rowIDs.length))
+		{
+			rowIDs = new byte[rowsReturned][];
+			kvsPerRow = new int[rowsReturned];
+		}
+		int cellNum = 0;
+		for (int rowNum = 0; rowNum < rowsReturned ; rowNum++)
+		{
+			if (result[rowNum] != null)
+			{
+				rowIDs[rowNum] = result[rowNum].getRow();
+				kvList = result[rowNum].list();
+			}
+			else
+			{
+				rowIDs[rowNum] = null;
+				kvList = null;
+			}
+ 			if (kvList == null)
+				numColsReturned = 0; 
+			else
+				numColsReturned = kvList.size();
+			if ((cellNum + numColsReturned) > numTotalCells)
+				throw new IOException("Insufficient cell array pre-allocated");
+			kvsPerRow[rowNum] = numColsReturned;
+			for (int colNum = 0 ; colNum < numColsReturned ; colNum++, cellNum++)
+			{ 
+				kv = kvList.get(colNum);
+				kvValLen[cellNum] = kv.getValueLength();
+				kvValOffset[cellNum] = kv.getValueOffset();
+				kvQualLen[cellNum] = kv.getQualifierLength();
+				kvQualOffset[cellNum] = kv.getQualifierOffset();
+				kvFamLen[cellNum] = kv.getFamilyLength();
+				kvFamOffset[cellNum] = kv.getFamilyOffset();
+				kvTimestamp[cellNum] = kv.getTimestamp();
+				kvBuffer[cellNum] = kv.getBuffer();
+			}
+		}
+		int cellsReturned = cellNum++;
+		setResultInfo(jniObject, kvValLen, kvValOffset,
+			kvQualLen, kvQualOffset, kvFamLen, kvFamOffset,
+			kvTimestamp, kvBuffer, rowIDs, kvsPerRow, cellsReturned);
+		return rowsReturned;	
+	}		
+	
 
 	public boolean fetchNextRow() throws IOException {
 	    logger.trace("Enter fetchNextRow(). Table: " + tableName);
@@ -753,6 +871,17 @@ public class HTableClient {
         logger.trace("Exit getStartKeys(), result size: " + result.getSize());
         return result;
     }
+
+    private native int setResultInfo(long jniObject,
+				int[] kvValLen, int[] kvValOffset,
+				int[] kvQualLen, int[] kvQualOffset,
+				int[] kvFamLen, int[] kvFamOffset,
+  				long[] timestamp, 
+				byte[][] kvBuffer, byte[][] rowIDs,
+				int[] kvsPerRow, int numCellsReturned);
+   static {
+     System.loadLibrary("executor");
+   }
     
  
 }
