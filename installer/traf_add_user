@@ -257,18 +257,6 @@ sed -e "s@export NODE_LIST=.*@export NODE_LIST=\"$NODE_LIST\"@" <$TRAF_WORKDIR/i
 sed -e "s@export CLUSTERNAME=.*@export CLUSTERNAME=\"$CLUSTERNAME\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2
 sed -e "s@export MY_NODES=.*@export MY_NODES=\"$MY_NODES\"@" <$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp2 >$TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
 
-# If we are on an OpenStack VM add additional entries to bashrc
-OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
-if [ $OPENSTACK_VM -ne 0 ]; then
-    echo "# Added for OpenStack VM support" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-    echo "export OS_TENANT_NAME=yvescadieux-project1" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-    echo "export OS_USERNAME=yvescadieux" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-    echo "export OS_PASSWORD=mtl_1028" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-    echo "export OS_AUTH_URL=https://region-a.geo-1.identity.hpcloudsvc.com:35357/v2.0/" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-    echo "export OS_REGION_NAME=region-a.geo-1   //region.a==west region.b==east" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-    echo "source ~/.novarc" >> $TRAF_WORKDIR/bashrc_${TRAF_USER}_temp1
-fi
-
 if [ "$userid_already_exists" == "Y" ]; then
     if [ -f $TRAF_USER_DIR/bashrc_backup ]; then
         echo "***INFO: preserving bashrc_backup"
@@ -319,12 +307,6 @@ if [ "$node_count" -ne "1" ]; then
     echo "end node" >> $sqconfig
     sudo cp $sqconfig $TRAF_USER_DIR/sqconfig
     sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqconfig
-fi
-
-# For OpenStack VM on HP Cloud copy this additional file
-if [ $OPENSTACK_VM -ne 0 ]; then
-	sudo cp /root/.novarc $TRAF_USER_DIR
-    sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.novarc
 fi
 
 # copy TRAF_USER_DIR to all other nodes if more than one
