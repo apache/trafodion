@@ -9036,48 +9036,51 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       newRecExpr().insert(assign->getValueId());
     
       const NAType& assignSrcType = assign->getSource().getType();
-      if (CmpCommon::getDefault(COMP_BOOL_226) == DF_ON)
-      {
-        // do this change for bulk loader alone. After some more discussion
-        // we may simply do this line unconditionally and remove the else 
-        // branch below.
-        updateToSelectMap().addMapEntry(target,assign->getSource());
-      }
-      else 
-      {
-        // if ( <we added some type of conversion> AND
-        //      ( <tgt and src are both character> AND
-        //        (<they are big and errors can occur> OR <charsets differ>))
-        //      OR
-        //      ( <we changed the basic type and we allow incompatible types> )
-        //    )
-        //   <then incorporate this added conversion into the updateToSelectMap>
-        if ( source != assign->getSource() && 
-             ((assignSrcType.getTypeQualifier() == NA_CHARACTER_TYPE &&
-               sourceType.getTypeQualifier() == NA_CHARACTER_TYPE &&
-               ((assign->getSource().getItemExpr()->getOperatorType() == ITM_CAST &&
-                 sourceType.errorsCanOccur(assignSrcType) && 
-                 sourceType.getNominalSize() > 
-                 CmpCommon::getDefaultNumeric(LOCAL_MESSAGE_BUFFER_SIZE)*1024) ||
-                // Temporary code to fix QC4395 in M6. For M7, try to set source
-                // to the right child of the assign after calling assign->bindNode.
-                // We should then be able to eliminate this entire if statement
-                // as well as the code to check for TRANSLATE nodes above.
-                ((CharType &) assignSrcType).getCharSet() !=
-                ((CharType &) sourceType).getCharSet()))
-              ||
-              // If we allow incompatible type assignments, also include the
-              // added cast into the updateToSelectMap
-              assignSrcType.getTypeQualifier() !=  sourceType.getTypeQualifier() &&
-              CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON))
-          {
-            updateToSelectMap().addMapEntry(target,assign->getSource());
-          }
-        else
-          {
-            updateToSelectMap().addMapEntry(target,source);
-          }
-      }
+      // if ( <we added some type of conversion> AND
+      //      ( <tgt and src are both character> AND
+      //        (<they are big and errors can occur> OR <charsets differ> OR <difference between tgt and src lengths is large>)))
+      //      OR
+      //      ( <we changed the basic type and we allow incompatible types> )
+      //    )
+      //   <then incorporate this added conversion into the updateToSelectMap>
+      if ( source != assign->getSource() && 
+           ((assignSrcType.getTypeQualifier() == NA_CHARACTER_TYPE &&
+             sourceType.getTypeQualifier() == NA_CHARACTER_TYPE &&
+             ((assign->getSource().getItemExpr()->getOperatorType() == ITM_CAST &&
+               sourceType.errorsCanOccur(assignSrcType) && 
+               sourceType.getNominalSize() > 
+               CmpCommon::getDefaultNumeric(LOCAL_MESSAGE_BUFFER_SIZE)*1024) ||
+              // Temporary code to fix QC4395 in M6. For M7, try to set source
+              // to the right child of the assign after calling assign->bindNode.
+              // We should then be able to eliminate this entire if statement
+              // as well as the code to check for TRANSLATE nodes above.
+              ((CharType &) assignSrcType).getCharSet() !=
+              ((CharType &) sourceType).getCharSet() || 
+              // The optimizer may ask for source data to be partitioned or sorted on original source columns
+              // This is the reason we need to choose the else branch below unless we have a particular reason
+              // to do otherwise. Each of the conditions in this if statement reflects one of those partcular
+              // conditions. The bottomValues of updateToSelectMap will be placed in their entirety in the 
+              // characteristic outputs of the source node. Outputs of the source node may be used to allocate
+              // buffers at runtime and therefore we would like to keep the output as small as possible.
+              // If the source cannot be partioned/sorted on a column because we have assign-getSource in the bottomValues
+              // then the cost is that data will be repartitioned with an additional exchange node. If the difference in
+              // length between source and assignSrc is large then the cost of repartition is less than the cost of 
+              // allocating and using large buffers.
+              sourceType.getNominalSize() > (assignSrcType.getNominalSize() + 
+                                             (ActiveSchemaDB()->getDefaults()).getAsLong(COMP_INT_98))  // default value is 512
+              ))
+            ||
+            // If we allow incompatible type assignments, also include the
+            // added cast into the updateToSelectMap
+            assignSrcType.getTypeQualifier() !=  sourceType.getTypeQualifier() &&
+            CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON))
+        {
+          updateToSelectMap().addMapEntry(target,assign->getSource());
+        }
+      else
+        {
+          updateToSelectMap().addMapEntry(target,source);
+        }
 
       i2++;
     }

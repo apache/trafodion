@@ -994,7 +994,7 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
   DDint__(COMP_INT_95,         "0"),
   DDint__(COMP_INT_96,         "0"),
   DDint__(COMP_INT_97,         "0"),
-  DDint__(COMP_INT_98,         "0"),
+  DDint__(COMP_INT_98,         "512"),
   DDint__(COMP_INT_99,         "10"),
 
   DD_____(COMP_STRING_1,	    "NONE"),
