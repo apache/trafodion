@@ -617,7 +617,8 @@ public:
   // MDAM will be useful for combining user-specified part key preds
   // with logicalPartFunc->getPartitioningKeyPredicates().
   virtual SearchKey *createSearchKey(const IndexDesc *indexDesc,
-                                     ValueIdSet availInputs) const
+                                     ValueIdSet availInputs,
+                                     ValueIdSet additionalPreds) const
   {return NULL;};
 
   virtual NABoolean shouldUseSynchronousAccess(
@@ -723,7 +724,8 @@ protected:
   void createBetweenPartitioningKeyPredicates(
        const char * pivLoName,
        const char * pivHiName,
-       ItemExpr   * partNumExpr);
+       ItemExpr   * partNumExpr = NULL,
+       NABoolean    useHash2Split = FALSE);
 
 private:
 
@@ -1335,7 +1337,8 @@ public:
   // begin/end key values of the search key are set to the partition
   // input values of the partitioning function.
   virtual SearchKey *createSearchKey(const IndexDesc *indexDesc,
-                                     ValueIdSet availInputs) const;
+                                     ValueIdSet availInputs,
+                                     ValueIdSet additionalPreds) const;
 
   virtual ItemExpr* createPartitioningExpression() ;
 
@@ -2010,7 +2013,8 @@ public:
   // MDAM will be useful for combining user-specified part key preds
   // with logicalPartFunc->getPartitioningKeyPredicates().
   virtual SearchKey *createSearchKey(const IndexDesc *indexDesc,
-                                     ValueIdSet availInputs) const;
+                                     ValueIdSet availInputs,
+                                     ValueIdSet additionalPreds) const;
 
   virtual NABoolean usesFSForPartitionSelection() const { return TRUE; }
 
@@ -2432,7 +2436,8 @@ public:
   // begin/end key values of the search key are set to the partition
   // input values of the partitioning function.
   virtual SearchKey *createSearchKey(const IndexDesc *indexDesc,
-                                     ValueIdSet availInputs) const;
+                                     ValueIdSet availInputs,
+                                     ValueIdSet additionalPreds) const;
 
   // ---------------------------------------------------------------------
   // The original (physical) number of RR partitions before any scaling.

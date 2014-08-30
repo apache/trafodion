@@ -1082,7 +1082,8 @@ HashPartitioningFunction::copy() const
 void PartitioningFunction::createBetweenPartitioningKeyPredicates(
        const char * pivLoName,
        const char * pivHiName,
-       ItemExpr   * partNumExpr)
+       ItemExpr   * partNumExpr,
+       NABoolean    useHash2Split)
 {
   if (NOT partKeyPredsCreated() || partNumExpr != NULL)
     {
@@ -1134,18 +1135,54 @@ void PartitioningFunction::createBetweenPartitioningKeyPredicates(
       // are generated here as partition input values.
       // -----------------------------------------------------------------
 
+      if (useHash2Split)
+        {
+          // For a HASH2 function, the PIVs are expressed as min and max
+          // hash values to be retrieved. These need to be converted to
+          // partition numbers when we use them here. Note that we need to
+          // use the original number of HASH2 partitions here. For example,
+          // if we have a table salted with 64 salt buckets and we use
+          // 8 ESPs (8 partitions), the predicate needs to select 8 different
+          // salt values (original partitions) for each ESP.
+          CMPASSERT(isAHash2PartitioningFunction());
+          UInt32 numOfOrigPartns = castToHash2PartitioningFunction()->
+            getCountOfOrigHashPartitions();
+          char numPartsString[30];
+
+          snprintf(numPartsString,sizeof(numPartsString),"%d",numOfOrigPartns);
+          NAString numPartsLiteral(numPartsString);
+          ConstValue *numPartns = new (CmpCommon::statementHeap())
+            ConstValue(new (CmpCommon::statementHeap())
+                         SQLInt(FALSE,
+                                FALSE,
+                                CmpCommon::statementHeap()),
+                       (void *) &numOfOrigPartns,
+                       (Lng32) sizeof(numOfOrigPartns),
+                       &numPartsLiteral,
+                       CmpCommon::statementHeap());
+
+          loPart = new (CmpCommon::statementHeap())
+            Hash2Distrib(loPart, numPartns);
+          hiPart = new (CmpCommon::statementHeap())
+            Hash2Distrib(hiPart, numPartns);
+        }
+
+      // lower bound
       rootPtr = new (CmpCommon::statementHeap())
-	BiLogic(ITM_AND,
-		new (CmpCommon::statementHeap())
-		BiRelat(ITM_GREATER_EQ,partNumExpr,loPart,TRUE),
-		new (CmpCommon::statementHeap())
-		BiRelat(ITM_LESS,      partNumExpr,hiPart,TRUE));
-
-      // -- Synthesize its type and assign a ValueId to it.
+        BiRelat(ITM_GREATER_EQ,
+                partNumExpr,
+                loPart,
+                TRUE);
       rootPtr->synthTypeAndValueId();
+      setOfPartKeyPredicates += rootPtr->getValueId();
 
-      // add the predicate to the set of key predicates (note that this
-      // is a predicate on the partitioning key, not the clustering key)
+      // upper bound
+      rootPtr = new (CmpCommon::statementHeap())
+        BiRelat((useHash2Split ? ITM_LESS_EQ : ITM_LESS),
+                partNumExpr,
+                hiPart,
+                TRUE);
+      rootPtr->synthTypeAndValueId();
       setOfPartKeyPredicates += rootPtr->getValueId();
 
       // Store the set of key predicates in the partitioning attributes.
@@ -1157,8 +1194,7 @@ void HashPartitioningFunction::createPartitioningKeyPredicates()
 {
   createBetweenPartitioningKeyPredicates(
        "_sys_HostVarLoHashPart",
-       "_sys_HostVarHiHashPart",
-       NULL);
+       "_sys_HostVarHiHashPart");
 }
 
 // -----------------------------------------------------------------------
@@ -1548,8 +1584,7 @@ void TableHashPartitioningFunction::createPartitioningKeyPredicates()
 {
   if (NOT partKeyPredsCreated())
     createBetweenPartitioningKeyPredicates("_sys_HostVarLoHashPart",
-                                           "_sys_HostVarHiHashPart",
-                                           NULL);
+                                           "_sys_HostVarHiHashPart");
 
   // Create the partition selection input values (needed by hash2).
   createPartitionSelectionExprInputs();
@@ -1565,9 +1600,12 @@ void TableHashPartitioningFunction::createPartitioningKeyPredicatesForSaltedTabl
   // For now we only allow this call after calling the regular
   // createPartitioningKeyPredicates() method
   CMPASSERT(partKeyPredsCreated());
-
+  
   // this allows us to specify NULL for the names here
-  createBetweenPartitioningKeyPredicates(NULL,NULL,saltCol.getItemExpr());
+  createBetweenPartitioningKeyPredicates(NULL,
+                                         NULL,
+                                         saltCol.getItemExpr(),
+                                         isAHash2PartitioningFunction());
 
   // and we don't need to call this
   // createPartitionSelectionExprInputs();
@@ -1889,13 +1927,15 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
 // -----------------------------------------------------------------------
 SearchKey *
 TableHashPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
-                                               ValueIdSet availInputs) const
+                                               ValueIdSet availInputs,
+                                               ValueIdSet additionalPreds) const
 {
-  ValueIdSet partKeyPreds(getPartitioningKeyPredicates());
+  ValueIdSet preds(getPartitioningKeyPredicates());
   ValueIdSet nonKeyColumnSet; // empty set
   SearchKey *partSearchKey = NULL;
 
   availInputs += getPartitionInputValues();
+  preds += additionalPreds;
 
   if (indexDesc->getPrimaryTableDesc()->getNATable()->isHbaseTable())
     {
@@ -1908,8 +1948,8 @@ TableHashPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
         SearchKey(indexDesc->getIndexKey(),
                   indexDesc->getOrderOfKeyValues(),
                   availInputs,
-                  partKeyPreds,
-                  this,
+                  TRUE,
+                  preds,
                   nonKeyColumnSet,
                   indexDesc);
     }
@@ -1922,7 +1962,7 @@ TableHashPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
         SearchKey(indexDesc->getPartitioningKey(),
                   indexDesc->getOrderOfPartitioningKeyValues(),
                   availInputs,
-                  partKeyPreds,
+                  preds,
                   this,
                   nonKeyColumnSet,
                   indexDesc);
@@ -4494,13 +4534,15 @@ NABoolean RangePartitioningFunction::shouldUseSynchronousAccess(
 
 SearchKey *
 RangePartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
-                                           ValueIdSet availInputs) const
+                                           ValueIdSet availInputs,
+                                           ValueIdSet additionalPreds) const
 {
   ValueIdSet preds(getPartitioningKeyPredicates());
 
   ValueIdSet nonKeyColumnSet; // empty set
 
   availInputs += getPartitionInputValues();
+  preds += additionalPreds;
 
   // make a search key from all that
   SearchKey *partSearchKey = new (CmpCommon::statementHeap())
@@ -5815,12 +5857,14 @@ isAGroupingOf(const PartitioningFunction &other,
 // -----------------------------------------------------------------------
 SearchKey *
 RoundRobinPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
-                                                ValueIdSet availInputs) const
+                                                ValueIdSet availInputs,
+                                                ValueIdSet additionalPreds) const
 {
-  ValueIdSet partKeyPreds(getPartitioningKeyPredicates());
+  ValueIdSet preds(getPartitioningKeyPredicates());
   ValueIdSet nonKeyColumnSet; // empty set
 
   availInputs += getPartitionInputValues();
+  preds += additionalPreds;
 
   // Call this special constructor that constructs a search key for a
   // RoundRobinPartitioningFunction.
@@ -5829,7 +5873,7 @@ RoundRobinPartitioningFunction::createSearchKey(const IndexDesc *indexDesc,
     SearchKey(indexDesc->getPartitioningKey(),
               indexDesc->getOrderOfPartitioningKeyValues(),
               availInputs,
-              partKeyPreds,
+              preds,
               this,
               nonKeyColumnSet,
               indexDesc);
@@ -5908,8 +5952,7 @@ HivePartitioningFunction::copy() const
 void HivePartitioningFunction::createPartitioningKeyPredicates()
 {
   createBetweenPartitioningKeyPredicates("_sys_HostVarLoHivePart",
-                                         "_sys_HostVarHiHivePart",
-                                         NULL);
+                                         "_sys_HostVarHiHivePart");
 
 } // HivePartitioningFunction::createPartitioningKeyPredicates()
 
