@@ -914,7 +914,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			String	prodVer = conn.getMetaData().getDatabaseProductVersion();
 			System.out.println("DB product version : " + prodVer);
-			assertEquals("DB Product Version", prodVer, "0.8");
+			assertEquals("DB Product Version", prodVer, "0.9");
   	       	conn.close();
 			System.out.println("JDBC Get DB product version passed");
        } catch (Exception ex)
@@ -954,7 +954,7 @@ public class TestBasic
         	conn = Utils.getUserConnection();
 			int	minorVer = conn.getMetaData().getDatabaseMinorVersion();
 			System.out.println("DB minor version : " + minorVer);
-			assertEquals("DB Minor Version", minorVer, 8);
+			assertEquals("DB Minor Version", minorVer, 9);
   	       	conn.close();
 			System.out.println("JDBC Get DB minor version passed");
        } catch (Exception ex)
