@@ -382,6 +382,21 @@ public class TmAuditTlog {
 
       tlogAuditLock =    new Object[tlogNumLogs];
       table = new HTable[tlogNumLogs];
+
+      try {
+         // Get the asn from the last control point.  This ignores 
+         // any asn increments between the last control point
+         // write and a system crash and could result in asn numbers
+         // being reused.  However this would just mean that some old 
+         // records are held onto a bit longer before cleanup and is safe.
+         asn.set(tLogControlPoint.getStartingAuditSeqNum());
+      }
+      catch (Exception e2){
+         LOG.debug("Exception setting the ASN " + e2);
+         LOG.debug("Setting the ASN to 1");
+         asn.set(1L);  // Couldn't read the asn so start asn at 1
+      }
+
       for (int i = 0 ; i < tlogNumLogs; i++) {
          tlogAuditLock[i]      = new Object();
          String lv_tLogName = new String(TLOG_TABLE_NAME + "_LOG_" + Integer.toHexString(i));
@@ -389,10 +404,6 @@ public class TmAuditTlog {
          LOG.debug("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
          HTableDescriptor desc = new HTableDescriptor(lv_tLogName);
          desc.addFamily(hcol);
-
-//         if ((useHashedKeys == false) && (useHashedKeys_2 == false)){
-//            desc.setValue(HTableDescriptor.SPLIT_POLICY, TmAuditTlogRegionSplitPolicy.class.getName()); // Never split
-//         }
 
           if (lvTlogExists == false) {
             // Need to prime the asn for future writes
@@ -403,17 +414,6 @@ public class TmAuditTlog {
             }
             catch (TableExistsException e) {
                LOG.error("Table " + lv_tLogName + " already exists");
-               try {
-                  // Get the asn from the last control point.  This ignores 
-                  // any asn increments between the last control point
-                  // write and a system crash and could result in asn numbers
-                  // being reused.  However this would just mean that some old 
-                  // records are held onto a bit longer before cleanup and is safe.
-                  asn.set(tLogControlPoint.getStartingAuditSeqNum());
-               }
-               catch (Exception e2){
-                  LOG.debug("Exception setting the ASN " + e2);
-               }
             }
          }
          try {

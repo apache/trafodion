@@ -77,6 +77,7 @@ public class HBaseAuditControlPoint {
     private static final byte[] CONTROL_POINT_FAMILY = Bytes.toBytes("cpf");
     private static final byte[] ASN_HIGH_WATER_MARK = Bytes.toBytes("hwm");
     private static HTable table;
+    private static boolean useAutoFlush;
 
     public HBaseAuditControlPoint(Configuration config) throws IOException {
       LOG.trace("Enter HBaseAuditControlPoint constructor()");
@@ -84,6 +85,20 @@ public class HBaseAuditControlPoint {
       HTableDescriptor desc = new HTableDescriptor(CONTROL_POINT_TABLE_NAME);
       desc.addFamily(new HColumnDescriptor(CONTROL_POINT_FAMILY));
       admin = new HBaseAdmin(config);
+
+      useAutoFlush = true;
+      try {
+         String autoFlush = System.getenv("TM_TLOG_AUTO_FLUSH");
+         if (autoFlush != null){
+            useAutoFlush = (Integer.parseInt(autoFlush) != 0);
+            LOG.debug("autoFlush != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_AUTO_FLUSH is not in ms.env");
+      }
+      LOG.info("useAutoFlush is " + useAutoFlush);
+
       boolean lvControlPointExists = admin.tableExists(CONTROL_POINT_TABLE_NAME);
       LOG.debug("HBaseAuditControlPoint lvControlPointExists " + lvControlPointExists);
       currControlPt = -1;
@@ -99,6 +114,7 @@ public class HBaseAuditControlPoint {
       try {
          LOG.debug("try new HTable");
          table = new HTable(config, desc.getName());
+         table.setAutoFlush(this.useAutoFlush);
       }
       catch (IOException e) {
          LOG.error("new HTable IOException");
@@ -158,6 +174,10 @@ public class HBaseAuditControlPoint {
       try {
          LOG.debug("try table.put with starting sequence number " + startingSequenceNumber);
          table.put(p);
+         if (useAutoFlush == false) {
+            LOG.debug("flushing controlpoint record");
+            table.flushCommits();
+         }
       }
       catch (Exception e) {
          LOG.error("HBaseAuditControlPoint:putRecord Exception" + e);

@@ -96,7 +96,6 @@ int HbaseTM_initialize (bool pp_tracing, bool pv_tm_stats, CTmTimer *pp_tmTimer,
 //----------------------------------------------------------------
 void HbaseTM_initiate_cp()
 {
-   cout << "HbaseTM_initiate_cp called\n";
    gv_HbaseTM.addControlPoint();
 }
 
