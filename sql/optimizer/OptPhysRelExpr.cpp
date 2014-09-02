@@ -14787,9 +14787,6 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
           myPartFunc->scaleNumberOfPartitions(partns);
        }
    
-   
-       neededPivs_ = myPartFunc->getPartitionInputValues();
-   
        partnsScaled = (oldPartns != partns);
    
      } else {
@@ -14838,8 +14835,6 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
         } else 
            myPartFunc = new(CmpCommon::statementHeap())
                SinglePartitionPartitioningFunction();
-
-        neededPivs_ = myPartFunc->getPartitionInputValues();
      }
   }
 
@@ -15029,12 +15024,9 @@ FileScan::synthPhysicalProperty(const Context* myContext,
           LogPhysPartitioningFunction::HORIZONTAL_PARTITION_SLICING)
         {
           logPhysPartFunc->createPartitioningKeyPredicates();
-
-          // apply the partitioning key of the logical partitioning
-          // function because multiple PA nodes may request parts of a DP2
-          // partition (do in scanOptimizer); Here - remember needed PIVs
-
-          neededPivs_ = logPhysPartFunc->getPartitionInputValues();
+          CMPASSERT(FALSE);
+          // also need to apply the part key preds and pick up the PIVs in
+          // FileScan::preCodGen if we ever use this
         }
 
     }
@@ -15084,7 +15076,6 @@ void FileScan::addPartKeyPredsToSelectionPreds(
                  const ValueIdSet& pivs)
 {
   selectionPred() += partKeyPreds;
-  neededPivs_ = pivs;
 }
 
 NABoolean FileScan::okToAttemptESPParallelism (

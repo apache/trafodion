@@ -801,12 +801,8 @@ public:
   // Naked access to executorPredicates_ only because there is code
   // in precodegen that needs this (old code) (don't use this, use
   // get/set functions above):
-  ValueIdSet& executorPred()
-  { return executorPredicates_; }
-
+  ValueIdSet& executorPred()                    { return executorPredicates_; }
   ItemExpr * getExecutorPredTree()              { return executorPredTree_; }
-
-  const ValueIdSet& getPartInputs()             { return neededPivs_; }
   ValueIdSet & retrievedCols()                  { return retrievedCols_; }
 
   NABoolean getReverseScan() const              { return reverseScan_; }
@@ -955,7 +951,6 @@ private:
 
   // a search key for the partitioning key (maybe same as pathKeys_)
   SearchKey * partKeys_;
-  ValueIdSet  neededPivs_;
 
   // For Hive tables, a bit mask of selected Hive partitions and buckets
   HivePartitionAndBucketKey *hiveSearchKey_;

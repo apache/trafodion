@@ -4560,7 +4560,8 @@ CostMethodFileScan::computeOperatorCostInternal(RelExpr* op,
     {
       // We need to add the partition input values so that
       // they are considered when putting together the keys
-      externalInputs += p->getPartInputs();
+      externalInputs +=
+        logPhysPartFunc->getLogPartitioningFunction()->getPartitionInputValues();
     }
   }
 

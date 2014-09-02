@@ -3673,13 +3673,24 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
+  const PartitioningFunction* myPartFunc = getPartFunc();
+
+  NABoolean usePartKeyPreds =
+    (isHbaseTable() &&
+     myPartFunc &&
+     myPartFunc->isPartitioned() &&
+     !myPartFunc->isAReplicationPartitioningFunction());
+
   if (isRewrittenMV())
     generator->setNonCacheableMVQRplan(TRUE);
 
-  // if partition key predicates have been applied to this file scan
-  // then "pull" the partition input values from the parent
-  getGroupAttr()->addCharacteristicInputs(neededPivs_);
-  pulledNewInputs += neededPivs_;
+  if (usePartKeyPreds)
+    {
+      // partition key predicates will be applied to this file scan,
+      // "pull" the partition input values from the parent
+      pulledNewInputs += myPartFunc->getPartitionInputValues();
+      getGroupAttr()->addCharacteristicInputs(myPartFunc->getPartitionInputValues());
+    }
 
   // Resolve the VEGReferences and VEGPredicates, if any, that appear
   // in the Characteristic Inputs, in terms of the externalInputs.
@@ -3705,16 +3716,11 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
   // data structure, when passed to replaceVEGExpressions(), causes
   // replaceVEGExpressions() to be idempotent.
 
-
   VEGRewritePairs  vegPairs(generator->wHeap());
   ValueIdSet partKeyPredsHBase;
-  const PartitioningFunction* myPartFunc = getPartFunc();
 
-  if ( isHbaseTable() &&
-       myPartFunc->isPartitioned() &&
-       !myPartFunc->isAReplicationPartitioningFunction())
+  if (usePartKeyPreds)
     {
-
       // add the partitioning key predicates to this scan node,
       // to make sure that each ESP reads only the part of the
       // data that it is supposed to process
@@ -3741,7 +3747,6 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
               createPartitioningKeyPredicatesForSaltedTable(saltCol);
         }
 
-      pulledNewInputs += myPartFunc->getPartitionInputValues();
       partKeyPredsHBase = myPartFunc->getPartitioningKeyPredicates();
     }
 
