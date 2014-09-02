@@ -134,11 +134,17 @@ echo >> $MODS_LOG
 #============================================
 #Check for errors
 
-export CLUSTER_NAME=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
+temp=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters |grep name | sed -e 's@[,]@@'g | sed 's/^[^\:]* ://')
+
+CLUSTER_NAME=$(echo $temp | sed -e 's/^"//' -e 's/"$//')
+export CLUSTER_NAME=${CLUSTER_NAME// /%20}
+
+export HBASE=$(curl -su $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/services | grep name | grep hbase | sed -e 's@[,]@@'g | awk '{print $3}' | sed "s/\"//g")
 
 if [ -z $CLUSTER_NAME ]; then
   echo
-  echo "***ERROR: Please check input parameters" 2>&1 | tee -a $MODS_LOG 
+  echo "***ERROR: Could not access http://$URL" 2>&1 | tee -a $MODS_LOG 
+  echo "***ERROR: Check your parameters or if Hadoop distribution is up." 2>&1 | tee -a $MODS_LOG
   echo
   exit -1
 fi

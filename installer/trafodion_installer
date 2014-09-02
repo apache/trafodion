@@ -220,32 +220,6 @@ if [ "$process_count" -ne 0 ]; then
 fi
 
 #============================================
-# If an sqconfig file was specified, then we'll use it instead of the default
-if [ "$SQCONFIG" != "" ]; then
-    SQCONFIG_MASTER="$SQCONFIG"
-    if [[ ! -f "$SQCONFIG" ]]; then
-        echo "***ERROR: Specified SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
-        exit -1
-    fi
-else
-    if [ "$node_count" -ne "1" ]; then
-        # For clusters this sqconfig file was generated when the Trafodion user was added
-        SQCONFIG_MASTER=$HOME/sqconfig
-        if [[ ! -f "$SQCONFIG_MASTER" ]]; then
-           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
-           exit -1
-        fi
-    else
-        # For single node, we use the sqconfig in the build
-        SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
-         if [[ ! -f "$SQCONFIG_MASTER" ]]; then
-           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
-           exit -1
-        fi
-    fi
-fi
-
-#============================================
 # Create install directory
 mkdir -p $SQ_ROOT
 cd $SQ_ROOT
@@ -277,7 +251,34 @@ if [ "$?" != "0" ]; then
     exit -1;
 fi
 
+
 #============================================
+# If an sqconfig file was specified, then we'll use it instead of the default
+if [ "$SQCONFIG" != "" ]; then
+    SQCONFIG_MASTER="$SQCONFIG"
+    if [[ ! -f "$SQCONFIG" ]]; then
+        echo "***ERROR: Specified SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+        exit -1
+    fi
+else
+    if [ "$node_count" -ne "1" ]; then
+        # For clusters this sqconfig file was generated when the Trafodion user was added
+        SQCONFIG_MASTER=$HOME/sqconfig
+        if [[ ! -f "$SQCONFIG_MASTER" ]]; then
+           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+           exit -1
+        fi
+    else
+        # For single node, we use the sqconfig in the build
+        SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
+         if [[ ! -f "$SQCONFIG_MASTER" ]]; then
+           echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
+           exit -1
+        fi
+    fi
+fi
+#============================================
+
 echo "***INFO: modifying .bashrc to set SQ_HOME, TOOLSDIR, MY_NODES and NODE_LIST" | tee -a $INSTALL_LOG
 cd $HOME
 cp .bashrc bashrc_temp

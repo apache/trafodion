@@ -177,7 +177,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $CLOUDERA_ADMIN:$CLOUDERA_PASS
 		} ] 
 	} ] 
 }' \
-http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/services/hbase1/config > $TRAF_WORKDIR/traf_hbase_config_temp
+http://$CLOUDERA_MANAGER_URL/api/v1/clusters/$CLUSTER_NAME/services/$HBASE/config > $TRAF_WORKDIR/traf_hbase_config_temp
 
 if [ $? != 0 ]; then
     echo "***INFO: unable to modify hbase configuration through Cloudera's REST API."
