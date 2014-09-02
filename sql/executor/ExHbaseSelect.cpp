@@ -477,10 +477,14 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 	    {
 	        rc = (short)retcode;
 	        tcb_->setupError(rc, "createSQRowDirect");
-		step_ = HANDLE_ERROR;
-		break;
+	        step_ = HANDLE_ERROR;
+	        break;
 	    }
-	    
+	    if (retcode != HBASE_ACCESS_SUCCESS)
+	    {
+	        step_ = HANDLE_ERROR;
+	        break;
+	    }
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incAccessedRows();
 
@@ -590,6 +594,11 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
       tcb_->setupError(rc, "createSQRowDirect");
       rc = -1;
       goto label_return;
+  }
+  if (retcode != HBASE_ACCESS_SUCCESS)
+  {
+     rc = -1;
+     goto label_return;
   }
 
   // extract the key from the fetched row, encode it and pass it back to mdam
@@ -1063,14 +1072,20 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    if (retcode == HBASE_ACCESS_NO_ROW)
 	    {
 	       step_ = GET_FETCH;
-               break;
-            }
+	       break;
+	    }
+	    if (retcode < 0)
+	    {
+	        rc = (short)retcode;
+	        tcb_->setupError(rc, "createSQRowDirect");
+	        step_ = HANDLE_ERROR;
+	        break;
+	    }  
 	    if (retcode != HBASE_ACCESS_SUCCESS)
 	    {
-		step_ = HANDLE_ERROR;
-		break;
+	        step_ = HANDLE_ERROR;
+	        break;
 	    }
-	    
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incAccessedRows();
 

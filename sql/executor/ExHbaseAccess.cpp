@@ -928,235 +928,6 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
     return 0;
 }
 
-short ExHbaseAccessTcb::createSQRow()
-{
-   short retcode = createSQRow(jbRowResult_);
-   ehi_->freeRowResult(jbRowResult_, jbaRowResult_);
-   return retcode;
-}
-
-short ExHbaseAccessTcb::createSQRow(jbyte *rowResult)
-{
-  // no columns are being fetched from hbase, do not create a row.
-  if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
-    return 0;
-
-  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-
-  ExpTupleDesc * asciiSourceTD =
-    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-    (hbaseAccessTdb().asciiTuppIndex_);
-
-  ExpTupleDesc * convertTuppTD =
-    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-    (hbaseAccessTdb().convertTuppIndex_);
-  
-  Attributes * attr = NULL;
-
-  // initialize as missing cols.
-  // TBD: can optimize to skip this step if there are no nullable and no added cols
-  memset(asciiRowMissingCols_, 1, asciiSourceTD->numAttrs());
-    // initialize latest timestamp to 0 for every column
-  memset(latestTimestampForCols_, 0, (asciiSourceTD->numAttrs()*sizeof(long)));
-  
-  hbaseAccessTdb().listOfFetchedColNames()->position();
-  Lng32 idx = -1;
-
-  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
-  Int32 familyLength, familyOffset;
-  long timestamp;
-
-  char *kvBuf = (char *) rowResult;
-
-  Int32 numCols = *(Int32 *)kvBuf;
-  kvBuf += sizeof(numCols);
-  if (numCols == 0)
-    return 0;
-
-  Int32 rowIDLen = *(Int32 *)kvBuf;
-  kvBuf += sizeof(rowIDLen);
-  kvBuf += rowIDLen;
-
-  Int32 *temp;
-  char *value;
-  char *buffer;
-  char *colName;
-  char *family;
-  char inlineColName[INLINE_COLNAME_LEN+1];
-  char *fullColName;
-  char *colVal; 
-  Lng32 colValLen;
-  Lng32  colNameLen;
-  Int32 allocatedLength = 0;
-
-  for (int i= 0; i< numCols; i++)
-  {
-     temp = (Int32 *)kvBuf;
-     kvLength = *temp++;
-     valueLength = *temp++;
-     valueOffset = *temp++;
-     qualLength = *temp++;
-     qualOffset = *temp++;
-     familyLength = *temp++;
-     familyOffset = *temp++;
-     timestamp = *(long *)temp;
-     temp += 2;
-     buffer = (char *)temp;
-     value = buffer + valueOffset; 
-
-     colName = (char*)buffer + qualOffset;
-     family = (char *)buffer + familyOffset;
-     colNameLen = familyLength + qualLength + 1; // 1 for ':'
-
-     if (allocatedLength == 0 && colNameLen < INLINE_COLNAME_LEN)
-        fullColName = inlineColName;
-     else
-     {
-        if (colNameLen > allocatedLength)
-        {
-           if (allocatedLength > 0)
-           {
-               NADELETEBASIC(fullColName, getHeap());
-           }
-           fullColName = new (getHeap()) char[colNameLen + 1];
-           allocatedLength = colNameLen;
-        }
-     }
-     strncpy(fullColName, family, familyLength);
-     fullColName[familyLength] = '\0';
-     strcat(fullColName, ":");
-     strncat(fullColName, colName, qualLength); 
-     fullColName[colNameLen] = '\0';
-    
-     colName = fullColName;
-      
-     colVal = (char*)value;
-     colValLen = valueLength;
-
-      if (! getColPos(colName, colNameLen, idx)) // not found
-	{
-          if (allocatedLength  > 0)
-             NADELETEBASIC(fullColName, getHeap());
-	  // error
-	  return -HBASE_CREATE_ROW_ERROR;
-	}
-
-      // not missing any more
-      asciiRowMissingCols_[idx] = 0;
-      if (timestamp > latestTimestampForCols_[idx])
-        latestTimestampForCols_[idx] = timestamp;
-
-      Attributes * attr = asciiSourceTD->getAttr(idx);
-      if (! attr)
-	{
-          if (allocatedLength  > 0)
-              NADELETEBASIC(fullColName, getHeap());
-	  // error
-	  return -HBASE_CREATE_ROW_ERROR;
-	}
-
-      // copy to asciiRow only if this is the latest version seen so far
-      // for this column. On 6/10/2014 we get two versions for a newly
-      // updated column that has not been committed yet.
-      if (timestamp == latestTimestampForCols_[idx]) 
-        {
-          if (attr->getNullFlag())
-            {
-              if (*colVal)
-                *(short*)&asciiRow_[attr->getNullIndOffset()] = -1;
-              else
-                *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
-
-              colValLen = colValLen - sizeof(char);
-              colVal += sizeof(char);
-            }
-
-          if (attr->getVCIndicatorLength() > 0)
-            {
-              char * srcPtr = &asciiRow_[attr->getOffset()];
-              Lng32 copyLen = MINOF(attr->getLength(), colValLen);
-              if (attr->getVCIndicatorLength() == sizeof(short))
-                *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
-              else
-                *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
-              str_cpy_all(srcPtr, colVal, copyLen);
-            }
-          else
-            {
-              char * srcPtr = &asciiRow_[attr->getOffset()];
-              Lng32 copyLen = MINOF(attr->getLength(), colValLen);
-              str_cpy_all(srcPtr, colVal, copyLen);
-            }
-        }
-    kvBuf = (char *)temp + kvLength;
-  }
-  if (allocatedLength > 0)
-  {
-     NADELETEBASIC(fullColName, getHeap());
-  }
-  // fill in null or default values for missing cols.
-  for (idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
-    {
-      if (asciiRowMissingCols_[idx] == 1) // missing
-	{
-	  attr = asciiSourceTD->getAttr(idx);
-	  if (! attr)
-	    {
-	      // error
-	      return -HBASE_CREATE_ROW_ERROR;
-	    }
-	  
-	  char * defVal = attr->getDefaultValue();
-	  char * defValPtr = defVal;
-	  short nullVal = 0;
-	  if (attr->getNullFlag())
-	    {
-	      nullVal = *(short*)defVal;
-	      *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
-	      
-	      defValPtr += 2;
-	    }
-	  
-          Lng32 copyLen;
-	  if (! nullVal)
-	    {
-	      if (attr->getVCIndicatorLength() > 0)
-		{
-		  copyLen = *(short*)defValPtr;
-		  if (attr->getVCIndicatorLength() == sizeof(short))
-		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
-		  else
-		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen;
-		  
-		  defValPtr += attr->getVCIndicatorLength();
-		  
-		}
-	      else
-		  copyLen = attr->getLength();
-		
-               char *destPtr = &asciiRow_[attr->getOffset()];
-               str_cpy_all(destPtr, defValPtr, copyLen);
-	    } // not nullVal
-	} // missing col
-    }
-
-  workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
-    .setDataPointer(convertRow_);
-  workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
-    .setDataPointer(asciiRow_);
-  
-  if (convertExpr())
-    {
-      ex_expr::exp_return_type evalRetCode =
-	convertExpr()->eval(pentry_down->getAtp(), workAtp_);
-      if (evalRetCode == ex_expr::EXPR_ERROR)
-	{
-	  return -1;
-	}
-    }
-
-  return 0;
-}
 
 Lng32 ExHbaseAccessTcb::createSQRowDirect()
 {
@@ -1194,18 +965,24 @@ Lng32 ExHbaseAccessTcb::createSQRowDirect()
   Lng32 retcode;
   int numCols; 
   retcode = ehi_->getNumCols(numCols);
+  if (retcode == HBASE_ACCESS_NO_ROW)
+     return retcode ;
   if (retcode != HBASE_ACCESS_SUCCESS)
+  {
+     setupError(retcode, "", "getNumCols()");
      return retcode;
+  }
   for (int colNo= 0; colNo < numCols; colNo++)
   {
       retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
       if (retcode != HBASE_ACCESS_SUCCESS)
+      {
+         setupError(retcode, "", "getColName()");
          return retcode;
-      if (colName == NULL) // reached end of columns in the row
-         break;
-      
+      }
+
       if (! getColPos(colName, colNameLen, idx)) // not found
-         return HBASE_CREATE_ROW_ERROR;
+         ex_assert(FALSE, "Error in getColPos()");
 
       // not missing any more
       asciiRowMissingCols_[idx] = 0;
@@ -1214,9 +991,7 @@ Lng32 ExHbaseAccessTcb::createSQRowDirect()
 
       Attributes * attr = asciiSourceTD->getAttr(idx);
       if (! attr)
-	  return HBASE_CREATE_ROW_ERROR;
-      
-
+         ex_assert(FALSE, "Attr not found -1");
       // copy to asciiRow only if this is the latest version seen so far
       // for this column. On 6/10/2014 we get two versions for a newly
       // updated column that has not been committed yet.
@@ -1229,7 +1004,10 @@ Lng32 ExHbaseAccessTcb::createSQRowDirect()
          retcode = ehi_->getColVal(colNo, colVal, colValLen, 
                      attr->getNullFlag(), nullVal);
          if (retcode != HBASE_ACCESS_SUCCESS)
+         {
+            setupError(retcode, "", "getColVal()");
             return retcode;
+         }
          if (attr->getNullFlag())
          {
             if (nullVal)
@@ -1253,10 +1031,7 @@ Lng32 ExHbaseAccessTcb::createSQRowDirect()
 	{
 	  attr = asciiSourceTD->getAttr(idx);
 	  if (! attr)
-	    {
-	      // error
-	      return HBASE_CREATE_ROW_ERROR;
-	    }
+             ex_assert(FALSE, "Attr not found -2");
 	  
 	  char * defVal = attr->getDefaultValue();
 	  char * defValPtr = defVal;

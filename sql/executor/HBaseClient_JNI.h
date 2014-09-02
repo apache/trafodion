@@ -245,58 +245,6 @@ private:
   static pthread_mutex_t javaMethodsInitMutex_;
 };
 
-// ===========================================================================
-// ===== The ResultKeyValueList class implements access to the Java 
-// ===== ResultKeyValueList class.
-// ===========================================================================
-
-typedef enum {
-  RKL_OK     = JOI_OK
- ,RKL_FIRST  = KYV_LAST
- ,RKL_ERROR_ADD_PARAM = RKL_FIRST
- ,RKL_LAST
-} RKL_RetCode;
-
-class ResultKeyValueList : public JavaObjectInterface
-{
-public:
-  ResultKeyValueList(NAHeap *heap, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jObj)
-  {}
-
-  // Destructor
-  virtual ~ResultKeyValueList();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  RKL_RetCode    init();
-  
-  Text* getRowID();
-  Int32 getSize();
-  KeyValue* getEntry(Int32 i);
-  
-  bool toJbyte(jbyte **rowResult, jbyteArray &jRowResult, jboolean *isCopy);
-
-    
-  // Get the error description.
-  virtual char* getErrorText(RKL_RetCode errEnum);
-
-private:  
-  enum JAVA_METHODS {
-    JM_ROWID = 0,
-    JM_SIZE, 
-    JM_ENTRY,
-    JM_KVS,
-    JM_LAST
-  };
-
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-};
-
 class HBaseClientRequest
 {
 public :
@@ -310,7 +258,8 @@ public :
   char *fileName_;
   NAHeap *heap_;
 };
- 
+
+
 // ===========================================================================
 // ===== The HTableClient class implements access to the Java 
 // ===== HTableClient class.
@@ -318,7 +267,7 @@ public :
 
 typedef enum {
   HTC_OK     = JOI_OK
- ,HTC_FIRST  = RKL_LAST
+ ,HTC_FIRST  = KYV_LAST
  ,HTC_DONE   = HTC_FIRST
  ,HTC_DONE_RESULT = 1000
  ,HTC_DONE_DATA
@@ -331,7 +280,6 @@ typedef enum {
  ,HTC_ERROR_SCANOPEN_EXCEPTION
  ,HTC_ERROR_SCANFETCH_EXCEPTION
  ,HTC_ERROR_FETCHNEXTROW_EXCEPTION
- ,HTC_ERROR_FETCHROWVEC_EXCEPTION
  ,HTC_ERROR_SCANCLOSE_EXCEPTION
  ,HTC_ERROR_GETROWOPEN_PARAM
  ,HTC_ERROR_GETROWOPEN_EXCEPTION
@@ -440,9 +388,6 @@ public:
   HTC_RetCode scanFetch();
   HTC_RetCode getFetch();
   HTC_RetCode fetchNextRow();
-  HTC_RetCode fetchRowVec(jbyte **rowResult, jbyteArray &jRowResult,
-                             jboolean *isCopy);
-  HTC_RetCode freeRowResult(jbyte *rowResult, jbyteArray &jRowResult);
   KeyValue*   getLastFetchedCell();
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
@@ -482,6 +427,10 @@ public:
               Lng32 &colValLen,
               NABoolean nullable,
               BYTE &nullVal);
+  HTC_RetCode getColVal(NAHeap *heap,
+              int colNo,
+              BYTE **colVal,
+              Lng32 &colValLen);
   HTC_RetCode getNumCols(int &numCols);
   HTC_RetCode getRowID(HbaseStr &rowID);
     
@@ -519,7 +468,6 @@ private:
    ,JM_SCAN_FETCH
    ,JM_GET_FETCH 
    ,JM_FETCH_ROW 
-   ,JM_FETCH_ROWV
    ,JM_GET_CELL  
    ,JM_DELETE    
    ,JM_CHECKANDDELETE
@@ -587,7 +535,7 @@ private:
 };
 
 // ===========================================================================
-// n===== The HBaseClient_JNI class implements access to the Java 
+// ===== The HBaseClient_JNI class implements access to the Java 
 // ===== HBaseClient_JNI class.
 // ===========================================================================
 

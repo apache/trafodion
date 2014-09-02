@@ -22,7 +22,9 @@
 #include "HdfsLogger.h"
 #include "Globals.h"
 
-#define DEFAULT_MAX_HEAP_SIZE "512"
+// Changed the default to 1024 to accomodate the increased java object
+// memory requirement with the scan performance improvements
+#define DEFAULT_MAX_HEAP_SIZE "1024"
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
 
 NABoolean loggerStatus = HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config");

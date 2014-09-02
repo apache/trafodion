@@ -484,29 +484,6 @@ public class HTableClient {
 		return true;
 	}
 
-	public ResultKeyValueList fetchRowVec() { 
-	    logger.trace("Enter fetchRowVec() " + tableName);
-
-		if (lastFetchedRow == null) {
-			logger.trace("Exit 1 fetchRowVec.  Returning empty.");
-			return null;
-		}
-		ResultKeyValueList result = new ResultKeyValueList(lastFetchedRow);
-		lastFetchedRow = null;
-
-		if (getResultSet != null) {
-			if (getResultSetPos == getResultSet.length) {
-				getResultSet = null;
-			} else {
-			        lastFetchedRow = getResultSet[getResultSetPos];
-			        getResultSetPos++;
-			}
-		}
-
-		logger.trace("Exit fetchRowVec()" + tableName + ". Result Size: " + result.getSize());
-		return result;
-	}
-
 	public KeyValue getLastFetchedCell() {
 		logger.trace("Enter getLastFetchedCell() ");
 		if (lastFetchedCell == null)
@@ -800,15 +777,15 @@ public class HTableClient {
 	}
 
 	public boolean flush() throws IOException {
-			if (scanner != null) {
-				scanner.close();
-				scanner = null;
-			}
-			
-			if (table != null)
-				table.flushCommits();
-				
-			return true;
+		if (scanner != null) {
+			scanner.close();
+			scanner = null;
+		}
+		
+		if (table != null)
+			table.flushCommits();
+		cleanScan();		
+		return true;
 	}
 
 	public boolean close(boolean clearRegionCache) throws IOException {
@@ -871,6 +848,23 @@ public class HTableClient {
         logger.trace("Exit getStartKeys(), result size: " + result.getSize());
         return result;
     }
+
+    private void cleanScan()
+    {
+        numRowsCached = 1;
+        numColsInScan = 0;
+        kvValLen = null;
+        kvValOffset = null;
+        kvQualLen = null;
+        kvQualOffset = null;
+        kvFamLen = null;
+        kvFamOffset = null;
+        kvTimestamp = null;
+        kvBuffer = null;
+        rowIDs = null;
+        kvsPerRow = null;
+    }
+
 
     private native int setResultInfo(long jniObject,
 				int[] kvValLen, int[] kvValOffset,

@@ -800,171 +800,6 @@ TCell* KeyValue::toTCell()
 }
 
 // ===========================================================================
-// ===== Class ResultKeyValueList
-// ===========================================================================
-
-JavaMethodInit* ResultKeyValueList::JavaMethods_ = NULL;
-jclass ResultKeyValueList::javaClass_ = 0;
-bool ResultKeyValueList::javaMethodsInitialized_ = false;
-pthread_mutex_t ResultKeyValueList::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
-
-static const char* const rklErrorEnumStr[] = 
-{
-  "Preparing parameters for init()."
-};
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-char* ResultKeyValueList::getErrorText(RKL_RetCode errEnum)
-{
-  if (errEnum < (RKL_RetCode)JOI_LAST)
-    return JavaObjectInterface::getErrorText((JOI_RetCode)errEnum);
-  else    
-    return (char*)rklErrorEnumStr[errEnum-RKL_FIRST-1];
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-ResultKeyValueList::~ResultKeyValueList()
-{
-//  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "ResultKeyValueList destructor called.");
-}
- 
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-RKL_RetCode ResultKeyValueList::init()
-{
-  static char className[]="org/trafodion/sql/HBaseAccess/ResultKeyValueList";
-  RKL_RetCode rc;
-
-  if (isInitialized())
-    return RKL_OK;
-    
-  if (javaMethodsInitialized_)
-    return (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-  else
-  {
-    pthread_mutex_lock(&javaMethodsInitMutex_);
-    if (javaMethodsInitialized_)
-    {
-      pthread_mutex_unlock(&javaMethodsInitMutex_);
-      return (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    }
-    JavaMethods_ = new JavaMethodInit[JM_LAST];
-    
-    JavaMethods_[JM_ROWID].jm_name      = "getRowID";
-    JavaMethods_[JM_ROWID].jm_signature = "()[B";
-    JavaMethods_[JM_SIZE ].jm_name      = "getSize";
-    JavaMethods_[JM_SIZE ].jm_signature = "()I";
-    JavaMethods_[JM_ENTRY].jm_name      = "getEntry";
-    JavaMethods_[JM_ENTRY].jm_signature = "(I)Lorg/apache/hadoop/hbase/KeyValue;";
-    JavaMethods_[JM_KVS].jm_name    = "getAllKeyValues";
-    JavaMethods_[JM_KVS].jm_signature = "()[B";
-   
-    rc = (RKL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
-    pthread_mutex_unlock(&javaMethodsInitMutex_);
-  }
-  return rc;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-Text* ResultKeyValueList::getRowID()
-{
-  //HdfsLogger::log(CAT_HBASE, LL_DEBUG, "ResultKeyValueList::getRowID() called.");
-
-  // byte[] getRowID();
-  jbyteArray jba_rowID = static_cast<jbyteArray>(jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_ROWID].methodID));
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return NULL;
-  }
-
-  if (jba_rowID == NULL)
-    return new (heap_) Text("<Empty>");
-
-  jbyte* p_rowID = jenv_->GetByteArrayElements(jba_rowID, 0);
-  int len = jenv_->GetArrayLength(jba_rowID);
-  Text* rowID = new (heap_) Text((char*)p_rowID, len);
-  jenv_->ReleaseByteArrayElements(jba_rowID, p_rowID, JNI_ABORT);
-  jenv_->DeleteLocalRef(jba_rowID);  
-
-  return rowID;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-Int32 ResultKeyValueList::getSize()
-{
-  //HdfsLogger::log(CAT_HBASE, LL_DEBUG, "ResultKeyValueList::getSize() called.");
-
-  //int getSize();
-  return jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_SIZE].methodID);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return 0;
-  }
-
-  return RKL_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-KeyValue* ResultKeyValueList::getEntry(Int32 i)
-{
-  //HdfsLogger::log(CAT_HBASE, LL_DEBUG, "ResultKeyValueList::getEntry(%d) called.", i);
-
-  //org.apache.hadoop.hbase.KeyValue getEntry(int i);
-  jobject jKeyValue = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_ENTRY].methodID, i);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return NULL;
-  }
-
-  KeyValue* kv = new (heap_) KeyValue(heap_, jKeyValue);
-  if (kv->init() != KYV_OK)
-     return NULL;
-  return kv;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-bool ResultKeyValueList::toJbyte(jbyte **rowResult, jbyteArray &jRowResult,
-                                     jboolean *isCopy)
-{
-
-  jbyteArray jba_kvs = static_cast<jbyteArray>(jenv_->CallObjectMethod(
-             javaObj_, JavaMethods_[JM_KVS].methodID));
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return false;
-  }
-
-  if (jba_kvs == NULL)
-    return false;
-  jRowResult = (jbyteArray)jenv_->NewGlobalRef(jba_kvs);
-  *rowResult = jenv_->GetByteArrayElements(jba_kvs, isCopy);
-  jenv_->DeleteLocalRef(jba_kvs);
-  return true;
-}
-
-// ===========================================================================
 // ===== Class HBaseClient_JNI
 // ===========================================================================
 
@@ -2413,7 +2248,6 @@ static const char* const htcErrorEnumStr[] =
  ,"Java exception in scanOpen()."
  ,"Java exception in scanFetch()."
  ,"Java exception in fetchNextRow()."
- ,"Java exception in fetchRowVec()."
  ,"Java exception in scanClose()."
  ,"Preparing parameters for getRowOpen()."
  ,"Java exception in getRowOpen()."
@@ -2534,8 +2368,6 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_GET_FETCH  ].jm_signature = "()Z";
     JavaMethods_[JM_FETCH_ROW  ].jm_name      = "fetchNextRow";
     JavaMethods_[JM_FETCH_ROW  ].jm_signature = "()Z";
-    JavaMethods_[JM_FETCH_ROWV ].jm_name      = "fetchRowVec";
-    JavaMethods_[JM_FETCH_ROWV ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/ResultKeyValueList;";
     JavaMethods_[JM_GET_CELL   ].jm_name      = "getLastFetchedCell";
     JavaMethods_[JM_GET_CELL   ].jm_signature = "()Lorg/apache/hadoop/hbase/KeyValue;";
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
@@ -2964,54 +2796,6 @@ HTC_RetCode HTableClient_JNI::fetchNextRow()
   return HTC_OK;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::fetchRowVec(jbyte **rowResult,
-                    jbyteArray &jRowResult, jboolean *isCopy)
-{
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::fetchRowVec() called.");
-
-  // public org.trafodion.sql.HBaseAccess.ResultKeyValueList fetchRowVec();
-  jobject jResult = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_FETCH_ROWV].methodID);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "HTableClient_JNI::fetchRowVec()", getLastError());
-    return HTC_ERROR_FETCHROWVEC_EXCEPTION;
-  }
-
-  if (jResult == NULL)
-  {
-    return HTC_DONE_RESULT;
-  } 
-
-  ResultKeyValueList* result = new (heap_) ResultKeyValueList(heap_, jResult);
-  if (result->init() != RKL_OK)
-     return HTC_ERROR_FETCHROWVEC_EXCEPTION;
-  bool gotData = result->toJbyte(rowResult, jRowResult, isCopy);
-
-  jenv_->DeleteLocalRef(jResult);  
-  NADELETE(result, ResultKeyValueList, result->getHeap());
-  
-  if (gotData)
-    return HTC_OK;
-  else
-    return HTC_DONE_DATA;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::freeRowResult(jbyte *rowResult,
-                    jbyteArray &jRowResult)
-{
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::freeRowResult() called.");
-  jenv_->ReleaseByteArrayElements(jRowResult, rowResult, JNI_ABORT);
-  jenv_->DeleteGlobalRef(jRowResult);
-  return HTC_OK;
-}
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
@@ -4137,20 +3921,69 @@ void HTableClient_JNI::setResultInfo( jintArray jKvValLen, jintArray jKvValOffse
 {
   if (numRowsReturned_ > 0)
      cleanupResultInfo();
+   NABoolean exceptionFound = FALSE;
    jKvValLen_ = (jintArray)jenv_->NewGlobalRef(jKvValLen);
-   jKvValOffset_ = (jintArray)jenv_->NewGlobalRef(jKvValOffset);
-   jKvQualLen_ = (jintArray)jenv_->NewGlobalRef(jKvQualLen);
-   jKvQualOffset_ = (jintArray)jenv_->NewGlobalRef(jKvQualOffset);
-   jKvFamLen_ = (jintArray)jenv_->NewGlobalRef(jKvFamLen);
-   jKvFamOffset_ = (jintArray)jenv_->NewGlobalRef(jKvFamOffset);
-   jTimestamp_ = (jlongArray)jenv_->NewGlobalRef(jTimestamp);
-   jKvBuffer_ = (jobjectArray)jenv_->NewGlobalRef(jKvBuffer);
-   jRowIDs_ = (jobjectArray)jenv_->NewGlobalRef(jRowIDs);
-   jKvsPerRow_ = (jintArray)jenv_->NewGlobalRef(jKvsPerRow);
+   if (jenv_->ExceptionCheck())
+       exceptionFound = TRUE;
+   if (! exceptionFound)
+   {
+      jKvValOffset_ = (jintArray)jenv_->NewGlobalRef(jKvValOffset);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jKvQualLen_ = (jintArray)jenv_->NewGlobalRef(jKvQualLen);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jKvQualOffset_ = (jintArray)jenv_->NewGlobalRef(jKvQualOffset);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jKvFamLen_ = (jintArray)jenv_->NewGlobalRef(jKvFamLen);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jKvFamOffset_ = (jintArray)jenv_->NewGlobalRef(jKvFamOffset);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jTimestamp_ = (jlongArray)jenv_->NewGlobalRef(jTimestamp);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jKvBuffer_ = (jobjectArray)jenv_->NewGlobalRef(jKvBuffer);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jRowIDs_ = (jobjectArray)jenv_->NewGlobalRef(jRowIDs);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
+   if (! exceptionFound)
+   {
+      jKvsPerRow_ = (jintArray)jenv_->NewGlobalRef(jKvsPerRow);
+      if (jenv_->ExceptionCheck())
+         exceptionFound = TRUE;
+   }
    numCellsReturned_ = numCellsReturned;
    currentRowNum_ = 0;
    prevRowCellNum_ = 0;
    cleanupDone_ = FALSE;
+   ex_assert(! exceptionFound, "Exception in setResultInfo");
    return;
 } 
 
@@ -4367,6 +4200,24 @@ HTC_RetCode HTableClient_JNI::getColVal(int colNo, BYTE *colVal,
     }
     nullVal = nullByte;
     colValLen = copyLen;
+    return HTC_OK;
+}
+
+HTC_RetCode HTableClient_JNI::getColVal(NAHeap *heap, int colNo, BYTE **colVal, 
+          Lng32 &colValLen)
+{
+    jint kvsPerRow = p_kvsPerRow_[currentRowNum_];
+    if (kvsPerRow == 0 || colNo >= kvsPerRow)
+       return HTC_GET_COLVAL_EXCEPTION;
+    int idx = prevRowCellNum_ + colNo;
+    ex_assert((idx < numCellsReturned_), "Buffer overflow");
+    jint kvValLen = p_kvValLen_[idx];
+    jint kvValOffset = p_kvValOffset_[idx];
+    BYTE *colValTmp = new (heap) BYTE[kvValLen];
+    jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, kvValLen,
+             (jbyte *)colValTmp); 
+    *colVal = colValTmp;
+    colValLen = kvValLen;
     return HTC_OK;
 }
 

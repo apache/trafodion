@@ -1791,12 +1791,16 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    }
 	    if (retcode < 0)
 	    {
-	        rc = retcode;
-		tcb_->setupError(rc, "createSQRowDirect");
-		step_ = HANDLE_ERROR;
-		break;
+	        rc = (short)retcode;
+	        tcb_->setupError(rc, "createSQRowDirect");
+	        step_ = HANDLE_ERROR;
+	        break;
 	    }
-	    
+	    if (retcode != HBASE_ACCESS_SUCCESS)
+	    {
+	        step_ = HANDLE_ERROR;
+	        break;
+	    }
 	    step_ = APPLY_PRED;
 	  }
 	  break;
@@ -2717,7 +2721,7 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	  break;
 
 	  case CREATE_FETCHED_ROW:
-	    {
+	  {
 	    retcode = tcb_->createSQRowDirect();
 	    if (retcode == HBASE_ACCESS_NO_ROW)
 	    {
@@ -2727,11 +2731,15 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	    if (retcode < 0)
 	    {
                 rc = (short)retcode;
-		tcb_->setupError(rc, "createSQRowDirect");
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-	    
+	        tcb_->setupError(rc, "createSQRowDirect");
+	        step_ = HANDLE_ERROR;
+	        break;
+	    }
+	    if (retcode != HBASE_ACCESS_SUCCESS)
+	    {
+	        step_ = HANDLE_ERROR;
+	        break;
+	    }
 	    step_ = APPLY_PRED;
 	  }
 	  break;
