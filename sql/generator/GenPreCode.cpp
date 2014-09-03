@@ -5876,13 +5876,13 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
     }
 
   if ((isUpsert()) &&
-      (getInsertType() == Insert::VSBB_INSERT_USER))
+      ((getInsertType() == Insert::VSBB_INSERT_USER) ||
+       (getInsertType() == Insert::UPSERT_LOAD)))
     {
       if ((inlinedActions) ||
 	  (producesOutputs()))
  	setInsertType(Insert::SIMPLE_INSERT);
     }
-
 
   if ((getInsertType() == Insert::SIMPLE_INSERT)  &&
       (NOT getTableDesc()->getNATable()->hasLobColumn()))
