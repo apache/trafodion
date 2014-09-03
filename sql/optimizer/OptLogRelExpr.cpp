@@ -5264,7 +5264,8 @@ Tuple::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 
   ValueIdList & tupleList = tupleExpr();
 
-  for (CollIndex i = 0; i < (CollIndex)(tupleList.entries()); i++)
+  CollIndex nTupleListEntries = (CollIndex)tupleList.entries();
+  for (CollIndex i = 0; i < nTupleListEntries ; i++)
   {
     ValueId ituple = tupleList[i];
     outputColStats.addColStatDescForVirtualCol(1,
@@ -5332,7 +5333,8 @@ TupleList::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 
   ValueIdList  & tupleList = tupleExpr();
 
-  for (CollIndex i = 0; i < (CollIndex)(tupleList.entries()); i++)
+  CollIndex nTupleListEntries = (CollIndex)tupleList.entries();
+  for (CollIndex i = 0; i < nTupleListEntries ; i++)
   {
     ValueId ituple = tupleList[i];
 

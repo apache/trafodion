@@ -7203,7 +7203,8 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
     // Make a union'ed tree of all the tuples in tupleList.	##
     // This is done coz TupleList doesn't handle transformation	##
     // of subqueries in tuples correctly yet.			##
-    for (CollIndex i = 0; i < (CollIndex)tupleList.entries(); i++) {
+    CollIndex nTupleListEntries = (CollIndex)tupleList.entries();
+    for (CollIndex i = 0; i < nTupleListEntries ; i++) {
 
       ItemExpr *ituple = tupleList[i]->child(0)->castToItemExpr();
       RelExpr  *rtuple = new(bindWA->wHeap()) Tuple(ituple);
@@ -7273,7 +7274,8 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
   ValueIdUnion *vidUnion;
 
   CollIndex i = 0;
-  for (i = 0; i < (CollIndex)tupleList.entries(); i++) {
+  CollIndex nEntries = (CollIndex)tupleList.entries() ;
+  for (i = 0; i < nEntries ; i++) {
 
     counterRowVals = 0;
 
@@ -7454,7 +7456,8 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
               ExprValueId newTLVid(newTupleExprTree);
               ItemExprTreeAsList newTupleList(&newTLVid, ITM_ITEM_LIST);
 
-              for (CollIndex i = 0; i < (CollIndex) tupleList.entries(); i++)
+              CollIndex nTupleListEntries = (CollIndex)tupleList.entries();
+              for (CollIndex i = 0; i < nTupleListEntries ; i++)
                 {
                   ItemExpr * tuple =
                     ((ItemExpr *) tupleList[i])->child(0)->castToItemExpr();

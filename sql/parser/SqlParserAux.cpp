@@ -2178,7 +2178,8 @@ ItemExpr *convertINvaluesToOR(ItemExpr *lhs, ItemExpr *rhs)
     ItemExprTreeAsList(&rightListId, ITM_ITEM_LIST);
 
   ItemExpr *result = NULL;
-  for (Lng32 i = 0; i < enl->entries(); i++)
+  CollIndex nEnlEntries = (CollIndex) enl->entries();
+  for (Lng32 i = 0; i < nEnlEntries ; i++)
     {
       BiRelat *eqpred = new (PARSERHEAP()) BiRelat(ITM_EQUAL, lhs, (*enl)[i]);
       eqpred->setCreatedFromINlist(TRUE);
