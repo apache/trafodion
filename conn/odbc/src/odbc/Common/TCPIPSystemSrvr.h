@@ -27,6 +27,7 @@
 #define READ_TIMEOUT 10
 #define WRITE_TIMEOUT 10
 
+#include "compression.h"
 
 
 class CTCPIPSystemSrvr_list; 
@@ -73,6 +74,7 @@ public:
 	int		m_rlength;
 	short	m_nSocketFnum;
 	char*	m_IObuffer;
+	CCompression m_compression;
 	long	m_trans_begin_tag;
 //On SQ, we use select to monitor completion. We need to be 
 //able to traverse the list to compare which open sockets have
@@ -129,5 +131,9 @@ DISPATCH_TCPIPRequest(
 extern void
 ReleaseServer();
 
+extern
+void DoCompression(CTCPIPSystemSrvr* pnode, HEADER* wheader, unsigned char* wbuffer, unsigned long& write_count);
+extern
+bool DoExpand(CTCPIPSystemSrvr* pnode, HEADER& rheader, unsigned char* rbuffer, unsigned long& read_count);
 
 #endif

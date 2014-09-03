@@ -31,7 +31,7 @@ include ../macros.gmk       # odbc level
 #       stubs.cpp    [obsolete SBoand: removed from OBJS]
 #    from Common:
 #       CommonFunctions.cpp
-#       Compression.cpp
+#       compression.cpp
 #       TransportBase.cpp
 #       FileSystemDrvr.cpp
 #       FileSystemDrvr_ps.cpp
@@ -68,6 +68,7 @@ include ../macros.gmk       # odbc level
 COMMON_OBJS  = $(OUTDIR)/utils.o \
         $(OUTDIR)/platform_utils.o \
         $(OUTDIR)/CommonFunctions.o \
+        $(OUTDIR)/compression.o \
         $(OUTDIR)/TransportBase.o \
         $(OUTDIR)/FileSystemDrvr.o \
         $(OUTDIR)/FileSystemDrvr_ps.o \
@@ -128,7 +129,7 @@ COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvr
 
 # Produce mxosrvr
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
-	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS)
+	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz
 
 $(OUTDIR)/ndcsversion.o: $(MY_SQROOT)/export/include/SCMBuildStr.h 
 
