@@ -1,0 +1,239 @@
+-- Tests for Hbase - Load/Extract
+-- Added April 2014
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+set schema trafodion.hbase;
+cqd comp_bool_226 'on';
+cqd HDFS_IO_BUFFERSIZE '32768';
+
+
+
+
+obey TEST018(clean_up);
+
+
+log LOG018 clear;
+
+sh regrhive.ksh -v -f $REGRTSTDIR/TEST018_create_hive_tables.hive &> $REGRRUNDIR/LOG018_create_hive_tables.hive ;
+obey TEST018(setup);
+obey TEST018(test_bulk_unload_simple);
+
+log;
+obey TEST018(clean_up);
+exit;
+
+?section clean_up
+drop table customer_demographics cascade;
+drop table customer_demographics_salt cascade;
+drop table customer_address cascade;
+drop table customer_address_NOPK cascade;
+sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_address.gz ;
+sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs.gz ;
+sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_3;
+sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_4.gz ;
+sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_2.gz ;
+
+?section setup
+--------------------------------------------------------------------------
+create table customer_demographics
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+); 
+
+create table customer_demographics_salt
+(
+  cd_demo_sk              int not null,
+  cd_gender               char(1),
+  cd_marital_status       char(1),
+  cd_education_status     char(20),
+  cd_purchase_estimate    int,
+  cd_credit_rating        char(10),
+  cd_dep_count            int,
+  cd_dep_employed_count   int,
+  cd_dep_college_count    int,
+  primary key (cd_demo_sk)
+)
+salt using 4 partitions on (cd_demo_sk); 
+
+
+create table customer_address
+(
+  ca_address_sk        int not null,
+  ca_address_id        char(16),
+  ca_street_number     char(10),
+  ca_street_name       varchar(60),
+  ca_street_type       char(15),
+  ca_suite_number      char(10),
+  ca_city              varchar(60),
+  ca_county            varchar(30),
+  ca_state             char(2),
+  ca_zip               char(10),
+  ca_country           varchar(30),
+  ca_gmt_offset        decimal(5,2),
+  ca_location_type     char(20),
+  primary key (ca_address_sk)
+);
+
+
+?section test_bulk_unload_simple
+--------------------------------------------------------------------------
+
+
+select count(*) from hive.hive.customer_address;
+
+load with no populate indexes into customer_address 
+select * from hive.hive.customer_address;                                                                                              
+select count(*) from customer_address;
+
+load  with no populate indexes into customer_demographics 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 50000;
+select count(*) from customer_demographics;
+
+load  with no populate indexes  into customer_demographics_salt 
+select * from hive.hive.customer_demographics where cd_demo_sk <= 50000;;                                                                                              
+select count(*) from customer_demographics_salt;
+
+-------------------------------
+
+explain options 'f' 
+INSERT INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_address 
+<<+ cardinality 10e10 >>;
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+,MERGE FILE  '/bulkload/merged_customer_address.gz'
+,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_address 
+;
+
+
+
+
+
+
+explain options 'f' 
+INSERT INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics 
+<<+ cardinality 10e10 >>;
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+,MERGE FILE  '/bulkload/merged_customer_demogs.gz'
+,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics 
+<<+ cardinality 10e10 >>;
+
+
+explain options 'f' 
+INSERT INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+,MERGE FILE  '/bulkload/merged_customer_demogs_3'
+--,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+log;
+sh echo "regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_3" >> LOG018 ;
+sh regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_3 >> LOG018 ;
+log LOG018;
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+,MERGE FILE  '/bulkload/merged_customer_demogs_4.gz'
+,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+log;
+sh echo "regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_4.gz" >> LOG018 ;
+sh regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_4.gz >> LOG018 ;
+log LOG018;
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+--,MERGE FILE  '/bulkload/merged_customer_demogs_2.gz'
+--,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+log;
+sh echo "regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l >> LOG018 ;
+log LOG018;
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+,MERGE FILE  '/bulkload/merged_customer_demogs_2.gz'
+,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+sh regrhadoop.ksh fs -copyToLocal  /bulkload/merged_customer_demogs_2.gz /tmp ;
+sh gunzip -f /tmp/merged_customer_demogs_2.gz;
+sh regrhadoop.ksh fs -rm   /user/hive/exttables/unload_customer_demographics/* ;
+sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/hive/exttables/unload_customer_demographics ;
+sh rm /bulkload/merged_customer_demogs_2 ;
+
+cqd HIVE_MAX_STRING_LENGTH '100';
+select [first 100] * from hive.hive.unload_customer_demographics order by cd_demo_sk;
+
+cqd TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'on';
+
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+,MERGE FILE  '/bulkload/merged_customer_demogs_4.gz'
+,COMPRESSION GZIP
+INTO hive.hive.tmp_unload_table
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+log;
+sh echo "regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l >> LOG018 ;
+log LOG018;
+
+
+
+
+
+
+
+
+
+

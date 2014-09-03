@@ -2027,7 +2027,8 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
       noScreenOutput = FALSE;
   }
 
-  if (queryType == SQL_EXE_UTIL && subqueryType == SQL_STMT_HBASE_LOAD)
+  if (queryType == SQL_EXE_UTIL &&
+      (subqueryType == SQL_STMT_HBASE_LOAD || subqueryType == SQL_STMT_HBASE_UNLOAD))
     doHBL = TRUE;
 
   if (NOT doCEFC)

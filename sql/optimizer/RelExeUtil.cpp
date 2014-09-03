@@ -91,6 +91,7 @@
 #include "charinfo.h"
 #include "SqlParserGlobals.h"		// must be last #include
 #include "ItmFlowControlFunction.h"
+#include "HDFSHook.h"
 
 
 NAWchar *SQLTEXTW();
@@ -8596,3 +8597,204 @@ const NAString ExeUtilHBaseBulkLoadTask::getText() const
   return result;
 }
 
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilHbaseLoad
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilHBaseBulkUnLoad::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilHBaseBulkUnLoad *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap)
+      ExeUtilHBaseBulkUnLoad(getTableName(),
+                      getExprNode(),
+                      NULL, CharInfo::UnknownCharSet, outHeap);
+  else
+    result = (ExeUtilHBaseBulkUnLoad *) derivedNode;
+
+  result->emptyTarget_ = emptyTarget_;
+  result->logErrors_ = logErrors_ ;
+  //result->compress_ = compress_ ;
+  result->noOutput_= noOutput_;
+  result->oneFile_= oneFile_;
+  result->compressType_ = compressType_;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+const NAString ExeUtilHBaseBulkUnLoad::getText() const
+{
+  NAString result(CmpCommon::statementHeap());
+
+  result = "HBASE_BULK_UNLOAD";
+
+  return result;
+}
+
+
+short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*> *
+    hBaseBulkUnLoadOptionList,   ComDiagsArea * da)
+{
+  if (!hBaseBulkUnLoadOptionList)
+    return 0;
+
+  for (CollIndex i = 0; i < hBaseBulkUnLoadOptionList->entries(); i++)
+  {
+    HBaseBulkUnLoadOption * lo = (*hBaseBulkUnLoadOptionList)[i];
+    switch (lo->option_)
+    {
+
+      case EMPTY_TARGET_:
+      {
+        if (getEmptyTarget())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0("EMPTY TARGET");
+          return 1;
+        }
+        setEmptyTarget(TRUE);
+      }
+      break;
+
+      case NO_OUTPUT_:
+      {
+        if (getNoOutput())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0(" NO OUTPUT  ");
+          return 1;
+        }
+        setNoOutput(TRUE);
+      }
+      break;
+      case LOG_ERRORS_:
+      {
+        *da << DgSqlCode(-4485)
+        << DgString0(" Error logging ");
+        return 1;
+      }
+      break;
+      case COMPRESS_:
+      {
+        if (getCompressType()!= NONE_)
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0(" COMPRESS ");
+          return 1;
+        }
+        //only GZIP is supported for now
+        setCompressType(GZIP_);
+      }
+      break;
+      case ONE_FILE_:
+      {
+        if (getOneFile())
+        {
+          //4488 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4488)
+                  << DgString0(" ONE FILE ");
+          return 1;
+        }
+        setOneFile(TRUE);
+        mergePath_ = lo->stringVal_;
+
+      }
+      break;
+      default:
+      {
+        //Not a valid bulk unload load option.
+        *da << DgSqlCode(-4487);
+        return 1;
+      }
+
+    }
+  }
+
+  return 0;
+
+};
+
+RelExpr * ExeUtilHBaseBulkUnLoadTask::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilHBaseBulkUnLoadTask *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap)
+    ExeUtilHBaseBulkUnLoadTask(getTableName(),
+                            getExprNode(),
+                            NULL,
+                            CharInfo::UnknownCharSet,
+                            NOT_SET_,
+                            outHeap);
+  else
+    result = (ExeUtilHBaseBulkUnLoadTask *) derivedNode;
+
+  result->taskType_ = taskType_;
+  result->hiveTablePath_= hiveTablePath_;
+  result->hostName_ = hostName_;
+  result->tableDir_ = tableDir_;
+  result->destinationPath_ = destinationPath_;
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+const NAString ExeUtilHBaseBulkUnLoadTask::getText() const
+{
+  NAString result(CmpCommon::statementHeap());
+
+  //change to swith statement later
+  if (taskType_ == OVERWRITE_TARGET_)
+       result = "OVERWRITE TARGET";
+  else
+       result = "MERGE FILES";
+
+  return result;
+}
+
+RelExpr * ExeUtilHBaseBulkUnLoadTask::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+
+
+   NATable *myNaTable =bindWA->getNATable(getTableName());
+
+   if (bindWA->errStatus())
+     return NULL;
+
+   if (!myNaTable)
+     return NULL;
+
+   const HHDFSTableStats* hTabStats = myNaTable->getClusteringIndex()->getHHDFSTableStats();
+
+   const char * hiveTablePath;
+   NAString hostName;
+   Int32 hdfsPort;
+   NAString tableDir;
+   NABoolean result;
+
+   char fldSep[2];
+   char recSep[2];
+   memset(fldSep,'\0',2);
+   memset(recSep,'\0',2);
+   fldSep[0] = hTabStats->getFieldTerminator();
+   recSep[0] = hTabStats->getRecordTerminator();
+   hiveTablePath = (*hTabStats)[0]->getDirName();
+   result = ((HHDFSTableStats* )hTabStats)->splitLocation
+     (hiveTablePath, hostName, hdfsPort, tableDir) ;
+
+   //add assertions here ???
+
+   hostName_ = hostName;
+   hiveTablePath_ = hiveTablePath;
+   tableDir_ = tableDir;
+   hdfsPort_ = hdfsPort;
+
+   return ExeUtilExpr::bindNode(bindWA);
+
+} // ExeUtilHBaseBulkUnLoadTask::bindNode()

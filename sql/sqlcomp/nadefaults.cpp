@@ -3215,7 +3215,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDint__(TRAF_NUM_OF_SALT_PARTNS,          "-1"), 
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                 "OFF"),   
-
+  DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                    "0"),
+  DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,            "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,             "OFF"),
   DDkwd__(TRAF_UPSERT_AUTO_FLUSH,                "OFF"),
   DDint__(TRAF_UPSERT_WB_SIZE,                   "2097152"), 

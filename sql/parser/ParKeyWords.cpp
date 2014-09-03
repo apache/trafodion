@@ -464,6 +464,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("GRANTED",            TOK_GRANTED,     NONRESTOKEN_),
   ParKeyWord("GROUP",              TOK_GROUP,       ANS_|RESWORD_|MPWORD_),
   ParKeyWord("GROUPING",           TOK_GROUPING,    COMPAQ_|RESWORD_),
+  ParKeyWord("GZIP",               TOK_GZIP,         NONRESTOKEN_),
   ParKeyWord("HARDWARE",           TOK_HARDWARE,    NONRESTOKEN_),
   ParKeyWord("HASH",               TOK_HASH,        NONRESTOKEN_),
   ParKeyWord("HASH2",              TOK_HASH2,        NONRESTOKEN_),

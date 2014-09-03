@@ -390,7 +390,7 @@ protected:
                           
   NABoolean isSequenceFile();
   void createSequenceFileError(Int32 sfwRetCode);
-
+  NABoolean isHdfsCompressed();
   void * lobGlob_;
 
   char hdfsHost_[500];

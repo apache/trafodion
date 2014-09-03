@@ -22,23 +22,48 @@
 package org.trafodion.sql.HBaseAccess;
 
 import java.io.IOException;
+import java.io.OutputStream;
+
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.Compressor;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.io.compress.*;
+import org.apache.hadoop.io.compress.zlib.*;
+import org.apache.hadoop.fs.*;
 
+import java.io.*;
+
+import org.apache.hadoop.util.*;
+import org.apache.hadoop.io.*;
+import org.apache.log4j.Logger;
 
 
 public class SequenceFileWriter {
 
+    static Logger logger = Logger.getLogger(SequenceFileWriter.class.getName());
     Configuration conf = null;           // File system configuration
     SequenceFile.Writer writer = null;
 
+    FSDataOutputStream fsOut = null;
+    OutputStream compressedOut = null;
+    
+    FileSystem  fs = null;
     /**
      * Class Constructor
      */
@@ -121,6 +146,147 @@ public class SequenceFileWriter {
         //e.printStackTrace();
         return e.getMessage();
       }
+    }
+    
+    
+    
+    boolean hdfsCreate(String fname) throws IOException
+    {
+      logger.debug("SequenceFileWriter.hdfsCreate() - started" );
+      Path filePath = new Path(fname + ".gz");
+      fs = FileSystem.get(filePath.toUri(),conf);
+      fsOut = fs.create(filePath, true);
+      
+      logger.debug("SequenceFileWriter.hdfsCreate() - file created" );
+      
+      GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, conf);
+      Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
+      try 
+      {
+         compressedOut = gzipCodec.createOutputStream(fsOut, gzipCompressor);
+      }
+      catch (IOException e)
+      {
+        logger.debug("SequenceFileWriter.hdfsCreate() --exception :" + e);
+        throw e;
+      }
+      
+      logger.debug("SequenceFileWriter.hdfsCreate() - compressed output stream created" );
+      return true;
+    }
+    
+    boolean hdfsWrite(String buff, long len) throws Exception
+    {
+
+      logger.debug("SequenceFileWriter.hdfsWrite() - started" );
+      try
+      {
+        compressedOut.write(Bytes.toBytes(buff), 0, (int)len);
+        compressedOut.flush();
+      }
+      catch (Exception e)
+      {
+        logger.debug("SequenceFileWriter.hdfsWrite() -- exception: " + e);
+        throw e;
+      }
+      logger.debug("SequenceFileWriter.hdfsWrite() - bytes written and flushed:" + len  );
+      
+      return true;
+    }
+    
+    boolean hdfsClose() throws IOException
+    {
+      logger.debug("SequenceFileWriter.hdfsClose() - started" );
+      try
+      {
+        compressedOut.close();
+        fsOut.close();
+      }
+      catch (IOException e)
+      {
+        logger.debug("SequenceFileWriter.hdfsClose() - exception:" + e);
+        throw e;
+      }
+      return true;
+    }
+
+    
+    public boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws Exception
+    {
+      logger.debug("SequenceFileWriter.hdfsMergeFiles() - start");
+      logger.debug("SequenceFileWriter.hdfsMergeFiles() - source Path: " + srcPathStr + 
+                                               ", destination File:" + dstPathStr );
+      try 
+      {
+        Path srcPath = new Path(srcPathStr );
+        srcPath = srcPath.makeQualified(srcPath.toUri(), null);
+        FileSystem srcFs = FileSystem.get(srcPath.toUri(),conf);
+  
+        Path dstPath = new Path(dstPathStr);
+        dstPath = dstPath.makeQualified(dstPath.toUri(), null);
+        FileSystem dstFs = FileSystem.get(dstPath.toUri(),conf);
+        
+        if (dstFs.exists(dstPath)){
+          logger.debug("SequenceFileWriter.hdfsMergeFiles() - destination files exists" );
+          // for this prototype we just delete the file-- will change in next code drops
+          dstFs.delete(dstPath, false);
+           // The caller should already have checked existence of file-- throw exception 
+           //throw new FileAlreadyExistsException(dstPath.toString());
+        }
+        
+        // copyMerge and use false for the delete option since it removes the whole directory
+        logger.debug("SequenceFileWriter.hdfsMergeFiles() - copyMerge" );
+        FileUtil.copyMerge(srcFs, srcPath, dstFs, dstPath, false, conf, null);
+        
+        logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete intermediate files" );
+        Path[] files = FileUtil.stat2Paths(srcFs.listStatus(srcPath));
+        for (Path f : files){
+          srcFs.delete(f, false);
+        }
+      }
+      catch (IOException e)
+      {
+        logger.debug("SequenceFileWriter.hdfsMergeFiles() --exception:" + e);
+        throw e;
+      }
+      
+      
+      return true;
+    }
+    public boolean hdfsCleanUnloadPath(String uldPathStr, boolean checkExistence, String mergeFileStr) throws Exception
+    {
+      logger.debug("SequenceFileWriter.hdfsCleanUnloadPath() - start");
+      logger.debug("SequenceFileWriter.hdfsMergeFiles() - unload Path: " + uldPathStr );
+      
+      try 
+      {
+      if (checkExistence){
+        Path mergePath = new Path(mergeFileStr );
+        mergePath = mergePath.makeQualified(mergePath.toUri(), null);
+        FileSystem mergeFs = FileSystem.get(mergePath.toUri(),conf);
+        if (mergeFs.exists( mergePath)){
+          logger.debug("SequenceFileWriter.hdfsMergeFiles() - marge Path: " + mergePath + " already exists" );
+          throw new FileAlreadyExistsException(mergePath.toString());
+        }
+      }
+      
+      Path uldPath = new Path(uldPathStr );
+      uldPath = uldPath.makeQualified(uldPath.toUri(), null);
+      FileSystem srcFs = FileSystem.get(uldPath.toUri(),conf);
+
+      Path[] files = FileUtil.stat2Paths(srcFs.listStatus(uldPath));
+      logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete files" );
+      for (Path f : files){
+        srcFs.delete(f, false);
+      }
+      }
+      catch (IOException e)
+      {
+        logger.debug("SequenceFileWriter.hdfsMergeFiles() -exception:" + e);
+        throw e;
+      }
+      
+      return true;
     }
 
 }

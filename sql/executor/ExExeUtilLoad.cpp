@@ -4207,3 +4207,389 @@ ExExeUtilHbaseLoadPrivateState::~ExExeUtilHbaseLoadPrivateState()
 {
 };
 
+
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+// build for class ExExeUtilHbaseUnLoadTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilHBaseBulkUnLoadTdb::build(ex_globals * glob)
+{
+  ExExeUtilHBaseBulkUnLoadTcb * exe_util_tcb;
+
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilHBaseBulkUnLoadTcb(*this, glob);
+
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilHbaseLoadTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
+     const ComTdbExeUtil & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob),
+       step_(INITIAL_),
+       nextStep_(INITIAL_),
+       rowsAffected_(0)
+{
+  qparent_.down->allocatePstate(this);
+
+}
+
+//////////////////////////////////////////////////////
+// work() for ExExeUtilHbaseLoadTcb
+//////////////////////////////////////////////////////
+short ExExeUtilHBaseBulkUnLoadTcb::work()
+{
+  Lng32 cliRC = 0;
+  short retcode = 0;
+  short rc;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ExTransaction *ta = getGlobals()->castToExExeStmtGlobals()->
+    castToExMasterStmtGlobals()->getStatement()->getContext()->getTransaction();
+
+  while (1)
+  {
+    switch (step_)
+    {
+      case INITIAL_:
+      {
+        NABoolean xnAlreadyStarted = ta->xnInProgress();
+        if (xnAlreadyStarted  )
+        {
+          //8111 - Transactions are not allowed with Bulk unload.
+          ComDiagsArea * da = getDiagsArea();
+          *da << DgSqlCode(-8111);
+          step_ = UNLOAD_ERROR_;
+        }
+
+        if (hblTdb().getSkipWriteToFiles())
+        {
+          hblTdb().setEmptyTarget(FALSE);
+          hblTdb().setOneFile(FALSE);
+        }
+        if (setStartStatusMsgAndMoveToUpQueue("UNLOAD", &rc))
+          return rc;
+
+       if (hblTdb().getCompressType() == 0)
+         cliRC = holdAndSetCQD("TRAF_UNLOAD_HDFS_COMPRESS", "0");
+       else
+         cliRC = holdAndSetCQD("TRAF_UNLOAD_HDFS_COMPRESS", "1");
+        if (cliRC < 0)
+        {
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+
+//        if (hblTdb().getCompressType() != 0)
+//          // setting io buffer size to smaller number to avoid out of
+//          // memory errors
+//         if (holdAndSetCQD("HDFS_IO_BUFFERSIZE", "1024") < 0)
+//         {
+//           step_ = UNLOAD_END_ERROR_;
+//           break;
+//         }
+
+        step_ = UNLOAD_;
+        if (hblTdb().getEmptyTarget())
+          step_ = EMPTY_TARGET_;
+      }
+        break;
+      case EMPTY_TARGET_:
+       {
+
+         if (setStartStatusMsgAndMoveToUpQueue(" EMPTY TARGET ", &rc, 0, TRUE))
+           return rc;
+
+         char * mfQuery =
+           new(getMyHeap()) char[strlen("UNLOAD  CLEANUP FOR TABLE  ; ") +
+                                strlen(hblTdb().getTableName()) +
+                                100];
+         strcpy(mfQuery, "UNLOAD  CLEANUP FOR TABLE   ");
+         strcat(mfQuery, hblTdb().getTableName());
+         strcat(mfQuery, " ;");
+
+         cliRC = cliInterface()->executeImmediate(mfQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+         NADELETEBASIC(mfQuery, getMyHeap());
+         mfQuery = NULL;
+
+         if (cliRC < 0) {
+           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+           step_ = UNLOAD_END_ERROR_;
+           break;
+         }
+         step_ = UNLOAD_;
+
+         setEndStatusMsg(" EMPTY TARGET ", 0, TRUE);
+       }
+       break;
+
+      case UNLOAD_:
+      {
+
+        if (setStartStatusMsgAndMoveToUpQueue(" EXTRACT ", &rc, 0, TRUE))
+          return rc;
+
+        rowsAffected_ = 0;
+        char * uldQuery =hblTdb().uldQuery_;
+        cliRC = cliInterface()->executeImmediate(uldQuery,
+                                                 NULL,
+                                                 NULL,
+                                                 TRUE,
+                                                 &rowsAffected_);
+        uldQuery = NULL;
+        if (cliRC < 0)
+        {
+          rowsAffected_ = 0;
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+        step_ = UNLOAD_END_;
+
+        if (hblTdb().getOneFile())
+          step_ = MERGE_FILES_;
+
+        if (hblTdb().getSkipWriteToFiles())
+          sprintf(statusMsgBuf_,"       Rows Processed but NOT Written to Disk: %ld %c",rowsAffected_, '\n' );
+        else
+          sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
+        int len = strlen(statusMsgBuf_);
+        setEndStatusMsg(" EXTRACT ", len, TRUE);
+
+      }
+        break;
+
+      case MERGE_FILES_:
+      {
+        if (setStartStatusMsgAndMoveToUpQueue(" MERGE FILES ", &rc, 0, TRUE))
+          return rc;
+
+        char * mfQuery =
+          new(getMyHeap()) char[strlen("UNLOAD  MERGE FILE FOR TABLE <tabname> into <dest>  ; ") +
+                               strlen(hblTdb().getTableName()) +
+                               strlen(hblTdb().getMergePath()) +
+                               100];
+        strcpy(mfQuery, "UNLOAD  MERGE FILE FOR TABLE   ");
+        strcat(mfQuery, hblTdb().getTableName());
+        strcat(mfQuery, " INTO '");
+        strcat(mfQuery, hblTdb().getMergePath());
+        strcat(mfQuery, "' ;");
+
+        cliRC = cliInterface()->executeImmediate(mfQuery, NULL,NULL,TRUE,NULL,TRUE);
+
+        NADELETEBASIC(mfQuery, getMyHeap());
+        mfQuery = NULL;
+
+        if (cliRC < 0) {
+          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+        step_ = UNLOAD_END_;
+
+        setEndStatusMsg(" MERGE FILES ", 0, TRUE);
+      }
+      break;
+
+      case UNLOAD_END_:
+      case UNLOAD_END_ERROR_:
+      {
+//        if (restoreCQD("HDFS_IO_BUFFERSIZE") < 0)
+//        {
+//          step_ = UNLOAD_ERROR_;
+//          break;
+//        }
+       if ( restoreCQD("TRAF_UNLOAD_HDFS_COMPRESS") < 0)
+       {
+         step_ = UNLOAD_ERROR_;
+         break;
+       }
+       if (step_ == UNLOAD_END_)
+         step_ = DONE_;
+       else
+         step_ = UNLOAD_ERROR_;
+      }
+
+      break;
+      case RETURN_STATUS_MSG_:
+      {
+        if (moveRowToUpQueue(statusMsgBuf_,0,&rc))
+          return rc;
+
+        step_ = nextStep_;
+      }
+      break;
+
+      case DONE_:
+      {
+        if (qparent_.up->isFull())
+          return WORK_OK;
+
+        // Return EOF.
+        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+        up_entry->upState.setMatchNo(0);
+        up_entry->upState.status = ex_queue::Q_NO_DATA;
+
+        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+        if (diagsArea == NULL)
+          diagsArea = ComDiagsArea::allocate(getMyHeap());
+        else
+          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+        diagsArea->setRowCount(rowsAffected_);
+
+        if (getDiagsArea())
+          diagsArea->mergeAfter(*getDiagsArea());
+
+        up_entry->setDiagsArea(diagsArea);
+
+        // insert into parent
+        qparent_.up->insert();
+        step_ = INITIAL_;
+        qparent_.down->removeHead();
+        return WORK_OK;
+      }
+        break;
+
+      case UNLOAD_ERROR_:
+      {
+        if (qparent_.up->isFull())
+          return WORK_OK;
+
+        // Return EOF.
+        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+        up_entry->upState.setMatchNo(0);
+        up_entry->upState.status = ex_queue::Q_SQLERROR;
+
+        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+        if (diagsArea == NULL)
+          diagsArea = ComDiagsArea::allocate(getMyHeap());
+        else
+          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+        if (getDiagsArea())
+          diagsArea->mergeAfter(*getDiagsArea());
+
+        up_entry->setDiagsArea(diagsArea);
+
+        // insert into parent
+        qparent_.up->insert();
+
+        pstate.matches_ = 0;
+
+
+
+        step_ = DONE_;
+      }
+        break;
+
+    } // switch
+  } // while
+
+  return WORK_OK;
+
+}
+
+short ExExeUtilHBaseBulkUnLoadTcb::moveRowToUpQueue(const char * row, Lng32 len,
+                                                  short * rc, NABoolean isVarchar)
+{
+  if (hblTdb().getNoOutput())
+    return 0;
+
+  return ExExeUtilTcb::moveRowToUpQueue(row, len, rc, isVarchar);
+}
+
+
+
+
+short ExExeUtilHBaseBulkUnLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char * operation,
+                                     short * rc,
+                                     int bufPos,
+                                     NABoolean   withtime)
+{
+
+  if (hblTdb().getNoOutput())
+     return 0;
+
+  if (withtime)
+    startTime_ = NA_JulianTimestamp();
+
+  getStatusString(operation, "Started",hblTdb().getTableName(), &statusMsgBuf_[bufPos]);
+  return moveRowToUpQueue(statusMsgBuf_,0,rc);
+}
+
+
+void ExExeUtilHBaseBulkUnLoadTcb::setEndStatusMsg(const char * operation,
+                                     int bufPos,
+                                     NABoolean   withtime)
+{
+
+  if (hblTdb().getNoOutput())
+     return ;
+
+  char timeBuf[200];
+
+  nextStep_ = step_;
+  step_ = RETURN_STATUS_MSG_;
+
+  if (withtime)
+  {
+    endTime_ = NA_JulianTimestamp();
+    Int64 elapsedTime = endTime_ - startTime_;
+
+    getTimeAsString(elapsedTime, timeBuf);
+  }
+
+  getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], withtime ? timeBuf : NULL);
+
+}
+
+////////////////////////////////////////////////////////////////////////
+// Redefine virtual method allocatePstates, to be used by dynamic queue
+// resizing, as well as the initial queue construction.
+////////////////////////////////////////////////////////////////////////
+ex_tcb_private_state * ExExeUtilHBaseBulkUnLoadTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExExeUtilHbaseUnLoadPrivateState> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Constructor and destructor for ExeUtil_private_state
+/////////////////////////////////////////////////////////////////////////////
+ExExeUtilHbaseUnLoadPrivateState::ExExeUtilHbaseUnLoadPrivateState()
+{
+}
+
+ExExeUtilHbaseUnLoadPrivateState::~ExExeUtilHbaseUnLoadPrivateState()
+{
+};
+

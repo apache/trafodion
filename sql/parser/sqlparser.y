@@ -686,6 +686,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_GOTO
 %token <tokval> TOK_GREATER_EQUAL
 %token <tokval> TOK_GROUP
+%token <tokval> TOK_GZIP
 %token <tokval> TOK_HAVING
 %token <tokval> TOK_HIVEMD
 %token <tokval> TOK_QUALIFY
@@ -1669,6 +1670,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
   
   NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoadOption*> * hBaseBulkLoadOptionsList;
   ExeUtilHBaseBulkLoad::HBaseBulkLoadOption * hBaseBulkLoadOption;
+
+  NAList<ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*> * hBaseBulkUnLoadOptionsList;
+  ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption * hBaseBulkUnLoadOption;
 
   NAList<FastExtract::UnloadOption*> * feOptionsList;
   FastExtract::UnloadOption * feOption;
@@ -2806,6 +2810,16 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hBaseBulkLoadOption>      hbb_stop_after_n_errors
 %type <hBaseBulkLoadOption>      hbb_index_table_only
 %type <hBaseBulkLoadOption>      hbb_upsert_using_load
+%type <hBaseBulkUnLoadOptionsList> optional_hbb_unload_options
+%type <hBaseBulkUnLoadOptionsList> hbb_unload_option_list
+%type <hBaseBulkUnLoadOption>      hbb_unload_option
+%type <hBaseBulkUnLoadOption>      hbb_unload_empty_target
+%type <hBaseBulkUnLoadOption>      hbb_unload_compress
+%type <hBaseBulkUnLoadOption>      hbb_unload_one_file
+%type <hBaseBulkUnLoadOption>      hbb_unload_no_output
+//%type <hBaseBulkUnLoadOption>      hbb_log_errors_option
+//%type <hBaseBulkUnLoadOption>      hbb_stop_after_n_errors
+
 %type <pSchemaName>             optional_from_schema
 %type <stringval>               get_statistics_optional_options
 
@@ -20027,7 +20041,7 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
                       $$ = op;
                     }    
 
-
+/*
 unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_options simple_table  
 				{
                                   // UNLOAD is disabled by default in M9.
@@ -20044,13 +20058,154 @@ unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_opt
                                   delete $3;
                                   delete $4;
 				}
-                
-///////////////////////////////                
-optional_unload_options : TOK_WITH unload_option_list
+   */                  
+unload_statement :  TOK_UNLOAD optional_hbb_unload_options TOK_INTO table_name query_expression
+                    {
+                      if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                         YYERROR;                     
+                      CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+                      NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+                                                      , PARSERHEAP() // in  - NAMemory * 
+                                                      );
+
+                      // If we can not get a variable-width multi-byte or single-byte string here, report error 
+                      if ( stmt == NULL )
+                      {
+                        *SqlParser_Diags <<  DgSqlCode(-3406);
+                        YYERROR;
+                      }
+                      UInt32 pos = stmt->index(" into ", pos, NAString::ignoreCase) + strlen(" into ");
+                       
+                      NAString stmt1 = "INSERT INTO TABLE  ";
+                      stmt1.append((char*)&(stmt->data()[pos]));
+                      
+                        ExeUtilHBaseBulkUnLoad * eubl = new (PARSERHEAP()) 
+                                        ExeUtilHBaseBulkUnLoad(CorrName(*$4, PARSERHEAP()),
+                                        NULL,
+                                        (char*)stmt1.data(),
+                                        stmtCharSet,
+                                        PARSERHEAP());
+                        if (eubl->setOptions($2, SqlParser_Diags))
+                               YYERROR; 
+                        $$ = finalize(eubl);    
+                    
+                    }
+                    |   TOK_UNLOAD  TOK_MERGE TOK_FILE TOK_FOR TOK_TABLE table_name TOK_INTO std_char_string_literal
+                      {
+                        //disabled by default for now 
+                         if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                          YYERROR; 
+                          ExeUtilHBaseBulkUnLoadTask * hbult = new (PARSERHEAP())   
+                                              ExeUtilHBaseBulkUnLoadTask(CorrName(*$6, PARSERHEAP()),
+                                              NULL,
+                                              NULL,
+                                              CharInfo::UnknownCharSet,
+                                              ExeUtilHBaseBulkUnLoadTask::MERGE_FILES_,
+                                              $8,
+                                              PARSERHEAP());
+                          $$ = finalize(hbult);         
+                          
+                      }
+                    |   TOK_UNLOAD  TOK_CLEANUP TOK_FOR TOK_TABLE table_name 
+                      {
+                        //disabled by default for now 
+                        if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
+                         YYERROR; 
+                          ExeUtilHBaseBulkUnLoadTask * hbult = new (PARSERHEAP())   
+                                              ExeUtilHBaseBulkUnLoadTask(CorrName(*$5, PARSERHEAP()),
+                                              NULL,
+                                              NULL,
+                                              CharInfo::UnknownCharSet,
+                                              ExeUtilHBaseBulkUnLoadTask::OVERWRITE_TARGET_,
+                                              PARSERHEAP());
+                          $$ = finalize(hbult);         
+                          
+                      }
+                                            
+
+optional_hbb_unload_options : TOK_WITH hbb_unload_option_list
                             {
                                $$ = $2;
                             }
                             | empty /* empty */
+                            {
+                                $$ = NULL;
+                            }
+                            
+hbb_unload_option_list : hbb_unload_option
+                      {
+                        NAList<ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*> * hbol =
+                        new (PARSERHEAP ()) NAList<ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*>;
+                        hbol->insert($1);
+                        $$ = hbol;
+                      }
+                      | hbb_unload_option ',' hbb_unload_option_list
+                      {
+                          $3->insert($1);
+                          $$ = $3;
+                      }
+
+hbb_unload_option :   hbb_unload_empty_target
+                | hbb_unload_compress
+                | hbb_unload_one_file
+                | hbb_unload_no_output
+                //| hbb_log_errors_option
+                //| hbb_stop_after_n_errors
+                
+                /* need to add execptions table and number of erros before stopping*/
+
+ hbb_unload_empty_target: TOK_PURGEDATA TOK_FROM TOK_TARGET
+                    {
+                    //NO ROLLBACK
+                      ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption
+                                          (ExeUtilHBaseBulkUnLoad::EMPTY_TARGET_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+                    
+ hbb_unload_compress: TOK_COMPRESSION TOK_GZIP
+                    {
+                    //NO ROLLBACK
+                      ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption
+                                          (ExeUtilHBaseBulkUnLoad::COMPRESS_,
+                                          1,
+                                          NULL);
+                      $$ = op;
+                    }
+
+ hbb_unload_one_file: TOK_MERGE TOK_FILE std_char_string_literal
+                    {
+                    //NO ROLLBACK
+                      ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption
+                                          (ExeUtilHBaseBulkUnLoad::ONE_FILE_,
+                                          0,
+                                          (char *)$3->data());
+                      $$ = op;
+                    }
+                    
+  
+ hbb_unload_no_output: TOK_NO TOK_OUTPUT
+                    {
+                    //NO ROLLBACK
+                      ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*op = 
+                              new (PARSERHEAP ()) ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption
+                                          (ExeUtilHBaseBulkUnLoad::NO_OUTPUT_,
+                                          0,
+                                          NULL);
+                      $$ = op;
+                    }
+                                      
+///////////////////////////////                
+
+optional_unload_options : TOK_WITH unload_option_list
+                            {
+                               $$ = $2;
+                            }
+                            | empty 
                             {
                             	$$ = NULL;
                             }
@@ -35078,6 +35233,7 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_LOGGABLE //++ MV
                       | TOK_LOGON
                       | TOK_LZO
+                      | TOK_GZIP
 		      | TOK_IUDLOG     // MV REFRESH
                       | TOK_IUD_LOG_TABLE    
 		      | TOK_RANGE_LOG_TABLE

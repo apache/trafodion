@@ -410,7 +410,9 @@ static short ft_codegen(Generator *generator,
     );
 
   tdb->setSequenceFile(isSequenceFile);
-    
+  tdb->setHdfsCompressed(CmpCommon::getDefaultNumeric(TRAF_UNLOAD_HDFS_COMPRESS)!=0);
+
+  tdb->setSkipWritingToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
   generator->initTdbFields(tdb);
 
   // Generate EXPLAIN info.

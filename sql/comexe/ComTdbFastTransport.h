@@ -66,7 +66,9 @@ public:
     HIVE_INSERT                 = 0x0020,
     OVERWRITE_HIVE_TABLE        = 0x0040,
     SEQUENCE_FILE               = 0x0080,
-	PRINT_DIAGS                 = 0x0100
+    PRINT_DIAGS                 = 0x0100,
+    HDFS_COMPRESSED             = 0x0200,
+    SKIP_WRITING_TO_FILES       = 0x0400
   };
 
   ComTdbFastExtract ()
@@ -320,6 +322,33 @@ public:
     return ((flags_ & SEQUENCE_FILE) != 0);
   }
   ;
+
+
+  void setHdfsCompressed(UInt32 value)
+  {
+    if (value)
+      flags_ |= HDFS_COMPRESSED;
+    else
+      flags_ &= ~HDFS_COMPRESSED;
+  }
+  NABoolean getHdfsCompressed() const
+  {
+    return ((flags_ & HDFS_COMPRESSED) != 0);
+  }
+  ;
+  void setSkipWritingToFiles(UInt32 value)
+  {
+    if (value)
+      flags_ |= SKIP_WRITING_TO_FILES;
+    else
+      flags_ &= ~SKIP_WRITING_TO_FILES;
+  }
+  NABoolean getSkipWritingToFiles() const
+  {
+    return ((flags_ & SKIP_WRITING_TO_FILES) != 0);
+  }
+  ;
+
 
   NA_EIDPROC inline const char *getTargetName() const { return targetName_; }
   NA_EIDPROC inline const char *getHdfsHostName() const { return hdfsHostName_; }

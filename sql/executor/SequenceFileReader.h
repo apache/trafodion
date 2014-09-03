@@ -141,6 +141,14 @@ typedef enum {
  ,SFW_ERROR_WRITE_PARAM
  ,SFW_ERROR_WRITE_EXCEPTION
  ,SFW_ERROR_CLOSE_EXCEPTION
+ ,SFW_ERROR_HDFS_CREATE_PARAM
+ ,SFW_ERROR_HDFS_CREATE_EXCEPTION
+ ,SFW_ERROR_HDFS_WRITE_PARAM
+ ,SFW_ERROR_HDFS_WRITE_EXCEPTION
+ ,SFW_ERROR_HDFS_CLOSE_EXCEPTION
+ ,SFW_ERROR_HDFS_MERGE_FILES_PARAM
+ ,SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION
+
  ,SFW_LAST
 } SFW_RetCode;
 
@@ -183,7 +191,18 @@ public:
   // Close the file.
   SFW_RetCode    close();
 
+  SFW_RetCode    hdfsCreate(const char* path);
+   SFW_RetCode    hdfsWrite(const char* data, Int64 size);
+   SFW_RetCode    hdfsMergeFiles(const std::string& srcPath,
+                                 const std::string& dstPath);
+   SFW_RetCode    hdfsCleanUnloadPath(const std::string& uldPath, NABoolean checkExistence,const std::string& mergePath );
+   SFW_RetCode    hdfsClose();
+
   virtual char*  getErrorText(SFW_RetCode errEnum);
+
+
+
+
 
 private:  
   enum JAVA_METHODS {
@@ -191,6 +210,11 @@ private:
     JM_OPEN,
     JM_WRITE,
     JM_CLOSE,
+    JM_HDFS_CREATE,
+    JM_HDFS_WRITE,
+    JM_HDFS_CLOSE,
+    JM_HDFS_MERGE_FILES,
+    JM_HDFS_CLEAN_UNLOAD_PATH,
     JM_LAST
   };
   

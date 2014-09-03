@@ -49,7 +49,7 @@
 #ifndef __EID
 #include "SequenceFileReader.h" 
 #endif
-
+#include  "cli_stdh.h"
 
 
 //----------------------------------------------------------------------
@@ -534,8 +534,9 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   ex_tcb::fixup();
 
-  ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap());
+  if(!myTdb().getSkipWritingToFiles())
+    ExpLOBinterfaceInit
+      (lobGlob_, getGlobals()->getDefaultHeap());
 
   return 0;
 }
@@ -587,10 +588,10 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         pstate.processingStarted_ = FALSE;
         ErrorOccured_ = FALSE;
 
-        //Allocate writeBuffers. This pool is used by EID thread to
-        //extract and fill the buffer. This buffer when full is inserted into
-        //writeQueue for writeThread to write. Once written, the free buffer is
-        //put back to pool.
+        //Allocate writeBuffers.
+        //
+        //
+        //
 
         numBuffers_ = 1;
         for (Int16 i = 0; i < numBuffers_; i++)
@@ -626,18 +627,12 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           feStats->setBuffersCount(numBuffers_);
         }
 
-//        if (numBuffers_ < 2)
-//        {
-//          updateWorkATPDiagsArea(EXE_EXTRACT_CANNOT_ALLOCATE_BUFFER);
-//          pstate.step_ = EXTRACT_ERROR;
-//          break;
-//        }
 
         ComDiagsArea *da = NULL;
-	//        char outFileName[500];
-        if (myTdb().getTargetFile())
-        {
 
+       if (!myTdb().getSkipWritingToFiles())
+        if (myTdb().getTargetFile() )
+        {
           Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
           if (myTdb().getIsHiveInsert())
           {
@@ -661,60 +656,63 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
              ex_assert(0, "hdfs files only");
           }
 
-	        if (isSequenceFile() && !sequenceFileWriter_)
-	          {
-	            sequenceFileWriter_ = new(getSpace()) 
+            if ((isSequenceFile() || isHdfsCompressed()) && !sequenceFileWriter_)
+            {
+              sequenceFileWriter_ = new(getSpace())
                                  SequenceFileWriter((NAHeap *)getSpace());
-	            sfwRetCode = sequenceFileWriter_->init();
-	            if (sfwRetCode != SFW_OK)
-	              {
+              sfwRetCode = sequenceFileWriter_->init();
+              if (sfwRetCode != SFW_OK)
+              {
                   createSequenceFileError(sfwRetCode);
-    	    	      pstate.step_ = EXTRACT_ERROR;
-    	    	      break;
-	              }
-	          }
-	        
-	        if (isSequenceFile())
-	          {
-	            strcat(hiveTableLocation_, "//");
-	            strcat(hiveTableLocation_, hdfsFileName_);
-	            //sfwRetCode = sequenceFileWriter_->open("hdfs://localhost:9000/user/hive/warehouse/promotion_seq/000001_0", SFW_COMP_NONE); //hiveTableLocation_);
-	            sfwRetCode = sequenceFileWriter_->open(hiveTableLocation_, SFW_COMP_NONE);
-	            if (sfwRetCode != SFW_OK)
-	              {
-                  createSequenceFileError(sfwRetCode);
-    	    	      pstate.step_ = EXTRACT_ERROR;
-    	    	      break;
-	              }
-	          }
-	        else
-	          {
-              retcode = 0;
-              retcode = ExpLOBinterfaceCreate(lobGlob_,
-                                                hdfsFileName_,
-                                                hiveTableLocation_,
-                                                (Lng32)Lob_External_HDFS_File,
-                                                hdfsHost_,
-                                                hdfsPort_,
-                                                0, //bufferSize -- 0 --> use default
-                                                myTdb().getHdfsReplication(), //replication
-                                                0 //bloclSize --0 -->use default
-                                                );
-              if (retcode < 0)
-                {
-                  Lng32 cliError = 0;
-          
-                  Lng32 intParam1 = -retcode;
-                  ComDiagsArea * diagsArea = NULL;
-                  ExRaiseSqlError(getHeap(), &diagsArea,
-                                  (ExeErrorCode)(8442), NULL, &intParam1,
-                                  &cliError, NULL, (char*)"ExpLOBinterfaceCreate",
-                                  getLobErrStr(intParam1));
-                  pentry_down->setDiagsArea(diagsArea);
                   pstate.step_ = EXTRACT_ERROR;
-                  break;
+                   break;
+              }
+           }
+
+          if (isSequenceFile()  || isHdfsCompressed())
+            {
+              strcat(hiveTableLocation_, "//");
+              strcat(hiveTableLocation_, hdfsFileName_);
+              //sfwRetCode = sequenceFileWriter_->open("hdfs://localhost:9000/user/hive/warehouse/promotion_seq/000001_0", SFW_COMP_NONE); //hiveTableLocation_);
+              if (isSequenceFile())
+                sfwRetCode = sequenceFileWriter_->open(hiveTableLocation_, SFW_COMP_NONE);
+              else
+                sfwRetCode = sequenceFileWriter_->hdfsCreate(hiveTableLocation_);
+              if (sfwRetCode != SFW_OK)
+                {
+                    createSequenceFileError(sfwRetCode);
+                pstate.step_ = EXTRACT_ERROR;
+                break;
                 }
             }
+          else
+            {
+                retcode = 0;
+                retcode = ExpLOBinterfaceCreate(lobGlob_,
+                                                  hdfsFileName_,
+                                                  hiveTableLocation_,
+                                                  (Lng32)Lob_External_HDFS_File,
+                                                  hdfsHost_,
+                                                  hdfsPort_,
+                                                  0, //bufferSize -- 0 --> use default
+                                                  myTdb().getHdfsReplication(), //replication
+                                                  0 //bloclSize --0 -->use default
+                                                  );
+                if (retcode < 0)
+                  {
+                    Lng32 cliError = 0;
+
+                    Lng32 intParam1 = -retcode;
+                    ComDiagsArea * diagsArea = NULL;
+                    ExRaiseSqlError(getHeap(), &diagsArea,
+                                    (ExeErrorCode)(8442), NULL, &intParam1,
+                                    &cliError, NULL, (char*)"ExpLOBinterfaceCreate",
+                                    getLobErrStr(intParam1));
+                    pentry_down->setDiagsArea(diagsArea);
+                    pstate.step_ = EXTRACT_ERROR;
+                    break;
+                  }
+              }
 
           if (feStats)
           {
@@ -1033,17 +1031,29 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         ssize_t bytesToWrite = currBuffer_->bufSize_ - currBuffer_->bytesLeft_;
         Int64 requestTag = 0;
         Int64 descSyskey = 0;
-        if (isSequenceFile())
+
+        if (!myTdb().getSkipWritingToFiles())
+          if (isSequenceFile())
           {
             sfwRetCode = sequenceFileWriter_->writeBuffer(currBuffer_->data_, bytesToWrite, myTdb().getRecordSeparator());
             if (sfwRetCode != SFW_OK)
               {
                 createSequenceFileError(sfwRetCode);
-  	    	      pstate.step_ = EXTRACT_ERROR;
-  	    	      break;
+                pstate.step_ = EXTRACT_ERROR;
+                break;
               }
           }
-        else
+          else  if (isHdfsCompressed())
+          {
+            sfwRetCode = sequenceFileWriter_->hdfsWrite(currBuffer_->data_, bytesToWrite);
+            if (sfwRetCode != SFW_OK)
+              {
+                createSequenceFileError(sfwRetCode);
+                      pstate.step_ = EXTRACT_ERROR;
+                      break;
+              }
+          }
+          else
           {
             retcode = 0;
             retcode = ExpLOBInterfaceInsert(lobGlob_,
@@ -1110,18 +1120,36 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
       case EXTRACT_ERROR:
       {
+
+        // If there is no room in the parent queue for the reply,
+        // try again later.
+        //Later we may split this state into 2 one for cancel and one for query
+        if (qParent_.up->isFull())
+          return WORK_OK;
+
          // Cancel the child request - there must be a child request in
          // progress to get to the ERROR state.
          if (pstate.processingStarted_)
          {
            qChild_.down->cancelRequestWithParentIndex(qParent_.down->getHeadIndex());
+           //pstate.processingStarted_ = FALSE;
          }
 
-         // If there is no room in the parent queue for the reply,
-         // try again later.
-         //
-         if (qParent_.up->isFull())
-           return WORK_OK;
+         while (pstate.step_ == EXTRACT_ERROR)
+         {
+           if (qChild_.up->isEmpty())
+             return WORK_OK;
+           ex_queue_entry * childEntry = qChild_.up->getHeadEntry();
+           ex_queue::up_status childStatus = childEntry->upState.status;
+
+           if (childStatus == ex_queue::Q_NO_DATA)
+           {
+             pstate.step_ = EXTRACT_DONE;
+           }
+           qChild_.up->removeHead();
+         }
+
+
 
          ex_queue_entry *pentry_up = qParent_.up->getTailEntry();
          pentry_up->copyAtp(pentry_down);
@@ -1152,17 +1180,34 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
       case EXTRACT_DONE:
       {
-        if (isSequenceFile())
+        // If there is no room in the parent queue for the reply,
+        // try again later.
+        //
+        if (qParent_.up->isFull())
+          return WORK_OK;
+
+        if (!myTdb().getSkipWritingToFiles())
+          if (isSequenceFile())
           {
             sfwRetCode = sequenceFileWriter_->close();
             if (sfwRetCode != SFW_OK)
               {
                 createSequenceFileError(sfwRetCode);
-  	    	      pstate.step_ = EXTRACT_ERROR;
-  	    	      break;
+                pstate.step_ = EXTRACT_ERROR;
+                break;
               }
           }
-        else
+          else  if (isHdfsCompressed())
+          {
+            sfwRetCode = sequenceFileWriter_->hdfsClose();
+            if (sfwRetCode != SFW_OK)
+              {
+                createSequenceFileError(sfwRetCode);
+                pstate.step_ = EXTRACT_ERROR;
+                break;
+              }
+          }
+          else
           {
             retcode = ExpLOBinterfaceCloseFile
                                     (lobGlob_,
@@ -1288,16 +1333,28 @@ NABoolean ExHdfsFastExtractTcb::isSequenceFile()
 {
   return myTdb().getIsSequenceFile();
 }
+NABoolean ExHdfsFastExtractTcb::isHdfsCompressed()
+{
+  return myTdb().getHdfsCompressed();
+}
+
 
 void ExHdfsFastExtractTcb::createSequenceFileError(Int32 sfwRetCode)
 {
 #ifndef __EID 
+  ContextCli *currContext = GetCliGlobals()->currContext();
+
   ComDiagsArea * diagsArea = NULL;
   char* errorMsg = sequenceFileWriter_->getErrorText((SFW_RetCode)sfwRetCode);
-  ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL, 
-  		  NULL, NULL, NULL, errorMsg, NULL);
-  ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
-  pentry_down->setDiagsArea(diagsArea);
+  ExRaiseSqlError(getHeap(),
+                  &diagsArea,
+                  (ExeErrorCode)(8447),
+                  NULL, NULL, NULL, NULL,
+                  errorMsg,
+                (char *)currContext->getJniErrorStr().data());
+  //ex_queue_entry *pentry_down = qParent_.down->getHeadEntry();
+  //pentry_down->setDiagsArea(diagsArea);
+  updateWorkATPDiagsArea(diagsArea);
 #endif
 }
 

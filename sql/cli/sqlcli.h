@@ -832,7 +832,8 @@ enum SQLATTR_SUBQUERY_TYPE
   /* describe type of statements like showcontrol, showplan */
   SQL_DESCRIBE_QUERY = 4,
   SQL_DISPLAY_EXPLAIN = 5,
-  SQL_STMT_HBASE_LOAD = 6
+  SQL_STMT_HBASE_LOAD = 6,
+  SQL_STMT_HBASE_UNLOAD = 7
 };
 
 

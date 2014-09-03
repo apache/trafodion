@@ -1,0 +1,68 @@
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+drop table unload_customer_address;
+create external table unload_customer_address
+(
+    ca_address_sk             int,
+    ca_address_id             string,
+    ca_street_number          string,
+    ca_street_name            string,
+    ca_street_type            string,
+    ca_suite_number           string,
+    ca_city                   string,
+    ca_county                 string,
+    ca_state                  string,
+    ca_zip                    string,
+    ca_country                string,
+    ca_gmt_offset             float,
+    ca_location_type          string
+)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/unload_customer_address';
+
+
+drop table unload_customer_demographics;
+create external table unload_customer_demographics
+(
+    cd_demo_sk                int,
+    cd_gender                 string,
+    cd_marital_status         string,
+    cd_education_status       string,
+    cd_purchase_estimate      int,
+    cd_credit_rating          string,
+    cd_dep_count              int,
+    cd_dep_employed_count     int,
+    cd_dep_college_count      int 
+)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/unload_customer_demographics';
+
+create external table tmp_unload_table
+(
+    filed string
+)
+row format delimited fields terminated by '|' 
+location '/user/hive/exttables/tmp_unload_table';
+
+
+quit;
+
+
+
+

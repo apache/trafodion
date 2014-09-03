@@ -84,11 +84,13 @@ public:
     GET_ERROR_INFO_          = 26,
     LOB_EXTRACT_             = 27,
     LOB_SHOWDDL_             = 28,
-    GET_HIVE_METADATA_INFO_ = 29,
-    HIVE_MD_ACCESS_ = 30,
+    GET_HIVE_METADATA_INFO_  = 29,
+    HIVE_MD_ACCESS_          = 30,
     AQR_WNR_INSERT_          = 31,
-    UPGRADE_MD_                 = 32,
-    HBASE_LOAD_                  = 33
+    UPGRADE_MD_              = 32,
+    HBASE_LOAD_              = 33,
+    HBASE_UNLOAD_            = 34,
+    HBASE_UNLOAD_TASK_       = 35
   };
 
   ComTdbExeUtil()
@@ -4664,6 +4666,190 @@ private:
   UInt32 flags_;                                     // 08-11
 
   char fillersExeUtilHbaseLoad_[4];                  // 12-15
+};
+
+//******************************************************
+// Bulk Unload
+//**************************8
+
+class ComTdbExeUtilHBaseBulkUnLoad : public ComTdbExeUtil
+{
+  friend class ExExeUtilHBaseBulkUnLoadTcb;
+  friend class ExExeUtilHbaseUnLoadPrivateState;
+
+public:
+  ComTdbExeUtilHBaseBulkUnLoad()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilHBaseBulkUnLoad(char * tableName,
+                             ULng32 tableNameLen,
+                             char * ldStmtStr,
+                             ex_cri_desc * work_cri_desc,
+                             const unsigned short work_atp_index,
+                             ex_cri_desc * given_cri_desc,
+                             ex_cri_desc * returned_cri_desc,
+                             queue_index down,
+                             queue_index up,
+                             Lng32 num_buffers,
+                             ULng32 buffer_size
+                             );
+
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHBaseBulkUnLoad);}
+
+  virtual const char *getNodeName() const
+  {
+    return "HBASE_BULK_UNLOAD";
+  };
+
+
+
+  void setEmptyTarget(NABoolean v)
+  {(v ? flags_ |= EMPTY_TARGET : flags_ &= ~EMPTY_TARGET); };
+  NABoolean getEmptyTarget() { return (flags_ & EMPTY_TARGET) != 0; };
+
+  void setLogErrors(NABoolean v)
+  {(v ? flags_ |= LOG_ERRORS : flags_ &= ~LOG_ERRORS); };
+  NABoolean getLogErrors() { return (flags_ & LOG_ERRORS) != 0; };
+
+  void setNoOutput(NABoolean v)
+    {(v ? flags_ |= NO_OUTPUT : flags_ &= ~NO_OUTPUT); };
+  NABoolean getNoOutput() { return (flags_ & NO_OUTPUT) != 0; };
+
+  void setCompressType(UInt8 v){
+    compressType_ = v;
+  };
+  UInt8 getCompressType() {
+    return compressType_;
+  };
+  void setOneFile(NABoolean v)
+    {(v ? flags_ |= ONE_FILE : flags_ &= ~ONE_FILE); };
+  NABoolean getOneFile() { return (flags_ & ONE_FILE) != 0; };
+
+  void setMergePath(char * v){
+    mergePath_ = v;
+  }
+  char * getMergePath() const {
+    return mergePath_;
+  }
+
+  void setSkipWriteToFiles(NABoolean v)
+      {(v ? flags_ |= SKIP_WRITE_TO_FILES : flags_ &= ~SKIP_WRITE_TO_FILES); };
+    NABoolean getSkipWriteToFiles() { return (flags_ & SKIP_WRITE_TO_FILES) != 0; };
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+private:
+  enum
+  {
+    EMPTY_TARGET        = 0x0001,
+    LOG_ERRORS          = 0x0002,
+    ONE_FILE            = 0x0004,
+    NO_OUTPUT           = 0x0008,
+    SKIP_WRITE_TO_FILES = 0x0010
+  };
+
+  // load stmt
+  NABasicPtr uldQuery_;                               // 00-07
+  NABasicPtr mergePath_;                              // 08-15
+  UInt32 flags_;                                      // 16-19
+  UInt8  compressType_;                               // 20-20
+  char fillersExeUtilHbaseUnLoad_[3];                 // 21-23
+};
+
+class ComTdbExeUtilHBaseBulkUnLoadTask : public ComTdbExeUtil
+{
+  friend class ExExeUtilHBaseBulkUnLoadTaskTcb;
+public:
+  enum TaskType
+   {
+     TSK_NOT_SET_   = 0 ,
+     TSK_OVERWRITE_TARGET_ = 1,
+     TSK_MERGE_FILES_  = 2
+   };
+  ComTdbExeUtilHBaseBulkUnLoadTask()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilHBaseBulkUnLoadTask(
+                                char * tableName,
+                                ULng32 tableNameLen,
+                                ex_cri_desc * work_cri_desc,
+                                const unsigned short work_atp_index,
+                                ex_cri_desc * given_cri_desc,
+                                ex_cri_desc * returned_cri_desc,
+                                queue_index down,
+                                queue_index up,
+                                Lng32 num_buffers,
+                                ULng32 buffer_size,
+                                char * hiveTableLocation,
+                                char * hiveHostName,
+                                UInt16 taskType );
+
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHBaseBulkUnLoadTask);}
+
+  virtual const char *getNodeName() const
+  {
+    if (taskType_ == TSK_OVERWRITE_TARGET_)
+     return "OVERWRITE TARGET";
+    else if (taskType_ == TSK_MERGE_FILES_)
+      return "MERGE FILES";
+    else
+    {
+      assert (0);
+      return "";
+    }
+
+  };
+
+  char * getHiveTableLocation() const
+  {
+    return hiveTableLocation_;
+  }
+
+  char * getMergeLocation() const
+  {
+    return mergeLocation_;
+  }
+  void setMergeLocation( const char * loc)
+  {
+    mergeLocation_ = loc;
+  }
+
+  Lng32 getHiveHdfsPort() const
+  {
+    return taskType_;
+  }
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+
+private:
+
+  NABasicPtr  hiveTableLocation_;                    //  0- 8
+  NABasicPtr mergeLocation_;                          // 9 -15
+  UInt32 flags_;                                      // 20-23
+  UInt16  taskType_;                                  // 24-25
+  char fillersComTdbExeUtilFastDelete_[10];           // 26-35
 };
 
 #endif

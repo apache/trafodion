@@ -2398,3 +2398,243 @@ ExExeUtilHiveTruncatePrivateState::~ExExeUtilHiveTruncatePrivateState()
 {
 };
 
+
+
+
+
+
+
+
+
+
+
+ex_tcb * ExExeUtilHBaseBulkUnLoadTaskTdb::build(ex_globals * glob)
+{
+  ExExeUtilTcb * exe_util_tcb;
+
+    exe_util_tcb = new(glob->getSpace()) ExExeUtilHBaseBulkUnLoadTaskTcb(*this, glob);
+
+    exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+
+////////////////////////////////////////////////////////////////
+// Constructor for class ExExeUtilHBaseBulkUnLoadTaskTcb
+///////////////////////////////////////////////////////////////
+ExExeUtilHBaseBulkUnLoadTaskTcb::ExExeUtilHBaseBulkUnLoadTaskTcb(
+     const ComTdbExeUtilHBaseBulkUnLoadTask & exe_util_tdb,
+     ex_globals * glob)
+     : ExExeUtilTcb( exe_util_tdb, NULL, glob)
+{
+  // Allocate the private state in each entry of the down queue
+  qparent_.down->allocatePstate(this);
+
+  sequenceFileWriter_ = NULL;
+  step_ = INITIAL_;
+}
+
+ExExeUtilHBaseBulkUnLoadTaskTcb::~ExExeUtilHBaseBulkUnLoadTaskTcb()
+{
+}
+
+//Int32 ExExeUtilHBaseBulkUnLoadTaskTcb::fixup()
+//{
+//  lobGlob_ = NULL;
+//
+//  ExpLOBinterfaceInit
+//    (lobGlob_, getGlobals()->getDefaultHeap());
+//
+//  return 0;
+//}
+
+void ExExeUtilHBaseBulkUnLoadTaskTcb::createHdfsFileError(Int32 sfwRetCode)
+{
+#ifndef __EID
+  ComDiagsArea * diagsArea = NULL;
+  char* errorMsg = sequenceFileWriter_->getErrorText((SFW_RetCode)sfwRetCode);
+  ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
+                  NULL, NULL, NULL, errorMsg, NULL);
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  pentry_down->setDiagsArea(diagsArea);
+#endif
+}
+//////////////////////////////////////////////////////
+// work() for ExExePurgedataUtilTcb
+//////////////////////////////////////////////////////
+short ExExeUtilHBaseBulkUnLoadTaskTcb::work()
+{
+  short rc = 0;
+  Lng32 cliRC = 0;
+  SFW_RetCode sfwRetCode = SFW_OK;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate = *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  while (1)
+  {
+    switch (step_)
+    {
+      case INITIAL_:
+      {
+        if (!sequenceFileWriter_)
+        {
+          sequenceFileWriter_ = new(getSpace())
+                       SequenceFileWriter((NAHeap *)getSpace());
+          sfwRetCode = sequenceFileWriter_->init();
+          if (sfwRetCode != SFW_OK)
+            {
+             createHdfsFileError(sfwRetCode);
+             step_ = ERROR_;
+            break;
+            }
+        }
+        if (ulTdb().taskType_ == ulTdb().TSK_MERGE_FILES_)
+          step_ = MERGE_FILES_;
+        else if (ulTdb().taskType_ == ulTdb().TSK_OVERWRITE_TARGET_)
+          step_ = OVERWRITE_TARGET_;
+          else
+            assert (0);
+      }
+        break;
+
+      case OVERWRITE_TARGET_:
+       {
+         std::string uldPath = std::string( ulTdb().getHiveTableLocation());
+         std::string tmp = std::string( "-");
+         sfwRetCode = sequenceFileWriter_->hdfsCleanUnloadPath( uldPath, FALSE , tmp);
+         if (sfwRetCode != SFW_OK)
+           {
+            createHdfsFileError(sfwRetCode);
+            step_ = ERROR_;
+           break;
+           }
+
+
+         step_ = DONE_;
+       }
+       break;
+      case MERGE_FILES_:
+      {
+        std::string srcPath = std::string( ulTdb().getHiveTableLocation());
+        std::string dstPath = std::string( ulTdb().getMergeLocation());
+        sfwRetCode = sequenceFileWriter_->hdfsMergeFiles( srcPath, dstPath);
+        if (sfwRetCode != SFW_OK)
+          {
+           createHdfsFileError(sfwRetCode);
+           step_ = ERROR_;
+          break;
+          }
+
+
+        step_ = DONE_;
+      }
+      break;
+      case ERROR_:
+      {
+        if (qparent_.up->isFull())
+          return WORK_OK;
+
+        // Return EOF.
+        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+        up_entry->upState.setMatchNo(0);
+        up_entry->upState.status = ex_queue::Q_SQLERROR;
+
+        ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+        if (diagsArea == NULL)
+          diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
+        else
+          diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+        if (getDiagsArea())
+          diagsArea->mergeAfter(*getDiagsArea());
+
+        up_entry->setDiagsArea(diagsArea);
+
+        getDiagsArea()->clear();
+
+        // insert into parent
+        qparent_.up->insert();
+
+        step_ = DONE_;
+      }
+        break;
+
+      case DONE_:
+      {
+        if (qparent_.up->isFull())
+          return WORK_OK;
+
+        // Return EOF.
+        ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+        up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
+
+        up_entry->upState.setMatchNo(0);
+        up_entry->upState.status = ex_queue::Q_NO_DATA;
+
+        if (getDiagsArea()->getNumber(DgSqlCode::WARNING_) > 0) // must be a warning
+        {
+          ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+
+          if (diagsArea == NULL)
+            diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
+          else
+            diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
+
+          if (getDiagsArea())
+            diagsArea->mergeAfter(*getDiagsArea());
+
+          up_entry->setDiagsArea(diagsArea);
+        }
+
+        // insert into parent
+        qparent_.up->insert();
+
+        //pstate.matches_ = 0;
+        step_ = INITIAL_;
+        qparent_.down->removeHead();
+
+        return WORK_OK;
+      }
+        break;
+
+    } // switch
+  } // while
+
+}
+
+
+ex_tcb_private_state * ExExeUtilHBaseBulkUnLoadTaskTcb::allocatePstates(
+     Lng32 &numElems,      // inout, desired/actual elements
+     Lng32 &pstateLength)  // out, length of one element
+{
+  PstateAllocator<ExExeUtilHBaseBulkUnLoadTaskPrivateState> pa;
+
+  return pa.allocatePstates(this, numElems, pstateLength);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Constructor and destructor for ExeUtil_private_state
+///////////////////////////////////////////////////////////////////////////
+ExExeUtilHBaseBulkUnLoadTaskPrivateState::ExExeUtilHBaseBulkUnLoadTaskPrivateState()
+{
+}
+
+ExExeUtilHBaseBulkUnLoadTaskPrivateState::~ExExeUtilHBaseBulkUnLoadTaskPrivateState()
+{
+};

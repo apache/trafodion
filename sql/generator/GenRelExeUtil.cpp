@@ -5604,3 +5604,201 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
 
   return 0;
 }
+
+
+
+////////////////////////////////////////////////////////
+//
+// ExeUtilHbaseUnLoad::codeGen()
+//
+/////////////////////////////////////////////////////////
+
+short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  NAString uldQueryNAS = this->getStmtText();
+  char * uldQuery = NULL;
+
+  if (uldQueryNAS.length() > 0)
+  {
+    uldQuery = space->allocateAlignedSpace(uldQueryNAS.length() + 1);
+    strcpy(uldQuery, uldQueryNAS.data());
+  }
+
+  char * mergePathStr = NULL;
+  if (mergePath_.length()>0){
+    mergePathStr = space->allocateAlignedSpace(mergePath_.length() + 1);
+    strcpy(mergePathStr, mergePath_.data());
+  }
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+#pragma nowarn(1506)   // warning elimination
+  = new (space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+#pragma warn(1506)  // warning elimination
+
+    ////ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+    const Int32 work_atp = 1;
+    const Int32 exe_util_row_atp_index = 2;
+
+    // Assumption (for now): retrievedCols contains ALL columns from
+    // the table/index. This is because this operator does
+    // not support projection of columns. Add all columns from this table
+    // to the map table.
+    //
+    // The row retrieved from filesystem is returned as the last entry in
+    // the returned atp.
+
+    Attributes ** attrs =
+      new(generator->wHeap())
+      Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+
+    for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
+      {
+        ItemExpr * col_node
+          = (((getVirtualTableDesc()->getColumnList())[i]).getValueDesc())->
+            getItemExpr();
+
+        attrs[i] = (generator->addMapInfo(col_node->getValueId(), 0))->
+          getAttr();
+      }
+
+    ExpTupleDesc *tupleDesc = 0;
+    ULng32 tupleLength = 0;
+    expGen->processAttributes(getVirtualTableDesc()->getColumnList().entries(),
+                              attrs, ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+                              tupleLength,
+                              work_atp, exe_util_row_atp_index,
+                              &tupleDesc, ExpTupleDesc::LONG_FORMAT);
+
+    // delete [] attrs;
+    // NADELETEBASIC is used because compiler does not support delete[]
+    // operator yet. Should be changed back later when compiler supports
+    // it.
+    NADELETEBASIC(attrs, generator->wHeap());
+
+    // The stats row will be returned as the last entry of the returned atp.
+    // Change the atp and atpindex of the returned values to indicate that.
+    expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+                                 0, returnedDesc->noTuples()-1);
+
+    char * tablename =
+      space->AllocateAndCopyToAlignedSpace(generator->genGetNameAsAnsiNAString(getTableName()), 0);
+
+  ComTdbExeUtilHBaseBulkUnLoad * exe_util_tdb = new(space)
+  ComTdbExeUtilHBaseBulkUnLoad(
+         tablename, strlen(tablename),
+         uldQuery,
+         0, 0, // no work cri desc
+         givenDesc,
+         returnedDesc,
+         (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+         (queue_index)getDefault(GEN_DDL_SIZE_UP),
+#pragma nowarn(1506)   // warning elimination
+         getDefault(GEN_DDL_NUM_BUFFERS),
+         1024); //getDefault(GEN_DDL_BUFFER_SIZE));
+#pragma warn(1506)  // warning elimination
+
+  exe_util_tdb->setEmptyTarget(emptyTarget_);
+  exe_util_tdb->setLogErrors(logErrors_);
+  exe_util_tdb->setNoOutput(noOutput_);
+  exe_util_tdb->setCompressType(compressType_);
+  exe_util_tdb->setOneFile(oneFile_);
+  exe_util_tdb->setMergePath(mergePathStr);
+  exe_util_tdb->setSkipWriteToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
+
+  generator->initTdbFields(exe_util_tdb);
+
+  if (!generator->explainDisabled())
+  {
+    generator->setExplainTuple(addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  return 0;
+}
+short ExeUtilHBaseBulkUnLoadTask::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+#pragma nowarn(1506)   // warning elimination
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+#pragma warn(1506)  // warning elimination
+
+  char * tablename = NULL;
+  if ((getUtilTableDesc()) &&
+      (getUtilTableDesc()->getNATable()) &&
+      (getUtilTableDesc()->getNATable()->isVolatileTable()))
+    {
+      tablename = space->AllocateAndCopyToAlignedSpace
+        (getTableName().getQualifiedNameObj().getObjectName(), 0);
+    }
+  else
+    {
+      tablename = space->AllocateAndCopyToAlignedSpace
+        (generator->genGetNameAsAnsiNAString(getTableName()), 0);
+    }
+
+
+   char * hiveTableLocation = NULL;
+   char * hdfsMergeLocation = NULL;
+
+
+   hiveTableLocation =
+       space->AllocateAndCopyToAlignedSpace (hiveTablePath_, 0);
+   hdfsMergeLocation =
+       space->AllocateAndCopyToAlignedSpace (destinationPath_, 0);
+
+   ComTdbExeUtilHBaseBulkUnLoadTask * exe_util_tdb = new(space)
+    ComTdbExeUtilHBaseBulkUnLoadTask(
+                            tablename,
+                            strlen(tablename),
+                            0,
+                            0, // no work cri desc
+                            (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                            (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                            (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                            (queue_index)getDefault(GEN_DDL_SIZE_UP),
+#pragma nowarn(1506)   // warning elimination
+                            getDefault(GEN_DDL_NUM_BUFFERS),
+                            getDefault(GEN_DDL_BUFFER_SIZE),
+                            hiveTableLocation,
+                            hdfsMergeLocation,
+                            taskType_);
+#pragma warn(1506)  // warning elimination
+
+  generator->initTdbFields(exe_util_tdb);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  // no tupps are returned
+  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                        Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  generator->setTransactionFlag(0); // transaction is not needed.
+
+
+  return 0;
+}
+

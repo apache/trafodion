@@ -1,0 +1,454 @@
+>>
+>>sh regrhive.ksh -v -f $REGRTSTDIR/TEST018_create_hive_tables.hive &> $REGRRUNDIR/LOG018_create_hive_tables.hive ;
+>>obey TEST018(setup);
+>>--------------------------------------------------------------------------
+>>create table customer_demographics
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>);
+
+--- SQL operation complete.
+>>
+>>create table customer_demographics_salt
++>(
++>  cd_demo_sk              int not null,
++>  cd_gender               char(1),
++>  cd_marital_status       char(1),
++>  cd_education_status     char(20),
++>  cd_purchase_estimate    int,
++>  cd_credit_rating        char(10),
++>  cd_dep_count            int,
++>  cd_dep_employed_count   int,
++>  cd_dep_college_count    int,
++>  primary key (cd_demo_sk)
++>)
++>salt using 4 partitions on (cd_demo_sk);
+
+--- SQL operation complete.
+>>
+>>
+>>create table customer_address
++>(
++>  ca_address_sk        int not null,
++>  ca_address_id        char(16),
++>  ca_street_number     char(10),
++>  ca_street_name       varchar(60),
++>  ca_street_type       char(15),
++>  ca_suite_number      char(10),
++>  ca_city              varchar(60),
++>  ca_county            varchar(30),
++>  ca_state             char(2),
++>  ca_zip               char(10),
++>  ca_country           varchar(30),
++>  ca_gmt_offset        decimal(5,2),
++>  ca_location_type     char(20),
++>  primary key (ca_address_sk)
++>);
+
+--- SQL operation complete.
+>>
+>>
+>>obey TEST018(test_bulk_unload_simple);
+>>--------------------------------------------------------------------------
+>>
+>>
+>>select count(*) from hive.hive.customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>load with no populate indexes into customer_address 
++>select * from hive.hive.customer_address;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+       Rows Processed: 50000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:06.100
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.592
+
+--- 50000 row(s) loaded.
+>>select count(*) from customer_address;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>load  with no populate indexes into customer_demographics 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 50000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+       Rows Processed: 50000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:03.996
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.460
+
+--- 50000 row(s) loaded.
+>>select count(*) from customer_demographics;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>load  with no populate indexes  into customer_demographics_salt 
++>select * from hive.hive.customer_demographics where cd_demo_sk <= 50000;
+Task: LOAD             Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  CLEANUP         Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  CLEANUP         Status: Ended      Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  PREPARATION     Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+       Rows Processed: 50000 
+Task:  PREPARATION     Status: Ended      ET: 00:00:04.452
+Task:  COMPLETION      Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
+Task:  COMPLETION      Status: Ended      ET: 00:00:01.380
+
+--- 50000 row(s) loaded.
+>>
+>>select count(*) from customer_demographics_salt;
+
+(EXPR)              
+--------------------
+
+               50000
+
+--- 1 row(s) selected.
+>>
+>>-------------------------------
+>>
+>>explain options 'f' 
++>INSERT INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_address 
++><<+ cardinality 10e10 >>;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+011
+1    .    3    hive_insert                     TMP_UNLOAD_TABLE      1.00E+011
+.    .    1    trafodion_scan                  CUSTOMER_ADDRESS      1.00E+011
+
+--- SQL operation complete.
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>,MERGE FILE  '/bulkload/merged_customer_address.gz'
++>,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_address 
++>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.147
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:04.150
+Task:  MERGE FILES     Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  MERGE FILES     Status: Ended      ET: 00:00:00.193
+
+--- 50000 row(s) unloaded.
+>>
+>>
+>>
+>>
+>>
+>>
+>>explain options 'f' 
++>INSERT INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics 
++><<+ cardinality 10e10 >>;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+011
+1    .    3    hive_insert                     TMP_UNLOAD_TABLE      1.00E+011
+.    .    1    trafodion_scan                  CUSTOMER_DEMOGRAPHIC  1.00E+011
+
+--- SQL operation complete.
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>,MERGE FILE  '/bulkload/merged_customer_demogs.gz'
++>,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics 
++><<+ cardinality 10e10 >>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.161
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:02.730
+Task:  MERGE FILES     Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  MERGE FILES     Status: Ended      ET: 00:00:00.185
+
+--- 50000 row(s) unloaded.
+>>
+>>
+>>explain options 'f' 
++>INSERT INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics_salt 
++><<+ cardinality 10e10 >>;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+011
+3    .    4    esp_exchange                    1:4(hash2)            1.00E+011
+1    .    3    hive_insert                     TMP_UNLOAD_TABLE      1.00E+011
+.    .    1    trafodion_scan                  CUSTOMER_DEMOGRAPHIC  1.00E+011
+
+--- SQL operation complete.
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>,MERGE FILE  '/bulkload/merged_customer_demogs_3'
++>--,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics_salt 
++><<+ cardinality 10e10 >>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.145
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:02.268
+Task:  MERGE FILES     Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  MERGE FILES     Status: Ended      ET: 00:00:00.231
+
+--- 50000 row(s) unloaded.
+>>
+>>log;
+regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_3
+1967364  /bulkload/merged_customer_demogs_3
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>,MERGE FILE  '/bulkload/merged_customer_demogs_4.gz'
++>,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics_salt 
++><<+ cardinality 10e10 >>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.272
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.859
+Task:  MERGE FILES     Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  MERGE FILES     Status: Ended      ET: 00:00:00.219
+
+--- 50000 row(s) unloaded.
+>>
+>>log;
+regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_4.gz
+193680  /bulkload/merged_customer_demogs_4.gz
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>--,MERGE FILE  '/bulkload/merged_customer_demogs_2.gz'
++>--,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics_salt 
++><<+ cardinality 10e10 >>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.270
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.106
+
+--- 50000 row(s) unloaded.
+>>
+>>log;
+regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l
+5
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>,MERGE FILE  '/bulkload/merged_customer_demogs_2.gz'
++>,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics_salt 
++><<+ cardinality 10e10 >>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EMPTY TARGET    Status: Ended      ET: 00:00:00.218
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.164
+Task:  MERGE FILES     Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  MERGE FILES     Status: Ended      ET: 00:00:00.220
+
+--- 50000 row(s) unloaded.
+>>
+>>sh regrhadoop.ksh fs -copyToLocal  /bulkload/merged_customer_demogs_2.gz /tmp ;
+>>sh gunzip -f /tmp/merged_customer_demogs_2.gz;
+>>sh regrhadoop.ksh fs -rm   /user/hive/exttables/unload_customer_demographics/* ;
+>>sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/hive/exttables/unload_customer_demographics ;
+>>sh rm /bulkload/merged_customer_demogs_2 ;
+>>
+>>cqd HIVE_MAX_STRING_LENGTH '100';
+
+--- SQL operation complete.
+>>select [first 100] * from hive.hive.unload_customer_demographics order by cd_demo_sk;
+
+CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
+-----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
+
+          1  M                                                                                                     M                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          2  F                                                                                                     M                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          3  M                                                                                                     S                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          4  F                                                                                                     S                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          5  M                                                                                                     D                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          6  F                                                                                                     D                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          7  M                                                                                                     W                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          8  F                                                                                                     W                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+          9  M                                                                                                     U                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+         10  F                                                                                                     U                                                                                                     Primary                                                                                                                500  Good                                                                                                             0                      0                     0
+         11  M                                                                                                     M                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         12  F                                                                                                     M                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         13  M                                                                                                     S                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         14  F                                                                                                     S                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         15  M                                                                                                     D                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         16  F                                                                                                     D                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         17  M                                                                                                     W                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         18  F                                                                                                     W                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         19  M                                                                                                     U                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         20  F                                                                                                     U                                                                                                     Secondary                                                                                                              500  Good                                                                                                             0                      0                     0
+         21  M                                                                                                     M                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         22  F                                                                                                     M                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         23  M                                                                                                     S                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         24  F                                                                                                     S                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         25  M                                                                                                     D                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         26  F                                                                                                     D                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         27  M                                                                                                     W                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         28  F                                                                                                     W                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         29  M                                                                                                     U                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         30  F                                                                                                     U                                                                                                     College                                                                                                                500  Good                                                                                                             0                      0                     0
+         31  M                                                                                                     M                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         32  F                                                                                                     M                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         33  M                                                                                                     S                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         34  F                                                                                                     S                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         35  M                                                                                                     D                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         36  F                                                                                                     D                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         37  M                                                                                                     W                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         38  F                                                                                                     W                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         39  M                                                                                                     U                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         40  F                                                                                                     U                                                                                                     2 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         41  M                                                                                                     M                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         42  F                                                                                                     M                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         43  M                                                                                                     S                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         44  F                                                                                                     S                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         45  M                                                                                                     D                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         46  F                                                                                                     D                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         47  M                                                                                                     W                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         48  F                                                                                                     W                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         49  M                                                                                                     U                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         50  F                                                                                                     U                                                                                                     4 yr Degree                                                                                                            500  Good                                                                                                             0                      0                     0
+         51  M                                                                                                     M                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         52  F                                                                                                     M                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         53  M                                                                                                     S                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         54  F                                                                                                     S                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         55  M                                                                                                     D                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         56  F                                                                                                     D                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         57  M                                                                                                     W                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         58  F                                                                                                     W                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         59  M                                                                                                     U                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         60  F                                                                                                     U                                                                                                     Advanced Degree                                                                                                        500  Good                                                                                                             0                      0                     0
+         61  M                                                                                                     M                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         62  F                                                                                                     M                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         63  M                                                                                                     S                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         64  F                                                                                                     S                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         65  M                                                                                                     D                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         66  F                                                                                                     D                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         67  M                                                                                                     W                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         68  F                                                                                                     W                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         69  M                                                                                                     U                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         70  F                                                                                                     U                                                                                                     Unknown                                                                                                                500  Good                                                                                                             0                      0                     0
+         71  M                                                                                                     M                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         72  F                                                                                                     M                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         73  M                                                                                                     S                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         74  F                                                                                                     S                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         75  M                                                                                                     D                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         76  F                                                                                                     D                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         77  M                                                                                                     W                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         78  F                                                                                                     W                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         79  M                                                                                                     U                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         80  F                                                                                                     U                                                                                                     Primary                                                                                                               1000  Good                                                                                                             0                      0                     0
+         81  M                                                                                                     M                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         82  F                                                                                                     M                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         83  M                                                                                                     S                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         84  F                                                                                                     S                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         85  M                                                                                                     D                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         86  F                                                                                                     D                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         87  M                                                                                                     W                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         88  F                                                                                                     W                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         89  M                                                                                                     U                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         90  F                                                                                                     U                                                                                                     Secondary                                                                                                             1000  Good                                                                                                             0                      0                     0
+         91  M                                                                                                     M                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         92  F                                                                                                     M                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         93  M                                                                                                     S                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         94  F                                                                                                     S                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         95  M                                                                                                     D                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         96  F                                                                                                     D                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         97  M                                                                                                     W                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         98  F                                                                                                     W                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+         99  M                                                                                                     U                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+        100  F                                                                                                     U                                                                                                     College                                                                                                               1000  Good                                                                                                             0                      0                     0
+
+--- 100 row(s) selected.
+>>
+>>cqd TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'on';
+
+--- SQL operation complete.
+>>
+>>UNLOAD  
++>WITH PURGEDATA FROM TARGET
++>,MERGE FILE  '/bulkload/merged_customer_demogs_4.gz'
++>,COMPRESSION GZIP
++>INTO hive.hive.tmp_unload_table
++>select * from trafodion.hbase.customer_demographics_salt 
++><<+ cardinality 10e10 >>;
+Task: UNLOAD           Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+Task:  EXTRACT         Status: Started    Object: HIVE.HIVE.TMP_UNLOAD_TABLE
+       Rows Processed but NOT Written to Disk: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:00.700
+
+--- 50000 row(s) unloaded.
+>>log;
+regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l
+0
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>log;
