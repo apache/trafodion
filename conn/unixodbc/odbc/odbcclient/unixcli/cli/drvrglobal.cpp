@@ -312,7 +312,7 @@ CDrvrGlobal::CDrvrGlobal()// : gOdbcMsg(DRVRMSG_DLL)
 #ifdef TRACE_COMPRESSION
 	char *envTraceCompression=NULL;
 	gTraceCompression=false;
-	if( (envTraceCompression = getenv("HPODBC_TRACE_COMPRESSION")) != NULL)
+	if( (envTraceCompression = getenv("TRAFODBC_TRACE_COMPRESSION")) != NULL)
 	{
 		if(strcmp(envTraceCompression,"1")==0)
 		{

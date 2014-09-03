@@ -6,7 +6,7 @@ ODBCVER := $(shell ./bldODBCVer.sh)
 
 VPATH = ./DrvrManager:./trace:./cli:./TCPIPV4:./Interface:./common:./platform:./security_dll/source
 
-C_FLAGS = -m64 -Dunixcli -DVERSION3 -DMXLINUX -DDISABLE_TRACE -DSIZEOF_LONG=8 -DSIZEOF_LONG_INT=8 -Wall -fPIC -w -DASYNCIO -I$(ICU)/linux64/include -I/usr/include/openssl
+C_FLAGS = -m64 -Dunixcli -DVERSION3 -DMXLINUX -DDISABLE_TRACE -DSIZEOF_LONG=8 -DSIZEOF_LONG_INT=8 -Wall -fPIC -w -DASYNCIO -DTRACE_COMPRESSION -I$(ICU)/linux64/include -I/usr/include/openssl
 
 LIBS = -lpthread -lrt -ldl -lz -L$(ICU)/linux64/lib -licuucNv44 -Wl,--hash-style=both /usr/lib64/libssl.a /usr/lib64/libcrypto.a -Wl,--version-script=linux.exports
 
@@ -39,7 +39,7 @@ DMOBJS = dmadmin.o dmcpool.o dmfunctions.o dminstall.o dmmapping.o drvrmanager.o
 TROBJS = gettrace.o init.o traceext.o 
 INTOBJS = odbcas_drvr.o odbcs_drvr.o transport.o
 CLIOBJS =  cconnect.o cdesc.o cdiag.o cenv.o chandle.o cstmt.o ctosqlconv.o diagfunctions.o drvrglobal.o drvrnet.o netcommon.o netconnect.o netstmt.o sqlconnect.o sqldesc.o sqlenv.o neofunc.o sqlhandle.o sqlstmt.o sqltocconv.o odbcmsg.o translte.o asyncIO.o charsetconv.o
-COMOBJS = transportbase.o TCPIPUnixDrvr.o marshaling.o marshalingdrvr_drvr.o swapdrvr_drvr.o windows.o swap.o nskieee.o ExpConvMxcs.o nix.o verslnxdrvr.o
+COMOBJS = transportbase.o TCPIPUnixDrvr.o marshaling.o marshalingdrvr_drvr.o swapdrvr_drvr.o windows.o compression.o swap.o nskieee.o ExpConvMxcs.o nix.o verslnxdrvr.o
 IP4OBJS = TCPIPV4.o Cipher.o Key.o MessageDigest.o secpwd.o Security.o securityException.o StaticLocking.o utils.o 
 EXPOBJS = sqlexportfunc_drvr.o version_drvr.o cdatasource_drvr.o 
 
