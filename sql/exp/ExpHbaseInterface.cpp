@@ -232,144 +232,71 @@ Lng32  ExpHbaseInterface::fetchAllRows(
   if (retcode != HBASE_ACCESS_SUCCESS)
     return retcode;
 
-  col1ValueList.resize(0);
-  col2ValueList.resize(0);
-
-  jbyte *jbRowResult;
-  jbyteArray jbaRowResult;
-  jboolean isCopy;
-  char *kvBuf;
-  Int32 numCols; 
-  HbaseStr rowID;
-  Int32 rowIDLen;
-  Int32 *temp;
-  char *value;
-  char *buffer;
+  char *colVal;
+  Int32 colValLen;
   char *colName;
-  char *family;
-  char inlineColName[INLINE_COLNAME_LEN+1];
-  char *fullColName;
-  Lng32 colNameLen;
-  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
-  Int32 familyLength, familyOffset;
-  long timestamp;
-  Lng32 filledCols = 0;
-  Int32 allocatedLength = 0;
+  short colNameLen;
+  Int64 timestamp;
   TextVec columns;
+
+  switch (numInCols)
+  {
+     case 1:
+        columns.push_back(col1NameStr);
+        col1ValueList.resize(0);
+        break;
+     case 2:
+        columns.push_back(col1NameStr);
+        columns.push_back(col2NameStr);
+        col1ValueList.resize(0);
+        col2ValueList.resize(0);
+        break;
+     case 3:
+        columns.push_back(col1NameStr);
+        columns.push_back(col2NameStr);
+        columns.push_back(col3NameStr);
+        col1ValueList.resize(0);
+        col2ValueList.resize(0);
+        col3ValueList.resize(0);
+        break;
+  }
 
   retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, NULL, 
        NULL, NULL);
+  if (retcode != HBASE_ACCESS_SUCCESS)
+    return retcode;
   while (retcode == HBASE_ACCESS_SUCCESS)
   {
-     retcode = fetchNextRow();
+     retcode = nextRow();
      if (retcode != HBASE_ACCESS_SUCCESS)
-	continue;
-
-     retcode = fetchRowVec(&jbRowResult, jbaRowResult, &isCopy);
-     if (retcode == HBASE_ACCESS_EOD)
-	{
-	  retcode = HBASE_ACCESS_SUCCESS;
-	  continue;
-	}
-      
-     if (retcode != HBASE_ACCESS_SUCCESS)
-	continue;
-
-     kvBuf = (char *) jbRowResult;
-     numCols = *(Int32 *)kvBuf;
-     kvBuf += sizeof(numCols);
-     if (numCols == 0)
-     {
-        rowID.val = NULL;
-        rowID.len = 0;
-     }
-     else
-     {
-        rowIDLen = *(Int32 *)kvBuf;
-        kvBuf += sizeof(rowIDLen);
-        rowID.val = kvBuf;
-        rowID.len = rowIDLen;
-        kvBuf += rowIDLen;
-     }
-     filledCols = 0; 
-     for (Lng32 j = 0; j < numCols && filledCols != numInCols; j++)
-     {
-        temp = (Int32 *)kvBuf;
-        kvLength = *temp++;
-        valueLength = *temp++;
-        valueOffset = *temp++;
-        qualLength = *temp++;
-        qualOffset = *temp++;
-        familyLength = *temp++;
-        familyOffset = *temp++;
-        timestamp = *(long *)temp;
-        temp += 2;
-        buffer = (char *)temp;
-        value = buffer + valueOffset;
-
-        colName = (char*)buffer + qualOffset;
-        family = (char *)buffer + familyOffset;
-        colNameLen = familyLength + qualLength + 1; // 1 for ':'
-
-        if (allocatedLength == 0 && colNameLen < INLINE_COLNAME_LEN)
-           fullColName = inlineColName;
-        else
+        break;
+     int numCols;
+     retcode = getNumCols(numCols);
+     if (retcode == HBASE_ACCESS_SUCCESS)
+     {	
+        for (int colNo = 0; colNo < numCols; colNo++)
         {
-           if (colNameLen > allocatedLength)
-           {
-               if (allocatedLength > 0)
-               {
-                  NADELETEBASIC(fullColName, heap_);
-               }
-               fullColName = new (heap_) char[colNameLen + 1];
-               allocatedLength = colNameLen;
-           }
+           retcode = getColName(colNo, &colName, colNameLen, timestamp);
+           if (retcode != HBASE_ACCESS_SUCCESS)
+              break;
+           BYTE *colVal;
+           retcode = getColVal((NAHeap *)heap_, colNo, &colVal, colValLen);
+           if (retcode != HBASE_ACCESS_SUCCESS) 
+              break; 
+           Text colValue((char *)colVal, colValLen);
+           NADELETEBASIC(colVal, heap_);
+	   if (colName == col1NameStr)
+	      col1ValueList.insert(colValue);
+	   else if (colName == col2NameStr)
+	      col2ValueList.insert(colValue);
+	   else if (colName == col3NameStr)
+	      col3ValueList.insert(colValue);
         }
-        strncpy(fullColName, family, familyLength);
-        fullColName[familyLength] = '\0';
-        strcat(fullColName, ":");
-        strncat(fullColName, colName, qualLength);
-        fullColName[colNameLen] = '\0';
-
-        colName = fullColName;
-
-	Text colValue((char*)value, valueLength);
-	if (colName == col1NameStr)
-	{
-           filledCols++;
-	   col1ValueList.insert(colValue);
-	}
-	else if (colName == col2NameStr)
-	{
-	   col2ValueList.insert(colValue);
-           filledCols++;
-	}
-	else if (colName == col3NameStr)
-	{
-	   col3ValueList.insert(colValue);
-           filledCols++;
-	}
-        kvBuf = (char *)temp + kvLength;
-     }
-     freeRowResult(jbRowResult, jbaRowResult);
-     if (allocatedLength > 0)
-     {
-         NADELETEBASIC(fullColName, heap_);
      }
   } // while
-  
+  scanClose();
   if (retcode == HBASE_ACCESS_EOD)
-    retcode = HBASE_ACCESS_SUCCESS;
-
-  if (retcode == HBASE_ACCESS_SUCCESS)
-    {
-      retcode = scanClose();
-    }
-  else
-    {
-      scanClose();
-    }
-  
+     retcode = HBASE_ACCESS_SUCCESS;
   return retcode;
 }
 
@@ -847,31 +774,6 @@ Lng32 ExpHbaseInterface_JNI::fetchNextRow()
     return -HBASE_ACCESS_ERROR;
 }
 
-Lng32 ExpHbaseInterface_JNI::fetchRowVec(jbyte **jbRowResult,
-                            jbyteArray &jbaRowResult,
-                            jboolean *isCopy)
-{
-  retCode_ = htc_->fetchRowVec(jbRowResult, jbaRowResult, isCopy);
-  if (retCode_ == HBC_OK)
-    return HBASE_ACCESS_SUCCESS;
-  if (retCode_ == HTC_DONE_DATA)
-    return HBASE_ACCESS_EOD;
-  else if (retCode_ == HTC_DONE_RESULT)
-    return HBASE_ACCESS_EOR;
-  else
-    return -HBASE_ACCESS_ERROR;
-}
-
-Lng32 ExpHbaseInterface_JNI::freeRowResult(jbyte *jbRowResult,
-                            jbyteArray &jbaRowResult)
-{
-  retCode_ = htc_->freeRowResult(jbRowResult, jbaRowResult);
-  if (retCode_ == HBC_OK)
-    return HBASE_ACCESS_SUCCESS;
-  else
-    return -HBASE_ACCESS_ERROR;
-}
-
 Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr &tblName,
 	  HbaseStr& row, 
@@ -1345,6 +1247,20 @@ Lng32 ExpHbaseInterface_JNI::getColVal(int colNo, BYTE *colVal,
   if (htc_ != NULL)
      retCode = htc_->getColVal(colNo, colVal, colValLen, nullable,
                     nullVal);
+  else
+     return HBC_ERROR_GET_HTC_EXCEPTION;
+
+  if (retCode != HTC_OK)
+    return HBASE_ACCESS_ERROR;
+  return HBASE_ACCESS_SUCCESS;
+}
+
+Lng32 ExpHbaseInterface_JNI::getColVal(NAHeap *heap, int colNo, 
+          BYTE **colVal, Lng32 &colValLen)
+{
+  HTC_RetCode retCode = HTC_OK;
+  if (htc_ != NULL)
+     retCode = htc_->getColVal(heap, colNo, colVal, colValLen);
   else
      return HBC_ERROR_GET_HTC_EXCEPTION;
 
