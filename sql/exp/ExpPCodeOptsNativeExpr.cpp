@@ -58,6 +58,7 @@
 #endif  /* NA_LINUX_LLVMJIT */
 
 #include "ExpPCodeOptimizations.h"
+#include <signal.h>
 
 #if 1   /* NA_LINUX_LLVMJIT */
 #include "llvm/Support/raw_ostream.h"    /* FOR NEW MODULE DUMPING IDEA */
@@ -5727,6 +5728,25 @@ NABoolean PCodeCfg::jitProcessPredicate(PCodeInst* comp,
 
 void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
 {
+  static pthread_mutex_t Our_LLVM_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+  // List of signal numbers for which LLVM establishes its own signal handlers
+  static const int SaveSigs[] = {
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGBUS, SIGFPE,
+    SIGSEGV, SIGUSR2, SIGPIPE, SIGTERM, SIGXFSZ
+  };
+  static const int NumSaveSigs = sizeof(SaveSigs) / sizeof(SaveSigs[0]);
+
+  static THREAD_P struct {
+    struct sigaction SigAct ;
+  } SavedSigInfo[ NumSaveSigs ];
+
+  static struct {
+    struct sigaction SigAct ;
+  } SavedLLVMhandlers[ NumSaveSigs ];
+
+  static NABoolean LLVMhandlersSaved = FALSE ;
+
 
 #if NExprDbgLvl > VV_NO
   char  NExBuf[500];
@@ -5793,6 +5813,41 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
   // First compute the dominator tree
   computeDomTree();
 
+  //
+  // Since the LLVM library is not thread-safe, we get a mutex at this point.
+  // If the mutex is not immediately available, then another thread is using
+  // LLVM right now, so we just fall back to using PCODE and not try to 
+  // generate a Native Expression right now.
+  //
+  int tryVal = pthread_mutex_trylock( &Our_LLVM_mutex );
+  if ( tryVal )
+  {
+     delete NExTempsList_ ;
+     NExTempsList_ = NULL ;
+     expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
+
+#if NExprDbgLvl >= VV_I2
+ if ( NExprDbgLvl_ >= VV_I2 ) {
+    DPT0( "VV90000A: ", VV_XD, "Not translating to native code - mutex locked.\n");
+ }
+#endif
+     return;
+  }
+
+  //
+  // Now that we have the mutex, save the current signal handlers for signals
+  // for which LLVM has handlers.  Also, if we have previously saved LLVM's
+  // sigaction handlers, restore them before we go back into LLVM code.
+  //
+  for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
+  {
+     Int32 ret = sigaction( SaveSigs[ii], 
+            ( LLVMhandlersSaved ) ?
+            &(SavedLLVMhandlers[ii].SigAct) : (const struct sigaction *)NULL,
+            &(SavedSigInfo[ii].SigAct) ) ;
+     assert( ret == 0 );
+  }
+
   llvm::InitializeNativeTarget();
   llvm::LLVMContext &LLContxt = llvm::getGlobalContext();
 
@@ -5811,8 +5866,20 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
   llvm::TargetOptions target_opts;
   target_opts.PositionIndependentExecutable = 1;
 
+  //
+  // NOTE: By specifying "x86-64" in the call to setMArch() below and
+  //       specifying only the generic 64-bit attributes and *not* specifying
+  //       any chip-specific attributes in the call to setMAttrs() below,
+  //       we are telling the JIT compiler to generate machine code for a
+  //       generic x86-64 chip rather than letting it default to generating
+  //       machine code for the specific chip that the SQL Compiler happens
+  //       to be running on at the moment.
+  //
+  std::vector<std::string>  MAttrs; // Machine Architecture attributes
+  MAttrs.push_back("64bit-mode");
+
   llvm::ExecutionEngine* TheExecutionEngine =
-    EngineBuilder(TheModule).setErrorStr(&ErrStr).setTargetOptions(target_opts).setRelocationModel(llvm::Reloc::PIC_).setOptLevel(CodeGenOpt::Default).create();
+    EngineBuilder(TheModule).setErrorStr(&ErrStr).setMArch("x86-64").setMAttrs(MAttrs).setTargetOptions(target_opts).setRelocationModel(llvm::Reloc::PIC_).setOptLevel(CodeGenOpt::Default).create();
   if ( !TheExecutionEngine )
   {
     std::cout << ErrStr << std::endl;
@@ -5820,6 +5887,20 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
     std::cout << std::endl ; // Flush anything in the data buffer
 
     delete Bldr ;
+
+    //
+    // Restore signal handlers to what they were on entry.
+    // NOTE: We do NOT try to save the LLVM handlers when going through this
+    // code the first time because LLVM has *not* set them up yet.
+    //
+    for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
+    {
+       Int32 ret = sigaction( SaveSigs[ii], &(SavedSigInfo[ii].SigAct),
+                                             (struct sigaction *)NULL);
+       assert( ret == 0 );
+    }
+    pthread_mutex_unlock( &Our_LLVM_mutex ); // Other threads could use LLVM now
+
     delete NExTempsList_ ;
     NExTempsList_ = NULL ;
     expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
@@ -9055,6 +9136,22 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
      delete Bldr;
      //delete TheModule;
      delete TheExecutionEngine;
+
+     //
+     // Restore signal handlers to what they were on entry.  ALSO, if this is
+     // the first time LLVM was called, save the LLVM handlers!
+     //
+     for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
+     {
+       Int32 ret = sigaction( SaveSigs[ii], &(SavedSigInfo[ii].SigAct),
+                    (LLVMhandlersSaved == FALSE) ?
+                   &(SavedLLVMhandlers[ii].SigAct) : (struct sigaction *)NULL);
+       assert( ret == 0 );
+     }
+     LLVMhandlersSaved = TRUE ;
+     pthread_mutex_unlock( &Our_LLVM_mutex ); // Other threads could use LLVM now
+
+
      printf("EXITING FROM layoutNativeCode() - funcBufLen >= 65536 \n");
      std::cout << std::endl ; // Flush anything in the data buffer
      expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
@@ -9094,6 +9191,21 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
         delete Bldr;
         //delete TheModule;
         delete TheExecutionEngine;
+
+        //
+        // Restore signal handlers to what they were on entry.  ALSO, if this is
+        // the first time LLVM was called, save the LLVM handlers!
+        //
+        for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
+        {
+          Int32 ret = sigaction( SaveSigs[ii], &(SavedSigInfo[ii].SigAct),
+                       (LLVMhandlersSaved == FALSE) ?
+                      &(SavedLLVMhandlers[ii].SigAct) : (struct sigaction *)NULL);
+          assert( ret == 0 );
+        }
+        LLVMhandlersSaved = TRUE ;
+        pthread_mutex_unlock( &Our_LLVM_mutex ); // Other threads could use LLVM now
+
         expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
         return;
      }
@@ -9227,6 +9339,19 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
   //delete TheModule;
   delete TheExecutionEngine;
 
+  //
+  // Restore signal handlers to what they were on entry.  ALSO, if this is
+  // the first time LLVM was called, save the LLVM handlers!
+  //
+  for (Int32 ii = 0; ii < NumSaveSigs ; ii++ )
+  {
+     Int32 ret = sigaction( SaveSigs[ii], &(SavedSigInfo[ii].SigAct),
+                  (LLVMhandlersSaved == FALSE) ?
+                 &(SavedLLVMhandlers[ii].SigAct) : (struct sigaction *)NULL);
+     assert( ret == 0 );
+  }
+  LLVMhandlersSaved = TRUE ;
+  pthread_mutex_unlock( &Our_LLVM_mutex ); // Other threads could use LLVM now
   return ;
 }
 #endif /* NA_LINUX_LLVMJIT */

@@ -454,6 +454,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
 			CliDebugSqlError(setConnectException.exception_nr)));
 	}
 
+#if 0 /* NOT NEEDED with improvements to Native Expressions code */
 	// new code begin: to disable native code for multi-threading
 		odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
 			&setConnectException,
@@ -469,6 +470,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
 				CliDebugSqlError(setConnectException.exception_nr)));
 		}
 	// new code end
+#endif /* NOT NEEDED with improvements to Native Expressions code */
 
 	if (srvrGlobal->nowaitOn == 2)
 	{

@@ -21,6 +21,7 @@
 CPPSRC := SqlciMain.cpp \
 	MxciEHCallBack.cpp
 
+EARLY_DLLS:= $(JAVA_HOME)/jre/lib/amd64/server/libjsig.so
 
 DEP_LIBS += tdm_sqlcli sqlcilib log4cpp arkcmp_dll
 

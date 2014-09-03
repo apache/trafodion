@@ -115,11 +115,15 @@ else
 LOC_JVMLIBS=$(JVMROOT)/jre/lib/i386/server
 endif
 
+#NOTE: The following line is commented out on purpose.  EARLY_DLLS, when needed,
+#      should be set up in other makefiles (e.g. sqlci and tdm_arkcmp makefiles).
+#EARLY_DLLS :=
+
 ifeq ($(SQ_BUILD_TYPE),debug)
    JAVA_COMPILE_FLAGS=-g
 endif
 LIBHDFS_INC=-I$(HADOOP_INC_DIR)
-LIBHDFS_LIB=-lhdfs -ljvm
+LIBHDFS_LIB=-ljvm -lhdfs
 LIBHDFS_SO=libhdfs.so
 
 THRIFT_INC=-I$(THRIFT_INC_DIR) -I$(THRIFT_INC_DIR)/thrift
@@ -392,8 +396,8 @@ build_c_rule = $(compile_c_rule)
 
 ALL_EXE_LDFLAGS = $(ALL_CXXFLAGS) $(OPT_EXE_LDFLAGS)
 
-# link_exe defines how to links an executable for OSS
-link_exe = $(CXX) $(ALL_EXE_LDFLAGS) $(OBJ_PATHS) \
+# link_exe defines how to link an executable for OSS
+link_exe = $(CXX) $(ALL_EXE_LDFLAGS) $(EARLY_DLLS) $(OBJ_PATHS) \
 	$(LOC_LIBS) $(SQLUTILS_LIBS) $(EXTRA_LIBS) $(DEP_DLL_NAMES:%=-l%) \
 	$(DEP_LIB_NAMES:%=-l%) $(EXTERN_OBJS) $(SYS_LIBS) $(GLOBAL_SYS_LIBS) $(LINK_EXTERN_LIB) \
 	-Wl,--rpath -Wl,$(RESULTDIR) \

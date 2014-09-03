@@ -21,6 +21,8 @@
 CPPSRC := arkcmp.cpp \
 	Sqlci_templ.cpp
 
+EARLY_DLLS:= $(JAVA_HOME)/jre/lib/amd64/server/libjsig.so
+
 #GUI Debugger
   ifeq ($(FLAVOR),debug)
      CXXFLAGS += -DNA_DEBUG_GUI -rdynamic -Wl,--export-dynamic
