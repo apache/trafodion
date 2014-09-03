@@ -25,7 +25,7 @@
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 typeset TRAF_USER="trafodion"
 typeset TRAF_USER_PASSWORD="traf123"   # 8 char max
-typeset NODE_LIST="$HOSTNAME"
+typeset NODE_LIST=""
 typeset CLUSTERNAME="$HOSTNAME"
 typeset HOME_DIR="/home"
 typeset timestamp=$(date +%F-%H-%M-%S)
@@ -46,7 +46,7 @@ Usage: $(basename $0) [options]
 
 Options:
     --help                 Print this message and exit.
-    --nodes "<node_list>"  Blank separated list of nodes (within quotes) in this Trafodion environment
+    --nodes "<node_list>"  Required blank separated list of nodes (within quotes) in this Trafodion environment
                            From 1 to N nodes, although two is the recommended minimum.
     --username <user>      Trafodion user name (default "$TRAF_USER")
     --password <password>  Password for the Trafodion user name (default "$TRAF_USER_PASSWORD")
@@ -115,6 +115,14 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [[ $NODE_LIST == "" ]]; then
+   echo 
+   echo "***ERROR: Please use --nodes option to include node list" 
+   echo "***ERROR: Exiting..."
+   echo
+   exit -1 
+fi
 
 #==============================================
 

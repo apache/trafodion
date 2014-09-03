@@ -66,6 +66,15 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+if [[ $MY_NODES == "" ]]; then
+   echo
+   echo "***ERROR: Please use --nodes option to include node list"
+   echo "***ERROR: Exiting..."
+   echo
+   exit -1
+fi
+
+
 #==============================================
 #Check with user if they want to preform the uninstall
 echo -n "Do you want to uninstall MapR? (Y/N) "

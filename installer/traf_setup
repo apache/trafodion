@@ -249,12 +249,8 @@ fi
 echo "$NODE_LIST" > $TRAF_WORKDIR/node_list
 echo "$MY_NODES" > $TRAF_WORKDIR/my_nodes
 
-# create working directory on all nodes
-$TRAF_PDSH mkdir -p $TRAF_WORKDIR
-$TRAF_PDSH mkdir -p $TRAF_WORKDIR/logs
-
 #================================
-echo "***INFO: installing required packages"
+echo "***INFO: Installing required packages"
 echo "***INFO: Log file located in $TRAF_WORKDIR/logs"
 YUM_LOG=$TRAF_WORKDIR/logs/trafodion_yum_$timestamp.log
 
@@ -266,8 +262,10 @@ if [ $node_count -ne 1 ]; then
         echo "***INFO: ... pdsh on node $node"
 
         # if not already installed on this node, then install it
-        ssh $node rpm -qa | grep pdsh
+        ssh $node rpm -qa | grep pdsh &> /dev/null
         if [ $? -ne 0 ]; then
+            ssh $node sudo mkdir -p $TRAF_WORKDIR
+            ssh $node sudo mkdir -p $TRAF_WORKDIR/logs
             ssh $node sudo yum --assumeyes install pdsh &>> $YUM_LOG
             if [ $? != 0 ]; then
                 echo "***ERROR: Can't install pdsh on node $node"
@@ -275,6 +273,10 @@ if [ $node_count -ne 1 ]; then
             fi
         fi
     done
+    # create working directory on all nodes
+    $TRAF_PDSH mkdir -p $TRAF_WORKDIR &> /dev/null
+    $TRAF_PDSH mkdir -p $TRAF_WORKDIR/logs &> /dev/null
+ 
 fi
 
 #Checking to see if epel package is installed. 
@@ -286,6 +288,8 @@ if [[ $EPEL_INSTALLED == 0 ]]; then
    wget http://download.fedoraproject.org/pub/epel/6/x86_64/$epel_rpm
    if [ $? != 0 ]; then
       echo "***ERROR: Can't download EPEL rpm $epel_rpm"
+      echo "***ERROR: Please check http_proxy settings in .bashrc file"
+      echo
       exit -1
    fi
    if [ $node_count -ne 1 ]; then
@@ -425,16 +429,18 @@ sudo chown --recursive $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER
 
 #=======================================
 
-echo "***INFO: Setting SELINUX=disabled in /etc/selinux.config"
-sudo cp /etc/selinux/config $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
-sudo sh -c "sed -e 's@^SELINUX=.*@SELINUX=disabled@' <$TRAF_WORKDIR/etc_selinux_config_ORIGINAL >/etc/selinux/config"
-if [ $node_count -gt 1 ] ; then
-    echo "***INFO: modifying /etc/selinux/config on remaining nodes"
+if [[ -f /etc/selinux/config ]]; then
+   echo "***INFO: Setting SELINUX=disabled in /etc/selinux.config"
+   sudo cp /etc/selinux/config $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
+   sudo sh -c "sed -e 's@^SELINUX=.*@SELINUX=disabled@' <$TRAF_WORKDIR/etc_selinux_config_ORIGINAL >/etc/selinux/config"
+   if [ $node_count -gt 1 ] ; then
+       echo "***INFO: modifying /etc/selinux/config on remaining nodes"
 
-    sudo cp /etc/selinux/config $TRAF_WORKDIR/traf_selinux.conf
+       sudo cp /etc/selinux/config $TRAF_WORKDIR/traf_selinux.conf
 
-    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/traf_selinux.conf $TRAF_WORKDIR
-    pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
-    pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
+       pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/traf_selinux.conf $TRAF_WORKDIR
+       pdcp $MY_NODES -x $HOSTNAME $TRAF_WORKDIR/etc_selinux_config_ORIGINAL $TRAF_WORKDIR/etc_selinux_config_ORIGINAL
+       pdsh $MY_NODES -x $HOSTNAME sudo cp $TRAF_WORKDIR/traf_selinux.conf /etc/selinux/config
 
+   fi
 fi

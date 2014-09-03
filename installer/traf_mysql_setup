@@ -27,6 +27,7 @@
 MYSQL_ROOT_PASSWORD="redhat06"
 MYSQL_HIVE_USER="hive1"
 MYSQL_HIVE_PASSWORD="hive"
+NODE_LIST=""
 #=====================
 
 MYSQL_HIVE_SCHEMA="/usr/lib/hive/scripts/metastore/upgrade/mysql/hive-schema-0.10.0.mysql.sql"
@@ -41,7 +42,7 @@ Usage: $(basename $0) [options]
 Options:
     --help                Print this message and exit.
 
-    --nodes "<node_list>" Blank separated list of nodes (within quotes)
+    --nodes "<node_list>" Required blank separated list of nodes (within quotes)
                           in this Trafodion environment.
 EOF
 }
@@ -75,6 +76,14 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [[ $NODE_LIST == "" ]]; then
+   echo
+   echo "***ERROR: Please use --nodes option to include node list"
+   echo "***ERROR: Exiting..."
+   echo
+   exit -1
+fi
 
 #============================
 # Check that we are running from a userid with sudo access
