@@ -124,16 +124,16 @@ ex_tcb * ExHbaseAccessTdb::build(ex_globals * glob)
 	{
 	  if ((vsbbInsert()) &&
 	      (NOT hbaseSqlIUD()))
-        if (this->getIsTrafodionLoadPrep())
+            if (this->getIsTrafodionLoadPrep())
               tcb = new(exe_glob->getSpace())
-                        ExHbaseAccessBulkLoadPrepSQTcb(
-                                                   *this,
-                                                   exe_glob);
-          else
-	    tcb = new(exe_glob->getSpace()) 
-	      ExHbaseAccessUpsertVsbbSQTcb(
-					   *this,
-					   exe_glob);
+                ExHbaseAccessBulkLoadPrepSQTcb(
+                                               *this,
+                                               exe_glob);
+            else
+              tcb = new(exe_glob->getSpace()) 
+                ExHbaseAccessUpsertVsbbSQTcb(
+                                             *this,
+                                             exe_glob);
 	  else
 	    tcb = new(exe_glob->getSpace()) 
 	      ExHbaseAccessInsertSQTcb(
