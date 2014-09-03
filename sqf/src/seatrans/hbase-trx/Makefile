@@ -37,13 +37,17 @@ all: build_all
 
 jdk_1_7:
 	$(MAKE) build_chk_1_7
-	set -o pipefail && $(MAVEN) package -DskipTests | tee -a build_trx.log
+	echo "$(MAVEN) package -DskipTests"
+	echo "### For full Maven output, see file build_trx.log"
+	set -o pipefail && $(MAVEN) package -DskipTests | tee build_trx.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
 jdk_1_6:
 	$(MAKE) build_chk_1_6
-	set -o pipefail && JAVA_HOME=$(JAVAJDK16) $(MAVEN) package -Djava.version=$(JAVA6_VERSION) -Dtrx-suffix=$(JAVA6_SUFFIX) -DskipTests | tee -a build_trx.log
+	echo "$(MAVEN) package -DskipTests"
+	echo "### For full Maven output, see file build_trx_1_6.log"
+	set -o pipefail && JAVA_HOME=$(JAVAJDK16) $(MAVEN) package -Djava.version=$(JAVA6_VERSION) -Dtrx-suffix=$(JAVA6_SUFFIX) -DskipTests | tee build_trx_1_6.log | grep --line-buffered -E -e '^\[[^WId]' -e '^\[INFO\] B[Uu][Ii][Ll][Dd]' -e 'to compile'
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME_1_6) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
@@ -62,6 +66,6 @@ build_chk_1_7:
 clean:
 	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_TRX_JARNAME)
 	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_TRX_JARNAME_1_6)
-	$(MAVEN) clean
+	$(MAVEN) clean | grep ERROR
 	$(RM) build_trx.log
 	$(RM) $(VFILE)
