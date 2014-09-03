@@ -45,7 +45,8 @@ extern CMonLog *MonLog;
 
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
-    return MonLog->write(eventType, severity, msg);
+    MonLog->writeAltLog(eventType, severity, msg);
+    return(0);
 }
 
 int wdt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
@@ -93,52 +94,6 @@ CMonLog::~CMonLog()
             mon_log_write(MON_LOG_ERROR_3, SQ_LOG_ERR, la_buf);
         }
     }
-}
-
-int CMonLog::write(int eventType, posix_sqlog_severity_t severity, char *msg)
-{
-    int error = 0;
-
-#ifdef USE_EVLOGGING
-    size_t bufSize = MON_EVENT_BUF_SIZE;
-    char  eventBuf[MON_EVENT_BUF_SIZE];
-    char* eventBufPtr = eventBuf;
-
-    sq_common_header_t sqHeader;
-    sqHeader.comp_id = 1;
-    sqHeader.process_id = getpid(); //this is just os level pid
-    sqHeader.zone_id = MyPNID;
-    sqHeader.thread_id = int((long int)gettid());
-
-    /* The next init function will be called by Monitor only */
-    error = evl_sqlog_init_header(eventBufPtr, bufSize, &sqHeader);
- 
-    /* add monitor string token */
-    error = evl_sqlog_add_token(eventBufPtr, TY_STRING, msg);
-
-    if (!error)
-    { 
-        // log events.
-        error = evl_sqlog_write((posix_sqlog_facility_t)SQ_LOG_SEAQUEST, eventType, severity, eventBufPtr);
-
-        // The error check is turned off temporarily until the above call
-        // actually logs msgs in qpid. Use the alternative logging
-        // mechanism for now.
-        if ( /* error && */ useAltLog_)
-        {
-          writeAltLog(eventType, severity, msg);
-          error = 0;
-        }
-     }
-#endif
-
-    if (trace_settings & TRACE_EVLOG_MSG)
-    {
-        trace_printf("Evlog event: type=%d, severity=%d, text: %s",
-                     eventType, severity, msg);
-    }
-
-    return error;
 }
 
 void CMonLog::writeAltLog(int eventType, posix_sqlog_severity_t severity, char *msg)

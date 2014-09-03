@@ -69,8 +69,6 @@ public:
     CMonLog( const char *logFilePrefix );
     ~CMonLog();
 
-    int write(int eventType, posix_sqlog_severity_t severity, char *msg);
-
     void memLogWrite(int event_type, int value1 = 0, int value2 = 0);
 
     void writeAltLog(int event_type, posix_sqlog_severity_t severity, char *msg);

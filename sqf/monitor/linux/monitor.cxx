@@ -1074,12 +1074,6 @@ int main (int argc, char *argv[])
        trace_printf("%s@%d" "DEBUGGING Option set" "\n", method_name, __LINE__);
 #endif
 
-
-#ifdef USE_EVLOGGING
-    if (trace_settings & TRACE_INIT)
-       trace_printf("%s@%d" "USE_EVLOGGING Option set" "\n", method_name, __LINE__);
-#endif
-
     if ( Emulate_Down )
         if (trace_settings & TRACE_INIT)
            trace_printf("%s@%d" "EMULATE_DOWN Option set" "\n", method_name, __LINE__);
