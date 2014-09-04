@@ -268,5 +268,6 @@ void MdamInterval::printBrief() const
     cout << ")";
   cout << " ";
   mdamRefList_.printBrief();
+  cout << endl;
 }
 #endif /* NA_MDAM_EXECUTOR_DEBUG */

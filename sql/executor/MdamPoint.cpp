@@ -130,6 +130,39 @@ void MdamPoint::print(const char * header) const
 void MdamPoint::printBrief() const
 {
   char * dataPointer = getDataPointer();
-  cout << *(Lng32 *)dataPointer;
+
+  // Test change, assume data type of column is CHAR(10)
+  // (if it is not, we'll just get some garbage more than likely)
+  char local[11];
+  local[0] = '\0';
+
+  if (dataPointer)
+    {
+    bool allNulls = true;
+    bool allFFs = true;
+    size_t i = 0;
+    while (i < 10 && (allNulls || allFFs))
+      {
+      if (dataPointer[i] != '\0') allNulls = false;
+      if (dataPointer[i] != -1) allFFs = false;
+      i++;
+      }
+    if (allNulls)
+      {
+      strcpy(local,"*lo*      ");  // hopefully there won't be a legitimate value of *lo*
+      }
+    else if (allFFs)
+      {
+      strcpy(local,"*hi*      ");  // hopefully there won't be a legitimate value of *hi*
+      }
+    else
+      {
+      strncpy(local,dataPointer,10);
+      local[10] = '\0';
+      }
+    }    
+  cout << local;
+  // cout << *(Lng32 *)dataPointer;
+  // End test change
 }
 #endif /* NA_MDAM_EXECUTOR_DEBUG */

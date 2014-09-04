@@ -1233,7 +1233,6 @@ void MdamColumn::print(const char * header) const
   else
     {
       intervals_.printBrief();
-      cout << endl;
     }
   cout << " Stop list: ";
   stop_list_.printBrief();
