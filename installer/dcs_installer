@@ -157,7 +157,7 @@ if [ "$node_count" -ne "1" ]; then
    ZOOKEEPER_NODES=$(pdsh $MY_NODES ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
    ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
 else
-    ZOOKEEPER_NODES=$(ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
+   ZOOKEEPER_NODES=$(ps --no-header -C java -o pid,cmd 2>/dev/null | grep QuorumPeerMain | awk '{print $1}' | sort)
    ZOOKEEPER_NODES=$(echo $ZOOKEEPER_NODES | sed -e "s@: @,@g" | sed -e 's@:$@@')
 fi
 
@@ -170,16 +170,18 @@ rm dcs-site.temp 2>/dev/null
 
 echo "***INFO: creating $DCS_DIR/conf/servers file"
 rm servers 2>/dev/null
-server_count=0
-while true; do
-    for node_name in $NODE_LIST
-    do
-	    echo $node_name >> servers
-        (( server_count++ ))
-        if [ $server_count -ge $DCS_SERVER_COUNT ]; then
-            break 2;
-        fi
-    done
+let per_node=$DCS_SERVER_COUNT/$node_count
+let extras=$DCS_SERVER_COUNT%$node_count
+count=1
+for node_name in $NODE_LIST
+do
+    if [ $count -le $extras ]; then
+       let node_servers=$per_node+1
+    else
+       node_servers=$per_node
+    fi
+    echo $node_name $node_servers >> servers
+    (( count++ ))
 done
 
 echo "***INFO: End of DCS install."
