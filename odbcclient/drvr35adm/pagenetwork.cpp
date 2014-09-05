@@ -56,6 +56,7 @@ void PageNetwork::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LOGIN, m_login);
 	DDX_Control(pDX, IDC_IPADDRESS, m_ipaddress);
 	DDX_Control(pDX, IDC_CONNECTION, m_connection);
+	DDX_Control(pDX, IDC_COMPRESSION, m_Compression);
 	//}}AFX_DATA_MAP
 }
 
@@ -98,6 +99,12 @@ BOOL PageNetwork::OnInitDialog()
 		m_fetch_buffer_size.SetWindowText(aAttr[ KEY_FETCH_BUFFER_SIZE].szAttr );
 	else
 		m_fetch_buffer_size.SetCurSel(0);
+
+	if( aAttr[ KEY_COMPRESSION].szAttr[0] != 0 )
+		m_Compression.SetWindowText(aAttr[ KEY_COMPRESSION].szAttr );
+	else
+		m_Compression.SetCurSel(0);
+
 
 	char szStaticText[]="Enter the DCS Master IP address specified during the Trafodion installation.\n\
 Enter the starting port number for the range of ports numbers specified for\n\

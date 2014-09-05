@@ -17,11 +17,19 @@ REM  limitations under the License.
 REM
 REM @@@ END COPYRIGHT @@@
 
+REM set this to openssl binary directory.
 set OPENSSL_PATH=E:\OpenSSL101e_bin
 REM set ODBCCP32_32_PATH="E:\Program Files (x86)\Microsoft Visual Studio 8\VC\PlatformSDK\Lib"
+REM set this to vs2008 64bit odbccp32.lib directory.
 set ODBCCP32_64_PATH="E:\Program Files (x86)\Microsoft Visual Studio 8\VC\PlatformSDK\Lib\amd64"
 set MSBUILD_PATH=C:\Windows\Microsoft.NET\Framework64\v4.0.30319
+REM set this to top directory include everything for build
 set BUILDDIR=E:
+REM set this to where git bash was installed.(from git install)
+set GIT_BASH="C:\Program Files (x86)\Git\bin\sh.exe"
+
+set ZLIB_SRC=%BUILDDIR%\zlib_official
+set ZLIB_SRC_GIT=%ZLIB_SRC:\=/%
 
 set SRCDIR=%BUILDDIR%\win-odbc64
 set LIBDIR=%BUILDDIR%\lib 
@@ -34,6 +42,28 @@ echo ===============================
 echo     BUILD WIN64 RELEASE
 echo ===============================
 echo=
+
+echo Building zlib - Win64 Release...
+if not exist %ZLIB_SRC% (
+echo %GIT_BASH%
+%GIT_BASH% --login -c "git clone https://github.com/madler/zlib/ %ZLIB_SRC_GIT%"
+)
+
+cd %ZLIB_SRC%\contrib\vstudio\vc10
+msbuild.exe /t:rebuild zlibstat.vcxproj /p:Platform=x64 /p:Configuration=Release
+cd %ZLIB_SRC%
+
+if not exist %SRCDIR%\dependencies\zlib\lib\x64\Release (
+mkdir %SRCDIR%\dependencies\zlib\lib\x64\Release
+)
+if not exist %SRCDIR%\dependencies\zlib\include (
+mkdir %SRCDIR%\dependencies\zlib\include
+)
+copy /Y %ZLIB_SRC%\contrib\vstudio\vc10\x64\ZlibStatRelease\zlibstat.lib %SRCDIR%\dependencies\zlib\lib\x64\Release
+copy /Y %ZLIB_SRC%\zlib.h %SRCDIR%\dependencies\zlib\include
+copy /Y %ZLIB_SRC%\zconf.h %SRCDIR%\dependencies\zlib\include
+cd %SRCDIR%
+rmdir /S /Q %ZLIB_SRC%
 
 echo Building Drvr35Msg - Win64 Release...
 cd %SRCDIR%\odbcclient\Drvr35Msg

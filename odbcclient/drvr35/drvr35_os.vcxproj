@@ -42,10 +42,14 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\x64\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\x64\Debug\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)PlatformSDK\include;$(IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)PlatformSDK\lib\amd64;$(VSInstallDir)SDK\v2.0\lib\amd64;$(LibraryPath);</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)PlatformSDK\include;$(IncludePath);</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)PlatformSDK\lib\amd64;$(VSInstallDir)SDK\v2.0\lib\amd64;$(LibraryPath);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\sql\cli;..\..\sql\common;../../dependencies/liblzf;.\;..\inc;.\interface;..\..\Common;..\Drvr35Msg;..\..\Krypton\generated_incs;..\TranslationDll;..\..\security_dll\native\header;..\..\security_dll\native\common;$(OpenSSLIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sql\cli;..\..\sql\common;.\;..\inc;.\interface;..\..\Common;..\Drvr35Msg;..\..\Krypton\generated_incs;..\TranslationDll;..\..\security_dll\native\header;..\..\security_dll\native\common;$(OpenSSLIncludeDir);..\..\dependencies\zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;_CRT_SECURE_NO_DEPRECATE;NDEBUG;_WINDOWS;NA_WINNT;TRACE_COMPRESSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
@@ -54,9 +58,9 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>version.lib;ws2_32.lib;odbccp32.lib;Psapi.Lib;libeay32MD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;ws2_32.lib;odbccp32.lib;Psapi.Lib;libeay32MD.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\lib\x64\Release/trfodbc1.dll</OutputFile>
-      <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);..\..\dependencies\zlib\lib\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>.\drvr35.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>..\..\..\..\lib\x64\Release/trfodbc1.pdb</ProgramDatabaseFile>
@@ -90,7 +94,7 @@ pause</Command>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\sql\cli;..\..\sql\common;../../dependencies/liblzf;.\;..\inc;.\interface;..\..\Common;..\Drvr35Msg;..\..\Krypton\generated_incs;..\TranslationDll;..\..\security_dll\native\header;..\..\security_dll\native\common;$(OpenSSLIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sql\cli;..\..\sql\common;.\;..\inc;.\interface;..\..\Common;..\Drvr35Msg;..\..\Krypton\generated_incs;..\TranslationDll;..\..\security_dll\native\header;..\..\security_dll\native\common;$(OpenSSLIncludeDir);..\..\dependencies\zlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;_CRT_SECURE_NO_DEPRECATE;_DEBUG;_WINDOWS;hp;NA_WINNT;TRACE_COMPRESSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -107,9 +111,9 @@ pause</Command>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>version.lib;ws2_32.lib;odbccp32.lib;Psapi.Lib;libeay32MDd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;ws2_32.lib;odbccp32.lib;Psapi.Lib;libeay32MDd.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\lib\x64\Debug/trfodbc1.dll</OutputFile>
-      <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\common;$(OpenSSLLibraryDir);..\..\dependencies\zlib\lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>.\drvr35.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AssemblyDebug>
@@ -143,6 +147,7 @@ pause</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Common\Compression.cpp" />
     <ClCompile Include="..\..\security_dll\native\source\Security.cpp" />
     <ClCompile Include="cconnect.cpp" />
     <ClCompile Include="cdatasource.cpp" />
@@ -196,6 +201,7 @@ pause</Command>
     <ResourceCompile Include="drvr35.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\Compression.h" />
     <ClInclude Include="..\..\security_dll\native\header\security.h" />
     <ClInclude Include="cconnect.h" />
     <ClInclude Include="cdatasource.h" />

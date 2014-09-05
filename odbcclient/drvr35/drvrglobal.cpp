@@ -336,13 +336,13 @@ CDrvrGlobal::CDrvrGlobal() : gOdbcMsg(DRVRMSG_DLL)
 	size_t valueSize = STRICT_SCHEMA_ENV_VAL_SIZE ;
 	size_t returnLen=0 ;
 	RestrictSchema = false;
-	if (getenv_s(&returnLen, envValue, valueSize, "HPODBC-SQLTABLES-RESTRICT-DSNSCHEMA") == 0) //success
+	if (getenv_s(&returnLen, envValue, valueSize, "TRAFODBC-SQLTABLES-RESTRICT-DSNSCHEMA") == 0) //success
 		if(returnLen != 0)
 			RestrictSchema = true;
 #ifdef TRACE_COMPRESSION                                                                                                            
    char *envTraceCompression=NULL;                                                                                                  
    gTraceCompression=false;                                                                                                         
-   if( (envTraceCompression = getenv("HPODBC_TRACE_COMPRESSION")) != NULL)                                                          
+   if( (envTraceCompression = getenv("TRAFODBC_TRACE_COMPRESSION")) != NULL)
    {                                                                                                                                
       if(strcmp(envTraceCompression,"1")==0)                                                                                        
       {                                                                                                                             

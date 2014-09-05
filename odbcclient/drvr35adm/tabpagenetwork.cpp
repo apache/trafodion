@@ -56,6 +56,7 @@ void TabPageNetwork::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_IPADDRESS, m_ipaddress);
 	DDX_Control(pDX, IDC_FETCH_BUFFER_SIZE, m_fetch_buffer_size);
 	DDX_Control(pDX, IDC_CONNECTION, m_connection);
+	DDX_Control(pDX, IDC_COMPRESSION, m_Compression);
 	//}}AFX_DATA_MAP
 }
 
@@ -72,6 +73,7 @@ BEGIN_MESSAGE_MAP(TabPageNetwork, CPropertyPage)
 	ON_CBN_SELCHANGE(IDC_QUERY, OnSelchangeQuery)
 	ON_CBN_SELCHANGE(IDC_CONNECTION, OnSelchangeConnection)
 	ON_CBN_SELCHANGE(IDC_FETCH_BUFFER_SIZE, OnSelchangeFetchBufferSize)
+	ON_CBN_SELCHANGE(IDC_COMPRESSION, OnSelchangeCompression)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -107,6 +109,12 @@ BOOL TabPageNetwork::OnInitDialog()
 		m_fetch_buffer_size.SetWindowText(aAttr[ KEY_FETCH_BUFFER_SIZE].szAttr );
 	else
 		m_fetch_buffer_size.SetCurSel(0);
+
+	if( aAttr[ KEY_COMPRESSION].szAttr[0] != 0 )
+		m_Compression.SetWindowText(aAttr[ KEY_COMPRESSION].szAttr );
+	else
+		m_Compression.SetCurSel(0);
+
 
 	char szStaticText[]="The current configuration is displayed.\n\
 DCS Master IP address is specified during the Trafodion installation.\n\
@@ -209,7 +217,7 @@ BOOL TabPageNetwork::OnKillActive()
 		cFetchBufferSize = "0";
 
 	if(cCompression.IsEmpty())
-		cCompression = "0";
+		cCompression = "SYSTEM_DEFAULT";
 
 	strncpy(aAttr[ KEY_LOGIN].szAttr,(LPCTSTR)cLoginTimeout, sizeof(aAttr[ KEY_LOGIN].szAttr));
 	strncpy(aAttr[ KEY_CONNECTION].szAttr,(LPCTSTR)cConnectionTimeout, sizeof(aAttr[ KEY_CONNECTION].szAttr));

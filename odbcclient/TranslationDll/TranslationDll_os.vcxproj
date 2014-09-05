@@ -176,6 +176,7 @@
     <ResourceCompile Include="TranslationDll.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="TranslationDll.h" />
     <CustomBuildStep Include="..\..\..\..\..\..\sql\common\csconvert.h">

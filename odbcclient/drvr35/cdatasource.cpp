@@ -479,6 +479,38 @@ short CDataSource::readDSValues(char *DSName, char* transError)
 	else
 		m_DSSelectRowsets = TRUE;
 
+// Compression 
+
+	keyValueLength = sizeof(keyValueBuf);
+	error = RegQueryValueEx (keyHandle,
+	                   "Compression",
+					   NULL,				// Reserved
+					   &keyValueType,
+					   keyValueBuf,
+					   &keyValueLength);
+
+	if (error == ERROR_SUCCESS){
+		if(_stricmp((const char *)keyValueBuf,SYSTEM_DEFAULT)==0){
+				m_DSIOCompression = 0;
+		}
+		else if(_stricmp((const char *)keyValueBuf,"no compression")==0){
+			m_DSIOCompression = COMP_NO_COMPRESSION;
+		}
+		else if(_stricmp((const char *)keyValueBuf,"best speed")==0){
+			m_DSIOCompression = COMP_BEST_SPEED;
+		}
+		else if(_stricmp((const char *)keyValueBuf,"best compression")==0){
+			m_DSIOCompression = COMP_BEST_COMPRESSION;
+		}
+		else if(_stricmp((const char *)keyValueBuf,"balance")==0){
+			m_DSIOCompression = COMP_DEFAULT;
+		}
+		else{
+			m_DSIOCompression = atol((const char *)keyValueBuf);
+		}
+	}
+	else
+		m_DSIOCompression = 0;
 
 	keyValueLength = sizeof(keyValueBuf);
 	error = RegQueryValueEx(keyHandle,
@@ -677,6 +709,26 @@ void CDataSource::updateDSValues(short DSNType, CONNECT_FIELD_ITEMS *connectFiel
 				break;
 			case KEY_CERTIFICATEFILE_ACTIVE:
 				strcpyUTF8(m_DSCertificateFileActive, AttrValue, sizeof(m_DSCertificateFileActive));
+				break;
+			case KEY_COMPRESSION:
+				if(_stricmp(AttrValue,SYSTEM_DEFAULT)==0){
+					m_DSIOCompression = 0;
+				}
+				else if(_stricmp(AttrValue,"no compression")==0){
+					m_DSIOCompression = COMP_NO_COMPRESSION;
+				}
+				else if(_stricmp(AttrValue,"best speed")==0){
+					m_DSIOCompression = COMP_BEST_SPEED;
+				}
+				else if(_stricmp(AttrValue,"best compression")==0){
+					m_DSIOCompression = COMP_BEST_COMPRESSION;
+				}
+				else if(_stricmp(AttrValue,"balance")==0){
+					m_DSIOCompression = COMP_DEFAULT;
+				}
+				else{
+					m_DSIOCompression = atol(AttrValue);
+				}
 				break;
 			default:
 				break;

@@ -19,6 +19,7 @@
 #ifndef TCPIP_SYSTEM_DRVR_H
 #define TCPIP_SYSTEM_DRVR_H
 
+#include "Compression.h"
 
 class CConnect;
 class CStmt;
@@ -68,6 +69,7 @@ public:
 	HEADER		m_rheader;
 	char		m_object_ref[MAX_OBJECT_REF + 1];
 	int          m_IOCompression;
+	CCompression m_compression;
 private:
 	char		m_swap;
 
@@ -99,6 +101,10 @@ extern
 bool OpenIO (CTCPIPSystemDrvr* pTCPIPSystem, char* object_ref);
 extern 
 void CloseIO (CTCPIPSystemDrvr* pTCPIPSystem);
+extern
+void DoCompression(CTCPIPSystemDrvr* pTCPIPSystem, HEADER& wheader, unsigned char* wbuffer, unsigned long& write_count);
+extern
+bool DoExpand(CTCPIPSystemDrvr* pTCPIPSystem, HEADER& rheader, unsigned char* rbuffer, unsigned long& read_count);
 extern "C" { 
 void WINAPI TCPIP_SET_ERROR(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail);
 }

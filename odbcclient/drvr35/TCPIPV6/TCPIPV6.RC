@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -28,7 +26,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,0
- PRODUCTVERSION 0,8,0,0
+ PRODUCTVERSION 0,9,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -44,13 +42,13 @@ BEGIN
         BLOCK "000004b0"
         BEGIN
             VALUE "CompanyName", "Hewlett-Packard Company"
-			VALUE "FileDescription", "TRAF ODBC TCPIPV6 DLL"
+            VALUE "FileDescription", "TRAF ODBC TCPIPV6 DLL"
             VALUE "FileVersion", "1, 0, 0, 0"
-			VALUE "InternalName", "TRAF ODBC TCPIPV6 DLL"
+            VALUE "InternalName", "TRAF ODBC TCPIPV6 DLL"
             VALUE "LegalCopyright", "?Copyright 2011 Hewlett-Packard Development Company, LP"
             VALUE "OriginalFilename", "traf_tcpipv60100.dll"
             VALUE "ProductName", "TRAF ODBC"
-            VALUE "ProductVersion", "0, 8, 0, 0"
+            VALUE "ProductVersion", "0.9.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -85,7 +83,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

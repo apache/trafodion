@@ -161,6 +161,9 @@
     <ClCompile Include="..\..\security_dll\native\source\Security.cpp">
       <Filter>Security</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Common\Compression.cpp">
+      <Filter>Interface Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="drvr35.rc">
@@ -293,6 +296,9 @@
     </ClInclude>
     <ClInclude Include="..\..\security_dll\native\header\security.h">
       <Filter>Security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\Compression.h">
+      <Filter>Interface Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

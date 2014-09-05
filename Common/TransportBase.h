@@ -21,6 +21,7 @@
 
 #include "odbcCommon.h"
 #include "odbcsrvrcommon.h"
+#include "zlib.h"
 
 typedef struct request
 {
@@ -248,9 +249,10 @@ enum DRVR_ERR {
 #define COMP_YES					'Y'
 #define COMP_NO						'N'
 
-#define COMP_12						0x12
-#define COMP_13						0x13
-#define COMP_14						0x14
+#define COMP_NO_COMPRESSION			Z_NO_COMPRESSION
+#define COMP_BEST_SPEED				Z_BEST_SPEED
+#define COMP_BEST_COMPRESSION		Z_BEST_COMPRESSION		
+#define COMP_DEFAULT				Z_DEFAULT_COMPRESSION   // this is value "balance" in DSN
 
 enum HDRTYPE {
 	WRITE_REQUEST_FIRST = 1,

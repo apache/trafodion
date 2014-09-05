@@ -339,8 +339,8 @@ bool DoIO (CTCPIPSystemDrvr* pTCPIPSystem, char* wbuffer, long write_count, char
 	char* buffer;
 	rbuffer = NULL;
 //
-	HEADER wheader = {0,0,0,0,'N',COMP_12,WRITE_REQUEST_FIRST,SIGNATURE,CLIENT_HEADER_VERSION_LE,PC,TCPIP,SWAP_YES,0,0};
-	HEADER rheader = {0,0,0,0,'N',COMP_12,READ_RESPONSE_FIRST,SIGNATURE,CLIENT_HEADER_VERSION_LE,PC,TCPIP,SWAP_YES,0,0};
+	HEADER wheader = {0,0,0,0,'N',COMP_NO_COMPRESSION,WRITE_REQUEST_FIRST,SIGNATURE,CLIENT_HEADER_VERSION_LE,PC,TCPIP,SWAP_YES,0,0};
+	HEADER rheader = {0,0,0,0,'N',COMP_NO_COMPRESSION,READ_RESPONSE_FIRST,SIGNATURE,CLIENT_HEADER_VERSION_LE,PC,TCPIP,SWAP_YES,0,0};
 	HEADER* prheader,*pwheader;
 
 	if(pTCPIPSystem->odbcAPI == AS_API_GETOBJREF)
@@ -373,31 +373,33 @@ bool DoIO (CTCPIPSystemDrvr* pTCPIPSystem, char* wbuffer, long write_count, char
 
 	RESET_ERRORS((long)pTCPIPSystem);
 
-	if (pTCPIPSystem->m_IOCompression > 0 &&
-	    pTCPIPSystem->m_IOCompression == 1)
+	if (pTCPIPSystem->m_IOCompression != 0)
 	{
 		wheader.compress_ind = COMP_YES;
-		//wheader.compress_type = COMP_14; // this should be set in the ::Compress method, based on what compression type the application chooses (right now there is only one COMP_14
+		wheader.compress_type = pTCPIPSystem->m_IOCompression;
 		rheader.compress_ind = COMP_YES;
-		rheader.compress_type = COMP_14;  // the driver requests that the server use this compression type. this should also be set based on what compression type the application chooses
+		rheader.compress_type = pTCPIPSystem->m_IOCompression;
 	}
 	else
 	{
 		wheader.compress_ind = COMP_NO;
-		wheader.compress_type = 0;
+		wheader.compress_type = COMP_NO_COMPRESSION;
 		rheader.compress_ind = COMP_NO;
-		rheader.compress_type = 0;
+		rheader.compress_type = COMP_NO_COMPRESSION;
 	}
 
 // send to the server
 
 	wheader.total_length = write_count;
 	wheader.hdr_type = WRITE_REQUEST_FIRST;
-		wheader.compress_type = 0;
+	if (wheader.compress_ind == COMP_YES  && write_count > MIN_LENGTH_FOR_COMPRESSION)
+		DoCompression(pTCPIPSystem, wheader, (unsigned char*)wbuffer, (unsigned long&)write_count);
+	else
+		wheader.compress_type = COMP_NO_COMPRESSION;
 #if (defined(WIN32)||defined(_WIN64))&&defined(TRACE_COMPRESSION)
 	if(gDrvrGlobal.gTraceCompression)
 	{
-		printf("sending bytes number: %d\n",write_count);
+		printf("%d,sending bytes number: %d\n",wheader.compress_type,write_count);
 	}
 #endif
 	wcount = write_count;
@@ -479,12 +481,8 @@ bool DoIO (CTCPIPSystemDrvr* pTCPIPSystem, char* wbuffer, long write_count, char
 // the server returns total length in the header
 
 	memcpy(&pTCPIPSystem->m_rheader, prheader, sizeof(HEADER));
-	if (prheader->compress_ind == COMP_YES && prheader->compress_type != 0)
-	{
-		SET_ERROR((long)pTCPIPSystem, PC, TCPIP, pTCPIPSystem->odbcAPI, E_DRIVER, pTCPIPSystem->m_object_ref, O_DO_WRITE_READ, F_DO_IO, DRVR_ERR_COMPRESS_OPERATION, rcount);
-		bok = false;
-		goto out;
-	}
+	if (prheader->compress_ind == COMP_YES && prheader->compress_type != COMP_NO_COMPRESSION)
+		rcount = prheader->cmp_length;
 	else
 		rcount = prheader->total_length;
 
@@ -527,11 +525,89 @@ bool DoIO (CTCPIPSystemDrvr* pTCPIPSystem, char* wbuffer, long write_count, char
 #if (defined(WIN32)||defined(_WIN64))&&defined(TRACE_COMPRESSION)
 	if(gDrvrGlobal.gTraceCompression)
 	{
-		printf("receiving bytes number: %d\n",read_count);
+		printf("%d,receiving bytes number: %d\n",pTCPIPSystem->m_rheader.compress_type,read_count);
 	}
 #endif
+	if (pTCPIPSystem->m_rheader.compress_ind == COMP_YES && pTCPIPSystem->m_rheader.compress_type != COMP_NO_COMPRESSION)
+	{
+		bok = DoExpand(pTCPIPSystem, pTCPIPSystem->m_rheader, (unsigned char*)rbuffer, (unsigned long&)read_count);
+		if (bok)
+			rbuffer = pTCPIPSystem->r_buffer();
+	}
 out:
 	return bok;
+}
+void DoCompression(CTCPIPSystemDrvr* pTCPIPSystem, HEADER& wheader, unsigned char* wbuffer, unsigned long& write_count)
+{
+	bool retcode = true;
+	unsigned long inCmpCount = write_count; // // In number of bytes 
+
+	unsigned char* cmp_buf=NULL;
+
+	retcode = pTCPIPSystem->m_compression.compress((unsigned char*)wbuffer,  // input buffer (data to be compressed)
+	                                                inCmpCount,              // input number of bytes
+													wheader.compress_type,
+	                                                &cmp_buf,                 // output buffer containing compressed output
+	                                                write_count);            // input/output param - input == max size, on output contains compressed size
+
+	if (retcode == false)
+	{
+		delete []cmp_buf;
+		wheader.compress_type = COMP_NO_COMPRESSION;
+		wheader.cmp_length = 0;
+		write_count = inCmpCount;
+		return;
+	}
+
+	memcpy(wbuffer, cmp_buf, write_count);
+
+	delete []cmp_buf; //allocated in m_compression.compress();
+	wheader.cmp_length = write_count;
+}
+
+bool DoExpand(CTCPIPSystemDrvr* pTCPIPSystem, HEADER& rheader, unsigned char* ibuffer, unsigned long& output_size)
+{
+	bool retcode;
+	unsigned char* obuffer=NULL;
+	int error=0;
+	char* tcp_obuffer=NULL;
+
+	if(rheader.compress_ind == COMP_YES )
+	{
+	  /*
+	   * check that the compression types is something that the driver understands
+	   */ 
+	   if((rheader.compress_type < COMP_DEFAULT) ||
+		   (rheader.compress_type > COMP_BEST_COMPRESSION))
+	   {
+		   SET_ERROR((long)pTCPIPSystem, PC, TCPIP, pTCPIPSystem->odbcAPI, E_DRIVER, pTCPIPSystem->m_object_ref, O_DO_EXPAND, F_DO_IO, DRVR_ERR_COMPRESS_OPERATION, (int)rheader.compress_type);
+		   return false;
+	   }
+	}
+	obuffer = (unsigned char*)new char[rheader.total_length +512]; // +512 is just to be safe
+	                                                               // (in case something goes wrong in decompression)
+	if (obuffer == NULL)
+	{
+		SET_ERROR((long)pTCPIPSystem, PC, TCPIP, pTCPIPSystem->odbcAPI, E_DRIVER, pTCPIPSystem->m_object_ref, O_DO_OPERATOR_NEW, F_DO_IO, DRVR_ERR_MEMORY_ALLOCATE, rheader.total_length);
+		return false;
+	}
+	output_size = rheader.total_length;
+	retcode = pTCPIPSystem->m_compression.expand(ibuffer,            // input compressed buffer    
+		                                         rheader.cmp_length, // input compresses length
+		                                         &obuffer,            // output buffer after decompression
+										         output_size,
+												 error);       // output size after decompression, 0 is error
+	
+	if (retcode == false || output_size == 0 )
+	{
+		delete[] obuffer;
+		SET_ERROR((long)pTCPIPSystem, PC, TCPIP, pTCPIPSystem->odbcAPI, E_DRIVER, pTCPIPSystem->m_object_ref, O_DO_EXPAND, F_DO_IO, DRVR_ERR_COMPRESS_OPERATION, (int)error);
+		return false;
+	}
+	pTCPIPSystem->r_assign((char*)obuffer, output_size);
+	rheader.compress_type = COMP_NO_COMPRESSION;
+	rheader.cmp_length = 0;
+	return true;
 }
 void WINAPI 
 TCPIP_SET_ERROR(long signature, char platform, char transport, int api, ERROR_TYPE error_type, char* process, OPERATION operation, FUNCTION function, int error, int errordetail)
