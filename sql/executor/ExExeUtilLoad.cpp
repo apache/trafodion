@@ -4317,10 +4317,10 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
            return rc;
 
          char * mfQuery =
-           new(getMyHeap()) char[strlen("UNLOAD  CLEANUP FOR TABLE  ; ") +
+           new(getMyHeap()) char[strlen("UNLOAD TABLE  CLEANUP ; ") +
                                 strlen(hblTdb().getTableName()) +
                                 100];
-         strcpy(mfQuery, "UNLOAD  CLEANUP FOR TABLE   ");
+         strcpy(mfQuery, "UNLOAD TABLE CLEANUP ");
          strcat(mfQuery, hblTdb().getTableName());
          strcat(mfQuery, " ;");
 
@@ -4382,11 +4382,11 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           return rc;
 
         char * mfQuery =
-          new(getMyHeap()) char[strlen("UNLOAD  MERGE FILE FOR TABLE <tabname> into <dest>  ; ") +
+          new(getMyHeap()) char[strlen("UNLOAD TABLE MERGE <tabname> into <dest>  ; ") +
                                strlen(hblTdb().getTableName()) +
                                strlen(hblTdb().getMergePath()) +
                                100];
-        strcpy(mfQuery, "UNLOAD  MERGE FILE FOR TABLE   ");
+        strcpy(mfQuery, "UNLOAD TABLE  MERGE ");
         strcat(mfQuery, hblTdb().getTableName());
         strcat(mfQuery, " INTO '");
         strcat(mfQuery, hblTdb().getMergePath());

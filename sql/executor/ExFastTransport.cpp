@@ -586,7 +586,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         //lobGlob_ = (void*)lobGlobals;
 
         pstate.processingStarted_ = FALSE;
-        ErrorOccured_ = FALSE;
+        errorOccurred_ = FALSE;
 
         //Allocate writeBuffers.
         //
@@ -1173,7 +1173,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
          pentry_up->upState.setMatchNo(pstate.matchCount_);
          qParent_.up->insert();
          //
-         ErrorOccured_ = TRUE;
+         errorOccurred_ = TRUE;
          pstate.step_ = EXTRACT_DONE;
       }
        break;
@@ -1216,7 +1216,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
                                      (Lng32)Lob_External_HDFS_File,
                                      hdfsHost_,
                                      hdfsPort_);
-            if (! ErrorOccured_ && retcode < 0)
+            if (! errorOccurred_ && retcode < 0)
               {
                 Lng32 cliError = 0;
     
@@ -1237,7 +1237,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         //insertUpQueueEntry will insert Q_NO_DATA into the up queue and
         //remove the head of the down queue
         insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
-        ErrorOccured_ = TRUE;
+        errorOccurred_ = FALSE;
 
         endOfData_ = FALSE;
 

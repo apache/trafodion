@@ -8648,8 +8648,8 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
       {
         if (getEmptyTarget())
         {
-          //4488 bulk load option $0~String0 cannot be specified more than once.
-          *da << DgSqlCode(-4488)
+          //4489 bulk unload option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4489)
                   << DgString0("EMPTY TARGET");
           return 1;
         }
@@ -8661,9 +8661,9 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
       {
         if (getNoOutput())
         {
-          //4488 bulk load option $0~String0 cannot be specified more than once.
-          *da << DgSqlCode(-4488)
-                  << DgString0(" NO OUTPUT  ");
+          //4489 bulk unload option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4489)
+                  << DgString0(" NO OUTPUT ");
           return 1;
         }
         setNoOutput(TRUE);
@@ -8680,8 +8680,8 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
       {
         if (getCompressType()!= NONE_)
         {
-          //4488 bulk load option $0~String0 cannot be specified more than once.
-          *da << DgSqlCode(-4488)
+          //4489 bulk load option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4489)
                   << DgString0(" COMPRESS ");
           return 1;
         }
@@ -8693,8 +8693,8 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
       {
         if (getOneFile())
         {
-          //4488 bulk load option $0~String0 cannot be specified more than once.
-          *da << DgSqlCode(-4488)
+          //4489 bulk unload option $0~String0 cannot be specified more than once.
+          *da << DgSqlCode(-4489)
                   << DgString0(" ONE FILE ");
           return 1;
         }

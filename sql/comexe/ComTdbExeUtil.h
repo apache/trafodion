@@ -4847,9 +4847,9 @@ private:
 
   NABasicPtr  hiveTableLocation_;                    //  0- 8
   NABasicPtr mergeLocation_;                          // 9 -15
-  UInt32 flags_;                                      // 20-23
-  UInt16  taskType_;                                  // 24-25
-  char fillersComTdbExeUtilFastDelete_[10];           // 26-35
+  UInt32 flags_;                                      // 16-19
+  UInt16  taskType_;                                  // 20-21
+  char fillersComTdbExeUtilFastDelete_[10];           // 22-31
 };
 
 #endif

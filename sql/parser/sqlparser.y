@@ -2788,15 +2788,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    unload_statement
 %type <relx>                    load_statement
 %type <relx>                    exe_util_init_hbase
-%type <feOptionsList>           optional_unload_options
-%type <feOptionsList>           unload_option_list
-%type <feOption>                unload_option
-%type <feOption>                delimiter_option
-%type <feOption>                header_option
-%type <feOption>                append_option
-%type <feOption>                null_string_option
-%type <feOption>                record_separator_option
-%type <feOption>                compression_option 
 %type <hBaseBulkLoadOptionsList> optional_hbbload_options
 %type <hBaseBulkLoadOptionsList> hbbload_option_list
 %type <hBaseBulkLoadOption>      hbbload_option
@@ -20041,25 +20032,8 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
                       $$ = op;
                     }    
 
-/*
-unload_statement : TOK_UNLOAD TOK_TO std_char_string_literal optional_unload_options simple_table  
-				{
-                                  // UNLOAD is disabled by default in M9.
-                                  // This check will be removed later.
-                                  if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
-                                    YYERROR;
-
-                                  FastExtract* fastExt = 
-                                    new (PARSERHEAP()) FastExtract($5, $3,   			  								 FastExtract::FILE, 
-                                                                   PARSERHEAP());
-                                  if (fastExt->setOptions($4, SqlParser_Diags))
-                                    YYERROR;
-                                  $$ = fastExt;
-                                  delete $3;
-                                  delete $4;
-				}
-   */                  
-unload_statement :  TOK_UNLOAD optional_hbb_unload_options TOK_INTO table_name query_expression
+                
+unload_statement :  TOK_UNLOAD optional_hbb_unload_options TOK_INTO table_name simple_table
                     {
                       if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                          YYERROR;                     
@@ -20090,29 +20064,29 @@ unload_statement :  TOK_UNLOAD optional_hbb_unload_options TOK_INTO table_name q
                         $$ = finalize(eubl);    
                     
                     }
-                    |   TOK_UNLOAD  TOK_MERGE TOK_FILE TOK_FOR TOK_TABLE table_name TOK_INTO std_char_string_literal
+                    |   TOK_UNLOAD  TOK_TABLE TOK_MERGE table_name  TOK_INTO std_char_string_literal
                       {
                         //disabled by default for now 
                          if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                           YYERROR; 
                           ExeUtilHBaseBulkUnLoadTask * hbult = new (PARSERHEAP())   
-                                              ExeUtilHBaseBulkUnLoadTask(CorrName(*$6, PARSERHEAP()),
+                                              ExeUtilHBaseBulkUnLoadTask(CorrName(*$4, PARSERHEAP()),
                                               NULL,
                                               NULL,
                                               CharInfo::UnknownCharSet,
                                               ExeUtilHBaseBulkUnLoadTask::MERGE_FILES_,
-                                              $8,
+                                              $6,
                                               PARSERHEAP());
                           $$ = finalize(hbult);         
                           
                       }
-                    |   TOK_UNLOAD  TOK_CLEANUP TOK_FOR TOK_TABLE table_name 
+                    |   TOK_UNLOAD  TOK_TABLE TOK_CLEANUP table_name 
                       {
                         //disabled by default for now 
                         if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
                          YYERROR; 
                           ExeUtilHBaseBulkUnLoadTask * hbult = new (PARSERHEAP())   
-                                              ExeUtilHBaseBulkUnLoadTask(CorrName(*$5, PARSERHEAP()),
+                                              ExeUtilHBaseBulkUnLoadTask(CorrName(*$4, PARSERHEAP()),
                                               NULL,
                                               NULL,
                                               CharInfo::UnknownCharSet,
@@ -20199,131 +20173,8 @@ hbb_unload_option :   hbb_unload_empty_target
                       $$ = op;
                     }
                                       
-///////////////////////////////                
+                
 
-optional_unload_options : TOK_WITH unload_option_list
-                            {
-                               $$ = $2;
-                            }
-                            | empty 
-                            {
-                            	$$ = NULL;
-                            }
-
-unload_option_list :   	unload_option
-							{
-								NAList<FastExtract::UnloadOption*> * feol =
-			  					new (PARSERHEAP ()) NAList<FastExtract::UnloadOption*>;
-								feol->insert($1);
-								$$ = feol;
-							}
-                          | unload_option ',' unload_option_list
-                            {
-                               	$3->insert($1);
-							   	$$ = $3;
-                            }
-
-unload_option :   delimiter_option
-                | header_option
-                | append_option
-                | null_string_option
-                | record_separator_option
-	        | compression_option
-		   		
-delimiter_option : TOK_DELIMITER std_char_string_literal
-				{
-					FastExtract::UnloadOption * feo = 
-			  			new (PARSERHEAP ()) FastExtract::UnloadOption
-			  					(FastExtract::DELIMITER_,
-			  					0,
-			  					(char *)$2->data());
-					$$ = feo;
-				}
-                   | TOK_DELIMITER unsigned_smallint
-                    {
-                      if ($2 < 256)
-                      {
-                        char * charVal = new (PARSERHEAP()) char[2];
-                        charVal[0] = (char)$2;
-                        charVal[1] = 0;
-                        FastExtract::UnloadOption * feo = 
-                          new (PARSERHEAP ()) FastExtract::UnloadOption
-                          (FastExtract::DELIMITER_,
-                           0,
-                           charVal);
-                        $$ = feo;
-                      }
-                      else
-                        YYERROR;
-                    }
-				
-header_option : TOK_NO TOK_HEADER
-				{
-					FastExtract::UnloadOption * feo = 
-			  			new (PARSERHEAP ()) FastExtract::UnloadOption
-			  					(FastExtract::HEADER_,
-			  					0,
-			  					NULL);
-					$$ = feo;
-				}
-				
-append_option : TOK_APPEND
-				{
-					FastExtract::UnloadOption * feo = 
-			  			new (PARSERHEAP ()) FastExtract::UnloadOption
-			  					(FastExtract::APPEND_,
-			  					1,
-			  					NULL);
-					$$ = feo;
-				}	
-				
-null_string_option : TOK_NULL_STRING std_char_string_literal
-				{
-					FastExtract::UnloadOption * feo = 
-			  			new (PARSERHEAP ()) FastExtract::UnloadOption
-			  					(FastExtract::NULL_STRING_,
-			  					0,
-			  					(char *)$2->data());
-					$$ = feo;
-				}		
-	
-record_separator_option : TOK_RECORD_SEPARATOR 	std_char_string_literal
-				{
-					FastExtract::UnloadOption * feo = 
-			  			new (PARSERHEAP ()) FastExtract::UnloadOption
-			  					(FastExtract::RECORD_SEP_,
-			  					0,
-			  					(char *)$2->data());
-					$$ = feo;
-				}
-                         | TOK_RECORD_SEPARATOR unsigned_smallint
-                             {
-                               if ($2 < 256)
-                               {
-                                 char * charVal = new (PARSERHEAP()) char[2];
-                                 charVal[0] = (char)$2;
-                                 charVal[1] = 0;
-                                 FastExtract::UnloadOption * feo = 
-                                   new (PARSERHEAP ()) FastExtract::UnloadOption
-                                   (FastExtract::RECORD_SEP_,
-                                    0,
-                                    charVal);
-                                 $$ = feo;
-                               }
-                               else
-                                 YYERROR;
-                             }
-
-compression_option : TOK_COMPRESSION TOK_LZO
-				{
-					FastExtract::UnloadOption * feo = 
-			  			new (PARSERHEAP ()) FastExtract::UnloadOption
-			  					(FastExtract::COMPRESSION_,
-			  					(Lng32) FastExtract::LZO,
-			  					NULL);
-					$$ = feo;
-				}
-				
 
 // Raj P - 7/2000
 // CALL <proc-name>	

@@ -397,7 +397,7 @@ protected:
   int hdfsPort_;
   char hdfsFileName_[1000];
   char hiveTableLocation_[1000];
-  NABoolean ErrorOccured_;
+  NABoolean errorOccurred_;
   SequenceFileWriter* sequenceFileWriter_;
 }; // class ExHdfsFastExtractTcb
 

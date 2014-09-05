@@ -3571,7 +3571,8 @@ ComTdbExeUtilHBaseBulkUnLoad::ComTdbExeUtilHBaseBulkUnLoad(char * tableName,
                     down, up,
                     num_buffers, buffer_size),
       uldQuery_(uldStmtStr),
-      flags_(0)
+      flags_(0),
+      compressType_(0)
     {
     setNodeType(ComTdb::ex_HBASE_UNLOAD);
     }

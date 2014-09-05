@@ -440,6 +440,9 @@ static const char* const sfwErrorEnumStr[] =
  ,"Java exception in hdfsClose()."
  ,"JNI NewStringUTF() in hdfsMergeFiles()."
  ,"Java exception in hdfsMergeFiles()."
+ ,"JNI NewStringUTF() in hdfsCleanUnloadPath()."
+ ,"Java exception in hdfsCleanUnloadPath()."
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -653,7 +656,7 @@ SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path)
 //////////////////////////////////////////////////////////////////////////////
 SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
 {
-  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsWrite called.", data);
+  HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsWrite(%ld) called.", len);
   jstring js_data = jenv_->NewStringUTF(data);
   if (js_data == NULL)
     return SFW_ERROR_HDFS_WRITE_PARAM;
@@ -717,21 +720,21 @@ SFW_RetCode SequenceFileWriter::hdfsClose()
 
 SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath, NABoolean checkExistence,const std::string& mergePath )
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsCleanUnloadPath(...) called.",
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsCleanUnloadPath(%s) called.",
                                                       uldPath.data());
 
   jstring js_UldPath = jenv_->NewStringUTF(uldPath.c_str());
    if (js_UldPath == NULL)
    {
      //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
-     return SFW_ERROR_HDFS_MERGE_FILES_PARAM;
+     return SFW_ERROR_HDFS_CLEANUP_PARAM;
    }
 
    jstring js_MergePath = jenv_->NewStringUTF(mergePath.c_str());
     if (js_MergePath == NULL)
     {
       //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
-      return SFW_ERROR_HDFS_MERGE_FILES_PARAM;
+      return SFW_ERROR_HDFS_CLEANUP_PARAM;
     }
 
   if (jenv_->ExceptionCheck())
@@ -739,7 +742,7 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath,
     getExceptionDetails();
     logError(CAT_HBASE, __FILE__, __LINE__);
     logError(CAT_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath(..) => before calling Java.", getLastError());
-    return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
+    return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
   jboolean j_checkExistence = checkExistence;
@@ -753,13 +756,13 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath,
     getExceptionDetails();
     logError(CAT_HBASE, __FILE__, __LINE__);
     logError(CAT_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
-    return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
+    return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
   if (jresult == false)
   {
     logError(CAT_HBASE, "SequenceFileWriter::hdfsCleanUnloadPath()", getLastError());
-    return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
+    return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
   return SFW_OK;
@@ -767,7 +770,7 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath,
 SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const std::string& srcPath,
                                                 const std::string& dstPath)
 {
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsMergeFiles(...) called.",
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsMergeFiles(%s, %s) called.",
                   srcPath.data(), dstPath.data());
 
   jstring js_SrcPath = jenv_->NewStringUTF(srcPath.c_str());
