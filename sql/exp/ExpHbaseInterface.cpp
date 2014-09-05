@@ -92,7 +92,7 @@ Lng32 ExpHbaseInterface::deleteColumns(
   if (retcode != HBASE_ACCESS_SUCCESS)
     return retcode;
 
-  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, NULL, NULL, NULL);
+  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, TRUE, NULL, NULL, NULL);
   if (retcode != HBASE_ACCESS_SUCCESS)
     return retcode;
 
@@ -261,7 +261,7 @@ Lng32  ExpHbaseInterface::fetchAllRows(
         break;
   }
 
-  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, NULL, 
+  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, TRUE, NULL, 
        NULL, NULL);
   if (retcode != HBASE_ACCESS_SUCCESS)
     return retcode;
@@ -585,6 +585,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      const NABoolean readUncommitted,
 				      const NABoolean cacheBlocks,
 				      const Lng32 numCacheRows,
+                                      const NABoolean preFetch,
 				      const TextVec *inColNamesToFilter, 
 				      const TextVec *inCompareOpList,
 				      const TextVec *inColValuesToCompare,
@@ -604,6 +605,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
     }
   retCode_ = htc_->startScan(transID, startRow, stopRow, columns, timestamp, 
 					  cacheBlocks, numCacheRows, 
+                                          preFetch,
 					  inColNamesToFilter,
 					  inCompareOpList,
 					  inColValuesToCompare,

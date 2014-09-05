@@ -69,7 +69,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   NULL, NULL, NULL);
+					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -210,7 +210,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   NULL, NULL, NULL);
+					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -436,6 +436,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
+                                           TRUE,
 					   (tcb_->hbaseFilterColumns_.size() > 0 ?
 					    &tcb_->hbaseFilterColumns_ : NULL),
 					   (tcb_->hbaseFilterOps_.size() > 0 ?
@@ -564,7 +565,7 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
 				 tcb_->hbaseAccessTdb().readUncommittedScan(),
 				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-				 NULL, NULL, NULL);
+				 TRUE, NULL, NULL, NULL);
   if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
     {
       rc = -1;

@@ -24,6 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.ByteOrder;
@@ -81,6 +86,10 @@ public class HTableClient {
 	byte[][] kvBuffer = null;
 	byte[][] rowIDs = null;
 	int[] kvsPerRow = null;
+        ExecutorService executorService = null;
+        Future future = null;
+	boolean preFetch = false;
+
 	static Logger logger = Logger.getLogger(HTableClient.class.getName());;
 
 	public class QualifiedColumn {
@@ -164,94 +173,102 @@ public class HTableClient {
 	}
 
 	String getHTableName() {
-	        if (table == null)
-	                return null;
-	        else
-		        return new String(table.getTableName());
+		if (table == null)
+			return null;
+		else
+			return new String(table.getTableName());
 	}
 
-        void resetAutoFlush()
-        {
-            table.setAutoFlush(true, true);
-        }
+	void resetAutoFlush() {
+		table.setAutoFlush(true, true);
+	}
+
 	public boolean startScan(long transID, byte[] startRow, byte[] stopRow,
 				 ByteArrayList columns, long timestamp,
 				 boolean cacheBlocks, int numCacheRows,
 				 ByteArrayList colNamesToFilter, 
 				 ByteArrayList compareOpList, 
 				 ByteArrayList colValuesToCompare,
-				 float samplePercent) 
+				 float samplePercent,
+				 boolean inPreFetch) 
            throws IOException {
+		logger.trace("Enter startScan() " + tableName + " txid: " + transID);
 
-	logger.trace("Enter startScan() " + tableName + " txid: " + transID);
+		Scan scan;
 
-			Scan scan;
+		if (startRow != null && startRow.toString() == "")
+			startRow = null;
+		if (stopRow != null && stopRow.toString() == "")
+			stopRow = null;
 
-			if (startRow != null && startRow.toString() == "")
-				startRow = null;
-			if (stopRow != null && stopRow.toString() == "")
-				stopRow = null;
+		if (startRow != null && stopRow != null)
+			scan = new Scan(startRow, stopRow);
+		else
+			scan = new Scan();
 
-			if (startRow != null && stopRow != null)
-				scan = new Scan(startRow, stopRow);
-			else
-				scan = new Scan();
+		if (cacheBlocks == true)
+			scan.setCacheBlocks(true);
+		else
+			scan.setCacheBlocks(false);
 
-			if (cacheBlocks == true)
-			    scan.setCacheBlocks(true);
-			else
-			    scan.setCacheBlocks(false);
+		scan.setCaching(numCacheRows);
+		numRowsCached = numCacheRows;
+		if (columns != null) {
+			numColsInScan = columns.size();
+			for (byte[] col : columns) {
+				QualifiedColumn qc = new QualifiedColumn(col);
+				scan.addColumn(qc.getFamily(), qc.getName());
+			}
+		}
+		else
+			numColsInScan = 0;
+		if (colNamesToFilter != null) {
+			FilterList list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
 
-			scan.setCaching(numCacheRows);
-			numRowsCached = numCacheRows;
-			if (columns != null) {
-				numColsInScan = columns.size();
-				for (byte[] col : columns) {
-					QualifiedColumn qc = new QualifiedColumn(col);
-					scan.addColumn(qc.getFamily(), qc.getName());
+			for (int i = 0; i < colNamesToFilter.size(); i++) {
+				byte[] colName = colNamesToFilter.get(i);
+				QualifiedColumn qc = new QualifiedColumn(colName);
+					
+				byte[] coByte = compareOpList.get(i);
+				byte[] colVal = colValuesToCompare.get(i);
+
+				if ((coByte == null) || (colVal == null)) {
+					return false;
 				}
+
+				String coStr = new String(coByte);
+				CompareOp co = CompareOp.valueOf(coStr);
+
+				SingleColumnValueFilter filter1 = 
+					new SingleColumnValueFilter(qc.getFamily(), qc.getName(), 
+							co, colVal);
+				list.addFilter(filter1);
 			}
-			else
-				numColsInScan = 0;
-			if (colNamesToFilter != null) 
-			{
-			    FilterList list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
 
-			    for (int i = 0; i < colNamesToFilter.size(); i++) 
-				{
-				    byte[] colName = colNamesToFilter.get(i);
-				    QualifiedColumn qc = new QualifiedColumn(colName);
-				
-				    byte[] coByte = compareOpList.get(i);
-				    byte[] colVal = colValuesToCompare.get(i);
-
-				    if ((coByte == null) || (colVal == null)) {
-					   return false;
-				    }
-
-				    String coStr = new String(coByte);
-				    CompareOp co = CompareOp.valueOf(coStr);
-
-				    SingleColumnValueFilter filter1 = 
-				        new SingleColumnValueFilter(qc.getFamily(), qc.getName(), 
-							                        co, colVal);
-				    list.addFilter(filter1);
-			    }
-
-			    if (samplePercent > 0.0f)
+			if (samplePercent > 0.0f)
 			      list.addFilter(new RandomRowFilter(samplePercent));
-			    scan.setFilter(list);
-			} else if (samplePercent > 0.0f) {
-			    scan.setFilter(new RandomRowFilter(samplePercent));
-                        }
+		    scan.setFilter(list);
+		} else if (samplePercent > 0.0f) {
+			scan.setFilter(new RandomRowFilter(samplePercent));
+		}
 
-			if (useTRex && (transID != 0)) {
-			    scanner = table.getScanner(transID, scan);
-			} else {
-			    scanner = table.getScanner(scan);
-			}
-			logger.trace("startScan(). After getScanner. Scanner: " + scanner);
-			resultIterator = new ResultIterator(scanner);
+		if (useTRex && (transID != 0)) {
+		    scanner = table.getScanner(transID, scan);
+		} else {
+		    scanner = table.getScanner(scan);
+		}
+		logger.trace("startScan(). After getScanner. Scanner: " + scanner);
+		resultIterator = new ResultIterator(scanner);
+		preFetch = inPreFetch;
+		if (preFetch)
+		{
+ 			executorService = Executors.newFixedThreadPool(1);
+			future = executorService.submit(new Callable<Result[]>() {
+				public Result[] call() throws Exception {
+					return scanner.next(numRowsCached);
+				}
+			});
+		}
 		logger.trace("Exit startScan().");
 		return true;
 	}
@@ -369,14 +386,15 @@ public class HTableClient {
 		return scanFetch();
 	}
 
-	public int fetchRows(long jniObject) throws IOException {
-		int ret;
+	public int fetchRows(long jniObject) throws IOException, 
+			InterruptedException, ExecutionException {
+		int rowsReturned = 0;
 		logger.trace("Enter fetcRows(). Table: " + tableName);
 		if (getResultSet != null)
 		{
-			ret = pushRowsToJni(jniObject, getResultSet);
+			rowsReturned = pushRowsToJni(jniObject, getResultSet);
 			getResultSet = null;
-			return ret;
+			return rowsReturned;
 		}
 		else
 		{
@@ -386,13 +404,31 @@ public class HTableClient {
 				setLastError(err);
 				return -1;
 			}
-			Result[] result = scanner.next(numRowsCached);
-			return pushRowsToJni(jniObject, result);
+			Result[] result = null;
+			if (preFetch)
+			{
+				result = (Result[])future.get();
+				rowsReturned = pushRowsToJni(jniObject, result);
+				future = null;
+				if ((rowsReturned <= 0 || rowsReturned < numRowsCached))
+					return rowsReturned;
+				future = executorService.submit(new Callable<Result[]>() {
+					public Result[] call() throws Exception {					
+						return scanner.next(numRowsCached);
+					}
+				});
+			}
+			else
+			{
+				result = scanner.next(numRowsCached);
+				rowsReturned = pushRowsToJni(jniObject, result);
+			}
+			return rowsReturned;
 		}
 	}
 
-	protected int pushRowsToJni(long jniObject, Result[] result) throws IOException
-	{
+	protected int pushRowsToJni(long jniObject, Result[] result) 
+			throws IOException {
 		if (result == null || result.length == 0)
 			return 0; 
 		int rowsReturned = result.length;
@@ -677,7 +713,7 @@ public class HTableClient {
 		bbRowIDs = (ByteBuffer)rowIDs;
 		bbRows = (ByteBuffer)rows;
 
-                List<Put> listOfPuts = new ArrayList<Put>();
+		List<Put> listOfPuts = new ArrayList<Put>();
 		numRows = bbRowIDs.getShort();
 		
 		for (short rowNum = 0; rowNum < numRows; rowNum++) {
@@ -696,9 +732,9 @@ public class HTableClient {
 				qc = new QualifiedColumn(colName);
 				put.add(qc.getFamily(), qc.getName(), colValue); 
 			}
-                        if (writeToWAL)  
-                        	put.setWriteToWAL(writeToWAL);
-                        listOfPuts.add(put);
+			if (writeToWAL)  
+				put.setWriteToWAL(writeToWAL);
+			listOfPuts.add(put);
 		}
 		if (autoFlush == false)
 			table.setAutoFlush(false, true);
@@ -707,8 +743,8 @@ public class HTableClient {
 		} else {
 			table.put(listOfPuts);
 		}
-                return true;
-    	}
+		return true;
+	} 
 
 	public boolean checkAndInsertRow(long transID, byte[] rowID, 
                          Object row, 
@@ -785,6 +821,11 @@ public class HTableClient {
 		if (table != null)
 			table.flushCommits();
 		cleanScan();		
+		future = null;
+		if (executorService != null) {
+			executorService.shutdown();
+			executorService = null;
+		}
 		return true;
 	}
 
