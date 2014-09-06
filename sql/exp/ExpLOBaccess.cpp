@@ -2369,6 +2369,7 @@ Ex_Lob_Error ExLobsOper (
 	  it = lobMap->find(string(lobName));
 	  lobMap->erase(it);
 	  delete lobPtr;
+          lobPtr = NULL;
 	}  
         break;
 
@@ -2413,6 +2414,7 @@ Ex_Lob_Error ExLobsOper (
         it = lobMap->find(string(lobName));
         lobMap->erase(it);
         delete lobPtr;
+        lobPtr = NULL;
         break;
 
       case Lob_Purge:
@@ -2420,6 +2422,7 @@ Ex_Lob_Error ExLobsOper (
         it = lobMap->find(string(lobName));
         lobMap->erase(it);
         delete lobPtr;
+        lobPtr = NULL;
         break;
 
       case Lob_Print:
@@ -2449,7 +2452,8 @@ Ex_Lob_Error ExLobsOper (
 
 #ifndef SQ_USE_HDFS
      // set the pass thru request object values from the lob
-    lobPtr->getRequest()->getValues(descNumOut, handleOutLen, handleOut, 
+    if (lobPtr)
+      lobPtr->getRequest()->getValues(descNumOut, handleOutLen, handleOut, 
                                     requestStatus, cliError,
                                     (char *)blackBox, blackBoxLen);    // reinstate the transaction
     if (TRANSID_IS_VALID(transIdBig)) {
@@ -2466,7 +2470,7 @@ Ex_Lob_Error ExLobsOper (
       nsecs += NUM_NSECS_IN_SEC;
     }
     totalnsecs = (secs * NUM_NSECS_IN_SEC) + nsecs;
-    if (lobPtr)
+    if (lobPtr && lobPtr->getStats())
       lobPtr->getStats()->hdfsAccessLayerTime += totalnsecs; 
        
     return err;
