@@ -289,7 +289,7 @@ ExWorkProcRetcode ExHbaseAccessDeleteSubsetTcb::work()
 				     hbaseAccessTdb().readUncommittedScan(),
 				     hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 				     hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-				     NULL, NULL, NULL);
+				     FALSE, NULL, NULL, NULL);
 	    if (setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -2678,13 +2678,15 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case SCAN_OPEN:
 	  {
+            // Pre-fetch is disabled because it interfers with
+            // Delete operations
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   NULL, NULL, NULL);
+					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -3062,7 +3064,7 @@ ExWorkProcRetcode ExHbaseUMDnativeSubsetTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   NULL, NULL, NULL);
+					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else

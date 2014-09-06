@@ -377,6 +377,7 @@ public:
   HTC_RetCode init();
   
   HTC_RetCode startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const TextVec& cols, Int64 timestamp, bool cacheBlocks, Lng32 numCacheRows,
+                        NABoolean preFetch,
 			const TextVec *inColNamesToFilter, 
 			const TextVec *inCompareOpList,
 			const TextVec *inColValuesToCompare,

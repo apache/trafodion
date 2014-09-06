@@ -2357,7 +2357,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_GET_ERROR  ].jm_name      = "getLastError";
     JavaMethods_[JM_GET_ERROR  ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_SCAN_OPEN  ].jm_name      = "startScan";
-    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[BLorg/trafodion/sql/HBaseAccess/ByteArrayList;JZILorg/trafodion/sql/HBaseAccess/ByteArrayList;Lorg/trafodion/sql/HBaseAccess/ByteArrayList;Lorg/trafodion/sql/HBaseAccess/ByteArrayList;F)Z";
+    JavaMethods_[JM_SCAN_OPEN  ].jm_signature = "(J[B[BLorg/trafodion/sql/HBaseAccess/ByteArrayList;JZILorg/trafodion/sql/HBaseAccess/ByteArrayList;Lorg/trafodion/sql/HBaseAccess/ByteArrayList;Lorg/trafodion/sql/HBaseAccess/ByteArrayList;FZ)Z";
     JavaMethods_[JM_GET_OPEN   ].jm_name      = "startGet";
     JavaMethods_[JM_GET_OPEN   ].jm_signature = "(J[BLorg/trafodion/sql/HBaseAccess/ByteArrayList;JZ)Z";
     JavaMethods_[JM_GETS_OPEN  ].jm_name      = "startGet";
@@ -2461,7 +2461,9 @@ ByteArrayList* HTableClient_JNI::newByteArrayList(const TextVec& vec)
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID, const Text& stopRowID, const TextVec& cols, Int64 timestamp, bool cacheBlocks, Lng32 numCacheRows,
+HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID, 
+   const Text& stopRowID, const TextVec& cols, Int64 timestamp, 
+   bool cacheBlocks, Lng32 numCacheRows, NABoolean preFetch,
 					const TextVec *inColNamesToFilter, 
 					const TextVec *inCompareOpList,
 					const TextVec *inColValuesToCompare,
@@ -2508,6 +2510,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID, c
   jlong j_ts = timestamp;
 
   jboolean j_cb = cacheBlocks;
+  jboolean j_preFetch = preFetch;
   jint j_ncr = numCacheRows;
   numReqRows_ = numCacheRows;
   currentRowNum_ = -1;
@@ -2556,8 +2559,11 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID, c
   jfloat j_smplPct = samplePercent;
 
   // public boolean startScan(long, byte[], byte[], org.trafodion.sql.HBaseAccess.ByteArrayList, long, float);
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_SCAN_OPEN].methodID, j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_ncr,
-					      j_colnamestofilter, j_compareoplist, j_colvaluestocompare, j_smplPct);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+            JavaMethods_[JM_SCAN_OPEN].methodID, 
+            j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_ncr,
+            j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
+            j_smplPct, j_preFetch);
 
   jenv_->DeleteLocalRef(jba_startRowID);  
   jenv_->DeleteLocalRef(jba_stopRowID);  
@@ -4027,20 +4033,26 @@ HTC_RetCode HTableClient_JNI::nextRow()
 
     ex_assert(fetchMode_ != UNKNOWN, "invalid fetchMode_");
     if (fetchMode_ == GET_ROW && numRowsReturned_ == -1)
-       return HTC_DONE_RESULT;
+       return HTC_DONE;
     if (currentRowNum_ == -1 || ((currentRowNum_+1) >= numRowsReturned_))
     {
         if (currentRowNum_ != -1)
         {
-            if (numRowsReturned_ < numReqRows_)
+            switch (fetchMode_)
             {
-               cleanupResultInfo();
-               return HTC_DONE;
-            } 
-            if (fetchMode_ == BATCH_GET || fetchMode_ == GET_ROW)
-            {
+              case BATCH_GET:
                 cleanupResultInfo();
                 return HTC_DONE_RESULT;
+              case GET_ROW:
+                cleanupResultInfo();
+                return HTC_DONE;
+              case SCAN_FETCH:
+                if (numRowsReturned_ < numReqRows_)
+                {
+                   cleanupResultInfo();
+                   return HTC_DONE;
+                }   
+                break;
             }
         }
         retCode = fetchRows();
