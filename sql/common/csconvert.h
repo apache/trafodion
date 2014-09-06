@@ -265,4 +265,11 @@ int fillWithMaxUTF8Chars(char *bufr,
                          int in_len, // in bytes
                          int max_chars);
 
+/* A method to find the beginning of a UTF8 char that is at the end off
+   a buffer.
+*/
+NA_EIDPROC
+char * findStartOfChar( char *someByteInChar, char *startOfBuffer );
+
+
 #endif /* CSCONVERT_H */

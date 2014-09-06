@@ -1239,3 +1239,15 @@ int fillWithMaxUTF8Chars(char *bufr,
 
   return result;
 }
+
+/* A method to find the beginning of an ASCII or UTF8 char that
+   is at the end off a buffer.
+*/
+char * findStartOfChar( char *someByteInChar, char *startOfBuffer )
+{
+  char * rtnv = someByteInChar ;
+  while ( rtnv > startOfBuffer && ( ( *rtnv & 0x80 ) ) &&
+          ( ( *rtnv & 0xC0 ) != 0xC0 ) )
+     rtnv-- ;
+  return rtnv ;
+}
