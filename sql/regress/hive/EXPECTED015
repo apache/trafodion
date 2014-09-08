@@ -255,7 +255,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:00.234
 >>--log errors are not implemented yet .
 >>prepare s from load with log error into t015t2 select * from t015t1;
 
-*** ERROR[4485] Invalid option for BULK LOAD or BULK UNLOAD:  Error logging
+*** ERROR[4485] Invalid option for BULK LOAD or BULK UNLOAD : ERROR LOGGING.
 
 *** ERROR[8822] The statement was not prepared.
 

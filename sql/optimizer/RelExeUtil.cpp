@@ -8501,7 +8501,7 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
       case CONSTRAINTS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(" Constraints ");
+        << DgString0(": CONSTRAINTS.");
         return 1;
       }
       break;
@@ -8520,14 +8520,14 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
       case STOP_AFTER_N_ERRORS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(" Stop after N Errors ");
+        << DgString0(": STOP AFTER N ERRORS.");
         return 1;
       }
       break;
       case LOG_ERRORS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(" Error logging ");
+        << DgString0(": ERROR LOGGING.");
         return 1;
       }
       break;
@@ -8545,8 +8545,7 @@ short ExeUtilHBaseBulkLoad::setOptions(NAList<ExeUtilHBaseBulkLoad::HBaseBulkLoa
       break;
       default:
       {
-        //Not a valid bulk laod option.
-        *da << DgSqlCode(-4487);
+        CMPASSERT(0);
         return 1;
       }
 
@@ -8663,7 +8662,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
         {
           //4489 bulk unload option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0(" NO OUTPUT ");
+                  << DgString0("NO OUTPUT");
           return 1;
         }
         setNoOutput(TRUE);
@@ -8672,7 +8671,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
       case LOG_ERRORS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(" Error logging ");
+        << DgString0(": ERROR LOGGING.");
         return 1;
       }
       break;
@@ -8682,7 +8681,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
         {
           //4489 bulk load option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0(" COMPRESS ");
+                  << DgString0("COMPRESS");
           return 1;
         }
         //only GZIP is supported for now
@@ -8695,7 +8694,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
         {
           //4489 bulk unload option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0(" ONE FILE ");
+                  << DgString0("ONE FILE");
           return 1;
         }
         setOneFile(TRUE);
@@ -8705,8 +8704,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
       break;
       default:
       {
-        //Not a valid bulk unload load option.
-        *da << DgSqlCode(-4487);
+        CMPASSERT(0);
         return 1;
       }
 

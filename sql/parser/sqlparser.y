@@ -20048,8 +20048,9 @@ unload_statement :  TOK_UNLOAD optional_hbb_unload_options TOK_INTO table_name s
                         *SqlParser_Diags <<  DgSqlCode(-3406);
                         YYERROR;
                       }
-                      UInt32 pos = stmt->index(" into ", pos, NAString::ignoreCase) + strlen(" into ");
-                       
+                      UInt32 pos = stmt->index(" into ", 0, NAString::ignoreCase) ;
+                      pos += strlen(" into ");
+                      
                       NAString stmt1 = "INSERT INTO TABLE  ";
                       stmt1.append((char*)&(stmt->data()[pos]));
                       
