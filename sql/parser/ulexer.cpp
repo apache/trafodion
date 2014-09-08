@@ -247,6 +247,7 @@ yyULexer::~yyULexer()
 void yyULexer::yy_load_buffer_state()
 {
   yy_n_chars_ = yy_current_buffer_->yy_n_chars;
+
   yytext_ = yy_c_buf_p_ = yy_current_buffer_->yy_buf_pos;
   yy_hold_char_ = *yy_c_buf_p_;
 }
@@ -337,7 +338,7 @@ inline static Int32 U_isAsciiAlNumUndHyphen(NAWchar c)
 /////////////////////////////////////////////////////////////////////
 
 inline Int32 yyULexer::endOfBuffer() 
-{ return currChar_ >= &yy_current_buffer_->yy_ch_buf[yy_n_chars_] ||
+{  return currChar_ >= &yy_current_buffer_->yy_ch_buf[yy_n_chars_] ||
     yy_n_chars_ <= 0;
 }
 

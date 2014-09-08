@@ -6299,6 +6299,149 @@ void JBBSubsetAnalysis::analyzeInitialPlan()
 
 }
 
+// compute the resources required for this subset
+void JBBSubsetAnalysis::computeRequiredResources(
+  MultiJoin * mjoin,
+  RequiredResources & reqResources,
+  EstLogPropSharedPtr & inLP)
+
+{
+  // makesure initial plan has been analyzed
+  CMPASSERT(analyzedInitialPlan_);
+
+  CostScalar A = csOne;
+  CostScalar B (getDefaultAsDouble(WORK_UNIT_ESP_DATA_COPY_COST));
+
+  //Get a handle to ASM
+  AppliedStatMan * appStatMan = QueryAnalysis::ASM();
+
+  UInt32 numJoinChildren = leftDeepJoinSequence_.entries();
+
+  CANodeIdSet joinOuterChildren = getJBBCs();
+
+  CostScalar joinMaxCard = csZero;
+  CostScalar maxCard = csZero;
+
+  // iterate over all children except the last child
+  UInt32 i = 0;
+  for (i = 0; i < (numJoinChildren-1); i++)
+  {
+    // get join's max cardinality
+    joinMaxCard = appStatMan->
+                 getStatsForCANodeIdSet(joinOuterChildren)-> getMaxCardEst();
+
+    CostScalar memoryResourcesRequired  = csZero;
+    CostScalar cpuResourcesRequired = csZero;
+
+    CANodeIdSet joinChild = leftDeepJoinSequence_[i];
+    // get all the nodes on the left of the join
+    joinOuterChildren -= joinChild;
+
+    CostScalar innerChildCardinality = csZero;
+    CostScalar innerChildRecordSize = csZero;
+    CostScalar innerChildMaxCardinality = csZero;
+    CostScalar outerChildCardinality = csZero;
+    CostScalar outerChildRecordSize = csZero;
+    CostScalar outerChildMaxCardinality = csZero;
+
+    CostScalar joinChildDataAccessCost = csZero;
+
+    // if child is a MultiJoin
+    if (joinChild.entries() > 1)
+    {
+      JBBSubset * innerChildSet = joinChild.jbbcsToJBBSubset();
+      MultiJoin * innerChildMJ = mjoin->createSubsetMultiJoin(*innerChildSet);
+      JBBSubsetAnalysis * innerChildAnalysis = innerChildSet->getJBBSubsetAnalysis();
+      innerChildAnalysis->computeRequiredResources(innerChildMJ,reqResources, inLP);
+      innerChildCardinality =  appStatMan->
+                                 getStatsForCANodeIdSet(joinChild)->
+                                   getResultCardinality();
+
+      innerChildMaxCardinality =  appStatMan->
+                                 getStatsForCANodeIdSet(joinChild)->
+                                   getMaxCardEst();
+
+      innerChildRecordSize = innerChildMJ->getGroupAttr()->getCharacteristicOutputs().getRowLength();
+
+    }
+    // child is a single node
+    else if (!joinChild.contains(factTable_) || !starJoinTypeIFeasible())
+    {
+      CANodeId innerChildNode = joinChild.getFirst();
+      innerChildCardinality = appStatMan->
+                                getStatsForCANodeId(innerChildNode)->
+                                  getResultCardinality();
+
+      innerChildMaxCardinality = appStatMan->
+                                getStatsForCANodeId(innerChildNode)->
+                                  getMaxCardEst();
+
+      RelExpr * innerChildExpr = innerChildNode.getNodeAnalysis()->getOriginalExpr();
+      innerChildRecordSize = innerChildExpr->getGroupAttr()->getCharacteristicOutputs().getRowLength();
+    }
+
+    if (joinOuterChildren.entries() > 1)
+    {
+      JBBSubset * outerChildSet = joinOuterChildren.jbbcsToJBBSubset();
+      MultiJoin * outerChildMJ = mjoin->createSubsetMultiJoin(*outerChildSet);
+      JBBSubsetAnalysis * outerChildAnalysis = outerChildSet->getJBBSubsetAnalysis();
+      outerChildCardinality =  appStatMan->
+                                 getStatsForCANodeIdSet(joinOuterChildren)->
+                                   getResultCardinality();
+
+      outerChildMaxCardinality =  appStatMan->
+                                 getStatsForCANodeIdSet(joinOuterChildren)->
+                                   getMaxCardEst();
+
+      outerChildRecordSize = outerChildMJ->getGroupAttr()->getCharacteristicOutputs().getRowLength();
+    }
+    else{
+      CANodeId outerChildNode = joinOuterChildren.getFirst();
+      outerChildCardinality = appStatMan->
+                                getStatsForCANodeId(outerChildNode)->
+                                  getResultCardinality();
+
+      outerChildMaxCardinality = appStatMan->
+                                getStatsForCANodeId(outerChildNode)->
+                                  getMaxCardEst();
+
+      RelExpr * outerChildExpr = outerChildNode.getNodeAnalysis()->getOriginalExpr();
+      outerChildRecordSize = outerChildExpr->getGroupAttr()->getCharacteristicOutputs().getRowLength();
+    }
+
+    if (maxCard < joinMaxCard)
+      maxCard = joinMaxCard;
+
+    if (maxCard < innerChildMaxCardinality)
+      maxCard = innerChildMaxCardinality;
+
+    if (maxCard < outerChildMaxCardinality)
+      maxCard = outerChildMaxCardinality;
+
+    memoryResourcesRequired  += (innerChildCardinality * innerChildRecordSize);
+
+    cpuResourcesRequired +=
+      (A * innerChildCardinality) +
+      (B * innerChildCardinality * innerChildRecordSize );
+
+    cpuResourcesRequired +=
+      (A * outerChildCardinality) +
+      (B * outerChildCardinality * outerChildRecordSize );
+
+    reqResources.accumulate(memoryResourcesRequired, cpuResourcesRequired, csZero, maxCard);
+  }
+
+  CANodeIdSet outerMostChild = leftDeepJoinSequence_[numJoinChildren-1];
+  if (outerMostChild.entries() > 1)
+  {
+    JBBSubset * childSet = outerMostChild.jbbcsToJBBSubset();
+    MultiJoin * childMJ = mjoin->createSubsetMultiJoin(*childSet);
+    JBBSubsetAnalysis * childAnalysis = childSet->getJBBSubsetAnalysis();
+    childAnalysis->computeRequiredResources(childMJ,reqResources, inLP);
+  }
+
+}
+
 CANodeId JBBSubsetAnalysis::findFactTable(
   CANodeIdSet childSet,
   CostScalar & factTableCKPrefixCardinality,

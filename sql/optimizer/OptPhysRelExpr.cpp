@@ -11460,6 +11460,8 @@ Context* GroupByAgg::createContextForAChild(Context* myContext,
 
   RequirementGenerator rg(child(0),rppForMe);
 
+  PartitioningRequirement* preq = rppForMe->getPartitioningRequirement();
+
   // ---------------------------------------------------------------------
   // If this is not a partial groupby then the child must be partitioned
   // on the groupby columns (even if there are none!).
@@ -11499,37 +11501,38 @@ Context* GroupByAgg::createContextForAChild(Context* myContext,
   // Also don't specify a required number of partitions for a scalar
   // aggregate, because a scalar aggregate cannot execute in parallel.
   // ---------------------------------------------------------------------
-  if (okToAttemptESPParallelism(myContext,
-                                pws,
-                                childNumPartsRequirement,
-                                childNumPartsAllowedDeviation,
-                                numOfESPsForced) AND
-      NOT rppForMe->executeInDP2() AND
-      NOT groupExpr().isEmpty())
-  {
-    if (NOT numOfESPsForced)
-      rg.makeNumOfPartsFeasible(childNumPartsRequirement,
-                                &childNumPartsAllowedDeviation);
-    rg.addNumOfPartitions(childNumPartsRequirement,
-                          childNumPartsAllowedDeviation);
-
-    // Can not allow skewBuster hash join co-exist with a full groupby
-    // or a partial groupby root in the same ESPs because the a group
-    // (in a non-skewbuster plan) can be broken into pieces across
-    // different ESPs.
-
-    // The BR case (i.e. the right child of a skew buster join is a full
-    // groupby) is dealt with in RelExpr::rppRequiresEnforcer().
-    //
-    // The UD case (i.e., the left child of a skew buster join is a full
-    // groupby) is dealt with through the partitioning key requirement
-    // (i.e., the partitioning keys added by statement
-    // rg.addPartitioningKey(groupExpr()) above will NEVER be satisfied
-    // by a SkewedDataPartitioningFunction).
-    //
-    // A full groupBy node is prevented from being the immediate parent of
-    // the skew-buster join due to the reason similar to the UD case.
-  } // end if ok to try parallelism
+  if ( !isAPartialGroupByLeaf1() && !isAPartialGroupByLeaf2() &&
+       okToAttemptESPParallelism(myContext,
+                                   pws,
+                                   childNumPartsRequirement,
+                                   childNumPartsAllowedDeviation,
+                                   numOfESPsForced) AND
+         NOT rppForMe->executeInDP2() AND
+         NOT groupExpr().isEmpty())
+   {
+       if (NOT numOfESPsForced)
+         rg.makeNumOfPartsFeasible(childNumPartsRequirement,
+                                   &childNumPartsAllowedDeviation);
+       rg.addNumOfPartitions(childNumPartsRequirement,
+                             childNumPartsAllowedDeviation);
+   
+       // Can not allow skewBuster hash join co-exist with a full groupby
+       // or a partial groupby root in the same ESPs because the a group
+       // (in a non-skewbuster plan) can be broken into pieces across
+       // different ESPs.
+   
+       // The BR case (i.e. the right child of a skew buster join is a full
+       // groupby) is dealt with in RelExpr::rppRequiresEnforcer().
+       //
+       // The UD case (i.e., the left child of a skew buster join is a full
+       // groupby) is dealt with through the partitioning key requirement
+       // (i.e., the partitioning keys added by statement
+       // rg.addPartitioningKey(groupExpr()) above will NEVER be satisfied
+       // by a SkewedDataPartitioningFunction).
+       //
+       // A full groupBy node is prevented from being the immediate parent of
+       // the skew-buster join due to the reason similar to the UD case.
+   } // end if ok to try parallelism
 
   // ---------------------------------------------------------------------
   // Done adding all the requirements together, now see whether it worked
@@ -11577,6 +11580,8 @@ Context* GroupByAgg::createContextForAChild(Context* myContext,
   // Store the Context for the child in the PlanWorkSpace.
   // ---------------------------------------------------------------------
   pws->storeChildContext(childIndex, planNumber, result);
+
+  NABoolean isPRoot = isAPartialGroupByRoot();
 
   return result;
 
@@ -12131,9 +12136,35 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     // -------------------------------------------------------------------
 
     NABoolean canAdjustDoP = TRUE;
+    NABoolean isASON = FALSE;
 
     NABoolean fakeEnv = FALSE;
     countOfCPUs = defs.getTotalNumOfESPsInCluster(fakeEnv);
+
+    // Do not enable the Adaptive Segmentation functionality for
+    // parallel label (DDL) operations or for a parallel extract
+    // operation. This will prevent AS from reducing the max degree of
+    // parallelism for these operations.
+    OperatorTypeEnum childOpType = child(0).getLogExpr()->getOperatorType();
+    if ((CmpCommon::getDefault(ASG_FEATURE) == DF_ON) &&
+        (childOpType != REL_PARALLEL_LABEL_CREATE) &&
+        (childOpType != REL_PARALLEL_LABEL_DROP) &&
+        (childOpType != REL_EXE_UTIL) &&
+        (childOpType != REL_PARALLEL_LABEL_ALTER) &&
+        (childOpType != REL_PARALLEL_LABEL_PURGEDATA) &&
+        (numExtractStreams_ == 0))
+    {
+      if(!OSIM_isNSKbehavior())
+      {
+        Lng32 maxDop = CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
+        if (countOfCPUs != maxDop)
+        {
+          // Adaptive segmentation is ON
+          isASON = TRUE;
+          countOfCPUs = maxDop;
+        }
+      }
+    }
 
     // Get the value as a token code, no errmsg if not a keyword.
     if (CmpCommon::getDefault(PARALLEL_NUM_ESPS, 0) != DF_SYSTEM)
@@ -12296,8 +12327,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     Lng32 minBytesPerESP = defs.getAsLong(HBASE_MIN_BYTES_PER_ESP_PARTITION);
 
     // To be replaced later by a different CQD
-    //if ( CmpCommon::getDefault(HBASE_PARTITIONING) == DF_OFF )
-    //  canAdjustDoP = FALSE;
+    if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_OFF  || isASON )
+      canAdjustDoP = FALSE;
 
     // Adjust DoP based on table size, if possible
     if ( canAdjustDoP ) {
@@ -12312,12 +12343,16 @@ Context* RelRoot::createContextForAChild(Context* myContext,
    
           Lng32 esps = (Lng32)(espsInCS.getCeiling().getValue());
    
-          if ( esps < 1 )
-             countOfCPUs = 1;
+          if ( esps < 0 )
+            esps = countOfCPUs;
           else {
+             if ( esps < 1 )
+                countOfCPUs = 1;
+             else {
    
-            if ( esps < countOfCPUs )
-               countOfCPUs = esps;
+               if ( esps < countOfCPUs )
+                  countOfCPUs = esps;
+             }
           }
    
           pipelinesPerCPU = 1;

@@ -23,6 +23,7 @@ CPPSRC := arkcmp.cpp \
 
 EARLY_DLLS:= -ljsig
 
+
 #GUI Debugger
   ifeq ($(FLAVOR),debug)
      CXXFLAGS += -DNA_DEBUG_GUI -rdynamic -Wl,--export-dynamic

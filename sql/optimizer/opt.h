@@ -817,6 +817,7 @@ public:
     return optimizerGracefulTermination_;
   };
 
+  RequiredResources * estimateRequiredResources(RelExpr* rootExpr);
   // initialize portion of the cache based on ActiveSchemaDB's optDefaults 
   // and the pass-in argument rootExpr
   void initialize(RelExpr* rootExpr);

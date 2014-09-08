@@ -1301,6 +1301,12 @@ public:
   // this is called at the end of the analysis phase
   virtual void analyzeInitialPlan();
 
+  virtual void computeRequiredResources(RequiredResources & reqResources,
+                                       EstLogPropSharedPtr & inLP = (*GLOBAL_EMPTY_INPUT_LOGPROP));
+
+  virtual void computeMyRequiredResources(RequiredResources & reqResources,
+                                      EstLogPropSharedPtr & inLP);
+
   // Accessor for the rowsetIterator flag.
   NABoolean isRowsetIterator() const { return rowsetIterator_; }
   // Mutator for the rowsetIterator flag.
@@ -1568,6 +1574,9 @@ public:
   {
     return cachedDefrag_;
   }
+
+  CostScalar getChild0Cardinality(const Context*);
+
 
 }; // class RelExpr
 

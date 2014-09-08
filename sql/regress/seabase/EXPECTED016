@@ -164,11 +164,10 @@
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART7           1.00E+009
 
 --- SQL operation complete.
@@ -177,20 +176,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443313407573
+PLAN_ID .................. 212276963862931157
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 STATEMENT ................ select f,count(f)
                            from mcStatPart7 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -198,11 +197,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -226,11 +223,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -241,11 +238,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART7.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -255,16 +252,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART7.A,
+                             TRAFODION.HBASE.MCSTATPART7.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 886.84
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -274,41 +273,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART7.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 885.86
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART7.A,
-                             TRAFODION.HBASE.MCSTATPART7.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART7
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 874.74
-EST_TOTAL_COST ......... 874.74
+EST_OPER_COST .......... 911.11
+EST_TOTAL_COST ......... 911.11
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART7
   cache_size ........ 10,000
@@ -329,11 +303,10 @@ DESCRIPTION
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART5           1.00E+009
 
 --- SQL operation complete.
@@ -342,20 +315,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443313755191
+PLAN_ID .................. 212276963863242312
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 STATEMENT ................ select f,count(f)
                            from mcStatPart5 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -363,11 +336,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -391,11 +362,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -406,11 +377,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -420,16 +391,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART5.A,
+                             TRAFODION.HBASE.MCSTATPART5.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 913.71
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -439,41 +412,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART5.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 912.74
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART5.A,
-                             TRAFODION.HBASE.MCSTATPART5.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART5
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 901.61
-EST_TOTAL_COST ......... 901.61
+EST_OPER_COST .......... 938.52
+EST_TOTAL_COST ......... 938.52
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART5
   cache_size ........ 10,000
@@ -494,11 +442,10 @@ DESCRIPTION
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART3           1.00E+009
 
 --- SQL operation complete.
@@ -507,20 +454,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443314042150
+PLAN_ID .................. 212276963863556579
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 STATEMENT ................ select f,count(f)
                            from mcStatPart3 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -528,11 +475,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -556,11 +501,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -571,11 +516,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART3.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -585,16 +530,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART3.A,
+                             TRAFODION.HBASE.MCSTATPART3.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 913.71
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -604,41 +551,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART3.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 912.74
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART3.A,
-                             TRAFODION.HBASE.MCSTATPART3.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART3
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 901.61
-EST_TOTAL_COST ......... 901.61
+EST_OPER_COST .......... 938.52
+EST_TOTAL_COST ......... 938.52
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART3
   cache_size ........ 10,000
@@ -659,11 +581,10 @@ DESCRIPTION
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART6           1.00E+009
 
 --- SQL operation complete.
@@ -672,20 +593,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443314325950
+PLAN_ID .................. 212276963863872730
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 STATEMENT ................ select f,count(f)
                            from mcStatPart6 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -693,11 +614,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -721,11 +640,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -736,11 +655,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART6.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -750,16 +669,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART6.A,
+                             TRAFODION.HBASE.MCSTATPART6.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 861.51
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -769,41 +690,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART6.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 860.53
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART6.A,
-                             TRAFODION.HBASE.MCSTATPART6.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART6
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 849.41
-EST_TOTAL_COST ......... 849.41
+EST_OPER_COST .......... 885.23
+EST_TOTAL_COST ......... 885.23
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART6
   cache_size ........ 10,000
@@ -824,11 +720,10 @@ DESCRIPTION
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART2           1.00E+009
 
 --- SQL operation complete.
@@ -837,20 +732,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443314609095
+PLAN_ID .................. 212276963864184490
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 STATEMENT ................ select f,count(f)
                            from mcStatPart2 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -858,11 +753,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -886,11 +779,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -901,11 +794,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART2.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 861.51
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -915,16 +808,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART2.A,
+                             TRAFODION.HBASE.MCSTATPART2.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 861.51
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 889.12
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -934,41 +829,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART2.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 860.53
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART2.A,
-                             TRAFODION.HBASE.MCSTATPART2.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART2
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 849.41
-EST_TOTAL_COST ......... 849.41
+EST_OPER_COST .......... 885.23
+EST_TOTAL_COST ......... 885.23
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART2
   cache_size ........ 10,000
@@ -989,11 +859,10 @@ DESCRIPTION
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART1           1.00E+009
 
 --- SQL operation complete.
@@ -1002,20 +871,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443314890339
+PLAN_ID .................. 212276963864493633
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 STATEMENT ................ select f,count(f)
                            from mcStatPart1 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1023,11 +892,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1051,11 +918,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -1066,11 +933,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART1.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 886.84
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1080,16 +947,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART1.A,
+                             TRAFODION.HBASE.MCSTATPART1.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 886.84
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 915
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1099,41 +968,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART1.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 885.86
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART1.A,
-                             TRAFODION.HBASE.MCSTATPART1.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART1
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 874.74
-EST_TOTAL_COST ......... 874.74
+EST_OPER_COST .......... 911.11
+EST_TOTAL_COST ......... 911.11
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART1
   cache_size ........ 10,000
@@ -1154,11 +998,10 @@ DESCRIPTION
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+000
-4    .    5    hash_partial_groupby                                  1.00E+000
-3    .    4    esp_exchange                    1:4(hash2)            1.00E+000
-2    .    3    hash_partial_groupby                                  1.00E+000
-1    .    2    esp_exchange                    4(hash2):8(hash2)     1.00E+009
+4    .    5    root                                                  1.00E+000
+3    .    4    hash_partial_groupby                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    hash_partial_groupby                                  1.00E+000
 .    .    1    trafodion_scan                  MCSTATPART8           1.00E+009
 
 --- SQL operation complete.
@@ -1167,20 +1010,20 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212275443315172341
+PLAN_ID .................. 212276963864815013
 ROWS_OUT ................. 1
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 STATEMENT ................ select f,count(f)
                            from mcStatPart8 <<+ cardinality 10e8 >>
                            group by f;
 
 
 ------------------------------------------------------------------ NODE LISTING
-ROOT ======================================  SEQ_NO 6        ONLY CHILD 5
+ROOT ======================================  SEQ_NO 5        ONLY CHILD 4
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 0
@@ -1188,11 +1031,9 @@ DESCRIPTION
   fragment_type .......... master
   statement_index ........ 0
   affinity_value ......... 0
-  est_memory_per_cpu ..... 89 KB
-  max_max_cardinality .... 0
+  max_max_cardinal  1,000,000,000
   total_overflow_size .... 0.00 KB
   esp_2_node_map ......... (\NSK:-1:-1:-1:-1)
-  esp_3_node_map ......... (\NSK:-1:-1:-1:-1:-1:-1:-1:-1)
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1216,11 +1057,11 @@ DESCRIPTION
                              F)))
 
 
-HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 5        ONLY CHILD 4
+HASH_PARTIAL_GROUPBY_ROOT =================  SEQ_NO 4        ONLY CHILD 3
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   memory_quota ........... 1200 MB
   max_card_est ........... 1
@@ -1231,11 +1072,11 @@ DESCRIPTION
   aggregates ............. sum(count_nonull(TRAFODION.HBASE.MCSTATPART8.F))
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 4        ONLY CHILD 3
+ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
 EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ......... 913.71
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1245,16 +1086,18 @@ DESCRIPTION
   record_length ......... 16
   parent_processes ....... 1
   child_processes ........ 4
-  child_partitioning_func  hash2 partitioned 4 ways on (randomNum)
+  child_partitioning_func  hash2 partitioned 4 ways on
+                             (TRAFODION.HBASE.MCSTATPART8.A,
+                             TRAFODION.HBASE.MCSTATPART8.B)
   seamonster_query ....... no
   seamonster_exchange .... no
 
 
-HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 3        ONLY CHILD 2
+HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
 REQUESTS_IN .............. 1
 ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.97
-EST_TOTAL_COST ......... 913.71
+EST_OPER_COST ............ 3.9
+EST_TOTAL_COST ......... 942.42
 DESCRIPTION
   max_card_est ........... 1
   fragment_id ............ 2
@@ -1264,41 +1107,16 @@ DESCRIPTION
   aggregates ............. count_nonull(TRAFODION.HBASE.MCSTATPART8.F)
 
 
-ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST ........... 11.13
-EST_TOTAL_COST ......... 912.74
-DESCRIPTION
-  max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
-  fragment_type .......... esp
-  est_memory_per_cpu ..... 89 KB
-  buffer_size ....... 30,388
-  record_length .......... 8
-  parent_processes ....... 4
-  child_processes ........ 8
-  parent_partitioning_fun  hash2 partitioned 4 ways on (randomNum)
-  child_partitioning_func  hash2 partitioned 8 ways on
-                             (TRAFODION.HBASE.MCSTATPART8.A,
-                             TRAFODION.HBASE.MCSTATPART8.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
-  partitioning_expression  (HashDistPartHash(cast(randomNum)) Hash2Distrib
-                             scaledNumParts)
-
-
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... MCSTATPART8
 REQUESTS_IN .............. 1
 ROWS_OUT ..... 1,000,000,000
-EST_OPER_COST .......... 901.61
-EST_TOTAL_COST ......... 901.61
+EST_OPER_COST .......... 938.52
+EST_TOTAL_COST ......... 938.52
 DESCRIPTION
   max_card_est ........... 1e+09
-  fragment_id ............ 3
-  parent_frag ............ 2
+  fragment_id ............ 2
+  parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART8
   cache_size ........ 10,000

@@ -341,7 +341,7 @@ const ValidateMVAge           validateMVAge;
 THREAD_P DefaultDefault defaultDefaults[] = {
  DDflt0_(ACCEPTABLE_INPUTESTLOGPROP_ERROR,	"0.5"),
 
-SDDint__(AFFINITY_VALUE,                        "-4"),
+SDDint__(AFFINITY_VALUE,                        "-2"),
 
  DDkwd__(ALIGNED_ROW_FORMAT,			"ON"),
 
@@ -433,6 +433,7 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   DDkwd__(AQR_WNR_LOCK_INSERT_TARGET,           "OFF"),
 
   DDkwd__(ARKCMP_FAKE_HW,		        "OFF"),
+  DDkwd__(ASG_FEATURE,		                "ON"),
 // Set ASM cache
   DDkwd__(ASM_ALLOWED,				"ON"),
 // Precompute statistics in ASM
@@ -1694,6 +1695,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_XPLN_NUM_BUFFERS,			"3"),
   DDui1__(GEN_XPLN_SIZE_DOWN,			"8"),
   DDui1__(GEN_XPLN_SIZE_UP,			"16"),
+
+
+  // When less or equal to this CQD (5000 rows by default), a partial root 
+  // will be running in the Master. Set to 0 to disable the feature.
+  DDint__(GROUP_BY_PARTIAL_ROOT_THRESHOLD,	"5000"),
 
   DDkwd__(GROUP_BY_USING_ORDINAL,		"MINIMUM"),
 
@@ -3432,7 +3438,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  XDDkwd__(WMS_QUERY_MONITORING,                       "ON"),
   // amount of work we are willing to assign per CPU for any query
   // not running at full system parallelism
- SDDflte_(WORK_UNIT_ESP,      "1"),
+ SDDflte_(WORK_UNIT_ESP,      "0.08"),
  SDDflte_(WORK_UNIT_ESP_DATA_COPY_COST, "0.001"),
  
   // ZIG_ZAG_TREES ON means do ZIG_ZAG_TREES

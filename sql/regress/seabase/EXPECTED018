@@ -79,7 +79,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 4    .    5    sort_partial_aggr_le                                  1.00E+000
 3    2    4    hybrid_hash_join                                      5.00E+012
 .    .    3    trafodion_scan                  T018_LINEITEM         1.00E+007
-1    .    2    esp_exchange                    2(rep-b):4(range)     1.00E+006
+1    .    2    esp_exchange                    2(rep-b):2(range)     1.00E+006
 .    .    1    trafodion_scan                  T018_ORDERS           1.00E+006
 
 --- SQL operation complete.

@@ -394,6 +394,9 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
   }
   // QSTUFF
 
+  // estimate resources required for this query
+  CURRSTMT_OPTDEFAULTS->estimateRequiredResources(this);
+
   // ---------------------------------------------------------------------
   // copy initial query into CascadesMemo
   // ---------------------------------------------------------------------
@@ -4392,6 +4395,140 @@ OptDefaults::computeRecommendedNumCPUsForMemory(double memoryResourceRequired)
   return mDoPm;
 }
 
+RequiredResources * OptDefaults::estimateRequiredResources(RelExpr* rootExpr)
+{
+  RequiredResources * requiredResources = NULL;
+  if (CmpCommon::getDefault(ASG_FEATURE) == DF_ON)
+  {
+    requiredResources = new (CmpCommon::statementHeap()) RequiredResources();
+    // compute and set the resources required for this query
+    rootExpr->computeRequiredResources(*requiredResources);
+
+    maxMaxCardinality_ = requiredResources->getMaxMaxCardinality().getValue();
+
+    requiredMemoryResourceEstimate_ = requiredResources->getMemoryResources().getValue();
+    requiredCpuResourceEstimate_ = requiredResources->getCpuResources().getValue();
+    totalDataAccessCost_ = requiredResources->getDataAccessCost().getValue();
+    maxOperatorMemoryEstimate_ = requiredResources->getMaxOperMemoryResources().getValue();
+    maxOperatorCpuEstimate_ = requiredResources->getMaxOperCpuReq().getValue();
+    maxOperatorDataAccessCost_ = requiredResources->getMaxOperDataAccessCost().getValue();
+    memoryPerCPU_ = getDefaultAsDouble(MEMORY_UNIT_ESP)*1000000;
+    workPerCPU_ = getDefaultAsDouble(WORK_UNIT_ESP)*1000000;
+    defaultDegreeOfParallelism_ = getDefaultAsLong
+      (DEFAULT_DEGREE_OF_PARALLELISM);
+
+    // take into account the number of ESPs per node. The total number of CPUs set below will be
+    // aka virtual # of CPUs_ to use for this query. Do not be confused with the actual # of
+    // physical CPUs available.
+    NADefaults &defs = ActiveSchemaDB()->getDefaults();
+    NABoolean fakeEnv = FALSE;
+    totalNumberOfCPUs_ = defs.getTotalNumOfESPsInCluster(fakeEnv);
+
+    // guard against any strange CQD(DEFAULT_DEGREE_OF_PARALLELISM), cqdDDoP.
+    // if cqdDDoP were 33 then dDoP should be 32
+    Lng32 cqdDDoP = getDefaultDegreeOfParallelism();
+
+    if (cqdDDoP > totalNumberOfCPUs_) cqdDDoP = totalNumberOfCPUs_;
+    // We should also floor it by totalNumberOfCPUs_/16
+    // start dDoP with all available CPUs
+    Lng32 dDoP = totalNumberOfCPUs_;
+
+    // keep halving dDoP until dDoP <= cqdDDoP
+    while (cqdDDoP < dDoP) dDoP /= 2;
+
+    // make sure dDDoP is positive
+    adjustedDegreeOfParallelism_ = dDoP;
+
+    // set the memory and cpu resources to be use in computation of degree
+    // of parallelism below. Just for this method.
+    double memoryToConsider = requiredMemoryResourceEstimate_;
+    double cpuToConsider = requiredCpuResourceEstimate_;
+
+    ULng32 useOperatorMaxForComputations =
+      getDefaultAsLong(USE_OPERATOR_MAX_FOR_DOP);
+
+    ULng32 operatorResourceFactor =
+      useOperatorMaxForComputations;
+
+    if (useOperatorMaxForComputations)
+    {
+      memoryToConsider = maxOperatorMemoryEstimate_;
+      cpuToConsider = MINOF(cpuToConsider,
+                            (operatorResourceFactor*maxOperatorCpuEstimate_));
+    }
+
+    double mDoPm = computeRecommendedNumCPUsForMemory(memoryToConsider);
+    double mDoPc = computeRecommendedNumCPUs(cpuToConsider);
+
+    double resourceDoP = MAXOF(mDoPm, mDoPc);
+
+    // numCPUs = total number of CPUs (including any down CPUs)
+    Lng32 numCPUs = totalNumberOfCPUs_;
+
+    // maxDoP = maximum degree of parallelism
+    Lng32 maxDoP;
+      // if  adaptive load balancing is OFF (-2), then don't increase Dop by power of 2
+    if (getDefaultAsLong(AFFINITY_VALUE) == -2)
+    {
+      // take the resouceDoP if it is within the range [dDop, maxDoP], 
+      // otherwise take either the low or the high value
+      if (resourceDoP < dDoP)
+          maxDoP = dDoP;
+      else if (resourceDoP > numCPUs)
+        maxDoP = numCPUs;
+      else
+        maxDoP = resourceDoP;
+     }
+    else {
+      maxDoP = dDoP;
+      if (resourceDoP > dDoP)
+        while ( (maxDoP < resourceDoP) && (maxDoP * 2 <= numCPUs) ) maxDoP *= 2;
+    }
+
+    // Adjust max degree of parallelism to make sure that no plan will have
+    // higher degree of parallelism than the largest table in the query.
+    // It is meant to avoid expensive exchanges for the purpose of matching
+    // the high degree of parallelism only and to have a high degree of
+    // parallelism when needed for large tables while not risking the huge
+    // DoP for smaller table queries.
+    if (CmpCommon::getDefault(COMP_BOOL_24) == DF_ON)
+    {
+      QueryAnalysis *qa = QueryAnalysis::Instance();
+      Lng32 highestNumOfPartns = qa->getHighestNumOfPartns();
+      Lng32 adjustedMaxDoP = MAXOF(highestNumOfPartns, dDoP);
+
+      // Cap maxDoP to adjustedMaxDoP
+      while (adjustedMaxDoP < maxDoP) maxDoP /= 2;
+    }
+
+    maximumDegreeOfParallelism_ = maxDoP;
+
+#ifdef _DEBUG
+    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+          CURRCONTEXT_OPTDEBUG->stream()
+        << endl
+        << "EMR = " << requiredMemoryResourceEstimate_ << endl
+        << "MaxOperMemory = " << maxOperatorMemoryEstimate_ << endl
+        << "Memory_Unit = " << memoryPerCPU_ << endl
+        << "MDOPm = " << mDoPm << endl
+        << "ECR = " << requiredCpuResourceEstimate_ << endl
+        << "MaxOperCpu = " << maxOperatorCpuEstimate_ << endl
+        << "Work_Unit = " << workPerCPU_ << endl
+        << "MDOPc = " << mDoPc << endl
+        << "MAX(MDOPm, MDOPc) = " << resourceDoP << endl
+        << "numCPUs = " << numCPUs << endl
+        << "DDoP = " << dDoP << endl
+        << "MDoP = " << maximumDegreeOfParallelism_ << endl
+        << "Data Access Cost = " << totalDataAccessCost_ << endl
+        << "Max Oper Data Access Cost = " << maxOperatorDataAccessCost_ << endl;
+    }
+#endif
+  }
+  return requiredResources;
+}
+
+
 
 void OptDefaults::initialize(RelExpr* rootExpr)
 {
@@ -6474,6 +6611,8 @@ Context * QueryOptimizerDriver::initializeOptimization(RelExpr *relExpr)
   }
   // QSTUFF
 
+  // estimate resources required for this query
+  RequiredResources * reqdRsrcs = CURRSTMT_OPTDEFAULTS->estimateRequiredResources(relExpr);
 
   // Copy initial query into CascadesMemo
   NABoolean duplicateExpr = FALSE;
@@ -6485,7 +6624,6 @@ Context * QueryOptimizerDriver::initializeOptimization(RelExpr *relExpr)
 
   // Initialize optimization defaults
   CURRSTMT_OPTDEFAULTS->initialize(relExpr);
-
 
   GlobalRuleSet->initializeFirstPass();
 

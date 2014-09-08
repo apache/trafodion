@@ -1112,10 +1112,36 @@ EstLogPropSharedPtr AppliedStatMan::getStatsForCANodeId(
     if (tableAnalysis && predIdSet)
     {
       TableDesc * tableDesc = tableAnalysis->getTableDesc();
-      const CorrName& name = tableDesc->getNATable()->getTableName();
+
+      const QualifiedName& qualName = 
+            tableDesc->getNATable()->getTableName();
+
+      CorrName name(qualName, STMTHEAP);
 
       Scan *scanExpr = new STMTHEAP Scan(name, tableDesc, REL_SCAN, STMTHEAP);
-      scanExpr->setBaseCardinality(MIN_ONE (tableDesc->getNATable()->getEstRowCount())) ;
+
+      Cardinality rc = tableDesc->getNATable()->getEstRowCount();
+
+      const CardinalityHint* cardHint = tableDesc->getCardinalityHint();
+      if ( cardHint ) 
+         rc = (cardHint->getScanCardinality()).getValue();
+
+      if ( !cardHint && tableDesc->getNATable()->isHbaseTable() ) {
+
+          NATable* nt = (NATable*)(tableDesc->getNATable());
+   
+          StatsList* statsList = nt->getColStats();
+   
+          if ( statsList && statsList->entries() > 0 ) {
+              ColStatsSharedPtr cStatsPtr = 
+                    statsList->getSingleColumnColStats(0);
+   
+              if ( cStatsPtr )
+                 rc = (cStatsPtr->getRowcount()).getValue();
+          }
+      }
+
+      scanExpr->setBaseCardinality(MIN_ONE (rc));
 
       GroupAttributes * gaExpr = new STMTHEAP GroupAttributes();
 

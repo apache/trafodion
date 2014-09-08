@@ -448,6 +448,9 @@ public:
   virtual void addLocalExpr(LIST(ExprNode *) &xlist,
                             LIST(NAString) &llist) const;
 
+  virtual void computeMyRequiredResources(RequiredResources & reqResources,
+                                      EstLogPropSharedPtr & inLP);
+
   // get a printable string that identifies the operator
   virtual const NAString getText() const;
 

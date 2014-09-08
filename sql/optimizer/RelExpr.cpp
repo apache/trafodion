@@ -8017,9 +8017,25 @@ PlanPriority HashGroupBy::computeOperatorPriority
   double val = 1;
   if (degreeOfParallelism <= 1)
     {
-      // serial plans are risky. exact an insurance premium from serial plans.
-      val = CURRSTMT_OPTDEFAULTS->riskPremiumSerial();
+
+    // Don't command premium for serial hash partial groupby plan if :
+    // 1. Operator is partial group by root
+    // 2. process < 5K rows
+    // This is to prevent optimizer choosing parallel plans for small queries.
+    // The idea is either premium has been already applied for groupby leaf level
+    // or leaf is running in parallel, we don't need to run root also in parallel
+
+       if ( isAPartialGroupByRoot() && 
+            CostScalar((ActiveSchemaDB()->getDefaults()).
+              getAsULong(GROUP_BY_PARTIAL_ROOT_THRESHOLD)) >=
+                  this->getChild0Cardinality(context) )
+          val = 1;
+       else
+          // serial plans are risky. extract an insurance premium from serial plans.
+
+          val = CURRSTMT_OPTDEFAULTS->riskPremiumSerial();
     }
+
   CostScalar premium(val);
   PlanPriority result(0, 0, premium);
 
@@ -15298,6 +15314,238 @@ void RelExpr::adjustTopPartFunc(Lng32 newDop)
    setDopReduced(TRUE);
 }
 
+// Required Resource Estimate Methods - Begin
+void RelExpr::computeRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  Int32 nc = getArity();
+
+  for (Lng32 i = 0; i < nc; i++)
+  {
+    if (child(i))
+      child(i)->computeRequiredResources(reqResources, inLP);
+    else
+      child(i).getLogExpr()->computeRequiredResources(reqResources, inLP);
+  }
+
+  computeMyRequiredResources(reqResources, inLP);
+}
+
+void Join::computeRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  Int32 nc = getArity();
+
+  if (child(0))
+    child(0)->computeRequiredResources(reqResources, inLP);
+  else
+    child(0).getLogExpr()->computeRequiredResources(reqResources, inLP);
+
+  EstLogPropSharedPtr inputForRight = inLP;
+
+  EstLogPropSharedPtr leftOutput =
+    child(0).getGroupAttr()->outputLogProp(inLP);
+
+  if(isTSJ())
+  {
+    inputForRight = leftOutput;
+  }
+
+  if (child(1))
+    child(1)->computeRequiredResources(reqResources, inputForRight);
+  else
+    child(1).getLogExpr()->computeRequiredResources(reqResources, inputForRight);
+
+
+  computeMyRequiredResources(reqResources, inLP);
+}
+
+void RequiredResources::accumulate(CostScalar memRsrcs,
+                                   CostScalar cpuRsrcs,
+                                   CostScalar dataAccessCost,
+                                   CostScalar maxCard)
+{
+  memoryResources_ += memRsrcs;
+  cpuResources_ += cpuRsrcs;
+  dataAccessCost_ += dataAccessCost;
+
+  if(maxOperMemReq_ < memRsrcs)
+    maxOperMemReq_ = memRsrcs;
+
+  if(maxOperCPUReq_ < cpuRsrcs)
+    maxOperCPUReq_ = cpuRsrcs;
+
+  if(maxOperDataAccessCost_ < dataAccessCost)
+    maxOperDataAccessCost_ = dataAccessCost;
+
+  if(maxMaxCardinality_ < maxCard)
+    maxMaxCardinality_ = maxCard;
+}
+
+void RelExpr::computeMyRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  CostScalar cpuResourcesRequired = csZero;
+  CostScalar A = csOne;
+  CostScalar B (getDefaultAsDouble(WORK_UNIT_ESP_DATA_COPY_COST));
+
+  Int32 nc = getArity();
+
+  for (Lng32 i = 0; i < nc; i++)
+  {
+    GroupAttributes * childGroupAttr = child(i).getGroupAttr();
+    CostScalar childCardinality =
+      childGroupAttr->outputLogProp(inLP)->getResultCardinality();
+    CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
+
+    cpuResourcesRequired +=
+      (A * childCardinality) +
+      (B * childCardinality * childRecordSize );
+  }
+
+  CostScalar myMaxCard = getGroupAttr()->getResultMaxCardinalityForInput(inLP);
+
+  reqResources.accumulate(csZero,
+                          cpuResourcesRequired,
+                          csZero,
+                          myMaxCard);
+}
+
+void RelRoot::computeMyRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+
+  if (hasOrderBy())
+  {
+    CostScalar memoryResourcesRequired = csZero;
+
+    GroupAttributes * childGroupAttr = child(0).getGroupAttr();
+    CostScalar childCardinality =
+      childGroupAttr->outputLogProp(inLP)->getResultCardinality();
+    CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
+    memoryResourcesRequired  = (childCardinality * childRecordSize);
+
+    reqResources.accumulate(memoryResourcesRequired, csZero, csZero);
+  }
+
+  // add the cpu resources
+  RelExpr::computeMyRequiredResources(reqResources, inLP);
+}
+
+void MultiJoin::computeMyRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  // get the subset analysis for this MultiJoin
+  JBBSubsetAnalysis * subsetAnalysis = getJBBSubset().getJBBSubsetAnalysis();
+
+  subsetAnalysis->computeRequiredResources(this,reqResources, inLP);
+}
+
+
+void Join::computeMyRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  CostScalar memoryResourcesRequired = csZero;
+
+  // only get the max card for this join. The contribution from the children
+  // of this join is done inside Join::computeReequiredResource() where
+  // child(i)->computeRequiredResources() is called (i=0,1). These two calls
+  // will call ::computeMyRequiredResoruce() of the corresponding RelExpr.
+  //
+  GroupAttributes * myGroupAttr = getGroupAttr();
+
+  CostScalar myMaxCard = myGroupAttr->getResultMaxCardinalityForInput(inLP);
+
+  reqResources.accumulate(csZero, csZero, csZero, myMaxCard);
+
+  if(!isTSJ())
+  {
+    GroupAttributes * innerChildGroupAttr = child(1).getGroupAttr();
+    CostScalar innerChildCardinality =
+      innerChildGroupAttr->outputLogProp(inLP)->getResultCardinality();
+    CostScalar innerChildRecordSize = innerChildGroupAttr->getCharacteristicOutputs().getRowLength();
+    memoryResourcesRequired = (innerChildCardinality * innerChildRecordSize);
+
+    reqResources.accumulate(memoryResourcesRequired, csZero, csZero);
+
+    // add the cpu resources
+    RelExpr::computeMyRequiredResources(reqResources, inLP);
+  }
+  else{
+    // isTSJ() == TRUE
+    CostScalar cpuResourcesRequired = csZero;
+    CostScalar A = csOne;
+    CostScalar B (getDefaultAsDouble(WORK_UNIT_ESP_DATA_COPY_COST));
+
+    Int32 nc = getArity();
+    EstLogPropSharedPtr inputForChild = inLP;
+
+    for (Lng32 i = 0; i < nc; i++)
+    {
+      GroupAttributes * childGroupAttr = child(i).getGroupAttr();
+      CostScalar childCardinality =
+        childGroupAttr->outputLogProp(inputForChild)->getResultCardinality();
+      CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
+
+      cpuResourcesRequired += (B * childCardinality * childRecordSize );
+
+      // do this only for the left child
+      if(i < 1)
+        cpuResourcesRequired += (A * childCardinality);
+
+      inputForChild = child(i).getGroupAttr()->outputLogProp(inputForChild);
+    }
+
+    reqResources.accumulate(csZero,
+                            cpuResourcesRequired,
+                            csZero);
+  }
+}
+
+void GroupByAgg::computeMyRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  CostScalar memoryResourcesRequired  = csZero;
+
+  GroupAttributes * childGroupAttr = child(0).getGroupAttr();
+  CostScalar childCardinality =
+    childGroupAttr->outputLogProp(inLP)->getResultCardinality();
+  CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
+  memoryResourcesRequired  = (childCardinality * childRecordSize);
+
+  reqResources.accumulate(memoryResourcesRequired, csZero, csZero);
+
+  // add the cpu resources
+  RelExpr::computeMyRequiredResources(reqResources, inLP);
+}
+
+void Scan::computeMyRequiredResources(RequiredResources & reqResources, EstLogPropSharedPtr & inLP)
+{
+  if(!(QueryAnalysis::Instance() &&
+       QueryAnalysis::Instance()->isAnalysisON()))
+    return;
+
+  //Get a handle to ASM
+  AppliedStatMan * appStatMan = QueryAnalysis::ASM();
+  const TableAnalysis * tAnalysis = getTableDesc()->getTableAnalysis();
+  CANodeId tableId = tAnalysis->getNodeAnalysis()->getId();
+  CostScalar dataAccessCost = csZero;
+
+  dataAccessCost = tAnalysis->getFactTableNJAccessCost();
+
+  if(dataAccessCost < 0)
+  {
+    // skip this for fact table under nested join
+    CostScalar numOfProbes(csZero);
+    CostScalar rowsToScan(csZero);
+
+    rowsToScan = appStatMan->
+                   getStatsForLocalPredsOnCKPOfJBBC(tableId)->
+                     getResultCardinality();
+
+    dataAccessCost =
+      tAnalysis->computeDataAccessCostForTable(numOfProbes, rowsToScan);
+  }
+
+  CostScalar myMaxCard = getGroupAttr()->getResultMaxCardinalityForInput(inLP);
+  reqResources.accumulate(csZero, csZero, dataAccessCost, myMaxCard);
+
+}
+// Required Resource Estimate Methods - End
+
 
 // -----------------------------------------------------------------------
 // methods for class SequenceGenerator
@@ -15922,3 +16170,18 @@ short RelExpr::bmoGrowthPercent(CostScalar e, CostScalar m)
   else
     return 25;
 }
+
+
+CostScalar RelExpr::getChild0Cardinality(const Context* context)
+{
+   EstLogPropSharedPtr inLogProp = context->getInputLogProp();
+   EstLogPropSharedPtr ch0OutputLogProp = child(0).outputLogProp(inLogProp);
+
+   const CostScalar ch0RowCount =
+      (ch0OutputLogProp) ? 
+                 (ch0OutputLogProp->getResultCardinality()).minCsOne() :
+                 csOne;
+
+   return ch0RowCount;
+}
+

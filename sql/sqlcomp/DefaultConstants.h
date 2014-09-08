@@ -3602,10 +3602,16 @@ enum DefaultConstants
 
   // ignore conversion errors when rows are read from hdfs.
   HDFS_READ_CONTINUE_ON_ERROR,
+
   TRAF_LOAD_USE_FOR_STATS,
+
+  ASG_FEATURE,
 
   TRAF_UNLOAD_HDFS_COMPRESS,
   TRAF_UNLOAD_SKIP_WRITING_TO_FILES,
+
+  GROUP_BY_PARTIAL_ROOT_THRESHOLD,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

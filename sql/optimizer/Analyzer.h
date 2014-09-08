@@ -2400,6 +2400,10 @@ public:
 
   void analyzeInitialPlan(MultiJoin * mjoin);
 
+  void computeRequiredResources(MultiJoin * mjoin,
+                            RequiredResources & reqResouces,
+                            EstLogPropSharedPtr & inLP);
+
   const NAList<CANodeIdSet> * const getInitialPlanLeftDeepJoinSequence()
   { return &leftDeepJoinSequence_; }
 

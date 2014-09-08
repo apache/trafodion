@@ -223,6 +223,8 @@ public:
   virtual void addLocalExpr(LIST(ExprNode *) &xlist,
 			    LIST(NAString) &llist) const;
 
+  virtual void computeMyRequiredResources(RequiredResources & reqResources,
+                                      EstLogPropSharedPtr & inLP);
   virtual HashValue topHash();
   virtual NABoolean duplicateMatch(const RelExpr & other) const;
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,

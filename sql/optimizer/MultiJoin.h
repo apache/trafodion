@@ -268,6 +268,9 @@ public:
   // this is called at the end of the analysis phase
   virtual void analyzeInitialPlan();
 
+  virtual void computeMyRequiredResources(RequiredResources & reqResources,
+                                      EstLogPropSharedPtr & inLP);
+
   // use the input JBBCExprGroupMap to set this MultiJoin childrenMap_
   void setChildren(const JBBCExprGroupMap & map);
 
