@@ -24,7 +24,7 @@
 
 // Changed the default to 1024 to accomodate the increased java object
 // memory requirement with the scan performance improvements
-#define DEFAULT_MAX_HEAP_SIZE "1024"
+#define DEFAULT_JVM_MAX_HEAP_SIZE 1024
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
 
 NABoolean loggerStatus = HdfsLogger::instance().initLog4cpp("log4cpp.hdfs.config");
@@ -107,7 +107,7 @@ int JavaObjectInterface::createJVM()
 
   char maxHeapOptions[64];
   bool passMaxHeapToJVM = true;
-  int maxHeapEnvvarMB = 512;
+  int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
   const char *maxHeapSizeStr = getenv("JVM_MAX_HEAP_SIZE_MB");
   if (maxHeapSizeStr)
   {
