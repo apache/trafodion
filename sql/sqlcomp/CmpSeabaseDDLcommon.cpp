@@ -592,6 +592,17 @@ NABoolean CmpSeabaseDDL::isSeabaseMD(const NAString &catName,
   return FALSE;
 }
 
+NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
+                                                 const ComObjectName &name)
+{
+  const NAString &schName = name.getSchemaNamePartAsAnsiString(TRUE);
+  if ((schName == SEABASE_MD_SCHEMA) ||
+      (schName == SEABASE_DTM_SCHEMA))
+    return TRUE;
+  else
+    return FALSE;
+}
+
 // ----------------------------------------------------------------------------
 // Method:  isUserUpdatableSeabaseMD
 //

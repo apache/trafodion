@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
-
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.fs.FileSystem;
@@ -391,8 +390,6 @@ public class HBaseClient {
             logger.debug("HBaseClient.dropAll(" + pattern + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
 
-	    //	    System.out.println(pattern);
-
 	    HTableDescriptor[] htdl = admin.listTables(pattern);
 	    if (htdl == null) // no tables match the given pattern.
 		return true;
@@ -400,27 +397,16 @@ public class HBaseClient {
 	    for (HTableDescriptor htd : htdl) {
 		String tblName = htd.getNameAsString();
 
-		//		System.out.println(tblName);
-		admin.disableTable(tblName);
-		admin.deleteTable(tblName);
+                // do not drop DTM log files which have the format: TRAFODION._DTM_.*
+                int idx = tblName.indexOf("TRAFODION._DTM_");
+                if (idx == 0)
+                    continue;
+                
+                //                System.out.println(tblName);
+                admin.disableTable(tblName);
+                admin.deleteTable(tblName);
 	    }
  	    
-	    /*
-            HTableDescriptor[] htd = admin.disableTables(pattern);
-	    if (htd != null) {
-		System.out.println("here");
-		System.out.println(pattern);
-
-
-		return false;
-	    }
-
-            htd = admin.deleteTables(pattern);
-	    if (htd != null) {
-		return false;
-	    }
-	    */
-
             admin.close();
             return cleanup();
     }

@@ -223,6 +223,8 @@ class CmpSeabaseDDL
 
   ComBoolean isSeabaseMD(const ComObjectName &name);
 
+  ComBoolean isSeabaseReservedSchema(const ComObjectName &name);
+
   ComBoolean isSeabase(const ComObjectName &name) ;
 
   ComBoolean isHbase(const ComObjectName &name) ;

@@ -920,7 +920,8 @@ void CmpSeabaseDDL::createSeabaseTable(
       createTableNode->getPrimaryKeyColRefArray()));
 
   NABoolean trustedCaller = FALSE;
-  if ((isSeabaseMD(tableName)) &&
+  if (((isSeabaseMD(tableName)) ||
+       (isSeabaseReservedSchema(tableName))) &&
       (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     trustedCaller = TRUE;
 
@@ -941,7 +942,8 @@ void CmpSeabaseDDL::createSeabaseTable(
       return;
     }
 
-  if ((isSeabaseMD(tableName)) &&
+  if (((isSeabaseMD(tableName)) ||
+       (isSeabaseReservedSchema(tableName))) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CREATE_TABLE_NOT_ALLOWED_IN_SMD)
@@ -1860,7 +1862,8 @@ void CmpSeabaseDDL::dropSeabaseTable(
       return;
     }
 
-  if ((isSeabaseMD(tableName)) &&
+  if (((isSeabaseMD(tableName)) ||
+       (isSeabaseReservedSchema(tableName))) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_CANNOT_DROP_SMD_TABLE)
@@ -2745,7 +2748,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
 
   ExeCliInterface cliInterface(STMTHEAP);
 
-  if ((isSeabaseMD(tableName)) &&
+  if (((isSeabaseMD(tableName)) ||
+       (isSeabaseReservedSchema(tableName))) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
@@ -2967,7 +2971,8 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
   ExeCliInterface cliInterface(STMTHEAP);
 
-  if ((isSeabaseMD(tableName)) &&
+  if (((isSeabaseMD(tableName)) ||
+       (isSeabaseReservedSchema(tableName))) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-CAT_CANNOT_ALTER_DEFINITION_METADATA_SCHEMA);
