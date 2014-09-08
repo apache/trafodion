@@ -1386,9 +1386,9 @@ $1~String1 --------------------------------
 4482 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on user-defined routine $1~string1.
 4483 ZZZZZ 99999 BEGINNER MINOR LOGONLY This LOB conversion function is not allowed in the VALUES clause with multiple input value rows. Use it with a single value row.
 4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY Indexes are not supported yet with $0~String0. Disable the indexes and try again.
-4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD: $0~String0 
+4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD $0~String0 
 4486 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraints are not supported with $0~String0. Disable the constraints and try again. 
-4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Not a valid BULK LOAD option. 
+4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY --Not used. 
 4488 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option $0~String0 cannot be specified more than once. 
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
