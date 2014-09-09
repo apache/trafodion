@@ -22,14 +22,14 @@
 //*  Header of the Messages file
 //*
 //****************************************************************************
-//* MessageIdTypeDef = A symbolic name that is output as the typedef name 
+//* MessageIdTypeDef = A symbolic name that is output as the typedef name
 //* for each numeric MessageId value
-//* SeverityNames = Two most significant bits in the MessageId which define 
+//* SeverityNames = Two most significant bits in the MessageId which define
 //* the type of message
-//* FacilityNames = Defines the set of names that are allowed as the value 
+//* FacilityNames = Defines the set of names that are allowed as the value
 //* of the Facility keyword
 //			Application=0xFFF
-//* LanguageNames = Defines the set of names that are allowed as the value 
+//* LanguageNames = Defines the set of names that are allowed as the value
 //* of the language keyword.  It maps to the message file for that language
 //LanguageNames=(USEnglish=9:tdm_odbcSrvrMsg_009)
 //**** end of header section; what follows are the message definitions *****
@@ -37,13 +37,13 @@
 //*  All error message definitions start with the keyword "MessageId"
 //*  if no value is specified, the number will be the last number used for the
 //*  facility plus one.  Instead of providing a number, we can provide +NUMBER
-//*  where number is the offset to be added to the last number used in 
+//*  where number is the offset to be added to the last number used in
 //*  the facility
 //*  MessageId numbers are limited to 16 bit values
-//*  
+//*
 //*  Severity and Facility if not specified will use the last option selected
 //*  the names used must match the names defined in the header
-//*  
+//*
 //*  SymbolicName is a symbols used to associate a C symbolic ocnstant name
 //*  with the final 32-bit message code that is the result of ORing together
 //*  the MessageId | Severity | Facility bits.  The constant definition is
@@ -51,18 +51,18 @@
 //*
 //*  After the message definition keywords comes one or more message text
 //*  definitions.  Each message text definition starts with the "Language"
-//*  keyword that identifies which binary output file the message text is 
+//*  keyword that identifies which binary output file the message text is
 //*  to be output to.  The message text is terminated by a line containing
 //*  a single period at the beginning of the line, immediately followed by
 //*  a new line.  No spaces allowed around keyword.  Within the message text,
 //*  blank lines and white space are preserved as part of the message.
 //*
 //*  Escape sequences supported in the message text:
-//*    %0 - terminates a message text line without a trailing new line 
+//*    %0 - terminates a message text line without a trailing new line
 //*        (for prompts)
-//*    %n!printf format string! - Identifies an insert (parameter); 
+//*    %n!printf format string! - Identifies an insert (parameter);
 //*         n can be between 1 and 99; defaults to !s!
-//*  Inserts refer to parameters used with FormatMessage API call, 
+//*  Inserts refer to parameters used with FormatMessage API call,
 //*    if not passed, an error is generated
 //*    %% - a single percent sign
 //*    %n - a hard line break
@@ -100,7 +100,7 @@
 //*
 //*************************************************************************
 //*
-//*      Actual Messages follow this line and have the following 
+//*      Actual Messages follow this line and have the following
 //*      structure:
 //*          Characters 1 to 5  of the Msg Text will contain SQLState
 //*          Characters 7 to 10 of the Msg Text will contain a Help ID number
@@ -378,7 +378,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve Data Source Name List because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve Data Source Name List because the Configuration Server disappeared.%0
 //
 #define CFG_DSN_LIST_CFG_SRVR_GONE       ((DWORD)0xC0060037L)
 
@@ -486,7 +486,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve data associated with the Data Source Name [%1!s!] because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve data associated with the Data Source Name [%1!s!] because the Configuration Server disappeared.%0
 //
 #define CFG_DSN_CFG_SRVR_GONE            ((DWORD)0xC0060041L)
 
@@ -594,7 +594,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to apply Data Source Name [%1!s!] changes because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to apply Data Source Name [%1!s!] changes because the Configuration Server disappeared.%0
 //
 #define CFG_SET_DSN_CFG_SRVR_GONE        ((DWORD)0xC006004BL)
 
@@ -702,7 +702,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to add Data Source Name [%1!s!] because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to add Data Source Name [%1!s!] because the Configuration Server disappeared.%0
 //
 #define CFG_ADD_DSN_CFG_SRVR_GONE        ((DWORD)0xC0060055L)
 
@@ -810,7 +810,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve Data Source Name [%1!s!] because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve Data Source Name [%1!s!] because the Configuration Server disappeared.%0
 //
 #define CFG_CHECK_DSN_CFG_SRVR_GONE      ((DWORD)0xC006005FL)
 
@@ -918,7 +918,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to drop the Data Source Name [%1!s!] because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to drop the Data Source Name [%1!s!] because the Configuration Server disappeared.%0
 //
 #define CFG_DROP_DSN_CFG_SRVR_GONE       ((DWORD)0xC0060069L)
 
@@ -1026,7 +1026,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve Environment Variables because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve Environment Variables because the Configuration Server disappeared.%0
 //
 #define CFG_GET_ENV_CFG_SRVR_GONE        ((DWORD)0xC0060073L)
 
@@ -1134,7 +1134,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to apply Environment Variables changes because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to apply Environment Variables changes because the Configuration Server disappeared.%0
 //
 #define CFG_SET_ENV_CFG_SRVR_GONE        ((DWORD)0xC006007DL)
 
@@ -1242,7 +1242,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve Resource Management Policy because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve Resource Management Policy because the Configuration Server disappeared.%0
 //
 #define CFG_GET_RESOURCE_CFG_SRVR_GONE   ((DWORD)0xC0060087L)
 
@@ -1350,7 +1350,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to apply Resource Management Policy changes because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to apply Resource Management Policy changes because the Configuration Server disappeared.%0
 //
 #define CFG_SET_RESOURCE_CFG_SRVR_GONE   ((DWORD)0xC0060091L)
 
@@ -1458,7 +1458,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve Data Source control data because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve Data Source control data because the Configuration Server disappeared.%0
 //
 #define CFG_GET_DSN_CTRL_CFG_SRVR_GONE   ((DWORD)0xC006009BL)
 
@@ -1566,7 +1566,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to apply Data Source [%1!s!] control changes because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to apply Data Source [%1!s!] control changes because the Configuration Server disappeared.%0
 //
 #define CFG_SET_DSN_CTRL_CFG_SRVR_GONE   ((DWORD)0xC00600A5L)
 
@@ -1674,7 +1674,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to apply Data Source [%1!s!] status changes because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to apply Data Source [%1!s!] status changes because the Configuration Server disappeared.%0
 //
 #define CFG_SET_DS_STATUS_CFG_SRVR_GONE  ((DWORD)0xC00600AFL)
 
@@ -1782,7 +1782,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve startup values because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve startup values because the Configuration Server disappeared.%0
 //
 #define CFG_GET_STARTUP_VALUES_CFG_SRVR_GONE ((DWORD)0xC00600B9L)
 
@@ -1890,7 +1890,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve Data Source values for Data Source Name [%1!s!] because the Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve Data Source values for Data Source Name [%1!s!] because the Configuration Server disappeared.%0
 //
 #define CFG_GET_DATASOURCE_VALUES_CFG_SRVR_GONE ((DWORD)0xC00600C3L)
 
@@ -2142,7 +2142,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to Start the Association Server because the Association Server or Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to Start the Association Server because the Association Server or Configuration Server disappeared.%0
 //
 #define CFG_AS_START_AS_SRVR_GONE        ((DWORD)0xC00100D3L)
 
@@ -2250,7 +2250,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to Stop the Association Server because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to Stop the Association Server because the Association Server disappeared.%0
 //
 #define CFG_AS_STOP_AS_SRVR_GONE         ((DWORD)0xC00100E1L)
 
@@ -2304,7 +2304,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to get Status from the Association Server because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to get Status from the Association Server because the Association Server disappeared.%0
 //
 #define CFG_AS_STATUS_AS_SRVR_GONE       ((DWORD)0xC00100E8L)
 
@@ -2502,7 +2502,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to start the Data Source Name [%1!s!] because the Association Server or Configuration Server dissapeared.%0
+//  zzzzz zzzzz Unable to start the Data Source Name [%1!s!] because the Association Server or Configuration Server disappeared.%0
 //
 #define CFG_DS_START_AS_SRVR_GONE        ((DWORD)0xC00100FAL)
 
@@ -2646,7 +2646,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to stop the Data Source Name [%1!s!] because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to stop the Data Source Name [%1!s!] because the Association Server disappeared.%0
 //
 #define CFG_DS_STOP_AS_SRVR_GONE         ((DWORD)0xC001010BL)
 
@@ -2736,7 +2736,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve status information on Data Source Name [%1!s!] because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve status information on Data Source Name [%1!s!] because the Association Server disappeared.%0
 //
 #define CFG_DS_STATUS_AS_SRVR_GONE       ((DWORD)0xC0010112L)
 
@@ -2808,7 +2808,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve status information on Data Sources because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve status information on Data Sources because the Association Server disappeared.%0
 //
 #define CFG_DS_ALL_STATUS_AS_SRVR_GONE   ((DWORD)0xC001011BL)
 
@@ -2934,7 +2934,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve detailed status information on Data Source Name [%1!s!] because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve detailed status information on Data Source Name [%1!s!] because the Association Server disappeared.%0
 //
 #define CFG_DS_DETAIL_STATUS_AS_SRVR_GONE ((DWORD)0xC0010128L)
 
@@ -3024,7 +3024,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to retrieve status information on all SQL/MX servers because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to retrieve status information on all SQL/MX servers because the Association Server disappeared.%0
 //
 #define CFG_SRVR_ALL_STATUS_AS_SRVR_GONE ((DWORD)0xC0010130L)
 
@@ -3168,7 +3168,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to stop the SQL/MX server because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to stop the SQL/MX server because the Association Server disappeared.%0
 //
 #define CFG_SRVR_STOP_AS_SRVR_GONE       ((DWORD)0xC001013DL)
 
@@ -3260,7 +3260,7 @@
 //
 // MessageText:
 //
-//  zzzzz zzzzz Unable to start configuration server because the Association Server dissapeared.%0
+//  zzzzz zzzzz Unable to start configuration server because the Association Server disappeared.%0
 //
 #define CFG_START_CFG_AS_SRVR_GONE       ((DWORD)0xC0010144L)
 
