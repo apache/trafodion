@@ -24,29 +24,33 @@
 //
 
 #include <platform_ndcs.h>
-#ifdef NSK_PLATFORM
-#include <sqlWin.h>
-#else
 #include <sql.h>
-#endif
 #include <sqlext.h>
 #include "SrvrCommon.h"
 #include "SrvrKds.h"
 #include "SqlInterface.h"
 #include "CommonDiags.h"
 //#include "tdm_odbcSrvrMsg.h"
-#ifdef NSK_PLATFORM
-#include "SrvrFunctions.h"			// Linux port - Todo
-#include "NskUtil.h"
-#include "cextdecs.h"
-#include "pThreadsSync.h"
-#include <tslxExt.h>
-#include "feerrors.h"
-#endif
 #include "CSrvrConnect.h"
 #include "Debug.h"
 
 #define SQL_PSEUDO_FILE "$ZQFO"
+#ifndef SEABASE_MD_SCHEMA
+#define SEABASE_MD_SCHEMA     "\"_MD_\""
+#define SEABASE_MD_CATALOG     "TRAFODION"
+#define SEABASE_COLUMNS         "COLUMNS"
+#define SEABASE_DEFAULTS        "DEFAULTS"
+#define SEABASE_INDEXES          "INDEXES"
+#define SEABASE_KEYS                "KEYS"
+#define SEABASE_OBJECTS          "OBJECTS"
+#define SEABASE_OBJECTUID      "OBJECTUID"
+#define SEABASE_TABLES            "TABLES"
+#define SEABASE_VIEWS              "VIEWS"
+#define SEABASE_VIEWS_USAGE  "VIEWS_USAGE"
+#define SEABASE_VERSIONS        "VERSIONS"
+#endif
+#define SQL_API_JDBC					9999
+#define SQL_API_SQLTABLES_JDBC			SQL_API_SQLTABLES + SQL_API_JDBC
 // Global Variables
 
 SRVR_SESSION_HDL	*pSrvrSession = NULL;
@@ -782,7 +786,7 @@ BOOL writeServerException( short retCode
 //#endif
 
 #ifdef _FASTPATH
-short setParamValue(long dataType, BYTE *dataPtr, BYTE *indPtr, long allocLength, char *dataValue)
+short setParamValue(long dataType, BYTE *dataPtr, BYTE *indPtr, long allocLength, const char *dataValue)
 {
 	FUNCTION_ENTRY("setParamValue",("dataType=%s, dataPtr=0x%08x, indPtr=0x%08x, allocLength=%ld, dataValue=0x%08x",
 		CliDebugSqlTypeCode(dataType),
@@ -860,10 +864,17 @@ short do_ExecSMD(
 				 , /* Out   */ ExceptionStruct *executeException
 				 , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
 				 , /* In	*/ long dialogueId
+				 , /* In	*/ const char *tableTypeList
+				 , /* In	*/ unsigned long metadataId
+				 , /* In	*/ short APIType
 				 , /* In	*/ const char *stmtLabel
 				 , /* In	*/ short sqlStmtType
-				 , /* In	*/ char *tableParam[]
-, /* In	*/ char *inputParam[]
+				 , /* In	*/const char *catalogNm
+				 , /* In	*/ const char *schemaNm
+				 , /* In	*/ const char *tableNm
+				 , /* In	*/ const char *columnNm
+				 , /* In	*/ const char *tableParam[]
+, /* In	*/ const char *inputParam[]
 , /* Out   */ SQLItemDescList_def *outputDesc
 , /* Out   */ long *stmtId
 )
@@ -874,6 +885,7 @@ short do_ExecSMD(
 		executeException,
 		sqlWarning,
 		dialogueId,
+		APIType,
 		DebugString(stmtLabel),
 		CliDebugSqlStatementType(sqlStmtType),
 		tableParam,
@@ -884,19 +896,37 @@ short do_ExecSMD(
 	SRVR_STMT_HDL		*pSrvrStmt;
 	long				rowsAffected;
 	SQLItemDesc_def		*SQLItemDesc;
-//	SMD_QUERY_TABLE		*smdQueryTable;		// Linux port - Commenting for now
 	unsigned long		curParamNo;
-	//long				allocLength; 64 change
-	int				allocLength;
+	int				    allocLength;
 	long				retcode;
 	SQLRETURN			rc;
 	short				indValue;
 	BOOL				tableParamDone;
 	unsigned long		index;
+	unsigned long totalSize=20000;
+	char lc_tableTypeList[MAX_ANSI_NAME_LEN+1];
+	char *token;
+	char* saveptr;
 	long				sqlcode;
-
+	short               holdability;
+	long                queryTimeout;
 	odbc_SQLSvc_SQLError ModuleError;
+	char *odbcAppVersion = "3";
 	CLEAR_ERROR(ModuleError);
+
+	char catalogNmNoEsc[MAX_ANSI_NAME_LEN+1];
+	char schemaNmNoEsc[MAX_ANSI_NAME_LEN+1];
+	char tableNmNoEsc[MAX_ANSI_NAME_LEN+1];
+	char columnNmNoEsc[MAX_ANSI_NAME_LEN+1];
+
+	char expCatalogNm[MAX_ANSI_NAME_LEN+1];
+	char expSchemaNm[MAX_ANSI_NAME_LEN+1];
+	char expTableNm[MAX_ANSI_NAME_LEN+1];
+	char expColumnNm[MAX_ANSI_NAME_LEN+1];
+
+	char tableName1[MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+3];
+	char tableName2[MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+3];
+	char tableName3[MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+MAX_ANSI_NAME_LEN+3];
 
 	// Setup module filenames for MX metadata
 	//Module version is changed from 0 to "SQLCLI_ODBC_MODULE_VERSION" R3.0
@@ -922,14 +952,447 @@ short do_ExecSMD(
 		pSrvrStmt = createSrvrStmt(dialogueId,
 		stmtLabel,
 		&sqlcode,
-		"NONSTOP_SQLMX_NSK.MXCS_SCHEMA.CATANSIMX",
-		SQLCLI_ODBC_MODULE_VERSION,
-		1234567890,
+		NULL,
+		0,
+		0,
 		sqlStmtType,
-		false,true);
+		false,false);
 
 	*stmtId = (long)pSrvrStmt;
+	SQLValue_def *sqlString = NULL;
+	// allocate space for the sqlString
+	MEMORY_ALLOC_ARRAY(sqlString, SQLValue_def, totalSize);
+	pSrvrStmt->sqlStmtType = TYPE_SELECT;
 
+	switch(APIType)
+			{
+		case SQL_API_SQLTABLES :
+		case SQL_API_SQLTABLES_JDBC :
+			   if ((strcmp(catalogNm,"%") == 0) && (strcmp(schemaNm,"") == 0) && (strcmp(tableNm,"") == 0))
+			   {
+				    strcpy(catalogNmNoEsc, SEABASE_MD_CATALOG);
+					inputParam[0] = catalogNmNoEsc;
+					inputParam[1] = inputParam[0];
+					inputParam[2] = NULL;
+
+					    if (APIType == SQL_API_SQLTABLES)
+						  {
+					    	snprintf((char *)sqlString->dataValue._buffer, totalSize,
+"select distinct(cast('%s' as varchar(128))) TABLE_CAT, "
+"cast(NULL as varchar(128) ) TABLE_SCHEM, "
+"cast(NULL as varchar(128) ) TABLE_NAME, "
+"cast(NULL as varchar(128) ) TABLE_TYPE, "
+"cast(NULL as varchar(128)) REMARKS "
+"from TRAFODION.\"_MD_\".objects "
+"where CATALOG_NAME = '%s' "
+"FOR READ UNCOMMITTED ACCESS ORDER BY 4,1,2,3;",
+							inputParam[0], inputParam[1]);
+						  }
+						  else
+						  {
+							snprintf((char *)sqlString->dataValue._buffer, totalSize,
+"select distinct(cast('%s' as varchar(128) )) TABLE_CAT "
+"from TRAFODION.\"_MD_\".objects "
+"where CATALOG_NAME = '%s' "
+"FOR READ UNCOMMITTED ACCESS ORDER BY 1;",
+							inputParam[0], inputParam[1]);
+						  }
+		           }
+		           else
+		           if ((strcmp(catalogNm,"") == 0) && (strcmp(schemaNm,"%") == 0) && (strcmp(tableNm,"") == 0))
+		                 {
+							  convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+							  strcpy(catalogNmNoEsc, SEABASE_MD_CATALOG);
+							  inputParam[0] = catalogNmNoEsc;
+							  inputParam[1] = inputParam[0];
+							  inputParam[2] = (char*) schemaNm;
+							  inputParam[3] = expSchemaNm;
+							  inputParam[4] = NULL;
+
+		                              if (APIType == SQL_API_SQLTABLES)
+		                              {
+		                            	  snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		 "select distinct cast(NULL as varchar(128) ) TABLE_CAT, "
+		   "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+		   "cast(NULL as varchar(128) ) TABLE_NAME, "
+		   "cast(NULL as varchar(128) ) TABLE_TYPE, "
+		   "cast(NULL as varchar(128)) REMARKS "
+		 "from TRAFODION.\"_MD_\".objects "
+		 "where "
+		   "(CATALOG_NAME = '%s' or "
+		   " CATALOG_NAME LIKE '%s' ESCAPE '\\') "
+		   "and (SCHEMA_NAME = '%s' or "
+		   "SCHEMA_NAME LIKE '%s' ESCAPE '\\') "
+		 "FOR READ UNCOMMITTED ACCESS ORDER BY 4,1,2,3;",
+		                                 inputParam[0], inputParam[1], inputParam[2],
+		                                 inputParam[3]);
+		                              }
+		                              else
+		                              {
+		                            	  snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		 "select distinct "
+		   "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+		   "cast(trim(CATALOG_NAME) as varchar(128) ) TABLE_CATALOG "
+		 "from TRAFODION.\"_MD_\".objects "
+		 "where "
+		   "(CATALOG_NAME = '%s' or "
+		   " CATALOG_NAME LIKE '%s' ESCAPE '\\') "
+		   "and (SCHEMA_NAME = '%s' or "
+		   "SCHEMA_NAME LIKE '%s' ESCAPE '\\') "
+		 "FOR READ UNCOMMITTED ACCESS ORDER BY 2;",
+		                                 inputParam[0], inputParam[1], inputParam[2],
+		                                 inputParam[3]);
+		                              }
+		                       }
+		                        else
+		                        if ((strcmp(catalogNm,"") == 0) && (strcmp(schemaNm,"")
+		== 0) && (strcmp(tableNm,"") == 0) && (strcmp(tableTypeList,"%") == 0))
+		                        {
+		                                strcpy(catalogNmNoEsc, "%");
+		                                strcpy(schemaNmNoEsc, "%");
+		                                strcpy(tableNmNoEsc, "%");
+		                                tableParam[0] = NULL;
+		                                inputParam[0] = NULL;
+		                                snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		 "select cast(NULL as varchar(128) ) TABLE_CAT,"
+		    "cast(NULL as varchar(128) ) TABLE_SCHEM, "
+		    "cast(NULL as varchar(128) ) TABLE_NAME,"
+		    "trim(TABLE_TYPE) TABLE_TYPE,"
+		    "cast(NULL as varchar(128)) REMARKS "
+		 " from (VALUES "
+		         "('TABLE'),"
+		         "('SYSTEM TABLE'),"
+		         "('VIEW'))"
+		     " tp (\"TABLE_TYPE\")"
+		 " FOR READ UNCOMMITTED ACCESS ORDER BY 4,1,2,3;");
+		                        }
+		                        else
+		                        {
+		                                if (tableNm[0] == '\0')
+		                                        strcpy((char *)tableNmNoEsc,"%");
+		                                /*if (! checkIfWildCard(catalogNm, expCatalogNm))
+		                                {
+		                                        exception_->exception_nr = odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_;
+		                                        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_WILDCARD_NOT_SUPPORTED;
+		                                        goto MapException;
+		                                }*/
+		                                if (strcmp(catalogNm,"") == 0) // If catalog empty default to system catalog
+		                                        strcpy(tableName1,SEABASE_MD_CATALOG);
+		                                else
+		                                {
+		                                        strncpy(tableName1,catalogNm, sizeof(tableName1));
+		                                        tableName1[sizeof(tableName1)-1] = 0;
+		                                }
+		                                tableParam[0] = tableName1;
+		                                tableParam[1] = NULL;
+		                                convertWildcardNoEsc(metadataId, TRUE, schemaNm,schemaNmNoEsc);
+		                                convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+		                                if (tableNm[0] == '\0')
+		                                {
+		                                convertWildcardNoEsc(metadataId, TRUE, tableNmNoEsc, tableNmNoEsc);
+		                                convertWildcard(metadataId, TRUE, tableNmNoEsc, expTableNm);
+		                                }
+		                                else
+		                                {
+		                                convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+		                                convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+		                                }
+
+		                                inputParam[0] = schemaNmNoEsc;
+		                                inputParam[1] = expSchemaNm;
+		                                inputParam[2] = tableNmNoEsc;
+		                                inputParam[3] = expTableNm;
+		                                if (tableTypeList == NULL || strlen(tableTypeList) == 0 || strcmp(tableTypeList,"%") == 0)
+		                                {
+		                                        inputParam[4]  = "UT"; // User Table
+		                                        inputParam[5]  = "BT";
+		                                        inputParam[6]  = "VI";
+		                                        inputParam[7]  = "SM"; // System MetaData
+		                                        inputParam[8]  = "BT";
+		                                        inputParam[9] = NULL;
+		                                }
+		                                else
+		                                {
+		                                        inputParam[4]  = "";
+		                                        inputParam[5]  = "";
+		                                        inputParam[6]  = "";
+		                                        inputParam[7]  = "";
+		                                        inputParam[8]  = "";
+		                                        inputParam[9] = NULL;
+
+		                                        strncpy(lc_tableTypeList, tableTypeList, sizeof(lc_tableTypeList));
+		                                        lc_tableTypeList[sizeof(lc_tableTypeList)-1] = 0;
+		                                        token = strtok_r(lc_tableTypeList, " ,'", &saveptr);
+		                                        while (token != NULL)
+		                                        {
+		                                                if (strcmp(token, "SYSTEM") == 0
+		)
+		                                                {
+		                                                        token = strtok_r(NULL, ",'", &saveptr);
+		                                                        if (token != NULL && strcmp(token, "TABLE") == 0)
+		                                                        {
+		                                                                inputParam[7] = "SM";
+		                                                                inputParam[8] = "BT";
+		                                                        }
+		                                                        else
+		                                                                continue;
+		                                                }
+		                                                else
+		                                                if (strcmp(token, "TABLE") == 0)                                                {
+		                                                        inputParam[4]  = "UT";
+		                                                        inputParam[5]  = "BT";
+		                                                }
+		                                                else
+		                                                if (strcmp(token, "VIEW") == 0)
+		                                                {
+		                                                        inputParam[4]  = "UT";
+		                                                        inputParam[6]  = "VI";
+		                                                }
+
+		                                                token = strtok_r(NULL, " ,'", &saveptr);
+		                                        }
+		                                }
+
+		                                if (APIType == SQL_API_SQLTABLES)
+		                                {
+		                                	snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		 "select cast('%s' as varchar(128) ) TABLE_CAT,"
+		   "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+		   "cast(trim(OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
+		   "trim(case OBJECT_TYPE "
+		       "when 'BT' then 'TABLE' "
+		       "when 'VI' then 'VIEW' "
+		      "end) TABLE_TYPE,"
+		   "cast(NULL as varchar(128)) REMARKS "
+		 " from TRAFODION.\"_MD_\".OBJECTS "
+		 " where (SCHEMA_NAME = '%s' or "
+		 " trim(SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+		 " and (OBJECT_NAME = '%s' or"
+		 " trim(OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+		 "  and ((SCHEMA_NAME <> '_MD_' and '%s'='UT' and OBJECT_TYPE in ('%s', '%s'))"
+		 "  or   (SCHEMA_NAME = '_MD_' and '%s'='SM' and OBJECT_TYPE in ('%s')))"
+		 " FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;",
+		                                   tableParam[0], inputParam[0], inputParam[1],
+		                                   inputParam[2], inputParam[3], inputParam[4],
+		                                   inputParam[5], inputParam[6], inputParam[7],
+		                                   inputParam[8]);
+
+		                                }
+		                                else
+		                                {
+		                                	snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		 "select cast('%s' as varchar(128) ) TABLE_CAT,"
+		  "cast(trim(SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM,"
+		  "cast(trim(OBJECT_NAME) as varchar(128) ) TABLE_NAME,"
+		  "trim(case OBJECT_TYPE "
+		       "when 'BT' then 'TABLE' "
+		       "when 'VI' then 'VIEW' "
+		       "end) TABLE_TYPE,"
+		  "cast(NULL as varchar(128)) REMARKS, "
+		  "cast(NULL as varchar(128)) TYPE_CAT,"
+		  "cast(NULL as varchar(128)) TYPE_SCHEM, "
+		  "cast(NULL as varchar(128)) TYPE_NAME,"
+		  "cast(NULL as varchar(128)) SELF_REFERENCING_COL_NAME, "
+		  "cast(NULL as varchar(128)) REF_GENERATION"
+		 " from TRAFODION.\"_MD_\".OBJECTS "
+		 " where (SCHEMA_NAME = '%s' or "
+		 " trim(SCHEMA_NAME) LIKE '%s' ESCAPE '\\')"
+		 " and (OBJECT_NAME = '%s' or"
+		 " trim(OBJECT_NAME) LIKE '%s' ESCAPE '\\')"
+		 "  and ((SCHEMA_NAME <> '_MD_' and '%s'='UT' and OBJECT_TYPE in ('%s', '%s'))"
+		 "  or   (SCHEMA_NAME = '_MD_' and '%s'='SM' and OBJECT_TYPE in ('%s')))"
+		 " FOR READ UNCOMMITTED ACCESS ORDER BY 4, 1, 2, 3 ;",
+		                                   tableParam[0], inputParam[0], inputParam[1],
+		                                   inputParam[2], inputParam[3], inputParam[4],
+		                                   inputParam[5], inputParam[6], inputParam[7],
+		                                   inputParam[8]);
+
+		                                }
+
+		                       }
+		                       break;
+		case SQL_API_SQLGETTYPEINFO :
+		  snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		  "select distinct TYPE_NAME TYPE_NAME,"
+		        "DATA_TYPE DATA_TYPE,PREC COLUMN_SIZE,"
+		        "LITERAL_PREFIX LITERAL_PREFIX,"
+		        "LITERAL_SUFFIX LITERAL_SUFFIX,"
+		        "CREATE_PARAMS CREATE_PARAMS,"
+		        "IS_NULLABLE NULLABLE,"
+		        "CASE_SENSITIVE CASE_SENSITIVE,"
+		        "SEARCHABLE SEARCHABLE,"
+		        "UNSIGNED_ATTRIBUTE UNSIGNED_ATTRIBUTE,"
+		        "FIXED_PREC_SCALE FIXED_PREC_SCALE,"
+		        "AUTO_UNIQUE_VALUE AUTO_UNIQUE_VALUE,"
+		        "LOCAL_TYPE_NAME LOCAL_TYPE_NAME,"
+		        "MINIMUM_SCALE MINIMUM_SCALE,"
+		        "MAXIMUM_SCALE MAXIMUM_SCALE,"
+		        "SQL_DATA_TYPE SQL_DATA_TYPE,"
+		        "SQL_DATETIME_SUB SQL_DATETIME_SUB,"
+		        "NUM_PREC_RADIX NUM_PREC_RADIX,"
+		        "INTERVAL_PRECISION INTERVAL_PRECISION "
+		 " from "
+		 " (VALUES "
+		        "(cast('BIGINT' as varchar(128)),cast(-5 as smallint), cast(19 as integer), cast (NULL as varchar(128)), cast (NULL as varchar(128)),"
+		        "cast (NULL as varchar(128)), cast(1 as smallint), cast(0 as smallint), cast(2 as smallint) , cast(0 as smallint), cast(0 as smallint),"
+		        "cast(0 as smallint), cast('LARGEINT' as varchar(128)), cast(NULL as smallint), cast(NULL as smallint), cast('LARGEINT' as varchar(128)),"
+		        "cast(10 as smallint), cast(19 as integer), cast(20 as integer), cast(-402 as smallint), cast(NULL as smallint), cast(NULL as smallint),"
+		         "cast(0 as smallint), cast(0 as smallint), cast(3 as smallint), cast(0 as smallint)),"
+		        "('BIGINT SIGNED', -5, 19, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'LARGEINT', NULL, NULL, 'SIGNED LARGEINT', 10, 19, 20, -402, NULL, NULL, 0, 0, 3, 0),"
+		        "('CHAR', 1, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'CHARACTER', NULL, NULL, 'CHARACTER', NULL, -1, -1, 1, NULL, NULL, 0, 0, 3, 0),"
+		        "('DATE', 91, 10, '{d ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'DATE', NULL, NULL, 'DATE', NULL, 10, 6, 9, 1, NULL, 1, 3, 3, 0),"
+		        "('DECIMAL', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'DECIMAL', 0, 18, 'DECIMAL', 10, -2, -3, 3, NULL, NULL, 0, 0, 3, 0),"
+		        "('DECIMAL SIGNED', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'DECIMAL', 0, 18, 'SIGNED DECIMAL', 10, -2, -3, 3, NULL, NULL, 0, 0, 3, 0),"
+		        "('DECIMAL UNSIGNED', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'DECIMAL', 0, 18, 'UNSIGNED DECIMAL', 10, -2, -3, -301, NULL, NULL, 0, 0, 3, 0),"
+		        "('DOUBLE PRECISION', 8, 15, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'DOUBLE', NULL, NULL, 'DOUBLE PRECISION', 2, 54, -1, 8, NULL, NULL, 0, 0, 3, 0),"
+		        "('DOUBLE PRECISION', 8, 15, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'DOUBLE', NULL, NULL, 'DOUBLE', 2, 54, -1, 8, NULL, NULL, 0, 0, 3, 0),"
+		        "('FLOAT', 6, 15, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'FLOAT', NULL, NULL, 'FLOAT', 2, -2, -1, 6, NULL, NULL, 0, 0, 3, 0),"
+		        "('INTEGER', 4, 10, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'INTEGER', NULL, NULL, 'INTEGER', 10, 10, -1, 4, NULL, NULL, 0, 0, 3, 0),"
+		        "('INTEGER SIGNED', 4, 10, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'INTEGER', NULL, NULL, 'SIGNED INTEGER', 10, 10, -1, 4, NULL, NULL, 0, 0, 3, 0),"
+		        "('INTEGER UNSIGNED', 4, 10, NULL, NULL, NULL, 1, 0, 2, 1, 0, 0, 'INTEGER', NULL, NULL, 'UNSIGNED INTEGER', 10, 10, -1, -401, NULL, NULL, 0, 0, 3, 0),"
+		        "('INTERVAL', 113, 0, '{INTERVAL ''', ''' MINUTE TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 3, 34, 100, 13, 2, 5, 6, 3, 0),"
+		        "('INTERVAL', 105, 0, '{INTERVAL ''', ''' MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 0, 34, 100, 5, 2, 5, 5, 3, 0),"
+		        "('INTERVAL', 101, 0, '{INTERVAL ''', ''' YEAR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 0, 34, 100, 1, 2, 1, 1, 3, 0),"
+		        "('INTERVAL', 106, 0, '{INTERVAL ''', ''' SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 0, 34, 100, 6, 2, 6, 6, 3, 0),"
+		        "('INTERVAL', 104, 0, '{INTERVAL ''', ''' HOUR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 0, 34, 100, 4, 2, 4, 4, 3, 0),"
+		        "('INTERVAL', 107, 0, '{INTERVAL ''', ''' YEAR TO MONTH}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 3, 34, 100, 7, 2, 1, 2, 3, 0),"
+		        "('INTERVAL', 108, 0, '{INTERVAL ''', ''' DAY TO HOUR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 3, 34, 100, 8, 2, 3, 4, 3, 0),"
+		        "('INTERVAL', 102, 0, '{INTERVAL ''', ''' MONTH}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 0, 34, 100, 2, 2, 2, 2, 3, 0),"
+		        "('INTERVAL', 111, 0, '{INTERVAL ''', ''' HOUR TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 3, 34, 100, 11, 2, 4, 5, 3, 0),"
+		        "('INTERVAL', 112, 0, '{INTERVAL ''', ''' HOUR TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 6, 34, 100, 12, 2, 4, 6, 3, 0),"
+		        "('INTERVAL', 110, 0, '{INTERVAL ''', ''' DAY TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 9, 34, 100, 10, 2, 3, 6, 3, 0),"
+		        "('INTERVAL', 109, 0, '{INTERVAL ''', ''' DAY TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 6, 34, 100, 9, 2, 3, 5, 3, 0),"
+		        "('INTERVAL', 103, 0, '{INTERVAL ''', ''' DAY}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', NULL, 0, 34, 100, 3, 2, 3, 3, 3, 0),"
+		        "('NUMERIC', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'NUMERIC', 0, 128, 'NUMERIC', 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0),"
+		        "('NUMERIC SIGNED', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'NUMERIC', 0, 128, 'SIGNED NUMERIC', 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0),"
+		        "('NUMERIC UNSIGNED', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'NUMERIC', 0, 128, 'UNSIGNED NUMERIC', 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0),"
+		        "('REAL', 7, 7, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'REAL', NULL, NULL, 'REAL', 2, 22, -1, 7, NULL, NULL, 0, 0, 3, 0),"
+		        "('SMALLINT', 5, 5, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'SMALLINT', NULL, NULL, 'SMALLINT', 10, 5, -1, 5, NULL, NULL, 0, 0, 3, 0),"
+		        "('SMALLINT SIGNED', 5, 5, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'SMALLINT', NULL, NULL, 'SIGNED SMALLINT', 10, 5, -1, 5, NULL, NULL, 0, 0, 3, 0),"
+		        "('SMALLINT UNSIGNED', 5, 5, NULL, NULL, NULL, 1, 0, 2, 1, 0, 0, 'SMALLINT', NULL, NULL, 'UNSIGNED SMALLINT', 10, 5, -1, -502, NULL, NULL, 0, 0, 3, 0),"
+		        "('TIME', 92, 8, '{t ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'TIME', NULL, NULL, 'TIME', NULL, 8, 6, 9, 2, NULL, 4, 6, 3, 0),"
+		        "('TIMESTAMP', 93, 26, '{ts ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'TIMESTAMP', 0, 6, 'TIMESTAMP', NULL, 19, 16, 9, 3, NULL, 1, 6, 3, 0),"
+		        "('VARCHAR', 12, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'VARCHAR', NULL, NULL, 'VARCHAR', NULL, -1, -1, 12, NULL, NULL, 0, 0, 3, 0)"
+		         " ) "
+		  " dt(\"TYPE_NAME\", \"DATA_TYPE\", \"PREC\", \"LITERAL_PREFIX\", \"LITERAL_SUFFIX\", \"CREATE_PARAMS\", \"IS_NULLABLE\", \"CASE_SENSITIVE\", \"SEARCHABLE\","
+		  "\"UNSIGNED_ATTRIBUTE\", \"FIXED_PREC_SCALE\", \"AUTO_UNIQUE_VALUE\", \"LOCAL_TYPE_NAME\", \"MINIMUM_SCALE\", \"MAXIMUM_SCALE\", \"SQL_TYPE_NAME\","
+		  "\"NUM_PREC_RADIX\", \"USEPRECISION\", \"USELENGTH\", \"SQL_DATA_TYPE\", \"SQL_DATETIME_SUB\", \"INTERVAL_PRECISION\", \"DATETIMESTARTFIELD\","
+		  "\"DATETIMEENDFIELD\", \"APPLICATION_VERSION\", \"TRANSLATION_ID\")"
+		" ORDER BY 2,1 FOR READ UNCOMMITTED ACCESS;");
+		    break;
+		case SQL_API_SQLCOLUMNS :
+			if (tableNm[0] != '$' && tableNm[0] != '\\')
+						{
+							if (strcmp(catalogNm,"") == 0)
+								strcpy(tableName1,SEABASE_MD_CATALOG);
+							else
+								strcpy(tableName1, catalogNm);
+							tableParam[0] = tableName1;
+							convertWildcard(metadataId, TRUE, schemaNm, expSchemaNm);
+							convertWildcardNoEsc(metadataId, TRUE, schemaNm, schemaNmNoEsc);
+							convertWildcard(metadataId, TRUE, tableNm, expTableNm);
+							convertWildcardNoEsc(metadataId, TRUE, tableNm, tableNmNoEsc);
+							convertWildcard(metadataId, TRUE, columnNm, expColumnNm);
+							convertWildcardNoEsc(metadataId, TRUE, columnNm, columnNmNoEsc);
+							inputParam[0] = schemaNmNoEsc;
+							inputParam[1] = expSchemaNm;
+							inputParam[2] = tableNmNoEsc;
+							inputParam[3] = expTableNm;
+							inputParam[4] = columnNmNoEsc;
+							inputParam[5] = expColumnNm;
+							inputParam[6] = odbcAppVersion;
+							inputParam[7] = NULL;
+					snprintf((char *)sqlString->dataValue._buffer, totalSize,
+		"select " "cast('%s' as varchar(128) ) TABLE_CAT, "
+		"cast(trim(ob.SCHEMA_NAME) as varchar(128) ) TABLE_SCHEM, "
+		"cast(trim(ob.OBJECT_NAME) as varchar(128) ) TABLE_NAME, "
+		"cast(trim(co.COLUMN_NAME) as varchar(128) ) COLUMN_NAME, "
+		"cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
+		"when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.DATA_TYPE end) as smallint) DATA_TYPE, "
+		"trim(dt.TYPE_NAME) TYPE_NAME, "
+		"cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then co.COLUMN_SIZE/2 "
+		"when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then co.COLUMN_SIZE/2 "
+		"when dt.USEPRECISION = -1 then co.COLUMN_SIZE when dt.USEPRECISION = -2 then co.COLUMN_PRECISION "
+		"when co.FS_DATA_TYPE = 192 then dt.USEPRECISION + 1 "
+		"when co.FS_DATA_TYPE >= 195 and co.FS_DATA_TYPE <= 207 then dt.USEPRECISION + 1 "
+		"else dt.USEPRECISION end) as integer) COLUMN_SIZE, "
+		"cast((case when dt.USELENGTH = -1 then co.COLUMN_SIZE when dt.USELENGTH = -2 then co.COLUMN_PRECISION "
+		"when dt.USELENGTH = -3 then co.COLUMN_PRECISION + 2  "
+		"else dt.USELENGTH end) as integer) BUFFER_LENGTH, "
+		"cast(co.COLUMN_SCALE as smallint) DECIMAL_DIGITS, "
+		"cast(dt.NUM_PREC_RADIX as smallint) NUM_PREC_RADIX, "
+		"cast((case when co.NULLABLE = 0 then 0 when co.NULLABLE = 2 then 1 else 2 end) as smallint) NULLABLE, "
+	    "cast(NULL as varchar(128)) REMARKS, "
+		"trim(co.DEFAULT_VALUE) COLUMN_DEF, "
+		"cast((case when co.FS_DATA_TYPE = 0 and co.character_set = 'UCS2' then -8 "
+		"when co.FS_DATA_TYPE = 64 and co.character_set = 'UCS2' then -9 else dt.SQL_DATA_TYPE end) as smallint) SQL_DATA_TYPE, "
+		"cast(dt.SQL_DATETIME_SUB as smallint) SQL_DATETIME_SUB, cast((case dt.DATA_TYPE when 1 then co.COLUMN_SIZE "
+		"when -1 then co.COLUMN_SIZE when 12 then co.COLUMN_SIZE else NULL end) as integer) CHAR_OCTET_LENGTH, "
+		"cast((case when (trim(co1.COLUMN_CLASS) <> 'S') then co.column_number+1 else "
+		"co.column_number end) as integer) ORDINAL_POSITION, "
+		"cast((case when co.NULLABLE = 0 then 'NO' else 'YES' end) as varchar(3)) IS_NULLABLE  "
+		"from  "
+		"TRAFODION.\"_MD_\".objects ob, "
+		"TRAFODION.\"_MD_\".columns co, "
+		"TRAFODION.\"_MD_\".columns co1, "
+		"(VALUES ("
+		"cast('BIGINT' as varchar(128)),cast(-5 as smallint), cast(19 as integer), cast (NULL as varchar(128)), cast (NULL as varchar(128)), "
+		"cast (NULL as varchar(128)), cast(1 as smallint), cast(0 as smallint), cast(2 as smallint) , cast(0 as smallint), cast(0 as smallint), "
+		"cast(0 as smallint), cast('LARGEINT' as varchar(128)), cast(NULL as smallint), cast(NULL as smallint), cast('SIGNED LARGEINT' as varchar(128)), cast(134 as integer), "
+		"cast(10 as smallint), cast(19 as integer), cast(20 as integer), cast(-402 as smallint), cast(NULL as smallint), cast(NULL as smallint), "
+		"cast(0 as smallint), cast(0 as smallint), cast(3 as smallint), cast(0 as smallint)), "
+		"('CHAR', 1, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'CHARACTER', NULL, NULL, 'CHARACTER', 0, NULL, -1, -1, 1, NULL, NULL, 0, 0, 3, 0), "
+		"('DATE', 91, 10, '{d ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'DATE', NULL, NULL, 'DATE', 192, NULL, 10, 6, 9, 1, NULL, 1, 3, 3, 0), "
+		"('DECIMAL', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'DECIMAL', 0, 18, 'SIGNED DECIMAL', 152, 10, -2, -3, 3, NULL, NULL, 0, 0, 3, 0), "
+		"('DECIMAL UNSIGNED', 3, 18, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'DECIMAL', 0, 18, 'UNSIGNED DECIMAL', 150, 10, -2, -3, -301, NULL, NULL, 0, 0, 3, 0), "
+		"('DOUBLE PRECISION', 8, 15, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'DOUBLE', NULL, NULL, 'DOUBLE', 143, 2, 54, -1, 8, NULL, NULL, 0, 0, 3, 0), "
+		"('FLOAT', 6, 15, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'FLOAT', NULL, NULL, 'FLOAT', 142, 2, -2, -1, 6, NULL, NULL, 0, 0, 3, 0), "
+		"('INTEGER', 4, 10, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'INTEGER', NULL, NULL, 'SIGNED INTEGER', 132, 10, 10, -1, 4, NULL, NULL, 0, 0, 3, 0), "
+		"('INTEGER UNSIGNED', 4, 10, NULL, NULL, NULL, 1, 0, 2, 1, 0, 0, 'INTEGER', NULL, NULL, 'UNSIGNED INTEGER', 133, 10, 10, -1, -401, NULL, NULL, 0, 0, 3, 0), "
+		"('INTERVAL', 113, 0, '{INTERVAL ''', ''' MINUTE TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 207, NULL, 3, 34, 100, 13, 2, 5, 6, 3, 0), "
+		"('INTERVAL', 105, 0, '{INTERVAL ''', ''' MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 199, NULL, 0, 34, 100, 5, 2, 5, 5, 3, 0), "
+		"('INTERVAL', 101, 0, '{INTERVAL ''', ''' YEAR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 195, NULL, 0, 34, 100, 1, 2, 1, 1, 3, 0), "
+		"('INTERVAL', 106, 0, '{INTERVAL ''', ''' SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 200, NULL, 0, 34, 100, 6, 2, 6, 6, 3, 0), "
+		  "('INTERVAL', 104, 0, '{INTERVAL ''', ''' HOUR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 198, NULL, 0, 34, 100, 4, 2, 4, 4, 3, 0), "
+		  "('INTERVAL', 107, 0, '{INTERVAL ''', ''' YEAR TO MONTH}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 201, NULL, 3, 34, 100, 7, 2, 1, 2, 3, 0), "
+		  "('INTERVAL', 108, 0, '{INTERVAL ''', ''' DAY TO HOUR}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 202, NULL, 3, 34, 100, 8, 2, 3, 4, 3, 0), "
+		  "('INTERVAL', 102, 0, '{INTERVAL ''', ''' MONTH}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 196, NULL, 0, 34, 100, 2, 2, 2, 2, 3, 0), "
+		  "('INTERVAL', 111, 0, '{INTERVAL ''', ''' HOUR TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 205, NULL, 3, 34, 100, 11, 2, 4, 5, 3, 0), "
+		  "('INTERVAL', 112, 0, '{INTERVAL ''', ''' HOUR TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 206, NULL, 6, 34, 100, 12, 2, 4, 6, 3, 0), "
+		  "('INTERVAL', 110, 0, '{INTERVAL ''', ''' DAY TO SECOND}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 204, NULL, 9, 34, 100, 10, 2, 3, 6, 3, 0), "
+		  "('INTERVAL', 109, 0, '{INTERVAL ''', ''' DAY TO MINUTE}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 203, NULL, 6, 34, 100, 9, 2, 3, 5, 3, 0), "
+		  "('INTERVAL', 103, 0, '{INTERVAL ''', ''' DAY}', NULL, 1, 0, 2, 0, 0, NULL, 'INTERVAL', 0, 0, 'INTERVAL', 197, NULL, 0, 34, 100, 3, 2, 3, 3, 3, 0), "
+		  "('NUMERIC', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 0, 0, 0, 'NUMERIC', 0, 128, 'SIGNED NUMERIC', 156, 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0), "
+		  "('NUMERIC UNSIGNED', 2, 128, NULL, NULL, 'precision,scale', 1, 0, 2, 1, 0, 0, 'NUMERIC', 0, 128, 'UNSIGNED NUMERIC', 155, 10, -2, -3, 2, NULL, NULL, 0, 0, 3, 0), "
+		  "('REAL', 7, 7, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'REAL', NULL, NULL, 'REAL', 142, 2, 22, -1, 7, NULL, NULL, 0, 0, 3, 0), "
+		  "('SMALLINT', 5, 5, NULL, NULL, NULL, 1, 0, 2, 0, 0, 0, 'SMALLINT', NULL, NULL, 'SIGNED SMALLINT', 130, 10, 5, -1, 5, NULL, NULL, 0, 0, 3, 0), "
+		  "('SMALLINT UNSIGNED', 5, 5, NULL, NULL, NULL, 1, 0, 2, 1, 0, 0, 'SMALLINT', NULL, NULL, 'UNSIGNED SMALLINT', 131, 10, 5, -1, -502, NULL, NULL, 0, 0, 3, 0), "
+		  "('TIME', 92, 8, '{t ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'TIME', NULL, NULL, 'TIME', 192, NULL, 8, 6, 9, 2, NULL, 4, 6, 3, 0), "
+		  "('TIMESTAMP', 93, 26, '{ts ''', '''}', NULL, 1, 0, 2, NULL, 0, NULL, 'TIMESTAMP', 0, 6, 'TIMESTAMP', 192, NULL, 19, 16, 9, 3, NULL, 1, 6, 3, 0), "
+		  "('VARCHAR', 12, 32000, '''', '''', 'max length', 1, 1, 3, NULL, 0, NULL, 'VARCHAR', NULL, NULL, 'VARCHAR', 64, NULL, -1, -1, 12, NULL, NULL, 0, 0, 3, 0) "
+		  " ) "
+		  "dt(\"TYPE_NAME\", \"DATA_TYPE\", \"PREC\", \"LITERAL_PREFIX\", \"LITERAL_SUFFIX\", \"CREATE_PARAMS\", \"IS_NULLABLE\", \"CASE_SENSITIVE\", \"SEARCHABLE\", "
+		     "\"UNSIGNED_ATTRIBUTE\", \"FIXED_PREC_SCALE\", \"AUTO_UNIQUE_VALUE\", \"LOCAL_TYPE_NAME\", \"MINIMUM_SCALE\", \"MAXIMUM_SCALE\", \"SQL_TYPE_NAME\", \"FS_DATA_TYPE\", "
+		     "\"NUM_PREC_RADIX\", \"USEPRECISION\", \"USELENGTH\", \"SQL_DATA_TYPE\", \"SQL_DATETIME_SUB\", \"INTERVAL_PRECISION\", \"DATETIMESTARTFIELD\", "
+		     "\"DATETIMEENDFIELD\", \"APPLICATION_VERSION\", \"TRANSLATION_ID\") "
+		"where  ob.OBJECT_UID = co.OBJECT_UID "
+		  "and dt.FS_DATA_TYPE = co.FS_DATA_TYPE "
+		  "and co.OBJECT_UID = co1.OBJECT_UID and co1.COLUMN_NUMBER = 0 "
+		  "and (dt.DATETIMESTARTFIELD = co.DATETIME_START_FIELD) "
+		  "and (dt.DATETIMEENDFIELD = co.DATETIME_END_FIELD) "
+		  "and (ob.SCHEMA_NAME = '%s' or trim(ob.SCHEMA_NAME) LIKE '%s' ESCAPE '\\') "
+		  "and (ob.OBJECT_NAME = '%s' or trim(ob.OBJECT_NAME) LIKE '%s' ESCAPE '\\') "
+		  "and (co.COLUMN_NAME = '%s' or trim(co.COLUMN_NAME) LIKE '%s' ESCAPE '\\')  "
+		  "and (ob.OBJECT_TYPE in ('BT' , 'VI') ) "
+		  "and (trim(co.COLUMN_CLASS) not in ('S', 'M')) "
+		  "and dt.APPLICATION_VERSION = %s "
+		"FOR READ UNCOMMITTED ACCESS order by 1, 2, 3, co.COLUMN_NUMBER ; ",
+		            tableParam[0], inputParam[0], inputParam[1],
+		            inputParam[2], inputParam[3], inputParam[4],
+		            inputParam[5], inputParam[6]);
+					}
+					break;
+			}
 	if (pSrvrStmt == NULL)
 	{
 		executeException->exception_nr = odbc_SQLSvc_PrepareFromModule_SQLError_exn_;
@@ -941,7 +1404,7 @@ short do_ExecSMD(
 		FUNCTION_RETURN_NUMERIC(EXECUTE_EXCEPTION,("EXECUTE_EXCEPTION"));
 	}
 
-	rc = pSrvrStmt->PrepareFromModule(INTERNAL_STMT);
+	rc = pSrvrStmt->Prepare(sqlString, sqlStmtType, holdability, queryTimeout,false);
 	if (rc == SQL_ERROR)
 	{
 		executeException->exception_nr = odbc_SQLSvc_ExecuteN_SQLError_exn_;
@@ -1165,6 +1628,58 @@ void freeOutputValueList(SQLValueList_def *ovl)
 	FUNCTION_RETURN_VOID((NULL));
 }
 
+short executeAndFetchSMDQuery(
+	/* In	*/ void * objtag_
+  , /* In	*/ const CEE_handle_def *call_id_
+  , /* In	*/ long dialogueId
+  , /* In	*/ short APIType
+  , /* In	*/ const char *stmtLabel
+  , /* In	*/ short sqlStmtType
+  , /* In	*/ const char *tableParam[]
+  , /* In	*/ const char *inputParam[]
+  , /* In	*/const char *catalogNm
+  , /* In	*/ const char *schemaNm
+  , /* In	*/ const char *tableNm
+  , /* In	*/ const char *columnNm
+  , /* In	*/ const char *tableTypeList
+  , /* In	*/ unsigned long metadataId
+  , /* Out   */ SQLItemDescList_def *outputDesc
+  , /* Out   */ ExceptionStruct *executeException
+  , /* Out   */ ExceptionStruct *fetchException
+  , /* Out   */ ERROR_DESC_LIST_def	*sqlWarning
+  , /* Out   */ long *rowsAffected
+  , /* Out   */ SQLValueList_def *outputValueList
+  , /* Out   */ long *stmtId
+  )
+{
+	FUNCTION_ENTRY("executeAndFetchSMDQuery",("..."));
+	short retCode;
+
+	retCode = do_ExecSMD(objtag_, call_id_, executeException, sqlWarning, dialogueId,
+			tableTypeList, metadataId, APIType, stmtLabel, sqlStmtType, catalogNm, schemaNm,
+			tableNm, columnNm, tableParam, inputParam, outputDesc, stmtId);
+	if(retCode != CEE_SUCCESS)
+		FUNCTION_RETURN_NUMERIC(retCode,("do_ExecSMD() Failed"));
+
+	long rowsRead;
+	SQLValueList_def fetchOutputValueList;
+	memset(&fetchOutputValueList, 0, sizeof (fetchOutputValueList));
+	*rowsAffected = 0;
+	do
+	{
+		odbc_SQLSvc_FetchN_sme_(objtag_, call_id_, fetchException, dialogueId, *stmtId, SQL_MAX_COLUMNS_IN_SELECT,
+								SQL_ASYNC_ENABLE_OFF, 0, &rowsRead, &fetchOutputValueList, sqlWarning);
+
+		if (fetchException->exception_nr != CEE_SUCCESS)
+			FUNCTION_RETURN_NUMERIC(FETCH_EXCEPTION,("FETCH_EXCEPTION - odbc_SQLSvc_FetchN_sme_() Failed"));
+
+		*rowsAffected += rowsRead;
+		if (rowsRead==SQL_MAX_COLUMNS_IN_SELECT) appendOutputValueList(outputValueList,&fetchOutputValueList,true);
+	} while (rowsRead==SQL_MAX_COLUMNS_IN_SELECT);
+	appendOutputValueList(outputValueList,&fetchOutputValueList,true);
+
+	FUNCTION_RETURN_NUMERIC(CEE_SUCCESS,("CEE_SUCCESS"));
+}
 
 short do_ExecFetchAppend(
 						 /* In    */ void *objtag_
@@ -1175,7 +1690,7 @@ short do_ExecFetchAppend(
 						 , /* In    */ const char *stmtLabel
 						 , /* In    */ short sqlStmtType
 						 , /* In    */ char *tableParam[]
-, /* In    */ char *inputParam[]
+, /* In    */ const char *inputParam[]
 , /* Out   */ SQLItemDescList_def *outputDesc
 , /* Out   */ long *rowsAffected
 , /* Out   */ SQLValueList_def *outputValueList
@@ -1197,7 +1712,7 @@ short do_ExecFetchAppend(
 
 	SRVR_STMT_HDL		*pSrvrStmt;
 	SQLItemDesc_def		*SQLItemDesc;
-//	SMD_QUERY_TABLE		*smdQueryTable;		// Linux port - Commenting for now
+	SMD_QUERY_TABLE		*smdQueryTable;		// Linux port - Commenting for now
 	unsigned long		curParamNo;
 	//long				allocLength;
 	int				allocLength;

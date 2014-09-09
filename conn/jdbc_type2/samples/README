@@ -62,11 +62,11 @@ CreateDataSource.java creates the SQLMXDataSource object and registers
 it with Java Naming and Directory Interface (JNDI).  An additional package 
 is required in order to run the CreateDataSource sample. The File 
 System Service Provider package for accessing the file system can be 
-downloaded from the Sun Microsystem web site.
+downloaded from the Oracle web site.
 
-     1. Go to http://java.sun.com/products/jndi/downloads/index.html
+     1. Go to http://www.oracle.com/technetwork/java/javasebusiness/downloads/java-archive-downloads-java-plat-419418.html
 
-     2. Scroll down to the "Download JNDI 1.2.1 & More" section and
+     2. Scroll down to the "Download JNDI 1.2.1" section and
 	select "Download".
 
      3. Accept the license agreement and select "File System Service 
@@ -75,14 +75,11 @@ downloaded from the Sun Microsystem web site.
  
      4. Unzip the fscontext-1_2-beta3.zip file. Under the lib directory, which 
         was created by the unzip, are two jar files that you need to transfer 
-        to the NonStop kernel system. These files are fscontext.jar and 
+        to the system. These files are fscontext.jar and 
         providerutil.jar.
 
      5. Put these files in the directory from which you run the demo and 
-	add these to your CLASSPATH environment variable.
-
-Sun's service provider for accessing the file system are used to
-register the SQLMXDataSource object. 
+	add these to your CLASSPATH environment variable. 
 
 Create a directory dataSources/jdbc in any directory before running this 
 program.  The recommended location is your current working directory. 
@@ -187,7 +184,7 @@ Then, run this Java program using the following command:
    java JdbcRowSetSample
 
 
-LobSample.java
+LobSample.java <not currently supported>
 --------------
 This program demonstrates LOB functionality via the JDBC Type2 driver. The 
 program creates the LOB base and data tables, inserts BLOB/CLOB data via 

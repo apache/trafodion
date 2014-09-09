@@ -28,11 +28,7 @@
 #include <set>
 #include <string>
 #include <platform_ndcs.h>
-#ifdef NSK_PLATFORM
-#include <sqlWin.h>
-#else
 #include <sql.h>
-#endif
 #include <sqlext.h>
 #include "SrvrCommon.h"
 //using namespace std;

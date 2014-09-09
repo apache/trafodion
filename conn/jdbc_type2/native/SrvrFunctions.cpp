@@ -24,18 +24,10 @@
 
 
 #include <windows.h>
-#ifdef NSK_PLATFORM
-	#include <sqlWin.h>
-#else
-	#include <sql.h>
-#endif
+#include <sql.h>
 #include <sqlext.h>
 #include "srvrCommon.h"
 #include "SrvrFunctions.h"
-#ifdef NSK_PLATFORM
-#include "NskUtil.h"
-	char catalogsTableNm[EXT_FILENAME_LEN+1];
-#endif
 #include "Debug.h"
 
 void AssembleSqlString(SMD_SELECT_TABLE *smdSelectTable, const char *catalogNm, 
