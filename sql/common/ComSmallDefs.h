@@ -152,6 +152,9 @@ typedef NABoolean               ComBoolean;
 // DTM log files are created in this schema. It is a reserved schema.
 #define SEABASE_DTM_SCHEMA     "_DTM_"
 
+// Trafodion statistics repository reserved schema
+#define SEABASE_REPOS_SCHEMA  "_REPOS_"
+
 /******    *****/
 enum ComActivationTime { COM_UNKNOWN_TIME, COM_BEFORE , COM_AFTER };
 #define COM_BEFORE_LIT         "B "
