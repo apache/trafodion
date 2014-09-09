@@ -373,7 +373,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   if (ehi == NULL)
     return;
 
-  if ((isSeabaseMD(indexName)) &&
+  if ((isSeabaseReservedSchema(indexName)) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-1118)
@@ -849,7 +849,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
   const NAString extNameForHbase = 
     catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
-  if (isSeabaseMD(indexName))
+  if (isSeabaseReservedSchema(indexName))
     {
       *CmpCommon::diags() << DgSqlCode(-1118)
 			  << DgTableName(extTableName);
