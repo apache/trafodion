@@ -117,7 +117,7 @@
 1115 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Label $0~String0 could not be created for $1~TableName (file error $2~NSKCode). 
 1116 ZZZZZ 99999 BEGINNER MINOR DBADMIN The current partitioning scheme requires a user-specified clustering key on object $0~TableName.
 1117 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping the only partition of an object is not allowed. At least two partitions must exist to perform the drop.
-1118 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creating object $0~TableName is not allowed in metadata schema.
+1118 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creating object $0~TableName is not allowed in a reserved system schema.
 1119 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping metadata object $0~TableName is not allowed.
 1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of approximate numeric datatype (float, real, double precision) in a partitioning key or salt clause is not allowed.
 1121 0A000 99999 BEGINNER MINOR DBADMIN Partitions cannot be added or dropped on table $0~TableName.  These partition operations are not allowed on tables whose clustering key consists only of the SYSKEY.
