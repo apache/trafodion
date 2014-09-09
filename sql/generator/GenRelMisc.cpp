@@ -4269,7 +4269,8 @@ short TupleList::codeGen(Generator * generator)
   ExpTupleDesc * tupleDesc = 0;
   ExprValueId eVid(tupleExprTree());
   ItemExprTreeAsList tupleList(&eVid, ITM_ITEM_LIST);
-  for (CollIndex i = 0; i < (CollIndex) tupleList.entries(); i++)
+  CollIndex nTupEntries = (CollIndex) tupleList.entries();
+  for (CollIndex i = 0; i < nTupEntries; i++)
     {
       ex_expr * moveExpr = NULL;
 
