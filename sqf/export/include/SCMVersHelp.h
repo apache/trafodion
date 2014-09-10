@@ -129,6 +129,14 @@ const char *INTVERS_CAT(comp,_vers_str)() { \
 extern "C" const char *INTVERS_CAT(comp,_vers2_str)(); \
 const char *INTVERS_CAT(comp,_vers2_str)() { \
     return INTVERS2_STR(comp); \
+} \
+extern "C" void INTVERS_CAT(comp,_get_comp_vers)(int *cvmaj, int *cvmin, int *cvupd); \
+void INTVERS_CAT(comp,_get_comp_vers)(int *cvmaj, int *cvmin, int *cvupd) { \
+    *cvmaj = VERS_CV_MAJ; *cvmin = VERS_CV_MIN; *cvupd = VERS_CV_UPD; \
+} \
+extern "C" void INTVERS_CAT(comp,_get_prod_vers)(int *pvmaj, int *pvmin, int *pvupd); \
+void INTVERS_CAT(comp,_get_prod_vers)(int *pvmaj, int *pvmin, int *pvupd) { \
+    *pvmaj = VERS_PV_MAJ; *pvmin = VERS_PV_MIN; *pvupd = VERS_PV_UPD; \
 }
 #else
 #define VERS_LIB(comp) \
@@ -144,6 +152,14 @@ const char *INTVERS_CAT(comp,_vers_str)() { \
 extern const char *INTVERS_CAT(comp,_vers2_str)(); \
 const char *INTVERS_CAT(comp,_vers2_str)() { \
     return INTVERS2_STR(comp); \
+} \
+extern void INTVERS_CAT(comp,_get_comp_vers)(int *cvmaj, int *cvmin, int *cvupd); \
+void INTVERS_CAT(comp,_get_comp_vers)(int *cvmaj, int *cvmin, int *cvupd) { \
+    *cvmaj = VERS_CV_MAJ; *cvmin = VERS_CV_MIN; *cvupd = VERS_CV_UPD; \
+} \
+extern void INTVERS_CAT(comp,_get_prod_vers)(int *pvmaj, int *pvmin, int *pvupd); \
+void INTVERS_CAT(comp,_get_prod_vers)(int *pvmaj, int *pvmin, int *pvupd) { \
+    *pvmaj = VERS_PV_MAJ; *pvmin = VERS_PV_MIN; *pvupd = VERS_PV_UPD; \
 }
 #endif
 
@@ -264,6 +280,18 @@ comp ## _dovers(argc, argv); \
 comp ## _vers_str()
 #define CALL_COMP_GETVERS2(comp) \
 comp ## _vers2_str()
+
+/*
+ * use this to call '<comp>_get_comp_vers()'
+ */
+#define CALL_COMP_GET_COMP_VERS(comp,cmaj,cmin,cupd) \
+comp ## _get_comp_vers(cmaj,cmin,cupd)
+
+/*
+ * use this to call '<comp>_get_prod_vers()'
+ */
+#define CALL_COMP_GET_PROD_VERS(comp,pmaj,pmin,pupd) \
+comp ## _get_prod_vers(pmaj,pmin,pupd)
 
 /*
  * use this to call '<comp>_vers_print()'
