@@ -19,9 +19,9 @@
 # @@@ END COPYRIGHT @@@
 #
 #
-# Script for display data in the Seaquest configuration database
+# Script for display data in the Trafodion configuration database
 
-function Usage  
+function Usage
 {
     echo "Usage: ${0##/*/} -c | --cluster | -p | --process | -q | --persistent | -r | --procdef | -u | --uniqstr"
     echo
@@ -121,7 +121,7 @@ eval set -- $options
 
 if [[ $# == 1 ]]; then
    Usage
-fi 
+fi
 
 while [ $# -gt 0 ]
 do
@@ -151,7 +151,7 @@ do
         -u|--uniqstr)
             uniqueStrings
             ;;
-        
+
         -h|--help)
             Usage
             ;;

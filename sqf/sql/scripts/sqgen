@@ -23,7 +23,7 @@
 function Usage {
     script_name=`/bin/basename $0`
     echo
-    echo $script_name generates various SeaQuest files in the $MY_SQROOT/sql/scripts directory.
+    echo $script_name generates various Trafodion files in the $MY_SQROOT/sql/scripts directory.
     echo
     echo "Usage: $script_name {-ft | -perf | [sqconfig_filename] | -h}"
     echo "  -h    Help"

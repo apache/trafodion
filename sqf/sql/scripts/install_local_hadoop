@@ -549,7 +549,7 @@ EOF
 
   # shell script to set up common environment variables
   cat <<EOF >$MY_SW_SCRIPTS_DIR/sw_env.sh
-# Basic environment variables for SeaQuest/Hadoop/Hive/HBase/MySQL setup
+# Basic environment variables for Trafodion/Hadoop/Hive/HBase/MySQL setup
 export JAVA_HOME=${JAVA_HOME}
 export MYSQL_HOME=${MYSQL_HOME}
 export YARN_HOME=${YARN_HOME}
@@ -946,7 +946,7 @@ EOF
   echo "Appending local configuration to $H_ENV_FILE..."
   cat <<EOF >>$H_ENV_FILE
 
-# SeaQuest-local configuration
+# Trafodion-local configuration
 # Make sure JAVA_HOME is set
 export JAVA_HOME=${JAVA_HOME}
 # Use a local PID dir to avoid conflicts with other Hadoop instances
@@ -956,7 +956,7 @@ EOF
   echo "Appending local configuration to $H_Y_ENV_FILE..."
   cat <<EOF >>$H_Y_ENV_FILE
 
-# SeaQuest-local configuration
+# Trafodion-local configuration
 # Make sure JAVA_HOME is set
 export JAVA_HOME=${JAVA_HOME}
 export HADOOP_CONF_DIR=${YARN_HOME}/etc/hadoop

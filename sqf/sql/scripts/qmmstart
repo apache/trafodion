@@ -19,17 +19,12 @@
 # @@@ END COPYRIGHT @@@
 #
 ######################################################################
-# This is the MVQR initialization script that is run when a Seaquest
+# This is the MVQR initialization script that is run when an
 # instance is started or initialized. It launches tdm_arkqmm as a persistent
 # process. The script can also be run manually, along with qmmstop, to
 # stop and restart QMM while an instance is up.
 #-----------------------------------------------------------------------
 #
-#   Modification History.
-# =====================
-#  04/02/2010   RN  A new initial script.
-#  11/05/2010   TBA port script to SQ.
-#  09/25/2012   BF  Modify for automated use during SQ startup or initialization.
 ####################################################################
 
 # -- tdm_arkqmm location
@@ -101,7 +96,7 @@ function startQMM
 
 function start_qmm
 {
-  
+
   # to make screen messages look better
   echo "Starting tdm_arkqmm as persistent process. Please wait...."
   echo " "

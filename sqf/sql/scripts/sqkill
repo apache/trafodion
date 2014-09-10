@@ -18,7 +18,7 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-# Kills the passed SeaQuest process
+# Kills the passed Trafodion process
 
 sqshell -a <<eof
 

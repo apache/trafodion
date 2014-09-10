@@ -21,7 +21,7 @@
 # do a ps on attached shell
 
 if [[ -z "$(which sqshell 2>/dev/null)" ]]; then
-	echo "Error:  SeaQuest environment is not up."
+	echo "Error:  Trafodion environment is not up."
 	exit 1
 fi
 
