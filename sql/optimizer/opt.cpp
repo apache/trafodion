@@ -4436,7 +4436,8 @@ RequiredResources * OptDefaults::estimateRequiredResources(RelExpr* rootExpr)
     // keep halving dDoP until dDoP <= cqdDDoP
     while (cqdDDoP < dDoP) dDoP /= 2;
 
-    // make sure dDDoP is positive
+    // dDDoP should be positive, since the minimal value for both cqdDDoP 
+    // and totalNumberOfCPUs_  is 1.
     adjustedDegreeOfParallelism_ = dDoP;
 
     // set the memory and cpu resources to be use in computation of degree

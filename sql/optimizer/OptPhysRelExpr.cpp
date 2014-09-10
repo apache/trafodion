@@ -11581,8 +11581,6 @@ Context* GroupByAgg::createContextForAChild(Context* myContext,
   // ---------------------------------------------------------------------
   pws->storeChildContext(childIndex, planNumber, result);
 
-  NABoolean isPRoot = isAPartialGroupByRoot();
-
   return result;
 
 } // GroupByAgg::createContextForAChild()
@@ -12143,26 +12141,39 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
     // Do not enable the Adaptive Segmentation functionality for
     // parallel label (DDL) operations or for a parallel extract
-    // operation. This will prevent AS from reducing the max degree of
+    // operation, or fast loading into traf tables. This will 
+    // prevent AS from reducing the max degree of
     // parallelism for these operations.
+
+    
     OperatorTypeEnum childOpType = child(0).getLogExpr()->getOperatorType();
+
+    // Decide if it is a fast trafodion load query
+    NABoolean isFastLoadIntoTrafodion = FALSE;
+    if ( childOpType == REL_UNARY_INSERT ) {
+
+       RelExpr* c0 = child(0).getLogExpr();
+       Insert* ins = (Insert*)c0;
+
+       isFastLoadIntoTrafodion = ins->getIsTrafLoadPrep();
+    }
+
     if ((CmpCommon::getDefault(ASG_FEATURE) == DF_ON) &&
         (childOpType != REL_PARALLEL_LABEL_CREATE) &&
         (childOpType != REL_PARALLEL_LABEL_DROP) &&
         (childOpType != REL_EXE_UTIL) &&
         (childOpType != REL_PARALLEL_LABEL_ALTER) &&
         (childOpType != REL_PARALLEL_LABEL_PURGEDATA) &&
-        (numExtractStreams_ == 0))
+        (numExtractStreams_ == 0) &&
+        !isFastLoadIntoTrafodion)
     {
       if(!OSIM_isNSKbehavior())
       {
-        Lng32 maxDop = CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
-        if (countOfCPUs != maxDop)
-        {
-          // Adaptive segmentation is ON
-          isASON = TRUE;
-          countOfCPUs = maxDop;
-        }
+        countOfCPUs = 
+            CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
+
+        // Adaptive segmentation is ON
+        isASON = TRUE;
       }
     }
 
