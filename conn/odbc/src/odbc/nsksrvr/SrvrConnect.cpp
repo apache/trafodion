@@ -113,14 +113,17 @@ extern short stopOnDisconnect;
 
 bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState);
 
-static void free_String_vector(struct String_vector *v) {
-    if (v->data) {
-        int32_t i;
-        for (i=0; i<v->count; i++) {
+static void free_String_vector(struct String_vector *v)
+{
+    if (v->data)
+    {
+        for (int32_t i=0; i < v->count; i++)
+        {
             free(v->data[i]);
         }
         free(v->data);
-        v->data = 0;
+        v->data = NULL;
+        v->count = 0;
     }
 }
 void sync_string_completion(int rc, const char *name, const void *data)
@@ -757,6 +760,7 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 		Stat stat;
 		struct String_vector children;
 		children.count = 0;
+		children.data = NULL;
 		stringstream ss;
 
 		ss.str("");
@@ -765,7 +769,6 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 		if( rc != ZOK || !(children.count > 0) )
 		{
 			free_String_vector(&children);
-			children.count = 0;
 			ss.str("");
 			ss << zkRootNode << "/dcs/servers/running";
 			rc = zoo_get_children(zh, ss.str().c_str(), 0, &children);
