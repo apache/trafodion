@@ -42,6 +42,7 @@ namespace {
 class ContextCli;
 
 class HBulkLoadClient_JNI;
+
 // ===========================================================================
 // ===== The StringArrayList class implements access to the Java 
 // ===== StringArrayList class.
@@ -118,8 +119,8 @@ private:
 
 typedef enum {
   BAL_OK     = JOI_OK
- ,BAL_FIRST  = JOI_LAST
- ,BAL_ERROR_ADD_PARAM = SAL_FIRST
+ ,BAL_FIRST  = SAL_LAST
+ ,BAL_ERROR_ADD_PARAM = BAL_FIRST
  ,BAL_ERROR_ADD_EXCEPTION
  ,BAL_ERROR_GET_EXCEPTION
  ,BAL_LAST
@@ -626,9 +627,6 @@ private:
 
 private:
   jstring getLastJavaError();
-  StringArrayList* newStringArrayList(const TextVec& vec);
-  StringArrayList* newStringArrayList(const HBASE_NAMELIST& nameList);
-  StringArrayList* newStringArrayList(const NAText *);
   ByteArrayList* newByteArrayList();
 
 private:  
@@ -834,6 +832,11 @@ private:
   static pthread_mutex_t javaMethodsInitMutex_;
 
 };
+
+jobjectArray convertToByteArrayObjectArray(const TextVec &vec);
+jobjectArray convertToStringObjectArray(const TextVec &vec);
+jobjectArray convertToStringObjectArray(const HBASE_NAMELIST& nameList);
+jobjectArray convertToStringObjectArray(const NAText *text, int arrayLen);
 #endif
 
 

@@ -184,11 +184,11 @@ public class HTableClient {
 	}
 
 	public boolean startScan(long transID, byte[] startRow, byte[] stopRow,
-				 ByteArrayList columns, long timestamp,
+				 Object[]  columns, long timestamp,
 				 boolean cacheBlocks, int numCacheRows,
-				 ByteArrayList colNamesToFilter, 
-				 ByteArrayList compareOpList, 
-				 ByteArrayList colValuesToCompare,
+				 Object[] colNamesToFilter, 
+				 Object[] compareOpList, 
+				 Object[] colValuesToCompare,
 				 float samplePercent,
 				 boolean inPreFetch) 
            throws IOException {
@@ -214,8 +214,9 @@ public class HTableClient {
 		scan.setCaching(numCacheRows);
 		numRowsCached = numCacheRows;
 		if (columns != null) {
-			numColsInScan = columns.size();
-			for (byte[] col : columns) {
+			numColsInScan = columns.length;
+			for (int i = 0; i < columns.length ; i++) {
+				byte[] col = (byte[])columns[i];
 				QualifiedColumn qc = new QualifiedColumn(col);
 				scan.addColumn(qc.getFamily(), qc.getName());
 			}
@@ -225,12 +226,12 @@ public class HTableClient {
 		if (colNamesToFilter != null) {
 			FilterList list = new FilterList(FilterList.Operator.MUST_PASS_ALL);
 
-			for (int i = 0; i < colNamesToFilter.size(); i++) {
-				byte[] colName = colNamesToFilter.get(i);
+			for (int i = 0; i < colNamesToFilter.length; i++) {
+				byte[] colName = (byte[])colNamesToFilter[i];
 				QualifiedColumn qc = new QualifiedColumn(colName);
 					
-				byte[] coByte = compareOpList.get(i);
-				byte[] colVal = colValuesToCompare.get(i);
+				byte[] coByte = (byte[])compareOpList[i];
+				byte[] colVal = (byte[])colValuesToCompare[i];
 
 				if ((coByte == null) || (colVal == null)) {
 					return false;
@@ -274,19 +275,24 @@ public class HTableClient {
 	}
 
 	public boolean startGet(long transID, byte[] rowID, 
-                     ByteArrayList columns,
+                     Object[] columns,
 		     long timestamp, boolean directRow) throws IOException {
 
 		logger.trace("Enter startGet(" + tableName + " rowID: " + new String(rowID));
 
 		Get get = new Get(rowID);
-		for (byte[] col : columns) {
-			logger.trace("startGet, col: " + new String(col));
-			QualifiedColumn qc = new QualifiedColumn(col);
-			get.addColumn(qc.getFamily(), qc.getName());
+		if (columns != null)
+		{
+			for (int i = 0; i < columns.length; i++) {
+				byte[] col = (byte[]) columns[i];
+				QualifiedColumn qc = new QualifiedColumn(col);
+				get.addColumn(qc.getFamily(), qc.getName());
+			}
+			numColsInScan = columns.length;
 		}
-		numColsInScan = columns.size();
-
+		else
+			numColsInScan = 0;
+			
 		Result getResult;
 		if (useTRex && (transID != 0)) {
 			getResult = table.get(transID, get);
@@ -327,24 +333,31 @@ public class HTableClient {
 		return results;
 	}
 
-	public boolean startGet(long transID, ByteArrayList rows,
-			ByteArrayList columns, long timestamp,
+	public boolean startGet(long transID, Object[] rows,
+			Object[] columns, long timestamp,
 			boolean directRow) 
                         throws IOException {
 
 		logger.trace("Enter startGet(multi-row) " + tableName);
 
 		List<Get> listOfGets = new ArrayList<Get>();
-		for (byte[] rowID : rows) {
+		for (int i = 0; i < rows.length; i++) {
+			byte[] rowID = (byte[])rows[i]; 
 			Get get = new Get(rowID);
 			listOfGets.add(get);
 		}
-		for (byte[] col : columns) {
-			QualifiedColumn qc = new QualifiedColumn(col);
-			for (Get get : listOfGets)
-				get.addColumn(qc.getFamily(), qc.getName());
+		if (columns != null)
+		{
+			for (int j = 0; j < columns.length; j++ ) {
+				byte[] col = (byte[])columns[j];
+				QualifiedColumn qc = new QualifiedColumn(col);
+				for (Get get : listOfGets)
+					get.addColumn(qc.getFamily(), qc.getName());
+			}
+			numColsInScan = columns.length;
 		}
-		numColsInScan = columns.size();
+		else
+			numColsInScan = 0;
 		if (useTRex && (transID != 0)) {
 			getResultSet = batchGet(transID, listOfGets);
 		} else {
@@ -528,7 +541,7 @@ public class HTableClient {
 	}
 
 	public boolean deleteRow(long transID, byte[] rowID, 
-				 ByteArrayList columns,
+				 Object[] columns,
 				 long timestamp) throws IOException {
 
 		logger.trace("Enter deleteRow(" + new String(rowID) + ", "
@@ -541,9 +554,10 @@ public class HTableClient {
 				del = new Delete(rowID, timestamp);
 
 			if (columns != null) {
-				for (byte[] col : columns) {
-				    QualifiedColumn qc = new QualifiedColumn(col);
-				    del.deleteColumns(qc.getFamily(), qc.getName());
+				for (int i = 0; i < columns.length ; i++) {
+					byte[] col = (byte[]) columns[i];
+					QualifiedColumn qc = new QualifiedColumn(col);
+					del.deleteColumns(qc.getFamily(), qc.getName());
 				}
 			}
 
