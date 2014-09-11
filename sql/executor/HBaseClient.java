@@ -58,6 +58,20 @@ import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 import org.trafodion.sql.HBaseAccess.StringArrayList;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 
+import org.apache.hadoop.hbase.HServerLoad;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.ClusterStatus;
+import org.apache.hadoop.hbase.ServerName;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.hbase.io.hfile.CacheConfig;
+import org.apache.hadoop.hbase.io.hfile.HFile;
+import org.apache.hadoop.hbase.io.hfile.HFileScanner;
+
 public class HBaseClient {
 
     static Logger logger = Logger.getLogger(HBaseClient.class.getName());
@@ -561,6 +575,216 @@ public class HBaseClient {
             AccessController accessController = new AccessController();
             accessController.revoke(userPerm);
         return true;
+    }
+
+    // Debugging method to display initial set of KeyValues and sequence
+    // of column qualifiers.
+    private void printQualifiers(HFile.Reader reader, int maxKeys) 
+                 throws IOException {
+      String qualifiers = new String();
+      HFileScanner scanner = reader.getScanner(false, false, false);
+      scanner.seekTo();
+      int kvCount = 0;
+      int nonPuts = 0;
+      do {
+        KeyValue kv = scanner.getKeyValue();
+        System.out.println(kv.toString());
+        if (kv.getType() == KeyValue.Type.Put.getCode())
+          qualifiers = qualifiers + kv.getQualifier()[0] + " ";
+        else
+          nonPuts++;
+      } while (++kvCount < maxKeys && scanner.next());
+      System.out.println("First " + kvCount + " column qualifiers: " + qualifiers);
+      if (nonPuts > 0)
+        System.out.println("Encountered " + nonPuts + " non-PUT KeyValue types.");
+    }
+
+    // Estimates the number of rows still in the MemStores of the regions
+    // associated with the passed table name. The number of bytes in the
+    // MemStores is divided by the passed row size in bytes, which is
+    // derived by comparing the row count for an HFile (which in turn is
+    // derived by the number of KeyValues in the file and the number of
+    // columns in the table) to the size of the HFile.
+    private long estimateMemStoreRows(String tblName, int rowSize)
+                 throws MasterNotRunningException, IOException {
+      if (rowSize == 0)
+        return 0;
+
+      HBaseAdmin admin = new HBaseAdmin(config);
+      HTable htbl = new HTable(config, tblName);
+      long totalMemStoreBytes = 0;
+      try {
+        // Get a set of all the regions for the table.
+        Set<HRegionInfo> tableRegionInfos = htbl.getRegionLocations().keySet();
+        Set tableRegions = new TreeSet(Bytes.BYTES_COMPARATOR);
+        for (HRegionInfo regionInfo : tableRegionInfos) {
+          tableRegions.add(regionInfo.getRegionName());
+        }
+     
+        // Get collection of all servers in the cluster.
+        ClusterStatus clusterStatus = admin.getClusterStatus();
+        Collection<ServerName> servers = clusterStatus.getServers();
+        final long bytesPerMeg = 1024L * 1024L;
+     
+        // For each server, look at each region it contains and see if 
+        // it is in the set of regions for the table. If so, add the
+        // size of its the running total.
+        for (ServerName serverName : servers) {
+          HServerLoad serverLoad = clusterStatus.getLoad(serverName);
+          for (HServerLoad.RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
+            byte[] regionId = regionLoad.getName();
+            if (tableRegions.contains(regionId)) {
+              long regionMemStoreBytes = bytesPerMeg * regionLoad.getMemStoreSizeMB();
+              logger.debug("Region " + regionLoad.getNameAsString()
+                           + " has MemStore size " + regionMemStoreBytes);
+              totalMemStoreBytes += regionMemStoreBytes;
+            }
+          }
+        }
+      }
+      finally {
+        admin.close();
+      }
+
+      // Divide the total MemStore size by the size of a single row.
+      logger.debug("Estimating " + (totalMemStoreBytes / rowSize)
+                   + " rows in MemStores of table's regions.");
+      return totalMemStoreBytes / rowSize;
+    }
+
+
+    // Estimates row count for tblName by iterating over the HFiles for
+    // the table, extracting the KeyValue entry count from the file's
+    // trailer block, summing the counts, and dividing by the number of
+    // columns in the table. An adjustment is made for the estimated
+    // number of missing (null) values by sampling the first several
+    // hundred KeyValues to see how many are missing.
+    public boolean estimateRowCount(String tblName, int partialRowSize,
+                                    int numCols, long[] rc)
+                   throws MasterNotRunningException, IOException, ClassNotFoundException {
+      logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called.");
+
+      final String REGION_NAME_PATTERN = "[0-9a-f]*";
+      final String HFILE_NAME_PATTERN  = "[0-9a-f]*";
+
+      // To estimate incidence of nulls, read the first 500 rows worth
+      // of KeyValues.
+      final int ROWS_TO_SAMPLE = 500;
+      int putKVsSampled = 0;
+      int nonPutKVsSampled = 0;
+      int nullCount = 0;
+      long totalEntries = 0;   // KeyValues in all HFiles for table
+      long totalSizeBytes = 0; // Size of all HFiles for table 
+      long estimatedTotalPuts = 0;
+
+      // Access the file system to go directly to the table's HFiles.
+      // Create a reader for the file to access the entry count stored
+      // in the trailer block, and a scanner to iterate over a few
+      // hundred KeyValues to estimate the incidence of nulls.
+      long nano1, nano2;
+      nano1 = System.nanoTime();
+      FileSystem fileSystem = FileSystem.get(config);
+      nano2 = System.nanoTime();
+      logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
+      CacheConfig cacheConf = new CacheConfig(config);
+      FileStatus[] fsArr = fileSystem.globStatus(new Path("/hbase/" + 
+                               tblName + "/" + REGION_NAME_PATTERN +
+                               "/#1/" + HFILE_NAME_PATTERN));
+      for (FileStatus fs : fsArr) {
+          HFile.Reader reader = HFile.createReader(fileSystem, fs.getPath(), cacheConf);
+          totalEntries += reader.getEntries();
+          totalSizeBytes += reader.length();
+          //printQualifiers(reader, 100);
+          if (ROWS_TO_SAMPLE > 0 &&
+              totalEntries == reader.getEntries()) {  // first file only
+            // Trafodion column qualifiers are ordinal numbers, which
+            // makes it easy to count missing (null) values. We also count
+            // the non-Put KVs (typically delete-row markers) to estimate
+            // their frequency in the full file set.
+            HFileScanner scanner = reader.getScanner(false, false, false);
+            scanner.seekTo();  //position at beginning of first data block
+            byte currQual = 0;
+            byte nextQual;
+            do {
+              KeyValue kv = scanner.getKeyValue();
+              if (kv.getType() == KeyValue.Type.Put.getCode()) {
+                nextQual = kv.getQualifier()[0];
+                if (nextQual < currQual)
+                  nullCount += ((numCols - currQual)  // nulls at end of this row
+                              + (nextQual - 1));      // nulls at start of next row
+                else
+                  nullCount += (nextQual - currQual - 1);
+                currQual = nextQual;
+                putKVsSampled++;
+              } else {
+                nonPutKVsSampled++;  // don't count these toward the number
+              }                      //   we want to scan
+            } while ((putKVsSampled + nullCount) < (numCols * ROWS_TO_SAMPLE)
+                     && scanner.next());
+            logger.debug("Sampled " + nullCount + " nulls.");
+          }  // code for first file
+      } // for
+
+      long estimatedEntries = (ROWS_TO_SAMPLE > 0
+                                 ? 0               // get from sample data, below
+                                 : totalEntries);  // no sampling, use stored value
+      if (putKVsSampled > 0) // avoid div by 0 if no Put KVs in sample
+        {
+          estimatedTotalPuts = (putKVsSampled * totalEntries) / 
+                               (putKVsSampled + nonPutKVsSampled);
+          estimatedEntries = ((putKVsSampled + nullCount) * estimatedTotalPuts)
+                                   / putKVsSampled;
+        }
+
+      // Calculate estimate of rows in all HFiles of table.
+      rc[0] = (estimatedEntries + (numCols/2)) / numCols; // round instead of truncate
+
+      // Estimate # of rows in MemStores of all regions of table. Pass
+      // a value to divide the size of the MemStore by. Base this on the
+      // ratio of bytes-to-rows in the HFiles, or the actual row size if
+      // the HFiles were empty.
+      int rowSize;
+      if (rc[0] > 0)
+        rowSize = (int)(totalSizeBytes / rc[0]);
+      else {
+        // From Traf metadata we have calculated and passed in part of the row
+        // size, including size of column qualifiers (col names), which are not
+        // known to HBase.  Add to this the length of the fixed part of the
+        // KeyValue format, times the number of columns.
+        int fixedSizePartOfKV = KeyValue.KEYVALUE_INFRASTRUCTURE_SIZE // key len + value len
+                              + KeyValue.KEY_INFRASTRUCTURE_SIZE;     // rowkey & col family len, timestamp, key type
+        rowSize = partialRowSize   // for all cols: row key + col qualifiers + values
+                      + (fixedSizePartOfKV * numCols);
+
+        // Trafodion tables have a single col family at present, so we only look
+        // at the first family name, and multiply its length times the number of
+        // columns. Even if more than one family is used in the future, presumably
+        // they will all be the same short size.
+        HTable htbl = new HTable(config, tblName);
+        HTableDescriptor htblDesc = htbl.getTableDescriptor();
+        HColumnDescriptor[] families = htblDesc.getColumnFamilies();
+        rowSize += (families[0].getName().length * numCols);
+      }
+
+      // Get the estimate of MemStore rows. Add to total after logging
+      // of individual sums below.
+      long memStoreRows = estimateMemStoreRows(tblName, rowSize);
+
+      logger.debug(tblName + " contains a total of " + totalEntries + " KeyValues in all HFiles.");
+      logger.debug("Based on a sample, it is estimated that " + estimatedTotalPuts +
+                   " of these KeyValues are of type Put.");
+      if (putKVsSampled + nullCount > 0)
+        logger.debug("Sampling indicates a null incidence of " + 
+                     (nullCount * 100)/(putKVsSampled + nullCount) +
+                     " percent.");
+      logger.debug("Estimated number of actual values (including nulls) is " + estimatedEntries);
+      logger.debug("Estimated row count in HFiles = " + estimatedEntries +
+                   " / " + numCols + " (# columns) = " + rc[0]);
+      logger.debug("Estimated row count from MemStores = " + memStoreRows);
+
+      rc[0] += memStoreRows;  // Add memstore estimate to total
+      logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
+      return true;
     }
 
     void printCell(KeyValue kv) {

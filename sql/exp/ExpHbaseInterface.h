@@ -312,6 +312,11 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 flushTable() = 0;
   static Lng32 flushAllTables();
 
+  virtual Lng32 estimateRowCount(HbaseStr& tblName,
+                                 Int32 partialRowSize,
+                                 Int32 numCols,
+                                 Int64& estRC) = 0;
+
 protected:
   ExpHbaseInterface(CollHeap * heap,
                     const char * server = NULL,
@@ -541,6 +546,11 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 
   virtual ByteArrayList* getRegionInfo(const char*);
   virtual Lng32 flushTable();
+  virtual Lng32 estimateRowCount(HbaseStr& tblName,
+                                 Int32 partialRowSize,
+                                 Int32 numCols,
+                                 Int64& estRC);
+
 protected:
   Lng32 getLastFetchedCell(
   	  HbaseStr &rowId,

@@ -680,6 +680,7 @@ enum DefaultConstants
   USTAT_ATTEMPT_ESP_PARALLELISM,  // use parallel plans for reading columns to form histograms
   USTAT_CHECK_HIST_ACCURACY,   // After stats collection, examine full table and calculate accuray of hists
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
+  USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*)
   USTAT_FORCE_TEMP,            // Force temporary table to be used
   USTAT_JIT_LOGGING,           // Use just-in-time logging when error occurs
   USTAT_LOCK_HIST_TABLES,      // Force lock of hist tables during FlushStatistics() to

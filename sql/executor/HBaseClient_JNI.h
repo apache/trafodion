@@ -540,6 +540,7 @@ private:
 // ===== HBaseClient_JNI class.
 // ===========================================================================
 
+// Keep in sync with hbcErrorEnumStr array.
 typedef enum {
   HBC_OK     = JOI_OK
  ,HBC_FIRST  = HTC_LAST
@@ -566,6 +567,8 @@ typedef enum {
  ,HBC_ERROR_THREAD_SIGMASK
  ,HBC_ERROR_ATTACH_JVM
  ,HBC_ERROR_GET_HBLC_EXCEPTION
+ ,HBC_ERROR_ROWCOUNT_EST_PARAM
+ ,HBC_ERROR_ROWCOUNT_EST_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -604,7 +607,9 @@ public:
   HBC_RetCode flushAllTables();
   HBC_RetCode exists(const char* fileName);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
-  HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes); 
+  HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
+  HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
+                               Int32 numCols, Int64& rowCount);
 
   // req processing in worker threads
   HBC_RetCode enqueueRequest(HBaseClientRequest *request);
@@ -649,6 +654,7 @@ private:
    ,JM_GRANT
    ,JM_REVOKE
    ,JM_GET_HBLC
+   ,JM_EST_RC
    ,JM_LAST
   };
   static jclass          javaClass_; 

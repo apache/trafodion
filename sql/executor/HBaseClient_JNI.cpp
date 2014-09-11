@@ -808,6 +808,7 @@ jclass HBaseClient_JNI::javaClass_ = 0;
 bool HBaseClient_JNI::javaMethodsInitialized_ = false;
 pthread_mutex_t HBaseClient_JNI::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
 
+// Keep in sync with HBC_RetCode enum.
 static const char* const hbcErrorEnumStr[] = 
 {
   "Preparing parameters for initConnection()."
@@ -819,8 +820,9 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in create()."
  ,"Preparing parameters for drop()."
  ,"Java exception in drop()."
- ,"Preparing parameters for dropAll()."
- ,"Java exception in dropAll()."
+ // No corresponding HBC_RetCode values for next 2 at present.
+ //,"Preparing parameters for dropAll()."
+ //,"Java exception in dropAll()."
  ,"Preparing parameters for exists()."
  ,"Java exception in exists()."
  ,"Preparing parameters for flushAll()."
@@ -833,6 +835,9 @@ static const char* const hbcErrorEnumStr[] =
  ,"Error in Thread Req Alloc"
  ,"Error in Thread SIGMAS"
  ,"Error in Attach JVM"
+ ,"Java exception in getHBulkLoadClient()."
+ ,"Preparing parameters for estimateRowCount()."
+ ,"Java exception in estimateRowCount()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -971,7 +976,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_FLUSHALL   ].jm_signature = "()Z";
     JavaMethods_[JM_GET_HBLC   ].jm_name      = "getHBulkLoadClient";
     JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;";
-   
+    JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
+    JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
    
    
    
@@ -1830,7 +1836,56 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// 
+// Estimate row count for tblName by adding the entry counts from the trailer
+// block of each HFile for the table, and dividing by the number of columns.
+//////////////////////////////////////////////////////////////////////////////
+HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
+                                              Int32 partialRowSize,
+                                              Int32 numCols,
+                                              Int64& rowCount)
+{
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
+  jstring js_tblName = jenv_->NewStringUTF(tblName);
+  if (js_tblName == NULL)
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_ROWCOUNT_EST_PARAM));
+    return HBC_ERROR_ROWCOUNT_EST_PARAM;
+  }
+
+  jint jPartialRowSize = partialRowSize;
+  jint jNumCols = numCols;
+  jlongArray jRowCount = jenv_->NewLongArray(1);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EST_RC].methodID,
+                                              js_tblName, jPartialRowSize,
+                                              jNumCols, jRowCount);
+  jboolean isCopy;
+  jlong* arrayElems = jenv_->GetLongArrayElements(jRowCount, &isCopy);
+  rowCount = *arrayElems;
+  if (isCopy == JNI_TRUE)
+    jenv_->ReleaseLongArrayElements(jRowCount, arrayElems, JNI_ABORT);
+
+  jenv_->DeleteLocalRef(js_tblName);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
+    return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
+  }
+
+  if (jresult == false)
+  {
+    logError(CAT_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
+    return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
+  }
+
+  return HBC_OK;  // Table exists.
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
 //////////////////////////////////////////////////////////////////////////////
 JavaMethodInit* HBulkLoadClient_JNI::JavaMethods_ = NULL;
 jclass HBulkLoadClient_JNI::javaClass_ = 0;
