@@ -35,6 +35,7 @@ log   LOG020 clear;
 obey TEST020(tests);
 obey TEST020(test_10_020913_3920);
 obey TEST020(test_10_030916_9668);
+obey TEST020(test_LP_1360493);
 log;
 obey TEST020(clean_up);
 exit;
@@ -79,6 +80,7 @@ drop table test020_directors cascade;
 drop table test020_movie_titles cascade;
 drop table test020t31;
 drop table test020_10_030916_9668;
+drop table test020_LP_1360493;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -647,3 +649,38 @@ create table test020_10_030916_9668 (col1 interval minute(2) to second(2) not nu
 
 insert into test020_10_030916_9668 values (interval '96:59.8' minute to second);
 select * from test020_10_030916_9668;
+
+?section test_LP_1360493
+create table tmp_LP_1360493
+ (sbin0_4 integer not null
+ , varchar0_500 varchar(11) default 'GDAAIAAA' not null heading 'varchar0_500 no nulls'
+ , sdec16_uniq numeric(18,0) signed not null
+ );
+
+create view view_LP_1360493
+ as select * from tmp_LP_1360493 where sdec16_uniq > 3000
+ union
+ select * from tmp_LP_1360493 where sdec16_uniq < 2500;
+
+create table test020_LP_1360493
+ ( vch15 varchar(15)
+ , nint integer
+ , ch3 char(3)
+ , nlarge largeint);
+
+insert into test020_LP_1360493
+ values ('1st orig value' ,99 , 'o' , 1 )
+ , ('2nd orig value' ,98 , 'ov' , 2 )
+ , ('5th orig value' ,95 , 'o ' , 5 )
+ , ('6 is short' ,97 , 'o' , 6 )
+ , ('7' ,94 , 'OVC' , 7 );
+
+select * from test020_LP_1360493;
+
+update test020_LP_1360493 set vch15 = (select max(c)
+from (select varchar0_500 from view_LP_1360493 ) dt(c)) where nint=95;
+
+drop table tmp_LP_1360493 cascade;
+
+select * from test020_LP_1360493;
+

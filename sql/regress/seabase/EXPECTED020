@@ -2970,4 +2970,73 @@ COL1
  96:59.80
 
 --- 1 row(s) selected.
+>>
+>>obey TEST020(test_LP_1360493);
+>>create table tmp_LP_1360493
++> (sbin0_4 integer not null
++> , varchar0_500 varchar(11) default 'GDAAIAAA' not null heading 'varchar0_500 no nulls'
++> , sdec16_uniq numeric(18,0) signed not null
++> );
+
+--- SQL operation complete.
+>>
+>>create view view_LP_1360493
++> as select * from tmp_LP_1360493 where sdec16_uniq > 3000
++> union
++> select * from tmp_LP_1360493 where sdec16_uniq < 2500;
+
+--- SQL operation complete.
+>>
+>>create table test020_LP_1360493
++> ( vch15 varchar(15)
++> , nint integer
++> , ch3 char(3)
++> , nlarge largeint);
+
+--- SQL operation complete.
+>>
+>>insert into test020_LP_1360493
++> values ('1st orig value' ,99 , 'o' , 1 )
++> , ('2nd orig value' ,98 , 'ov' , 2 )
++> , ('5th orig value' ,95 , 'o ' , 5 )
++> , ('6 is short' ,97 , 'o' , 6 )
++> , ('7' ,94 , 'OVC' , 7 );
+
+--- 5 row(s) inserted.
+>>
+>>select * from test020_LP_1360493;
+
+VCH15            NINT         CH3  NLARGE
+---------------  -----------  ---  --------------------
+
+1st orig value            99  o                       1
+2nd orig value            98  ov                      2
+5th orig value            95  o                       5
+6 is short                97  o                       6
+7                         94  OVC                     7
+
+--- 5 row(s) selected.
+>>
+>>update test020_LP_1360493 set vch15 = (select max(c)
++>from (select varchar0_500 from view_LP_1360493 ) dt(c)) where nint=95;
+
+--- 1 row(s) updated.
+>>
+>>drop table tmp_LP_1360493 cascade;
+
+--- SQL operation complete.
+>>
+>>select * from test020_LP_1360493;
+
+VCH15            NINT         CH3  NLARGE
+---------------  -----------  ---  --------------------
+
+1st orig value            99  o                       1
+2nd orig value            98  ov                      2
+?                         95  o                       5
+6 is short                97  o                       6
+7                         94  OVC                     7
+
+--- 5 row(s) selected.
+>>
 >>log;
