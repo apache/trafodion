@@ -1250,7 +1250,7 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	      getHbaseAccessStats()->getTimer().start();
 	    
 	    retcode = ehi_->insertRows(table_,
-                                       hbaseAccessTdb().rowIdLen(),
+                                       hbaseAccessTdb().getRowIDLen(),
 				       rowIDs_,
                                        rows_,
                                        insColTSval_,
@@ -1601,7 +1601,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
         short numRowsInBuffer = patchDirectRowBuffers();
         if (getHbaseAccessStats())
           getHbaseAccessStats()->getTimer().start();
-        retcode = ehi_->addToHFile(hbaseAccessTdb().rowIdLen(),
+        retcode = ehi_->addToHFile(hbaseAccessTdb().getRowIDLen(),
                                    rowIDs_,
                                    rows_);
 
@@ -2057,7 +2057,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		    break;
 		  }
 
-		rowIdRow.assign(tcb_->rowIdRow_, tcb_->hbaseAccessTdb().rowIdLen_);
+		rowIdRow.assign(tcb_->rowIdRow_, tcb_->hbaseAccessTdb().getRowIDLen());
 	      }
             HbaseStr rowID;
             if (tcb_->mergeInsertRowIdExpr())
@@ -3833,8 +3833,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 
             short numRowsInBuffer = patchDirectRowIDBuffers();
 	    retcode = ehi_->deleteRows(table_,
-               (hbaseAccessTdb().keyLen_ > 0 ? hbaseAccessTdb().keyLen_ :
-                            hbaseAccessTdb().rowIdLen()),
+                                       hbaseAccessTdb().getRowIDLen(),
                                        rowIDs_,
 				       -1);
 
@@ -3927,7 +3926,7 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
             short numRowsInBuffer = patchDirectRowBuffers();
 
 	    retcode = ehi_->insertRows(table_,
-				        hbaseAccessTdb().rowIdLen(),
+				       hbaseAccessTdb().getRowIDLen(),
                                        rowIDs_,
                                        rows_,
 				       -1);

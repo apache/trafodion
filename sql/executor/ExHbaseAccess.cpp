@@ -1308,7 +1308,7 @@ short ExHbaseAccessTcb::evalRowIdAsciiExpr(const char * inputRowIdVals,
   if (hbaseAccessTdb().sqHbaseTable())
     {
       outputRowIdPtr = rowIdBuf; 
-      outputRowIdLen = hbaseAccessTdb().rowIdLen();
+      outputRowIdLen = hbaseAccessTdb().getRowIDLen();
     }
   else
     {
