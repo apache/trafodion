@@ -26,6 +26,10 @@ INFO: DriverManager.getConnection(url, props) passed
 
 Inserting TimeStamp
 
+INFO: DriverManager.getConnection(url, props) passed
+
+Inserting TimeStamp
+
 
 getTypeInfo()
 
@@ -54,279 +58,6 @@ Column 19 Data Type: SMALLINT Name: INTERVAL_PRECISION
 Fetching rows...
 
 Printing Row 1 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -92,-92
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' MINUTE TO SECOND},' MINUTE TO SECOND}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -92,-92
-Column 17 - 13,13
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 2 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -91,-91
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' HOUR TO SECOND},' HOUR TO SECOND}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -91,-91
-Column 17 - 12,12
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 3 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -90,-90
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' HOUR TO MINUTE},' HOUR TO MINUTE}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -90,-90
-Column 17 - 11,11
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 4 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -89,-89
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' DAY TO SECOND},' DAY TO SECOND}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -89,-89
-Column 17 - 10,10
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 5 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -88,-88
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' DAY TO MINUTE},' DAY TO MINUTE}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -88,-88
-Column 17 - 9,9
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 6 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -87,-87
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' DAY TO HOUR},' DAY TO HOUR}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -87,-87
-Column 17 - 8,8
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 7 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -86,-86
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' YEAR TO MONTH},' YEAR TO MONTH}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -86,-86
-Column 17 - 7,7
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 8 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -85,-85
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' SECOND},' SECOND}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -85,-85
-Column 17 - 6,6
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 9 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -84,-84
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' MINUTE},' MINUTE}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -84,-84
-Column 17 - 5,5
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 10 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -83,-83
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' HOUR},' HOUR}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -83,-83
-Column 17 - 4,4
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 11 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -82,-82
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' DAY},' DAY}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -82,-82
-Column 17 - 3,3
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 12 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -81,-81
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' MONTH},' MONTH}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -81,-81
-Column 17 - 2,2
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 13 using getString(), getObject()
-Column 1 - INTERVAL,INTERVAL
-Column 2 - -80,-80
-Column 3 - 0,0
-Column 4 - {INTERVAL ',{INTERVAL '
-Column 5 - ' YEAR},' YEAR}
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 0,0
-Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - INTERVAL,INTERVAL
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -80,-80
-Column 17 - 1,1
-Column 18 - 0,0
-Column 19 - 2,2
-
-Printing Row 14 using getString(), getObject()
 Column 1 - BIGINT,BIGINT
 Column 2 - -5,-5
 Column 3 - 19,19
@@ -340,14 +71,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - LARGEINT,LARGEINT
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - -402,-402
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 15 using getString(), getObject()
+Printing Row 2 using getString(), getObject()
 Column 1 - BIGINT SIGNED,BIGINT SIGNED
 Column 2 - -5,-5
 Column 3 - 19,19
@@ -361,59 +92,38 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - LARGEINT,LARGEINT
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - -402,-402
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 16 using getString(), getObject()
-Column 1 - LONG VARCHAR,LONG VARCHAR
-Column 2 - -1,-1
-Column 3 - 4018,4018
-Column 4 - ','
-Column 5 - ','
-Column 6 - null,null
-Column 7 - 1,1
-Column 8 - 1,1
-Column 9 - 3,3
-Column 10 - 0,0
-Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - LONG VARCHAR,LONG VARCHAR
-Column 14 - 0,0
-Column 15 - 0,0
-Column 16 - -1,-1
-Column 17 - 0,0
-Column 18 - 0,0
-Column 19 - 0,0
-
-Printing Row 17 using getString(), getObject()
+Printing Row 3 using getString(), getObject()
 Column 1 - CHAR,CHAR
 Column 2 - 1,1
-Column 3 - 254,254
+Column 3 - 32000,32000
 Column 4 - ','
 Column 5 - ','
 Column 6 - max length,max length
 Column 7 - 1,1
 Column 8 - 1,1
 Column 9 - 3,3
-Column 10 - 0,0
+Column 10 - null,null
 Column 11 - 0,0
-Column 12 - 0,0
+Column 12 - null,null
 Column 13 - CHARACTER,CHARACTER
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 1,1
-Column 17 - 0,0
-Column 18 - 0,0
-Column 19 - 0,0
+Column 17 - null,null
+Column 18 - null,null
+Column 19 - null,null
 
-Printing Row 18 using getString(), getObject()
+Printing Row 4 using getString(), getObject()
 Column 1 - NUMERIC,NUMERIC
 Column 2 - 2,2
-Column 3 - 18,18
+Column 3 - 128,128
 Column 4 - null,null
 Column 5 - null,null
 Column 6 - precision,scale,precision,scale
@@ -425,16 +135,16 @@ Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - NUMERIC,NUMERIC
 Column 14 - 0,0
-Column 15 - 18,18
+Column 15 - 128,128
 Column 16 - 2,2
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 19 using getString(), getObject()
-Column 1 - DECIMAL,DECIMAL
-Column 2 - 3,3
-Column 3 - 18,18
+Printing Row 5 using getString(), getObject()
+Column 1 - NUMERIC SIGNED,NUMERIC SIGNED
+Column 2 - 2,2
+Column 3 - 128,128
 Column 4 - null,null
 Column 5 - null,null
 Column 6 - precision,scale,precision,scale
@@ -444,15 +154,36 @@ Column 9 - 2,2
 Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
-Column 13 - DECIMAL,DECIMAL
+Column 13 - NUMERIC,NUMERIC
 Column 14 - 0,0
-Column 15 - 18,18
-Column 16 - -301,-301
-Column 17 - 0,0
+Column 15 - 128,128
+Column 16 - 2,2
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 20 using getString(), getObject()
+Printing Row 6 using getString(), getObject()
+Column 1 - NUMERIC UNSIGNED,NUMERIC UNSIGNED
+Column 2 - 2,2
+Column 3 - 128,128
+Column 4 - null,null
+Column 5 - null,null
+Column 6 - precision,scale,precision,scale
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 1,1
+Column 11 - 0,0
+Column 12 - 0,0
+Column 13 - NUMERIC,NUMERIC
+Column 14 - 0,0
+Column 15 - 128,128
+Column 16 - 2,2
+Column 17 - null,null
+Column 18 - 10,10
+Column 19 - null,null
+
+Printing Row 7 using getString(), getObject()
 Column 1 - DECIMAL,DECIMAL
 Column 2 - 3,3
 Column 3 - 18,18
@@ -469,11 +200,53 @@ Column 13 - DECIMAL,DECIMAL
 Column 14 - 0,0
 Column 15 - 18,18
 Column 16 - 3,3
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 21 using getString(), getObject()
+Printing Row 8 using getString(), getObject()
+Column 1 - DECIMAL SIGNED,DECIMAL SIGNED
+Column 2 - 3,3
+Column 3 - 18,18
+Column 4 - null,null
+Column 5 - null,null
+Column 6 - precision,scale,precision,scale
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - 0,0
+Column 13 - DECIMAL,DECIMAL
+Column 14 - 0,0
+Column 15 - 18,18
+Column 16 - 3,3
+Column 17 - null,null
+Column 18 - 10,10
+Column 19 - null,null
+
+Printing Row 9 using getString(), getObject()
+Column 1 - DECIMAL UNSIGNED,DECIMAL UNSIGNED
+Column 2 - 3,3
+Column 3 - 18,18
+Column 4 - null,null
+Column 5 - null,null
+Column 6 - precision,scale,precision,scale
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 1,1
+Column 11 - 0,0
+Column 12 - 0,0
+Column 13 - DECIMAL,DECIMAL
+Column 14 - 0,0
+Column 15 - 18,18
+Column 16 - -301,-301
+Column 17 - null,null
+Column 18 - 10,10
+Column 19 - null,null
+
+Printing Row 10 using getString(), getObject()
 Column 1 - INTEGER,INTEGER
 Column 2 - 4,4
 Column 3 - 10,10
@@ -487,14 +260,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - INTEGER,INTEGER
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 4,4
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 22 using getString(), getObject()
+Printing Row 11 using getString(), getObject()
 Column 1 - INTEGER SIGNED,INTEGER SIGNED
 Column 2 - 4,4
 Column 3 - 10,10
@@ -508,14 +281,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - INTEGER,INTEGER
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 4,4
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 23 using getString(), getObject()
+Printing Row 12 using getString(), getObject()
 Column 1 - INTEGER UNSIGNED,INTEGER UNSIGNED
 Column 2 - 4,4
 Column 3 - 10,10
@@ -525,18 +298,18 @@ Column 6 - null,null
 Column 7 - 1,1
 Column 8 - 0,0
 Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 1,1
+Column 10 - 1,1
+Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - INTEGER,INTEGER
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - -401,-401
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 24 using getString(), getObject()
+Printing Row 13 using getString(), getObject()
 Column 1 - SMALLINT,SMALLINT
 Column 2 - 5,5
 Column 3 - 5,5
@@ -550,14 +323,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - SMALLINT,SMALLINT
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 5,5
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 25 using getString(), getObject()
+Printing Row 14 using getString(), getObject()
 Column 1 - SMALLINT SIGNED,SMALLINT SIGNED
 Column 2 - 5,5
 Column 3 - 5,5
@@ -571,14 +344,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - SMALLINT,SMALLINT
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 5,5
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 26 using getString(), getObject()
+Printing Row 15 using getString(), getObject()
 Column 1 - SMALLINT UNSIGNED,SMALLINT UNSIGNED
 Column 2 - 5,5
 Column 3 - 5,5
@@ -588,18 +361,18 @@ Column 6 - null,null
 Column 7 - 1,1
 Column 8 - 0,0
 Column 9 - 2,2
-Column 10 - 0,0
-Column 11 - 1,1
+Column 10 - 1,1
+Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - SMALLINT,SMALLINT
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - -502,-502
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 10,10
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 27 using getString(), getObject()
+Printing Row 16 using getString(), getObject()
 Column 1 - FLOAT,FLOAT
 Column 2 - 6,6
 Column 3 - 15,15
@@ -613,14 +386,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - FLOAT,FLOAT
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 6,6
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 2,2
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 28 using getString(), getObject()
+Printing Row 17 using getString(), getObject()
 Column 1 - REAL,REAL
 Column 2 - 7,7
 Column 3 - 7,7
@@ -634,14 +407,14 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - REAL,REAL
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 7,7
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 2,2
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 29 using getString(), getObject()
+Printing Row 18 using getString(), getObject()
 Column 1 - DOUBLE PRECISION,DOUBLE PRECISION
 Column 2 - 8,8
 Column 3 - 15,15
@@ -655,14 +428,35 @@ Column 10 - 0,0
 Column 11 - 0,0
 Column 12 - 0,0
 Column 13 - DOUBLE,DOUBLE
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 8,8
-Column 17 - 0,0
+Column 17 - null,null
 Column 18 - 2,2
-Column 19 - 0,0
+Column 19 - null,null
 
-Printing Row 30 using getString(), getObject()
+Printing Row 19 using getString(), getObject()
+Column 1 - VARCHAR,VARCHAR
+Column 2 - 12,12
+Column 3 - 32000,32000
+Column 4 - ','
+Column 5 - ','
+Column 6 - max length,max length
+Column 7 - 1,1
+Column 8 - 1,1
+Column 9 - 3,3
+Column 10 - null,null
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - VARCHAR,VARCHAR
+Column 14 - null,null
+Column 15 - null,null
+Column 16 - 12,12
+Column 17 - null,null
+Column 18 - null,null
+Column 19 - null,null
+
+Printing Row 20 using getString(), getObject()
 Column 1 - DATE,DATE
 Column 2 - 91,91
 Column 3 - 10,10
@@ -672,18 +466,18 @@ Column 6 - null,null
 Column 7 - 1,1
 Column 8 - 0,0
 Column 9 - 2,2
-Column 10 - 0,0
+Column 10 - null,null
 Column 11 - 0,0
-Column 12 - 0,0
+Column 12 - null,null
 Column 13 - DATE,DATE
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 9,9
 Column 17 - 1,1
-Column 18 - 0,0
-Column 19 - 0,0
+Column 18 - null,null
+Column 19 - null,null
 
-Printing Row 31 using getString(), getObject()
+Printing Row 21 using getString(), getObject()
 Column 1 - TIME,TIME
 Column 2 - 92,92
 Column 3 - 8,8
@@ -693,456 +487,323 @@ Column 6 - null,null
 Column 7 - 1,1
 Column 8 - 0,0
 Column 9 - 2,2
-Column 10 - 0,0
+Column 10 - null,null
 Column 11 - 0,0
-Column 12 - 0,0
+Column 12 - null,null
 Column 13 - TIME,TIME
-Column 14 - 0,0
-Column 15 - 0,0
+Column 14 - null,null
+Column 15 - null,null
 Column 16 - 9,9
 Column 17 - 2,2
-Column 18 - 0,0
-Column 19 - 0,0
+Column 18 - null,null
+Column 19 - null,null
 
-Printing Row 32 using getString(), getObject()
+Printing Row 22 using getString(), getObject()
 Column 1 - TIMESTAMP,TIMESTAMP
 Column 2 - 93,93
-Column 3 - 19,19
+Column 3 - 26,26
 Column 4 - {ts ',{ts '
 Column 5 - '},'}
 Column 6 - null,null
 Column 7 - 1,1
 Column 8 - 0,0
 Column 9 - 2,2
-Column 10 - 0,0
+Column 10 - null,null
 Column 11 - 0,0
-Column 12 - 0,0
+Column 12 - null,null
 Column 13 - TIMESTAMP,TIMESTAMP
 Column 14 - 0,0
 Column 15 - 6,6
 Column 16 - 9,9
 Column 17 - 3,3
-Column 18 - 0,0
-Column 19 - 0,0
+Column 18 - null,null
+Column 19 - null,null
 
-Printing Row 33 using getString(), getObject()
-Column 1 - VARCHAR,VARCHAR
-Column 2 - 12,12
-Column 3 - 254,254
-Column 4 - ','
-Column 5 - ','
-Column 6 - max length,max length
+Printing Row 23 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 101,101
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' YEAR},' YEAR}
+Column 6 - null,null
 Column 7 - 1,1
-Column 8 - 1,1
-Column 9 - 3,3
+Column 8 - 0,0
+Column 9 - 2,2
 Column 10 - 0,0
 Column 11 - 0,0
-Column 12 - 0,0
-Column 13 - VARCHAR,VARCHAR
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
 Column 14 - 0,0
 Column 15 - 0,0
-Column 16 - 12,12
-Column 17 - 0,0
-Column 18 - 0,0
-Column 19 - 0,0
+Column 16 - 100,100
+Column 17 - 1,1
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 24 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 102,102
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' MONTH},' MONTH}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 2,2
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 25 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 103,103
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' DAY},' DAY}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 3,3
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 26 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 104,104
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' HOUR},' HOUR}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 4,4
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 27 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 105,105
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' MINUTE},' MINUTE}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 5,5
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 28 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 106,106
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' SECOND},' SECOND}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 6,6
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 29 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 107,107
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' YEAR TO MONTH},' YEAR TO MONTH}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 7,7
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 30 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 108,108
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' DAY TO HOUR},' DAY TO HOUR}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 8,8
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 31 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 109,109
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' DAY TO MINUTE},' DAY TO MINUTE}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 9,9
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 32 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 110,110
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' DAY TO SECOND},' DAY TO SECOND}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 10,10
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 33 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 111,111
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' HOUR TO MINUTE},' HOUR TO MINUTE}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 11,11
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 34 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 112,112
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' HOUR TO SECOND},' HOUR TO SECOND}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 12,12
+Column 18 - null,null
+Column 19 - 2,2
+
+Printing Row 35 using getString(), getObject()
+Column 1 - INTERVAL,INTERVAL
+Column 2 - 113,113
+Column 3 - 0,0
+Column 4 - {INTERVAL ',{INTERVAL '
+Column 5 - ' MINUTE TO SECOND},' MINUTE TO SECOND}
+Column 6 - null,null
+Column 7 - 1,1
+Column 8 - 0,0
+Column 9 - 2,2
+Column 10 - 0,0
+Column 11 - 0,0
+Column 12 - null,null
+Column 13 - INTERVAL,INTERVAL
+Column 14 - 0,0
+Column 15 - 0,0
+Column 16 - 100,100
+Column 17 - 13,13
+Column 18 - null,null
+Column 19 - 2,2
 
 End of Data
 
 getCatalogs()
 
 Printing ResultSetMetaData ...
-No. of Columns 5
+No. of Columns 1
 Column 1 Data Type: VARCHAR Name: TABLE_CAT
-Column 2 Data Type: VARCHAR Name: TABLE_SCHEM
-Column 3 Data Type: VARCHAR Name: TABLE_NAME
-Column 4 Data Type: VARCHAR Name: TABLE_TYPE
-Column 5 Data Type: VARCHAR Name: REMARKS
 
 Fetching rows...
 
 Printing Row 1 using getString(), getObject()
-Column 1 - !!!__$$ xyz,!!!__$$ xyz
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 2 using getString(), getObject()
-Column 1 - !!!abc%%%,!!!abc%%%
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 3 using getString(), getObject()
-Column 1 - %%%zyx$$$,%%%zyx$$$
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 4 using getString(), getObject()
-Column 1 - (((a))),(((a)))
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 5 using getString(), getObject()
-Column 1 - (((a)))__{{{b}}}--[[[c]]],(((a)))__{{{b}}}--[[[c]]]
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 6 using getString(), getObject()
-Column 1 - (((a))__:::///b\\\--[[[c]]],(((a))__:::///b\\\--[[[c]]]
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 7 using getString(), getObject()
-Column 1 - ***123,***123
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 8 using getString(), getObject()
-Column 1 - ***9,***9
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 9 using getString(), getObject()
-Column 1 - ++=++SQL++-+=_==-_--__-_,++=++SQL++-+=_==-_--__-_
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 10 using getString(), getObject()
-Column 1 - ////b\\\\,////b\\\\
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 11 using getString(), getObject()
-Column 1 - ///b\\\,///b\\\
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 12 using getString(), getObject()
-Column 1 - A,A
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 13 using getString(), getObject()
-Column 1 - A1,A1
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 14 using getString(), getObject()
-Column 1 - ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMN
-RSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWX,ABCDEFGHIJKLMNOPQ
-UVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRS
-WXYZABCDEFGHIJKLMNOPQRSTUVWX
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 15 using getString(), getObject()
-Column 1 - ABCDEFGHIJKLM_NOPQRSTUVWXYZ_1234567890_1234567890_ABCDEFGHIJKLM_NO
-STUVWXYZ_1234567890_1234567890_ABCDEFGHIJKLM_NOPQRSTUVWXYZ_,ABCDEFGHIJKLM_NOP
-TUVWXYZ_1234567890_1234567890_ABCDEFGHIJKLM_NOPQRSTUVWXYZ_1234567890_12345678
-ABCDEFGHIJKLM_NOPQRSTUVWXYZ_
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 16 using getString(), getObject()
-Column 1 - ANASCAT,ANASCAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 17 using getString(), getObject()
-Column 1 - ATS10CAT,ATS10CAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 18 using getString(), getObject()
-Column 1 - A_B_,A_B_
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 19 using getString(), getObject()
-Column 1 - BEER,BEER
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 20 using getString(), getObject()
-Column 1 - CAT,CAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 21 using getString(), getObject()
-Column 1 - ENDCAT,ENDCAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 22 using getString(), getObject()
-Column 1 - JEE_CAT,JEE_CAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 23 using getString(), getObject()
-Column 1 - KSCAT,KSCAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 24 using getString(), getObject()
-Column 1 - MYDB,MYDB
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 25 using getString(), getObject()
-Column 1 - NONSTOP_SQLMX_CANCUN,NONSTOP_SQLMX_CANCUN
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 26 using getString(), getObject()
-Column 1 - OM,OM
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 27 using getString(), getObject()
-Column 1 - RAOCAT,RAOCAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 28 using getString(), getObject()
-Column 1 - ROLCAT,ROLCAT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 29 using getString(), getObject()
-Column 1 - Roland's Catalog,Roland's Catalog
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 30 using getString(), getObject()
-Column 1 - SALES REPORT,SALES REPORT
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 31 using getString(), getObject()
-Column 1 - SQL_DATABASE,SQL_DATABASE
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 32 using getString(), getObject()
-Column 1 - TEST!%,TEST!%
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 33 using getString(), getObject()
-Column 1 - TPCC,TPCC
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 34 using getString(), getObject()
-Column 1 - Test$$,Test$$
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 35 using getString(), getObject()
-Column 1 - Z,Z
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 36 using getString(), getObject()
-Column 1 - Z1,Z1
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 37 using getString(), getObject()
-Column 1 - ZEKE,ZEKE
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 38 using getString(), getObject()
-Column 1 - ZEPHYRQA,ZEPHYRQA
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 39 using getString(), getObject()
-Column 1 - ZEPHYR_SQLMX_QA_01,ZEPHYR_SQLMX_QA_01
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 40 using getString(), getObject()
-Column 1 - ZEPHYR_SQLMX_QA_02,ZEPHYR_SQLMX_QA_02
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 41 using getString(), getObject()
-Column 1 - ZEPHYR_SQLMX_QA_03,ZEPHYR_SQLMX_QA_03
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 42 using getString(), getObject()
-Column 1 - [[[c]]],[[[c]]]
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 43 using getString(), getObject()
-Column 1 - ___***ABC,___***ABC
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 44 using getString(), getObject()
-Column 1 - a  a   a    a     a,a  a   a    a     a
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 45 using getString(), getObject()
-Column 1 - a % # b,a % # b
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 46 using getString(), getObject()
-Column 1 - a"B,a"B
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 47 using getString(), getObject()
-Column 1 - a#b,a#b
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 48 using getString(), getObject()
-Column 1 - a%20%23#b,a%20%23#b
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 49 using getString(), getObject()
-Column 1 - a%b,a%b
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 50 using getString(), getObject()
-Column 1 - a'b,a'b
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 51 using getString(), getObject()
-Column 1 - a<,a<
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 52 using getString(), getObject()
-Column 1 - a<>\',a<>\'
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 53 using getString(), getObject()
-Column 1 - b\,b\
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
-
-Printing Row 54 using getString(), getObject()
-Column 1 - b\b,b\b
-Column 2 - null,null
-Column 3 - null,null
-Column 4 - null,null
-Column 5 - null,null
+Column 1 - TRAFODION,TRAFODION
 
 End of Data
 
@@ -1163,12 +824,24 @@ Column 10 Data Type: VARCHAR Name: REF_GENERATION
 
 Fetching rows...
 
+Printing Row 1 using getString(), getObject()
+Column 1 - TRAFODION,TRAFODION
+Column 2 - SEABASE,SEABASE
+Column 3 - DBMETASAMPLE,DBMETASAMPLE
+Column 4 - TABLE,TABLE
+Column 5 - null,null
+Column 6 - null,null
+Column 7 - null,null
+Column 8 - null,null
+Column 9 - null,null
+Column 10 - null,null
+
 End of Data
 
 getColumns()
 
 Printing ResultSetMetaData ...
-No. of Columns 22
+No. of Columns 18
 Column 1 Data Type: VARCHAR Name: TABLE_CAT
 Column 2 Data Type: VARCHAR Name: TABLE_SCHEM
 Column 3 Data Type: VARCHAR Name: TABLE_NAME
@@ -1187,12 +860,28 @@ Column 15 Data Type: SMALLINT Name: SQL_DATETIME_SUB
 Column 16 Data Type: INTEGER Name: CHAR_OCTET_LENGTH
 Column 17 Data Type: INTEGER Name: ORDINAL_POSITION
 Column 18 Data Type: VARCHAR Name: IS_NULLABLE
-Column 19 Data Type: VARCHAR Name: SCOPE_CATLOG
-Column 20 Data Type: VARCHAR Name: SCOPE_SCHEMA
-Column 21 Data Type: VARCHAR Name: SCOPE_TABLE
-Column 22 Data Type: SMALLINT Name: SOURCE_DATA_TYPE
 
 Fetching rows...
+
+Printing Row 1 using getString(), getObject()
+Column 1 - TRAFODION,TRAFODION
+Column 2 - SEABASE,SEABASE
+Column 3 - DBMETASAMPLE,DBMETASAMPLE
+Column 4 - C1,C1
+Column 5 - 1,1
+Column 6 - CHAR,CHAR
+Column 7 - 20,20
+Column 8 - 20,20
+Column 9 - 0,0
+Column 10 - null,null
+Column 11 - 2,2
+Column 12 - null,null
+Column 13 - ,
+Column 14 - 1,1
+Column 15 - null,null
+Column 16 - 20,20
+Column 17 - 1,1
+Column 18 - YES,YES
 
 End of Data
 
