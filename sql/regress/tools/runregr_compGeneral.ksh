@@ -223,7 +223,7 @@ fi
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TESTTOK"
+  sbtestfiles="TEST001 TEST004 TEST005 TEST006 TEST011 TEST012 TEST013 TEST015 TESTTOK TESTTOK2"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do
@@ -698,7 +698,7 @@ for i in $prettyfiles; do
     # Special test case for 018.  Only use the special filter if running
     # in the NSK environment.
     dofilter=1
-    if [ $tnum -eq "018" -a $nsk -eq 0 ]; then
+    if [ "$tnum" == "018" -a $nsk -eq 0 ]; then
       dofilter=0
     fi
  
