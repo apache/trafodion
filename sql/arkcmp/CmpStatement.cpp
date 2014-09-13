@@ -772,9 +772,9 @@ CmpStatement::process (const CmpMessageDDL& statement)
   // set the current catalog and schema names.
   InitSchemaDB();
 
-  // Fix CR #10-000222-6882, control character embedded in sqlStr is not
-  // handled.  Now replace control characters tabs, line feeds, spaces
-  // with spaces. (no longer substitute for \n so we can recognized embedded comments)
+  // C control character embedded in sqlStr is not handled.  Now replace 
+  // control characters tabs, line feeds, spaces with spaces. (no longer 
+  // substitute for \n so we can recognized embedded comments)
   for (Int32 i = 0; sqlStr[i]; i++)
    if (sqlStr[i] != '\n' && isSpace8859_1((unsigned char)sqlStr[i])) sqlStr[i] = ' ';
 

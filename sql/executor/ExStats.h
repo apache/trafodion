@@ -4336,6 +4336,8 @@ NA_EIDPROC
   // Security Invalidation Keys -- no need to pack or unpack.
   Int32 getNumSIKeys() const { return numSIKeys_; }
   SQL_SIKEY *getSIKeys() const { return sIKeys_; }
+  void setSIKeys( CliGlobals *cliGlobals, SecurityInvKeyInfo *sikInfo);
+
 private:
   enum Flags
   {

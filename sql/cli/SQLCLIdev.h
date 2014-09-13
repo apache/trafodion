@@ -906,6 +906,10 @@ SQLCLI_LIB_FUNC short SQL_MXARLIB_GETANSINAME(
     Lng32           partitionNameMaxLength,  /* in:  length of buffer */
     Lng32           *returnedPartitionNameLength); /* out: p name len */
 
+Lng32 SQL_EXEC_GetAuthID(
+   const char * authName,
+   Lng32  & authID);
+
 Lng32 SQL_EXEC_GetAuthName_Internal(
    Lng32   auth_id,
    char   *string_value,

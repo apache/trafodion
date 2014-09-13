@@ -58,6 +58,7 @@
 #endif // NA_CMPDLL
 #include "ExStats.h"
 #include "ExpSeqGen.h"
+#include "ssmpipc.h"
 
 class CliGlobals;
 class HashQueue;
@@ -110,8 +111,12 @@ public:
   RETCODE setDatabaseUserByID(Int32 userID);
   RETCODE setDatabaseUserByName(const char *userName);
 
-  // Functions to map between SeaQuest authentication IDs and names. The 
+  // Functions to map between Trafodion authentication IDs and names. The 
   // mapping operation is not supported on other platforms.
+  RETCODE getAuthIDFromName(
+     const char *authName,  
+     Int32 & authID);   
+  
   RETCODE getAuthNameFromID(
      Int32 authID,         // IN
      char *authNameBuffer, // OUT
@@ -436,6 +441,9 @@ private:
   ExeTraceInfo *exeTraceInfo_;
   // UDR server manager for this process
   ExUdrServerManager *udrServerManager_;
+  // SSMP manager for this context.
+  ExSsmpManager *ssmpManager_;
+
   //   
   //
   //  Fields to enforce SQL semantics inside the UDR server. These
@@ -479,17 +487,19 @@ private:
   void setDatabaseUser(const Int32 &uid, // IN
                        const char *uname);   // IN
 
-  // An enumeration for different types of lookups into the ROLES and USERS tables
+  // An enumeration for different types of lookups into the AUTHS table 
   //   USER BY USER NAME      -- Find the row matching a database user name
   //   USER BY USER ID        -- Find the row matching a database user ID
   //   USER BY EXTERNAL NAME  -- Find the row matching an external user name
   //   ROLE BY ROLE ID	      -- Find the row matching a database role ID
+  //   AUTH BY NAME           -- Find the row matching the database name
   enum AuthQueryType
     {
       USERS_QUERY_BY_USER_NAME = 2,
       USERS_QUERY_BY_USER_ID,
       USERS_QUERY_BY_EXTERNAL_NAME,
-      ROLE_QUERY_BY_ROLE_ID
+      ROLE_QUERY_BY_ROLE_ID,
+      AUTH_QUERY_BY_NAME
     };
 
   // Private method to perform single-row lookups into the USERS

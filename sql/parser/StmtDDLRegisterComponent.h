@@ -58,10 +58,12 @@ public:
   // constructors of (un)register component
   StmtDDLRegisterComponent(RegisterComponentType eRegComponentParseNodeType,
                            const NAString & componentName,
+                           const NABoolean isSystem,
                            const NAString & latin1DetailInfo,
                            CollHeap * heap = PARSERHEAP());
   StmtDDLRegisterComponent(RegisterComponentType eRegComponentParseNodeType,
                            const NAString & componentName,
+                           ComDropBehavior dropBehavior, 
                            CollHeap * heap = PARSERHEAP());
 
   // virtual destructor
@@ -75,6 +77,8 @@ public:
   inline const NAString & getExternalComponentName() const;
   inline const RegisterComponentType getRegisterComponentType() const;
   inline const NAString & getRegisterComponentDetailInfo() const;
+  inline const NABoolean isSystem() const;
+  inline const ComDropBehavior getDropBehavior() const;
 
   // for tracing
 
@@ -91,6 +95,8 @@ private:
   RegisterComponentType registerComponentType_;
   NAString componentName_;
   NAString componentDetailInfo_;
+  NABoolean isSystem_;
+  ComDropBehavior dropBehavior_; 
  
 }; // class StmtDDLRegisterComponent
 
@@ -118,6 +124,17 @@ inline const NAString &
 StmtDDLRegisterComponent::getRegisterComponentDetailInfo() const
 {
   return componentDetailInfo_;
+}
+
+inline const NABoolean
+StmtDDLRegisterComponent::isSystem() const
+{
+  return isSystem_;
+}
+inline const ComDropBehavior
+StmtDDLRegisterComponent::getDropBehavior() const
+{
+  return dropBehavior_;
 }
 
 #endif // STMTDDLREGISTERCOMPONENT_H

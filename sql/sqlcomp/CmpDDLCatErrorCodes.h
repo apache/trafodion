@@ -36,18 +36,18 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_TABLE_DOES_NOT_EXIST_ERROR                = 1004
                   , CAT_CONSTRAINT_DOES_NOT_EXIST_ERROR           = 1005
                   , CAT_INDEX_DOES_NOT_EXIST_ERROR                = 1006
-                  , CAT_MODULE_DOES_NOT_EXIST_ERROR               = 1007
+                  , CAT_WGO_NOT_ALLOWED                           = 1007
                   , CAT_AUTHID_DOES_NOT_EXIST_ERROR               = 1008
                   , CAT_COLUMN_DOES_NOT_EXIST_ERROR               = 1009
                   , CAT_UNSUPPORTED_COMMAND_ERROR                 = 1010
-                  , CAT_MODULE_ALREADY_EXISTS                     = 1011
+                  , CAT_ONLY_ONE_GRANTEE_ALLOWED                  = 1011
                   , CAT_PRIVILEGE_NOT_GRANTED                     = 1012
                   , CAT_NOT_ALL_PRIVILEGES_GRANTED                = 1013
                   , CAT_DEPENDENT_PRIVILEGES_EXIST                = 1014
                   , CAT_NOT_ALL_PRIVILEGES_REVOKED                = 1015
                   , CAT_REDUNDANT_COLUMN_REF_PK                   = 1016
                   , CAT_NOT_AUTHORIZED                            = 1017
-                  , CAT_LOCK_LENGTH_TOO_LONG                      = 1018
+                  , CAT_CAN_BE_REUSED_ERROR                       = 1018
                   , CAT_PARTITION_NOT_FOUND                       = 1019
                   , CAT_SMD_PRIVS_CANNOT_BE_CHANGED               = 1020
                   , CAT_INITIALIZE_SQL_ALREADY_DONE               = 1021
@@ -221,15 +221,19 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_RESERVED_METADATA_SCHEMA_NAME             = 1187
                   , CAT_RI_CIRCULAR_DEPENDENCY                    = 1188
                   , CAT_VIEW_NAME_VALID                           = 1189
-                  //
-                  // NSK specific errors
-                  //
+                  
                   , CAT_DROP_LABEL_ERROR_FELABELBAD               = 1194
                   , CAT_INVALID_SYSTEM_NAME                       = 1196
+                  , CAT_CODE_MUST_CONTAIN_2_NONBLANKS             = 1220
+                  , CAT_COMPONENT_NOT_SYSTEM                      = 1221
+                  , CAT_AUTHORIZATION_NOT_ENABLED                 = 1222
+                  , CAT_CANT_GRANT_TO_SELF_OR_ROOT                = 1223
                   , CAT_INVALID_TYPE_FOR_PARAM                    = 1224
                   , CAT_MIXED_PRIVILEGES                          = 1225
                   , CAT_NO_PRIVILEGES_SPECIFIED                   = 1226
-
+                  , CAT_NO_UNREG_USER_HAS_PRIVS                   = 1227
+                  , CAT_ROLE_HAS_PRIVS_NO_DROP                    = 1228
+                  , CAT_OPTION_NOT_SUPPORTED                      = 1229
                   //
                   // More Catalog Manager errors
                   //
@@ -239,6 +243,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_LABEL_FAILED_DUE_TO_EXTENT_OR_MAXEXTENT   = 1235
                   , CAT_IMPROPER_SCHEMA_NAME                      = 1236
                   , CAT_NON_ISO88591_RANGE_PARTITION_COLUMN       = 1240
+                  , CAT_INIT_AUTHORIZATION_FAILED                 = 1244
                   , CAT_FIRST_KEY_VALUE_INVALID                   = 1245
                   , CAT_FIRST_KEY_VALUE_INCONSISTENT              = 1246
                   , CAT_PARTITION_NAME_ALREADY_EXISTS             = 1248
@@ -306,14 +311,14 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_PUBLISH_MISMATCH_COLUMN_COLUMN_PRIVS      = 1320
                   , CAT_PUBLISH_NO_PUBLIC_SCHEMA                  = 1321
                   , CAT_PUBLISH_VIEW_NOT_REFERENCING_OBJECT       = 1322
-                  , CAT_ROLE_NOT_DEFINED_FOR_USER                 = 1323
+                  , CAT_UNABLE_TO_GRANT_PRIVILEGES                = 1323
                   , CAT_NO_SCHEMA_WGO_ALLOWED                     = 1325
 
                   , CAT_REGULAR_OPERATION_ON_INMEMORY_OBJECT      = 1326
                   , CAT_INMEMORY_OPERATION_ON_REGULAR_OBJECT      = 1327
                   , CAT_INVALID_PRIV_FOR_OBJECT                   = 1328
                   , CAT_UNABLE_TO_CREATE_METADATA_VIEWS           = 1329
-                  //  reserved 1330 for R3.0
+                  , CAT_ROLE_IS_GRANTED_NO_REVOKE                 = 1330
                   , CAT_LDAP_USER_NOT_FOUND                       = 1331
                   , CAT_LDAP_COMM_ERROR                           = 1332
                   , CAT_USER_NOT_EXIST                            = 1333
@@ -332,14 +337,14 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_NO_UNREG_USER_HAS_COLUMN_PRIVS            = 1346
                   , CAT_NO_UNREG_USER_OWNS_ROLES                  = 1347
                   , CAT_ROLE_IS_GRANTED_NO_DROP                   = 1348
-                  , CAT_ROLE_GRANT_BEFORE_DEFAULT                 = 1349
+                  , CAT_NO_UNREG_USER_GRANTED_ROLES               = 1349
                   , CAT_ROLE_NOT_GRANTED_TO_USER                  = 1350
                   , CAT_DUPLICATE_ROLES_IN_LIST                   = 1351
                   , CAT_DUPLICATE_USERS_IN_LIST                   = 1352
                   , CAT_NO_ROLE_WGO_ALLOWED                       = 1353
                   , CAT_NO_ROLE_SCHEMA_GRANT_ALLOWED              = 1354
-                  , CAT_NO_GRANT_ROLE_TO_PUBLIC                   = 1355
-                  , CAT_COMPONENT_PRIVILEGE_TYPE_EXISTS           = 1356
+                  , CAT_NO_GRANT_ROLE_TO_PUBLIC_OR_SYSTEM         = 1355
+                  , CAT_COMPONENT_PRIVILEGE_CODE_EXISTS           = 1356
                   , CAT_COMPONENT_PRIVILEGE_NAME_EXISTS           = 1357
                   , CAT_COMPONENT_PRIVILEGE_NOT_FOUND             = 1358
                   , CAT_INVALID_PRIVILEGE_FOR_GRANT_OR_REVOKE     = 1359
@@ -369,6 +374,7 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   , CAT_DISABLE_AUTHNAME_CHANGES                  = 1383
                   , CAT_POS_UNEQUABLE_DISK_POOL_DEFINED           = 1384
                   , CAT_POS_DISK_POOL_MAPPING_FAILED              = 1385
+                  , CAT_TRAFODION_OBJECT_EXISTS                   = 1390
 
                   , CAT_SHOWDDL_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE  = 1400
                   , CAT_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE_TO_CHARSET = 1401

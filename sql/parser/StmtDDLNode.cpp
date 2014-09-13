@@ -1701,20 +1701,24 @@ StmtDDLPublish::getText() const
 //
 StmtDDLRegisterComponent::StmtDDLRegisterComponent(StmtDDLRegisterComponent::RegisterComponentType eRegComponentParseNodeType,
                                                    const NAString & sComponentName,
+                                                   const NABoolean isSystem,
                                                    const NAString & sDetailInfo,
                                                    CollHeap * heap)
   : StmtDDLNode(DDL_REGISTER_COMPONENT),
     registerComponentType_(eRegComponentParseNodeType),
     componentName_(sComponentName, heap),
+    isSystem_(isSystem),
     componentDetailInfo_(sDetailInfo, heap)
 {
 } 
 StmtDDLRegisterComponent::StmtDDLRegisterComponent(StmtDDLRegisterComponent::RegisterComponentType eRegComponentParseNodeType,
                                                    const NAString & sComponentName,
+                                                   ComDropBehavior dropBehavior, 
                                                    CollHeap * heap)
   : StmtDDLNode(DDL_REGISTER_COMPONENT),
     registerComponentType_(eRegComponentParseNodeType),
     componentName_(sComponentName, heap),
+    dropBehavior_(dropBehavior),
     componentDetailInfo_(heap)
 {
 } 
@@ -1747,9 +1751,21 @@ StmtDDLRegisterComponent::displayLabel1() const
 {
   NAString aLabel("UNREGISTER COMPONENT");
   if (getRegisterComponentType() == StmtDDLRegisterComponent::REGISTER_COMPONENT)
+  {
     aLabel = "REGISTER COMPONENT";
+    if (isSystem())
+      aLabel += " (SYSTEM)";
+  }
   aLabel += " - External Component name: ";
   aLabel += getExternalComponentName();
+  if (getRegisterComponentType() == StmtDDLRegisterComponent::UNREGISTER_COMPONENT)
+  {
+     aLabel += " Drop behavior: ";
+     if (dropBehavior_ == COM_CASCADE_DROP_BEHAVIOR)
+        aLabel += "CASCADE";
+     else
+        aLabel += "RESTRICT";
+  }
   return aLabel;
 }
 

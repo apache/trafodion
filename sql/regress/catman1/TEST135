@@ -1,0 +1,178 @@
+-- ============================================================================
+-- TEST135 - tests privilege grants and revokes associated with object owners
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- This test uses users sql_user1, sql_user2, and sql_user3
+--
+--   Makes sure privileges are granted correctly for new objects
+--   Makes sure privileges are revoked correctly for dropped objects
+--
+-- Sections:
+--   clean_up - removes database setup
+--   set_up - prepares for test
+--   tests - runs tests
+-- ============================================================================
+
+obey TEST135(clean_up);
+set parserflags 64;
+log LOG135 clear;
+sh rm -f LOG135-SECONDARY;
+obey TEST135(set_up);
+obey TEST135(tbl_tests);
+obey TEST135(udr_tests);
+obey TEST135(negative_tests);
+log;
+exit;
+
+?section clean_up
+set schema t135sch;
+-- drop mapping functions
+drop table_mapping function sessionize;
+-- drop database
+drop schema t135sch cascade;
+-- disables authorization
+initialize authorization, drop;
+
+?section set_up
+
+-- create schema
+create schema t135sch;
+
+-- Prepare library file
+sh rm -f ./udrtest135.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh udrtest135.c
+  2>&1 | tee LOG135-SECONDARY;
+set pattern $$DLL$$ udrtest135.dll;
+
+-- enable authorization;
+initialize authorization;
+get tables in schema privmgr_md;
+
+-- Prepare metadata queries
+prepare check_privs from 
+select object_name, grantee_name, grantor_name 
+from privmgr_md.object_privileges
+where 
+  object_name in ('TRAFODION.T135SCH.T135_T1', 'TRAFODION.T135SCH.T135_T2', 'TRAFODION.T135SCH.T135_V1', 'TRAFODION.T135SCH.T135_V2', 'TRAFODION.T135SCH.T135_L1', 'TRAFODION.T135SCH.T135_L2', 'TRAFODION.T135SCH.T135_SESSIONIZE', 'TRAFODION.T135SCH.T135_ADD2')
+for read uncommitted access;
+
+?section tbl_tests
+set schema t135sch;
+ 
+-- Verify that a create table adds privilege manager metadata
+create table t135_t1 (c1 int not null primary key, c2 int);
+-- returns 1 row
+execute check_privs;
+
+-- Verify that a drop table removes privilege manager metadata
+drop table t135_t1;
+-- returns 0 rows
+execute check_privs;
+
+-- Verify metadata for tables and indexes
+create table t135_t1 (c1 int not null primary key, c2 int);
+create index ndx1 on t135_t1(c2);
+-- returns 1 row
+execute check_privs;
+
+drop table t135_t1;
+-- returns 0 rows
+execute check_privs;
+
+-- Verify metadata for tables, indexes, and views
+create table t135_t1 (c1 int not null primary key, c2 int);
+create index ndx1 on t135_t1(c2);
+create view t135_v1 as select * from t135_t1;
+create view t135_v2 as select * from t135_t1;
+-- returns 3 rows
+execute check_privs;
+
+-- fails
+drop table t135_t1;
+-- returns 3 rows
+execute check_privs;
+
+drop table t135_t1 cascade;
+-- returns 0 rows
+execute check_privs; 
+
+-- verify views referencing multiple tables and create table like
+create table t135_t1 (c1 int not null primary key, c2 int);
+create table t135_t2 like t135_t1;
+create view t135_v1 as select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2
+   where t135_t1.c1 = t135_t2.c1;
+-- return 3 rows
+execute check_privs;
+
+drop view t135_v1;
+-- return 2 rows
+execute check_privs;
+drop table t135_t1;
+-- return 1 rows
+execute check_privs;
+drop table t135_t2;
+-- return 0 rows
+execute check_privs;
+
+?section udr_tests
+set schema t135sch;
+
+-- Verify metadata for libraries 
+create library t135_l1 file 'udrtest135.dll';
+-- return 1 row
+execute check_privs;
+drop library t135_l1;
+-- return 0 rows
+execute check_privs;
+
+-- verify metadata for table mapping functions
+create library t135_l1 file 'udrtest135.dll';
+create table_mapping function t135_sessionize(colname char(10), timeintval int)
+returns (userid char(32), ts largeint, session_id largeint)
+external name 'SESSIONIZE'
+library t135_l1;
+-- return 2 rows
+execute check_privs;
+
+-- verify metadata for functions
+create function t135_ADD2(int,int) returns (ADD2 int)
+language c parameter style sql external name 'add2'
+library t135_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+-- return 3 rows
+execute check_privs;
+
+drop function t135_add2;
+-- return 2 rows
+execute check_privs;
+
+drop table_mapping function t135_sessionize;
+-- return 1 row
+execute check_privs;
+
+drop library t135_l1;
+-- return 0 rows
+execute check_privs;
+
+?section negative_tests
+set schema t135sch;
+--initialize authorization, drop;
+
+

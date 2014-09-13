@@ -27,7 +27,7 @@ obey TEST001(create_tables);
 obey TEST001(register_functions);
 obey TEST001(tests);
 log;
---obey TEST001(clean_up);
+obey TEST001(clean_up);
 exit;
 
 ?section clean_up

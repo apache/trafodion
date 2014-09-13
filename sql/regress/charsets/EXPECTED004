@@ -376,6 +376,7 @@ abc
 
 --- SQL operation complete.
 >>select unicode_value(_ucs2 x'0390', ucs2) from (values(1))x;
+
 *** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
 
 *** ERROR[1389] Object UNICODE_VALUE does not exist in Trafodion.
@@ -387,6 +388,7 @@ abc
 *** ERROR[8822] The statement was not prepared.
 
 >>select unicode_char(0390, ucs2) from (values(1))x;
+
 *** ERROR[1389] Object UNICODE_CHAR does not exist in Trafodion.
 
 *** ERROR[1389] Object UNICODE_CHAR does not exist in Trafodion.

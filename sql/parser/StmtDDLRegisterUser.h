@@ -62,10 +62,7 @@ public:
   // register user
   StmtDDLRegisterUser(const NAString & externalUserName,
 		      const NAString * pDbUserName,
-                      const NAString * pLogonRole,
                       ElemDDLNode *pOwner,
-                      ComAuthenticationType authenticationType,
-                      ComBoolean isImmutable,
                       CollHeap * heap);
 
   // unregister user
@@ -86,18 +83,11 @@ public:
 
   inline const NAString & getExternalUserName() const;
   inline const NAString & getDbUserName() const ;
-  inline const NAString & getLogonRole() const;
-  inline const NABoolean isImmutable() const;
-  inline const NABoolean isLogonRoleSpecified() const;
   inline const RegisterUserType getRegisterUserType() const;
   inline const NABoolean isOwnerSpecified() const;
   inline const ElemDDLGrantee *getOwner() const;
   inline const ComDropBehavior getDropBehavior() const;
-  inline const ComAuthenticationType getAuthenticationType() const;
 
-  // mutator
-  inline void setAuthenticationType(ComAuthenticationType authType);
-  inline void setIsImmutable(ComBoolean isImmutable);
   // for tracing
 
 private:
@@ -108,12 +98,9 @@ private:
 
   NAString externalUserName_;
   NAString dbUserName_;
-  NAString logonRole_;
-  NABoolean isImmutable_;
   RegisterUserType registerUserType_;
   ComDropBehavior dropBehavior_;
   ElemDDLGrantee *pOwner_;
-  ComAuthenticationType authenticationType_;
 
 }; // class StmtDDLRegisterUser
 
@@ -136,22 +123,7 @@ StmtDDLRegisterUser::getDbUserName() const
 {
   return dbUserName_;
 }
-inline const NAString &
-StmtDDLRegisterUser::getLogonRole() const
-{
-  return logonRole_;
-}
-inline const NABoolean
-StmtDDLRegisterUser::isImmutable() const
-{
-  return isImmutable_;
-}
 
-inline const NABoolean
-StmtDDLRegisterUser::isLogonRoleSpecified() const
-{
-  return logonRole_.isNull() ? FALSE : TRUE;
-}
 inline const StmtDDLRegisterUser::RegisterUserType
 StmtDDLRegisterUser::getRegisterUserType() const
 {
@@ -172,24 +144,6 @@ inline const ComDropBehavior
 StmtDDLRegisterUser::getDropBehavior() const
 {
   return dropBehavior_;
-}
-
-inline const ComAuthenticationType
-StmtDDLRegisterUser::getAuthenticationType() const
-{
-  return authenticationType_;
-}
-
-inline void
-StmtDDLRegisterUser::setAuthenticationType(ComAuthenticationType authenticationType)
-{
-  authenticationType_ = authenticationType;
-}
-
-inline void
-StmtDDLRegisterUser::setIsImmutable(ComBoolean isImmutable)
-{
-  isImmutable_ = isImmutable;
 }
 
 // -----------------------------------------------------------------------

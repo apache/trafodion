@@ -997,18 +997,19 @@ StmtDDLCreateCatalog::getText() const
 // constructor
 //
 
-StmtDDLCreateComponentPrivilege::StmtDDLCreateComponentPrivilege(const NAString & aComponentPrivilegeName,
-                                                                 const NAString & aComponentPrivilegeAbbreviation,
-                                                                 const NAString & aComponentName,
-                                                                 const NAString & aComponentPrivilegeDetailInformation,
-                                                                 Int64 aComponentPrivilegeClassInformation,
-                                                                 CollHeap       * heap) // default is PARSERHEAP()
+StmtDDLCreateComponentPrivilege::StmtDDLCreateComponentPrivilege(
+   const NAString & aComponentPrivilegeName,
+   const NAString & aComponentPrivilegeAbbreviation,
+   const NAString & aComponentName,
+   const NABoolean isSystem,
+   const NAString & aComponentPrivilegeDetailInformation,
+   CollHeap       * heap) // default is PARSERHEAP()
   : StmtDDLNode(DDL_CREATE_COMPONENT_PRIVILEGE),
     componentPrivilegeName_(aComponentPrivilegeName, heap),
     componentPrivilegeAbbreviation_(aComponentPrivilegeAbbreviation, heap),
     componentName_(aComponentName, heap),
-    componentPrivilegeDetailInformation_(aComponentPrivilegeDetailInformation, heap), 
-    componentPrivilegeClassInformation_(aComponentPrivilegeClassInformation)
+    isSystem_(isSystem),
+    componentPrivilegeDetailInformation_(aComponentPrivilegeDetailInformation, heap) 
 {
 }
 
@@ -1051,6 +1052,10 @@ StmtDDLCreateComponentPrivilege::displayLabel2() const
 {
   NAString aLabel("Component name: ");
   aLabel += getComponentName();
+  if (isSystem_)
+  {
+     aLabel += " (SYSTEM)";
+  }
   aLabel += " - Component privilege detail information: ";
   aLabel += getComponentPrivilegeDetailInformation();
   return aLabel;

@@ -56,6 +56,9 @@
 #include  "ErrorMessage.h"
 #include  "HBaseClient_JNI.h"
 
+#include "CmpDDLCatErrorCodes.h"
+#include "PrivMgrCommands.h"
+
 //******************************************************************************
 //                                                                             *
 //  These definitions were stolen from CatWellKnownTables.h
@@ -723,16 +726,6 @@ static const QueryString getObjectsInMVQuery[] =
   {" ; "},
 };
 
-static const QueryString getRolesQuery[] =
-{
-  {" select translate(rtrim(R.role_name) using ucs2toutf8) from "},
-  {"   HP_SYSTEM_CATALOG.HP_SECURITY_SCHEMA.roles   R "},
-  {"        %s "},
-  {" for read uncommitted access "},
-  {" order by 1 "},
-  {" ; "}
-};
-
 static const QueryString getRolesForRoleQuery[] =
 {
   {" select translate(rtrim(R.role_name) using ucs2toutf8) from "},
@@ -752,15 +745,10 @@ static const QueryString getRolesForRoleQuery[] =
 
 static const QueryString getUsersForRoleQuery[] =
 {
-  {" select translate(rtrim(U.user_name) using ucs2toutf8) from "},
-  {"   hp_system_catalog.hp_security_schema.roles R, "},
-  {"   hp_system_catalog.hp_security_schema.users U, "},
-  {"   hp_system_catalog.hp_security_schema.role_usage RU "},
-  {" where (R.role_id=RU.role_id) and "},
-  {"       (U.user_id=RU.grantee) and "},
-  {"       (RU.grantor != -2) and "},
-  {"       (R.role_name='%s') "},
-  {"        %s "},
+  {" select translate(rtrim(RU.grantee_name) using ucs2toutf8) "},
+  {"   from %s.\"%s\".%s RU "},
+  {" where (RU.grantor_ID != -2) and "},
+  {"       (RU.role_name='%s') "},
   {" for read uncommitted access "},
   {" order by 1"},
   {" ; "}
@@ -813,15 +801,10 @@ static const QueryString getSchemasForUserQuery[] =
 
 static const QueryString getRolesForUserQuery[] =
 {
-  {" select translate(rtrim(R.role_name) using ucs2toutf8) from "},
-  {"   hp_system_catalog.hp_security_schema.roles R, "},
-  {"   hp_system_catalog.hp_security_schema.users U, "},
-  {"   hp_system_catalog.hp_security_schema.role_usage RU "},
-  {" where (R.role_id=RU.role_id) and "},
-  {"       (U.user_id=RU.grantee) and "},
-  {"       (RU.grantor != -2) and "},
-  {"       (U.user_name='%s') "},
-  {"        %s "},
+  {" select translate(rtrim(RU.role_name) using ucs2toutf8) "},
+  {"   from %s.\"%s\".%s RU "},
+  {" where (RU.grantor_ID != -2) and "},
+  {"       (RU.grantee_name='%s') "},
   {" for read uncommitted access "},
   {" order by 1 "},
   {" ; "}
@@ -873,43 +856,49 @@ static const QueryString getProceduresForLibraryQuery[] =
 // Get UID from OBJECTS table based on library name?
 static const QueryString getComponents[] =
 {
-  {" select translate(rtrim(component_name) using ucs2toutf8) from "},
-  {" hp_system_catalog.hp_security_schema.components "},
+  {" select translate(rtrim(component_name) using ucs2toutf8)  "},
+  {"   from %s.\"%s\".%s "},
   {" for read uncommitted access "},
   {" order by component_name "},
   {" ; "}
 };
 
-static const QueryString getComponentPrivilegeTypes[] = 
+static const QueryString getComponentOperations[] = 
 {
-  {" select translate(rtrim(priv_name) using ucs2toutf8), "},
-  {"        translate(rtrim(priv_type) using ucs2toutf8) from "},
-  {" hp_system_catalog.hp_security_schema.components c, "},
-  {" hp_system_catalog.hp_security_schema.component_privilege_usage u "},
-  {" where (c.component_uid=u.component_uid) and "},
-  {"       (c.component_name='%s') and "},
-  {"       (u.component_priv_class !='IN') "},
+  {" select translate(rtrim(operation_name) using ucs2toutf8), "},
+  {"        translate(rtrim(operation_code) using ucs2toutf8) from "},
+  {"    %s.\"%s\".%s c, "},
+  {"    %s.\"%s\".%s o "},
+  {" where (c.component_uid=o.component_uid) and "},
+  {"       (c.component_name='%s')  "},
   {" for read uncommitted access "},
   {" order by 1 "},
   {" ; "}
 };
 
-static const QueryString getPrivilegesForComponentUsers[] =
+static const QueryString getComponentPrivilegesForUser[] =
 {
-  {" select distinct translate(rtrim(priv_name) using ucs2toutf8), "},
-  {"                 translate(rtrim(priv_type) using ucs2toutf8) from "},
-  {"   hp_system_catalog.hp_security_schema.components c, "},
-  {"   hp_system_catalog.hp_security_schema.component_privileges p, "},
-  {"   hp_system_catalog.hp_security_schema.component_privilege_usage u "},
-  {" where (c.component_uid=p.component_uid) and "},
-  {"       (c.component_uid = u.component_uid) and "},
+  {" select distinct translate(rtrim(o.operation_name) using ucs2toutf8), "},
+  {"                 translate(rtrim(o.operation_code) using ucs2toutf8) from "},
+  {"    %s.\"%s\".%s c, "},
+  {"    %s.\"%s\".%s o, "},
+  {"    %s.\"%s\".%s p "},
+  {" where (c.component_uid = p.component_uid) and "},
+  {"       (c.component_uid = o.component_uid) and "},
   {"       (c.component_name='%s') and "},
-  {"       (p.privilege_type = u.priv_type) and "},
-  {"       (u.component_priv_class !='IN') and "},
-  {" %s) order by 1 " },
+  {"       (p.operation_code = o.operation_code) and "},
+  {"       ((p.grantee_name = '%s') or "},
+  {"        (p.grantee_name in (select role_name from "},
+  {"          %s.\"%s\".%s ru "},
+  {"          where ru.grantee_name = '%s'))"},
+  {" order by 1 " },
   {" for read uncommitted access "},
   {" ; " }
 };
+
+
+
+
 
 static const QueryString getTrafTablesInSchemaQuery[] =
 {
@@ -1100,6 +1089,16 @@ static const QueryString getTrafUsers[] =
   {" select distinct T.auth_db_name "},
   {"   from %s.\"%s\".%s T "},
   {"  where T.auth_type = '%s' "},
+  {"  for read uncommitted access "},
+  {" order by 1 "},
+  {"  ; "}
+};
+
+static const QueryString getTrafRoles[] = 
+{
+  {" select distinct T.auth_db_name "},
+  {"   from %s.\"%s\".%s T "},
+  {"  where T.auth_type = 'R' "},
   {"  for read uncommitted access "},
   {" order by 1 "},
   {"  ; "}
@@ -1823,8 +1822,14 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
         str_sprintf(headingBuf_, "Components");
     break;
 
-   case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
+   case ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_:
       {
+        str_sprintf(headingBuf_, "Operations for Component %s",
+                    getMItdb().getObj());
+        break;
+      }
+   case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
+      {	//TODO: Add user?
         str_sprintf(headingBuf_, "Privilege information on Component %s",
                     getMItdb().getObj());
         break;
@@ -2317,10 +2322,14 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	    char cat[100];
 	    char sch[100];
+            char pmsch[100];
 	    char tab[100];
 	    char view[100];
 	    char view_usage[100];
             char auths[100];
+            char role_usage[100];
+            char components[100];
+            char componentOperations[100];
             char routine[100];
             char library_usage[100];
 
@@ -2328,12 +2337,37 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	    //	    strcpy(cat, TRAFODION_SYSCAT_LIT);
 	    strcpy(sch, SEABASE_MD_SCHEMA);
+	    strcpy(pmsch, SEABASE_PRIVMGR_SCHEMA);
 	    strcpy(tab, SEABASE_OBJECTS);
 	    strcpy(view, SEABASE_VIEWS);
 	    strcpy(view_usage, SEABASE_VIEWS_USAGE);
             strcpy(auths, SEABASE_AUTHS);
+            strcpy(role_usage, "ROLE_USAGE");
+            strcpy(components, "COMPONENTS");
+            strcpy(componentOperations, "COMPONENT_OPERATIONS");
             strcpy(routine, SEABASE_ROUTINES);
             strcpy(library_usage, SEABASE_LIBRARIES_USAGE);
+
+
+          // "get components;" or "get component privileges on <component>;" are called,
+          // but authorization tables were not initialized,
+	      if(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENTS_
+	      ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_
+	      ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_)
+	      {
+                NAString privMDLoc = getMItdb().cat_.getPointer();
+                privMDLoc += ".\"";
+                privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+                privMDLoc += "\"";
+                PrivMgrCommands privMgrInterface(privMDLoc.data(), CmpCommon::diags());
+                if (!privMgrInterface.isAuthorizationEnabled())
+                {
+                    ComDiagsArea * diags = getDiagsArea();
+                    *diags << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
+                    step_ = HANDLE_ERROR_;
+                    break;
+                }
+         }
 
 	    switch (getMItdb().queryType_)
 	      {
@@ -2556,6 +2590,82 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[15] = ausStr;
                 }
                 break ;
+                
+              case ComTdbExeUtilGetMetadataInfo::ROLES_:
+                {
+                  qs = getTrafRoles;
+                  sizeOfqs = sizeof(getTrafRoles);
+
+                  param_[0] = cat;
+                  param_[1] = sch;
+                  param_[2] = auths;
+                }
+              break;
+
+              case ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_:
+                {
+                  qs = getUsersForRoleQuery;
+                  sizeOfqs = sizeof(getUsersForRoleQuery);
+                  
+                  param_[0] = cat;
+                  param_[1] = pmsch;
+                  param_[2] = role_usage;
+                  param_[3] = getMItdb().getParam1();
+                }
+              break;
+                
+              case ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_:
+                {
+                  qs = getRolesForUserQuery;
+                  sizeOfqs = sizeof(getRolesForUserQuery);
+                  
+                  param_[0] = cat;
+                  param_[1] = pmsch;
+                  param_[2] = role_usage;
+                  param_[3] = getMItdb().getParam1();
+                }
+              break;
+              
+              case ComTdbExeUtilGetMetadataInfo::COMPONENTS_:
+              {
+                qs = getComponents;
+                sizeOfqs = sizeof(getComponents);
+
+                param_[0] = cat;
+                param_[1] = pmsch;
+                param_[2] = components;
+              }
+              break;
+
+              case ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_:
+              {
+                qs = getComponentOperations;
+                sizeOfqs = sizeof(getComponentOperations);
+
+                param_[0] = cat;
+                param_[1] = pmsch;
+                param_[2] = components;
+                param_[3] = cat;
+                param_[4] = pmsch;
+                param_[5] = componentOperations;
+                param_[6] = getMItdb().getObj();
+              }
+              break;
+
+              case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
+              {
+                qs = getComponentPrivilegesForUser;
+                sizeOfqs = sizeof(getComponentOperations);
+
+                param_[0] = cat;
+                param_[1] = pmsch;
+                param_[2] = components;
+                param_[3] = cat;
+                param_[4] = pmsch;
+                param_[5] = componentOperations;
+                param_[6] = getMItdb().getObj();
+              }
+              break;
 
               case ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_:
                 {

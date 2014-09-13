@@ -69,7 +69,6 @@ invoke t013t1;
 insert into t013t1 values (1);
 select * from t013t1;
 create index t013t1i on t013t1(a);
-grant select on t013t1 to public;
 
 create volatile table t013t1(a int, b int);
 invoke t013t1;

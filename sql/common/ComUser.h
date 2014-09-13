@@ -100,8 +100,14 @@ class ComUser
      static Int32 getCurrentUser();
      static Int32 getSessionUser();
      static bool isRootUserID(Int32 userID);
+     static bool isPublicUserID(Int32 userID);
+     static bool isSystemUserID(Int32 userID);
      static Int32 getRootUserID() { return SUPER_USER; }
+     static Int32 getPublicUserID() { return PUBLIC_USER; }
+     static Int32 getSystemUserID() { return SYSTEM_USER; }
      static const char * getRootUserName() { return "DB__ROOT"; }
+     static const char * getPublicUserName() { return "PUBLIC"; }
+     static const char * getSystemUserName() { return "_SYSTEM"; }
      static char getAuthType(Int32 authID);
      static Int16 getUserNameFromUserID(Int32 userID,
                                         char *userName,
@@ -113,13 +119,18 @@ class ComUser
                                          char  * authName,
                                          Int32   maxLen,
                                          Int32 & actualLen);
+     static Int16 getAuthIDFromAuthName (const char  * authName,
+                                         Int32 & authID);
 
      // default constructor
      ComUser ();
 
 
      // accessors
-     Int32 getEffectiveUser(ComUser::VerifyAction act);
+     Int32 getEffectiveUserID(const ComUser::VerifyAction act = VerifyAction::ANY);
+     Int16 getEffectiveUserName (NAString &userNameStr,
+                                 const ComUser::VerifyAction act = VerifyAction::ANY);
+
      virtual bool  userHasPriv(ComUser::VerifyAction act);
      virtual bool  isAuthorized( VerifyAction authAction,
                                  bool trustedCaller = false);
@@ -165,7 +176,7 @@ class ComUserVerifyObj : public ComUser
     ComObjectName      objName_;
     ObjType            objType_;
 
-    bool userOwnsObject(ComUser::VerifyAction act, Int32 objOwner);
+    bool userOwnsObject(ComUser::VerifyAction act, Int32 objOwnerID);
 };
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

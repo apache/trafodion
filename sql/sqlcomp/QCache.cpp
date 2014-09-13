@@ -45,6 +45,7 @@
 #include "ControlDB.h"
 #include "CmpErrLog.h"
 #include "CompilerTracking.h"
+#include "ComDistribution.h"
 
 #ifdef DBG_QCACHE
 #include <fstream>
@@ -2220,6 +2221,47 @@ void QCache::incNOfDisplacedPreParserEntries(ULng32 howMany)
 // Free all entries with specified QI Security Key
 void QCache::free_entries_with_QI_keys( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry )
 {
+  LRUList::iterator lru = clruQ_.end();
+  while ( (clruQ_.size() > 0) && (lru != clruQ_.begin()) )
+  {
+     KeyDataPair& entry = *(--lru);
+     CacheData * cdata = (CacheData*)entry.second_ ;
+     ComTdbRoot * rootTdb = (ComTdbRoot *)cdata->getPlan()->getPlan();
+
+     Int32 found = 0;
+
+     char * base = (char *) rootTdb;
+     const ComSecurityKey * planSet = rootTdb->getPtrToUnpackedSecurityInvKeys( base );
+     CollIndex numPlanSecKeys = (CollIndex)(rootTdb->getNumberOfUnpackedSecKeys( base ));
+     char SiKeyOpVal[4] ;
+     SiKeyOpVal[2] = '\0'; //Put null terminator after first 2 chars
+
+     for ( CollIndex ii = 0; ii < numPlanSecKeys; ii ++ )
+     {
+         for ( Int32 jj = 0; jj < NumSiKeys ; jj ++ )
+         {
+            SiKeyOpVal[0] = pSiKeyEntry[jj].operation[0];
+            SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
+
+            ComQIActionType siKeyType =
+              ComQIActionTypeLiteralToEnum( SiKeyOpVal );
+            if ( ( (pSiKeyEntry[jj]).subject == planSet[ii].getSubjectHashValue() ) &&
+                 ( (pSiKeyEntry[jj]).object == planSet[ii].getObjectHashValue() ) &&
+                 ( siKeyType == planSet[ii].getSecurityKeyType() ) )
+            {
+                 found = 1;
+                 break;
+            }
+         }
+         if ( found )
+            break;
+     }
+     if ( found )
+     {
+        ++lru; // restart backward scan from entry's previous neighbor
+        deCache((CacheKey*)(entry.first_)); // decache entry
+     }
+  }
 }
 
 // free least recently used entries to make room for a new entry

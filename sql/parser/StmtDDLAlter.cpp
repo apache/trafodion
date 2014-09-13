@@ -2998,15 +2998,12 @@ StmtDDLAlterUser::StmtDDLAlterUser(
    const NAString        & databaseUsername,
    AlterUserCmdSubType     cmdSubType,
    const NAString        * pExternalName,
-   const NAString        * pLogonRole,
    NABoolean               isValidUser,
-   ComAuthenticationType   authType,
    CollHeap              * heap) 
  : StmtDDLNode(DDL_ALTER_USER),
    databaseUserName_(databaseUsername,heap),
    alterUserCmdSubType_(cmdSubType),
-   isValidUser_(isValidUser), 
-   authenticationType_(authType)
+   isValidUser_(isValidUser)
 
 {
 
@@ -3018,14 +3015,6 @@ StmtDDLAlterUser::StmtDDLAlterUser(
      externalUserName_ = userName;
    }
    
-   if (pLogonRole == NULL)
-      logonRole_ = ComString("",heap);
-   else
-   {
-      NAString logonRole(*pLogonRole,heap);
-      logonRole_ = logonRole;
-   }
-  
 } 
 
 // virtual destructor

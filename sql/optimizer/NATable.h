@@ -20,6 +20,7 @@
 #ifndef NATABLE_H
 #define NATABLE_H
 
+#include <vector>
 #include "BaseTypes.h"
 #include "Collections.h"
 #include "Int64.h"
@@ -39,6 +40,7 @@
 #include "sqlcli.h"
 #include "hiveHook.h"
 #include "ExpLOBexternal.h"
+#include "ComSecurityKey.h"
 
 //forward declaration(s)
 // -----------------------------------------------------------------------
@@ -56,6 +58,7 @@ class MVInfoForDML;
 class NATableDB;
 struct desc_struct;
 class HbaseCreateOption;
+class PrivMgrUserPrivs;
 
 typedef QualifiedName* QualifiedNamePtr;
 typedef ULng32 (*HashFunctionPtr)(const QualifiedName&);
@@ -380,9 +383,6 @@ public:
   NATable(BindWA *bindWA, const CorrName &corrName, NAMemory *heap,
           struct hive_tbl_desc*);
 
-  // copy ctor
-  NATable (const NATable & orig, NAMemory * h=0) ; //not written
-
   virtual ~NATable();
 
   // Obtain a list of table identifiers for all the indices and vertical
@@ -648,6 +648,9 @@ public:
   NABoolean isToBeRemovedFromCacheBNC() const   /* BNC = Before Next Compilation attempt */
   {  return( (flags_ & REMOVE_FROM_CACHE_BNC) != 0 ); }
 
+  ComSecurityKeySet getSecKeySet() { return secKeySet_ ; }
+  void setSecKeySet(std::vector <ComSecurityKey*>& secKeys);
+
   void setDroppableTable( NABoolean value )
   {  value ? flags_ |= DROPPABLE : flags_ &= ~DROPPABLE; }
 
@@ -797,9 +800,15 @@ public:
 
   NABoolean getClearHDFSStatsAfterStmt() { return resetHDFSStatsAfterStmt_; };
 
+  NAMemory* getHeap() const { return heap_; }
   NATableHeapType getHeapType() { return heapType_; }
 
+  PrivMgrUserPrivs* getPrivInfo() const { return privInfo_; }
+  void setPrivInfo(PrivMgrUserPrivs* privInfo) { privInfo_ = privInfo; }
+
 private:
+  // copy ctor
+  NATable (const NATable & orig, NAMemory * h=0) ; //not written
 
   void setRecordLength(Int32 recordLength) { recordLength_ = recordLength; }
 
@@ -1046,6 +1055,8 @@ private:
 
   char * parentTableName_;
 
+  ComSecurityKeySet secKeySet_ ;
+
   desc_struct *partnsDesc_;
 
   desc_struct *tableDesc_;
@@ -1082,6 +1093,9 @@ private:
   Int32 hiveDefaultStringLen_;
   Int32 hiveTableId_;
   
+  // Object containing info on all privileges the current user has for this table.
+  PrivMgrUserPrivs* privInfo_;
+
 }; // class NATable
 
 //-----------------------------------------------------------------------

@@ -35,6 +35,17 @@
 -- ============================================================================
 
 obey TEST136(clean_up);
+register user sql_user1;
+register user sql_user2;
+register user sql_user3;
+register user sql_user4;
+register user sql_user5;
+register user sql_user6;
+register user sql_user7;
+register user sql_user8;
+register user sql_user9;
+register user sql_user10;
+initialize authorization;
 set parserflags 64;
 log LOG136 clear;
 obey TEST136(create_db);
@@ -60,6 +71,7 @@ drop role baseball_players;
 drop table "delimited_sch136".t1;
 drop schema "delimited_sch136";
 obey TEST136(drop_users);
+initialize authorization, drop;
 
 ?section drop_users
 unregister user test136_user1;
@@ -152,14 +164,6 @@ register user test136_user1;
 -- succeed: register user -> AS clause
 register user test136_user2 
    as test136_u2;
-
--- succeed: register user -> IMMUTABLE
-register user test136_user3 
-   IMMUTABLE;
-
--- succeed: register user -> AS and IMMUTABLE
-register user test136_user4 
-   as test136_u4 IMMUTABLE;
 
 set parserflags 1;
 -- succeed: register user -> BY clause
@@ -377,8 +381,6 @@ showddl user donald;
 alter user minnie set offline;
 -- error 1333
 alter user "donald/duck@disney.com" set offline;
---error 1010
-alter user mickey set immutable;
 --error 1337
 alter user DB__ROOT set offline;
 --error 1335

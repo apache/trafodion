@@ -39,15 +39,6 @@ A
 >>create index t013t1i on t013t1(a);
 
 --- SQL operation complete.
->>grant select on t013t1 to public;
-
-*** ERROR[8448] Unable to access Hbase interface. Call to ExpHbaseInterface::grant() returned error HBASE_ACCESS_ERROR(705). Cause: 
-org.apache.hadoop.hbase.coprocessor.CoprocessorException: Coprocessor [org.apache.hadoop.hbase.security.access.AccessController]: This method can only execute at _acl_ table.
-org.apache.hadoop.hbase.security.access.AccessController.grant(AccessController.java:1094)
-org.trafodion.sql.HBaseAccess.HBaseClient.grant(HBaseClient.java:544)
-.
-
---- SQL operation failed with errors.
 >>
 >>create volatile table t013t1(a int, b int);
 

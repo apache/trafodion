@@ -73,6 +73,8 @@
 #include "CmpSeabaseDDL.h"
 #include "RelScan.h"
 #include "exp_clause_derived.h"
+#include "PrivMgrCommands.h"
+#include "ComDistribution.h"
 
 #define MAX_NODE_NAME 9
 
@@ -4320,7 +4322,9 @@ NATable::NATable(BindWA *bindWA,
     hiveTableId_(-1),
     tableDesc_(inTableDesc),
     numSaltPartns_(0),
-    hbaseCreateOptions_(NULL)
+    hbaseCreateOptions_(NULL),
+    privInfo_(NULL),
+    secKeySet_(heap)
 {
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
   NAString mmPhase;
@@ -5097,7 +5101,8 @@ NATable::NATable(BindWA *bindWA,
     hiveTableId_(htbl->tblID_),
     tableDesc_(NULL),
     numSaltPartns_(0),
-    hbaseCreateOptions_(NULL)
+    hbaseCreateOptions_(NULL),
+    privInfo_(NULL)
 {
 
   NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
@@ -6069,6 +6074,10 @@ NATable::~NATable()
   }
   // implicitly destructs all subcomponents allocated out of this' private heap
   // hence no need to write a complicated destructor!
+
+  // privInfo_ is allocated on context heap. If on NATable's private heap, weird
+  // behvior results.
+  delete privInfo_;
 }
 
 //some stuff of historical importance
@@ -6863,6 +6872,18 @@ NABoolean NATable::hasSaltedColumn()
   return FALSE;
 }
 
+void NATable::setSecKeySet(std::vector <ComSecurityKey*>& secKeys)
+{
+  for (std::vector<ComSecurityKey*>::iterator iter = secKeys.begin();
+       iter != secKeys.end();
+       iter++)
+    {
+      // Insertion of the dereferenced pointer results in NASet making a copy of
+      // the object, and then we delete the original.
+      secKeySet_.insert(**iter);
+      delete *iter;
+    }
+}
 
 // get details of this NATable cache entry
 void NATableDB::getEntryDetails(
@@ -7780,6 +7801,56 @@ Int32 NATableDB::end()
 void
 NATableDB::free_entries_with_QI_key( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry )
 {
+  UInt32 currIndx = 0;
+
+  while ( currIndx < cachedTableList_.entries() )
+  {
+     NABoolean found = FALSE;
+     NATable * currTable = cachedTableList_[currIndx];
+
+     //
+     // For this NATable entry in the cache, we now scan the Security Invalidation Key SET
+     // and, if we find any of the specified SQL_SIKEYs,
+     // we remove the NATable entry from the cache.
+     //
+     Int32 numSikEntries = currTable->secKeySet_.entries();
+     for (Int32 ii = 0; ii < numSikEntries; ii++ )
+     {
+        char SiKeyOpVal[4] ;
+        SiKeyOpVal[2] = '\0'; //Put null terminator after first 2 chars
+
+        for ( Int32 jj = 0; jj < NumSiKeys; jj++ )
+        {
+           SiKeyOpVal[0] = pSiKeyEntry[jj].operation[0];
+           SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
+
+           ComQIActionType siKeyType =
+             ComQIActionTypeLiteralToEnum( SiKeyOpVal );
+           if ( ( pSiKeyEntry[jj].subject ==
+                  currTable->secKeySet_[ii].getSubjectHashValue() ) &&
+                ( pSiKeyEntry[jj].object ==
+                  currTable->secKeySet_[ii].getObjectHashValue() ) &&
+                ( siKeyType ==
+                  currTable->secKeySet_[ii].getSecurityKeyType() ) )
+           {
+              found = TRUE;
+              break;  // Break out of loop since we know we must remove the NATable entry
+           }
+        }
+        if ( found )
+           break;
+     }
+     if ( found )
+     {
+        if ( currTable->accessedInCurrentStatement_ )
+           statementCachedTableList_.remove( currTable );
+        while ( statementTableList_.remove( currTable ) ) // Remove as many times as on list!
+        { ; }
+
+        RemoveFromNATableCache( currTable , currIndx );
+     }
+     else currIndx++; //Increment if NOT found ... else currIndx already pointing at next entry!
+  }
 }
 
 //

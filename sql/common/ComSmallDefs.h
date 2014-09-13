@@ -120,10 +120,14 @@ typedef NABoolean               ComBoolean;
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
 #define TRAFODION_SYSCAT_LIT              "TRAFODION"
 #define SEABASE_SYSTEM_SCHEMA           "SEABASE"
+#define SEABASE_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 
 #define SEABASE_DEFAULT_COL_FAMILY "#1"
 
 // reserved names for seabase metadata where SQL table information is kept
+// there are places in the code that assume metadata schema and table 
+// names are less than 100 characters.  If you create a name that is 
+// bigger than this, be sure to changes places like GET cidd
 #define SEABASE_MD_SCHEMA     "_MD_"
 #define SEABASE_COLUMNS         "COLUMNS"
 #define SEABASE_DEFAULTS        "DEFAULTS"

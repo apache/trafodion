@@ -143,6 +143,7 @@ public:
   inline const QualifiedName    &getSqlName()              const { return name_; }  
   inline const ComString        &getSurrogateFileName()    const { return surrogateFileName_; }
   inline const ComString        &getSchemaLabelFileName()  const { return schemaLabelFileName_; }
+  inline       ComSecurityKeySet getSecKeySet()                  { return routineSecKeySet_ ; }
   inline const Int64             getSchemaRedefTime()      const { return schemaRedefTime_; }  
   inline const Int64             getRoutineID()            const { return routineID_; }
   inline const Int32              getStateAreaSize()        const { return stateAreaSize_; }
@@ -255,6 +256,8 @@ private:
   ComString            surrogateFileName_;
   ComString            schemaLabelFileName_;
   ComTimestamp         schemaRedefTime_;
+
+  ComSecurityKeySet    routineSecKeySet_ ;
 
   Int64                routineID_;
   NABoolean            isUniversal_;

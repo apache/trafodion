@@ -1,0 +1,394 @@
+>>obey TEST133(create_db);
+>>set schema t133sch;
+
+--- SQL operation complete.
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table teams add constraint valid_team_no check (team_number > 0);
+
+--- SQL operation complete.
+>>
+>>insert into teams values
++>   (1, 'White Socks', 'Sam','4082282222'),
++>   (2, 'Giants', 'Joe', '5102839483'),
++>   (3, 'Cardinals', 'Stella', '9513849384'),
++>   (4, 'Indians', 'Matt', '5128383748'),
++>   (5, 'Tigers', 'Ronit', '6198273827');
+
+--- 5 row(s) inserted.
+>>
+>>create table team_statistics
++>  (team_number int not null primary key,
++>   num_players int not null)
++>;
+
+--- SQL operation complete.
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>--create index home_games on games (home_team_number);
+>>
+>>alter table games add constraint valid_game_number check (game_number > 0);
+
+--- SQL operation complete.
+>>
+>>create table standings
++>    (team_number int not null primary key,
++>     wins int default 0,
++>     loses int default 0,
++>     last_updated timestamp default current_timestamp)
++>;
+
+--- SQL operation complete.
+>>insert into standings (team_number)
++>  select team_number from teams;
+
+--- 5 row(s) inserted.
+>>
+>>insert into games values
++>   (1, 2, 1, timestamp '2009-04-23 19:30:00', 'California'),
++>   (1, 3, 2, timestamp '2009-04-24 19:30:00', 'California'),
++>   (1, 4, 3, timestamp '2009-04-25 10:00:00', 'Oklahoma'),
++>   (2, 3, 4, timestamp '2009-04-25 13:30:00', 'Michigan'),
++>   (1, 5, 5, timestamp '2009-04-25 15:00:00', 'Oklahoma'),
++>   (2, 5, 6, timestamp '2009-04-27 17:00:00', 'New York'),
++>   (3, 4, 7, timestamp '2009-04-28 17:00:00', 'Florida'),
++>   (4, 2, 8, current_timestamp, 'Missouri');
+
+--- 8 row(s) inserted.
+>>
+>>create view home_teams_games as
++>  select t.team_number, g.game_number, g.game_time
++>  from "TEAMS" t,
++>       "GAMES" g
++>  where t.team_number = g.home_team_number
++>  order by 1, game_number, game_time;
+
+--- SQL operation complete.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>insert into players values
++>   (1, 'Tom', 1, '4083948394', null),
++>   (2, 'Bob', 1, '4089483948', null),
++>   (3, 'Toby',1, '4082938493', 'pitcher'),
++>   (3, 'Toby',2, '4082938493', null),
++>   (4, 'Julie', 2, '5108394839', 'catcher'),
++>   (5, 'Joanne', 2, '5103849384', null),
++>   (6, 'Pete', 2, '5102839483', null),
++>   (6, 'Pete', 3, '5102839483', 'third base'),
++>   (7, 'Jared',4, '9518293849', 'short stop'),
++>   (8, 'Zachary', 4, '9518293840', null),
++>   (9, 'Lynne', 5, '9518293892', 'pitcher'),
++>   (10, 'Omar', 5, '5128394893', null);
+
+--- 12 row(s) inserted.
+>>
+>>alter table players add constraint valid_player_number check(player_number > 0);
+
+--- SQL operation complete.
+>>
+>>create view players_on_team as
++>  select player_name, team_name
++>  from teams t, players p
++>  where p.player_team_number = t.team_number
++>  order by t.team_name;
+
+--- SQL operation complete.
+>>select * from players_on_team;
+
+PLAYER_NAME                                         TEAM_NAME           
+--------------------------------------------------  --------------------
+
+Pete                                                Cardinals           
+Julie                                               Giants              
+Joanne                                              Giants              
+Toby                                                Giants              
+Pete                                                Giants              
+Jared                                               Indians             
+Zachary                                             Indians             
+Omar                                                Tigers              
+Lynne                                               Tigers              
+Toby                                                White Socks         
+Bob                                                 White Socks         
+Tom                                                 White Socks         
+
+--- 12 row(s) selected.
+>>
+>>create view games_by_player as
++>  select player_name, game_time
++>  from teams t, games g, players p
++>  where p.player_team_number = t.team_number and
++>        t.team_number = g.home_team_number
++>  order by player_name, team_number;
+
+--- SQL operation complete.
+>>
+>>alter table players add constraint players_teams
++>   foreign key (player_team_number) references teams (team_number);
+
+--- SQL operation complete.
+>>
+>>insert into team_statistics
++>  select team_number, count (player_number)
++>   from teams t, players p
++>   where t.team_number = p.player_team_number
++>   group by team_number;
+
+--- 5 row(s) inserted.
+>>
+>>create volatile table home_games as
++>  select home_team_number, visitor_team_number, game_number,  game_location
++>  from games
++>    where extract(year  from games.game_time) =
++>          extract(year  from current_timestamp) and
++>          extract(month from games.game_time) =
++>          extract(month from current_timestamp);
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST133(tests);
+>>-- =================================================================
+>>-- this set of tests run basic initialize authorization tests
+>>-- =================================================================
+>>
+>>set schema privmgr_md;
+
+--- SQL operation complete.
+>>get tables;
+
+--- SQL operation complete.
+>>
+>>create table t133_t1 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>create view t133_v1 as select * from t133_t1;
+
+--- SQL operation complete.
+>>create index t133_i1 on t133_t1(c2);
+
+--- SQL operation complete.
+>>create table t133_t2 like t133_t1;
+
+--- SQL operation complete.
+>>
+>>initialize authorization;
+
+--- SQL operation complete.
+>>obey TEST133(set_up);
+>>set schema privmgr_md;
+
+--- SQL operation complete.
+>>prepare get_owner_privs from
++>select distinct
++>   substring (object_name,1,40) as object_name,
++>   object_type as type,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   privileges_bitmap,
++>   grantable_bitmap
++>from object_privileges 
++>where grantor_id = -2
++>    and object_uid in 
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_type in ('VI','BT','LB','UR')
++>        and schema_name in ('PRIVMGR_MD', 'T133SCH'))
++>  order by 1, 2
++>;
+
+--- SQL command prepared.
+>>
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
+ROLE_USAGE
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>execute get_owner_privs;
+
+OBJECT_NAME                                                                                                                                                       TYPE  GRANTEE     PRIVILEGES_BITMAP     GRANTABLE_BITMAP
+----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  --------------------  --------------------
+
+TRAFODION."PRIVMGR_MD"."COMPONENTS"                                                                                                                               BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."ROLE_USAGE"                                                                                                                               BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."T133_T1"                                                                                                                                  BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."T133_T2"                                                                                                                                  BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."T133_V1"                                                                                                                                  VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."PLAYERS"                                                                                                                                     BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                                                                                                             VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+
+--- 16 row(s) selected.
+>>
+>>initialize authorization, drop;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>
+>>initialize authorization;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
+ROLE_USAGE
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>drop table object_privileges;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+ROLE_USAGE
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>initialize authorization;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
+ROLE_USAGE
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>execute get_owner_privs;
+
+OBJECT_NAME                                                                                                                                                       TYPE  GRANTEE     PRIVILEGES_BITMAP     GRANTABLE_BITMAP
+----------------------------------------------------------------------------------------------------------------------------------------------------------------  ----  ----------  --------------------  --------------------
+
+TRAFODION."PRIVMGR_MD"."COMPONENTS"                                                                                                                               BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."ROLE_USAGE"                                                                                                                               BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."T133_T1"                                                                                                                                  BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."T133_T2"                                                                                                                                  BT    DB__ROOT                      47                    47
+TRAFODION."PRIVMGR_MD"."T133_V1"                                                                                                                                  VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."PLAYERS"                                                                                                                                     BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                                                                                                             VI    DB__ROOT                       1                     0
+TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
+TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+
+--- 16 row(s) selected.
+>>
+>>drop table components;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
+ROLE_USAGE
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>initialize authorization, drop;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+T133_T1
+T133_T2
+
+--- SQL operation complete.
+>>
+>>sh sqlci -i "TEST133(authorized)" -u sql_user4;
+>>initialize authorization;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>initialize authorization, drop;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>exit;
+
+End of MXCI Session
+
+>>log;

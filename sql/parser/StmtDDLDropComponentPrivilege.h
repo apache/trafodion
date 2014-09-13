@@ -47,6 +47,7 @@ public:
   // constructor
   StmtDDLDropComponentPrivilege (const NAString & componentPrivilegeName,
                                  const NAString & componentName,
+                                 ComDropBehavior dropBehavior, 
                                  CollHeap       * heap = PARSERHEAP());
 
   // Virtual Destructor  
@@ -60,6 +61,7 @@ public:
 
   inline const NAString & getComponentPrivilegeName()              const { return componentPrivilegeName_; }
   inline const NAString & getComponentName()                       const { return componentName_; }
+  inline const ComDropBehavior getDropBehavior()                   const { return dropBehavior_; }
 
   // for tracing
   // LCOV_EXCL_START
@@ -80,6 +82,7 @@ private:
 
   NAString componentPrivilegeName_;
   NAString componentName_;
+  ComDropBehavior dropBehavior_; 
 
 };
 

@@ -48,8 +48,8 @@ public:
   StmtDDLCreateComponentPrivilege (const NAString & componentPrivilegeName,
                                    const NAString & componentPrivilegeAbbreviation,
                                    const NAString & componentName,
+                                   const NABoolean  isSystem,
                                    const NAString & componentPrivilegeDetailInformation,
-                                   Int64 componentPrivilegeClassInformation,
                                    CollHeap       * heap = PARSERHEAP());
 
   // Virtual Destructor  
@@ -65,11 +65,7 @@ public:
   inline const NAString & getComponentPrivilegeAbbreviation()      const { return componentPrivilegeAbbreviation_; }
   inline const NAString & getComponentName()                       const { return componentName_; }
   inline const NAString & getComponentPrivilegeDetailInformation() const { return componentPrivilegeDetailInformation_; }
-  inline const ComComponentPrivilegeClass getComponentPrivilegeClassInformation() const { 
-         if( componentPrivilegeClassInformation_ == 0) 
-           return COM_INTERNAL_COMPONENT_PRIVILEGE;
-	 else 
-           return COM_EXTERNAL_COMPONENT_PRIVILEGE; }
+  inline NABoolean isSystem() const { return isSystem_; }
 
   // for tracing
   // LCOV_EXCL_START
@@ -91,8 +87,8 @@ private:
   NAString componentPrivilegeName_;
   NAString componentPrivilegeAbbreviation_;
   NAString componentName_;
+  NABoolean isSystem_;
   NAString componentPrivilegeDetailInformation_;
-  Int64 componentPrivilegeClassInformation_;
 
 };
 

@@ -233,6 +233,59 @@ private:
   char   fillerRwrs_[32];
 };
 
+#include "ComSecurityKey.h"
+// ---------------------------------------------------------------------
+// Template instantiation to produce a 64-bit pointer emulator class
+// for ComSecurityKey
+// ---------------------------------------------------------------------
+typedef NABasicPtrTempl<ComSecurityKey> ComSecurityKeyPtr;
+
+class SecurityInvKeyInfo  : public NAVersionedObject
+{
+public:
+  SecurityInvKeyInfo () :
+      NAVersionedObject(-1),
+      numSiks_(0), 
+      sikValues_(NULL) {}
+
+  SecurityInvKeyInfo ( Int32 numSiks,
+                        ComSecurityKey * sikValues ) :
+      numSiks_(numSiks), 
+      sikValues_(sikValues) {}
+
+  const ComSecurityKey * getSikValues(void) { return sikValues_; }
+
+  const Int32 getNumSiks(void) { return numSiks_; }
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(0,getClassVersionID());
+  }
+
+  virtual short getClassSize() { return (short)sizeof(SecurityInvKeyInfo); }
+
+  Long       pack(void *);
+  Lng32      unpack(void * base, void * reallocator);
+
+private:
+  Int32               numSiks_;                          // 00 - 03
+  char                sikFiller_[4];                     // 04 - 07
+  ComSecurityKeyPtr   sikValues_;                        // 08 - 15
+};
+
+// ---------------------------------------------------------------------
+// Template instantiation to produce a 64-bit pointer emulator class
+// for SecurityInvKeyInfo
+// ---------------------------------------------------------------------
+typedef NAVersionedObjectPtrTempl<SecurityInvKeyInfo> SecurityInvKeyInfoPtr;
 //
 // Task Definition Block
 //
@@ -509,7 +562,7 @@ protected:
   Int16 cursorType_;                                                // 298-299
   Int16 subqueryType_;                                              //  300-301
   char fillersComTdbRoot1_[2];                                      // 302-303
-  char fillerForSecurityInfo_[8];                                   // 304-311
+  SecurityInvKeyInfoPtr sikPtr_;                                    // 304-311
   char fillersComTdbRoot2_[40];                                     // 312-351
 
 public:
@@ -1065,6 +1118,13 @@ public:
   CompilationStatsData * getCompilationStatsData() 
   { return (CompilationStatsData*)compilationStatsData_.getPointer();}
   CompilationStatsDataPtr getCompilationStatsDataPtr() { return compilationStatsData_; }
+  SecurityInvKeyInfo *getSikInfo() { return (SecurityInvKeyInfo *)
+                                            sikPtr_.getPointer(); }
+  void setSikInfo(SecurityInvKeyInfo * sikInfo) { sikPtr_ = sikInfo; }
+
+  Int32 getNumberOfUnpackedSecKeys( char * base );
+  const ComSecurityKey * getPtrToUnpackedSecurityInvKeys( char * base );
+
 
   // ****  information for GUI  *** -------------
   virtual const ComTdb* getChild(Int32 pos) const;

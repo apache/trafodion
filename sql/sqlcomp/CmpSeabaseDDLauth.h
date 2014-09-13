@@ -36,6 +36,7 @@
 
 class StmtDDLRegisterUser;
 class StmtDDLAlterUser;
+class StmtDDLCreateRole;
 class NAString;
 
 // ----------------------------------------------------------------------------
@@ -55,7 +56,7 @@ class CmpSeabaseDDLauth
                        STATUS_WARNING   = 12,
                        STATUS_NOTFOUND  = 13,
                        STATUS_ERROR     = 14 };
-
+                       
      CmpSeabaseDDLauth ();
 
      AuthStatus   getAuthDetails (const char *pAuthName, 
@@ -64,7 +65,7 @@ class CmpSeabaseDDLauth
      bool         authExists     (const NAString &authName, 
                                     bool isExternal = false);
      virtual bool describe       (const NAString &authName, 
-                                    NAString &authText) = 0;
+                                    NAString &authText);
 
      // accessors
      Int32          getAuthCreator() const    { return authCreator_; }
@@ -75,7 +76,6 @@ class CmpSeabaseDDLauth
      Int64          getAuthRedefTime() const  { return authRedefTime_; }
      ComIdClass     getAuthType() const       { return authType_; }
 
-     bool  isAuthImmutable() const { return authImmutable_; }
      bool  isAuthValid() const     { return authValid_; }
      bool  isPublic() const        { return false; }
      bool  isRole()   const        { return authType_ == COM_ROLE_CLASS; }
@@ -87,7 +87,7 @@ class CmpSeabaseDDLauth
     bool isAuthNameValid    (const NAString &authName);
     void verifyAuthority    (void);
 
-    virtual Int32 getUniqueID (void) = 0;
+    virtual Int32 getUniqueID (void);
 
     // mutators
     void setAuthCreator      (const Int32 authCreator)
@@ -100,8 +100,6 @@ class CmpSeabaseDDLauth
       {authExtName_=authExtName;}
     void setAuthID           (const Int32 authID)
       {authID_ = authID;}
-    void setAuthImmutable    (bool isImmutable)
-       {authImmutable_ = isImmutable;}
      void setAuthRedefTime    (const Int64 authRedefTime)
        { authRedefTime_ = authRedefTime;}
      void setAuthType        (ComIdClass authType)
@@ -124,7 +122,6 @@ class CmpSeabaseDDLauth
     NAString          authDbName_;
     NAString          authExtName_;
     Int32             authID_;
-    bool              authImmutable_;
     Int64             authRedefTime_;
     ComIdClass        authType_;
     bool              authValid_;
@@ -147,7 +144,9 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
      // Execute level methods
      void alterUser(StmtDDLAlterUser * pNode);
      void registerUser(StmtDDLRegisterUser * pNode);
-     void unregisterUser(StmtDDLRegisterUser * pNode);
+     void unregisterUser(
+        const std::string & systemCatalog,
+        StmtDDLRegisterUser * pNode);
      
      CmpSeabaseDDLauth::AuthStatus getUserDetails(const char *pUserName, 
                                                     bool isExternal = false);
@@ -158,5 +157,50 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
    protected:
 
      Int32 getUniqueID (void);
+     void verifyAuthority    (void);
 };
+
+
+// ----------------------------------------------------------------------------
+// class:  CmpSeabaseDDLrole
+//
+// Class that manages role authorization IDs
+//
+// Child class of CmpSeabaseDDLauth
+// ----------------------------------------------------------------------------
+class CmpSeabaseDDLrole : public CmpSeabaseDDLauth
+{
+   public:
+
+     CmpSeabaseDDLrole ();
+
+     void createRole(
+        const std::string & systemCatalog,
+        StmtDDLCreateRole * pNode);
+        
+     void createStandardRole(
+        const std::string roleName,
+        const int32_t roleID);
+        
+     bool describe(
+        const NAString & roleName, 
+        const char * systemCatalog,
+        NAString & roleText);
+     
+     void dropRole(
+        const std::string & systemCatalog,
+        StmtDDLCreateRole * pNode);
+     
+     void dropStandardRole(const std::string roleName);
+        
+     CmpSeabaseDDLauth::AuthStatus getRoleDetails(const char *pRoleName);
+     
+     bool getRoleIDFromRoleName(const char * roleName,Int32 &roleID);
+
+   protected:
+
+     Int32 getUniqueID (void);
+     void verifyAuthority    (void);
+};
+
 #endif // _CMP_SEABASE_DDL_AUTH_H_

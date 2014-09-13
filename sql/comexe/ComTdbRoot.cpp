@@ -317,6 +317,8 @@ Long ComTdbRoot::pack(void * space)
   if (schCount_ > 0)
     schemaLabelInfoList_.pack(space, schCount_);
 
+  sikPtr_.pack(space);
+
   return ComTdb::pack(space);
 }
 
@@ -364,6 +366,8 @@ Lng32 ComTdbRoot::unpack(void * base, void * reallocator)
   if(udrStoiList_.unpack (base,udrCount_, reallocator)) return -1;
 
   if(schemaLabelInfoList_.unpack (base, schCount_, reallocator)) return -1;
+
+  if (sikPtr_.unpack(base, reallocator)) return -1;
 
   return ComTdb::unpack(base, reallocator);
 }
@@ -621,5 +625,41 @@ NABoolean ComTdbRoot::aqrEnabledForSqlcode(Lng32 sqlcode)
     return TRUE;
   else
     return FALSE;
+}
+
+Int32 ComTdbRoot::getNumberOfUnpackedSecKeys( char * base )
+{
+  // Since plan is "packed" when this routine is called, we must 
+  // find "real" pointer
+  SecurityInvKeyInfo * SikInfoP = 
+    (SecurityInvKeyInfo *)(base - (char *)sikPtr_.getPointer()) ;
+  return ( SikInfoP->getNumSiks() );
+}
+
+
+const ComSecurityKey * ComTdbRoot::getPtrToUnpackedSecurityInvKeys( 
+                                                            char * base )
+{
+  // Since plan is "packed" when this routine is called, we must 
+  // find "real" pointers
+  SecurityInvKeyInfo * SikInfoP = 
+    (SecurityInvKeyInfo *)(base - (char *)sikPtr_.getPointer()) ;
+  return ( (ComSecurityKey *)( base - (char *)(SikInfoP->getSikValues()) ) );
+}
+
+// -----------------------------------------------------------------------
+// Methods for class SecurityInvKeyInfo
+// -----------------------------------------------------------------------
+
+Long SecurityInvKeyInfo::pack(void * space)
+{
+  if (sikValues_.pack(space)) return -1;
+  return NAVersionedObject::pack(space);
+}
+
+Lng32 SecurityInvKeyInfo::unpack(void * base, void * reallocator)
+{
+  if (sikValues_.unpack(base)) return -1;
+  return NAVersionedObject::unpack(base, reallocator);
 }
 

@@ -928,6 +928,7 @@ DEFAULT
 --- SQL operation failed with errors.
 >>
 >>values(getCollation('def'));
+
 *** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
 
 *** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
@@ -955,6 +956,7 @@ DEFAULT
 --- SQL operation failed with errors.
 >>
 >>values(getCollation('ghi'));
+
 *** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.
 
 *** ERROR[1389] Object GETCOLLATION does not exist in Trafodion.

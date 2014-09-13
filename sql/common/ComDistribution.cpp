@@ -292,3 +292,42 @@ Int32 literalToEnum (const literalAndEnumStruct * conversionTable,
   return 0;
 }
 
+const literalAndEnumStruct qiTypeConversionTable [] =
+{
+  {COM_QI_INVALID_ACTIONTYPE, COM_QI_INVALID_ACTIONTYPE_LIT},
+  {COM_QI_USER_GRANT_ROLE, COM_QI_USER_GRANT_ROLE_LIT},
+  {COM_QI_ROLE_GRANT_ROLE, COM_QI_ROLE_GRANT_ROLE_LIT},
+  {COM_QI_OBJECT_SELECT, COM_QI_OBJECT_SELECT_LIT},
+  {COM_QI_OBJECT_INSERT, COM_QI_OBJECT_INSERT_LIT},
+  {COM_QI_OBJECT_DELETE, COM_QI_OBJECT_DELETE_LIT},
+  {COM_QI_OBJECT_UPDATE, COM_QI_OBJECT_UPDATE_LIT},
+  {COM_QI_SCHEMA_SELECT, COM_QI_SCHEMA_SELECT_LIT},
+  {COM_QI_SCHEMA_INSERT, COM_QI_SCHEMA_INSERT_LIT},
+  {COM_QI_SCHEMA_DELETE, COM_QI_SCHEMA_DELETE_LIT},
+  {COM_QI_SCHEMA_UPDATE, COM_QI_SCHEMA_UPDATE_LIT},
+  {COM_QI_OBJECT_EXECUTE, COM_QI_OBJECT_EXECUTE_LIT},
+  {COM_QI_SCHEMA_EXECUTE, COM_QI_SCHEMA_EXECUTE_LIT}
+};
+
+//----------------------------------------------------------------------
+//
+// Query Invalidation Action type translations
+//
+void ComQIActionTypeEnumToLiteral (const ComQIActionType qiType,
+                             char* qiTypeLiteral)
+{
+  NABoolean found;
+  enumToLiteral ( qiTypeConversionTable, occurs(qiTypeConversionTable), qiType, qiTypeLiteral, found);
+
+  ComASSERT (found);
+}
+
+ComQIActionType ComQIActionTypeLiteralToEnum (const char * qiTypeLiteral)
+{
+  NABoolean found;
+  ComQIActionType result =
+          (ComQIActionType) literalToEnum (qiTypeConversionTable, occurs(qiTypeConversionTable), qiTypeLiteral, found);
+  ComASSERT (found);
+
+  return result;
+}
