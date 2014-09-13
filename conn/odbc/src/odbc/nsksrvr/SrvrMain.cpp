@@ -94,14 +94,17 @@ void initTcpProcessNameTemp(char *tcpName )
 	strcpy(tcpName, DEFAULT_TCP_PROCESS);
 }
 
-static void free_String_vector(struct String_vector *v) {
-    if (v->data) {
-        int32_t i;
-        for (i=0; i<v->count; i++) {
+static void free_String_vector(struct String_vector *v)
+{
+    if (v->data)
+    {
+        for (int32_t i=0; i < v->count; i++)
+        {
             free(v->data[i]);
         }
         free(v->data);
-        v->data = 0;
+        v->data = NULL;
+        v->count = 0;
     }
 }
 
@@ -314,10 +317,12 @@ catch(SB_Fatal_Excep sbfe)
 	ss << zkRootNode << "/dcs/master";
 	string dcsMaster(ss.str());
 	Stat stat;
-	struct String_vector children;
 	int startPortNum = 0, portRangeNum;
 	char masterHostName[MAX_HOST_NAME_LEN];
 	char startPort[12], portRange[12], masterTS[24];
+	struct String_vector children;
+	children.count = 0;
+	children.data = NULL;
 
 	// Get the instance ID from registered node
 	char *tkn;
