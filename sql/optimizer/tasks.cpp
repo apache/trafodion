@@ -1454,7 +1454,6 @@ void CreatePlanTask::perform(Lng32 taskId)
   Context  *childContext = NULL;
   Guidance *childGuidance= NULL;
 
-#ifndef NDEBUG
   ostream &out = CURRCONTEXT_OPTDEBUG->stream();
   const char* prefix = "    ";
   NABoolean showThisPlan = FALSE;
@@ -1466,7 +1465,6 @@ void CreatePlanTask::perform(Lng32 taskId)
     if ( CmpCommon::getDefault(NSK_DBG_PRINT_COST) == DF_ON)
       showPlanCost = TRUE;
   }
-#endif // NDEBUG
 
   if (workSpace_->isEmpty())
     {
@@ -1518,7 +1516,6 @@ void CreatePlanTask::perform(Lng32 taskId)
 					FALSE,
 					taskId, ++stride));
 
-#ifndef NDEBUG
 // LCOV_EXCL_START
       if ( showThisPlan )
       {
@@ -1527,7 +1524,6 @@ void CreatePlanTask::perform(Lng32 taskId)
         out << endl;
       }
 // LCOV_EXCL_STOP
-#endif // NDEBUG
     }
   else
     {
@@ -1565,7 +1561,6 @@ void CreatePlanTask::perform(Lng32 taskId)
           // that is never re-optimized in this pass:
           plan_->setSuccessInCurrentPass();
           
-#ifndef NDEBUG
 // LCOV_EXCL_START
           if ( showThisPlan )
           {
@@ -1573,7 +1568,6 @@ void CreatePlanTask::perform(Lng32 taskId)
             CURRCONTEXT_OPTDEBUG->showTree( getExpr(), getPlan(), prefix, showPlanCost );
           }
 // LCOV_EXCL_STOP
-#endif // NDEBUG
 
 	  // This is a solution for the optimization goal represented
 	  // by the context; now check whether it's the optimal one so far
@@ -1592,10 +1586,8 @@ void CreatePlanTask::perform(Lng32 taskId)
 		  // found a better solution
 		  context_->setSolution(plan_);
 
-#ifndef NDEBUG
                   if ( showThisPlan )
                     out << prefix << "*** Chosen plan ***" << endl << endl;
-#endif // NDEBUG
                   // if because of nice context we have an enforcer above
                   // partial plan that already satisfies requirement -
                   // replace solution with that partial plan because
@@ -1613,7 +1605,6 @@ void CreatePlanTask::perform(Lng32 taskId)
                         // child satisfies context without enforcer
                         // and can be promoted
 		        context_->setSolution(planToPromote);
-#ifndef NDEBUG
                         if ( showThisPlan )
                         {
                           out << endl << prefix << 
@@ -1622,7 +1613,6 @@ void CreatePlanTask::perform(Lng32 taskId)
                               planToPromote->getPhysicalExpr(), 
                               planToPromote, prefix, showPlanCost );
                         }
-#endif // NDEBUG
                       }
                     }
                   }
@@ -1630,10 +1620,8 @@ void CreatePlanTask::perform(Lng32 taskId)
 	      else
               {
 		oldSolution = plan_;
-#ifndef NDEBUG
                 if ( showThisPlan )
                   out << prefix << "*** Non-optimal plan ***" << endl << endl;
-#endif // NDEBUG
               }
 	      
 	      // here is some opportunity for pruning: discard the more
@@ -1650,13 +1638,11 @@ void CreatePlanTask::perform(Lng32 taskId)
 	      // This is the first solution for this pass and therefore 
               // it is the optimal one so far.
 	      context_->setSolution(plan_);
-#ifndef NDEBUG
 // LCOV_EXCL_START
               if ( showThisPlan )
                 out << prefix << "*** Chosen plan ***" << endl << endl;
 
 // LCOV_EXCL_STOP
-#endif // NDEBUG
 // if because of nice context we have an enforcer above
               // partial plan that already satisfies requirement -
               // replace solution with that partial plan because
@@ -1674,7 +1660,6 @@ void CreatePlanTask::perform(Lng32 taskId)
                      // child satisfies context without enforcer
                      // and can be promoted
 	             context_->setSolution(planToPromote);
-#ifndef NDEBUG
                      if ( showThisPlan )
                      {
                        out << endl << prefix << 
@@ -1683,7 +1668,6 @@ void CreatePlanTask::perform(Lng32 taskId)
                          planToPromote->getPhysicalExpr(), 
                          planToPromote, prefix, showPlanCost );
                      }
-#endif // NDEBUG
                    }
                 }
               }

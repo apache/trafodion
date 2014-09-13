@@ -688,6 +688,38 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   description += cacheBuf ;
   description += " " ;
 
+  char buf[20];
+  if ( getProbes().getValue() > 0.0 ) {
+    description += "probes: "; // total number of probes
+    sprintf(buf, "%g ", getProbes().getValue());
+    description += buf;
+  }
+
+  if ( getSuccessfulProbes().getValue() > 0.0 ) {
+    description += "successful_probes: "; // # of probes returning data
+    sprintf(buf, "%g ", getSuccessfulProbes().getValue());
+    description += buf;
+  }
+
+  if ( getUniqueProbes().getValue() > 0.0 ) {
+     description += "unique_probes: "; // # of probes returning 1 row
+     sprintf(buf, "%g ", getUniqueProbes().getValue());
+     description += buf;
+  }
+
+  if ( getDuplicatedSuccProbes().getValue() > 0.0 ) {
+     description += "duplicated_succ_probes: "; // # of succ probes returning
+     sprintf(buf, "%g ", getDuplicatedSuccProbes().getValue());  // more than 1 row
+     description += buf;
+  }
+
+  if ( getEstRowsAccessed().getValue() ) {
+     description += "rows_accessed: "; // #  rows accessed
+     sprintf(buf, "%g ", getEstRowsAccessed().getValue());
+     description += buf;
+  }
+
+
   /*
   // now get columns_retrieved
   description += "columns_retrieved: ";

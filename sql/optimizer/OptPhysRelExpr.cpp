@@ -368,7 +368,6 @@ Context* RelExpr::createPlan(Context* myContext,
       // plan and it satisfies any forced plan constraints.
 
       // We should check if plan is acceptable when cost!=NULL? SP.
-#ifdef _DEBUG
       if (cost AND CmpCommon::getDefault(NSK_DBG_SHOW_PLAN_LOG) == DF_ON )
       {
         // This is to print each intermediate (not only the best) plans
@@ -397,7 +396,6 @@ Context* RelExpr::createPlan(Context* myContext,
                               "  *** ",TRUE);
         }
       }
-#endif
       if (currentPlanIsAcceptable(pws->getLatestPlan(),rppForMe))
       {
 #ifdef _DEBUG
