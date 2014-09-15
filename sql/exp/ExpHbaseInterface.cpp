@@ -1332,3 +1332,22 @@ Lng32 ExpHbaseInterface_JNI::nextRow()
     return -HBASE_ACCESS_ERROR;
 }
 
+// Get an estimate of the number of rows in table tblName. Pass in the
+// fully qualified table name and the number of columns in the table.
+// The row count estimate is returned in estRC.
+Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
+                                              Int32 partialRowSize,
+                                              Int32 numCols,
+                                              Int64& estRC)
+{
+  if (client_ == NULL)
+  {
+    if (init() != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+
+  estRC = 0;
+  retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, estRC);
+  return retCode_;
+}
+
