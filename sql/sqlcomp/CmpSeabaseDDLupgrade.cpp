@@ -36,6 +36,12 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "CmpSeabaseDDLupgrade.h"
 
+// get software major and minor versions from -D defs defined in sqlcomp/Makefile.
+// These defs pick up values from export vars defined in sqf/sqenvcom.sh.
+#define SOFTWARE_MAJOR_VERSION TRAF_SOFTWARE_VERS_MAJOR
+#define SOFTWARE_MINOR_VERSION TRAF_SOFTWARE_VERS_MINOR
+#define SOFTWARE_UPDATE_VERSION TRAF_SOFTWARE_VERS_UPDATE
+
 NABoolean CmpSeabaseMDupgrade::isOldMDtable(const NAString &objName)
 {
   if (objName.contains(OLD_MD_EXTENSION))
@@ -179,6 +185,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		break;
 	      }
 
+	    if (mdui.getSWVersion())
+	      {
+		mdui.setStep(GET_SW_VERSION);
+		mdui.setSubstep(0);
+		break;
+	      }
+
 	    mdui.setMsg("Metadata Upgrade: started");
 	    mdui.setStep(VERSION_CHECK);
 	    mdui.setSubstep(0);
@@ -307,6 +320,102 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
 	      } // switch
 	  } // GET_MD_VERSION
+	  break;
+	  
+	case GET_SW_VERSION:
+	  {
+	    switch (mdui.subStep())
+	      {
+	      case 0:
+		{
+		  ehi = allocEHI(&ActiveSchemaDB()->getDefaults());
+		  
+		  Int64 sysSWMajorVersion;
+		  Int64 sysSWMinorVersion;
+                  Int64 sysSWUpdVersion;
+                  Int64 mdSWMajorVersion;
+                  Int64 mdSWMinorVersion;
+		  retcode = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
+                                             NULL, NULL,
+					     &sysSWMajorVersion,
+					     &sysSWMinorVersion,
+                                             &sysSWUpdVersion,
+                                             &mdSWMajorVersion,
+                                             &mdSWMinorVersion);
+		  
+		  deallocEHI(ehi);
+		  
+		  if (retcode == 0)
+		    {
+		      // no version mismatch detected between system and expected software.
+                      if ((mdSWMajorVersion == sysSWMajorVersion) &&
+                          (mdSWMinorVersion == sysSWMinorVersion))
+                        // software version stored in metadata is uptodate
+                        mdui.setSubstep(1);
+                      else
+                        // metadata need to be updated with current software version.
+                        mdui.setSubstep(2);
+		    }
+		  else if (retcode == -1397) // mismatch in software version
+		    {
+                      mdui.setSubstep(3);
+		    }
+
+                  Int64 expSWMajorVersion = SOFTWARE_MAJOR_VERSION;
+                  Int64 expSWMinorVersion = SOFTWARE_MINOR_VERSION;
+                  Int64 expSWUpdVersion = SOFTWARE_UPDATE_VERSION;
+		  str_sprintf(msgBuf, "  System Version %Ld.%Ld.%Ld. Expected Version %Ld.%Ld.%Ld. Metadata Version %Ld.%Ld",
+			      sysSWMajorVersion, sysSWMinorVersion, sysSWUpdVersion,
+			      expSWMajorVersion, expSWMinorVersion, expSWUpdVersion,
+                              mdSWMajorVersion, mdSWMinorVersion);
+		  mdui.setMsg(msgBuf);
+		  mdui.setEndStep(FALSE);
+		  
+		  return 0;
+		} // case 0
+		break;
+		
+	      case 1:
+		{
+		  str_sprintf(msgBuf, "  Software is current.");
+		  mdui.setMsg(msgBuf);
+		  mdui.setEndStep(FALSE);
+		  
+		  mdui.setStep(DONE_RETURN);
+		  mdui.setSubstep(0);
+		  
+		  return 0;
+		}
+		break;
+		
+	      case 2:
+		{
+		  str_sprintf(msgBuf, "  Metadata need to be updated with current software version. Run 'initialize trafodion, update software version' to update it.");
+		  mdui.setMsg(msgBuf);
+		  mdui.setEndStep(FALSE);
+		  
+		  mdui.setStep(DONE_RETURN);
+		  mdui.setSubstep(0);
+		  
+		  return 0;
+		}
+		break;
+
+	      case 3:
+		{
+		  str_sprintf(msgBuf, "  Version of software being used is not compatible with version of software on the system.");
+		  mdui.setMsg(msgBuf);
+		  mdui.setEndStep(FALSE);
+		  
+		  mdui.setStep(DONE_RETURN);
+		  mdui.setSubstep(0);
+		  
+		  return 0;
+		}
+		break;
+		
+	      } // switch
+	  } // GET_SW_VERSION
 	  break;
 	  
 	case VERSION_CHECK:

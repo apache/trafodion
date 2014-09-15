@@ -671,6 +671,9 @@ short ExeUtilMetadataUpgrade::codeGen(Generator * generator)
   if (getMDVersion())
     upgd_tdb->setGetMDVersion(TRUE);
 
+  if (getSWVersion())
+    upgd_tdb->setGetSWVersion(TRUE);
+
   generator->initTdbFields(upgd_tdb);
   
   if(!generator->explainDisabled()) {

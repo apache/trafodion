@@ -199,6 +199,7 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->hbaseDDLNoUserXn_ = hbaseDDLNoUserXn_;
   result->initHbase_ = initHbase_;
   result->dropHbase_ = dropHbase_;
+  result->updateVersion_ = updateVersion_;
   result->purgedataHbase_ = purgedataHbase_;
   result->addSeqTable_ = addSeqTable_;
   result->flags_ = flags_;
@@ -6472,7 +6473,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   }
 
   if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews() ||
-      addSeqTable())
+      addSeqTable() || updateVersion())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;

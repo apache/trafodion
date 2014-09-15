@@ -15818,6 +15818,14 @@ exe_util_get_version_info :   TOK_GET TOK_VERSION TOK_OF TOK_METADATA
 
 				 $$ = mu;
 			       }
+                         | TOK_GET TOK_VERSION TOK_OF TOK_SOFTWARE
+                               {
+				 ExeUtilMetadataUpgrade * mu =
+				   new(PARSERHEAP()) ExeUtilMetadataUpgrade(PARSERHEAP());
+				 mu->setGetSWVersion(TRUE);
+
+				 $$ = mu;
+			       }
                           | TOK_GET TOK_VPROC TOK_OF TOK_SYSTEM TOK_MODULES
                                {
 		 YYERROR;
@@ -15985,7 +15993,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16002,7 +16010,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16019,7 +16027,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE, FALSE, TRUE,
                                                           FALSE, FALSE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16036,7 +16044,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, TRUE, FALSE,
                                                           FALSE, FALSE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16053,7 +16061,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, TRUE,
                                                           FALSE, FALSE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16077,7 +16085,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, FALSE,
-							  TRUE,
+							  TRUE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16093,7 +16101,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           TRUE, FALSE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16110,7 +16118,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
                                                           FALSE, TRUE,
-							  FALSE,
+							  FALSE, FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
@@ -16118,6 +16126,24 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
                  $$ = ia;
 
                }
+
+             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_UPDATE TOK_SOFTWARE TOK_VERSION
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
+                                                          FALSE, FALSE,
+							  FALSE, TRUE,
+							  (char*)stmt->data(),
+							  stmtCharSet,
+							  PARSERHEAP());
+
+		 $$ = de;
+	       }
+
 
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look

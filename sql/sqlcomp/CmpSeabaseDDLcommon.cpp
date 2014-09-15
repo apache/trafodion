@@ -82,6 +82,13 @@ static bool hasValue(
    int32_t value);   
 
 #include "EncodedKeyValue.h"
+#include "SCMVersHelp.h"
+
+// get software major and minor versions from -D defs defined in sqlcomp/Makefile.
+// These defs pick up values from export vars defined in sqf/sqenvcom.sh.
+#define SOFTWARE_MAJOR_VERSION TRAF_SOFTWARE_VERS_MAJOR
+#define SOFTWARE_MINOR_VERSION TRAF_SOFTWARE_VERS_MINOR
+#define SOFTWARE_UPDATE_VERSION TRAF_SOFTWARE_VERS_UPDATE
 
 CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
@@ -841,12 +848,39 @@ short CmpSeabaseDDL::readAndInitDefaultsFromSeabaseDefaultsTable
   return retcode;
 }   
 
+#define VERS_CV_MAJ 1
+#define VERS_CV_MIN 0
+#define VERS_CV_UPD 1
+VERS_BIN(xx) // get rid of warning
+
+short CmpSeabaseDDL::getSystemSoftwareVersion(Int64 &softMajVers, 
+                                              Int64 &softMinVers,
+                                              Int64 &softUpdVers)
+{
+  //  int cmaj, cmin, cupd;
+  int pmaj, pmin, pupd;
+  CALL_COMP_GET_PROD_VERS(xx,&pmaj,&pmin,&pupd);
+  softMajVers = pmaj;
+  softMinVers = pmin;
+  softUpdVers = pupd;
+  //  CALL_COMP_GET_COMP_VERS(xx,cmaj,cmin,cupd);
+  //  printf("pvers=%d.%d.%d\n", pmaj, pmin, pupd);
+  //  printf("cvers=%d.%d.%d\n", cmaj, cmin, cupd);
+
+  return 0;
+}
+
 short CmpSeabaseDDL::validateVersions(NADefaults *defs, 
-                                      ExpHbaseInterface * inEHI,
-                                      Int64 * mdMajorVersion,
-                                      Int64 * mdMinorVersion,
-                                      Lng32 * hbaseErrNum,
-                                      NAString * hbaseErrStr)
+				      ExpHbaseInterface * inEHI,
+				      Int64 * mdMajorVersion,
+				      Int64 * mdMinorVersion,
+				      Int64 * sysSWMajorVersion,
+				      Int64 * sysSWMinorVersion,
+                                      Int64 * sysSWUpdVersion,
+                                      Int64 * mdSWMajorVersion,
+                                      Int64 * mdSWMinorVersion,
+				      Lng32 * hbaseErrNum,
+				      NAString * hbaseErrStr)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -998,14 +1032,32 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         }
 
       if (temp == "SOFTWARE")
-        {
-          if ((majorVersion != SOFTWARE_MAJOR_VERSION) ||
-              (minorVersion != SOFTWARE_MINOR_VERSION))
-            {
-              retcode = -1397;
-              goto label_return;
-            }
-        }
+	{
+          Int64 sysMajorVersion = 0;
+          Int64 sysMinorVersion = 0;
+          Int64 sysUpdVersion = 0;
+
+          getSystemSoftwareVersion(sysMajorVersion, sysMinorVersion, sysUpdVersion);
+	  if (sysSWMajorVersion)
+	    *sysSWMajorVersion = sysMajorVersion;
+	  if (sysSWMinorVersion)
+	    *sysSWMinorVersion = sysMinorVersion;
+	  if (sysSWUpdVersion)
+	    *sysSWUpdVersion = sysUpdVersion;
+
+          if (mdSWMajorVersion)
+            *mdSWMajorVersion = majorVersion;
+          if (mdSWMinorVersion)
+            *mdSWMinorVersion = minorVersion;
+
+	  if ((sysMajorVersion != SOFTWARE_MAJOR_VERSION) ||
+	      (sysMinorVersion != SOFTWARE_MINOR_VERSION) ||
+              (sysUpdVersion != SOFTWARE_UPDATE_VERSION))
+	    {
+	      retcode = -1397;
+	      goto label_return;
+	    }
+	}
     }
 
   if ((NOT mdVersionFound) ||
@@ -3894,7 +3946,8 @@ void CmpSeabaseDDL::initSeabaseMD()
   Lng32 hbaseErrNum = 0;
   NAString hbaseErrStr;
   Lng32 errNum = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
-                                  NULL, NULL, &hbaseErrNum, &hbaseErrStr);
+				  NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
+                                  &hbaseErrNum, &hbaseErrStr);
   if (errNum != 0)
     {
       CmpCommon::context()->setIsUninitializedSeabase(TRUE);
@@ -4742,6 +4795,64 @@ short CmpSeabaseDDL::dropMDTable(ExpHbaseInterface *ehi, const char * tab)
   return 0;
 }
 
+void CmpSeabaseDDL::updateVersion()
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  ExeCliInterface cliInterface(STMTHEAP);
+
+  if ((CmpCommon::context()->isUninitializedSeabase()) &&
+      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1393))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1393);
+      return;
+    }
+
+  Int64 softMajorVersion;
+  Int64 softMinorVersion;
+  Int64 softUpdVersion;
+  getSystemSoftwareVersion(softMajorVersion, softMinorVersion, softUpdVersion);
+
+  char queryBuf[5000];
+  
+  Int64 updateTime = NA_JulianTimestamp();
+
+  str_sprintf(queryBuf, "update %s.\"%s\".%s set major_version = %Ld, minor_version = %Ld, init_time = %Ld, comment = 'update version'  where version_type = 'SOFTWARE' ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VERSIONS,
+              softMajorVersion, softMinorVersion,
+              updateTime);
+  NABoolean xnWasStartedHere = FALSE;
+  if (NOT xnInProgress(&cliInterface))
+    {
+      cliRC = cliInterface.beginXn();
+      if (cliRC < 0)
+	{
+	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+	  return;
+	}
+      
+      xnWasStartedHere = TRUE;
+    }
+
+  cliRC = cliInterface.executeImmediate(queryBuf);
+  if (cliRC < 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+  
+  if (xnWasStartedHere)
+    {
+      cliRC = cliInterface.commitXn();
+      if (cliRC < 0)
+	{
+	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+	  return;
+	}
+    }
+}
+
 void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
                                        NAString &currCatName, NAString &currSchName)
 {
@@ -5009,7 +5120,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->initHbase()) ||
       (ddlExpr->createMDViews()) ||
       (ddlExpr->dropMDViews()) ||
-      (ddlExpr->addSeqTable()))
+      (ddlExpr->addSeqTable()) ||
+      (ddlExpr->updateVersion()))
     ignoreUninitTrafErr = TRUE;
 
   // if metadata views are being created during initialize trafodion, then this
@@ -5067,6 +5179,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       (ddlExpr->initAuthorization()) ||
       (ddlExpr->dropAuthorization()) ||
       (ddlExpr->addSeqTable()) ||
+      (ddlExpr->updateVersion()) ||
       ((ddlNode) &&
        ((ddlNode->getOperatorType() == DDL_DROP_SCHEMA) ||
         (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ADD_CONSTRAINT_PRIMARY_KEY) ||
@@ -5119,6 +5232,10 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->addSeqTable())
     {
       createSeabaseSeqTable();
+    }
+  else if (ddlExpr->updateVersion())
+    {
+      updateVersion();
     }
   else if (ddlExpr->purgedataHbase())
     {

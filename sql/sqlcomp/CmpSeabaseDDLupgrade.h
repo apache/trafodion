@@ -374,6 +374,7 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
     UPGRADE_FAILED_RESTORE_OLD_MD,
     UPGRADE_FAILED_DROP_OLD_MD,
     GET_MD_VERSION,
+    GET_SW_VERSION,
     DONE_RETURN
   } ;
 

@@ -821,7 +821,8 @@ class CmpMDupgradeInfo
     START_               = 0x0010,
     END_                   = 0x0020,
     XN_STARTED_     = 0x0040,
-    GET_MD_VERSION_    = 0x0080
+    GET_MD_VERSION_    = 0x0080,
+    GET_SW_VERSION_    = 0x0100
   };
 
  public:
@@ -861,6 +862,10 @@ class CmpMDupgradeInfo
   void setGetMDVersion(NABoolean v)
   {(v ? flags_ |= GET_MD_VERSION_ : flags_ &= ~GET_MD_VERSION_); }
   NABoolean getMDVersion() { return (flags_ & GET_MD_VERSION_) != 0;}
+
+  void setGetSWVersion(NABoolean v)
+  {(v ? flags_ |= GET_SW_VERSION_ : flags_ &= ~GET_SW_VERSION_); }
+  NABoolean getSWVersion() { return (flags_ & GET_SW_VERSION_) != 0;}
 
   void setMsg(const char * msg)
   {
