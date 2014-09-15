@@ -341,7 +341,7 @@ void StatsGlobals::checkForDeadProcesses(pid_t myPid)
 
   int pidRemainingToCheck = 20;
   pid_t firstPid = pidToCheck_;
-  for (;;)
+  for (;maxPid_ > 0;)
   {
     if (pidRemainingToCheck <= 0)
       break;
