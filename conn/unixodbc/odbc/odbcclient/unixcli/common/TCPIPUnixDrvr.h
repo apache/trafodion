@@ -19,6 +19,7 @@
 #ifndef TCPIP_UNIX_DRVR_H
 #define TCPIP_UNIX_DRVR_H
 #include "unix_extra.h"
+#include "compression.h"
 class CConnect;
 class CStmt;
 
@@ -68,6 +69,8 @@ public:
 	HEADER		m_rheader;
 	char		m_object_ref[MAX_OBJECT_REF + 1];
 	int		    m_IOCompression;
+	CCompression m_compression;
+
 private:
 	char		m_swap;
 
