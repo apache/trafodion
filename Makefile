@@ -118,3 +118,7 @@ version:
 # Check that Environment variables are set correctly
 sqroot:
 	./bldenvchk.sh;
+
+# Check for absolute filenames used as dynamic linked libraries
+find-absolute-dlls:
+	sqf/build-scripts/find-abs-dlls

@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+function usage {
+
+typeset MYNAME="$(basename $0)"
+cat <<EOF
+
+Find absolute files used as dynamic linked libraries
+
+usage:  $MYNAME [-h] [-v] [<directory>]
+
+-h		Give help text
+
+-v		Verbose output
+
+<directory>	Directory to examine.  Defaults to current directory.
+
+EOF
+}
+
+VERBOSE=
+INDIR=
+DIRS=
+while [[ -n "$1" ]]; do
+        case $1 in
+-v | --v | -verbose | --verbose)
+		VERBOSE=yes
+		;;
+-h | --h | -help | --help )
+		usage
+		exit 0
+		;;
+-*)		echo "ERROR: Unrecognized option : $1"
+		usage
+		exit 1
+		;;
+*)		INDIR="$1"
+		if [[ "$INDIR" == "${INDIR#/}" ]]; then
+			INDIR="$PWD/$INDIR"
+		fi
+		if [[ ! -d $INDIR ]]; then
+			echo "ERROR: Directory not found : $INDIR"
+			exit 1
+		fi
+		;;
+	esac
+	shift 1
+done
+if [[ -z "$INDIR" ]]; then
+	INDIR="$PWD"
+fi
+
+echo "Searching $INDIR"
+echo "for absolute files used as dlls ..."
+echo
+
+LINKEDFILES=$(find $INDIR -type f -exec file {} \; | \
+		grep 'dynamically linked' | \
+		cut -f1 -d: )
+
+if [[ -n "$VERBOSE" ]]; then
+	echo "Files using dlls ="
+	ls -l $LINKEDFILES
+	echo
+fi
+
+BADFILES=
+for AFILE in $LINKEDFILES; do
+	if [[ -n "$(objdump -x $AFILE | grep NEED | grep / )" ]]; then
+		BADFILES="$BADFILES $AFILE"
+	fi
+done
+
+NUM=$(echo "$BADFILES" | wc -w)
+if [[ $NUM -ne 0 ]]; then
+	echo "ERROR: Found $NUM files with absolute filenames as dlls:"
+	echo
+	for A in $BADFILES; do
+		echo ${A#$INDIR/}
+		objdump -x $A | grep NEED | grep /
+		echo
+	done
+fi
+exit $NUM
