@@ -176,13 +176,42 @@ TRAF_VERSION=$(ls export/lib | \
                sed -e 's@hbase-trx-\([0-9].*\).jar@\1@')
 
 #=====================================
+# Detect java version
+
+# test for java 1.7
+java_17=$(ps -C java --noheader -o pid,user,cmd \
+   | grep --max-count=1 hbase \
+   | awk '{print $3}' \
+   | grep "1.7." \
+   | wc -l)
+
+# if not java 1.7 then test for java 1.6
+if [ "$java_17" == "0" ]; then
+   java_16=$(ps -C java --noheader -o pid,user,cmd \
+      | grep --max-count=1 hbase \
+      | awk '{print $3}' \
+      | grep "1.6." \
+      | wc -l)
+
+   # if not 1.7 nor 1.6 then we have a problem
+   if [ "$java_16" == "0" ]; then
+      echo "***ERROR: Unsupported HBase java version.  HBase java version must be 1.6 or 1.7"
+      exit -1
+   else
+      JAVA_VERSION="1.6"
+   fi
+else
+   JAVA_VERSION="1.7"
+fi
+
+#=====================================
 #Run correct mods script
 
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
    echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $MODS_LOG
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
    $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
-      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
+      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
 if [ ${PIPESTATUS[0]} != "0" ]; then
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
       echo "***ERROR: Exiting...." | tee -a $MODS_LOG
@@ -194,7 +223,7 @@ if [[ $HADOOP_TYPE == "ambari" ]]; then
    echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
    $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
-      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER 2>&1 | tee -a $MODS_LOG
+      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
    if [ ${PIPESTATUS[0]}  != "0" ]; then
       echo "***ERROR: traf_amabari_mods exited with an error." | tee -a $MODS_LOG
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG

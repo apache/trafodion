@@ -40,6 +40,7 @@ HDFS_USER=$6
 HBASE_USER=$7
 HBASE_GROUP=$8
 TRAF_USER=$9
+JAVA_VERSION=${10}
 
 #=====================================
 # copy Trafodion hbase trx jar to /usr/lib/hbase/lib
@@ -47,12 +48,11 @@ TRAF_USER=$9
 cd $TRAF_WORKDIR
 
 # determine java version and choose corresponding jar files
-java_version=$(ps -C java --noheader -o pid,user,cmd | grep hbase | grep --max-count=1 -E "jdk|java|jre" | awk '{print $3}' | sed -e "s@^.*\([0-9]\.[0-9]\)\..*@\1@")
-echo "***INFO: Detected JAVA version $java_version"
-if [ "$java_version" == "1.6" ]; then
+echo "***INFO: Detected JAVA version $JAVA_VERSION"
+if [ "$JAVA_VERSION" == "1.6" ]; then
 	hbase_trx_jar="hbase-trx-${TRAF_VERSION}-java6.jar"
 	bulkload_jar="trafodion-hbase-extensions-${TRAF_VERSION}-java6.jar"
-elif [ "$java_version" == "1.7" ]; then
+elif [ "$JAVA_VERSION" == "1.7" ]; then
 	hbase_trx_jar="hbase-trx-${TRAF_VERSION}.jar"
 	bulkload_jar="trafodion-hbase-extensions-${TRAF_VERSION}.jar"
 else
