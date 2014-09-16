@@ -56,12 +56,8 @@ class StmtDDLAlterUser : public StmtDDLNode
 public:
 
 enum AlterUserCmdSubType { 
-   SET_LOGON_ROLE = 2,
-   SET_EXTERNAL_NAME,
-   SET_IS_VALID_USER,
-   SET_AUTH_TYPE,
-   SET_IMMUTABLE,
-   RESET_IMMUTABLE
+   SET_EXTERNAL_NAME = 2,
+   SET_IS_VALID_USER 
 };
 
 
@@ -69,9 +65,7 @@ enum AlterUserCmdSubType {
       const NAString        & databaseUsername,
       AlterUserCmdSubType     cmdSubType,
       const NAString        * pExternalName,
-      const NAString        * pLogonRole,
       NABoolean               isValidUser,
-      ComAuthenticationType   authType,
       CollHeap              * heap);
 
    virtual ~StmtDDLAlterUser();
@@ -85,10 +79,8 @@ enum AlterUserCmdSubType {
 
    inline const NAString & getExternalUsername() const;
    inline const NAString & getDatabaseUsername() const;
-   inline const NAString & getLogonRole() const;
    inline NABoolean isValidUser() const;
    inline AlterUserCmdSubType getAlterUserCmdSubType() const;
-   inline ComAuthenticationType getAuthenticationType() const;
 
 // for tracing
 
@@ -104,10 +96,8 @@ private:
 
 NAString externalUserName_;
 NAString databaseUserName_;
-NAString logonRole_;
 AlterUserCmdSubType alterUserCmdSubType_;
 NABoolean isValidUser_;
-ComAuthenticationType authenticationType_;  
 }; // class StmtDDLAlterUser
 
 // -----------------------------------------------------------------------
@@ -129,11 +119,6 @@ StmtDDLAlterUser::getDatabaseUsername() const
 {
   return databaseUserName_;
 }
-inline const NAString &
-StmtDDLAlterUser::getLogonRole() const
-{
-  return logonRole_;
-}
 
 inline NABoolean
 StmtDDLAlterUser::isValidUser() const
@@ -145,12 +130,6 @@ inline StmtDDLAlterUser::AlterUserCmdSubType
 StmtDDLAlterUser::getAlterUserCmdSubType() const
 {
   return alterUserCmdSubType_;
-}
-
-inline ComAuthenticationType
-StmtDDLAlterUser::getAuthenticationType() const
-{
-  return authenticationType_;
 }
 
 #endif // STMTDDLALTERUSER_H

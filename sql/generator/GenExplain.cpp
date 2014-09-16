@@ -59,6 +59,7 @@
 
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateIndex.h"
+#include "ComDistribution.h"
 
 
 void RelExpr::addExplainPredicates(ExplainTupleMaster * explainTuple,
@@ -1370,6 +1371,28 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     {
       statement += "CIF: OFF ";
     }
+  }
+
+  SecurityInvKeyInfo * sik = rootTdb->getSikInfo();
+  if (sik)
+  {
+    const ComSecurityKey * sikValue  = sik->getSikValues();
+    statement += "Query_Invalidation_Keys: ";
+    Int32 numSiks = sik->getNumSiks();
+    for (Int32 i = 0; i < numSiks; i++)
+    {
+       char buf[64];
+       char sikOperationLit[8];
+       ComQIActionTypeEnumToLiteral(sikValue[i].getSecurityKeyType(),
+                                    sikOperationLit);
+       sikOperationLit[2] = '\0';
+       str_sprintf(buf, "{%Ld,%Ld,%s}",
+                  (Int64)sikValue[i].getSubjectHashValue(),
+                  (Int64)sikValue[i].getObjectHashValue(),
+                  sikOperationLit);
+       statement += buf;
+    }
+    statement += " ";
   }
 
   explainTuple->setDescription(statement);

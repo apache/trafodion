@@ -4411,6 +4411,48 @@ Lng32 SQL_EXEC_GetSessionAttr(
    tmpSemaphore->release();
    return retcode;
 }
+
+Lng32 SQL_EXEC_GetAuthID(
+   const char * authName,
+   Lng32  & authID) 
+   
+{
+
+Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+      SQLCLI_GetAuthID(GetCliGlobals(),
+                       authName,
+                       authID);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+   return retcode;
+
+}
+
+
 SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetAuthName_Internal(
    Lng32   auth_id,

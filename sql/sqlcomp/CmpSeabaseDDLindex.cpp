@@ -638,7 +638,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo.createTime = 0;
   tableInfo.redefTime = 0;
   tableInfo.objUID = 0;
-  tableInfo.objOwner = naTable->getOwner(); 
+  tableInfo.objOwnerID = naTable->getOwner(); 
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     // if index is to be populated during create index, then initially create it as an
@@ -661,6 +661,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   ii.nonKeyColCount = nonKeyColCount;
   ii.keyInfoArray = NULL; //keyInfoArray;
   
+  Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			 catalogNamePart, schemaNamePart, objectNamePart,
 			 COM_INDEX_OBJECT_LIT,
@@ -671,7 +672,9 @@ void CmpSeabaseDDL::createSeabaseIndex(
 			 totalColCount,
 			 keyInfoArray,
 			 1, // numIndex
-                         &ii))
+                         &ii,
+                         tableInfo.objOwnerID,
+                         objUID))
     {
       deallocEHI(ehi); 
 

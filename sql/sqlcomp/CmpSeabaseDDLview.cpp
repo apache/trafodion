@@ -36,6 +36,7 @@
 #define   SQLPARSERGLOBALS_NADEFAULTS
 
 #include "ComObjectName.h"
+#include "ComUser.h"
 
 #include "StmtDDLCreateView.h"
 #include "StmtDDLDropView.h"
@@ -50,6 +51,11 @@
 #include "ExExeUtilCli.h"
 #include "Generator.h"
 #include "desc.h"
+
+// for privilege checking
+#include "PrivMgrCommands.h"
+#include "PrivMgrDefs.h"
+#include <bitset>
 
 #include "ComCextdecs.h"
 
@@ -310,6 +316,141 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
   return 0;
 } 
 
+// ****************************************************************************
+// method: gatherViewPrivileges
+//
+// For each referenced object (table or view) directly associated with the new
+// view, combine privilege and grantable bitmaps together.  The list of 
+// privileges gathered will be assigned as default privileges as the privilege
+// owner values.
+//
+// TBD:  when column privileges are added, need to check only the affected
+//       columns
+//
+// Parameters:
+//    createViewNode - for list of objects and isUpdatable/isInsertable flags
+//    cliInterface - used to get UID of referenced object
+//    privilegeBitmap - returns privileges this user has on the view
+//    grantableBitmap - returns privileges this user can grant
+//
+// returns:
+//    0 - successful
+//   -1 - user does not have the privilege
+// ****************************************************************************
+short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewNode,
+				           ExeCliInterface * cliInterface,
+                                           PrivMgrBitmap &privilegesBitmap,
+                                           PrivMgrBitmap &grantableBitmap)
+{
+  if (!isAuthorizationEnabled())
+    return 0;
+
+  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+  privMDLoc += std::string(".\"") +
+               std::string(SEABASE_PRIVMGR_SCHEMA) +
+               std::string("\"");
+  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+
+  Int32 userID = ComUser::getCurrentUser();
+
+  std::vector<PrivMgrBitmap *> privilegesList;
+  std::vector<PrivMgrBitmap *> grantableList;
+
+  const ParViewUsages &vu = createViewNode->getViewUsages();
+  const ParTableUsageList &vtul = vu.getViewTableUsageList();
+
+  // generate the lists of privileges and grantable privileges
+  // a side effect is to return an error if basic privileges are not granted
+  for (CollIndex i = 0; i < vtul.entries(); i++)
+    {
+      ComObjectName usedObjName(vtul[i].getQualifiedNameObj()
+                                .getQualifiedNameAsAnsiString(),
+                                vtul[i].getAnsiNameSpace());
+
+      const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
+      const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
+      const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
+      const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
+
+      char objType[10];
+      Int64 usedObjUID = getObjectUID(cliInterface,
+                                      catalogNamePart.data(), schemaNamePart.data(),
+                                      objectNamePart.data(),
+                                      NULL,
+                                      objType);
+      if (usedObjUID < 0)
+        {
+          return -1;
+        }
+
+      // TBD:  should we be getting privileges from the NATable structure instead?
+      PrivMgrUserPrivs privInfo;
+      PrivStatus retcode = privInterface.getPrivileges(usedObjUID, userID, privInfo);
+
+      if ( privInfo.hasSelectPriv() )
+        {
+/*
+ * Code needs to be added in the compiler to check privileges on views...
+          if (createViewNode->getIsUpdatable() && (!privInfo.hasUpdatePriv()))
+          {
+             *CmpCommon::diags() << DgSqlCode( -4481 )
+              << DgString0( "UPDATE" )
+              << DgString1( extUsedObjName.data());
+ 
+              return -1;
+          }
+          if (createViewNode->getIsInsertable()&& (!privInfo.hasInsertPriv()))
+          {
+             *CmpCommon::diags() << DgSqlCode( -4481 )
+              << DgString0( "INSERT" )
+              << DgString1( extUsedObjName.data());
+ 
+              return -1;
+          }
+          // set bits in the bitmaps
+          privilegesBitmap.set(SELECT_PRIV);
+*/
+        }
+      else
+        {
+           *CmpCommon::diags() << DgSqlCode( -4481 )
+            << DgString0( "SELECT" )
+            << DgString1( extUsedObjName.data());
+ 
+            return -1;
+        }
+      PrivMgrBitmap *pPrivilegesBitmap = new PrivMgrBitmap(privInfo.getObjectBitmap());
+      PrivMgrBitmap *pGrantableBitmap = new PrivMgrBitmap(privInfo.getGrantableBitmap());
+      privilegesList.push_back(pPrivilegesBitmap);
+      grantableList.push_back(pGrantableBitmap);
+    }
+
+  // intersect the bitmaps in the privileges and grantable lists 
+  // into single maps
+  size_t i = 0;
+  for (i = 0; i < privilegesList.size(); i++)
+  {
+    PrivMgrBitmap *pMap = privilegesList[i];
+    privilegesBitmap &= *pMap;
+  }
+  for (i = 0; i < grantableList.size(); i++)
+  {
+    PrivMgrBitmap *pMap = grantableList[i];
+    grantableBitmap &= *pMap;
+  }
+
+  // Delete the bitmap lists
+  for(i = 0; i < privilegesList.size(); i++)
+   delete privilegesList[i];
+  privilegesList.clear();
+  for(i = 0; i < grantableList.size(); i++)
+   delete grantableList[i];
+  grantableList.clear();
+
+  return 0;
+}
+
+
 void CmpSeabaseDDL::createSeabaseView(
 				      StmtDDLCreateView * createViewNode,
 				      NAString &currCatName, NAString &currSchName)
@@ -327,6 +468,17 @@ void CmpSeabaseDDL::createSeabaseView(
   const NAString extViewName = viewName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
   
+  if (!isDDLOperationAuthorized(SQLOperation::CREATE_VIEW,extViewName,
+                                COM_VIEW_OBJECT_LIT))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     processReturn ();
+     return;
+  }
+  
+  ComUserVerifyObj verifyAuth(viewName, ComUserVerifyObj::OBJ_OBJ_TYPE);
+  Int32 objOwnerID = verifyAuth.getEffectiveUserID(ComUser::CREATE_ROUTINE);
+
   ExpHbaseInterface * ehi = NULL;
   ExeCliInterface cliInterface(STMTHEAP);
 
@@ -393,6 +545,8 @@ void CmpSeabaseDDL::createSeabaseView(
     {
       query = new(STMTHEAP) char[2000];
 
+      // TBD:  need to save privileges granted on the view
+      //       add grant them back later
       // Replace view. Drop this view and recreate it.
       str_sprintf(query, "drop view \"%s\".\"%s\".\"%s\" cascade;",
 		  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
@@ -407,6 +561,26 @@ void CmpSeabaseDDL::createSeabaseView(
 	  
 	  return;
 	}
+    }
+
+  // Gather the object and grantable privileges that the view creator has.
+  // This code also verifies that the current user has the necessary
+  // privileges to create the view.
+  PrivMgrBitmap privilegesBitmap;
+  PrivMgrBitmap grantableBitmap;
+  if (isAuthorizationEnabled())
+    {
+      privilegesBitmap.set();
+      grantableBitmap.set();
+      if (gatherViewPrivileges(createViewNode, 
+                               &cliInterface, 
+                               privilegesBitmap, 
+                               grantableBitmap))
+        {
+          processReturn();
+
+          return;
+        }
     }
 
   NAString viewText(STMTHEAP);
@@ -440,6 +614,7 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
+  Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
 			   COM_VIEW_OBJECT_LIT,
@@ -447,9 +622,10 @@ void CmpSeabaseDDL::createSeabaseView(
 			   NULL,
 			   numCols,
 			   colInfoArray,
-			   0,
-			   NULL,
-			   0, NULL))
+			   0, NULL,
+			   0, NULL,
+                           objOwnerID,
+                           objUID))
     {
       deallocEHI(ehi); 
 
@@ -457,16 +633,57 @@ void CmpSeabaseDDL::createSeabaseView(
 
       return;
     }
-    Int64 objUID = getObjectUID(&cliInterface, 
-			   catalogNamePart.data(), schemaNamePart.data(), 
-                           objectNamePart.data(),
-			   COM_VIEW_OBJECT_LIT);
-    if (objUID < 0)
-    {
-      processReturn();
-      return;
-    }
 
+    if (objUID < 0)
+      {
+        deallocEHI(ehi);
+        processReturn();
+        return;
+      }
+
+  // grant privileges for view
+  if (isAuthorizationEnabled())
+    {
+      Int32 userID = ComUser::getCurrentUser();
+      char userName[MAX_USERNAME_LEN+1];
+      Int32 lActualLen = 0;
+      Int16 status = ComUser::getUserNameFromUserID( (Int32) userID
+                                                   , (char *)&userName
+                                                   , MAX_USERNAME_LEN
+                                                   , lActualLen );
+      if (status != FEOK)
+        {
+          *CmpCommon::diags() << DgSqlCode(-20235)
+                              << DgInt0(status)
+                              << DgInt1(objOwnerID);
+
+          deallocEHI(ehi);
+
+          processReturn();
+
+          return;
+       }
+
+      // Initiate the privilege manager interface class
+      std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+      privMDLoc += std::string(".\"") +
+                   std::string(SEABASE_PRIVMGR_SCHEMA) +
+                   std::string("\"");
+      PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+
+      retcode = privInterface.grantObjectPrivilege 
+       (objUID, std::string(extViewName.data()), std::string (COM_VIEW_OBJECT_LIT), 
+        userID, std::string(userName), 
+        privilegesBitmap, grantableBitmap);
+      if (retcode != STATUS_GOOD && retcode != STATUS_WARNING)
+        {
+          deallocEHI(ehi);
+
+          processReturn();
+
+          return;
+        }   
+    }
 
 
   query = new(STMTHEAP) char[newViewText.length() + 1000];
@@ -545,6 +762,14 @@ void CmpSeabaseDDL::dropSeabaseView(
   const NAString objectNamePart = viewName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extViewName = viewName.getExternalName(TRUE);
 
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_VIEW,extViewName,
+                                COM_VIEW_OBJECT_LIT))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     processReturn ();
+     return;
+  }
+ 
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();

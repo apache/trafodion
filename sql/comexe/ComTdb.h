@@ -878,7 +878,7 @@ struct ComTdbVirtTableTableInfo
   Lng32 isAudited;
   const char * hbaseCreateOptions;
   Lng32 validDef; // 0, invalid. 1, valid. 2, disabled.
-  Int32 objOwner;
+  Int32 objOwnerID;
   Lng32 numSaltPartns; // num of salted partitions this table was created with.
 };
 

@@ -8,22 +8,15 @@
 >>
 >>create role football_players;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation complete.
 >>grant role football_players to public;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
+*** ERROR[1355] Granting a role to PUBLIC or _SYSTEM is not allowed.
 
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation failed with errors.
 >>create role baseball_players;
 
-*** ERROR[4222] The DDL feature is not supported in this software version.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation complete.
 >>
 >>create schema "delimited_sch136";
 
@@ -96,18 +89,6 @@
 
 --- SQL operation complete.
 >>
->>-- succeed: register user -> IMMUTABLE
->>register user test136_user3 
-+>   IMMUTABLE;
-
---- SQL operation complete.
->>
->>-- succeed: register user -> AS and IMMUTABLE
->>register user test136_user4 
-+>   as test136_u4 IMMUTABLE;
-
---- SQL operation complete.
->>
 >>set parserflags 1;
 
 --- SQL operation complete.
@@ -135,13 +116,11 @@ DB_USER_NAME                                                                    
 
 DB__ROOT                                                                          ROOT                                                                              SYSTEM   Y      USER     
 TEST136_U2                                                                        TEST136_USER2                                                                     NORMAL   Y      USER     
-TEST136_U4                                                                        TEST136_USER4                                                                     NORMAL   Y      USER     
 TEST136_U6                                                                        TEST136_USER6                                                                     NORMAL   Y      USER     
 TEST136_USER1                                                                     TEST136_USER1                                                                     NORMAL   Y      USER     
-TEST136_USER3                                                                     TEST136_USER3                                                                     NORMAL   Y      USER     
 TEST136_USER5                                                                     TEST136_USER5                                                                     NORMAL   Y      USER     
 
---- 7 row(s) selected.
+--- 5 row(s) selected.
 >>
 >>-- cleanup
 >>unregister user test136_user1;
@@ -152,10 +131,14 @@ TEST136_USER5                                                                   
 --- SQL operation complete.
 >>unregister user test136_user3;
 
---- SQL operation complete.
+*** ERROR[1333] User TEST136_USER3 does not exist.
+
+--- SQL operation failed with errors.
 >>unregister user test136_u4;
 
---- SQL operation complete.
+*** ERROR[1333] User TEST136_U4 does not exist.
+
+--- SQL operation failed with errors.
 >>unregister user test136_user5;
 
 --- SQL operation complete.
@@ -663,6 +646,8 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
   )
 ;
 
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T136SCH.T136T1 TO DB__ROOT WITH GRANT OPTION;
+
 --- SQL operation complete.
 >>-- revoke select on $$TEST_CATALOG$$.t136sch.t136t1 from test136_user1;
 >>showddl $$TEST_CATALOG$$.t136sch.t136t1, privileges;
@@ -674,6 +659,8 @@ CREATE TABLE TRAFODION.T136SCH.T136T1
   , PRIMARY KEY (C1 ASC)
   )
 ;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T136SCH.T136T1 TO DB__ROOT WITH GRANT OPTION;
 
 --- SQL operation complete.
 >>unregister user test136_user1;
@@ -843,12 +830,6 @@ REGISTER USER "DONALD/DUCK@DISNEY.COM" AS "DONALD";
 >>alter user "donald/duck@disney.com" set offline;
 
 *** ERROR[1333] User DONALD/DUCK@DISNEY.COM does not exist.
-
---- SQL operation failed with errors.
->>--error 1010
->>alter user mickey set immutable;
-
-*** ERROR[1010] The statement just entered is currently not supported.
 
 --- SQL operation failed with errors.
 >>--error 1337

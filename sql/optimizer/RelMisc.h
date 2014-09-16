@@ -43,6 +43,7 @@
 #include "StmtNode.h"
 #include "LateBindInfo.h"
 #include "SequenceGeneratorAttributes.h"
+#include "ComSecurityKey.h"
 
 struct desc_struct;
 
@@ -328,8 +329,16 @@ public:
   LIST(OptSqlTableOpenInfo *) &getDDLStoiList() 	{ return ddlStoiList_; }
   LIST(OptUdrOpenInfo *) &getUdrStoiList() 	{ return stoiUdrList_; }
   LIST(OptUDFInfo *) &getUDFList() 	        { return udfList_; }
+  ComSecurityKeySet  &getSecurityKeySet()       { return securityKeySet_; }
 
   NABoolean &needFirstSortedRows() 		{ return needFirstSortedRows_; }
+
+  NABoolean checkPrivileges(BindWA* bindWA);
+  NABoolean findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
+                                        , const uint32_t userHashValue
+                                        , const PrivType which
+                                        );
+
 
 
 
@@ -557,6 +566,10 @@ public:
   // list of all UDFs open in the context of this query.
   // This list applies only to TRIGGERS.
   LIST(OptUDFInfo *) udfList_;
+
+  // list of ComSecurityKeys used by this query
+  // If a privilege is obtained by more than one means, compiler chooses a path
+  ComSecurityKeySet  securityKeySet_;
 
   ////////////////////////////////////////////////////////////////////
   // The fields updatableSelect_, updateCurrentOf_ and pkeyList_ are

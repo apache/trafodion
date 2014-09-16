@@ -84,7 +84,9 @@
 #include "StmtNode.h"
 #include "QueryText.h"
 #include "ControlDB.h"                  // ActiveControlDB()
-#include "CmpISPInterface.h"   
+#include "CmpISPInterface.h"
+#include "ComUser.h"
+#include "ComDistribution.h"
 
 #define   SQLPARSERGLOBALS_NADEFAULTS
 #include "SqlParserGlobalsCmn.h"
@@ -1178,6 +1180,189 @@ void CmpMain::getAnySiKeys( TimeVal      begTime,
           {
              *pMaxTimestamp = begTime;
           }
+#ifndef NDEBUG
+          if ( *retNumSiKeys == 0 )
+          {
+              // Look for Debug Mechanism
+              if ( prev_QI_Priv_Value == 0 ) // If previously set to "off"
+              {
+                 NAString qiPath = "";
+
+                 Lng32 new_QI_Priv_Value = getDefaultAsLong(QI_PRIV);
+                 if ( new_QI_Priv_Value != prev_QI_Priv_Value )
+                 {
+                    // NOTE: This debug mechanism assumes:
+                    // (a) There will be an NATable entry for QI_PATH [If there is not,
+                    //     the debug mechanism just doesn't work.]
+                    // (b) We need to deal ONLY with pathnames that can be CQD values.
+                    //     So, no UTF8 names, etc., but that's probably OK for a debug
+                    //     mechanism.
+                    //
+                    CmpCommon::getDefault(QI_PATH, qiPath, FALSE);
+                    if ( qiPath.length() <= 0 )
+                       new_QI_Priv_Value = prev_QI_Priv_Value; //Ignore new QI_PRIV value !!
+                 }
+                 if ( new_QI_Priv_Value != prev_QI_Priv_Value )
+                 {
+                    char sikOpLit[4];
+
+                    //
+                    // The SQL_EXEC_GetSecInvalidKeys() call above did NOT return any SQL_SIKEYs.
+                    // So, we can choose to return some "hand-built" SQL_SIKEYs.
+                    // We choose to do so if the user has set up the CQDs QI_PATH and set QI_PRIV > 0.
+                    // The idea of this debug mechanism is to hand-build the SQL_SIKEYs
+                    // requested by the user's value of QI_PRIV and for the table/view specified
+                    // by QI_PATH.   See the definition of the enum ComQIActionType for what values
+                    // of QI_PRIV correspond to the various privileges.  Note: If the user specifies
+                    // a QI_PRIV value of 255, then we hand-build several SQL_SIKEYs ... one for
+                    // each of several privileges.
+                    //
+                    prev_QI_Priv_Value = new_QI_Priv_Value ;
+                    //ComUserID thisUserID = ((NAUserInfo)CatProcess.getSessionUserId());
+                    Int32 thisUserID = ComUser::getCurrentUser();
+
+                    QualifiedName thisQN ( qiPath, 3);
+                    ExtendedQualName thisEQN ( thisQN );
+                    NATable *tab = ActiveSchemaDB()->getNATableDB()->get(&thisEQN, NULL, TRUE);
+                    Int32  realObjHashVal = 0;
+                    //ComUID objectUID = -1;
+                    int64_t objectUID = -1;
+                    if ( tab != NULL )
+                       objectUID = tab->objectUid().get_value();
+                    if (objectUID == 0)  // Weird, but sometimes true for VIEW objects
+                    {
+                       if ( tab->getSecKeySet().entries() > 0 )
+                          realObjHashVal = tab->getSecKeySet()[0].getObjectHashValue();
+                    }
+
+                    Int32 SiKeyDebugEntries = 1;
+                    if ( new_QI_Priv_Value == 255 )
+                       SiKeyDebugEntries = 7;
+
+                    if ( SiKeyDebugEntries > SiKeyArraySize_ )
+                    {
+                        NADELETEBASIC( SiKeyArray_ , heap ) ;  // Delete the old allocated memory
+                        SiKeyArraySize_ = SiKeyDebugEntries ;
+                        SiKeyArray_ = new(heap) SQL_SIKEY[SiKeyDebugEntries] ; // Allocate new array
+                    }
+                    if ( SiKeyDebugEntries == 1 )
+                    {
+                       // NOTE: For now, this Debug/Regression test Mechanism supports specifying ONLY values
+                       // for QI_PRIV corresponding to COM_QI_OBJECT_* enum values (within enum ComQIActionType)
+
+                       ComSecurityKey  secKey(thisUserID, objectUID,
+                                              SELECT_PRIV,  // Just a dummy value
+                                              ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[0].subject = (Int32) secKey.getSubjectHashValue();
+                       SiKeyArray_[0].object = (Int32) secKey.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral( (ComQIActionType) new_QI_Priv_Value,
+                                                     sikOpLit  );
+                       SiKeyArray_[0].operation[0] = sikOpLit[0];
+                       SiKeyArray_[0].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[0].object = realObjHashVal;
+                    }
+                    else
+                    {
+                       ComSecurityKey  secKey0(thisUserID, objectUID,
+                                    SELECT_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[0].subject = (Int32) secKey0.getSubjectHashValue();
+                       SiKeyArray_[0].object = (Int32) secKey0.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey0.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[0].operation[0] = sikOpLit[0];
+                       SiKeyArray_[0].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[0].object = realObjHashVal;
+                       ComSecurityKey  secKey1(thisUserID, objectUID,
+                                    INSERT_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[1].subject = (Int32) secKey1.getSubjectHashValue();
+                       SiKeyArray_[1].object = (Int32) secKey1.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey1.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[1].operation[0] = sikOpLit[0];
+                       SiKeyArray_[1].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[1].object = realObjHashVal;
+                       ComSecurityKey  secKey2(thisUserID, objectUID,
+                                    DELETE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[2].subject = (Int32) secKey2.getSubjectHashValue();
+                       SiKeyArray_[2].object = (Int32) secKey2.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey2.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[2].operation[0] = sikOpLit[0];
+                       SiKeyArray_[2].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[2].object = realObjHashVal;
+                       ComSecurityKey  secKey3(thisUserID, objectUID,
+                                    UPDATE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[3].subject = (Int32) secKey3.getSubjectHashValue();
+                       SiKeyArray_[3].object = (Int32) secKey3.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey3.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[3].operation[0] = sikOpLit[0];
+                       SiKeyArray_[3].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[3].object = realObjHashVal;
+                       ComSecurityKey  secKey4(thisUserID, objectUID,
+                                    USAGE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[4].subject = (Int32) secKey4.getSubjectHashValue();
+                       SiKeyArray_[4].object = (Int32) secKey4.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey4.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[4].operation[0] = sikOpLit[0];
+                       SiKeyArray_[4].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[4].object = realObjHashVal;
+                       ComSecurityKey  secKey5(thisUserID, objectUID,
+                                    REFERENCES_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[5].subject = (Int32) secKey5.getSubjectHashValue();
+                       SiKeyArray_[5].object = (Int32) secKey5.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey5.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[5].operation[0] = sikOpLit[0];
+                       SiKeyArray_[5].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[5].object = realObjHashVal;
+                       ComSecurityKey  secKey6(thisUserID, objectUID,
+                                    EXECUTE_PRIV, ComSecurityKey::OBJECT_IS_OBJECT);
+                       SiKeyArray_[6].subject = (Int32) secKey6.getSubjectHashValue();
+                       SiKeyArray_[6].object = (Int32) secKey6.getObjectHashValue();
+
+                       ComQIActionTypeEnumToLiteral(
+                                      secKey6.getSecurityKeyType(), sikOpLit  );
+                       SiKeyArray_[6].operation[0] = sikOpLit[0];
+                       SiKeyArray_[6].operation[1] = sikOpLit[1];
+
+                       if ( objectUID == 0 )
+                         SiKeyArray_[6].object = realObjHashVal;
+                    }
+                    *retNumSiKeys = SiKeyDebugEntries;
+                    *pMaxTimestamp = begTime;
+                 }
+              }
+              else
+              {
+                 prev_QI_Priv_Value = getDefaultAsLong(QI_PRIV); // Set prev value to latest value
+                 // Note: We will keep this up until user sets value to 0, then
+                 // the next time we will go through the code in the 'if' block above.
+              }
+          }
+#endif
 
        }
     }
@@ -1788,6 +1973,8 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
     OSIM_capturePrologue();
   }
 
+  bindWA.setFailedForPrivileges(FALSE);
+
 
   // *************************************************************************
   // *                                                                       *
@@ -1801,6 +1988,8 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
   if (!queryExpr || bindWA.errStatus())
   {
       sqlcompCleanup(input_str, queryExpr, TRUE);
+      if ( bindWA.failedForPrivileges() )
+         return PRIVILEGEERROR;
       return BINDERERROR;
   }
 

@@ -75,6 +75,7 @@
 #include "Statement.h"
 #include "ComTdbRoot.h"
 #endif
+#include "ComDistribution.h"
 
 #include <unistd.h>
 #include <errno.h>
@@ -10256,6 +10257,52 @@ NABoolean ExMasterStats::filterForCpuStats(short subReqType,
    return retcode;
 }
 
+void ExMasterStats::setSIKeys(CliGlobals *cliGlobals, 
+                              SecurityInvKeyInfo *sikInfo)
+{
+  ex_assert((numSIKeys_ == 0), "setKeys called twice.");
+  Int32 numSIKeys = sikInfo ? sikInfo->getNumSiks() : 0;
+  if (numSIKeys > PreAllocatedSikKeys)
+  {
+    short savedPriority, savedStopMode;
+    Long semId = cliGlobals->getSemId();
+    StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
+    if (statsGlobals)
+    {
+      short error = statsGlobals->getStatsSemaphore(
+                    semId, cliGlobals->myPin(), 
+                    savedPriority, savedStopMode,
+                    FALSE /*shouldTimeout*/);
+      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    }
+
+    if (sIKeys_ != &preallocdSiKeys_[0])
+      NADELETEBASIC(sIKeys_, (NAHeap *) getHeap());
+    sIKeys_ = new ((NAHeap *)(getHeap())) SQL_SIKEY[numSIKeys];
+
+    if (statsGlobals)
+      statsGlobals->releaseStatsSemaphore(
+                      semId, cliGlobals->myPin(), 
+                      savedPriority, savedStopMode);
+  }
+
+  numSIKeys_ = numSIKeys;
+  if (numSIKeys_ > 0)
+  {
+    const ComSecurityKey *pComSecurityKey = sikInfo->getSikValues();
+    for (int i = 0; i < numSIKeys_; i++)
+    {
+      sIKeys_[i].subject = pComSecurityKey[i].getSubjectHashValue();
+      sIKeys_[i].object  = pComSecurityKey[i].getObjectHashValue();
+      char sikOpLit[4];
+      ComQIActionTypeEnumToLiteral(pComSecurityKey[i].getSecurityKeyType(),
+                                  sikOpLit  );
+      sIKeys_[i].operation[0]  =  sikOpLit[0];
+      sIKeys_[i].operation[1]  =  sikOpLit[1];
+    }
+  }
+  validPrivs_ = true;
+}
 Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
                          short *cpu, pid_t *pid, 
                          short *idOffset,

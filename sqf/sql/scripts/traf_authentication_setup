@@ -88,10 +88,10 @@ function change_sqenvcom
   cp $MY_SQROOT/sqenvcom.sh sqenvcom.sh_temp
   if [ $authOn -eq 1 ]; then
     sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
-    echo "INFO: Authentication has been turned on"
+    echo "INFO: Authentication has been enabled"
   else
     sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=YES@TRAFODION_ENABLE_AUTHENTICATION=NO@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
-    echo "INFO: Authentication has been turned off"
+    echo "INFO: Authentication has been disabled"
   fi
   rm sqenvcom.sh_temp > /dev/null 2>&1
 
@@ -174,6 +174,58 @@ function copy_config
     pdcp -p -x $HOSTNAME $MY_NODES $configFile $defaultConfigFileDir$defaultConfigFile
   fi
   echo "INFO: Configuration file has been propagated to nodes in the cluster"
+}
+
+# =============================================================================
+# function enable_authorization
+#
+# this functions calls sqlci to enable authorization
+# =============================================================================
+function enable_authorization
+{
+  logLoc=$MY_SQROOT/logs
+  rm $logLoc/authEnable.log > /dev/null 2>&1
+  #gdb sqlci
+  sqlci >> "$logLoc/authEnable.log" 2>&1 <<eof
+   values (current_timestamp);
+   initialize authorization;
+   get tables in schema privmgr_md;
+   get users;
+   get roles;
+   get components;
+   exit;
+eof
+  errorRows=`/bin/cat $logLoc/authEnable.log | /bin/grep "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    echo "ERROR: Authorization has not been enabled, see $logLoc/authEnable.log"
+  else
+    echo "INFO: Authorization (grant/revoke support) has been enabled"
+  fi
+}
+
+# =============================================================================
+# function disable_authorization
+#
+# this functions calls sqlci to disable authorization
+# =============================================================================
+function disable_authorization
+{
+  logLoc=$MY_SQROOT/logs
+  rm $logLoc/authDisable.log > /dev/null 2>&1
+  sqlci >> "$logLoc/authDisable.log" 2>&1 <<eof
+   values (current_timestamp);
+   initialize authorization, drop;
+   get tables in schema privmgr_md;
+   get users;
+   get roles;
+   exit;
+eof
+  errorRows=`/bin/cat $logLoc/authDisable.log | /bin/grep "\*\*\* ERROR" | wc -l`
+  if [ $errorRows -ne 0 ]; then
+    echo "ERROR: Authorization has not been disabled, see $logLoc/authDisable.log"
+  else
+    echo "INFO: Authorization (grant/revoke support) has been disabled"
+  fi
 }
 
 # =============================================================================
@@ -279,19 +331,31 @@ if [ $doStatus -eq 0 ]; then
 fi
 
 # display introductory messages
-echo "INFO: Start of authentication script $(date)."
+echo "INFO: Start of security (authentication and authorization) script $(date)."
 
 isCluster=1
 if [ "$MY_NODES" == "" ]; then
   isCluster=0
 fi
+ 
+errorRows=0
 
 # if turning authentication on, make sure a valid config file was specified
 # and copy the configuration file to all nodes
 if [ $authOn -eq 1 ]; then
   setup_config
   copy_config
+  enable_authorization
 fi
+
+if [ $authOff -eq 1 ]; then
+  disable_authorization
+fi
+
+if [ $errorRows -ne 0 ]; then
+  echo "Errors found, script terminated"
+  exit 3
+fi 
 
 # Adjust the TRAFODION_AUTHENTICATION_CONFIG environment variable
 if [ $authOn -eq 1 -o $authOff -eq 1 ]; then
@@ -316,5 +380,5 @@ else
     echo
   fi
 fi
-echo "INFO: End of authentication script $(date)."
+echo "INFO: End of security (authorization and authentication) script $(date)."
 

@@ -96,6 +96,7 @@ NARoutine::NARoutine (CollHeap *heap)
     , lastUsedTime_           (0)
     , schemaLabelFileName_    ("", heap)
     , schemaRedefTime_        (0)
+    , routineSecKeySet_       (heap)
     , passThruDataNumEntries_ (0)
     , passThruData_           (NULL)
     , passThruDataSize_       (NULL)
@@ -302,6 +303,7 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     , initialRowCost_	      (old.initialRowCost_)
     , normalRowCost_	      (old.normalRowCost_)
     , udfFanOut_              (old.udfFanOut_)
+    , routineSecKeySet_       (h)
     , passThruDataNumEntries_ (old.passThruDataNumEntries_)
     , uecValues_              (old.uecValues_, h)
     , actionPosition_         (old.actionPosition_)
@@ -334,14 +336,16 @@ NARoutine::NARoutine (const NARoutine &old, CollHeap *h)
     }
   }
 
+  routineSecKeySet_ = old.routineSecKeySet_;
+
   heapSize_ = (h ? h->getTotalSize() : 0);
 }
 
-NARoutine:: NARoutine(const QualifiedName   &name,
-            const desc_struct    *routine_desc,
-            BindWA                *bindWA,
-            Int32                 &errorOccurred,
-            NAMemory              *heap)
+NARoutine::NARoutine(const QualifiedName   &name,
+           const desc_struct    *routine_desc,
+           BindWA                *bindWA,
+           Int32                 &errorOccurred,
+           NAMemory              *heap)
     : name_                   (name, heap)
     , hashKey_                (name, heap) 
     , language_               (routine_desc->body.routine_desc.language)

@@ -75,6 +75,7 @@ CPPSRC := \
 	NATestpoint.cpp \
 	NAType.cpp \
         ComUser.cpp \
+	ComSecurityKey.cpp \
 	NLSConversion.cpp \
 	NumericType.cpp \
 	str.cpp \

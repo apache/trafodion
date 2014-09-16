@@ -1,0 +1,581 @@
+>>obey TEST139(set_up);
+>>set schema privmgr_md;
+
+--- SQL operation complete.
+>>initialize authorization;
+
+--- SQL operation complete.
+>>prepare get_owner_privs from
++>select distinct
++>   substring (object_name,1,10) as object_name,
++>   object_type as type,
++>   substring(authname(grantee_id),1,10) as grantee,
++>   privileges_bitmap,
++>   grantable_bitmap
++>from object_privileges 
++>where grantor_id = -2
++>    and object_uid in 
++>     (select object_uid
++>      from "_MD_".objects
++>      where object_type in ('VI','BT','LB','UR')
++>        and schema_name in ('PRIVMGR_MD', 'T139SCH'))
++>  order by 1, 2
++>;
+
+--- SQL command prepared.
+>>
+>>prepare object_privs from
++>select distinct
++>  object_type as type,
++>  substring (grantor_name,1,10) as grantor,
++>  substring (grantee_name,1,10) as grantee,
++>  privileges_bitmap as privs,
++>  grantable_bitmap as wgo
++>from privmgr_md.object_privileges
++>where object_name like ?tblname 
++>order by 1, 2, 3;
+
+--- SQL command prepared.
+>>
+>>prepare all_privs from
++>select distinct
++>  object_type as type,
++>  substring (object_name,1,20) as objname,
++>  substring (grantor_name,1,10) as grantor,
++>  substring (grantee_name,1,10) as grantee,
++>  privileges_bitmap as privs,
++>  grantable_bitmap as wgo
++>from privmgr_md.object_privileges
++>where object_uid in
++>   (select object_uid from "_MD_".objects
++>    where schema_name in ('T139SCH'))
++>ORDER BY 1, 2,3,4;
+
+--- SQL command prepared.
+>>
+>>obey TEST139(create_db);
+>>set schema t139sch;
+
+--- SQL operation complete.
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table teams add constraint valid_team_no check (team_number > 0);
+
+--- SQL operation complete.
+>>
+>>insert into teams values
++>   (1, 'White Socks', 'Sam','4082282222'),
++>   (2, 'Giants', 'Joe', '5102839483'),
++>   (3, 'Cardinals', 'Stella', '9513849384'),
++>   (4, 'Indians', 'Matt', '5128383748'),
++>   (5, 'Tigers', 'Ronit', '6198273827');
+
+--- 5 row(s) inserted.
+>>
+>>create table team_statistics
++>  (team_number int not null primary key,
++>   num_players int not null)
++>;
+
+--- SQL operation complete.
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>--create index home_games on games (home_team_number);
+>>
+>>alter table games add constraint valid_game_number check (game_number > 0);
+
+--- SQL operation complete.
+>>
+>>create table standings
++>    (team_number int not null primary key,
++>     wins int default 0,
++>     loses int default 0,
++>     last_updated timestamp default current_timestamp)
++>;
+
+--- SQL operation complete.
+>>insert into standings (team_number)
++>  select team_number from teams;
+
+--- 5 row(s) inserted.
+>>
+>>insert into games values
++>   (1, 2, 1, timestamp '2009-04-23 19:30:00', 'California'),
++>   (1, 3, 2, timestamp '2009-04-24 19:30:00', 'California'),
++>   (1, 4, 3, timestamp '2009-04-25 10:00:00', 'Oklahoma'),
++>   (2, 3, 4, timestamp '2009-04-25 13:30:00', 'Michigan'),
++>   (1, 5, 5, timestamp '2009-04-25 15:00:00', 'Oklahoma'),
++>   (2, 5, 6, timestamp '2009-04-27 17:00:00', 'New York'),
++>   (3, 4, 7, timestamp '2009-04-28 17:00:00', 'Florida'),
++>   (4, 2, 8, current_timestamp, 'Missouri');
+
+--- 8 row(s) inserted.
+>>
+>>create view home_teams_games as
++>  select t.team_number, g.game_number, g.game_time
++>  from "TEAMS" t,
++>       "GAMES" g
++>  where t.team_number = g.home_team_number
++>  order by 1, game_number, game_time;
+
+--- SQL operation complete.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>insert into players values
++>   (1, 'Tom', 1, '4083948394', null),
++>   (2, 'Bob', 1, '4089483948', null),
++>   (3, 'Toby',1, '4082938493', 'pitcher'),
++>   (3, 'Toby',2, '4082938493', null),
++>   (4, 'Julie', 2, '5108394839', 'catcher'),
++>   (5, 'Joanne', 2, '5103849384', null),
++>   (6, 'Pete', 2, '5102839483', null),
++>   (6, 'Pete', 3, '5102839483', 'third base'),
++>   (7, 'Jared',4, '9518293849', 'short stop'),
++>   (8, 'Zachary', 4, '9518293840', null),
++>   (9, 'Lynne', 5, '9518293892', 'pitcher'),
++>   (10, 'Omar', 5, '5128394893', null);
+
+--- 12 row(s) inserted.
+>>
+>>alter table players add constraint valid_player_number check(player_number > 0);
+
+--- SQL operation complete.
+>>
+>>create view players_on_team as
++>  select player_name, team_name
++>  from teams t, players p
++>  where p.player_team_number = t.team_number
++>  order by t.team_name;
+
+--- SQL operation complete.
+>>select * from players_on_team;
+
+PLAYER_NAME                                         TEAM_NAME           
+--------------------------------------------------  --------------------
+
+Pete                                                Cardinals           
+Julie                                               Giants              
+Joanne                                              Giants              
+Toby                                                Giants              
+Pete                                                Giants              
+Jared                                               Indians             
+Zachary                                             Indians             
+Omar                                                Tigers              
+Lynne                                               Tigers              
+Toby                                                White Socks         
+Bob                                                 White Socks         
+Tom                                                 White Socks         
+
+--- 12 row(s) selected.
+>>
+>>create view games_by_player as
++>  select player_name, game_time
++>  from teams t, games g, players p
++>  where p.player_team_number = t.team_number and
++>        t.team_number = g.home_team_number
++>  order by player_name, team_number;
+
+--- SQL operation complete.
+>>
+>>alter table players add constraint players_teams
++>   foreign key (player_team_number) references teams (team_number);
+
+--- SQL operation complete.
+>>
+>>insert into team_statistics
++>  select team_number, count (player_number)
++>   from teams t, players p
++>   where t.team_number = p.player_team_number
++>   group by team_number;
+
+--- 5 row(s) inserted.
+>>
+>>create volatile table home_games as
++>  select home_team_number, visitor_team_number, game_number,  game_location
++>  from games
++>    where extract(year  from games.game_time) =
++>          extract(year  from current_timestamp) and
++>          extract(month from games.game_time) =
++>          extract(month from current_timestamp);
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST139(tests);
+>>-- =================================================================
+>>-- this set of tests run basic grant and revoke tests
+>>-- =================================================================
+>>set schema t139sch;
+
+--- SQL operation complete.
+>>
+>>set param ?tblname '%GAMES';
+>>
+>>-- test SELECT, UPDATE, DELETE, INSERT on games
+>>grant select on games to sql_user1;
+
+--- SQL operation complete.
+>>showddl games;
+
+CREATE TABLE TRAFODION.T139SCH.GAMES
+  (
+    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (GAME_NUMBER ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
+  TRAFODION.T139SCH.VALID_GAME_NUMBER CHECK
+  (TRAFODION.T139SCH.GAMES.GAME_NUMBER > 0)
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.GAMES TO DB__ROOT WITH GRANT OPTION;
+  GRANT SELECT ON TRAFODION.T139SCH.GAMES TO SQL_USER1;
+
+--- SQL operation complete.
+>>-- make sure user1 can select but not other operations
+>>sh sqlci -i "TEST139(user1_dml)" -u sql_user1;
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>update games set game_location = 'Ohio' where game_location = 'New York';
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.T139SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>update games set game_location = 'New York' where game_location = 'Ohio';
+
+*** ERROR[4481] The user does not have UPDATE privilege on table or view TRAFODION.T139SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>insert into games values (4, 5, 9, current_timestamp, 'Ohio');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T139SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>delete from games where game_number = 9;
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view TRAFODION.T139SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>grant update on games to sql_user1;
+
+--- SQL operation complete.
+>>showddl games;
+
+CREATE TABLE TRAFODION.T139SCH.GAMES
+  (
+    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (GAME_NUMBER ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
+  TRAFODION.T139SCH.VALID_GAME_NUMBER CHECK
+  (TRAFODION.T139SCH.GAMES.GAME_NUMBER > 0)
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.GAMES TO DB__ROOT WITH GRANT OPTION;
+  GRANT SELECT, UPDATE ON TRAFODION.T139SCH.GAMES TO SQL_USER1;
+
+--- SQL operation complete.
+>>-- make sure user 1 can select and update but not other operations
+>>sh sqlci -i "TEST139(user1_dml)" -u sql_user1;
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>update games set game_location = 'Ohio' where game_location = 'New York';
+
+--- 1 row(s) updated.
+>>update games set game_location = 'New York' where game_location = 'Ohio';
+
+--- 1 row(s) updated.
+>>insert into games values (4, 5, 9, current_timestamp, 'Ohio');
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T139SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>delete from games where game_number = 9;
+
+*** ERROR[4481] The user does not have DELETE privilege on table or view TRAFODION.T139SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>grant delete, insert, references on games to sql_user1;
+
+--- SQL operation complete.
+>>showddl games;
+
+CREATE TABLE TRAFODION.T139SCH.GAMES
+  (
+    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (GAME_NUMBER ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
+  TRAFODION.T139SCH.VALID_GAME_NUMBER CHECK
+  (TRAFODION.T139SCH.GAMES.GAME_NUMBER > 0)
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.GAMES TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.GAMES
+  TO SQL_USER1;
+
+--- SQL operation complete.
+>>-- make sure user1 can do all dml
+>>sh sqlci -i "TEST139(user1_dml)" -u sql_user1;
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>update games set game_location = 'Ohio' where game_location = 'New York';
+
+--- 1 row(s) updated.
+>>update games set game_location = 'New York' where game_location = 'Ohio';
+
+--- 1 row(s) updated.
+>>insert into games values (4, 5, 9, current_timestamp, 'Ohio');
+
+--- 1 row(s) inserted.
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   9
+
+--- 1 row(s) selected.
+>>delete from games where game_number = 9;
+
+--- 1 row(s) deleted.
+>>select count(*) from games;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>exit;
+
+End of MXCI Session
+
+>>execute object_privs;
+
+TYPE  GRANTOR                                   GRANTEE                                   PRIVS                 WGO
+----  ----------------------------------------  ----------------------------------------  --------------------  --------------------
+
+BT    DB__ROOT                                  SQL_USER1                                                   47                     0
+BT    _SYSTEM                                   DB__ROOT                                                    47                    47
+VI    _SYSTEM                                   DB__ROOT                                                    47                    47
+
+--- 3 row(s) selected.
+>>-- this query does not always return the correct rows 
+>>-- execute all_privs;
+>>
+>>-- test WITH GRANT OPTION
+>>--grant select, insert, delete on teams to sql_user2 with grant option;
+>>--showddl teams;
+>>-- make sure user2 grant of select, insert, delete to user2 succeeds
+>>-- make sure user2 grant of update, references fails
+>>-- user2 will grant select to user3
+>>--sh sqlci -i "TEST139(user2_dml)" -u sql_user2;
+>>-- make sure user3 can select
+>>-- user3 will grant select to user4
+>>--sh sqlci -i "TEST139(user3_dml)" -u sql_user3;
+>>--grant update on teams to sql_user2 with grant option;
+>>--showddl teams;
+>>-- make sure user2 can grant update privilege
+>>--sh sqlci -i "TEST139(user2_dml)" -u sql_user2;
+>>-- make sure user3 can update
+>>--sh sqlci -i "TEST139(user3_dml)" -u sql_user3;
+>>-- make sure user4 can select, but not other privs
+>>--sh sqlci -i "TEST139(user4_dml)" -u sql_user4;
+>>
+>>-- test revoke SELECT, UPDATE, DELETE, INSERT, REFERENCES 
+>>
+>>revoke update on games from sql_user1;
+
+--- SQL operation complete.
+>>showddl games;
+
+CREATE TABLE TRAFODION.T139SCH.GAMES
+  (
+    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (GAME_NUMBER ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
+  TRAFODION.T139SCH.VALID_GAME_NUMBER CHECK
+  (TRAFODION.T139SCH.GAMES.GAME_NUMBER > 0)
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.GAMES TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, REFERENCES ON TRAFODION.T139SCH.GAMES TO
+  SQL_USER1;
+
+--- SQL operation complete.
+>>revoke all_dml on games from sql_user2;
+
+--- SQL operation complete.
+>>showddl games;
+
+CREATE TABLE TRAFODION.T139SCH.GAMES
+  (
+    HOME_TEAM_NUMBER                 INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , VISITOR_TEAM_NUMBER              INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , GAME_TIME                        TIMESTAMP(6) NO DEFAULT NOT NULL NOT
+      DROPPABLE
+  , GAME_LOCATION                    VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (GAME_NUMBER ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T139SCH.GAMES ADD CONSTRAINT
+  TRAFODION.T139SCH.VALID_GAME_NUMBER CHECK
+  (TRAFODION.T139SCH.GAMES.GAME_NUMBER > 0)
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.GAMES TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, REFERENCES ON TRAFODION.T139SCH.GAMES TO
+  SQL_USER1;
+
+--- SQL operation complete.
+>>revoke all_dml on teams from sql_user3;
+
+--- SQL operation complete.
+>>showddl teams;
+
+CREATE TABLE TRAFODION.T139SCH.TEAMS
+  (
+    TEAM_NUMBER                      INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TEAM_NAME                        CHAR(20) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TEAM_CONTACT                     VARCHAR(50) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , TEAM_CONTACT_NUMBER              CHAR(10) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (TEAM_NUMBER ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T139SCH.TEAMS ADD CONSTRAINT
+  TRAFODION.T139SCH.VALID_TEAM_NO CHECK (TRAFODION.T139SCH.TEAMS.TEAM_NUMBER >
+  0)
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T139SCH.TEAMS TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>
+>>-- sh sqlci -i "TEST139(authorized)" -u sql_user4;
+>>log;

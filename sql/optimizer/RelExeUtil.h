@@ -195,6 +195,8 @@ public:
     initHbase_(FALSE),
     dropHbase_(FALSE),
     purgedataHbase_(FALSE),
+    initAuthorization_(FALSE),
+    dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
     flags_(0)
   {
@@ -204,6 +206,7 @@ public:
 
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
 	 NABoolean createMDviews, NABoolean dropMDviews,
+         NABoolean initAuthorization, NABoolean dropAuthorization,
 	 NABoolean addSeqTable,
 	 char * ddlStmtText,
 	 CharInfo::CharSet ddlStmtTextCharSet,
@@ -226,6 +229,8 @@ public:
     initHbase_(initHbase), 
     dropHbase_(dropHbase),
     purgedataHbase_(FALSE),
+    initAuthorization_(initAuthorization),
+    dropAuthorization_(dropAuthorization),
     addSeqTable_(addSeqTable),
     flags_(0)
   {
@@ -258,6 +263,8 @@ public:
     initHbase_(FALSE), 
     dropHbase_(FALSE),
     purgedataHbase_(purgedataHbase),
+    initAuthorization_(FALSE),
+    dropAuthorization_(FALSE),
     addSeqTable_(FALSE),
     flags_(0)
   {
@@ -321,6 +328,8 @@ public:
   NABoolean initHbase() { return initHbase_; }
   NABoolean dropHbase() { return dropHbase_; }
   NABoolean purgedataHbase() { return purgedataHbase_; }
+  NABoolean initAuthorization() { return initAuthorization_; }
+  NABoolean dropAuthorization() { return dropAuthorization_; }
   NABoolean addSeqTable() { return addSeqTable_; }
 
   NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
@@ -380,6 +389,8 @@ public:
   NABoolean initHbase_;	  
   NABoolean dropHbase_;	
   NABoolean purgedataHbase_;
+  NABoolean initAuthorization_;
+  NABoolean dropAuthorization_;
   NABoolean addSeqTable_;
 
   // if set, this ddl cannot run under a user transaction. It must run in autocommit
@@ -447,8 +458,9 @@ public:
     METADATA_UPGRADE_         = 31,
     HBASE_LOAD_               = 32,
     HBASE_LOAD_TASK_          = 33,
-    HBASE_UNLOAD_             = 34,
-    HBASE_UNLOAD_TASK_        = 35
+    AUTHORIZATION_            = 34,
+    HBASE_UNLOAD_             = 35,
+    HBASE_UNLOAD_TASK_        = 36
 
   };
 
@@ -2036,7 +2048,8 @@ public:
     SCHEMAS_      = 8,
     COMPONENTS_   = 9,               
     COMPONENT_PRIVILEGES_ = 10,
-    INVALID_VIEWS_ = 11     
+    INVALID_VIEWS_ = 11,
+    COMPONENT_OPERATIONS = 12     
   };
 
   enum InfoFor
@@ -2085,7 +2098,7 @@ public:
 
   NABoolean hbaseObjects() { return hbaseObjs_;}
   void setHbaseObjects(NABoolean v) { hbaseObjs_ = v; }
-
+  
 private:
   NAString ausStr_; // all/user/system objects
   NAString infoType_;
@@ -2555,7 +2568,8 @@ class ExeUtilHbaseCoProcAggr : public ExeUtilExpr
    : ExeUtilExpr(HBASE_COPROC_AGGR_, corrName,
 		 NULL, NULL, 
 		 NULL, CharInfo::UnknownCharSet, oHeap),
-    aggregateExpr_(aggregateExpr)
+     aggregateExpr_(aggregateExpr),
+     corrName_(corrName)
   {
   };
 
@@ -2578,8 +2592,11 @@ class ExeUtilHbaseCoProcAggr : public ExeUtilExpr
   ValueIdSet &aggregateExpr() { return aggregateExpr_; }
   const ValueIdSet &aggregateExpr() const { return aggregateExpr_; }
 
+  CorrName& getCorrName() { return corrName_; }
+
  private:
   ValueIdSet aggregateExpr_;
+  CorrName corrName_;
   
 };
 

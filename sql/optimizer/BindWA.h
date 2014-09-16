@@ -80,6 +80,7 @@ class StmtDDLCreateTrigger;
 struct desc_struct;
 class NARoutine;
 class HbaseColUsageInfo;
+class ExeUtilHbaseCoProcAggr;
 
 // ***********************************************************************
 // BindContext
@@ -1480,6 +1481,12 @@ public:
 
   LIST(OptSqlTableOpenInfo *) &getStoiList()  { return stoiList_; }
   LIST(OptUdrOpenInfo *) &getUdrStoiList()  { return udrStoiList_; }
+  LIST(ExeUtilHbaseCoProcAggr *) &getCoProcAggrList() { return coProcAggrList_; }
+  BindWA& insertCoProcAggr(ExeUtilHbaseCoProcAggr *coProcAggr)
+  {
+    coProcAggrList_.insert(coProcAggr);
+    return *this;
+  }
 
   LIST(OptUDFInfo *) &getUDFList()  { return udfList_; }
   
@@ -1612,6 +1619,13 @@ public:
     noNeedToLimitSchemaAccess_ = val;
   }
 
+  void setFailedForPrivileges(NABoolean val) {
+    failedForPrivileges_ = val;
+  }
+  NABoolean failedForPrivileges() const {
+    return failedForPrivileges_ ;
+  }
+
   void setShouldLogAccessViolations(NABoolean val) {
     shouldLogAccessViolations_ = val;
   }
@@ -1719,6 +1733,11 @@ private:
   // Open access info (security info) for all UDR's referenced in a statement
   // --------------------------------------------------------------------
   LIST(OptUdrOpenInfo *) udrStoiList_;
+
+  // --------------------------------------------------------------------
+  // All coprocessors referenced in a statement
+  // --------------------------------------------------------------------
+  LIST(ExeUtilHbaseCoProcAggr *) coProcAggrList_;
 
   // --------------------------------------------------------------------
   // All UDF's referenced in a statement

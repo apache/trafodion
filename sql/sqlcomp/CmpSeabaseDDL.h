@@ -39,6 +39,8 @@
 #include "NAColumn.h"
 #include "desc.h"
 #include "CmpMessage.h"
+#include "PrivMgrDefs.h"
+#include "PrivMgrMD.h"
 
 class ExpHbaseInterface;
 class ExeCliInterface;
@@ -77,6 +79,8 @@ class StmtDDLDropSchema;
 class StmtDDLRegisterUser;
 class StmtDDLAlterUser;
 class CmpSeabaseDDLauth;
+class StmtDDLRegisterComponent;
+class PrivMgrComponent;
 
 // classes for constraints
 class StmtDDLAddConstraint;
@@ -132,6 +136,8 @@ class CmpSeabaseDDL
 			       const NAString &schName,
 			       const NAString &objName);
  
+  NABoolean isAuthorizationEnabled();
+
   short existsInHbase(const NAString &objName,
 		      ExpHbaseInterface * ehi = NULL);
 
@@ -161,6 +167,7 @@ class CmpSeabaseDDL
                         const char * catName,
                         const char * schName,
                         const char * objName,
+                        const char * objType,
                         Int32 * objectOwner);
 
   static short genHbaseCreateOptions(
@@ -177,6 +184,12 @@ class CmpSeabaseDDL
   static NAString getSystemCatalogStatic();
 
   static NABoolean isEncodingNeededForSerialization(NAColumn * nac);
+  
+  bool isDDLOperationAuthorized(
+     SQLOperation operation,
+     const ComObjectName & objName,
+     const char * objType);
+  
 
   static NABoolean enabledForSerialization(NAColumn * nac);
 
@@ -406,7 +419,8 @@ class CmpSeabaseDDL
 			     const ComTdbVirtTableKeyInfo * keyInfo,
 			     Lng32 numIndexes,
 			     const ComTdbVirtTableIndexInfo * indexInfo,
-                             const Int64 inUID = -1);
+                             Int32 objOwnerID,
+                             Int64 &inUID);
 
   short deleteFromSeabaseMDTable(
 				 ExeCliInterface *cliInterface,
@@ -510,6 +524,11 @@ class CmpSeabaseDDL
 			Int64 viewUID,
 			ExeCliInterface * cliInterface);
   
+  short gatherViewPrivileges (const StmtDDLCreateView * createViewParseNode,
+			      ExeCliInterface * cliInterface,
+                              PrivMgrBitmap &privilegesBitmap,
+                              PrivMgrBitmap &grantableBitmap);
+
   short genPKeyName(StmtDDLAddConstraintPK *addPKNode,
 		    const char * catName,
 		    const char * schName,
@@ -686,9 +705,14 @@ class CmpSeabaseDDL
   void createSeabaseLibrary(StmtDDLCreateLibrary  * createLibraryNode,
                             NAString &currCatName, NAString &currSchName);
   
-  void registerSeabaseUser   (StmtDDLRegisterUser  * registerUserNode);
-  void unregisterSeabaseUser (StmtDDLRegisterUser  * registerUserNode);
-  void alterSeabaseUser      (StmtDDLAlterUser     * registerUserNode);
+  void registerSeabaseUser (
+                            StmtDDLRegisterUser        * registerUserNode);
+  void alterSeabaseUser (
+                            StmtDDLAlterUser        * alterUserNode);
+  void unregisterSeabaseUser (
+                            StmtDDLRegisterUser        * registerUserNode);
+  void registerSeabaseComponent (
+                            StmtDDLRegisterComponent   * registerComponentNode);
 
   void dropSeabaseLibrary(StmtDDLDropLibrary  * dropLibraryNode,
                           NAString &currCatName, NAString &currSchName);
@@ -711,8 +735,13 @@ class CmpSeabaseDDL
   void seabaseGrantRevoke(
 			  StmtDDLNode                  * stmtDDLNode,
 			  NABoolean isGrant,
-			  NAString &currCatName, NAString &currSchName);
+			  NAString &currCatName, NAString &currSchName,
+                          NABoolean useHBase = FALSE);
   
+  void seabaseGrantRevokeHBase(StmtDDLNode                  * stmtDDLNode,
+                               NABoolean isGrant,
+                               NAString &currCatName, NAString &currSchName);
+
   void dropSeabaseSchema(
 			 StmtDDLDropSchema                  * dropSchemaNode,
 			 NAString &currCatName, NAString &currSchName);
@@ -730,6 +759,18 @@ class CmpSeabaseDDL
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
   void createSeabaseSeqTable();
+
+  void initSeabaseAuthorization();
+  void dropSeabaseAuthorization();
+  NABoolean insertPrivMgrInfo(const Int64 objUID,
+                              const NAString &objName,
+                              const NAString &objType,
+                              const Int32 objOwnerID);
+
+  NABoolean deletePrivMgrInfo(const NAString &objName,
+                              const Int64 objUID, 
+                              const NAString objType);
+
 
   short dropSeabaseObjectsFromHbase(const char * pattern);
   short updateSeabaseAuths(ExeCliInterface * cliInterface, const char * sysCat);
@@ -833,6 +874,7 @@ class CmpSeabaseDDL
 
   NAString seabaseSysCat_;
 
+  Int16 authorizationEnabled_;
   const char * param_[NUM_MAX_PARAMS];
 
 };

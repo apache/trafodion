@@ -6463,6 +6463,14 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean specialType = FALSE;
   if (isUstat())  // special DDLExpr node for an Update Stats statement
     return boundExpr;
+
+  if (initAuthorization() || dropAuthorization())
+  {
+    isHbase_ = TRUE;
+    hbaseDDLNoUserXn_ = TRUE;
+    return boundExpr;
+  }
+
   if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews() ||
       addSeqTable())
   {
@@ -6676,6 +6684,34 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     {
       isAuth = TRUE; 
     }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateRole())
+    {
+      isAuth = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRoleGrant())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRegisterComponent())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLCreateComponentPrivilege())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLDropComponentPrivilege())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGrantComponentPrivilege())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
+    else if (getExprNode()->castToElemDDLNode()->castToStmtDDLRevokeComponentPrivilege())
+    {
+      isPrivilegeMngt = TRUE; 
+    }
     else if (getExprNode()->castToElemDDLNode()->castToStmtDDLGrant())
     {
       isTable_ = TRUE;
@@ -6743,8 +6779,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
-			alterAddConstr || alterDropConstr || alterRenameTable || otherAlters)) ||
-          isPrivilegeMngt )))
+			alterAddConstr || alterDropConstr || alterRenameTable || otherAlters)))))
       {
 	if (NOT isNative_)
 	  {
@@ -6769,7 +6804,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	if (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
 	  hbaseDDLNoUserXn_ = TRUE;
       }
-    else if (isAuth)
+    else if (isAuth || isPrivilegeMngt)
       {
         isHbase_ = TRUE;
       }
@@ -8344,6 +8379,9 @@ RelExpr * ExeUtilHbaseCoProcAggr::bindNode(BindWA *bindWA)
   setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
   if (bindWA->errStatus())
     return this;
+
+  // BindWA keeps list of coprocessors used, so privileges can be checked.
+  bindWA->insertCoProcAggr(this);
 
   return boundExpr;
 }

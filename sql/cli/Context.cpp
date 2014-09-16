@@ -147,6 +147,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     prevFixupSequence_(0),
     catmanInfo_(NULL),
     flags_(0),
+    ssmpManager_(NULL),
     udrServerList_(NULL),
     udrRuntimeOptions_(NULL),
     udrRuntimeOptionDelimiters_(NULL),
@@ -275,7 +276,11 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
      espManager_ = NULL;
   else
      espManager_ = new(ipcHeap_) ExEspManager(env_, cliGlobals_);
+    
   udrServerManager_ = new (ipcHeap_) ExUdrServerManager(env_);
+
+  if (cliGlobals->getStatsGlobals())
+    ssmpManager_ = new(ipcHeap_) ExSsmpManager(env_);
 
   seqGen_ = new(exCollHeap()) SequenceValueGenerator(exCollHeap());
 
@@ -389,6 +394,8 @@ void ContextCli::deleteMe()
      NADELETE(espManager_, ExEspManager, ipcHeap_);
   if (udrServerManager_ != NULL)
      NADELETE(udrServerManager_, ExUdrServerManager, ipcHeap_);
+  if (ssmpManager_ != NULL)
+     NADELETE(ssmpManager_, ExSsmpManager, ipcHeap_);
   if (exeTraceInfo_ != NULL)
   {
     delete exeTraceInfo_;
@@ -4166,6 +4173,43 @@ Lng32 ContextCli::setSecInvalidKeys(
            /* IN */    Int32 numSiKeys,
            /* IN */    SQL_SIKEY siKeys[])
 {
+  CliGlobals *cliGlobals = getCliGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return diagsArea_.mainSQLCODE();
+  }
+
+  ComDiagsArea *tempDiagsArea = &diagsArea_;
+  tempDiagsArea->clear();
+ 
+  IpcServer *ssmpServer = ssmpManager_->getSsmpServer(
+                                 cliGlobals->myNodeName(), 
+                                 cliGlobals->myCpu(), tempDiagsArea);
+  if (ssmpServer == NULL)
+    return diagsArea_.mainSQLCODE();
+
+  SsmpClientMsgStream *ssmpMsgStream  = new (cliGlobals->getIpcHeap())
+        SsmpClientMsgStream((NAHeap *)cliGlobals->getIpcHeap(), 
+                            ssmpManager_, tempDiagsArea);
+
+  ssmpMsgStream->addRecipient(ssmpServer->getControlConnection());
+
+  SecInvalidKeyRequest *sikMsg = 
+    new (cliGlobals->getIpcHeap()) SecInvalidKeyRequest(
+                                      cliGlobals->getIpcHeap(), 
+                                      numSiKeys, siKeys);
+
+  *ssmpMsgStream << *sikMsg;
+
+  // Call send with no timeout.  
+  ssmpMsgStream->send(); 
+
+  // I/O is now complete.  
+  sikMsg->decrRefCount();
+
+  cliGlobals->getEnvironment()->deleteCompletedMessages();
+  ssmpManager_->cleanupDeletedSsmpServers();
   return diagsArea_.mainSQLCODE();
 
 }
@@ -4618,7 +4662,29 @@ RETCODE ContextCli::authQuery(
       }
       break;
 
-
+      case AUTH_QUERY_BY_NAME:
+      {
+         CmpSeabaseDDLauth authInfo;
+         authStatus = authInfo.getAuthDetails(authName,false);
+         if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
+         {
+            authIDFromTable = authInfo.getAuthID();
+            strcpy(authNameFromTable,authInfo.getAuthDbName().data());    
+         }
+      }
+      break;
+      
+      case ROLE_QUERY_BY_ROLE_ID:
+      {
+        CmpSeabaseDDLrole roleInfo;
+        authStatus = roleInfo.getAuthDetails(authID);
+        if (authStatus == CmpSeabaseDDLauth::STATUS_GOOD)
+        {
+          authIDFromTable = roleInfo.getAuthID();
+          strcpy (authNameFromTable, roleInfo.getAuthDbName().data());
+        }
+      }
+      break;
       default:
       {
          ex_assert(0, "Invalid query type");
@@ -4753,6 +4819,80 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
 
 // *****************************************************************************
 // *                                                                           *
+// * Function: ContextCli::getAuthIDFromName                                   *
+// *                                                                           *
+// *    Map an authentication name to a numeric ID.  If the name cannot be     *
+// * mapped to a number, an error is returned.                                 *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <authName>                      const char *                    In       *
+// *    is the authorization name to be mapped to a numeric ID.                *
+// *                                                                           *
+// *  <authID>                        Int32 &                         Out      *
+// *    passes back the numeric ID.                                            *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Returns: RETCODE                                                         *
+// *                                                                           *
+// *  SUCCESS: auth ID returned                                                *
+// *  ERROR: auth name not found                                               *
+// *                                                                           *
+// *****************************************************************************
+
+RETCODE ContextCli::getAuthIDFromName(
+   const char *authName,  
+   Int32 & authID)   
+   
+{
+
+RETCODE result = SUCCESS;
+char authNameFromTable[600];
+
+   if (authName == NULL)
+      return ERROR;
+
+  // Cases to consider
+  // * authName is the current user name
+  // * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
+  //   are not registered in the AUTHS table
+  // * other users
+
+  if (databaseUserName_ && strcasecmp(authName,databaseUserName_) == 0)
+  {
+     authID = databaseUserID_;
+     return SUCCESS;
+  }
+  
+  if (strcasecmp(authName,ComUser::getPublicUserName()) == 0)
+  {
+     authID = ComUser::getPublicUserID();
+     return SUCCESS;
+  }
+  
+  if (strcasecmp(authName,ComUser::getSystemUserName()) == 0)
+  {
+     authID = ComUser::getSystemUserID();
+     return SUCCESS;
+  }
+  
+//TODO: If list of roles granted to user is cached in context, search there first.
+
+   return authQuery(AUTH_QUERY_BY_NAME,authName,0,authNameFromTable,authID); 
+                       
+}
+//******************* End of ContextCli::getAuthIDFromName *********************
+
+
+
+
+
+
+// *****************************************************************************
+// *                                                                           *
 // * Function: ContextCli::getAuthNameFromID                                   *
 // *                                                                           *
 // *    Map an integer authentication ID to a name.  If the number cannot be   *
@@ -4765,7 +4905,7 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
 // *  <authID>                        Int32                           In       *
 // *    is the numeric ID to be mapped to a name.                              *
 // *                                                                           *
-// *  <authName>                      char *                          In       *
+// *  <authName>                      char *                          Out      *
 // *    passes back the name that the numeric ID mapped to.  If the ID does    *
 // *  not map to a name, the ASCII equivalent of the ID is passed back.        *                                                                       *
 // *                                                                           *
@@ -4923,12 +5063,9 @@ RETCODE ContextCli::getDBUserNameFromID(Int32 userID,         // IN
 RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
                                         Int32 *userID)        // OUT
 {
-  RETCODE result = SUCCESS;
-  char usersNameFromUsersTable[600];
-  Int32 userIDFromUsersTable;
   
-  if (userName == NULL)
-    userName = "";
+   if (userName == NULL || userID == NULL)
+      return ERROR;
 
   // Cases to consider
   // * userName is the current user name
@@ -4936,34 +5073,40 @@ RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
   //   are not registered in the USERS table
   // * other users
 
-  NABoolean isCurrentUser = FALSE;
-  if (databaseUserName_)
-    if (strcasecmp(userName, databaseUserName_) == 0)
-      isCurrentUser = TRUE;
-
-  Int32 localUserID;
-  if (isCurrentUser)
+  if (databaseUserName_ && strcasecmp(userName,databaseUserName_) == 0)
   {
-    localUserID = databaseUserID_;
-  }
-  else
-  {
-    // See if the USERS row exists
-    result = usersQuery(USERS_QUERY_BY_USER_NAME,
-                        userName,    // IN user name
-                        0,           // IN user ID (ignored)
-                        usersNameFromUsersTable, //OUT
-                        userIDFromUsersTable);  // OUT
-    if (result != ERROR)
-      localUserID = userIDFromUsersTable;
+     *userID = databaseUserID_;
+     return SUCCESS;
   }
   
-  // Return the user ID if the lookup was successful
-  if (result != ERROR)
-    if (userID)
-      *userID = localUserID;
+  if (strcasecmp(userName,ComUser::getPublicUserName()) == 0)
+  {
+     *userID = ComUser::getPublicUserID();
+     return SUCCESS;
+  }
+  
+  if (strcasecmp(userName,ComUser::getSystemUserName()) == 0)
+  {
+     *userID = ComUser::getSystemUserID();
+     return SUCCESS;
+  }
+  
+// See if the AUTHS row exists
 
-  return result;
+RETCODE result = SUCCESS;
+char usersNameFromUsersTable[600];
+Int32 userIDFromUsersTable;
+
+   result = usersQuery(USERS_QUERY_BY_USER_NAME,
+                       userName,    // IN user name
+                       0,           // IN user ID (ignored)
+                       usersNameFromUsersTable, //OUT
+                       userIDFromUsersTable);  // OUT
+   if (result == SUCCESS && userID)
+      *userID = userIDFromUsersTable;
+
+   return result;
+  
 }
 
 // Public method only meant to be called in ESPs. All we do is call
@@ -5029,13 +5172,14 @@ RETCODE ContextCli::storeName(
 {
 
    actualLength = strlen(src);
-   if (actualLength > maxLength)
+   if (actualLength >= maxLength)
    {
       diagsArea_ << DgSqlCode(-CLI_USERNAME_BUFFER_TOO_SMALL);
       return ERROR;
    }
    
    memcpy(dest,src,actualLength);
+   dest[actualLength] = 0;
    return SUCCESS;
 
 }

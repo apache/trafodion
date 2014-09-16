@@ -3035,6 +3035,18 @@ short RelRoot::codeGen(Generator * generator)
   if(generator->hiveAccess())
     root_tdb->setHiveAccess(TRUE);
 
+  Int32 numSikEntries = securityKeySet_.entries();
+  if (numSikEntries > 0)
+  {
+    ComSecurityKey * sikValues = new (space) ComSecurityKey[numSikEntries];
+
+    for (Int32 sv = 0; sv < numSikEntries; sv++)
+      sikValues[sv] = securityKeySet_[sv];
+
+    SecurityInvKeyInfo * sikInfo = new (space) SecurityInvKeyInfo(
+                                     numSikEntries, sikValues); 
+    root_tdb->setSikInfo(sikInfo);
+  }
 
   if (!generator->explainDisabled())
     {

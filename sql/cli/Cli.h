@@ -501,6 +501,12 @@ Lng32 SQLCLI_SetSessionAttr(/*IN*/ CliGlobals *cliGlobals,
 			    /*IN SESSIONATTR_TYPE*/ Lng32 attrName,
 			    /*IN OPTIONAL*/         Lng32 numeric_value,
 			    /*IN OPTIONAL*/         char *string_value);
+                            
+Lng32 SQLCLI_GetAuthID(
+   CliGlobals * cliGlobals,
+   const char * authName,
+   Lng32 & authID);
+                            
                          
 Lng32 SQLCLI_GetAuthName (
     /*IN*/            CliGlobals *cliGlobals,

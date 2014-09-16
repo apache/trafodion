@@ -2234,7 +2234,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		authorization_identifier_list
 %type <stringval>               as_auth_clause
 %type <stringval>               optional_as_clause
-%type <stringval>               optional_logon_clause
 %type <stringval> 		external_user_identifier
 %type <tokval>	 		user_or_role
 %type <tokval>                  procedure_or_function
@@ -2369,7 +2368,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <levelEnum>               levels_clause
 
 %type <stringval>               optional_component_detail_clause
-%type <int64>	 		optional_internal
 %type <int64>                   optional_blob_unit
 %type <stringval>               component_privilege_name
 %type <stringval>               component_name
@@ -2390,9 +2388,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>  		revoke_role_statement
 %type <boolean>                 optional_with_admin_option
 %type <boolean>                 optional_granted
-%type <boolean>  		optional_immutable_clause
-%type <authTypeEnum>            auth_type_clause
-%type <authTypeEnum>            optional_auth_type_clause
  /*%type <boolean>                 admin_option_for*/
 %type <pElemDDL>                optional_granted_by
 %type <pStmtDDL>                publish_statement
@@ -15989,6 +15984,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
+                                                          FALSE, FALSE,
 							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
@@ -16005,6 +16001,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, FALSE, FALSE,
+                                                          FALSE, FALSE,
 							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
@@ -16021,6 +16018,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE, FALSE, TRUE,
+                                                          FALSE, FALSE,
 							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
@@ -16037,6 +16035,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, TRUE, FALSE,
+                                                          FALSE, FALSE,
 							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
@@ -16053,6 +16052,7 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, TRUE,
+                                                          FALSE, FALSE,
 							  FALSE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
@@ -16076,13 +16076,48 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 	                                       );
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
+                                                          FALSE, FALSE,
 							  TRUE,
 							  (char*)stmt->data(),
 							  stmtCharSet,
 							  PARSERHEAP());
 
-		 $$ = de;
-	       }
+                 $$ = de;
+
+               }
+             | TOK_INITIALIZE TOK_AUTHORIZATION
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
+                                                          TRUE, FALSE,
+							  FALSE,
+							  (char*)stmt->data(),
+							  stmtCharSet,
+							  PARSERHEAP());
+                 $$ = ia;
+
+               }
+
+             | TOK_INITIALIZE TOK_AUTHORIZATION ',' TOK_DROP
+               {
+		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
+		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
+						   , PARSERHEAP() 
+	                                       );
+
+		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
+                                                          FALSE, TRUE,
+							  FALSE,
+							  (char*)stmt->data(),
+							  stmtCharSet,
+							  PARSERHEAP());
+
+                 $$ = ia;
+
+               }
 
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look
@@ -28641,12 +28676,6 @@ file_attribute_uid_clause : TOK_UID NUMERIC_LITERAL_EXACT_NO_SCALE
 /* type pElemDDL */
 file_attribute_owner_clause : TOK_BY authorization_identifier
                                   {
-                                    if (!Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                                    {
-                                      // Internal syntax: not allowed
-                                      yyerror("");
-                                      YYERROR;
-                                    }
                                     $$ = new (PARSERHEAP()) ElemDDLFileAttrOwner(*$2);
                                     delete $2;
                                   }
@@ -28884,7 +28913,6 @@ is_not_droppable : TOK_DROPPABLE
                    { $$ = FALSE; }
                  | TOK_NOT_DROPPABLE
                    { $$ = TRUE; }
-
 
 online_or_offline    : TOK_ONLINE
                       { $$ = TRUE; }
@@ -29685,10 +29713,10 @@ revoke_role_statement : TOK_REVOKE optional_with_admin_option
                         {
                           // revoke_role_statement ::= TOK_REVOKE optional_with_admin_option TOK_ROLE authorization_identifier_list TOK_FROM grantee_list optional_granted_by
 
-                          if ($2 /* optional_with_admin_option */ == TRUE)
-                          {
-                            YYERROR;
-                          }
+                          //if ($2 /* optional_with_admin_option */ == TRUE)
+                          //{
+                          //  YYERROR;
+                          //}
 
                           $$ = new (PARSERHEAP())
                             StmtDDLRoleGrant(
@@ -29847,10 +29875,10 @@ grant_role_statement : TOK_GRANT TOK_ROLE authorization_identifier_list TOK_TO g
                                  optional_with_admin_option
                                  optional_granted_by
                        {
-                          if($6 /* optional_with_admin_option */ == TRUE) // "with admin option" specified
-			  {
-                              YYERROR;
-                          }
+                          //if($6 /* optional_with_admin_option */ == TRUE) // "with admin option" specified
+			  //{
+                          //    YYERROR;
+                          //}
                           $$ = new (PARSERHEAP())
 			       StmtDDLRoleGrant(
                                 $3 , /*role list*/ 
@@ -30358,41 +30386,6 @@ optional_by_auth_identifier : empty
                                         PARSERHEAP());
                                   delete $2 /*authorization_identifier*/;
                                 }
-
-optional_auth_type_clause: empty
-                  {
-		    $$ = COM_DEFAULT_AUTH;
-                  }
-                  
-                  | auth_type_clause
-                   
-optional_immutable_clause: empty
-                  {
-		    $$ = FALSE;
-                  }
-                  
-                  | TOK_IMMUTABLE
-                  {
-		    $$ = TRUE;
-                  }
-                  
-                   
-auth_type_clause: TOK_LOCAL TOK_AUTHENTICATION
-                  {
-		     $$ = COM_PRIMARY_AUTH;
-                  }
-                | TOK_ENTERPRISE TOK_AUTHENTICATION
-                   {
-	 	      $$ = COM_PRIMARY_AUTH;
-                   }
-                | TOK_REMOTE TOK_AUTHENTICATION
-                   {
-                     $$ = COM_SECONDARY_AUTH; 
-                   }   
-                | TOK_CLUSTER TOK_AUTHENTICATION
-                   {
-                     $$ = COM_SECONDARY_AUTH; 
-                   }   
 
 publish_statement : TOK_PUBLISH privileges TOK_ON ddl_qualified_name
                     TOK_AS identifier
@@ -34114,7 +34107,7 @@ revoke_schema_statement: TOK_REVOKE optional_grant_option_for privileges
 revoke_component_privilege_stmt : TOK_REVOKE optional_grant_option_for TOK_COMPONENT privilege_or_privileges_token
                                              component_privilege_name_list TOK_ON component_name
                                              TOK_FROM authorization_identifier_or_public
-                                             optional_granted_by
+                                             optional_drop_behavior optional_granted_by
                                 {
                                   // revoke_component_privilege_stmt ::=
                                   //   TOK_REVOKE optional_grant_option_for TOK_COMPONENT privilege_or_privileges_token
@@ -34126,7 +34119,7 @@ revoke_component_privilege_stmt : TOK_REVOKE optional_grant_option_for TOK_COMPO
                                     , *$7 // component_name - deep copy
                                     , *$9 // authorization_identifier - a.k.a. user_role_name - deep copy
                                     , $2  // optional_grant_option_for - NABoolean
-                                    , $10 // optional granted by
+                                    , $11 // optional granted by
                                     , PARSERHEAP()
                                     );
                                   // cannot delete $5 - component_privilege_name_list - shallow copy
@@ -34177,39 +34170,7 @@ drop_catalog_statement : TOK_DROP TOK_CATALOG catalog_name extension_drop_behavi
                                 }
 
 /*ALTER USER*/
-alter_user_statement : TOK_ALTER TOK_USER authorization_identifier  
-                       TOK_SET TOK_LOGON TOK_ROLE TOK_NONE
-                                {
-                                  $$ = new (PARSERHEAP())
-                                  StmtDDLAlterUser(
-                                        *$3 /*databaseUsername*/, 
-                                        StmtDDLAlterUser::SET_LOGON_ROLE,
-                                        NULL /*externalUsername*/,
-                                        NULL /*logon role*/,
-                                        TRUE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
-                                        PARSERHEAP()); 
-                                  delete $3;
-                                }
-			  |
-                          
-                       TOK_ALTER TOK_USER authorization_identifier  
-                       TOK_SET TOK_LOGON TOK_ROLE authorization_identifier
-                                {
-                                  $$ = new (PARSERHEAP())
-                                  StmtDDLAlterUser(
-                                        *$3 /*databaseUsername*/, 
-                                        StmtDDLAlterUser::SET_LOGON_ROLE,
-                                        NULL /*externalUsername*/,
-                                        $7 /*logon role*/,
-                                        TRUE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
-                                        PARSERHEAP()); 
-                                  delete $3;
-                                }
-			  |
-                          
-                        TOK_ALTER TOK_USER authorization_identifier 
+alter_user_statement :  TOK_ALTER TOK_USER authorization_identifier 
                         TOK_SET TOK_EXTERNAL TOK_NAME external_user_identifier
                                 {
                                   $$ = new (PARSERHEAP())
@@ -34217,41 +34178,7 @@ alter_user_statement : TOK_ALTER TOK_USER authorization_identifier
                                         *$3 /*databaseUsername*/, 
                                         StmtDDLAlterUser::SET_EXTERNAL_NAME,
                                         $7 /*externalUsername*/,
-                                        NULL /*logon role*/,
                                         TRUE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
-                                        PARSERHEAP()); 
-                                  delete $3;
-                                }
-			  |
-                          
-                        TOK_ALTER TOK_USER authorization_identifier 
-                        TOK_SET TOK_IMMUTABLE
-                                {
-                                  $$ = new (PARSERHEAP())
-                                  StmtDDLAlterUser(
-                                        *$3 /*databaseUsername*/, 
-                                        StmtDDLAlterUser::SET_IMMUTABLE,
-                                        NULL /*externalUsername*/,
-                                        NULL /*logon role*/,
-                                        TRUE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
-                                        PARSERHEAP()); 
-                                  delete $3;
-                                }
-			  |
-                          
-                        TOK_ALTER TOK_USER authorization_identifier 
-                        TOK_RESET TOK_IMMUTABLE
-                                {
-                                  $$ = new (PARSERHEAP())
-                                  StmtDDLAlterUser(
-                                        *$3 /*databaseUsername*/, 
-                                        StmtDDLAlterUser::RESET_IMMUTABLE,
-                                        NULL /*externalUsername*/,
-                                        NULL /*logon role*/,
-                                        TRUE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
                                         PARSERHEAP()); 
                                   delete $3;
                                 }
@@ -34265,9 +34192,7 @@ alter_user_statement : TOK_ALTER TOK_USER authorization_identifier
                                         *$3 /*databaseUsername*/, 
                                         StmtDDLAlterUser::SET_IS_VALID_USER,
                                         NULL /*externalUsername*/,
-                                        NULL /*logon role*/,
                                         TRUE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
                                         PARSERHEAP()); 
                                   delete $3;
                                 }
@@ -34281,31 +34206,13 @@ alter_user_statement : TOK_ALTER TOK_USER authorization_identifier
                                         *$3 /*databaseUsername*/, 
                                         StmtDDLAlterUser::SET_IS_VALID_USER,
                                         NULL /*NOT USED: externalUsername*/,
-                                        NULL /*NOT USED: logon role*/,
                                         FALSE /*isValidUser*/,
-                                        COM_UNKNOWN_AUTH /*NOT USED: auth type*/,
-                                        PARSERHEAP()); 
-                                  delete $3;
-                                }
-			  |
-                          
-                        TOK_ALTER TOK_USER authorization_identifier 
-                        TOK_SET auth_type_clause
-                                {
-                                  $$ = new (PARSERHEAP())
-                                  StmtDDLAlterUser(
-                                        *$3 /*databaseUsername*/, 
-                                        StmtDDLAlterUser::SET_AUTH_TYPE,
-                                        NULL /*NOT USED: externalUsername*/,
-                                        NULL /*NOT USED: logon role*/,
-                                        FALSE /*NOT USED: isValidUser*/,
-                                        $5 /*authType*/,
                                         PARSERHEAP()); 
                                   delete $3;
                                 }
 
 /* type pStmtDDL */
-register_component_statement : TOK_REGISTER TOK_COMPONENT component_name optional_component_detail_clause
+register_component_statement : TOK_REGISTER TOK_COMPONENT component_name optional_system optional_component_detail_clause
                                 {
                                   // register_component_statement ::= TOK_REGISTER TOK_COMPONENT component_name
                                   //                                               optional_component_detail_clause
@@ -34313,11 +34220,12 @@ register_component_statement : TOK_REGISTER TOK_COMPONENT component_name optiona
                                     StmtDDLRegisterComponent
                                     ( StmtDDLRegisterComponent::REGISTER_COMPONENT
                                     , *$3  // component_name - deep copy
-                                    , *$4  // optional_component_detail_clause - deep copy
+                                    , $4   // optional_system
+                                    , *$5  // optional_component_detail_clause - deep copy
                                     , PARSERHEAP()
                                     );
                                   delete $3; // component_name
-                                  delete $4; // optional_component_detail_clause
+                                  delete $5; // optional_component_detail_clause
                                 }
 /* type stringval */
 optional_component_detail_clause : empty
@@ -34340,16 +34248,6 @@ optional_component_detail_clause : empty
                                   }
                                   $$ = $2; // component_str_lit
                                 }
-/* type stringval */
-optional_internal : /*empty*/
-                   {
-                                  // optional_internal ::= empty
-                        $$ = 1; // an empty string
-		   }
-                  | TOK_INTERNAL
-                   {
-			$$ = 0; //COM_INTERNAL_COMPONENT_PRIVILEGE
-                   }
 /* type stringval */
 component_str_lit : std_char_string_literal
                                 {
@@ -34384,30 +34282,26 @@ component_str_lit : std_char_string_literal
 /* type pStmtDDL */
 /*REGISTER USER*/
 register_user_statement : TOK_REGISTER TOK_USER external_user_identifier
-                             optional_as_clause optional_logon_clause 
-                             optional_by_auth_identifier
-                             optional_auth_type_clause optional_immutable_clause
+                             optional_as_clause optional_by_auth_identifier
                                 {
                                   $$ = new (PARSERHEAP())
                                   StmtDDLRegisterUser(
                                         *$3 /*external_user*/, 
                                         $4 /*auth_id*/,
-                                        $5 /*default role*/,
-                                        $6 /*by clause*/,
-                                        $7 /* auth_type clause */,
-                                        $8 /* immutable */, 
+                                        $5 /*by clause*/,
                                         PARSERHEAP()); 
                                   delete $3;
                                 }
 
 /* type pStmtDDL */
-unregister_component_statement : TOK_UNREGISTER TOK_COMPONENT component_name
+unregister_component_statement : TOK_UNREGISTER TOK_COMPONENT component_name optional_drop_behavior
                                 {
                                   // unregister_component_statement ::= TOK_UNREGISTER TOK_COMPONENT component_name
                                   $$ = new (PARSERHEAP())
                                     StmtDDLRegisterComponent
                                     ( StmtDDLRegisterComponent::UNREGISTER_COMPONENT
                                     , *$3 // component_name - deep copy
+                                    , $4  // drop behavior
                                     , PARSERHEAP()
                                     );
                                   delete $3; // component_name
@@ -34438,19 +34332,6 @@ optional_as_clause : empty
                      }
                      | as_auth_clause
 
-/* type stringval */
-optional_logon_clause : empty
-                        {
-                          $$ = NULL;
-                        }
-                      | TOK_LOGON TOK_ROLE TOK_NONE
-                        {
-                          $$ = NULL;
-                        }
-                      | TOK_LOGON TOK_ROLE authorization_identifier
-                        {
-                          $$ = $3;
-                        }
 // type stringval - a guardian style system name having the form: "\FIGARO".
 nsk_node_name: BACKSLASH_SYSTEM_NAME 
                {
@@ -34540,8 +34421,8 @@ create_component_privilege_stmt : TOK_CREATE TOK_COMPONENT TOK_PRIVILEGE
                                              component_privilege_name
                                              TOK_AS priv_abbrev_str_lit
                                              TOK_ON component_name
+                                             optional_system
                                              optional_component_detail_clause
-					     optional_internal
                {
                  // create_component_privilege_stmt ::=
                  //   TOK_CREATE TOK_COMPONENT TOK_PRIVILEGE component_privilege_name
@@ -34554,20 +34435,20 @@ create_component_privilege_stmt : TOK_CREATE TOK_COMPONENT TOK_PRIVILEGE
                    ( *$4 // component_privilege_name - deep copy
                    , *$6 // priv_abbrev_str_lit - deep copy
                    , *$8 // component_name - deep copy
-                   , *$9 // optional_component_detail_clause - deep copy
-		   , $10 //optional_internal - deep copy
+		   , $9 //optional_system
+                   , *$10 // optional_component_detail_clause - deep copy
                    , PARSERHEAP()
                    );
                  delete $4 /*component_privilege_name*/;
                  delete $6 /*priv_abbrev_str_lit*/;
                  delete $8 /*component_name*/;
-                 delete $9 /*optional_component_detail_clause*/;
+                 delete $10 /*optional_component_detail_clause*/;
                }
 
 /* type pStmtDDL */
 drop_component_privilege_stmt : TOK_DROP TOK_COMPONENT TOK_PRIVILEGE 
                                  component_privilege_name
-                                 TOK_ON component_name
+                                 TOK_ON component_name optional_drop_behavior
                {
                  // drop_component_privilege_stmt ::=
                  //   TOK_DROP TOK_COMPONENT TOK_PRIVILEGE component_privilege_name
@@ -34577,6 +34458,7 @@ drop_component_privilege_stmt : TOK_DROP TOK_COMPONENT TOK_PRIVILEGE
                    StmtDDLDropComponentPrivilege
                    ( *$4 // component_privilege_name - deep copy
                    , *$6 // component_name - deep copy
+                   , $7  // drop behavior
                    , PARSERHEAP()
                    );
                  delete $4 /*component_privilege_name*/;
@@ -34593,7 +34475,7 @@ priv_abbrev_str_lit : component_str_lit
                    // $0~string0 is too long (longer than $1~int1 $2~string1).
                    // Component privilege abbreviation is too long (longer than 2 bytes).
                    *SqlParser_Diags << DgSqlCode(-3301)
-                                    << /*subst0*/ DgString0("Component privilegeabbreviation")
+                                    << /*subst0*/ DgString0("Component privilege abbreviation")
                                     << /*subst1*/ DgInt0(ComMAX_COMPONENT_PRIV_ABBREV_STRING_LEN_IN_BYTES)
                                     << /*subst2*/ DgString1("bytes");
                    YYERROR;

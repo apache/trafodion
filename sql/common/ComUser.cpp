@@ -35,6 +35,7 @@
 
 #include "ComUser.h"
 #include "CmpSeabaseDDL.h"
+#include "CmpDDLCatErrorCodes.h"
 
 #include "sqlcli.h"
 #include "SQLCLIdev.h"
@@ -95,23 +96,70 @@ Int32 ComUser::getSessionUser(void)
 }
 
 // ----------------------------------------------------------------------------
-// method: getEffectiveUser
+// method: getEffectiveUserID
 //
-// This method returns the effective user for the session.
-// If this if the first time, the effectiveUser_ member is also set.
-// In most cases the effective user is the same as the session user
-// If the user is the system owner (DB__ROOT) or has system owner privileges,
-// and this is a create operation, then the effective user is the schema
-// owner.
+// This method returns the effective user ID for the session.
+// In most cases the effective user ID is the same as the session user
+// If the user ID is the system owner ID or has system owner privileges,
+// and this is a create operation, then the effective user ID is the schema
+// owner ID.
 //
 // We may need to change this when definer and invoker rights are enabled
 //
 // input:  VerifyAction - describes what operation the user desires
 // ----------------------------------------------------------------------------
-Int32 ComUser::getEffectiveUser(VerifyAction act)
+Int32 ComUser::getEffectiveUserID(const VerifyAction act)
 {
   return (getSessionUser() == SUPER_USER && belongsToCreateGroup(act))
              ? getSchemaOwner() : getSessionUser();
+}
+
+// ----------------------------------------------------------------------------
+// method:getEffectiveUserName
+//
+// This mehtod returns the effective username form teh session.
+// In most cases the effective username is the same as the session user.
+// If the username is the system owner or has system owner privileges and
+// this is a create operations, then the effective username is the schema
+// owner name.
+//
+// This may need to change when definer and invoker rights are enabled.
+//
+// input:  VerifyAction - describes the operation, if not specified, then
+//                        ANY is the default
+//
+// returns the status:
+//    0 - userNameStr contains the effective username
+//    -1 - error occurred, see ComDiags area for problem
+// ----------------------------------------------------------------------------
+Int16 ComUser::getEffectiveUserName( NAString &userNameStr,
+                                     const VerifyAction act ) 
+{
+  Int32 effectiveUserID(getEffectiveUserID(act));
+  char userName[MAX_USERNAME_LEN+1];
+  Int32 actualLen;
+  Int16 retcode = getUserNameFromUserID(effectiveUserID,
+                                        (char *)&userName,
+                                        MAX_USERNAME_LEN,
+                                        actualLen);
+  if (retcode != FEOK)
+  {
+    if (retcode == FENOTFOUND)
+      *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
+                          << DgString0((char *)&userName);
+    else if (retcode == FEBUFTOOSMALL)
+      *CmpCommon::diags() << DgSqlCode(-8941);
+    else
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+         *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                             << DgInt0(__LINE__)
+                             << DgString0("get effective username");
+    }
+    return -1;
+  }
+  userNameStr = userName;
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -235,6 +283,32 @@ Int16 ComUser::getUserIDFromUserName(const char *userName, Int32 &userID)
 
 
 // ----------------------------------------------------------------------------
+// method: getAuthIDFromAuthName
+//
+// Reads the AUTHS table to get the authID associated with the passed
+// in authorization name
+//
+//  Returns:  FEOK -- found
+//            FENOTFOUND -- auth name not defined
+//            other -- unexpected error
+// ----------------------------------------------------------------------------
+Int16 ComUser::getAuthIDFromAuthName(const char *authName, Int32 &authID)
+{
+  Int16 result = FEOK;
+
+  Int16 retcode = SQL_EXEC_GetAuthID(authName,authID);
+
+  if (retcode < 0)
+    result = FENOTFOUND;
+
+  if (retcode != 0)
+    SQL_EXEC_ClearDiagnostics(NULL);
+
+  return result;
+}
+
+
+// ----------------------------------------------------------------------------
 //  method:      getAuthNameFromAuthID
 //
 //  Maps an integer authentication ID to a name.  If the number cannot be
@@ -345,14 +419,14 @@ bool ComUserVerifyObj::isAuthorized(ComUser::VerifyAction act,
   const NAString schName = getObjName().getSchemaNamePartAsAnsiString(true);
   const NAString objName = getObjName().getObjectNamePartAsAnsiString(true);
 
-  if (CmpSeabaseDDL::isSeabaseMD(catName, schName, objName))
-    return trustedCaller ? true : false;
-
   // For now, just return true
   return true;
 #if 0
+  if (CmpSeabaseDDL::isSeabaseMD(catName, schName, objName))
+    return trustedCaller ? true : false;
+
   // Get the owner of the object
-  Int32 objOwner = getEffectiveUser(act);
+  Int32 objOwnerID = getEffectiveUser(act);
 
   // For create operations, the object does not exist so there is no owner
   // otherwise, get the owner from the OBJECTS table
@@ -366,7 +440,7 @@ bool ComUserVerifyObj::isAuthorized(ComUser::VerifyAction act,
                                             catName.data(),
                                             schName.data(),
                                             objName.data(),
-                                            &objOwner);
+                                            &objOwnerID);
 
     // -1 is returned if object owner could not be extracted, 0 otherwise
     if (retcode < 0)
@@ -374,7 +448,7 @@ bool ComUserVerifyObj::isAuthorized(ComUser::VerifyAction act,
   }
 
   // If user owns object via the object, schema, or other; return true
-  if (userOwnsObject(act, objOwner))
+  if (userOwnsObject(act, objOwnerID))
     return true;
 
   // If user has been granted the privilege, return true
@@ -389,16 +463,16 @@ bool ComUserVerifyObj::isAuthorized(ComUser::VerifyAction act,
 // they own the schema, or they own the system (DB__ROOT).
 //
 // input:  VerifyAction  - describes what operation the user desires
-//         objOwner - specifies the object owner ID
+//         objOwnerID - specifies the object owner ID
 // ----------------------------------------------------------------------------
 bool ComUserVerifyObj::userOwnsObject(VerifyAction act,
-                                      Int32 objOwner)
+                                      Int32 objOwnerID)
 {
   if (getSessionUser() == SUPER_USER )
     return true;
   if (getSessionUser() == getSchemaOwner())
     return true;
-  if (objOwner == getSessionUser())
+  if (objOwnerID == getSessionUser())
       return true;
   return false;
 }

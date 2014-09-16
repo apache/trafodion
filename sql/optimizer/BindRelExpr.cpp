@@ -93,6 +93,9 @@
 #include "NAExecTrans.h"
 #include "HDFSHook.h"
 #include "CmpSeabaseDDL.h"
+#include "ComUser.h"
+#include "PrivMgrCommands.h"
+#include "PrivMgrDefs.h"
 
   #define SLASH_C '/'
 
@@ -5815,6 +5818,12 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     // populate the list of all the UDF information of this query
     udfList_.insert(bindWA->getUDFList());
 
+    // check privileges
+    if (!checkPrivileges(bindWA))
+    {
+      bindWA->setErrStatus();
+      return NULL;
+    }
 
     // store the trigger's list in the root
     if (bindWA->getTriggersList())
@@ -5972,6 +5981,420 @@ NABoolean RelRoot::checkFirstNRowsNotAllowed(BindWA *bindWA)
    return FALSE;
 }
 
+NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
+{
+  // If internal callers, allow operation - is this needed?
+  if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+    {
+      return TRUE;
+    }
+
+  // for now, return if root user.  There is a chicken and egg problem
+  // when check privileges is called during startup
+  // TDB - add something in context to know when we have set the current
+  // user ID in the globals.
+  Int32 thisUserID = ComUser::getCurrentUser();
+  NAString qiPath = "";
+  CmpCommon::getDefault(QI_PATH, qiPath, FALSE);
+  if ( qiPath.length() == 0 ) // If debugging or regression testing Query Invalidation, skip root check
+  {
+    if (ComUser::isRootUserID(thisUserID))
+      return TRUE;
+  }
+
+  // See if there is anything to check
+  if (bindWA->getStoiList().entries() == 0 &&
+      bindWA->getUdrStoiList().entries() == 0 &&
+      bindWA->getCoProcAggrList().entries() == 0)
+    return TRUE;
+
+  // If authorization is not enabled, then return TRUE
+  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+  privMDLoc += std::string(".\"") +
+               std::string(SEABASE_PRIVMGR_SCHEMA) +
+               std::string("\"");
+  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+  if (!privInterface.isAuthorizationEnabled())
+    return TRUE;
+
+  ComBoolean QI_enabled = (CmpCommon::getDefault(CAT_ENABLE_QUERY_INVALIDATION) == DF_ON);
+
+  SqlTableOpenInfo * stoi = NULL ;
+  OptSqlTableOpenInfo * optStoi = NULL;
+  NABoolean privCheckSuccess = TRUE;
+
+ //
+  // Have the ComSecurityKey constructor compute the hash value for the the User's ID.
+  // Note: The following code doesn't care about the object's hash value or the resulting 
+  // ComSecurityKey's ActionType....we just need the hash value for the User's ID.
+  int64_t objectUID = 12345;
+  ComSecurityKey userKey( thisUserID , objectUID
+                         , SELECT_PRIV
+                         , ComSecurityKey::OBJECT_IS_OBJECT
+                        );
+  uint32_t userHashValue = userKey.getSubjectHashValue();
+
+  NABoolean RemoveNATableEntryFromCache = FALSE ;
+  NABoolean thisPrivCheckSuccess = TRUE;
+
+  for(Int32 i=0; i<(Int32)bindWA->getStoiList().entries(); i++)
+  {
+    RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
+    thisPrivCheckSuccess = TRUE;           // Initialize each time through loop
+    optStoi = (bindWA->getStoiList())[i];
+    stoi = optStoi->getStoi();
+    NATable* tab = optStoi->getTable();
+    if (tab->isSeabaseMDTable())
+      continue;
+
+    // Privilege info for the user/table combination is stored in the NATable
+    // object.
+    PrivStatus retcode = STATUS_GOOD;
+    PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
+    if (!privInfo)
+      {
+        // If tab->getHeap() is used, the priv error is added to diags area
+        // correctly, but does not appear in output; also, subsequent
+        // queries will not even get to checkPrivilege -- they display
+        // results even if priv is not held.
+        privInfo = new(CmpCommon::contextHeap()) PrivMgrUserPrivs;
+        std::vector <ComSecurityKey *> secKeyVec;
+        retcode = privInterface.getPrivileges(tab->objectUid().get_value(),
+                                              thisUserID, *privInfo, &secKeyVec);
+        if (retcode != STATUS_GOOD)
+          return FALSE;
+        tab->setPrivInfo(privInfo);
+        //tab->setSecKeySet(secKeyVec); -- causes weird problems; under investigation
+      }
+
+   // if this is an explain query, validate that user has SELECT priv.
+   // If they do, access is allowed.
+   const NAString * val =
+     ActiveControlDB()->getControlSessionValue("EXPLAIN");
+   if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+       ((val) && (*val == "ON")) &&
+       (privInfo->hasSelectPriv()))
+     continue;
+
+   NABoolean ErrorPutInDiags = FALSE ;
+
+    Int32 numSecKeys = tab->getSecKeySet().entries();
+
+    if (stoi->getInsertAccess())
+    {
+      // See if we have the priv
+      if ( privInfo->hasInsertPriv() )
+      {
+        if ( QI_enabled && numSecKeys > 0 &&
+             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
+                                 userHashValue, INSERT_PRIV ) )
+        {
+           thisPrivCheckSuccess = FALSE;
+           RemoveNATableEntryFromCache = TRUE;
+        }
+      }
+      else
+      {
+         thisPrivCheckSuccess        = FALSE;
+         RemoveNATableEntryFromCache = TRUE;
+         ErrorPutInDiags             = FALSE;
+      }
+      if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
+      {
+         *CmpCommon::diags() << DgSqlCode( -4481 )
+                             << DgString0( "INSERT" )
+                             << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+      }
+    }
+
+    thisPrivCheckSuccess = TRUE; // Ensure previous priv check doesn't affect next check
+    if (stoi->getUpdateAccess())
+    {
+      if ( privInfo->hasUpdatePriv() )
+      {
+        if ( QI_enabled && numSecKeys > 0 &&
+             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
+                                 userHashValue, UPDATE_PRIV ) )
+        {
+           thisPrivCheckSuccess = FALSE;
+           RemoveNATableEntryFromCache = TRUE;
+        }
+      }
+      else
+      {
+         thisPrivCheckSuccess        = FALSE;
+         RemoveNATableEntryFromCache = TRUE;
+         ErrorPutInDiags             = FALSE;
+      }
+      if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
+      {
+         *CmpCommon::diags() << DgSqlCode( -4481 )
+                             << DgString0( "UPDATE" )
+                             << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+      }
+    }
+
+    thisPrivCheckSuccess = TRUE; // Ensure previous priv check doesn't affect next check
+    if (stoi->getDeleteAccess())
+    {
+      if ( privInfo->hasDeletePriv() )
+      {
+        if ( QI_enabled && numSecKeys > 0 &&
+             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
+                                 userHashValue, DELETE_PRIV ) )
+        {
+           thisPrivCheckSuccess = FALSE;
+           RemoveNATableEntryFromCache = TRUE;
+        }
+      }
+      else
+      {
+        thisPrivCheckSuccess = FALSE;
+        RemoveNATableEntryFromCache = TRUE;
+        NATable* table = optStoi->getTable();
+        *CmpCommon::diags() << DgSqlCode(-4481)
+                            << DgString0("DELETE")
+                            << DgString1(table->getTableName().getQualifiedNameAsAnsiString());
+
+      }
+    }
+
+    thisPrivCheckSuccess = TRUE; // Ensure previous priv check doesn't affect next check
+    if (stoi->getSelectAccess())
+    {
+      if ( privInfo->hasSelectPriv() )
+      {
+        if ( QI_enabled && numSecKeys > 0 &&
+             ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
+                                 userHashValue, SELECT_PRIV ) )
+        {
+           thisPrivCheckSuccess = FALSE;
+           RemoveNATableEntryFromCache = TRUE;
+        }
+      }
+      else
+      {
+         thisPrivCheckSuccess        = FALSE;
+         RemoveNATableEntryFromCache = TRUE;
+         ErrorPutInDiags             = FALSE;
+      }
+      if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
+      {
+         *CmpCommon::diags() << DgSqlCode( -4481 )
+                             << DgString0( "SELECT" )
+                             << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+      }
+    }
+
+    if ( RemoveNATableEntryFromCache )
+    {
+       tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
+       privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
+    }
+  }
+
+  // We currently do NOT cache the NARoutine objects for SPJs.
+  // We currently do NOT support UDFs which are the other users of NARoutine objects.
+  // Until one of these statements changes, we do NOT need to remove
+  // NARoutine objects from cache.  Hence the following line and all lines
+  // dealing with RemoveNARoutineEntryFromCache are commented out!
+
+  // NABoolean RemoveNARoutineEntryFromCache = FALSE ;
+  OptUdrOpenInfo * udrStoi = NULL;
+
+  for(Int32 i=0; i<(Int32)bindWA->getUdrStoiList().entries(); i++)
+  {
+    thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
+    // RemoveNARoutineEntryFromCache = FALSE ; // Initialize each time through loop
+
+    udrStoi = (bindWA->getUdrStoiList())[i];
+    if (udrStoi->getUdrStoi()->checkSecurity() == FALSE)
+      continue;
+
+   NARoutine* rtn = udrStoi->getNARoutine();
+   PrivMgrUserPrivs privInfo;
+   PrivStatus retcode = privInterface.getPrivileges(rtn->getRoutineID(), thisUserID, privInfo);
+
+    // If we have object EXECUTE priv
+    if ( privInfo.hasExecutePriv() )
+    {
+      if ( QI_enabled && ! findKeyAndInsertInOutputList(
+                                         udrStoi->getNARoutine()->getSecKeySet(),
+                                         userHashValue,
+                                         EXECUTE_PRIV ) )
+      {
+        thisPrivCheckSuccess = FALSE;
+        // RemoveNARoutineEntryFromCache = TRUE;
+      }
+    }
+    else
+    {
+      thisPrivCheckSuccess = FALSE;
+      // RemoveNARoutineEntryFromCache = TRUE;
+    }
+
+    if ( thisPrivCheckSuccess == FALSE )
+    {
+      *CmpCommon::diags() << DgSqlCode(-4482)
+                          << DgString0("EXECUTE")
+                          << DgString1(udrStoi->getUdrName());
+    }
+
+    // if ( RemoveNARoutineEntryFromCache )
+    //{
+       // Mark as to be removed by CmpMain before Compilation retry
+       // udrStoi->getNARoutine()->setRemoveFromCacheBNC(TRUE); 
+    //}
+
+    if ( ! thisPrivCheckSuccess )        // Accumulate overall failure (if any)
+         privCheckSuccess = FALSE ;
+  }
+
+  // Check privs on any CoprocAggrs used in the query.
+  ExeUtilHbaseCoProcAggr* coProcAggr = NULL;
+  for (Int32 i=0; i<(Int32)bindWA->getCoProcAggrList().entries(); i++)
+  {
+    thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
+    coProcAggr = (bindWA->getCoProcAggrList())[i];
+    NATable* tab = bindWA->getSchemaDB()->getNATableDB()->
+                                   get(coProcAggr->getCorrName(), bindWA, NULL);
+    if (tab->isSeabaseMDTable())
+      continue;
+    PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
+    PrivStatus retcode = STATUS_GOOD;
+    if (!privInfo)
+      {
+        privInfo = new(CmpCommon::contextHeap()) PrivMgrUserPrivs;
+        retcode = privInterface.getPrivileges(tab->objectUid().get_value(),
+                                              thisUserID, *privInfo);
+        if (retcode != STATUS_GOOD)
+         return false;
+        tab->setPrivInfo(privInfo);
+      }
+
+   const NAString * val = ActiveControlDB()->getControlSessionValue("EXPLAIN");
+   if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+       ((val) && (*val == "ON")) &&
+       (privInfo->hasSelectPriv()))
+     continue;
+
+   NABoolean ErrorPutInDiags = FALSE ;
+   Int32 numSecKeys = 0;
+
+   if ( privInfo->hasSelectPriv() )
+   {
+     if ( QI_enabled && numSecKeys > 0 &&
+          ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
+                              userHashValue, SELECT_PRIV ) )
+     {
+        thisPrivCheckSuccess = FALSE;
+        RemoveNATableEntryFromCache = TRUE;
+     }
+   }
+   else
+   {
+      thisPrivCheckSuccess        = FALSE;
+      RemoveNATableEntryFromCache = TRUE;
+      ErrorPutInDiags             = FALSE;
+   }
+   if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
+   {
+      *CmpCommon::diags() << DgSqlCode( -4481 )
+       << DgString0( "SELECT" )
+       << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+   }
+
+   if ( RemoveNATableEntryFromCache )
+   {
+      tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
+      privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
+   }
+  }
+
+  bindWA->setFailedForPrivileges( ! privCheckSuccess );
+
+  return privCheckSuccess ;
+}
+
+NABoolean RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
+                                               , const uint32_t userHashValue
+                                               , const PrivType which
+                                               )
+{
+   ComSecurityKey  dummyKey;
+
+   ComQIActionType objectActionType =
+                   dummyKey.convertBitmapToQIActionType ( which, ComSecurityKey::OBJECT_IS_OBJECT );
+
+   ComSecurityKey * UserSchemaKey = NULL;
+   ComSecurityKey * UserObjectKey = NULL;
+   ComSecurityKey * RoleSchemaKey = NULL;
+   ComSecurityKey * RoleObjectKey = NULL;
+   ComSecurityKey * BestKey = NULL;
+
+   ComSecurityKey * thisKey = &(KeysForTab[0]);
+
+   uint32_t hashValueOfPublic = 0;
+
+   // NOTE: hashValueOfPublic will be the same for all keys, so we generate it only once.
+   if ( KeysForTab.entries() > 0 )
+      hashValueOfPublic = thisKey->generateHash(PUBLIC_USER);
+
+   // Traverse List looking for ANY appropriate ComSecurityKey 
+   for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
+   {
+      thisKey = &(KeysForTab[ii]);
+      if ( thisKey->getSecurityKeyType() == objectActionType )
+      {
+         if ( thisKey->getSubjectHashValue() == hashValueOfPublic ||
+              thisKey->getSubjectHashValue() == userHashValue )
+         {
+              if ( ! UserObjectKey ) UserObjectKey = thisKey;
+         }
+         else if ( ! RoleObjectKey ) RoleObjectKey = thisKey;
+      }
+      else {;} // Not right action type, just continue traversing.
+   }
+
+   if ( UserObjectKey ) BestKey = UserObjectKey ;
+   else if ( RoleObjectKey ) BestKey = RoleObjectKey ;
+   if ( BestKey == NULL)
+   {
+        //return FALSE;  // We didn't find any ComSecurityKey that granted the privilege
+        return TRUE;  // Sometimes there aren't any security keys...  GMS???
+   }
+   securityKeySet_.insert(*BestKey);
+
+   uint32_t SubjHashValue = BestKey->getSubjectHashValue();
+   hashValueOfPublic = BestKey->generateHash(PUBLIC_USER);
+   // Check whether this privilege was granted to PUBLIC.  If so, nothing more to check.
+   if ( SubjHashValue == hashValueOfPublic )
+      return TRUE;
+   while ( SubjHashValue != userHashValue ) //While we see a ComSecurityKey for a Role
+   {
+      NABoolean found = FALSE;
+      for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
+      {
+         // If this ComSecurityKey is a GRANT type and the grantee (the object)
+         // is the Role specified by SubjHashValue, then break out of inner loop.
+         ComSecurityKey * thisKey = &(KeysForTab[ii]);
+         if ( (   thisKey->getObjectHashValue() == SubjHashValue ) &&
+              (  (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE ) ) )
+         {
+            securityKeySet_.insert(*thisKey); // Insert this GRANT type ComSecurityKey into the Plan
+            found = TRUE;
+            SubjHashValue = thisKey->getSubjectHashValue();
+            break; // We found the user or Role which granted the user the privilege
+         }
+      }
+      if (found == FALSE)
+         // This should never happen.
+         return FALSE; // ... but we want to prevent infinite loops.
+
+      // else continue; We will continue until we find the Role to which the User belongs
+   }
+   return TRUE;
+}
 
 
 // -----------------------------------------------------------------------

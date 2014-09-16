@@ -268,7 +268,10 @@ static Lng32 SQLCLI_Prepare_Setup_Post(
      {
         masterStats->setCompEndTime(compEndTime);
         rootTdb = (stmt ? stmt->getRootTdb() : NULL);
-	  
+        if (rootTdb)
+            stmtStats->getMasterStats()->setSIKeys(
+                 currContext.getCliGlobals(), rootTdb->getSikInfo());
+
         if (rootTdb != NULL && rootTdb->getCollectStatsType() != ComTdb::NO_STATS)
 	{
            masterStats->setCollectStatsType(rootTdb->getCollectStatsType());
@@ -6467,6 +6470,31 @@ Lng32 SQLCLI_GetSessionAttr( /*IN*/ CliGlobals *cliGlobals,
   
   return SUCCESS;
 }
+
+
+Lng32 SQLCLI_GetAuthID(
+   CliGlobals * cliGlobals,
+   const char * authName,
+   Lng32 & authID)
+   
+{
+
+Lng32 retcode = 0;
+
+// create initial context, if first call, and add module, if any.
+   retcode = CliPrologue(cliGlobals, NULL);
+   if (isERROR(retcode))
+      return retcode;
+
+ContextCli &currContext = *(cliGlobals->currContext());
+ComDiagsArea &diags = currContext.diags();
+
+   retcode = currContext.getAuthIDFromName(authName,authID);
+
+   return CliEpilogue(cliGlobals, NULL, retcode);
+
+}
+
 
 Lng32 SQLCLI_GetAuthName (
     /*IN*/            CliGlobals *cliGlobals,

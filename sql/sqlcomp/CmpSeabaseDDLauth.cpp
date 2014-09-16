@@ -34,6 +34,7 @@
 #include "CmpSeabaseDDL.h"
 #include "StmtDDLRegisterUser.h"
 #include "StmtDDLAlterUser.h"
+#include "StmtDDLCreateRole.h"
 #include "ElemDDLGrantee.h"
 #include "CompException.h"
 #include "Context.h"
@@ -42,6 +43,9 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "NAStringDef.h"
 #include "ExpHbaseInterface.h"
+#include "PrivMgrCommands.h"
+#include "PrivMgrRoles.h"
+#include "PrivMgrComponentPrivileges.h"
 
 #ifndef   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
 #define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
@@ -73,8 +77,7 @@ CmpSeabaseDDLauth::CmpSeabaseDDLauth()
   authCreator_(NA_UserIdDefault),
   authCreateTime_(0),
   authRedefTime_(0),
-  authValid_(true),
-  authImmutable_(false)
+  authValid_(true)
 {}
 
 // ----------------------------------------------------------------------------
@@ -117,6 +120,30 @@ bool CmpSeabaseDDLauth::authExists (const NAString &authName, bool isExternal)
                           << DgString0("CmpSeabaseDDLauth::authExists for authName");
     return false;
   }
+}
+
+// ----------------------------------------------------------------------------
+// method:  describe
+//
+// This method is not valid for the base class
+//
+// Input:  none
+//
+// Output:  populates diag area, throws exception.
+// ----------------------------------------------------------------------------
+bool CmpSeabaseDDLauth::describe(const NAString &authName, NAString &authText)
+{
+
+   *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                       << DgInt0(__LINE__)
+                       << DgString0("CmpSeabaseDDLauth::describe");
+                          
+UserException excp(NULL,0);
+
+   throw excp;
+   
+   return 0;
+
 }
 
 // ----------------------------------------------------------------------------
@@ -181,8 +208,9 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
 {
   try
   {
-    NAString whereClause ("where auth_id = ");
-    whereClause += authID;
+    char buf[1000];
+    str_sprintf(buf, "where auth_id = %d ", authID);
+    NAString whereClause (buf);
     return selectExactRow(whereClause);
   }
 
@@ -196,6 +224,30 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
 
     return STATUS_ERROR;
   }
+}
+
+// ----------------------------------------------------------------------------
+// method:  getUniqueID
+//
+// This method is not valid for the base class
+//
+// Input:  none
+//
+// Output:  populates diag area, throws exception.
+// ----------------------------------------------------------------------------
+Int32 CmpSeabaseDDLauth::getUniqueID()
+{
+
+   *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                       << DgInt0(__LINE__)
+                       << DgString0("CmpSeabaseDDLauth::getUniqueID");
+                          
+UserException excp(NULL,0);
+
+   throw excp;
+   
+   return 0;
+    
 }
 
 // ----------------------------------------------------------------------------
@@ -325,7 +377,6 @@ void CmpSeabaseDDLauth::insertRow()
   }
 
   NAString authValid = isAuthValid() ? "Y" : "N";
-  NAString immutable = isAuthImmutable() ? "Y" : "N";
 
   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
   str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, '%s', '%s', '%s', %d, '%s', %Ld, %Ld)",
@@ -448,7 +499,7 @@ CmpSeabaseDDLauth::selectExactRow(const NAString & whereClause)
   if ( type[0] == 'U')
     setAuthType(COM_USER_CLASS);
   else if (type[0] == 'R')
-    setAuthType(COM_USER_CLASS);
+    setAuthType(COM_ROLE_CLASS);
   else
     setAuthType(COM_UNKNOWN_ID_CLASS);
 
@@ -504,9 +555,9 @@ Int64 CmpSeabaseDDLauth::selectCount(const NAString & whereClause)
 }
 
 // selectMaxAuthID - gets the last used auth ID
-// ACH - need to improve the algorithm
 Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
 {
+  bool nullTerminate = true;
   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
   char buf[400];
   str_sprintf(buf, "select max (auth_id) from %s.\"%s\".%s %s" , 
@@ -514,9 +565,26 @@ Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
               whereClause.data());
 
   Lng32 len = 0;
-  Int32 maxValue = 0;
+
+
+// *****************************************************************************
+// *                                                                           *
+// *   CLI/Executor function executeImmediate (actually executeImmediateExec)  *
+// * may overwrite memory following maxValue.  To avoid this problem, the      *
+// * workaround is to surround maxValue with dummy variables to guard the      *
+// * memory.  Dummy variables need to be volatile to avoid elimination         *
+// * during optimization.                                                      *
+// *                                                                           *
+// *   The overwrite only occurs when nullTerminate is true, but if it is      *
+// * false, the maxValue is not set.                                           *
+// *                                                                           *
+// *****************************************************************************
+
+  volatile int dummy1 = -1;
+  UInt32 maxValue = 0;
+  volatile int dummy2 = -1;
   ExeCliInterface cliInterface(STMTHEAP);
-  Lng32 cliRC = cliInterface.executeImmediate(buf, (char *)&maxValue, &len, true);
+  Lng32 cliRC = cliInterface.executeImmediate(buf, (char *)&maxValue, &len, nullTerminate);
   if (cliRC != 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
@@ -614,7 +682,7 @@ Int32 CmpSeabaseDDLuser::getUniqueID()
   newUserID = selectMaxAuthID(whereClause);
   newUserID++;
   return newUserID;
-}  
+}
 
 // ----------------------------------------------------------------------------
 // Public method: registerUser
@@ -659,7 +727,6 @@ void CmpSeabaseDDLuser::registerUser(StmtDDLRegisterUser * pNode)
     }
 
     // set up class members from parse node
-    setAuthImmutable(pNode->isImmutable());
     setAuthType(COM_USER_CLASS);  // we are a user
     setAuthValid(true); // assume a valid user
 
@@ -742,7 +809,10 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
 // Input:  parse tree containing a definition of the user
 // Output: the global diags area is set up with the result
 // ----------------------------------------------------------------------------
-void CmpSeabaseDDLuser::unregisterUser (StmtDDLRegisterUser * pNode)
+void CmpSeabaseDDLuser::unregisterUser(
+   const std::string & systemCatalog,
+   StmtDDLRegisterUser * pNode)
+
 {
   try
   {
@@ -775,9 +845,73 @@ void CmpSeabaseDDLuser::unregisterUser (StmtDDLRegisterUser * pNode)
       return;
     }
 
+    NAString whereClause(" WHERE AUTH_TYPE = 'R' AND AUTH_CREATOR = ");
+    
+    char authIDString[20];
+    
+    sprintf(authIDString,"%d",getAuthID());
+    whereClause += authIDString;
+    
+    if (selectCount(whereClause) > 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_OWNS_ROLES);
+      return;
+    }
+    
+    // User does not own any roles, but may have been granted roles.
+    
+    std::string privMDLoc(systemCatalog);
 
-    // TODO, check to see if the user owns anything before removing
-
+    privMDLoc += ".\"";
+    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+    privMDLoc += "\"";
+   
+    PrivMgrRoles role(privMDLoc,CmpCommon::diags());
+    
+    if (role.isAuthorizationEnabled() &&
+        role.isUserGrantedAnyRole(getAuthID()))
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_GRANTED_ROLES);
+       return;
+    }
+    
+    // Does user own any objects?
+    NAString whereClause2(" WHERE OBJECT_OWNER = ");
+      
+    NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
+    char buf[1000];
+    str_sprintf(buf, "SELECT COUNT(*) FROM %s.\"%s\".%s %s %d",
+                sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS, 
+                whereClause2.data(),getAuthID());
+      
+    Int32 len = 0;
+    Int64 rowCount = 0;
+    ExeCliInterface cliInterface(STMTHEAP);
+    Lng32 cliRC = cliInterface.executeImmediate(buf, (char*)&rowCount, &len, NULL);
+    if (cliRC != 0)
+    {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      UserException excp (NULL, 0);
+      throw excp;
+    }
+    
+    if (rowCount > 0)
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_OWNS_OBJECT);
+       return;
+    }
+                
+    PrivMgr privMgr(privMDLoc,CmpCommon::diags());
+    std::vector<PrivClass> privClasses;
+    
+    privClasses.push_back(PrivClass::ALL);
+    
+    if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses))
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_HAS_PRIVS);
+       return;
+    }
+    
     // delete the row
     deleteRow(getAuthDbName());
   }
@@ -1027,5 +1161,600 @@ bool CmpSeabaseDDLuser::describe (const NAString &authName, NAString &authText)
 }
 //------------------------------ End of describe -------------------------------
 
+// ----------------------------------------------------------------------------
+// method: verifyAuthority
+//
+// makes sure user has privilege to perform user operation
+//
+// Input: none
+//
+// Output:  an exception is generated if user does not have authority
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLuser::verifyAuthority()
 
+{
+
+int32_t currentUser = ComUser::getCurrentUser();
+
+// Root user has authority to manage users.
+   if (currentUser == ComUser::getRootUserID())
+      return;
+      
+// Verify authorization is enabled.  If not, no restrictions.
+NAString systemCatalog = CmpSeabaseDDL::getSystemCatalogStatic();
+std::string privMDLoc(systemCatalog.data());
+  
+   privMDLoc += std::string(".\"") +
+                std::string(SEABASE_PRIVMGR_SCHEMA) +
+                std::string("\"");
+                
+PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+
+    if (!componentPrivileges.isAuthorizationEnabled())
+       return;
+
+// Authorization enabled.  See if non-root user has authority to manage users.       
+   if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_USERS,true))
+      return;   
+       
+// No authority.  We're outta here.
+   *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+   UserException excp (NULL, 0);
+   throw excp;
+
+}
+
+// ****************************************************************************
+// Class CmpSeabaseDDLrole methods
+// ****************************************************************************
+
+// ----------------------------------------------------------------------------
+// Default constructor
+// ----------------------------------------------------------------------------
+CmpSeabaseDDLrole::CmpSeabaseDDLrole()
+: CmpSeabaseDDLauth()
+{}
+
+
+// ----------------------------------------------------------------------------
+// Public method: createRole
+//
+// Creates a role in the Trafodion metadata
+//
+// Input:  parse tree containing a definition of the role
+// Output: the global diags area is set up with the result
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLrole::createRole(
+   const std::string & systemCatalog,
+   StmtDDLCreateRole * pNode)
+   
+{
+
+// Set up a global try/catch loop to catch unexpected errors
+   try
+   {
+      // Verify user is authorized to perform CREATE ROLE requests
+      verifyAuthority();
+
+      // Verify that the specified role name is not reserved
+      setAuthDbName(pNode->getRoleName());
+      if (isAuthNameReserved(getAuthDbName()))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_AUTH_NAME_RESERVED)
+                             << DgString0(getAuthDbName().data());
+         return;
+      }
+
+      // Verify that the name does not include unsupported special characters
+      if (!isAuthNameValid(getAuthDbName()))
+      {
+         *CmpCommon::diags() << DgSqlCode (-CAT_INVALID_CHARS_IN_AUTH_NAME)
+                             << DgString0(getAuthDbName().data());
+         return;
+      }
+
+      // set up class members from parse node
+      setAuthType(COM_ROLE_CLASS);  // we are a role
+      setAuthValid(true); // assume a valid role
+
+      Int64 createTime = NA_JulianTimestamp();
+      setAuthCreateTime(createTime);
+      setAuthRedefTime(createTime);  // make redef time the same as create time
+
+      // Make sure role has not already been registered
+      if (authExists(getAuthDbName(),false))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_ALREADY_EXISTS)
+                             << DgString0(getAuthDbName().data());
+         return;
+      }
+      
+      // unexpected error occurred - ?
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0)
+         return;
+
+      // Get a unique role ID number
+      Int32 roleID = getUniqueID(); //TODO: add role support
+      setAuthID(roleID);
+      
+      std::string creatorUsername;
+
+      // If the WITH ADMIN clause was specified, then create the role on behalf of the
+      // authorization ID specified in this clause.
+      // Need to translate the creator name to its authID
+      if (pNode->getOwner() == NULL)
+      {
+         // get effective user from the Context
+         Int32 *pUserID = GetCliGlobals()->currContext()->getDatabaseUserID();
+         setAuthCreator(*pUserID);
+         char creatorName[257];
+         int32_t length;
+         ComUser::getAuthNameFromAuthID(*pUserID,creatorName,sizeof(creatorName),length);
+         creatorUsername = creatorName;
+      }
+      else
+      {
+         const NAString creatorName =
+                pNode->getOwner()->getAuthorizationIdentifier();
+         Int32 authID = NA_UserIdDefault;
+         Int32 result = ComUser::getUserIDFromUserName(creatorName.data(),authID);
+         if (result != 0)
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
+                                << DgString0(creatorName.data());
+            return;
+         }
+         
+         // TODO: verify creator can create roles
+         setAuthCreator(authID);
+         creatorUsername = creatorName.data();
+      }
+      // For roles, external and database names are the same.
+      setAuthExtName(getAuthDbName());
+      // Add the role to AUTHS table
+      insertRow();
+      
+      // Grant this role to the creator of the role if authorization is enabled.
+      std::string privMDLoc(systemCatalog);
+
+      privMDLoc += ".\"";
+      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+      privMDLoc += "\"";
+      
+      PrivMgrRoles roles(privMDLoc,CmpCommon::diags());
+      
+      if (roles.isAuthorizationEnabled())
+      { 
+         PrivStatus privStatus = roles.grantRoleToCreator(roleID,
+                                                          getAuthDbName().data(),
+                                                          getAuthCreator(),
+                                                          creatorUsername);
+      }      
+   }
+   catch (...)
+   {
+     // At this time, an error should be in the diags area.
+     // If there is no error, set up an internal error
+     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+       *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                           << DgInt0(__LINE__)
+                           << DgString0("CmpSeabaseDDLuser::create role");
+   }
+}
+
+
+// ----------------------------------------------------------------------------
+// Public method: createStandardRole
+//
+// Creates a standard role (ie. DB__nameROLE) in the Trafodion metadata
+//
+// Input:  
+//    role name
+//    role ID
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLrole::createStandardRole(
+   const std::string roleName,
+   const int32_t roleID)
+
+{
+
+// Verify name is a standard name
+
+size_t prefixLength = strlen(RESERVED_AUTH_NAME_PREFIX);
+
+   if (roleName.size() <= prefixLength ||
+       roleName.compare(0,prefixLength,RESERVED_AUTH_NAME_PREFIX) != 0)
+   {
+       *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_NOT_EXIST)
+                           << DgString0(roleName.data());
+       return;
+   }
+
+   setAuthDbName(roleName.c_str());
+   setAuthExtName(roleName.c_str());
+   setAuthType(COM_ROLE_CLASS);  // we are a role
+   setAuthValid(true); // assume a valid role
+
+   Int64 createTime = NA_JulianTimestamp();
+   setAuthCreateTime(createTime);
+   setAuthRedefTime(createTime);  // make redef time the same as create time
+
+   // Make sure role has not already been registered
+   if (authExists(getAuthDbName(),false))
+      return;
+   
+   setAuthID(roleID);
+   setAuthCreator(ComUser::getRootUserID());
+
+// Add the role to AUTHS table
+   insertRow();
+
+}
+
+
+
+// -----------------------------------------------------------------------------
+// public method:  describe
+//
+// This method returns the showddl text for the requested role in string format
+//
+// Input:
+//   roleName - name of role to describe
+//   systemCatalog - the location of the system catalog
+//
+// Input/Output:  
+//   roleText - the CREATE ROLE (and GRANT ROLE) text
+//
+// returns result:
+//    true -  successful
+//    false - failed (ComDiags area will be set up with appropriate error)
+//-----------------------------------------------------------------------------
+bool CmpSeabaseDDLrole::describe(
+   const NAString & roleName, 
+   const char * systemCatalog,
+   NAString &roleText)
+{
+  try
+  {
+    CmpSeabaseDDLauth::AuthStatus retcode = getRoleDetails(roleName.data());
+    
+    // If the role was not found, set up an error
+    if (retcode == STATUS_NOTFOUND)
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_NOT_EXIST)
+                          << DgString0(roleName.data());
+      return false;
+    }
+
+    // If an error was detected, throw an exception so the catch handler will 
+    // put a value in ComDiags area in case no message exists
+    if (retcode == STATUS_ERROR)
+    {
+      UserException excp (NULL, 0);
+      throw excp;
+    }
+  
+    // Generate output text
+    roleText = "CREATE ROLE \"";
+    roleText += getAuthDbName();
+    roleText += "\"";
+    
+    if (getAuthCreator() != ComUser::getRootUserID())
+    {
+       roleText += " WITH ADMIN \"";
+       
+       char creatorName[129];
+       int32_t length = 0;
+       
+       Int16 retCode = ComUser::getAuthNameFromAuthID(getAuthCreator(),creatorName,
+                                                      sizeof(creatorName),length);
+       roleText += creatorName; 
+       roleText += "\"";
+    }
+    
+    roleText += ";\n";
+    std::string privMDLoc(systemCatalog);
+    
+    privMDLoc += ".\"";
+    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+    privMDLoc += "\"";
+    
+    PrivMgrRoles roles(privMDLoc,CmpCommon::diags());
+    
+    if (roles.isAuthorizationEnabled())
+    {
+       std::vector<std::string> granteeNames;
+       std::vector<int32_t> grantDepths;
+       std::vector<int32_t> grantorIDs;
+       
+       PrivStatus privStatus = PrivStatus::STATUS_GOOD;
+       
+       privStatus = roles.fetchUsersForRole(getAuthID(),granteeNames,
+                                            grantorIDs,grantDepths);
+                                          
+       if (privStatus == PrivStatus::STATUS_GOOD)
+       {
+          for (size_t r = 0; r < granteeNames.size(); r++)
+          {
+             if (grantorIDs[r] == ComUser::getSystemUserID())
+                roleText += "-- ";
+             roleText += "GRANT ROLE \"";
+             roleText += getAuthDbName();
+             roleText += "\" TO \"";
+             roleText += granteeNames[r].c_str();
+             roleText += "\"";
+             if (grantDepths[r] != 0)
+                roleText += " WITH ADMIN OPTION";
+             roleText += ";\n";
+          }
+       }
+    }
+  }
+
+  catch (...)
+  {
+   // At this time, an error should be in the diags area.
+   // If there is no error, set up an internal error
+   if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
+                        << DgInt0(__LINE__)
+                        << DgString0("CmpSeabaseDDLrole::describe");
+    return false;
+  }
+
+  return true;
+}
+//------------------------------ End of describe -------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// Public method: dropRole
+//
+// Drops a role from the Trafodion metadata
+//
+// Input:  parse tree containing a definition of the role
+// Output: the global diags area is set up with the result
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLrole::dropRole(
+   const std::string & systemCatalog,
+   StmtDDLCreateRole * pNode)
+        
+{
+
+// Set up a global try/catch loop to catch unexpected errors
+   try
+   {
+      const NAString roleName(pNode->getRoleName());
+      // Verify that the specified user name is not reserved
+      setAuthDbName(roleName);
+      if (isAuthNameReserved(getAuthDbName()))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_AUTH_NAME_RESERVED)
+                             << DgString0(roleName.data());
+         return;
+      }
+      
+      // read role details from the AUTHS table
+      CmpSeabaseDDLauth::AuthStatus retcode = getRoleDetails(roleName);
+      if (retcode == STATUS_ERROR)
+         return;
+        
+      if (retcode == STATUS_NOTFOUND)
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_NOT_EXIST)
+                             << DgString0(roleName.data());
+         return;
+      }
+      
+      // Verify user is authorized to perform DROP ROLE requests
+      if (ComUser::getCurrentUser() != getAuthCreator())
+         verifyAuthority();
+      
+      std::string privMDLoc(systemCatalog);
+
+      privMDLoc += ".\"";
+      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+      privMDLoc += "\"";
+   
+      PrivMgrRoles role(privMDLoc,CmpCommon::diags());
+      
+      if (role.isAuthorizationEnabled())
+      {
+         
+         bool roleIsGranted = role.isGranted(getAuthID(),true); 
+         //TODO: Could support a CASCADE option
+         if (roleIsGranted)
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_IS_GRANTED_NO_DROP);
+            return;
+         }
+         
+         PrivStatus privStatus = role.revokeRoleFromCreator(getAuthID(),
+                                                            getAuthCreator());
+
+         if (privStatus != PrivStatus::STATUS_GOOD)
+            return;
+            
+         PrivMgr privMgr(privMDLoc,CmpCommon::diags());
+         std::vector<PrivClass> privClasses;
+         
+         privClasses.push_back(PrivClass::ALL);
+         
+         if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_HAS_PRIVS_NO_DROP);
+            return;
+         }
+      }
+      
+      // delete the row
+      deleteRow(roleName);
+   }
+   catch (...)
+   {
+      // At this time, an error should be in the diags area.
+      // If there is no error, set up an internal error
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
+                             << DgInt0(__LINE__)
+                             << DgString0("CmpSeabaseDDLuser::drop role");
+   }
+}
+
+
+// ----------------------------------------------------------------------------
+// Public method: dropStandardRole
+//
+// Drops a standard role (ie. DB__nameROLE) from the Trafodion metadata
+//
+// Input:  role name
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLrole::dropStandardRole(const std::string roleName)
+
+{
+
+// Verify name is a standard name
+
+size_t prefixLength = strlen(RESERVED_AUTH_NAME_PREFIX);
+
+   if (roleName.size() <= prefixLength ||
+       roleName.compare(0,prefixLength,RESERVED_AUTH_NAME_PREFIX) != 0)
+   {
+       *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_NOT_EXIST)
+                           << DgString0(roleName.c_str());
+       return;
+   }
+   // delete the row
+   deleteRow(roleName.c_str());
+
+}
+
+
+// ----------------------------------------------------------------------------
+// public method: getRoleDetails
+//
+// Create the CmpSeabaseDDLuser class containing user details for the
+// requested username
+//
+// Input:
+//    userName - the database username to retrieve details for
+//    isExternal -
+//       true - the username is the external name (auth_ext_name)
+//       false - the username is the database name (auth_db_name)
+//
+//  Output:
+//    Returned parameter:
+//       STATUS_GOOD: authorization details are populated:
+//       STATUS_NOTFOUND: authorization details were not found
+//       STATUS_WARNING: (not 100) warning was returned, diags area populated
+//       STATUS_ERROR: error was returned, diags area populated
+// ----------------------------------------------------------------------------
+CmpSeabaseDDLauth::AuthStatus 
+CmpSeabaseDDLrole::getRoleDetails(const char *pRoleName)
+{
+  CmpSeabaseDDLauth::AuthStatus retcode = getAuthDetails(pRoleName,false);
+  if (retcode == STATUS_GOOD && !isRole())
+  {
+    *CmpCommon::diags() << DgSqlCode (-CAT_IS_NOT_A_ROLE)
+                        << DgString0(getAuthDbName().data());
+     retcode = STATUS_ERROR;
+  }
+  return retcode;
+}
+
+
+// ----------------------------------------------------------------------------
+// Public method: getRoleIDFromRoleName
+//
+// Lookup a role name in the Trafodion metadata
+//
+// Input:  Role name to lookup
+// Output: Role ID if role was found
+//    true returned if role found
+//   false returned if role not found
+// ----------------------------------------------------------------------------
+bool CmpSeabaseDDLrole::getRoleIDFromRoleName(
+   const char * roleName,
+   Int32 & roleID) 
+   
+{
+
+CmpSeabaseDDLauth::AuthStatus authStatus = getAuthDetails(roleName,false);
+
+    if (authStatus != STATUS_GOOD && authStatus != STATUS_WARNING)
+       return false;
+       
+    if (getAuthType() != COM_ROLE_CLASS)
+       return false;
+      
+    roleID = getAuthID();
+    return true;
+    
+}
+
+
+// ----------------------------------------------------------------------------
+// method:  getUniqueID
+//
+// This method returns a unique role ID
+//
+// Input:  none
+//
+// Output:  returns a unique role ID
+// ----------------------------------------------------------------------------
+Int32 CmpSeabaseDDLrole::getUniqueID()
+{
+  Int32 newRoleID = 0;
+  NAString whereClause ("where auth_id > 1000000");
+  newRoleID = selectMaxAuthID(whereClause);
+  if (newRoleID == 0)
+     newRoleID = 1000001;
+  else
+     newRoleID++;
+  return newRoleID;
+}
+
+// ----------------------------------------------------------------------------
+// method: verifyAuthority
+//
+// makes sure user has privilege to perform role operation
+//
+// Input: none
+//
+// Output:  an exception is generated if user does not have authority
+// ----------------------------------------------------------------------------
+void CmpSeabaseDDLrole::verifyAuthority()
+
+{
+
+int32_t currentUser = ComUser::getCurrentUser();
+
+// Root user has authority to manage roles.
+   if (currentUser == ComUser::getRootUserID())
+      return;
+      
+// Verify authorization is enabled.  If not, no restrictions.
+NAString systemCatalog = CmpSeabaseDDL::getSystemCatalogStatic();
+std::string privMDLoc(systemCatalog.data());
+  
+   privMDLoc += std::string(".\"") +
+                std::string(SEABASE_PRIVMGR_SCHEMA) +
+                std::string("\"");
+                
+PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+
+    if (!componentPrivileges.isAuthorizationEnabled())
+       return;
+
+// Authorization enabled.  See if non-root user has authority to manage roles.       
+   if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_ROLES,true))
+      return;   
+       
+// No authority.  We're outta here.
+   *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+   UserException excp (NULL, 0);
+   throw excp;
+
+}
 

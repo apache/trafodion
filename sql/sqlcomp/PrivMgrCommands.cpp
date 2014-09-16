@@ -1,0 +1,1032 @@
+//*****************************************************************************
+// @@@ START COPYRIGHT @@@
+//
+// (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+// @@@ END COPYRIGHT @@@
+//*****************************************************************************
+  
+// ==========================================================================
+// Contains non inline methods in the following classes
+//   PrivMgrCommands
+// ==========================================================================
+
+#include "PrivMgrCommands.h"
+#include "PrivMgrMD.h"
+#include "DgBaseType.h"
+
+#include "PrivMgrPrivileges.h"
+
+#include "PrivMgrComponents.h"
+#include "PrivMgrComponentOperations.h"
+#include "PrivMgrComponentPrivileges.h"
+#include "PrivMgrRoles.h"
+#include "ComSecurityKey.h"
+#include <cstdio>
+
+// -----------------------------------------------------------------------
+// Default Constructor
+// -----------------------------------------------------------------------
+PrivMgrCommands::PrivMgrCommands () 
+{
+};
+
+// -----------------------------------------------------------------------
+// Construct a PrivMgrCommands object for a new component.
+// -----------------------------------------------------------------------
+PrivMgrCommands::PrivMgrCommands ( const std::string &metadataLocation
+                                 , ComDiagsArea *pDiags )
+: PrivMgr(metadataLocation,pDiags)
+{
+};
+
+// -----------------------------------------------------------------------
+// Copy constructor
+// -----------------------------------------------------------------------
+PrivMgrCommands:: PrivMgrCommands ( const PrivMgrCommands &other )
+: PrivMgr(other)
+{
+}
+
+// -----------------------------------------------------------------------
+// Destructor.
+// -----------------------------------------------------------------------
+PrivMgrCommands::~PrivMgrCommands() 
+{
+}
+
+// ----------------------------------------------------------------------------
+// Assignment operator
+// ----------------------------------------------------------------------------
+PrivMgrCommands& PrivMgrCommands::operator=(const PrivMgrCommands& other)
+{
+  //  Check for pathological case of X = X.
+  if ( this == &other )
+    return *this;
+
+  metadataLocation_ = other.metadataLocation_;
+  return *this;
+}
+
+// ----------------------------------------------------------------------------
+// method: authorizationEnabled
+//
+// Return true if authorization has been enabled, false otherwise.
+//
+// ----------------------------------------------------------------------------
+bool PrivMgrCommands::authorizationEnabled()
+{
+  PrivMgrMDAdmin admin(getMetadataLocation());
+  return admin.isAuthorizationEnabled();
+}
+  
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::createComponentOperation                       *
+// *                                                                           *
+// *    Add an operation for a specified component.                            *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentName>                 const std::string &             In       *
+// *    is the component name.                                                 *
+// *                                                                           *
+// *  <operationName>                 const std::string &             In       *
+// *    is the operation name to be added.                                     *
+// *                                                                           *
+// *  <operationCode>                 const std::string &             In       *
+// *    is a 2 character code associated with the operation unique to the      *
+// *    component.                                                             *
+// *                                                                           *
+// *  <isSystemOperation>             bool                            In       *
+// *    is true if the operation is a system operation.                        *
+// *                                                                           *
+// *  <operationDescription>          const std::string &             In       *
+// *    is a descrption of the operation.  May be empty.                       *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Operation added.                                             *
+// *           *: Operation not added. A CLI error is put into the diags area. *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::createComponentOperation(
+   const std::string & componentName,
+   const std::string & operationName,
+   const std::string & operationCode,
+   bool isSystem,
+   const std::string & operationDescription)
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrComponentOperations componentOperations(getMetadataLocation(),
+                                                     pDiags_);
+      
+      privStatus = componentOperations.createOperation(componentName,
+                                                       operationName,
+                                                       operationCode,
+                                                       isSystem,
+                                                       operationDescription);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+   
+}
+//************* End of PrivMgrCommands::createComponentOperation ***************
+
+//-----------------------------------------------------------------------------
+// method: describeComponents
+// returns description of component in the form of REGISTER, CREATE, GRANT statements, 
+// by a specified component name.
+//   
+// Input:
+//     componentName - a unique component name
+//      
+// Output:
+//     outlines -output string lines in array
+// 
+// returns true on success.
+//-----------------------------------------------------------------------------
+bool PrivMgrCommands::describeComponents(
+   const std::string & componentName, 
+   std::vector<std::string> & outlines)
+   
+{
+
+    PrivStatus privStatus = STATUS_GOOD;
+    try
+    {   
+        std::string componentUIDString;
+        int64_t componentUID;
+        //generate register component statement
+        PrivMgrComponents components(getMetadataLocation(), 
+                                     pDiags_); 
+
+        privStatus = components.describeComponents(componentName, 
+                                                   componentUIDString, 
+                                                   componentUID, 
+                                                   outlines);
+        // If the component name was not registered
+        if (privStatus == STATUS_NOTFOUND)
+          return false;
+
+        //component was registered, try to 
+        //find it in component_operations, component_privileges tables,
+        //and generate create & grant statements.
+        PrivMgrComponentPrivileges componentPrivileges(getMetadataLocation(), 
+                                                       pDiags_); 
+        PrivMgrComponentOperations componentOperations(getMetadataLocation(), 
+                                                       pDiags_); 
+        privStatus = componentOperations.describeComponentOperations(componentUIDString, 
+                                                                     componentName, 
+                                                                     outlines, 
+                                                                     &componentPrivileges);
+    }
+
+    catch (...)
+    {
+      return false;
+    }
+    
+    return true;
+    
+}
+//*************** End of PrivMgrCommands::describeComponents *******************
+
+
+// ----------------------------------------------------------------------------
+// method: describePrivileges
+//
+// returns GRANT statements for privileges associated with the 
+// specified objectUID
+//
+// Parameters:
+//     objectUID - a unique object identifier
+//     objectName - the name of the object
+//     privilegeText - the resultant grant text
+//
+// returns true if successful
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
+bool PrivMgrCommands::describePrivileges (const int64_t objectUID,
+                                          const std::string &objectName,
+                                          std::string &privilegeText)
+{
+  PrivMgrPrivileges objectPrivs (objectUID, objectName, 0, metadataLocation_, pDiags_);
+  PrivStatus retcode = objectPrivs.getPrivTextForObject(privilegeText);
+  return (retcode == STATUS_GOOD) ? true : false;
+}
+
+   
+// ----------------------------------------------------------------------------
+// method: dropAuthorizationMetadata
+//
+// This method drops all the metadata used by the privilege manager
+//
+// Returns the status of the request
+// The Trafodion diags area contains the error that was encountered
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::dropAuthorizationMetadata()
+{
+  PrivMgrMDAdmin metadata(getMetadataLocation(),getDiags());
+  std::vector<string> tablesToDrop;
+  size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
+  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
+  {
+    const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
+    tablesToDrop.push_back(tableDefinition.tableName);
+  }
+  return metadata.dropMetadata(tablesToDrop);
+}
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::dropComponentOperation                         *
+// *                                                                           *
+// *    Removes operation for the specified component from the list of         *
+// *  operations for that component.  Granted privileges are automatically     *
+// *  removed if the CASCADE option is specified.                              *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentName>                 const std::string &             In       *
+// *    is the component name.                                                 *
+// *                                                                           *
+// *  <operationName>                 const std::string &             In       *
+// *    is the operation name.                                                 *
+// *                                                                           *
+// *  <dropBehavior>                  PrivDropBehavior                In       *
+// *    indicates whether restrict or cascade behavior is requested.           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Operation deleted.                                           *
+// *           *: Operation not deleted. A CLI error is put into the           *
+// *              diags area.                                                  *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::dropComponentOperation(
+   const std::string & componentName,
+   const std::string & operationName,
+   PrivDropBehavior dropBehavior) 
+
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrComponentOperations componentOperations(getMetadataLocation(),
+                                                     pDiags_);
+      
+      privStatus = componentOperations.dropOperation(componentName,
+                                                     operationName,
+                                                     dropBehavior);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+   
+}
+//************** End of PrivMgrCommands::dropComponentOperation ****************
+
+// ----------------------------------------------------------------------------
+// method: getPrivileges
+//
+// returns GRANT statements for privileges associated with the 
+// specified objectUID
+//
+// Input:
+//     objectUID - a unique object identifier
+//     objectName - the name of the object
+//     privilegeText - the resultant grant text
+//     secKeySet - the security keys for the object/user
+//
+// returns true if results were found, false otherwise
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::getPrivileges(
+  const int64_t objectUID,
+  const int32_t userID,
+  PrivMgrUserPrivs &userPrivs,
+  std::vector <ComSecurityKey *>* secKeySet)
+{
+  PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
+  PrivMgrBitmap objPrivs;
+  PrivMgrBitmap grantablePrivs;
+  PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID, 
+                                                           userID, 
+                                                           objPrivs, 
+                                                           grantablePrivs);
+  if (retcode != STATUS_GOOD)
+    return retcode;
+
+  userPrivs.setObjectBitmap(objPrivs);
+  userPrivs.setGrantableBitmap(grantablePrivs);
+
+  // Add security keys to passed vector if non-null.
+  if (secKeySet)
+  {
+     PrivMgrCoreDesc privs(objPrivs,grantablePrivs);
+     
+     retcode = objectPrivs.buildSecurityKeys(userID,privs,*secKeySet);
+     if (retcode != STATUS_GOOD)
+        return retcode;
+  }
+
+  // TBD:  set column privileges
+  
+  return STATUS_GOOD;
+}
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::grantComponentPrivilege                        *
+// *                                                                           *
+// *    Grants the authority to perform one or more operations on a            *
+// *  component to an authID.                                                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentName>                 const std::string &              In      *
+// *    is the component name.                                                 *
+// *                                                                           *
+// *  <operationNamesList>            const std::vector<std::string> & In      *
+// *    is a list of component operations to be granted.                       *
+// *                                                                           *
+// *  <grantorID>                    const int32_t                     In      *
+// *    is the authID granting the privilege.                                  *
+// *                                                                           *
+// *  <grantorName>                   const std::string &              In      *
+// *    is the name of the authID granting the privilege.                      *
+// *                                                                           *
+// *  <granteeID>                     const int32_t                    In      *
+// *    is the the authID being granted the privilege.                         *
+// *                                                                           *
+// *  <granteeName>                   const std::string &              In      *
+// *    is the name of the authID being granted the privilege.                 *
+// *                                                                           *
+// *  <grantDepth>                    const int32_t                    In      *
+// *    is the number of levels this privilege may be granted by the grantee.  *
+// *  Initially this is either 0 or -1.                                        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Component privilege(s) were granted                          *
+// *           *: One or more component privileges were not granted.           *
+// *              A CLI error is put into the diags area.                      *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::grantComponentPrivilege(
+   const std::string & componentName,
+   const std::vector<std::string> & operationNamesList,
+   const int32_t grantorID,
+   const std::string & grantorName,
+   const int32_t granteeID,
+   const std::string & granteeName,
+   const int32_t grantDepth)
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrComponentPrivileges componentPrivileges(getMetadataLocation(),
+                                                     pDiags_);
+      
+      privStatus = componentPrivileges.grantPrivilege(componentName,
+                                                      operationNamesList,
+                                                      grantorID,
+                                                      grantorName,
+                                                      granteeID,
+                                                      granteeName,
+                                                      grantDepth);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+
+}
+//************* End of PrivMgrCommands::grantComponentPrivilege ****************
+
+
+// ----------------------------------------------------------------------------
+// method: grantObjectPrivilege
+//
+// Grants one or more privilege on an object to the grantee (user or TBD role)
+//
+// Input:
+//    objectUID, objectName, objectType - identifies the object
+//    granteeUID, granteeName - identifies the grantee
+//    grantorUID, grantorName - identifies the grantor
+//    privsList - a list of privileges to grant
+//    isAllSpecified - grant all privileges for the object type
+//    isWGOSpecified - indicates if WITH GRANT OPTION was specified
+//
+// Returns the status of the request
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::grantObjectPrivilege (
+   const int64_t objectUID,
+   const std::string &objectName,
+   const std::string &objectType,
+   const int32_t granteeUID,
+   const std::string &granteeName,
+   const int32_t grantorUID,
+   const std::string &grantorName,
+   const std::vector<string> &privsList,
+   const bool isAllSpecified,
+   const bool isWGOSpecified)
+{
+  PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  return grantCmd.grantObjectPriv
+   (objectType, granteeUID, granteeName, grantorName, privsList, isAllSpecified, isWGOSpecified);
+}
+
+PrivStatus PrivMgrCommands::grantObjectPrivilege (
+      const int64_t objectUID,
+      const std::string &objectName,
+      const std::string &objectType,
+      const int32_t granteeUID,
+      const std::string &granteeName,
+      const PrivMgrBitmap &objectPrivs,
+      const PrivMgrBitmap &grantablePrivs)
+{
+  int32_t grantorUID = SYSTEM_UID;
+  PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  return grantCmd.grantObjectPriv
+   (objectType, granteeUID, granteeName, objectPrivs, grantablePrivs);
+}
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::grantRole                                      *
+// *                                                                           *
+// *    Grants a role to an authorization ID.                                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <roleIDs>                       const std::vector<int32_t> &     In      *
+// *    is a vector of roleIDs.  The caller is responsible for ensuring all    *
+// *  IDs are unique.                                                          *
+// *                                                                           *
+// *  <roleNames>                     const std::vector<std::string> & In      *
+// *    is a list of role names.  The elements in <roleIDs> must correspond    *
+// *  to the elements in <roleNames>, i.e., roleIDs[n] is the role ID for      *
+// *  the role with name roleNames[n].                                         *
+// *                                                                           *
+// *  <grantorIDs>                    const std::vector<int32_t> &     In      *
+// *    is a vector of authIDs granting the role.  The elements of the vector  *
+// *  are for the corresponding role entry.                                    *
+// *                                                                           *
+// *  <grantorNames>                  const std::vector<std::string> & In      *
+// *    is a list of names of the authID granting the role in the              *
+// *  corresponding position in the role vectors.                              *
+// *                                                                           *
+// *  <grantorClass                   PrivAuthClass                    In      *
+// *    is the auth class of the authID granting the role.  Currently only     *
+// *  user is supported.                                                       *
+// *                                                                           *
+// *  <grantees>                      const std::vector<int32_t> &     In      *
+// *    is a vector of authIDs being granted the role.  The caller is          *
+// *  responsible for ensuring all IDs are unique.                             *
+// *                                                                           *
+// *  <granteeNames>                  const std::vector<std::string> & In      *
+// *    is a list of grantee names.  The elements in <grantees> must correspond*
+// *  to the elements in <granteeNames>, i.e., grantees[n] is the numeric      *
+// *  auth ID for authorization ID with the name granteeNames[n].              *
+// *                                                                           *
+// *  <granteeClasses>                const std::vector<PrivAuthClass> & In    *
+// *     is a list of classes for each grantee.  List must correspond to       *
+// *  <grantees>.  Currently only user is supported.                           *
+// *                                                                           *
+// *  <grantDepth>                    const int64_t                    In      *
+// *    is the number of levels this role may be granted by the grantee.       *
+// *  Initially this is either 0 or -1.                                        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Role(s) were granted                                         *
+// *           *: One or more roles were not granted.                          *
+// *              A CLI error is put into the diags area.                      *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::grantRole(
+   const std::vector<int32_t> & roleIDs,
+   const std::vector<std::string> & roleNames,
+   const std::vector<int32_t> & grantorIDs,
+   const std::vector<std::string> & grantorNames,
+   PrivAuthClass grantorClass,
+   const std::vector<int32_t> & grantees,
+   const std::vector<std::string> & granteeNames,
+   const std::vector<PrivAuthClass> & granteeClasses,
+   const int32_t grantDepth)
+    
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrRoles roles(getMetadataLocation(),pDiags_);
+      
+      privStatus = roles.grantRole(roleIDs,
+                                   roleNames,
+                                   grantorIDs,
+                                   grantorNames,
+                                   grantorClass,
+                                   grantees,
+                                   granteeNames,                                 
+                                   granteeClasses,                               
+                                   grantDepth);                                   
+   }
+
+   catch (...)
+   {
+      return STATUS_INTERNAL;
+   }
+   
+   return privStatus;
+
+}
+//******************** End of PrivMgrCommands::grantRole ***********************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::grantRoleToCreator                             *
+// *                                                                           *
+// *    Grants a role to an authorization ID.                                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <roleID>                        const int32_t                    In      *
+// *    is the ID of the role being created.                                   *
+// *                                                                           *
+// *  <roleName>                      const std::string &              In      *
+// *    is the name of the role being created.                                 *
+// *                                                                           *
+// *  <granteeID>                     const int32_t                    In      *
+// *    is the ID of the creator of the role.                                  *
+// *                                                                           *
+// *  <granteeName>                   const std::string &              In      *
+// *    is the name of the creator of the role.                                *
+// *                                                                           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Role was granted to the creator.                             *
+// *           *: Role was not granted.                                        *
+// *              A CLI error is put into the diags area.                      *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::grantRoleToCreator(
+   const int32_t roleID,
+   const std::string & roleName,
+   const int32_t granteeID,
+   const std::string granteeName)  
+    
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrRoles roles(getMetadataLocation(),pDiags_);
+      
+      privStatus = roles.grantRoleToCreator(roleID,roleName,granteeID,
+                                            granteeName);
+      
+      if (privStatus != STATUS_GOOD)
+         privStatus = STATUS_INTERNAL;                                   
+   }
+
+   catch (...)
+   {
+      return STATUS_INTERNAL;
+   }
+   
+   return privStatus;
+
+}
+//**************** End of PrivMgrCommands::grantRoleToCreator ******************
+
+
+// ----------------------------------------------------------------------------
+// method: initializeAuthorizationMetadata
+//
+// This method creates all the metadata needed by the privilege manager
+//
+// Input: 
+//     Location of the Trafodion OBJECTS table
+//     Location of the Trafodion AUTHS table
+//
+// Returns the status of the request
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::initializeAuthorizationMetadata(
+    const std::string &objectsLocation,
+    const std::string &authsLocation)
+{
+   PrivMgrMDAdmin metadata(getMetadataLocation(),getDiags());
+   return metadata.initializeMetadata(objectsLocation, authsLocation);
+}
+
+
+// ----------------------------------------------------------------------------
+// method: isPrivMgrTable
+//
+// Input:
+//   objectName - name of object to check
+//
+// this method returns true if the passed in object name is a privilege
+// manager metadata object, false otherwise.
+// ----------------------------------------------------------------------------
+bool PrivMgrCommands::isPrivMgrTable(const std::string &objectName)
+{
+  size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
+  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
+  {
+    const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
+    std::string mdTable (tableDefinition.tableName);   
+    if (mdTable == objectName)
+      return true;
+  }
+  return false;
+}
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::registerComponent                              *
+// *                                                                           *
+// *    Registers (adds) a component to the list of components known to        *
+// *  Privilege Manager.  Authority to perform operations within the           *
+// *  component may be granted to one or more authorization IDs.               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentName>                 const std::string &             In       *
+// *    is the name of the component.  Name is assumed to be upper case.       *
+// *                                                                           *
+// *  <isSystem>                      const bool                      In       *
+// *    is true if this is a system level component, false otherwise.  If a    *
+// *  component is system level, code in Trafodion can assume is it always     *
+// *  defined.                                                                 *
+// *                                                                           *
+// *  System components may only be unregistered by DB__ROOT.  Only DB__ROOT   *
+// *  may register a system component.                                         *
+// *                                                                           *
+// *  <componentDescription>          const std::string &             In       *
+// *    is a description of the component.                                     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Component name was registered.                               *
+// *           *: Unable to register component name, see diags.                *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::registerComponent(
+   const std::string &componentName,
+   const bool isSystem,
+   const std::string &componentDescription)
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrComponents components(getMetadataLocation(),pDiags_);
+      
+      privStatus = components.registerComponent(componentName,
+                                                isSystem,
+                                                componentDescription);
+   }
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+  
+}
+//**************** End of PrivMgrCommands::registerComponent *******************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::revokeComponentPrivilege                       *
+// *                                                                           *
+// *    Revokes the authority to perform one or more operations on a           *
+// *  component from an authID.                                                *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentName>                 const std::string &              In      *
+// *    is the component name.                                                 *
+// *                                                                           *
+// *  <operationNamesList>            const std::vector<std::string> & In      *
+// *    is a list of component operations to be revoked.                       *
+// *                                                                           *
+// *  <grantorID>                     const int32_t                    In      *
+// *    is the authID revoking the privilege.                                  *
+// *                                                                           *
+// *  <granteeID>                     const int32_t                    In      *
+// *    is the authID the privilege is being revoked from.                     *
+// *                                                                           *
+// *  <isGOFSpecified>                const bool                       In      *
+// *    is true if admin rights are being revoked.                             *
+// *                                                                           *
+// *  <dropBehavior>                  PrivDropBehavior                 In      *
+// *    indicates whether restrict or cascade behavior is requested.           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Component privilege(s) were revoked                          *
+// *           *: One or more component privileges were not revoked.           *
+// *              A CLI error is put into the diags area.                      *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::revokeComponentPrivilege(
+   const std::string & componentName,
+   const std::vector<std::string> & operationNamesList,
+   const int32_t grantorID,
+   const int32_t granteeID,
+   const bool isGOFSpecified,
+   PrivDropBehavior dropBehavior) 
+   
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrComponentPrivileges componentPrivileges(getMetadataLocation(),
+                                                     pDiags_);
+      privStatus = componentPrivileges.revokePrivilege(componentName,
+                                                       operationNamesList,
+                                                       grantorID,
+                                                       granteeID,0,
+                                                       isGOFSpecified,
+                                                       dropBehavior);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+   
+   return privStatus;
+
+}
+//************* End of PrivMgrCommands::revokeComponentPrivilege ***************
+
+// ----------------------------------------------------------------------------
+// method: revokeObjectPrivilege
+//
+// Revokes one or more privilege on an object to the grantee (user or TBD role)
+//
+// Input:
+//    objectUID, objectName, objectType - identifies the object
+//    granteeUID - identifies the grantee
+//    grantorUID - identifies the grantor
+//    privsList - a list of privileges to revoke
+//    isAllSpecified - grant all privileges for the object type
+//    isGOFSpecified - indicates if GRANT OPTION FOR  was specified
+//
+// Returns the status of the request
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::revokeObjectPrivilege(
+    const int64_t objectUID,
+    const std::string &objectName,
+    const std::string &objectType,
+    const int32_t granteeUID,
+    const int32_t grantorUID,
+    const std::vector<string> &privList,
+    const bool isAllSpecified,
+    const bool isGOFSpecified)
+{
+  // If we are revoking privileges on the authorization tables,
+  // just return STATUS_GOOD.  Object_privileges will go away.
+  if (isPrivMgrTable(objectName))
+    return STATUS_GOOD;
+
+  // set up privileges class
+  PrivMgrPrivileges revokeCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  return revokeCmd.revokeObjectPriv(objectType,
+                                    granteeUID, 
+                                    privList,
+                                    isAllSpecified, 
+                                    isGOFSpecified); 
+}
+
+PrivStatus PrivMgrCommands::revokeObjectPrivilege(
+    const int64_t objectUID,
+    const std::string &objectName,
+    const int32_t grantorUID)
+{
+  // If we are revoking privileges on the authorization tables,
+  // just return STATUS_GOOD.  Object_privileges will go away.
+  if (isPrivMgrTable(objectName))
+    return STATUS_GOOD;
+
+  // set up privileges class
+  PrivMgrPrivileges revokeCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  return revokeCmd.revokeObjectPriv();
+}
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrCommands::revokeRole                                     *
+// *                                                                           *
+// *    Revokes one or more roles from one or more authorization IDs.          *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <roleIDs>                    const std::vector<int32_t> &        In      *
+// *    is a vector of roleIDs.  The caller is responsible for ensuring all    *
+// *  IDs are unique.                                                          *
+// *                                                                           *
+// *  <granteeIDs>                 const std::vector<int32_t> &        In      *
+// *    is a vector of granteeIDs.  The caller is responsible for ensuring all *
+// *  IDs are unique.                                                          *
+// *                                                                           *
+// *  <granteeClasses>             const std::vector<PrivAuthClass> &  In      *
+// *    is a vector of PrivAuthClass corresponding the granteeID in the same   *
+// *  position in the granteeIDs vector.                                       *
+// *                                                                           *
+// *  <grantorIDs>                    const std::vector<int32_t> &     In      *
+// *    is a vector of authIDs that granted the role.  The elements of the     *
+// *  vector are for the corresponding role entry.                             *
+// *                                                                           *
+// *  <isGOFSpecified>             const bool                          In      *
+// *    is true if admin rights are being revoked.                             *
+// *                                                                           *
+// *  <newGrantDepth>              const int32_t                       In      *
+// *    is the number of levels this privilege may be granted by the grantee.  *
+// *  Initially this is always 0 when revoking.                                *
+// *                                                                           *
+// *  <dropBehavior>               PrivDropBehavior                    In      *
+// *    indicates whether restrict or cascade behavior is requested.           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Role(s) were revoked                                         *
+// *           *: One or more roles were not revoked.                          *
+// *              A CLI error is put into the diags area.                      *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::revokeRole(
+   const std::vector<int32_t> & roleIDs,
+   const std::vector<int32_t> & granteeIDs,
+   const std::vector<PrivAuthClass> & granteeClasses,
+   const std::vector<int32_t> & grantorIDs,
+   const bool isGOFSpecified,
+   const int32_t newGrantDepth,
+   PrivDropBehavior dropBehavior) 
+    
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrRoles roles(getMetadataLocation(),pDiags_);
+      
+      privStatus = roles.revokeRole(roleIDs,
+                                    granteeIDs,
+                                    granteeClasses,
+                                    grantorIDs,
+                                    isGOFSpecified,
+                                    newGrantDepth,
+                                    dropBehavior);
+   }
+
+   catch (...)
+   {
+      return STATUS_INTERNAL;
+   }
+   
+   return privStatus;
+
+}
+//******************** End of PrivMgrCommands::revokeRole **********************
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrComponents::unregisterComponent                          *
+// *                                                                           *
+// *    Removes the component from the list of components known to the         *
+// *  Privilege Manager.  Operations of the component and privileges           *
+// *  granted for those operations are automatically removed if the            *
+// *  CASCADE option is specified.                                             *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <componentName>                 const std::string &             In       *
+// *    is the name of the component.  Name is assumed to be upper case.       *
+// *                                                                           *
+// *  <dropBehavior>                  PrivDropBehavior                In       *
+// *    indicates whether restrict or cascade behavior is requested.           *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// * STATUS_GOOD: Component was unregistered.                                  *
+// *           *: Unable to unregister component, see diags.                   *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrCommands::unregisterComponent(
+   const std::string & componentName,
+   PrivDropBehavior dropBehavior)
+
+{
+
+PrivStatus privStatus = STATUS_GOOD;
+
+   try
+   {
+      PrivMgrComponents components(getMetadataLocation(),pDiags_);
+
+      privStatus = components.unregisterComponent(componentName,dropBehavior);
+   }
+
+   catch (...)
+   {
+      return STATUS_ERROR;
+   }
+
+   return privStatus;
+
+}
+//*************** End of PrivMgrCommands::unregisterComponent ******************
+

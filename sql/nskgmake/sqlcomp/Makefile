@@ -27,6 +27,15 @@ CPPSRC := CmpDescribe.cpp \
         CmpSeabaseDDLauth.cpp \
 	CmpSeabaseDDLroutine.cpp \
 	CmpSeabaseDDLupgrade.cpp \
+        PrivMgrCommands.cpp \
+        PrivMgrMD.cpp \
+        PrivMgrMDTable.cpp \
+        PrivMgrPrivileges.cpp \
+        PrivMgrDesc.cpp \
+        PrivMgrComponents.cpp \
+        PrivMgrComponentOperations.cpp \
+        PrivMgrComponentPrivileges.cpp \
+        PrivMgrRoles.cpp \
 	DefaultValidator.cpp \
 	nadefaults.cpp \
 	NewDel.cpp \

@@ -2419,7 +2419,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",    "TABLES",    "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
 
     {  "ALL",    "COMPONENTS",  "",    "",          0,     0,        0,      0,      ComTdbExeUtilGetMetadataInfo::COMPONENTS_ },
-    {  "ALL",    "PRIVILEGES",  "ON",  "COMPONENT", 0,     0,        0,      0,      ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_ },
+    {  "ALL",    "PRIVILEGES",  "ON",  "COMPONENT", 0,     0,        0,      0,      ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_ },
     {  "USER",   "PRIVILEGES",  "ON",  "COMPONENT", 0,     0,        0,      0,      ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_ },    
 
     {  "USER",   "ROLES",       "",    "",         0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_ },
@@ -2760,11 +2760,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     }
 
   if (
-      (infoType_ == "ROLES") ||
       (infoType_ == "MVS") ||
       (infoType_ == "MVGROUPS") ||
       (infoType_ == "SYNONYMS") ||
-      (infoType_ == "PRIVILEGES") ||
       (infoType_ == "PARTITIONS") ||
       (infoType_ == "TRIGGERS") ||
       (infoType_ == "CATALOGS"))

@@ -61,17 +61,12 @@
 // constructor used for REGISTER USER
 StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & externalUserName,
                                          const NAString * pDbUserName,
-                                         const NAString * pLogonRole,
                                          ElemDDLNode *pOwner,
-                                         ComAuthenticationType authenticationType,
-                                         ComBoolean isImmutable,
                                          CollHeap * heap)
   : StmtDDLNode(DDL_REGISTER_USER),
     externalUserName_(externalUserName,heap),
     registerUserType_(REGISTER_USER),
-    dropBehavior_(COM_UNKNOWN_DROP_BEHAVIOR),
-    authenticationType_(authenticationType),
-    isImmutable_(isImmutable)
+    dropBehavior_(COM_UNKNOWN_DROP_BEHAVIOR)
 {
   if (pDbUserName == NULL)
   {
@@ -82,15 +77,6 @@ StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & externalUserName,
   {
     NAString userName(*pDbUserName, heap);
     dbUserName_ = userName;
-  }
-  if (pLogonRole == NULL)
-  {
-    logonRole_ = ComString("", heap);
-  }
-  else
-  {
-    NAString logonRole (*pLogonRole, heap);
-    logonRole_ = logonRole;
   }
   if (pOwner)
   {
@@ -109,8 +95,7 @@ StmtDDLRegisterUser::StmtDDLRegisterUser(const NAString & dbUserName,
     dbUserName_(dbUserName, heap),
     externalUserName_("", heap),
     registerUserType_(UNREGISTER_USER),
-    dropBehavior_(dropBehavior),
-    authenticationType_(COM_UNKNOWN_AUTH) // not used for UNREGISTER, just set it
+    dropBehavior_(dropBehavior) 
 {
 } // StmtDDLRegisterUser::StmtDDLRegisterUser()
 

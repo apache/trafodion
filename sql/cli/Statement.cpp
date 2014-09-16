@@ -4342,7 +4342,13 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	      {
 		stmtStats_->getMasterStats()->
 		  setFixupEndTime(NA_JulianTimestamp());
-	      }
+                if (!stmtStats_->getMasterStats()->getValidPrivs())
+                  {
+                    diagsArea << DgSqlCode(-CLI_INVALID_QUERY_PRIVS);
+                    state_ = ERROR_;
+                    break;
+                  }
+              }
 
 	    /* execute it */
             if( root_tdb )
@@ -5484,6 +5490,11 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
   if (root_tdb && getStmtStats() && 
       (NULL != (masterStats = getStmtStats()->getMasterStats())))
     {
+      if (!masterStats->getValidPrivs())
+        {
+          diagsArea << DgSqlCode(-CLI_INVALID_QUERY_PRIVS);
+          return ERROR;
+        }
       if (root_tdb->qCacheInfoIsClass() && root_tdb->qcInfo())
         masterStats->setCompilerCacheHit(
                             root_tdb->qcInfo()->cacheWasHit());

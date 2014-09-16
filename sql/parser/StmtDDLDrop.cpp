@@ -95,11 +95,14 @@ StmtDDLDropCatalog::getText() const
 // constructor
 //
 
-StmtDDLDropComponentPrivilege::StmtDDLDropComponentPrivilege(const NAString & aComponentPrivilegeName,
-                                                             const NAString & aComponentName,
-                                                             CollHeap       * heap) // default is PARSERHEAP()
+StmtDDLDropComponentPrivilege::StmtDDLDropComponentPrivilege(
+   const NAString & aComponentPrivilegeName,
+   const NAString & aComponentName,
+   ComDropBehavior dropBehavior, 
+   CollHeap       * heap) // default is PARSERHEAP()
   : StmtDDLNode(DDL_DROP_COMPONENT_PRIVILEGE),
     componentPrivilegeName_(aComponentPrivilegeName, heap),
+    dropBehavior_(dropBehavior),
     componentName_(aComponentName, heap)
 {
 }
@@ -141,6 +144,12 @@ StmtDDLDropComponentPrivilege::displayLabel2() const
 {
   NAString aLabel("Component name: ");
   aLabel += getComponentName();
+  aLabel += " Drop behavior: ";
+  if (dropBehavior_ == COM_CASCADE_DROP_BEHAVIOR)
+     aLabel += "CASCADE";
+  else
+     aLabel += "RESTRICT";
+      
   return aLabel;
 }
 

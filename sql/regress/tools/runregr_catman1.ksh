@@ -280,6 +280,7 @@ for ix in $testfiles; do
       fi
 
       cat $tfile > $ix.tmp
+      echo "obey $scriptsdir/tools/reg_users.sql" >> $ix.tmp
 
       echo "Executing: $sqlci -i$ix.tmp"
       $sqlci -i$ix.tmp
