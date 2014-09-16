@@ -457,6 +457,9 @@ bool READ_TCPIP_REQUEST(CTCPIPSystemSrvr* pnode)
 	}
 
 	hdr = &pnode->m_rhdr;
+	if (pnode->m_rhdr.compress_ind == COMP_YES && pnode->m_rhdr.compress_type != COMP_NO_COMPRESSION)
+		total_length = hdr->cmp_length;
+	else
 		total_length = hdr->total_length;
 	if(pnode->r_allocate(total_length) == NULL)
 	{
@@ -493,10 +496,10 @@ bool READ_TCPIP_REQUEST(CTCPIPSystemSrvr* pnode)
 		pnode->m_curptr += length;
 		total_length -= length;
 	}
-	if (pnode->m_rhdr.compress_ind == COMP_YES)
+	if (pnode->m_rhdr.compress_ind == COMP_YES && pnode->m_rhdr.compress_type != COMP_NO_COMPRESSION)
 	{
-		pnode->send_error(SRVR_ERR_COMPRESS_OPERATION,0, NULL);
-		return false;
+		SRVRTRACE_EXIT(FILE_TSS+15);
+		return DoExpand(pnode, pnode->m_rhdr, (unsigned char *)pnode->m_rbuffer, total_length);
 	}
 	SRVRTRACE_EXIT(FILE_TSS+15);
 	return true;
@@ -530,7 +533,14 @@ int WRITE_TCPIP_RESPONSE(CTCPIPSystemSrvr* pnode, unsigned long message_length)
 	hdr = (HEADER*)pnode->m_wbuffer;
 	memcpy(hdr, &pnode->m_rhdr, sizeof(HEADER));
 	hdr->total_length = message_length - sizeof(HEADER);
-		hdr->compress_type = 0;
+	if (hdr->compress_ind == COMP_YES && hdr->total_length > MIN_LENGTH_FOR_COMPRESSION)
+	{
+		total_length -= sizeof(HEADER);
+		DoCompression(pnode, hdr, (unsigned char*)(buffer+sizeof(HEADER)), (unsigned long&)total_length);
+		total_length += sizeof(HEADER);
+	}
+	else
+		hdr->compress_type = COMP_NO_COMPRESSION;
 
 	memcpy(&pnode->m_whdr, hdr, sizeof(HEADER));
 
@@ -592,4 +602,91 @@ void BUILD_TCPIP_REQUEST(CTCPIPSystemSrvr* pnode)
 		RESUMETRANSACTION(pnode->m_trans_begin_tag);
 	DISPATCH_TCPIPRequest(objtag_, call_id_, operation_id);
 	SRVRTRACE_EXIT(FILE_TSS+18);
+}
+
+/* 
+ *   write_count: on input  contains the input size (i.e. uncompressed size)
+ *              : on output contains the size after compression
+ */
+void DoCompression(CTCPIPSystemSrvr* pnode, HEADER* wheader, unsigned char* wbuffer, unsigned long& write_count)
+{
+	SRVRTRACE_ENTER(FILE_TSS+19);
+	bool retcode = true;
+	unsigned long inCmpCount = write_count; // In number of bytes 
+
+	unsigned char* cmp_buf = NULL;
+
+	retcode = pnode->m_compression.compress((unsigned char*)wbuffer,  // input buffer (data to be compressed)
+																  (unsigned int)inCmpCount,              // input number of bytes
+																  (int)COMP_DEFAULT,
+	                                               (unsigned char**)&cmp_buf,                 // output buffer containing compressed output
+																  (unsigned long&)write_count);            // input/output param - input == max size, on output contains compressed size
+
+	if (retcode == false)
+	{
+		delete[] cmp_buf;
+		wheader->compress_type = COMP_NO_COMPRESSION;
+		wheader->cmp_length = 0;
+		write_count = inCmpCount;
+		SRVRTRACE_EXIT(FILE_TSS+19);
+		return;
+	}
+	memcpy(wbuffer, cmp_buf, write_count);
+
+	delete[] cmp_buf; //allocated in m_compression.compress();
+	wheader->compress_type=COMP_DEFAULT;
+	wheader->cmp_length = write_count;
+	SRVRTRACE_EXIT(FILE_TSS+19);
+}
+
+bool DoExpand(CTCPIPSystemSrvr* pnode, HEADER& rheader, unsigned char* ibuffer, unsigned long& output_size)
+{
+	SRVRTRACE_ENTER(FILE_TSS+20);
+	bool retcode;
+	unsigned char* obuffer;
+	int error=0;
+	char* tcp_obuffer=NULL;
+
+	if(rheader.compress_ind == COMP_YES )
+	{
+	  /*
+	   * check that the compression types is something that the driver understands
+	   */ 
+	   if((rheader.compress_type < COMP_DEFAULT) ||
+		   (rheader.compress_type > COMP_BEST_COMPRESSION))
+	   {
+		   pnode->send_error(SRVR_ERR_EXPAND_OPERATION,0, NULL);
+		   SRVRTRACE_EXIT(FILE_TSS+20);
+		   return false;
+	   }
+	}
+	obuffer = (unsigned char*)new char[rheader.total_length +512]; // +512 is just to be safe
+	                                                               // (in case something goes wrong in decompression)
+	if (obuffer == NULL)
+	{
+		pnode->send_error(SRVR_ERR_MEMORY_ALLOCATE,(unsigned short)rheader.total_length, NULL);
+		SRVRTRACE_EXIT(FILE_TSS+20);
+		return false;
+	}
+
+	output_size = rheader.total_length; 
+	retcode = pnode->m_compression.expand((unsigned char*)ibuffer,            // input compressed buffer    
+		                                          (unsigned long)rheader.cmp_length, // input compresses length
+		                                          (unsigned char**)&obuffer,            // output buffer after decompression
+															   (unsigned long&)output_size,
+																(int&)error);       // output size after decompression (should be equal to rheader.total_length)
+	//output_size could be 0 or rheader.total_length, no other value.
+	if (retcode == false || output_size == 0 )
+	{
+		delete[] obuffer;
+		pnode->send_error(SRVR_ERR_EXPAND_OPERATION,0, NULL);
+		SRVRTRACE_EXIT(FILE_TSS+20);
+		return false;
+	}
+	pnode->r_assign((char*)obuffer, output_size);
+	rheader.compress_type = COMP_NO_COMPRESSION;
+	rheader.cmp_length = 0;
+
+	SRVRTRACE_EXIT(FILE_TSS+20);
+	return true;
 }
