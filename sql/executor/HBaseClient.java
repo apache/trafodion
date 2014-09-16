@@ -210,7 +210,7 @@ public class HBaseClient {
    } 
 
     public boolean createk(String tblName, Object[] tableOptions, 
-        ByteArrayList beginEndKeys) 
+        Object[]  beginEndKeys) 
         throws IOException, MasterNotRunningException {
             logger.debug("HBaseClient.create(" + tblName + ") called.");
             String trueStr = "TRUE";
@@ -377,17 +377,15 @@ public class HBaseClient {
             }
             desc.addFamily(colDesc);
             HBaseAdmin admin = new HBaseAdmin(config);
-            byte[][] keys = new byte[beginEndKeys.size()][];
-            for (int i = 0; i < beginEndKeys.size(); i++) 
+            if (beginEndKeys != null && beginEndKeys.length > 0)
             {
-                keys[i] = beginEndKeys.get(i); 
+               byte[][] keys = new byte[beginEndKeys.length][];
+               for (int i = 0; i < beginEndKeys.length; i++) 
+                   keys[i] = (byte[])beginEndKeys[i]; 
+               admin.createTable(desc, keys);
             }
-
-            if (beginEndKeys.size() == 0)
-                admin.createTable(desc);
             else
-                admin.createTable(desc, keys);
-
+               admin.createTable(desc);
             admin.close();
         return true;
     }

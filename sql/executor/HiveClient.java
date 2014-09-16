@@ -43,8 +43,6 @@ import org.apache.hadoop.hive.metastore.api.UnknownDBException;
 // import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
 import org.apache.hadoop.hive.conf.HiveConf;
 
-import org.trafodion.sql.HBaseAccess.StringArrayList;
-
 public class HiveClient {
 
     static Logger logger = Logger.getLogger(HiveClient.class.getName());
@@ -144,17 +142,21 @@ public class HiveClient {
         return redefTime ;
     }
 
-    public StringArrayList getAllSchemas() throws MetaException {
-        StringArrayList retList = new StringArrayList();
-        retList.addAll(hmsClient.getAllDatabases());
-        return retList ;
+    public Object[] getAllSchemas() throws MetaException {
+        List<String> schemaList = (hmsClient.getAllDatabases());
+        if (schemaList != null)
+           return schemaList.toArray();
+        else
+           return null; 
     }
 
-    public StringArrayList getAllTables(String schName) 
+    public Object[] getAllTables(String schName) 
         throws MetaException {
-        StringArrayList retList = new StringArrayList();
-        retList.addAll(hmsClient.getAllTables(schName));
-        return retList;
+        List<String> tableList = hmsClient.getAllTables(schName);
+        if (tableList != null)
+           return tableList.toArray();
+        else
+           return null;
     }
 
     // Because Hive changed the name of the class containing internal constants changed
@@ -211,29 +213,4 @@ public class HiveClient {
 
         return fieldVal.toString();
     }
-    
-    /*    public static void main(String[] args)
-    {
-        System.out.println("Hello, World");
-        
-        try {
-            HiveClient myClient = new HiveClient();
-            String emptyString = "";
-            myClient.init(emptyString);
-            StringArrayList dbs = myClient.getAllSchemas();
-            for(int i=0;i<dbs.size();i++){
-                System.out.println("Database Name : " + dbs.get(i));
-                StringArrayList tbls = myClient.getAllTables(dbs.get(i));
-                for(int j=0;j<tbls.size();j++) {
-                    System.out.println("      Table Name : " + dbs.get(i) + "." + tbls.get(j));
-                    String tbl = myClient.getHiveTableString(dbs.get(i), tbls.get(j));
-                    System.out.println(tbl);
-                }
-            } 
-        }
-        catch (Throwable e) {
-            System.out.println("Failed to getAllDatabases");
-            System.out.println(StringUtils.stringifyException(e));
-        }
-        } */
 }

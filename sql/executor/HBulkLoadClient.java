@@ -67,7 +67,6 @@ import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
 import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoderImpl;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.trafodion.sql.HBaseAccess.StringArrayList;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 //import org.trafodion.sql.HBaseAccess.HBaseClient;
 import org.trafodion.sql.HBaseAccess.HTableClient.QualifiedColumn;

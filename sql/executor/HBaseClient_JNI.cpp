@@ -25,192 +25,6 @@
 #include <signal.h>
 #include "pthread.h"
 // ===========================================================================
-// ===== Class StringArrayList
-// ===========================================================================
-
-JavaMethodInit* StringArrayList::JavaMethods_ = NULL;
-jclass StringArrayList::javaClass_ = 0;
-bool StringArrayList::javaMethodsInitialized_ = false;
-pthread_mutex_t StringArrayList::javaMethodsInitMutex_ = PTHREAD_MUTEX_INITIALIZER;
-
-static const char* const salErrorEnumStr[] = 
-{
-  "JNI NewStringUTF() in add() for writing."  // SAL_ERROR_ADD_PARAM
- ,"Java exception in add() for writing."      // SAL_ERROR_ADD_EXCEPTION
-};
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-char* StringArrayList::getErrorText(SAL_RetCode errEnum)
-{
-  if (errEnum < (SAL_RetCode)JOI_LAST)
-    return JavaObjectInterface::getErrorText((JOI_RetCode)errEnum);
-  else    
-    return (char*)salErrorEnumStr[errEnum-SAL_FIRST-1];
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-StringArrayList::~StringArrayList()
-{
-//  HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "StringArrayList destructor called.");
-}
- 
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-SAL_RetCode StringArrayList::init()
-{
-  static char className[]="org/trafodion/sql/HBaseAccess/StringArrayList";
-  SAL_RetCode rc;
-  
-  if (isInitialized())
-    return SAL_OK;
-
-  if (javaMethodsInitialized_)
-    return (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-  else
-  {
-    pthread_mutex_lock(&javaMethodsInitMutex_);
-    if (javaMethodsInitialized_)
-    {
-      pthread_mutex_unlock(&javaMethodsInitMutex_);
-      return (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    }
-    JavaMethods_ = new JavaMethodInit[JM_LAST];
-    
-    JavaMethods_[JM_CTOR      ].jm_name      = "<init>";
-    JavaMethods_[JM_CTOR      ].jm_signature = "()V";
-    JavaMethods_[JM_ADD       ].jm_name      = "addElement";
-    JavaMethods_[JM_ADD       ].jm_signature = "(Ljava/lang/String;)V";
-    JavaMethods_[JM_GET       ].jm_name      = "getElement";
-    JavaMethods_[JM_GET       ].jm_signature = "(I)Ljava/lang/String;";
-    JavaMethods_[JM_GETSIZE   ].jm_name      = "getSize";
-    JavaMethods_[JM_GETSIZE   ].jm_signature = "()I";
- 
-    rc = (SAL_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
-    javaMethodsInitialized_ = TRUE;
-    pthread_mutex_unlock(&javaMethodsInitMutex_);
-  }
- 
-  return rc;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-SAL_RetCode StringArrayList::add(const char* str)
-{
-//  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "StringArrayList::add(%s) called.", str);
-  jstring js_str = jenv_->NewStringUTF(str);
-  if (js_str == NULL) 
-  {
-    GetCliGlobals()->setJniErrorStr(getErrorText(SAL_ERROR_ADD_PARAM));
-    return SAL_ERROR_ADD_PARAM;
-  }
-
-  // void add(java.lang.String);
-  jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_ADD].methodID, js_str);
-
-  jenv_->DeleteLocalRef(js_str);  
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return SAL_ERROR_ADD_EXCEPTION;
-  }
-
-  return SAL_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-SAL_RetCode StringArrayList::add(const TextVec& vec)
-{
-  for (std::vector<Text>::const_iterator it = vec.begin() ; it != vec.end(); ++it)
-  {
-    const char* str = (*it).data();
-    add(str);
-  }
-
-  return SAL_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-SAL_RetCode StringArrayList::add(const HBASE_NAMELIST& nameList)
-{
-  for (CollIndex i=0; i<nameList.entries(); i++)
-  {
-    const HbaseStr& str = nameList.at(i);
-    add(str.val);
-  }
-
-  return SAL_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-SAL_RetCode StringArrayList::add(const NAText * createOptions)
-{
-  for (CollIndex i=0; i<HBASE_MAX_OPTIONS; i++)
-  {
-    add(createOptions[i].c_str());
-  }
-
-  return SAL_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-Text* StringArrayList::get(Int32 i)
-{
-  // String get(i);
-  jstring strVal = (jstring)(jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET].methodID, i));
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return NULL;
-  }
-
-  if (strVal == NULL)
-    return NULL;
-
-  int len = jenv_->GetStringLength(strVal);
-
-  if (len == 0)
-    return NULL;
-    
-  // Not using UFTchars and NAWString for now.
-  const char* char_result = jenv_->GetStringUTFChars(strVal, 0);
-  Text* val = new (heap_) Text(char_result, len);
-  jenv_->ReleaseStringUTFChars(strVal, char_result);
-  jenv_->DeleteLocalRef(strVal);  
-
-  return val;
-}
-
-Int32 StringArrayList::getSize()
-{
-  Int32 len = jenv_->CallIntMethod(javaObj_, JavaMethods_[JM_GETSIZE].methodID);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    return 0;
-  }
-  return len;
-}
-
-// ===========================================================================
 // ===== Class ByteArrayList
 // ===========================================================================
 
@@ -958,7 +772,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_CREATE     ].jm_name      = "create";
     JavaMethods_[JM_CREATE     ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;)Z";
     JavaMethods_[JM_CREATEK    ].jm_name      = "createk";
-    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;Lorg/trafodion/sql/HBaseAccess/ByteArrayList;)Z";
+    JavaMethods_[JM_CREATEK    ].jm_signature = "(Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/Object;)Z";
     JavaMethods_[JM_DROP       ].jm_name      = "drop";
     JavaMethods_[JM_DROP       ].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_DROP_ALL       ].jm_name      = "dropAll";
@@ -998,29 +812,6 @@ jstring HBaseClient_JNI::getLastJavaError()
   // java.lang.String getLastError();
   return (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ERROR].methodID);
 }
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-ByteArrayList* HBaseClient_JNI::newByteArrayList()
-{
-  ByteArrayList* bal = new (heap_) ByteArrayList(heap_);
-  if ( bal->init() != BAL_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::init() error.");
-    return NULL;
-  }
-  
-/*
-  if (bal->add(nameList) != BAL_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "StringArrayList::add() error.");
-    return NULL;
-  } 
-*/
-  
-  return bal;
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -1220,6 +1011,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
         JavaMethods_[JM_CREATE].methodID, js_fileName, j_fams);
 
   jenv_->DeleteLocalRef(js_fileName); 
+  jenv_->DeleteLocalRef(j_fams);
 
   if (jenv_->ExceptionCheck())
   {
@@ -1263,24 +1055,26 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
      logError(CAT_HBASE, "HBaseClient_JNI::create()", getLastError());
      return HBC_ERROR_CREATE_PARAM;
   }
-      
-  ByteArrayList* beginEndKeys = newByteArrayList();
-  if (beginEndKeys == NULL)
-  {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_CREATE_PARAM));
-    return HBC_ERROR_CREATE_PARAM;
-  }
-  for (int i = 0; i < numSplits; i++)
-         beginEndKeys->addElement(splitValues[i], keyLength);
-    
 
-  jobject j_keys = beginEndKeys->getJavaObject();
-    
+  jobjectArray j_keys = NULL;    
+  if (numSplits > 0)
+  {
+     j_keys = convertToByteArrayObjectArray(splitValues, numSplits, keyLength);
+     if (j_keys == NULL)
+     {
+        getExceptionDetails();
+        logError(CAT_HBASE, __FILE__, __LINE__);
+        logError(CAT_HBASE, "HBaseClient_JNI::create()", getLastError());
+        return HBC_ERROR_CREATE_PARAM;
+     }
+  }
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_CREATEK].methodID, js_fileName, j_opts, j_keys);
 
   jenv_->DeleteLocalRef(js_fileName); 
-  NADELETE(beginEndKeys, ByteArrayList, beginEndKeys->getHeap());
+  jenv_->DeleteLocalRef(j_opts);
+  if (j_keys != NULL)
+     jenv_->DeleteLocalRef(j_keys);
 
   if (jenv_->ExceptionCheck())
   {
@@ -2341,9 +2135,7 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_CHECKANDUPDATE     ].jm_name      = "checkAndUpdateRow";
     JavaMethods_[JM_CHECKANDUPDATE     ].jm_signature = "(J[BLjava/lang/Object;[B[BJ)Z";
     JavaMethods_[JM_COPROC_AGGR     ].jm_name      = "coProcAggr";
-    JavaMethods_[JM_COPROC_AGGR     ].jm_signature = "(JI[B[B[B[BZI)Z";
-    JavaMethods_[JM_COPROC_AGGR_GET_RESULT     ].jm_name      = "coProcAggrGetResult";
-    JavaMethods_[JM_COPROC_AGGR_GET_RESULT     ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/ByteArrayList;";
+    JavaMethods_[JM_COPROC_AGGR     ].jm_signature = "(JI[B[B[B[BZI)[B";
     JavaMethods_[JM_GET_NAME   ].jm_name      = "getTableName";
     JavaMethods_[JM_GET_NAME   ].jm_signature = "()Ljava/lang/String;";
     JavaMethods_[JM_GET_HTNAME ].jm_name      = "getTableName";
@@ -2384,42 +2176,6 @@ jstring HTableClient_JNI::getLastJavaError()
 
   // java.lang.String getLastError();
   return (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ERROR].methodID);
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-ByteArrayList* HTableClient_JNI::newByteArrayList(jobject jObj)
-{
-  ByteArrayList* bal = new (heap_) ByteArrayList(heap_, jObj);
-  if ( bal->init() != BAL_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::init() error.");
-    return NULL;
-  }
-  
-  return bal;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-ByteArrayList* HTableClient_JNI::newByteArrayList(const TextVec& vec)
-{
-  ByteArrayList* bal = new (heap_) ByteArrayList(heap_);
-  if ( bal->init() != BAL_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::init() error.");
-    return NULL;
-  }
-  
-  if (bal->add(vec) != BAL_OK)
-  {
-    HdfsLogger::log(CAT_HBASE, LL_ERROR, "ByteArrayList::add() error.");
-    return NULL;
-  }
-  
-  return bal;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3311,7 +3067,10 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
   jboolean j_cb = cacheBlocks;
   jint j_ncr = numCacheRows;
 
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_COPROC_AGGR].methodID, j_tid, j_aggrtype, jba_startrowid, jba_stoprowid, jba_colfamily, jba_colname, j_cb, j_ncr);
+  jarray jresult = (jarray)jenv_->CallObjectMethod(javaObj_, 
+              JavaMethods_[JM_COPROC_AGGR].methodID, j_tid, 
+              j_aggrtype, jba_startrowid, jba_stoprowid, jba_colfamily, 
+              jba_colname, j_cb, j_ncr);
 
   jenv_->DeleteLocalRef(jba_startrowid);  
   jenv_->DeleteLocalRef(jba_stoprowid);  
@@ -3326,33 +3085,15 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
     return HTC_ERROR_COPROC_AGGR_EXCEPTION;
   }
 
-  if (jresult == false) 
+  Text *val = NULL;
+  if (jresult != NULL)
   {
-    logError(CAT_HBASE, "HTableClient_JNI::coProcAggr()", getLastError());
-    return HTC_ERROR_COPROC_AGGR_EXCEPTION;
+     jbyte *result = jenv_->GetByteArrayElements((jbyteArray)jresult, NULL);
+     int len = jenv_->GetArrayLength(jresult);
+     val = new (heap_) Text((char *)result, len);
+     jenv_->ReleaseByteArrayElements((jbyteArray)jresult, result, JNI_ABORT);
+
   }
-
-  jobject jbal = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_COPROC_AGGR_GET_RESULT].methodID);
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "HTableClient_JNI::coprocAggr()", getLastError());
-    return HTC_ERROR_COPROC_AGGR_EXCEPTION;
-  }
-
-  if (jbal == NULL)
-  {
-    return HTC_ERROR_COPROC_AGGR_EXCEPTION;
-  } 
-
-  ByteArrayList * aggrValList = newByteArrayList(jbal);
-  if (aggrValList == NULL)
-  {
-    GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_COPROC_AGGR_PARAM));
-    return HTC_ERROR_COPROC_AGGR_PARAM;
-  }  
-  Text * val = aggrValList->get(0);
   if (val == NULL)
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_COPROC_AGGR_PARAM));
@@ -3521,9 +3262,9 @@ HVC_RetCode HiveClient_JNI::init()
     JavaMethods_[JM_GET_RDT    ].jm_name      = "getRedefTime";
     JavaMethods_[JM_GET_RDT    ].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)J";
     JavaMethods_[JM_GET_ASH     ].jm_name      = "getAllSchemas";
-    JavaMethods_[JM_GET_ASH     ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/StringArrayList;";
+    JavaMethods_[JM_GET_ASH     ].jm_signature = "()[Ljava/lang/Object;";
     JavaMethods_[JM_GET_ATL    ].jm_name      = "getAllTables";
-    JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)Lorg/trafodion/sql/HBaseAccess/StringArrayList;";
+    JavaMethods_[JM_GET_ATL    ].jm_signature = "(Ljava/lang/String;)[Ljava/lang/Object;";
    
     rc = (HVC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -3751,8 +3492,8 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
 
-  jobject jStringArrayList = 
-     jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ASH].methodID);
+  jarray j_schNames= 
+     (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ASH].methodID);
 
   if (jenv_->ExceptionCheck())
   {
@@ -3762,28 +3503,12 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
     return HVC_ERROR_GET_ALLSCH_EXCEPTION;
   }
 
-   StringArrayList* schNames_SAL = new (heap_) StringArrayList(heap_, 
-                     jStringArrayList);
-   if (schNames_SAL == NULL)
+  int numSchemas = convertStringObjectArrayToList(heap_, j_schNames,
+                   schNames);           
+  if (numSchemas == 0)
      return HVC_DONE;
-
-   if (schNames_SAL->init() != SAL_OK)
-      return HVC_ERROR_GET_ALLSCH_EXCEPTION;
-
-   int numSchemas = schNames_SAL->getSize();
-   if (numSchemas == 0)
-     return HVC_DONE;
-
-   Text * schName;
-   for(int i=0; i<numSchemas; i++) {
-     schName = schNames_SAL->get(i); // Allocation is done in the get method.
-     schNames.insert(schName);
-   }
-
-  NADELETE(schNames_SAL, StringArrayList, schNames_SAL->getHeap());
-  jenv_->DeleteLocalRef(jStringArrayList); 
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Exit HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
-
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, 
+       "Exit HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
   return HVC_OK;
 }
 
@@ -3802,8 +3527,8 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
     return HVC_ERROR_GET_ALLTBL_PARAM;
   }
 
-  jobject jStringArrayList = 
-    jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ATL].methodID, 
+  jarray j_tblNames = 
+    (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ATL].methodID, 
                             js_schName);
 
   if (jenv_->ExceptionCheck())
@@ -3814,26 +3539,10 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
     return HVC_ERROR_GET_ALLTBL_EXCEPTION;
   }
 
-   StringArrayList* tabNames_SAL = new (heap_) StringArrayList(heap_, 
-                                                       jStringArrayList);
-   if (tabNames_SAL == NULL)
+  int numTables = convertStringObjectArrayToList(heap_, j_tblNames,
+                   tblNames);           
+  if (numTables == 0)
      return HVC_DONE;
-   if (tabNames_SAL->init() != SAL_OK)
-      return HVC_ERROR_GET_ALLTBL_EXCEPTION;
-   int numTables = tabNames_SAL->getSize();
-   if (numTables == 0)
-     return HVC_DONE;
-
-   Text * tblName;
-   for(int i=0; i<numTables; i++) {
-     tblName = tabNames_SAL->get(i); // allocation done in the get method, 
-                                     //what heap should we use?
-     tblNames.insert(tblName);
-   }
-
-  NADELETE(tabNames_SAL, StringArrayList, tabNames_SAL->getHeap());
-  jenv_->DeleteLocalRef(jStringArrayList);  
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Exit HiveClient_JNI::getAllTables(%s, %p) called.", schName, (void *) &tblNames);
 
   return HVC_OK;
 }
@@ -4263,8 +3972,6 @@ jobjectArray convertToByteArrayObjectArray(const TextVec &vec)
    int vecLen = vec.size();
    int i = 0;
    jobjectArray j_objArray = NULL;
-   if (jenv_->ExceptionCheck())
-      return NULL;
    for (std::vector<Text>::const_iterator it = vec.begin(); 
            it != vec.end(); ++it, i++)
    {
@@ -4279,6 +3986,37 @@ jobjectArray convertToByteArrayObjectArray(const TextVec &vec)
        if (j_objArray == NULL)
        {
           j_objArray = jenv_->NewObjectArray(vecLen,
+                 jenv_->GetObjectClass(j_obj), NULL);
+          if (jenv_->ExceptionCheck())
+          {
+             jenv_->DeleteLocalRef(j_obj);
+             return NULL;
+          }
+       }
+       jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+   }
+   return j_objArray;
+}
+
+jobjectArray convertToByteArrayObjectArray(const char **array,
+                   int numElements, int elementLen)
+{
+   int i = 0;
+   jobjectArray j_objArray = NULL;
+   for (i = 0; i < numElements; i++)
+   {
+       jbyteArray j_obj = jenv_->NewByteArray(elementLen);
+       if (jenv_->ExceptionCheck())
+       {
+          if (j_objArray != NULL)
+             jenv_->DeleteLocalRef(j_objArray);
+          return NULL; 
+       }
+       jenv_->SetByteArrayRegion(j_obj, 0, elementLen,
+             (const jbyte *)(array[i]));
+       if (j_objArray == NULL)
+       {
+          j_objArray = jenv_->NewObjectArray(numElements,
                  jenv_->GetObjectClass(j_obj), NULL);
           if (jenv_->ExceptionCheck())
           {
@@ -4378,3 +4116,23 @@ jobjectArray convertToStringObjectArray(const NAText *textArray, int arrayLen)
    return j_objArray;
 }
 
+int convertStringObjectArrayToList(NAHeap *heap, jarray j_objArray, 
+                                         LIST(Text *)&list)
+{
+
+    if (j_objArray == NULL)
+        return 0;
+    int arrayLen = jenv_->GetArrayLength(j_objArray);
+    jstring j_str;
+    const char *str;
+    jboolean isCopy;
+
+    for (int i = 0; i < arrayLen; i++)
+    {
+        j_str = (jstring)jenv_->GetObjectArrayElement((jobjectArray)j_objArray, i);
+        str = jenv_->GetStringUTFChars(j_str, &isCopy);
+        list.insert(new (heap) Text(str));
+        jenv_->ReleaseStringUTFChars(j_str, str);        
+    }
+    return arrayLen;
+}
