@@ -34,6 +34,7 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/GlobalInformation.o \
        $(OUTDIR)/JdbcDriverGlobal.o \
        $(OUTDIR)/JdbcDebug.o \
+       $(OUTDIR)/SrvrSmd.o \
        $(OUTDIR)/SqlInterface.o \
        $(OUTDIR)/SQLMXCommonFunctions.o \
        $(OUTDIR)/SQLMXConnection.o \

@@ -24,6 +24,7 @@
 
 #include <set>
 #include <string>
+#include <cstring>
 #include "tip.h"
 
 #define MAX_STMT_LABEL_LEN		512
@@ -31,7 +32,6 @@
 #define MAX_STMT_NAME_LEN		512
 #define MAX_ANSI_NAME_LEN		512
 #define MAX_TEXT_SID_LEN		186
-#define MAX_NSKCATALOGNAME_LEN	25
 #define EXT_FILENAME_LEN		34
 #define MAX_DBNAME_LEN			25 /* (1+7) + (1+7) + (1+8) */
 /* \SYSTEM.$VOLUME.SUBVOLUME */
@@ -44,8 +44,6 @@
 #define EXTERNAL_STMT			0
 #define INTERNAL_STMT			1
 
-#define NSK_ENDIAN				256
-
 #define ODBC_SRVR_COMPONENT		4
 
 #define	NT_VERSION_MAJOR_1	1
@@ -54,10 +52,6 @@
 
 #define	 SQLERRWARN 1
 #define	 ESTIMATEDCOSTRGERRWARN	2
-
-#define	NSK_VERSION_MAJOR_1	NT_VERSION_MAJOR_1+1
-#define	NSK_VERSION_MINOR_0	0
-#define NSK_BUILD_1			1
 
 #define	MAX_PROCESS_NAME_LEN	9
 
@@ -179,15 +173,11 @@ typedef struct _SRVR_GLOBAL_Def
 	tip_handle_t		tip_gateway;
 	char				*pxid_url;
 	long long			local_xid;
-	UINT				xid_length;
-
-	LPCRITICAL_SECTION	CSObject;
-	BOOL				failOverEnabled;
+	bool				failOverEnabled;
 	long				clientACP;
 	long				clientErrorLCID;
 	long				clientLCID;
-	BOOL				useCtrlInferNCHAR;
-	char				NskSystemCatalogName[MAX_NSKCATALOGNAME_LEN+1]; // MP system catalog name
+	bool				useCtrlInferNCHAR;
 	char				DefaultCatalog[129];
 	char				DefaultSchema[129];
 	char				CurrentCatalog[129]; // Added for MFC
@@ -196,7 +186,7 @@ typedef struct _SRVR_GLOBAL_Def
 //	std::set<std::string> setOfCQD; // Added for MFC 
 	int					moduleCaching;          // Added for MFC
 	char				compiledModuleLocation[100]; // Added for MFC
-	BOOL				jdbcProcess;		// This flag is used to determine the query for SQLTables
+	bool				jdbcProcess;		// This flag is used to determine the query for SQLTables
 	short				nowaitOn;
 	short				nowaitFilenum;
 	char				SystemCatalog[129]; // MX system catalog name
@@ -235,27 +225,9 @@ typedef struct tagTIME_TYPE
 	unsigned char		second;
 } TIME_TYPES;
 
-typedef struct tagTIMESTAMP_TYPE
-{
-	SWORD   year;
-	UCHAR   month;
-	UCHAR   day;
-	UCHAR   hour;
-	UCHAR   minute;
-	UCHAR   second;
-	UCHAR   fraction[4]; // This has been treated as UDWORD by SQL/MX. However this is not
-	// word aligned. We should ensure that we don't treat this as UDWORD
-	// without copying to temp variable. Same is the case when we do copy.
-	//  I am using sizeof (UDWORD) for copying to and fro.
-} TIMESTAMP_TYPES;
-
-#ifdef NSK_PLATFORM	// Linux port - Copied values from current SQ
-#define SQLCLI_ODBC_VERSION SQLCLI_STATEMENT_VERSION_12 //R3.0 changes -- align with sqlcli.h
-#define SQLCLI_ODBC_MODULE_VERSION 12 //R3.0 changes -- align with sqlcli.h
-#else
 #define SQLCLI_ODBC_VERSION 2
 #define SQLCLI_ODBC_MODULE_VERSION 1
-#endif
+
 
 #define NOWAIT_PENDING		-8002
 
@@ -302,7 +274,7 @@ typedef struct {
 	SQLValue_def *_buffer;
 } SQLValueList_def;
 
-typedef struct {
+typedef struct tag {
 	long version;
 	long dataType;
 	long datetimeCode;

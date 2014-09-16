@@ -22,8 +22,9 @@
 #ifndef _SRVRCOMMON_DEFINED
 #define _SRVRCOMMON_DEFINED
 #include <platform_ndcs.h>
-//#include "SrvrFunctions.h"	// Linux port - Todo
+#include "SrvrFunctions.h"
 #include "CSrvrStmt.h"
+#include "CoreCommon.h"
 //#include "eventMsgs.h"
 
 #define MFCKEY	"T2MFC"  // MFC
@@ -157,7 +158,7 @@ extern short SetAutoCommitOff();
 extern void destroyConnIdleTimer();
 extern void startConnIdleTimer();
 
-#ifdef NSK_PLATFORM		// Linux port - Todo
+
 extern short do_ExecSql(
 						/* In	*/ void * objtag_
 						, /* In	*/ const CEE_handle_def *call_id_
@@ -196,7 +197,30 @@ extern short executeAndFetchSQLQuery( void * objtag_
 , ERROR_DESC_LIST_def	*sqlWarning
 , long *rowsAffected
 , SQLValueList_def *outputValueList);
-#endif
+
+short executeAndFetchSMDQuery(
+	/* In	*/ void * objtag_
+  , /* In	*/ const CEE_handle_def *call_id_
+  , /* In	*/ long dialogueId
+  , /* In	*/ short APIType
+  , /* In	*/ const char *stmtLabel
+  , /* In	*/ short sqlStmtType
+  , /* In	*/ const char *tableParam[]
+  , /* In	*/ const char *inputParam[]
+  , /* In	*/ const char *catalogNm
+  , /* In	*/ const char *schemaNm
+  , /* In	*/ const char *tableNm
+  , /* In	*/ const char *columnNm
+  , /* In	*/ const char *tableTypeList
+  , /* In	*/ unsigned long metadataId
+  , /* Out   */ SQLItemDescList_def *outputDesc
+  , /* Out   */ ExceptionStruct *executeException
+  , /* Out   */ ExceptionStruct *fetchException
+  , /* Out   */ ERROR_DESC_LIST_def	*sqlWarning
+  , /* Out   */ long *rowsAffected
+  , /* Out   */ SQLValueList_def *outputValueList
+  , /* Out   */ long *stmtId
+  );
 
 extern short completeTransaction( void * objtag_
 								 , const CEE_handle_def *call_id_
@@ -210,16 +234,23 @@ extern BOOL writeServerException( short retCode
 								 , ExceptionStruct *prepareException
 								 , ExceptionStruct *executeException
 								 , ExceptionStruct *fetchException);
-extern short do_ExecSMD(
+short do_ExecSMD(
 						/* In	*/ void * objtag_
 						, /* In	*/ const CEE_handle_def *call_id_
 						, /* Out   */ ExceptionStruct *executeException
 						, /* Out   */ ERROR_DESC_LIST_def *sqlWarning
 						, /* In	*/ long dialogueId
+						, /* In	*/ const char *tableTypeList
+						, /* In	*/ unsigned long metadataId
+						, /* In	*/ short APIType
 						, /* In	*/ const char *stmtLabel
 						, /* In	*/ short sqlStmtType
-						, /* In	*/ char *tableParam[]
-, /* In	*/ char *inputParam[]
+						, /* In	*/ const char *catalogNm
+						, /* In	*/ const char *schemaNm
+						, /* In	*/ const char *tableNm
+						, /* In	*/ const char *columnNm
+						, /* In	*/ const char *tableParam[]
+, /* In	*/ const char *inputParam[]
 , /* Out   */ SQLItemDescList_def *outputDesc
 , /* Out   */ long *stmtId
 );
@@ -233,7 +264,7 @@ extern short do_ExecFetchAppend(
 								, /* In    */ const char *stmtLabel
 								, /* In    */ short sqlStmtType
 								, /* In    */ char *tableParam[]
-, /* In    */ char *inputParam[]
+, /* In    */ const char *inputParam[]
 , /* Out   */ SQLItemDescList_def *outputDesc
 , /* Out   */ long *rowsAffected
 , /* Out   */ SQLValueList_def *outputValueList

@@ -27,11 +27,7 @@
 #include <wchar.h>
 #include <errno.h>
 #include <time.h>
-#ifdef NSK_PLATFORM
-#include <sqlWin.h>
-#else
 #include <sql.h>
-#endif
 #include <sqlext.h>
 #include <sqltypes.h>
 #include <math.h>
@@ -43,11 +39,8 @@
 #include "org_trafodion_jdbc_t2_DataWrapper.h"
 #include "SQLMXCommonFunctions.h"
 #include "CoreCommon.h"
-#ifdef NSK_PLATFORM
-#include "cextdecs.h"
-#include "pThreadsSync.h"
-#endif
 #include "SrvrCommon.h"
+#include "SrvrOthers.h"
 #include "Debug.h"
 #include "GlobalInformation.h"
 #include "org_trafodion_jdbc_t2_T2Driver.h"  //spjrs
@@ -859,9 +852,6 @@ static Charset_def CHARSET_INFORMATION[] = {
 
 		if (pSrvrStmt != NULL)
 		{
-#ifdef NSK_PLATFORM // *** Allowing this code right now. Need to see if it is needed.
-			if(GlobalInformation::getSQLMX_Version() != CLI_VERSION_R2)
-#endif			
 			{
 				stmtType = pSrvrStmt->getSqlQueryStatementType();
 				DEBUG_OUT(DEBUG_LEVEL_CLI|DEBUG_LEVEL_STMT,("SQL Query Statement Type=%s",
@@ -943,9 +933,6 @@ static Charset_def CHARSET_INFORMATION[] = {
 			if (rowCount->_length)
 				JNI_SetIntArrayRegion(jenv,rowCountArray, 0, rowCount->_length, (jint *)rowCount->_buffer);
 		}
-#ifdef NSK_PLATFORM // *** Allowing this code right now. Need to see if it is needed.
-		if(GlobalInformation::getSQLMX_Version() != CLI_VERSION_R2)
-#endif					
 		{
 			if(pSrvrStmt->getSqlQueryStatementType() == SQL_SELECT_UNIQUE)
 			{
@@ -2198,7 +2185,6 @@ func_exit:
 		// Null out outputValueList before we pass it down
 		CLEAR_LIST(outputValueList);
 
-#ifndef TODO	// Linux port Todo:
 		odbc_SQLSvc_GetSQLCatalogs_sme_(NULL, NULL,
 			&exception_,
 			dialogueId,
@@ -2224,7 +2210,6 @@ func_exit:
 			nfkCatalogNm,
 			nfkSchemaNm,
 			nfkTableNm);
-#endif
 
 		if (catalogNm)
 			JNI_ReleaseStringUTFChars(jenv,catalogNm, nCatalogNm);
@@ -2272,10 +2257,10 @@ func_exit:
 
 			if (sqlWarning._length > 0) setSQLWarning(jenv, jobj, &sqlWarning);
 			// Free up outputValueList memory
-			for (int i=0; i < outputValueList._length; i++)
+			/*for (int i=0; i < outputValueList._length; i++)
 			{
 				MEMORY_DELETE(outputValueList._buffer[i].dataValue._buffer);
-			}
+			}*/
 			MEMORY_DELETE(outputValueList._buffer);
 			break;
 		case odbc_SQLSvc_GetSQLCatalogs_ParamError_exn_:
@@ -3187,7 +3172,6 @@ func_exit:
 		short					currPos = 0;
 		DATE_TYPES				*SQLDate;
 		TIME_TYPES				*SQLTime;
-		TIMESTAMP_TYPES			*SQLTimestamp;
 		unsigned long			ulFraction;
 		short					retCode;
 		BOOL					usejchar = FALSE;
@@ -3622,7 +3606,3 @@ func_exit:
 		return result;
 
 	}
-
-
-
-

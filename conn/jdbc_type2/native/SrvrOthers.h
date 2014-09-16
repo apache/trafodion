@@ -343,7 +343,7 @@ odbc_SQLSvc_CloseUsingLabel_sme_(
 								 , /* Out   */ long *rowsAffected
 								 , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
 								 );
-#ifndef TODO
+
 //
 // Actually defined in SrvrSmd.cpp
 //
@@ -376,7 +376,6 @@ odbc_SQLSvc_GetSQLCatalogs_sme_(
 								, /* In    */ const char *fkschemaNm
 								, /* In    */ const char *fktableNm
 								);
-#endif
 
 //extern std::map<std::string, std::string> mapOfSQLToModuleFile;
 

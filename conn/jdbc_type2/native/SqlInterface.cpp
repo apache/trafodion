@@ -30,14 +30,7 @@
  */
 
 #include <platform_ndcs.h>
-#ifdef NSK_PLATFORM
-#include <sqlWin.h>
-#include "pThreadsSync.h"
-#include <MD5.h> // MFC
-#include <SQLCLIdev.h> // MFC
-#else
 #include <sql.h>
-#endif
 #include <sqlext.h>
 #include "SrvrCommon.h"
 #include "SrvrKds.h"
@@ -1387,9 +1380,6 @@ SQLRETURN FREESTATEMENT(SRVR_STMT_HDL* pSrvrStmt)
 					if(pConnect->isModuleLoaded((const char *) pSrvrStmt->moduleId.module_name))
 					{
 						pConnect->removeFromLoadedModuleSet((const char *) pSrvrStmt->moduleId.module_name);
-#ifdef NSK_PLATFORM	// Linux port - not supported						
-						retcode = SQL_EXEC_DropModule(&pSrvrStmt->moduleId);
-#endif						
 						HANDLE_THREAD_ERROR(retcode, sqlWarning, pSrvrStmt);
 					}
 				}
@@ -1561,11 +1551,11 @@ SQLRETURN PREPARE(SRVR_STMT_HDL* pSrvrStmt)
 	}
 	DEBUG_OUT(DEBUG_LEVEL_CLI,("SQL Query Statement Type=%s",
 		CliDebugSqlQueryStatementType(SqlQueryStatementType)));
-
-        if (SqlQueryStatementType == SQL_EXE_UTIL  &&
+		
+		if (SqlQueryStatementType == SQL_EXE_UTIL  &&
             pSrvrStmt->columnCount > 0)
           SqlQueryStatementType = SQL_SELECT_NON_UNIQUE;
-
+          
 	pSrvrStmt->setSqlQueryStatementType(SqlQueryStatementType);
 
 	switch (pSrvrStmt->getSqlQueryStatementType())
@@ -2312,9 +2302,6 @@ SQLRETURN ALLOCSQLMXHDLS(SRVR_STMT_HDL* pSrvrStmt)
 	pStmt->handle = 0;
 	pStmt->charset = SQLCHARSETSTRING_ISO88591;
 	
-#ifdef NSK_PLATFORM		// Linux port - not supported in SQ
-	pStmt->loadTime = 0;  //R3.0 changes -- align with sqlcli.h
-#endif
 	if (pSrvrStmt->stmtName[0] != '\0')
 	{
 		pStmt->name_mode = stmt_name;
@@ -2512,9 +2499,6 @@ SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, 
 	pStmt->module = pModule;
 	pStmt->handle = 0;
 	pStmt->charset = SQLCHARSETSTRING_ISO88591;
-#ifdef NSK_PLATFORM		// Linux port - not supported in SQ	
-	pStmt->loadTime = 0;  //R3.0 changes -- align with sqlcli.h
-#endif
 	if (pSrvrStmt->stmtName[0] != '\0')
 	{
 		pStmt->name_mode = stmt_name;
@@ -2547,12 +2531,12 @@ SQLRETURN ALLOCSQLMXHDLS_SPJRS(SRVR_STMT_HDL *pSrvrStmt, SQLSTMT_ID *callpStmt, 
 	if (pModule->module_name == NULL)
 	{
 		DEBUG_OUT(DEBUG_LEVEL_STMT,("***pModule->module_name == NULL  Call AllocStmtForRs()"));
-
-#ifdef NSK_PLATFORM		// Linux port - ToDo compile errors
+/* Commenting out for now - will be looked at when SPJ is supported
+ #ifdef NSK_PLATFORM
 		CLI_AllocStmtForRS(callpStmt,
 			pSrvrStmt->RSIndex,
 			pStmt);
-#endif			
+#endif */
 		if (retcode < 0)
 		{
 			CLI_ClearDiagnostics(NULL);
@@ -2850,21 +2834,6 @@ SQLRETURN DISCONNECT(SRVR_CONNECT_HDL *pSrvrConnect)
 
 	long txBeginTag;
 
-#ifdef NSK_PLATFORM	// Linux port - ToDo txn related
-	short status = TMF_GETTXHANDLE_(txHandle);
-
-	if (! status)
-		// RESUMETRANSACTION requires the transaction tag that was returned
-		// in the BEGINTRANSCTION call. It does not work with the transid.
-		#ifdef _LP64
-		status = TMF_BEGINTAG_FROM_TXHANDLE_(txHandle,(__int32_t _ptr64 *) &txBeginTag);
-		#else
-			status = TMF_BEGINTAG_FROM_TXHANDLE_(txHandle, &txBeginTag);
-		#endif
-
-	if (status)
-		txBeginTag = 0;
-#endif
 
 	retcode = CLI_DeleteContext(pSrvrConnect->contextHandle);
 
@@ -2912,7 +2881,7 @@ SQLRETURN PREPAREFORMFC(SRVR_STMT_HDL* pSrvrStmt)
 		("pSrvrStmt=0x%08x",
 		pSrvrStmt));
 
-#ifdef NSK_PLATFORM	// Linux port - Todo: Not supported 
+#ifdef NSK_PLATFORM	// Linux port - Todo: Not supported
 	CLI_DEBUG_SHOW_SERVER_STATEMENT(pSrvrStmt);
 
 	long retcode;
