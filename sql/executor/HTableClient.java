@@ -72,7 +72,6 @@ public class HTableClient {
 	int getResultSetPos;
 	String lastError;
 	RMInterface table = null;
-	ByteArrayList coprocAggrResult = null;
 	private boolean writeToWAL = false;
 	int numRowsCached = 1;
 	int numColsInScan = 0;
@@ -775,7 +774,7 @@ public class HTableClient {
 				true);
 	}
 
-        public boolean coProcAggr(long transID, int aggrType, 
+        public byte[] coProcAggr(long transID, int aggrType, 
 		byte[] startRowID, 
               byte[] stopRowID, byte[] colFamily, byte[] colName, 
               boolean cacheBlocks, int numCacheRows) 
@@ -789,41 +788,8 @@ public class HTableClient {
 		    final ColumnInterpreter<Long, Long> ci = new LongColumnInterpreter();
 		    byte[] tname = getTableName().getBytes();
 		    long rowCount = aggregationClient.rowCount(transID, tname, ci, scan);
-
-		    coprocAggrResult = new ByteArrayList();
-
 		    byte[] rcBytes = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(rowCount).array();
-		    coprocAggrResult.add(rcBytes);
-
-		    /*
-		    ByteBuffer byteBuffer = ByteBuffer.wrap(rcBytes);
-		    LongBuffer longBuffer = byteBuffer.asLongBuffer();
-		    long l[] = new long[longBuffer.capacity()];
-		    longBuffer.get(l);
-
-		    System.out.println(rowCount);
-		    System.out.println(rcBytes);
-		    System.out.println(l[0]);
-
-		      scan.addColumn(TEST_FAMILY, TEST_QUALIFIER);
-		      final ColumnInterpreter<Long, Long> ci = new LongColumnInterpreter();
-		      SingleColumnValueFilter scvf = new SingleColumnValueFilter(TEST_FAMILY,
-		      TEST_QUALIFIER, CompareOp.EQUAL,
-		      Bytes.toBytes(4l));
-		      scan.setFilter(scvf);
-		    */
-		return true;
-    }
-
-	public ByteArrayList coProcAggrGetResult() { 
-		logger.trace("HBaseClient.coProcAggrGetResult() ");
-
-		if (coprocAggrResult == null) {
-			logger.trace("  Returning empty.");
-			return null;
-		}
-
-		return coprocAggrResult;
+                    return rcBytes; 
 	}
 
 	public boolean flush() throws IOException {

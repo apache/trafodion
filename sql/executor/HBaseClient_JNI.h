@@ -43,74 +43,12 @@ class ContextCli;
 
 class HBulkLoadClient_JNI;
 
-// ===========================================================================
-// ===== The StringArrayList class implements access to the Java 
-// ===== StringArrayList class.
-// ===========================================================================
-
-typedef enum {
-  SAL_OK     = JOI_OK
- ,SAL_FIRST  = JOI_LAST
- ,SAL_ERROR_ADD_PARAM = SAL_FIRST
- ,SAL_ERROR_ADD_EXCEPTION
- ,SAL_LAST
-} SAL_RetCode;
-
 #define NUM_HBASE_WORKER_THREADS 4
 
 typedef enum {
   HBC_Req_Shutdown = 0
  ,HBC_Req_Drop
 } HBaseClientReqType;
-
-class StringArrayList : public JavaObjectInterface
-{
-public:
-  StringArrayList(NAHeap *heap, jobject jObj = NULL)
-       :  JavaObjectInterface(heap, jObj)
-  {}
-
-  // Destructor
-  virtual ~StringArrayList();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  SAL_RetCode    init();
-  
-  SAL_RetCode add(const char* str);
-    
-  // Add a Text vector.
-  SAL_RetCode add(const TextVec& vec);
-    
-  // Add a Text vector.
-  SAL_RetCode add(const HBASE_NAMELIST& nameList);
-
-  SAL_RetCode add(const NAText* hbaseOptions);
-
-  // Get a Text element
-  Text* get(Int32 i);
-
-  Int32 getSize();
-    
-  // Get the error description.
-  virtual char* getErrorText(SAL_RetCode errEnum);
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0, 
-    JM_ADD,
-    JM_GET,
-    JM_GETSIZE,
-    JM_LAST
-  };
-  
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-};
-
 
 // ===========================================================================
 // ===== The ByteArrayList class implements access to the Java 
@@ -119,7 +57,7 @@ private:
 
 typedef enum {
   BAL_OK     = JOI_OK
- ,BAL_FIRST  = SAL_LAST
+ ,BAL_FIRST  = JOI_LAST
  ,BAL_ERROR_ADD_PARAM = BAL_FIRST
  ,BAL_ERROR_ADD_EXCEPTION
  ,BAL_ERROR_GET_EXCEPTION
@@ -457,8 +395,6 @@ public:
 
 private:
   jstring getLastJavaError();
-  ByteArrayList*   newByteArrayList(jobject jObj = NULL);
-  ByteArrayList*   newByteArrayList(const TextVec& vec);
 
 private:  
   enum JAVA_METHODS {
@@ -475,7 +411,6 @@ private:
    ,JM_CHECKANDDELETE
    ,JM_CHECKANDUPDATE
    ,JM_COPROC_AGGR
-   ,JM_COPROC_AGGR_GET_RESULT
    ,JM_GET_NAME
    ,JM_GET_HTNAME
    ,JM_GETENDKEYS
@@ -632,7 +567,6 @@ private:
 
 private:
   jstring getLastJavaError();
-  ByteArrayList* newByteArrayList();
 
 private:  
   enum JAVA_METHODS {
@@ -840,9 +774,13 @@ private:
 };
 
 jobjectArray convertToByteArrayObjectArray(const TextVec &vec);
+jobjectArray convertToByteArrayObjectArray(const char **array,
+                   int numElements, int elementLen);
 jobjectArray convertToStringObjectArray(const TextVec &vec);
 jobjectArray convertToStringObjectArray(const HBASE_NAMELIST& nameList);
 jobjectArray convertToStringObjectArray(const NAText *text, int arrayLen);
+int convertStringObjectArrayToList(NAHeap *heap, jarray j_objArray, 
+                                         LIST(Text *)&list);
 #endif
 
 
