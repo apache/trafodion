@@ -27,13 +27,13 @@ MONPIDLISTCS=$(echo $MONPIDLIST | sed 's/ /,/g')
 # Obtain process ids of any watchdog processes for current user.
 WDTPIDLIST=$(ps --sort=cmd,pid -C sqwatchdog -o user:12,pid | grep -w ^$USER | cut -b 14-18)
 
-# Obtain process ids of Seaquest processes (except monitor and watchdog processes)
+# Obtain process ids of Trafodion processes (except monitor and watchdog processes)
 if [ "$1" = "-safekill" ]; then
     SAFE=1
 fi
 SQ_PROCS=$(pstat -h -s | cut -b 14-18)
 
-# Remove Seaquest processes (except monitor and watchdog processes)
+# Remove Trafodion processes (except monitor and watchdog processes)
 if [[ -n $SQ_PROCS ]]; then
     echo $SQ_PROCS | xargs kill -9 2>/dev/null
 fi
@@ -61,8 +61,8 @@ if [[ -z $SAFE ]]; then
         echo $WDTPIDLIST | xargs kill -9
     fi
 
-    # Remove Seaquest processes (except monitor and watchdog processes).
-    # This repeats the earlier steps.  Generally will be few if any Seaquest
+    # Remove Trafodion processes (except monitor and watchdog processes).
+    # This repeats the earlier steps.  Generally will be few if any Trafodion
     # processes remaining.   Those remaining are typically persistent processes
     # that got recreated by the monitor before it was killed.
     SQ_PROCS=$(pstat -h -s | cut -b 14-18)

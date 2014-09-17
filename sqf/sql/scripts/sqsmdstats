@@ -69,7 +69,7 @@ function printHelp {
 
 # **************************************************************************
 # FUNCTION: chkInstance
-# check to see if the SeaQuest environment is up
+# check to see if the Trafodion environment is up
 function chkInstance
 {
   if [ -z $MY_SQROOT ]; then
@@ -84,19 +84,19 @@ function chkInstance
   sqcheck_result=$?
 
   if   [ $sqcheck_result -eq 0 ]; then
-    echo "The SeaQuest environment is up."
+    echo "The Trafodion environment is up."
   elif [ $sqcheck_result -eq 1 ]; then
-    echo "ERROR:  The SeaQuest environment is only partially up."
+    echo "ERROR:  The Trafodion environment is only partially up."
     echo
     echo "Exiting the sqsmdstats script." 
     exit 1;
   elif [ $sqcheck_result -eq 2 ]; then
-    echo "ERROR:  The SeaQuest environment is not up."
+    echo "ERROR:  The Trafodion environment is not up."
     echo
     echo "Exiting the sqsmdstats script." 
     exit 1;
   else
-    echo "ERROR:  The SeaQuest environment is unknown."
+    echo "ERROR:  The Trafodion environment is unknown."
     echo
     echo "Exiting the sqsmdstats script." 
     exit 1;

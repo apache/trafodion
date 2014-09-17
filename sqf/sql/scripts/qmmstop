@@ -24,11 +24,6 @@
 # can subsequently be restarted using the qmmstart script.
 #-----------------------------------------------------------------------
 #
-#   Modification History.
-# =====================
-#  04/02/2010   RN  A new initial script.
-#  11/05/2010   TBA port script to SQ.
-#  09/25/2012   BF  Modify for automated use during SQ startup or initialization.
 ####################################################################
 
 # qmm name
@@ -92,7 +87,7 @@ function stopQMM
     rm $qmmscr > /dev/null 2>&1
   fi
 }
-  
+
 function stop_qmm
 {
   echo "Stopping tdm_arkqmm persistent process. Please wait...."
@@ -101,7 +96,7 @@ function stop_qmm
   cat > $qmmscr << EOF
   sqshell -a <<eof
   set  {process \\\$$qmmName} PERSIST_RETRIES=0,60
-  kill \\\$$qmmName 
+  kill \\\$$qmmName
   exit
 eof
 EOF

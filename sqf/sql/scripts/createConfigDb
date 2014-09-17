@@ -1,4 +1,4 @@
--- Table definitions for Seaquest Foundation configuration database
+-- Table definitions for Trafodion Foundation configuration database
 --
 -- @@@ START COPYRIGHT @@@
 --
@@ -99,7 +99,7 @@ pNid integer  primary key,
 nodeName varchar(32) unique
 -- startCore integer,
 -- endCore   integer,
--- excluded 
+-- excluded
 );
 
 create table lnode
