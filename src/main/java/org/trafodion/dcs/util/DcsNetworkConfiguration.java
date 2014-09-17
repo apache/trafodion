@@ -104,26 +104,26 @@ public class DcsNetworkConfiguration {
 			checkCloud();
 	}
 
-        public void getCanonicalHostName (NetworkInterface ni, InetAddress inet) throws Exception {
-               if(inet.getCanonicalHostName().contains(".") ) {
-                  intHostAddress = extHostAddress = inet.getHostAddress();
-                  canonicalHostName = inet.getCanonicalHostName();
-                  LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
-                  ia = inet;
-               }
+	public void getCanonicalHostName (NetworkInterface ni, InetAddress inet) throws Exception {
+		if(inet.getCanonicalHostName().contains(".") ) {
+			intHostAddress = extHostAddress = inet.getHostAddress();
+			canonicalHostName = inet.getCanonicalHostName();
+			LOG.info("Using interface [" + ni.getDisplayName() + "," + canonicalHostName + "," + extHostAddress + "]");
+			ia = inet;
+		}
 
-        }
+	}
 
-        public InetAddress getInetAddress (NetworkInterface ni) throws Exception {
-           InetAddress inet=null;
-           Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
-           while(rawAdrs.hasMoreElements()) {
-              inet = rawAdrs.nextElement();
-              LOG.info("Match Found interface [" + ni.toString() +"," + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
-          }
-          matchedInterface = true;
-          return inet;
-        }
+	public InetAddress getInetAddress (NetworkInterface ni) throws Exception {
+		InetAddress inet=null;
+		Enumeration<InetAddress> rawAdrs = ni.getInetAddresses();
+		while(rawAdrs.hasMoreElements()) {
+			inet = rawAdrs.nextElement();
+			LOG.info("Match Found interface [" + ni.toString() +"," + ni.getDisplayName() + "," + inet.getCanonicalHostName() + "," + inet.getHostAddress() + "]");
+		}
+		matchedInterface = true;
+		return inet;
+	}
 
 	public void checkCloud() {
 		//Ideally we want to use http://jclouds.apache.org/ so we can support all cloud providers.
@@ -132,7 +132,7 @@ public class DcsNetworkConfiguration {
 		String cloudCommand = conf.get(Constants.DCS_CLOUD_COMMAND, Constants.DEFAULT_DCS_CLOUD_COMMAND);
 		ScriptContext scriptContext = new ScriptContext();
 		scriptContext.setScriptName("sys_shell.py");
-		scriptContext.setCommand(cloudCommand + " | grep -v '^+' | grep -w '" + canonicalHostName + "' | sed 's/.*=\\([0-9.]*\\), \\([0-9.]*\\).*$/\\1,\\2/'");
+		scriptContext.setCommand(cloudCommand);
 		LOG.info(scriptContext.getScriptName() + " exec [" + scriptContext.getCommand() + "]");
 		ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
 

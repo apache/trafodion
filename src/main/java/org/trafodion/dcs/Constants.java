@@ -266,7 +266,7 @@ public final class Constants {
   /** DCS cloud command */
   public static final String DCS_CLOUD_COMMAND = "dcs.cloud.command";
   /** Default value for DCS cloud command */
-  public static final String DEFAULT_DCS_CLOUD_COMMAND = "nova list";
+  public static final String DEFAULT_DCS_CLOUD_COMMAND = "nova list | grep -v '^+' | grep -w `hostname` | sed 's/.*=\\([0-9.]*\\), \\([0-9.]*\\).*$/\\1,\\2/'";
 
   private Constants() {
     // Can't be instantiated with this ctor.
