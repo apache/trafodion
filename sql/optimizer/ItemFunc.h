@@ -1587,7 +1587,7 @@ public:
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
 }; // class CurrentTimestampRunning
 
-class DateFormat : public BuiltinFunction
+class DateFormat : public CacheableBuiltinFunction
 {
 public:
   enum 
@@ -1602,7 +1602,7 @@ public:
 
   DateFormat(ItemExpr *val1Ptr, ItemExpr *formatStrPtr,
 	     Int32 dateFormat)
-	: BuiltinFunction(ITM_DATEFORMAT, CmpCommon::statementHeap(),
+	: CacheableBuiltinFunction(ITM_DATEFORMAT,
 			  2, val1Ptr, formatStrPtr),
 	  dateFormat_(dateFormat)
 	{ allowsSQLnullArg() = FALSE; }
@@ -1613,16 +1613,20 @@ public:
   // accessor functions
   Int32 getDateFormat() const { return dateFormat_; }
 
-  virtual NABoolean isCacheableExpr(CacheWA& cwa)
-  {
-    if ((child(1)) && 
-	((dateFormat_ == DATE_FORMAT_STR) ||
-	 (dateFormat_ == TIME_FORMAT_STR) ||
-	 (dateFormat_ == TIMESTAMP_FORMAT_STR)))
-      return FALSE;
-    else
-      return TRUE;
-  }
+//  virtual NABoolean isCacheableExpr(CacheWA& cwa)
+//  {
+//    if ((child(1)) && 
+//	((dateFormat_ == DATE_FORMAT_STR) ||
+//	 (dateFormat_ == TIME_FORMAT_STR) ||
+//	 (dateFormat_ == TIMESTAMP_FORMAT_STR)))
+//      return FALSE;
+//    else
+//      return TRUE;
+//  }
+
+  // do not change format literals of DateFormat into constant parameters
+  virtual ItemExpr* normalizeForCache(CacheWA& cwa, BindWA& bindWA)
+    { return this; } 
 
   // append an ascii-version of ItemExpr into cachewa.qryText_
   virtual void generateCacheKey(CacheWA& cwa) const;
