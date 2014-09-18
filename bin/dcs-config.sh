@@ -99,6 +99,8 @@ export MALLOC_ARENA_MAX=${MALLOC_ARENA_MAX:-4}
 
 if [ -z "$JAVA_HOME" ]; then
   for candidate in \
+    /usr/lib/jvm/java-1.7* \
+    /usr/lib/jvm/java-1.6.0* \
     /usr/lib/jvm/java-6-sun \
     /usr/lib/jvm/java-1.6.0-sun-1.6.0.*/jre \
     /usr/lib/jvm/java-1.6.0-sun-1.6.0.* \

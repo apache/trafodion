@@ -56,7 +56,7 @@ then
   exit $errCode
 fi
 
-if [ "$master" == "" ] || [ "$master" == "$HOSTNAME" ] ; then
+if [ "$master" == "" ] || [ "$master" == "$(hostname -f)" ] ; then
   "$bin"/dcs-daemon.sh --config "${DCS_CONF_DIR}" stop master 
 else
     remote_cmd="cd ${DCS_HOME}; $bin/dcs-daemon.sh --config ${DCS_CONF_DIR} stop master"
