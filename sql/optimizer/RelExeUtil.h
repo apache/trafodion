@@ -194,6 +194,7 @@ public:
     isNative_(FALSE),
     initHbase_(FALSE),
     dropHbase_(FALSE),
+    updateVersion_(FALSE),
     purgedataHbase_(FALSE),
     initAuthorization_(FALSE),
     dropAuthorization_(FALSE),
@@ -207,7 +208,7 @@ public:
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
 	 NABoolean createMDviews, NABoolean dropMDviews,
          NABoolean initAuthorization, NABoolean dropAuthorization,
-	 NABoolean addSeqTable,
+	 NABoolean addSeqTable, NABoolean updateVersion,
 	 char * ddlStmtText,
 	 CharInfo::CharSet ddlStmtTextCharSet,
 	  CollHeap *oHeap = CmpCommon::statementHeap())
@@ -228,6 +229,7 @@ public:
     isNative_(FALSE),
     initHbase_(initHbase), 
     dropHbase_(dropHbase),
+    updateVersion_(updateVersion),
     purgedataHbase_(FALSE),
     initAuthorization_(initAuthorization),
     dropAuthorization_(dropAuthorization),
@@ -262,6 +264,7 @@ public:
     isNative_(FALSE),
     initHbase_(FALSE), 
     dropHbase_(FALSE),
+    updateVersion_(FALSE),
     purgedataHbase_(purgedataHbase),
     initAuthorization_(FALSE),
     dropAuthorization_(FALSE),
@@ -327,6 +330,7 @@ public:
 
   NABoolean initHbase() { return initHbase_; }
   NABoolean dropHbase() { return dropHbase_; }
+  NABoolean updateVersion() { return updateVersion_; }
   NABoolean purgedataHbase() { return purgedataHbase_; }
   NABoolean initAuthorization() { return initAuthorization_; }
   NABoolean dropAuthorization() { return dropAuthorization_; }
@@ -388,6 +392,7 @@ public:
                                   // creating an hbase table from trafodion interface.
   NABoolean initHbase_;	  
   NABoolean dropHbase_;	
+  NABoolean updateVersion_;
   NABoolean purgedataHbase_;
   NABoolean initAuthorization_;
   NABoolean dropAuthorization_;
@@ -2628,10 +2633,15 @@ public:
   {(v ? myFlags_ |= GET_MD_VERSION : myFlags_ &= ~GET_MD_VERSION); }
   NABoolean getMDVersion() { return (myFlags_ & GET_MD_VERSION) != 0;}
 
+  void setGetSWVersion(NABoolean v)
+  {(v ? myFlags_ |= GET_SW_VERSION : myFlags_ &= ~GET_SW_VERSION); }
+  NABoolean getSWVersion() { return (myFlags_ & GET_SW_VERSION) != 0;}
+
  private:
   enum Flags
   {
-    GET_MD_VERSION   = 0x0001
+    GET_MD_VERSION   = 0x0001,
+    GET_SW_VERSION = 0x0002
   };
 
   UInt32 myFlags_;

@@ -381,6 +381,9 @@ ExWorkProcRetcode ExExeUtilMetadataUpgradeTcb::work()
 	    if (mdUpgdTdb().getMDVersion())
 	      mdi_->setGetMDVersion(TRUE);
 
+	    else if (mdUpgdTdb().getSWVersion())
+	      mdi_->setGetSWVersion(TRUE);
+
 	    step_ = SEND_REQ_TO_CMP_;
 	  }
 	  break;
