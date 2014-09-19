@@ -35,7 +35,6 @@ CCFLAGS += -Wno-long-long -fmessage-length=0
 INCLUDES  = -I$(INCEXPDIR)
 
 DEPENDENCIES =  $(MPI_BINEXPDIR)/mpicc \
-		$(MPI_BINEXPDIR)/mpiCC \
 		$(MPI_INCEXPDIR)/mpi.h \
 		$(MPI_LIBEXPDIR)/libmtmpi.so \
 		$(BINEXPDIR)/hydra_pmi_proxy \
@@ -51,13 +50,6 @@ $(MPI_BINEXPDIR)/mpicc: mpicc
 	cp mpicc $(MPI_BINEXPDIR)/mpicc
 	rm -f $(BINEXPDIR)/mpicc
 	ln -s $(MPI_BINEXPDIR)/mpicc $(BINEXPDIR)/mpicc
-
-$(MPI_BINEXPDIR)/mpiCC: mpiCC
-	-mkdir -p $(MPI_BINEXPDIR) $(BINEXPDIR)
-	chmod +x mpiCC
-	cp mpiCC $(MPI_BINEXPDIR)/mpiCC
-	rm -f $(BINEXPDIR)/mpiCC
-	ln -s $(MPI_BINEXPDIR)/mpiCC $(BINEXPDIR)/mpiCC
 
 $(MPI_INCEXPDIR)/mpi.h: $(MPICH_ROOT)/include/mpi.h
 	-mkdir -p $(MPI_INCEXPDIR) $(INCEXPDIR)

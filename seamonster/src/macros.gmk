@@ -34,7 +34,6 @@ endif
 CC		= $(GCC_TOOL_ROOT)/bin/gcc
 CXX		= $(GCC_TOOL_ROOT)/bin/g++
 MPICC		= $(MPI_ROOT)/bin/mpicc
-MPICXX		= $(MPI_ROOT)/bin/mpiCC
 
 # export
 EXPROOT		= $(MY_SQROOT)/export
@@ -46,7 +45,6 @@ KMEXPDIR	= $(EXPROOT)/km
 
 ifeq ($(SQ_MTYPE),32)
 MPICC		+= -mpi32
-MPICXX		+= -mpi32
 endif
 
 # sm libs
