@@ -47,7 +47,7 @@ CTCPIPSystemDrvr::CTCPIPSystemDrvr()
 	m_IObuffer = new char[MAX_TCP_BUFFER_LENGTH];
 	if (m_IObuffer == NULL)
 		exit(0);
-	m_hSocket = NULL;
+	m_hSocket = -1;
 	m_IOCompression = 0;
 	m_hEvents[0] = NULL;
 	m_hEvents[1] = NULL;
@@ -61,7 +61,7 @@ CTCPIPSystemDrvr::~CTCPIPSystemDrvr()
 
 	if (m_IObuffer != NULL)
 		delete m_IObuffer;
-	if (m_hSocket != NULL)
+	if (m_hSocket != -1)
 	{
 		closesocket(m_hSocket);
 	}

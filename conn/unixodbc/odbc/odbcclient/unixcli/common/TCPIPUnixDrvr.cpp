@@ -53,7 +53,7 @@ CTCPIPUnixDrvr::CTCPIPUnixDrvr()
 	m_IObuffer = new char[MAX_TCP_BUFFER_LENGTH];
 	if (m_IObuffer == NULL)
 		exit(0);
-	m_hSocket = NULL;
+	m_hSocket = INVALID_SOCKET;
 
 	m_IOCompression = 0;
 	m_hEvents[0] = NULL;
@@ -88,7 +88,7 @@ CTCPIPUnixDrvr::~CTCPIPUnixDrvr()
 #else
 		delete []m_IObuffer;
 #endif
-	if (m_hSocket != NULL)
+	if (m_hSocket != INVALID_SOCKET)
 	{
 #ifndef unixcli
 		closesocket(m_hSocket);
