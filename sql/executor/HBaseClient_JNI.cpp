@@ -1004,6 +1004,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFam
      getExceptionDetails();
      logError(CAT_HBASE, __FILE__, __LINE__);
      logError(CAT_HBASE, "HBaseClient_JNI::create()", getLastError());
+     jenv_->DeleteLocalRef(js_fileName); 
      return HBC_ERROR_CREATE_PARAM;
   }
     
@@ -1053,6 +1054,7 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
      getExceptionDetails();
      logError(CAT_HBASE, __FILE__, __LINE__);
      logError(CAT_HBASE, "HBaseClient_JNI::create()", getLastError());
+     jenv_->DeleteLocalRef(js_fileName); 
      return HBC_ERROR_CREATE_PARAM;
   }
 
@@ -1065,6 +1067,8 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
         getExceptionDetails();
         logError(CAT_HBASE, __FILE__, __LINE__);
         logError(CAT_HBASE, "HBaseClient_JNI::create()", getLastError());
+        jenv_->DeleteLocalRef(js_fileName); 
+        jenv_->DeleteLocalRef(j_opts);
         return HBC_ERROR_CREATE_PARAM;
      }
   }
@@ -1513,6 +1517,7 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
   if (jba_tblName == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GRANT_PARAM));
+    jenv_->DeleteLocalRef(jba_user);  
     return HBC_ERROR_GRANT_PARAM;
   }
   jenv_->SetByteArrayRegion(jba_tblName, 0, len, (const jbyte*)tblName.data());
@@ -1527,13 +1532,19 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
        getExceptionDetails();
        logError(CAT_HBASE, __FILE__, __LINE__);
        logError(CAT_HBASE, "HBaseClient_JNI::grant()", getLastError());
+       jenv_->DeleteLocalRef(jba_user);  
+       jenv_->DeleteLocalRef(jba_tblName);  
        return HBC_ERROR_GRANT_PARAM;
     }
   }
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GRANT].methodID, jba_user, jba_tblName, j_actionCodes);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+       JavaMethods_[JM_GRANT].methodID, jba_user, jba_tblName, j_actionCodes);
 
   jenv_->DeleteLocalRef(jba_user);  
   jenv_->DeleteLocalRef(jba_tblName);  
+  if (j_actionCodes != NULL)
+     jenv_->DeleteLocalRef(j_actionCodes);  
+
 
   if (jenv_->ExceptionCheck())
   {
@@ -1939,6 +1950,7 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
   if (jba_tblName == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_REVOKE_PARAM));
+    jenv_->DeleteLocalRef(jba_user);  
     return HBC_ERROR_REVOKE_PARAM;
   }
   jenv_->SetByteArrayRegion(jba_tblName, 0, len, (const jbyte*)tblName.data());
@@ -1953,13 +1965,18 @@ HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const
        getExceptionDetails();
        logError(CAT_HBASE, __FILE__, __LINE__);
        logError(CAT_HBASE, "HBaseClient_JNI::revoke()", getLastError());
+       jenv_->DeleteLocalRef(jba_user);  
+       jenv_->DeleteLocalRef(jba_tblName);  
        return HBC_ERROR_REVOKE_PARAM;
     }
   }
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_REVOKE].methodID, jba_user, jba_tblName, j_actionCodes);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+       JavaMethods_[JM_REVOKE].methodID, jba_user, jba_tblName, j_actionCodes);
 
   jenv_->DeleteLocalRef(jba_user);  
   jenv_->DeleteLocalRef(jba_tblName);  
+   if (j_actionCodes != NULL)
+      jenv_->DeleteLocalRef(j_actionCodes);
 
   if (jenv_->ExceptionCheck())
   {
@@ -2205,6 +2222,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
   if (jba_stopRowID == NULL) 
   {
     GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_SCANOPEN_PARAM));
+    jenv_->DeleteLocalRef(jba_startRowID);
     return HTC_ERROR_SCANOPEN_PARAM;
   }
   jenv_->SetByteArrayRegion(jba_stopRowID, 0, len, (const jbyte*)stopRowID.data());
@@ -2218,6 +2236,8 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
        getExceptionDetails();
        logError(CAT_HBASE, __FILE__, __LINE__);
        logError(CAT_HBASE, "HTableClient_JNI::startScan()", getLastError());
+       jenv_->DeleteLocalRef(jba_startRowID);
+       jenv_->DeleteLocalRef(jba_stopRowID);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
     numColsInScan_ = cols.size();
@@ -2242,6 +2262,10 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
        getExceptionDetails();
        logError(CAT_HBASE, __FILE__, __LINE__);
        logError(CAT_HBASE, "HTableClient_JNI::startScan()", getLastError());
+       jenv_->DeleteLocalRef(jba_startRowID);
+       jenv_->DeleteLocalRef(jba_stopRowID);
+       if (j_cols != NULL)
+           jenv_->DeleteLocalRef(j_cols);
        return HTC_ERROR_SCANOPEN_PARAM;
     }
   }
@@ -2255,6 +2279,13 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
         getExceptionDetails();
         logError(CAT_HBASE, __FILE__, __LINE__);
         logError(CAT_HBASE, "HTableClient_JNI::startScan()", getLastError());
+        jenv_->DeleteLocalRef(jba_startRowID);
+        jenv_->DeleteLocalRef(jba_stopRowID);
+        if (j_cols != NULL)
+           jenv_->DeleteLocalRef(j_cols);
+        if (j_colnamestofilter != NULL)
+           jenv_->DeleteLocalRef(j_colnamestofilter);
+
         return HTC_ERROR_SCANOPEN_PARAM;
      }
   }
@@ -2268,6 +2299,14 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
         getExceptionDetails();
         logError(CAT_HBASE, __FILE__, __LINE__);
         logError(CAT_HBASE, "HTableClient_JNI::startScan()", getLastError());
+        jenv_->DeleteLocalRef(jba_startRowID);
+        jenv_->DeleteLocalRef(jba_stopRowID);
+        if (j_cols != NULL)
+           jenv_->DeleteLocalRef(j_cols);
+        if (j_colnamestofilter != NULL)
+           jenv_->DeleteLocalRef(j_colnamestofilter);
+        if (j_compareoplist != NULL)
+           jenv_->DeleteLocalRef(j_compareoplist);
         return HTC_ERROR_SCANOPEN_PARAM;
      }
   }
@@ -2282,6 +2321,15 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 
   jenv_->DeleteLocalRef(jba_startRowID);  
   jenv_->DeleteLocalRef(jba_stopRowID);  
+  if (j_cols != NULL)
+     jenv_->DeleteLocalRef(j_cols);
+  if (j_colnamestofilter != NULL)
+     jenv_->DeleteLocalRef(j_colnamestofilter);
+  if (j_compareoplist != NULL)
+     jenv_->DeleteLocalRef(j_compareoplist);
+  if (j_colvaluestocompare != NULL)
+     jenv_->DeleteLocalRef(j_colvaluestocompare);
+  
 
   if (jenv_->ExceptionCheck())
   {
@@ -2324,6 +2372,7 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID, const T
         getExceptionDetails();
         logError(CAT_HBASE, __FILE__, __LINE__);
         logError(CAT_HBASE, "HTableClient_JNI::startGet()", getLastError());
+        jenv_->DeleteLocalRef(jba_rowID);
         return HTC_ERROR_GETROWOPEN_PARAM;
      }  
      numColsInScan_ = cols.size();
@@ -2335,9 +2384,13 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID, const T
   jlong j_ts = timestamp;
   jboolean j_directRow = directRow;
   
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GET_OPEN].methodID, j_tid, jba_rowID, j_cols, j_ts, j_directRow);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+            JavaMethods_[JM_GET_OPEN].methodID, j_tid, jba_rowID, 
+            j_cols, j_ts, j_directRow);
 
   jenv_->DeleteLocalRef(jba_rowID);  
+  if (j_cols != NULL)
+     jenv_->DeleteLocalRef(j_cols);
 
   if (jenv_->ExceptionCheck())
   {
@@ -2383,6 +2436,8 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
     getExceptionDetails();
     logError(CAT_HBASE, __FILE__, __LINE__);
     logError(CAT_HBASE, "HTableClient_JNI::startGets()", getLastError());
+    if (j_cols != NULL)
+        jenv_->DeleteLocalRef(j_cols);
     return HTC_ERROR_GETROWSOPEN_PARAM;
   }  
   numReqRows_ = rowIDs.size();
@@ -2390,7 +2445,12 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
   jlong j_ts = timestamp;
   jboolean j_directRow = directRow;
   
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_GETS_OPEN].methodID, j_tid, j_rows, j_cols, j_ts, j_directRow);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
+      JavaMethods_[JM_GETS_OPEN].methodID, j_tid, j_rows, j_cols, 
+         j_ts, j_directRow);
+  jenv_->DeleteLocalRef(j_rows);
+  if (j_cols != NULL)
+      jenv_->DeleteLocalRef(j_cols);
 
   if (jenv_->ExceptionCheck())
   {
@@ -2571,6 +2631,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
         getExceptionDetails();
         logError(CAT_HBASE, __FILE__, __LINE__);
         logError(CAT_HBASE, "HTableClient_JNI::deleteRow()", getLastError());
+        jenv_->DeleteLocalRef(jba_rowID);  
         return HTC_ERROR_DELETEROW_PARAM;
      }
   }  
@@ -2580,6 +2641,8 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
           JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts);
 
   jenv_->DeleteLocalRef(jba_rowID);  
+  if (j_cols != NULL)
+     jenv_->DeleteLocalRef(j_cols);
 
   if (jenv_->ExceptionCheck())
   {
@@ -3994,6 +4057,7 @@ jobjectArray convertToByteArrayObjectArray(const TextVec &vec)
           }
        }
        jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
    }
    return j_objArray;
 }
@@ -4025,6 +4089,7 @@ jobjectArray convertToByteArrayObjectArray(const char **array,
           }
        }
        jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
    }
    return j_objArray;
 }
@@ -4055,6 +4120,7 @@ jobjectArray convertToStringObjectArray(const TextVec &vec)
           }
        }
        jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
    }
    return j_objArray;
 }
@@ -4084,6 +4150,7 @@ jobjectArray convertToStringObjectArray(const HBASE_NAMELIST& nameList)
           }
        }
        jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
    }
    return j_objArray;
 }
@@ -4112,6 +4179,7 @@ jobjectArray convertToStringObjectArray(const NAText *textArray, int arrayLen)
           }
        }
        jenv_->SetObjectArrayElement(j_objArray, i, (jobject)j_obj);
+       jenv_->DeleteLocalRef(j_obj);
    }
    return j_objArray;
 }

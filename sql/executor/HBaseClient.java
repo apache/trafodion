@@ -212,7 +212,7 @@ public class HBaseClient {
     public boolean createk(String tblName, Object[] tableOptions, 
         Object[]  beginEndKeys) 
         throws IOException, MasterNotRunningException {
-            logger.debug("HBaseClient.create(" + tblName + ") called.");
+            logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
