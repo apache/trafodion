@@ -84,27 +84,36 @@ if [[ $pid != "" ]];then
 fi
 
 sudo pkill cloudera-scm*
+
+sudo umount /var/run/cloudera-scm-agent/process
+
+sudo yum-complete-transaction
+#==============================================
+echo "***INFO: Removing any remaining Cloudera RPM's"
+
+listRPM=`rpm -qa | grep cloudera`
+
+for i in ${listRPM[@]}; do 
+    sudo rpm -e $i
+    sudo yum remove $i
+done
+
 #==============================================
 echo "***INFO: Removing Cloudera symbolic directory links"
 
-fileFound=$(sudo find / -wholename /etc/alternatives/hadoop-conf | wc -l)
-
-if [[ $fileFound -ge 1 ]]; then
+if [[ -f /etc/alternatives/hadoop-conf ]]; then
    sudo rm -rf /etc/alternatives/hadoop-conf*
-   fileFound=0
 fi
 
-fileFound=$(sudo find / -wholename /etc/alternatives/hbase-conf | wc -l)
-
-if [[ $fileFound -ge 1 ]]; then
+if [[ -f /etc/alternatives/hbase-conf ]]; then
    sudo rm -rf /etc/alternatives/hbase-conf*
-   fileFound=0
 fi
 
-fileFound=$(sudo find / -wholename /etc/alternatives/hive-conf | wc -l)
-
-if [[ $fileFound -ge 1 ]]; then
+if [[ -f /etc/alternatives/hive-conf ]]; then
    sudo rm -rf /etc/alternatives/hive-conf*
-   fileFound=0
+fi
+
+if [[ -f /cloudera-scm-server-db ]]; then
+   sudo rm -rf /cloudera-scm-server-db
 fi
 #============================================
