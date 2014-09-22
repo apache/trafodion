@@ -128,6 +128,7 @@ public class TmAuditTlog {
    private static boolean useAutoFlush;
    private static boolean ageCommitted;
    private static boolean forceControlPoint;
+   private static boolean disableBlockCache;
  
    private static AtomicLong asn;  // Audit sequence number is the monotonic increasing value of the tLog write
 
@@ -299,6 +300,19 @@ public class TmAuditTlog {
       catch (Exception e) {
          LOG.debug("TM_TLOG_NUM_LOGS is not in ms.env");
       }
+      disableBlockCache = false;
+      try {
+         String blockCacheString = System.getenv("TM_TLOG_DISABLE_BLOCK_CACHE");
+         if (blockCacheString != null){
+            disableBlockCache = (Integer.parseInt(blockCacheString) != 0);
+            LOG.debug("disableBlockCache != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_DISABLE_BLOCK_CACHE is not in ms.env");
+      }
+      LOG.info("disableBlockCache is " + disableBlockCache);
+
       switch (tlogNumLogs) {
         case 1:
           tLogHashKey = 0b0;
@@ -332,6 +346,9 @@ public class TmAuditTlog {
       LOG.debug("TM_TLOG_NUM_LOGS is " + tlogNumLogs);
 
       HColumnDescriptor hcol = new HColumnDescriptor(TLOG_FAMILY);
+      if (disableBlockCache) {
+         hcol.setBlockCacheEnabled(false);
+      }
       hcol.setMaxVersions(versions);
       admin = new HBaseAdmin(config);
 
@@ -797,10 +814,9 @@ public class TmAuditTlog {
       for (int i = 0; i < tlogNumLogs; i++) {
          try {
             Scan s = new Scan();
+            s.setCaching(500);
+            s.setCacheBlocks(false);
             ArrayList<Delete> deleteList = new ArrayList<Delete>();
-            String asnToken = new String();
-            String stateToken = new String();
-            String transidToken = new String();
             ResultScanner ss = table[i].getScanner(s);
 
             try {
@@ -809,9 +825,9 @@ public class TmAuditTlog {
                      String valueString = new String(kv.getValue());
                      StringTokenizer st = new StringTokenizer(valueString, ",");
                      if (st.hasMoreElements()) {
-                        asnToken = st.nextElement().toString() ;
-                        transidToken = st.nextElement().toString() ;
-                        stateToken = st.nextElement().toString() ;
+                        String asnToken = st.nextElement().toString() ;
+                        String transidToken = st.nextElement().toString() ;
+                        String stateToken = st.nextElement().toString() ;
                         if ((Long.parseLong(asnToken) < lvAsn) && (stateToken.equals("FORGOTTEN"))) {
                            String rowKey = new String(r.getRow());
                            Delete del = new Delete(r.getRow());
@@ -842,7 +858,6 @@ public class TmAuditTlog {
                                     transidToken = stok.nextElement().toString() ;
                                     stateToken = stok.nextElement().toString() ;
                                     if ((Long.parseLong(asnToken) < lvAsn) && (stateToken.equals("FORGOTTEN"))) {
-                                       String rowKey = new String(r.getRow());
                                        Delete del = new Delete(r.getRow());
                                        LOG.trace("Secondary search found new delete - adding (" + transidToken + ") with asn: " + asnToken + " to delete list");
                                        deleteList.add(del);
@@ -929,7 +944,7 @@ public class TmAuditTlog {
          if ((lvCtrlPt - 5) > 0){  // We'll keep 5 control points of audit
             try {
                agedAsn = tLogControlPoint.getRecord(String.valueOf(lvCtrlPt - 5));
-               if (agedAsn > 0){
+               if ((agedAsn > 0) && (lvCtrlPt % 5 == 0)){
                   try {
                      LOG.debug("Attempting to remove TLOG writes older than asn " + agedAsn);
                      deleteAgedEntries(agedAsn);
@@ -939,7 +954,6 @@ public class TmAuditTlog {
                      throw e;
                   }
                }
-
                try {
                   tLogControlPoint.deleteAgedRecords(lvCtrlPt - 5);
                }
@@ -973,11 +987,8 @@ public class TmAuditTlog {
          LOG.debug("key: " + key + ", hexkey: " + Long.toHexString(key) + ", transid: " +  lvTransid);
          g = new Get(Bytes.toBytes(key));
          int lvTxState = TM_TX_STATE_NOTX;
-         String recordString;
-         String asnToken = new String();
-         String stateString = new String();
-         String transidToken = new String();
-         String tableNameToken = new String();
+         String stateString = "";
+         String transidToken = "";
          int    lv_lockIndex = (int)(lvTransid & tLogHashKey);
          try {
             Result r = table[lv_lockIndex].get(g);
@@ -998,10 +1009,10 @@ public class TmAuditTlog {
                LOG.debug("getTransactionState: tLog transaction not found: " + transidString);
                return;
             }
-            recordString =  new String (Bytes.toString(value));
+            String recordString =  new String (Bytes.toString(value));
             StringTokenizer st = new StringTokenizer(recordString, ",");
             if (st.hasMoreElements()) {
-               asnToken = st.nextElement().toString() ;
+               String asnToken = st.nextElement().toString() ;
                transidToken = st.nextElement().toString() ;
                stateString = st.nextElement().toString() ;
                LOG.debug("getTransactionState: stateString is " + stateString);
@@ -1023,7 +1034,6 @@ public class TmAuditTlog {
             }
             else if (stateString.compareTo("FORGOTTEN") == 0){
                // Need to get the previous state record so we know how to drive the regions
-               String stateToken = new String();
                String keyS = new String(r.getRow());
                Get get = new Get(r.getRow());
                get.setMaxVersions(versions);  // will return last n versions of row
@@ -1035,9 +1045,9 @@ public class TmAuditTlog {
                   st = new StringTokenizer(stringValue, ",");
                   if (st.hasMoreElements()) {
                      LOG.debug("Performing secondary search on (" + transidToken + ")");
-                     asnToken = st.nextElement().toString() ;
+                     String asnToken = st.nextElement().toString() ;
                      transidToken = st.nextElement().toString() ;
-                     stateToken = st.nextElement().toString() ;
+                     String stateToken = st.nextElement().toString() ;
                      if ((stateToken.compareTo("COMMITTED") == 0) || (stateToken.compareTo("ABORTED") == 0)) {
                          String rowKey = new String(r.getRow());
                          LOG.debug("Secondary search found record for (" + transidToken + ") with state: " + stateToken);
@@ -1096,7 +1106,7 @@ public class TmAuditTlog {
 
             // Load the TransactionState object up with regions
             while (st.hasMoreElements()) {
-               tableNameToken = st.nextToken();
+               String tableNameToken = st.nextToken();
                HTable table = new HTable(config, tableNameToken);
                NavigableMap<HRegionInfo, ServerName> regions = table.getRegionLocations();
                Iterator it =  regions.entrySet().iterator();

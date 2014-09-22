@@ -78,12 +78,31 @@ public class HBaseAuditControlPoint {
     private static final byte[] ASN_HIGH_WATER_MARK = Bytes.toBytes("hwm");
     private static HTable table;
     private static boolean useAutoFlush;
+    private static boolean disableBlockCache;
 
     public HBaseAuditControlPoint(Configuration config) throws IOException {
       LOG.trace("Enter HBaseAuditControlPoint constructor()");
       CONTROL_POINT_TABLE_NAME = config.get("CONTROL_POINT_TABLE_NAME");
       HTableDescriptor desc = new HTableDescriptor(CONTROL_POINT_TABLE_NAME);
-      desc.addFamily(new HColumnDescriptor(CONTROL_POINT_FAMILY));
+      HColumnDescriptor hcol = new HColumnDescriptor(CONTROL_POINT_FAMILY);
+
+      disableBlockCache = false;
+      try {
+         String blockCacheString = System.getenv("TM_TLOG_DISABLE_BLOCK_CACHE");
+         if (blockCacheString != null){
+            disableBlockCache = (Integer.parseInt(blockCacheString) != 0);
+            LOG.debug("disableBlockCache != null");
+         }
+      }
+      catch (Exception e) {
+         LOG.debug("TM_TLOG_DISABLE_BLOCK_CACHE is not in ms.env");
+      }
+      LOG.info("disableBlockCache is " + disableBlockCache);
+      if (disableBlockCache) {
+         hcol.setBlockCacheEnabled(false);
+      }
+
+      desc.addFamily(hcol);
       admin = new HBaseAdmin(config);
 
       useAutoFlush = true;
@@ -139,6 +158,8 @@ public class HBaseAuditControlPoint {
       long highKey = -1;
       LOG.debug("new Scan");
       Scan s = new Scan();
+      s.setCaching(10);
+      s.setCacheBlocks(false);
       LOG.debug("resultScanner");
       ResultScanner ss = table.getScanner(s);
       try {
@@ -148,7 +169,7 @@ public class HBaseAuditControlPoint {
          for (Result r : ss) {
             rowKey = new String(r.getRow());
             LOG.debug("rowKey is " + rowKey );
-            currKey = Long.parseLong(new String(r.getRow()));
+            currKey = Long.parseLong(rowKey);
             LOG.debug("value is " + Long.parseLong(Bytes.toString(r.value())));
             if (currKey > highKey) {
                LOG.debug("Setting highKey to " + currKey);
@@ -189,7 +210,6 @@ public class HBaseAuditControlPoint {
 
    public static ArrayList<String> getRecordList(String controlPt) throws IOException {
       LOG.trace("getRecord");
-      String token = new String();
       ArrayList<String> transactionList = new ArrayList<String>();
       Get g = new Get(Bytes.toBytes(controlPt));
       Result r = table.get(g);
@@ -198,7 +218,7 @@ public class HBaseAuditControlPoint {
       LOG.debug("recordString is " + recordString);
       StringTokenizer st = new StringTokenizer(recordString, ",");
       while (st.hasMoreElements()) {
-        token = st.nextElement().toString() ;
+        String token = st.nextElement().toString() ;
         LOG.debug("token is " + token);
         transactionList.add(token);
       }
@@ -246,7 +266,7 @@ public class HBaseAuditControlPoint {
                  + CONTROL_POINT_FAMILY + " ASN_HIGH_WATER_MARK " + ASN_HIGH_WATER_MARK);
       byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
       LOG.debug("Starting asn setting recordString ");
-      String recordString = null;
+      String recordString = "";
       try {
          recordString = new String(currValue);
       }
@@ -301,6 +321,8 @@ public class HBaseAuditControlPoint {
       String controlPtString = new String(String.valueOf(controlPoint));
 
       Scan s = new Scan();
+      s.setCaching(10);
+      s.setCacheBlocks(false);
       ArrayList<Delete> deleteList = new ArrayList<Delete>();
       ResultScanner ss = table.getScanner(s);
       try {

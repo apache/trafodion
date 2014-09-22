@@ -182,10 +182,10 @@ public class TransactionalRegion extends HRegion {
                 if (doTlog) this.cleanAT = 0;
                 else this.cleanAT = 1;
 
-                commitCheckTimes        = new long[1000];
-                hasConflictTimes        = new long[1000];
-                putBySequenceTimes      = new long[1000];
-                writeToLogTimes         = new long[1000];
+                commitCheckTimes        = new long[100];
+                hasConflictTimes        = new long[100];
+                putBySequenceTimes      = new long[100];
+                writeToLogTimes         = new long[100];
 
                 timeIndex               =    new AtomicInteger (0);
                 totalCommits            =    new AtomicInteger (0);
@@ -881,7 +881,11 @@ public class TransactionalRegion extends HRegion {
                    minWriteToLogTime = writeToLogTimes[lv_timeIndex];
                 }
 
-                if (lv_timeIndex == 499) {
+                if (lv_timeIndex == 49) {
+                   timeIndex.set(1);  // Start over so we don't exceed the array size
+                }
+
+                if (lv_totalCommits == 49999) {
                    avgCommitCheckTime = (double) (totalCommitCheckTime/lv_totalCommits);
                    avgConflictTime = (double) (totalConflictTime/lv_totalCommits);
                    avgPutTime = (double) (totalPutTime/lv_totalCommits);
@@ -921,7 +925,6 @@ public class TransactionalRegion extends HRegion {
                          + avgWriteToLogTime / 1000 + " microseconds\n" +
                       "                                     Ops:  " 
                          + writeToLogOperations.get() + "\n\n");
-                   timeIndex.set(1);
                    totalCommits.set(0);
                    writeToLogOperations.set(0);
                    putBySequenceOperations.set(0);

@@ -25,6 +25,7 @@ echo "DTM_TLOG_PER_TM=0"
 echo "TM_ENABLE_TLOG_WRITES=1"
 echo "TM_TLOG_NUM_LOGS=16"
 echo "TM_TLOG_AUTO_FLUSH=0"
+echo "TM_TLOG_DISABLE_BLOCK_CACHE=0"
 echo "#TM_TLOG_MAX_VERSIONS less than 3 will be ignored"
 echo "TM_TLOG_MAX_VERSIONS=5"
 
