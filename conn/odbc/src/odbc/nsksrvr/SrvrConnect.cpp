@@ -1527,7 +1527,22 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	odbc_SQLSvc_InitializeDialogue_sme_(objtag_, call_id_, &exception_, userDesc, inContext,
 						dialogueId, &outContext);
 
-	if (exception_.exception_nr == 0 || exception_.exception_nr == odbc_SQLSvc_InitializeDialogue_SQLError_exn_) // In case of password expiry
+	// If there is an exception, do not proceed to set the server initial context
+	if (exception_.exception_nr != 0)
+	{
+		odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
+		updateSrvrState(SRVR_CONNECT_REJECTED);
+		if (outContext.outContextOptionStringLen > 0)
+			delete [] outContext.outContextOptionString;
+
+			if (srvrGlobal->traceLogger != NULL)
+			{
+				srvrGlobal->traceLogger->TraceConnectExit(exception_, outContext);
+			}
+
+		return;
+	}
+	else
 	{
 
 // Get Default Catalog Schema
@@ -1705,29 +1720,6 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	else
 		outContext.outContextOptionStringLen = 0;
 
-        // For performance reasons, SQL statements to setup the initial context are executed
-        // after responding back to client
-        //
-        // If there is an exception, do not proceed to set the server initial context
-        if (exception_.exception_nr != 0)
-        {
-           if (exception_.exception_nr != odbc_SQLSvc_InitializeDialogue_SQLError_exn_ ||   // maintain connection in case of password expiry warnings
-               (exception_.exception_detail >= 4400 && exception_.exception_detail < 4499)) // reject connection in case of security error
-           {
-              odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
-              updateSrvrState(SRVR_CONNECT_REJECTED);
-              if (outContext.outContextOptionStringLen > 0)
-                 delete [] outContext.outContextOptionString;
-
-              if (srvrGlobal->traceLogger != NULL)
-              {
-                 srvrGlobal->traceLogger->TraceConnectExit(exception_, outContext);
-              }
-
-              return;
-           }
-        }
-
 	//  +++ Fix for update stats problem on volatile table. This code was earlier
 	//  just before SET_ODBC_PROCESS connection attr above.
 	//	Have moved the BEGIN_SESSION here to fix an issue with AQR.
@@ -1793,6 +1785,10 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	{
 	   updateSrvrState(SRVR_CONNECTED);
 	}
+
+	// For performance reasons, SQL statements to setup the initial context
+	// are executed after responding back to client
+	//
 
 	odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
 
@@ -3532,15 +3528,19 @@ BOOL SRVR::updateSrvrState(SRVR_STATE srvrState)
 
 		srvrGlobal->srvrState = SRVR_AVAILABLE;
 		bool result;
-/*
-		if( srvrState == SRVR_CONNECT_REJECTED || srvrState == SRVR_CONNECT_FAILED )
-			result = updateZKState(CONNECTING, AVAILABLE);
-		else
-			result = updateZKState(CONNECTED, AVAILABLE);
-*/
+
 		if( srvrState == SRVR_CONNECT_REJECTED || srvrState == SRVR_CONNECT_FAILED )
 		{
-			result = updateZKState(CONNECTING, srvrState == SRVR_CONNECT_REJECTED? CONNECT_REJECTED : CONNECT_FAILED);
+
+		// Commenting the following code. MXOSRVR remains in this state
+		// for timeout duration (clientConnErrorTimeOut).
+		// Changing the state to AVAILABLE immediately.
+		// Leaving the related code in place (ASTimerExpired)
+		// if this gets revisited.
+		//
+		//	result = updateZKState(CONNECTING, srvrState == SRVR_CONNECT_REJECTED? CONNECT_REJECTED : CONNECT_FAILED);
+
+			result = updateZKState(CONNECTING, AVAILABLE);
 		}
 		else
 			result = updateZKState(CONNECTED, AVAILABLE);
