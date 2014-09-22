@@ -100,7 +100,7 @@ void WINAPI TCPIPCloseSession (void* ipTCPIPSystem)
 
 	CTCPIPUnixDrvr* pTCPIPSystem = (CTCPIPUnixDrvr*)ipTCPIPSystem;
 
-	if (pTCPIPSystem->m_hSocket == NULL)
+	if (pTCPIPSystem->m_hSocket == INVALID_SOCKET)
 		return;
 	shutdown(pTCPIPSystem->m_hSocket,SHUT_WR);
 #ifndef unixcli	
@@ -110,7 +110,7 @@ void WINAPI TCPIPCloseSession (void* ipTCPIPSystem)
 	close(pTCPIPSystem->m_hSocket);
 #endif
 	memset(pTCPIPSystem->m_object_ref,0,sizeof(pTCPIPSystem->m_object_ref));
-	pTCPIPSystem->m_hSocket = NULL;
+	pTCPIPSystem->m_hSocket = INVALID_SOCKET;
 
 	if (pTCPIPSystem->m_hEvents[0] != NULL)
 		CloseHandle(pTCPIPSystem->m_hEvents[0]);
@@ -140,7 +140,7 @@ bool WINAPI TCPIPOpenSession(void* ipTCPIPSystem, char* object_ref)
 
 	CTCPIPUnixDrvr* pTCPIPSystem = (CTCPIPUnixDrvr*)ipTCPIPSystem;
 
-	if (pTCPIPSystem->m_hSocket != NULL)
+	if (pTCPIPSystem->m_hSocket != INVALID_SOCKET)
 		return true;
 
 	if (pTCPIPSystem->odbcAPI != AS_API_GETOBJREF &&
@@ -156,7 +156,7 @@ bool WINAPI TCPIPOpenSession(void* ipTCPIPSystem, char* object_ref)
 	if ((pTCPIPSystem->m_hSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 	{
 		(fpTCPIPSET_ERROR)((long)pTCPIPSystem, UNX, TCPIP, pTCPIPSystem->odbcAPI, E_DRIVER, object_ref, O_OPEN_SESSION, F_SOCKET, errno, (int)0, strerror(errno));
-		pTCPIPSystem->m_hSocket = NULL;
+		pTCPIPSystem->m_hSocket = INVALID_SOCKET;
 		return false;
 	}
 // this is the default, for now we will change it to the max value
@@ -279,7 +279,7 @@ bool WINAPI TCPIPDoWriteRead(void* ipTCPIPSystem, HEADER*& hdr, char*& buffer, i
 	int data_length = 0;
 	CTCPIPUnixDrvr* pTCPIPSystem = (CTCPIPUnixDrvr*)ipTCPIPSystem;
 
-	if (pTCPIPSystem->m_hSocket == NULL)
+	if (pTCPIPSystem->m_hSocket == INVALID_SOCKET)
 	{
 		(fpTCPIPSET_ERROR)((long)pTCPIPSystem, UNX, TCPIP, pTCPIPSystem->odbcAPI, E_DRIVER, pTCPIPSystem->m_object_ref, O_DO_WRITE_READ, F_CHECKCONNECTION, 999, (int)0, "Invalid Socket");
 		return false;
