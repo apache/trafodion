@@ -871,7 +871,8 @@ enum ComLevels { COM_UNKNOWN_LEVEL
                , COM_LOCAL_LEVEL
                };
 
-
+// For any new object type, add a define for the corresponding string literal
+// below, and a case in comObjectTypeLit().
 enum ComObjectType { COM_UNKNOWN_OBJECT
                    , COM_BASE_TABLE_OBJECT
                    , COM_CHECK_CONSTRAINT_OBJECT
@@ -911,10 +912,10 @@ enum ComObjectType { COM_UNKNOWN_OBJECT
 #define COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT   "RC"
 #define COM_STORED_PROCEDURE_OBJECT_LIT         "SP"
 #define COM_UNIQUE_CONSTRAINT_OBJECT_LIT        "UC"
+#define COM_USER_DEFINED_ROUTINE_OBJECT_LIT     "UR"
 #define COM_VIEW_OBJECT_LIT                     "VI"
 #define COM_MV_OBJECT_LIT                       "MV"
 #define COM_MVRG_OBJECT_LIT                     "RG"  // OZ
-#define COM_USER_DEFINED_ROUTINE_OBJECT_LIT     "UR"
 #define COM_TRIGGER_OBJECT_LIT                  "TR"
 #define COM_LOB_TABLE_OBJECT_LIT                "LT"
 #define COM_TRIGGER_TABLE_OBJECT_LIT            "TT"
@@ -1907,5 +1908,7 @@ Int64  ComSmallDef_local_GetTimeStamp();
 void   print_ComUID_with_text(FILE *fp, char *text, ComUID value);
 ComUID read_ComUID_with_text(FILE *fp, char *text);
 ostream & operator<<(ostream &s, const ComUID &uid);
+
+const char* comObjectTypeLit(ComObjectType objType);
 
 #endif // COMSMALLDEFS_H

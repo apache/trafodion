@@ -75,6 +75,8 @@
 #include "exp_clause_derived.h"
 #include "PrivMgrCommands.h"
 #include "ComDistribution.h"
+#include "ExExeUtilCli.h"
+#include "CmpDescribe.h"
 
 #define MAX_NODE_NAME 9
 
@@ -6165,6 +6167,99 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
     }
 
   return constrFound;
+}
+
+// Query the metadata to find the object uid of the table. This is used when
+// the uid for a metadata table is requested, since 0 is usually stored for
+// these tables.
+void NATable::lookupObjectUid()
+{
+    ExeCliInterface cliInterface(STMTHEAP);
+    QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
+
+    const size_t BUF_SIZE = 2000;
+    char buf[BUF_SIZE];
+    snprintf(buf, BUF_SIZE,
+             "select object_uid from %s.\"%s\".%s "
+             "where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s'",
+             ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG),
+             SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+             qualName.getCatalogName().data(),
+             qualName.getSchemaName().data(),
+             qualName.getObjectName().data(),
+             comObjectTypeLit(objectType_)
+             );
+
+    Lng32 diagsMark = CmpCommon::diags()->mark();
+
+    Lng32 cliRC = 0;
+    NABoolean switched = FALSE;
+    ULng32 savedCmpParserFlags, savedExeParserFlags;
+    CmpContext* prevContext = CmpCommon::context();
+
+    // For compiling the query to get the object UID, the parser flags will be
+    // overwritten by those stored in the current CLI context, as modified by
+    // SQL_EXEC_SetParserFlagsForExSqlComp_Internal below. We need to store the
+    // current ones in case of a cmp context switch, so they can be restored
+    // when we switch back.
+    savedCmpParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+
+    if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+       if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
+         {
+           // Failed to switch/create metadata CmpContext; continue using current CmpContext.
+         }
+       else
+         {
+           switched = TRUE;
+           // send controls to the context we are switching to
+           sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, TRUE, prevContext);
+           // Turn off hbase predicate filtering and esp parallelism, as they
+           // currently can cause problems.
+           cliInterface.holdAndSetCQD("hbase_filter_preds", "OFF");
+           cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
+           // Mark as an internal query to avoid privilege check, which would
+           // result in infinite recursion looking up object UID of Tables table.
+           SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedExeParserFlags);
+           SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+         }
+
+    cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
+
+    // Ignore any CLI error and just avoid setting objectUID_.
+    NABoolean failed = FALSE;
+    if (cliRC < 0)
+      {
+        CmpCommon::diags()->rewind(diagsMark);
+        failed = TRUE;
+      }
+    cliRC = cliInterface.clearExecFetchClose(NULL, 0);
+    if (cliRC < 0)
+      {
+        CmpCommon::diags()->rewind(diagsMark);
+        failed = TRUE;
+      }
+    if (cliRC == 100) // did not find the row
+      failed = TRUE;
+
+    if (!failed)
+      {
+        char * ptr = NULL;
+        Lng32 len = 0;
+        cliInterface.getPtrAndLen(1, ptr, len);
+        objectUID_ = *(Int64*)ptr;
+      }
+
+    cliInterface.fetchRowsEpilogue(NULL, TRUE);
+
+    if (switched == TRUE)
+      {
+        SQL_EXEC_SWITCH_BACK_COMPILER();
+        cliInterface.restoreCQD("hbase_filter_preds");
+        cliInterface.restoreCQD("attempt_esp_parallelism");
+        SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedExeParserFlags);
+        Set_SqlParser_Flags(savedCmpParserFlags);
+      }
 }
 
 NATable::~NATable()
