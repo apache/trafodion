@@ -1613,17 +1613,6 @@ public:
   // accessor functions
   Int32 getDateFormat() const { return dateFormat_; }
 
-//  virtual NABoolean isCacheableExpr(CacheWA& cwa)
-//  {
-//    if ((child(1)) && 
-//	((dateFormat_ == DATE_FORMAT_STR) ||
-//	 (dateFormat_ == TIME_FORMAT_STR) ||
-//	 (dateFormat_ == TIMESTAMP_FORMAT_STR)))
-//      return FALSE;
-//    else
-//      return TRUE;
-//  }
-
   // do not change format literals of DateFormat into constant parameters
   virtual ItemExpr* normalizeForCache(CacheWA& cwa, BindWA& bindWA)
     { return this; } 
