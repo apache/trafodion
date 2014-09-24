@@ -85,7 +85,6 @@ class CmpSeabaseDDLauth
 
     bool isAuthNameReserved (const NAString &authName);
     bool isAuthNameValid    (const NAString &authName);
-    void verifyAuthority    (void);
 
     virtual Int32 getUniqueID (void);
 
@@ -157,7 +156,7 @@ class CmpSeabaseDDLuser : public CmpSeabaseDDLauth
    protected:
 
      Int32 getUniqueID (void);
-     void verifyAuthority    (void);
+     void verifyAuthority(bool isRemapUser = false);
 };
 
 

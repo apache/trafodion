@@ -115,9 +115,7 @@ bool CmpSeabaseDDLauth::authExists (const NAString &authName, bool isExternal)
   {
     // If there is no error in the diags area, set up an internal error
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLauth::authExists for authName");
+       SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLauth::authExists for authName");
     return false;
   }
 }
@@ -134,10 +132,8 @@ bool CmpSeabaseDDLauth::authExists (const NAString &authName, bool isExternal)
 bool CmpSeabaseDDLauth::describe(const NAString &authName, NAString &authText)
 {
 
-   *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                       << DgInt0(__LINE__)
-                       << DgString0("CmpSeabaseDDLauth::describe");
-                          
+   SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLauth::describe");
+
 UserException excp(NULL,0);
 
    throw excp;
@@ -181,9 +177,7 @@ CmpSeabaseDDLauth::getAuthDetails(const char *pAuthName, bool isExternal)
   {
     // If there is no error in the diags area, set up an internal error
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLauth::getAuthDetails for authName");
+       SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLauth::getAuthDetails for authName");
     return STATUS_ERROR;
   }
 }
@@ -218,9 +212,7 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
   {
     // If there is no error in the diags area, set up an internal error
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLauth::getAuthDetails for authID");
+       SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLauth::getAuthDetails for authID");
 
     return STATUS_ERROR;
   }
@@ -238,9 +230,7 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getAuthDetails(Int32 authID)
 Int32 CmpSeabaseDDLauth::getUniqueID()
 {
 
-   *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                       << DgInt0(__LINE__)
-                       << DgString0("CmpSeabaseDDLauth::getUniqueID");
+   SEABASEDDL_INTERNAL_ERROR("CmpSeabaseDDLauth::getUniqueID");
                           
 UserException excp(NULL,0);
 
@@ -299,29 +289,6 @@ bool CmpSeabaseDDLauth::isAuthNameValid(const NAString &authName)
 }
 
 // ----------------------------------------------------------------------------
-// method: verifyAuthority
-//
-// makes sure user has privilege to perform operation
-//
-// Input: none
-//
-// Output:  an exception is generated if user does not have authority
-// ----------------------------------------------------------------------------
-void CmpSeabaseDDLauth::verifyAuthority()
-{
-  // get effective user from the Context
-  const char *databaseUserName = GetCliGlobals()->currContext()->getDatabaseUserName();
-  NAString userNameStr = databaseUserName;
-  NAString rootNameStr = ComUser::getRootUserName();
-  if (rootNameStr != userNameStr)
-  {
-    *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
-    UserException excp (NULL, 0);
-    throw excp;
-  }
-}
-
-// ----------------------------------------------------------------------------
 // Methods that perform metadata access
 //
 // All methods return a UserException if an unexpected error occurs
@@ -369,9 +336,7 @@ void CmpSeabaseDDLauth::insertRow()
       authType = COM_USER_CLASS_LIT;
       break;
     default:
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLauth::deleteRow invalid authType");
+      SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLuser::deleteRow invalid authType");
       UserException excp (NULL, 0);
       throw excp;
   }
@@ -795,9 +760,7 @@ DBUserAuth::AuthenticationConfiguration foundConfigurationNumber = DBUserAuth::D
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLuser::register user");
+       SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLuser::registerUser");
   }
 }
 
@@ -920,9 +883,7 @@ void CmpSeabaseDDLuser::unregisterUser(
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLuser::unregister user");
+      SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLuser::unregisterUser");
   }
 }
 
@@ -938,15 +899,21 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
 {
   try
   {
-    verifyAuthority();
+    StmtDDLAlterUser::AlterUserCmdSubType cmdSubType = pNode->getAlterUserCmdSubType();
+    verifyAuthority(cmdSubType == StmtDDLAlterUser::SET_EXTERNAL_NAME);
 
-    // Verify that that user name being altered is not a reserved name
+    // Verify that that user name being altered is not a reserved name.
+    // Altering of external name for DB__ROOT is the exception.
     if (isAuthNameReserved(pNode->getDatabaseUsername()))
-     {
-       *CmpCommon::diags() << DgSqlCode (-CAT_AUTH_NAME_RESERVED)
-                           << DgString0(pNode->getDatabaseUsername().data());
-       return;
-     }
+    {
+      if (cmdSubType != StmtDDLAlterUser::SET_EXTERNAL_NAME ||
+          !(pNode->getDatabaseUsername() == ComUser::getRootUserName()))
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_AUTH_NAME_RESERVED)
+                            << DgString0(pNode->getDatabaseUsername().data());
+        return;
+      }
+    }
 
     // read user details from the AUTHS table
     const NAString dbUserName(pNode->getDatabaseUsername());
@@ -961,9 +928,6 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
     }
 
     // Process the requested operation
-    StmtDDLAlterUser::AlterUserCmdSubType cmdSubType = 
-      pNode->getAlterUserCmdSubType();
-
     NAString setClause("set ");
     switch (cmdSubType)
     {
@@ -1018,9 +982,7 @@ void CmpSeabaseDDLuser::alterUser (StmtDDLAlterUser * pNode)
     // At this time, an error should be in the diags area.
     // If there is no error, set up an internal error
     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("CmpSeabaseDDLuser::alterUser");
+      SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLuser::alterUser");
   }
 }
 
@@ -1151,9 +1113,7 @@ bool CmpSeabaseDDLuser::describe (const NAString &authName, NAString &authText)
    // At this time, an error should be in the diags area.
    // If there is no error, set up an internal error
    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgInt0(__LINE__)
-                        << DgString0("CmpSeabaseDDLuser::describe");
+      SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLuser::describe");
     return false;
   }
 
@@ -1170,7 +1130,7 @@ bool CmpSeabaseDDLuser::describe (const NAString &authName, NAString &authText)
 //
 // Output:  an exception is generated if user does not have authority
 // ----------------------------------------------------------------------------
-void CmpSeabaseDDLuser::verifyAuthority()
+void CmpSeabaseDDLuser::verifyAuthority(bool isRemapUser)
 
 {
 
@@ -1195,8 +1155,13 @@ PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
 
 // Authorization enabled.  See if non-root user has authority to manage users.       
    if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::MANAGE_USERS,true))
-      return;   
-       
+   {
+      if (!isRemapUser)
+         return; 
+      if (componentPrivileges.hasSQLPriv(currentUser,SQLOperation::REMAP_USER,true))
+         return;
+   }   
+           
 // No authority.  We're outta here.
    *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
    UserException excp (NULL, 0);
@@ -1285,11 +1250,15 @@ void CmpSeabaseDDLrole::createRole(
       if (pNode->getOwner() == NULL)
       {
          // get effective user from the Context
-         Int32 *pUserID = GetCliGlobals()->currContext()->getDatabaseUserID();
-         setAuthCreator(*pUserID);
-         char creatorName[257];
+         Int32 userID = ComUser::getCurrentUser();
+         setAuthCreator(userID);
+         char creatorName[MAX_DBUSERNAME_LEN + 1];
          int32_t length;
-         ComUser::getAuthNameFromAuthID(*pUserID,creatorName,sizeof(creatorName),length);
+         if (ComUser::getAuthNameFromAuthID(userID,creatorName,sizeof(creatorName),length) != 0)
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR);
+            return;
+         }
          creatorUsername = creatorName;
       }
       else
@@ -1329,16 +1298,19 @@ void CmpSeabaseDDLrole::createRole(
                                                           getAuthDbName().data(),
                                                           getAuthCreator(),
                                                           creatorUsername);
+         if (privStatus != PrivStatus::STATUS_GOOD)
+         {
+            SEABASEDDL_INTERNAL_ERROR("Unable to grant role to role administrator");
+            return;
+         }
       }      
    }
    catch (...)
    {
-     // At this time, an error should be in the diags area.
-     // If there is no error, set up an internal error
-     if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-       *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                           << DgInt0(__LINE__)
-                           << DgString0("CmpSeabaseDDLuser::create role");
+      // At this time, an error should be in the diags area.
+      // If there is no error, set up an internal error
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+         SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLrole::createRole");
    }
 }
 
@@ -1443,11 +1415,17 @@ bool CmpSeabaseDDLrole::describe(
     {
        roleText += " WITH ADMIN \"";
        
-       char creatorName[129];
+       char creatorName[MAX_DBUSERNAME_LEN + 1];
        int32_t length = 0;
        
        Int16 retCode = ComUser::getAuthNameFromAuthID(getAuthCreator(),creatorName,
                                                       sizeof(creatorName),length);
+       if (retCode != 0)
+       {
+          SEABASEDDL_INTERNAL_ERROR("Role administrator not registered");
+          UserException excp (NULL, 0);
+          throw excp;
+       }
        roleText += creatorName; 
        roleText += "\"";
     }
@@ -1496,9 +1474,8 @@ bool CmpSeabaseDDLrole::describe(
    // At this time, an error should be in the diags area.
    // If there is no error, set up an internal error
    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgInt0(__LINE__)
-                        << DgString0("CmpSeabaseDDLrole::describe");
+      SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLrole::describe");
+
     return false;
   }
 
@@ -1561,21 +1538,19 @@ void CmpSeabaseDDLrole::dropRole(
       
       if (role.isAuthorizationEnabled())
       {
+         //TODO: Could support a CASCADE option that would clean up
+         // grants and dependent objects.
          
+         // First, see if role has been granted
          bool roleIsGranted = role.isGranted(getAuthID(),true); 
-         //TODO: Could support a CASCADE option
          if (roleIsGranted)
          {
             *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_IS_GRANTED_NO_DROP);
             return;
          }
          
-         PrivStatus privStatus = role.revokeRoleFromCreator(getAuthID(),
-                                                            getAuthCreator());
-
-         if (privStatus != PrivStatus::STATUS_GOOD)
-            return;
-            
+         // Now see if the role has been granted any privileges.
+         // TODO: could allow priv grants if no dependent objects.
          PrivMgr privMgr(privMDLoc,CmpCommon::diags());
          std::vector<PrivClass> privClasses;
          
@@ -1584,6 +1559,17 @@ void CmpSeabaseDDLrole::dropRole(
          if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses))
          {
             *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_HAS_PRIVS_NO_DROP);
+            return;
+         }
+
+         // Role has not been granted and no privileges have been granted to
+         // the role.  Remove the system grant.
+         PrivStatus privStatus = role.revokeRoleFromCreator(getAuthID(),
+                                                            getAuthCreator());
+
+         if (privStatus != PrivStatus::STATUS_GOOD)
+         {
+            SEABASEDDL_INTERNAL_ERROR("Unable to remove grant to role administrator");
             return;
          }
       }
@@ -1596,9 +1582,7 @@ void CmpSeabaseDDLrole::dropRole(
       // At this time, an error should be in the diags area.
       // If there is no error, set up an internal error
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0("CmpSeabaseDDLuser::drop role");
+         SEABASEDDL_INTERNAL_ERROR("Switch statement in CmpSeabaseDDLrole::dropRole");
    }
 }
 

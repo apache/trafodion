@@ -890,7 +890,7 @@ static const QueryString getComponentPrivilegesForUser[] =
   {"       ((p.grantee_name = '%s') or "},
   {"        (p.grantee_name in (select role_name from "},
   {"          %s.\"%s\".%s ru "},
-  {"          where ru.grantee_name = '%s'))"},
+  {"          where ru.grantee_name = '%s')))"},
   {" order by 1 " },
   {" for read uncommitted access "},
   {" ; " }
@@ -1822,18 +1822,17 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
         str_sprintf(headingBuf_, "Components");
     break;
 
-   case ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_:
-      {
-        str_sprintf(headingBuf_, "Operations for Component %s",
-                    getMItdb().getObj());
-        break;
-      }
-   case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
-      {	//TODO: Add user?
-        str_sprintf(headingBuf_, "Privilege information on Component %s",
-                    getMItdb().getObj());
-        break;
-      }
+    case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
+       {	 
+      	 if (getMItdb().getParam1())
+            str_sprintf(headingBuf_, "Privilege information on Component %s for %s",
+                        getMItdb().getObj(),getMItdb().getParam1());
+         
+         else
+            str_sprintf(headingBuf_, "Operation information on Component %s",
+                        getMItdb().getObj());
+         break;
+       }
 
     default:
       str_sprintf(headingBuf_, "Add to ExExeUtilGetMetadataInfoTcb::displayHeading");
@@ -2330,6 +2329,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
             char role_usage[100];
             char components[100];
             char componentOperations[100];
+            char componentPrivileges[100];
             char routine[100];
             char library_usage[100];
 
@@ -2345,6 +2345,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
             strcpy(role_usage, "ROLE_USAGE");
             strcpy(components, "COMPONENTS");
             strcpy(componentOperations, "COMPONENT_OPERATIONS");
+            strcpy(componentPrivileges, "COMPONENT_PRIVILEGES");
             strcpy(routine, SEABASE_ROUTINES);
             strcpy(library_usage, SEABASE_LIBRARIES_USAGE);
 
@@ -2637,33 +2638,44 @@ short ExExeUtilGetMetadataInfoTcb::work()
               }
               break;
 
-              case ComTdbExeUtilGetMetadataInfo::COMPONENT_OPERATIONS_:
-              {
-                qs = getComponentOperations;
-                sizeOfqs = sizeof(getComponentOperations);
-
-                param_[0] = cat;
-                param_[1] = pmsch;
-                param_[2] = components;
-                param_[3] = cat;
-                param_[4] = pmsch;
-                param_[5] = componentOperations;
-                param_[6] = getMItdb().getObj();
-              }
-              break;
-
               case ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_:
               {
-                qs = getComponentPrivilegesForUser;
-                sizeOfqs = sizeof(getComponentOperations);
+              
+                if (getMItdb().getParam1()) // Get privileges for auth ID
+                {
+                   qs = getComponentPrivilegesForUser;
+                   sizeOfqs = sizeof(getComponentPrivilegesForUser);
 
-                param_[0] = cat;
-                param_[1] = pmsch;
-                param_[2] = components;
-                param_[3] = cat;
-                param_[4] = pmsch;
-                param_[5] = componentOperations;
-                param_[6] = getMItdb().getObj();
+                   param_[0] = cat;
+                   param_[1] = pmsch;
+                   param_[2] = components;
+                   param_[3] = cat;
+                   param_[4] = pmsch;
+                   param_[5] = componentOperations;
+                   param_[6] = cat;
+                   param_[7] = pmsch;
+                   param_[8] = componentPrivileges;
+                   param_[9] = getMItdb().getObj();
+                   param_[10] = getMItdb().getParam1();
+                   param_[11] = cat;
+                   param_[12] = pmsch;
+                   param_[13] = role_usage;
+                   param_[14] = getMItdb().getParam1();
+                   
+                 }
+                 else  // Get all operations for a component
+                 {
+                    qs = getComponentOperations;
+                    sizeOfqs = sizeof(getComponentOperations);
+
+                    param_[0] = cat;
+                    param_[1] = pmsch;
+                    param_[2] = components;
+                    param_[3] = cat;
+                    param_[4] = pmsch;
+                    param_[5] = componentOperations;
+                    param_[6] = getMItdb().getObj();
+                 }
               }
               break;
 
@@ -2764,28 +2776,6 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    short len = (short)(ptr ? strlen(ptr) : 0);
  
 	    exprRetCode = ex_expr::EXPR_TRUE;
-
-            // For component privileges, attach priv_type and priv_name
-            // together
-            if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::COMPONENT_PRIVILEGES_)
-            {
-               char * ptr1 = vi->get(1);
-               short len1 = strlen(ptr1);  
-
-               // catenate type and name  with comma and space in between
-               char catString[128 + 2 + 2 + 1];
-               len = len + len1 + 2; // 2 for comma and space 
-               char * rPtr = &catString[0];
-               if (ptr1)
-               {
-                 str_cpy_all(rPtr, ptr1 ,len1);
-                 rPtr[len1] = ',';
-                 rPtr[len1+1] = ' ';
-                 rPtr[len1+2] = 0;
-                 strcat (rPtr, vi->get(0));
-                 ptr = rPtr;
-               }
-             }
 
 	    if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_TABLE_ ) || 
 		(getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TRIGTEMP_TABLE_ON_MV_ ))

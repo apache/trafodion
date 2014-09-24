@@ -188,7 +188,11 @@ PrivMgrComponentOperations::PrivMgrComponentOperations(const PrivMgrComponentOpe
 // Destructor.
 // -----------------------------------------------------------------------
 PrivMgrComponentOperations::~PrivMgrComponentOperations() 
-{ }
+{ 
+
+   delete &myTable_;
+
+}
 
 // *****************************************************************************
 // *                                                                           *
@@ -355,7 +359,7 @@ std::string tempStr;
          return STATUS_GOOD;
          
       *pDiags_ << DgSqlCode(-CAT_COMPONENT_PRIVILEGE_NAME_EXISTS)
-               << DgTableName(operationName.c_str());
+               << DgString0(operationName.c_str());
       return STATUS_ERROR;
    }
 
@@ -365,7 +369,7 @@ std::string tempStr;
          return STATUS_GOOD;
          
       *pDiags_ << DgSqlCode(-CAT_COMPONENT_PRIVILEGE_CODE_EXISTS)
-               << DgTableName(operationCode.c_str());
+               << DgString0(operationCode.c_str());
       return STATUS_ERROR;
    }
 
@@ -1049,13 +1053,9 @@ PrivStatus MyTable::fetchByCode(
    }
    
 // Not found in cache, look for the component name in metadata.
-char componentUIDString[20];
-
-   sprintf(componentUIDString,"%ld",componentUID);
-
 std::string whereClause("WHERE COMPONENT_UID = ");
 
-   whereClause += componentUIDString;
+   whereClause += PrivMgr::UIDToString(componentUID);
    whereClause += " AND OPERATION_CODE = '";
    whereClause += operationCode;
    whereClause += "'";
@@ -1078,10 +1078,8 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
 
       // Should not occur, internal error
       default:
-         *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                  << DgInt0(__LINE__)
-                  << DgString0("Switch statement in PrivMgrComponentOperations::MyTable::fetchByCode()");
-         return STATUS_INTERNAL;
+         PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgrComponentOperations::MyTable::fetchByCode()");
+         return STATUS_ERROR;
          break;
    }
    
@@ -1180,13 +1178,9 @@ PrivStatus MyTable::fetchByName(
    }
    
 // Not found in cache, look for the component name in metadata.
-char componentUIDString[20];
-
-   sprintf(componentUIDString,"%ld",componentUID);
-
 std::string whereClause("WHERE COMPONENT_UID = ");
 
-   whereClause += componentUIDString;
+   whereClause += PrivMgr::UIDToString(componentUID);
    whereClause += " AND OPERATION_NAME = '";
    whereClause += operationName;
    whereClause += "'";
@@ -1209,10 +1203,8 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
 
       // Should not occur, internal error
       default:
-         *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                  << DgInt0(__LINE__)
-                  << DgString0("Switch statement in PrivMgrComponentOperations::MyTable::fetchByName()");
-         return STATUS_INTERNAL;
+         PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgrComponentOperations::MyTable::fetchByName()");
+         return STATUS_ERROR;
          break;
    }
    
