@@ -179,9 +179,7 @@ if [[ $node_count -gt 1 ]]; then
 
       #If file has not been copied over, then script will exit
 
-      fileFound=$(find / -wholename /root/.ssh/id_rsa | wc -l)
-
-      if [[ $fileFound -lt 1 ]]; then
+      if [[ -f /root/.ssh/id_rsa ]]; then
          echo
          echo "***ERROR[1]: Private Key file not found"
          echo "Script exiting..."

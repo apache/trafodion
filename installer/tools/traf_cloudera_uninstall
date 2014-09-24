@@ -57,11 +57,13 @@ sudo rm -Rf /etc/alternatives/hadoop* /etc/alternatives/hive* /etc/alternatives/
 
 sudo rm -Rf /var/tmp/sqoop* /var/lib/alternatives/hbase* /etc/run/webhcat* /usr/share/hue* /tmp/hadoop* /tmp/hsperfdata_zookeeper
 
+sudo rm -rf /etc/hadoop/conf
+sudo rm -rf /etc/hive/conf
 #==============================================
 echo "***INFO: Kill any running Cloudera Manager and CDH processes that might still be running"
 
 for u in hdfs mapred cloudera-scm hbase hue zookeeper oozie hive impala flume; do
-    sudo kill $(ps -u $u -o pid=) >/dev/null 2>&1
+    sudo kill $(ps -u $u -o pid=) 2>/dev/null
 done
 
 #==============================================
@@ -94,11 +96,16 @@ echo "***INFO: Removing any remaining Cloudera RPM's"
 listRPM=`rpm -qa | grep cloudera`
 
 for i in ${listRPM[@]}; do 
-    sudo rpm -e $i
-    sudo yum remove $i
+    sudo rpm -e $i 2>/dev/null
+    sudo yum remove $i 2>/dev/null
 done
 
 #==============================================
+echo "***INFO: Removing any Cloudera repos"
+
+sudo rm -rf /etc/yum.repos.d/cloudera*
+
+#=============================================
 echo "***INFO: Removing Cloudera symbolic directory links"
 
 if [[ -f /etc/alternatives/hadoop-conf ]]; then

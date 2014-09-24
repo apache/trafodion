@@ -113,6 +113,8 @@ sudo rm -rf /etc/hcatalog
 sudo rm -rf /etc/ganglia
 sudo rm -rf /etc/nagios
 sudo rm -rf /etc/webhcat
+sudo rm -rf /etc/hadoop/conf
+sudo rm -rf /etc/hive/conf
 
 sudo rm -rf /var/log/ambari*
 sudo rm -rf /var/log/flume*
@@ -195,4 +197,13 @@ sudo rm -rf /home/zookeeper*
 sudo rm -rf /home/hdfs*
 sudo rm -rf /home/hue*
 #==============================================
+#Deleting all ambari repos
+echo "***INFO: Deleting all ambari repos"
 
+listAmbariRepo=`sudo find / -name ambari.repo*`
+
+for i in ${listAmbariRepo[@]}; do
+    sudo rm -rf $i 
+done
+
+#==============================================

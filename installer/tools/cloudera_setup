@@ -133,7 +133,9 @@ cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
 
 if [[ $cloudera_installed -eq 0 ]]; then
 
-   echo "***INFO: Installing Cloudera, will need browser access to complete" | tee -a $SETUP_LOG
+   echo "***INFO: Installing Cloudera, will need browser access to complete" | tee -a $SETUP_LOG 
+
+   sudo rm -rf cloudera-manager-* 2>/dev/null
 
    wget http://archive.cloudera.com/cm5/installer/latest/cloudera-manager-installer.bin
 
@@ -143,6 +145,8 @@ if [[ $cloudera_installed -eq 0 ]]; then
       echo
       exit -1
    fi
+   
+   sudo rm -rf oracle-j2sdk* 2>/dev/null
 
    wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
 

@@ -71,6 +71,8 @@ echo >> $SETUP_LOG
 if [[ $AMBARI -eq 0 ]]; then
    echo "***INFO: Installing Hortonworks/Ambari, will need browser access to complete" | tee -a $SETUP_LOG
 
+   sudo rm -rf ambari.repo* 2>/dev/null
+
    wget http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.5.1/ambari.repo
 
    if [ $? -ne 0 ]; then
