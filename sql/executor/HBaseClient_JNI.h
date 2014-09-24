@@ -218,7 +218,7 @@ typedef enum {
  ,HTC_ERROR_SCANOPEN_PARAM
  ,HTC_ERROR_SCANOPEN_EXCEPTION
  ,HTC_ERROR_SCANFETCH_EXCEPTION
- ,HTC_ERROR_FETCHNEXTROW_EXCEPTION
+ ,HTC_ERROR_FETCHROWS_EXCEPTION
  ,HTC_ERROR_SCANCLOSE_EXCEPTION
  ,HTC_ERROR_GETROWOPEN_PARAM
  ,HTC_ERROR_GETROWOPEN_EXCEPTION
@@ -327,7 +327,6 @@ public:
 		Int64 timestamp, NABoolean directRow);
   HTC_RetCode scanFetch();
   HTC_RetCode getFetch();
-  HTC_RetCode fetchNextRow();
   KeyValue*   getLastFetchedCell();
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
@@ -394,7 +393,7 @@ public:
   } 
 
 private:
-  jstring getLastJavaError();
+  NAString getLastJavaError();
 
 private:  
   enum JAVA_METHODS {
@@ -405,7 +404,6 @@ private:
    ,JM_GETS_OPEN 
    ,JM_SCAN_FETCH
    ,JM_GET_FETCH 
-   ,JM_FETCH_ROW 
    ,JM_GET_CELL  
    ,JM_DELETE    
    ,JM_CHECKANDDELETE
@@ -566,7 +564,7 @@ private:
   HBaseClient_JNI(NAHeap *heap, int debugPort, int debugTimeout);
 
 private:
-  jstring getLastJavaError();
+  NAString  getLastJavaError();
 
 private:  
   enum JAVA_METHODS {
@@ -669,7 +667,7 @@ private:
   {}
 
 private:
-  jstring getLastJavaError();
+  NAString getLastJavaError();
 
 private:  
   enum JAVA_METHODS {
@@ -752,7 +750,7 @@ public:
 
 
 private:
-  jstring getLastJavaError();
+  NAString getLastJavaError();
 
 
   enum JAVA_METHODS {

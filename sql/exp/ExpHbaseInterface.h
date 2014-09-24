@@ -187,8 +187,6 @@ class ExpHbaseInterface : public NABasicObject
 		 HbaseStr &colVal,
 		 Int64 &timestamp) = 0;
 
-  virtual Lng32 fetchNextRow() = 0;
-
   virtual Lng32 nextRow() = 0;
 
   virtual Lng32 getColVal(int colNo, BYTE *colVal,
@@ -423,8 +421,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		 HbaseStr &colName,
 		 HbaseStr &colVal,
 		 Int64 &timestamp);
-
-  virtual Lng32 fetchNextRow();
 
   virtual Lng32 nextRow();
 

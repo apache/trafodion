@@ -500,19 +500,16 @@ public class HBaseClient {
 
 
     public void releaseHTableClient(HTableClient htable) 
-
                     throws IOException {
         if (htable == null)
             return;
 	                
         logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
-        htable.flush();
+        htable.release();
         if (hTableClientsInUse.remove(htable.getTableName(), htable))
             hTableClientsFree.put(htable.getTableName(), htable);
-
         else
             logger.debug("Table not found in inUse Pool");
-
     }
 
     public boolean flushAllTables() throws IOException {
@@ -523,8 +520,8 @@ public class HBaseClient {
         for (HTableClient htable : hTableClientsInUse.values()) {
 		  htable.flush();
         }
-	    return true; 
-	}
+	return true; 
+    }
 
     public boolean grant(byte[] user, byte[] tblName,
                          Object[] actionCodes) throws IOException {

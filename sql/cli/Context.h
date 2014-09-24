@@ -580,6 +580,9 @@ public:
   inline void setJniErrorStr(NAString errorStr)
   {  jniErrorStr_ = errorStr; }
 
+  inline void setJniErrorStr(const char *errorStr)
+  {  jniErrorStr_ = errorStr; }
+
   inline NAString getJniErrorStr()
   { return jniErrorStr_; }
 

@@ -306,6 +306,7 @@ SQLCLI_LIB_FUNC
   inline NABoolean isUncProcess() {return isUncProcess_;}
   NAHeap *getCurrContextHeap();
   void setJniErrorStr(NAString errorStr); 
+  void setJniErrorStr(const char *errorStr); 
   NAString getJniErrorStr();
   const char* getJniErrorStrPtr();
   void updateTransMode(TransMode *transMode);
