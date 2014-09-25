@@ -65,6 +65,8 @@ class JavaObjectInterface
   : public ExGod
 #endif
 {
+public:
+  NAString getLastJavaError(jmethodID methodID);
 protected:
 
   // Default constructor - for creating a new JVM		
@@ -116,9 +118,10 @@ protected:
   // Get the error description.
   virtual char* getErrorText(JOI_RetCode errEnum);
  
-  jstring getLastError(JNIEnv *jenv = NULL);
+  NAString getLastError();
 
   // Write the description of a Java error to the log file.
+  void logError(const char* cat, const char* methodName, const char *result);
   void logError(const char* cat, const char* methodName, jstring jresult);
   void logError(const char* cat, const char* file, int line);
 

@@ -1295,7 +1295,13 @@ void CliGlobals::getUdrErrorFlags(NABoolean &sqlViolation,
     currContext()->getUdrErrorFlags(sqlViolation, xactViolation,
                                   xactAborted);
 }
+
 void CliGlobals::setJniErrorStr(NAString errorStr)
+{
+   currContext()->setJniErrorStr(errorStr);
+}
+
+void CliGlobals::setJniErrorStr(const char *errorStr)
 {
    currContext()->setJniErrorStr(errorStr);
 }

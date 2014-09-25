@@ -764,18 +764,6 @@ Lng32 ExpHbaseInterface_JNI::getFetch(
   return getLastFetchedCell(rowId, colFamName, colName, colVal, timestamp);
 }
 
-//----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::fetchNextRow()
-{
-  retCode_ = htc_->fetchNextRow();
-  if (retCode_ == HBC_OK)
-    return HBASE_ACCESS_SUCCESS;
-  else if (retCode_ == HTC_DONE)
-    return HBASE_ACCESS_EOD;
-  else
-    return -HBASE_ACCESS_ERROR;
-}
-
 Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr &tblName,
 	  HbaseStr& row, 

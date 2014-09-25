@@ -804,13 +804,9 @@ HBC_RetCode HBaseClient_JNI::init()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-jstring HBaseClient_JNI::getLastJavaError()
+NAString HBaseClient_JNI::getLastJavaError()
 {
-  if (javaObj_ == NULL)
-    return NULL;
-
-  // java.lang.String getLastError();
-  return (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ERROR].methodID);
+  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1364,13 +1360,13 @@ HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv)
   {
     getExceptionDetails(jenv);
     logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "HBaseClient_JNI::drop()", getLastError(jenv));
+    logError(CAT_HBASE, "HBaseClient_JNI::drop()", getLastError());
     return HBC_ERROR_DROP_EXCEPTION;
   }
 
   if (jresult == false) 
   {
-    logError(CAT_HBASE, "HBaseClient_JNI::drop()", getLastError(jenv));
+    logError(CAT_HBASE, "HBaseClient_JNI::drop()", getLastJavaError());
     return HBC_ERROR_DROP_EXCEPTION;
   }
 
@@ -1405,13 +1401,13 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async)
   {
     getExceptionDetails(jenv_);
     logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "HBaseClient_JNI::dropAll()", getLastError(jenv_));
+    logError(CAT_HBASE, "HBaseClient_JNI::dropAll()", getLastError());
     return HBC_ERROR_DROP_EXCEPTION;
   }
 
   if (jresult == false) 
   {
-    logError(CAT_HBASE, "HBaseClient_JNI::dropAll()", getLastError(jenv_));
+    logError(CAT_HBASE, "HBaseClient_JNI::dropAll()", getLastJavaError());
     return HBC_ERROR_DROP_EXCEPTION;
   }
 
@@ -1919,13 +1915,9 @@ HBulkLoadClient_JNI::~HBulkLoadClient_JNI()
   //HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "HBulkLoadClient_JNI destructor called.");
 }
 
-jstring HBulkLoadClient_JNI::getLastJavaError()
+NAString HBulkLoadClient_JNI::getLastJavaError()
 {
-  if (javaObj_ == NULL)
-    return NULL;
-
-  // java.lang.String getLastError();
-  return (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ERROR].methodID);
+  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
 }
 
 
@@ -2022,7 +2014,7 @@ static const char* const htcErrorEnumStr[] =
  ,"Preparing parameters for scanOpen()."
  ,"Java exception in scanOpen()."
  ,"Java exception in scanFetch()."
- ,"Java exception in fetchNextRow()."
+ ,"Java exception in fetchRows()."
  ,"Java exception in scanClose()."
  ,"Preparing parameters for getRowOpen()."
  ,"Java exception in getRowOpen()."
@@ -2141,8 +2133,6 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_SCAN_FETCH ].jm_signature = "()Z";
     JavaMethods_[JM_GET_FETCH  ].jm_name      = "getFetch";
     JavaMethods_[JM_GET_FETCH  ].jm_signature = "()Z";
-    JavaMethods_[JM_FETCH_ROW  ].jm_name      = "fetchNextRow";
-    JavaMethods_[JM_FETCH_ROW  ].jm_signature = "()Z";
     JavaMethods_[JM_GET_CELL   ].jm_name      = "getLastFetchedCell";
     JavaMethods_[JM_GET_CELL   ].jm_signature = "()Lorg/apache/hadoop/hbase/KeyValue;";
     JavaMethods_[JM_DELETE     ].jm_name      = "deleteRow";
@@ -2186,13 +2176,9 @@ HTC_RetCode HTableClient_JNI::init()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-jstring HTableClient_JNI::getLastJavaError()
+NAString HTableClient_JNI::getLastJavaError()
 {
-  if (javaObj_ == NULL)
-    return NULL;
-
-  // java.lang.String getLastError();
-  return (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ERROR].methodID);
+  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2490,21 +2476,7 @@ HTC_RetCode HTableClient_JNI::scanFetch()
   }
 
   if (jresult == false) 
-  {
-    jstring jLastError = getLastJavaError();
-    if (jLastError != NULL)
-    {
-      logError(CAT_HBASE, "HTableClient_JNI::scanFetch()", jLastError);
-      const char *errStr = jenv_->GetStringUTFChars(jLastError, 0);
-      GetCliGlobals()->setJniErrorStr(errStr);
-      jenv_->ReleaseStringUTFChars(jLastError, errStr);
-      jenv_->DeleteLocalRef(jLastError);
-      return HTC_ERROR_SCANFETCH_EXCEPTION;
-    }
-    else
-      // Done reading all the data.
       return HTC_DONE;
-  }
   return HTC_OK;
 }
 
@@ -2527,58 +2499,7 @@ HTC_RetCode HTableClient_JNI::getFetch()
   }
 
   if (jresult == false) 
-  {
-    jstring jLastError = getLastJavaError();
-    if (jLastError != NULL)
-    {
-      logError(CAT_HBASE, "HTableClient_JNI::getFetch()", jLastError);
-      const char *errStr = jenv_->GetStringUTFChars(jLastError, 0);
-      GetCliGlobals()->setJniErrorStr(errStr);
-      jenv_->ReleaseStringUTFChars(jLastError, errStr);
-      jenv_->DeleteLocalRef(jLastError);
-      return HTC_ERROR_GETFETCH_EXCEPTION;
-    }
-    else
-     // Done reading all the data.
-       return HTC_DONE;
-  }
-
-  return HTC_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::fetchNextRow()
-{
-  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::fetchNextRow() called.");
-
-  // public boolean fetchNextRow();
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_FETCH_ROW].methodID);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_HBASE, __FILE__, __LINE__);
-    logError(CAT_HBASE, "HTableClient_JNI::fetchNextRow()", getLastError());
-    return HTC_ERROR_FETCHNEXTROW_EXCEPTION;
-  }
-
-  if (jresult == false) 
-  {
-    jstring jLastError = getLastJavaError();
-    if (jLastError != NULL)
-    {
-      logError(CAT_HBASE, "HTableClient_JNI::fetchNextRow()", jLastError);
-      const char *errStr = jenv_->GetStringUTFChars(jLastError, 0);
-      GetCliGlobals()->setJniErrorStr(errStr);
-      jenv_->ReleaseStringUTFChars(jLastError, errStr);
-      jenv_->DeleteLocalRef(jLastError);
-      return HTC_ERROR_FETCHNEXTROW_EXCEPTION;
-    }
-    else
-      return HTC_DONE;
-  }
+     return HTC_DONE;
   return HTC_OK;
 }
 
@@ -3339,13 +3260,9 @@ HVC_RetCode HiveClient_JNI::init()
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-jstring HiveClient_JNI::getLastJavaError()
+NAString HiveClient_JNI::getLastJavaError()
 {
-  if (javaObj_ == NULL)
-    return NULL;
-
-  // java.lang.String getLastError();
-  return (jstring)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ERROR].methodID);
+  return JavaObjectInterface::getLastJavaError(JavaMethods_[JM_GET_ERROR].methodID);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4014,15 +3931,14 @@ HTC_RetCode HTableClient_JNI::fetchRows()
       getExceptionDetails();
       logError(CAT_HBASE, __FILE__, __LINE__);
       logError(CAT_HBASE, "HTableClient_JNI::fetchRows()", getLastError());
-      return HTC_ERROR_FETCHNEXTROW_EXCEPTION;
+      return HTC_ERROR_FETCHROWS_EXCEPTION;
    }
 
    numRowsReturned_ = jRowsReturned;
    if (numRowsReturned_ == -1)
    {
-      GetCliGlobals()->setJniErrorStr(getErrorText(HTC_ERROR_FETCHNEXTROW_EXCEPTION));
       logError(CAT_HBASE, "HTableClient_JNI::fetchRows()", getLastJavaError());
-      return HTC_ERROR_FETCHNEXTROW_EXCEPTION;
+      return HTC_ERROR_FETCHROWS_EXCEPTION;
    }
    else
    if (numRowsReturned_ == 0)
