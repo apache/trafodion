@@ -23,4 +23,3 @@ CXXFLAGS	= $(CXX64FLAGS)
 CC		= $(GCC_TOOL_ROOT)/bin/gcc
 CXX		= $(GCC_TOOL_ROOT)/bin/g++
 MPICC		= $(MPI_ROOT)/bin/mpicc
-MPICXX		= $(MPI_ROOT)/bin/mpiCC
