@@ -208,12 +208,6 @@ public:
       const std::vector<PrivAuthClass> & granteeClasses,
       const int32_t grantDepth);
    
-   PrivStatus grantRoleToCreator(
-      const int32_t roleID,
-      const std::string & roleName,
-      const int32_t granteeID,
-      const std::string granteeName);  
-      
    PrivStatus initializeAuthorizationMetadata(
       const std::string &objectsLocation,
       const std::string &authsLocation);

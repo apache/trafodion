@@ -593,76 +593,13 @@ PrivStatus privStatus = STATUS_GOOD;
 
    catch (...)
    {
-      return STATUS_INTERNAL;
+      return STATUS_ERROR;
    }
    
    return privStatus;
 
 }
 //******************** End of PrivMgrCommands::grantRole ***********************
-
-// *****************************************************************************
-// *                                                                           *
-// * Function: PrivMgrCommands::grantRoleToCreator                             *
-// *                                                                           *
-// *    Grants a role to an authorization ID.                                  *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// *  Parameters:                                                              *
-// *                                                                           *
-// *  <roleID>                        const int32_t                    In      *
-// *    is the ID of the role being created.                                   *
-// *                                                                           *
-// *  <roleName>                      const std::string &              In      *
-// *    is the name of the role being created.                                 *
-// *                                                                           *
-// *  <granteeID>                     const int32_t                    In      *
-// *    is the ID of the creator of the role.                                  *
-// *                                                                           *
-// *  <granteeName>                   const std::string &              In      *
-// *    is the name of the creator of the role.                                *
-// *                                                                           *
-// *                                                                           *
-// *****************************************************************************
-// *                                                                           *
-// * Returns: PrivStatus                                                       *
-// *                                                                           *
-// * STATUS_GOOD: Role was granted to the creator.                             *
-// *           *: Role was not granted.                                        *
-// *              A CLI error is put into the diags area.                      *
-// *                                                                           *
-// *****************************************************************************
-PrivStatus PrivMgrCommands::grantRoleToCreator(
-   const int32_t roleID,
-   const std::string & roleName,
-   const int32_t granteeID,
-   const std::string granteeName)  
-    
-{
-
-PrivStatus privStatus = STATUS_GOOD;
-
-   try
-   {
-      PrivMgrRoles roles(getMetadataLocation(),pDiags_);
-      
-      privStatus = roles.grantRoleToCreator(roleID,roleName,granteeID,
-                                            granteeName);
-      
-      if (privStatus != STATUS_GOOD)
-         privStatus = STATUS_INTERNAL;                                   
-   }
-
-   catch (...)
-   {
-      return STATUS_INTERNAL;
-   }
-   
-   return privStatus;
-
-}
-//**************** End of PrivMgrCommands::grantRoleToCreator ******************
 
 
 // ----------------------------------------------------------------------------
@@ -970,7 +907,7 @@ PrivStatus privStatus = STATUS_GOOD;
 
    catch (...)
    {
-      return STATUS_INTERNAL;
+      return STATUS_ERROR;
    }
    
    return privStatus;

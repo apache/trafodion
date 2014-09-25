@@ -4855,29 +4855,29 @@ char authNameFromTable[600];
    if (authName == NULL)
       return ERROR;
 
-  // Cases to consider
-  // * authName is the current user name
-  // * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
-  //   are not registered in the AUTHS table
-  // * other users
+// Cases to consider
+// * authName is the current user name
+// * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
+//   are not registered in the AUTHS table
+// * other users
 
-  if (databaseUserName_ && strcasecmp(authName,databaseUserName_) == 0)
-  {
-     authID = databaseUserID_;
-     return SUCCESS;
-  }
-  
-  if (strcasecmp(authName,ComUser::getPublicUserName()) == 0)
-  {
-     authID = ComUser::getPublicUserID();
-     return SUCCESS;
-  }
-  
-  if (strcasecmp(authName,ComUser::getSystemUserName()) == 0)
-  {
-     authID = ComUser::getSystemUserID();
-     return SUCCESS;
-  }
+   if (databaseUserName_ && strcasecmp(authName,databaseUserName_) == 0)
+   {
+      authID = databaseUserID_;
+      return SUCCESS;
+   }
+
+   if (strcasecmp(authName,ComUser::getPublicUserName()) == 0)
+   {
+      authID = ComUser::getPublicUserID();
+      return SUCCESS;
+   }
+
+   if (strcasecmp(authName,ComUser::getSystemUserName()) == 0)
+   {
+      authID = ComUser::getSystemUserID();
+      return SUCCESS;
+   }
   
 //TODO: If list of roles granted to user is cached in context, search there first.
 
@@ -5067,29 +5067,29 @@ RETCODE ContextCli::getDBUserIDFromName(const char *userName, // IN
    if (userName == NULL || userID == NULL)
       return ERROR;
 
-  // Cases to consider
-  // * userName is the current user name
-  // * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
-  //   are not registered in the USERS table
-  // * other users
+// Cases to consider
+// * userName is the current user name
+// * SYSTEM_USER and PUBLIC_USER have special integer user IDs and
+//   are not registered in the USERS table
+// * other users
 
-  if (databaseUserName_ && strcasecmp(userName,databaseUserName_) == 0)
-  {
-     *userID = databaseUserID_;
-     return SUCCESS;
-  }
-  
-  if (strcasecmp(userName,ComUser::getPublicUserName()) == 0)
-  {
-     *userID = ComUser::getPublicUserID();
-     return SUCCESS;
-  }
-  
-  if (strcasecmp(userName,ComUser::getSystemUserName()) == 0)
-  {
-     *userID = ComUser::getSystemUserID();
-     return SUCCESS;
-  }
+   if (databaseUserName_ && strcasecmp(userName,databaseUserName_) == 0)
+   {
+      *userID = databaseUserID_;
+      return SUCCESS;
+   }
+   
+   if (strcasecmp(userName,ComUser::getPublicUserName()) == 0)
+   {
+      *userID = ComUser::getPublicUserID();
+      return SUCCESS;
+   }
+   
+   if (strcasecmp(userName,ComUser::getSystemUserName()) == 0)
+   {
+      *userID = ComUser::getSystemUserID();
+      return SUCCESS;
+   }
   
 // See if the AUTHS row exists
 

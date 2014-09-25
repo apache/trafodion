@@ -167,7 +167,11 @@ PrivMgrComponentPrivileges::PrivMgrComponentPrivileges(const PrivMgrComponentPri
 // Destructor.
 // -----------------------------------------------------------------------
 PrivMgrComponentPrivileges::~PrivMgrComponentPrivileges() 
-{ }
+{ 
+
+   delete &myTable_;
+
+}
 
 // *****************************************************************************
 // *                                                                           *
@@ -569,19 +573,13 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 // Not found in cache, look for the component name in metadata.
 std::string whereClause("WHERE COMPONENT_UID = ");
 
-char grantorIDString[20];
-char granteeIDString[20];
-
-   sprintf(grantorIDString,"%d",grantorID);
-   sprintf(granteeIDString,"%d",granteeID);
-
    whereClause += componentUIDString;
    whereClause += " AND OPERATION_CODE = '";
    whereClause += operationCode; 
    whereClause += "' AND GRANTOR_ID = ";          
-   whereClause += grantorIDString; 
+   whereClause += authIDToString(grantorID); 
    whereClause += " AND GRANTEE_ID = ";          
-   whereClause += granteeIDString; 
+   whereClause += authIDToString(granteeID); 
    
 MyRow row(fullTableName_);
    
@@ -755,28 +753,23 @@ MyRow row(fullTableName_);
    
 std::string whereClauseHeader(" WHERE COMPONENT_UID = ");
 
-char grantorIDString[20];
-char granteeIDString[20];
-
-   sprintf(granteeIDString,"%d",granteeID);
-   sprintf(grantorIDString,"%d",grantorID);
-
    whereClauseHeader += componentUIDString;
    whereClauseHeader += " AND GRANTEE_ID = ";          
-   whereClauseHeader += granteeIDString; 
+   whereClauseHeader += authIDToString(granteeID); 
    whereClauseHeader += " AND GRANTOR_ID = ";          
-   whereClauseHeader += grantorIDString; 
+   whereClauseHeader += authIDToString(grantorID); 
    whereClauseHeader += " AND OPERATION_CODE = '";
    
    for (size_t oc = 0; oc < operationCodes.size(); oc++)
    {
-      
       int32_t thisGrantDepth;
       
+      // If privilege is already granted, just move on to the next entry.
+      // Note, if adding WITH GRANT OPTION, perform an update.
       if (grantExists(componentUIDString,operationCodes[oc],grantorID,granteeID,
                       thisGrantDepth))  
       {
-         if (grantDepth == thisGrantDepth)
+         if (grantDepth == thisGrantDepth || grantDepth == 0)
             continue;
       
          std::string whereClause = whereClauseHeader + operationCodes[oc] + "'";
@@ -1023,12 +1016,7 @@ std::string whereClause(" WHERE COMPONENT_UID = ");
    whereClause += " AND OPERATION_CODE = '";
    whereClause += operationCode;
    whereClause += "' AND GRANTEE_ID = ";
-   
-char authIDString[20];
-
-   sprintf(authIDString,"%d",authID);
-
-   whereClause += authIDString; 
+   whereClause += authIDToString(authID); 
    
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -1109,12 +1097,7 @@ std::string whereClause(" WHERE COMPONENT_UID = 1 AND (OPERATION_CODE = '");
          }
    
    whereClause += "') AND (GRANTEE_ID = -1 OR GRANTEE_ID = ";
-   
-char authIDString[20];
-
-   sprintf(authIDString,"%d",authID);
-
-   whereClause += authIDString;
+   whereClause += authIDToString(authID);
     
 // *****************************************************************************
 // *                                                                           *
@@ -1137,12 +1120,8 @@ char authIDString[20];
       
       for (size_t r = 0; r < roleIDs.size(); r++)
       {
-         char roleIDString[20];
-
-         sprintf(roleIDString,"%d",roleIDs[r]);
-         
          whereClause += " OR GRANTEE_ID = ";
-         whereClause += roleIDString;
+         whereClause += authIDToString(roleIDs[r]);
       }
    }
    
@@ -1208,11 +1187,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause (" WHERE GRANTEE_ID = ");
 
-char authIDString[20];
-
-   sprintf(authIDString,"%d",authID);
-
-   whereClause += authIDString; 
+   whereClause += authIDToString(authID); 
    whereClause += " AND COMPONENT_UID = ";          
    whereClause += componentUIDString;
    whereClause += " AND OPERATION_CODE = '";          
@@ -1261,11 +1236,7 @@ bool PrivMgrComponentPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
 
 std::string whereClause(" WHERE GRANTEE_ID =  ");   
 
-char authIDString[20];
-
-   sprintf(authIDString,"%d",authID);
-
-   whereClause += authIDString; 
+   whereClause += authIDToString(authID); 
 
 int64_t rowCount = 0;   
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -1401,17 +1372,13 @@ PrivStatus PrivMgrComponentPrivileges::revokeAllForGrantor(
 // *                                                                           *
 // *****************************************************************************
 
-char grantorIDString[20];
-         
-   sprintf(grantorIDString,"%d",grantorID);
-
 std::string whereClause("WHERE COMPONENT_UID = ");
 
    whereClause += componentUIDString;
    whereClause += " AND OPERATION_CODE = '";
    whereClause += operationCode;
    whereClause += "' AND GRANTOR_ID = ";
-   whereClause += grantorIDString;
+   whereClause += authIDToString(grantorID);
    
 std::string orderByClause;
    
@@ -1586,6 +1553,16 @@ PrivStatus privStatus = STATUS_GOOD;
    
    for (size_t oc = 0; oc < operationCodes.size(); oc++)
    {
+   
+      int32_t grantDepth;
+       
+      if (!grantExists(componentUIDString,operationCodes[oc],grantorID,
+                       granteeID,grantDepth))
+      {
+         *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         return STATUS_ERROR;
+      }
+   
       if (!hasWGO(granteeID,componentUIDString,operationCodes[oc]))
          continue;
 
@@ -1608,17 +1585,10 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 std::string whereClauseHeader("WHERE COMPONENT_UID = ");
 
    whereClauseHeader += componentUIDString;
-
-char grantorString[20];
-char granteeString[20];
-
-   sprintf(grantorString,"%d",grantorID);
-   sprintf(granteeString,"%d",granteeID);
-   
    whereClauseHeader += " AND GRANTOR_ID = ";
-   whereClauseHeader += grantorString;
+   whereClauseHeader += authIDToString(grantorID);;
    whereClauseHeader += " AND GRANTEE_ID = ";
-   whereClauseHeader += granteeString;
+   whereClauseHeader += authIDToString(granteeID);;
    whereClauseHeader += " AND OPERATION_CODE = '";
    
 std::string setClause("SET GRANT_DEPTH = ");
@@ -1722,13 +1692,9 @@ PrivStatus MyTable::fetchOwner(
    }    
        
 // Not found in cache, look for the system grantor in metadata.
-char componentUIDString[20];
-
-   sprintf(componentUIDString,"%ld",componentUID);
-
 std::string whereClause("WHERE COMPONENT_UID = ");
 
-   whereClause += componentUIDString;
+   whereClause += PrivMgr::UIDToString(componentUID);
    whereClause += " AND OPERATION_CODE = '";
    whereClause += operationCode;
    whereClause += "' AND GRANTOR_ID = -2";
@@ -1754,10 +1720,8 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
 
       // Should not occur, internal error
       default:
-         *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                  << DgInt0(__LINE__)
-                  << DgString0("Switch statement in PrivMgrComponentPrivileges::MyTable::fetchOwner()");
-         return STATUS_INTERNAL;
+         PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgrComponentPrivileges::MyTable::fetchOwner()");
+         return STATUS_ERROR;
          break;
    }
    

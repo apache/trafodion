@@ -161,7 +161,11 @@ PrivMgrRoles::PrivMgrRoles(const PrivMgrRoles &other)
 // Destructor.
 // -----------------------------------------------------------------------
 PrivMgrRoles::~PrivMgrRoles() 
-{ }
+{ 
+
+   delete &myTable_;
+   
+}
 
 // *****************************************************************************
 // *                                                                           *
@@ -258,11 +262,7 @@ PrivStatus PrivMgrRoles::fetchRolesForUser(
 
 std::string whereClause(" WHERE GRANTEE_ID = ");
 
-char authIDString[20];
-
-   sprintf(authIDString,"%d",authID);
-   
-   whereClause += authIDString;
+   whereClause += authIDToString(authID);
    
 std::vector<MyRow> rows;
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -335,11 +335,7 @@ PrivStatus PrivMgrRoles::fetchUsersForRole(
 
 std::string whereClause(" WHERE ROLE_ID = ");
 
-char roleIDString[20];
-
-   sprintf(roleIDString,"%d",roleID);
-   
-   whereClause += roleIDString;
+   whereClause += authIDToString(roleID);
    
 std::vector<MyRow> rows;
 MyTable &myTable = static_cast<MyTable &>(myTable_);
@@ -403,7 +399,7 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
 // *                                                                           *
 // *  <granteeNames>                  const std::vector<std::string> & In      *
 // *    is a list of grantee names.  The elements in <grantees> must correspond*
-// *  to the elements in <granteeNames>, i.e., grantees[n] is the numeric      *
+// *  to the elements in <granteeNames>, i.e., granteeIDs[n] is the numeric    *
 // *  auth ID for authorization ID with the name granteeNames[n].              *
 // *                                                                           *
 // *  <granteeClasses>                const std::vector<PrivAuthClass> & In    *
@@ -447,16 +443,9 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
       int32_t roleID = roleIDs[r]; 
       std::string whereClauseHeader(" WHERE ROLE_ID = ");
       
-      char roleIDString[20];
-      sprintf(roleIDString,"%d",roleID);
-      
-      whereClauseHeader += roleIDString;
-      
-      char grantorIDString[20];
-      sprintf(grantorIDString,"%d",grantorIDs[r]);
-      
+      whereClauseHeader += authIDToString(roleID);
       whereClauseHeader += " AND GRANTOR_ID = ";
-      whereClauseHeader += grantorIDString;
+      whereClauseHeader += authIDToString(grantorIDs[r]);
       whereClauseHeader += " AND GRANTEE_ID = ";
            
       for (size_t g = 0; g < granteeIDs.size(); g++)
@@ -484,11 +473,11 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
          
          if (grantExists(roleID,grantorIDs[r],granteeIDs[g],thisGrantDepth))
          {
-            //Does this grant already exist?  No error, just move on to the
-            // next grantee.
-            if (thisGrantDepth == grantDepth)
+            // If privilege is already granted, just move on to the next entry.
+            // Note, if adding WITH GRANT OPTION, perform an update.
+            if (thisGrantDepth == grantDepth || grantDepth == 0)
                continue; 
-            //TODO: if grantDepth is zero, this is an internal error
+
             update = true;        
          }
          
@@ -501,13 +490,11 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
          }
          
          roleWasGranted = true;
+         PrivStatus privStatus = STATUS_GOOD;
          
          if (update)  // Set new grant depth
          {
-            char granteeIDString[20];
-            sprintf(granteeIDString,"%d",granteeIDs[g]);
-            
-            std::string whereClause = whereClauseHeader + granteeIDString;
+            std::string whereClause = whereClauseHeader + authIDToString(granteeIDs[g]);
             
             std::string setClause(" SET GRANT_DEPTH = ");
             
@@ -516,7 +503,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
             sprintf(grantDepthString,"%d",grantDepth);
             setClause += grantDepthString + whereClause;
             
-            myTable.update(setClause);
+            privStatus = myTable.update(setClause);
          }
          else // Grant role to grantee from grantor.
          {
@@ -532,7 +519,13 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
             row.grantorAuthClass_ = grantorClass;
             row.grantDepth_ = grantDepth;
             
-            myTable.insert(row);
+            privStatus = myTable.insert(row);
+         }
+         if (privStatus != STATUS_GOOD)
+         {
+            if (pDiags_->getNumber(DgSqlCode::ERROR_) == 0)
+               PRIVMGR_INTERNAL_ERROR("I/O error granting role");
+            return STATUS_ERROR;
          }
       }//grantees
    }//roles
@@ -648,15 +641,9 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause ("WHERE ROLE_ID = ");
 
-char roleIDString[20];
-char granteeIDString[20];
-
-   sprintf(roleIDString,"%d",roleID);
-   sprintf(granteeIDString,"%d",authID);
-
-   whereClause += roleIDString; 
+   whereClause += authIDToString(roleID); 
    whereClause += " AND GRANTEE_ID = ";          
-   whereClause += granteeIDString;
+   whereClause += authIDToString(authID);
 
 int64_t rowCount = 0;
 
@@ -710,15 +697,9 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause (" WHERE ROLE_ID = ");
 
-char roleIDString[20];
-char authIDString[20];
-
-   sprintf(roleIDString,"%d",roleID);
-   sprintf(authIDString,"%d",authID);
-
-   whereClause += roleIDString; 
+   whereClause += authIDToString(roleID); 
    whereClause += " AND GRANTEE_ID = ";          
-   whereClause += authIDString;
+   whereClause += authIDToString(authID);
    whereClause += " AND GRANT_DEPTH <> 0";
    
 int64_t rowCount = 0;
@@ -780,19 +761,11 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause ("WHERE ROLE_ID = ");
 
-char roleIDString[20];
-char grantorIDString[20];
-char granteeIDString[20];
-
-   sprintf(roleIDString,"%d",roleID);
-   sprintf(grantorIDString,"%d",grantorID);
-   sprintf(granteeIDString,"%d",granteeID);
-
-   whereClause += roleIDString; 
+   whereClause += authIDToString(roleID); 
    whereClause += " AND GRANTOR_ID = ";          
-   whereClause += grantorIDString; 
+   whereClause += authIDToString(grantorID); 
    whereClause += " AND GRANTEE_ID = ";          
-   whereClause += granteeIDString; 
+   whereClause += authIDToString(granteeID); 
    
 MyRow row(fullTableName_);
    
@@ -849,11 +822,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause("WHERE ROLE_ID = ");
 
-char roleIDString[20];
-
-   sprintf(roleIDString,"%d",roleID);
-
-   whereClause += roleIDString;
+   whereClause += authIDToString(roleID);
    if (shouldExcludeGrantsBySystem)
       whereClause += " AND GRANTOR_ID <> -2";
       
@@ -904,11 +873,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause(" WHERE GRANTEE_ID = ");
 
-char authIDString[20];
-
-   sprintf(authIDString,"%d",authID);
-
-   whereClause += authIDString;
+   whereClause += authIDToString(authID);
       
 int64_t rowCount = 0;
    
@@ -1012,17 +977,11 @@ PrivStatus PrivMgrRoles::revokeAllForGrantor(
 // *                                                                           *
 // *****************************************************************************
 
-char roleIDString[20];
-char grantorIDString[20];
-         
-   sprintf(roleIDString,"%d",roleID);
-   sprintf(grantorIDString,"%d",grantorID);
-
 std::string whereClause("WHERE ROLE_ID = ");
 
-   whereClause += roleIDString;
+   whereClause += authIDToString(roleID);
    whereClause += " AND GRANTOR_ID = ";
-   whereClause += grantorIDString;
+   whereClause += authIDToString(grantorID);
    
 std::string orderByClause;
    
@@ -1168,6 +1127,14 @@ PrivStatus privStatus = STATUS_GOOD;
       
       for (size_t g = 0; g < granteeIDs.size(); g++)
       {
+         int32_t grantDepth;
+          
+         if (!grantExists(roleID,grantorIDs[r],granteeIDs[g],grantDepth))
+         {
+            *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            return STATUS_ERROR;
+         }
+         
          if (hasWGO(granteeIDs[g],roleID))
          {
             privStatus = revokeAllForGrantor(granteeIDs[g],roleID,
@@ -1178,6 +1145,7 @@ PrivStatus privStatus = STATUS_GOOD;
                return STATUS_ERROR;
             }
          }
+         
          if (dependentObjectsExist(granteeIDs[g],roleID))
          {
             *pDiags_ << DgSqlCode(-CAT_DEPENDENT_ROLE_PRIVILEGES_EXIST);
@@ -1202,23 +1170,16 @@ std::string setClause("SET GRANT_DEPTH = ");
 
    for (size_t r2 = 0; r2 < roleIDs.size(); r2++)
    {
+      std::string whereClause(" WHERE ROLE_ID = ");
+      
+      whereClause += authIDToString(roleIDs[r2]);
+      whereClause += " AND GRANTOR_ID = ";
+      whereClause += authIDToString(grantorIDs[r2]);
+      
       for (size_t g2 = 0; g2 < granteeIDs.size(); g2++)
       {
-         std::string whereClause(" WHERE ROLE_ID = ");
-         
-         char roleIDString[20];
-         char granteeIDString[20];
-         char grantorIDString[20];
-
-         sprintf(grantorIDString,"%d",grantorIDs[r2]);
-         sprintf(roleIDString,"%d",roleIDs[r2]);
-         sprintf(granteeIDString,"%d",granteeIDs[g2]);
-         
-         whereClause += roleIDString;
          whereClause += " AND GRANTEE_ID = ";
-         whereClause += granteeIDString;
-         whereClause += " AND GRANTOR_ID = ";
-         whereClause += grantorIDString;
+         whereClause += authIDToString(granteeIDs[g2]);
          
          MyTable &myTable = static_cast<MyTable &>(myTable_);
          
@@ -1232,7 +1193,11 @@ std::string setClause("SET GRANT_DEPTH = ");
             privStatus = myTable.deleteWhere(whereClause); 
             
          if (privStatus != STATUS_GOOD)
-            return STATUS_INTERNAL;
+         {
+            if (pDiags_->getNumber(DgSqlCode::ERROR_) == 0)
+               PRIVMGR_INTERNAL_ERROR("I/O error revoking role");
+            return STATUS_ERROR;
+         }
       }
    }   
       
@@ -1276,17 +1241,9 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 std::string whereClause(" WHERE ROLE_ID = ");
 
-char roleIDString[20];
-char granteeIDString[20];
-
-   sprintf(roleIDString,"%d",roleID);
-
-   whereClause += roleIDString;
+   whereClause += authIDToString(roleID);
    whereClause += " AND GRANTEE_ID = ";
-   
-   sprintf(granteeIDString,"%d",granteeID);
-   
-   whereClause += granteeIDString;
+   whereClause += authIDToString(granteeID);
    whereClause += " AND GRANTOR_ID = -2";
    
    return myTable.deleteWhere(whereClause);

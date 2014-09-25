@@ -119,6 +119,12 @@ struct MDDescsInfo;
 
 #include "CmpSeabaseDDLmd.h"
 
+#define SEABASEDDL_INTERNAL_ERROR(text)                                   \
+   *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR) 	  \
+                       << DgString0(__FILE__)   		   	  \
+                       << DgInt0(__LINE__)			   	  \
+                       << DgString0(text) 			   	  
+
 class CmpSeabaseDDL
 {
  public:

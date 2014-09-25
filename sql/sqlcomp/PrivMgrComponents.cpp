@@ -268,7 +268,11 @@ PrivStatus privStatus = STATUS_GOOD;
    privStatus = componentOperations.dropAll();
       
    if (privStatus != STATUS_GOOD)
-      return STATUS_INTERNAL;
+   {
+      if (pDiags_->getNumber(DgSqlCode::ERROR_) == 0)
+         PRIVMGR_INTERNAL_ERROR("Unable to drop operations for component");
+      return STATUS_ERROR;
+   }
 
 // If there were any operations or granted privileges on any component, they
 // are now gone.  Delete all components from the COMPONENTS table.
@@ -380,10 +384,7 @@ PrivStatus privStatus = myTable.fetchByName(componentName,row);
    if (privStatus == STATUS_NOTFOUND || privStatus == STATUS_ERROR)
       return STATUS_NOTFOUND;
 
-char buf[1000];
-
-   sprintf(buf,"%ld",row.componentUID_);
-   componentUIDString = buf;
+   componentUIDString = UIDToString(row.componentUID_);
    componentUID = row.componentUID_;
    isSystem = row.isSystem_;
    componentDescription = row.componentDescription_;
@@ -710,7 +711,11 @@ PrivStatus privStatus = STATUS_GOOD;
       privStatus = componentOperations.dropAll(componentUIDString);
       
       if (privStatus != STATUS_GOOD)
-         return STATUS_INTERNAL;
+      {
+         if (pDiags_->getNumber(DgSqlCode::ERROR_) == 0)
+            PRIVMGR_INTERNAL_ERROR("Unable to drop operations for component");
+         return STATUS_ERROR;
+      }
    }
 
 // If there were any operations or granted privileges on this component, they
@@ -851,10 +856,8 @@ PrivStatus privStatus = selectWhereUnique(whereClause,row);
 
       // Should not occur, internal error
       default:
-         *pDiags_ << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                  << DgInt0(__LINE__)
-                  << DgString0("Switch statement in PrivMgrComponents::MyTable::fetchByName()");
-         return STATUS_INTERNAL;
+         PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgrComponents::MyTable::fetchByName()");
+         return STATUS_ERROR;
          break;
    }
    

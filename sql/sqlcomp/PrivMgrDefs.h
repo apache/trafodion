@@ -38,8 +38,7 @@ enum PrivStatus { STATUS_UNKNOWN   = 20,
                   STATUS_GOOD      = 21,
                   STATUS_WARNING   = 22,
                   STATUS_NOTFOUND  = 23,
-                  STATUS_ERROR     = 24,
-                  STATUS_INTERNAL = 25
+                  STATUS_ERROR     = 24
                 };
 
 // Defines the list of supported privileges

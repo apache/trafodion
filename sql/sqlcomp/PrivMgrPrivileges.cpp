@@ -351,10 +351,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
 
   if (objectUID_ == 0)
   {
-    *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgString0(__FILE__)
-                        << DgInt0(__LINE__)
-                        << DgString1("objectUID is 0 for grant command");
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for grant command");
     return STATUS_ERROR;
   }
 
@@ -574,10 +571,7 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
 
   if (objectUID_ == 0)
   {
-    *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgString0(__FILE__)
-                        << DgInt0(__LINE__)
-                        << DgString1("objectUID is 0 for grant command");
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for grant command");
     return STATUS_ERROR;
   }
 
@@ -717,7 +711,7 @@ PrivStatus PrivMgrPrivileges::getAffectedObjects(
     // and the current.  Updated descriptors are stored in the viewUsage
     // structure.
     retcode = gatherViewPrivileges(viewUsage, listOfAffectedObjects);
-    if (retcode != STATUS_GOOD && retcode != STATUS_INTERNAL)
+    if (retcode != STATUS_GOOD)
       return retcode;
 
     // check to see if privileges changed
@@ -801,7 +795,7 @@ PrivStatus PrivMgrPrivileges::gatherViewPrivileges(
                                                listOfAffectedObjects,
                                                originalPrivs,
                                                currentPrivs);
-    if (retcode != STATUS_GOOD && retcode == STATUS_INTERNAL)
+    if (retcode != STATUS_GOOD)
       return retcode;
 
    // add the returned privilege to the summarized privileges
@@ -849,10 +843,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv (const std::string &objectType,
 
   if (objectUID_ == 0)
   {
-    *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgString0(__FILE__)
-                        << DgInt0(__LINE__)
-                        << DgString1("objectUID is 0 for revoke command");
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for revoke command");
     return STATUS_ERROR;
   }
 
@@ -1107,10 +1098,7 @@ PrivStatus PrivMgrPrivileges::revokeObjectPriv ()
 
   if (objectUID_ == 0)
   {
-    *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgString0(__FILE__)
-                        << DgInt0(__LINE__)
-                        << DgString1("objectUID is 0 for revoke command");
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for revoke command");
     return STATUS_ERROR;
   }
 
@@ -1453,10 +1441,7 @@ PrivStatus PrivMgrPrivileges::getPrivTextForObject(std::string &privilegeText)
 
   if (objectUID_ == 0)
   {
-    *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgString0(__FILE__)
-                        << DgInt0(__LINE__)
-                        << DgString1("objectUID is 0 for describe privileges command");
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for describe privileges command");
     return STATUS_ERROR;
   }
 
@@ -1617,10 +1602,7 @@ PrivStatus PrivMgrPrivileges::getPrivsOnObjectForUser(
 
   if (objectUID == 0)
   {
-    *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                        << DgString0(__FILE__)
-                        << DgInt0(__LINE__)
-                        << DgString1("objectUID is 0 for get privileges command");
+    PRIVMGR_INTERNAL_ERROR("objectUID is 0 for get privileges command");
     return STATUS_ERROR;
   }
 
@@ -1782,17 +1764,17 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
     std::vector<std::string> roleNames;
     std::vector<int32_t> roleDepths;
     retcode = roles.fetchRolesForUser(granteeID, roleNames, listOfIDs, roleDepths);
-    if (retcode == STATUS_ERROR || retcode == STATUS_INTERNAL)
+    if (retcode == STATUS_ERROR)
      return retcode;
   }
 
   // Get the list of privileges for the object and all the UIDs
   std::string whereClause ("where object_uid = ");
-  whereClause += std::to_string((long long int)objectUID);
+  whereClause += UIDToString(objectUID);
   whereClause += " and grantee_id in (";
   for (size_t i = 0; i < listOfIDs.size(); i++)
   {
-    whereClause += std::to_string((long long int) listOfIDs[i]);
+    whereClause += UIDToString(listOfIDs[i]);
     if (i+1 != listOfIDs.size())
       whereClause += ", ";
   }
@@ -1800,7 +1782,7 @@ PrivStatus PrivMgrPrivileges::getRowsForGrantee(
 
   ObjectPrivsMDTable objectPrivsTable(fullTableName_, pDiags_);
   retcode = objectPrivsTable.selectWhere(whereClause, rowList);
-  if (retcode == STATUS_ERROR || retcode == STATUS_INTERNAL)
+  if (retcode == STATUS_ERROR)
   {
     deleteRowsForGrantee(rowList);
     return retcode;
@@ -2133,9 +2115,7 @@ PrivStatus ObjectPrivsMDTable::selectWhereUnique(
      {
        while(!rowList.empty())
          delete rowList.back(), rowList.pop_back();
-       *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                << DgInt0(__LINE__)
-                << DgString0("Select unique for object_privileges table returned more than 1 row");
+       PRIVMGR_INTERNAL_ERROR("Select unique for object_privileges table returned more than 1 row");
        return STATUS_ERROR;
      }
      row = static_cast<ObjectPrivsMDRow &>(*rowList[0]);
@@ -2513,10 +2493,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
     message += " rows into OBJECT_PRIVILEGES table, instead ";
     message += to_string((long long int)rowsInserted);
     message += " were inserted.";
-    *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-             << DgString0(__FILE__)
-             << DgInt0(__LINE__)
-             << DgString1(message.c_str());
+    PRIVMGR_INTERNAL_ERROR(message.c_str());
     return STATUS_ERROR;
   }
 

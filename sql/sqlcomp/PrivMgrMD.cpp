@@ -442,7 +442,7 @@ bool PrivMgr::isAuthIDGrantedPrivs(
       return false;
       
 
-// Special case of PrivClass::ALL.  Caller doe snot need to change when
+// Special case of PrivClass::ALL.  Caller does not need to change when
 // new a new PrivClass is added. 
    if (privClasses.size() == 1 && privClasses[0] == PrivClass::ALL)
    {
@@ -486,10 +486,8 @@ bool PrivMgr::isAuthIDGrantedPrivs(
          case PrivClass::ALL:
          default:
          {
-            *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                     << DgInt0(__LINE__)
-                     << DgString0("Switch statement in PrivMgr::isAuthIDGrantedPrivs()");
-            return STATUS_INTERNAL;
+            PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgr::isAuthIDGrantedPrivs()");
+            return STATUS_ERROR;
             break;
          }
       }
@@ -638,6 +636,8 @@ bool PrivMgr::isAuthorizationEnabled()
   PrivMDStatus retcode = authorizationEnabled();
   return (retcode == PRIV_INITIALIZED);
 }
+
+
 
 // *****************************************************************************
 //    PrivMgrMDAdmin methods
@@ -999,7 +999,7 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   selectStmt += ", ";
   selectStmt += viewsMDTable;
   selectStmt += " where o.object_type = 'VI' and u.used_object_uid = ";
-  selectStmt += std::to_string((long long int) objectUsage.objectUID);
+  selectStmt += UIDToString(objectUsage.objectUID);
   selectStmt += " and u.using_view_uid = o.object_uid ";
   selectStmt += "and o.object_uid = v.view_uid";
   //selectStmt += " and o.object_owner = ";
@@ -1101,7 +1101,7 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   selectStmt += ", ";
   selectStmt += viewUsageMDTable;
   selectStmt += " where u.using_view_uid = ";
-  selectStmt += std::to_string((long long int) viewUsage.viewUID);
+  selectStmt += UIDToString(viewUsage.viewUID);
   selectStmt += " and u.used_object_uid = o.object_uid ";
   selectStmt += " order by o.create_time ";
 
@@ -1169,10 +1169,6 @@ PrivStatus privStatus = STATUS_GOOD;
    {
       PrivMgrPrivileges objectPrivs (metadataLocation_,pDiags_);
       privStatus = objectPrivs.populateObjectPriv(objectsLocation,authsLocation);
-      if (privStatus != STATUS_GOOD && privStatus != STATUS_NOTFOUND)
-         return STATUS_ERROR;
-         
-      privStatus = objectPrivs.grantSelectOnAuthsToPublic(objectsLocation,authsLocation);
       if (privStatus != STATUS_GOOD && privStatus != STATUS_NOTFOUND)
          return STATUS_ERROR;
    }

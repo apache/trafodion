@@ -129,6 +129,11 @@ enum class SQLOperation {
 
 enum {SQL_OPERATIONS_COMPONENT_UID = 1};
 #define SQL_OPERATION_NAME "SQL_OPERATIONS"
+#define PRIVMGR_INTERNAL_ERROR(text)                                      \
+   *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)			  \
+            << DgString0(__FILE__)   					  \
+            << DgInt0(__LINE__)						  \
+            << DgString0(text) 						  
 
 // *****************************************************************************
 // * Class:         PrivMgr
@@ -138,9 +143,15 @@ enum {SQL_OPERATIONS_COMPONENT_UID = 1};
 class PrivMgr
 {
   public:
+  
     // -------------------------------------------------------------------
     // Static functions:
     // -------------------------------------------------------------------
+    
+    // 4.4.6 implementation of to_string only supports double, long long int,
+    // and unsigned long long int.  Update when int, etc. are supported.
+    static inline std::string authIDToString(const int32_t value)  {return std::to_string(static_cast<long long int>(value));}
+    static inline std::string UIDToString(const int64_t value)  {return std::to_string(static_cast<long long int>(value));}
     
     static const char * getSQLOperationName(SQLOperation operation);
     static const char * getSQLOperationCode(SQLOperation operation);
@@ -172,15 +183,13 @@ class PrivMgr
 
   protected:
     PrivMDStatus authorizationEnabled();
-    
     // -------------------------------------------------------------------
     // Data members:
     // -------------------------------------------------------------------
     std::string  metadataLocation_;
     ComDiagsArea * pDiags_;
     
-}; // class PrivMgr      
-  
+}; // class PrivMgr  
 
 // ****************************************************************************
 // class: PrivMgrMDAdmin

@@ -871,16 +871,16 @@ short CmpSeabaseDDL::getSystemSoftwareVersion(Int64 &softMajVers,
 }
 
 short CmpSeabaseDDL::validateVersions(NADefaults *defs, 
-				      ExpHbaseInterface * inEHI,
-				      Int64 * mdMajorVersion,
-				      Int64 * mdMinorVersion,
-				      Int64 * sysSWMajorVersion,
-				      Int64 * sysSWMinorVersion,
+                                      ExpHbaseInterface * inEHI,
+                                      Int64 * mdMajorVersion,
+                                      Int64 * mdMinorVersion,
+                                      Int64 * sysSWMajorVersion,
+                                      Int64 * sysSWMinorVersion,
                                       Int64 * sysSWUpdVersion,
                                       Int64 * mdSWMajorVersion,
                                       Int64 * mdSWMinorVersion,
-				      Lng32 * hbaseErrNum,
-				      NAString * hbaseErrStr)
+                                      Lng32 * hbaseErrNum,
+                                      NAString * hbaseErrStr)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -1032,32 +1032,32 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
         }
 
       if (temp == "SOFTWARE")
-	{
+        {
           Int64 sysMajorVersion = 0;
           Int64 sysMinorVersion = 0;
           Int64 sysUpdVersion = 0;
 
           getSystemSoftwareVersion(sysMajorVersion, sysMinorVersion, sysUpdVersion);
-	  if (sysSWMajorVersion)
-	    *sysSWMajorVersion = sysMajorVersion;
-	  if (sysSWMinorVersion)
-	    *sysSWMinorVersion = sysMinorVersion;
-	  if (sysSWUpdVersion)
-	    *sysSWUpdVersion = sysUpdVersion;
+          if (sysSWMajorVersion)
+            *sysSWMajorVersion = sysMajorVersion;
+          if (sysSWMinorVersion)
+            *sysSWMinorVersion = sysMinorVersion;
+          if (sysSWUpdVersion)
+            *sysSWUpdVersion = sysUpdVersion;
 
           if (mdSWMajorVersion)
             *mdSWMajorVersion = majorVersion;
           if (mdSWMinorVersion)
             *mdSWMinorVersion = minorVersion;
 
-	  if ((sysMajorVersion != SOFTWARE_MAJOR_VERSION) ||
-	      (sysMinorVersion != SOFTWARE_MINOR_VERSION) ||
+          if ((sysMajorVersion != SOFTWARE_MAJOR_VERSION) ||
+              (sysMinorVersion != SOFTWARE_MINOR_VERSION) ||
               (sysUpdVersion != SOFTWARE_UPDATE_VERSION))
-	    {
-	      retcode = -1397;
-	      goto label_return;
-	    }
-	}
+            {
+              retcode = -1397;
+              goto label_return;
+            }
+        }
     }
 
   if ((NOT mdVersionFound) ||
@@ -1910,18 +1910,18 @@ short CmpSeabaseDDL::checkDefaultValue(
 }
 
 short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
-				 Lng32 serializedOption,
-				 Lng32 &datatype,
-				 Lng32 &length,
-				 Lng32 &precision,
-				 Lng32 &scale,
-				 Lng32 &dtStart,
-				 Lng32 &dtEnd,
-				 Lng32 &upshifted,
-				 Lng32 &nullable,
-				 NAString &charset,
-				 CharInfo::Collation &collationSequence,
-				 ULng32 &colFlags)
+                                 Lng32 serializedOption,
+                                 Lng32 &datatype,
+                                 Lng32 &length,
+                                 Lng32 &precision,
+                                 Lng32 &scale,
+                                 Lng32 &dtStart,
+                                 Lng32 &dtEnd,
+                                 Lng32 &upshifted,
+                                 Lng32 &nullable,
+                                 NAString &charset,
+                                 CharInfo::Collation &collationSequence,
+                                 ULng32 &colFlags)
 {
   short rc = 0;
 
@@ -1945,19 +1945,19 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
     {
     case NA_CHARACTER_TYPE:
       {
-	CharType *charType = (CharType *)naType;
-	
-	scale = 0;
+        CharType *charType = (CharType *)naType;
+        
+        scale = 0;
 
-	precision = charType->getPrecisionOrMaxNumChars();
-	charset = CharInfo::getCharSetName(charType->getCharSet());
-	upshifted = (charType->isUpshifted() ? -1 : 0);
+        precision = charType->getPrecisionOrMaxNumChars();
+        charset = CharInfo::getCharSetName(charType->getCharSet());
+        upshifted = (charType->isUpshifted() ? -1 : 0);
 
-	collationSequence = charType->getCollation();
-	if (serializedOption == 1) // option explicitly specified
-	  {
+        collationSequence = charType->getCollation();
+        if (serializedOption == 1) // option explicitly specified
+          {
             setFlags(colFlags, SEABASE_SERIALIZED);
-	  }
+          }
         else if ((serializedOption == -1) && // not specified
                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
           {
@@ -1968,26 +1968,26 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
       
     case NA_NUMERIC_TYPE:
       {
-	NumericType *numericType = (NumericType *)naType;
-	scale = numericType->getScale();
-	
-	if (datatype == REC_BPINT_UNSIGNED)
-	  precision = numericType->getPrecision();
-	else if (numericType->binaryPrecision())
-	  precision = 0;
-	else
-	  precision = numericType->getPrecision();
+        NumericType *numericType = (NumericType *)naType;
+        scale = numericType->getScale();
+        
+        if (datatype == REC_BPINT_UNSIGNED)
+          precision = numericType->getPrecision();
+        else if (numericType->binaryPrecision())
+          precision = 0;
+        else
+          precision = numericType->getPrecision();
 
-	if (serializedOption == 1) // option explicitly specified
-	  {
-	    if (DFS2REC::isBinary(datatype))
-	      setFlags(colFlags, SEABASE_SERIALIZED);
-	    else if (numericType->isEncodingNeeded())
-	      {
+        if (serializedOption == 1) // option explicitly specified
+          {
+            if (DFS2REC::isBinary(datatype))
+              setFlags(colFlags, SEABASE_SERIALIZED);
+            else if (numericType->isEncodingNeeded())
+              {
                 *CmpCommon::diags() << DgSqlCode(-1191);
                 return -1;
-	      }
-	  }
+              }
+          }
         else if ((serializedOption == -1) && // not specified
                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
                  (DFS2REC::isBinary(datatype)))
@@ -2000,21 +2000,21 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
     case NA_DATETIME_TYPE:
     case NA_INTERVAL_TYPE:
       {
-	DatetimeIntervalCommonType *dtiCommonType = 
-	  (DatetimeIntervalCommonType *)naType;
-	
-	scale = dtiCommonType->getFractionPrecision();
-	precision = dtiCommonType->getLeadingPrecision();
-	
-	dtStart = dtiCommonType->getStartField();
-	dtEnd = dtiCommonType->getEndField();
+        DatetimeIntervalCommonType *dtiCommonType = 
+          (DatetimeIntervalCommonType *)naType;
+        
+        scale = dtiCommonType->getFractionPrecision();
+        precision = dtiCommonType->getLeadingPrecision();
+        
+        dtStart = dtiCommonType->getStartField();
+        dtEnd = dtiCommonType->getEndField();
 
-	if ((serializedOption == 1) &&
-	    (dtiCommonType->isEncodingNeeded()))
-	  {
-	    *CmpCommon::diags() << DgSqlCode(-1191);
-	    return -1;
-	  }
+        if ((serializedOption == 1) &&
+            (dtiCommonType->isEncodingNeeded()))
+          {
+            *CmpCommon::diags() << DgSqlCode(-1191);
+            return -1;
+          }
       }
       break;
       
@@ -2067,8 +2067,8 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
 
   CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
   rc = getTypeInfo(naType, serializedOption,
-		   datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
-		   charset, collationSequence, colFlags);
+                   datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
+                   charset, collationSequence, colFlags);
 
   if (colName == "SYSKEY")
     {
@@ -3946,7 +3946,7 @@ void CmpSeabaseDDL::initSeabaseMD()
   Lng32 hbaseErrNum = 0;
   NAString hbaseErrStr;
   Lng32 errNum = validateVersions(&ActiveSchemaDB()->getDefaults(), ehi,
-				  NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
+                                  NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
                                   &hbaseErrNum, &hbaseErrStr);
   if (errNum != 0)
     {
@@ -4627,13 +4627,10 @@ void CmpSeabaseDDL::initSeabaseAuthorization()
   PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
   PrivStatus retcode = privInterface.initializeAuthorizationMetadata
     (objectsLocation, authsLocation); 
-  if (retcode == STATUS_ERROR)
-  {
-    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("initialize authorization command");
-  }
+  if (retcode == STATUS_ERROR && 
+      CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+     SEABASEDDL_INTERNAL_ERROR("INITIALIZE AUTHORIZATION command");
+
   return;
 }
 
@@ -4646,13 +4643,10 @@ void CmpSeabaseDDL::dropSeabaseAuthorization()
   privMDLoc += "\"";
   PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
   PrivStatus retcode = privInterface.dropAuthorizationMetadata(); 
-  if (retcode == STATUS_ERROR)
-  {
-    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
-                          << DgInt0(__LINE__)
-                          << DgString0("drop authorization command");
-  }
+  if (retcode == STATUS_ERROR && 
+      CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+     SEABASEDDL_INTERNAL_ERROR("DROP AUTHORIZATION command");
+
   return;
 }
 
@@ -4827,10 +4821,10 @@ void CmpSeabaseDDL::updateVersion()
     {
       cliRC = cliInterface.beginXn();
       if (cliRC < 0)
-	{
-	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-	  return;
-	}
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return;
+        }
       
       xnWasStartedHere = TRUE;
     }
@@ -4846,10 +4840,10 @@ void CmpSeabaseDDL::updateVersion()
     {
       cliRC = cliInterface.commitXn();
       if (cliRC < 0)
-	{
-	  cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-	  return;
-	}
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return;
+        }
     }
 }
 
@@ -4902,7 +4896,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags()
-	<< DgSqlCode(-1010);
+        << DgSqlCode(-1010);
       
       processReturn();
       
@@ -4913,9 +4907,9 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
-	      STMTHEAP,
-	      tableName.getSchemaNamePart().getInternalName(),
-	      tableName.getCatalogNamePart().getInternalName());
+              STMTHEAP,
+              tableName.getSchemaNamePart().getInternalName(),
+              tableName.getCatalogNamePart().getInternalName());
   cn.setSpecialType(purgedataTableName);
   NATable *naTable = bindWA.getNATable(cn); 
   if (naTable == NULL || bindWA.errStatus())
@@ -5744,7 +5738,7 @@ PrivMgrCommands componentOperations(privMDLoc,CmpCommon::diags());
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
    }
-  
+   
 const std::string componentName = pParseNode->getComponentName().data();
 const std::string operationName = pParseNode->getComponentPrivilegeName().data();
 const std::string operationCode = pParseNode->getComponentPrivilegeAbbreviation().data();
@@ -5759,13 +5753,9 @@ PrivStatus retcode = STATUS_GOOD;
                                                           isSystem,
                                                           operationDescription);
            
-   if (retcode == STATUS_INTERNAL)
-   {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0("CREATE COMPONENT PRIVILEGE command");
-   }
+   if (retcode == STATUS_ERROR && 
+       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("CREATE COMPONENT PRIVILEGE command");
    
 }
 //****************** End of createSeabaseComponentOperation ********************
@@ -5825,13 +5815,9 @@ PrivStatus retcode = STATUS_GOOD;
                                                         operationName,
                                                         privDropBehavior);
            
-   if (retcode == STATUS_INTERNAL)
-   {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0("DROP COMPONENT PRIVILEGE command");
-   }
+   if (retcode == STATUS_ERROR && 
+       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("DROP COMPONENT PRIVILEGE command");
    
 }
 //******************* End of dropSeabaseComponentOperation *********************
@@ -5911,10 +5897,19 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
-      //TODO: only DB__ROOT can use BY clause.  Except, a user can specify themself.
-      // So check if either DB__ROOT or same user (as current/effective user).
-      // When roles supported, user can specify a granted role.
-      
+      if (grantorID != ComUser::getRootUserID())
+      {
+         PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+         
+         if (!componentPrivileges.hasSQLPriv(grantorID,
+                                             SQLOperation::MANAGE_ROLES,
+                                             true))
+         {
+            *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+            return;
+         }
+      }
+   
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
       // TODO: Only works for users.  For roles, need a more generic 
@@ -5950,18 +5945,20 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
       }
       else
       {
-         char GrantorNameString[129];
+         char GrantorNameString[MAX_DBUSERNAME_LEN + 1];
          int32_t length;
          
          Int16 retCode = ComUser::getAuthNameFromAuthID(grantorID,GrantorNameString,
                                                sizeof(GrantorNameString),length);
-         //TODO: handle error return or overflow
+         if (retCode != 0)
+            SEABASEDDL_INTERNAL_ERROR("Current user not registered");
+
          grantorName = GrantorNameString;
       }  
       
 // *****************************************************************************
 // *                                                                           *
-// *   Next, walk throught the list of roles being granted, making sure        *
+// *   Next, walk through the list of roles being granted, making sure         *
 // * each one exists and none appear more than once.  For each role,           *
 // * if the grantor is DB__ROOT, determine the creator of the role and         *
 // * use that data for the entries in the grantor vectors.                     *
@@ -6005,7 +6002,7 @@ std::vector<std::string> roleNames;
       {
          grantorIDs.push_back(roleInfo.getAuthCreator());
          
-         char GrantorNameString[129];
+         char GrantorNameString[MAX_DBUSERNAME_LEN + 1];
          int32_t length;
          
          Int16 retCode = ComUser::getAuthNameFromAuthID(roleInfo.getAuthCreator(),
@@ -6013,8 +6010,9 @@ std::vector<std::string> roleNames;
                                                         sizeof(GrantorNameString),
                                                         length);
          
-         
-         
+         if (retCode != 0)
+            SEABASEDDL_INTERNAL_ERROR("Role administrator not registered");
+
          grantorNames.push_back(GrantorNameString);
       }
       else
@@ -6141,12 +6139,11 @@ std::string commandString;
                                           privDropBehavior);
    }
     
-   if (privStatus == STATUS_INTERNAL)
+   if (privStatus == STATUS_ERROR && 
+       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
    {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0(commandString.c_str());
+      commandString += " command";
+      SEABASEDDL_INTERNAL_ERROR(commandString.c_str());
    }
    
 }
@@ -6213,9 +6210,11 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
-      //TODO: only DB__ROOT can use BY clause.  Except, a user can specify themself.
-      // So check if either DB__ROOT or same user (as current/effective user).
-      // When roles supported, user can specify a granted role.
+      if (grantorID != ComUser::getRootUserID())
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         return;
+      }
       
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
@@ -6283,13 +6282,9 @@ PrivStatus retcode = STATUS_GOOD;
                                                          granteeName.data(),
                                                          grantDepth);
            
-   if (retcode == STATUS_INTERNAL)
-   {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0("GRANT COMPONENT PRIVILEGE command");
-   }
+   if (retcode == STATUS_ERROR && 
+       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("GRANT COMPONENT PRIVILEGE command");
    
 }
 //****************** End of grantSeabaseComponentPrivilege *********************
@@ -6386,16 +6381,13 @@ PrivStatus retcode = STATUS_GOOD;
       } 
          break;
       default:
-         retcode = STATUS_INTERNAL; 
+         retcode = STATUS_ERROR; 
    }
   
-   if (retcode == STATUS_INTERNAL)
-   {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0("REGISTER/UNREGISTER COMPONENT command");
-   }
+   if (retcode == STATUS_ERROR && 
+       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("REGISTER/UNREGISTER COMPONENT command");
+
 }
 
 //************** End of CmpSeabaseDDL::registerSeabaseComponent ****************
@@ -6445,7 +6437,7 @@ const ConstStringList & privList = pParseNode->getComponentPrivilegeNameList();
 const NAString & granteeName = pParseNode->getUserRoleName(); 
 int32_t granteeID;
 
-   if (ComUser::getUserIDFromUserName(granteeName.data(),granteeID) != 0)
+   if (ComUser::getAuthIDFromAuthName(granteeName.data(),granteeID) != 0)
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHID_DOES_NOT_EXIST_ERROR)
                           << DgString0(granteeName.data());
@@ -6458,9 +6450,11 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
 
    if (grantedBy != NULL)
    {
-      //TODO: only DB__ROOT can use BY clause.  Except, a user can specify themself.
-      // So check if either DB__ROOT or same user (as current/effective user).
-      // When roles supported, user can specify a granted role.
+      if (grantorID != ComUser::getRootUserID())
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         return;
+      }
       
       // BY clause specified.  Determine the grantor
       ComString grantedByName = grantedBy->getAuthorizationIdentifier();
@@ -6506,13 +6500,9 @@ PrivDropBehavior dropBehavior = PrivDropBehavior::RESTRICT;
                                                           granteeID,
                                                           isGOFSpecified,
                                                           dropBehavior);
-   if (retcode == STATUS_INTERNAL)
-   {
-      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-         *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)
-                             << DgInt0(__LINE__)
-                             << DgString0("REVOKE COMPONENT PRIVILEGE command");
-   }
+   if (retcode == STATUS_ERROR && 
+       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+      SEABASEDDL_INTERNAL_ERROR("REVOKE COMPONENT PRIVILEGE command");
    
 }
 //****************** End of revokeSeabaseComponentPrivilege ********************
