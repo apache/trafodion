@@ -1,0 +1,218 @@
+#!/usr/bin/python
+
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+import os
+import sys
+import tempfile
+import re
+import logging
+import subprocess
+import string
+from optparse import OptionParser
+
+def configure_trafodion_scanner_logger():
+  logger = logging.getLogger("trafodion_scanner_logger")
+  logger.setLevel(logging.DEBUG)
+  formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+  fh = logging.FileHandler('trafodion_scanner.log')
+  fh.setLevel(logging.DEBUG)
+  fh.setFormatter(formatter)
+  logger.addHandler(fh)
+  return logger
+  
+def compare_check_result(result,expected_result,comparison_operator):
+  # for the comparison operators (lt, le, ge, gt), 
+  # we first cast the result and expected_result to integer type, 
+  # to enable correct numeric comparison
+  if (comparison_operator in ('lt', 'le', 'ge', 'gt')):
+    result = int(result)
+    expected_result = int(expected_result)
+  
+  if (comparison_operator == 'lt'):
+    return expected_result < result
+  if (comparison_operator == 'le'):
+    return expected_result <= result
+  if (comparison_operator == 'eq'):
+    return expected_result == result
+  if (comparison_operator == 'ne'):
+    return expected_result != result
+  if (comparison_operator == 'ge'):
+    return expected_result >= result
+  if (comparison_operator == 'gt'):
+    return expected_result > result
+
+def exec_command_with_exit_code(cmd_string):
+  temp_file=tempfile.TemporaryFile()
+  exit_code = subprocess.call(cmd_string, stdout=temp_file, stderr=subprocess.STDOUT, shell=True)
+  temp_file.seek(0) # go back to start of file before read
+  cmd_output = temp_file.read()
+  cmd_output = cmd_output.strip() # trim leading and trailing whitespace before comparison
+  return (cmd_output, exit_code)
+
+def exec_command(cmd_string):
+  (cmd_output, exit_code) = exec_command_with_exit_code(cmd_string)
+  return cmd_output
+  
+def exec_command_remote(cmd_string,node_name):
+  named_temp_file=tempfile.NamedTemporaryFile(delete=False)
+  named_temp_file.write(cmd_string)
+  named_temp_file.close()
+  cmd_output = exec_command('cat ' + named_temp_file.name + ' | ssh -oStrictHostKeyChecking=no -oBatchMode=yes -q -T ' + node_name)
+  os.remove(named_temp_file.name)
+  return cmd_output
+  
+def read_config(filename):
+  with open(filename) as config:
+    lines=[ line.split(':::') for line in config if not re.search('^#',line) and not re.search('^\s*$',line) ]
+    logger = logging.getLogger("trafodion_scanner_logger")
+    logger.info("Reading configuration file %s", filename)
+    return lines
+
+def main(argv):
+  parser = OptionParser()
+  parser.add_option("-c", "--config_file", dest="config_file", help="Trafodion Scanner configuration filename. Default is trafodion_scanner.cfg.", default="trafodion_scanner.cfg")
+  parser.add_option("-n", "--nodes", dest="nodes", help="Blank-separated list of nodes (enclosed in quotes) on which you plan to install Trafodion. The trafodion scanner will check these nodes. These must be DNS names on your cluster. IP addresses are not supported. Example: --nodes \"node1 node2 node3 node4\". Default is \"localhost\", which means the local node only.", default="localhost")
+  parser.add_option("-s", "--clustername", dest="clustername", help="Name you plan to use for the Trafodion cluster. Default is the value of the $HOSTNAME environmental variable, which is currently " + os.environ['HOSTNAME'] + ".", default=os.environ['HOSTNAME'])    
+  parser.add_option("-d", "--home_dir", dest="home_dir", help="Path you plan to use for the home directory of the Trafodion User ID. Default is /home.", default="/home")
+  (options, args) = parser.parse_args()  
+    
+  logger = configure_trafodion_scanner_logger()
+  logger.info('Started')
+  
+  logger.info('Using the following options: --config_file=%s, --nodes=%s, --clustername=%s, --home_dir=%s', options.config_file, options.nodes, options.clustername, options.home_dir)
+  
+  list_of_node_names = options.nodes.split()
+  count_of_nodes = len(list_of_node_names)
+  
+  # before doing any checks, we first validate that we can access the specified nodes via passwordless ssh
+  count_of_inaccessible_nodes = 0
+  for node_name in list_of_node_names:
+    if node_name != 'localhost':
+      (cmd_output, exit_code) = exec_command_with_exit_code('echo hostname | ssh -oStrictHostKeyChecking=no -oBatchMode=yes -T ' + node_name)
+      if exit_code == 255: # ssh exits with the exit status of the remote command or with 255 if an error occurred
+        count_of_inaccessible_nodes += 1
+        logger.error('***ERROR: Unable to access %s via passwordless ssh: %s', node_name, cmd_output)
+        print '***ERROR: Unable to access ' + node_name + ' via passwordless ssh: ' + cmd_output
+  if count_of_inaccessible_nodes > 0:
+    logger.info('Exiting due to fatal error: unable to access %d of %d specified nodes via passwordless ssh', count_of_inaccessible_nodes, count_of_nodes)
+    print 'Exiting due to fatal error: unable to access ' + str(count_of_inaccessible_nodes) + ' of ' + str(count_of_nodes) + ' specified nodes via passwordless ssh'   
+    sys.exit(1)
+  
+  count_of_configuration_dump_items = 0
+  count_of_configuration_check_items = 0
+  configuration_checks_passed = {}
+  configuration_checks_failed = {}  
+  
+  scan_lines=read_config(options.config_file)
+  
+  for i in range(len(scan_lines)):
+    configuration_item = scan_lines[i][0].strip() # trim leading and trailing whitespace
+    
+    if configuration_item == 'CONFIGURATION_DUMP':
+      descripion = scan_lines[i][1].strip() # trim leading and trailing whitespace
+      command_string = scan_lines[i][2].strip() # trim leading and trailing whitespace
+      count_of_configuration_dump_items += 1
+      
+      for node_name in list_of_node_names:
+        if node_name == 'localhost':
+          command_output = exec_command(command_string)
+        else:          
+          command_output = exec_command_remote(command_string, node_name)                   
+        logger.info('Configuration Gathered on node %s: %s, command executed is %s, result is:\n%s', node_name, descripion, command_string, command_output)
+        print 'Configuration Gathered on node ' + node_name + ': ' + string.ljust(descripion, 59) + '(see log)'
+
+    else: 
+      descripion = scan_lines[i][1].strip() # trim leading and trailing whitespace
+      expected_value = scan_lines[i][2].strip() # trim leading and trailing whitespace
+      comparison_operator = scan_lines[i][3].strip() # trim leading and trailing whitespace
+      command_string = scan_lines[i][4].strip() # trim leading and trailing whitespace
+      count_of_configuration_check_items += 1
+      
+      # before command execution, we need to replace command-line argument placeholders 
+      # in the command string with the corresponding values
+      command_string = command_string.replace('<<<nodes>>>', options.nodes)
+      command_string = command_string.replace('<<<clustername>>>', options.clustername)
+      command_string = command_string.replace('<<<home_dir>>>', options.home_dir)
+      
+      for node_name in list_of_node_names:
+        check_outcome = ''
+        if node_name == 'localhost':
+          command_output = exec_command(command_string)
+        else:
+          command_output = exec_command_remote(command_string, node_name)          
+        if (compare_check_result(command_output,expected_value,comparison_operator)):
+          check_outcome = "PASS"
+          if configuration_item in configuration_checks_passed:
+            configuration_checks_passed[configuration_item].append(node_name)
+          else:
+            configuration_checks_passed[configuration_item] = [node_name]
+        else:
+          check_outcome = "FAIL"
+          if configuration_item in configuration_checks_failed:
+            configuration_checks_failed[configuration_item].append(node_name)
+          else:
+            configuration_checks_failed[configuration_item] = [node_name]
+        logger.info('Configuration Checked on node %s: %s :%s (command executed is %s, result is %s)', node_name, descripion, check_outcome, command_string, command_output)
+        print 'Configuration Checked on node ' + node_name + ': ' + string.ljust(descripion, 60) + ':' + check_outcome
+          
+  # report summary stats
+  
+  configuration_checks_passed_on_all_nodes = []
+  configuration_checks_passed_on_some_nodes = []
+  configuration_checks_failed_on_all_nodes = []
+  configuration_checks_failed_on_some_nodes = []
+  for check in configuration_checks_passed:
+    if len(configuration_checks_passed[check]) == count_of_nodes:
+      configuration_checks_passed_on_all_nodes.append(check)
+    else:
+      configuration_checks_passed_on_some_nodes.append(check)
+  for check in configuration_checks_failed:
+    if len(configuration_checks_failed[check]) == count_of_nodes:
+      configuration_checks_failed_on_all_nodes.append(check)
+    else:
+      configuration_checks_failed_on_some_nodes.append(check)
+  configuration_checks_passed_on_all_nodes.sort()
+  configuration_checks_passed_on_some_nodes.sort()
+  configuration_checks_failed_on_all_nodes.sort()
+  configuration_checks_failed_on_some_nodes.sort()
+      
+  summary_string = ''
+  summary_string += 'Completed Execution on ' + str(count_of_nodes) + ' nodes: ' + ', '.join(list_of_node_names) + '\n'
+  summary_string += 'Total Configuration Items Gathered: ' + str(count_of_configuration_dump_items) + '\n'
+  summary_string += 'Total Configuration Items Checked: ' + str(count_of_configuration_check_items) + '\n'
+  summary_string += '  ' + str(len(configuration_checks_passed_on_all_nodes)) + ' Checks PASSED on all nodes' + '\n'
+  if len(configuration_checks_passed_on_all_nodes) > 0:
+    summary_string += '     Specifically: ' + ', '.join(configuration_checks_passed_on_all_nodes) + '\n'
+  summary_string += '  ' + str(len(configuration_checks_passed_on_some_nodes)) + ' Checks PASSED on only some nodes (FAILED on some nodes)' + '\n'
+  if len(configuration_checks_passed_on_some_nodes) > 0:
+    for check in configuration_checks_passed_on_some_nodes:
+      summary_string += '     Specifically: ' + check + ' (FAILED on ' + ', '.join(configuration_checks_failed[check]) + ')' + '\n'
+  summary_string += '  ' + str(len(configuration_checks_failed_on_all_nodes)) + ' Checks FAILED on all nodes' + '\n'
+  if len(configuration_checks_failed_on_all_nodes) > 0:
+    summary_string += '     Specifically: ' + ', '.join(configuration_checks_failed_on_all_nodes) + '\n'
+  
+  logger.info('Summary:\n\n%s', summary_string)
+  print '\n******* SUMMARY *******\n' + summary_string
+  
+  logger.info('Stopped')    
+
+# Call the main() function to begin the program
+if __name__ == '__main__':
+  main(sys.argv[1:])
