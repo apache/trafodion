@@ -4591,6 +4591,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 	      (scan->selectionPred().isEmpty()) &&
               ((scan->getTableName().getSpecialType() == ExtendedQualName::NORMAL_TABLE) ||
 	       (scan->getTableName().getSpecialType() == ExtendedQualName::INDEX_TABLE)) &&
+              !scan->getTableName().isPartitionNameSpecified() &&
+              !scan->getTableName().isPartitionRangeSpecified() &&
               (NOT bindWA->inViewDefinition()) &&
 	      (interfaceNAS != "THRIFT"))
 	    {

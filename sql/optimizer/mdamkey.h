@@ -342,7 +342,7 @@ public:
        CollIndex disjunctNumber = 0) const;
 
   
-  void setNoExePred(){ noExePred_= TRUE; }
+  void setNoExePred(NABoolean v = TRUE){ noExePred_= v; }
 
   NABoolean getNoExePred(){ return noExePred_;}
     

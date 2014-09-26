@@ -3764,7 +3764,11 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
       const LogPhysPartitioningFunction *logPhysPartFunc =
 	getPartFunc()->castToLogPhysPartitioningFunction();
 
-      augmentedPreds += partKeyPredsHBase;
+      if (!partKeyPredsHBase.isEmpty())
+        {
+          augmentedPreds += partKeyPredsHBase;
+          mdamKeyPtr()->setNoExePred(FALSE);
+        }
 
       if ( logPhysPartFunc != NULL )
       {
