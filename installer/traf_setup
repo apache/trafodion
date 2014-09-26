@@ -147,7 +147,7 @@ node_count=$(echo $NODE_LIST | wc -w)
 # display license text and get acceptance
 echo "=== $timestamp ==="
 cat $( cd "$( dirname "$0" )" && pwd )/trafodion_license
-read -p "BY TYPING “ACCEPT” YOU AGREE TO THE TERMS OF THIS AGREEMENT: " answer
+read -p "BY TYPING \"ACCEPT\" YOU AGREE TO THE TERMS OF THIS AGREEMENT: " answer
 answer=${answer,,}
 if [ "$answer" != "accept" ]; then
     echo "***ERROR: You must accept this license by typing \"accept\" to install."
@@ -179,7 +179,7 @@ if [[ $node_count -gt 1 ]]; then
 
       #If file has not been copied over, then script will exit
 
-      if [[ -f /root/.ssh/id_rsa ]]; then
+      if ! [[ -f /root/.ssh/id_rsa ]]; then
          echo
          echo "***ERROR[1]: Private Key file not found"
          echo "Script exiting..."
