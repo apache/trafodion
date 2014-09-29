@@ -1098,6 +1098,7 @@ Ex_Lob_Error ExLob::closeDataCursorSimple(char *fileName, ExLobGlobals *lobGloba
 
       if (cursor->eod_ || cursor->eor_) { // prefetch thread already done,
         cursor->emptyPrefetchList(lobGlobals);
+	cursor->lock_.unlock();
         lobCursors_.erase(it);            // so erase it here. 
         // no need to unlock as cursor object is gone.
       } else {
@@ -1661,7 +1662,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
         } else {
           assert("data_ is null"); 
         }
-        cursor->lock_.lock();
+	  cursor->lock_.lock();
       }   
       cursor->lock_.unlock();
       if (cursor->eol_) { 
@@ -1956,6 +1957,7 @@ ExLobLock::ExLobLock()
 
 ExLobLock::~ExLobLock()
 {
+   pthread_mutex_unlock( &mutex_ );
    pthread_mutex_destroy(&mutex_);
    pthread_cond_destroy(&workBell_);
 }
