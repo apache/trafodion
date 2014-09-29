@@ -1295,6 +1295,8 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
 
+  DDkwd__(ESTIMATE_HBASE_ROW_COUNT,             "ON"),
+
  // Disable hints - if SYSTEM, enable on SSD, and disable only on HDD
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_HASH,	"SYSTEM"),
   DDkwd__(EXE_BMO_DISABLE_CMP_HINTS_OVERFLOW_SORT,	"SYSTEM"),

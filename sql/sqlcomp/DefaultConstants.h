@@ -3461,6 +3461,10 @@ enum DefaultConstants
   // if ON, hbase coprocessors could be used, if the query allows it.
   HBASE_COPROCESSORS,
 
+  // If ON, optimizer will estimate HBase row count by looking at info in HFiles
+  // instead of relying on default cardinality estimate.
+  ESTIMATE_HBASE_ROW_COUNT,
+
   // if ON, then filter predicates could be pushed down to hbase.
   // It will depends on the query on which predicates or sub-predicates could be pushed.
   HBASE_FILTER_PREDS,

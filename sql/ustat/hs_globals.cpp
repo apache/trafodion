@@ -2823,92 +2823,6 @@ HSGlobalsClass::~HSGlobalsClass()
   DeleteHSContext(contID_);
 }
 
-// Get the part of the row size that is computable with info we have available
-// without accessing HBase. The result is passed to estimateRowCount(), which
-// completes the row size calculation with HBase info.
-//
-// A row stored in HBase consists of the following fields for each column:
-//          -----------------------------------------------------------------------
-//          | Key  |Value | Row  | Row  |Column|Column|Column| Time | Key  |Value |
-//  Field   |Length|Length| Key  | Key  |Family|Family|Qualif| stamp| Type |      |
-//          |      |      |Length|      |Length|      |      |      |      |      |
-//          -----------------------------------------------------------------------
-//  # Bytes    4      4       2             1                    8      1
-//
-// The field lengths calculated here are for Row Key, Column Qualif, and Value.
-// The size of the Value fields are not known to HBase, which treats cols as
-// untyped, so we add up their lengths here, as well as the row key lengths,
-// which are readily accessible via Traf metadata. The qualifiers, which represent
-// the names of individual columns, are not the Trafodion column names, but
-// minimal binary values that are mapped to the actual column names.
-// The fixed size fields could also be added in here, but we defer that to the Java
-// side so constants of the org.apache.hadoop.hbase.KeyValue class can be used.
-// The single column family used by Trafodion is also a known entity, but we
-// again do it in Java using the HBase client interface as insulation against
-// possible future changes.
-Int32 HSGlobalsClass::getPartialHBaseRowSize()
-{
-  HSLogMan *LM = HSLogMan::Instance();
-  Int32 partialRowSize = 0;
-  Int32 rowKeySize = 0;
-  NAFileSet* clusteringIndex = objDef->getNATable()->getClusteringIndex();
-  const NAColumnArray& keyCols = clusteringIndex->getIndexKeyColumns();
-  CollIndex numKeyCols = keyCols.entries();
-
-  // For each column of the table, add the length of its value and the length of
-  // its name (HBase column qualifier). If a given column is part of the primary
-  // key, add the length of its value again, because it is part of the HBase row
-  // key.
-  for (Int32 colInx=0; colInx<objDef->getNumCols(); colInx++)
-    {
-      // Get length of the column qualifier and its data.
-      HSColumnStruct& colInfo = objDef->getColInfo(colInx);
-      partialRowSize += colInfo.length;  // data length
-
-      // The qualifier is not the actual column name, but a binary value
-      // representing the ordinal position of the col in the table.
-      // Single byte is used if possible.
-      partialRowSize++;
-      if (colInfo.colnum > 255)
-        partialRowSize++;
-
-      if (LM->LogNeeded())
-        {
-          snprintf(LM->msg, sizeof(LM->msg),
-                            "Qualif/Value Lengths of column %s are %d/%d",
-                            colInfo.colname->data(),
-                            colInfo.colnum > 255 ? 2 : 1,
-                            colInfo.length);
-          LM->Log(LM->msg);
-        }
-
-      // Add col length again if a primary key column, because it will be part
-      // of the row key.
-      NABoolean found = FALSE;
-      for (CollIndex keyColInx=0; keyColInx<numKeyCols && !found; keyColInx++)
-        {
-          if (colInfo.colnum == keyCols[keyColInx]->getPosition())
-            {
-              rowKeySize += colInfo.length;
-              found = TRUE;
-            }
-        }
-    }
-
-  partialRowSize += rowKeySize;
-  if (LM->LogNeeded())
-    {
-      snprintf(LM->msg, sizeof(LM->msg), "Row key size = %d", rowKeySize);
-      LM->Log(LM->msg);
-      snprintf(LM->msg, sizeof(LM->msg),
-               "Partial HBase row size (row key + column qualifiers + values) = %d",
-               partialRowSize);
-      LM->Log(LM->msg);
-    }
-
-  return partialRowSize;
-}
-
 // -----------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------
@@ -3019,85 +2933,32 @@ Lng32 HSGlobalsClass::Initialize()
                 LM->Log(LM->msg);
               }
           }
-        else if (!(optFlags & SAMPLE_REQUESTED &&
+        else if (!((optFlags & SAMPLE_REQUESTED) &&
                    convertInt64ToDouble(actualRowCount) >=
                      CmpCommon::getDefaultNumeric(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT)))
           {
-            actualRowCount = 0; // if this gets set to nonzero below, count(*) is skipped
+            actualRowCount = 0;
             if (hs_globals->isHbaseTable &&
                 CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
               {
                 LM->StartTimer("Estimate row count for HBase table");
-                // For an HBase table, we get the table storage size for all
-                // regions of the table, and divide by the size of a row of the
-                // table as stored in HBase.
-                NADefaults* defs = &ActiveSchemaDB()->getDefaults();
-                const char* server = defs->getValue(HBASE_SERVER);
-                const char* port = defs->getValue(HBASE_THRIFT_PORT);
-                const char* interface = defs-> getValue(HBASE_INTERFACE);
-                const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
-                ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-                                         (STMTHEAP, server, port, interface, zkPort);
-
-                Lng32 retcode = ehi->init();
-                if (retcode < 0)
+                actualRowCount = objDef->getNATable()->estimateHBaseRowCount();
+                LM->StopTimer();
+                if (LM->LogNeeded())
                   {
-                    diagsArea << DgSqlCode(-8448)
-                              << DgString0((char*)"ExpHbaseInterface::init()")
-                              << DgString1(getHbaseErrStr(-retcode))
-                              << DgInt0(-retcode)
-                              << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-                    delete ehi;
+                    snprintf(LM->msg, sizeof(LM->msg),
+                             "Call to estimateHBaseRowCount() returned " PF64 ".",
+                             actualRowCount);
+                    LM->Log(LM->msg);
                   }
-                else
-                  {
-                    HbaseStr fqTblName;
-                    fqTblName.len = user_table->length();
-                    fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
-                    strncpy(fqTblName.val, user_table->data(), fqTblName.len);
-                    fqTblName.val[fqTblName.len] = '\0';
-
-                    Int32 partialRowSize = getPartialHBaseRowSize();
-                    retcode = ehi->estimateRowCount(fqTblName,
-                                                    partialRowSize,
-                                                    objDef->getNumCols(),
-                                                    actualRowCount);
-                    if (retcode < 0)
-                      actualRowCount = 0;
-
-                    if (LM->LogNeeded())
-                      {
-                        if (retcode < 0)
-                          {
-                            snprintf(LM->msg, sizeof(LM->msg),
-                                     "Call to estimateRowCount() failed with error %d.",
-                                     retcode);
-                            LM->Log(LM->msg);
-                          }
-                        else
-                          {
-                            snprintf(LM->msg, sizeof(LM->msg),
-                                     "Call to estimateRowCount() returned " PF64 ".",
-                                     actualRowCount);
-                            LM->Log(LM->msg);
-                          }
-                      }
-
-                    delete ehi;
-                  }
-                LM->StopTimer();  // estimate hbase row count
               }
 
-            // If actualRowCount is still 0, then either
-            //   a) the table is not an HBase table
-            //   b) the ExpHbaseInterface failed to initialize
-            //   c) estimateRowCount() returned an error
-            //   d) the value returned by estimateRowCount() was 0; the only thing
-            //      we can infer from this is that there is less than 1MB of storage
-            //      dedicated to the table -- no HFiles, and < 1MB in MemStore,
-            //      for which size is reported only in megabytes.
-            // In any of these cases we need to resort to a count(*).
-            if (actualRowCount == 0)
+            // If actualRowCount is still 0 then the table is not an HBase table
+            // (or the cqd is not set). If it is HIST_NO_STATS_ROWCOUNT, then
+            // estimateHBaseRowCount() was not able to produce an estimate. In either
+            // of these cases, we need to resort to a count(*).
+            if (actualRowCount == 0 ||
+                actualRowCount == ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT))
               {
                 LM->StartTimer("Execute query to get row count");
                 query  = "SELECT COUNT(*) FROM ";

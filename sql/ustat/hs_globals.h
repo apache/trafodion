@@ -1391,11 +1391,6 @@ public:
     HSGlobalsClass(ComDiagsArea &diags);
     ~HSGlobalsClass();
 
-    // Get the part of the row size that is computable with info we have available
-    // without accessing HBase. The result is passed to estimateRowCount(), which
-    // completes the row size calculation with HBase info.
-    Int32 getPartialHBaseRowSize();
-
     //Process USTAT options
     Lng32 Initialize();
 

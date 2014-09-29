@@ -815,6 +815,12 @@ public:
   PrivMgrUserPrivs* getPrivInfo() const { return privInfo_; }
   void setPrivInfo(PrivMgrUserPrivs* privInfo) { privInfo_ = privInfo; }
 
+  // Get the part of the row size that is computable with info we have available
+  // without accessing HBase. The result is passed to estimateHBaseRowCount(),
+  // which completes the row size calculation with HBase info.
+  Int32 computeHBaseRowSizeFromMetaData();
+  Int64 estimateHBaseRowCount();
+
 private:
   // copy ctor
   NATable (const NATable & orig, NAMemory * h=0) ; //not written

@@ -77,6 +77,7 @@
 #include "ComDistribution.h"
 #include "ExExeUtilCli.h"
 #include "CmpDescribe.h"
+#include "Globals.h"
 
 #define MAX_NODE_NAME 9
 
@@ -5491,28 +5492,41 @@ NATable::getStatistics()
       // mark the kind of histograms needed for this table's columns
       markColumnsForHistograms();
 
-        NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
-        NAString mmPhase = "NATable getStats - " + tblName;
-        MonitorMemoryUsage_Enter((char*)mmPhase.data(), NULL, TRUE);
+      NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
+      NAString mmPhase = "NATable getStats - " + tblName;
+      MonitorMemoryUsage_Enter((char*)mmPhase.data(), NULL, TRUE);
 
-	  //trying to get statistics for a new statement allocate colStats_
-	  colStats_ = new (CmpCommon::statementHeap()) StatsList(CmpCommon::statementHeap());
+      //trying to get statistics for a new statement allocate colStats_
+      colStats_ = new (CmpCommon::statementHeap()) StatsList(CmpCommon::statementHeap());
 
+      // Do not create statistics on the fly for the following tables
+      if (isAnMV() || isUMDTable() ||
+          isSMDTable() || isMVUMDTable() ||
+          isTrigTempTable() )
+        CURRSTMT_OPTDEFAULTS->setHistDefaultSampleSize(0);
 
-          // Do not create statistics on the fly for the following tables
-          if (isAnMV() || isUMDTable() ||
-            isSMDTable() || isMVUMDTable() ||
-            isTrigTempTable() )
-            CURRSTMT_OPTDEFAULTS->setHistDefaultSampleSize(0);;
+      CURRCONTEXT_HISTCACHE->getHistograms(*this);
 
+      Cardinality defaultCard = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+      NABoolean usingDefaultCard = FALSE;
+      if ((*colStats_).entries() > 0)
+        {
+          originalCardinality_ = (*colStats_)[0]->getRowcount();
+          if (originalCardinality_ == defaultCard && (*colStats_)[0]->isFakeHistogram())
+            usingDefaultCard = TRUE;
+        }
+      else
+        {
+          originalCardinality_ = defaultCard;
+          usingDefaultCard = TRUE;
+        }
 
-	   CURRCONTEXT_HISTCACHE->getHistograms(*this);
+      if (usingDefaultCard && isHbaseTable() && CmpCommon::getDefault(ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+        originalCardinality_ = estimateHBaseRowCount();
 
-          if ((*colStats_).entries() > 0)
-            originalCardinality_ = (*colStats_)[0]->getRowcount();
-          else
-            originalCardinality_ = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
-
+      // Set cardinality for Indexes on the table.
+      for (CollIndex i=0; i<indexes_.entries(); i++)
+        indexes_[i]->setEstimatedNumberOfRecords(originalCardinality_.value());
 
       // -----------------------------------------------------------------------
       // So now we have read in the contents of the HISTOGRM & HISTINTS
@@ -7134,6 +7148,132 @@ void NATable::setSecKeySet(std::vector <ComSecurityKey*>& secKeys)
       secKeySet_.insert(**iter);
       delete *iter;
     }
+}
+
+// Get the part of the row size that is computable with info we have available
+// without accessing HBase. The result is passed to estimateHBaseRowCount(), which
+// completes the row size calculation with HBase info.
+//
+// A row stored in HBase consists of the following fields for each column:
+//          -----------------------------------------------------------------------
+//          | Key  |Value | Row  | Row  |Column|Column|Column| Time | Key  |Value |
+//  Field   |Length|Length| Key  | Key  |Family|Family|Qualif| stamp| Type |      |
+//          |      |      |Length|      |Length|      |      |      |      |      |
+//          -----------------------------------------------------------------------
+//  # Bytes    4      4       2             1                    8      1
+//
+// The field lengths calculated here are for Row Key, Column Qualif, and Value.
+// The size of the Value fields are not known to HBase, which treats cols as
+// untyped, so we add up their lengths here, as well as the row key lengths,
+// which are readily accessible via Traf metadata. The qualifiers, which represent
+// the names of individual columns, are not the Trafodion column names, but
+// minimal binary values that are mapped to the actual column names.
+// The fixed size fields could also be added in here, but we defer that to the Java
+// side so constants of the org.apache.hadoop.hbase.KeyValue class can be used.
+// The single column family used by Trafodion is also a known entity, but we
+// again do it in Java using the HBase client interface as insulation against
+// possible future changes.
+Int32 NATable::computeHBaseRowSizeFromMetaData()
+{
+  Int32 partialRowSize = 0;
+  Int32 rowKeySize = 0;
+  const NAColumnArray& keyCols = clusteringIndex_->getIndexKeyColumns();
+  CollIndex numKeyCols = keyCols.entries();
+
+  // For each column of the table, add the length of its value and the length of
+  // its name (HBase column qualifier). If a given column is part of the primary
+  // key, add the length of its value again, because it is part of the HBase row
+  // key.
+  for (Int32 colInx=0; colInx<colcount_; colInx++)
+    {
+      // Get length of the column qualifier and its data.
+      NAColumn* col = colArray_[colInx];;
+      Lng32 colLen = col->getType()->getNominalSize(); // data length
+      Lng32 colPos = col->getPosition();  // position in table
+
+      partialRowSize += colLen;
+
+      // The qualifier is not the actual column name, but a binary value
+      // representing the ordinal position of the col in the table.
+      // Single byte is used if possible.
+      partialRowSize++;
+      if (colPos > 255)
+        partialRowSize++;
+
+      // Add col length again if a primary key column, because it will be part
+      // of the row key.
+      NABoolean found = FALSE;
+      for (CollIndex keyColInx=0; keyColInx<numKeyCols && !found; keyColInx++)
+        {
+          if (colPos == keyCols[keyColInx]->getPosition())
+            {
+              rowKeySize += colLen;
+              found = TRUE;
+            }
+        }
+    }
+
+  partialRowSize += rowKeySize;
+  return partialRowSize;
+}
+
+// For an HBase table, we can estimate the number of rows by dividing the number
+// of KeyValues in all HFiles of the table by the number of columns (with a few
+// other considerations).
+Int64 NATable::estimateHBaseRowCount()
+{
+  if (!isHbaseTable())
+    return ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+
+  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
+  const char* server = defs->getValue(HBASE_SERVER);
+  const char* port = defs->getValue(HBASE_THRIFT_PORT);
+  const char* interface = defs-> getValue(HBASE_INTERFACE);
+  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
+  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
+                           (STMTHEAP, server, port, interface, zkPort);
+
+  Int64 estRowCount;
+  Lng32 retcode = ehi->init();
+  if (retcode < 0)
+    {
+      *CmpCommon::diags()
+                << DgSqlCode(-8448)
+                << DgString0((char*)"ExpHbaseInterface::init()")
+                << DgString1(getHbaseErrStr(-retcode))
+                << DgInt0(-retcode)
+                << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+      delete ehi;
+      estRowCount = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+    }
+  else
+    {
+      HbaseStr fqTblName;
+      NAString tblName = getTableName().getQualifiedNameAsAnsiString();
+      fqTblName.len = tblName.length();
+      fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+      strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+      fqTblName.val[fqTblName.len] = '\0';
+
+      Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
+      retcode = ehi->estimateRowCount(fqTblName,
+                                      partialRowSize,
+                                      colcount_,
+                                      estRowCount);
+      NADELETEBASIC(fqTblName.val, STMTHEAP);
+
+      // Return the default cardinality if
+      //   a) an error occurred while estimating the row count, or
+      //   b) the value returned by estimateHBaseRowCount() was 0; the only thing
+      //      we can infer from this is that there is less than 1MB of storage
+      //      dedicated to the table -- no HFiles, and < 1MB in MemStore,
+      //      for which size is reported only in megabytes.
+      if (retcode < 0 || estRowCount == 0)
+        estRowCount = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+      delete ehi;
+    }
+
+  return estRowCount;
 }
 
 // get details of this NATable cache entry

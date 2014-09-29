@@ -178,6 +178,8 @@ public:
   void setPartitioningFunction(PartitioningFunction * pFunc)
                                                      {partFunc_ = pFunc;}
   void setFileSetName(QualifiedName & rhs) {fileSetName_ = rhs;}
+  void setEstimatedNumberOfRecords(Cardinality newEstimate)
+                     { estimatedNumberOfRecords_ = newEstimate; }
 
   // ---------------------------------------------------------------------
   // Query the file organization.
