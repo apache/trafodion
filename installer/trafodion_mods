@@ -205,14 +205,31 @@ else
 fi
 
 #=====================================
+# Detect Hbase version
+
+echo "exit" | hbase shell &> hbaseVersion.txt
+
+version=`grep "Version" hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'}`
+
+hbaseVersion=`echo "${version%.*}"`
+
+sudo rm -rf hbaseVersion.txt
+#=====================================
 #Run correct mods script
 
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
-   echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $MODS_LOG
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
-   $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
-      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
-if [ ${PIPESTATUS[0]} != "0" ]; then
+   if [[ "$hbaseVersion" == "0.98" ]]; then
+      echo "***INFO: Cloudera installed will run traf_cloudera_mods98" 2>&1 | tee -a $MODS_LOG
+      $TRAF_WORKDIR/installer/traf_cloudera_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+         $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
+   else
+      echo "***INFO: Cloudera installed will run traf_cloudera_mods" 2>&1 | tee -a $MODS_LOG
+      $TRAF_WORKDIR/installer/traf_cloudera_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+         $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
+   fi
+   if [ ${PIPESTATUS[0]} != "0" ]; then
+      echo "***ERROR: Subscript exited with error." | tee -a $MODS_LOG
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
       echo "***ERROR: Exiting...." | tee -a $MODS_LOG
       exit -1
@@ -220,12 +237,18 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
 fi
 
 if [[ $HADOOP_TYPE == "ambari" ]]; then
-   echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
-   $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
-      $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
+   if [[ "$hbaseVersion" == "0.98" ]]; then
+      echo "***INFO: Hortonworks installed will run traf_ambari_mods98" 2>&1 | tee -a $MODS_LOG
+       $TRAF_WORKDIR/installer/traf_ambari_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+         $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG 
+   else
+      echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
+      $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+         $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
+   fi
    if [ ${PIPESTATUS[0]}  != "0" ]; then
-      echo "***ERROR: traf_amabari_mods exited with an error." | tee -a $MODS_LOG
+      echo "***ERROR: Subscript exited with error." | tee -a $MODS_LOG
       echo "***ERROR: Please check log files." | tee -a $MODS_LOG
       echo "***ERROR: Exiting...." | tee -a $MODS_LOG
       exit -1

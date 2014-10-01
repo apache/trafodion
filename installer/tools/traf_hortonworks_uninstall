@@ -207,3 +207,9 @@ for i in ${listAmbariRepo[@]}; do
 done
 
 #==============================================
+#Deleting any leftover processes
+
+sudo pkill -f ambari
+
+#==============================================
+

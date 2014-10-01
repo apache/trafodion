@@ -48,7 +48,6 @@ JAVA_VERSION=${10}
 cd $TRAF_WORKDIR
 
 PORT=`echo $AMBARI_URL | sed 's/.*://'`
-echo $PORT 
 
 # determine java version and choose corresponding jar files
 echo "***INFO: Detected JAVA version $JAVA_VERSION"

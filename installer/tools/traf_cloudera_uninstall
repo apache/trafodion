@@ -85,7 +85,7 @@ if [[ $pid != "" ]];then
    sudo kill -9 $pid
 fi
 
-sudo pkill cloudera-scm*
+sudo pkill -f cloudera-scm
 
 sudo umount /var/run/cloudera-scm-agent/process
 
@@ -93,11 +93,25 @@ sudo yum-complete-transaction
 #==============================================
 echo "***INFO: Removing any remaining Cloudera RPM's"
 
+listRPM=`rpm -qa | grep hadoop`
+
+for i in ${listRPM[@]}; do
+    sudo rpm -e $i 2>/dev/null
+    sudo yum -y remove $i 2>/dev/null
+done
+
 listRPM=`rpm -qa | grep cloudera`
 
 for i in ${listRPM[@]}; do 
     sudo rpm -e $i 2>/dev/null
     sudo yum remove $i 2>/dev/null
+done
+
+listRPM=`rpm -qa | grep hbase`
+
+for i in ${listRPM[@]}; do
+    sudo rpm -e $i 2>/dev/null
+    sudo yum -y remove $i 2>/dev/null
 done
 
 #==============================================

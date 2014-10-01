@@ -25,7 +25,7 @@ typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 typeset TRAF_DIR="$( cd "$( dirname "$0" )" && pwd )/.."
 typeset MY_NODES=""
 typeset timestamp=$(date +%F-%H-%M-%S)
-typeset LOG="$TRAF_DIR/../logs/uninstall_ambari_$timestamp.log"
+typeset LOG="$TRAF_DIR/../logs/uninstall_hortonworks_$timestamp.log"
 #==============================================
 
 function print_usage {
@@ -91,7 +91,7 @@ node_count=$(echo $MY_NODES | wc -w)
 #Info for log file
 echo "***INFO: Log file is located at $TRAF_DIR/../logs"
 
-echo "***Log File: trafodion_ambari_uninstall script***" >> $LOG
+echo "***Log File: trafodion_hortonworks_uninstall script***" >> $LOG
 echo >> $LOG
 
 #============================================
@@ -109,23 +109,23 @@ do
       sudo ambari-server stop
       sudo ambari-server reset
       sudo /usr/bin/yum --assumeyes install pdsh --skip-broken
-      $TRAF_WORKDIR/traf_ambari_uninstall | tee -a $LOG
+      $TRAF_WORKDIR/traf_hortonworks_uninstall | tee -a $LOG
    else
       echo "***INFO: Stopping all services" | tee -a $LOG
       pdsh -S -w $node 'sudo ambari-agent stop' 
-      pdcp -w $node  -x $HOSTNAME $TRAF_WORKDIR/traf_ambari_uninstall $HOME | tee -a $LOG
+      pdcp -w $node  -x $HOSTNAME $TRAF_WORKDIR/traf_hortonworks_uninstall $HOME | tee -a $LOG
       if [ ${PIPESTATUS[0]} != "0" ]; then
          echo "***ERROR: Error copying script to $node" | tee -a $LOG
          echo "***ERROR: Exiting..." | tee -a $LOG
          exit -1
       fi
-      pdsh -S -w $node $HOME/traf_ambari_uninstall | tee -a $LOG
+      pdsh -S -w $node $HOME/traf_hortonworks_uninstall | tee -a $LOG
    fi
 
    if [ ${PIPESTATUS[0]} != "0" ]; then
-      echo "***ERROR: Hortonworks/Ambari may not be completely uninstalled on $node" | tee -a $LOG
+      echo "***ERROR: Hortonworks may not be completely uninstalled on $node" | tee -a $LOG
       echo "***ERROR: Review log files." | tee -a $LOG
    fi
 done
 
-echo "***INFO: Hortonworks/Ambari  uninstalled." | tee -a $LOG
+echo "***INFO: Hortonworks uninstalled." | tee -a $LOG
