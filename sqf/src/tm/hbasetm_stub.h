@@ -55,7 +55,7 @@ public:
    short prepareCommit(int64 pv_transid) {return FEOK; }
    short doCommit(int64 pv_transid) { return FEOK; }
    short abortTransaction(int64 pv_transid) {return FEOK; }
-   int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length) {return FEOK; }
+   int registerRegion(int64 pv_transid, const char pa_region[], int64 pv_hashcode, const char pa_regionInfo[], int pv_regionInfo_Length) {return FEOK; }
    int recoverRegion(int64 *pp_count, int64 *pp_transidList[], int64 *pp_flags);
 
    int failedRegions(int64 pv_transid) { return FEOK; }

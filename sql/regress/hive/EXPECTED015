@@ -411,9 +411,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>
 >>--------------------------------------------------------------------------
->>cqd TRAF_LOAD_USE_QUASI_SECURE 'off';
-
---- SQL operation complete.
+>>
 >>select count(*) from hive.hive.customer_address;
 
 (EXPR)              
@@ -582,9 +580,7 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 --- 20 row(s) selected.
 >>
 >>---------------------
->>cqd TRAF_LOAD_USE_QUASI_SECURE 'on';
-
---- SQL operation complete.
+>>
 >>select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 
 *** WARNING[6008] Statistics for column (CD_DEMO_SK) from table HIVE.HIVE.CUSTOMER_DEMOGRAPHICS were not available. As a result, the access path chosen might not be the best possible.

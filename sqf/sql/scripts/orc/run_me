@@ -1,0 +1,1 @@
+$JAVA_HOME/bin/java org.apache.hadoop.hive.ql.io.orc.OrcFileRead /user/hive/warehouse/orc_store/000000_0

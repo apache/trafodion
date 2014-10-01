@@ -266,7 +266,7 @@ catch(SB_Fatal_Excep sbfe)
 
 	char zkErrStr[2048];
 	stringstream zk_ip_port;
-	zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
+//	zoo_set_debug_level(ZOO_LOG_LEVEL_DEBUG);
 	if( zkHost[0] == '\x0' && regZnodeName[0] == '\x0' )
 	{
 		sprintf(zkErrStr, "***** Cannot get Zookeeper properties or registered znode info from startup params");

@@ -274,7 +274,7 @@ odbc_SQLSvc_ExecuteN_sme_(
 	}
 
 	// Clear out any previous rowcount results
-	MEMORY_DELETE(pSrvrStmt->rowCount._buffer);
+	//	MEMORY_DELETE(pSrvrStmt->rowCount._buffer);
 	pSrvrStmt->rowCount._length = 0;
 
 	if (totalRowCount <= 0)

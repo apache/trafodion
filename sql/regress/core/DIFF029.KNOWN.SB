@@ -1,35 +1,29 @@
-506,508c506
+512,513d511
 < *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
 < 
-< --- 0 row(s) updated.
----
-> --- 2 row(s) updated.
-512,513d509
+518,519d515
 < *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
 < 
-518,519d513
+524,525d519
 < *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
 < 
-524,525d517
-< *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
-< 
-530c522
+530c524
 < --- 2 row(s) updated.
 ---
 > --- 0 row(s) updated.
-534,535d525
+534,535d527
 < *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
 < 
-547,548d536
+547,548d538
 < *** ERROR[8421] NULL cannot be assigned to a NOT NULL column.
 < 
-553,554d540
+553,554d542
 < *** ERROR[8105] The operation is prevented by the check option on view #CAT.#SCH.T29XV3.
 < 
-559,560d544
+559,560d546
 < *** ERROR[8101] The operation is prevented by check constraint #CAT.#SCH." T29x" on table #CAT.#SCH.T29X.
 < 
-565,571c549
+565,571c551
 < S R D
 < ----------
 < 
@@ -39,58 +33,7 @@
 < --- 2 row(s) selected.
 ---
 > --- 0 row(s) selected.
-575c553
+575c555
 < --- 2 row(s) deleted.
 ---
 > --- 0 row(s) deleted.
-592a571
->  10 3 f 3 0
-593a573
->  10 10 c 3 0
-598c578
-< --- 11 row(s) selected.
----
-> --- 13 row(s) selected.
-607c587
-< --- 1 row(s) updated.
----
-> --- 2 row(s) updated.
-621a602
->  30 30 c 2
-623c604
-< --- 4 row(s) selected.
----
-> --- 5 row(s) selected.
-636a618
->  10 3 f 3 0
-640a623
->  30 30 c 2 0
-643c626
-< --- 12 row(s) selected.
----
-> --- 14 row(s) selected.
-663a647
->  30 30 c 2
-665c649
-< --- 3 row(s) selected.
----
-> --- 4 row(s) selected.
-678a663
->  10 3 f 3 0
-681a667
->  30 30 c 2 0
-684c670
-< --- 11 row(s) selected.
----
-> --- 13 row(s) selected.
-756c742
-< --- 11 row(s) deleted.
----
-> --- 13 row(s) deleted.
-759,762c745
-< *** ERROR[4222] The ALTER feature is not supported in this software version.
-< 
-< *** ERROR[8822] The statement was not prepared.
-< 
----
-> --- SQL operation complete.

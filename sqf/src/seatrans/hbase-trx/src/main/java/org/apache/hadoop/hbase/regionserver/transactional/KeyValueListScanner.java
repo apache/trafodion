@@ -13,9 +13,12 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+
+import org.apache.commons.lang.NotImplementedException;
 
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Scan;
@@ -140,4 +143,19 @@ public class KeyValueListScanner implements KeyValueScanner {
     		       long oldestUnexpiredTS){
     	return true;
     }
+
+ @Override
+  public boolean seekToLastRow() throws IOException {
+    throw new NotImplementedException("Not implemented");
+  }
+
+ @Override
+  public boolean seekToPreviousRow(KeyValue seekKey) throws IOException {
+    throw new NotImplementedException("Not implemented");
+  }
+
+ @Override
+  public boolean backwardSeek(KeyValue seekKey) throws IOException {
+    throw new NotImplementedException("Not implemented");
+  }
 }

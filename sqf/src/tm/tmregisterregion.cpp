@@ -28,7 +28,7 @@ using namespace std;
  * Signature: (I[B[B)V   
  */
 JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInterface_registerRegion
-(JNIEnv *pp_env, jobject pv_object, jint pv_port, jbyteArray pv_hostname, jbyteArray pv_dos)
+(JNIEnv *pp_env, jobject pv_object, jint pv_port, jbyteArray pv_hostname, jlong pv_startcode, jbyteArray pv_dos)
 {
    short lv_ret;
    char la_hostname[TM_MAX_REGIONSERVER_STRING];
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMInter
 	  lp_dos,
 	  lv_dos_length);
 
-   lv_ret = REGISTERREGION(pv_port, la_hostname, lv_hostname_length, la_dos, lv_dos_length);
+   lv_ret = REGISTERREGION(pv_port, la_hostname, lv_hostname_length, pv_startcode, la_dos, lv_dos_length);
    //cout << "REGISTERREGION Error: " << lv_ret << endl;
    pp_env->ReleaseByteArrayElements(pv_hostname, lp_hostname, 0);
    pp_env->ReleaseByteArrayElements(pv_dos, lp_dos, 0);

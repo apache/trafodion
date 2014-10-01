@@ -18,6 +18,7 @@
 
 package org.trafodion.sql.HBaseAccess;
 
+import com.google.protobuf.ServiceException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -31,6 +32,8 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.NamespaceDescriptor;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -48,16 +51,17 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescriptio
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
 //import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
 
-//import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
-import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
+import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
+//import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
-//import org.apache.hadoop.hbase.regionserver.BloomType; in v0.97
-import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
+import org.apache.hadoop.hbase.regionserver.BloomType; 
+//import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
 import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 //import org.apache.hadoop.hbase.client.Durability;
 import org.trafodion.sql.HBaseAccess.HTableClient;
 
-import org.apache.hadoop.hbase.HServerLoad;
+import org.apache.hadoop.hbase.ServerLoad;
+import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ClusterStatus;
@@ -130,7 +134,8 @@ public class HBaseClient {
     }
 
     public boolean init(String zkServers, String zkPort) 
-              throws MasterNotRunningException, ZooKeeperConnectionException {
+	throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
+    {
          setupLog4j();
          logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
                          + ") called.");
@@ -535,13 +540,17 @@ public class HBaseClient {
 			assigned[i] = Permission.Action.valueOf(actionCode);
 		}
 
-		UserPermission userPerm = new UserPermission(user, tblName,
+	    //HB98
+	    TableName htblName = TableName.valueOf(new String(NamespaceDescriptor.DEFAULT_NAMESPACE_NAME)
+						   ,new String(tblName));
+            UserPermission userPerm = new UserPermission(user, htblName,
                                                          colFamily, assigned);
 
-		AccessController accessController = new AccessController();
-            accessController.grant(userPerm);
-		return true;
-	}
+            AccessController accessController = new AccessController();
+	    //HB98 The grant() method is very different in HB98 (commenting out for now)
+            //accessController.grant(userPerm);
+        return true;
+    }
 
    public boolean revoke(byte[] user, byte[] tblName,
                           Object[] actionCodes) 
@@ -556,11 +565,16 @@ public class HBaseClient {
             assigned[i] = Permission.Action.valueOf(actionCode);
         }
 
-        UserPermission userPerm = new UserPermission(user, tblName,
+	    //HB98
+	    TableName htblName = TableName.valueOf(new String(NamespaceDescriptor.DEFAULT_NAMESPACE_NAME)
+						   ,new String(tblName));
+            UserPermission userPerm = new UserPermission(user, htblName,
                                                          colFamily, assigned);
 
-        AccessController accessController = new AccessController();
-        accessController.revoke(userPerm);
+            AccessController accessController = new AccessController();
+	    
+	    //HB98 The revoke() method is very different in HB98 (commenting out for now)
+            //accessController.revoke(userPerm);
         return true;
     }
 
@@ -617,8 +631,8 @@ public class HBaseClient {
         // it is in the set of regions for the table. If so, add the
         // size of its the running total.
         for (ServerName serverName : servers) {
-          HServerLoad serverLoad = clusterStatus.getLoad(serverName);
-          for (HServerLoad.RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
+          ServerLoad serverLoad = clusterStatus.getLoad(serverName);
+          for (RegionLoad regionLoad: serverLoad.getRegionsLoad().values()) {
             byte[] regionId = regionLoad.getName();
             if (tableRegions.contains(regionId)) {
               long regionMemStoreBytes = bytesPerMeg * regionLoad.getMemStoreSizeMB();
@@ -678,7 +692,7 @@ public class HBaseClient {
                                tblName + "/" + REGION_NAME_PATTERN +
                                "/#1/" + HFILE_NAME_PATTERN));
       for (FileStatus fs : fsArr) {
-          HFile.Reader reader = HFile.createReader(fileSystem, fs.getPath(), cacheConf);
+          HFile.Reader reader = HFile.createReader(fileSystem, fs.getPath(), cacheConf, config);
           totalEntries += reader.getEntries();
           totalSizeBytes += reader.length();
           //printQualifiers(reader, 100);

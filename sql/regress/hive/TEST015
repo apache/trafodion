@@ -21,7 +21,7 @@
 
 set schema trafodion.hbase;
 CQD COMP_BOOL_226 'ON';
-cqd TRAF_LOAD_USE_QUASI_SECURE 'on';
+cqd TRAF_LOAD_USE_QUASI_SECURE 'off';
 cqd TRAF_LOAD_TAKE_SNAPSHOT 'on';
 
 obey TEST015(clean_up);
@@ -231,7 +231,7 @@ prepare s6 from load transform into t015t6 select a,a,a from t015t1;
 explain options 'f' s6;
 
 --------------------------------------------------------------------------
-cqd TRAF_LOAD_USE_QUASI_SECURE 'off';
+
 select count(*) from hive.hive.customer_address;
 select count(*) from customer_address;
 
@@ -264,7 +264,7 @@ select count(*) from customer_address_NOPK;
 select [first 20] * from customer_address_NOPK order by ca_address_sk ;
 
 ---------------------
-cqd TRAF_LOAD_USE_QUASI_SECURE 'on';
+
 select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;
 select count(*) from customer_demographics;
 

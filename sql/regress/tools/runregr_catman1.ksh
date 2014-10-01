@@ -167,6 +167,11 @@ fi
 #skipTheseTests="TEST140"
 skipTheseTests=""
 
+#skip these tests for Seabase
+if [ "$seabase" -ne 0 ]; then
+  skipTheseTests="$skipTheseTests TEST133"
+fi
+
 testfiles="$prettyfiles"
 prettyfiles=
 skippedfiles=

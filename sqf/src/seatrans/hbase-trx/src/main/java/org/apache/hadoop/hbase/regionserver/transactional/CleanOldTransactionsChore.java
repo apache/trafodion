@@ -12,41 +12,41 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.apache.hadoop.hbase.Chore;
-import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.Stoppable;
+
+import org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint;
 
 /**
  * Cleans up committed transactions when they are no longer needed to verify
  * pending transactions.
  */
-class CleanOldTransactionsChore extends Chore {
+public class CleanOldTransactionsChore extends Chore {
 
-  private static final String SLEEP_CONF = "hbase.transaction.clean.sleep";
-  private static final int DEFAULT_SLEEP = 60 * 1000;
+  private final TrxRegionEndpoint trx_Region;
 
-  private final TransactionalRegionServer regionServer;
+  static final Log LOG = LogFactory.getLog(CleanOldTransactionsChore.class);
 
   /**
-   * @param regionServer
-   * @param stopRequest
+   * @param trx_Region
+   * @param timer        
+   * @param stoppable    
    */
-  public CleanOldTransactionsChore(final TransactionalRegionServer regionServer) {
-    super("CleanOldTransactions", regionServer.getConfiguration().getInt(
-        SLEEP_CONF, DEFAULT_SLEEP), regionServer);
-    this.regionServer = regionServer;
+  public CleanOldTransactionsChore(final TrxRegionEndpoint trx_Region,
+                                   final int timer,  
+                                   final Stoppable stoppable) {
+    super("CleanOldTransactionsChore", timer, stoppable);
+    this.trx_Region = trx_Region;
   }
 
   @Override
-  protected void chore() {
-    try {
-		for (HRegionInfo regionInfo : regionServer.getOnlineRegions()) {
-		  TransactionalRegion region = (TransactionalRegion) regionServer
-		      .getOnlineRegion(regionInfo.getRegionName());
-		  region.removeUnNeededCommitedTransactions();
-		}
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
+  public void chore() {
+
+      trx_Region.removeUnNeededCommitedTransactions();
+
+      //LOG.trace("CleanOldTransactionsChore: region " + this.trx_Region.getRegionNameAsString());
   }
 }

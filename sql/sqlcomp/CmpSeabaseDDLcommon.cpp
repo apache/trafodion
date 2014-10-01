@@ -5186,6 +5186,8 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       startXn = FALSE;
     }
 
+  //HBase98 Narendra
+  startXn = FALSE;
   if ((NOT xnInProgress(&cliInterface)) &&
       (startXn))
     {

@@ -20,7 +20,7 @@ public class SingleVersionDeleteNotSupported extends DoNotRetryIOException {
      * default constructor
      */
     public SingleVersionDeleteNotSupported() {
-        super(TransactionalRegionServer.class.getName()
+        super("Transaction Manager" 
                 + " does not support single version deletes. Use Delete.addColumns()"
                 + " to remove all versions of the given row, column.");
     }

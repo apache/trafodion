@@ -201,7 +201,7 @@ int CHbaseTM::initJVM()
   JavaMethods_[JM_COMPLETEREQUEST].jm_name      = "completeRequest";
   JavaMethods_[JM_COMPLETEREQUEST].jm_signature = "(J)S";
   JavaMethods_[JM_REGREGION  ].jm_name      = "callRegisterRegion";
-  JavaMethods_[JM_REGREGION  ].jm_signature = "(JI[B[B)S";
+  JavaMethods_[JM_REGREGION  ].jm_signature = "(JI[BJ[B)S";
   JavaMethods_[JM_PARREGION  ].jm_name      = "participatingRegions";
   JavaMethods_[JM_PARREGION  ].jm_signature = "(J)I";
   JavaMethods_[JM_CNTPOINT   ].jm_name      = "addControlPoint";
@@ -549,7 +549,8 @@ int CHbaseTM::registerRegion(int64 pv_transid,
  			     int pv_port,
  			     const char pa_hostname[],
  			     int pv_hostname_Length,
- 			     const char pa_regionInfo[],
+			     long pv_startcode,
+ 			     const char *pa_regionInfo,
  			     int pv_regionInfo_Length)
 
 {
@@ -573,9 +574,10 @@ int CHbaseTM::registerRegion(int64 pv_transid,
     return RET_ADD_PARAM;
   _tlp_jenv->SetByteArrayRegion(jba_hostname, 0, pv_hostname_Length, (const jbyte*) pa_hostname);
 
-  jbyteArray jba_regionInfo = _tlp_jenv->NewByteArray(pv_regionInfo_Length+1);
+  jbyteArray jba_regionInfo = _tlp_jenv->NewByteArray(pv_regionInfo_Length);
   if (jba_regionInfo == NULL)
     return RET_ADD_PARAM;
+
   _tlp_jenv->SetByteArrayRegion(jba_regionInfo, 0, pv_regionInfo_Length, (const jbyte*)pa_regionInfo);
 
   lv_error = _tlp_jenv->CallShortMethod(javaObj_,
@@ -583,6 +585,7 @@ int CHbaseTM::registerRegion(int64 pv_transid,
 					jlv_transid,
 					jiv_port,
 					jba_hostname,
+					pv_startcode,
 					jba_regionInfo);
   exc = _tlp_jenv->ExceptionOccurred();
   if(exc) {

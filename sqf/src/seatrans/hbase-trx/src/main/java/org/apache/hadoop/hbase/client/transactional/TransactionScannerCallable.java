@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.ScannerCallable;
-import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
 
 class TransactionScannerCallable extends ScannerCallable {
 
@@ -45,8 +44,12 @@ class TransactionScannerCallable extends ScannerCallable {
 			// server).beginTransaction(transactionState
 			// .getTransactionId(), location.getRegionInfo().getRegionName());
 	  }
-	  long id = ((TransactionalRegionInterface)this.server).openScanner(transactionState.getTransactionId(),
-				this.location.getRegionInfo().getRegionName(), this.getScan());
+	  // OSB: No server, need to revamp this
+	  // needs to get the ID from just the coprocessor, working on this currently with Joanie
+	  long id = (long) 0;
+	  //((TransactionalRegionInterface)this.server).openScanner(transactionState.getTransactionId(),
+		//		this.location.getRegionInfo().getRegionName(), this.getScan());
+	  
 	  return id;
   }
 }

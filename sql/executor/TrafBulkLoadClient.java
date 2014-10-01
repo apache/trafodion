@@ -45,7 +45,7 @@ public class TrafBulkLoadClient {
           Class.forName("org.trafodion.sql.extensions.TrafBulkLoadProtocol");
       endpointClazz = endpointClazz!=null?endpointClazz:
           Class.forName("org.trafodion.sql.extensions.TrafBulkLoadEndpoint");
-      proxy = table.coprocessorProxy(protocolClazz, startRow);
+      //proxy = table.coprocessorProxy(protocolClazz, startRow);
       this.table = table;  
     } catch (ClassNotFoundException e) {
       throw new IOException("Failed to initialize SecureBulkLoad", e);

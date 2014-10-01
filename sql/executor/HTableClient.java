@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.NavigableSet;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
@@ -49,7 +52,18 @@ import org.apache.hadoop.hbase.client.transactional.TransactionState;
 
 import org.apache.log4j.Logger;
 
-import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
+// H98 coprocessor needs
+import java.util.*;
+import org.apache.hadoop.hbase.*;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.coprocessor.*;
+import org.apache.hadoop.hbase.coprocessor.*;
+import org.apache.hadoop.hbase.coprocessor.example.*;
+import org.apache.hadoop.hbase.ipc.*;
+import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.*;
+import org.apache.hadoop.hbase.util.*;
+
+//import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.coprocessor.ColumnInterpreter;
 import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
 
@@ -62,6 +76,7 @@ import org.apache.hadoop.hbase.filter.RandomRowFilter;
 
 public class HTableClient {
 	private boolean useTRex;
+	private boolean useTRexScanner;
 	private String tableName;
 
 	private ResultScanner scanner = null;
@@ -69,8 +84,9 @@ public class HTableClient {
 	KeyValue lastFetchedCell = null;
 	Result[] getResultSet = null;
 	String lastError;
-	RMInterface table = null;
-	private boolean writeToWAL = false;
+        RMInterface table = null;
+        ByteArrayList coprocAggrResult = null;
+        private boolean writeToWAL = false;
 	int numRowsCached = 1;
 	int numColsInScan = 0;
 	int[] kvValLen = null;
@@ -147,12 +163,35 @@ public class HTableClient {
 	    logger.debug("Enter HTableClient::init, tableName: " + tblName);
 	    this.useTRex = useTRex;
 	    tableName = tblName;
+	    
+	    this.useTRex = true; //HBase98 TODO
+	    String useTransactions = System.getenv("USE_TRANSACTIONS");
+	    if (useTransactions != null) {
+		int lv_useTransactions = (Integer.parseInt(useTransactions));
+		if (lv_useTransactions == 0) {
+		    this.useTRex = false;
+		}
+		else {
+		    this.useTRex = true;
+		}
+	    }
+	    
+	    //HBase98 TODO -- For scanner
+	    this.useTRexScanner = true;
+	    String useTransactionsScanner = System.getenv("USE_TRANSACTIONS_SCANNER");
+	    if (useTransactionsScanner != null) {
+		int lv_useTransactionsScanner = (Integer.parseInt(useTransactionsScanner));
+		if (lv_useTransactionsScanner == 1) {
+		    this.useTRexScanner = true;
+		}
+	    }
 
 	    config.set("hbase.regionserver.class", "org.apache.hadoop.hbase.ipc.TransactionalRegionInterface");
 	    config.set("hbase.regionserver.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer");
 	    config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
 	    config.set("hbase.hlog.splitter.impl", "org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter");
 	    table = new RMInterface(config, tblName);
+	    //	    table = new HTable(config, tblName);
 	    logger.debug("Exit HTableClient::init, table object: " + table);
 	    return true;
 	}
@@ -252,13 +291,14 @@ public class HTableClient {
 			scan.setFilter(new RandomRowFilter(samplePercent));
 		}
 
-		if (useTRex && (transID != 0)) {
+		if (useTRexScanner && (transID != 0)) {
 		    scanner = table.getScanner(transID, scan);
 		} else {
 		    scanner = table.getScanner(scan);
 		}
 		logger.trace("startScan(). After getScanner. Scanner: " + scanner);
 		resultIterator = new ResultIterator(scanner);
+		
 		preFetch = inPreFetch;
 		if (preFetch)
 		{
@@ -269,6 +309,7 @@ public class HTableClient {
 				}
 			});
 		}
+
 		logger.trace("Exit startScan().");
 		return true;
 	}
@@ -277,7 +318,9 @@ public class HTableClient {
                      Object[] columns,
 		     long timestamp, boolean directRow) throws IOException {
 
-		logger.trace("Enter startGet(" + tableName + " rowID: " + new String(rowID));
+		logger.trace("Enter startGet(" + tableName + 
+			     " #cols: " + ((columns == null) ? 0:columns.length ) +
+			     " rowID: " + new String(rowID));
 
 		Get get = new Get(rowID);
 		if (columns != null)
@@ -309,7 +352,7 @@ public class HTableClient {
 		} else {
 			resultIterator = new ResultIterator(getResult);
 		}
-		logger.trace("Exit 2 startGet.");
+		logger.trace("Exit 2 startGet. size: " + getResult.size());
 		return true;
 	}
 
@@ -321,7 +364,8 @@ public class HTableClient {
 		Result [] results = new Result[gets.size()];
 		int i=0;
 		for (Get g : gets) {
-			Result r = table.get(transactionID, g);
+		    //Result r = table.get(transactionID, g);
+			Result r = table.get(g);
 			if (r != null && r.isEmpty() == false)
 				results[i++] = r;
 		}
@@ -391,7 +435,8 @@ public class HTableClient {
 	public int fetchRows(long jniObject) throws IOException, 
 			InterruptedException, ExecutionException {
 		int rowsReturned = 0;
-		logger.trace("Enter fetcRows(). Table: " + tableName);
+
+		logger.trace("Enter fetchRows(). Table: " + tableName);
 		if (getResultSet != null)
 		{
 			rowsReturned = pushRowsToJni(jniObject, getResultSet);
@@ -513,7 +558,7 @@ public class HTableClient {
 				 long timestamp) throws IOException {
 
 		logger.trace("Enter deleteRow(" + new String(rowID) + ", "
-			     + timestamp + ") ");
+			     + timestamp + ") " + tableName);
 
 			Delete del;
 			if (timestamp == -1)
@@ -530,9 +575,9 @@ public class HTableClient {
 			}
 
 			if (useTRex && (transID != 0)) {
-				table.delete(transID, del);
+			    table.delete(transID, del);
 			} else {
-				table.delete(del);
+			    table.delete(del);
 			}
 		logger.trace("Exit deleteRow");
 		return true;
@@ -541,7 +586,7 @@ public class HTableClient {
 	public boolean deleteRows(long transID, short rowIDLen, Object rowIDs,
 		      long timestamp) throws IOException {
 
-	        logger.trace("Enter deleteRows() ");
+	        logger.trace("Enter deleteRows() " + tableName);
 
 		List<Delete> listOfDeletes = new ArrayList<Delete>();
 		listOfDeletes.clear();
@@ -560,10 +605,11 @@ public class HTableClient {
 			    del = new Delete(rowID, timestamp);
 			listOfDeletes.add(del);
 		}
+
 		if (useTRex && (transID != 0)) 
-			table.delete(transID, listOfDeletes);
-                 else
-			table.delete(listOfDeletes);
+		    table.delete(transID, listOfDeletes);
+		else
+		    table.delete(listOfDeletes);
 		logger.trace("Exit deleteRows");
 		return true;
 	}
@@ -582,7 +628,7 @@ public class HTableClient {
 					 long timestamp) throws IOException {
 
 		logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
-			     + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") ");
+			     + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
 
 			Delete del;
 			if (timestamp == -1)
@@ -617,7 +663,7 @@ public class HTableClient {
 		byte[] columnToCheck, byte[] colValToCheck,
 		boolean checkAndPut) throws IOException 	{
 
-		logger.trace("Enter putRow() ");
+		logger.trace("Enter putRow() " + tableName);
 
 		Put put;
 		ByteBuffer bb;
@@ -654,19 +700,19 @@ public class HTableClient {
 		boolean res = true;
 		if (checkAndPut)
 		{
-			if (useTRex && (transID != 0)) 
-			    res = table.checkAndPut(transID, rowID, 
-				family, qualifier, colValToCheck, put);
-			 else 
-			    res = table.checkAndPut(rowID, 
-				family, qualifier, colValToCheck, put);
+		    if (useTRex && (transID != 0)) 
+			res = table.checkAndPut(transID, rowID, 
+						family, qualifier, colValToCheck, put);
+		    else 
+			res = table.checkAndPut(rowID, 
+						family, qualifier, colValToCheck, put);
 		}
 		else
 		{
-			if (useTRex && (transID != 0)) 
-				table.put(transID, put);
-			else
-				table.put(put);
+		    if (useTRex && (transID != 0)) 
+			table.put(transID, put);
+		    else 
+			table.put(put);
 		}
 		return res;
 	}
@@ -683,7 +729,7 @@ public class HTableClient {
                        long timestamp, boolean autoFlush)
 			throws IOException {
 
-		logger.trace("Enter putRows() ");
+		logger.trace("Enter putRows() " + tableName);
 
 		Put put;
 		ByteBuffer bbRows, bbRowIDs;
@@ -720,10 +766,11 @@ public class HTableClient {
 		}
 		if (autoFlush == false)
 			table.setAutoFlush(false, true);
+
 		if (useTRex && (transID != 0)) {
-			table.put(transID, listOfPuts);
+		    table.put(transID, listOfPuts);
 		} else {
-			table.put(listOfPuts);
+		    table.put(listOfPuts);
 		}
 		return true;
 	} 
@@ -751,13 +798,22 @@ public class HTableClient {
 
 		    Configuration customConf = table.getConfiguration();
 
-		    TransactionalAggregationClient aggregationClient = new TransactionalAggregationClient(customConf);
+		    TransactionalAggregationClient aggregationClient = 
+                        new TransactionalAggregationClient(customConf);
 		    Scan scan = new Scan();
 		    scan.addFamily(colFamily);
-		    final ColumnInterpreter<Long, Long> ci = new LongColumnInterpreter();
+		    final ColumnInterpreter<Long, Long, EmptyMsg, LongMsg, LongMsg> ci =
+			new LongColumnInterpreter();
 		    byte[] tname = getTableName().getBytes();
-		    long rowCount = aggregationClient.rowCount(transID, tname, ci, scan);
-		    byte[] rcBytes = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(rowCount).array();
+		    long rowCount = aggregationClient.rowCount(transID, 
+                      org.apache.hadoop.hbase.TableName.valueOf(getTableName()),
+                      ci,
+                      scan);
+
+		    coprocAggrResult = new ByteArrayList();
+
+		    byte[] rcBytes = 
+                      ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(rowCount).array();
                     return rcBytes; 
 	}
 
@@ -787,7 +843,7 @@ public class HTableClient {
 	}
 
 	public boolean close(boolean clearRegionCache) throws IOException {
-           logger.trace("Enter close() ");
+           logger.trace("Enter close() " + tableName);
            if (scanner != null) {
               scanner.close();
               scanner = null;

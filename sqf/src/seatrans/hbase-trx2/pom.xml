@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- @@@ START COPYRIGHT @@@                                                 -->
+<!--                                                                         -->
+<!-- (C) Copyright 2014 Hewlett-Packard Development Company, L.P.            -->
+<!--                                                                         -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License");         -->
+<!-- you may not use this file except in compliance with the License.        -->
+<!-- You may obtain a copy of the License at                                 -->
+<!--                                                                         -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0                         -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- See the License for the specific language governing permissions and     -->
+<!-- limitations under the License.                                          -->
+<!--                                                                         -->
+<!-- @@@ END COPYRIGHT @@@                                                   -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.apache</groupId>
+	<artifactId>hbase-trx</artifactId>
+        <!-- obey sqenv.sh to get the value of TRAFODION_VER -->
+	<version>${env.TRAFODION_VER}</version>
+	<packaging>jar</packaging>
+	<name>hbase-trx</name>
+	<description>Hbase-trx is an HBase extension that provides serialized transactions and indexed tables.</description>
+	
+	<properties>
+	  <hadoop.version>1.2.0</hadoop.version>
+	  <hbase.version>0.94.6-trafodion-15</hbase.version>
+	  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+          <java.version>1.7</java.version>
+          <trx-suffix></trx-suffix>
+	</properties>
+	
+	<dependencies>
+	  <dependency>
+	    <groupId>org.apache.hbase</groupId>
+	    <artifactId>hbase</artifactId>
+	    <version>${hbase.version}</version>
+	  </dependency>
+	  
+	  <!--  Test dependencies -->
+	  <dependency>
+	    <groupId>org.apache.hbase</groupId>
+	    <artifactId>hbase</artifactId>
+	    <version>${hbase.version}</version>
+	    <classifier>tests</classifier>
+	    <scope>test</scope>
+    	  </dependency>
+    	  <dependency>
+	    <groupId>org.apache.hadoop</groupId>
+	    <artifactId>hadoop-core</artifactId>
+	    <version>${hadoop.version}</version>
+          </dependency>
+    	  <dependency>
+	    <groupId>org.apache.hadoop</groupId>
+	    <artifactId>hadoop-test</artifactId>
+	    <version>${hadoop.version}</version>
+	    <scope>test</scope>
+          </dependency>
+          <dependency>
+	    <groupId>junit</groupId>
+	    <artifactId>junit</artifactId>
+	    <version>4.8.1</version>
+	    <scope>test</scope>
+          </dependency>
+	</dependencies>
+
+	<repositories>
+	  <repository>
+	    <id>hbase-trafodion-repos</id>
+	    <url>http://mvnrepo.trafodion.org</url>
+	  </repository>
+	</repositories>
+
+	<build>
+          <defaultGoal>package</defaultGoal>
+          <!-- allow for different build targets with separate classes directories and
+               output jars, used for Java 6 compile for now -->
+          <outputDirectory>${project.build.directory}/classes${trx-suffix}</outputDirectory>
+          <finalName>${project.artifactId}-${project.version}${trx-suffix}</finalName>
+          <!-- Some plugins (javadoc for example) can be used in the normal build- and the site phase.
+               These plugins inherit their options from the <reporting> section below. These settings
+               can be overwritten here. -->
+          <pluginManagement>
+            <plugins>
+              <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                  <source>${java.version}</source>
+                  <target>${java.version}</target>
+                  <showWarnings>true</showWarnings>
+                  <showDeprecation>false</showDeprecation>
+                </configuration>
+              </plugin>
+              <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                  <archive>
+                    <manifestFile>hbase-trx.jar.versions</manifestFile>
+                  </archive>
+                </configuration>
+              </plugin>
+              <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                  <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
+                  <argLine>-Xmx1g</argLine>
+                  <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                </configuration>
+              </plugin>
+              <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6.1</version>
+              </plugin>
+              <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.4</version>
+              </plugin>
+            </plugins>
+          </pluginManagement>
+          
+          <plugins>
+            <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <!-- THIS might not be doable
+                   <executions>
+                     <execution>
+                       <phase>package</phase>
+                       <goals>
+                         <goal>single</goal>
+                       </goals>
+                     </execution>
+                   </executions>
+                   -->
+              <configuration>
+                <tarLongFileMode>gnu</tarLongFileMode>
+                <descriptors>
+                  <descriptor>src/assembly/bin.xml</descriptor>
+                </descriptors>
+              </configuration>
+            </plugin>
+          </plugins>
+          <resources>
+            <resource>
+              <directory>${basedir}/src/main/java</directory>
+              <includes>
+                <!-- include all the Java sources in the jar -->
+                <include>**/*.java</include>
+              </includes>
+            </resource>
+          </resources>
+        </build>
+</project>

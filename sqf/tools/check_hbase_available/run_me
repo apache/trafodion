@@ -1,0 +1,14 @@
+$JAVA_HOME/bin/java CheckHBase
+read -p 'Enter any key to continue...' lv_key
+
+./chk_hba
+read -p 'Enter any key to continue...' lv_key
+
+$JAVA_HOME/bin/java HBPerf 201
+read -p 'Enter any key to continue...' lv_key
+
+$JAVA_HOME/bin/java HBPerf_counter
+read -p 'Enter any key to continue...' lv_key
+
+$JAVA_HOME/bin/java HBPerf_agg_count
+

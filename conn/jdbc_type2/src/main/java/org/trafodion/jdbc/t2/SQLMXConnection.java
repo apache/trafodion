@@ -1408,7 +1408,8 @@ public class SQLMXConnection extends PreparedStatementManager implements
                         {
                            if (autoCommit_ != autoCommit)
                            {
-                              setAutoCommit(server_, getDialogueId_(), autoCommit);
+			      if (connectInitialized_)
+                              	setAutoCommit(server_, getDialogueId_(), autoCommit);
 			      autoCommit_ = autoCommit;
                            }
                         } 
@@ -1875,7 +1876,7 @@ public class SQLMXConnection extends PreparedStatementManager implements
 									.equalsIgnoreCase("ON");
 					// MFC added two more parameters
 					connectInit(server_, getDialogueId_(), catalog_, schema_,
-							mploc_, isReadOnly_,
+							mploc_, isReadOnly_, autoCommit_,
 							mapTxnIsolation(transactionIsolation_),
 							loginTimeout_, queryTimeout_, enableMFC_,
 							compiledModuleLocation_, blnCQD);
@@ -2835,7 +2836,7 @@ public class SQLMXConnection extends PreparedStatementManager implements
 	// private native void setReadOnly(String server, int dialogueId, boolean
 	// readOnly);
 	private native void connectInit(String server, long dialogueId,
-			String catalog, String schema, String mploc, boolean isReadOnly,
+			String catalog, String schema, String mploc, boolean isReadOnly, boolean autoCommit,
 			int transactionIsolation, int loginTimeout, int queryTimeout,
 			String modulecaching, String compiledmodulelocation,
 			boolean blnDoomUsrTxn) throws SQLException;

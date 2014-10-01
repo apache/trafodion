@@ -1,0 +1,6 @@
+#
+# Gets the HBase detailed status and writes it to the file hbase_status_detailed.out
+#
+hbase shell <<EOF > hbase_status_detailed.out
+status 'detailed'
+EOF

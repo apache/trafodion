@@ -213,10 +213,11 @@ public class TransactionState {
 	   	}
 	}
     
-    public boolean addRegion(final HRegionLocation hregion) {
+    public boolean addRegion(final HRegionLocation hregion) {        
         TransactionRegionLocation trRegion   = new TransactionRegionLocation(hregion.getRegionInfo(), 
-                                                                             hregion.getHostname(), 
-                                                                             hregion.getPort());
+                                                                             hregion.getServerName());
+
+// Save hregion for now
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
@@ -239,11 +240,9 @@ public class TransactionState {
         return regionsToIgnore;
     }
 
-    void addRegionToIgnore(final HRegionLocation region) {
-        TransactionRegionLocation trRegion   = new TransactionRegionLocation(region.getRegionInfo(), 
-                                                                             region.getHostname(), 
-                                                                             region.getPort());
-        regionsToIgnore.add(trRegion);
+    void addRegionToIgnore(final TransactionRegionLocation region) {
+        // Changing to an HRegionLocation for now
+        regionsToIgnore.add(region);
     }
 
     /**

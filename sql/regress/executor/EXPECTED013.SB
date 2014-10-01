@@ -18,7 +18,7 @@
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Jul 29 14:20:11 2014
+-- Definition current  Tue Sep  2 22:04:27 2014
 
   (
     A                                INT DEFAULT NULL
@@ -46,7 +46,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue Jul 29 14:20:19 2014
+-- Definition current  Tue Sep  2 22:04:31 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -108,7 +108,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Jul 29 14:20:39 2014
+-- Definition current  Tue Sep  2 22:04:39 2014
 
   (
     A                                INT DEFAULT NULL
@@ -133,7 +133,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue Jul 29 14:20:45 2014
+-- Definition current  Tue Sep  2 22:04:41 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -172,7 +172,7 @@ A            B            C
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Jul 29 14:20:54 2014
+-- Definition current  Tue Sep  2 22:04:45 2014
 
   (
     A                                INT DEFAULT NULL
@@ -194,7 +194,7 @@ A
 >>invoke t013t1;
 
 -- Definition of Trafodion volatile table T013T1
--- Definition current  Tue Jul 29 14:20:56 2014
+-- Definition current  Tue Sep  2 22:04:46 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -443,7 +443,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Jul 29 14:21:29 2014
+-- Definition current  Tue Sep  2 22:04:54 2014
 
   (
     A                                INT DEFAULT NULL
@@ -463,7 +463,7 @@ CONTROL QUERY DEFAULT
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Jul 29 14:21:34 2014
+-- Definition current  Tue Sep  2 22:04:56 2014
 
   (
     A                                INT DEFAULT NULL
@@ -561,7 +561,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Tue Jul 29 14:22:03 2014
+-- Definition current  Tue Sep  2 22:05:06 2014
 
   (
     A                                INT DEFAULT NULL
@@ -578,7 +578,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion volatile table T013T3
--- Definition current  Tue Jul 29 14:22:05 2014
+-- Definition current  Tue Sep  2 22:05:07 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -593,7 +593,7 @@ control query shape nested_join(anything,anything);
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Tue Jul 29 14:22:10 2014
+-- Definition current  Tue Sep  2 22:05:08 2014
 
   (
     A                                INT DEFAULT NULL
@@ -658,7 +658,7 @@ CREATE VOLATILE TABLE T013T3
 >>invoke t013t3;
 
 -- Definition of Trafodion table TRAFODION.T013SCH.T013T3
--- Definition current  Tue Jul 29 14:22:28 2014
+-- Definition current  Tue Sep  2 22:05:14 2014
 
   (
     A                                INT DEFAULT NULL
@@ -1280,7 +1280,7 @@ CREATE VOLATILE TABLE T013T1
 >>invoke t013t1;
 
 -- Definition of Trafodion table TRAFODION.T013_SCH.T013T1
--- Definition current  Tue Jul 29 14:25:30 2014
+-- Definition current  Tue Sep  2 22:06:24 2014
 
   (
     A                                INT DEFAULT NULL

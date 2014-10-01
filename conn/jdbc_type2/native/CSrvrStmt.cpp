@@ -461,7 +461,9 @@ void  SRVR_STMT_HDL::cleanupSQLValueList(void)
 	MEMORY_DELETE(outputValueVarBuffer);
 	outputValueList._length = 0;
 	maxRowCnt = 0;
-	MEMORY_DELETE(rowCount._buffer);
+	if (rowCount._length > 0) {
+	  MEMORY_DELETE(rowCount._buffer);
+	}
 	rowCount._buffer = NULL;
 	rowCount._length = 0;
 

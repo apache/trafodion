@@ -55,16 +55,20 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescriptio
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
 import org.apache.hadoop.hbase.snapshot.RestoreSnapshotException;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
-import org.apache.hadoop.hbase.io.hfile.Compression;
+//import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.io.hfile.HFile;
-//import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
-import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
+import org.apache.hadoop.hbase.io.hfile.HFileContext;
+import org.apache.hadoop.hbase.io.hfile.HFileContextBuilder;
+import org.apache.hadoop.hbase.io.compress.*;
+//import org.apache.hadoop.hbase.io.compress.Compression;
+//import org.apache.hadoop.hbase.io.hfile.Compression;
+//import org.apache.hadoop.hbase.io.hfile.Compression.Algorithm;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
-//import org.apache.hadoop.hbase.regionserver.BloomType; in v0.97
-import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
+import org.apache.hadoop.hbase.regionserver.BloomType; 
+//import org.apache.hadoop.hbase.regionserver.StoreFile.BloomType ;
 //import org.apache.hadoop.hbase.client.Durability;
-import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoderImpl;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.trafodion.sql.HBaseAccess.HTableClient;
@@ -96,8 +100,8 @@ public class HBulkLoadClient
   FileSystem fileSys = null;
   String compression = COMPRESSION;
   int blockSize = BLOCKSIZE;
-  DataBlockEncoding inCacheEncoding = DataBlockEncoding.NONE;
-  DataBlockEncoding onDiskEncoding = DataBlockEncoding.NONE;
+  DataBlockEncoding dataBlockEncoding = DataBlockEncoding.NONE;
+ // DataBlockEncoding onDiskEncoding = DataBlockEncoding.NONE; deprecated
   
   
   
@@ -145,9 +149,8 @@ public class HBulkLoadClient
     
     compression= hColDescs[0].getCompression().getName();
     blockSize= hColDescs[0].getBlocksize();
-    inCacheEncoding = hColDescs[0].getDataBlockEncoding();
-    onDiskEncoding = hColDescs[0].getDataBlockEncodingOnDisk();
-
+    dataBlockEncoding = hColDescs[0].getDataBlockEncoding();
+    
     if (userMaxSize == 0)
     {
       if (hTbaledesc.getMaxFileSize()==-1)
@@ -170,7 +173,6 @@ public class HBulkLoadClient
   {
     logger.debug("HBulkLoadClient.doCreateHFile() called.");
     
-    //may chage those assertion later it needed to something else???
     if (hFileLocation == null )
       throw new NullPointerException(hFileLocation + " is not set");
     if (hFileName == null )
@@ -188,12 +190,16 @@ public class HBulkLoadClient
 
     try
     {
+      HFileContext hfileContext = new HFileContextBuilder()
+                                 .withBlockSize(blockSize)
+                                 .withCompression(Compression.getCompressionAlgorithmByName(compression))
+                                 .withDataBlockEncoding(dataBlockEncoding)
+                                 .build();
+
       writer =    HFile.getWriterFactory(config, new CacheConfig(config))
                      .withPath(fileSys, hfilePath)
-                     .withBlockSize(blockSize)
-                     .withCompression(compression)
-                     .withComparator(KeyValue.KEY_COMPARATOR)
-                     .withDataBlockEncoder(new HFileDataBlockEncoderImpl(onDiskEncoding,inCacheEncoding))
+                     .withFileContext(hfileContext)
+                     .withComparator(KeyValue.COMPARATOR)
                      .create();
       logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
     }

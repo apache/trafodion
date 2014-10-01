@@ -20,7 +20,6 @@ import javax.transaction.xa.Xid;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
 
 /**
  * View hbase as a JTA transactional resource. This allows it to participate in transactions across multiple resources.
@@ -109,9 +108,9 @@ public class JtaXAResource implements XAResource {
         }
 
         switch (status) {
-            case TransactionalRegionInterface.COMMIT_OK:
+            case TransactionalReturn.COMMIT_OK:
                 return XAResource.XA_OK;
-            case TransactionalRegionInterface.COMMIT_OK_READ_ONLY:
+            case TransactionalReturn.COMMIT_OK_READ_ONLY:
                 return XAResource.XA_RDONLY;
             default:
                 throw new XAException(XAException.XA_RBPROTO);

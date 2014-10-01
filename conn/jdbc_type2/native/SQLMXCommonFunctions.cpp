@@ -2308,6 +2308,7 @@ func_exit:
 
 	short suspendExtTxn(jint &externalTxid)
 	{
+/*
 		FUNCTION_ENTRY("suspendExtTxn",
 			("externalTxid=0x%08x",
 			externalTxid));
@@ -2338,10 +2339,13 @@ func_exit:
 		DEBUG_OUT(DEBUG_LEVEL_TXN,("resumeTransaction(0x%08x) returned %d", externalTxid, status));
 
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+               return 0;
 	}
 
 	short resumeOrBeginTxn(JNIEnv *jenv, jint &currentTxid, jint &externalTxid, jint txnMode)
 	{
+/*
 		FUNCTION_ENTRY("resumeOrBeginTxn",("jenv=0x%08x, currentTxid=0x%08x, externalTxid=0x%08x, txnMode=%ld,",
 			jenv,
 			currentTxid,
@@ -2420,6 +2424,7 @@ func_exit:
 					currentTxid = 0;
 					break;
 					/*For 10-091005-5100, Just pass back the error 97*/
+/*
 				case 97: // CONTROL QUERY DEFAULT DOOM_USERTRANSACTION 'ON'
 					break;
 				default:
@@ -2435,10 +2440,13 @@ func_exit:
 		}
 #endif		
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+               return 0;
 	}
 
 	short resumeTxn(JNIEnv *jenv, jint &currentTxid, jint &externalTxid, jint txnMode)
 	{
+/*
 		FUNCTION_ENTRY("resumeTxn",("jenv=0x%08x, currentTxid=0x%08x, externalTxid=0x%08x",
 			jenv,
 			currentTxid,
@@ -2517,12 +2525,15 @@ func_exit:
 		}
 #endif		
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+		return 0;
 	}
 
 	short suspendOrEndTxn(JNIEnv *jenv, jint &currentTxid,
 		jboolean autoCommit, unsigned long exception_nr,
 		jboolean isSelect)
 	{
+/*
 		FUNCTION_ENTRY("suspendOrEndTxn",("jenv=0x%08x, currentTxid=0x%08x, autoCommit=%s, exception_nr=%ld, isSelect=%s",
 			jenv,
 			currentTxid,
@@ -2567,13 +2578,17 @@ func_exit:
 				status));
 		}
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+                return 0;
 	}
+
 
 
 	short suspendOrEndTxn(JNIEnv *jenv, jint &currentTxid,
 		jint previousTxid, jboolean autoCommit,
 		unsigned long exception_nr, jboolean isSelect)
 	{
+/*
 		FUNCTION_ENTRY("suspendOrEndTxn",
 			("jenv=0x%08x, currentTxid=0x%08x, previousTxid=0x%08x, autoCommit=%s, exception_nr=%ld, isSelect=%s",
 			jenv,
@@ -2588,6 +2603,7 @@ func_exit:
 		/* 
 		* Description: Type 2 driver now supports atomicity at statement level
 		*/
+/*
 		if (previousTxid) // Transaction was already started by the previous SQL execution
 		{
 			DEBUG_OUT(DEBUG_LEVEL_TXN,("previous txn (0x%08x) in progres",previousTxid));
@@ -2604,6 +2620,7 @@ func_exit:
 					/*10-091005-5100: Whenever the user has started the txn
 					* dont abort it just resume it as above.
 					*/
+/*
 					status = resumeTransaction(0);
 					DEBUG_OUT(DEBUG_LEVEL_TXN,("resumeTransaction(0) returned %d", status));
 					/*Commented for 10-091005-5100*/
@@ -2612,6 +2629,7 @@ func_exit:
 					//DEBUG_OUT(DEBUG_LEVEL_TXN,("abortTransaction() returned %d (Ignored)", rc));
 					//currentTxid = 0;
 					/*Commented for 10-091005-5100*/
+/*
 				}
 			}
 			// Resume txn if cmd passed OR it failed and it is a select
@@ -2639,10 +2657,13 @@ func_exit:
 				status, currentTxid, DebugBoolStr(autoCommit)));
 		}
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+		return 0;
 	}
 
 	short beginTxnControl(JNIEnv *jenv, jint &currentTxid, jint &externalTxid, jint txnMode, jint holdability)
 	{
+/*
 		FUNCTION_ENTRY("beginTxnControl",("jenv=0x%08x, currentTxid=0x%08x, externalTxid=0x%08x, txnMode=%ld, holdability=%ld",
 			jenv,
 			currentTxid,
@@ -2679,6 +2700,8 @@ func_exit:
 			DEBUG_OUT(DEBUG_LEVEL_TXN,("Invalid txn mode"));
 		}
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+		return 0;
 	}
 
 	void throwTransactionException(JNIEnv *jenv, jint err_code)
@@ -2713,6 +2736,7 @@ func_exit:
 		jboolean autoCommit, unsigned long exception_nr, jboolean isSelect,
 		jint txnMode, jint &externalTxid)
 	{
+/*
 		FUNCTION_ENTRY("endTxnControl",("jenv=0x%08x, currentTxid=0x%08x, txid=0x%08x, autoCommit=%s, exception_nr=%ld, isSelect=%s, txnMode=%ld, externalTxid=0x%08x",
 			jenv,
 			currentTxid,
@@ -2774,6 +2798,8 @@ func_exit:
 			DEBUG_OUT(DEBUG_LEVEL_TXN,("Invalid txn mode"));
 		}
 		FUNCTION_RETURN_NUMERIC(status,(NULL));
+*/
+		return 0;
 	}
 
 

@@ -362,7 +362,7 @@ JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_beginTransacti
 
 JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jstring catalog,
- jstring schema, jstring mploc, jboolean isReadOnly, jint transactionIsolation,
+ jstring schema, jstring mploc, jboolean isReadOnly, jboolean autoCommit, jint transactionIsolation,
  jint loginTimeout, jint queryTimeout, jstring modulecaching, jstring compiledmodulelocation, jboolean blnDoomUsrTxn)
 {
 	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit",("..."));
@@ -614,7 +614,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
 		&setConnectException,
 		dialogueId,
 		SQL_AUTOCOMMIT,
-		TRUE,
+		autoCommit,
 		NULL,
 		&sqlWarning
 		);

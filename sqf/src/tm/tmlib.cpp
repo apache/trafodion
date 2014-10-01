@@ -543,7 +543,7 @@ int tmlib_callback (MS_Mon_Tmlib_Fun_Type pv_fun,
 }
 
 // TOPL REGISTERTRANSACTION
-short REGISTERREGION(int pv_port, char *pa_hostname, int pv_hostname_length, char *pa_regionInfo, int pv_regionInfo_length)
+short REGISTERREGION(int pv_port, char *pa_hostname, int pv_hostname_length, long pv_startcode, char *pa_regionInfo, int pv_regionInfo_length)
 {
    short lv_error = FEOK;
    // instantiate a gp_trans_thr object for this thread if needed.
@@ -553,8 +553,8 @@ short REGISTERREGION(int pv_port, char *pa_hostname, int pv_hostname_length, cha
    TM_Transaction *lp_trans = gp_trans_thr->get_current();
 
    TMlibTrace(("TMLIB_TRACE : REGISTERREGION ENTRY: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
-   TMlibTrace(("TMLIB_TRACE : ENTER REGISTERREGION port: %d, hostname %s, length: %d, regionInfo: %s, length: %d\n",
- 	      pv_port, pa_hostname, pv_hostname_length, pa_regionInfo, pv_regionInfo_length), 2);
+   TMlibTrace(("TMLIB_TRACE : ENTER REGISTERREGION port: %d, hostname %s, length: %d, startcode: %ld, regionInfo: %s, length: %d\n",
+	       pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length), 2);
    if (lp_trans == NULL)
    {
        TMlibTrace(("TMLIB_TRACE : REGISTERREGION returning with error %d\n",
@@ -562,7 +562,7 @@ short REGISTERREGION(int pv_port, char *pa_hostname, int pv_hostname_length, cha
        return FENOTRANSID;
     }
 
-    lv_error =  lp_trans->register_region(pv_port, pa_hostname, pv_hostname_length, pa_regionInfo, pv_regionInfo_length);
+   lv_error =  lp_trans->register_region(pv_port, pa_hostname, pv_hostname_length, pv_startcode, pa_regionInfo, pv_regionInfo_length);
 
     TMlibTrace(("TMLIB_TRACE : REGISTERREGION EXIT: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
     TMlibTrace(("TMLIB_TRACE : EXIT REGISTERREGION return code %d\n",

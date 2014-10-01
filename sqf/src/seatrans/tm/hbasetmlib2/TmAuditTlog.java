@@ -48,7 +48,6 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.LocalHBaseCluster;
 import org.apache.hadoop.hbase.ServerName;
@@ -481,7 +480,7 @@ public class TmAuditTlog {
          // branches reply prior to cleanup
          Iterator<TransactionRegionLocation> it = regions.iterator();
          while (it.hasNext()) {
-            String name = new String(it.next().getRegionInfo().getTableNameAsString());
+	     String name = new String(it.next().getRegionInfo().getTable().getNameAsString());
             if (name.length() > 0){
                tableString.append(",");
                tableString.append(name);
@@ -534,7 +533,7 @@ public class TmAuditTlog {
          e.printStackTrace();
          throw e;
       }
-      LOG.debug("TLOG putSingleRecord synchronization copmplete in thread " + threadId );
+      LOG.debug("TLOG putSingleRecord synchronization complete in thread " + threadId );
 
       synchTimes[lv_TimeIndex] = endSynch - startSynch;
       totalSynchTime += synchTimes[lv_TimeIndex];
@@ -606,7 +605,7 @@ public class TmAuditTlog {
       long lvAsn;
       long threadId = Thread.currentThread().getId();
       while (it.hasNext()) {
-         String name = new String(it.next().getRegionInfo().getTableNameAsString());
+         String name = new String(it.next().getRegionInfo().getTable().getNameAsString());
          if (name.length() > 0){
             tableString.append(",");
             tableString.append(name);
@@ -1119,7 +1118,7 @@ public class TmAuditTlog {
                   StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
                   String hostName = new String(tok.nextElement().toString());
                   int portNumber = Integer.parseInt(tok.nextElement().toString());
-                  TransactionRegionLocation loc = new TransactionRegionLocation(regionKey, hostName, portNumber);
+                  TransactionRegionLocation loc = new TransactionRegionLocation(regionKey, serverValue);
                   ts.addRegion(loc);
               }
             }

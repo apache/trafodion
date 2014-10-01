@@ -172,6 +172,7 @@ public:
  		      int pv_port,
  		      const char pa_hostname[],
  		      int pv_hostname_Length,
+		      long pv_startcode,
  		      const char pa_regionInfo[],
  		      int pv_regionInfo_Length);
    short addControlPoint();

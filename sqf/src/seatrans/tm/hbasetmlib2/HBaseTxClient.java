@@ -44,12 +44,14 @@ import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
 import org.apache.hadoop.hbase.client.transactional.TransactionRegionLocation;
-import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
+import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
@@ -200,8 +202,6 @@ public class HBaseTxClient {
       setupLog4j();
       LOG.debug("Enter init(" + dtmid + ")");
       config = HBaseConfiguration.create();
-      config.set("hbase.regionserver.class", "org.apache.hadoop.hbase.ipc.TransactionalRegionInterface");
-      config.set("hbase.regionserver.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer");
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
       config.set("hbase.hlog.splitter.impl", "org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter");
       config.set("dtmid", String.valueOf(dtmid));
@@ -360,19 +360,18 @@ public class HBaseTxClient {
 
      try {
         short result = (short) trxManager.prepareCommit(ts);
-        LOG.debug("prepareCommit, [ " + ts + " ], result " + result + ((result == TransactionalRegionInterface.COMMIT_OK_READ_ONLY)?", Read-Only":""));
-
+        LOG.debug("prepareCommit, [ " + ts + " ], result " + result + ((result == TransactionalReturn.COMMIT_OK_READ_ONLY)?", Read-Only":""));
         switch (result) {
-          case TransactionalRegionInterface.COMMIT_OK:
+          case TransactionalReturn.COMMIT_OK:
               LOG.trace("Exit OK prepareCommit, txid: " + transactionId);
               return RET_OK;
-          case TransactionalRegionInterface.COMMIT_OK_READ_ONLY:
+          case TransactionalReturn.COMMIT_OK_READ_ONLY:
              synchronized(mapLock) {
                 mapTransactionStates.remove(transactionId);
              }
              LOG.trace("Exit OK_READ_ONLY prepareCommit, txid: " + transactionId);
              return RET_READONLY;
-          case TransactionalRegionInterface.COMMIT_CONFLICT:
+          case TransactionalReturn.COMMIT_CONFLICT:
              LOG.info("Exit RET_HASCONFLICT prepareCommit, txid: " + transactionId);
              return RET_HASCONFLICT;
           default:
@@ -462,29 +461,37 @@ public class HBaseTxClient {
    }
 
     public short callRegisterRegion(long transactionId,
-						 int  pv_port,
-						 byte[] pv_hostname,
- 						 byte[] pv_regionInfo) throws Exception {
+				    int  pv_port,
+				    byte[] pv_hostname,
+				    long pv_startcode,
+				    byte[] pv_regionInfo) throws Exception {
  	String hostname    = new String(pv_hostname);
 	LOG.debug("Enter callRegisterRegion, txid: [" + transactionId + "]");
 	LOG.trace("callRegisterRegion, txid: [" + transactionId + "], port: " + pv_port + ", hostname: " + hostname + ", reg info len: " + pv_regionInfo.length + " " + new String(pv_regionInfo, "UTF-8"));
 
-       ByteArrayInputStream lv_bis = new ByteArrayInputStream(pv_regionInfo);
-       DataInputStream lv_dis = new DataInputStream(lv_bis);
-       HRegionInfo lv_regionInfo = new HRegionInfo();
-       try {
-	   lv_regionInfo.readFields(lv_dis);
-       }
-       catch (IOException e) {
-           LOG.error("HBaseTxClient:callRegisterRegion exception in lv_regionInfo.readFields, retval: " +
+	HRegionInfo lv_regionInfo;
+	try {
+	    lv_regionInfo = HRegionInfo.parseFrom(pv_regionInfo);
+	}
+	catch (Exception de) {
+           LOG.trace("HBaseTxClient:callRegisterRegion exception in lv_regionInfo parseFrom, retval: " +
 		     RET_EXCEPTION +
 		     " txid: " + transactionId +
-		     " IOException: " + e);
-           throw new Exception("IOException in lv_regionInfo.readFields, unable to register region");
-       }
+		     " DeserializationException: " + de);
+	   StringWriter sw = new StringWriter();
+	   PrintWriter pw = new PrintWriter(sw);
+	   de.printStackTrace(pw);
+	   LOG.error(sw.toString()); 
+	   
+           throw new Exception("DeserializationException in lv_regionInfo parseFrom, unable to register region");
+	}
 
-       TransactionRegionLocation regionLocation = new TransactionRegionLocation(lv_regionInfo, hostname, pv_port);
-       String regionTableName = regionLocation.getRegionInfo().getTableNameAsString();
+       // TODO Not in CDH 5.1       ServerName lv_servername = ServerName.valueOf(hostname, pv_port, pv_startcode);
+       String lv_hostname_port_string = hostname + ":" + pv_port;
+       String lv_servername_string = ServerName.getServerName(lv_hostname_port_string, pv_startcode);
+       ServerName lv_servername = ServerName.parseServerName(lv_servername_string);
+       TransactionRegionLocation regionLocation = new TransactionRegionLocation(lv_regionInfo, lv_servername);
+       String regionTableName = regionLocation.getRegionInfo().getTable().getNameAsString();
 
        TransactionState ts = mapTransactionStates.get(transactionId);
        if(ts == null) {
@@ -581,9 +588,15 @@ public class HBaseTxClient {
                  } catch (Exception e) {                        
                          throw new Exception();
                  }
+		 //HBase98 TODO: need to set the value of startcode correctly
+		 //HBase98 TODO: Not in CDH 5.1:  ServerName lv_servername = ServerName.valueOf(hostname, port, 0);
+
+		 String lv_hostname_port_string = hostname + ":" + port;
+		 String lv_servername_string = ServerName.getServerName(lv_hostname_port_string, 0);
+		 ServerName lv_servername = ServerName.parseServerName(lv_servername_string);
+
                  TransactionRegionLocation loc = new TransactionRegionLocation(regionInfoLoc,
-                		                                                       hostname,
-                		                                                       port);
+									       lv_servername);
                  ts.addRegion(loc);
              }
 
@@ -710,9 +723,9 @@ public class HBaseTxClient {
 
           // TableName
           Iterator<TransactionRegionLocation> it = regions.iterator();
-          tablename = it.next().getRegionInfo().getTableNameAsString();
+          tablename = it.next().getRegionInfo().getTable().getNameAsString();
           while(it.hasNext()){
-              tablename = tablename + ";" + it.next().getRegionInfo().getTableNameAsString();
+              tablename = tablename + ";" + it.next().getRegionInfo().getTable().getNameAsString();
           }
           hm.addElement(tnum, "TableName", tablename);
 
@@ -720,7 +733,7 @@ public class HBaseTxClient {
           Iterator<TransactionRegionLocation> it2 = regions.iterator();
           encoded_region_name = it2.next().getRegionInfo().getEncodedName();
           while(it2.hasNext()){
-              encoded_region_name = encoded_region_name + ";" + it2.next().getRegionInfo().getTableNameAsString();
+              encoded_region_name = encoded_region_name + ";" + it2.next().getRegionInfo().getTable().getNameAsString();
           }
           hm.addElement(tnum, "EncodedRegionName", encoded_region_name);
 
@@ -728,7 +741,7 @@ public class HBaseTxClient {
           Iterator<TransactionRegionLocation> it3 = regions.iterator();
           region_name = it3.next().getRegionInfo().getRegionNameAsString();
           while(it3.hasNext()){
-              region_name = region_name + ";" + it3.next().getRegionInfo().getTableNameAsString();
+              region_name = region_name + ";" + it3.next().getRegionInfo().getTable().getNameAsString();
           }
           hm.addElement(tnum, "RegionName", region_name);
 

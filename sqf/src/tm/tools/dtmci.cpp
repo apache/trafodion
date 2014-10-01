@@ -1394,6 +1394,7 @@ int main(int argc, char *argv[])
     if(lv_shellExec) 
           lp_in = openInput(argv[10]);
 
+    putenv((char *) "TMLIB_ENABLE_CLEANUP=0");
     while (!lv_done)
     {
         char *lp_readline;

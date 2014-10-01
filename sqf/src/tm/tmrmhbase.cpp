@@ -372,6 +372,7 @@ int32 RM_Info_HBASE::registerRegion (CTmTxBase *pp_txn,  int64 pv_flags, CTmTxMe
 				       pp_msg->request()->u.iv_register_region.iv_port,
 				       pp_msg->request()->u.iv_register_region.ia_hostname,
 				       pp_msg->request()->u.iv_register_region.iv_hostname_length,
+				       pp_msg->request()->u.iv_register_region.iv_startcode,
 				       pp_msg->request()->u.iv_register_region.ia_regioninfo2,
 				       pp_msg->request()->u.iv_register_region.iv_regioninfo_length
 				       );

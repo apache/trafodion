@@ -32,9 +32,9 @@ import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
-import org.apache.hadoop.hbase.ipc.HMasterInterface;
-import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
-import org.apache.hadoop.hbase.ipc.HRegionInterface;
+//H98import org.apache.hadoop.hbase.ipc.HMasterInterface;
+//H98import org.apache.hadoop.hbase.ipc.TransactionalRegionInterface;
+//H98import org.apache.hadoop.hbase.ipc.HRegionInterface;
 
 
 public class TrafInfo {
@@ -42,7 +42,7 @@ public class TrafInfo {
     private HBaseAdmin hbadmin;
     private HConnection connection;
     Configuration     config;
-    HMasterInterface  hmaster;
+    //    HMasterInterface  hmaster;
 
     public TrafInfo() throws IOException {
         init();
@@ -54,7 +54,7 @@ public class TrafInfo {
 
         try {
             hbadmin = new HBaseAdmin(config);
-            hmaster = hbadmin.getMaster();
+	    //H98            hmaster = hbadmin.getMaster();
         } catch(Exception e) {
             System.out.println("ERROR: Unable to obtain HBase accessors, Exiting");
             e.printStackTrace();
@@ -93,6 +93,7 @@ public class TrafInfo {
         String regionName, tableName;
         int idx;
 
+	/* H98
         Collection<ServerName> sn = hmaster.getClusterStatus().getServers();
         for(ServerName sname : sn) {
             System.out.println("===================================================================="
@@ -151,6 +152,9 @@ public class TrafInfo {
                 System.exit(1);
             }
         }
+	*/
+	
+
     }
 
     public static void main(String[] args) throws IOException {

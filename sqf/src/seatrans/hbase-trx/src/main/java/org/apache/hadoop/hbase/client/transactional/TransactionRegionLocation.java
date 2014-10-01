@@ -10,19 +10,24 @@
  */
 package org.apache.hadoop.hbase.client.transactional;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.HRegionLocation;
+import org.apache.hadoop.hbase.ServerName;
 
 public class TransactionRegionLocation extends HRegionLocation {
 
+  /*
    public TransactionRegionLocation(HRegionInfo regionInfo, final String hostname, final int port) {
-      super(regionInfo, hostname, port);
+     //ServerName
+     ServerName sn = new ServerName(hostname, port, 0);
+     //regionInfo, hostname, port);
    }
+   */
+   
+  
+  public TransactionRegionLocation(HRegionInfo regionInfo, ServerName servName) {
+    super(regionInfo, servName);
+  }
 
    @Override
    //public int compareTo(HRegionLocation o) {

@@ -67,7 +67,7 @@ TM_Transaction::~TM_Transaction()
 }
 
 // TOPL
-short  TM_Transaction::register_region(int port, char *hostName, int hostname_Length, char *regionInfo, int regionInfo_Length)
+short  TM_Transaction::register_region(int port, char *hostName, int hostname_Length, long startcode, char *regionInfo, int regionInfo_Length)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
@@ -84,6 +84,7 @@ short  TM_Transaction::register_region(int port, char *hostName, int hostname_Le
     lv_req.u.iv_register_region.iv_port = port;
     memcpy (lv_req.u.iv_register_region.ia_hostname, hostName, hostname_Length);
     lv_req.u.iv_register_region.iv_hostname_length = hostname_Length;
+    lv_req.u.iv_register_region.iv_startcode = startcode;
     
     memcpy (lv_req.u.iv_register_region.ia_regioninfo2, regionInfo, regionInfo_Length);
     lv_req.u.iv_register_region.iv_regioninfo_length = regionInfo_Length;

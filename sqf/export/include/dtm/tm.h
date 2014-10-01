@@ -257,7 +257,7 @@ typedef struct TM_HBASEREGIONINFO {
 
 // Trafodion start //
 #define TM_MAX_REGIONSERVER_STRING 2048 
-extern "C" short REGISTERREGION(int port, char *hostname, int hostname_length, char *regionInfo, int regionInfo_Length);
+extern "C" short REGISTERREGION(int port, char *hostname, int hostname_length, long startcode, char *regionInfo, int regionInfo_Length);
 extern "C" short HBASETM_REQUESTREGIONINFO(TM_HBASEREGIONINFO pa_trans[], short *pp_count);
 // Trafodion end //
 //

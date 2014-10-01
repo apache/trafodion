@@ -18,7 +18,8 @@
 
 # This Makefile is just a thin shell to Maven, which is used to do the real build
 
-BLD_HBASE_TRX_JARNAME       =hbase-trx-$(TRAFODION_VER).jar
+BLD_HBASE_TRX_JARNAME           =hbase-trx-$(TRAFODION_VER).jar
+BLD_HBASE_HDP2_1_TRX_JARNAME    =hbase-trx-hdp2_1-$(TRAFODION_VER).jar
 
 # We also build the same code again with Java 6, to be loaded into
 # HBase distros that are compiled with Java6. Note that this jar, if
@@ -34,6 +35,12 @@ GENVERS			    =./genvers
 .NOTPARALLEL: all
 
 all: build_all
+
+jdk_1_7_hdp2_1:
+	$(MAKE) build_chk_1_7_hdp2_1
+	set -o pipefail && $(MAVEN) -f pom.xml.hdp2_1 package -DskipTests | tee -a build_trx.log
+	cp -pf target/$(BLD_HBASE_HDP2_1_TRX_JARNAME) $(MY_SQROOT)/export/lib
+	$(RM) $(VFILE)
 
 jdk_1_7:
 	$(MAKE) build_chk_1_7
@@ -51,7 +58,7 @@ jdk_1_6:
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME_1_6) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-build_all: jdk_1_6 jdk_1_7
+build_all: jdk_1_6 jdk_1_7 jdk_1_7_hdp2_1
 
 build_chk_1_6:
 	$(GENVERS) > $(VFILE)
@@ -63,9 +70,15 @@ build_chk_1_7:
 	@if [ $(GENVERS) -nt target/$(BLD_HBASE_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_TRX_JARNAME); fi
 	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_TRX_JARNAME); fi
 
+build_chk_1_7_hdp2_1:
+	$(GENVERS) > $(VFILE)
+	@if [ $(GENVERS) -nt target/$(BLD_HBASE_HDP2_1_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP2_1_TRX_JARNAME); fi
+	@if [ $(MY_SQROOT)/export/include/SCMBuildStr.h -nt target/$(BLD_HBASE_HDP2_1_TRX_JARNAME) ]; then echo "update manifest"; $(RM) -f target/$(BLD_HBASE_HDP2_1_TRX_JARNAME); fi
+
 clean:
 	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_TRX_JARNAME)
 	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_TRX_JARNAME_1_6)
-	$(MAVEN) clean | grep ERROR
+	$(RM) $(MY_SQROOT)/export/lib/$(BLD_HBASE_HDP2_1_TRX_JARNAME)
+	-$(MAVEN) clean | grep ERROR
 	$(RM) build_trx.log
 	$(RM) $(VFILE)

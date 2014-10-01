@@ -330,6 +330,8 @@ if [ $USE_DEFAULT_PORTS == 'yes' ]; then
   MY_YARN_ADMIN_PORT_NUM=8033
   # yarn.nodemanager.localizer.address
   MY_YARN_LOCALIZER_PORT_NUM=8040
+  # yarn.nodemanager.webapp.address
+  MY_YARN_NM_PORT_NUM=8041
   # unique port # for MySQL (don't use default of 3306, often used already)
   MY_SQL_PORT_NUM=3346
   # hbase.master.port
@@ -358,6 +360,7 @@ else
   MY_YARN_TRACKER_PORT_NUM=`expr $MY_START_PORT + 131`
   MY_YARN_ADMIN_PORT_NUM=`expr $MY_START_PORT + 133`
   MY_YARN_LOCALIZER_PORT_NUM=`expr $MY_START_PORT + 140`
+  MY_YARN_NM_PORT_NUM=`expr $MY_START_PORT + 141`
   MY_HBASE_MASTER_PORT_NUM=`expr $MY_START_PORT + 160`
   MY_HBASE_MASTER_INFO_PORT_NUM=`expr $MY_START_PORT + 161`
   MY_HBASE_REGIONSERVER_PORT_NUM=`expr $MY_START_PORT + 162`
@@ -412,8 +415,11 @@ HADOOP_1_TAR=hadoop-1.0.4-bin.tar.gz
 
 # Hive 0.9 requires Hadoop 0.20 or higher
 # HBase seems fine with Hadoop 0.20 or higher
-HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh4/cdh/4
-HADOOP_TAR=hadoop-2.0.0-cdh4.2.0.tar.gz
+#HADOOP_MIRROR_URL=http://archive.cloudera.com/cdh4/cdh/4
+#HADOOP_TAR=hadoop-2.0.0-cdh4.2.0.tar.gz
+# Narendra
+HADOOP_MIRROR_URL=http://www.bizdirusa.com/mirrors/apache/hadoop/common/hadoop-2.4.0
+HADOOP_TAR=hadoop-2.4.0.tar.gz
 
 # Alternative: Use MariaDB (not validated)
 # MARIADB_MIRROR_URL=https://downloads.mariadb.org/f/mariadb-5.5.29/kvm-bintar-hardy-amd64/mariadb-5.5.29-linux-x86_64.tar.gz/from/http:/ftp.osuosl.org/pub/mariadb
@@ -425,11 +431,20 @@ MYSQL_TAR=mysql-5.6.10-linux-glibc2.5-x86_64.tar.gz
 MYSQL_JDBC_URL=http://cdn.mysql.com/archives/mysql-connector-java-5.1
 MYSQL_JDBC_TAR=mysql-connector-java-5.1.23.tar.gz
 
-HIVE_MIRROR_URL=http://archive.apache.org/dist/hive/hive-0.9.0
-HIVE_TAR=hive-0.9.0-bin.tar.gz
+#HIVE_MIRROR_URL=http://archive.apache.org/dist/hive/hive-0.9.0
+#HIVE_TAR=hive-0.9.0-bin.tar.gz
+# Narendra
+HIVE_MIRROR_URL=http://mirrors.ibiblio.org/apache/hive/stable
+HIVE_PREFIX=apache-hive-0.13.1-bin
+HIVE_TAR=${HIVE_PREFIX}.tar.gz
 
-HBASE_MIRROR_URL=http://archive.cloudera.com/cdh4/cdh/4
-HBASE_TAR=hbase-0.94.6-cdh4.4.0.tar.gz
+#HBASE_MIRROR_URL=http://archive.cloudera.com/cdh4/cdh/4
+#HBASE_TAR=hbase-0.94.6-cdh4.4.0.tar.gz
+# Narendra
+#HBASE_MIRROR_URL=http://psg.mtu.edu/pub/apache/hbase/hbase-0.98.3
+#HBASE_TAR=hbase-0.98.3-hadoop2-bin.tar.gz
+HBASE_MIRROR_URL=http://archive.cloudera.com/cdh5/cdh/5
+HBASE_TAR=hbase-0.98.1-cdh5.1.0.tar.gz
 
 TPCDS_MIRROR_URL=http://www.tpc.org/tpcds/dsgen/dsgen-download-files.asp?download_key=NaN
 TPCDS_ZIP=tpcds_kit.zip
@@ -658,6 +673,14 @@ EOF
 
 . $MY_SW_SCRIPTS_DIR/sw_env.sh
 ${MY_SW_ROOT}/hadoop/bin/hadoop \$*
+EOF
+
+  cat <<EOF >$MY_SW_SCRIPTS_DIR/swyarn
+#!/bin/sh
+# command to run yarn
+
+. $MY_SW_SCRIPTS_DIR/sw_env.sh
+${MY_SW_ROOT}/hadoop/bin/yarn \$*
 EOF
 
   cat <<EOF >$MY_SW_SCRIPTS_DIR/swhdfs
@@ -909,14 +932,6 @@ EOF
 <?xml version="1.0"?>
 <configuration>
   <property>
-    <name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce.shuffle</value>
-  </property>
-  <property>
-    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
-    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
-  </property>
-  <property>
     <name>yarn.resourcemanager.address</name>
     <value>${MY_HOST_1}:${MY_YARN_RESMAN_PORT_NUM}</value>
   </property>
@@ -939,6 +954,15 @@ EOF
   <property>
     <name>yarn.nodemanager.localizer.address	</name>
     <value>${MY_HOST_1}:${MY_YARN_LOCALIZER_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.webapp.address</name>
+    <value>${MY_HOST_1}:${MY_YARN_NM_PORT_NUM}</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+    <description>shuffle service that needs to be set for Map Reduce to run </description>
   </property>
 </configuration>
 EOF
@@ -976,15 +1000,23 @@ EOF
   $MY_SW_SCRIPTS_DIR/swstophadoop   >>${MY_LOG_FILE} 2>&1
   $MY_SW_SCRIPTS_DIR/swstarthadoop  >>${MY_LOG_FILE} 2>&1
 
-  bin/hdfs dfs -mkdir /user/$USER                   >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/hive                    >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /bulkload                     >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/hive/warehouse          >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /tmp                          >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /tmp                      >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /user/hive/warehouse      >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /bulkload                 >>${MY_LOG_FILE} 2>&1  
-
+  echo "Creating HDFS directories" 2>&1 | tee -a ${MY_LOG_FILE}
+  bin/hdfs dfs -mkdir /tmp                           >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user                          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/$USER                    >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/hive                     >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion                >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /bulkload                      >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/bulkload       >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/hive/warehouse           >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /hive                          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /hive/tpcds                    >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /tmp                       >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/hive/warehouse       >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /bulkload                  >>${MY_LOG_FILE} 2>&1  
+  bin/hdfs dfs -chmod g+w /user/trafodion/bulkload   >>${MY_LOG_FILE} 2>&1  
+  bin/hadoop fs -ls -R /                 2>&1 | tee -a ${MY_LOG_FILE}
+  echo "Done: Creating HDFS directories" 2>&1 | tee -a ${MY_LOG_FILE}
 
 fi
 # end of Hadoop (MapReduce + HDFS) setup
@@ -1105,7 +1137,8 @@ else
   tar -xf ${HIVE_TAR}
   echo "Creating symbolic link to latest Hive distribution..."
   rm -rf hive
-  ln -s `dirname hive-*/bin` hive
+#  ln -s `dirname hive-*/bin` hive
+  ln -s ${HIVE_PREFIX} hive
 
   HIVE_CONFIG_FILE=hive/conf/hive-site.xml
   HIVE_LOG_CONFIG_FILE=hive/conf/hive-log4j.properties
@@ -1206,7 +1239,7 @@ EOF
   ${MY_SW_ROOT}/mysql/bin/mysql --defaults-file=${MY_SQL_CONFIG_FILE} --user=${MY_SQL_USER} --password=${MY_SQL_USER_PASSWD} <<EOF 2>&1 | tee -a ${MY_LOG_FILE}
 create database ${MY_SQL_METASTORE_DB};
 use ${MY_SQL_METASTORE_DB};
-SOURCE ${MY_SW_ROOT}/hive/scripts/metastore/upgrade/mysql/hive-schema-0.9.0.mysql.sql;
+SOURCE ${MY_SW_ROOT}/hive/scripts/metastore/upgrade/mysql/hive-schema-0.13.0.mysql.sql;
 EOF
 
 fi
@@ -1235,7 +1268,17 @@ else
   HBASE_CONFIG_FILE=hbase/conf/hbase-site.xml
   HBASE_ENV_FILE=hbase/conf/hbase-env.sh
   
-  # For HBase_Trx (for now)
+  # For HBase_Trx
+  
+  # Build HBase TRX
+  echo "Building HBase TRX"
+  cd $MY_SQROOT ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
+  cd $MY_SQROOT/src/seatrans/hbase-trx
+  make clean 2>&1 | tee -a ${MY_LOG_FILE}
+  make 2>&1 | tee -a ${MY_LOG_FILE}
+  cd $MY_SW_ROOT
+
+  # Setup HBase TRX JAR in HBase' CLASSPATH
   echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/${HBASE_TRX_JAR}:${MY_SQROOT}/export/lib/${HBASE_HBL_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
@@ -1302,39 +1345,21 @@ else
      <name>hbase.bulkload.staging.dir</name>
      <value>hdfs://${MY_HOST_1}:${MY_HADOOP_HDFS_PORT_NUM}/hbase-staging</value>
   </property>  
-  <property>
-    <name>hbase.coprocessor.region.classes</name>
-    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalAggregateImpl,org.trafodion.sql.extensions.TrafBulkLoadEndpoint</value>
-  </property>
-  <property>
-    <name>hbase.coprocessor.master.classes</name>
-    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalMasterObserver</value>
-  </property>
  <property>
     <name>hbase.snapshot.enabled</name>
     <value>true</value>
   </property>
   <property>
-    <name>hbase.regionserver.class</name>
-    <value>org.apache.hadoop.hbase.ipc.TransactionalRegionInterface</value></property>
-  <property>
-    <name>hbase.regionserver.impl</name>
-    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer</value></property>
-  <property>
-    <name>hbase.hregion.impl</name>
-    <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value></property>
-  <property>
-    <name>hbase.hlog.splitter.impl</name>
-    <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value></property>
-  <property>
     <name>hbase.master.distributed.log.splitting</name>
-    <value>false</value> </property>
+    <value>false</value>
+   </property>
    <property>
-     <name>hbase.regionserver.region.transactional.hlog</name>
-     <value>false</value> </property>
-   <property>
-     <name>hbase.regionserver.region.transactional.tlog</name>
-     <value>true</value> </property>
+     <name>hbase.hregion.impl</name>
+     <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>
+   </property>
+  <property>
+    <name>hbase.coprocessor.region.classes</name>
+    <value>org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.example.RowCountEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation</value> </property>
 </configuration>
 EOF
 
@@ -1409,7 +1434,7 @@ else
       ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -put ${t}.dat /hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1
     done
 
-  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -lsr /hive/tpcds/*/*.dat                  >>${MY_LOG_FILE} 2>&1
+  ${MY_SW_SCRIPTS_DIR}/swhdfs dfs -ls -R /hive/tpcds/*/*.dat                  >>${MY_LOG_FILE} 2>&1
 
   echo "Creating tables in Hive..." | tee -a ${MY_LOG_FILE}
   ${MY_SW_SCRIPTS_DIR}/swhive <<EOF >>${MY_LOG_FILE} 2>&1

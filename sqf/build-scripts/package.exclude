@@ -55,6 +55,7 @@ sql/scripts/stopHA
 sql/scripts/stdout*
 sql/scripts/unmountalldisks
 sql/scripts/start_se*
+sql/scripts/sw*
 tools/make*
 tools/sqlcount
 tst.*

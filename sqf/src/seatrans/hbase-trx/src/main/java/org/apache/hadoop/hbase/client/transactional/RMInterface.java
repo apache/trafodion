@@ -20,12 +20,13 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.hbase.client.ServerCallable;
+//NG98 import org.apache.hadoop.hbase.client.ServerCallable;
 import org.apache.hadoop.hbase.client.transactional.TransactionManager;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
 import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
+import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,7 +46,7 @@ public class RMInterface extends TransactionalTable{
         System.loadLibrary("stmlib");
    }
 
-    private native void registerRegion(int port, byte[] hostname, byte[] regionInfo);
+    private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
     
     public static void main(String[] args) {
       System.out.println("MAIN ENTRY");      
@@ -57,53 +58,55 @@ public class RMInterface extends TransactionalTable{
     }
 
     public synchronized TransactionState registerTransaction(final long transactionID, final byte[] row) throws IOException {
-	LOG.trace("Enter registerTransaction, transaction ID: " + transactionID);
+        LOG.trace("Enter registerTransaction, transaction ID: " + transactionID);
         boolean register = false;
         short ret = 0;
 
-	TransactionState ts = mapTransactionStates.get(transactionID);
+        TransactionState ts = mapTransactionStates.get(transactionID);
         
         // if we don't have a TransactionState for this ID we need to register it with the TM
         if (ts == null) {
             ts = new TransactionState(transactionID);
-	    LOG.trace("registerTransaction, created TransactionState " + ts);
+        LOG.trace("registerTransaction, created TransactionState " + ts);
             mapTransactionStates.put(transactionID, ts);
             register = true;
         }
-        HRegionLocation location = super.getRegionLocation(row, false /*reload*/);
+        HRegionLocation location = super.getRegionLocation(row, false /*reload*/);        
 
         TransactionRegionLocation trLocation = new TransactionRegionLocation(location.getRegionInfo(),
-                                                                             location.getHostname(), 
-                                                                             location.getPort());
-	LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation " + trLocation);
+                                                                             location.getServerName());                                                                             
+        LOG.trace("RMInterface:registerTransaction, created TransactionRegionLocation " + trLocation);
             
         // if this region hasn't been registered as participating in the transaction, we need to register it
         if (ts.addRegion(trLocation)) {
             register = true;
-	    LOG.trace("registerTransaction, added TransactionRegionLocation to ts");
+            LOG.trace("registerTransaction, added TransactionRegionLocation to ts");
         }
 
         // register region with TM.
         if (register) {
 
-	    byte [] lv_hostname = location.getHostname().getBytes();
-	    int lv_port = location.getPort();
-
-	    ByteArrayOutputStream lv_bos = new ByteArrayOutputStream();
-	    DataOutputStream lv_dos = new DataOutputStream(lv_bos);
-	    location.getRegionInfo().write(lv_dos);
-	    lv_dos.flush();
-	    byte [] lv_byte_region_info = lv_bos.toByteArray();
-	    LOG.trace("RMInterface:registerTransaction, byte region info: " + new String(lv_byte_region_info));
-	    registerRegion(lv_port, lv_hostname, lv_byte_region_info);
-	    
-	    Set<RMInterface> lv_set_rm = mapRMsPerTransaction.get(transactionID);
-	    if (lv_set_rm == null) {
-		lv_set_rm = new HashSet<RMInterface>();
-		mapRMsPerTransaction.put(transactionID, lv_set_rm);
+    	    byte [] lv_hostname = location.getHostname().getBytes();
+    	    int lv_port = location.getPort();
+	    long lv_startcode = location.getServerName().getStartcode();
+    
+	    byte [] lv_byte_region_info = location.getRegionInfo().toByteArray();
+    	    LOG.trace("RMInterface:registerTransaction, byte region info, length: " + lv_byte_region_info.length + 
+		      ", val: " + new String(lv_byte_region_info));
+	    try {
+		LOG.trace("Deserialized HRegionInfo: " + HRegionInfo.parseFrom(lv_byte_region_info));
+	    } catch (DeserializationException de) {
+		LOG.error("RMInterface:registerTransaction. error in deserializing HRegionInfo" + de);
 	    }
-	    lv_set_rm.add(this);
-	    LOG.trace("txid: " + transactionID + " mapRMsPerTransaction.lv_set_rm length: " + lv_set_rm.size());
+    	    registerRegion(lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
+    	    
+    	    Set<RMInterface> lv_set_rm = mapRMsPerTransaction.get(transactionID);
+    	    if (lv_set_rm == null) {
+    	      lv_set_rm = new HashSet<RMInterface>();
+    	      mapRMsPerTransaction.put(transactionID, lv_set_rm);
+    	    }
+    	    lv_set_rm.add(this);
+    	    LOG.trace("txid: " + transactionID + " mapRMsPerTransaction.lv_set_rm length: " + lv_set_rm.size());
         }
 
         if ((ts == null) || (ret != 0)) {
@@ -111,7 +114,7 @@ public class RMInterface extends TransactionalTable{
             throw new IOException("registerTransaction failed with error.");
         }
 
-	LOG.trace("Exit registerTransaction, transaction ID: " + transactionID);
+        LOG.trace("Exit registerTransaction, transaction ID: " + transactionID);
         return ts;
     }
    
@@ -154,17 +157,18 @@ public class RMInterface extends TransactionalTable{
         TransactionState ts = registerTransaction(transactionID, delete.getRow());
         super.delete(ts, delete);
     }
-
+    
     public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
-        LOG.trace("delete txid: " + transactionID);
+        LOG.trace("Enter delete (list of deletes) txid: " + transactionID);
 	TransactionState ts;
-        for (Delete del : deletes) {
-            ts = registerTransaction(transactionID, del.getRow());
-        }
+	for (Delete delete : deletes) {
+	    ts = registerTransaction(transactionID, delete.getRow());
+	}
 	ts = mapTransactionStates.get(transactionID);
         super.delete(ts, deletes);
+        LOG.trace("Exit delete (list of deletes) txid: " + transactionID);
     }
-    
+
     public synchronized ResultScanner getScanner(final long transactionID, final Scan scan) throws IOException {
         LOG.trace("getScanner txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, scan.getStartRow());

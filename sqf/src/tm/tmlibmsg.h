@@ -530,6 +530,7 @@ typedef struct registerregion_req {
     int                 iv_port;
     char ia_hostname[TM_MAX_REGIONSERVER_STRING];
     int                 iv_hostname_length;
+    long                iv_startcode;
     char ia_regioninfo2[TM_MAX_REGIONSERVER_STRING];
     int                 iv_regioninfo_length;
 } Register_Region_Req_Type;

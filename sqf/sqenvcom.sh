@@ -33,6 +33,7 @@ export TRAFODION_VER_MINOR=9
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
+
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -105,12 +106,16 @@ export MY_MPI_ROOT=$MY_ROOT
 # JDK - Using 1.7, but also need 1.6 to create back-compatible jar
 # Use JAVA_HOME if set, else look for installed openjdk, finally toolsdir
 # Likewise for JAVAJDK16
-if [[ -z "$JAVA_HOME" && -d /usr/lib/jvm/java-1.7.0-openjdk.x86_64/ ]]
+if [[ -z "$JAVA_HOME" && -d ${TOOLSDIR}/jdk1.7.0_67 ]]
+then
+  export JAVA_HOME="${TOOLSDIR}/jdk1.7.0_67"
+elif [[ -z "$JAVA_HOME" && -d /usr/lib/jvm/java-1.7.0-openjdk.x86_64/ ]]
 then
   export JAVA_HOME="/usr/lib/jvm/java-1.7.0-openjdk.x86_64"
 elif [[ -z "$JAVA_HOME" ]]
 then
-  export JAVA_HOME="${TOOLSDIR}/jdk1.7.0_09_64"
+#    export JAVA_HOME="${TOOLSDIR}/jdk1.7.0_67"
+ echo "Please set JAVA_HOME to version jdk1.7.0_67"
 fi
 if [[ -z "$JAVAJDK16" && -d /usr/lib/jvm/java-1.6.0-openjdk.x86_64 ]]
 then
@@ -135,6 +140,9 @@ export RH_MAJ_VERS=$(sed -r 's/^.* release ([0-9]+).[0-9]+ .*/\1/' /etc/redhat-r
 export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 export NVTHOME=$MY_SQROOT/transporter
+
+export HBASE_TRXDIR=$MY_SQROOT/export/lib
+export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
 
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
@@ -221,7 +229,7 @@ else
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/i386/server
 fi
 
-ls /usr/lib/hadoop/hadoop-*cdh4*.jar >/dev/null 2>&1
+ls /usr/lib/hadoop/hadoop-*cdh5*.jar >/dev/null 2>&1
 if [ $? -eq 0 ]; then
   # we are on a cluster with Cloudera installed
   # -------------------------------------------
@@ -240,6 +248,12 @@ if [ $? -eq 0 ]; then
                           /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
   export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
+                          /usr/lib/hbase/hbase-client.jar
+                          /usr/lib/hbase/hbase-common.jar
+                          /usr/lib/hbase/hbase-server.jar
+                          /usr/lib/hbase/hbase-examples.jar
+                          /usr/lib/hbase/hbase-protocol.jar
+			  /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar"
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
@@ -254,7 +268,7 @@ if [ $? -eq 0 ]; then
   export HBASE_CNF_DIR=/etc/hbase/conf
   export HIVE_CNF_DIR=/etc/hive/conf
 
-elif [ -n "$(ls /usr/lib/hadoop/*HDP* /usr/lib/hbase/*HDP* 2>/dev/null)" ]; then
+elif [ -n "$(ls /usr/lib/hadoop/*HDP* /usr/lib/hbase/*HDP* /etc/init.d/ambari* 2>/dev/null)" ]; then
   # we are on a cluster with Hortonworks installed
   # ----------------------------------------------
 
@@ -273,10 +287,17 @@ elif [ -n "$(ls /usr/lib/hadoop/*HDP* /usr/lib/hbase/*HDP* 2>/dev/null)" ]; then
                           /usr/lib/hadoop/lib"
   export HADOOP_JAR_FILES="/usr/lib/hadoop/client/hadoop-hdfs-*.jar"
   export HBASE_JAR_FILES="/usr/lib/hbase/hbase-*-security.jar
+                          /usr/lib/hbase/lib/hbase-common.jar
+                          /usr/lib/hbase/lib/hbase-client.jar
+                          /usr/lib/hbase/lib/hbase-server.jar
+                          /usr/lib/hbase/lib/hbase-protocol.jar
+                          /usr/lib/hbase/lib/htrace-core*.jar
                           /usr/lib/hbase/lib/zookeeper.jar
                           /usr/lib/hbase/lib/protobuf-*.jar"
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core*.jar"
+
+  export HBASE_TRX_JAR=hbase-trx-hdp2_1-${TRAFODION_VER}.jar
 
   # Configuration directories
 
@@ -344,6 +365,44 @@ elif [ -d /opt/mapr ]; then
   # HBase-trx jar with some modifications to work with MapR HBase 0.94.13
   export HBASE_TRX_JAR=hbase_mapr-trx-0.94.13.jar
 
+elif [ -e $MY_SQROOT/sql/scripts/sw_env.sh ]; then
+  # we are on a development system where install_local_hadoop has been
+  # executed
+  # ----------------------------------------------------------------
+  #echo "Sourcing in $MY_SQROOT/sw_env.sh"
+  . $MY_SQROOT/sql/scripts/sw_env.sh
+  #echo "YARN_HOME = $YARN_HOME"
+
+  # native library directories and include directories
+  export HADOOP_LIB_DIR=$YARN_HOME/lib/native
+  export HADOOP_INC_DIR=$YARN_HOME/include
+  export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
+  export THRIFT_INC_DIR=$TOOLSDIR/thrift-0.9.0/include
+
+  # directories with jar files and list of jar files
+  export HADOOP_JAR_DIRS="$YARN_HOME/share/hadoop/common
+                          $YARN_HOME/share/hadoop/common/lib
+                          $YARN_HOME/share/hadoop/mapreduce
+                          $YARN_HOME/share/hadoop/hdfs"
+  export HADOOP_JAR_FILES=
+  HBASE_JAR_DIRS="$HBASE_HOME/lib"
+  for d in $HBASE_JAR_DIRS
+  do
+    HBASE_JAR_FILES="$HBASE_JAR_FILES $d/*.jar"
+  done
+
+  export HIVE_JAR_DIRS="$HIVE_HOME/lib"
+  export HIVE_JAR_FILES="$HIVE_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-*.jar"
+
+  # suffixes to suppress in the classpath (set this to ---none--- to add all files)
+  export SUFFIXES_TO_SUPPRESS="-sources.jar -tests.jar"
+
+  # Configuration directories
+
+  export HADOOP_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hadoop/etc/hadoop
+  export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
+  export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
+  
 elif [ -d $TOOLSDIR/hadoop-2.0.0-cdh4.2.0 ]; then
   # we are on a development system or cluster with a tools directory
   # ----------------------------------------------------------------
@@ -376,9 +435,6 @@ elif [ -d $TOOLSDIR/hadoop-2.0.0-cdh4.2.0 ]; then
 fi
 
 # Common for local workstations, Cloudera, Hortonworks and MapR
-
-export HBASE_TRXDIR=$MY_SQROOT/export/lib
-export HBASE_TRX_JAR=hbase-trx-${TRAFODION_VER}.jar
 
 export HBASE_HBLDIR=$MY_SQROOT/export/lib
 export HBASE_HBL_JAR=trafodion-hbase-extensions-${TRAFODION_VER}.jar
@@ -609,6 +665,9 @@ do
           SUPPRESS_FILE=1
         fi
       done
+      # also eliminate ant jar that may be 
+      # incompatible with system ant command
+      [[ $j =~ /ant- ]] && SUPPRESS_FILE=1
 
     # finally, add the jar to the classpath
     if [ $SUPPRESS_FILE -eq 0 ]; then
@@ -653,6 +712,9 @@ This is not supported. To change environments, do the following:
 EOF
 fi
 
+
+
+
 if [ -n "$USER_CLASSPATH" ]; then
   # new info, followed by the original classpath
   export CLASSPATH="${SQ_CLASSPATH}:${USER_CLASSPATH}"
@@ -666,11 +728,11 @@ export CLASSPATH="${CLASSPATH}:"
 ###################
 
 # Check that existing JAVA_HOME is suitable
-REQ_VER="javac 1.7."
+REQ_VER="javac 1.7.0_67"
 if [[ -n "$JAVA_HOME" ]]; then
   THIS_JVM_VER="$($JAVA_HOME/bin/javac -version 2>&1 > /dev/null)"
-  if [[ "${THIS_JVM_VER:0:10}" != "$REQ_VER" ]]; then
-    echo "Warning: Your existing JAVA_HOME is not version 1.7."
+  if [[ "${THIS_JVM_VER:0:14}" != "$REQ_VER" ]]; then
+    echo "Warning: Your existing JAVA_HOME is not version 1.7.0_67"
     echo "  Your JAVA_HOME = $JAVA_HOME"
     echo "  Required java version = $REQ_VER"
   fi

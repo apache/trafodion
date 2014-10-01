@@ -1,0 +1,228 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// This file contains protocol buffers that are used for TrxRegionProtocol.
+
+option java_package = "org.apache.hadoop.hbase.coprocessor.transactional.generated";
+
+option java_outer_classname = "TrxRegionProtos";
+option java_generic_services = true;
+//option java_generate_equals_and_hash = true;
+option optimize_for = SPEED;
+
+import "HBase.proto";
+import "ClusterStatus.proto";
+import "Client.proto";
+
+message AbortTransactionRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message AbortTransactionResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message BeginTransactionRequest{
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+}
+
+message BeginTransactionResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CommitRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message CommitResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CommitRequestRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message CommitRequestResponse {
+  required int32 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CommitIfPossibleRequest{
+  required bytes regionName = 1;
+  required int64 transactionId = 2;
+}
+
+message CommitIfPossibleResponse {
+  optional string exception = 1;
+  optional bool hasException = 2;
+}
+
+message CheckAndDeleteRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required bytes row = 3;
+  required bytes family = 4;
+  required bytes qualifier = 5;
+  required bytes value = 6;
+  required MutationProto delete = 7;
+}
+
+message CheckAndDeleteResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message CheckAndPutRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required bytes row = 3;
+  required bytes family = 4;
+  required bytes qualifier = 5;
+  required bytes value = 6;
+  required MutationProto put = 7;
+}
+
+message CheckAndPutResponse {
+  required bool result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message DeleteMultipleTransactionalRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  repeated MutationProto delete = 3;
+}
+
+message DeleteMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message DeleteTransactionalRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required MutationProto delete = 3;
+}
+
+message DeleteTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message GetTransactionalRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required Get get = 3;
+}
+
+message GetTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message OpenScannerRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required Scan scan = 3;
+}
+
+message OpenScannerResponse {
+  required int64 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message PutTransactionalRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required MutationProto put = 3;
+}
+
+message PutTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message PutMultipleTransactionalRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  repeated MutationProto put = 3;
+}
+
+message PutMultipleTransactionalResponse {
+  optional Result result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+message RecoveryRequestRequest {
+  required int64 transactionId = 1;
+  required bytes regionName = 2;
+  required int32 tmId = 3;
+}
+
+message RecoveryRequestResponse {
+  repeated int64 result = 1;
+  optional string exception = 2;
+  optional bool hasException = 3;
+}
+
+service TrxRegionService {
+  rpc abortTransaction(AbortTransactionRequest)
+    returns(AbortTransactionResponse);
+  rpc beginTransaction(BeginTransactionRequest)
+    returns(BeginTransactionResponse);
+  rpc checkAndDelete(CheckAndDeleteRequest)
+    returns(CheckAndDeleteResponse);
+  rpc checkAndPut(CheckAndPutRequest)
+    returns(CheckAndPutResponse);
+  rpc commit(CommitRequest)
+    returns(CommitResponse);
+  rpc commitIfPossible(CommitIfPossibleRequest)
+    returns(CommitIfPossibleResponse);
+  rpc commitRequest(CommitRequestRequest)
+    returns(CommitRequestResponse);
+  rpc delete(DeleteTransactionalRequest)
+    returns(DeleteTransactionalResponse);
+  rpc deleteMultiple(DeleteMultipleTransactionalRequest)
+    returns(DeleteMultipleTransactionalResponse);
+  rpc get(GetTransactionalRequest)
+    returns(GetTransactionalResponse);
+  rpc put(PutTransactionalRequest)
+    returns(PutTransactionalResponse);
+  rpc putMultiple(PutMultipleTransactionalRequest)
+    returns(PutMultipleTransactionalResponse);
+  rpc openScanner(OpenScannerRequest)
+    returns(OpenScannerResponse);
+  rpc recoveryRequest(RecoveryRequestRequest)
+    returns(RecoveryRequestResponse);
+}

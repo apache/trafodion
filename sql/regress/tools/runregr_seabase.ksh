@@ -222,6 +222,12 @@ prettyfiles=
 # skip these tests on all platforms.
 skipTheseTests="TEST021"
 
+#skip these tests for Seabase
+if [ "$seabase" -ne 0 ]; then
+  skipTheseTests="$skipTheseTests TEST012 TEST013"
+fi
+
+
 # Skip exclusive tests during concurrent execution
 if [ "$REGRCONCURRENT" -ne 0 ]; then
   skipTheseTests="$skipTheseTests $exclusiveTests"

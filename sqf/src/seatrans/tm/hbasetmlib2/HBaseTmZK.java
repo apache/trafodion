@@ -74,7 +74,7 @@ public class HBaseTmZK implements Abortable{
 	 * @return
 	 * @throws KeeperException
 	 */
-	private byte [] checkData (String znode) throws KeeperException{
+	private byte [] checkData (String znode) throws KeeperException, InterruptedException {
 		return ZKUtil.getData(zooKeeper, znode);
 	}
 	
@@ -98,7 +98,7 @@ public class HBaseTmZK implements Abortable{
 	 * @return
 	 * @throws KeeperException
 	 */
-	public Map<String,byte []> checkForRecovery() throws KeeperException {		
+	public Map<String,byte []> checkForRecovery() throws InterruptedException, KeeperException {		
         LOG.trace("checkForRecovery -- ENTRY");
 		if(ZKUtil.nodeHasChildren(zooKeeper, zkNode)) {
 			List<String> nodeChildren = new ArrayList<String>();
@@ -114,7 +114,7 @@ public class HBaseTmZK implements Abortable{
 			return nodeDataMap;
 		}
 		else {
-			LOG.warn(zkNode + " is currently not present.");
+			LOG.debug(zkNode + " is currently not present.");
             LOG.trace("checkForRecovery -- EXIT -- node not present");
 			return null;
 		}		
