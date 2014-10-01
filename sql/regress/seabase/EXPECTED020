@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Wed May 14 05:05:22 2014
+-- Definition current  Fri Oct  3 19:52:59 2014
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -48,7 +48,7 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Wed May 14 05:05:27 2014
+-- Definition current  Fri Oct  3 19:53:02 2014
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -155,7 +155,7 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Wed May 14 05:05:41 2014
+-- Definition current  Fri Oct  3 19:53:18 2014
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -248,7 +248,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Wed May 14 05:06:05 2014
+-- Definition current  Fri Oct  3 19:53:47 2014
 
   (
     C                                INT DEFAULT NULL
@@ -1405,8 +1405,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1448,8 +1446,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1457,8 +1453,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
 CREATE INDEX TEST020T12RI2 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1513,8 +1507,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1522,8 +1514,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
 CREATE INDEX TEST020T12RI2 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1533,8 +1523,6 @@ CREATE INDEX TEST020T12RI3 ON TRAFODION.SCH.TEST020T12
     R1 ASC
   , R3 ASC
   , R4 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1604,8 +1592,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1613,8 +1599,6 @@ CREATE INDEX TEST020T12RI1 ON TRAFODION.SCH.TEST020T12
 CREATE INDEX TEST020T12RI2 ON TRAFODION.SCH.TEST020T12
   (
     R1 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1624,8 +1608,6 @@ CREATE INDEX TEST020T12RI3 ON TRAFODION.SCH.TEST020T12
     R1 ASC
   , R3 ASC
   , R4 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -1633,8 +1615,6 @@ CREATE INDEX TEST020T12RI3 ON TRAFODION.SCH.TEST020T12
 CREATE INDEX TEST020T12RI4 ON TRAFODION.SCH.TEST020T12
   (
     R3 ASC
-  , R1 ASC
-  , R3 ASC
   )
 ;
 
@@ -2036,9 +2016,6 @@ CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -2081,9 +2058,6 @@ CREATE TABLE TRAFODION.SCH.TEST020T14
 CREATE INDEX TEST020T14NDX ON TRAFODION.SCH.TEST020T14
   (
     R2 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -2099,9 +2073,6 @@ CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -2147,9 +2118,6 @@ CREATE TABLE TRAFODION.SCH.TEST020T14
 CREATE INDEX TEST020T14NDX ON TRAFODION.SCH.TEST020T14
   (
     R2 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -2165,9 +2133,6 @@ CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -2223,9 +2188,6 @@ CREATE TABLE TRAFODION.SCH.TEST020T14
 CREATE INDEX TEST020T14NDX ON TRAFODION.SCH.TEST020T14
   (
     R2 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -2234,9 +2196,6 @@ CREATE INDEX TEST020T14RI1 ON TRAFODION.SCH.TEST020T14
   (
     R1 ASC
   , R3 ASC
-  , R1 ASC
-  , R3 ASC
-  , R2 ASC
   )
 ;
 
@@ -3006,7 +2965,7 @@ COL1
 >>
 >>select * from test020_LP_1360493;
 
-VCH15            NINT         CH3  NLARGE
+VCH15            NINT         CH3  NLARGE              
 ---------------  -----------  ---  --------------------
 
 1st orig value            99  o                       1
@@ -3028,7 +2987,7 @@ VCH15            NINT         CH3  NLARGE
 >>
 >>select * from test020_LP_1360493;
 
-VCH15            NINT         CH3  NLARGE
+VCH15            NINT         CH3  NLARGE              
 ---------------  -----------  ---  --------------------
 
 1st orig value            99  o                       1

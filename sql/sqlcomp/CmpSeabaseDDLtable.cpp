@@ -58,7 +58,7 @@ extern short CmpDescribeSeabaseTable (
                              NABoolean withPartns = FALSE,
                              NABoolean noTrailingSemi = FALSE);
 
-static void convertVirtTableColumnInfoToDescStruct( 
+void CmpSeabaseDDL::convertVirtTableColumnInfoToDescStruct( 
      const ComTdbVirtTableColumnInfo * colInfo,
      const ComObjectName * objectName,
      desc_struct * column_desc)
@@ -125,7 +125,7 @@ static void convertVirtTableColumnInfoToDescStruct(
   column_desc->body.columns_desc.computed_column_text = NULL; // not present in colInfo
 }
 
-static desc_struct * convertVirtTableColumnInfoArrayToDescStructs(
+desc_struct * CmpSeabaseDDL::convertVirtTableColumnInfoArrayToDescStructs(
      const ComObjectName * objectName,
      const ComTdbVirtTableColumnInfo * colInfoArray,
      Lng32 numCols)
@@ -151,7 +151,7 @@ static desc_struct * convertVirtTableColumnInfoArrayToDescStructs(
   return first_column_desc;
 }
 
-static desc_struct * convertVirtTableKeyInfoArrayToDescStructs(
+desc_struct * CmpSeabaseDDL::convertVirtTableKeyInfoArrayToDescStructs(
      const ComTdbVirtTableKeyInfo *keyInfoArray,
      const ComTdbVirtTableColumnInfo *colInfoArray,
      Lng32 numKeys)
@@ -1267,123 +1267,18 @@ void CmpSeabaseDDL::createSeabaseTable(
 
   tableInfo.numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
 
-  NAText hbaseOptionsStr;
   NAList<HbaseCreateOption*> hbaseCreateOptions;
-  NABoolean maxFileSizeOptionSpecified = FALSE;
-  NABoolean splitPolicyOptionSpecified = FALSE;
-  const char *maxFileSizeOptionString = "MAX_FILESIZE";
-  const char *splitPolicyOptionString = "SPLIT_POLICY";
-
-  Lng32 numHbaseOptions = 0;
-  if (createTableNode->getHbaseOptionsClause())
-    {
-      for (CollIndex i = 0; i < createTableNode->getHbaseOptionsClause()->getHbaseOptions().entries(); i++)
-        {
-          HbaseCreateOption * hbaseOption =
-            createTableNode->getHbaseOptionsClause()->getHbaseOptions()[i];
-
-          hbaseCreateOptions.insert(hbaseOption);
-
-          if (hbaseOption->key() == maxFileSizeOptionString)
-            maxFileSizeOptionSpecified = TRUE;
-          else if (hbaseOption->key() == splitPolicyOptionString)
-            splitPolicyOptionSpecified = TRUE;
-
-          hbaseOptionsStr += hbaseOption->key();
-          hbaseOptionsStr += "=''";
-          hbaseOptionsStr += hbaseOption->val();
-          hbaseOptionsStr += "''";
-
-          hbaseOptionsStr += "|";
-        }
-
-      numHbaseOptions += createTableNode->getHbaseOptionsClause()->getHbaseOptions().entries();
-    }
-
-  if (numSplits > 0 /* i.e. a salted table */)
-    {
-      // set table-specific region split policy and max file
-      // size, controllable by CQDs, but only if they are not
-      // already set explicitly in the DDL.
-      // Save these options in metadata if they are specified by user through
-      // explicit create option or through a cqd.
-      double maxFileSize = 
-        CmpCommon::getDefaultNumeric(HBASE_SALTED_TABLE_MAX_FILE_SIZE);
-      NABoolean usePerTableSplitPolicy = 
-        (CmpCommon::getDefault(HBASE_SALTED_TABLE_SET_SPLIT_POLICY) == DF_ON);
-      HbaseCreateOption * hbaseOption = NULL;
-
-      if (maxFileSize > 0 && !maxFileSizeOptionSpecified)
-         {
-          char fileSizeOption[100];
-          Int64 maxFileSizeInt;
-
-          if (maxFileSize < LLONG_MAX)
-            maxFileSizeInt = maxFileSize;
-          else
-            maxFileSizeInt = LLONG_MAX;
-          
-          snprintf(fileSizeOption,100,"%ld", maxFileSizeInt);
-          hbaseOption = new(STMTHEAP) HbaseCreateOption("MAX_FILESIZE", fileSizeOption);
-          hbaseCreateOptions.insert(hbaseOption);
-
-         if (ActiveSchemaDB()->getDefaults().userDefault(HBASE_SALTED_TABLE_MAX_FILE_SIZE) == TRUE)
-           {
-             numHbaseOptions += 1;
-             snprintf(fileSizeOption,100,"MAX_FILESIZE=''%ld''|", maxFileSizeInt);
-             hbaseOptionsStr += fileSizeOption;
-           }
-        }
-
-      if (usePerTableSplitPolicy && !splitPolicyOptionSpecified)
-        {
-          const char *saltedTableSplitPolicy =
-            "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy";
-          hbaseOption = new(STMTHEAP) HbaseCreateOption(
-               "SPLIT_POLICY", saltedTableSplitPolicy);
-          hbaseCreateOptions.insert(hbaseOption);
-
-          if (ActiveSchemaDB()->getDefaults().userDefault(HBASE_SALTED_TABLE_SET_SPLIT_POLICY) == TRUE)
-            {
-              numHbaseOptions += 1;
-              hbaseOptionsStr += "SPLIT_POLICY=''";
-              hbaseOptionsStr += saltedTableSplitPolicy;
-              hbaseOptionsStr += "''|";
-            }
-        }  
-    }
-  
-  /////////////////////////////////////////////////////////////////////
-  // update HBASE_CREATE_OPTIONS field in metadata TABLES table.
-  // Format of data stored in this field, if applicable.
-  //    HBASE_OPTIONS=>numOptions(4bytes)option='val'| ...
-  //    NUM_SPLITS=>4_bytes(int)
-  ///////////////////////////////////////////////////////////////////////
   NAString hco;
-  //  if ((createTableNode->getHbaseOptionsClause()) &&
-  if  (hbaseOptionsStr.size() > 0)
-    {
-      hco += "HBASE_OPTIONS=>";
 
-      char hbaseOptionsNumCharStr[5];
-      sprintf(hbaseOptionsNumCharStr, "%04d", numHbaseOptions);
-      hco += hbaseOptionsNumCharStr;
-
-      hco += hbaseOptionsStr.data();
-      
-      hco += " "; // separator
-    }
-  
-  if (numSplits > 0)
-    {
-      char splitNumCharStr[5];
-      sprintf(splitNumCharStr, "%04d", numSplits+1);
- 
-      hco += "NUM_SALT_PARTNS=>";
-      hco+=splitNumCharStr;
-                 
-      hco += " "; // separator
-    }
+  short retVal = setupHbaseOptions(createTableNode->getHbaseOptionsClause(), 
+                                   numSplits, extTableName, 
+                                   hbaseCreateOptions, hco);
+  if (retVal)
+  {
+    deallocEHI(ehi);
+    processReturn();
+    return;
+  }
 
   tableInfo.hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
      
@@ -5998,9 +5893,10 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       populateKeyInfo(keyInfoArray[idx], vi);
     }
 
-  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount from %s.\"%s\".%s I, %s.\"%s\".%s O where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s for read committed access ",
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.hbase_create_options from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
               objUID,
               (includeInvalidDefs ? " " : " and O.valid_def = 'Y' "));
 
@@ -6049,6 +5945,25 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       Lng32 isExplicit = *(Lng32*)vi->get(5);
       Lng32 keyColCount = *(Lng32*)vi->get(6);
       Lng32 nonKeyColCount = *(Lng32*)vi->get(7);
+      char * idxHbaseCreateOptions = (char*)vi->get(8);
+
+      Lng32 idxNumSaltPartns = 0;
+      if (idxHbaseCreateOptions)
+      {
+        // get num salt partns from hbaseCreateOptions.
+        // It is stored as:  NUM_SALT_PARTNS=>NNNN
+        char * saltStr = strstr(idxHbaseCreateOptions, "NUM_SALT_PARTNS=>");
+        if (saltStr)
+        {
+          char  numSaltPartnsCharStr[HBASE_OPTION_MAX_INTEGER_LENGTH];
+          char * startNumSaltPartns = saltStr + strlen("NUM_SALT_PARTNS=>");
+          memcpy(numSaltPartnsCharStr, startNumSaltPartns, 
+                 HBASE_OPTION_MAX_INTEGER_LENGTH-1);
+          numSaltPartnsCharStr[HBASE_OPTION_MAX_INTEGER_LENGTH-1] = 0;
+          idxNumSaltPartns = str_atoi(numSaltPartnsCharStr, 
+                                      HBASE_OPTION_MAX_INTEGER_LENGTH-1);
+        }
+      }
 
       Int64 idxUID = getObjectUID(&cliInterface,
                                   idxCatName, idxSchName, idxObjName,
@@ -6084,6 +5999,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       indexInfoArray[idx].isExplicit = isExplicit;
       indexInfoArray[idx].keyColCount = keyColCount;
       indexInfoArray[idx].nonKeyColCount = nonKeyColCount;
+      indexInfoArray[idx].hbaseCreateOptions = idxHbaseCreateOptions;
+      indexInfoArray[idx].numSaltPartns = idxNumSaltPartns;
 
       Queue * keyInfoQueue = NULL;
       str_sprintf(query, "select column_name, column_number, keyseq_number, ordering, nonkeycol  from %s.\"%s\".%s where object_uid = %Ld for read committed access order by keyseq_number",

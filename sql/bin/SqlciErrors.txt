@@ -200,6 +200,9 @@
 1198 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU View text is too long to fit into the metadata.
 1199 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The PARTITION BY clause is not allowed for a Trafodion table.
 1200 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while reading HDFS file statistics for Hive table $1~TableName. Cause: $0~string0.
+1201 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Salted index $0~string0 cannot be unique.
+1202 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Index $0~string1 cannot be salted like a table since table $0~string0 is not salted.
+1203 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU HBASE_OPTIONS clause in CREATE statement is longer than 6000 characters. Object $0~string0 was not created.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
 1222 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Command not supported when authorization is not enabled.

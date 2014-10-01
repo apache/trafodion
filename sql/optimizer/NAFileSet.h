@@ -52,6 +52,7 @@ class NAFileSetList;
 class PartitioningFunction;
 struct desc_struct;
 class HHDFSTableStats;
+class HbaseCreateOption;
 
 // -----------------------------------------------------------------------
 // An enumerated type that describes how data is organized in EVERY
@@ -115,6 +116,8 @@ public:
 	    NABoolean inMemObjectDefn,
             desc_struct *keysDesc,
             HHDFSTableStats *hHDFSTableStats,
+            Lng32 numSaltPartns,
+            NAList<HbaseCreateOption*>* hbaseCreateOptions,
             CollHeap * h=0);
 
   // copy ctor
@@ -131,6 +134,11 @@ public:
   const QualifiedName & getRandomPartition() const;
 
   const NAColumnArray & getAllColumns() const      { return allColumns_; }
+
+  // used by showddl. returns the number of columns in an index that are 
+  // specified directly by the user. Salt column is included in the count.
+  // Returns 0 when called on the clusteringindex.
+  Lng32 getCountOfUserSpecifiedIndexCols() const ;
 
   const NAColumnArray & getIndexKeyColumns() const
                                               { return indexKeyColumns_; }
@@ -155,6 +163,10 @@ public:
 
   const HHDFSTableStats *getHHDFSTableStats() const { return hHDFSTableStats_; }
   HHDFSTableStats *getHHDFSTableStats()             { return hHDFSTableStats_; }
+
+  Lng32 numSaltPartns() const { return numSaltPartns_; } 
+  NAList<HbaseCreateOption*> * hbaseCreateOptions() const
+    { return hbaseCreateOptions_;}
 
   // ---------------------------------------------------------------------
   // Mutator functions
@@ -451,6 +463,11 @@ private:
   // HDFS file-level stats for Hive tables
   // ---------------------------------------------------------------------
   HHDFSTableStats *hHDFSTableStats_;
+
+  // number of salted partitions specified at table create time.
+  Lng32 numSaltPartns_;
+
+  NAList<HbaseCreateOption*> * hbaseCreateOptions_;
   
 };
 

@@ -2650,6 +2650,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		parallel_execution_spec
 %type <pElemDDL>  		index_division_clause
 %type <pElemDDL>  		salt_by_clause
+%type <pElemDDL>  		salt_like_clause
 %type <pElemDDL>                optional_salt_column_list
 %type <pElemDDL>  		division_by_clause
 %type <pElemDDL>            hbase_table_options
@@ -29264,6 +29265,12 @@ optional_salt_column_list : TOK_ON '(' column_reference_list ')'
                                }
 
 /* type pElemDDL */
+salt_like_clause : TOK_SALT TOK_LIKE TOK_TABLE
+                               {
+                                 $$ = new (PARSERHEAP()) ElemDDLSaltOptionsClause(TRUE); //like table
+                               }
+
+/* type pElemDDL */
 division_by_clause : division_by_clause_starting_tokens sort_by_value_expression_list  ')'
                                {
                                  // division_by_clause ::= division_by_clause_starting_tokens sort_by_value_expression_list ')'
@@ -31763,6 +31770,8 @@ index_option_spec : location_clause
                       | populate_option
                       | attribute_num_rows_clause
                       | index_division_clause
+                      | hbase_table_options
+                      | salt_like_clause
                       | TOK_TABLESPACE IDENTIFIER
                          {
 			   $$ = NULL;

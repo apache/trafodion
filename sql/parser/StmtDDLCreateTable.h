@@ -42,7 +42,6 @@
 #include "ElemDDLColRefArray.h"
 #include "ElemDDLDivisionClause.h"
 #include "ElemDDLSaltOptions.h"
-#include "ElemDDLSaltOptions.h"
 #include "ElemDDLLikeCreateTable.h"
 #include "ElemDDLLocation.h"
 #include "ElemDDLPartitionArray.h"

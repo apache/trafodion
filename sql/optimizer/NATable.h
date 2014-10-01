@@ -762,8 +762,9 @@ public:
   NABoolean insertMissingStatsWarning(CollIndexSet colsSet) const;
 
   const desc_struct * getTableDesc() const { return tableDesc_; }
-  Lng32 numSaltPartns() { return numSaltPartns_; }
-  NAList<HbaseCreateOption*> * hbaseCreateOptions() { return hbaseCreateOptions_;}
+  Lng32 numSaltPartns() { return clusteringIndex_->numSaltPartns(); }
+  NAList<HbaseCreateOption*> * hbaseCreateOptions()
+    { return clusteringIndex_->hbaseCreateOptions();}
 
   NABoolean isStatsFetched() const {return statsFetched_; };
 
@@ -1060,11 +1061,6 @@ private:
   desc_struct *partnsDesc_;
 
   desc_struct *tableDesc_;
-
-  // number of salted partitions specified at table create time.
-  Lng32 numSaltPartns_;
-
-  NAList<HbaseCreateOption*> * hbaseCreateOptions_;
 
   // hash table to store all the column positions for which missing
   // stats warning has been generated. We are not storing ValueIdSet

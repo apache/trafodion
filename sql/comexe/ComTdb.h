@@ -876,9 +876,9 @@ struct ComTdbVirtTableTableInfo
   Int64 redefTime;
   Int64 objUID;
   Lng32 isAudited;
-  const char * hbaseCreateOptions;
   Lng32 validDef; // 0, invalid. 1, valid. 2, disabled.
   Int32 objOwnerID;
+  const char * hbaseCreateOptions;
   Lng32 numSaltPartns; // num of salted partitions this table was created with.
 };
 
@@ -928,6 +928,8 @@ struct ComTdbVirtTableIndexInfo
   Lng32 isExplicit;
   Lng32 keyColCount;
   Lng32 nonKeyColCount;
+  const char * hbaseCreateOptions;
+  Lng32 numSaltPartns; // num of salted partitions this index was created with.
 
   const ComTdbVirtTableKeyInfo * keyInfoArray;
   const ComTdbVirtTableKeyInfo * nonKeyInfoArray;

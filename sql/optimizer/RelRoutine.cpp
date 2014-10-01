@@ -64,7 +64,6 @@
 #include "RelRoutine.h"
 #include "ElemDDLColDefArray.h"
 #include "CmpSeabaseDDL.h"
-#include "CmpSeabaseDDLtable.cpp"
 
 
 // -----------------------------------------------------------------------
@@ -1463,9 +1462,9 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
                             FALSE, 0, 
                             CmpCommon::statementHeap());
 
-   colDescs = convertVirtTableColumnInfoArrayToDescStructs(&tableName,
-                                                           colInfoArray,
-                                                           numCols) ;
+   colDescs = cmpSBD.convertVirtTableColumnInfoArrayToDescStructs(&tableName,
+                                                                  colInfoArray,
+                                                                  numCols) ;
 
   // calculate the record length 
   desc_struct *tempDescs = colDescs;

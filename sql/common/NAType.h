@@ -306,6 +306,7 @@ public:
   Lng32 getTotalAlignment() const { return totalAlignment_; }
   Lng32 getDataAlignment() const { return dataAlignment_; }
   Lng32 getPrefixSize() const;
+  Lng32 getPrefixSizeWithAlignment() const ;
   Lng32 getArrayElementSize() const;
 
   // ---------------------------------------------------------------------

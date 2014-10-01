@@ -44,6 +44,7 @@
 #include "StmtDDLAlterTableDisableIndex.h"
 
 #include "CmpDDLCatErrorCodes.h"
+#include "ElemDDLHbaseOptions.h"
 
 #include "SchemaDB.h"
 #include "CmpSeabaseDDL.h"
@@ -59,26 +60,31 @@
 
 #include "NumericType.h"
 
-short CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
-						    ElemDDLColRefArray &indexColRefArray,
-						    NABoolean isUnique,
-						    NABoolean hasSyskey,
-						    const NAColumnArray &baseTableNAColArray,
-						    const NAColumnArray &baseTableKeyArr,
-						    Lng32 &keyColCount,
-						    Lng32 &nonKeyColCount,
-						    Lng32 &totalColCount,
-						    ComTdbVirtTableColumnInfo * &colInfoArray,
-						    ComTdbVirtTableKeyInfo * &keyInfoArray,
-						    NAList<NAString> &selColList,
-						    NAMemory * heap)
+short 
+CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
+     ElemDDLColRefArray &indexColRefArray,
+     NABoolean isUnique,
+     NABoolean hasSyskey,
+     const NAColumnArray &baseTableNAColArray,
+     const NAColumnArray &baseTableKeyArr,
+     Lng32 &keyColCount,
+     Lng32 &nonKeyColCount,
+     Lng32 &totalColCount,
+     ComTdbVirtTableColumnInfo * &colInfoArray,
+     ComTdbVirtTableKeyInfo * &keyInfoArray,
+     NAList<NAString> &selColList,
+     Lng32 &keyLength,
+     NAMemory * heap)
 {
   Lng32 retcode = 0;
+  keyLength = 0;
 
   keyColCount = indexColRefArray.entries();
   nonKeyColCount = 0;
 
   Lng32 baseTableKeyCount = baseTableKeyArr.entries();
+
+  
 
   if (isUnique)
     nonKeyColCount = baseTableKeyCount;
@@ -202,12 +208,13 @@ short CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       strcpy(colInfoArray[i].paramDirection, COM_UNKNOWN_PARAM_DIRECTION_LIT);
       colInfoArray[i].isOptional = FALSE;
  
-     // update key info
-     keyInfoArray[i].colName = col_name; 
-     keyInfoArray[i].keySeqNum = i+1;
-     keyInfoArray[i].tableColNum = tableCol->getPosition();
-     keyInfoArray[i].ordering = 
-       (nodeKeyCol->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
+      keyLength += naType->getEncodedKeyLength();
+      // update key info
+      keyInfoArray[i].colName = col_name; 
+      keyInfoArray[i].keySeqNum = i+1;
+      keyInfoArray[i].tableColNum = tableCol->getPosition();
+      keyInfoArray[i].ordering = 
+        (nodeKeyCol->getColumnOrdering() == COM_ASCENDING_ORDER ? 0 : 1);
 
      keyInfoArray[i].nonKeyCol = 0;
 
@@ -239,9 +246,33 @@ short CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 
   // add base table primary key info
   CollIndex j = 0;
+  NABoolean duplicateColFound = FALSE;
   while (i < totalColCount)
     {
       const NAColumn * keyCol = baseTableKeyArr[j];
+      
+      // If an index is being created on a subset of the base table's key
+      // columns, then those columns have already been added in the loop above
+      // We will skip them here, so that the index does not have the same 
+      // column twice.
+      duplicateColFound = FALSE;
+      for (int k = 0; 
+           (k < indexColRefArray.entries() && !duplicateColFound); k++)
+        {
+          if (keyInfoArray[k].tableColNum == keyCol->getPosition()) 
+            {
+              duplicateColFound = TRUE;
+              totalColCount-- ;
+              if (isUnique)
+                nonKeyColCount-- ;
+              else
+                keyColCount-- ;
+              j++;   
+            }         
+        }
+      if (duplicateColFound)
+        continue ; // do not add this col here since it has already been added
+          
 
       // update column info for the index
       char * col_name = new(heap) char[strlen(keyCol->getColName().data()) + 2 + 1];
@@ -326,8 +357,10 @@ short CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       
       if (isUnique)
 	keyInfoArray[i].nonKeyCol = 1;
-      else
+      else {
 	keyInfoArray[i].nonKeyCol = 0;
+        keyLength += naType->getEncodedKeyLength();
+      }
 
       keyInfoArray[i].hbaseColFam = new(heap) char[strlen(SEABASE_DEFAULT_COL_FAMILY) + 1];
       strcpy((char*)keyInfoArray[i].hbaseColFam, SEABASE_DEFAULT_COL_FAMILY);
@@ -603,10 +636,47 @@ void CmpSeabaseDDL::createSeabaseIndex(
   ElemDDLColRefArray & indexColRefArray = createIndexNode->getColRefArray();
   const NAFileSet * nafs = naTable->getClusteringIndex();
   const NAColumnArray &baseTableKeyArr = nafs->getIndexKeyColumns();
+  Int32 numSplits = 0;
+
+  if (createIndexNode->getSaltOptions() && 
+      createIndexNode->getSaltOptions()->getLikeTable())
+  {
+    if (createIndexNode->isUniqueSpecified())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_SALTED_UNIQUE_IDX)
+                           << DgString0(extIndexName);
+       deallocEHI(ehi);
+       processReturn();
+       return;
+    }
+    // verify base table is salted
+    if (naTable->hasSaltedColumn())
+    {
+      createIndexNode->getSaltOptions()->setNumPartns(naTable->numSaltPartns());
+      NAString saltCol = "_SALT_";
+      ElemDDLColRef * saltColRef = new (STMTHEAP) ElemDDLColRef(
+                                        saltCol /*column_name*/,
+                                        COM_UNKNOWN_ORDER /*default val*/,
+                                        STMTHEAP);
+      //SALT column will be the first column in the index
+      indexColRefArray.insertAt((CollIndex)0, saltColRef);
+      numSplits = naTable->numSaltPartns() - 1;
+    }
+    else
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_SALT_LIKE_CLAUSE)
+                           << DgString0(extTableName)
+                           << DgString1(extIndexName);
+       deallocEHI(ehi);
+       processReturn();
+       return;
+    }
+  }
 
   Lng32 keyColCount = 0;
   Lng32 nonKeyColCount = 0;
   Lng32 totalColCount = 0;
+  Lng32 keyLength = 0;
 
   ComTdbVirtTableColumnInfo * colInfoArray = NULL;
   ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
@@ -624,14 +694,35 @@ void CmpSeabaseDDL::createSeabaseIndex(
 				     colInfoArray,
 				     keyInfoArray,
 				     selColList,
+                                     keyLength,
 				     STMTHEAP))
     {
       deallocEHI(ehi); 
-      
       processReturn();
-      
       return;
     }
+
+  char ** encodedKeysBuffer = NULL;
+  if (numSplits > 0) {
+
+    desc_struct * colDescs = 
+      convertVirtTableColumnInfoArrayToDescStructs(&tableName,
+                                                   colInfoArray,
+                                                   totalColCount) ;
+    desc_struct * keyDescs = 
+      convertVirtTableKeyInfoArrayToDescStructs(keyInfoArray,
+                                                colInfoArray,
+                                                keyColCount) ;
+
+    if (createEncodedKeysBuffer(encodedKeysBuffer,
+                                colDescs, keyDescs, numSplits, 
+                                keyColCount, keyLength))
+      {
+        deallocEHI(ehi);
+        processReturn();
+        return;
+      }
+  }
 
   ComTdbVirtTableTableInfo tableInfo;
   tableInfo.tableName = NULL,
@@ -650,6 +741,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   tableInfo.validDef = 0;
   tableInfo.hbaseCreateOptions = NULL;
+  tableInfo.numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
 
   ComTdbVirtTableIndexInfo ii;
   ii.baseTableName = (char*)extTableName.data();
@@ -660,6 +752,19 @@ void CmpSeabaseDDL::createSeabaseIndex(
   ii.keyColCount = keyColCount;
   ii.nonKeyColCount = nonKeyColCount;
   ii.keyInfoArray = NULL; //keyInfoArray;
+
+  NAList<HbaseCreateOption*> hbaseCreateOptions;
+  NAString hco;
+  short retVal = setupHbaseOptions(createIndexNode->getHbaseOptionsClause(), 
+                                   numSplits, extIndexName,
+                                   hbaseCreateOptions, hco);
+  if (retVal)
+  {
+    deallocEHI(ehi); 
+    processReturn();
+    return;
+  }
+  tableInfo.hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
   
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
@@ -683,12 +788,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
       return;
     }
 
-  if (createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, NULL, NULL) == -1)
+  if (createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY, NULL, 
+                       NULL, &hbaseCreateOptions, numSplits, keyLength, 
+                       encodedKeysBuffer) == -1)
     {
       deallocEHI(ehi); 
-
       processReturn();
-
       return;
     }
 
@@ -705,7 +810,6 @@ void CmpSeabaseDDL::createSeabaseIndex(
 				currCatName, currSchName, COM_INDEX_OBJECT_LIT))
 	    {
 	      processReturn();
-	      
 	      return;
 	    }
 

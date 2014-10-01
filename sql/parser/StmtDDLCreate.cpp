@@ -1430,6 +1430,9 @@ StmtDDLCreateIndex::StmtDDLCreateIndex(NABoolean isUnique,
           isPartitionByClauseSpec_(FALSE),
           isDivisionClauseSpec_(FALSE),
           pDivisionClauseParseNode_(NULL),
+          isHbaseOptionsSpec_(NULL),
+	  pHbaseOptionsParseNode_(NULL),
+          pSaltOptions_(NULL),
           isParallelExec_(FALSE),
           configFileName_(heap),
           isParallelExecutionClauseSpec_(FALSE),
@@ -1685,7 +1688,29 @@ StmtDDLCreateIndex::setIndexOption(ElemDDLNode * pIndexOption)
 
     }
     break;
-
+    
+  case ELM_HBASE_OPTIONS_ELEM:
+    {
+      if (isHbaseOptionsSpecified())
+        {
+          // Error 3183 - Duplicate $0~string0 clauses were specified.
+          *SqlParser_Diags << DgSqlCode(-3183)
+                           << DgString0("HBASE_OPTIONS");
+        }
+      pHbaseOptionsParseNode_ =
+        pIndexOption->castToElemDDLHbaseOptions();
+      isHbaseOptionsSpec_ = TRUE;
+    }
+    break ;
+  case ELM_SALT_OPTIONS_ELEM:
+    {
+      if (pSaltOptions_)
+        // Error 3183 - Duplicate $0~string0 clauses were specified.
+        *SqlParser_Diags << DgSqlCode(-3183) << DgString0("SALT");
+      else
+        pSaltOptions_ = pIndexOption->castToElemDDLSaltOptionsClause();
+    }
+    break;
   default :
     NAAbort("StmtDDLCreate.C", __LINE__, "internal logic error");
     break;

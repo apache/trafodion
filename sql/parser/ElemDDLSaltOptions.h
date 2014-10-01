@@ -59,6 +59,8 @@ public:
   ElemDDLSaltOptionsClause(ElemDDLNode * pSaltExprTree,
                            Int32 numPartitions);
 
+  ElemDDLSaltOptionsClause( NABoolean likeTable);
+
   // virtual destructor
   virtual ~ElemDDLSaltOptionsClause();
 
@@ -91,11 +93,15 @@ public:
 
   void setChild(Lng32 index, ExprNode * pChildNode);
 
+  void setNumPartns(Int32 numPartns) {numPartitions_ = numPartns;}
+
   //
   // methods for tracing and/or building text
   //
 
   virtual const NAString getText() const;
+
+  NABoolean getLikeTable() const;
 
 private:
 
@@ -112,6 +118,7 @@ private:
 
   Int32 numPartitions_;
   ElemDDLColRefArray saltColumnArray_;
+  NABoolean likeTable_; // salt an index like its base table
 
   // pointers to child parse node
 

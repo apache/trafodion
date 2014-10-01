@@ -1527,13 +1527,13 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
   for (CollIndex c = 0; c < partColArray.entries(); c++)
     {
       const NAType *pkType = partColArray[c]->getType();
-      // TBD: Handle nullable key types, right now this should assert below with key len mismatch
-      Lng32 decodedValueLen = pkType->getNominalSize();
+      Lng32 decodedValueLen = 
+        pkType->getNominalSize() + pkType->getSQLnullHdrSize();
       ItemExpr *keyColVal = NULL;
 
       if (pkType->isEncodingNeeded())
         {
-          encodedKeyP = &actEncodedKey[keyColOffset + pkType->getSQLnullHdrSize()];
+          encodedKeyP = &actEncodedKey[keyColOffset];
 
           // for varchar the decoding logic expects the length to be in the first
           // pkType->getVarLenHdrSize() chars, so add it 
@@ -1571,59 +1571,104 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                                   heap);
           CMPASSERT(keyColEncVal);
 
-          keyColVal =
-            new(heap) CompDecode(keyColEncVal,
-                                 pkType,
-                                 !partColArray.isAscending(c),
-                                 decodedValueLen,
-                                 CollationInfo::Sort,
-                                 TRUE,
-                                 heap);
+          if (keyColEncVal->isNull())
+          {
+            // do not call the expression evaluator if the value 
+            // to be decoded is NULL. We cannot use keyColEncVal created
+            // a few lines above since the string literal passed in to
+            // the constructor (4th argument) has a specific value in that 
+            // case. This argument will be used to set the text_ field of 
+            // ConstValue. If the constructor called as shown below text_ will
+            // contain the literal "NULL", when the value passed in as 
+            // second argument is null.
+            keyColVal =
+                new (heap) ConstValue(pkType,
+                                      (void *) encodedKeyP,
+                                      decodedValueLen,
+                                      NULL,
+                                      heap);
+          }
+          else 
+          {
+            keyColVal =
+              new(heap) CompDecode(keyColEncVal,
+                                   pkType,
+                                   !partColArray.isAscending(c),
+                                   decodedValueLen,
+                                   CollationInfo::Sort,
+                                   TRUE,
+                                   heap);
 
-           keyColVal->synthTypeAndValueId();
+            keyColVal->synthTypeAndValueId();
 
-           ValueIdList exprs;
-           exprs.insert(keyColVal->getValueId());
+            ValueIdList exprs;
+            exprs.insert(keyColVal->getValueId());
 
-           char staticDecodeBuf[200];
-           Lng32 staticDecodeBufLen = 200;
+            char staticDecodeBuf[200];
+            Lng32 staticDecodeBufLen = 200;
 
-           char* decodeBuf = staticDecodeBuf;
-           Lng32 decodeBufLen = staticDecodeBufLen;
+            char* decodeBuf = staticDecodeBuf;
+            Lng32 decodeBufLen = staticDecodeBufLen;
 
-           // For character types, multiplying by 8 to deal with conversions between
-           // any two known character sets supported.  
-           Lng32 factor = (DFS2REC::isAnyCharacter(pkType->getFSDatatype())) ? 8 : 1;
+            // For character types, multiplying by 8 to deal with conversions between
+            // any two known character sets supported.  
+            Lng32 factor = (DFS2REC::isAnyCharacter(pkType->getFSDatatype())) ? 8 : 1;
 
-           if ( staticDecodeBufLen < decodedValueLen * factor) {
-               decodeBufLen = decodedValueLen * factor;
-               decodeBuf = new (STMTHEAP) char[decodeBufLen];
-           }
+            if ( staticDecodeBufLen < decodedValueLen * factor) {
+              decodeBufLen = decodedValueLen * factor;
+              decodeBuf = new (STMTHEAP) char[decodeBufLen];
+            }
 
-           Lng32 resultLength = 0;
-           Lng32 resultOffset = 0;
+            Lng32 resultLength = 0;
+            Lng32 resultOffset = 0;
 
-           // Produce the decoded key. Refer to 
-           // ex_function_encode::decodeKeyValue() for the 
-           // implementation of the decoding logic.
-           ex_expr::exp_return_type rc = exprs.evalAtCompileTime
-               (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, decodeBuf, decodeBufLen,
-                &resultLength, &resultOffset, CmpCommon::diags()
+            // Produce the decoded key. Refer to 
+            // ex_function_encode::decodeKeyValue() for the 
+            // implementation of the decoding logic.
+            ex_expr::exp_return_type rc = exprs.evalAtCompileTime
+              (0, ExpTupleDesc::SQLARK_EXPLODED_FORMAT, decodeBuf, decodeBufLen,
+               &resultLength, &resultOffset, CmpCommon::diags()
                );
 
 
-           if ( rc == ex_expr::EXPR_OK ) {
-             CMPASSERT(resultOffset == pkType->getVarLenHdrSize());
-             keyColVal =
-               new (heap) ConstValue(pkType,
-                                     (void *) decodeBuf,
-                                     resultLength,
-                                     NULL,
-                                     heap);
-           }
+            if ( rc == ex_expr::EXPR_OK ) {
+              CMPASSERT(resultOffset == pkType->getPrefixSizeWithAlignment());
+              // expect the decodeBuf to have this layout
+              // | null ind. | varchar length ind. | alignment | result |
+              // |<---getPrefixSizeWithAlignment-------------->|
+              // |<----getPrefixSize-------------->|
 
-           if ( rc != ex_expr::EXPR_OK ) 
-             return NULL;
+              // The method getPrefixSizeWithAlignment(), the diagram above,
+              // and this code block assumes that varchar length ind. is
+              // 2 bytes if present. If it is 4 bytes we should fail the 
+              // previous assert
+
+              // Next we get rid of alignment bytes by prepending the prefix
+              // (null ind. + varlen ind.) to the result. ConstValue constr.
+              // will process prefix + result. The assert above ensures that 
+              // there are no alignment fillers at the beginning of the 
+              // buffer. Given the previous assumption about size
+              // of varchar length indicator, alignment bytes will be used by
+              // expression evaluator only if column is of nullable type.
+              // For a description of how alignment is computed, please see
+              // ExpTupleDesc::sqlarkExplodedOffsets() in exp/exp_tuple_desc.cpp
+
+              if (pkType->getSQLnullHdrSize() > 0)
+                memmove(&decodeBuf[resultOffset - pkType->getPrefixSize()], 
+                                  decodeBuf, pkType->getPrefixSize());
+              keyColVal =
+                new (heap) 
+                ConstValue(pkType,
+                           (void *) &(decodeBuf[resultOffset - 
+                                                pkType->getPrefixSize()]),
+                           resultLength+pkType->getPrefixSize(),
+                           NULL,
+                           heap);
+            }
+
+            if ( rc != ex_expr::EXPR_OK ) 
+              return NULL;
+          }
 
         } // encoded 
       else
@@ -3794,6 +3839,14 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 
       CMPASSERT(indexes_desc->body.indexes_desc.blocksize > 0);
 
+      NAList<HbaseCreateOption*>* hbaseCreateOptions = NULL;
+      if ((indexes_desc->body.indexes_desc.hbaseCreateOptions) &&
+          (CmpSeabaseDDL::genHbaseCreateOptions
+           (indexes_desc->body.indexes_desc.hbaseCreateOptions,
+            hbaseCreateOptions,
+            heap)))
+        return TRUE;
+
       newIndex = new (heap)
 	NAFileSet(
 		  qualIndexName, // QN containing "\NSK.$VOL", FUNNYSV, FUNNYNM
@@ -3835,6 +3888,8 @@ NABoolean createNAFileSets(desc_struct * table_desc       /*IN*/,
 		  (indexes_desc->body.indexes_desc.isInMemoryObjectDefn != 0),
                   indexes_desc->body.indexes_desc.keys_desc,
                   NULL, // no Hive stats
+                  indexes_desc->body.indexes_desc.numSaltPartns,
+                  hbaseCreateOptions,
                   heap);
 
       if (isNotAvailable)
@@ -4181,6 +4236,8 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
 		  0, // inMemObjectDefn
                   NULL, // indexes_desc->body.indexes_desc.keys_desc,
                   hiveHDFSTableStats,
+                  0, // saltPartns
+                  NULL, //hbaseCreateOptions
                   heap);
 
       if (isNotAvailable)
@@ -4426,8 +4483,6 @@ NATable::NATable(BindWA *bindWA,
     hiveDefaultStringLen_(0),
     hiveTableId_(-1),
     tableDesc_(inTableDesc),
-    numSaltPartns_(0),
-    hbaseCreateOptions_(NULL),
     privInfo_(NULL),
     secKeySet_(heap)
 {
@@ -4469,17 +4524,6 @@ NATable::NATable(BindWA *bindWA,
       // Need to initialize the maxIndexLevelsPtr field
       *maxIndexLevelsPtr = 1;
     }
-
-  numSaltPartns_ = table_desc->body.table_desc.numSaltPartns;
-
-  NAList<HbaseCreateOption*>* hbaseCreateOptions = NULL;
-  if ((table_desc->body.table_desc.hbaseCreateOptions) &&
-      (CmpSeabaseDDL::genHbaseCreateOptions
-       (table_desc->body.table_desc.hbaseCreateOptions,
-	hbaseCreateOptions,
-	heap_)))
-    return;
-  hbaseCreateOptions_ = hbaseCreateOptions;
 
   if ((corrName.isHbase()) || (corrName.isSeabase()))
     {
@@ -5205,8 +5249,6 @@ NATable::NATable(BindWA *bindWA,
     hiveDefaultStringLen_(0),
     hiveTableId_(htbl->tblID_),
     tableDesc_(NULL),
-    numSaltPartns_(0),
-    hbaseCreateOptions_(NULL),
     privInfo_(NULL)
 {
 
@@ -6068,8 +6110,14 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
       const NAColumnArray &nacArr = naf->getIndexKeyColumns();
 
       Lng32 numKeyCols = 
-	((isUniqueIndex || isPrimaryKey) ? nacArr.entries() :
-	 (nacArr.entries() - numBTpkeys));
+	(isPrimaryKey ? nacArr.entries() : 
+         naf->getCountOfUserSpecifiedIndexCols());
+
+      if (naf->numSaltPartns() > 0)
+        numKeyCols-- ; // for salted index, the SALT column is counted
+      // as a user specified column, but it is not present in inputCols
+      // We want to disregard the salt column when looking for a match.
+
       if ((inputCols.entries() > 0) && (inputCols.entries() != numKeyCols))
 	continue;
 
@@ -6079,7 +6127,10 @@ NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
 	{
 	  const NAString &colName = inputCols[j];
 	  keyColNAS.insert(colName);
-	  indexNAS.insert(nacArr[j]->getColName());
+          if (naf->numSaltPartns() > 0)
+            indexNAS.insert(nacArr[j+1]->getColName()); //SALT column is first
+          else                                          // skip it.
+            indexNAS.insert(nacArr[j]->getColName());
 	}
 
       if (inputCols.entries() == 0)
