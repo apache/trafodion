@@ -1239,8 +1239,8 @@ void print_helptext()
    cout << endl << " status trans[action] [transid]";
    cout << endl << "        : Status of the specified transaction.";
    cout << endl << "        : transid may be in numeric or <node>,<sequence> format.";
-   cout << endl << " status regions";
-   cout << endl << "        : Status of the transactions on the hbase regions - client side";
+  // cout << endl << " status regions";
+  // cout << endl << "        : Status of the transactions on the hbase regions - client side";
    cout << endl << " transid [string] <transid>";
    cout << endl << "        : Prints transaction ID information";
    cout << endl << "        : Entering string option outputs (node, sequence, incarn #)";
@@ -1696,10 +1696,10 @@ int main(int argc, char *argv[])
             {
                 process_statussystem();
             }
-            else if(!strcmp(lp_nextcmd, "regions"))
+            /*else if(!strcmp(lp_nextcmd, "regions"))
             {
                 process_request_regions_info();
-            }
+            }*/
             else
             {
                 cout << endl << "** Invalid qualifier '" <<lp_nextcmd 
