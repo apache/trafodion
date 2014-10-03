@@ -161,7 +161,6 @@ JSRC := RowToInsert.java \
         HTableClient.java \
         HBaseClient.java \
 	HiveClient.java \
-        TrafBulkLoadClient.java \
         HBulkLoadClient.java
 
 
@@ -176,12 +175,6 @@ $(TARGOBJDIR)/java/$(PACKAGE)/HTableClient.class : $(TARGOBJDIR)/java/$(PACKAGE)
 $(TARGOBJDIR)/java/$(PACKAGE)/HBulkLoadClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/RowToInsert.class
 $(TARGOBJDIR)/java/$(PACKAGE)/HBulkLoadClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/RowsToInsert.class
 $(TARGOBJDIR)/java/$(PACKAGE)/HBulkLoadClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/HTableClient.class
-
-#$(TARGOBJDIR)/java/$(PACKAGE)/HBulkLoadClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/TrafBulkLoadProtocol.class
-#$(TARGOBJDIR)/java/$(PACKAGE)/HBulkLoadClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/TrafBulkLoadEndpoint.class
-$(TARGOBJDIR)/java/$(PACKAGE)/HBulkLoadClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/TrafBulkLoadClient.class
-
-
 
 $(TARGOBJDIR)/java/$(PACKAGE)/HBaseClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/RowToInsert.class
 $(TARGOBJDIR)/java/$(PACKAGE)/HBaseClient.class : $(TARGOBJDIR)/java/$(PACKAGE)/RowsToInsert.class

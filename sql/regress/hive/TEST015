@@ -21,7 +21,7 @@
 
 set schema trafodion.hbase;
 CQD COMP_BOOL_226 'ON';
-cqd TRAF_LOAD_USE_QUASI_SECURE 'off';
+
 cqd TRAF_LOAD_TAKE_SNAPSHOT 'on';
 
 obey TEST015(clean_up);

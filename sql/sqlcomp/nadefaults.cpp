@@ -3215,7 +3215,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_TAKE_SNAPSHOT ,    "OFF"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES, "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "ON"),
-  DDkwd__(TRAF_LOAD_USE_QUASI_SECURE , "OFF"),
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                 "OFF"),
 
   DDint__(TRAF_NUM_OF_SALT_PARTNS,          "-1"), 

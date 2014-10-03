@@ -449,46 +449,7 @@ public class HBulkLoadClient
 
     if (quasiSecure)
     {
-      logger.debug("HbulkLoadClient.doBulkLoad() - quasi secure bulk load");
-      //we need to add few lines of code to support secure hbase later 
-      TrafBulkLoadClient client = new TrafBulkLoadClient(table) ;
-  
-      String hiddenToken = client.prepareBulkLoad(table.getTableDescriptor().getName());
-      logger.debug("HBulkLoadClient.doBulkLoad() - hiddenToken: " + hiddenToken);
-      
-      Path hiddenPath = new Path(hiddenToken);
-      hiddenPath = hiddenPath.makeQualified(hiddenPath.toUri(), null);
-      FileSystem hiddenFs = FileSystem.get(hiddenPath.toUri(),config);
-      
-      if ( hiddenFs.getScheme().compareTo(prepFs.getScheme()) == 0 &&
-          hiddenFs.getScheme().toUpperCase().compareTo(new String("HDFS")) == 0)
-      {
-        logger.debug("HBulkLoadClient.doBulkLoad() - moving hfiles from preparation directory to hidden directory");
-        for (Path hfam : hFams) 
-          prepFs.rename(hfam,hiddenPath);
-
-        logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hidden hfiles permissions");
-        Path[] hiddenHFams = FileUtil.stat2Paths(hiddenFs.listStatus(hiddenPath));
-        for (Path hiddenHfam : hiddenHFams) 
-        {
-           Path[] hiddenHfiles = FileUtil.stat2Paths(prepFs.listStatus(hiddenHfam));
-           hiddenFs.setPermission(hiddenHfam,PERM_ALL_ACCESS );
-           for (Path hiddehfile : hiddenHfiles)
-           {
-             logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hidden hfile permissions:" + hiddehfile);
-             hiddenFs.setPermission(hiddehfile,PERM_ALL_ACCESS);
-           }
-           //create _tmp dir used as temp space for Hfile processing
-           FileSystem.mkdirs(hiddenFs, new Path(hiddenHfam,"_tmp"), PERM_ALL_ACCESS);
-        }
-        logger.debug("HBulkLoadClient.doBulkLoad() - quasi secure bulk load started ");
-        doSnapshotNBulkLoad(hiddenPath,tableName,  table,  loader,  snapshot);
-        logger.debug("HBulkLoadClient.doBulkLoad() - quasi secure bulk load is done ");
-        client.cleanupBulkLoad(hiddenToken);
-        logger.debug("HBulkLoadClient.doBulkLoad() - hidden directory cleanup done ");
-      }
-      else
-        throw new Exception("HBulkLoadClient.doBulkLoad() - cannot perform load. source and target file systems are diffrent");
+      throw new Exception("HBulkLoadClient.doBulkLoad() - cannot perform load. Trafodion on secure HBase mode is not implemented yet");
     }
     else
     {

@@ -5501,7 +5501,7 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setIndexTableOnly(indexTableOnly_);
   exe_util_tdb->setUpsertUsingLoad(upsertUsingLoad_);
 
-  exe_util_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
+  exe_util_tdb->setQuasiSecure(FALSE);
 
 
   generator->initTdbFields(exe_util_tdb);
@@ -5578,7 +5578,7 @@ short ExeUtilHBaseBulkLoadTask::codeGen(Generator * generator)
   strcpy(tlpTmpLocation, tlpTmpLocationNAS.data());
   load_tdb->setLoadPrepLocation(tlpTmpLocation);
 
-  load_tdb->setQuasiSecure(CmpCommon::getDefault(TRAF_LOAD_USE_QUASI_SECURE) == DF_ON);
+  load_tdb->setQuasiSecure(FALSE);
   load_tdb->setTakeSnapshot((CmpCommon::getDefault(TRAF_LOAD_TAKE_SNAPSHOT) == DF_ON));
 
   if (taskType_ == PRE_LOAD_CLEANUP_)

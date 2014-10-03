@@ -362,10 +362,7 @@ endif
 # $(FINAL_EXES): $(FINAL_DLLS)
 
 # This is where the top-level is declared to build everything.
-buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_JARS) $(FINAL_EXES) mavenbuild
-
-mavenbuild: 
-	cd $(TOPDIR)/hbaseExtensions ; make all
+buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_JARS) $(FINAL_EXES)
 
 clean:
 	@echo "Removing intermediate objects for $(TARGTYPE)/$(ARCHBITS)/$(FLAVOR)"
@@ -381,4 +378,4 @@ clean:
 	@rm -rf $(LOGFILE) $(LOGFILE).old
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
-	cd $(TOPDIR)/hbaseExtensions ; make clean
+
