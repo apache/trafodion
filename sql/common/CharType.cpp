@@ -778,55 +778,57 @@ NABoolean CharType::isCompatibleAllowUnknownCharset(const NAType& other) const
 	  ((CharType&)other).getCharSet() == CharInfo::UnknownCharSet));
 }
 
-// helper function for min/maxRepresentableValue
-NABoolean CharType::createStringLiteral(char * buf,
-                                        NAString **stringLiteral,
-                                        CollHeap *h,
-                                        CharInfo::CharSet targetCS) const
+NABoolean CharType::createSQLLiteral(const char * buf,
+                                     NAString *&stringLiteral,
+                                     NABoolean &isNull,
+                                     CollHeap *h) const
 {
+  if (NAType::createSQLLiteral(buf, stringLiteral, isNull, h))
+    return TRUE;
+
   // Generate a string literal in a target charset (usually UTF8)
   // of the form _<type charset>'<string in target charset>'
   // TBD: - consider using hex literal instead of unprintable characters
   NABoolean result = TRUE;
   NAString *resultLiteral = new(h) NAString(getCharSetAsPrefix());
+  const char *valPtr = buf + getSQLnullHdrSize();
+  Int32 valLen = 0;
   CharInfo::CharSet sourceCS = getCharSet();
   char *tempBuf = NULL;
-  Int32 bufLen = 0;
 
   if (getVarLenHdrSize() == 0)
-    bufLen = getNominalSize();
+    valLen = getNominalSize();
   else 
     {
       if (getVarLenHdrSize() == 2)
-        bufLen = *((Int16 *) buf);
+        valLen = *((Int16 *) valPtr);
       else if (getVarLenHdrSize() == 4)
-        bufLen = *((Int32 *) buf);
+        valLen = *((Int32 *) valPtr);
       else
         ComASSERT(FALSE);
 
-      buf += getVarLenHdrSize();
+      valPtr += getVarLenHdrSize();
     }
 
-  ComASSERT(targetCS == CharInfo::UTF8);
   *resultLiteral += "'";
 
   switch (sourceCS)
     {
     case CharInfo::UTF8:
-      *resultLiteral += NAString(buf, bufLen);
+      *resultLiteral += NAString(valPtr, valLen);
       break;
 
     case CharInfo::ISO88591:
       {
         // try it the easy way, for all ASCII chars
         NABoolean allAscii = TRUE;
-        unsigned char *ucharBuf = (unsigned char *) buf;
-        for (Int32 i=0; i<bufLen && allAscii; i++)
+        unsigned char *ucharBuf = (unsigned char *) valPtr;
+        for (Int32 i=0; i<valLen && allAscii; i++)
           if (ucharBuf[i] > 127)
             allAscii = FALSE;
         if (allAscii)
           {
-            *resultLiteral += NAString((char *) buf, bufLen);
+            *resultLiteral += NAString((char *) valPtr, valLen);
             break;
           }
       }
@@ -837,13 +839,13 @@ NABoolean CharType::createStringLiteral(char * buf,
         char *firstUntranslatedChar = NULL;
         unsigned int outputLength = 0;
         Int32 tempBufSize = CharInfo::getMaxConvertedLenInBytes(sourceCS,
-                                                                bufLen,
+                                                                valLen,
                                                                 CharInfo::UTF8);
         tempBuf = new(h) char[tempBufSize];
 
         int retCode = LocaleToUTF8(cnv_version1,
-                                   buf,
-                                   bufLen,
+                                   valPtr,
+                                   valLen,
                                    tempBuf,
                                    tempBufSize,
                                    convertCharsetEnum(sourceCS),
@@ -874,8 +876,7 @@ NABoolean CharType::createStringLiteral(char * buf,
   *resultLiteral += "'";
   if (tempBuf)
     NADELETEBASIC(tempBuf, h);
-  assert(stringLiteral)
-    *stringLiteral = resultLiteral;
+  stringLiteral = resultLiteral;
 
   return result;
 }
@@ -1179,7 +1180,8 @@ void SQLChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
 
   if (stringLiteral)
     {
-      NABoolean res = createStringLiteral((char *) bufPtr, stringLiteral, h);
+      NABoolean isNull = FALSE;
+      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
       assert(res);
     }
 }
@@ -1226,7 +1228,8 @@ void SQLChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 
   if (stringLiteral)
     {
-      NABoolean res = createStringLiteral((char *) bufPtr, stringLiteral, h);
+      NABoolean isNull = FALSE;
+      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
       assert(res);
     }
 }
@@ -1336,7 +1339,8 @@ void SQLVarChar::minRepresentableValue(void* bufPtr, Lng32* bufLen,
   }
   if (stringLiteral)
     {
-      NABoolean res = createStringLiteral((char *) bufPtr, stringLiteral, h);
+      NABoolean isNull = FALSE;
+      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
       assert(res);
     }
 } // minRepresentableValue()
@@ -1396,7 +1400,8 @@ void SQLVarChar::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
   }
   if (stringLiteral)
     {
-      NABoolean res = createStringLiteral((char *) bufPtr, stringLiteral, h);
+      NABoolean isNull = FALSE;
+      NABoolean res = createSQLLiteral((const char *) bufPtr, *stringLiteral, isNull, h);
       assert(res);
     }
 } // maxRepresentableValue()

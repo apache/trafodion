@@ -324,6 +324,19 @@ public:
   virtual double getMinValue() const { return 0; };
   virtual double getMaxValue() const { return 0; };
 
+  // ---------------------------------------------------------------------
+  // create an SQL literal (in UTF-8) from a binary buffer
+  // returns whether it was able to create a valid SQL literal
+  // This assumes "buf" to be in the format of an already decoded
+  // key value. That's similar to SQL/ARK exploded format, except
+  // that there are no fillers for alignment, NULL indicator. Var
+  // len indicator and value appear adjacent to each other, unaligned.
+  // ---------------------------------------------------------------------
+  virtual NABoolean createSQLLiteral(const char * buf,       // in
+                                     NAString *&sqlLiteral,  // out
+                                     NABoolean &isNull,      // out
+                                     CollHeap *h) const;     // in/out
+
   // compute the largest smaller value than v
   virtual double computeLSV(double v) const 
   { return (roundTripConversionToDouble())? v-1 : v; }

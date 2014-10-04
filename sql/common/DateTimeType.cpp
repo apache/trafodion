@@ -744,6 +744,54 @@ void DatetimeType::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 #pragma warning (default : 4305 4309)   //warning elimination
   }
 }
+
+NABoolean DatetimeType::createSQLLiteral(const char * buf,
+                                         NAString *&stringLiteral,
+                                         NABoolean &isNull,
+                                         CollHeap *h) const
+{
+  if (NAType::createSQLLiteral(buf, stringLiteral, isNull, h))
+    return TRUE;
+
+  // First step is to convert to ASCII, then add datetime syntax around it
+  const int RESULT_LEN = 100;
+  char result[RESULT_LEN];
+  const char *valPtr = buf + getSQLnullHdrSize();
+  unsigned short resultLen = 0;
+  ComDiagsArea *diags = NULL;
+
+  ex_expr::exp_return_type ok =
+    convDoIt((char *) valPtr,
+             getNominalSize(),
+             getFSDatatype(),
+             getPrecision(),
+             getScale(),
+             result,
+             RESULT_LEN,
+             REC_BYTE_V_ASCII,
+             0,
+             SQLCHARSETCODE_UTF8,
+             (char *) &resultLen,
+             sizeof(resultLen),
+             h,
+             &diags,
+             conv_case_index::CONV_UNKNOWN,
+             0);
+
+   if ( ok != ex_expr::EXPR_OK || resultLen == 0)
+     return FALSE;
+
+   stringLiteral = new(h) NAString(result, resultLen, h);
+   *stringLiteral += '\'';
+   if (getTypeName() == "DATE")
+     stringLiteral->prepend(" DATE '");
+   else if (getTypeName() == "TIME")
+     stringLiteral->prepend(" TIME '");
+   else if (getTypeName() == "TIMESTAMP")
+     stringLiteral->prepend(" TIMESTAMP '");
+   return TRUE;
+}
+
 // ***********************************************************************
 //
 //  DatetimeType : getRecDateTimeCode

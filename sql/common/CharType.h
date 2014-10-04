@@ -331,13 +331,10 @@ void generateTextThenSetDisplayDataType ( CharInfo::CharSet cs                  
                                         , NAString & ddt                         // in/out
                                         );
 
-// create a string literal from a binary buffer
-// returns whether it was able to create a valid string literal
-NABoolean createStringLiteral(
-     char * buf,
-     NAString** stringLiteral,
-     CollHeap* h,
-     CharInfo::CharSet targetCS = CharInfo::UTF8) const;
+virtual NABoolean createSQLLiteral(const char * buf,
+                                   NAString *&sqlLiteral,
+                                   NABoolean &isNull,
+                                   CollHeap *h) const;
 
 private:
 

@@ -1336,7 +1336,6 @@ ItemExpr * getRangePartitionBoundaryValues
 
   length = stopIndex - startIndex + 1;
 
-  // Replace "FRACTION" with "SECOND  " for SQL/MP objects
   NAString keyValueString( &keyValueBuffer[startIndex], (size_t) length );
 
   // ---------------------------------------------------------------------
@@ -1385,25 +1384,178 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 {
   Lng32 keyColOffset = 0;
   ItemExpr *result = NULL;
+  char *actEncodedKey = (char *) encodedKey; // original key or a copy
   const char* encodedKeyP = NULL;
   char* varCharstr = NULL;
+  Lng32 totalKeyLength = 0;
+  Lng32 numFullyProvidedCols = 0;
+  Lng32 lenOfFullyProvidedCols = 0;
 
+  // in newer HBase versions, the region start key may be shorter than an actual key
+  for (CollIndex i = 0; i < partColArray.entries(); i++)
+    {
+      const NAType *pkType = partColArray[i]->getType();
+      Lng32 colEncodedLength = pkType->getSQLnullHdrSize() + pkType->getNominalSize();
+
+      totalKeyLength += colEncodedLength;
+      if (totalKeyLength <= encodedKeyLen)
+        {
+          // this column is fully provided in the region start key
+          numFullyProvidedCols++;
+          lenOfFullyProvidedCols = totalKeyLength;
+        }
+    }
+
+  if (encodedKeyLen < totalKeyLength)
+    {
+      // the provided key does not cover all the key columns
+
+      // need to extend the partial buffer, allocate a copy
+      actEncodedKey = new(heap) char[totalKeyLength];
+      memcpy(actEncodedKey, encodedKey, encodedKeyLen);
+      memset(&actEncodedKey[encodedKeyLen], 0, totalKeyLength-encodedKeyLen);
+      Lng32 currOffset = lenOfFullyProvidedCols;
+
+      // go through the partially or completely missing columns and make something up
+      // so that we can treat the buffer as fully encoded in the final loop below
+      for (CollIndex j = numFullyProvidedCols; j < partColArray.entries(); j++)
+        {
+          const NAType *pkType = partColArray[j]->getType();
+          Lng32 colEncodedLength = pkType->getSQLnullHdrSize() + pkType->getNominalSize();
+          NABoolean isDescending = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
+
+          NABoolean columnIsPartiallyProvided = (currOffset < encodedKeyLen);
+
+          if (columnIsPartiallyProvided)
+            {
+              // This column is partially provided, try to make sure that it has a valid
+              // value. Note that the buffer has a prefix of some bytes with actual key
+              // values, followed by bytes that are zeroed out. 
+
+
+              // First, for descending columns, use 0xFF instead of 0 for fillers
+              if (isDescending)
+                memset(&actEncodedKey[encodedKeyLen],
+                       0xFF,
+                       currOffset + colEncodedLength - encodedKeyLen);
+
+              // Next, decide by data type whether it's ok for the type to have
+              // a suffix of the buffer zeroed out (even descending columns will
+              // in the end see zeroes). If the type can't take it, we'll just
+              // discard all the partial information.
+
+              switch (pkType->getTypeQualifier())
+                {
+                case NA_NUMERIC_TYPE:
+                  {
+                    NumericType *nt = (NumericType *) pkType;
+
+                    if (!nt->isExact() || nt->isDecimal() || nt->isBigNum())
+                      columnIsPartiallyProvided = FALSE;
+                  }
+                  break;
+
+                case NA_DATETIME_TYPE:
+                case NA_INTERVAL_TYPE:
+                  // those types should tolerate zeroing out trailing bytes
+                  break;
+
+                case NA_CHARACTER_TYPE:
+                  // generally, character types should also tolerate zeroing out
+                  // trailing bytes, but we might need to clean up characters
+                  // that got split in the middle
+                  {
+                    CharInfo::CharSet cs = pkType->getCharSet();
+
+                    switch (cs)
+                      {
+                      case CharInfo::UCS2:
+                      case CharInfo::UTF8:
+                        // For now just accept partial characters, it's probably ok
+                        // since they are just used as a key. May look funny in EXPLAIN.
+                        break;
+
+                      default:
+                        break;
+                      }
+                  }
+                  break;
+
+                default:
+                  columnIsPartiallyProvided = FALSE;
+                  break;
+                }
+
+              if (!columnIsPartiallyProvided)
+                // not really needed, will be overwritten below
+                memset(&actEncodedKey[currOffset], 0, colEncodedLength);
+            }
+
+          if (!columnIsPartiallyProvided)
+            {
+              // This column is not at all provided in the region start key
+              // or we decided to erase the partial value.
+              // Generate the min/max value for ASC/DESC key columns.
+              Lng32 remainingBufLen = colEncodedLength;
+
+              if (isDescending)
+                {
+                  pkType->maxRepresentableValue(&actEncodedKey[currOffset],
+                                                &remainingBufLen,
+                                                NULL,
+                                                heap);
+
+                  // descending key values are stored inverted
+                  for (int b=currOffset; b<currOffset+remainingBufLen; b++)
+                    actEncodedKey[b] = ~actEncodedKey[b];
+                }
+              else
+                {
+                  pkType->minRepresentableValue(&actEncodedKey[currOffset],
+                                                &remainingBufLen,
+                                                NULL,
+                                                heap);
+                }
+            }
+
+          currOffset += colEncodedLength;
+
+        } // loop through columns not entirely provided
+
+    } // provided encoded key length < total key length
 
   for (CollIndex c = 0; c < partColArray.entries(); c++)
     {
       const NAType *pkType = partColArray[c]->getType();
+      // TBD: Handle nullable key types, right now this should assert below with key len mismatch
       Lng32 decodedValueLen = pkType->getNominalSize();
       ItemExpr *keyColVal = NULL;
 
       if (pkType->isEncodingNeeded())
         {
-          encodedKeyP = &encodedKey[keyColOffset];
+          encodedKeyP = &actEncodedKey[keyColOffset + pkType->getSQLnullHdrSize()];
 
           // for varchar the decoding logic expects the length to be in the first
           // pkType->getVarLenHdrSize() chars, so add it 
+
+          // Note that this is less than ideal:
+          // - A VARCHAR is really encoded as a fixed char in the key, as
+          //   the full length without a length field
+          // - Given that an encoded key is not aligned, we should really
+          //   consider it a byte string, e.g. a character type with charset
+          //   ISO88591, which tolerates any bit patterns. Considering the
+          //   enoded key as the same data type as the column causes all kinds
+          //   of problems.
+          // - The key decode function in the expressions code expects the varchar
+          //   length field, even though it is not present in an actual key. So,
+          //   we add it here in a separate buffer.
+          // - When we generate a ConstValue to represent the decoded key, we also
+          //   need to include the length field, with length = max. length
+
           if (pkType->getTypeName() == "VARCHAR")
           {
               varCharstr = new (heap) char[decodedValueLen + pkType->getVarLenHdrSize()];
+              // careful, this works on little-endian systems only!!
               str_cpy_all(varCharstr, (char*) &decodedValueLen, pkType->getVarLenHdrSize());
               str_cpy_all(varCharstr+pkType->getVarLenHdrSize(), encodedKeyP, decodedValueLen);
               decodedValueLen += pkType->getVarLenHdrSize();
@@ -1415,7 +1567,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
             new (heap) ConstValue(pkType,
                                   (void *) encodedKeyP,
                                   decodedValueLen,
-                                  new(heap) NAString("'<region boundary>'"),
+                                  new(heap) NAString("<encRegionKey>"),
                                   heap);
           CMPASSERT(keyColEncVal);
 
@@ -1435,7 +1587,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
            char staticDecodeBuf[200];
            Lng32 staticDecodeBufLen = 200;
-  
+
            char* decodeBuf = staticDecodeBuf;
            Lng32 decodeBufLen = staticDecodeBufLen;
 
@@ -1461,67 +1613,17 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
 
            if ( rc == ex_expr::EXPR_OK ) {
-
-            char staticDecodeInUTF8Buf[200];
-            Lng32 staticDecodeInUTF8BufLen = 200;
-
-            Lng32 decodeInUTF8BufLen = staticDecodeInUTF8BufLen;
-            char* decodeInUTF8Buf = staticDecodeInUTF8Buf;
-            Lng32 varLenHdrSize = pkType->getVarLenHdrSize();
-
-            // Allocate a new buffer if the static one is not big enough.
-            if ( staticDecodeInUTF8BufLen < resultLength * factor + varLenHdrSize) {
-              decodeInUTF8BufLen = resultLength * factor + varLenHdrSize;
-              decodeInUTF8Buf = new (STMTHEAP) char[decodeInUTF8BufLen];
-            }
-            
-            // include VC length indicator for call to convDoIt
-            if (varLenHdrSize > 0) {
-              CMPASSERT(resultOffset >= varLenHdrSize);
-              resultOffset -= varLenHdrSize;
-
-              // make sure we really have the varlen header in front of the buffer
-              // and that it is matching the value we got returned in evalAtCompileTime
-              if (varLenHdrSize == sizeof(UInt16))
-                {
-                  CMPASSERT(*(UInt16 *)(&decodeBuf[resultOffset]) == resultLength);
-                }
-              else if (varLenHdrSize == sizeof(UInt32))
-                {
-                  CMPASSERT(*(UInt32 *)(&decodeBuf[resultOffset]) == resultLength);
-                }
-
-              resultLength += varLenHdrSize;
-            }
-
-            Lng32 len;
-
-            rc = convDoIt(&decodeBuf[resultOffset], resultLength, 
-                 pkType->getFSDatatype(), 
-                 pkType->getPrecision(), 
-                 pkType->getScaleOrCharset(), 
-                 decodeInUTF8Buf, decodeInUTF8BufLen, REC_BYTE_V_ASCII,
-                 0, SQLCHARSETCODE_UTF8, 
-                 (char*)&len, sizeof(len), heap, NULL,
-                 conv_case_index::CONV_UNKNOWN, 
-                 0, // data conversionErrorFlag 
-                 0 // flags
-                );
-
-           if ( rc == ex_expr::EXPR_OK ) {
-
+             CMPASSERT(resultOffset == pkType->getVarLenHdrSize());
              keyColVal =
-                new (heap) ConstValue(pkType,
-                                    (void *) &(decodeBuf[resultOffset]),
-                                    resultLength,
-                                    new(heap) NAString(decodeInUTF8Buf, len),
-                                    heap);
-
+               new (heap) ConstValue(pkType,
+                                     (void *) decodeBuf,
+                                     resultLength,
+                                     NULL,
+                                     heap);
            }
-          }
 
-          if ( rc != ex_expr::EXPR_OK ) 
-            return NULL;
+           if ( rc != ex_expr::EXPR_OK ) 
+             return NULL;
 
         } // encoded 
       else
@@ -1529,9 +1631,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
           // simply use the provided value as the binary value of a constant
           keyColVal =
             new (heap) ConstValue(pkType,
-                                  (void *) &encodedKey[keyColOffset],
+                                  (void *) &actEncodedKey[keyColOffset],
                                   decodedValueLen,
-                                  new(heap) NAString("'<region boundary>'"),
+                                  NULL,
                                   heap);
         }
 
@@ -1552,7 +1654,10 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
     }
 
   // make sure we consumed the entire key but no more than that
-  CMPASSERT(keyColOffset == encodedKeyLen);
+  CMPASSERT(keyColOffset == totalKeyLength);
+
+  if (actEncodedKey != encodedKey)
+    NADELETEBASIC(actEncodedKey, heap);
 
   return result;
 } // static getRangePartitionBoundaryValuesFromEncodedKeys()

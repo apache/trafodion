@@ -36,6 +36,7 @@
 #include "Int64.h"
 #include "float.h"
 #include "str.h"
+#include "exp_clause_derived.h"
 
 
 #define NAME_BUF_LEN 100
@@ -766,6 +767,47 @@ void NumericType::minRepresentableValue(void*, Lng32*, NAString**,
 void NumericType::maxRepresentableValue(void*, Lng32*, NAString**,
 					CollHeap* h,
 					NABoolean sqlmpKeyGen) const {}
+
+NABoolean NumericType::createSQLLiteral(const char * buf,
+                                        NAString *&stringLiteral,
+                                        NABoolean &isNull,
+                                        CollHeap *h) const
+{
+  if (NAType::createSQLLiteral(buf, stringLiteral, isNull, h))
+    return TRUE;
+
+  // For all the numeric types, just converting the number to a string value should
+  // produce a valid SQL literal.
+  const int RESULT_LEN = 100;
+  char result[RESULT_LEN];
+  const char *valPtr = buf + getSQLnullHdrSize();
+  unsigned short resultLen = 0;
+  ComDiagsArea *diags = NULL;
+
+  ex_expr::exp_return_type ok =
+    convDoIt((char *) valPtr,
+             getTotalSize(),
+             getFSDatatype(),
+             getPrecision(),
+             getScale(),
+             result,
+             RESULT_LEN,
+             REC_BYTE_V_ASCII,
+             0,
+             SQLCHARSETCODE_UTF8,
+             (char *) &resultLen,
+             sizeof(resultLen),
+             h,
+             &diags,
+             conv_case_index::CONV_UNKNOWN,
+             0);
+
+   if ( ok != ex_expr::EXPR_OK || resultLen == 0)
+     return FALSE;
+
+   stringLiteral = new(h) NAString(result, resultLen, h);
+   return TRUE;
+}
 
 // -----------------------------------------------------------------------
 // Print function for debugging

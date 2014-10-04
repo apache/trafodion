@@ -238,6 +238,11 @@ public:
 			     NAMemory* h=0,
                              NABoolean sqlmpKeyGen=FALSE) const;
 
+  virtual NABoolean createSQLLiteral(const char * buf,       // in
+                                     NAString *&sqlLiteral,  // out
+                                     NABoolean &isNull,      // out
+                                     CollHeap *h) const;     // in/out
+
   // ---------------------------------------------------------------------
   // Method that returns the encoded form for a given value to be
   // used by the optimizer for estimations.

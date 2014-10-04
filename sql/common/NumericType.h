@@ -210,6 +210,11 @@ public:
                                      NABoolean sqlmpKeyGen=FALSE) const;
 
 
+  virtual NABoolean createSQLLiteral(const char * buf,       // in
+                                     NAString *&sqlLiteral,  // out
+                                     NABoolean &isNull,      // out
+                                     CollHeap *h) const;     // in/out
+
   // ---------------------------------------------------------------------
   //  Method that returns the encoded form (in floating point) for a 
   //  given value.  This value will then be used by the optimizer
