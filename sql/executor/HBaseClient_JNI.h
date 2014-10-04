@@ -114,76 +114,6 @@ private:
   static pthread_mutex_t javaMethodsInitMutex_;
 };
 
-// ===========================================================================
-// ===== The KeyValue class implements access to the Java 
-// ===== KeyValue class.
-// ===========================================================================
-
-typedef enum {
-  KYV_OK     = JOI_OK
- ,KYV_FIRST  = BAL_LAST
- ,KYV_ERROR_GETBUFFER = KYV_FIRST
- ,KYV_LAST
-} KYV_RetCode;
-
-class KeyValue : public JavaObjectInterface
-{
-public:
-  KeyValue(NAHeap *heap, jobject jObj = NULL)
-    :  JavaObjectInterface(heap, jObj)
-  {}
-  
-  // Destructor
-  virtual ~KeyValue();
-  
-  // Initialize JVM and all the JNI configuration.
-  // Must be called.
-  KYV_RetCode    init();
-  
-  Int32 getBufferSize();
-  char* getBuffer(char* targetBuffer, Int32 buffSize);
-  Int32 getFamilyLength();
-  Int32 getFamilyOffset();
-  Int32 getKeyLength();
-  Int32 getKeyOffset();
-  Int32 getQualifierLength();
-  Int32 getQualifierOffset();
-  Int32 getRowLength();
-  Int32 getRowOffset();
-  Int32 getValueLength();
-  Int32 getValueOffset();
-  Int64 getTimestamp();
-  
-  TCell* toTCell();
-      
-  // Get the error description.
-  virtual char* getErrorText(KYV_RetCode errEnum);
-
-private:  
-  enum JAVA_METHODS {
-    JM_CTOR = 0, 
-    JM_BUFFER, 
-    JM_FAM_LEN,
-    JM_FAM_OFF,
-    JM_KEY_LEN,
-    JM_KEY_OFF,
-    JM_QUA_LEN,
-    JM_QUA_OFF,
-    JM_ROW_LEN,
-    JM_ROW_OFF,
-    JM_VAL_LEN,
-    JM_VAL_OFF,
-    JM_TS,    
-    JM_LAST
-  };
-  
-  static jclass          javaClass_;  
-  static JavaMethodInit* JavaMethods_;
-  static bool javaMethodsInitialized_;
-  // this mutex protects both JaveMethods_ and javaClass_ initialization
-  static pthread_mutex_t javaMethodsInitMutex_;
-};
-
 class HBaseClientRequest
 {
 public :
@@ -206,7 +136,7 @@ public :
 
 typedef enum {
   HTC_OK     = JOI_OK
- ,HTC_FIRST  = KYV_LAST
+ ,HTC_FIRST  = BAL_LAST
  ,HTC_DONE   = HTC_FIRST
  ,HTC_DONE_RESULT = 1000
  ,HTC_DONE_DATA
@@ -217,14 +147,12 @@ typedef enum {
  ,HTC_ERROR_CLOSE_EXCEPTION
  ,HTC_ERROR_SCANOPEN_PARAM
  ,HTC_ERROR_SCANOPEN_EXCEPTION
- ,HTC_ERROR_SCANFETCH_EXCEPTION
  ,HTC_ERROR_FETCHROWS_EXCEPTION
  ,HTC_ERROR_SCANCLOSE_EXCEPTION
  ,HTC_ERROR_GETROWOPEN_PARAM
  ,HTC_ERROR_GETROWOPEN_EXCEPTION
  ,HTC_ERROR_GETROWSOPEN_PARAM
  ,HTC_ERROR_GETROWSOPEN_EXCEPTION
- ,HTC_ERROR_GETFETCH_EXCEPTION
  ,HTC_ERROR_GETCLOSE_EXCEPTION
  ,HTC_ERROR_DELETEROW_PARAM
  ,HTC_ERROR_DELETEROW_EXCEPTION
@@ -265,6 +193,8 @@ typedef enum {
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
  ,HTC_SET_JNIOBJECT_EXCEPTION
+ ,HTC_GET_ROWID_EXCEPTION
+ ,HTC_NEXTCELL_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -287,6 +217,7 @@ public:
      jRowIDs_ = NULL;
      jKvsPerRow_ = NULL;
      currentRowNum_ = -1;
+     currentRowCellNum_ = -1;
      prevRowCellNum_ = 0;
      numRowsReturned_ = 0;
      numColsInScan_ = 0;
@@ -309,6 +240,7 @@ public:
      p_kvsPerRow_ = NULL;
      numCellsReturned_ = 0;
      numCellsAllocated_ = 0;
+     rowIDLen_ = 0;
   }
 
   // Destructor
@@ -323,12 +255,9 @@ public:
 			const TextVec *inColValuesToCompare,
 			Float32 samplePercent = -1.0f);
   HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, 
-		Int64 timestamp, NABoolean directRow);
+		Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, 
-		Int64 timestamp, NABoolean directRow);
-  HTC_RetCode scanFetch();
-  HTC_RetCode getFetch();
-  KeyValue*   getLastFetchedCell();
+		Int64 timestamp);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
@@ -373,7 +302,12 @@ public:
               Lng32 &colValLen);
   HTC_RetCode getNumCols(int &numCols);
   HTC_RetCode getRowID(HbaseStr &rowID);
-    
+  HTC_RetCode nextCell(HbaseStr &rowId,
+                 HbaseStr &colFamName,
+                 HbaseStr &colName,
+                 HbaseStr &colVal,
+                 Int64 &timestamp);
+
   //  HTC_RetCode codeProcAggrGetResult();
 
   const char *getTableName();
@@ -404,9 +338,6 @@ private:
    ,JM_SCAN_OPEN 
    ,JM_GET_OPEN  
    ,JM_GETS_OPEN 
-   ,JM_SCAN_FETCH
-   ,JM_GET_FETCH 
-   ,JM_GET_CELL  
    ,JM_DELETE    
    ,JM_CHECKANDDELETE
    ,JM_CHECKANDUPDATE
@@ -455,11 +386,13 @@ private:
   jint *p_kvsPerRow_;
   jint numRowsReturned_;
   int currentRowNum_;
+  int currentRowCellNum_;
   int numColsInScan_;
   int numReqRows_;
   int numCellsReturned_;
   int numCellsAllocated_;
   int prevRowCellNum_;
+  int rowIDLen_;
   char *colName_;
   char inlineColName_[INLINE_COLNAME_LEN+1];
   short colNameAllocLen_;

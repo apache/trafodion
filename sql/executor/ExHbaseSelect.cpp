@@ -73,27 +73,42 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = SCAN_FETCH;
+	      step_ = NEXT_ROW;
 	  }
 	  break;
-
-	case SCAN_FETCH:
-	  {
-	    retcode = tcb_->ehi_->scanFetch(tcb_->rowId_, tcb_->colFamName_, 
-					    tcb_->colName_, tcb_->colVal_, tcb_->colTS_);
-	    if (retcode == HBASE_ACCESS_EOD)
-	      {
-		step_ = SCAN_CLOSE;
-		break;
-	      }
-
-	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanFetch"))
-	      step_ = HANDLE_ERROR;
+	case NEXT_ROW:
+ 	  {
+	    retcode = tcb_->ehi_->nextRow();
+	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
+	    {
+	       step_ = SCAN_CLOSE;
+	       break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextRow"))
+	       step_ = HANDLE_ERROR;
 	    else
-	      step_ = CREATE_ROW;
+	       step_ = NEXT_CELL;
 	  }
 	  break;
-
+	case NEXT_CELL:
+          {
+ 	    if (tcb_->colVal_.val == NULL)
+	       tcb_->colVal_.val = new (tcb_->getHeap()) 
+	          char[tcb_->hbaseAccessTdb().convertRowLen()];
+	    tcb_->colVal_.len = tcb_->hbaseAccessTdb().convertRowLen();        
+	    retcode = tcb_->ehi_->nextCell(tcb_->rowId_, tcb_->colFamName_, 
+	       tcb_->colName_, tcb_->colVal_, tcb_->colTS_);
+	    if (retcode == HBASE_ACCESS_EOD)
+	    {
+               step_ = NEXT_ROW;
+               break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextCell"))
+               step_ = HANDLE_ERROR;
+	    else
+               step_ = CREATE_ROW;
+	  }
+	  break;
 	case CREATE_ROW:
 	  {
 	    rc = tcb_->createColumnwiseRow();
@@ -118,14 +133,14 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 	    else if (rc == -1)
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = SCAN_FETCH;
+	      step_ = NEXT_CELL;
 	  }
 	  break;
 
 	case RETURN_ROW:
 	  {
-	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->hbaseAccessTdb().convertRowLen(), 
-				 &rc, FALSE))
+	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, 
+                      tcb_->hbaseAccessTdb().convertRowLen(), &rc, FALSE))
 	      return 1;
 	    
 	    if (tcb_->getHbaseAccessStats())
@@ -138,7 +153,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    step_ = SCAN_FETCH;
+	    step_ = NEXT_CELL;
 	  }
 	  break;
 
@@ -214,83 +229,53 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = SCAN_FETCH;
+	      step_ = NEXT_ROW;
 
 	    tcb_->isEOD_ = FALSE;
 	  }
 	  break;
 
-	case SCAN_FETCH:
+	case NEXT_ROW:
 	  {
-	    retcode = tcb_->ehi_->scanFetch(tcb_->rowId_, tcb_->colFamName_, 
+	    tcb_->rowwiseRowLen_ = 0;
+	    retcode = tcb_->ehi_->nextRow();
+	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
+	    {
+	       step_ = SCAN_CLOSE;
+	       break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextRow"))
+	       step_ = HANDLE_ERROR;
+	    else
+	       step_ = NEXT_CELL;
+	  }
+	  break;
+
+	case NEXT_CELL:
+	  {
+	    if (tcb_->colVal_.val == NULL)
+	       tcb_->colVal_.val = new (tcb_->getHeap()) 
+ 	       char[tcb_->hbaseAccessTdb().convertRowLen()];
+	    tcb_->colVal_.len = tcb_->hbaseAccessTdb().convertRowLen();        
+	    retcode = tcb_->ehi_->nextCell(tcb_->rowId_, tcb_->colFamName_, 
 					    tcb_->colName_, tcb_->colVal_,
 					    tcb_->colTS_);
-
 	    if (retcode == HBASE_ACCESS_EOD)
-	      {
-		tcb_->isEOD_ = TRUE;
-
-		//		if ((! tcb_->prevRowId_.val) || (strlen(tcb_->rowwiseRow_) == 0))
-		if ((! tcb_->prevRowId_.val) || (tcb_->rowwiseRowLen_ == 0))
-		  step_ = DONE;
-		else
-		  step_ = CREATE_ROW;
-		break;
-	      }
-
-	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanFetch"))
-	      {
-		step_ = HANDLE_ERROR;
-		break;
-	      }
-
-	    if (!tcb_->prevRowId_.val)
-	      {
-		tcb_->setupPrevRowId();
-	      }
-	    else if (memcmp(tcb_->prevRowId_.val, tcb_->rowId_.val, tcb_->rowId_.len) == 0)
-	      {
-		//		str_sprintf(&tcb_->rowwiseRow_[strlen(tcb_->rowwiseRow_)], ", ");
-	      }
+	    { 
+	       step_ = CREATE_ROW;
+	       break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextCell"))
+               step_ = HANDLE_ERROR;
 	    else
-	      {
-		step_ = CREATE_ROW;
-		break;
-	      }
-
-	    step_ = APPEND_ROW;
+	       step_ = APPEND_ROW;
 	  }
 	  break;
 
 	case APPEND_ROW:
 	  {
-	    // values are stored in the following format:
-	    //  colNameLen(2 bytes)
-	    //  colName for colNameLen bytes
-	    //  colValueLen(4 bytes)
-	    //  colValue for colValueLen bytes.
-	    //
-	    // Attribute values are not necessarily null-terminated. 
-	    // Cannot use string functions.
-	    //
-	    char* pos = tcb_->rowwiseRow_ + tcb_->rowwiseRowLen_;
-
-	    short colNameLen = tcb_->colName_.len;
-	    memcpy(pos, (char*)&colNameLen, sizeof(short));
-	    pos += sizeof(short);
-
-	    memcpy(pos, tcb_->colName_.val, colNameLen);
-	    pos += colNameLen;
-
-	    Lng32 colValueLen = tcb_->colVal_.len;
-	    memcpy(pos, (char*)&colValueLen, sizeof(Lng32));
-	    pos += sizeof(Lng32);
-
-	    memcpy(pos, tcb_->colVal_.val, colValueLen);
-	    pos += colValueLen;
-
-	    tcb_->rowwiseRowLen_ += sizeof(short) + colNameLen + sizeof(Lng32) + colValueLen;
-	    step_ = SCAN_FETCH;
+	    tcb_->copyCell();
+	    step_ = NEXT_CELL;
 	  }
 	  break;
 
@@ -310,7 +295,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 	  }
 	  break;
 
-	  case APPLY_PRED:
+	case APPLY_PRED:
 	  {
 	    rc = tcb_->applyPred(tcb_->scanExpr());
 
@@ -327,17 +312,15 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 	    else if (tcb_->isEOD_)
 	      step_ = SCAN_CLOSE;
 	    else
-	      step_ = APPEND_ROW;
-
-	    tcb_->setupPrevRowId();
+	      step_ = NEXT_ROW;
 	  }
 	  break;
 
 	case RETURN_ROW:
 	  {
 	    rc = 0;
-	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, tcb_->hbaseAccessTdb().convertRowLen(), 
-				 &rc, FALSE))
+	    if (tcb_->moveRowToUpQueue(tcb_->convertRow_, 
+                   tcb_->hbaseAccessTdb().convertRowLen(), &rc, FALSE))
 	      return 1;
 
 	    if (tcb_->getHbaseAccessStats())
@@ -349,13 +332,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 		step_ = SCAN_CLOSE;
 		break;
 	      }
-
-	    tcb_->setupPrevRowId();
-
-	    if (tcb_->isEOD_)
-	      step_ = SCAN_CLOSE;
-	    else
-	      step_ = APPEND_ROW;
+             step_ = NEXT_ROW;
 	  }
 	  break;
 
@@ -448,11 +425,11 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = SCAN_FETCH_NEXT_ROW;
+	      step_ = NEXT_ROW;
 	  }
 	  break;
 
-	case SCAN_FETCH_NEXT_ROW:
+	case NEXT_ROW:
 	  {
 	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
@@ -471,7 +448,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 	    retcode = tcb_->createSQRowDirect();
 	    if (retcode == HBASE_ACCESS_NO_ROW)
 	    {
-	        step_ = SCAN_FETCH_NEXT_ROW;
+	        step_ = NEXT_ROW;
 	        break;
 	    }
 	    if (retcode < 0)
@@ -501,7 +478,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 	    else if (rc == -1)
 	      step_ = HANDLE_ERROR;
 	    else
-              step_ = SCAN_FETCH_NEXT_ROW;
+              step_ = NEXT_ROW;
 	  }
 	  break;
 
@@ -521,7 +498,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 		break;
 	      }
 
-            step_ = SCAN_FETCH_NEXT_ROW;
+            step_ = NEXT_ROW;
 	  }
 	  break;
 
@@ -664,36 +641,54 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	    if (tcb_->rowIds_.size() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
-					     tcb_->columns_, -1, FALSE);
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowOpen"))
 		  step_ = HANDLE_ERROR;
 		else
-		  step_ = GET_FETCH;
+		  step_ = NEXT_ROW;
 	      }
 	    else
 	      {
 		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
-					     tcb_->columns_, -1, FALSE);
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
 		else
-		  step_ = GET_FETCH;
+		  step_ = NEXT_ROW;
 	      }
 	      
 	  }
 	  break;
 
-	case GET_FETCH:
-	  {
-	    retcode = tcb_->ehi_->getFetch(tcb_->rowId_, tcb_->colFamName_, 
-					   tcb_->colName_, tcb_->colVal_, tcb_->colTS_);
-	    if (retcode == HBASE_ACCESS_EOD)
-	      {
-		step_ = GET_CLOSE;
-		break;
-	      }
+	case NEXT_ROW:
+	  {       
+	    retcode = tcb_->ehi_->nextRow();
+	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
+	    {
+ 	       step_ = GET_CLOSE;
+	       break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextRow"))
+	       step_ = HANDLE_ERROR;
+	    else
+	       step_ = NEXT_CELL;
+	  }
+	  break;
 
-	    if (tcb_->setupError(retcode, "ExpHbaseInterface::getFetch"))
+	case NEXT_CELL:
+	  {
+	    if (tcb_->colVal_.val == NULL)
+	        tcb_->colVal_.val = new (tcb_->getHeap()) 
+	        char[tcb_->hbaseAccessTdb().convertRowLen()];
+	    tcb_->hbaseAccessTdb().convertRowLen();
+	    retcode = tcb_->ehi_->nextCell( tcb_->rowId_, tcb_->colFamName_, 
+	       tcb_->colName_, tcb_->colVal_, tcb_->colTS_);
+	    if (retcode == HBASE_ACCESS_EOD)
+	    {
+		step_ = NEXT_ROW;
+		break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextCell"))
 	      step_ = HANDLE_ERROR;
 	    else
 	      step_ = CREATE_ROW;
@@ -725,7 +720,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	    else if (rc == -1)
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = GET_FETCH;
+	      step_ = NEXT_CELL;
 	  }
 	  break;
 
@@ -746,7 +741,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    step_ = GET_FETCH;
+	    step_ = NEXT_CELL;
 	  }
 	  break;
 
@@ -822,49 +817,53 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	    if (tcb_->rowIds_.size() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
-					     tcb_->columns_, -1, FALSE);
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowOpen"))
 		  step_ = HANDLE_ERROR;
 		else
-		  step_ = GET_FETCH;
+		  step_ = NEXT_ROW;
 	      }
 	    else
 	      {
 		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
-					     tcb_->columns_, -1, FALSE);
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
 		else
-		  step_ = GET_FETCH;
+		  step_ = NEXT_ROW;
 	      }
 
 	  }
 	  break;
 
-	case GET_FETCH:
+	case NEXT_ROW:
 	  {
-	    retcode = tcb_->ehi_->getFetch(tcb_->rowId_, tcb_->colFamName_, 
-					   tcb_->colName_, tcb_->colVal_, tcb_->colTS_);
-	    if (retcode == HBASE_ACCESS_EOD)
-	      {
-		if (! tcb_->prevRowId_.val)
-		  step_ = DONE;
-		else
-		  step_ = CREATE_ROW;
-		break;
-	      }
-
-	    if (!tcb_->prevRowId_.val)
-	      {
-		tcb_->setupPrevRowId();
-	      }
+	    retcode = tcb_->ehi_->nextRow();
+	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
+	    {
+	       step_ = GET_CLOSE;
+	       break;
+	    }
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextRow"))
+	       step_ = HANDLE_ERROR;
 	    else
-	      {
-		//		str_sprintf(&tcb_->rowwiseRow_[strlen(tcb_->rowwiseRow_)], ", ");
-	      }
-	      
-	    if (tcb_->setupError(retcode, "ExpHbaseInterface::getFetch"))
-	      step_ = HANDLE_ERROR;
+	       step_ = NEXT_CELL;
+	  }
+	  break;
+
+	case NEXT_CELL:
+	  {
+	     if (tcb_->colVal_.val == NULL)
+	        tcb_->colVal_.val = new (tcb_->getHeap()) 
+		   char[tcb_->hbaseAccessTdb().convertRowLen()];
+	    tcb_->colVal_.len = tcb_->hbaseAccessTdb().convertRowLen();
+	    retcode = tcb_->ehi_->nextCell(tcb_->rowId_, tcb_->colFamName_, 
+	        tcb_->colName_, tcb_->colVal_, tcb_->colTS_);
+	    if (retcode == HBASE_ACCESS_EOD)
+	       step_ = CREATE_ROW;
+	    else
+	    if (tcb_->setupError(retcode, "ExpHbaseInterface::nextCell"))
+	       step_ = HANDLE_ERROR;
 	    else
 	      step_ = APPEND_ROW;
 	  }
@@ -872,33 +871,8 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 
 	case APPEND_ROW:
 	  {
-	    // values are stored in the following format:
-	    //  colNameLen(2 bytes)
-	    //  colName for colNameLen bytes
-	    //  colValueLen(4 bytes)
-	    //  colValue for colValueLen bytes.
-	    //
-	    // Attribute values are not necessarily null-terminated. 
-	    // Cannot use string functions.
-	    //
-	    char* pos = tcb_->rowwiseRow_ + tcb_->rowwiseRowLen_;
-
-	    short colNameLen = tcb_->colName_.len;
-	    memcpy(pos, (char*)&colNameLen, sizeof(short));
-	    pos += sizeof(short);
-
-	    memcpy(pos, tcb_->colName_.val, colNameLen);
-	    pos += colNameLen;
-
-	    Lng32 colValueLen = tcb_->colVal_.len;
-	    memcpy(pos, (char*)&colValueLen, sizeof(Lng32));
-	    pos += sizeof(Lng32);
-
-	    memcpy(pos, tcb_->colVal_.val, colValueLen);
-	    pos += colValueLen;
-
-	    tcb_->rowwiseRowLen_ += sizeof(short) + colNameLen + sizeof(Lng32) + colValueLen;
-	    step_ = GET_FETCH;
+	    tcb_->copyCell();
+	    step_ = NEXT_CELL;
 	  }
 	  break;
 
@@ -940,13 +914,6 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	    
 	    if (tcb_->getHbaseAccessStats())
 	      tcb_->getHbaseAccessStats()->incUsedRows();
-
-	    if ((pentry_down->downState.request == ex_queue::GET_N) &&
-		(pentry_down->downState.requestValue == tcb_->matches_))
-	      {
-		step_ = GET_CLOSE;
-		break;
-	      }
 
 	    step_ = GET_CLOSE;
 	  }
@@ -1019,26 +986,26 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    if (tcb_->rowIds_.size() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
-					     tcb_->columns_, -1, TRUE);
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowOpen"))
 		  step_ = HANDLE_ERROR;
 		else
-		  step_ = GET_FETCH;
+		  step_ = NEXT_ROW;
 	      }
 	    else
 	      {
 		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
-					     tcb_->columns_, -1, TRUE);
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
 		else
-		  step_ = GET_FETCH;
+		  step_ = NEXT_ROW;
 	      }
 	      
 	  }
 	  break;
 
-	case GET_FETCH:
+	case NEXT_ROW:
 	  {
 	    retcode = tcb_->ehi_->nextRow();
             // EOD is end of data, EOR is end of result set. 
@@ -1056,7 +1023,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
             if ( (retcode == HBASE_ACCESS_EOD) && 
                  (tcb_->rowIds_.size() > 1) )
             {
-                step_ = GET_FETCH;
+                step_ = NEXT_ROW;
                 break;
             }
  
@@ -1072,7 +1039,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    retcode = tcb_->createSQRowDirect();
 	    if (retcode == HBASE_ACCESS_NO_ROW)
 	    {
-	       step_ = GET_FETCH;
+	       step_ = NEXT_ROW;
 	       break;
 	    }
 	    if (retcode < 0)
@@ -1103,7 +1070,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    else if (rc == -1)
 	      step_ = HANDLE_ERROR;
 	    else
-	      step_ = GET_FETCH;
+	      step_ = NEXT_ROW;
 	  }
 	  break;
 
@@ -1124,7 +1091,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 		break;
 	      }
 
-	    step_ = GET_FETCH;
+	    step_ = NEXT_ROW;
 	  }
 	  break;
 

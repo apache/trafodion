@@ -82,8 +82,6 @@ public class HTableClient {
 	private String tableName;
 
 	private ResultScanner scanner = null;
-	private ResultIterator resultIterator = null;
-	KeyValue lastFetchedCell = null;
 	Result[] getResultSet = null;
 	String lastError;
         RMInterface table = null;
@@ -289,7 +287,6 @@ public class HTableClient {
 		    scanner = table.getScanner(scan);
 		}
 		if (logger.isTraceEnabled()) logger.trace("startScan(). After getScanner. Scanner: " + scanner);
-		resultIterator = new ResultIterator(scanner);
 		
 		preFetch = inPreFetch;
 		if (preFetch)
@@ -308,7 +305,7 @@ public class HTableClient {
 
 	public boolean startGet(long transID, byte[] rowID, 
                      Object[] columns,
-		     long timestamp, boolean directRow) throws IOException {
+		     long timestamp) throws IOException {
 
 	    if (logger.isTraceEnabled()) logger.trace("Enter startGet(" + tableName + 
 			     " #cols: " + ((columns == null) ? 0:columns.length ) +
@@ -338,12 +335,8 @@ public class HTableClient {
 			return false;
 		}
 		if (logger.isTraceEnabled()) logger.trace("startGet, result: " + getResult);
-		if (directRow) {
-			getResultSet = new Result[1];
-			getResultSet[0] = getResult;
-		} else {
-			resultIterator = new ResultIterator(getResult);
-		}
+		getResultSet = new Result[1];
+		getResultSet[0] = getResult;
 		if (logger.isTraceEnabled()) logger.trace("Exit 2 startGet. size: " + getResult.size());
 		return true;
 	}
@@ -366,8 +359,7 @@ public class HTableClient {
 	}
 
 	public boolean startGet(long transID, Object[] rows,
-			Object[] columns, long timestamp,
-			boolean directRow) 
+			Object[] columns, long timestamp)
                         throws IOException {
 
 		if (logger.isTraceEnabled()) logger.trace("Enter startGet(multi-row) " + tableName);
@@ -395,33 +387,7 @@ public class HTableClient {
 		} else {
 			getResultSet = table.get(listOfGets);
 		}
-		if (directRow) 
-			return true;
-		else {
-			if (getResultSet.length > 0) {
-			        resultIterator = new ResultIterator(getResultSet);
-			} else
-				resultIterator = null;
-		}
 		return true;
-	}
-
-	public boolean scanFetch() throws IOException {
-		if (logger.isTraceEnabled()) logger.trace("Enter scanFetch() " + tableName);
-		if (resultIterator == null) {
-			return false;
-		}
-
-		lastFetchedCell = resultIterator.nextCell();
-		if (lastFetchedCell == null) {
-			return false; 
-		}
-		return true;
-	}
-
-	public boolean getFetch() throws IOException {
-		if (logger.isTraceEnabled()) logger.trace("Enter getFetch() " + tableName);
-		return scanFetch();
 	}
 
 	public int fetchRows() throws IOException, 
@@ -471,12 +437,19 @@ public class HTableClient {
 		if (result == null || result.length == 0)
 			return 0; 
 		int rowsReturned = result.length;
+		int numTotalCells = 0;
+		if (numColsInScan == 0)
+		{
+			for (int i = 0; i < result.length; i++) {	
+				numTotalCells += result[i].size();
+			}
+		}
+		else
 		// There can be maximum of 2 versions per kv
 		// So, allocate place holder to keep cell info
 		// for that many KVs
-		int numTotalCells = 2 * rowsReturned * numColsInScan;
+			numTotalCells = 2 * rowsReturned * numColsInScan;
 		int numColsReturned;
-		HashMap<String, Integer>  kvMap = null;
 		Cell[] kvList;
 		Cell kv;
 
@@ -538,13 +511,6 @@ public class HTableClient {
 		return rowsReturned;	
 	}		
 	
-	public KeyValue getLastFetchedCell() {
-		if (logger.isTraceEnabled()) logger.trace("Enter getLastFetchedCell() ");
-		if (lastFetchedCell == null)
-			if (logger.isTraceEnabled()) logger.trace("  Returning empty.");
-		return lastFetchedCell;
-	}
-
 	public boolean deleteRow(long transID, byte[] rowID, 
 				 Object[] columns,
 				 long timestamp) throws IOException {
@@ -844,8 +810,6 @@ public class HTableClient {
 			executorService.shutdown();
 			executorService = null;
 		}
-		resultIterator = null;
-		lastFetchedCell = null;
 		getResultSet = null;
 		if (cleanJniObject) {
 			if (jniObject != 0)

@@ -420,6 +420,8 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
   row_.len = 0;
   rows_.val = NULL;
   rows_.len = 0;
+  colVal_.val = 0;
+  colVal_.len = 0;
 }
     
 ExHbaseAccessTcb::~ExHbaseAccessTcb()
@@ -457,6 +459,8 @@ void ExHbaseAccessTcb::freeResources()
      NADELETEBASIC(directRowIDBuffer_, getHeap());
   if (directRowBuffer_)
      NADELETEBASIC(directRowBuffer_, getHeap());
+  if (colVal_.val != NULL)
+     NADELETEBASIC(colVal_.val, getHeap());
 }
 
 
@@ -762,37 +766,17 @@ short ExHbaseAccessTcb::createColumnwiseRow()
 	      
 	    case HBASE_COL_FAMILY_INDEX:
 	      {
-		Lng32 i = 0;
-		NABoolean done = FALSE;
-		while (not done)
-		  {
-		    if (colName_.val[i] != ':')
-		      i++;
-		    else
-		      done = TRUE;
-		  }
-		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = i; //colName_.len;
+		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = colFamName_.len;
                 str_cpy_all(&asciiRow_[attr->getOffset()],
-                          colName_.val, i);
+                          colFamName_.val, colFamName_.len);
 	      }
 	      break;
 	      
 	    case HBASE_COL_NAME_INDEX:
 	      {
-		Lng32 i = 0;
-		NABoolean done = FALSE;
-		while (not done)
-		  {
-		    if (colName_.val[i] != ':')
-		      i++;
-		    else
-		      done = TRUE;
-		  }
-
-                short colNameLen = colName_.len - (i+1);
-		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = colNameLen;
+		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = colName_.len;
                 str_cpy_all(&asciiRow_[attr->getOffset()],
-                          &colName_.val[i+1], colNameLen);
+                          colName_.val, colName_.len);
 	      }
 	      break;
 	      
@@ -832,6 +816,40 @@ short ExHbaseAccessTcb::createColumnwiseRow()
   return 0;
 }
 
+short ExHbaseAccessTcb::copyCell()
+{
+    // values are stored in the following format:
+    //  colNameLen(2 bytes)
+    //  colName for colNameLen bytes
+    //  colValueLen(4 bytes)
+    //  colValue for colValueLen bytes.
+    //
+    //  Attribute values are not necessarily null-terminated. 
+    // Cannot use string functions.
+    //
+    //
+    char* pos = rowwiseRow_ + rowwiseRowLen_;
+    short colNameLen = colName_.len + colFamName_.len + 1;
+    memcpy(pos, (char*)&colNameLen, sizeof(short));
+    pos += sizeof(short);
+
+    memcpy(pos, colFamName_.val, colFamName_.len);
+    pos += colFamName_.len;
+    *pos++ = ':';
+    memcpy(pos, colName_.val, colName_.len);
+    pos += colName_.len;
+
+    Lng32 colValueLen = colVal_.len;
+    memcpy(pos, (char*)&colValueLen, sizeof(Lng32));
+    pos += sizeof(Lng32);
+
+    memcpy(pos, colVal_.val, colValueLen);
+    pos += colValueLen;
+
+    rowwiseRowLen_ += sizeof(short) + colNameLen + sizeof(Lng32) + colValueLen;
+    return 0;
+}
+
 // return:
 // 0, if all ok.
 // -1, if error.
@@ -852,8 +870,8 @@ short ExHbaseAccessTcb::createRowwiseRow()
 	    {
 	    case HBASE_ROW_ROWID_INDEX:
 	      {
-		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = prevRowId_.len;
-	        str_cpy_all(&asciiRow_[attr->getOffset()], prevRowId_.val, prevRowId_.len);
+		*(short*)&asciiRow_[attr->getVCLenIndOffset()] = rowId_.len;
+	        str_cpy_all(&asciiRow_[attr->getOffset()], rowId_.val, rowId_.len);
 	      }
 	      break;
 	      

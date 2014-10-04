@@ -258,6 +258,7 @@ protected:
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
   short createColumnwiseRow();
   short createRowwiseRow();
+  short copyCell();
   Lng32 createSQRowDirect();
   short getColPos(char * colName, Lng32 colNameLen, Lng32 &idx);
   short applyPred(ex_expr * expr,UInt16 tuppIndex = 0,
@@ -447,7 +448,8 @@ public:
   enum {
     NOT_STARTED
     , SCAN_OPEN
-    , SCAN_FETCH
+    , NEXT_ROW
+    , NEXT_CELL 
     , SCAN_CLOSE
     , CREATE_ROW
     , RETURN_ROW
@@ -471,7 +473,8 @@ public:
   enum {
     NOT_STARTED
     , SCAN_OPEN
-    , SCAN_FETCH
+    , NEXT_ROW
+    , NEXT_CELL
     , SCAN_CLOSE
     , APPEND_ROW
     , CREATE_ROW
@@ -498,8 +501,8 @@ public:
   enum {
     NOT_STARTED
     , SCAN_OPEN
-    , SCAN_FETCH_NEXT_ROW
-    , SCAN_FETCH_ROW_VEC
+    , NEXT_ROW
+    , NEXT_CELL
     , SCAN_CLOSE
     , APPEND_ROW
     , CREATE_ROW
@@ -524,7 +527,8 @@ public:
   enum {
     NOT_STARTED
     , GET_OPEN
-    , GET_FETCH
+    , NEXT_ROW
+    , NEXT_CELL
     , GET_CLOSE 
     , CREATE_ROW
     , APPLY_PRED
@@ -549,7 +553,8 @@ public:
   enum {
     NOT_STARTED
     , GET_OPEN
-    , GET_FETCH
+    , NEXT_ROW
+    , NEXT_CELL
     , GET_CLOSE 
     , APPEND_ROW
     , CREATE_ROW
@@ -576,7 +581,8 @@ public:
   enum {
     NOT_STARTED
     , GET_OPEN
-    , GET_FETCH
+    , NEXT_ROW
+    , NEXT_CELL
     , GET_CLOSE 
     , APPEND_ROW
     , CREATE_ROW
@@ -713,7 +719,8 @@ public:
     NOT_STARTED
     , SCAN_INIT
     , SCAN_OPEN
-    , SCAN_FETCH
+    , NEXT_ROW
+    , NEXT_CELL
     , CREATE_ROW
     , APPLY_PRED
     , SCAN_CLOSE
@@ -842,8 +849,7 @@ public:
     NOT_STARTED
     , SCAN_INIT
     , SCAN_OPEN
-    , SCAN_FETCH_NEXT_ROW
-    , SCAN_FETCH_ROW_VEC
+    , NEXT_ROW
     , CREATE_FETCHED_ROW
     , CREATE_UPDATED_ROW
     , EVAL_CONSTRAINT
@@ -878,7 +884,8 @@ public:
     NOT_STARTED
     , SCAN_INIT
     , SCAN_OPEN
-    , SCAN_FETCH_NEXT_CELL
+    , NEXT_ROW
+    , NEXT_CELL
     , APPEND_CELL_TO_ROW
     , CREATE_FETCHED_ROWWISE_ROW
     , CREATE_UPDATED_ROWWISE_ROW
@@ -907,7 +914,7 @@ public:
     NOT_STARTED
     , SETUP_UMD
     , GET_NEXT_ROWID
-    , GET_FETCH_ROW_VEC
+    , NEXT_ROW 
     , CREATE_FETCHED_ROW
     , CREATE_UPDATED_ROW
     , CREATE_MERGE_INSERTED_ROW
@@ -950,7 +957,8 @@ public:
     , SETUP_UMD
     , SCAN_INIT
     , GET_NEXT_ROWID
-    , GET_FETCH
+    , NEXT_ROW
+    , NEXT_CELL
     , APPEND_CELL_TO_ROW
     , CREATE_FETCHED_ROW
     , CREATE_UPDATED_ROW
