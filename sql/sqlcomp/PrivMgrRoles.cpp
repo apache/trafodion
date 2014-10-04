@@ -920,8 +920,76 @@ PrivStatus PrivMgrRoles::populateCreatorGrants(const std::string & authsLocation
 
 MyTable &myTable = static_cast<MyTable &>(myTable_);
 
-   return myTable.insertSelect(authsLocation);
-   
+   // See if the table is empty before inserting any rows
+
+std::string whereClause;
+
+int64_t expectedRows = 0;
+
+PrivStatus privStatus = myTable.selectCountWhere(whereClause,expectedRows);
+
+   if (privStatus == STATUS_ERROR)
+      return privStatus;
+
+   if (expectedRows != 0)
+   {
+      std::string message ("Found ");
+      message += to_string((long long int)expectedRows);
+      message += " rows in ROLE_USAGE table, expecting 0 rows";
+      PRIVMGR_INTERNAL_ERROR(message.c_str());
+      return STATUS_ERROR;
+   }
+
+   // insert the rows
+   privStatus = myTable.insertSelect(authsLocation);
+
+   if (privStatus == STATUS_ERROR)
+      return privStatus;
+  
+   // make sure that the number rows inserted match the expected.
+   // get the number of rows inserted
+int64_t insertedRows;
+
+   privStatus = myTable.selectCountWhere(whereClause,insertedRows);
+
+   if (privStatus == STATUS_ERROR)
+      return privStatus;
+
+   // get number rows expected
+std::string selectStmt ("SELECT COUNT(*) FROM  ");
+
+   whereClause = " where AUTH_TYPE = 'R'";
+   selectStmt += authsLocation;
+   selectStmt += " ";
+   selectStmt += whereClause;
+
+int32_t length = 0;
+ExeCliInterface cliInterface(STMTHEAP);
+
+int32_t cliRC = cliInterface.executeImmediate(selectStmt.c_str(),
+                                              (char*)&expectedRows,
+                                              &length,NULL);
+
+   if (cliRC < 0)
+   {
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return STATUS_ERROR;
+   }
+
+   // Check to see if rows inserted match expected rows
+   if (expectedRows != insertedRows)
+   {
+      std::string message ("Expected to insert ");
+      message += to_string((long long int)expectedRows);
+      message += " rows into ROLE_USAGE table, instead ";
+      message += to_string((long long int)insertedRows);
+      message += " were found.";
+      PRIVMGR_INTERNAL_ERROR(message.c_str());
+      return STATUS_ERROR;
+   }
+
+   return STATUS_GOOD;
+
 }
 //***************** End of PrivMgrRoles::populateCreatorGrants *****************
 
@@ -1361,7 +1429,7 @@ PrivStatus MyTable::insertSelect(const std::string & authsLocation)
 
 char insertStatement[2000];
 
-   sprintf(insertStatement, "INSERT INTO %s SELECT A1.AUTH_ID, A1.AUTH_DB_NAME, A1.AUTH_CREATOR,"
+   sprintf(insertStatement, "UPSERT INTO %s SELECT A1.AUTH_ID, A1.AUTH_DB_NAME, A1.AUTH_CREATOR,"
            "(SELECT AUTH_DB_NAME FROM %s A2 WHERE A2.auth_ID = A1.AUTH_CREATOR)," 
            "(SELECT AUTH_TYPE FROM %s A3 WHERE A3.auth_ID = A1.AUTH_CREATOR),"
            "-2,'_SYSTEM','%c',-1 FROM %s A1 WHERE A1.AUTH_TYPE = 'R'",

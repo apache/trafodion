@@ -2288,6 +2288,7 @@ void ObjectPrivsMDTable::setRow (OutputInfo *pCliRow,
 // *****************************************************************************
 PrivStatus ObjectPrivsMDTable::insert(const PrivMgrMDRow &rowIn)
 {
+
   char insertStmt[2000];
   const ObjectPrivsMDRow &row = static_cast<const ObjectPrivsMDRow &>(rowIn);
 
@@ -2423,6 +2424,28 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
    const std::string &objectsLocation,
    const std::string &authsLocation)
 {
+  // Before inserting rows, make sure that the OBJECT_PRIVILEGES table is empty
+  char buf[2000];
+  sprintf(buf, "select count(*) from %s", tableName_.c_str());
+  Int64 rowsSelected = 0;
+  Lng32 theLen = 0;
+  ExeCliInterface cliInterface(STMTHEAP);
+  int32_t cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &theLen, NULL);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    return STATUS_ERROR;
+  }
+
+  if (rowsSelected != 0)
+  {
+    std::string message ("Found ");
+    message += to_string((long long int)rowsSelected);
+    message += " rows in OBJECT_PRIVILEGES table, expecting 0 rows";
+    PRIVMGR_INTERNAL_ERROR(message.c_str());
+    return STATUS_ERROR;
+  }
+
   // Create bitmaps for all supported object types;
   PrivMgrDesc privDesc;
   privDesc.setAllTableGrantPrivileges(true);
@@ -2439,7 +2462,6 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
 
   // for views, privilegesBitmap is set to 1 (SELECT), wgo to 0 (no)
   std::string systemGrantor("_SYSTEM");
-  char buf[2000];
 
   // Generate case stmt for grantable bitmap
   sprintf (buf, "case when object_type = 'BT' then %ld when object_type = 'VI' then 1 when object_type = 'LB' then %ld when object_type = 'UR' then %ld else %ld end", 
@@ -2449,7 +2471,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   sprintf (buf, "case when object_type = 'BT' then %ld else 0 end", tableBits);
   std::string grantableClause(buf);
 
-  sprintf(buf, "insert into %s select distinct object_uid, trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', object_type, object_owner, (select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, '%s', %d, '%s', '%s', %s, %s from %s o where o.object_type in ('VI','BT','LB','UR')",
+  sprintf(buf, "upsert into %s select distinct object_uid, trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', object_type, object_owner, (select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, '%s', %d, '%s', '%s', %s, %s from %s o where o.object_type in ('VI','BT','LB','UR')",
               tableName_.c_str(),
               authsLocation.c_str(),
               USER_GRANTEE_LIT,
@@ -2458,13 +2480,12 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
               objectsLocation.c_str());
 
   Int64 rowsInserted = 0;
-  ExeCliInterface cliInterface(STMTHEAP);
-  int32_t cliRC = cliInterface.executeImmediate(buf, NULL, NULL, FALSE, &rowsInserted);
+  cliRC = cliInterface.executeImmediate(buf, NULL, NULL, FALSE, &rowsInserted);
   if (cliRC < 0)
-    {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return STATUS_ERROR;
-    }
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    return STATUS_ERROR;
+  }
 
   // Bug:  for some reasons, insert returns NOTFOUND even though the 
   //       operations succeeded.
@@ -2475,9 +2496,9 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   }
 
   // Make sure rows were inserted correctly.
- sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR')",
-              objectsLocation.c_str());
-  Int64 rowsSelected = 0;
+  // Get the number of rows expected (rowsSelected)
+  sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR')",
+               objectsLocation.c_str());
   Lng32 len = 0;
   cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, NULL);
   if (cliRC < 0)
@@ -2486,13 +2507,23 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
     return STATUS_ERROR;
   }
 
+  // Get the number of rows inserted
+  sprintf(buf, "select count(*) from %s", tableName_.c_str());
+  cliRC = cliInterface.executeImmediate(buf, (char*)&rowsInserted, &theLen, NULL);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    return STATUS_ERROR;
+  }
+
+  // Check to see if the number of rows selected match the rows inserted
   if (rowsInserted != rowsSelected)
   {
     std::string message ("Expected to insert ");
     message += to_string((long long int)rowsSelected);
     message += " rows into OBJECT_PRIVILEGES table, instead ";
     message += to_string((long long int)rowsInserted);
-    message += " were inserted.";
+    message += " were found.";
     PRIVMGR_INTERNAL_ERROR(message.c_str());
     return STATUS_ERROR;
   }
