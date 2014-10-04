@@ -171,9 +171,6 @@ public class HTableClient {
 		if (lv_useTransactions == 0) {
 		    this.useTRex = false;
 		}
-		else {
-		    this.useTRex = true;
-		}
 	    }
 	    
 	    //HBase98 TODO -- For scanner
@@ -181,15 +178,12 @@ public class HTableClient {
 	    String useTransactionsScanner = System.getenv("USE_TRANSACTIONS_SCANNER");
 	    if (useTransactionsScanner != null) {
 		int lv_useTransactionsScanner = (Integer.parseInt(useTransactionsScanner));
-		if (lv_useTransactionsScanner == 1) {
-		    this.useTRexScanner = true;
+		if (lv_useTransactionsScanner == 0) {
+		    this.useTRexScanner = false;
 		}
 	    }
 
-	    config.set("hbase.regionserver.class", "org.apache.hadoop.hbase.ipc.TransactionalRegionInterface");
-	    config.set("hbase.regionserver.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionServer");
 	    config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
-	    config.set("hbase.hlog.splitter.impl", "org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter");
 	    table = new RMInterface(config, tblName);
 	    //	    table = new HTable(config, tblName);
 	    logger.debug("Exit HTableClient::init, table object: " + table);
