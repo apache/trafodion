@@ -2010,12 +2010,12 @@ short RangeLookup::codeGen(Generator * generator)
   // now fill the allocated constant space with the data  
   copySplitKeys(constKeyArray, keysLen);
 
-  NAString cvText("SplitValue_xx");
   constValSplitKeys = new (generator->wHeap()) ConstValue(
        new (generator->wHeap()) SQLChar(keysLen,FALSE),
        constKeyArray,
        keysLen,
-       &cvText);
+       NULL,
+       generator->wHeap());
   constValSplitKeys->bindNode(generator->getBindWA());
   constValSplitKeys->codeGen(generator);
 

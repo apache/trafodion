@@ -312,6 +312,43 @@ NAString* NAType::convertToString(double v, NAMemory * h) const
   return NULL;
 }
 
+NABoolean NAType::createSQLLiteral(const char * buf,
+                                   NAString *&stringLiteral,
+                                   NABoolean &isNull,
+                                   CollHeap *h) const
+{
+  // the base class can handle the case of a NULL value and
+  // generate a NULL value, otherwise let the derived class
+  // generate a literal
+  if (supportsSQLnull())
+    {
+      Int32 nullValue = 0;
+
+      switch (getSQLnullHdrSize())
+        {
+        case 2:
+          {
+            Int16 tmp = *((Int16*) buf);
+            nullValue = tmp;
+          }
+          break;
+
+        default:
+          ComASSERT(FALSE);
+        }
+
+      if (nullValue)
+        {
+          stringLiteral = new(h) NAString("NULL", h);
+          isNull = TRUE;
+          return TRUE;
+        }
+    }
+
+  isNull = FALSE;
+  return FALSE;
+}
+
 // keyValue INPUT is the string representation of the current value, then
 // keyValue is OUTPUT as the string rep of the very NEXT value, and RETURN TRUE.
 // If we're already at the maximum value, keyValue returns empty, RETURN FALSE.

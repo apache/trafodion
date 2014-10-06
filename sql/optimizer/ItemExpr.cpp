@@ -9456,6 +9456,7 @@ ConstValue::ConstValue()
      , value_(NULL)
      , storageSize_(0)
      , text_(new (CmpCommon::statementHeap()) NAString("NULL", CmpCommon::statementHeap()))
+     , textIsValidatedSQLLiteralInUTF8_(FALSE)
      , wtext_(0), isSystemSupplied_(FALSE)
      , locale_strval(0)
      , locale_wstrval(0)
@@ -9469,6 +9470,7 @@ ConstValue::ConstValue()
 ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
            : ItemExpr(ITM_CONSTANT)
            , isNull_(IS_NOT_NULL)
+           , textIsValidatedSQLLiteralInUTF8_(FALSE)
            , wtext_(0)
            , type_(new (CmpCommon::statementHeap()) SQLInt(TRUE, FALSE))
 	   , isSystemSupplied_(FALSE)
@@ -9497,7 +9499,7 @@ ConstValue::ConstValue(const NAString & strval,
              enum CharInfo::Coercibility coercibility,
              NAMemory * outHeap)
 : ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL), wtext_(0),
-  isStrLitWithCharSetPrefix_(FALSE),
+  textIsValidatedSQLLiteralInUTF8_(FALSE), isStrLitWithCharSetPrefix_(FALSE),
   isSystemSupplied_(FALSE), locale_wstrval(0), rebindNeeded_(FALSE)
 {
    initCharConstValue(strval, charSet, collation, coercibility, FALSE, outHeap);
@@ -9580,6 +9582,7 @@ void ConstValue::initCharConstValue
   text_ = new (outHeap)
     NAString(strval,
 	     outHeap);
+  textIsValidatedSQLLiteralInUTF8_ = FALSE;
 }
 
 ConstValue::ConstValue(const NAWString& wstrval,
@@ -9667,6 +9670,7 @@ void ConstValue::initCharConstValue(const NAWString& strval,
   text_ = new (outHeap)
 	    NAString((char*)strval.data(), storageSize_,
 	     outHeap);
+  textIsValidatedSQLLiteralInUTF8_ = FALSE;
 
   init_wtext_field(strLitPrefixCharSet);
 }
@@ -9679,6 +9683,7 @@ ConstValue::ConstValue(NAString strval, NAWString wstrval,
  : ItemExpr(ITM_CONSTANT), isNull_(IS_NOT_NULL),
    value_(0),
    text_(0),
+   textIsValidatedSQLLiteralInUTF8_(FALSE),
    wtext_(0),
    isSystemSupplied_(FALSE),
    isStrLitWithCharSetPrefix_(FALSE),
@@ -9797,15 +9802,29 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   if(type)
     type_ = type->newCopy(outHeap);
 
-  // If a literal was not supplied, the text for this constant
-  // is the bit pattern for the given value. Note that embedded
-  // ascii nulls in the bit pattern are copied as is.
+  // If a literal was not supplied, call a method to convert
+  // the value from its binary form to UTF-8 and add any necessary
+  // syntax modifiers like the charset and date and time qualifiers
   if (literal == NULL)
-    text_ = new (outHeap)
-      NAString((char *)value,(UInt32)value_len, CmpCommon::statementHeap());
+    {
+      NABoolean isNull = FALSE;
+      if (type_)
+        textIsValidatedSQLLiteralInUTF8_ =
+          type_->createSQLLiteral((const char *)value,
+                                  text_,
+                                  isNull,
+                                  outHeap);
+      DCMPASSERT(textIsValidatedSQLLiteralInUTF8_); // for now
+      if (!textIsValidatedSQLLiteralInUTF8_)
+        text_ = new (outHeap) NAString("<unknown value>", outHeap);
+      if (isNull)
+        isNull_ = IS_NULL;
+    }
   else
-    text_ = new (outHeap) NAString
-      (*literal, outHeap);
+    {
+      text_ = new (outHeap) NAString(*literal, outHeap);
+      textIsValidatedSQLLiteralInUTF8_ = FALSE;
+    }
 }
 
 /*soln:10-050710-9594 begin */
@@ -9841,6 +9860,7 @@ ConstValue::ConstValue(const NAType * type, void * value, Lng32 value_len,
   else
     text_ = new (outHeap) NAString
       (*literal, outHeap);
+  textIsValidatedSQLLiteralInUTF8_ = FALSE;
 
   if(lstrval)
      locale_strval = new (outHeap) NAString
@@ -9915,8 +9935,8 @@ ConstValue::ConstValue(const NAType * type,
   if (wantMinValue) // min value
   {
     type->minRepresentableValue(&storage[startOfData],
-								&templen,
-								NULL,
+                                &templen,
+                                NULL,
                                 outHeap,
                                 isSQLMPTable);
     text_ = new (outHeap) NAString("<min>", outHeap);
@@ -9924,13 +9944,13 @@ ConstValue::ConstValue(const NAType * type,
   else
   {
     type->maxRepresentableValue(&storage[startOfData],
-								&templen,
-								NULL,
+                                &templen,
+                                NULL,
                                 outHeap,
                                 isSQLMPTable);
    text_ = new (outHeap) NAString("<max>", outHeap);
   }
-
+  textIsValidatedSQLLiteralInUTF8_ = FALSE;
 }
 
 // A copy constructor used by the SampleSize derived class
@@ -9942,6 +9962,7 @@ ConstValue::ConstValue(OperatorTypeEnum otype,
 //  , isNull_(other.isNull())
   , type_(other->getType())
   , storageSize_(other->getStorageSize())
+  , textIsValidatedSQLLiteralInUTF8_(other->textIsValidatedSQLLiteralInUTF8_)
   , isSystemSupplied_(other->isSystemSupplied_)
   , locale_strval(other->locale_strval)
   , locale_wstrval(other->locale_wstrval)
@@ -9957,6 +9978,7 @@ ConstValue::ConstValue(OperatorTypeEnum otype,
 ConstValue::ConstValue(const ConstValue& s, NAHeap *h)
   : ItemExpr(ITM_CONSTANT), isNull_(s.isNull_), type_(s.type_)
   , storageSize_(s.storageSize_), wtext_(s.wtext_)
+  , textIsValidatedSQLLiteralInUTF8_(s.textIsValidatedSQLLiteralInUTF8_)
   , isSystemSupplied_(s.isSystemSupplied_)
   , isStrLitWithCharSetPrefix_(s.isStrLitWithCharSetPrefix_)
   , rebindNeeded_(s.rebindNeeded_)
@@ -9973,6 +9995,7 @@ ConstValue::ConstValue(const ConstValue& s, NAHeap *h)
 ConstValue::ConstValue(const ConstValue& s)
   : ItemExpr(ITM_CONSTANT), isNull_(s.isNull_), type_(s.type_)
   , storageSize_(s.storageSize_), wtext_(s.wtext_), value_(s.value_)
+  , textIsValidatedSQLLiteralInUTF8_(s.textIsValidatedSQLLiteralInUTF8_)
   , text_(s.text_), isSystemSupplied_(s.isSystemSupplied_)
   , isStrLitWithCharSetPrefix_(s.isStrLitWithCharSetPrefix_)
   , rebindNeeded_(s.rebindNeeded_)
@@ -10312,7 +10335,8 @@ const NAString ConstValue::getTextForQuery() const
 
 const NAString ConstValue::getTextForQuery(UnparseFormatEnum form) const
 {
-  if(getType()->getTypeQualifier() != NA_CHARACTER_TYPE)
+  if(getType()->getTypeQualifier() != NA_CHARACTER_TYPE ||
+     textIsValidatedSQLLiteralInUTF8_)
     return *text_;
 
   //
@@ -10414,9 +10438,12 @@ const NAString ConstValue::getText() const
 {
   if(getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
     {
-      NAString result("\'", CmpCommon::statementHeap());
+      NAString result(CmpCommon::statementHeap());
+      if (!textIsValidatedSQLLiteralInUTF8_)
+        result += "\'";
       if (text_) result += *text_;
-      result += "\'";
+      if (!textIsValidatedSQLLiteralInUTF8_)
+        result += "\'";
 
       // Change imbedded NULL and \377 chars to \0 and \377
       // This comes up in key values quite often.
@@ -10520,16 +10547,24 @@ void ConstValue::unparse(NAString &result,
     if (getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
       {
         CharType* chType = (CharType*)getType();
+
         if (form == MVINFO_FORMAT)
           result += getText();
-        else if ((form == MV_SHOWDDL_FORMAT) || (form == QUERY_FORMAT))
-          result += chType->getCharSetAsPrefix() + getTextForQuery(form);
         else
-          result += chType->getCharSetAsPrefix() + getTextForQuery();
+          {
+            if (!textIsValidatedSQLLiteralInUTF8_)
+              result += chType->getCharSetAsPrefix();
+
+            if ((form == MV_SHOWDDL_FORMAT) || (form == QUERY_FORMAT))
+              result += getTextForQuery(form);
+            else
+              result += getTextForQuery();
+          }
       }
-      else
+    else
       {
-        if (getType()->getTypeQualifier() == NA_DATETIME_TYPE)
+        if (getType()->getTypeQualifier() == NA_DATETIME_TYPE &&
+            !textIsValidatedSQLLiteralInUTF8_)
         {
           if (getType()->getTypeName() == "DATE")
               result += " DATE '";
@@ -10539,7 +10574,8 @@ void ConstValue::unparse(NAString &result,
               result += " TIMESTAMP '";
         }
         result += getText();
-        if (getType()->getTypeQualifier() == NA_DATETIME_TYPE)
+        if (getType()->getTypeQualifier() == NA_DATETIME_TYPE &&
+            !textIsValidatedSQLLiteralInUTF8_)
           result += "'";
       }
     } // MVINFO_FORMAT || QUERY_FORMAT || MV_SHOWDDL_FORMAT || COMPUTED_COLUMN_FORMAT
@@ -10616,7 +10652,7 @@ NABoolean ConstValue::duplicateMatch(const ItemExpr & other) const
 
 ItemExpr * ConstValue::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
-  ItemExpr *result;
+  ConstValue *result;
 
   if (derivedNode == NULL)
     {
@@ -10642,13 +10678,16 @@ ItemExpr * ConstValue::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
           result = new (outHeap) ConstValue(type_,value_,storageSize_,
                                             locale_strval, locale_wstrval,
                                             text_,outHeap, isNull_);
+          
           /* soln:10-050710-9594 end */
 
-          ((ConstValue*)result)->setRebindNeeded(isRebindNeeded());
+          result->textIsValidatedSQLLiteralInUTF8_ =
+            textIsValidatedSQLLiteralInUTF8_;
+          result->setRebindNeeded(isRebindNeeded());
         }
     }
   else
-    result = derivedNode;
+    result = (ConstValue *) derivedNode;
 
   return ItemExpr::copyTopNode(result, outHeap);
 }

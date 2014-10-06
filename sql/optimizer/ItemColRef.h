@@ -373,8 +373,11 @@ public:
   // Supply a type, a buffer containing the packed value,
   // the size of the buffer and , optionally, the string
   // for the literal
-  ConstValue(const NAType * type, void * value, Lng32 value_len, 
-	     NAString * literal = NULL, NAMemory * outHeap = CmpCommon::statementHeap());
+  ConstValue(const NAType * type,
+             void * value,
+             Lng32 value_len, 
+	     NAString * literal = NULL,
+             NAMemory * outHeap = CmpCommon::statementHeap());
 
   /*soln:10-050710-9594 begin */
   /* Same as above constructor along with string constants */
@@ -605,6 +608,14 @@ private:
   // contains the text used for specifying the constant value.
   // it is captured by the parser.
   NAString *text_;
+  // Indicates whether the ConstValue constructor stored a valid SQL literal
+  // in *text_(TRUE) or text_ was passed by the caller (FALSE) and may or may
+  // not be a valid literal.
+  // NOTE: In the long term, we should validate or fix all cases and get
+  // rid of this data member. Also note that FALSE doesn't mean that text_
+  // is an invalid SQL literal, it just means we are keeping the older
+  // code that doesn't always store valid literals.
+  NABoolean textIsValidatedSQLLiteralInUTF8_;
 
   // wtext_ is used to hold and return (via getConstWStr())
   // a column default's string value.

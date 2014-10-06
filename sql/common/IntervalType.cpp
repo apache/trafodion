@@ -37,6 +37,7 @@
 #include "IntervalType.h"
 #include "NumericType.h"
 #include "str.h"
+#include "exp_clause_derived.h"
 
 // ***********************************************************************
 // Static data
@@ -600,6 +601,121 @@ void IntervalType::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
       Int64 maxVal = LLONG_MAX;
       str_cpy_all((char *) bufPtr, (char *) &maxVal, *bufLen);
     }
+}
+
+NABoolean IntervalType::createSQLLiteral(const char * buf,
+                                         NAString *&stringLiteral,
+                                         NABoolean &isNull,
+                                         CollHeap *h) const
+{
+  if (NAType::createSQLLiteral(buf, stringLiteral, isNull, h))
+    return TRUE;
+
+  // First step is to convert to ASCII, then add interval syntax around it
+  const int NUMVAL_LEN = 32;
+  char numVal[NUMVAL_LEN];
+  char *numValPtr = numVal;
+  const char *valPtr = buf + getSQLnullHdrSize();
+  NABoolean isNegative = FALSE;
+  
+  unsigned short numValLen = 0;
+  ComDiagsArea *diags = NULL;
+
+  ex_expr::exp_return_type ok =
+    convDoIt((char *) valPtr,
+             getNominalSize(),
+             getFSDatatype(),
+             getPrecision(),
+             getScale(),
+             numVal,
+             NUMVAL_LEN,
+             REC_BYTE_V_ASCII,
+             0,
+             SQLCHARSETCODE_UTF8,
+             (char *) &numValLen,
+             sizeof(numValLen),
+             h,
+             &diags,
+             conv_case_index::CONV_UNKNOWN,
+             0);
+
+   if ( ok != ex_expr::EXPR_OK || numValLen == 0)
+     return FALSE;
+
+   // put the literal together like this:
+   // INTERVAL [-] '<value converted to ascii w/o sign>' <start field>[<precision>] [to <end-field>][<precision>]
+
+   stringLiteral = new(h) NAString("INTERVAL ", h);
+
+   // skip leading blanks, converted value is right-aligned
+   while (*numValPtr == ' ' && numValLen > 0)
+     {
+       numValPtr++;
+       numValLen--;
+     }
+
+   // determine the sign and skip blanks after the sign
+   if (numValLen && *numValPtr == '-')
+     {
+       isNegative = TRUE;
+       numValPtr++;
+       numValLen--;
+       while (*numValPtr == ' ' && numValLen > 0)
+         {
+           numValPtr++;
+           numValLen--;
+         }
+     }
+       
+   if (numValLen <= 0)
+     return FALSE;
+
+   // add [-] '<value converted to ascii w/o sign>'
+   if (isNegative)
+     *stringLiteral += "- ' ";
+   else
+     *stringLiteral += "'";
+
+   stringLiteral->append(numValPtr, numValLen);
+   *stringLiteral += "' ";
+
+   // add start field
+   *stringLiteral += getFieldName(getStartField());
+
+   // add leading precision if not the default of 2
+   if (getStartField() != REC_DATE_SECOND)
+     {
+       if (getLeadingPrecision() != 2)
+         {
+           char lp[30];
+           snprintf(lp, 30, "(%d)", getLeadingPrecision());
+           *stringLiteral += lp;
+         }
+     }
+   else if (getLeadingPrecision() != 2 || getFractionPrecision() != 6)
+     {
+       // this is the form SECOND(<leading prec>, <fraction prec>)
+       char p[60];
+       snprintf(p, 60, "(%d, %d)", getLeadingPrecision(), getFractionPrecision());
+       *stringLiteral += p;
+     }     
+
+   // add end field if different from start field
+   if (getEndField() != getStartField())
+     {
+       *stringLiteral += " TO ";
+       *stringLiteral += getFieldName(getEndField());
+     }
+     
+   // add fraction precision for secnds if not the default of 6
+   if (getEndField() == REC_DATE_SECOND && getFractionPrecision() != 6)
+     {
+       char fp[30];
+       snprintf(fp, 30, "(%d)", getFractionPrecision());
+       *stringLiteral += fp;
+     }
+
+   return TRUE;
 }
 
 double IntervalType::encode (void* bufPtr) const
