@@ -224,7 +224,7 @@ skipTheseTests="TEST021"
 
 #skip these tests for Seabase
 if [ "$seabase" -ne 0 ]; then
-  skipTheseTests="$skipTheseTests TEST012 TEST013"
+  skipTheseTests="$skipTheseTests"
 fi
 
 
