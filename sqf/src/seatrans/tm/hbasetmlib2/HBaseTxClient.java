@@ -572,7 +572,7 @@ public class HBaseTxClient {
              
              private void addRegionToTS(String hostnamePort, byte[] regionInfo,
             		                    TransactionState ts) throws Exception{
-            	 HRegionInfo regionInfoLoc = new HRegionInfo();
+            	 HRegionInfo regionInfoLoc; // = new HRegionInfo();
                  final byte [] delimiter = ",".getBytes();
                  String[] result = hostnamePort.split(new String(delimiter), 3);
 
@@ -580,7 +580,15 @@ public class HBaseTxClient {
                          throw new IllegalArgumentException("Region array format is incorrect");
 
                  String hostname = result[0];
-                 int port = Integer.parseInt(result[1]);                 
+                 int port = Integer.parseInt(result[1]);
+                 try {
+                                 regionInfoLoc = HRegionInfo.parseFrom(regionInfo);
+                 }
+                 catch(Exception e) {
+                                 LOG.error("Unable to parse region byte array, " + e);
+                                 throw e;
+                 }
+                 /*                 
                  ByteArrayInputStream lv_bis = new ByteArrayInputStream(regionInfo);
                  DataInputStream lv_dis = new DataInputStream(lv_bis);
                  try {
@@ -588,6 +596,7 @@ public class HBaseTxClient {
                  } catch (Exception e) {                        
                          throw new Exception();
                  }
+                 */
 		 //HBase98 TODO: need to set the value of startcode correctly
 		 //HBase98 TODO: Not in CDH 5.1:  ServerName lv_servername = ServerName.valueOf(hostname, port, 0);
 
@@ -624,10 +633,10 @@ public class HBaseTxClient {
                                      LOG.error(sw.toString()); 
                              }
                              
-                             
+                             LOG.debug("in-doubt region size " + regions.size());
                              for(Map.Entry<String,byte[]> region : regions.entrySet()) {  
                             	     List<Long> TxRecoverList = new ArrayList<Long>();
-                                     LOG.trace("Processing region: " + new String(region.getValue()));
+                                     LOG.debug("BBB Processing region: " + new String(region.getValue()));
                                      String hostnamePort = region.getKey();
                                      byte [] regionInfo =  region.getValue();                                    
 				                     try {
@@ -641,13 +650,13 @@ public class HBaseTxClient {
 				                    	 if(ts == null) {
 				                    		 ts = new TransactionState(txid);
 				                    	 }
-				                    	 try {
+				                   /* 	 try {
 				                    		 this.addRegionToTS(hostnamePort, regionInfo, ts);
 				                    	 } catch (Exception e) {
 				                    		 LOG.error("Unable to add region to TransactionState" +
 				                    		 		"region info: " + new String(regionInfo));
 				                    		 e.printStackTrace();
-				                    	 }
+				                    	 } */
 				                    	 transactionStates.put(txid, ts);
 				                     }				                     
                              }
@@ -659,7 +668,7 @@ public class HBaseTxClient {
                                    try {
                                            audit.getTransactionState(ts);
                                            if(ts.getStatus().equals("COMMITTED")) {
-                                                   LOG.debug("Redriving commit for " + ts.getTransactionId());
+                                                   LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size());
                                                    txnManager.doCommit(ts);
                                            }
                                            else if(ts.getStatus().equals("ABORTED")) {

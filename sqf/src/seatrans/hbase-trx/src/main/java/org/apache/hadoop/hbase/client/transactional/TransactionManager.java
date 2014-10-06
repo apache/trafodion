@@ -173,6 +173,11 @@ public class TransactionManager {
 	        // We have received our reply in the form of an exception,
 	        // so decrement outstanding count and wake up waiters to avoid
 	        // getting hung forever
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        e.printStackTrace(pw);
+                        LOG.error(sw.toString());
+                        
 	        transactionState.requestPendingCountDec(true);
                 throw new CommitUnsuccessfulException(e);
         }
@@ -343,9 +348,9 @@ public class TransactionManager {
 		  
 		  table.getRegionLocation(startKey, true);
 	      }            
-	      result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
+            result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
           } catch (Throwable e) {
-	      e.printStackTrace();
+            e.printStackTrace();
             throw new Exception("Abort call not successful");
           }
           

@@ -83,19 +83,7 @@ public static final String trxkeyindoubtTransactionsCountByTmid = "indoubtTransa
 public static final int COMMIT_REQUEST = 1;
 public static final int COMMIT = 2;
 public static final int ABORT = 3;
-
-/*
-// Collection of active transactions keyed by id.
-protected Map<Long, TransactionState> transactionsById = new HashMap<Long, TransactionState>();
-
-// Map of recent transactions that are COMMIT_PENDING or COMMITED keyed by their sequence number
-protected SortedMap<Integer, TransactionState> commitedTransactionsBySequenceNumber = Collections
-		.synchronizedSortedMap(new TreeMap<Integer, TransactionState>());
-
-// Collection of transactions that are COMMIT_PENDING
-protected Set<TransactionState> commitPendingTransactions = Collections
-		.synchronizedSet(new HashSet<TransactionState>());
-*/
+public static final int CONTROL_POINT_COMMIT = 4;
 
 // In-doubt transaction list during recovered WALEdit replay
 private SortedMap<Long, WALEdit> pendingTransactionsById = new TreeMap<Long, WALEdit>();
@@ -140,14 +128,7 @@ public void start(CoprocessorEnvironment e) throws IOException {
     if (!re.getSharedData().containsKey(trxkey)) {
       // there is a short race here, in the worst case we create a watcher that will be notified once
       re.getSharedData().putIfAbsent(trxkey, transactionsRefMap);
-
-      /*TBR
-      if (re.getSharedData().isEmpty())
-         LOG.debug("ZZZ shared is empty ");
-      else
-         LOG.debug("ZZZ shared is NOT empty Yes ... ");
-      */
-      
+     
       LOG.debug("Trafodion Recovery Region Observer CP: trxRegionObserver put data structure into CoprocessorEnvironment ");
     }
  
@@ -158,7 +139,7 @@ public void start(CoprocessorEnvironment e) throws IOException {
    sn = rss.getServerName();
    hostName = sn.getHostname();
    port = sn.getPort();
-   LOG.debug("AAA Hostname " + hostName + " port " + port);
+   LOG.trace("Hostname " + hostName + " port " + port);
    zkw1 = rss.getZooKeeper();
 
    String regionName = my_Region.getRegionNameAsString();
@@ -166,12 +147,6 @@ public void start(CoprocessorEnvironment e) throws IOException {
 
    transactionsRefMap.put(regionName+trxkeypendingTransactionsById, pendingTransactionsById);
    transactionsRefMap.put(regionName+trxkeyindoubtTransactionsCountByTmid, indoubtTransactionsCountByTmid);;
-
-    //TBR
-    if (transactionsRefMap.isEmpty())
-         LOG.trace("Trafodion Recovery Region Observer CP: reference map is empty ");
-    else
-         LOG.trace("Trafodion Recovery Region Observer CP: reference map is NOT empty Yes ... " + transactionsRefMap.size());
 
     LOG.debug("Trafodion Recovery Region Observer CP: trxRegionObserver load start complete");
 
@@ -201,14 +176,14 @@ static ConcurrentHashMap<String, Object> getRefMap() {
 
      // Retrieve KV to see if it has the Trafodion Transaction context tag
      KeyValue kv = kvs.get(0); // get the first KV to check the associated transactional tag (all the KV pairs contain the same tag)
-     LOG.debug("PPP01 KV hex dump " + Hex.encodeHexString(kv.getValueArray() /*kv.getBuffer()*/));
+     LOG.trace("KV hex dump " + Hex.encodeHexString(kv.getValueArray() /*kv.getBuffer()*/));
      byte[] tagArray = Bytes.copy(kv.getTagsArray(), kv.getTagsOffset(), kv.getTagsLength());
      byte tagType = 41;
-     LOG.debug("Trafodion Recovery Region Observer CP:PPP11 tag array hex dump " + Hex.encodeHexString(tagArray));
+     LOG.trace("Trafodion Recovery Region Observer CP: tag array hex dump " + Hex.encodeHexString(tagArray));
      Tag tag = Tag.getTag(tagArray, 0, kv.getTagsLength(), tagType);  //TagType.TRANSACTION_TAG_TYPE
 
      if (tag == null) {
-        LOG.debug("Trafodion Recovery Region Observer CP:PPP00 there is no desired transactional tag in KV, skip ... ");
+        LOG.trace("Trafodion Recovery Region Observer CP: there is no desired transactional tag in KV, skip ... ");
         return;
      }
      byte[] b = tag.getBuffer();
@@ -258,9 +233,16 @@ static ConcurrentHashMap<String, Object> getRefMap() {
                    }
                    WALEdit walB = pendingTransactionsById.get(tid);
                    replayCommittedTransaction(tid, walB);
-                   //pendingTransactionsById.remove(tid);
+                   pendingTransactionsById.remove(tid);
                    commitCount++;
              break;
+
+             case CONTROL_POINT_COMMIT:
+                     LOG.debug("AAA3 get CP edit : " + tid + " region " + regionInfo.getRegionNameAsString());
+                     replayCommittedTransaction(tid, logEdit);  
+                     if (pendingTransactionsById.containsKey(tid)) pendingTransactionsById.remove(tid);  
+                     commitCount++;          
+              break;
 
              default:
                         throw new IllegalStateException("Trafodion Recovery Region Observer CP: Unexpected log entry type detected in audit replay");
@@ -282,11 +264,11 @@ static ConcurrentHashMap<String, Object> getRefMap() {
 @Override
 public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
 
-   //SST Trafodion Recovery : after Open, we should have alreday constructed all the indoubt transactions in
+   //        Trafodion Recovery : after Open, we should have alreday constructed all the indoubt transactions in
    //        pendingTransactionsById now process it and construct transaction list by TM id. These two data
    //        structures are put in the reference map which is shared with TrxRegionEndpoint coprocessor class per region 
 
-   LOG.debug("Trafodion Recovery Region Observer CP:OOO postOpen coprocessor is invoked ... in region "+ regionInfo.getRegionNameAsString());
+   LOG.debug("Trafodion Recovery Region Observer CP: postOpen coprocessor is invoked ... in region "+ regionInfo.getRegionNameAsString());
 
    // discard any in-doubt transaction if ENV (likely the property XML) indicates (should be set in start)
    // just ignore it for now
@@ -296,9 +278,6 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
 	      pendingTransactionsById.clear();
        }
     }
-
-    //LOG.debug("OOO Trafodion Recovery: randomly wite (1,18) into indoubtTransactionsCountByTmId");
-    //indoubtTransactionsCountByTmid.put(1, 18);
 
     LOG.debug("Trafodion Recovery: Region " + regionInfo.getRegionNameAsString() + " is in state RECOVERING ");
               
@@ -346,24 +325,13 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
 
      // Now we need to inform TM through ZK (TBD here may need to check if 0.98 requires new APIs to construct region info
 
-     // construct region info into byte[]
-     ByteArrayOutputStream lv_bos = new ByteArrayOutputStream();
-     DataOutputStream lv_dos = new DataOutputStream(lv_bos);
-     try {
-        regionInfo.write(lv_dos);
-        lv_dos.flush();
-     } catch (IOException exp) {
-             LOG.error("Trafodion Recovery Region Observer CP: Flush failed after flush data output stream in postOpen " + regionInfo.getRegionNameAsString());
-     }
-     byte [] lv_byte_region_info = lv_bos.toByteArray();
+     byte [] lv_byte_region_info = regionInfo.toByteArray();
      String lv_encoded = regionInfo.getEncodedName();
    
      // loop for every tm, call TRS.createzNode (tmid, region encoded name, zNodedata)
      for (int node  : indoubtTransactionsCountByTmid.keySet()) {
            try {
                  LOG.debug("Trafodion Recovery Region Observer CP: ZKW Create Recovery zNode TM " + node + " region encoded name " + lv_encoded + " region info bytes " + new String(lv_byte_region_info));
-                 //TransactionalRegionServer.createRecoveryzNode(node, lv_encoded, lv_b);
-                 // SST TBD temorarily disbale ZK create zNode for recovery to allow check-in
                  createRecoveryzNode(node, lv_encoded, lv_byte_region_info);
                   } catch (IOException exp) {
                   LOG.error("Trafodion Recovery Region Observer CP: ZKW Create recovery zNode failed");
@@ -372,7 +340,8 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
 
       LOG.debug("Trafodion Recovery Region Observer CP: ZKW Complete post of recovery zNode for region info " + new String(lv_byte_region_info));
      
-      // Flush the cache (since we don't do it during replay committed transactions)
+      // Flush the cache (since we don't do it during replay committed transactions) and may need to re-write all the edits for in-doubt txn
+      // in case the failure occurred again before the resolution
 /*
       try {
              LOG.trace("Trafodion Recovery:  Flushing cache in postOpen " + regionInfo.getRegionNameAsString());
@@ -385,7 +354,6 @@ public void postOpen(ObserverContext<RegionCoprocessorEnvironment> e) {
              return;
       }
 */
-   //should continue to invoke other postOpen coprocessor if any
 
 } // end of postOpen
 
@@ -419,18 +387,7 @@ public void replayCommittedTransaction(long transactionId, WALEdit val) throws I
 
 public void startRegionAfterRecovery() throws IOException {
    boolean isFlush = false;
-/*        try {
-               LOG.trace("SSS Trafodion Recovery:  Flushing cache in startRegionAfterRecovery " + regionInfo.getRegionNameAsString());
-               HRegion.FlushResult fr = my_Region.flushcache();
-               if (!fr.isFlushSucceeded()) {
-                   LOG.trace("Trafodion Recovery:  Flushcache returns false !!! " + regionInfo.getRegionNameAsString());
-               }
-         } catch (IOException e) {
-               LOG.error("Trafodion Recovery: Flush failed after replay edits" + regionInfo.getRegionNameAsString());
-               return;
-         }
-*/
-         //SST TBD
+         //TBD
          // if we have indoubt transaction, do we need to rewrite back to HLOG, otherwise, if the system crash in the middle of recovery
          // we could lose the memory  and HLOG, but the split-log may already be removed after region open
          // if flush succeeds, then it is not necessary
@@ -466,28 +423,5 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
           }
        }
 } // end ogf createRecoveryzNode
-
-
-public void deleteRecoveryzNode(int node, String encodedName) throws IOException {
-
-       synchronized(zkRecoveryCheckLock) {
-         // default zNodePath
-         String zNodeKey = hostName + "," + port + "," + encodedName;
-
-         StringBuilder sb = new StringBuilder();
-         sb.append("TM");
-         sb.append(node);
-         String str = sb.toString();
-         String zNodePathTM = zNodePath + str;
-         String zNodePathTMKey = zNodePathTM + "/" + zNodeKey;
-         LOG.debug("Trafodion Recovery Region Observer CP: ZKW Delete region recovery znode" + node + " zNode Path " + zNodePathTMKey);
-          // delete zookeeper recovery zNode, call ZK ...
-         try {
-                ZKUtil.deleteNodeFailSilent(zkw1, zNodePathTMKey);
-          } catch (KeeperException e) {
-          throw new IOException("Trafodion Recovery Region Observer CP: ZKW Unable to delete recovery zNode to TM " + node, e);
-          }
-       }
-} // end of deleteRecoveryzNode
 
 } // end of TrxRegionObserver Class
