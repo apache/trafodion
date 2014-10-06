@@ -225,7 +225,8 @@ class ExpHbaseInterface : public NABasicObject
 
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
-		  const Text & column);
+		  const Text & column) = 0;
+
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,
 		  HbaseStr& rowID, 
@@ -457,6 +458,11 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
 				  const int64_t timestamp);
+
+  virtual Lng32 deleteColumns(
+		  HbaseStr &tblName,
+		  const Text & column);
+
   virtual Lng32 insertRow(
 		  HbaseStr &tblName,
 		  HbaseStr& rowID, 
