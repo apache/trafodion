@@ -1,4 +1,4 @@
-#!/bin/bash
+GFG#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
@@ -210,6 +210,8 @@ done
 #Deleting any leftover processes
 
 sudo pkill -f ambari
+sudo pkill -f hadoop
+sudo pkill -f zookeeper
 
 #==============================================
 
