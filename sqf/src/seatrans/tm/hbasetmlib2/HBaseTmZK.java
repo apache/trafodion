@@ -51,7 +51,7 @@ public class HBaseTmZK implements Abortable{
 	 * @throws Exception
 	 */
 	public HBaseTmZK(final Configuration conf) throws Exception {
-                LOG.trace("HBaseTmZK(conf) -- ENTRY");
+                if (LOG.isTraceEnabled()) LOG.trace("HBaseTmZK(conf) -- ENTRY");
 		this.dtmID = 0;
 		this.zkNode = baseNode + "0";
 		this.zooKeeper = new ZooKeeperWatcher(conf, "TM Recovery", this, true);
@@ -63,7 +63,7 @@ public class HBaseTmZK implements Abortable{
 	 * @throws Exception
 	 */
 	public HBaseTmZK(final Configuration conf, final short dtmID) throws Exception {
-        LOG.trace("HBaseTmZK(conf, dtmID) -- ENTRY");
+        if (LOG.isTraceEnabled()) LOG.trace("HBaseTmZK(conf, dtmID) -- ENTRY");
 		this.dtmID = dtmID;
 		this.zkNode = baseNode + String.format("%d", dtmID);
 		this.zooKeeper = new ZooKeeperWatcher(conf, "TM Recovery", this, true);
@@ -99,24 +99,25 @@ public class HBaseTmZK implements Abortable{
 	 * @throws KeeperException
 	 */
 	public Map<String,byte []> checkForRecovery() throws InterruptedException, KeeperException {		
-        LOG.trace("checkForRecovery -- ENTRY");
+        if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- ENTRY");
 		if(ZKUtil.nodeHasChildren(zooKeeper, zkNode)) {
 			List<String> nodeChildren = new ArrayList<String>();
 			Map<String, byte []> nodeDataMap = new HashMap<String, byte []>();
 			nodeChildren = getChildren();
 		 	
 			for(String node : nodeChildren) {				
-                LOG.trace("checkForRecovery -- found node: '" + node + "'");
+
+                if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- found node: '" + node + "'");
 				byte [] nodeData = checkData(zkNode +"/" + node);	
-                LOG.trace("checkForRecovery -- found node: " + node + " node data " + nodeData.toString());		
+                if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- found node: " + node + " node data " + nodeData.toString());		
 				nodeDataMap.put(node, nodeData);
 			}
-            LOG.trace("checkForRecovery -- EXIT returning " + nodeDataMap.size() + " regions");
+            if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- EXIT returning " + nodeDataMap.size() + " regions");
 			return nodeDataMap;
 		}
 		else {
-			LOG.trace(zkNode + " is currently not present.");
-            LOG.trace("checkForRecovery -- EXIT -- node not present");
+			if (LOG.isTraceEnabled()) LOG.trace(zkNode + " is currently not present.");
+            if (LOG.isTraceEnabled()) LOG.trace("checkForRecovery -- EXIT -- node not present");
 			return null;
 		}		
 	}

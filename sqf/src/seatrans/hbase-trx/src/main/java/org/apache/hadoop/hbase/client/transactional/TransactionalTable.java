@@ -92,10 +92,10 @@ public class TransactionalTable extends HTable {
     }
     
     private void addLocation(final TransactionState transactionState, HRegionLocation location) {
-      LOG.trace("addLocation ENTRY");
+      if (LOG.isTraceEnabled()) LOG.trace("addLocation ENTRY");
       if (transactionState.addRegion(location))     	  
-         LOG.trace("TransactionalTable.recordServer added region to TS. Beginning txn " + transactionState + " on server");
-      LOG.trace("addLocation EXIT");
+         if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.recordServer added region to TS. Beginning txn " + transactionState + " on server");
+      if (LOG.isTraceEnabled()) LOG.trace("addLocation EXIT");
     }
     
     /**
@@ -108,7 +108,7 @@ public class TransactionalTable extends HTable {
      */
     
     public Result get(final TransactionState transactionState, final Get get) throws IOException {
-      LOG.trace("Enter TransactionalTable.get");
+      if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.get");
       
       addLocation(transactionState, super.getRegionLocation(get.getRow()));
       final String regionName = super.getRegionLocation(get.getRow()).getRegionInfo().getRegionNameAsString();
@@ -140,7 +140,7 @@ public class TransactionalTable extends HTable {
       Collection<GetTransactionalResponse> results = result.values();
       // Should only be one result, if more than one. Can't handle.
       // Need to test whether '!=' or '>' is correct
-      LOG.trace("Results count: " + results.size());
+      if (LOG.isTraceEnabled()) LOG.trace("Results count: " + results.size());
       //if(results.size() != 1)
       //  throw new IOException("Incorrect number of results from coprocessor call");      
       GetTransactionalResponse[] resultArray = new GetTransactionalResponse[results.size()];    		  
@@ -218,7 +218,7 @@ public class TransactionalTable extends HTable {
      */
     public synchronized void put(final TransactionState transactionState, final Put put) throws IOException {
       validatePut(put);
-    	LOG.trace("TransactionalTable.put ENTRY");
+    	if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put ENTRY");
     
       
       addLocation(transactionState, super.getRegionLocation(put.getRow()));
@@ -260,11 +260,11 @@ public class TransactionalTable extends HTable {
       throw new IOException(resultArray[0].getException());
     
     // put is void, may not need to check result
-    LOG.trace("TransactionalTable.put EXIT");
+    if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put EXIT");
   }
 
   public synchronized ResultScanner getScanner(final TransactionState transactionState, final Scan scan) throws IOException {
-    LOG.trace("Enter TransactionalTable.getScanner");
+    if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.getScanner");
     if (scan.getCaching() <= 0) {
         scan.setCaching(getScannerCaching());
     }
@@ -278,7 +278,7 @@ public class TransactionalTable extends HTable {
   public boolean checkAndDelete(final TransactionState transactionState,
   		final byte[] row, final byte[] family, final byte[] qualifier, final byte[] value,
                      final Delete delete) throws IOException {
-    LOG.trace("Enter TransactionalTable.checkAndDelete row: " + row + " family: " + family + " qualifier: " + qualifier + " value: " + value);
+    if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndDelete row: " + row + " family: " + family + " qualifier: " + qualifier + " value: " + value);
     if (!Bytes.equals(row, delete.getRow())) {
             throw new IOException("Action's getRow must match the passed row");
     }
@@ -354,14 +354,14 @@ public class TransactionalTable extends HTable {
 			final byte[] row, final byte[] family, final byte[] qualifier,
 			final byte[] value, final Put put) throws IOException {
 
-		LOG.trace("Enter TransactionalTable.checkAndPut row: " + row
+		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndPut row: " + row
 				+ " family: " + family + " qualifier: " + qualifier
 				+ " value: " + value);
 		if (!Bytes.equals(row, put.getRow())) {
 			throw new IOException("Action's getRow must match the passed row");
 		}
 		final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
-		LOG.trace("checkAndPut, region name: " + regionName);
+		if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, region name: " + regionName);
 	    //if(regionName == null) 
 	    	//throw new IOException("Null regionName");
 	    //System.out.println("RegionName: " + regionName);
@@ -427,7 +427,7 @@ public class TransactionalTable extends HTable {
    	 */
    	public void delete(final TransactionState transactionState,
    			List<Delete> deletes) throws IOException {
-   		LOG.trace("Enter TransactionalTable.delete[] row ");
+   		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.delete[] row ");
    		// collect all rows from same region
    			final Map<HRegionLocation, List<Delete>> rows = new HashMap<HRegionLocation, List<Delete>>();
    			HRegionLocation location = null;
@@ -505,7 +505,7 @@ public class TransactionalTable extends HTable {
 	 */
 	public void put(final TransactionState transactionState,
 			final List<Put> puts) throws IOException {
-		LOG.trace("Enter TransactionalTable.put[] row ");
+		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.put[] row ");
 		// collect all rows from same region
 		final Map<HRegionLocation, List<Put>> rows = new HashMap<HRegionLocation, List<Put>>();
 		HRegionLocation location = null;

@@ -130,7 +130,7 @@ public class TransactionManager {
     public Integer doCommitX(final byte[] regionName, final long transactionId) throws CommitUnsuccessfulException {
         try {
 
-          LOG.trace("doCommitX -- ENTRY txid: " + transactionId);
+          if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- ENTRY txid: " + transactionId);
           Batch.Call<TrxRegionService, CommitResponse> callable =
               new Batch.Call<TrxRegionService, CommitResponse>() {
             ServerRpcController controller = new ServerRpcController();
@@ -150,8 +150,8 @@ public class TransactionManager {
 
             Map<byte[], CommitResponse> result = null;
             try {
-              LOG.trace("doCommitX -- before coprocessorService txid: " + transactionId);
-	      LOG.trace("doCommitX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
+              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- before coprocessorService txid: " + transactionId);
+	      if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
               result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
             } catch (Throwable e) {
               e.printStackTrace();
@@ -191,7 +191,7 @@ public class TransactionManager {
       	{
       		transactionLogger.forgetTransaction(transactionState.getTransactionId());
       	}
-      	LOG.trace("doCommitX -- EXIT txid: " + transactionId);
+      	if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- EXIT txid: " + transactionId);
       	return 0;
     }
 	
@@ -228,15 +228,15 @@ public class TransactionManager {
 
         Map<byte[], CommitRequestResponse> result = null;
         try {
-	    LOG.trace("doPrepareX -- before coprocessorService txid: " + transactionId + " table: " + table.toString());
-	    LOG.trace("doPrepareX -- txid: " + transactionId + " table: " + table.toString() + " endKey_Orig: " + new String(endKey_orig, "UTF-8"));
-	    LOG.trace("doPrepareX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
+	    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- before coprocessorService txid: " + transactionId + " table: " + table.toString());
+	    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- txid: " + transactionId + " table: " + table.toString() + " endKey_Orig: " + new String(endKey_orig, "UTF-8"));
+	    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
 	    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
 	    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
 	    if (location.getRegionInfo().compareTo(lv_hri) != 0) {
 		LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
-		LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
-		LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
+		if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
+		if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
 		
 		table.getRegionLocation(startKey, true);
 	    }
@@ -266,7 +266,7 @@ public class TransactionManager {
        LOG.warn("Received IOException " + e + " from commitRequest for transaction " + transactionId + " rethrowing exception");
        throw new IOException();
     }
-    LOG.trace("commitStatus: " + commitStatus);
+    if (LOG.isTraceEnabled()) LOG.trace("commitStatus: " + commitStatus);
   	boolean canCommit = true;
     boolean readOnly = false;
                 
@@ -343,8 +343,8 @@ public class TransactionManager {
 	      HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
 	      if (location.getRegionInfo().compareTo(lv_hri) != 0) {
 		  LOG.info("doAbortX -- " + table.toString() + " location being refreshed");
-		  LOG.trace("doAbortX -- lv_hri: " + lv_hri);
-		  LOG.trace("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
+		  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- lv_hri: " + lv_hri);
+		  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
 		  
 		  table.getRegionLocation(startKey, true);
 	      }            
@@ -443,7 +443,7 @@ public class TransactionManager {
      */
     public TransactionState beginTransaction() {
         long transactionId = transactionLogger.createNewTransactionLog();
-        LOG.trace("Beginning transaction " + transactionId);
+        if (LOG.isTraceEnabled()) LOG.trace("Beginning transaction " + transactionId);
         return new TransactionState(transactionId);
     }
 
@@ -454,7 +454,7 @@ public class TransactionManager {
      */
     public TransactionState beginTransaction(long transactionId) {
         //long transactionId =
-      LOG.trace("Enter beginTransaction, txid: " + transactionId);
+      if (LOG.isTraceEnabled()) LOG.trace("Enter beginTransaction, txid: " + transactionId);
       if(transactionLogger.createNewTransactionLog(transactionId) == 0) {
 	      LOG.error("beginTransaction, error in createNewTransactionLog");
               // Error creating new txn log, throw exception
@@ -541,11 +541,11 @@ public class TransactionManager {
      */
     public void tryCommit(final TransactionState transactionState) throws CommitUnsuccessfulException, IOException {
         long startTime = EnvironmentEdgeManager.currentTimeMillis();
-        LOG.trace("Attempting to commit transaction: " + transactionState.toString());
+        if (LOG.isTraceEnabled()) LOG.trace("Attempting to commit transaction: " + transactionState.toString());
         int status = prepareCommit(transactionState);
 
         if (status == TransactionalReturn.COMMIT_OK) {
-          LOG.trace("doCommit txid:" + transactionState.getTransactionId());
+          if (LOG.isTraceEnabled()) LOG.trace("doCommit txid:" + transactionState.getTransactionId());
           doCommit(transactionState);
         } else if (status == TransactionalReturn.COMMIT_OK_READ_ONLY) {
         	// no requests sent for fully read only transaction
@@ -555,7 +555,7 @@ public class TransactionManager {
           // We have already aborted at this point
           throw new CommitUnsuccessfulException();
         }
-        LOG.trace("Committed transaction [" + transactionState.getTransactionId() + "] in ["
+        if (LOG.isTraceEnabled()) LOG.trace("Committed transaction [" + transactionState.getTransactionId() + "] in ["
                 + ((EnvironmentEdgeManager.currentTimeMillis() - startTime)) + "]ms");
     }
 
@@ -568,14 +568,14 @@ public class TransactionManager {
     public void doCommit(final TransactionState transactionState) throws CommitUnsuccessfulException {
     	int loopCount = 0;
         try {
-            LOG.trace("Committing [" + transactionState.getTransactionId() + "]");
+            if (LOG.isTraceEnabled()) LOG.trace("Committing [" + transactionState.getTransactionId() + "]");
 
             transactionLogger.setStatusForTransaction(transactionState.getTransactionId(),
                 TransactionLogger.TransactionStatus.COMMITTED);
 
             // (Asynchronously send commit
             for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
-              LOG.trace("sending commits ... [" + transactionState.getTransactionId() + "]");
+              if (LOG.isTraceEnabled()) LOG.trace("sending commits ... [" + transactionState.getTransactionId() + "]");
                 if (transactionState.getRegionsToIngore().contains(location)) {
                     continue;
                 }
@@ -588,7 +588,7 @@ public class TransactionManager {
                     
                 threadPool.submit(new TransactionManagerCallable(transactionState, location, connection) {
                   public Integer call() throws CommitUnsuccessfulException {
-                    LOG.trace("before doCommit() [" + transactionState.getTransactionId() + "]");
+                    if (LOG.isTraceEnabled()) LOG.trace("before doCommit() [" + transactionState.getTransactionId() + "]");
                     return doCommitX(regionName, transactionState.getTransactionId());
                   }
                 });
@@ -673,11 +673,11 @@ public class TransactionManager {
     }
     
     public void registerRegion(final TransactionState transactionState, TransactionRegionLocation location)throws IOException{
-        LOG.trace("registerRegion ENTRY, transactioState:" + transactionState);
+        if (LOG.isTraceEnabled()) LOG.trace("registerRegion ENTRY, transactioState:" + transactionState);
     	if(transactionState.addRegion(location)){
-	    LOG.trace("registerRegion -- adding region: " + location.getRegionInfo().getRegionNameAsString());
+	    if (LOG.isTraceEnabled()) LOG.trace("registerRegion -- adding region: " + location.getRegionInfo().getRegionNameAsString());
     	}
-        LOG.trace("registerRegion EXIT");
+        if (LOG.isTraceEnabled()) LOG.trace("registerRegion EXIT");
     }
     
     /**
@@ -688,7 +688,7 @@ public class TransactionManager {
      * @throws Exception
      */
     public List<Long> recoveryRequest (String hostnamePort, byte[] regionArray, int tmid) throws Exception{
-        LOG.trace("recoveryRequest -- ENTRY TM" + tmid);
+        if (LOG.isTraceEnabled()) LOG.trace("recoveryRequest -- ENTRY TM" + tmid);
         HRegionInfo regionInfo = null;
         HTable table = null;
         
@@ -724,7 +724,7 @@ public class TransactionManager {
     	    regionInfo = HRegionInfo.parseFrom(regionArray);
     	}
     	catch (Exception de) {
-            LOG.trace("HBaseTxClient:callRegisterRegion exception in lv_regionInfo parseFrom, " + 		     
+            if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient:callRegisterRegion exception in lv_regionInfo parseFrom, " + 		     
  		     " TM : " + tmid +
  		     " DeserializationException: " + de);
  	        StringWriter sw = new StringWriter();
@@ -783,7 +783,7 @@ public class TransactionManager {
        
         //return tri.recoveryRequest(regionInfo.getRegionName(), tmid);
         table.close();
-        LOG.trace("recoveryRequest -- EXIT TM" + tmid);
+        if (LOG.isTraceEnabled()) LOG.trace("recoveryRequest -- EXIT TM" + tmid);
         
         return resultArray[0].getResultList();
     }

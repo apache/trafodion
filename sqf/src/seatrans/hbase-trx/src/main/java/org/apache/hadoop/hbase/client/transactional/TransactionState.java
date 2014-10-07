@@ -87,7 +87,7 @@ public class TransactionState {
     public boolean addTableName(final String table) {
         boolean added =  tableNames.add(table);
         if (added) {
-            LOG.trace("Adding new table name [" + table + "] to transaction state ["
+            if (LOG.isTraceEnabled()) LOG.trace("Adding new table name [" + table + "] to transaction state ["
                     + transactionId + "]");
         }
         return added;
@@ -221,7 +221,7 @@ public class TransactionState {
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
-            LOG.trace("Adding new hregion [" + hregion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
+            if (LOG.isTraceEnabled()) LOG.trace("Adding new hregion [" + hregion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
                     + transactionId + "]");
         }
 

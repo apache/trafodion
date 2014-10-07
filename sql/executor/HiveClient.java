@@ -73,7 +73,7 @@ public class HiveClient {
     public boolean init(String metastoreURI) 
               throws MetaException {
          setupLog4j();
-         logger.debug("HiveClient.init(" + metastoreURI + " " + ") called.");
+         if (logger.isDebugEnabled()) logger.debug("HiveClient.init(" + metastoreURI + " " + ") called.");
          ddlTimeConst = getDDLTimeConstant();
          hiveConf = new HiveConf();
 	 if (metastoreURI.length() > 0) {
@@ -91,7 +91,7 @@ public class HiveClient {
 
     public boolean exists(String schName, String tblName)  
         throws MetaException, TException, UnknownDBException {
-            logger.debug("HiveClient.exists(" + schName + " , " + tblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HiveClient.exists(" + schName + " , " + tblName + ") called.");
             boolean result = hmsClient.tableExists(schName, tblName);
             return result;
     }
@@ -99,32 +99,32 @@ public class HiveClient {
     public String getHiveTableString(String schName, String tblName)
         throws MetaException, TException {
         Table table;
-        logger.debug("HiveClient.getHiveTableString(" + schName + " , " + 
+        if (logger.isDebugEnabled()) logger.debug("HiveClient.getHiveTableString(" + schName + " , " + 
                      tblName + ") called.");
         try {
             table = hmsClient.getTable(schName, tblName);
         }
         catch (NoSuchObjectException x) {
-            logger.debug("HiveTable not found");
+            if (logger.isDebugEnabled()) logger.debug("HiveTable not found");
             return new String("");
         }
-        logger.debug("HiveTable is " + table.toString());
+        if (logger.isDebugEnabled()) logger.debug("HiveTable is " + table.toString());
         return table.toString() ;
     }
 
     public long getRedefTime(String schName, String tblName)
         throws MetaException, TException, ClassCastException, NullPointerException, NumberFormatException {
         Table table;
-        logger.debug("HiveClient.getRedefTime(" + schName + " , " + 
+        if (logger.isDebugEnabled()) logger.debug("HiveClient.getRedefTime(" + schName + " , " + 
                      tblName + ") called.");
         try {
             table = hmsClient.getTable(schName, tblName);
-            logger.debug("getTable returns null for " + schName + "." + tblName + ".");
+            if (logger.isDebugEnabled()) logger.debug("getTable returns null for " + schName + "." + tblName + ".");
             if (table == null)
                 return 0;
         }
         catch (NoSuchObjectException x) {
-            logger.debug("Hive table no longer exists.");
+            if (logger.isDebugEnabled()) logger.debug("Hive table no longer exists.");
             return 0;
         }
 
@@ -138,7 +138,7 @@ public class HiveClient {
             if (rfTime != null)
                 redefTime = Long.parseLong(rfTime);
         }
-        logger.debug("RedefTime is " + redefTime);
+        if (logger.isDebugEnabled()) logger.debug("RedefTime is " + redefTime);
         return redefTime ;
     }
 

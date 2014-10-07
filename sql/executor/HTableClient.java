@@ -143,16 +143,16 @@ public class HTableClient {
 	}
 
 	public boolean setWriteBufferSize(long writeBufferSize) throws IOException {
-		logger.debug("Enter HTableClient::setWriteBufferSize, size  : " + writeBufferSize);
+		if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::setWriteBufferSize, size  : " + writeBufferSize);
 	    table.setWriteBufferSize(writeBufferSize);
 	    return true;
 	  }
 	 public long getWriteBufferSize() {
-		 logger.debug("Enter HTableClient::getWriteBufferSize, size return : " + table.getWriteBufferSize());
+		 if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::getWriteBufferSize, size return : " + table.getWriteBufferSize());
 		 return table.getWriteBufferSize();
 	 }
 	public boolean setWriteToWAL(boolean v) {
-		logger.debug("Enter HTableClient::setWriteToWALL, size  : " + v);
+		if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::setWriteToWALL, size  : " + v);
 	    writeToWAL = v;
 	    return true;
 	  }
@@ -160,33 +160,39 @@ public class HTableClient {
 	public boolean init(String tblName, Configuration config, 
               boolean useTRex) throws IOException 
         {
-	    logger.debug("Enter HTableClient::init, tableName: " + tblName);
+	    if (logger.isDebugEnabled()) logger.debug("Enter HTableClient::init, tableName: " + tblName);
 	    this.useTRex = useTRex;
 	    tableName = tblName;
 	    
-	    this.useTRex = true; //HBase98 TODO
-	    String useTransactions = System.getenv("USE_TRANSACTIONS");
-	    if (useTransactions != null) {
-		int lv_useTransactions = (Integer.parseInt(useTransactions));
-		if (lv_useTransactions == 0) {
-		    this.useTRex = false;
-		}
+	    if ( !this.useTRex ) {
+		this.useTRexScanner = false;
 	    }
+	    else {
+
+		// If the parameter useTRex is false, then do not go thru this logic
+
+		String useTransactions = System.getenv("USE_TRANSACTIONS");
+		if (useTransactions != null) {
+		    int lv_useTransactions = (Integer.parseInt(useTransactions));
+		    if (lv_useTransactions == 0) {
+			this.useTRex = false;
+		    }
+		}
 	    
-	    //HBase98 TODO -- For scanner
-	    this.useTRexScanner = true;
-	    String useTransactionsScanner = System.getenv("USE_TRANSACTIONS_SCANNER");
-	    if (useTransactionsScanner != null) {
-		int lv_useTransactionsScanner = (Integer.parseInt(useTransactionsScanner));
-		if (lv_useTransactionsScanner == 0) {
-		    this.useTRexScanner = false;
+		this.useTRexScanner = true;
+		String useTransactionsScanner = System.getenv("USE_TRANSACTIONS_SCANNER");
+		if (useTransactionsScanner != null) {
+		    int lv_useTransactionsScanner = (Integer.parseInt(useTransactionsScanner));
+		    if (lv_useTransactionsScanner == 0) {
+			this.useTRexScanner = false;
+		    }
 		}
 	    }
 
 	    config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
 	    table = new RMInterface(config, tblName);
 	    //	    table = new HTable(config, tblName);
-	    logger.debug("Exit HTableClient::init, table object: " + table);
+	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, table object: " + table);
 	    return true;
 	}
 
@@ -224,7 +230,7 @@ public class HTableClient {
 				 float samplePercent,
 				 boolean inPreFetch) 
            throws IOException {
-		logger.trace("Enter startScan() " + tableName + " txid: " + transID);
+	    if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID);
 
 		Scan scan;
 
@@ -290,7 +296,7 @@ public class HTableClient {
 		} else {
 		    scanner = table.getScanner(scan);
 		}
-		logger.trace("startScan(). After getScanner. Scanner: " + scanner);
+		if (logger.isTraceEnabled()) logger.trace("startScan(). After getScanner. Scanner: " + scanner);
 		resultIterator = new ResultIterator(scanner);
 		
 		preFetch = inPreFetch;
@@ -304,7 +310,7 @@ public class HTableClient {
 			});
 		}
 
-		logger.trace("Exit startScan().");
+		if (logger.isTraceEnabled()) logger.trace("Exit startScan().");
 		return true;
 	}
 
@@ -312,7 +318,7 @@ public class HTableClient {
                      Object[] columns,
 		     long timestamp, boolean directRow) throws IOException {
 
-		logger.trace("Enter startGet(" + tableName + 
+	    if (logger.isTraceEnabled()) logger.trace("Enter startGet(" + tableName + 
 			     " #cols: " + ((columns == null) ? 0:columns.length ) +
 			     " rowID: " + new String(rowID));
 
@@ -339,14 +345,14 @@ public class HTableClient {
                     || getResult.isEmpty()) {
 			return false;
 		}
-		logger.trace("startGet, result: " + getResult);
+		if (logger.isTraceEnabled()) logger.trace("startGet, result: " + getResult);
 		if (directRow) {
 			getResultSet = new Result[1];
 			getResultSet[0] = getResult;
 		} else {
 			resultIterator = new ResultIterator(getResult);
 		}
-		logger.trace("Exit 2 startGet. size: " + getResult.size());
+		if (logger.isTraceEnabled()) logger.trace("Exit 2 startGet. size: " + getResult.size());
 		return true;
 	}
 
@@ -354,7 +360,7 @@ public class HTableClient {
 	// so work around it.
 	private Result[] batchGet(long transactionID, List<Get> gets)
 			throws IOException {
-		logger.trace("Enter batchGet(multi-row) " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter batchGet(multi-row) " + tableName);
 		Result [] results = new Result[gets.size()];
 		int i=0;
 		for (Get g : gets) {
@@ -372,7 +378,7 @@ public class HTableClient {
 			boolean directRow) 
                         throws IOException {
 
-		logger.trace("Enter startGet(multi-row) " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter startGet(multi-row) " + tableName);
 
 		List<Get> listOfGets = new ArrayList<Get>();
 		for (int i = 0; i < rows.length; i++) {
@@ -409,7 +415,7 @@ public class HTableClient {
 	}
 
 	public boolean scanFetch() throws IOException {
-		logger.trace("Enter scanFetch() " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter scanFetch() " + tableName);
 		if (resultIterator == null) {
 			return false;
 		}
@@ -422,7 +428,7 @@ public class HTableClient {
 	}
 
 	public boolean getFetch() throws IOException {
-		logger.trace("Enter getFetch() " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter getFetch() " + tableName);
 		return scanFetch();
 	}
 
@@ -430,7 +436,7 @@ public class HTableClient {
 			InterruptedException, ExecutionException {
 		int rowsReturned = 0;
 
-		logger.trace("Enter fetchRows(). Table: " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter fetchRows(). Table: " + tableName);
 		if (getResultSet != null)
 		{
 			rowsReturned = pushRowsToJni(jniObject, getResultSet);
@@ -541,9 +547,9 @@ public class HTableClient {
 	}		
 	
 	public KeyValue getLastFetchedCell() {
-		logger.trace("Enter getLastFetchedCell() ");
+		if (logger.isTraceEnabled()) logger.trace("Enter getLastFetchedCell() ");
 		if (lastFetchedCell == null)
-			logger.trace("  Returning empty.");
+			if (logger.isTraceEnabled()) logger.trace("  Returning empty.");
 		return lastFetchedCell;
 	}
 
@@ -551,7 +557,7 @@ public class HTableClient {
 				 Object[] columns,
 				 long timestamp) throws IOException {
 
-		logger.trace("Enter deleteRow(" + new String(rowID) + ", "
+		if (logger.isTraceEnabled()) logger.trace("Enter deleteRow(" + new String(rowID) + ", "
 			     + timestamp + ") " + tableName);
 
 			Delete del;
@@ -573,14 +579,14 @@ public class HTableClient {
 			} else {
 			    table.delete(del);
 			}
-		logger.trace("Exit deleteRow");
+		if (logger.isTraceEnabled()) logger.trace("Exit deleteRow");
 		return true;
 	}
 
 	public boolean deleteRows(long transID, short rowIDLen, Object rowIDs,
 		      long timestamp) throws IOException {
 
-	        logger.trace("Enter deleteRows() " + tableName);
+	        if (logger.isTraceEnabled()) logger.trace("Enter deleteRows() " + tableName);
 
 		List<Delete> listOfDeletes = new ArrayList<Delete>();
 		listOfDeletes.clear();
@@ -604,7 +610,7 @@ public class HTableClient {
 		    table.delete(transID, listOfDeletes);
 		else
 		    table.delete(listOfDeletes);
-		logger.trace("Exit deleteRows");
+		if (logger.isTraceEnabled()) logger.trace("Exit deleteRows");
 		return true;
 	}
 
@@ -621,7 +627,7 @@ public class HTableClient {
 					 byte[] columnToCheck, byte[] colValToCheck,
 					 long timestamp) throws IOException {
 
-		logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
+		if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
 			     + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
 
 			Delete del;
@@ -657,7 +663,7 @@ public class HTableClient {
 		byte[] columnToCheck, byte[] colValToCheck,
 		boolean checkAndPut) throws IOException 	{
 
-		logger.trace("Enter putRow() " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter putRow() " + tableName);
 
 		Put put;
 		ByteBuffer bb;
@@ -723,7 +729,7 @@ public class HTableClient {
                        long timestamp, boolean autoFlush)
 			throws IOException {
 
-		logger.trace("Enter putRows() " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter putRows() " + tableName);
 
 		Put put;
 		ByteBuffer bbRows, bbRowIDs;
@@ -837,7 +843,7 @@ public class HTableClient {
 	}
 
 	public boolean close(boolean clearRegionCache) throws IOException {
-           logger.trace("Enter close() " + tableName);
+           if (logger.isTraceEnabled()) logger.trace("Enter close() " + tableName);
            if (scanner != null) {
               scanner.close();
               scanner = null;
@@ -856,7 +862,7 @@ public class HTableClient {
 	}
 
 	public ByteArrayList getEndKeys() throws IOException {
-	    logger.trace("Enter getEndKeys() " + tableName);
+	    if (logger.isTraceEnabled()) logger.trace("Enter getEndKeys() " + tableName);
             ByteArrayList result = new ByteArrayList();
             if (table == null) {
                 return null;
@@ -865,19 +871,19 @@ public class HTableClient {
 
             // transfer the HTable result to ByteArrayList
             for (int i=0; i<htableResult.length; i++ ) {
-                logger.trace("Inside getEndKeys(), result[i]: " + 
+                if (logger.isTraceEnabled()) logger.trace("Inside getEndKeys(), result[i]: " + 
                              htableResult[i]);
-                logger.trace("Inside getEndKeys(), result[i]: " + 
+                if (logger.isTraceEnabled()) logger.trace("Inside getEndKeys(), result[i]: " + 
                              new String(htableResult[i]));
                 result.add(htableResult[i]);
             }
 
-            logger.trace("Exit getEndKeys(), result size: " + result.getSize());
+            if (logger.isTraceEnabled()) logger.trace("Exit getEndKeys(), result size: " + result.getSize());
             return result;
 	}
 
     public ByteArrayList getStartKeys() throws IOException {
-        logger.trace("Enter getStartKeys() " + tableName);
+        if (logger.isTraceEnabled()) logger.trace("Enter getStartKeys() " + tableName);
         ByteArrayList result = new ByteArrayList();
         if (table == null) {
             return null;
@@ -886,14 +892,14 @@ public class HTableClient {
 
         // transfer the HTable result to ByteArrayList
         for (int i=0; i<htableResult.length; i++ ) {
-            logger.trace("Inside getStartKeys(), result[i]: " + 
+            if (logger.isTraceEnabled()) logger.trace("Inside getStartKeys(), result[i]: " + 
                          htableResult[i]);
-            logger.trace("Inside getStartKeys(), result[i]: " + 
+            if (logger.isTraceEnabled()) logger.trace("Inside getStartKeys(), result[i]: " + 
                          new String(htableResult[i]));
             result.add(htableResult[i]);
         }
 
-        logger.trace("Exit getStartKeys(), result size: " + result.getSize());
+        if (logger.isTraceEnabled()) logger.trace("Exit getStartKeys(), result size: " + result.getSize());
         return result;
     }
 

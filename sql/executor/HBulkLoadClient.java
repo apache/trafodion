@@ -109,13 +109,13 @@ public class HBulkLoadClient
 
   public HBulkLoadClient()
   {
-    logger.debug("HBulkLoadClient.HBulkLoadClient() called.");
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.HBulkLoadClient() called.");
 
   }
 
   public HBulkLoadClient(Configuration conf) throws IOException
   {
-    logger.debug("HBulkLoadClient.HBulkLoadClient(...) called.");
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.HBulkLoadClient(...) called.");
     if (conf == null)
     {
       throw new IOException("config not set");
@@ -133,7 +133,7 @@ public class HBulkLoadClient
   public boolean initHFileParams(String hFileLoc, String hFileNm, long userMaxSize /*in MBs*/, String tblName) 
   throws UnsupportedOperationException, IOException
   {
-    logger.debug("HBulkLoadClient.initHFileParams() called.");
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.initHFileParams() called.");
     
     hFileLocation = hFileLoc;
     hFileName = hFileNm;
@@ -171,7 +171,7 @@ public class HBulkLoadClient
   }
   public boolean doCreateHFile() throws IOException, URISyntaxException
   {
-    logger.debug("HBulkLoadClient.doCreateHFile() called.");
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doCreateHFile() called.");
     
     if (hFileLocation == null )
       throw new NullPointerException(hFileLocation + " is not set");
@@ -186,7 +186,7 @@ public class HBulkLoadClient
     Path hfilePath = new Path(new Path(hFileLocation ), hFileName + "_" +  System.currentTimeMillis());
     hfilePath = hfilePath.makeQualified(hfilePath.toUri(), null);
 
-    logger.debug("HBulkLoadClient.createHFile Path: " + hfilePath);
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.createHFile Path: " + hfilePath);
 
     try
     {
@@ -201,11 +201,11 @@ public class HBulkLoadClient
                      .withFileContext(hfileContext)
                      .withComparator(KeyValue.COMPARATOR)
                      .create();
-      logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
+      if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.createHFile Path: " + writer.getPath() + "Created");
     }
     catch (IOException e)
     {
-       logger.debug("HBulkLoadClient.doCreateHFile Exception" + e.getMessage());
+       if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doCreateHFile Exception" + e.getMessage());
        throw e;
     }
     return true;
@@ -228,7 +228,7 @@ public class HBulkLoadClient
   public boolean addToHFile(short rowIDLen, Object rowIDs,
                 Object rows) throws IOException, URISyntaxException
   {
-     logger.debug("Enter addToHFile() ");
+     if (logger.isDebugEnabled()) logger.debug("Enter addToHFile() ");
      Put put;
     if (isNewFileNeeded())
     {
@@ -267,13 +267,13 @@ public class HBulkLoadClient
             writer.append(kv);
         } 
     }
-    logger.debug("End addToHFile() ");
+    if (logger.isDebugEnabled()) logger.debug("End addToHFile() ");
        return true;
   }
 
   public boolean closeHFile() throws IOException
   {
-    logger.debug("HBulkLoadClient.closeHFile() called." + ((writer == null) ? "NULL" : "NOT NULL"));
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.closeHFile() called." + ((writer == null) ? "NULL" : "NOT NULL"));
 
     if (writer == null)
       return false;
@@ -296,7 +296,7 @@ public class HBulkLoadClient
         {
             if (snpd.getName().compareTo(snapshotName) == 0)
             {
-              logger.debug("HbulkLoadClient.createSnapshot() -- deleting: " + snapshotName + " : " + snpd.getName());
+              if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.createSnapshot() -- deleting: " + snapshotName + " : " + snpd.getName());
               admin.deleteSnapshot(snapshotName);
             }
         }
@@ -306,7 +306,7 @@ public class HBulkLoadClient
     catch (Exception e)
     {
       //log exeception and throw the exception again to teh parent
-      logger.debug("HbulkLoadClient.createSnapshot() - Exception: " + e);
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.createSnapshot() - Exception: " + e);
       throw e;
     }
     finally
@@ -335,7 +335,7 @@ public class HBulkLoadClient
     catch (Exception e)
     {
       //log exeception and throw the exception again to the parent
-      logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
       throw e;
     }
     finally
@@ -379,7 +379,7 @@ public class HBulkLoadClient
     catch (Exception e)
     {
       //log exeception and throw the exception again to the parent
-      logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.restoreSnapshot() - Exception: " + e);
       throw e;
     }
     finally 
@@ -400,23 +400,23 @@ public class HBulkLoadClient
     {
       snapshotName = tableName + "_SNAPSHOT";
       createSnapshot(tableName, snapshotName);
-      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot created: " + snapshotName);
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot created: " + snapshotName);
     }
     try
     {
-      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - bulk load started ");
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - bulk load started ");
       loader.doBulkLoad(hFilePath, table);
-      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - bulk load is done ");
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - bulk load is done ");
     }
     catch (IOException e)
     {
-      logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: " + e.toString());
+      if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - Exception: " + e.toString());
       if (snapshot)
       {
         restoreSnapshot(snapshotName, tableName);
-        logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot restored: " + snapshotName);
+        if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot restored: " + snapshotName);
         deleteSnapshot(snapshotName, tableName);
-        logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
+        if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
         throw e;
       }
     }
@@ -425,15 +425,15 @@ public class HBulkLoadClient
       if  (snapshot)
       {
         deleteSnapshot(snapshotName, tableName);
-        logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
+        if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
       }
     }
     
   }
   public boolean doBulkLoad(String prepLocation, String tableName, boolean quasiSecure, boolean snapshot) throws Exception
   {
-    logger.debug("HBulkLoadClient.doBulkLoad() - start");
-    logger.debug("HBulkLoadClient.doBulkLoad() - Prep Location: " + prepLocation + 
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - start");
+    if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - Prep Location: " + prepLocation + 
                                              ", Table Name:" + tableName + 
                                              ", quasisecure : " + quasiSecure +
                                              ", snapshot: " + snapshot);
@@ -453,23 +453,23 @@ public class HBulkLoadClient
     }
     else
     {
-      logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hfiles permissions");
+      if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hfiles permissions");
       for (Path hfam : hFams) 
       {
          Path[] hfiles = FileUtil.stat2Paths(prepFs.listStatus(hfam));
          prepFs.setPermission(hfam,PERM_ALL_ACCESS );
          for (Path hfile : hfiles)
          {
-           logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hfile permissions:" + hfile);
+           if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - adjusting hfile permissions:" + hfile);
            prepFs.setPermission(hfile,PERM_ALL_ACCESS);
            
          }
          //create _tmp dir used as temp space for Hfile processing
          FileSystem.mkdirs(prepFs, new Path(hfam,"_tmp"), PERM_ALL_ACCESS);
       }
-      logger.debug("HBulkLoadClient.doBulkLoad() - bulk load started. Loading directly from preparation directory");
+      if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - bulk load started. Loading directly from preparation directory");
       doSnapshotNBulkLoad(prepPath,tableName,  table,  loader,  snapshot);
-      logger.debug("HBulkLoadClient.doBulkLoad() - bulk load is done ");
+      if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.doBulkLoad() - bulk load is done ");
     }
     return true;
   }

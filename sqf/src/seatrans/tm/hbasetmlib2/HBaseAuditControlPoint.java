@@ -80,7 +80,7 @@ public class HBaseAuditControlPoint {
     private static boolean disableBlockCache;
 
     public HBaseAuditControlPoint(Configuration config) throws IOException {
-      LOG.trace("Enter HBaseAuditControlPoint constructor()");
+      if (LOG.isTraceEnabled()) LOG.trace("Enter HBaseAuditControlPoint constructor()");
       CONTROL_POINT_TABLE_NAME = config.get("CONTROL_POINT_TABLE_NAME");
       HTableDescriptor desc = new HTableDescriptor(CONTROL_POINT_TABLE_NAME);
       HColumnDescriptor hcol = new HColumnDescriptor(CONTROL_POINT_FAMILY);
@@ -90,11 +90,11 @@ public class HBaseAuditControlPoint {
          String blockCacheString = System.getenv("TM_TLOG_DISABLE_BLOCK_CACHE");
          if (blockCacheString != null){
             disableBlockCache = (Integer.parseInt(blockCacheString) != 0);
-            LOG.debug("disableBlockCache != null");
+            if (LOG.isDebugEnabled()) LOG.debug("disableBlockCache != null");
          }
       }
       catch (Exception e) {
-         LOG.debug("TM_TLOG_DISABLE_BLOCK_CACHE is not in ms.env");
+         if (LOG.isDebugEnabled()) LOG.debug("TM_TLOG_DISABLE_BLOCK_CACHE is not in ms.env");
       }
       LOG.info("disableBlockCache is " + disableBlockCache);
       if (disableBlockCache) {
@@ -109,19 +109,19 @@ public class HBaseAuditControlPoint {
          String autoFlush = System.getenv("TM_TLOG_AUTO_FLUSH");
          if (autoFlush != null){
             useAutoFlush = (Integer.parseInt(autoFlush) != 0);
-            LOG.debug("autoFlush != null");
+            if (LOG.isDebugEnabled()) LOG.debug("autoFlush != null");
          }
       }
       catch (Exception e) {
-         LOG.debug("TM_TLOG_AUTO_FLUSH is not in ms.env");
+         if (LOG.isDebugEnabled()) LOG.debug("TM_TLOG_AUTO_FLUSH is not in ms.env");
       }
       LOG.info("useAutoFlush is " + useAutoFlush);
 
       boolean lvControlPointExists = admin.tableExists(CONTROL_POINT_TABLE_NAME);
-      LOG.debug("HBaseAuditControlPoint lvControlPointExists " + lvControlPointExists);
+      if (LOG.isDebugEnabled()) LOG.debug("HBaseAuditControlPoint lvControlPointExists " + lvControlPointExists);
       currControlPt = -1;
       try {
-         LOG.debug("Creating the table " + CONTROL_POINT_TABLE_NAME);
+         if (LOG.isDebugEnabled()) LOG.debug("Creating the table " + CONTROL_POINT_TABLE_NAME);
          admin.createTable(desc);
          currControlPt = 1;
       }
@@ -130,7 +130,7 @@ public class HBaseAuditControlPoint {
       }
 
       try {
-         LOG.debug("try new HTable");
+         if (LOG.isDebugEnabled()) LOG.debug("try new HTable");
          table = new HTable(config, desc.getName());
          table.setAutoFlush(this.useAutoFlush);
       }
@@ -143,35 +143,35 @@ public class HBaseAuditControlPoint {
             currControlPt = getCurrControlPt();
          }
          catch (Exception e2) {
-            LOG.debug("Exit getCurrControlPoint() exception " + e2);
+            if (LOG.isDebugEnabled()) LOG.debug("Exit getCurrControlPoint() exception " + e2);
          }
       }
-      LOG.debug("currControlPt is " + currControlPt);
+      if (LOG.isDebugEnabled()) LOG.debug("currControlPt is " + currControlPt);
 
-      LOG.trace("Exit constructor()");
+      if (LOG.isTraceEnabled()) LOG.trace("Exit constructor()");
       return;
     }
 
    public static long getCurrControlPt() throws Exception {
-      LOG.trace("getCurrControlPt:  start");
+      if (LOG.isTraceEnabled()) LOG.trace("getCurrControlPt:  start");
       long highKey = -1;
-      LOG.debug("new Scan");
+      if (LOG.isDebugEnabled()) LOG.debug("new Scan");
       Scan s = new Scan();
       s.setCaching(10);
       s.setCacheBlocks(false);
-      LOG.debug("resultScanner");
+      if (LOG.isDebugEnabled()) LOG.debug("resultScanner");
       ResultScanner ss = table.getScanner(s);
       try {
          long currKey;
          String rowKey;
-         LOG.debug("entering for loop" );
+         if (LOG.isDebugEnabled()) LOG.debug("entering for loop" );
          for (Result r : ss) {
             rowKey = new String(r.getRow());
-            LOG.debug("rowKey is " + rowKey );
+            if (LOG.isDebugEnabled()) LOG.debug("rowKey is " + rowKey );
             currKey = Long.parseLong(rowKey);
-            LOG.debug("value is " + Long.parseLong(Bytes.toString(r.value())));
+            if (LOG.isDebugEnabled()) LOG.debug("value is " + Long.parseLong(Bytes.toString(r.value())));
             if (currKey > highKey) {
-               LOG.debug("Setting highKey to " + currKey);
+               if (LOG.isDebugEnabled()) LOG.debug("Setting highKey to " + currKey);
                highKey = currKey;
             }
          }
@@ -182,20 +182,20 @@ public class HBaseAuditControlPoint {
       } finally {
          ss.close();
       }
-      LOG.debug("getCurrControlPt returning " + highKey);
+      if (LOG.isDebugEnabled()) LOG.debug("getCurrControlPt returning " + highKey);
       return highKey;
    }
 
    public static long putRecord(final long ControlPt, final long startingSequenceNumber) throws Exception {
-      LOG.trace("putRecord starting sequence number ("  + String.valueOf(startingSequenceNumber) + ")");
+      if (LOG.isTraceEnabled()) LOG.trace("putRecord starting sequence number ("  + String.valueOf(startingSequenceNumber) + ")");
       String controlPtString = new String(String.valueOf(ControlPt));
       Put p = new Put(Bytes.toBytes(controlPtString));
       p.add(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK, Bytes.toBytes(String.valueOf(startingSequenceNumber)));
       try {
-         LOG.debug("try table.put with starting sequence number " + startingSequenceNumber);
+         if (LOG.isDebugEnabled()) LOG.debug("try table.put with starting sequence number " + startingSequenceNumber);
          table.put(p);
          if (useAutoFlush == false) {
-            LOG.debug("flushing controlpoint record");
+            if (LOG.isDebugEnabled()) LOG.debug("flushing controlpoint record");
             table.flushCommits();
          }
       }
@@ -203,32 +203,32 @@ public class HBaseAuditControlPoint {
          LOG.error("HBaseAuditControlPoint:putRecord Exception" + e);
          throw e;
       }
-      LOG.trace("HBaseAuditControlPoint:putRecord returning " + ControlPt);
+      if (LOG.isTraceEnabled()) LOG.trace("HBaseAuditControlPoint:putRecord returning " + ControlPt);
       return ControlPt;
    }
 
    public static ArrayList<String> getRecordList(String controlPt) throws IOException {
-      LOG.trace("getRecord");
+      if (LOG.isTraceEnabled()) LOG.trace("getRecord");
       ArrayList<String> transactionList = new ArrayList<String>();
       Get g = new Get(Bytes.toBytes(controlPt));
       Result r = table.get(g);
       byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
       String recordString = new String(currValue);
-      LOG.debug("recordString is " + recordString);
+      if (LOG.isDebugEnabled()) LOG.debug("recordString is " + recordString);
       StringTokenizer st = new StringTokenizer(recordString, ",");
       while (st.hasMoreElements()) {
         String token = st.nextElement().toString() ;
-        LOG.debug("token is " + token);
+        if (LOG.isDebugEnabled()) LOG.debug("token is " + token);
         transactionList.add(token);
       }
 
-      LOG.trace("getRecord - exit with list size (" + transactionList.size() + ")");
+      if (LOG.isTraceEnabled()) LOG.trace("getRecord - exit with list size (" + transactionList.size() + ")");
       return transactionList;
 
     }
 
    public static long getRecord(final String controlPt) throws IOException {
-      LOG.trace("getRecord " + controlPt);
+      if (LOG.isTraceEnabled()) LOG.trace("getRecord " + controlPt);
       long lvValue = -1;
       Get g = new Get(Bytes.toBytes(controlPt));
       String recordString;
@@ -237,86 +237,86 @@ public class HBaseAuditControlPoint {
          byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
          try {
             recordString = new String (Bytes.toString(currValue));
-            LOG.debug("recordString is " + recordString);
+            if (LOG.isDebugEnabled()) LOG.debug("recordString is " + recordString);
             lvValue = Long.parseLong(recordString, 10);
          }
          catch (NullPointerException e){
-            LOG.debug("control point " + controlPt + " is not in the table");
+            if (LOG.isDebugEnabled()) LOG.debug("control point " + controlPt + " is not in the table");
          }
       }
       catch (IOException e){
           LOG.error("getRecord IOException");
           throw e;
       }
-      LOG.trace("getRecord - exit " + lvValue);
+      if (LOG.isTraceEnabled()) LOG.trace("getRecord - exit " + lvValue);
       return lvValue;
 
     }
 
    public static long getStartingAuditSeqNum() throws IOException {
-      LOG.trace("getStartingAuditSeqNum");
+      if (LOG.isTraceEnabled()) LOG.trace("getStartingAuditSeqNum");
       String controlPtString = new String(String.valueOf(currControlPt));
       long lvAsn;
-      LOG.debug("getStartingAuditSeqNum new get for control point " + currControlPt);
+      if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum new get for control point " + currControlPt);
       Get g = new Get(Bytes.toBytes(controlPtString));
-      LOG.debug("getStartingAuditSeqNum setting result");
+      if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum setting result");
       Result r = table.get(g);
-      LOG.debug("getStartingAuditSeqNum currValue CONTROL_POINT_FAMILY is "
+      if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum currValue CONTROL_POINT_FAMILY is "
                  + CONTROL_POINT_FAMILY + " ASN_HIGH_WATER_MARK " + ASN_HIGH_WATER_MARK);
       byte [] currValue = r.getValue(CONTROL_POINT_FAMILY, ASN_HIGH_WATER_MARK);
-      LOG.debug("Starting asn setting recordString ");
+      if (LOG.isDebugEnabled()) LOG.debug("Starting asn setting recordString ");
       String recordString = "";
       try {
          recordString = new String(currValue);
       }
       catch (NullPointerException e) {
-         LOG.debug("getStartingAuditSeqNum recordString is null");
+         if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum recordString is null");
          lvAsn = 1;
-         LOG.debug("Starting asn is 1");
+         if (LOG.isDebugEnabled()) LOG.debug("Starting asn is 1");
          return lvAsn;
       }
-      LOG.debug("getStartingAuditSeqNum recordString is good");
-      LOG.debug("Starting asn for control point " + currControlPt + " is " + recordString);
+      if (LOG.isDebugEnabled()) LOG.debug("getStartingAuditSeqNum recordString is good");
+      if (LOG.isDebugEnabled()) LOG.debug("Starting asn for control point " + currControlPt + " is " + recordString);
       lvAsn = Long.valueOf(recordString);
-      LOG.trace("getStartingAuditSeqNum - exit returning " + lvAsn);
+      if (LOG.isTraceEnabled()) LOG.trace("getStartingAuditSeqNum - exit returning " + lvAsn);
       return lvAsn;
     }
 
    public static long doControlPoint(final long sequenceNumber) throws IOException {
-      LOG.trace("doControlPoint start");
+      if (LOG.isTraceEnabled()) LOG.trace("doControlPoint start");
       try {
          currControlPt++;
-         LOG.debug("doControlPoint interval (" + currControlPt + "), sequenceNumber (" + sequenceNumber+ ") try putRecord");
+         if (LOG.isDebugEnabled()) LOG.debug("doControlPoint interval (" + currControlPt + "), sequenceNumber (" + sequenceNumber+ ") try putRecord");
          putRecord(currControlPt, sequenceNumber);
       }
       catch (Exception e) {
          LOG.error("doControlPoint Exception" + e);
       }
 
-      LOG.trace("doControlPoint - exit");
+      if (LOG.isTraceEnabled()) LOG.trace("doControlPoint - exit");
       return currControlPt;
    }
 
    public static boolean deleteRecord(final long controlPoint) throws IOException {
-      LOG.trace("deleteRecord start for control point " + controlPoint);
+      if (LOG.isTraceEnabled()) LOG.trace("deleteRecord start for control point " + controlPoint);
       String controlPtString = new String(String.valueOf(controlPoint));
 
       try {
          List<Delete> list = new ArrayList<Delete>();
          Delete del = new Delete(Bytes.toBytes(controlPtString));
-         LOG.debug("deleteRecord  (" + controlPtString + ") ");
+         if (LOG.isDebugEnabled()) LOG.debug("deleteRecord  (" + controlPtString + ") ");
          table.delete(del);
       }
       catch (Exception e) {
          LOG.error("deleteRecord IOException");
       }
 
-      LOG.trace("deleteRecord - exit");
+      if (LOG.isTraceEnabled()) LOG.trace("deleteRecord - exit");
       return true;
    }
 
    public static boolean deleteAgedRecords(final long controlPoint) throws IOException {
-      LOG.trace("deleteAgedRecords start - control point " + controlPoint);
+      if (LOG.isTraceEnabled()) LOG.trace("deleteAgedRecords start - control point " + controlPoint);
       String controlPtString = new String(String.valueOf(controlPoint));
 
       Scan s = new Scan();
@@ -329,12 +329,12 @@ public class HBaseAuditControlPoint {
          for (Result r : ss) {
             rowKey = new String(r.getRow());
             if (Long.parseLong(rowKey) < controlPoint) {
-               LOG.debug("Adding  (" + rowKey + ") to delete list");
+               if (LOG.isDebugEnabled()) LOG.debug("Adding  (" + rowKey + ") to delete list");
                Delete del = new Delete(rowKey.getBytes());
                deleteList.add(del);
             }
          }
-         LOG.debug("attempting to delete list with " + deleteList.size() + " elements");
+         if (LOG.isDebugEnabled()) LOG.debug("attempting to delete list with " + deleteList.size() + " elements");
          table.delete(deleteList);
       }
       catch (Exception e) {
@@ -343,7 +343,7 @@ public class HBaseAuditControlPoint {
          ss.close();
       }
 
-      LOG.trace("deleteAgedRecords - exit");
+      if (LOG.isTraceEnabled()) LOG.trace("deleteAgedRecords - exit");
       return true;
    }
 }

@@ -152,12 +152,12 @@ public class SequenceFileWriter {
     
     boolean hdfsCreate(String fname) throws IOException
     {
-      logger.debug("SequenceFileWriter.hdfsCreate() - started" );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() - started" );
       Path filePath = new Path(fname + ".gz");
       fs = FileSystem.get(filePath.toUri(),conf);
       fsOut = fs.create(filePath, true);
       
-      logger.debug("SequenceFileWriter.hdfsCreate() - file created" );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() - file created" );
       
       GzipCodec gzipCodec = (GzipCodec) ReflectionUtils.newInstance( GzipCodec.class, conf);
       Compressor gzipCompressor = CodecPool.getCompressor(gzipCodec);
@@ -167,18 +167,18 @@ public class SequenceFileWriter {
       }
       catch (IOException e)
       {
-        logger.debug("SequenceFileWriter.hdfsCreate() --exception :" + e);
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() --exception :" + e);
         throw e;
       }
       
-      logger.debug("SequenceFileWriter.hdfsCreate() - compressed output stream created" );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCreate() - compressed output stream created" );
       return true;
     }
     
     boolean hdfsWrite(String buff, long len) throws Exception
     {
 
-      logger.debug("SequenceFileWriter.hdfsWrite() - started" );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() - started" );
       try
       {
         compressedOut.write(Bytes.toBytes(buff), 0, (int)len);
@@ -186,17 +186,17 @@ public class SequenceFileWriter {
       }
       catch (Exception e)
       {
-        logger.debug("SequenceFileWriter.hdfsWrite() -- exception: " + e);
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() -- exception: " + e);
         throw e;
       }
-      logger.debug("SequenceFileWriter.hdfsWrite() - bytes written and flushed:" + len  );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsWrite() - bytes written and flushed:" + len  );
       
       return true;
     }
     
     boolean hdfsClose() throws IOException
     {
-      logger.debug("SequenceFileWriter.hdfsClose() - started" );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsClose() - started" );
       try
       {
         compressedOut.close();
@@ -204,7 +204,7 @@ public class SequenceFileWriter {
       }
       catch (IOException e)
       {
-        logger.debug("SequenceFileWriter.hdfsClose() - exception:" + e);
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsClose() - exception:" + e);
         throw e;
       }
       return true;
@@ -213,8 +213,8 @@ public class SequenceFileWriter {
     
     public boolean hdfsMergeFiles(String srcPathStr, String dstPathStr) throws Exception
     {
-      logger.debug("SequenceFileWriter.hdfsMergeFiles() - start");
-      logger.debug("SequenceFileWriter.hdfsMergeFiles() - source Path: " + srcPathStr + 
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - start");
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - source Path: " + srcPathStr + 
                                                ", destination File:" + dstPathStr );
       try 
       {
@@ -227,7 +227,7 @@ public class SequenceFileWriter {
         FileSystem dstFs = FileSystem.get(dstPath.toUri(),conf);
         
         if (dstFs.exists(dstPath)){
-          logger.debug("SequenceFileWriter.hdfsMergeFiles() - destination files exists" );
+          if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - destination files exists" );
           // for this prototype we just delete the file-- will change in next code drops
           dstFs.delete(dstPath, false);
            // The caller should already have checked existence of file-- throw exception 
@@ -235,10 +235,10 @@ public class SequenceFileWriter {
         }
         
         // copyMerge and use false for the delete option since it removes the whole directory
-        logger.debug("SequenceFileWriter.hdfsMergeFiles() - copyMerge" );
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - copyMerge" );
         FileUtil.copyMerge(srcFs, srcPath, dstFs, dstPath, false, conf, null);
         
-        logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete intermediate files" );
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete intermediate files" );
         Path[] files = FileUtil.stat2Paths(srcFs.listStatus(srcPath));
         for (Path f : files){
           srcFs.delete(f, false);
@@ -246,7 +246,7 @@ public class SequenceFileWriter {
       }
       catch (IOException e)
       {
-        logger.debug("SequenceFileWriter.hdfsMergeFiles() --exception:" + e);
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() --exception:" + e);
         throw e;
       }
       
@@ -255,8 +255,8 @@ public class SequenceFileWriter {
     }
     public boolean hdfsCleanUnloadPath(String uldPathStr, boolean checkExistence, String mergeFileStr) throws Exception
     {
-      logger.debug("SequenceFileWriter.hdfsCleanUnloadPath() - start");
-      logger.debug("SequenceFileWriter.hdfsMergeFiles() - unload Path: " + uldPathStr );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsCleanUnloadPath() - start");
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - unload Path: " + uldPathStr );
       
       try 
       {
@@ -265,7 +265,7 @@ public class SequenceFileWriter {
         mergePath = mergePath.makeQualified(mergePath.toUri(), null);
         FileSystem mergeFs = FileSystem.get(mergePath.toUri(),conf);
         if (mergeFs.exists( mergePath)){
-          logger.debug("SequenceFileWriter.hdfsMergeFiles() - marge Path: " + mergePath + " already exists" );
+          if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - marge Path: " + mergePath + " already exists" );
           throw new FileAlreadyExistsException(mergePath.toString());
         }
       }
@@ -275,14 +275,14 @@ public class SequenceFileWriter {
       FileSystem srcFs = FileSystem.get(uldPath.toUri(),conf);
 
       Path[] files = FileUtil.stat2Paths(srcFs.listStatus(uldPath));
-      logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete files" );
+      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() - delete files" );
       for (Path f : files){
         srcFs.delete(f, false);
       }
       }
       catch (IOException e)
       {
-        logger.debug("SequenceFileWriter.hdfsMergeFiles() -exception:" + e);
+        if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.hdfsMergeFiles() -exception:" + e);
         throw e;
       }
       

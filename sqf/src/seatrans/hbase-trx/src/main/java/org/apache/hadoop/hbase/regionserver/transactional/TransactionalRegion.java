@@ -102,7 +102,7 @@ public class TransactionalRegion extends HRegion {
 	public RegionScanner getScanner(final Scan scan, 
                                         final List<KeyValueScanner> scanners)
 			throws IOException {
-                LOG.trace("TransactionalRegion getScanner -- Calling super getScanner" );
+                if (LOG.isTraceEnabled()) LOG.trace("TransactionalRegion getScanner -- Calling super getScanner" );
 		return super.getScanner(scan, scanners);
         }
 }

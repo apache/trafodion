@@ -137,7 +137,7 @@ public class HBaseClient {
 	throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
     {
          setupLog4j();
-         logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
+         if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + zkServers + ", " + zkPort
                          + ") called.");
          config = HBaseConfiguration.create();
 	 if (zkServers.length() > 0)
@@ -199,7 +199,7 @@ public class HBaseClient {
 
     public boolean create(String tblName, Object[]  colFamNameList) 
         throws IOException, MasterNotRunningException {
-            logger.debug("HBaseClient.create(" + tblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called.");
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
             for (int i = 0; i < colFamNameList.length ; i++) {
@@ -217,7 +217,7 @@ public class HBaseClient {
     public boolean createk(String tblName, Object[] tableOptions, 
         Object[]  beginEndKeys) 
         throws IOException, MasterNotRunningException {
-            logger.debug("HBaseClient.createk(" + tblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
             cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
@@ -397,7 +397,7 @@ public class HBaseClient {
 
     public boolean drop(String tblName) 
              throws MasterNotRunningException, IOException {
-            logger.debug("HBaseClient.drop(" + tblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
             //			admin.disableTableAsync(tblName);
            admin.disableTable(tblName);
@@ -408,7 +408,7 @@ public class HBaseClient {
 
     public boolean dropAll(String pattern) 
              throws MasterNotRunningException, IOException {
-            logger.debug("HBaseClient.dropAll(" + pattern + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.dropAll(" + pattern + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
 
 	    HTableDescriptor[] htdl = admin.listTables(pattern);
@@ -434,7 +434,7 @@ public class HBaseClient {
 
     public boolean copy(String currTblName, String oldTblName)
 	throws MasterNotRunningException, IOException, SnapshotCreationException, InterruptedException {
-            logger.debug("HBaseClient.copy(" + currTblName + oldTblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.copy(" + currTblName + oldTblName + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
 	    
 	    String snapshotName = currTblName + "_SNAPSHOT";
@@ -473,7 +473,7 @@ public class HBaseClient {
 
     public boolean exists(String tblName)  
            throws MasterNotRunningException, IOException {
-            logger.debug("HBaseClient.exists(" + tblName + ") called.");
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.exists(" + tblName + ") called.");
             HBaseAdmin admin = new HBaseAdmin(config);
             boolean result = admin.tableExists(tblName);
             admin.close();
@@ -483,20 +483,20 @@ public class HBaseClient {
     public HTableClient getHTableClient(String tblName, 
                   boolean useTRex) throws IOException 
     {
-       logger.debug("HBaseClient.getHTableClient(" + tblName
+       if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHTableClient(" + tblName
                          + (useTRex ? ", use TRX" : ", no TRX") + ") called.");
        HTableClient htable = hTableClientsFree.get(tblName);
        if (htable == null) {
           htable = new HTableClient();
           if (htable.init(tblName, config, useTRex) == false) {
-             logger.debug("  ==> Error in init(), returning empty.");
+             if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
           }
-          logger.debug("  ==> Created new object.");
+          if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
           hTableClientsInUse.put(htable.getTableName(), htable);
           return htable;
        } else {
-            logger.debug("  ==> Returning existing object, removing from container.");
+            if (logger.isDebugEnabled()) logger.debug("  ==> Returning existing object, removing from container.");
             hTableClientsInUse.put(htable.getTableName(), htable);
             htable.resetAutoFlush();
             return htable;
@@ -509,16 +509,16 @@ public class HBaseClient {
         if (htable == null)
             return;
 	                
-        logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
         htable.release();
         if (hTableClientsInUse.remove(htable.getTableName(), htable))
             hTableClientsFree.put(htable.getTableName(), htable);
         else
-            logger.debug("Table not found in inUse Pool");
+            if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
     }
 
     public boolean flushAllTables() throws IOException {
-        logger.debug("HBaseClient.flushAllTables() called.");
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.flushAllTables() called.");
        if (hTableClientsInUse.isEmpty()) {
           return true;
         }
@@ -530,7 +530,7 @@ public class HBaseClient {
 
     public boolean grant(byte[] user, byte[] tblName,
                          Object[] actionCodes) throws IOException {
-        logger.debug("HBaseClient.grant(" + new String(user) + ", "
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.grant(" + new String(user) + ", "
                      + new String(tblName) + ") called.");
 		byte[] colFamily = null;
 
@@ -555,7 +555,7 @@ public class HBaseClient {
    public boolean revoke(byte[] user, byte[] tblName,
                           Object[] actionCodes) 
                      throws IOException {
-        logger.debug("HBaseClient.revoke(" + new String(user) + ", "
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.revoke(" + new String(user) + ", "
                      + new String(tblName) + ") called.");
         byte[] colFamily = null;
 
@@ -636,7 +636,7 @@ public class HBaseClient {
             byte[] regionId = regionLoad.getName();
             if (tableRegions.contains(regionId)) {
               long regionMemStoreBytes = bytesPerMeg * regionLoad.getMemStoreSizeMB();
-              logger.debug("Region " + regionLoad.getNameAsString()
+              if (logger.isDebugEnabled()) logger.debug("Region " + regionLoad.getNameAsString()
                            + " has MemStore size " + regionMemStoreBytes);
               totalMemStoreBytes += regionMemStoreBytes;
             }
@@ -648,7 +648,7 @@ public class HBaseClient {
       }
 
       // Divide the total MemStore size by the size of a single row.
-      logger.debug("Estimating " + (totalMemStoreBytes / rowSize)
+      if (logger.isDebugEnabled()) logger.debug("Estimating " + (totalMemStoreBytes / rowSize)
                    + " rows in MemStores of table's regions.");
       return totalMemStoreBytes / rowSize;
     }
@@ -663,7 +663,7 @@ public class HBaseClient {
     public boolean estimateRowCount(String tblName, int partialRowSize,
                                     int numCols, long[] rc)
                    throws MasterNotRunningException, IOException, ClassNotFoundException {
-      logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called.");
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called.");
 
       final String REGION_NAME_PATTERN = "[0-9a-f]*";
       final String HFILE_NAME_PATTERN  = "[0-9a-f]*";
@@ -686,7 +686,7 @@ public class HBaseClient {
       nano1 = System.nanoTime();
       FileSystem fileSystem = FileSystem.get(config);
       nano2 = System.nanoTime();
-      logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
+      if (logger.isDebugEnabled()) logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
       CacheConfig cacheConf = new CacheConfig(config);
       FileStatus[] fsArr = fileSystem.globStatus(new Path("/hbase/" + 
                                tblName + "/" + REGION_NAME_PATTERN +
@@ -722,7 +722,7 @@ public class HBaseClient {
               }                      //   we want to scan
             } while ((putKVsSampled + nullCount) < (numCols * ROWS_TO_SAMPLE)
                      && scanner.next());
-            logger.debug("Sampled " + nullCount + " nulls.");
+            if (logger.isDebugEnabled()) logger.debug("Sampled " + nullCount + " nulls.");
           }  // code for first file
       } // for
 
@@ -771,20 +771,20 @@ public class HBaseClient {
       // of individual sums below.
       long memStoreRows = estimateMemStoreRows(tblName, rowSize);
 
-      logger.debug(tblName + " contains a total of " + totalEntries + " KeyValues in all HFiles.");
-      logger.debug("Based on a sample, it is estimated that " + estimatedTotalPuts +
+      if (logger.isDebugEnabled()) logger.debug(tblName + " contains a total of " + totalEntries + " KeyValues in all HFiles.");
+      if (logger.isDebugEnabled()) logger.debug("Based on a sample, it is estimated that " + estimatedTotalPuts +
                    " of these KeyValues are of type Put.");
       if (putKVsSampled + nullCount > 0)
-        logger.debug("Sampling indicates a null incidence of " + 
+        if (logger.isDebugEnabled()) logger.debug("Sampling indicates a null incidence of " + 
                      (nullCount * 100)/(putKVsSampled + nullCount) +
                      " percent.");
-      logger.debug("Estimated number of actual values (including nulls) is " + estimatedEntries);
-      logger.debug("Estimated row count in HFiles = " + estimatedEntries +
+      if (logger.isDebugEnabled()) logger.debug("Estimated number of actual values (including nulls) is " + estimatedEntries);
+      if (logger.isDebugEnabled()) logger.debug("Estimated row count in HFiles = " + estimatedEntries +
                    " / " + numCols + " (# columns) = " + rc[0]);
-      logger.debug("Estimated row count from MemStores = " + memStoreRows);
+      if (logger.isDebugEnabled()) logger.debug("Estimated row count from MemStores = " + memStoreRows);
 
       rc[0] += memStoreRows;  // Add memstore estimate to total
-      logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
+      if (logger.isDebugEnabled()) logger.debug("Total estimated row count for " + tblName + " = " + rc[0]);
       return true;
     }
 
@@ -801,7 +801,7 @@ public class HBaseClient {
     
   public  HBulkLoadClient getHBulkLoadClient() throws IOException 
   {
-    logger.debug("HBaseClient.getHBulkLoadClient() called.");
+    if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHBulkLoadClient() called.");
     HBulkLoadClient hblc = null;
     try 
     {
