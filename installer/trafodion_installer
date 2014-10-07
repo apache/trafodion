@@ -305,9 +305,21 @@ if [[ -z $NODES ]]; then
    # confusing errors when running sqgen
    if [ -f /usr/bin/pdsh ]; then
       echo "***ERROR: This is a single node cluster yet, /usr/bin/pdsh is installed on it." | tee -a $INSTALL_LOG
-      echo "***       Please uninstall or rename /usr/bin/pdsh temporarily." | tee -a $INSTALL_LOG
+      echo "***       Please uninstall or rename /usr/bin/pdsh and /usr/bin/pdcp temporarily." | tee -a $INSTALL_LOG
+      echo "***       Please reinstall or rename after successful install." | tee -a $INSTALL_LOG
       exit -1
    fi
+
+   # since sqgen uses the existence of /usr/bin/pdcp to determine if it should copy files 
+   # across nodes we will check for it here and warn the user to remove/rename it to 
+   # head-off the confusing errors when running sqgen
+   if [ -f /usr/bin/pdcp ]; then
+      echo "***ERROR: This is a single node cluster yet, /usr/bin/pdcp is installed on it." | tee -a $INSTALL_LOG
+      echo "***       Please uninstall or rename /usr/bin/pdcp and /usr/bin/pdsh temporarily." | tee -a $INSTALL_LOG
+      echo "***       Please reinstall or rename after successful install." | tee -a $INSTALL_LOG
+      exit -1
+   fi
+
 fi
 
 NODE_LIST=$(echo $NODES)
