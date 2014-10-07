@@ -145,6 +145,9 @@ public:
   // Is it recommended by user hint
   NABoolean isHintIndex() const;
 
+  // return the amount of data that the local predicate will produce
+  CostScalar getKbForLocalPred() const;
+
   // new methods added for costing purposes:
   CostScalar getKbPerVolume() const;
   CostScalar getRecordSizeInKb() const;

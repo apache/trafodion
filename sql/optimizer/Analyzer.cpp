@@ -884,7 +884,7 @@ TableAnalysis * QueryAnalysis::newTableAnalysis(RelExpr* tableExpr)
 
   // If column x in usedCols is the underlying column of a computed column, 
   // compute the column analysis for the computed column.
-  const ValueIdSet& divColumns = tableDesc->getDivisioningColumns();
+  ValueIdSet divColumns = tableDesc->getDivisioningColumns();
 
   for (ValueId x= divColumns.init(); divColumns.next(x); divColumns.advance(x) )
   {
@@ -893,6 +893,14 @@ TableAnalysis * QueryAnalysis::newTableAnalysis(RelExpr* tableExpr)
      // not appear in a prdicate can still be consiered for MDAM scan over
      // it. See keyless heuristics for NJ in JoinToTSJRule::topMatch() in
      // TransRule.cpp.
+     ColAnalysis* colAn = new (heap_) ColAnalysis(x, tabAnalysis);
+     colAnalysisArray_.insertAt(x, colAn);
+  }
+
+  // By the same argument as for the divisioning columns, include the salt column.
+  ValueIdSet saltColumnSet = tableDesc->getSaltColumnAsSet();
+  for (ValueId x= saltColumnSet.init(); saltColumnSet.next(x); saltColumnSet.advance(x) )
+  {
      ColAnalysis* colAn = new (heap_) ColAnalysis(x, tabAnalysis);
      colAnalysisArray_.insertAt(x, colAn);
   }
@@ -4434,7 +4442,7 @@ Int32 AccessPathAnalysis::numIndexPrefixCovered(const ValueIdSet& vidSet,
     indexDesc_->getPrimaryTableDesc()->getTableAnalysis()->getUsedCols();
 
   // get the use equality columns
-  equalityCols.intersect((ValueIdSet&)usedCols);
+  equalityCols.intersectSet((ValueIdSet&)usedCols);
 
   // Get the list of index columns and check if a prefix is
   // covered in the provided set.

@@ -2393,7 +2393,7 @@ NABoolean OSIM_isLinuxbehavior()
       CURRCONTEXT_OPTSIMULATOR->getCaptureSysType() == OptimizerSimulator::OSIM_LINUX)
     return TRUE;
   else
-    return TRUE;
+    return FALSE;
 }
 
 NABoolean OptimizerSimulator::runningInCaptureMode()

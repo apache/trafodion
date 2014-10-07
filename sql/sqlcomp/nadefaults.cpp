@@ -1167,7 +1167,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDkwd__(DEFAULTS_TABLE_ACCESS_WARNINGS,	"OFF"),
 
  SDDkwd__(DEFAULT_CHARSET,           (char *)SQLCHARSETSTRING_ISO88591),
- XDDui1__(DEFAULT_DEGREE_OF_PARALLELISM,    "16"),
+ XDDui1__(DEFAULT_DEGREE_OF_PARALLELISM,    "2"),
 
  SDDkwd__(DEFAULT_SCHEMA_ACCESS_ONLY, "OFF"),
  SDDkwd__(DEFAULT_SCHEMA_NAMETYPE, "SYSTEM"),
@@ -4148,19 +4148,7 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
     case DEFAULT_DEGREE_OF_PARALLELISM:
       {
-        Lng32 x = 0;
-        if(!OSIM_isLinuxbehavior())
-        {
-          x = 16;
-        }
-        else{
-	        // For Linux, we set it to 8 (power of 2). See Hans' email below.
-	        // "As far as I know, the SeaQuest will be sold in units of 8 blades,
-	        // each one is a 4-way SMP. The first such unit will be 2 head nodes
-	        // (for XC and other things) and 6 SQL nodes. Additional units will
-	        // add 6 or 8 nodes each."
-	        x = 8;
-        }
+        Lng32 x = 2;
 
 	utoa_(x, valuestr);
 	strcpy(newValue, valuestr);

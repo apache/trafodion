@@ -212,6 +212,8 @@ public:
 
   ValueIdSet getDivisioningColumns() ;
 
+  ValueIdSet getSaltColumnAsSet() ;
+
 private:
 
   // compress the histograms based on query predicates on this table
