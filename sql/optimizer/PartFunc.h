@@ -381,9 +381,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   // Compare two part funcs on push-down compatibility
   virtual NABoolean 
@@ -869,9 +868,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual ItemExpr* createPartitioningExpression() ;
 
@@ -963,9 +961,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual ItemExpr* createPartitioningExpression() ;
 
@@ -1061,9 +1058,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual ItemExpr* createPartitioningExpression() ;
 
@@ -1176,9 +1172,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   // build the part expr using the part key columns as input
   virtual ItemExpr* createPartitioningExpression() ;
@@ -1313,9 +1308,8 @@ public:
   void createPartitioningKeyPredicatesForSaltedTable(ValueId saltCol);
 
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual PartitioningRequirement* makePartitioningRequirement();
 
@@ -1973,9 +1967,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual PartitioningFunction *
   scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,
@@ -2198,9 +2191,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual ItemExpr* createPartitioningExpression() ;
 
@@ -2408,9 +2400,8 @@ public:
   // Replace the pivs, partitioning key predicates and partitioning 
   // expression with those passed in.
   virtual void replacePivs(
-    const ValueIdSet& newPivs,
-    const ValueIdSet& newPartKeyPreds,
-    ItemExpr* newPartExpr);
+    const ValueIdList& newPivs,
+    const ValueIdSet& newPartKeyPreds);
 
   virtual PartitioningFunction *
   scaleNumberOfPartitions(Lng32 &suggestedNewNumberOfPartitions,

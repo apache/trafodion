@@ -1131,16 +1131,12 @@ void RelExpr::replacePivs()
   if (myPartFunc == NULL)
     return;
 
-  const ValueIdSet myPartKeyPreds = myPartFunc->getPartitioningKeyPredicates();
-  const ValueIdSet myPivs = myPartFunc->getPartitionInputValuesLayout();
+  const ValueIdSet  &myPartKeyPreds = myPartFunc->getPartitioningKeyPredicates();
+  const ValueIdSet  &myPivs         = myPartFunc->getPartitionInputValues();
+  const ValueIdList &myPivLayout    = myPartFunc->getPartitionInputValuesLayout();
 
-  // Temporary variables for holding the mapped part. function pieces
-  PartitioningFunction* myMappedPartFunc;
-  ValueIdSet myMappedPartKeyPreds;
-  ValueIdSet myMappedPivs;
-  ItemExpr* myMappedPartExpr;
-  // For mapping
-  NABoolean rewriteForChild0;
+  if (myPivs.entries() == 0)
+    return;
 
   // Process all children.
   for (Lng32 childIndex = 0; childIndex < getArity(); childIndex++)
@@ -1155,89 +1151,22 @@ void RelExpr::replacePivs()
 
     CMPASSERT(childPartFunc != NULL);
 
-    const ValueIdSet childPartKeyPreds =
+    const ValueIdSet &childPartKeyPreds =
                        childPartFunc->getPartitioningKeyPredicates();
-    ValueIdSet childPivs =
+    const ValueIdList &childPivLayout =
                        childPartFunc->getPartitionInputValuesLayout();
-    const IndexDesc* childIndexDesc = sppOfChild->getIndexDesc();
-
-    // Map the partitioning key preds and part expr, if necessary,
-    // from the parent value id's to the child's.
-    // Note the default version does no mapping.
-    // Also note that the pivs do not get mapped, they just get copied.
-    if (childIndex == 0)
-      rewriteForChild0 = TRUE;
-    else
-      rewriteForChild0 = FALSE;
-
-    myMappedPartFunc =
-      mapPartitioningFunction(myPartFunc,rewriteForChild0);
-    myMappedPivs = myMappedPartFunc->getPartitionInputValuesLayout();
-    myMappedPartKeyPreds = myMappedPartFunc->getPartitioningKeyPredicates();
-    myMappedPartExpr = myMappedPartFunc->getPartitioningExpression();
-
-    const LogPhysPartitioningFunction* childLppf =
-      childPartFunc->castToLogPhysPartitioningFunction();
 
     // The parent's mapped partitioning function and the child's MUST be
-    // equivalent, or the child has a replication partitioning function, or
+    // compatible, or the child has a replication partitioning function, or
     // the parent is a DP2 Exchange, the child has a logPhysPartitioning
     // function, and it's logical partitioning function is equivalent to the
     // parent's mapped partitioning function.
 
-    // it is better to
-    // check the compatibility/colocation of physical partfuncs of the two
-    // operators when myMappPartFunc is a logphy.
-    //
-
-    //
-    // For certain equi-joins, mapping may change the partitioning
-    // key columns generating new expressions replacing the "bottom-values" of
-    // with the "top-values" of the map. This, however, does not mean that
-    // new partitioning key columns are generated. After de-normalization is
-    // done, we should get back the same physical columns or expressions.
-    // For this reason, it is necessary to compare partitioning functions of
-    // the child with the pre-mapped partitioning function: So the following
-    // line was added:
-    // (myPartFunc->comparePartFuncToFunc(*childPartFunc) == SAME)
-    // Solution 10-040611-6903
-    if ( NOT myMappedPartFunc->isALogPhysPartitioningFunction() ) {
-      // For the MergeUnion operator, now it is not always required that
-      // the partitioning functions match. In some cases (where random 
-      // partitioning func was created for one of the children), it is ok if
-      // only partitioning function type and the number of partitions match.
-      NABoolean mergeUnion = 
-        ( (CURRSTMT_OPTDEFAULTS->isSideTreeInsert() == FALSE) AND
-          (getOperatorType() == REL_MERGE_UNION) AND 
-          (myPartFunc->comparePartFuncsForUnion(*childPartFunc) == SAME)
-        );
-      
-      NABoolean optimizedHashAntiSemiJoin = FALSE;
-
-
-
-      float dop_threshold = 0.0;
-      ActiveSchemaDB()-> getDefaults().getFloat(DOP_REDUCTION_ROWCOUNT_THRESHOLD, dop_threshold);
-
-      NABoolean dopReduced = 
-                dop_threshold > 0.0 && getOperatorType() == REL_EXCHANGE && 
-                ((Exchange*)this)->dopReduced(); 
-
-      CMPASSERT
-        (mergeUnion OR
-         optimizedHashAntiSemiJoin OR
-         (dopReduced AND (childLppf == NULL OR
-                myMappedPartFunc->isAReplicationPartitioningFunction() OR
-                myMappedPartFunc->isAGroupingOf(*childLppf->getLogPartitioningFunction())))
-         OR
-         (myMappedPartFunc->comparePartFuncToFunc(*childPartFunc) == SAME) OR
-         (myPartFunc->comparePartFuncToFunc(*childPartFunc) == SAME) OR
-         childPartFunc->isAReplicationPartitioningFunction() OR
-         ((childLppf != NULL) AND
-          (myMappedPartFunc->
-           comparePartFuncToFunc(*childLppf->getLogPartitioningFunction())
-           == SAME)));
-    }
+    // "compatible" means that the functions can use the same set of PIVs
+    // to produce valid values. For example, two HASH2 part functions are
+    // compatible if they have the same number of partitions. Two range 
+    // part functions are compatible if they have the same number of
+    // key columns and the data types of the keys match.
 
     // Check if I have some pivs and the child has some pivs and they
     // are different. Note that it could be possible for this operator
@@ -1247,90 +1176,37 @@ void RelExpr::replacePivs()
     // and in this case there is nothing to do - you would not want
     // to give the child pivs that it does not need.
 
-    if (NOT myMappedPivs.isEmpty() AND
-        NOT childPivs.isEmpty() AND
-        myMappedPivs != childPivs)
+    if (NOT childPivLayout.isEmpty() AND
+        !(myPivLayout == childPivLayout))
     {
-      // Child's pivs are different from mine.
-      // Make the child pivs and parent pivs the same.
+      // Child's pivs exist and are different from mine.
+      // Make the child pivs and parent pivs the same and map
+      // all item expressions in the child that refer to them
+      // to the new PIVs.
 
-      childPartFunc->replacePivs(myMappedPivs,
-        myMappedPartKeyPreds,
-        myMappedPartExpr);
+      ValueIdMap pivMap(myPartFunc->getPartitionInputValuesLayout(),
+                        childPartFunc->getPartitionInputValuesLayout());
+      ValueIdSet rewrittenChildPartKeyPreds;
 
-      OperatorTypeEnum ot = child(0)->castToRelExpr()->getOperatorType();
+      // check for "compatible" partitioning functions
+      CMPASSERT(myPartFunc->getPartitionInputValuesLayout().entries() ==
+                childPartFunc->getPartitionInputValuesLayout().entries());
+      CMPASSERT(myPartFunc->getPartitioningFunctionType() ==
+                childPartFunc->getPartitioningFunctionType());
+      CMPASSERT(myPartFunc->getCountOfPartitions() ==
+                childPartFunc->getCountOfPartitions());
+      // could also check column types of range part. func. but
+      // since that's more complicated we won't check for now
 
-      NABoolean modifyScan = (ot == REL_HBASE_ACCESS);
+      pivMap.mapValueIdSetDown(childPartKeyPreds, rewrittenChildPartKeyPreds);
 
-      if (!modifyScan && childLppf != NULL ) {
-         LogPhysPartitioningFunction::logPartType logPartType =
-           childLppf->getLogPartType();
-
-        if ((logPartType ==
-              LogPhysPartitioningFunction::LOGICAL_SUBPARTITIONING) OR
-            (logPartType ==
-              LogPhysPartitioningFunction::HORIZONTAL_PARTITION_SLICING))
-            modifyScan = TRUE;
-      }
-
-      if ( modifyScan )
-      {
-        // Child must be executing in DP2.
-
-        // If we are doing logical subpartitioning and the child is a
-        // File scan, then the partitioning key predicates were added
-        // to the selection predicates. We need to get rid of the old
-        // version of the part key preds and replace them with the new
-        // version.
-        {
-          // Get rid of the old part key preds if they are there.
-          child(childIndex)->selectionPred() -= childPartKeyPreds;
-          // Call a virtual method to add them. This method does
-          // nothing unless the child is a file scan.
-          child(childIndex)->addPartKeyPredsToSelectionPreds(
-                               myMappedPartKeyPreds,myMappedPivs);
-          if (( child(childIndex)->getOperatorType() == REL_HBASE_ACCESS OR
-               child(childIndex)->getOperatorType() == REL_FILE_SCAN  OR
-               child(childIndex)->getOperatorType() == REL_DP2_SCAN  OR
-               child(childIndex)->getOperatorType() == REL_DP2_SCAN_UNIQUE)   AND
-              ((FileScan *)(RelExpr *)(child(childIndex)))->getSearchKeyPtr() != NULL)
-            {
-             ValueIdSet exePreds = ((FileScan *)(RelExpr *)(child(childIndex)))->
-                                            searchKey()->getExecutorPredicates();
-             exePreds   -= childPartKeyPreds;
-             exePreds  += myMappedPartKeyPreds;
-             ((FileScan *)(RelExpr *)(child(childIndex)))->
-                                     searchKey()->setExecutorPredicates(exePreds);
-//             ValueIdSet keyPreds = ((FileScan *)(RelExpr *)(child(childIndex)))->
-//                                            searchKey()->keyPredicates();
-             ((FileScan *)(RelExpr *)(child(childIndex)))->
-                     searchKey()->replaceBegEndPivs( childPivs,myMappedPivs);
-            }
-        }
-
-        if ((sppOfChild->getPartSearchKey() != NULL) AND NOT
-            sppOfChild->getPartSearchKey()->isUnique())
-        {
-          // Need to regenerate the partitioning search key for a
-          // range or hash partitioned or round robin table, since the
-          // original was based on the old partitioning key predicates
-          // and PIVs.
-
-          // the key preds have the group's char. inputs and the
-          // partition input variables available
-          ValueIdSet availInputs(
-              child(childIndex)->getGroupAttr()->getCharacteristicInputs());
-          ValueIdSet dummy;
-
-          SearchKey *newPartSearchKey =
-            childLppf->getLogPartitioningFunction()->
-            createSearchKey(childIndexDesc, availInputs, dummy);
-
-          if(newPartSearchKey)
-            sppOfChild->setPartSearchKey(newPartSearchKey);
-
-        } // end if part search key is not null or unique
-      } // end if the child's part func is a logphys part func
+      // Update the child's partitioning function. Note that since replacePivs()
+      // is called before calling preCodeGen() on the child, we do this before
+      // any predicates that use PIVs are generated in the child. So, no other
+      // places in the child need to be updated.
+      childPartFunc->replacePivs(
+           myPivLayout,
+           rewrittenChildPartKeyPreds);
     } // end if my part key preds are not the same as the childs
   } // end for all children
 
