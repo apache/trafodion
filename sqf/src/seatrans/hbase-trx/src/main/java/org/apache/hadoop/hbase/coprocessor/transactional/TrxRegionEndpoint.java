@@ -179,6 +179,9 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionalAggregateRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionalAggregateResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
+import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
+import org.apache.hadoop.hbase.zookeeper.ZKUtil;
+import org.apache.zookeeper.KeeperException;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -229,7 +232,7 @@ CoprocessorService, Coprocessor {
   private Object commitCheckLock = new Object();
   private Object recoveryCheckLock = new Object();
   private Object editReplay = new Object();
-  private int reconstructIndoubts = 1; // SST TBD put "1" to temporarily disable recovery
+  private int reconstructIndoubts = 0; 
   //temporary THLog getSequenceNumber() replacement
   private AtomicLong nextLogSequenceId = new AtomicLong(0);
   private final int oldTransactionFlushTrigger = 0;
@@ -241,7 +244,7 @@ CoprocessorService, Coprocessor {
   CleanOldTransactionsChore cleanOldTransactionsThread;
   static Stoppable stoppable = new StoppableImplementation();
   private int cleanTimer = 5000; // Five minutes
-  private int regionState = 2; // SST TBD to set region state = STARTED to disable recovery
+  private int regionState = 0; 
   private Path recoveryTrxPath = null;
   private int cleanAT = 0;
   private HRegionInfo regionInfo = null;
@@ -251,7 +254,11 @@ CoprocessorService, Coprocessor {
   private RegionCoprocessorHost rch = null;
   private HLog tHLog = null;
   boolean closing = false;
-  int recoveryTest = 1;
+  private static Object zkRecoveryCheckLock = new Object();
+  private static ZooKeeperWatcher zkw1 = null;
+  String lv_hostName;
+  int lv_port;
+  private static String zNodePath = "/hbase/Trafodion/recovery/";
 
   private static final int DEFAULT_LEASE_TIME = 7200 * 1000;
   private static final int LEASE_CHECK_FREQUENCY = 1000;
@@ -272,6 +279,12 @@ CoprocessorService, Coprocessor {
   private Thread ChoreThread = null;
   //private static Thread ScannerLeasesThread = null;
   private static Thread TransactionalLeasesThread = null;
+  private static boolean editGenerated = false;
+
+  private static final int COMMIT_REQUEST = 1;
+  private static final int COMMIT = 2;
+  private static final int ABORT = 3;
+  private static final int CONTROL_POINT_COMMIT = 4;
 
   // TrxRegionService methods
     
@@ -1250,6 +1263,7 @@ CoprocessorService, Coprocessor {
         }
 */
 
+
     List<Cell> results = new ArrayList<Cell>();
 
     if (!exceptionThrown) {
@@ -1637,12 +1651,12 @@ CoprocessorService, Coprocessor {
 
       //SST TBD until integration with recovery 
       if (reconstructIndoubts == 0) {
+         LOG.debug("TrxRegionEndpoint coprocessor:  RECOV recovery Request");
          constructIndoubtTransactions();
-         reconstructIndoubts = 1;
       }
 
       // Placeholder for real work when recovery is added
-      LOG.trace("TrxRegionEndpoint coprocessor: recoveryResponse - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", tmId" + tmId);
+      LOG.debug("TrxRegionEndpoint coprocessor: recoveryResponse - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", tmId" + tmId);
 
       java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
@@ -1671,7 +1685,7 @@ CoprocessorService, Coprocessor {
                           long tid = entry.getKey();
                           if ((int) (tid >> 32) == tmId) {
                               indoubtTransactions.add(tid);
-                              LOG.info("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + "has been added into the recovery repply to TM " + tmId);
+                              LOG.info("Trafodion Recovery: region " + regionInfo.getEncodedName() + " in-doubt transaction " + tid + " has been added into the recovery repply to TM " + tmId);
                           }
                      } 
                      break;
@@ -2240,12 +2254,13 @@ CoprocessorService, Coprocessor {
 
     RegionServerServices rss = tmp_env.getRegionServerServices();
     ServerName sn = rss.getServerName();
-    String lv_hostName = sn.getHostname();
-    int lv_port = sn.getPort();
+    lv_hostName = sn.getHostname();
+    lv_port = sn.getPort();
     LOG.debug("TrxRegionEndpoint coprocessor: Hostname " + lv_hostName + " port " + lv_port);
     this.regionInfo = this.m_Region.getRegionInfo();
     this.nextLogSequenceId = this.m_Region.getSequenceId();
     this.t_Region = (TransactionalRegion) tmp_env.getRegion();
+    zkw1 = rss.getZooKeeper();
 
     LOG.debug("TrxRegionEndpoint coprocessor: get the reference from Region CoprocessorEnvrionment ");
 
@@ -2377,25 +2392,48 @@ CoprocessorService, Coprocessor {
      }
    }
 
+  public void deleteRecoveryzNode(int node, String encodedName) throws IOException {
+
+       synchronized(zkRecoveryCheckLock) {
+         // default zNodePath
+         String zNodeKey = lv_hostName + "," + lv_port + "," + encodedName;
+
+         StringBuilder sb = new StringBuilder();
+         sb.append("TM");
+         sb.append(node);
+         String str = sb.toString();
+         String zNodePathTM = zNodePath + str;
+         String zNodePathTMKey = zNodePathTM + "/" + zNodeKey;
+         LOG.debug("Trafodion Recovery Region Observer CP: ZKW Delete region recovery znode" + node + " zNode Path " + zNodePathTMKey);
+          // delete zookeeper recovery zNode, call ZK ...
+         try {
+             ZKUtil.deleteNodeFailSilent(zkw1, zNodePathTMKey);
+          } catch (KeeperException e) {
+            throw new IOException("Trafodion Recovery Region Observer CP: ZKW Unable to delete recovery zNode to TM " + node, e);
+          }
+       }
+  } // end of deleteRecoveryzNode
+
   /**
    * Starts the region after a recovery
    */
   public void startRegionAfterRecovery() throws IOException {
     boolean isFlush = false;
-/*
+
     try {
           LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery:  Flushing cache in startRegionAfterRecovery " + m_Region.getRegionInfo().getRegionNameAsString());
-          if (!m_Region.flushcache().isFlushSucceeded()) { 
-             LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery:  Flushcache returns false !!! " + m_Region.getRegionInfo().getRegionNameAsString());
-          }
+          m_Region.flushcache();
+          //if (!m_Region.flushcache().isFlushSucceeded()) { 
+          //   LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery:  Flushcache returns false !!! " + m_Region.getRegionInfo().getRegionNameAsString());
+          //}
      } catch (IOException e) {
      LOG.error("TrxRegionEndpoint coprocessor:  Trafodion Recovery: Flush failed after replay edits" + m_Region.getRegionInfo().getRegionNameAsString());
      return;
      }
 
-*/
+
     //FileSystem fileSystem = m_Region.getFilesystem();
-    //Path archiveTHLog = new Path (recoveryTrxPath.getParent(),"archivethLOG.ile.LOG.);
+    //Path archiveTHLog = new Path (recoveryTrxPath.getParent(),"archivethlogfile.log");
     //if (fileSystem.exists(archiveTHLog)) fileSystem.delete(archiveTHLog, true);
     //if (fileSystem.exists(recoveryTrxPath))fileSystem.rename(recoveryTrxPath,archiveTHLog);
     if (indoubtTransactionsById != null)
@@ -2413,22 +2451,27 @@ CoprocessorService, Coprocessor {
    */
   private void commit(final TransactionState state) throws IOException {
     long txid = 0;
+    WALEdit b = null;
+    Tag commitTag;
     LOG.trace("TrxRegionEndpoint coprocessor:  Commiting transaction: " + state.toString() + " to "
      + m_Region.getRegionInfo().getRegionNameAsString());
     long transactionId = state.getTransactionId();
     if (state.isReinstated()) {
-      LOG.debug("TrxRegionEndpoint coprocessor:  commit Trafodion Recovery: commit reinstated indoubt transactions " + transactionId);
-      WALEdit b = null;
+      LOG.debug("TrxRegionEndpoint coprocessor:  commit Trafodion Recovery: commit reinstated indoubt transactions " + transactionId + 
+                              " in region " + m_Region.getRegionInfo().getRegionNameAsString());
       synchronized (indoubtTransactionsById) {  
-        b = indoubtTransactionsById.get(getTransactionalUniqueId(transactionId));
+        b = indoubtTransactionsById.get(transactionId);
       }
       LOG.trace("TrxRegionEndpoint coprocessor:  commit Writing " + b.size() + " updates for reinstated transaction " + transactionId);
       for (KeyValue kv : b.getKeyValues()) {
         synchronized (editReplay) {
+          Put put;
+          Delete del;
           LOG.trace("TrxRegionEndpoint coprocessor:  Trafodion Recovery:   " + m_Region.getRegionInfo().getRegionNameAsString() + " replay commit for transaction: "   + transactionId + " with Op " + kv.getType());
           if (kv.getTypeByte() == KeyValue.Type.Put.getCode()) {
-		Put put = new Put(CellUtil.cloneRow(kv)); // kv.getRow()
+		put = new Put(CellUtil.cloneRow(kv)); // kv.getRow()
                 put.add(CellUtil.cloneFamily(kv), CellUtil.cloneQualifier(kv), kv.getTimestamp(), CellUtil.cloneValue(kv));
+                state.addWrite(put);
            try {
              m_Region.put(put);
            }
@@ -2439,12 +2482,13 @@ CoprocessorService, Coprocessor {
               throw new IOException(e.toString());
            }
   	  } else if (CellUtil.isDelete(kv))  {
-		Delete del = new Delete(CellUtil.cloneRow(kv));
+		del = new Delete(CellUtil.cloneRow(kv));
 	       	if (CellUtil.isDeleteFamily(kv)) {
 	 	     del.deleteFamily(CellUtil.cloneFamily(kv));
 	        } else if (kv.isDeleteType()) {
 	             del.deleteColumn(CellUtil.cloneFamily(kv), CellUtil.cloneQualifier(kv));
 	        }
+                state.addDelete(del);
             try {
               m_Region.delete(del);
             }
@@ -2504,8 +2548,9 @@ CoprocessorService, Coprocessor {
     if (state.hasWrite() || state.isReinstated()) {
        // comment out for now
       LOG.trace("write commit edit to HLOG");
-       //this.transactionLog.writeCommitToLog(m_Region.getRegionInfo(), state.getTransactionId(), m_Region.getTableDesc());
-      Tag commitTag = state.formTransactionalContextTag(2); //SST: TBD 1 is prepare, 2 is commit, and 3 is abort
+      //this.transactionLog.writeCommitToLog(m_Region.getRegionInfo(), state.getTransactionId(), m_Region.getTableDesc()); 
+      if (editGenerated) commitTag = state.formTransactionalContextTag(COMMIT);
+      else commitTag = state.formTransactionalContextTag(CONTROL_POINT_COMMIT);
       List<Tag> tagList = new ArrayList<Tag>();
       tagList.add(commitTag);
 
@@ -2513,34 +2558,29 @@ CoprocessorService, Coprocessor {
       WALEdit e1 = state.getEdit();
       WALEdit e = new WALEdit();
 
-      // SST get 1st Cell to associated with the commit record as a workaround through HLOG async append
-      Cell c = e1.getKeyValues().get(0);
-      KeyValue kv = new KeyValue(c.getRowArray(), c.getRowOffset(), (int)c.getRowLength(),
+      if (editGenerated) {
+         // TBD get 1st Cell to associated with the commit record as a workaround through HLOG async append
+         Cell c = e1.getKeyValues().get(0);
+         KeyValue kv = new KeyValue(c.getRowArray(), c.getRowOffset(), (int)c.getRowLength(),
 					c.getFamilyArray(), c.getFamilyOffset(), (int)c.getFamilyLength(),
 					c.getQualifierArray(), c.getQualifierOffset(), (int) c.getQualifierLength(),
 					c.getTimestamp(), Type.codeToType(c.getTypeByte()), c.getValueArray(), c.getValueOffset(),
 					c.getValueLength(), tagList);
       
-      e.add(kv);
+         e.add(kv);
+       }
+       else { // TBD to handle 1st edit issue
+         for (Cell c : e1.getKeyValues()) {
+              KeyValue kv = new KeyValue(c.getRowArray(), c.getRowOffset(), (int)c.getRowLength(),
+					c.getFamilyArray(), c.getFamilyOffset(), (int)c.getFamilyLength(),
+					c.getQualifierArray(), c.getQualifierOffset(), (int) c.getQualifierLength(),
+					c.getTimestamp(), Type.codeToType(c.getTypeByte()), c.getValueArray(), c.getValueOffset(),
+					c.getValueLength(), tagList);
+              e.add(kv);
+          }
+       }
 
-             /*// SST trace print
-             LOG.debug("CMT11 KV info length " + kv.getLength() + " " + kv.getKeyLength() + " " + kv.getValueLength() + " " + kv.getTagsLength()); 
-             LOG.debug("CMT22 tag " + Hex.encodeHexString( kv.getBuffer()));
-             byte[] tagArray = Bytes.copy(kv.getTagsArray(), kv.getTagsOffset(), kv.getTagsLength());
-             LOG.debug("CMT33 tag " + Hex.encodeHexString(tagArray));
-             byte tagType = 41;
-             Tag tag = Tag.getTag(tagArray, 0, kv.getTagsLength(), tagType); //TagType.TRANSACTION_TAG_TYPE
-             byte[] b = tag.getBuffer();
-             int offset = Tag.TYPE_LENGTH_SIZE + Tag.TAG_LENGTH_SIZE;
-             int version = Bytes.toInt(b,offset);
-             int op = Bytes.toInt(b,Bytes.SIZEOF_INT+offset);
-             long tid = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+offset);
-             long LOG.eqId = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+Bytes.SIZEOF_LONG+offset);
-             LOG.debug("CMT44 Find transactional tag within Edits for tid " + tid + " op " + op + " LOG.seq " + LOG.eqId + " version " + version);
-             if (e.isEmpty()) LOG.debug("CMT55 in commit edits is empty");
-             else LOG.debug("CMT55 in commit edits is NOT empty " + e.size());
-             */
-
+    //if (!editGenerated) { // comment out the if (!editGenerated) -- only for DEV test to create in-doubt txn
       try {
            txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
                   e, new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
@@ -2550,9 +2590,11 @@ CoprocessorService, Coprocessor {
          LOG.trace("TrxRegionEndpoint coprocessor commit writing to HLOG : Threw an exception");
          throw exp1;
        }
-      LOG.trace("BBB write commit edit to HLOG after appendNoSync");
-      LOG.debug("TrxRegionEndpoint coprocessor:commit -- EXIT txId: " + transactionId + " HLog seq " + txid);
-      //SST: no need to do this.tHLog.sync(txid) for phase 2 due to TLOG enabled
+    //}
+         LOG.trace("BBB write commit edit to HLOG after appendNoSync");
+         LOG.debug("TrxRegionEndpoint coprocessor:commit -- EXIT txId: " + transactionId + " HLog seq " + txid);
+         if (!editGenerated) editGenerated = true;
+      // no need to do this.tHLog.sync(txid) for phase 2 due to TLOG enabled
     }
 
     state.setStatus(Status.COMMITED);
@@ -2571,7 +2613,7 @@ CoprocessorService, Coprocessor {
 
     if (state.isReinstated()) {
       synchronized(indoubtTransactionsById) {
-        indoubtTransactionsById.remove(getTransactionalUniqueId(state.getTransactionId()));
+        indoubtTransactionsById.remove(state.getTransactionId());
         int tmid = (int) (transactionId >> 32);
         int count = 0;
         if (indoubtTransactionsCountByTmid.containsKey(tmid)) {
@@ -2581,13 +2623,12 @@ CoprocessorService, Coprocessor {
         if (count == 0) {
           indoubtTransactionsCountByTmid.remove(tmid);
           String lv_encoded = m_Region.getRegionInfo().getEncodedName();
-          //try {
-            LOG.trace("TrxRegionEndpoint coprocessor: commit Trafodion Recovery: delete in commit recovery zNode TM " + tmid + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
-            // comment out for now
-            //TrxRegionEndpoint coprocessor: erver.deleteRecoveryzNode(tmid, lv_encoded);
-          //} catch (IOException e) {
-           // LOG.error("Trafodion Recovery: delete recovery zNode failed");
-          //}
+            try {
+              LOG.trace("TrxRegionEndpoint coprocessor: commit Trafodion Recovery: delete in commit recovery zNode TM " + tmid + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
+              deleteRecoveryzNode(tmid, lv_encoded);
+            } catch (IOException e) {
+            LOG.error("Trafodion Recovery: delete recovery zNode failed");
+            }
         }
 
         if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
@@ -2609,7 +2650,7 @@ CoprocessorService, Coprocessor {
    */
   private void resolveTransactionFromLog(
     final TransactionState transactionState) throws IOException {
-    LOG.error("TrxRegionEndpoint coprocessor:  Global transaction LOG.is not Implemented. (Optimisticly) assuming transaction commit!");
+    LOG.error("TrxRegionEndpoint coprocessor:  Global transaction log is not Implemented. (Optimisticly) assuming transaction commit!");
     commit(transactionState);
   }
 
@@ -2967,7 +3008,12 @@ CoprocessorService, Coprocessor {
             if ((indoubtTransactionsById == null) || (indoubtTransactionsById.size() == 0)) {
               LOG.debug("Trafodion Recovery Endpoint Coprocessor: Region " + regionInfo.getRegionNameAsString() + " has no in-doubt transaction, set region START ");
               regionState = 2; // region is started for transactional access
-              reconstructIndoubts = 1;
+              reconstructIndoubts = 1; 
+              try {
+              startRegionAfterRecovery();
+               } catch (IOException exp1) {
+                    LOG.debug("Trafodion Recovery: flush error during region start");
+               }
               return;
             }
 
@@ -3001,13 +3047,13 @@ CoprocessorService, Coprocessor {
              } // not reconstruct indoubtes yet
              reconstructIndoubts = 1;
         } // synchronized
-        // SST cleanup lists (this is for testing purpose only)
+        /* //TBD cleanup lists (this is for testing purpose only)
         LOG.debug("Trafodion Recovery Endpoint Coprocessor:EEE Clean up recovery test for indoubt transactions");
         transactionsById.clear();
         commitPendingTransactions.clear();
         commitedTransactionsBySequenceNumber.clear();
         LOG.debug("Trafodion Recovery Endpoint Coprocessor:EEE Clean up indoubt transactions in data lists");
-
+        */
   }
 
   /**
@@ -3024,10 +3070,10 @@ CoprocessorService, Coprocessor {
     LOG.debug("TrxRegionEndpoint coprocessor:  beginTransaction -- ENTRY txId: " + transactionId);
     checkClosing(transactionId);
                 
-    //SST TBD until integration with recovery 
+    // TBD until integration with recovery 
     if (reconstructIndoubts == 0) {
+       LOG.debug("TrxRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
        constructIndoubtTransactions();
-       reconstructIndoubts = 1;
     }
     if (regionState != 2) {
        LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery: RECOVERY WARN beginTransaction while the region is still in recovering state " +  regionState);
@@ -3224,30 +3270,13 @@ CoprocessorService, Coprocessor {
                 
     if (state.hasWrite()) {
       LOG.trace("write commitRequest edit to HLOG");
-      //transactionLog.writeCommitRequestToLog(m_Region.getRegionInfo(), state);
       //call HLog by passing tagged WALEdits and associated fields
       try {
-                  txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
+             txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
                   state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                   nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
-
-      //
-      // Once we append edit into HLOG during DML operation, there is no need to do any HLOG write in phase 1.
-      // Likely all the edits have been synced, so just do a sync(state.getLargestSeqId()) --> most likely, it is an no-op
-      // This is to leverage the time between last DML and phase 1, so there is no need to do any LOG.ing (and waited) in phase 1.
-      // And there is no need to write "prepared" record since we try to optimize normal running mode (99.99% commit)
-      // We can append "commit" or "abort" into HLOG in phase 2 in a no-sync mode, but it can also be eliminated if necessary.
-      // All the transaction reinstated during recovery will be treated as "in-doubt" and need to use TLOG to resolve. 
-      // So TLOG must be kept for a while (likely a few CP), besides, HRegion chore thread can perform ~ CP action by writing
-      //  the smallest sequenceId (not LOG.eqid), so we don't need to deal with commite case (but we did write abort edit since
-      //  the number of abort is < 0.1% -- we can set this as a configurable property).
-
-      //  this.tHLog.sync(state.getLargestSeqId());
-      //
-
-      LOG.debug("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
-      this.tHLog.sync(txid);
-      LOG.debug("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK and HLOG Sync Completed for Txid " + txid);
+             this.tHLog.sync(txid);
+             LOG.debug("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
       } catch (IOException exp) {
           LOG.info("TrxRegionEndpoint coprocessor:commitRequest IOException caught in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
           throw exp;
@@ -3318,7 +3347,7 @@ CoprocessorService, Coprocessor {
     //                                      state.getTransactionId(),
     //                                    m_Region.getTableDesc());
        LOG.trace("abort write to HLOG");
-       Tag abortTag = state.formTransactionalContextTag(3); //SST: TBD 1 is prepare, 2 is commit, and 3 is abort
+       Tag abortTag = state.formTransactionalContextTag(ABORT);
        List<Tag> tagList = new ArrayList<Tag>();
        tagList.add(abortTag);
 
@@ -3336,25 +3365,6 @@ CoprocessorService, Coprocessor {
       c.getValueLength(), tagList);
       
       e.add(kv);
-
-             /*// SST trace print
-             LOG.debug("ABR11 KV info length " + kv.getLength() + " " + kv.getKeyLength() + " " + kv.getValueLength() + " " + kv.getTagsLength()); 
-             LOG.debug("ABR22 tag " + Hex.encodeHexString( kv.getBuffer()));
-             byte[] tagArray = Bytes.copy(kv.getTagsArray(), kv.getTagsOffset(), kv.getTagsLength());
-             LOG.debug("ABR33 tag " + Hex.encodeHexString(tagArray));
-             byte tagType = 41;
-             Tag tag = Tag.getTag(tagArray, 0, kv.getTagsLength(), tagType); //TagType.TRANSACTION_TAG_TYPE
-             byte[] b = tag.getBuffer();
-             int offset = Tag.TYPE_LENGTH_SIZE + Tag.TAG_LENGTH_SIZE;
-             int version = Bytes.toInt(b,offset);
-             int op = Bytes.toInt(b,Bytes.SIZEOF_INT+offset);
-             long tid = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+offset);
-             long LOG.eqId = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+Bytes.SIZEOF_LONG+offset);
-             LOG.debug("ABR44 Find transactional tag within Edits for tid " + tid + " op " + op + " LOG.seq " + LOG.eqId + " version " + version);
-             if (e.isEmpty()) LOG.debug("ABR55 in abort edits is empty");
-             else LOG.debug("ABR55 in abort edits is NOT empty " + e.size());
-             */
-
       try {
              txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
                   e, new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
@@ -3365,7 +3375,7 @@ CoprocessorService, Coprocessor {
         throw exp1;
        }
        LOG.debug("TrxRegionEndpoint coprocessor:abort -- EXIT txId: " + transactionId + " HLog seq " + txid);
-       //SST: no need to do this.tHLog.sync(txid) for phase 2 due to TLOG enabled
+       //TBD: no need to do this.tHLog.sync(txid) for phase 2 due to TLOG enabled
     }
 
     synchronized (commitPendingTransactions) {
@@ -3386,19 +3396,16 @@ CoprocessorService, Coprocessor {
             if (count > 0) indoubtTransactionsCountByTmid.put(tmid, count);
         }
 
-        // if all reinstated txns are resolved from a TM,
-        // remove it and delete associated zNode
+        // if all reinstated txns are resolved from a TM, remove it and delete associated zNode
         if (count == 0) {
           indoubtTransactionsCountByTmid.remove(tmid);
           String lv_encoded = m_Region.getRegionInfo().getEncodedName();
-          //TODO recovery
-          //
-          //try {
-           // LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery: delete in abort recovery zNode TM " + tmid + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
-            //TransactionalRegionServer.deleteRecoveryzNode(tmid, lv_encoded);
-          // } catch (IOException e) {
-           // LOG.error("TrxRegionEndpoint coprocessor: Trafodion Recovery: delete recovery zNode failed");
-           //}
+          try {
+            LOG.trace("TrxRegionEndpoint coprocessor: Trafodion Recovery: delete in abort recovery zNode TM " + tmid + " region encoded name " + lv_encoded + " for 0 in-doubt transaction");
+            deleteRecoveryzNode(tmid, lv_encoded);
+          } catch (IOException e) {
+             LOG.error("TrxRegionEndpoint coprocessor: Trafodion Recovery: delete recovery zNode failed");
+          }
          }
 
          if ((indoubtTransactionsById == null) || 

@@ -107,14 +107,15 @@ public class HBaseTmZK implements Abortable{
 		 	
 			for(String node : nodeChildren) {				
                 LOG.trace("checkForRecovery -- found node: '" + node + "'");
-				byte [] nodeData = checkData(zkNode +"/" + node);			
+				byte [] nodeData = checkData(zkNode +"/" + node);	
+                LOG.trace("checkForRecovery -- found node: " + node + " node data " + nodeData.toString());		
 				nodeDataMap.put(node, nodeData);
 			}
             LOG.trace("checkForRecovery -- EXIT returning " + nodeDataMap.size() + " regions");
 			return nodeDataMap;
 		}
 		else {
-			LOG.debug(zkNode + " is currently not present.");
+			LOG.trace(zkNode + " is currently not present.");
             LOG.trace("checkForRecovery -- EXIT -- node not present");
 			return null;
 		}		

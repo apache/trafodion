@@ -119,9 +119,7 @@ public class TransactionState {
     private HTableDescriptor tabledescriptor;
     private int reInstated = 0;
     private WALEdit e;
-    private int transactionEditsLen;
     private List<Tag> tagList = Collections.synchronizedList(new ArrayList<Tag>());
-    //private List<Tag> tagList = new ArrayList<Tag>();
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, final HRegionInfo regionInfo, HTableDescriptor htd) {
         LOG.trace("Trafodion Recovery: create TS object for " + transactionId);
@@ -131,7 +129,6 @@ public class TransactionState {
         this.status = Status.PENDING;
         this.tabledescriptor = htd;
         this.e = new WALEdit();
-        this.transactionEditsLen = 0;
         Tag transactionalTag = this.formTransactionalContextTag(1);
         tagList.add(transactionalTag );
     }
@@ -190,33 +187,8 @@ public class TransactionState {
              //KeyValue kv = KeyValueUtil.ensureKeyValue(value);
              //LOG.debug("add tag into edit for put " + this.transactionId);
              KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
-
-             /* // SST trace print
-             LOG.debug("PUT11 KV info length " + kv.getLength() + " " + kv.getKeyLength() + " " + kv.getValueLength() + " " + kv.getTagsLength()); 
-             LOG.debug("PUT22 tag " + Hex.encodeHexString( kv.getBuffer()));
-             byte[] tagArray = Bytes.copy(kv.getTagsArray(), kv.getTagsOffset(), kv.getTagsLength());
-             LOG.debug("PUT33 tag " + Hex.encodeHexString(tagArray));
-             byte tagType = 41;
-             Tag tag = Tag.getTag(tagArray, 0, kv.getTagsLength(), tagType); //TagType.TRANSACTION_TAG_TYPE
-             byte[] b = tag.getBuffer();
-             int offset = Tag.TYPE_LENGTH_SIZE + Tag.TAG_LENGTH_SIZE;
-             int version = Bytes.toInt(b,offset);
-             int op = Bytes.toInt(b,Bytes.SIZEOF_INT+offset);
-             long tid = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+offset);
-             long logSeqId = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+Bytes.SIZEOF_LONG+offset);
-             LOG.debug("PUT44 Find transactional tag within Edits for tid " + tid + " op " + op + " log seq " + logSeqId + " version " + version);
-             */
-
-             transactionEditsLen = transactionEditsLen + kv.getLength();
              e.add(kv);
          }
-
-       //  Here, we just append the ACTIVE edit to HLOG in the no-wait form (actively logging) rathen than waiting until phase 1
-       //  long txid = this.tHLog.appendNoSync(this.regionInfo, this.regionInfo.getTable(),
-       //           state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
-       //           nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
-       //  if (txid > largestLogSeqId) largestLogSeqId = txid; // save the log txid into TS object, later sync on largestSeqid during phase 1
-    
        LOG.trace("addWrite -- EXIT");
     }
 
@@ -251,24 +223,6 @@ public class TransactionState {
              //KeyValue kv = KeyValueUtil.ensureKeyValue(value);
              // LOG.debug("add tag into edit for put " + this.transactionId);
              KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
-
-             /* // SST trace print
-             LOG.debug("DEL11 KV info length " + kv.getLength() + " " + kv.getKeyLength() + " " + kv.getValueLength() + " " + kv.getTagsLength()); 
-             LOG.debug("DEL22 tag " + Hex.encodeHexString( kv.getBuffer()));
-             byte[] tagArray = Bytes.copy(kv.getTagsArray(), kv.getTagsOffset(), kv.getTagsLength());
-             LOG.debug("DEL33 tag " + Hex.encodeHexString(tagArray));
-             byte tagType = 41;
-             Tag tag = Tag.getTag(tagArray, 0, kv.getTagsLength(), tagType); //*TagType.TRANSACTION_TAG_TYPE
-             byte[] b = tag.getBuffer();
-             int offset = Tag.TYPE_LENGTH_SIZE + Tag.TAG_LENGTH_SIZE;
-             int version = Bytes.toInt(b,offset);
-             int op = Bytes.toInt(b,Bytes.SIZEOF_INT+offset);
-             long tid = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+offset);
-             long logSeqId = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+Bytes.SIZEOF_LONG+offset);
-             LOG.debug("DEL44 Find transactional tag within Edits for tid " + tid + " op " + op + " log seq " + logSeqId + " version " + version);
-             */
-
-             transactionEditsLen = transactionEditsLen + kv.getLength();
              e.add(kv);
          }
     }
@@ -377,10 +331,6 @@ public class TransactionState {
 
     public WALEdit getEdit() {
        return e;
-    }
-
-    public int getTransactionEditsLen() {
-       return transactionEditsLen;
     }
 
     /**
