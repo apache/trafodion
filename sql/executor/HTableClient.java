@@ -844,10 +844,7 @@ public class HTableClient {
 
 	public boolean close(boolean clearRegionCache) throws IOException {
            if (logger.isTraceEnabled()) logger.trace("Enter close() " + tableName);
-           if (scanner != null) {
-              scanner.close();
-              scanner = null;
-           }
+           release();
            if (table != null) 
            {
               if (clearRegionCache)
