@@ -240,11 +240,11 @@ if [[ $HADOOP_TYPE == "ambari" ]]; then
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
    if [[ "$hbaseVersion" == "0.98" ]]; then
       echo "***INFO: Hortonworks installed will run traf_ambari_mods98" 2>&1 | tee -a $MODS_LOG
-       $TRAF_WORKDIR/installer/traf_ambari_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+       $TRAF_WORKDIR/installer/traf_hortonworks_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
          $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG 
    else
       echo "***INFO: Hortonworks installed will run traf_ambari_mods" 2>&1 | tee -a $MODS_LOG
-      $TRAF_WORKDIR/installer/traf_ambari_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
+      $TRAF_WORKDIR/installer/traf_hortonworks_mods $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
          $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
    fi
    if [ ${PIPESTATUS[0]}  != "0" ]; then
