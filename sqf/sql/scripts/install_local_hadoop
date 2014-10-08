@@ -1269,13 +1269,17 @@ else
   HBASE_ENV_FILE=hbase/conf/hbase-env.sh
   
   # For HBase_Trx
-  
-  # Build HBase TRX
-  echo "Building HBase TRX"
-  cd $MY_SQROOT ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
-  cd $MY_SQROOT/src/seatrans/hbase-trx
-  make clean 2>&1 | tee -a ${MY_LOG_FILE}
-  make 2>&1 | tee -a ${MY_LOG_FILE}
+
+  # Do not build if the TRX jar already exists
+  if [ ! -e ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} ]; then
+     # Build HBase TRX
+     echo "Building HBase TRX"
+     cd $MY_SQROOT ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
+     cd $MY_SQROOT/src/seatrans/hbase-trx
+     make clean 2>&1 | tee -a ${MY_LOG_FILE}
+     make 2>&1 | tee -a ${MY_LOG_FILE}
+  fi
+
   cd $MY_SW_ROOT
 
   # Setup HBase TRX JAR in HBase' CLASSPATH
