@@ -3053,7 +3053,7 @@ Lng32 HSGlobalsClass::Initialize()
                   {
                     HbaseStr fqTblName;
                     fqTblName.len = user_table->length();
-                    fqTblName.val = new(STMTHEAP) char(fqTblName.len+1);
+                    fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
                     strncpy(fqTblName.val, user_table->data(), fqTblName.len);
                     fqTblName.val[fqTblName.len] = '\0';
 
