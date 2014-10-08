@@ -375,6 +375,8 @@ CoprocessorService, Coprocessor {
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
     WrongRegionException wre = null;
     // First test if this region matches our region name
+
+    /* commenting it out for the time-being
     if (!name.equals(regionInfo.getRegionNameAsString())) {
        wre = new WrongRegionException("Request Region Name, " +
         name + ",  does not match this region, " +
@@ -383,7 +385,9 @@ CoprocessorService, Coprocessor {
       "Request Region Name, " +
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
-     }else {
+     }else 
+    */
+    {
       try {
         beginTransaction(request.getTransactionId());
       } catch (Throwable e) {
@@ -622,6 +626,9 @@ CoprocessorService, Coprocessor {
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
+
+    /* commenting it out for the time-being
+
     if (!name.equals(regionInfo.getRegionNameAsString())) {
        wre = new WrongRegionException("Request Region Name, " +
         name + ",  does not match this region, " +
@@ -631,6 +638,7 @@ CoprocessorService, Coprocessor {
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
    }
+    */
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteResponse.Builder checkAndDeleteResponseBuilder = CheckAndDeleteResponse.newBuilder();
 
@@ -728,6 +736,7 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     boolean result = false;
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
@@ -740,6 +749,7 @@ CoprocessorService, Coprocessor {
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
    }
+    */
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutResponse.Builder checkAndPutResponseBuilder = CheckAndPutResponse.newBuilder();
 
@@ -834,10 +844,10 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: closeScanner - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() +
 ", scannerId " + scannerId);
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
-    /*
     if (!name.equals(regionInfo.getRegionNameAsString())) {
        wre = new WrongRegionException("Request Region Name, " +
         name + ",  does not match this region, " +
@@ -918,6 +928,7 @@ CoprocessorService, Coprocessor {
    Throwable t = null;
    WrongRegionException wre = null;
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
@@ -930,6 +941,7 @@ CoprocessorService, Coprocessor {
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
    } 
+    */
 
    if (wre == null) {
      for (org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto proto : results)
@@ -1007,6 +1019,7 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
    WrongRegionException wre = null;
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
@@ -1019,6 +1032,7 @@ CoprocessorService, Coprocessor {
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
     }
+    */
 
     if (wre == null && type == MutationType.DELETE && proto.hasRow())
       row = proto.getRow().toByteArray();
@@ -1075,10 +1089,10 @@ CoprocessorService, Coprocessor {
     WrongRegionException wre = null;
     org.apache.hadoop.hbase.client.Result result2 = null;
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
-    /*
     if (!name.equals(regionInfo.getRegionNameAsString())) {
        wre = new WrongRegionException("Request Region Name, " +
         name + ",  does not match this region, " +
@@ -1205,6 +1219,7 @@ CoprocessorService, Coprocessor {
     long scannerId = 0L;
     boolean isLoadingCfsOnDemandSet = false;
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
@@ -1218,7 +1233,9 @@ CoprocessorService, Coprocessor {
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
         exceptionThrown = true;
-    } else {
+    } else 
+    */
+    {
     
       try {
         scan = ProtobufUtil.toScan(request.getScan());
@@ -1362,6 +1379,7 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - scannerId " + scannerId + ", numberOfRows " + numberOfRows + ", nextCallSeq " + nextCallSeq); 
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
     // First test if this region matches our region name
@@ -1374,7 +1392,9 @@ CoprocessorService, Coprocessor {
       "Request Region Name, " +
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
-    } else {
+    } else 
+    */
+    {
     
       try {
 
@@ -1494,6 +1514,7 @@ CoprocessorService, Coprocessor {
     Throwable t = null;
     WrongRegionException wre = null;
 
+    /* commenting it out for the time-being
     java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
     // First test if this region matches our region name
     if (!name.equals(regionInfo.getRegionNameAsString())) {
@@ -1504,7 +1525,9 @@ CoprocessorService, Coprocessor {
       "Request Region Name, " +
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
-    } else {
+    } else 
+    */
+    {
       try {
           put = ProtobufUtil.toPut(proto);
       } catch (Throwable e) {
@@ -1568,6 +1591,7 @@ CoprocessorService, Coprocessor {
    MutationType type;
    Throwable t = null;
    WrongRegionException wre = null;
+    /* commenting it out for the time-being
    java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
     // First test if this region matches our region name
     if (!name.equals(regionInfo.getRegionNameAsString())) {
@@ -1578,7 +1602,9 @@ CoprocessorService, Coprocessor {
       "Request Region Name, " +
         name + ",  does not match this region, " +
         regionInfo.getRegionNameAsString());
-   } else {
+   } else 
+    */
+   {
 
      for (org.apache.hadoop.hbase.protobuf.generated.ClientProtos.MutationProto proto : results)
      { 
@@ -1658,6 +1684,7 @@ CoprocessorService, Coprocessor {
       // Placeholder for real work when recovery is added
       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: recoveryResponse - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() + ", tmId" + tmId);
 
+    /* commenting it out for the time-being
       java.lang.String name = ((com.google.protobuf.ByteString) request.getRegionName()).toStringUtf8();
 
       // First test if this region matches our region name
@@ -1670,6 +1697,7 @@ CoprocessorService, Coprocessor {
           name + ",  does not match this region, " +
           regionInfo.getRegionNameAsString());
       } 
+    */
 
       org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.RecoveryRequestResponse.Builder recoveryResponseBuilder = RecoveryRequestResponse.newBuilder();
 
