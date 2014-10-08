@@ -79,82 +79,58 @@ ExpHbaseInterface* ExpHbaseInterface::newInstance(CollHeap* heap,
                                             zkPort, debugPort, debugTimeout); // This is the transactional interface
 }
 
-Lng32 ExpHbaseInterface::deleteColumns(
+Lng32 ExpHbaseInterface_JNI::deleteColumns(
 	     HbaseStr &tblName,
 	     const Text& column)
 {
-  Lng32 retcode = 0;
+ Lng32 retcode = 0;
 
   std::vector<Text> columns;
   columns.push_back(column);
+  htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
+  if (htc_ == NULL)
+  {
+    retCode_ = HBC_ERROR_GET_HTC_EXCEPTION;
+    return HBASE_OPEN_ERROR;
+  }
+  Int64 transID = getTransactionIDFromContext();
 
-  retcode = init();
-  if (retcode != HBASE_ACCESS_SUCCESS)
+  int numReqRows = 100;
+  retcode = htc_->startScan(transID, "", "", columns, -1, FALSE, numReqRows, FALSE, 
+       NULL, NULL, NULL, 0);
+  if (retcode != HTC_OK)
     return retcode;
 
-  retcode = scanOpen(tblName, "", "", columns, -1, FALSE, FALSE, 100, TRUE, NULL, NULL, NULL);
-  if (retcode != HBASE_ACCESS_SUCCESS)
-    return retcode;
-
-  NABoolean done1 = FALSE;
-  while (NOT done1)
-    {
-      retcode = nextRow();
-      if (retcode == HBASE_ACCESS_EOD)
-	{
-	  done1 = TRUE;
-	  break;
-	}
-      
-      if (retcode != HBASE_ACCESS_SUCCESS)
-	{
-	  // close
-	  scanClose();
-
-	  close();
-
-	  // and done
-	  return retcode;
-	}
-      
-      NABoolean done2 = FALSE;
-      HbaseStr rowID;
-      while (NOT done2)
-	{
-	  retcode = getRowID(rowID);
-	  if (retcode == HBASE_ACCESS_EOD)
-	    {
-	      done2 = TRUE;
-	      break;
-	    }
-
-	  if (retcode != HBASE_ACCESS_SUCCESS)
-	    {
-	      // close
-	      scanClose();
-
-	      close();
-
-	      return retcode;
-	    }
-	  retcode = deleteRow(tblName, rowID, columns, -1);
-	  if (retcode != HBASE_ACCESS_SUCCESS)
-	    {
-	      // close
-	      scanClose();
-
-	      close();
-
-	      return retcode;
-	    }
-	} // while NOT done2
-    } // while NOT done1
-
+  NABoolean done = FALSE;
+  HbaseStr rowID;
+  while (NOT done)
+  {
+     for (int rowNo = 0; rowNo < numReqRows; rowNo++)
+     {
+         retcode = htc_->nextRow();
+         if (retcode != HTC_OK)
+         {
+            done = TRUE;
+	    break;
+         }
+         retcode = htc_->getRowID(rowID);
+         if (retcode != HBASE_ACCESS_SUCCESS)
+         {
+            done = TRUE; 
+            break;
+         }
+         retcode = htc_->deleteRow(transID, rowID, columns, -1);
+         if (retcode != HTC_OK) 
+         {
+            done = TRUE;
+            break;
+	 }
+     }
+  } // while NOT done
   scanClose();
-
-  close();
-
-  return HBASE_ACCESS_SUCCESS;
+  if (retcode == HTC_DONE)
+     return HBASE_ACCESS_SUCCESS;
+  return HBASE_ACCESS_ERROR;
 }
 
 Lng32 ExpHbaseInterface::checkAndUpdateRow(
