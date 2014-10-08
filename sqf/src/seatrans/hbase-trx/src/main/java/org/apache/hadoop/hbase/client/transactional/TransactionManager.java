@@ -56,6 +56,7 @@ public class TransactionManager {
 
   static final Log LOG = LogFactory.getLog(TransactionManager.class);
  
+  private int RETRY_ATTEMPTS;
   private final HConnection connection;
   private final TransactionLogger transactionLogger;
   private JtaXAResource xAResource;
@@ -63,7 +64,7 @@ public class TransactionManager {
   public static final int TM_COMMIT_FALSE = 0;     
   public static final int TM_COMMIT_READ_ONLY = 1; 
   public static final int TM_COMMIT_TRUE = 2;
-  public static final int TM_COMMIT_FALSE_CONFLICT = 3; 
+  public static final int TM_COMMIT_FALSE_CONFLICT = 3;    
   
   static ExecutorService    cp_tpe;
 
@@ -127,60 +128,94 @@ public class TransactionManager {
 	 * Return  : Always 0, can ignore
 	 * Purpose : Call commit for a given regionserver  
 	 */
-    public Integer doCommitX(final byte[] regionName, final long transactionId) throws CommitUnsuccessfulException {
-        try {
+    public Integer doCommitX(final byte[] regionName, final long transactionId) throws CommitUnsuccessfulException, IOException {
+        boolean retry = false;
+        int retryCount = 0;
+        do {
+	        try {
+	
+	          if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- ENTRY txid: " + transactionId);
+	          Batch.Call<TrxRegionService, CommitResponse> callable =
+	              new Batch.Call<TrxRegionService, CommitResponse>() {
+	            ServerRpcController controller = new ServerRpcController();
+	            BlockingRpcCallback<CommitResponse> rpcCallback =
+	              new BlockingRpcCallback<CommitResponse>();
+	
+	            @Override
+	            public CommitResponse call(TrxRegionService instance) throws IOException {
+	              org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequest.Builder builder = CommitRequest.newBuilder();
+	              builder.setTransactionId(transactionId);
+		      builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName))); //ByteString.copyFromUtf8(Bytes.toString(regionName)));
+	
+	              instance.commit(controller, builder.build(), rpcCallback);
+	              return rpcCallback.get();
+	            }
+	          };
+	
+	            Map<byte[], CommitResponse> result = null;
+	            try {
+                    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+                    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+                    if ((location.getRegionInfo().compareTo(lv_hri) != 0)) {
+                        LOG.info("doCommitX -- " + table.toString() + " location being refreshed");
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- lv_hri: " + lv_hri);
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location.getRegionInfo(): " + location.getRegionInfo());                        
+                        table.getRegionLocation(startKey, true);
+                    }
+	              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- before coprocessorService txid: " + transactionId);
+	              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
+	              result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
+	            } catch (Throwable e) {
+	              String msg = "ERROR occurred while calling coprocessor service";
+	              LOG.error(msg + ":" + e);
+	              throw new Exception(msg);
+	            }   
+	            if(result.size() != 1) {
+	            	LOG.error("doCommitX, result size: " + result.size());
+	            	throw new IOException("ERROR Received incorrect number of results from coprocessor call");
+	            }
+	            for (CommitResponse cresponse : result.values())
+	            {
+	              if(cresponse.getHasException()) {
+	            	if (LOG.isTraceEnabled()) LOG.trace("doCommitX coprocessor exception: " + cresponse.getException());
+	                throw new Exception(cresponse.getException());
+	              }                     
+	            }
+	            retry = false;
+	            
+	        }
+		    catch (UnknownTransactionException ute) {
+			       LOG.error("exception in doCommitX : " + ute);       
+			       LOG.info("Got unknown exception during commit. Transaction: ["
+			           + transactionState.getTransactionId() + "]");
+   		        transactionState.requestPendingCountDec(true);
+	            throw new UnknownTransactionException(); 
+		    }
+	        catch (Exception e) { 	              
+                    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+                    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+                    if ((location.getRegionInfo().compareTo(lv_hri) != 0) ||
+                        (location.getServerName().compareTo(lv_hrl.getServerName()) != 0)) {
+                        LOG.info("doCommitX -- " + table.toString() + " location being refreshed");
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- lv_hri: " + lv_hri);
+                        if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location.getRegionInfo(): " + location.getRegionInfo());
 
-          if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- ENTRY txid: " + transactionId);
-          Batch.Call<TrxRegionService, CommitResponse> callable =
-              new Batch.Call<TrxRegionService, CommitResponse>() {
-            ServerRpcController controller = new ServerRpcController();
-            BlockingRpcCallback<CommitResponse> rpcCallback =
-              new BlockingRpcCallback<CommitResponse>();
+                        table.getRegionLocation(startKey, true);
+                    }
+                    retry = true;
+                    retryCount++;
+                    if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- setting retry, count: " + retryCount);
+                    if(retryCount == RETRY_ATTEMPTS) {
+        		        LOG.error("exception in doCommitX: " + e);
+        		        // We have received our reply in the form of an exception,
+        		        // so decrement outstanding count and wake up waiters to avoid
+        		        // getting hung forever
+        		        transactionState.requestPendingCountDec(true);
+        	            throw new CommitUnsuccessfulException(e);                        
+                    }
 
-            @Override
-            public CommitResponse call(TrxRegionService instance) throws IOException {
-              org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequest.Builder builder = CommitRequest.newBuilder();
-              builder.setTransactionId(transactionId);
-	      builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName))); //ByteString.copyFromUtf8(Bytes.toString(regionName)));
-
-              instance.commit(controller, builder.build(), rpcCallback);
-              return rpcCallback.get();
-            }
-          };
-
-            Map<byte[], CommitResponse> result = null;
-            try {
-              if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- before coprocessorService txid: " + transactionId);
-	      if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
-              result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
-            } catch (Throwable e) {
-              e.printStackTrace();
-              throw new Exception("ERROR occurred while calling coprocessor service");
-            }   
-            if(result.size() > 1) {
-		LOG.error("doCommitX, result size: " + result.size());
-              throw new IOException("ERROR Received incorrect number of results from coprocessor call");
-            }
-            for (CommitResponse cresponse : result.values())
-            {
-              if(cresponse.getHasException()) {
-                throw new Exception(cresponse.getException());
-              }                     
-            }
-            
-        }catch (Exception e) { 
-	        LOG.error("exception in doCommitX: " + e);
-	        // We have received our reply in the form of an exception,
-	        // so decrement outstanding count and wake up waiters to avoid
-	        // getting hung forever
-                        StringWriter sw = new StringWriter();
-                        PrintWriter pw = new PrintWriter(sw);
-                        e.printStackTrace(pw);
-                        LOG.error(sw.toString());
-                        
-	        transactionState.requestPendingCountDec(true);
-                throw new CommitUnsuccessfulException(e);
-        }
+	        }
+        } while (retryCount < RETRY_ATTEMPTS && retry == true);
 			
       	// We have received our reply so decrement outstanding count
       	transactionState.requestPendingCountDec(false);
@@ -207,65 +242,94 @@ public class TransactionManager {
 	throws IOException, CommitUnsuccessfulException {
 
     int commitStatus = 0;
-   
-    try {			
-      Batch.Call<TrxRegionService, CommitRequestResponse> callable =
-          new Batch.Call<TrxRegionService, CommitRequestResponse>() {
-        ServerRpcController controller = new ServerRpcController();
-        BlockingRpcCallback<CommitRequestResponse> rpcCallback =
-          new BlockingRpcCallback<CommitRequestResponse>();
+    boolean retry = false;
+    int retryCount = 0;
+    do {
+	    try {			
+	      Batch.Call<TrxRegionService, CommitRequestResponse> callable =
+	          new Batch.Call<TrxRegionService, CommitRequestResponse>() {
+	        ServerRpcController controller = new ServerRpcController();
+	        BlockingRpcCallback<CommitRequestResponse> rpcCallback =
+	          new BlockingRpcCallback<CommitRequestResponse>();
+	
+	        @Override
+	        public CommitRequestResponse call(TrxRegionService instance) throws IOException {
+	          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestRequest.Builder builder = CommitRequestRequest.newBuilder();
+	          builder.setTransactionId(transactionId);
+		  builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
+	
+	          instance.commitRequest(controller, builder.build(), rpcCallback);
+	          return rpcCallback.get();
+	        }
+	      };
+	
+	     Map<byte[], CommitRequestResponse> result = null;
 
-        @Override
-        public CommitRequestResponse call(TrxRegionService instance) throws IOException {
-          org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CommitRequestRequest.Builder builder = CommitRequestRequest.newBuilder();
-          builder.setTransactionId(transactionId);
-	  builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
+	     try {
+		    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- before coprocessorService txid: " + transactionId + " table: " + table.toString());
+		    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- txid: " + transactionId + " table: " + table.toString() + " endKey_Orig: " + new String(endKey_orig, "UTF-8"));
+		    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
 
-          instance.commitRequest(controller, builder.build(), rpcCallback);
-          return rpcCallback.get();
-        }
-      };
-
-        Map<byte[], CommitRequestResponse> result = null;
-        try {
-	    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- before coprocessorService txid: " + transactionId + " table: " + table.toString());
-	    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- txid: " + transactionId + " table: " + table.toString() + " endKey_Orig: " + new String(endKey_orig, "UTF-8"));
-	    if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
-	    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
-	    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-	    if (location.getRegionInfo().compareTo(lv_hri) != 0) {
-		LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
-		if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
-		if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
-		
-		table.getRegionLocation(startKey, true);
+		    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+		    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+		    if ((location.getRegionInfo().compareTo(lv_hri) != 0)) {
+			    	LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
+			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
+			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
+				
+			    	table.getRegionLocation(startKey, true);
+			}
+		    
+		    result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
+	        } catch (Throwable e) {	          
+	          LOG.error("doPrepareX coprocessor error for " + Bytes.toString(regionName) + " txid: " + transactionId + ":" + e);
+	          throw new CommitUnsuccessfulException("Unable to call prepare, coprocessor error");
+	          
+	        }
+	
+	        if(result.size() != 1)  {
+		    LOG.error("doPrepareX, result size: " + result.size());
+		    throw new IOException("ERROR Received incorrect number of results from coprocessor call");
+	        }
+	        for (CommitRequestResponse cresponse : result.values())
+	        {
+	          // Should only be one result
+	          int value = cresponse.getResult();          
+	          commitStatus = value;        
+	          if(cresponse.getHasException()) {
+	        	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX coprocessor exception: " + cresponse.getException());
+	            throw new Exception(cresponse.getException());
+	          }
+	        }
+	        retry = false;
 	    }
-	    result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
-        } catch (Throwable e) {
-          e.printStackTrace();
-          LOG.error("doPrepareX coprocessor error for " + Bytes.toString(regionName) + " txid: " + transactionId);
-          throw new CommitUnsuccessfulException("Unable to call prepare, coprocessor error");
-          
-        }
+	    catch(UnknownTransactionException ute) {
+	    	LOG.warn("Exception: " + ute);
+	    	throw new UnknownTransactionException();
+	    }
+	    catch(Exception e) {	    	
+		    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+		    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+		    if ((location.getRegionInfo().compareTo(lv_hri) != 0) || 
+		        (location.getServerName().compareTo(lv_hrl.getServerName()) != 0)) {
+		    	LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
+		    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
+		    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
+			
+		    	table.getRegionLocation(startKey, true);
 
-        if(result.size() > 1)  {
-	    LOG.error("doPrepareX, result size: " + result.size());
-	    throw new IOException("ERROR Received incorrect number of results from coprocessor call");
-        }
-        for (CommitRequestResponse cresponse : result.values())
-        {
-          // Should only be one result
-          int value = cresponse.getResult();          
-          commitStatus = value;        
-          if(cresponse.getHasException()) {
-            throw new Exception(cresponse.getException());
-          }
-        }
-    }
-    catch(Exception e) {
-       LOG.warn("Received IOException " + e + " from commitRequest for transaction " + transactionId + " rethrowing exception");
-       throw new IOException();
-    }
+		    	LOG.debug("doPrepareX retry count: " + retryCount);
+		    }
+	    	retry = true;
+	    	retryCount++;
+	    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- setting retry, count: " + retryCount);
+		    if(retryCount == RETRY_ATTEMPTS){
+		    	LOG.error("Exception: " + e);
+		    	throw new IOException(e);
+		    }
+	    }
+    } while (retryCount < RETRY_ATTEMPTS && retry == true); 
+    
     if (LOG.isTraceEnabled()) LOG.trace("commitStatus: " + commitStatus);
   	boolean canCommit = true;
     boolean readOnly = false;
@@ -316,61 +380,87 @@ public class TransactionManager {
   	 * Return  : Ignored
   	 * Purpose : Call abort for a given regionserver  
   	 */
-    public Integer doAbortX(final byte[] regionName, final long transactionId) {
-              
-      try {
+    public Integer doAbortX(final byte[] regionName, final long transactionId) throws IOException{
+	    boolean retry = false;
+	    int retryCount = 0;
+	    do {
+	    	try {
 
-          Batch.Call<TrxRegionService, AbortTransactionResponse> callable =
-            new Batch.Call<TrxRegionService, AbortTransactionResponse>() {
-          ServerRpcController controller = new ServerRpcController();
-          BlockingRpcCallback<AbortTransactionResponse> rpcCallback =
-            new BlockingRpcCallback<AbortTransactionResponse>();
+	          Batch.Call<TrxRegionService, AbortTransactionResponse> callable =
+	            new Batch.Call<TrxRegionService, AbortTransactionResponse>() {
+	          ServerRpcController controller = new ServerRpcController();
+	          BlockingRpcCallback<AbortTransactionResponse> rpcCallback =
+	            new BlockingRpcCallback<AbortTransactionResponse>();
+	
+	          @Override
+	          public AbortTransactionResponse call(TrxRegionService instance) throws IOException {
+	            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionRequest.Builder builder = AbortTransactionRequest.newBuilder();
+	            builder.setTransactionId(transactionId);
+	            builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
+	
+	            instance.abortTransaction(controller, builder.build(), rpcCallback);
+	            return rpcCallback.get();
+	          }
+	        };
+	          
+	        Map<byte[], AbortTransactionResponse> result = null;
+	          try {       
+	              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+	              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+	              if ((location.getRegionInfo().compareTo(lv_hri) != 0)) {
+	                  LOG.info("doAbortX -- " + table.toString() + " region location being refreshed ");
+	                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- lv_hri: " + lv_hri);
+ 	                  if (LOG.isTraceEnabled())  LOG.trace("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
 
-          @Override
-          public AbortTransactionResponse call(TrxRegionService instance) throws IOException {
-            org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.AbortTransactionRequest.Builder builder = AbortTransactionRequest.newBuilder();
-            builder.setTransactionId(transactionId);
-            builder.setRegionName(ByteString.copyFromUtf8(Bytes.toString(regionName)));
+	                  table.getRegionLocation(startKey, true);
+	              }
+		      result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
+	          } catch (Throwable e) {
+	              String msg = "ERROR occurred while calling coprocessor service";
+	              LOG.error(msg + ":" + e);
+	              throw new Exception(msg);
+	          }
+	          
+	          if(result.size() != 1) 
+	            throw new IOException("ERROR Received incorrect number of results from coprocessor call");
+	          
+	          for (AbortTransactionResponse cresponse : result.values())
+	          {                                                  
+	            if(cresponse.getHasException()) {
+	              LOG.error("Abort HasException true: " + cresponse.getHasException());
+	              LOG.error("Abort HasException true: " + cresponse.getException().toString());
+	              throw new Exception(cresponse.getException());
+	            }
+	          }
+	          retry = false;
+	      } 
+	      catch (UnknownTransactionException ute) {
+		         LOG.error("exception in doAbortX (ignoring): " + ute);       
+		         LOG.info("Got unknown exception during abort. Transaction: ["
+		             + transactionState.getTransactionId() + "]");
+	      }
+	      catch (Exception e)
+	      {        		    	  
+              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
+              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
+              if ((location.getRegionInfo().compareTo(lv_hri) != 0) ||
+                  (location.getServerName().compareTo(lv_hrl.getServerName()) != 0)) {
+                  LOG.info("doAbortX -- " + table.toString() + " region location being refreshed ");
+                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- lv_hri: " + lv_hri);
+                  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
 
-            instance.abortTransaction(controller, builder.build(), rpcCallback);
-            return rpcCallback.get();
-          }
-        };
-          
-        Map<byte[], AbortTransactionResponse> result = null;
-          try {
-	      HRegionLocation lv_hrl = table.getRegionLocation(startKey);
-	      HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-	      if (location.getRegionInfo().compareTo(lv_hri) != 0) {
-		  LOG.info("doAbortX -- " + table.toString() + " location being refreshed");
-		  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- lv_hri: " + lv_hri);
-		  if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- location.getRegionInfo(): " + location.getRegionInfo());
-		  
-		  table.getRegionLocation(startKey, true);
-	      }            
-            result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
-          } catch (Throwable e) {
-            e.printStackTrace();
-            throw new Exception("Abort call not successful");
-          }
-          
-          if(result.size() > 1) 
-            throw new IOException("ERROR Received incorrect number of results from coprocessor call");
-          
-          for (AbortTransactionResponse cresponse : result.values())
-          {                                                  
-            if(cresponse.getHasException()) {
-              LOG.error("Abort HasException true: " + cresponse.getHasException());
-              LOG.error("Abort HasException true: " + cresponse.getException().toString());
-              throw new Exception(cresponse.getException());
-            }
-          }
-      } catch (Exception e) //ignore
-      {        	
-         LOG.error("exception in doAbortX (ignoring): " + e);       
-         LOG.info("Got unknown exception during abort. Transaction: ["
-             + transactionState.getTransactionId() + "]");
-      }           
+                  table.getRegionLocation(startKey, true);
+              }              
+              retry = true;
+              retryCount++;
+              if (LOG.isTraceEnabled()) LOG.trace("doAbortX -- setting retry, count: " + retryCount);
+              if (retryCount == RETRY_ATTEMPTS){
+		         LOG.error("exception in doAbortX (ignoring): " + e);       
+		         LOG.info("Got unknown exception during abort. Transaction: ["
+		             + transactionState.getTransactionId() + "]");
+              }
+	      }   
+	  } while (retryCount < RETRY_ATTEMPTS && retry == true);	     
       
       // We have received our reply so decrement outstanding count
       transactionState.requestPendingCountDec(false);
@@ -400,9 +490,16 @@ public class TransactionManager {
 
         int intThreads = 16;
 
+        
+        String retryAttempts = System.getenv("TMCLIENT_RETRY_ATTEMPTS");
         String numThreads = System.getenv("TM_JAVA_THREAD_POOL_SIZE");
         String numCpThreads = System.getenv("TM_JAVA_CP_THREAD_POOL_SIZE");
 
+        if (retryAttempts != null) 
+        	RETRY_ATTEMPTS = Integer.parseInt(retryAttempts);
+        else 
+        	RETRY_ATTEMPTS = 3;
+        
         if (numThreads != null)
             intThreads = Integer.parseInt(numThreads);
 
@@ -587,7 +684,7 @@ public class TransactionManager {
                   //      .getHRegionConnection(location.getServerName());
                     
                 threadPool.submit(new TransactionManagerCallable(transactionState, location, connection) {
-                  public Integer call() throws CommitUnsuccessfulException {
+                  public Integer call() throws CommitUnsuccessfulException, IOException {
                     if (LOG.isTraceEnabled()) LOG.trace("before doCommit() [" + transactionState.getTransactionId() + "]");
                     return doCommitX(regionName, transactionState.getTransactionId());
                   }
