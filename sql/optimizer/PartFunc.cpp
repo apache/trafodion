@@ -567,9 +567,8 @@ void PartitioningFunction::createPartitioningKeyPredicates()
 }
 
 void PartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // Redefine PartitioningFunction::replacePivs()
   CMPABORT;
@@ -758,9 +757,8 @@ void SinglePartitionPartitioningFunction::createPartitioningKeyPredicates()
 
 // LCOV_EXCL_START
 void SinglePartitionPartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // do nothing, there aren't any pivs for a single
   // partition
@@ -906,9 +904,8 @@ void ReplicateViaBroadcastPartitioningFunction::
 }
 
 void ReplicateViaBroadcastPartitioningFunction::
-       replacePivs(const ValueIdSet& newPivs,
-                   const ValueIdSet& newPartKeyPreds,
-                   ItemExpr* newPartExpr)
+       replacePivs(const ValueIdList& newPivs,
+                   const ValueIdSet& newPartKeyPreds)
 {
   // Do nothing, the pivs of a replication "function"
   // are the empty set.
@@ -1006,9 +1003,8 @@ void ReplicateNoBroadcastPartitioningFunction::
 }
 
 void ReplicateNoBroadcastPartitioningFunction::
-       replacePivs(const ValueIdSet& newPivs,
-                   const ValueIdSet& newPartKeyPreds,
-                   ItemExpr* newPartExpr)
+       replacePivs(const ValueIdList& newPivs,
+                   const ValueIdSet& newPartKeyPreds)
 {
   // Do nothing, the pivs of a replication "function"
   // are the empty set.
@@ -1201,14 +1197,12 @@ void HashPartitioningFunction::createPartitioningKeyPredicates()
 // HashPartitioningFunction::replacePivs()
 // -----------------------------------------------------------------------
 void HashPartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // Overwrite the old pivs, part key preds, and part expr. with the new ones.
   storePartitionInputValues(newPivs);
   storePartitioningKeyPredicates(newPartKeyPreds);
-  storeExpression(newPartExpr);
 } // HashPartitioningFunction::replacePivs()
 
 COMPARE_RESULT
@@ -1615,14 +1609,12 @@ void TableHashPartitioningFunction::createPartitioningKeyPredicatesForSaltedTabl
 // TableHashPartitioningFunction::replacePivs()
 // -----------------------------------------------------------------------
 void TableHashPartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // Overwrite the old pivs, part key preds, and part expr. with the new ones.
   storePartitionInputValues(newPivs);
   storePartitioningKeyPredicates(newPartKeyPreds);
-  storeExpression(newPartExpr);
 } // TableHashPartitioningFunction::replacePivs()
 
 PartitioningFunction*
@@ -4088,14 +4080,12 @@ void RangePartitioningFunction::createPartitioningKeyPredicates()
 // RangePartitioningFunction::replacePivs()
 // -----------------------------------------------------------------------
 void RangePartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // Overwrite the old pivs, part key preds, and part expr. with the new ones.
   storePartitionInputValues(newPivs);
   storePartitioningKeyPredicates(newPartKeyPreds);
-  storeExpression(newPartExpr);
 } // RangePartitioningFunction::replacePivs()
 
 PartitioningFunction * RangePartitioningFunction::scaleNumberOfPartitions(
@@ -4881,16 +4871,14 @@ void LogPhysPartitioningFunction::createPartitioningKeyPredicates()
 // LogPhysPartitioningFunction::replacePivs()
 // -----------------------------------------------------------------------
 void LogPhysPartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // Overwrite the old pivs, part key preds, and part expr. with the new ones.
   storePartitionInputValues(newPivs);
   storePartitioningKeyPredicates(newPartKeyPreds);
-  storeExpression(newPartExpr);
   // Also overwrite them in the logical partitioning function.
-  logPartFunc_->replacePivs(newPivs,newPartKeyPreds,newPartExpr);
+  logPartFunc_->replacePivs(newPivs,newPartKeyPreds);
 } // LogPhysPartitioningFunction::replacePivs()
 
 ItemExpr* LogPhysPartitioningFunction::createPartitioningExpression()
@@ -5376,14 +5364,12 @@ void RoundRobinPartitioningFunction::createPartitioningKeyPredicates()
 // RoundRobinPartitioningFunction::replacePivs()
 // -----------------------------------------------------------------------
 void RoundRobinPartitioningFunction::replacePivs(
-       const ValueIdSet& newPivs,
-       const ValueIdSet& newPartKeyPreds,
-       ItemExpr* newPartExpr)
+       const ValueIdList& newPivs,
+       const ValueIdSet& newPartKeyPreds)
 {
   // Overwrite the old pivs, part key preds, and part expr. with the new ones.
   storePartitionInputValues(newPivs);
   storePartitioningKeyPredicates(newPartKeyPreds);
-  storeExpression(newPartExpr);
 } // RoundRobinPartitioningFunction::replacePivs()
 
 // -----------------------------------------------------------------------

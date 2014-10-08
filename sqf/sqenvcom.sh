@@ -385,6 +385,7 @@ elif [ -e $MY_SQROOT/sql/scripts/sw_env.sh ]; then
                           $YARN_HOME/share/hadoop/mapreduce
                           $YARN_HOME/share/hadoop/hdfs"
   export HADOOP_JAR_FILES=
+  export HBASE_JAR_FILES=
   HBASE_JAR_DIRS="$HBASE_HOME/lib"
   for d in $HBASE_JAR_DIRS
   do
