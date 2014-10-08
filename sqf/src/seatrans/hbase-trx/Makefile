@@ -58,7 +58,7 @@ jdk_1_6:
 	cp -pf target/$(BLD_HBASE_TRX_JARNAME_1_6) $(MY_SQROOT)/export/lib
 	$(RM) $(VFILE)
 
-build_all: jdk_1_6 jdk_1_7 jdk_1_7_hdp2_1
+build_all: jdk_1_7 jdk_1_7_hdp2_1
 
 build_chk_1_6:
 	$(GENVERS) > $(VFILE)
