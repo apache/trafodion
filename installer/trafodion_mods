@@ -211,7 +211,9 @@ echo "exit" | hbase shell &> hbaseVersion.txt
 
 version=`grep "Version" hbaseVersion.txt | sed 's/-.*//' | awk {'print$2'}`
 
-hbaseVersion=`echo "${version%.*}"`
+hbase=`echo "${version#*.}"`
+
+hbaseVersion=`echo $hbase | cut -f1 -d"."`
 
 sudo rm -rf hbaseVersion.txt
 #=====================================
@@ -219,7 +221,7 @@ sudo rm -rf hbaseVersion.txt
 
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
-   if [[ "$hbaseVersion" == "0.98" ]]; then
+   if [[ "$hbaseVersion" == "98" ]]; then
       echo "***INFO: Cloudera installed will run traf_cloudera_mods98" 2>&1 | tee -a $MODS_LOG
       $TRAF_WORKDIR/installer/traf_cloudera_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
          $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG
@@ -238,7 +240,7 @@ fi
 
 if [[ $HADOOP_TYPE == "ambari" ]]; then
    echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
-   if [[ "$hbaseVersion" == "0.98" ]]; then
+   if [[ "$hbaseVersion" == "98" ]]; then
       echo "***INFO: Hortonworks installed will run traf_ambari_mods98" 2>&1 | tee -a $MODS_LOG
        $TRAF_WORKDIR/installer/traf_hortonworks_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
          $HDFS_USER $HBASE_USER $HBASE_GROUP $TRAF_USER $JAVA_VERSION 2>&1 | tee -a $MODS_LOG 
