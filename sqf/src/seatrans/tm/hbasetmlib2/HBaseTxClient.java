@@ -37,7 +37,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.transactional.TransactionManager;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
 import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
@@ -45,13 +46,14 @@ import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
 import org.apache.hadoop.hbase.client.transactional.TransactionRegionLocation;
 import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
+import org.apache.hadoop.hbase.exceptions.DeserializationException;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
@@ -75,7 +77,7 @@ public class HBaseTxClient {
    boolean forceForgotten;
    boolean useRecovThread;
 
-   Configuration config;
+   private static Configuration config;
    TransactionManager trxManager;
    Map<Long, TransactionState> mapTransactionStates = new HashMap<Long, TransactionState>();
    private final Object mapLock = new Object();
@@ -633,18 +635,18 @@ public class HBaseTxClient {
                                      LOG.error(sw.toString()); 
                              }
                              
-                             LOG.debug("in-doubt region size " + regions.size());
+                             if (LOG.isDebugEnabled()) LOG.debug("in-doubt region size " + regions.size());
                              for(Map.Entry<String,byte[]> region : regions.entrySet()) {  
                             	     List<Long> TxRecoverList = new ArrayList<Long>();
                                      if (LOG.isDebugEnabled()) LOG.debug("BBB Processing region: " + new String(region.getValue()));
                                      String hostnamePort = region.getKey();
                                      byte [] regionInfo =  region.getValue();                                    
-				                     try {
+                                            try {
                                          TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionInfo, tmID);
                                      } catch (Exception e) {
                                          LOG.error("Error calling recoveryRequest " + new String(regionInfo) + " TM " + tmID);
                                          e.printStackTrace();
-                                     }				                    
+                                     }
 				                     for(Long txid : TxRecoverList) {
 				                    	 TransactionState ts = transactionStates.get(txid);
 				                    	 if(ts == null) {
@@ -654,12 +656,12 @@ public class HBaseTxClient {
 				                    		 this.addRegionToTS(hostnamePort, regionInfo, ts);
 				                    	 } catch (Exception e) {
 				                    		 LOG.error("Unable to add region to TransactionState" +
-				                    		 		"region info: " + new String(regionInfo));
+				                    		 		"region info: " + new String(regionBytes));
 				                    		 e.printStackTrace();
 				                    	 } */
 				                    	 transactionStates.put(txid, ts);
-				                     }				                     
-                             }
+				                     }
+                                     }
 
                              for(Map.Entry<Long, TransactionState> tsEntry: transactionStates.entrySet()) {
                             	   TransactionState ts = tsEntry.getValue();
@@ -668,8 +670,9 @@ public class HBaseTxClient {
                                    try {
                                            audit.getTransactionState(ts);
                                            if(ts.getStatus().equals("COMMITTED")) {
-                                                   if (LOG.isDebugEnabled()) LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size());
-                                                   txnManager.doCommit(ts);
+                                                   if (LOG.isDebugEnabled()) LOG.debug("Redriving commit for " + ts.getTransactionId() + " number of regions " + ts.getParticipatingRegions().size() +
+                                                             " and tolerating UnknownTransactionExceptions" );
+                                                   txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
                                            }
                                            else if(ts.getStatus().equals("ABORTED")) {
                                                    if (LOG.isDebugEnabled()) LOG.debug("Redriving abort for " + ts.getTransactionId());

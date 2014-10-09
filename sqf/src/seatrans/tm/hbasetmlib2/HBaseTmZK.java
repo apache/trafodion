@@ -18,17 +18,35 @@
 
 package org.trafodion.dtm;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.apache.hadoop.conf.Configuration;
+
 import org.apache.hadoop.hbase.Abortable;
+import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.ServerName;
+
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.transactional.TransactionRegionLocation;
+
 import org.apache.hadoop.hbase.zookeeper.ZKUtil;
 import org.apache.hadoop.hbase.zookeeper.ZKUtil.NodeAndData;
 import org.apache.hadoop.hbase.zookeeper.ZooKeeperWatcher;
@@ -121,6 +139,78 @@ public class HBaseTmZK implements Abortable{
 			return null;
 		}		
 	}
+
+	/**
+	 * @param toDelete
+	 * @throws KeeperException
+	 */
+	public void deleteRegionEntry(Map.Entry<String,byte[]> toDelete ) throws KeeperException {
+           LOG.info("deleteRegionEntry -- ENTRY -- key: " + toDelete.getKey() + " value: " + new String(toDelete.getValue()));
+           ZKUtil.deleteNodeFailSilent(zooKeeper, zkNode + "/" + toDelete.getKey());
+           LOG.info("deleteRegionEntry -- EXIT ");
+        }
+
+	/**
+	 * @param node
+	 * @param hostName
+	 * @param portNumber
+	 * @param encodedName
+	 * @param data
+	 * @throws IOException
+	 */
+        public void createRecoveryzNode(String hostName, int portNumber, String encodedName, byte [] data) throws IOException {
+           LOG.info("HBaseTmZK:createRecoveryzNode: hostName: " + hostName + " port: " + portNumber +
+                     " encodedName: " + encodedName + " data: " + new String(data));
+           // default zNodePath for recovery
+           String zNodeKey = hostName + "," + portNumber + "," + encodedName;
+
+           LOG.info("HBaseTmZK:createRecoveryzNode: ZKW Post region recovery znode" + this.dtmID + " zNode Path " + zkNode);
+           // create zookeeper recovery zNode, call ZK ...
+           try {
+              if (ZKUtil.checkExists(zooKeeper, zkNode) == -1) {
+                 // create parent nodename
+                 LOG.info("HBaseTmZK:createRecoveryzNode:: ZKW create parent zNodes " + zkNode);
+                 ZKUtil.createWithParents(zooKeeper, zkNode);
+              }
+              ZKUtil.createAndFailSilent(zooKeeper, zkNode + "/" + zNodeKey, data);
+           } catch (KeeperException e) {
+              throw new IOException("HBaseTmZK:createRecoveryzNode: ZKW Unable to create recovery zNode: " + zkNode + " , throwing IOException " + e);
+           }
+        }
+
+	/**
+	 * @param node
+	 * @param recovTable
+	 * @throws IOException
+	 */
+        public void postAllRegionEntries(HTable recovTable) throws IOException {
+           LOG.info("HBaseTmZK:postAllRegionEntries: recovTable: " + recovTable );
+           NavigableMap<HRegionInfo, ServerName> regionMap = recovTable.getRegionLocations();
+           Iterator it =  regionMap.entrySet().iterator();
+           while(it.hasNext()) { // iterate entries.
+              NavigableMap.Entry pairs = (NavigableMap.Entry)it.next();
+              HRegionInfo region = (HRegionInfo) pairs.getKey();
+              LOG.info("postAllRegionEntries: region: " + region.getRegionNameAsString());
+              ServerName serverValue = (ServerName) regionMap.get(region);
+              String hostAndPort = new String(serverValue.getHostAndPort());
+              StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
+              String hostName = new String(tok.nextElement().toString());
+              int portNumber = Integer.parseInt(tok.nextElement().toString());
+              ByteArrayOutputStream lv_bos = new ByteArrayOutputStream();
+              DataOutputStream lv_dos = new DataOutputStream(lv_bos);
+              region.write(lv_dos);
+              lv_dos.flush();
+              byte [] lv_byte_region_info = lv_bos.toByteArray();
+              try{
+                 LOG.info("Calling createRecoveryzNode for encoded region: " + region.getEncodedName());
+                 createRecoveryzNode(hostName, portNumber, region.getEncodedName(), lv_byte_region_info);
+              }
+              catch (Exception e2){
+                 LOG.error("postAllRegionEntries exception in createRecoveryzNode " + region.getTableName().toString() +
+                           " exception: " + e2);
+              }
+           }// while
+        }
 	
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.hbase.Abortable#abort(java.lang.String, java.lang.Throwable)

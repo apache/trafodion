@@ -52,6 +52,7 @@ message BeginTransactionResponse {
 message CommitRequest{
   required bytes regionName = 1;
   required int64 transactionId = 2;
+  optional bool ignoreUnknownTransactionException = 3;
 }
 
 message CommitResponse {

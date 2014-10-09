@@ -445,7 +445,7 @@ CoprocessorService, Coprocessor {
     {
      // Process local memory
       try {
-        commit(request.getTransactionId());
+        commit(request.getTransactionId(), request.getIgnoreUnknownTransactionException());
       } catch (Throwable e) {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commit threw exception after internal commit");
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  Caught exception " + e.getMessage() + "" + stackTraceToString(e));
@@ -2432,7 +2432,7 @@ CoprocessorService, Coprocessor {
          String str = sb.toString();
          String zNodePathTM = zNodePath + str;
          String zNodePathTMKey = zNodePathTM + "/" + zNodeKey;
-         LOG.debug("Trafodion Recovery Region Observer CP: ZKW Delete region recovery znode" + node + " zNode Path " + zNodePathTMKey);
+         if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP: ZKW Delete region recovery znode" + node + " zNode Path " + zNodePathTMKey);
           // delete zookeeper recovery zNode, call ZK ...
          try {
              ZKUtil.deleteNodeFailSilent(zkw1, zNodePathTMKey);
@@ -2475,7 +2475,7 @@ CoprocessorService, Coprocessor {
   /**
    * Commits the transaction
    * @param TransactionState state
-   * @throws IOException 
+   * @throws IOException
    */
   private void commit(final TransactionState state) throws IOException {
     long txid = 0;
@@ -3100,7 +3100,7 @@ CoprocessorService, Coprocessor {
                 
     // TBD until integration with recovery 
     if (reconstructIndoubts == 0) {
-       LOG.debug("TrxRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
+       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  RECOV beginTransaction -- ENTRY txId: " + transactionId);
        constructIndoubtTransactions();
     }
     if (regionState != 2) {
@@ -3217,18 +3217,35 @@ CoprocessorService, Coprocessor {
     }
     return stateR;
   }
- 
+
+  /**
+   * Commits the transaction
+   * @param long TransactionId
+   * @throws IOException
+   */
+  public void commit(final long transactionId) throws IOException {
+     commit(transactionId, false /* IgnoreUnknownTransactionException */);
+  }
+
   /**
    * Commits the transaction                        
    * @param long TransactionId
+   * @param boolean ignoreUnknownTransactionException
    * @throws IOException 
    */
-  public void commit(final long transactionId) throws IOException {
-    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commit(txId) -- ENTRY txId: " + transactionId);
+  public void commit(final long transactionId, final boolean ignoreUnknownTransactionException) throws IOException {
+    if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commit(txId) -- ENTRY txId: " + transactionId +
+              " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
     TransactionState state;
     try {
       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
+      if (ignoreUnknownTransactionException == true) {
+         if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:  ignoring UnknownTransactionException in commit : " + transactionId
+                + " in region "
+                + m_Region.getRegionInfo().getRegionNameAsString());
+         return;
+      }
       LOG.fatal("TrxRegionEndpoint coprocessor:  Asked to commit unknown transaction: " + transactionId
                 + " in region "
                 + m_Region.getRegionInfo().getRegionNameAsString());
