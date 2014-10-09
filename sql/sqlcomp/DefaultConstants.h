@@ -3611,6 +3611,10 @@ enum DefaultConstants
   TRAF_UNLOAD_SKIP_WRITING_TO_FILES,
 
   GROUP_BY_PARTIAL_ROOT_THRESHOLD,
+  TRAF_UNLOAD_BYPASS_LIBHDFS,
+  TRAF_UNLOAD_DEF_DELIMITER,
+  TRAF_UNLOAD_DEF_NULL_STRING,
+  TRAF_UNLOAD_DEF_RECORD_SEPARATOR,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

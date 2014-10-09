@@ -48,7 +48,7 @@ sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store_sales_summary/*;
 
 
 --- setup tabkles to insert into
-sh regrhive.ksh -v -f $REGRTSTDIR/create_hive_tables.hive;
+sh regrhive.ksh -v -f $REGRTSTDIR/TEST003_create_hive_tables.hive;
 
 prepare showOperators from
 select operator

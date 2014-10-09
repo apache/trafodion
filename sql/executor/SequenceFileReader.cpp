@@ -442,7 +442,9 @@ static const char* const sfwErrorEnumStr[] =
  ,"Java exception in hdfsMergeFiles()."
  ,"JNI NewStringUTF() in hdfsCleanUnloadPath()."
  ,"Java exception in hdfsCleanUnloadPath()."
-
+ ,"JNI NewStringUTF() in hdfsExists()."
+ ,"Java exception in hdfsExists()."
+ ,"file already exists."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -493,17 +495,18 @@ SFW_RetCode SequenceFileWriter::init()
     JavaMethods_[JM_CLOSE     ].jm_name      = "close";
     JavaMethods_[JM_CLOSE     ].jm_signature = "()Ljava/lang/String;";
    
-    JavaMethods_[JM_HDFS_CREATE      ].jm_name      = "hdfsCreate";
-    JavaMethods_[JM_HDFS_CREATE      ].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_CREATE     ].jm_name      = "hdfsCreate";
+    JavaMethods_[JM_HDFS_CREATE     ].jm_signature = "(Ljava/lang/String;Z)Z";
     JavaMethods_[JM_HDFS_WRITE      ].jm_name      = "hdfsWrite";
-    JavaMethods_[JM_HDFS_WRITE      ].jm_signature = "(Ljava/lang/String;J)Z";
+    JavaMethods_[JM_HDFS_WRITE      ].jm_signature = "([BJ)Z";
     JavaMethods_[JM_HDFS_CLOSE      ].jm_name      = "hdfsClose";
     JavaMethods_[JM_HDFS_CLOSE      ].jm_signature = "()Z";
     JavaMethods_[JM_HDFS_MERGE_FILES].jm_name      = "hdfsMergeFiles";
     JavaMethods_[JM_HDFS_MERGE_FILES].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
-
     JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].jm_name      = "hdfsCleanUnloadPath";
-    JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].jm_signature = "(Ljava/lang/String;ZLjava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].jm_signature = "(Ljava/lang/String;)Z";
+    JavaMethods_[JM_HDFS_EXISTS].jm_name      = "hdfsExists";
+    JavaMethods_[JM_HDFS_EXISTS].jm_signature = "(Ljava/lang/String;)Z";
 
 
     setHBaseCompatibilityMode(FALSE);
@@ -622,7 +625,7 @@ SFW_RetCode SequenceFileWriter::close()
 //////////////////////////////////////////////////////////////////////////////
 //
 //////////////////////////////////////////////////////////////////////////////
-SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path)
+SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path, NABoolean compress)
 {
   HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsCreate(%s) called.", path);
   jstring js_path = jenv_->NewStringUTF(path);
@@ -630,7 +633,9 @@ SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path)
     return SFW_ERROR_HDFS_CREATE_PARAM;
 
 
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE].methodID, js_path);
+  jboolean j_compress = compress;
+
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CREATE].methodID, js_path, j_compress);
 
   jenv_->DeleteLocalRef(js_path);
 
@@ -657,16 +662,20 @@ SFW_RetCode SequenceFileWriter::hdfsCreate(const char* path)
 SFW_RetCode SequenceFileWriter::hdfsWrite(const char* data, Int64 len)
 {
   HdfsLogger::log(CAT_SEQ_FILE_WRITER, LL_DEBUG, "SequenceFileWriter::hdfsWrite(%ld) called.", len);
-  jstring js_data = jenv_->NewStringUTF(data);
-  if (js_data == NULL)
+
+  //Write the requisite bytes into the file
+  jbyteArray jbArray = jenv_->NewByteArray( len);
+  if (!jbArray) {
+
     return SFW_ERROR_HDFS_WRITE_PARAM;
+  }
+  jenv_->SetByteArrayRegion(jbArray, 0, len, (const jbyte*)data);
 
   jlong j_len = len;
   // String write(java.lang.String);
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID, js_data, j_len);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_WRITE].methodID,jbArray , j_len);
 
-  jenv_->DeleteLocalRef(js_data);
-
+  jenv_->DeleteLocalRef(jbArray);
 
   if (jenv_->ExceptionCheck())
   {
@@ -718,7 +727,7 @@ SFW_RetCode SequenceFileWriter::hdfsClose()
   return SFW_OK;
 }
 
-SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath, NABoolean checkExistence,const std::string& mergePath )
+SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsCleanUnloadPath(%s) called.",
                                                       uldPath.data());
@@ -729,14 +738,6 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath,
      //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
      return SFW_ERROR_HDFS_CLEANUP_PARAM;
    }
-
-   jstring js_MergePath = jenv_->NewStringUTF(mergePath.c_str());
-    if (js_MergePath == NULL)
-    {
-      //GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_HDFS_MERGE_FILES_PARAM));
-      return SFW_ERROR_HDFS_CLEANUP_PARAM;
-    }
-
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -745,9 +746,7 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const std::string& uldPath,
     return SFW_ERROR_HDFS_CLEANUP_EXCEPTION;
   }
 
-  jboolean j_checkExistence = checkExistence;
-
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].methodID, js_UldPath, j_checkExistence, js_MergePath);
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].methodID, js_UldPath);
 
   jenv_->DeleteLocalRef(js_UldPath);
 
@@ -813,6 +812,41 @@ SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const std::string& srcPath,
     logError(CAT_HBASE, "SequenceFileWriter::hdfsMergeFiles()", getLastError());
     return SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION;
   }
+
+  return SFW_OK;
+}
+SFW_RetCode SequenceFileWriter::hdfsExists( const std::string& uldPath, NABoolean & exist)
+{
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "SequenceFileWriter::hdfsExists(%s) called.",
+                                                      uldPath.data());
+
+  jstring js_UldPath = jenv_->NewStringUTF(uldPath.c_str());
+   if (js_UldPath == NULL)
+   {
+     return SFW_ERROR_HDFS_EXISTS_PARAM;
+   }
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "SequenceFileWriter::hdfsExists(..) => before calling Java.", getLastError());
+    return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
+  }
+
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_HDFS_EXISTS].methodID, js_UldPath);
+
+  jenv_->DeleteLocalRef(js_UldPath);
+
+  exist = jresult;
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "SequenceFileWriter::hdfsExists()", getLastError());
+    return SFW_ERROR_HDFS_EXISTS_EXCEPTION;
+  }
+
 
   return SFW_OK;
 }

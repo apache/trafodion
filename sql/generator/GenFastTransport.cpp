@@ -413,6 +413,7 @@ static short ft_codegen(Generator *generator,
   tdb->setHdfsCompressed(CmpCommon::getDefaultNumeric(TRAF_UNLOAD_HDFS_COMPRESS)!=0);
 
   tdb->setSkipWritingToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
+  tdb->setBypassLibhdfs(CmpCommon::getDefault(TRAF_UNLOAD_BYPASS_LIBHDFS) == DF_ON);
   generator->initTdbFields(tdb);
 
   // Generate EXPLAIN info.
@@ -436,7 +437,46 @@ static short ft_codegen(Generator *generator,
 
 
 
+NABoolean PhysicalFastExtract::isSpecialChar(char * str , char & chr)
+{
+  chr = '\0';
+  if (strlen(str) != 2)
+    return false;
+  if (str[0] == '\\')
+  {
+    switch (str[1])
+    {
+      case 'a' :
+        chr = '\a';
+        break;
+      case 'b' :
+        chr = '\b';
+        break;
+      case 'f' :
+        chr = '\f';
+        break;
+      case 'n' :
+        chr = '\n';
+        break;
+      case 'r' :
+        chr = '\r';
+        break;
+      case 't' :
+        chr = '\t';
+        break;
+      case 'v' :
+        chr = '\v';
+        break;
+      default:
+      {
 
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+  return FALSE;
+}
 
 ////////////////////////////////////////////////////////////////////////////
   //
@@ -460,6 +500,7 @@ PhysicalFastExtract::codeGen(Generator *generator)
 {
   short result = 0;
   Space *space = generator->getSpace();
+  CmpContext *cmpContext = generator->currentCmpContext();
 
   const ULng32 downQueueMaxSize = getDefault(GEN_FE_SIZE_DOWN);
   const ULng32 upQueueMaxSize = getDefault(GEN_FE_SIZE_UP);
@@ -498,13 +539,31 @@ PhysicalFastExtract::codeGen(Generator *generator)
   char * hdfsHostName = NULL;
   Int32 hdfsPortNum = getHdfsPort();
 
+  char * newDelimiter = (char *)getDelimiter().data();
+  char specChar = '0';
+  if (!isHiveInsert() && isSpecialChar(newDelimiter, specChar))
+  {
+    newDelimiter = new (cmpContext->statementHeap()) char[2];
+    newDelimiter[0] = specChar;
+    newDelimiter[1] = '\0';
+  }
+
+  char * newRecordSep = (char *)getRecordSeparator().data();
+  specChar = '0';
+  if (!isHiveInsert() && isSpecialChar(newRecordSep, specChar))
+  {
+    newRecordSep = new (cmpContext->statementHeap()) char[2];
+    newRecordSep[0] = specChar;
+    newRecordSep[1] = '\0';
+  }
+
   targetName = AllocStringInSpace(*space, (char *)getTargetName().data());
   hdfsHostName = AllocStringInSpace(*space, (char *)getHdfsHostName().data());
   hiveTableName = AllocStringInSpace(*space, (char *)getHiveTableName().data());
-  delimiter = AllocStringInSpace(*space,  (char *)getDelimiter().data());
+  delimiter = AllocStringInSpace(*space,  newDelimiter);
   header = AllocStringInSpace(*space, (char *)getHeader().data());
   nullString = AllocStringInSpace(*space, (char *)getNullString().data());
-  recordSeparator = AllocStringInSpace(*space, (char *)getRecordSeparator().data());
+  recordSeparator = AllocStringInSpace(*space, newRecordSep);
 
    result = ft_codegen(generator,
                        *this,              // RelExpr &relExpr
@@ -541,6 +600,9 @@ PhysicalFastExtract::codeGen(Generator *generator)
 
   if (isAppend())
     newTdb->setIsAppend(1);
+  if (this->includeHeader())
+    newTdb->setIncludeHeader(1);
+
   if (isHiveInsert())
   {
     newTdb->setIsHiveInsert(1);

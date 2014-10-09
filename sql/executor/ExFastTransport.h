@@ -31,7 +31,6 @@
 #include "ex_tcb.h"
 #include "ComSmallDefs.h"
 #include "ExStats.h"
-#include "ExFastTransportIO.h"
 
 #include "ExpLOBinterface.h"
 #include "ex_exe_stmt_globals.h"
@@ -53,6 +52,44 @@ class SequenceFileWriter;
 
 class ExFastExtractTdb;
 class ExFastExtractTcb;
+
+class IOBuffer
+{
+
+public:
+
+  friend class ExFastExtractTcb;
+  enum BufferStatus {PARTIAL = 0, FULL, EMPTY, ERR};
+
+  IOBuffer(char *buffer, Int32 bufSize)
+    : bytesLeft_(bufSize),
+      bufSize_(bufSize),
+      status_(EMPTY)
+  {
+    data_ = buffer;
+    //memset(data_, '\0', bufSize);
+
+  }
+
+  ~IOBuffer()
+  {
+  }
+
+  void setStatus(BufferStatus val)
+  {
+    status_ = val;
+  }
+  BufferStatus getStatus()
+  {
+    return status_ ;
+  }
+
+  char* data_;
+  Int32 bytesLeft_;
+  Int32 bufSize_;
+  BufferStatus status_;
+
+};
 //----------------------------------------------------------------------
 // Task control block
 
@@ -291,25 +328,6 @@ public:
     }
 
 
-  //This cleanup is called at the root level. When it reaches this operator
-  //we need to do the necessary cleanup. Memory deallocations are performed
-  //as part of heal deallocation at the higher level. Also, note that this cleanup
-  //when invoked by TSE at root level, EID thread is not running( i.e. EID
-  //thread would have returned FE_CONTINUE or FE_EOF)
-  virtual void cleanup( void)
-  {
-	  if (!retCodet_)
-	  {
-		  pthread_cancel(wthreadId_);
-		  retCodet_ = -1;
-		  fileWriter_->close();
-	  }
-
-	  //call parent class cleanup(); for
-	  //driving cleanup for children of this class.
-	  ex_tcb::cleanup();
-
-  }
 
 protected:
 
@@ -331,21 +349,9 @@ protected:
   sql_buffer_pool    *inputPool_;
   IOBuffer           *bufferPool_[10];
   Int32              numBuffers_;
-  Float64            ioTimeout_;
-  SimpleQueue  		 *writeQueue_;
-  pthread_mutex_t    *queueMutex_;
-  pthread_cond_t     *queueReadyCv_;
-  pthread_t          wthreadId_;
-  pthread_attr_t     *attr_;
-  Int16              retCodet_;  //to validate if wthreadId_ is valid.
   IOBuffer           *currBuffer_;
-  ThreadState        *threadState_;
-  ThreadFlag         *threadFlag_;
-  struct Params      *param_;
-  ErrorMsg			 *errMsg_; //error msg from wthread
   const ex_tcb       *childTcb_;
   ex_queue_pair      qChild_;
-  FileReadWrite      *fileWriter_;
   int                *sourceFieldsConvIndex_;
   SqlBuffer          *inSqlBuffer_;
   UInt32             maxExtractRowLength_;
@@ -354,10 +360,7 @@ protected:
   CollHeap           *heap_;
   ExFastExtractStats *feStats_;
 
-  //Io sync with write thread fields
-  IOSyncState		 ioSyncState_;
-  NABoolean 		 trySleep_;
-  time_t			 tstart_;
+  time_t              tstart_;
 
   UInt32             bufferAllocFailuresCount_;
 }; // class ExFastExtractTcb
@@ -366,6 +369,14 @@ protected:
 class ExHdfsFastExtractTcb : public ExFastExtractTcb
 {
   typedef ex_tcb super;
+
+  void convertSQRowToString(ULng32 nullLen,
+                            ULng32 recSepLen,
+                            ULng32 delimLen,
+                            tupp_descriptor* dataDesc,
+                            char* targetData,
+                            NABoolean & convError);
+
   friend class ExFastExtractTdb;
 
 public:
@@ -384,6 +395,10 @@ public:
 protected:
 
 
+  Lng32 lobInterfaceInsert(ssize_t bytesToWrite);
+  Lng32 lobInterfaceCreate();
+  Lng32 lobInterfaceClose();
+
   virtual void insertUpQueueEntry(ex_queue::up_status status,
                           ComDiagsArea *diags,
                           NABoolean popDownQueue);
@@ -391,12 +406,19 @@ protected:
   NABoolean isSequenceFile();
   void createSequenceFileError(Int32 sfwRetCode);
   NABoolean isHdfsCompressed();
+  NABoolean getEmptyNullString()
+  {
+    if (myTdb().getNullString() == NULL)
+      return TRUE;
+    return strlen(myTdb().getNullString()) == 0;
+  }
+
   void * lobGlob_;
 
   char hdfsHost_[500];
-  int hdfsPort_;
-  char hdfsFileName_[1000];
-  char hiveTableLocation_[1000];
+  int  hdfsPort_;
+  char fileName_[1000];
+  char targetLocation_[1000];
   NABoolean errorOccurred_;
   SequenceFileWriter* sequenceFileWriter_;
 }; // class ExHdfsFastExtractTcb

@@ -6531,16 +6531,8 @@ NABoolean PhysicalFastExtractRule::topMatch (RelExpr *relExpr,
   if (relExpr->isPhysical())
     return FALSE;
 
-  if (((FastExtract*)relExpr)->isHiveInsert())
-  {
     if ((context->getReqdPhysicalProperty()->executeInDP2()))
       return FALSE;
-  }
-  else
-  {
-    if (NOT(context->getReqdPhysicalProperty()->executeInDP2()))
-      return FALSE;
-  }
 
   const ReqdPhysicalProperty* const rppForMe =
     context->getReqdPhysicalProperty();

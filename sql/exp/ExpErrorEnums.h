@@ -458,10 +458,10 @@ enum ExeErrorCode
   EXE_EXTRACT_CANNOT_ALLOCATE_BUFFER    = 8962,
   EXE_EXTRACT_BACKUP_SWITCHED           = 8963,
   EXE_LOAD_NON_EMPTY_TABLE              = 8964,
-
+  EXE_UNLOAD_FILE_EXISTS                = 8965,
   // ---------------------------------------------------------------------
   // SeaMonster
-  // ---------------------------------------------------------------------
+  // -----NON_EMPTY_TABLE----------------------------------------------------------------
   EXE_SM_FUNCTION_ERROR                 = 8951,
   EXE_SM_CONTROL_CONN_ERROR             = 8952,
   EXE_SM_FIXUP_REPLY_TIMEOUT            = 8953,

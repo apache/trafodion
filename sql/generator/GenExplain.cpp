@@ -2023,3 +2023,37 @@ ControlRunningQuery::addSpecificExplainInfo( ExplainTupleMaster *explainTuple,
   return(explainTuple);
 }
 
+
+ExplainTuple *ExeUtilHBaseBulkUnLoad::addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb *tdb,
+    Generator *generator)
+{
+  NAString description = "extract_location: ";
+  description += extractLocation_;
+
+  description += " empty_target: ";
+  description += emptyTarget_ ? "true" : "false";
+
+  if (oneFile_)
+  {
+    if (mergePath_.length() > 0)
+    {
+       description += " merge_path: ";
+       description += mergePath_;
+    }
+    description += " overwrite_merge_file: ";
+    description +=  overwriteMergeFile_ ? "true" : "false";
+  }
+  description += " compression: ";
+  if (compressType_ ==1 )
+    description += "GZIP";
+  else
+    description += "NONE";
+
+
+  description += " extract_query: ";
+  description += getStmtText();
+
+  explainTuple->setDescription(description);
+
+  return explainTuple;
+}

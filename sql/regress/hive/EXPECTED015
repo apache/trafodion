@@ -228,7 +228,7 @@ Task:  COMPLETION      Status: Ended      ET: 00:00:01.300
 
 --- 5 row(s) loaded.
 >>
->>prepare s from load with no recovery,  no populate indexes  into t015t2 select * from t015t1;
+>>prepare s from load with no recovery  no populate indexes  into t015t2 select * from t015t1;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -278,7 +278,7 @@ A
         300
 
 --- 3 row(s) selected.
->>load with truncate table, no populate indexes  into t015t2 select * from t015t1;
+>>load with truncate table no populate indexes  into t015t2 select * from t015t1;
 Task: LOAD             Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  PURGE DATA      Status: Started    Object: TRAFODION.HBASE.T015T2
 Task:  PURGE DATA      Status: Ended      Object: TRAFODION.HBASE.T015T2

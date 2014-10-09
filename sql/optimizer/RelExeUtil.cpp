@@ -8656,7 +8656,9 @@ RelExpr * ExeUtilHBaseBulkUnLoad::copyTopNode(RelExpr *derivedNode, CollHeap* ou
   result->noOutput_= noOutput_;
   result->oneFile_= oneFile_;
   result->compressType_ = compressType_;
-
+  result->extractLocation_ = extractLocation_;
+  result->mergePath_ = mergePath_;
+  result->overwriteMergeFile_ = overwriteMergeFile_;
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
@@ -8668,76 +8670,179 @@ const NAString ExeUtilHBaseBulkUnLoad::getText() const
 
   return result;
 }
+void ExeUtilHBaseBulkUnLoad::buildWithClause(NAString & withStr, char * str)
+{
+  if (withStr.length() == 0 )
+  {
+    withStr = " WITH ";
+    withStr += str;
+  }
+  else
+  {
+    withStr += " ";
+    withStr += str;
+  }
+}
 
-
-short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*> *
+short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
     hBaseBulkUnLoadOptionList,   ComDiagsArea * da)
 {
-  if (!hBaseBulkUnLoadOptionList)
-    return 0;
 
-  for (CollIndex i = 0; i < hBaseBulkUnLoadOptionList->entries(); i++)
+  NAString delimiterSqlStr(CmpCommon::statementHeap());
+  NAString nullStringSqlStr(CmpCommon::statementHeap());
+  NAString recordSeparatorSqlStr(CmpCommon::statementHeap());
+  NAString withClauseStr(CmpCommon::statementHeap());
+
+  if (hBaseBulkUnLoadOptionList)
   {
-    HBaseBulkUnLoadOption * lo = (*hBaseBulkUnLoadOptionList)[i];
-    switch (lo->option_)
+    for (CollIndex i = 0; i < hBaseBulkUnLoadOptionList->entries(); i++)
     {
+      UnloadOption * lo = (*hBaseBulkUnLoadOptionList)[i];
+      switch (lo->option_)
+      {
+      case UnloadOption::DELIMITER_:
+      {
 
-      case EMPTY_TARGET_:
+        if (delimiterSqlStr.length() == 0)
+        {
+          delimiterSqlStr = " DELIMITER ";
+          if (lo->numericVal_ == 0)
+          {
+            delimiterSqlStr.append(" '");
+            delimiterSqlStr.append( lo->stringVal_);
+            delimiterSqlStr.append("' ");
+          }
+          else
+          {
+            char buf[5];
+            sprintf(buf,"%u",(unsigned int) lo->stringVal_[0]);
+            delimiterSqlStr.append( buf);
+            delimiterSqlStr.append(" ");
+          }
+          buildWithClause(withClauseStr,(char*)delimiterSqlStr.data());
+        }
+        else
+        {
+          *da << DgSqlCode(-4376) << DgString0("DELIMITER");
+          return 1;
+        }
+      }
+      break;
+      case UnloadOption::NULL_STRING_:
+      {
+        if (nullStringSqlStr.length() == 0)
+        {
+          nullStringSqlStr = " NULL_STRING ";
+          nullStringSqlStr.append(" '");
+          nullStringSqlStr.append( lo->stringVal_);
+          nullStringSqlStr.append("' ");
+          buildWithClause(withClauseStr,(char*)nullStringSqlStr.data());
+        }
+        else
+        {
+          *da << DgSqlCode(-4376) << DgString0("NULL_STRING");
+          return 1;
+        }
+      }
+      break;
+      case  UnloadOption::RECORD_SEP_:
+      {
+        if (recordSeparatorSqlStr.length() == 0)
+        {
+          recordSeparatorSqlStr = " RECORD_SEPARATOR ";
+          if (lo->numericVal_ == 0)
+          {
+            recordSeparatorSqlStr.append(" '");
+            recordSeparatorSqlStr.append( lo->stringVal_);
+            recordSeparatorSqlStr.append("' ");
+          }
+          else
+          {
+            char buf[5];
+            sprintf(buf,"%u",(unsigned int) lo->stringVal_[0]);
+            recordSeparatorSqlStr.append( buf);
+            recordSeparatorSqlStr.append(" ");
+          }
+          buildWithClause(withClauseStr,(char*)recordSeparatorSqlStr.data());
+        }
+        else
+        {
+          *da << DgSqlCode(-4376) << DgString0("RECORD_SEPARATOR");
+          return 1;
+        }
+      }
+      break;
+      case  UnloadOption::EMPTY_TARGET_:
       {
         if (getEmptyTarget())
         {
           //4489 bulk unload option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0("EMPTY TARGET");
+                          << DgString0("EMPTY TARGET");
           return 1;
         }
         setEmptyTarget(TRUE);
       }
       break;
 
-      case NO_OUTPUT_:
+      case  UnloadOption::NO_OUTPUT_:
       {
         if (getNoOutput())
         {
           //4489 bulk unload option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0("NO OUTPUT");
+                          << DgString0("NO OUTPUT");
           return 1;
         }
         setNoOutput(TRUE);
       }
       break;
-      case LOG_ERRORS_:
+      case  UnloadOption::LOG_ERRORS_:
       {
         *da << DgSqlCode(-4485)
-        << DgString0(": ERROR LOGGING.");
+                << DgString0(": ERROR LOGGING.");
         return 1;
       }
       break;
-      case COMPRESS_:
+      case  UnloadOption::APPEND_:
+      {
+        *da << DgSqlCode(-4485)
+                << DgString0(": APPEND.");
+        return 1;
+      }
+      break;
+      case  UnloadOption::HEADER_:
+      {
+        *da << DgSqlCode(-4485)
+                << DgString0(": HEADER.");
+        return 1;
+      }
+      break;
+      case  UnloadOption::COMPRESS_:
       {
         if (getCompressType()!= NONE_)
         {
           //4489 bulk load option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0("COMPRESS");
+                          << DgString0("COMPRESS");
           return 1;
         }
         //only GZIP is supported for now
         setCompressType(GZIP_);
       }
       break;
-      case ONE_FILE_:
+      case  UnloadOption::ONE_FILE_:
       {
         if (getOneFile())
         {
           //4489 bulk unload option $0~String0 cannot be specified more than once.
           *da << DgSqlCode(-4489)
-                  << DgString0("ONE FILE");
+                          << DgString0("ONE FILE");
           return 1;
         }
         setOneFile(TRUE);
         mergePath_ = lo->stringVal_;
+        setOverwriteMergeFile(lo->numericVal_);
 
       }
       break;
@@ -8746,92 +8851,63 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBul
         CMPASSERT(0);
         return 1;
       }
+      }
+    }
 
+    if (getOneFile())
+    {
+      if (mergePath_.contains("/"))
+      {
+        //4487 Invalid file name
+        *da << DgSqlCode(-4487);
+        return 1;
+
+      }
+      if (getCompressType()!= NONE_)
+      {
+        // currently only gzip compression is supported
+        //verify the merge path ends with .gz
+        if (!(mergePath_.length() > 3 &&
+            strcmp(&(mergePath_.data()[mergePath_.length() -3 ]), ".gz") == 0))
+        {
+          //4487 Invalid file name
+          *da << DgSqlCode(-4487)
+                        << DgString0(": compressed merge file needs to end with .gz .");
+          return 1;
+        }
+      }
+      if (extractLocation_.data()[extractLocation_.length()-1] != '/')
+        mergePath_.prepend("/");
+      mergePath_.prepend(extractLocation_);
     }
   }
 
-  return 0;
+  char * stmt = this->getStmtText();
 
-};
-
-RelExpr * ExeUtilHBaseBulkUnLoadTask::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
-{
-  ExeUtilHBaseBulkUnLoadTask *result;
-
-  if (derivedNode == NULL)
-    result = new (outHeap)
-    ExeUtilHBaseBulkUnLoadTask(getTableName(),
-                            getExprNode(),
-                            NULL,
-                            CharInfo::UnknownCharSet,
-                            NOT_SET_,
-                            outHeap);
-  else
-    result = (ExeUtilHBaseBulkUnLoadTask *) derivedNode;
-
-  result->taskType_ = taskType_;
-  result->hiveTablePath_= hiveTablePath_;
-  result->hostName_ = hostName_;
-  result->tableDir_ = tableDir_;
-  result->destinationPath_ = destinationPath_;
-  return ExeUtilExpr::copyTopNode(result, outHeap);
-}
-
-const NAString ExeUtilHBaseBulkUnLoadTask::getText() const
-{
-  NAString result(CmpCommon::statementHeap());
-
-  //change to swith statement later
-  if (taskType_ == OVERWRITE_TARGET_)
-       result = "OVERWRITE TARGET";
-  else
-       result = "MERGE FILES";
-
-  return result;
-}
-
-RelExpr * ExeUtilHBaseBulkUnLoadTask::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound()) {
-    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-    return this;
+  for ( char *s = stmt; *s ; s++ )
+  {
+    if (*s=='\n' || *s=='\t' || *s == '\r')
+    {
+      *s = ' ';
+    }
   }
 
+  NAString stmt1 = this->getStmtText();
+  UInt32 pos = stmt1.index(" into ", 0, NAString::ignoreCase) ;
+  pos += strlen(" into ");
+
+  NAString uldQuery = " ";
+  uldQuery.append((char*)&(stmt1.data()[pos]));
+  uldQuery.prepend(" TO ");
+  if (withClauseStr.length() != 0)
+  {
+    uldQuery.prepend(withClauseStr);
+  }
+  uldQuery.prepend("UNLOAD EXTRACT ");
+
+  this->setStmtText((char*)uldQuery.data(), this->getStmtTextCharSet());
+
+  return 0;
+};
 
 
-   NATable *myNaTable =bindWA->getNATable(getTableName());
-
-   if (bindWA->errStatus())
-     return NULL;
-
-   if (!myNaTable)
-     return NULL;
-
-   const HHDFSTableStats* hTabStats = myNaTable->getClusteringIndex()->getHHDFSTableStats();
-
-   const char * hiveTablePath;
-   NAString hostName;
-   Int32 hdfsPort;
-   NAString tableDir;
-   NABoolean result;
-
-   char fldSep[2];
-   char recSep[2];
-   memset(fldSep,'\0',2);
-   memset(recSep,'\0',2);
-   fldSep[0] = hTabStats->getFieldTerminator();
-   recSep[0] = hTabStats->getRecordTerminator();
-   hiveTablePath = (*hTabStats)[0]->getDirName();
-   result = ((HHDFSTableStats* )hTabStats)->splitLocation
-     (hiveTablePath, hostName, hdfsPort, tableDir) ;
-
-   //add assertions here ???
-
-   hostName_ = hostName;
-   hiveTablePath_ = hiveTablePath;
-   tableDir_ = tableDir;
-   hdfsPort_ = hdfsPort;
-
-   return ExeUtilExpr::bindNode(bindWA);
-
-} // ExeUtilHBaseBulkUnLoadTask::bindNode()
