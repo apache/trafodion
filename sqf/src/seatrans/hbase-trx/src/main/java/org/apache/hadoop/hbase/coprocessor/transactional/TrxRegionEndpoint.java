@@ -1675,7 +1675,6 @@ CoprocessorService, Coprocessor {
       Throwable t = null;
       WrongRegionException wre = null;
 
-      //SST TBD until integration with recovery 
       if (reconstructIndoubts == 0) {
          LOG.debug("TrxRegionEndpoint coprocessor:  RECOV recovery Request");
          constructIndoubtTransactions();
@@ -3401,7 +3400,7 @@ CoprocessorService, Coprocessor {
       WALEdit e1 = state.getEdit();
       WALEdit e = new WALEdit();
 
-      // SST get 1st Cell to associatyed with the abort record as a workaround through HLOG async append
+      // get 1st Cell to associatyed with the abort record as a workaround through HLOG async append
       Cell c = e1.getKeyValues().get(0);
       KeyValue kv = new KeyValue(c.getRowArray(), c.getRowOffset(), (int)c.getRowLength(),
       c.getFamilyArray(), c.getFamilyOffset(), (int)c.getFamilyLength(),

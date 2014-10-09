@@ -194,7 +194,7 @@ static ConcurrentHashMap<String, Object> getRefMap() {
      long logSeqId = Bytes.toLong(b,Bytes.SIZEOF_INT+Bytes.SIZEOF_INT+Bytes.SIZEOF_LONG+offset);
      if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP:PPP13 Find transactional tag within Edits for tid " + tid + " op " + op + " log seq " + logSeqId + " version " + version);
 
-     //SST Trafodion Recovery : process each edit according to its nature (prepare, commit, abort)
+     // process each edit according to its nature (prepare, commit, abort)
 
      switch (op) {
 
@@ -253,8 +253,6 @@ static ConcurrentHashMap<String, Object> getRefMap() {
      if (LOG.isDebugEnabled()) LOG.debug("Trafodion Recovery Region Observer CP:   " + regionInfo.getRegionNameAsString() + " Edits replay read " + totalEdits + " transactional operations (skipped " + skippedEdits
                         + " because sequence id <= " + minSeqID + "): " + commitRequestCount + " commitRequests, "
                         + abortCount + " aborts, " + commitCount + " commits, and " + flushCount + " flushes.");
-
-     //SST recovery patch
 
      env.complete(); // do not need to invoke further down coprocessor
 
