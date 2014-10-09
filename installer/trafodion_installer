@@ -301,8 +301,9 @@ if [[ -z $NODES ]]; then
    NODES=$(hostname)
    
    # since sqgen uses the existence of /usr/bin/pdsh to determine multi-node cluster
-   # we will check for it here and warn the user to remove/rename it to head-off the
-   # confusing errors when running sqgen
+   # and sqgen uses the existence of /usr/bin/pdcp to determine if it needs to copy 
+   # files we will check for these here and warn the user to remove/rename these to 
+   # head-off the confusing errors when running sqgen
    if [ -f /usr/bin/pdsh ] || [ -f /usr/bin/pdcp ]; then
       echo "***ERROR: This is a single node cluster yet /usr/bin/pdsh or /usr/bin/pdcp is installed on it." | tee -a $INSTALL_LOG
       echo "***       Please uninstall or rename /usr/bin/pdsh and /usr/bin/pdcp temporarily." | tee -a $INSTALL_LOG

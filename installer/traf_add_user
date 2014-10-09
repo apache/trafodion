@@ -288,9 +288,12 @@ if [ "$node_count" -ne "1" ]; then
     # On some VMs it seems that "Socket(s)" is not listed in
     # lscpu so, we will default processors=1 in that case
     if [ "$processors" == "" ]; then
-        echo "***WARNING: unable to determine number of sockets with 'lscpu'..."
-        echo "***WARNING: ...defaulting sqconfig 'processors=1'"
-        processors="1"
+       processors=$(lscpu | grep "CPU socket(s)" | awk '{print $3}')
+       if [ "$processors" == "" ]; then
+          echo "***WARNING: unable to determine number of sockets with 'lscpu'..."
+          echo "***WARNING: ...defaulting sqconfig 'processors=1'"
+          processors="1"
+       fi
     fi
     echo "# (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P." > $sqconfig
     echo "#" >> $sqconfig
