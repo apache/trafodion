@@ -1014,7 +1014,7 @@ public class TmAuditTlog {
                String asnToken = st.nextElement().toString() ;
                transidToken = st.nextElement().toString() ;
                stateString = st.nextElement().toString() ;
-               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: stateString is " + stateString);
+               if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: transaction: " + transidToken + " stateString is: " + stateString);
             }
             if (stateString.compareTo("COMMITTED") == 0){
                lvTxState = TM_TX_STATE_COMMITTED;
@@ -1112,7 +1112,7 @@ public class TmAuditTlog {
                while(it.hasNext()) { // iterate entries.
                   NavigableMap.Entry pairs = (NavigableMap.Entry)it.next();
                   HRegionInfo regionKey = (HRegionInfo) pairs.getKey();
-                  if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: region: " + regionKey.getRegionNameAsString());
+                  if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: transaction: " + transidToken + " adding region: " + regionKey.getRegionNameAsString());
                   ServerName serverValue = (ServerName) regions.get(regionKey);
                   String hostAndPort = new String(serverValue.getHostAndPort());
                   StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
