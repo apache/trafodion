@@ -61,15 +61,6 @@ class PushDownProperty;
 class PushDownRequirement;
 
 // -----------------------------------------------------------------------
-// global variables
-// -----------------------------------------------------------------------
-extern THREAD_P class CostWeight *DefaultCostWeight;
-extern THREAD_P class PerformanceGoal *DefaultPerformanceGoal;
-extern THREAD_P class PerformanceGoal *ResourcePerformanceGoal;
-NABoolean InitCostVariables();
-void      CleanupCostVariables();
-
-// -----------------------------------------------------------------------
 // global defines
 // -----------------------------------------------------------------------
 
@@ -602,8 +593,8 @@ public:
            const PlanExecutionEnum location = DEFAULT_LOCATION,
            const Lng32 availableCPUs = DEFAULT_SINGLETON,
            const Lng32 pipelinesPerCPU = DEFAULT_SINGLETON,
-           const CostWeight* const costWeight = DefaultCostWeight,
-           const PerformanceGoal* const perfGoal = DefaultPerformanceGoal,
+           const CostWeight* const costWeight = CURRSTMT_OPTDEFAULTS->getDefaultCostWeight(),
+           const PerformanceGoal* const perfGoal = CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal(),
            RelExpr* mustMatch = NULL,
 	   PushDownRequirement* pdp = NULL
   )
@@ -804,8 +795,8 @@ public:
       location_(DEFAULT_LOCATION),
       availableCPUs_(DEFAULT_SINGLETON),
       pipelinesPerCPU_(DEFAULT_SINGLETON),
-      costWeight_(DefaultCostWeight),
-      perfGoal_(DefaultPerformanceGoal),
+      perfGoal_(CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal()),
+      costWeight_(CURRSTMT_OPTDEFAULTS->getDefaultCostWeight()),
       mustMatch_(mustMatch),
       pushDownRequirement_(NULL),
       noEspExchangeRequirement_(FALSE),

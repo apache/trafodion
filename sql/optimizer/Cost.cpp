@@ -490,8 +490,8 @@ overlapAdd(const SimpleCostVector &v1, const SimpleCostVector &v2)
   double minIdleTime = v1.getIdleTime().value();
   double v2IdleTime = v2.getIdleTime().value();
   double elapsedTimeDif =
-      v1.getElapsedTime(*DefaultPerformanceGoal).value() -
-      v2.getElapsedTime(*DefaultPerformanceGoal).value();
+      v1.getElapsedTime(*(CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal())).value() -
+      v2.getElapsedTime(*(CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal())).value();
   if ( minIdleTime < v2IdleTime )
   {
       if ( elapsedTimeDif > 0.0 )
@@ -991,8 +991,8 @@ CostScalar SimpleCostVector::getElapsedTime(const ReqdPhysicalProperty* const
     cw = rpp->getCostWeight();
   }
   else {
-    goal = DefaultPerformanceGoal;
-    cw = DefaultCostWeight;
+    goal = CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal();
+    cw = CURRSTMT_OPTDEFAULTS->getDefaultCostWeight();
   }
 
   return getElapsedTime(*goal,cw);
@@ -1017,7 +1017,7 @@ CostScalar SimpleCostVector::getElapsedTime(const PerformanceGoal& goal,
   {
     CostWeight *vecWeight;
     if (vectorWeight == NULL)
-      vecWeight = DefaultCostWeight;
+      vecWeight = CURRSTMT_OPTDEFAULTS->getDefaultCostWeight();
     else
       vecWeight = (CostWeight*) vectorWeight;
     et = vecWeight->convertToElapsedTime(*this);
@@ -1828,7 +1828,7 @@ COMPARE_RESULT Cost::compareCosts(
   // pfg = (rpp ? rpp->getPerformanceGoal() : DefaultPerformanceGoal);
 
   const CostWeight * rcw;
-  rcw = (rpp ? rpp->getCostWeight() : DefaultCostWeight);
+  rcw = (rpp ? rpp->getCostWeight() : CURRSTMT_OPTDEFAULTS->getDefaultCostWeight());
 
   // ---------------------------------------------------------------------
   // If optimized for resource consumption, the set of cost weights
@@ -1879,9 +1879,9 @@ COMPARE_RESULT Cost::compareCosts(
     // In order to compare total resources, first convert it to
     // an elapsed time unit.
     CostScalar tc_et1 = getTotalCost().getElapsedTime
-                          (*ResourcePerformanceGoal,rcw);
+                          (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),rcw);
     CostScalar tc_et2 = other.getTotalCost().getElapsedTime
-                          (*ResourcePerformanceGoal,rcw);
+                          (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),rcw);
     if (tc_et1 > tc_et2)
       return MORE;
     else if (tc_et1 < tc_et2)
@@ -1909,7 +1909,7 @@ ElapsedTime Cost::convertToElapsedTime(
     return scmComputeTotalCost();
   }
   const PerformanceGoal* pfg;
-  pfg = (rpp ? rpp->getPerformanceGoal() : DefaultPerformanceGoal);
+  pfg = (rpp ? rpp->getPerformanceGoal() : CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal());
 
   // ---------------------------------------------------------------------
   // Assume the given set of cost weights in rpp converts the Cost object

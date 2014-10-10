@@ -2787,8 +2787,6 @@ void initializeGUIData(SqlcmpdbgExpFuncs* expFuncs)
                                       ,CURRSTMT_OPTGLOBALS->task_list
                                       ,QueryAnalysis::Instance()
                                       ,cmpCurrentContext
-                                      ,DefaultCostWeight
-                                      ,DefaultPerformanceGoal
                                       ,gpClusterInfo
                                       );
 } // initializeGUIData(...)

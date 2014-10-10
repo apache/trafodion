@@ -103,8 +103,7 @@ public:
 typedef struct tagSqlcmpdbgExpFuncs
 {
   void (*fpDisplayQueryTree) (Sqlcmpdbg::CompilationPhase, void *, void *);
-  void (*fpSqldbgSetPointers) (void *, void *, void *, void *, void *,
-			       void *, void *);
+  void (*fpSqldbgSetPointers) (void *, void *, void *, void *, void *);
   void (*fpDoMemoStep) (Int32, Int32, Int32, void *, void *, void *);
   void (*fpHideQueryTree) (BOOL);
   void (*fpDisplayTDBTree) (Sqlcmpdbg::CompilationPhase, void *, void *);

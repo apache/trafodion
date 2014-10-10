@@ -29,8 +29,6 @@ extern "C" Q_DECL_EXPORT void DisplayQueryTree (Sqlcmpdbg::CompilationPhase
 extern "C" Q_DECL_EXPORT void SqldbgSetPointers (void *memo, void *tasklist,
 						 void *analysis,
 						 void *currentContext,
-						 void *dCostWeight,
-						 void *dPerformanceGoal,
 						 void *ClusterInfo);
 extern "C" Q_DECL_EXPORT void DoMemoStep (Int32 passNo = -1, Int32 groupNo =
 					  -1, Int32 taskNo = -1, void *task =

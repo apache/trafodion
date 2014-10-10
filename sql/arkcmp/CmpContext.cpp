@@ -325,9 +325,6 @@ CmpContext::~CmpContext()
   //                       -- trees are more often DAGs...)!
   ruleSet_ = NULL;
 
-  // cleanup the costing variables
-  CleanupCostVariables();
-
   if (diags_)
     diags_->decrRefCount();
 
@@ -377,10 +374,6 @@ NABoolean CmpContext::initContextGlobals()
 
     // globals for ustat
   uStatID_ = 0;
-
-  // initialize the costing variables
-  if (! InitCostVariables())
-    rtnStatus = FALSE;
 
   // retrieve SQLMX_REGRESS environmnet variable
   const char *env;

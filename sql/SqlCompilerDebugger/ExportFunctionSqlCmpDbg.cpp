@@ -69,7 +69,6 @@ void DisplayQueryTree(Sqlcmpdbg::CompilationPhase phase,
 
 void SqldbgSetPointers(void *memoptr , void *tasklist ,
                          void *analysis , void *currentContext ,
-                         void *dCostWeight , void *dPerformanceGoal ,
                          void *ClusterInfo ) 
 {
   if (MainWindow::IsQuiting)
@@ -78,8 +77,7 @@ void SqldbgSetPointers(void *memoptr , void *tasklist ,
   mainWindow_->m_querydata->SetAnalysis(analysis);
   mainWindow_->m_querydata->SetTaskList(tasklist);
   cmpCurrentContext = (CmpContext *) currentContext;
-  DefaultCostWeight = (CostWeight *) dCostWeight;
-  DefaultPerformanceGoal = (PerformanceGoal *) dPerformanceGoal;
+
   CURRSTMT_OPTGLOBALS->memo = (CascadesMemo *) memoptr;
   
   // Initialize the GUI pointer to the compiler's global cluster info:

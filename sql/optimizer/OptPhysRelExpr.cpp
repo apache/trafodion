@@ -12386,8 +12386,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
                                loc,
                                countOfCPUs,
                                pipelinesPerCPU,
-                               DefaultCostWeight,
-                               DefaultPerformanceGoal,
+                               CURRSTMT_OPTDEFAULTS->getDefaultCostWeight(),
+                               CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal(),
                                NULL, NULL);
 
   // Support for CONTROL QUERY SHAPE

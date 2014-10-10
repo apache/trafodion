@@ -328,8 +328,6 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
                                              ,CURRSTMT_OPTGLOBALS->task_list
                                              ,QueryAnalysis::Instance()
                                              ,cmpCurrentContext
-                                             ,DefaultCostWeight
-                                             ,DefaultPerformanceGoal
                                              ,gpClusterInfo
                                              );
 #endif
@@ -646,8 +644,6 @@ if (CURRSTMT_OPTDEFAULTS->optimizerHeuristic2()) {//#ifdef _DEBUG
               CmpMain::pExpFuncs_->fpSqldbgSetPointers(CURRSTMT_OPTGLOBALS->memo, CURRSTMT_OPTGLOBALS->task_list,
                                                        QueryAnalysis::Instance(),
                                                        cmpCurrentContext,
-                                                       DefaultCostWeight,
-                                                       DefaultPerformanceGoal,
                                                        gpClusterInfo
                                                        );
 
@@ -3938,6 +3934,10 @@ OptDefaults::OptDefaults()
    requiredScanDescForFastDelete_ = NULL; 
 
    isSideTreeInsert_ = FALSE; 
+
+   DefaultCostWeight_ = NULL;
+   DefaultPerformanceGoal_ = NULL;
+   ResourcePerformanceGoal_ = NULL;
 } 
 
 // Static methods of OptDefaults
@@ -4719,8 +4719,8 @@ void OptDefaults::initialize(RelExpr* rootExpr)
 
   OPHuseConservativeCL_ = (optimizerPruning_ AND
 	(CmpCommon::getDefault(OPH_USE_CONSERVATIVE_COST_LIMIT) == DF_ON)) OR
-         (optimizerPruning_ AND (DefaultPerformanceGoal != NULL) AND
-          DefaultPerformanceGoal->isOptimizeForResourceConsumption());
+         (optimizerPruning_ AND (DefaultPerformanceGoal_ != NULL) AND
+          DefaultPerformanceGoal_->isOptimizeForResourceConsumption());
 
   OPHuseFailedPlanCost_ = optimizerPruning_ AND OPHreuseFailedPlan_ AND
 	(CmpCommon::getDefault(OPH_USE_FAILED_PLAN_COST) == DF_ON);
@@ -5001,6 +5001,78 @@ void OptDefaults::initialize(RelExpr* rootExpr)
   isSideTreeInsert_ = FALSE;
   
   return;
+}
+
+NABoolean OptDefaults::InitCostVariables()
+{
+  NABoolean rtnStatus = TRUE;      // assume the best
+
+  if (DefaultCostWeight_ == NULL &&
+      (DefaultCostWeight_ = new ResourceConsumptionWeight(1,
+						     1,
+						     1,
+						     0,
+						     0
+						     )) == NULL)
+    return(FALSE);
+
+  NAString goalText;
+  DefaultToken goalTok = CmpCommon::getDefault(OPTIMIZATION_GOAL, goalText, -1);
+
+  if (DefaultPerformanceGoal_)
+    {
+      // Free the previous performance goal so there won't be
+      // a leak in the global heap.
+      delete DefaultPerformanceGoal_;
+      DefaultPerformanceGoal_ = NULL;
+    }
+
+  if (goalTok == DF_LASTROW)
+    {
+      DefaultPerformanceGoal_ = new OptimizeForLastRow();
+    }
+// LCOV_EXCL_START
+  else if (goalTok == DF_FIRSTROW)
+    {
+      DefaultPerformanceGoal_ = new OptimizeForFirstRow();
+    }
+  else if (goalTok == DF_RESOURCES)
+    {
+      DefaultPerformanceGoal_ = new OptimizeForResourceConsumption();
+    }
+  else
+    {
+      // Unknown token.
+      // Since NADefaults OPTIMIZATION_GOAL default-default is "LASTROW",
+      // use that as a fallback.
+      DefaultPerformanceGoal_ = new OptimizeForLastRow();
+      *CmpCommon::diags() << DgSqlCode(+2055)		// warning only
+        << DgString0(goalText)
+        << DgString1("OPTIMIZATION_GOAL");
+    }
+// LCOV_EXCL_STOP
+
+  if (ResourcePerformanceGoal_ == NULL)
+    {
+      // This one is a hardcoded performance goal, no consulting defaults
+      ResourcePerformanceGoal_ = new OptimizeForResourceConsumption();
+    }
+
+  return(rtnStatus);
+}
+
+void OptDefaults::CleanupCostVariables()
+{
+  if (DefaultCostWeight_ != NULL)
+    delete DefaultCostWeight_;
+  if (DefaultPerformanceGoal_ != NULL)
+    delete DefaultPerformanceGoal_;
+  if (ResourcePerformanceGoal_ != NULL)
+    delete ResourcePerformanceGoal_;
+
+  DefaultCostWeight_ = NULL;
+  DefaultPerformanceGoal_ = NULL;
+  ResourcePerformanceGoal_ = NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -7099,8 +7171,6 @@ void QueryOptimizerDriver::DEBUG_GUI_SET_POINTERS()
 					      ,CURRSTMT_OPTGLOBALS->task_list
 					      ,QueryAnalysis::Instance()
 					      ,cmpCurrentContext
-					      ,DefaultCostWeight
-					      ,DefaultPerformanceGoal
 					      ,gpClusterInfo
 					      );
 #endif
@@ -7151,8 +7221,6 @@ DEBUG_GUI_DISPLAY_AFTER_OPTIMIZATION(Context *context)
 						CURRSTMT_OPTGLOBALS->task_list,
 						QueryAnalysis::Instance(),
 						cmpCurrentContext,
-						DefaultCostWeight,
-						DefaultPerformanceGoal,
 						gpClusterInfo
 						);
 

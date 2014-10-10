@@ -89,8 +89,8 @@ RequirementGenerator::RequirementGenerator(
     {
       availableCPUs_    = DEFAULT_SINGLETON;
       pipelinesPerCPU_	= DEFAULT_SINGLETON;
-      costWeight_ 	= DefaultCostWeight;
-      perfGoal_ 	= DefaultPerformanceGoal;
+      costWeight_ 	= CURRSTMT_OPTDEFAULTS->getDefaultCostWeight();
+      perfGoal_ 	= CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal();
       logicalPartReq_   = NULL;
       logicalOrderOrArrangement_ = FALSE;
       pushDownRequirement_ = 0;

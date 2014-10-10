@@ -215,7 +215,7 @@ void MdamTrace::printFileScanInfo(ScanOptimizer *opt,
     .getReqdPhysicalProperty()->getPerformanceGoal() == NULL
     OR
     opt->getContext().getReqdPhysicalProperty()->getPerformanceGoal() ==
-    DefaultPerformanceGoal)
+    CURRSTMT_OPTDEFAULTS->getDefaultPerformanceGoal())
   {
     printf("%sOptimizing for last row.\n", indent_);
   }
@@ -719,9 +719,11 @@ ScanOptimizerTest2(const FileScan& associatedFileScan
         perDiff = ((et1 > et2) ? (et1-et2) : (et2-et1))/et2;
       } else {
         CostScalar tc_et1 = cost1->getTotalCost().getElapsedTime
-          (*ResourcePerformanceGoal,DefaultCostWeight);
+          (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),
+            CURRSTMT_OPTDEFAULTS->getDefaultCostWeight());
         CostScalar tc_et2 = cost2->getTotalCost().getElapsedTime
-          (*ResourcePerformanceGoal,DefaultCostWeight);
+          (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),
+           CURRSTMT_OPTDEFAULTS->getDefaultCostWeight());
 
         perDiff = ((tc_et1 > tc_et2) ? (tc_et1-tc_et2) : (tc_et2-tc_et1))/tc_et2;
 
@@ -898,9 +900,11 @@ ScanOptimizerTest4(const FileScan& associatedFileScan
           perDiff = ((et1 > et2) ? (et1-et2) : (et2-et1))/et2;
         } else {
           CostScalar tc_et1 = cost1->getTotalCost().getElapsedTime
-            (*ResourcePerformanceGoal,DefaultCostWeight);
+            (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),
+             CURRSTMT_OPTDEFAULTS->getDefaultCostWeight());
           CostScalar tc_et2 = cost2->getTotalCost().getElapsedTime
-            (*ResourcePerformanceGoal,DefaultCostWeight);
+            ( *(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),
+              CURRSTMT_OPTDEFAULTS->getDefaultCostWeight() );
 
           perDiff = ((tc_et1 > tc_et2) ? (tc_et1-tc_et2)
                                         : (tc_et2-tc_et1))/tc_et2;
@@ -1012,9 +1016,11 @@ ScanOptimizerTest5(const FileScan& associatedFileScan
           perDiff = ((et1 > et2) ? (et1-et2) : (et2-et1))/et2;
         } else {
           CostScalar tc_et1 = cost1->getTotalCost().getElapsedTime
-            (*ResourcePerformanceGoal,DefaultCostWeight);
+            (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),
+            CURRSTMT_OPTDEFAULTS->getDefaultCostWeight());
           CostScalar tc_et2 = cost2->getTotalCost().getElapsedTime
-            (*ResourcePerformanceGoal,DefaultCostWeight);
+            (*(CURRSTMT_OPTDEFAULTS->getResourcePerformanceGoal()),
+             CURRSTMT_OPTDEFAULTS->getDefaultCostWeight());
 
           perDiff = ((tc_et1 > tc_et2) ? (tc_et1-tc_et2) : (tc_et2-tc_et1))/tc_et2;
 

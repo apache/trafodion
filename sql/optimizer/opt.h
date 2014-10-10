@@ -105,6 +105,9 @@ class CmpStatement;
 class SimpleCostVector;
 class OptDebug;              // for debugging purposes
 
+class PerformanceGoal;
+class CostWeight;
+
 // forward declaration
 class QueryComplexityVector;
 
@@ -940,6 +943,20 @@ public:
   double computeRecommendedNumCPUs(double cpuResourceRequired);
   double computeRecommendedNumCPUsForMemory(double memoryResourceRequired);
 
+  // -----------------------------------------------------------------------
+  // default weighing factors for cost: make the total value a multiple
+  // of random disk I/Os (normalize all values to 20 ms and add them up).
+  // Space consumption (memory and temp disk files) doesn't count.
+  // -----------------------------------------------------------------------
+  CostWeight* getDefaultCostWeight() const { return DefaultCostWeight_; }
+  PerformanceGoal* getDefaultPerformanceGoal() const { return DefaultPerformanceGoal_; }
+  PerformanceGoal* getResourcePerformanceGoal() const { return ResourcePerformanceGoal_; }
+
+
+protected:
+   NABoolean InitCostVariables();
+   void CleanupCostVariables();
+
 private:
   optLevelEnum optLevel_;
   optLevelEnum indexEliminationLevel_;
@@ -1166,6 +1183,9 @@ private:
 
   NABoolean isSideTreeInsert_;
 
+  CostWeight* DefaultCostWeight_;
+  PerformanceGoal* DefaultPerformanceGoal_;
+  PerformanceGoal* ResourcePerformanceGoal_;
 }; // class OptDefaults
 
 //<pb>
