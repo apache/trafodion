@@ -2046,12 +2046,16 @@ const
                       // this handles compExpr trees that reference
                       // multiple base columns
 
+                      // use the basecolumn Veg, using the basecolumn byitself can cause issues
+                      // during codegen downstream
+                      ValueId egVid = bcol->getTableDesc()->getColumnVEGList()[bcol->getColNumber()];
+
                       // create a new predicate bcol = compExpr
                       ItemExpr *mirrorPred = 
                         new(CmpCommon::statementHeap()) BiRelat(
-			     ITM_EQUAL,
-                             bcol,
-			     compExpr);
+                            ITM_EQUAL,
+                            egVid.getItemExpr(),
+                            compExpr);
                       mirrorPred->synthTypeAndValueId();
                       ValueId mpValId = mirrorPred->getValueId();
                       ValueId mpValIdRewritten;
