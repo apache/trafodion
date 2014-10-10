@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResultInfo
   (JNIEnv *, jobject, jlong, jintArray, jintArray, jintArray, jintArray, jintArray, jintArray, jlongArray, jobjectArray, jobjectArray, jintArray, jint);
 
+/*
+ * Class:     org_trafodion_sql_HBaseAccess_HTableClient
+ * Method:    cleanup
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_cleanup
+  (JNIEnv *, jobject, jlong);
+
 #ifdef __cplusplus
 }
 #endif

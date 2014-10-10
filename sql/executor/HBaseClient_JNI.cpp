@@ -792,8 +792,6 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
     JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
    
-   
-   
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -921,9 +919,15 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
     return NULL;
   }
   HTableClient_JNI *htc = new (heap) HTableClient_JNI(heap, j_htc);
+  jenv_->DeleteLocalRef(j_htc);
   if (htc->init() != HTC_OK)
+  {
+     NADELETE(htc, HTableClient_JNI, heap);
      return NULL;
+  }
   htc->setTableName(tableName);
+  if (htc->setJniObject() != HTC_OK)
+     return NULL; 
   return htc;
 }
 
@@ -936,7 +940,6 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
 
   jobject j_htc = htc->getJavaObject();
     
-  // public void releaseHTableClient(org.trafodion.sql.HBaseAccess.HTableClient);
   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HTC].methodID, j_htc);
 
   if (jenv_->ExceptionCheck())
@@ -978,7 +981,12 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
     return NULL;
   }
   HBulkLoadClient_JNI *hblc = new HBulkLoadClient_JNI(heap, j_hblc);
-  hblc->init();
+  jenv_->DeleteLocalRef(j_hblc);
+  if ( hblc->init()!= HBLC_OK)
+  {
+     NADELETE(hblc, HBulkLoadClient_JNI, heap);
+     return NULL; 
+  }
   return hblc;
 }
 
@@ -2058,6 +2066,7 @@ static const char* const htcErrorEnumStr[] =
  ,"Java exception in flush()."
  ,"Java exception in getColName()."
  ,"Java exception in getColValue()."
+ ,"Java exception in setJniObject()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2077,6 +2086,7 @@ char* HTableClient_JNI::getErrorText(HTC_RetCode errEnum)
 HTableClient_JNI::~HTableClient_JNI()
 {
   //HdfsLogger::log(CAT_JNI_TOP, LL_DEBUG, "HTableClient destructor called.");
+  cleanupResultInfo();
   if (tableName_ != NULL)
   {
      NADELETEBASIC(tableName_, heap_);
@@ -2164,7 +2174,9 @@ HTC_RetCode HTableClient_JNI::init()
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_name      = "deleteRows";
     JavaMethods_[JM_DIRECT_DELETE_ROWS ].jm_signature = "(JSLjava/lang/Object;J)Z";
     JavaMethods_[JM_FETCH_ROWS ].jm_name      = "fetchRows";
-    JavaMethods_[JM_FETCH_ROWS ].jm_signature = "(J)I";
+    JavaMethods_[JM_FETCH_ROWS ].jm_signature = "()I";
+    JavaMethods_[JM_SET_JNIOBJECT].jm_name      = "setJniObject";
+    JavaMethods_[JM_SET_JNIOBJECT].jm_signature = "(J)V";
    
     rc = (HTC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -3076,6 +3088,7 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
      int len = jenv_->GetArrayLength(jresult);
      val = new (heap_) Text((char *)result, len);
      jenv_->ReleaseByteArrayElements((jbyteArray)jresult, result, JNI_ABORT);
+     jenv_->DeleteLocalRef(jresult);
 
   }
   if (val == NULL)
@@ -3104,8 +3117,12 @@ ByteArrayList* HTableClient_JNI::getEndKeys()
     return NULL;
 
   ByteArrayList* endKeys = new (heap_) ByteArrayList(heap_, jByteArrayList);
+  jenv_->DeleteLocalRef(jByteArrayList);
   if (endKeys->init() != BAL_OK)
+  {
+     NADELETE(endKeys, ByteArrayList, heap_);
      return NULL;
+  }
   return endKeys;
 
 }
@@ -3404,9 +3421,14 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
     logError(CAT_HBASE, "HiveClient_JNI::getHiveTableStr()", getLastError());
     return HVC_ERROR_GET_HVT_EXCEPTION;
   }
-
+ 
+  if (jresult == NULL)
+     return HVC_DONE;
   if (jenv_->GetStringLength(jresult) <= 0)
-    return HVC_DONE; // Table does not exist
+  { 
+     jenv_->DeleteLocalRef(jresult);
+     return HVC_DONE; // Table does not exist
+  }
     
   // Not using UFTchars and NAWString for now.
   const char* char_result = jenv_->GetStringUTFChars(jresult, 0);
@@ -3485,6 +3507,7 @@ HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 
   int numSchemas = convertStringObjectArrayToList(heap_, j_schNames,
                    schNames);           
+  jenv_->DeleteLocalRef(j_schNames);
   if (numSchemas == 0)
      return HVC_DONE;
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, 
@@ -3521,6 +3544,7 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
 
   int numTables = convertStringObjectArrayToList(heap_, j_tblNames,
                    tblNames);           
+  jenv_->DeleteLocalRef(j_tblNames);
   if (numTables == 0)
      return HVC_DONE;
 
@@ -3560,6 +3584,14 @@ JNIEXPORT jint JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_setResult
                 jTimestamp, jKvBuffer, jRowIDs, jKvsPerRow, numCellsReturned);  
    return 0;
 }
+
+JNIEXPORT void JNICALL Java_org_trafodion_sql_HBaseAccess_HTableClient_cleanup
+  (JNIEnv *jenv, jobject jobj, jlong jniObject)
+{
+   HTableClient_JNI *htc = (HTableClient_JNI *)jniObject;
+   NADELETE(htc, HTableClient_JNI, htc->getHeap()); 
+}
+
 #ifdef __cplusplus
 }
 #endif
@@ -3945,6 +3977,22 @@ HTC_RetCode HTableClient_JNI::fetchRows()
       return HTC_DONE;
    return HTC_OK; 
 }
+
+HTC_RetCode HTableClient_JNI::setJniObject()
+{
+   jlong jniObject = (jlong)this;
+   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_SET_JNIOBJECT].methodID, 
+         jniObject);
+   if (jenv_->ExceptionCheck())
+   {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HBaseClient_JNI::setJniObject()", getLastError());
+    return HTC_SET_JNIOBJECT_EXCEPTION;
+  }
+  return HTC_OK;
+}
+
 
 jobjectArray convertToByteArrayObjectArray(const TextVec &vec)
 {

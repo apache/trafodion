@@ -154,13 +154,14 @@ public class HBaseClient {
        Iterator<HTableClient> iter;
        HTableClient htable;
        boolean clearRegionCache = false;
+       boolean cleanJniObject = true;
 
        hTableClients = hTableClientsPool.values();
        iter = hTableClients.iterator();
        while (iter.hasNext())
        {
          htable = iter.next();
-         htable.close(clearRegionCache);          
+         htable.close(clearRegionCache, cleanJniObject);          
        }
        hTableClientsPool.clear();
     }
@@ -176,12 +177,13 @@ public class HBaseClient {
        Iterator<HTableClient> iter;
        HTableClient htable;
        boolean clearRegionCache = true;
+       boolean cleanJniObject = false;
  
        iter = hTableClients.iterator();
        while (iter.hasNext())
        {
           htable = iter.next();
-          htable.close(clearRegionCache);     
+          htable.close(clearRegionCache, cleanJniObject);     
        }
     }
 
@@ -510,7 +512,8 @@ public class HBaseClient {
             return;
 	                
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
-        htable.release();
+        boolean cleanJniObject = false;
+        htable.release(cleanJniObject);
         if (hTableClientsInUse.remove(htable.getTableName(), htable))
             hTableClientsFree.put(htable.getTableName(), htable);
         else

@@ -264,6 +264,7 @@ typedef enum {
  ,HTC_ERROR_FLUSHTABLE_EXCEPTION
  ,HTC_GET_COLNAME_EXCEPTION
  ,HTC_GET_COLVAL_EXCEPTION
+ ,HTC_SET_JNIOBJECT_EXCEPTION
  ,HTC_LAST
 } HTC_RetCode;
 
@@ -391,6 +392,7 @@ public:
     tableName_ = new (heap_) char[len+1];
     strcpy(tableName_, tableName);
   } 
+  HTC_RetCode setJniObject();
 
 private:
   NAString getLastJavaError();
@@ -420,6 +422,7 @@ private:
    ,JM_DIRECT_INSERT_ROWS
    ,JM_DIRECT_DELETE_ROWS
    ,JM_FETCH_ROWS
+   ,JM_SET_JNIOBJECT
    ,JM_LAST
   };
   enum FETCH_MODE {

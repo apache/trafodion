@@ -90,13 +90,14 @@ char* JavaObjectInterface::buildClassPath()
   return classPathBuffer;
 }
 
+#define MAX_NO_JVM_OPTIONS 10
 //////////////////////////////////////////////////////////////////////////////
 // Create a new JVM instance.
 //////////////////////////////////////////////////////////////////////////////
 int JavaObjectInterface::createJVM()
 {
   JavaVMInitArgs jvm_args;
-  JavaVMOption jvm_options[4];
+  JavaVMOption jvm_options[MAX_NO_JVM_OPTIONS];
 
   char* classPathArg = buildClassPath();
   int numJVMOptions = 0;
@@ -167,6 +168,23 @@ int JavaObjectInterface::createJVM()
      numJVMOptions++;
   }
 #endif 
+  const char *oomOption = "-XX:+HeapDumpOnOutOfMemoryError";
+  jvm_options[numJVMOptions].optionString = (char *)oomOption;
+  numJVMOptions++;
+
+  char *mySqRoot = getenv("MY_SQROOT");
+  int len;
+  char *oomDumpDir = NULL;
+  if (mySqRoot != NULL)
+  {
+     len = strlen(mySqRoot); 
+     oomDumpDir = new (heap_) char[len+50];
+     strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
+     strcat(oomDumpDir, mySqRoot);
+     strcat(oomDumpDir, "/logs");
+     jvm_options[numJVMOptions].optionString = (char *)oomDumpDir;
+     numJVMOptions++;
+  }
 
   jvm_args.version            = JNI_VERSION_1_6;
   jvm_args.options            = jvm_options;

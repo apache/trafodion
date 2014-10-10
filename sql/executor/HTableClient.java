@@ -102,6 +102,7 @@ public class HTableClient {
         ExecutorService executorService = null;
         Future future = null;
 	boolean preFetch = false;
+	long jniObject = 0;
 
 	static Logger logger = Logger.getLogger(HTableClient.class.getName());;
 
@@ -432,14 +433,14 @@ public class HTableClient {
 		return scanFetch();
 	}
 
-	public int fetchRows(long jniObject) throws IOException, 
+	public int fetchRows() throws IOException, 
 			InterruptedException, ExecutionException {
 		int rowsReturned = 0;
 
 		if (logger.isTraceEnabled()) logger.trace("Enter fetchRows(). Table: " + tableName);
 		if (getResultSet != null)
 		{
-			rowsReturned = pushRowsToJni(jniObject, getResultSet);
+			rowsReturned = pushRowsToJni(getResultSet);
 			getResultSet = null;
 			return rowsReturned;
 		}
@@ -455,7 +456,7 @@ public class HTableClient {
 			if (preFetch)
 			{
 				result = (Result[])future.get();
-				rowsReturned = pushRowsToJni(jniObject, result);
+				rowsReturned = pushRowsToJni(result);
 				future = null;
 				if ((rowsReturned <= 0 || rowsReturned < numRowsCached))
 					return rowsReturned;
@@ -468,13 +469,13 @@ public class HTableClient {
 			else
 			{
 				result = scanner.next(numRowsCached);
-				rowsReturned = pushRowsToJni(jniObject, result);
+				rowsReturned = pushRowsToJni(result);
 			}
 			return rowsReturned;
 		}
 	}
 
-	protected int pushRowsToJni(long jniObject, Result[] result) 
+	protected int pushRowsToJni(Result[] result) 
 			throws IOException {
 		if (result == null || result.length == 0)
 			return 0; 
@@ -823,7 +824,7 @@ public class HTableClient {
 		return true;
 	}
 
-	public boolean release() throws IOException {
+	public boolean release(boolean cleanJniObject) throws IOException {
 		if (table != null)
 			table.flushCommits();
 		if (scanner != null) {
@@ -839,12 +840,17 @@ public class HTableClient {
 		resultIterator = null;
 		lastFetchedCell = null;
 		getResultSet = null;
+		if (cleanJniObject) {
+			if (jniObject != 0)
+				cleanup(jniObject);
+			tableName = null;
+		}
+		jniObject = 0;
 		return true;
 	}
 
-	public boolean close(boolean clearRegionCache) throws IOException {
+	public boolean close(boolean clearRegionCache, boolean cleanJniObject) throws IOException {
            if (logger.isTraceEnabled()) logger.trace("Enter close() " + tableName);
-           release();
            if (table != null) 
            {
               if (clearRegionCache)
@@ -916,6 +922,9 @@ public class HTableClient {
         kvsPerRow = null;
     }
 
+   	 private void setJniObject(long inJniObject) {
+		jniObject = inJniObject;
+	}    
 
     private native int setResultInfo(long jniObject,
 				int[] kvValLen, int[] kvValOffset,
@@ -924,9 +933,10 @@ public class HTableClient {
   				long[] timestamp, 
 				byte[][] kvBuffer, byte[][] rowIDs,
 				int[] kvsPerRow, int numCellsReturned);
+
+   private native void cleanup(long jniObject);
+ 
    static {
      System.loadLibrary("executor");
    }
-    
- 
 }
