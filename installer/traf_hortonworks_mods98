@@ -115,7 +115,7 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
-$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.coprocessor.region.classes "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.example.RowCountEndpoint,org.apache.hadoop.hbase.coprocessor.example.RowCountEndpoint"
+$AMBARI_DIR/configs.sh -port $PORT set $AMBARI_HOST $CLUSTER_NAME hbase-site hbase.coprocessor.region.classes "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
 if [ $? != 0 ]; then
     echo "***INFO: unable to modify hbase.coprocessor.region.classes through Ambari's configs.sh script."
     exit -1

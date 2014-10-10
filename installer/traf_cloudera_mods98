@@ -152,7 +152,7 @@ curl -X PUT -H 'Content-Type:application/json' -u $CLOUDERA_ADMIN:$CLOUDERA_PASS
 	"roleType" : "REGIONSERVER", 
 	"items" : [ { 
 		"name" : "hbase_coprocessor_region_classes", 
-                "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.example.RowCountEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
+                "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
 		}, {
 		"name" : "hbase_regionserver_config_safety_valve", 
 		"value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.bulkload.staging.dir</name>\r\n   <value>/hbase-staging</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.transactional.tlog</name>\r\n   <value>true</value>\r\n</property>\r\n"
