@@ -73,22 +73,30 @@ fi
 echo "***INFO: copying $hbase_trx_jar to all nodes"
 if [ $node_count -ne 1 ]; then
     pdsh $MY_NODES mkdir -p $TRAF_WORKDIR 2>/dev/null
+    pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     pdcp $MY_NODES export/lib/$hbase_trx_jar $TRAF_WORKDIR
-    pdsh $MY_NODES sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/share/cmf/lib/plugins
-    pdsh $MY_NODES sudo chmod 644 /usr/share/cmf/lib/plugins/$hbase_trx_jar
+    pdsh $MY_NODES sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
+    pdsh $MY_NODES sudo chmod 644 /usr/lib/hbase/lib/$hbase_trx_jar
 else
+    sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
+    sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     cp export/lib/$hbase_trx_jar $TRAF_WORKDIR
     chmod 755 $TRAF_WORKDIR/$hbase_trx_jar
-    sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/share/cmf/lib/plugins
+    sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
 fi
 
 echo "***INFO: copying $bulkload_jar to all nodes"
 if [ $node_count -ne 1 ]; then
     pdsh $MY_NODES mkdir -p $TRAF_WORKDIR 2>/dev/null
+    pdsh $MY_NODES sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    pdsh $MY_NODES sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
     pdcp $MY_NODES export/lib/$bulkload_jar $TRAF_WORKDIR
     pdsh $MY_NODES sudo cp $TRAF_WORKDIR/$bulkload_jar /usr/share/cmf/lib/plugins
     pdsh $MY_NODES sudo chmod 644 /usr/share/cmf/lib/plugins/$bulkload_jar
 else
+    sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
+    sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
     cp export/lib/$bulkload_jar $TRAF_WORKDIR
     chmod 755 $TRAF_WORKDIR/$bulkload_jar
     sudo cp $TRAF_WORKDIR/$bulkload_jar /usr/share/cmf/lib/plugins
