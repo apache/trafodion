@@ -108,7 +108,6 @@ import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Mutation;
-import org.apache.hadoop.hbase.exceptions.OutOfOrderScannerNextException;
 import org.apache.hadoop.hbase.regionserver.RegionServerServices;
 import org.apache.hadoop.hbase.Stoppable;
 import org.apache.hadoop.hbase.NotServingRegionException;
@@ -1363,6 +1362,7 @@ CoprocessorService, Coprocessor {
     RegionScanner scanner = null;
     Throwable t = null;
     ScannerTimeoutException ste = null;
+    OutOfOrderScannerNextException ooo = null;
     WrongRegionException wre = null;
     Exception ne = null;
     Scan scan = null;
@@ -1423,8 +1423,11 @@ CoprocessorService, Coprocessor {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + scannerId+ ", scanner is null"); 
         }
 
+     } catch(OutOfOrderScannerNextException ooone) {
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + scannerId + " Caught OutOfOrderScannerNextException  " + ooone.getMessage() + " " + stackTraceToString(ooone));
+       ooo = ooone;
      } catch(ScannerTimeoutException cste) {
-       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + scannerId + " Caught ScannerTimeoutExceptionn  " + cste.getMessage() + " " + stackTraceToString(cste));
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + scannerId + " Caught ScannerTimeoutException  " + cste.getMessage() + " " + stackTraceToString(cste));
        ste = cste;
      } catch(Throwable e) {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + scannerId + " Caught exception  " + e.getMessage() + " " + stackTraceToString(e));
@@ -1453,14 +1456,21 @@ CoprocessorService, Coprocessor {
  
    }
 
-   if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() +
-", scannerId " + scannerId);
+   TransactionalRegionScannerHolder rsh = 
+      scanners.get(scannerId);
 
-   nextCallSeq++;
+   // Joanie: Activate when client side transactional scanner changes
+   // are available
+   //nextCallSeq++;
+
+   rsh.nextCallSeq = nextCallSeq;
+
+   if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: performScan - id " + request.getTransactionId() + ", regionName " + regionInfo.getRegionNameAsString() +
+", scannerId " + scannerId + ", nextCallSeq " + nextCallSeq + ", rsh.nextCallSeq " + rsh.nextCallSeq);
 
     org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PerformScanResponse.Builder performResponseBuilder = PerformScanResponse.newBuilder();
     performResponseBuilder.setHasMore(hasMore);
-    performResponseBuilder.setNextCallSeq(nextCallSeq++);
+    performResponseBuilder.setNextCallSeq(nextCallSeq);
     performResponseBuilder.setCount(count);
     performResponseBuilder.setHasException(false);
 
@@ -1495,6 +1505,12 @@ CoprocessorService, Coprocessor {
     {
       performResponseBuilder.setHasException(true);
       performResponseBuilder.setException(ne.toString());
+    }
+
+    if (ooo != null)
+    {
+      performResponseBuilder.setHasException(true);
+      performResponseBuilder.setException(ooo.toString());
     }
 
     PerformScanResponse presponse = performResponseBuilder.build();
@@ -3629,6 +3645,7 @@ CoprocessorService, Coprocessor {
       }
 
       if (nextCallSeq != rsh.nextCallSeq) {
+        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: getScanner calling OutOfOrderScannerNextException, nextCallSeq is " + nextCallSeq + " rsh.nextCallSeq is " + rsh.nextCallSeq);
         throw new OutOfOrderScannerNextException(
         "Expected nextCallSeq: " + rsh.nextCallSeq +
         " But the nextCallSeq got from client: " + nextCallSeq); 

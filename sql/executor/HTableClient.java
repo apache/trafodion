@@ -46,6 +46,7 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.client.transactional.TransactionalAggregationClient;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
@@ -798,18 +799,34 @@ public class HTableClient {
                           throws IOException, Throwable {
 
 		    Configuration customConf = table.getConfiguration();
+                    long rowCount = 0;
 
-		    TransactionalAggregationClient aggregationClient = 
-                        new TransactionalAggregationClient(customConf);
-		    Scan scan = new Scan();
-		    scan.addFamily(colFamily);
-		    final ColumnInterpreter<Long, Long, EmptyMsg, LongMsg, LongMsg> ci =
+                    if (transID > 0) {
+		      TransactionalAggregationClient aggregationClient = 
+                          new TransactionalAggregationClient(customConf);
+		      Scan scan = new Scan();
+		      scan.addFamily(colFamily);
+		      final ColumnInterpreter<Long, Long, EmptyMsg, LongMsg, LongMsg> ci =
 			new LongColumnInterpreter();
-		    byte[] tname = getTableName().getBytes();
-		    long rowCount = aggregationClient.rowCount(transID, 
-                      org.apache.hadoop.hbase.TableName.valueOf(getTableName()),
-                      ci,
-                      scan);
+		      byte[] tname = getTableName().getBytes();
+		      rowCount = aggregationClient.rowCount(transID, 
+                        org.apache.hadoop.hbase.TableName.valueOf(getTableName()),
+                        ci,
+                        scan);
+                    }
+                    else {
+		      AggregationClient aggregationClient = 
+                          new AggregationClient(customConf);
+		      Scan scan = new Scan();
+		      scan.addFamily(colFamily);
+		      final ColumnInterpreter<Long, Long, EmptyMsg, LongMsg, LongMsg> ci =
+			new LongColumnInterpreter();
+		      byte[] tname = getTableName().getBytes();
+		      rowCount = aggregationClient.rowCount( 
+                        org.apache.hadoop.hbase.TableName.valueOf(getTableName()),
+                        ci,
+                        scan);
+                    }
 
 		    coprocAggrResult = new ByteArrayList();
 
