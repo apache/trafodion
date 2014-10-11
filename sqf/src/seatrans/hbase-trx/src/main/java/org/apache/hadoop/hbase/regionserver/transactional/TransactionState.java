@@ -220,7 +220,6 @@ public class TransactionState {
         writeOrdering.add(waction = new WriteAction(delete));
 
          for (Cell value : waction.getCells()) {
-             //KeyValue kv = KeyValueUtil.ensureKeyValue(value);
              // if (LOG.isDebugEnabled()) LOG.debug("add tag into edit for put " + this.transactionId);
              KeyValue kv = KeyValue.cloneAndAddTags(value, tagList);
              e.add(kv);
@@ -463,7 +462,7 @@ public class TransactionState {
     }
 
     private synchronized Cell[] getAllCells(final Scan scan) {
-        if (LOG.isTraceEnabled()) LOG.trace("getAllCells -- ENTRY");
+        //if (LOG.isTraceEnabled()) LOG.trace("getAllCells -- ENTRY");
         List<Cell> kvList = new ArrayList<Cell>();
 
         for (WriteAction action : writeOrdering) {
@@ -503,7 +502,7 @@ public class TransactionState {
     }
     
 	  private KeyValue[] getAllKVs(final Scan scan) {
-        if (LOG.isTraceEnabled()) LOG.trace("getAllKVs -- ENTRY");
+        //if (LOG.isTraceEnabled()) LOG.trace("getAllKVs -- ENTRY");
         List<KeyValue> kvList = new ArrayList<KeyValue>();
 
         for (WriteAction action : writeOrdering) {
@@ -830,8 +829,8 @@ public class TransactionState {
           for (List<KeyValue> kvs : kvsList) {
               for (KeyValue kv : kvs) {
                   edits.add(kv);
-                  if (LOG.isTraceEnabled()) LOG.trace("Trafodion getKeyValues:   " + regionInfo.getRegionNameAsString() + " create edits for transaction: "
-                                 + transactionId + " with Op " + kv.getType());
+                  //if (LOG.isDebugEnabled()) LOG.debug("Trafodion getKeyValues:   " + regionInfo.getRegionNameAsString() + " create edits for transaction: "
+                   //              + transactionId + " with Op " + kv.getType());
               }
               }
           }
