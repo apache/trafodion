@@ -38,6 +38,7 @@ import java.nio.ByteOrder;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
@@ -110,20 +111,9 @@ public class HTableClient {
 		byte[] family = null;
 		byte[] name = null;
 
-		// Once we move to HBase 0.95, this method is provided by the Bytes
-		// class.
-		int indexOf(byte[] array, byte target) {
-			for (int i = 0; i < array.length; i++) {
-				if (array[i] == target) {
-					return i;
-				}
-			}
-			return -1;
-		}
-
 		public QualifiedColumn(byte[] qc) {
 			if (qc != null && qc.length > 0) {
-				int pos = indexOf(qc, (byte) ':');
+				int pos = Bytes.indexOf(qc, (byte) ':');
 				if (pos == -1) {
 					family = Bytes.toBytes("cf1");
 					name = qc;
@@ -486,8 +476,8 @@ public class HTableClient {
 		int numTotalCells = 2 * rowsReturned * numColsInScan;
 		int numColsReturned;
 		HashMap<String, Integer>  kvMap = null;
-		List<KeyValue> kvList;
-		KeyValue kv;
+		Cell[] kvList;
+		Cell kv;
 
 		if (kvValLen == null ||
 	 		(kvValLen != null && numTotalCells > kvValLen.length))
@@ -513,7 +503,7 @@ public class HTableClient {
 			if (result[rowNum] != null)
 			{
 				rowIDs[rowNum] = result[rowNum].getRow();
-				kvList = result[rowNum].list();
+				kvList = result[rowNum].rawCells();
 			}
 			else
 			{
@@ -523,13 +513,13 @@ public class HTableClient {
  			if (kvList == null)
 				numColsReturned = 0; 
 			else
-				numColsReturned = kvList.size();
+				numColsReturned = kvList.length;
 			if ((cellNum + numColsReturned) > numTotalCells)
 				throw new IOException("Insufficient cell array pre-allocated");
 			kvsPerRow[rowNum] = numColsReturned;
 			for (int colNum = 0 ; colNum < numColsReturned ; colNum++, cellNum++)
 			{ 
-				kv = kvList.get(colNum);
+				kv = kvList[colNum];
 				kvValLen[cellNum] = kv.getValueLength();
 				kvValOffset[cellNum] = kv.getValueOffset();
 				kvQualLen[cellNum] = kv.getQualifierLength();
@@ -537,7 +527,7 @@ public class HTableClient {
 				kvFamLen[cellNum] = kv.getFamilyLength();
 				kvFamOffset[cellNum] = kv.getFamilyOffset();
 				kvTimestamp[cellNum] = kv.getTimestamp();
-				kvBuffer[cellNum] = kv.getBuffer();
+				kvBuffer[cellNum] = kv.getValueArray();
 			}
 		}
 		int cellsReturned = cellNum++;
