@@ -157,14 +157,6 @@ public class TransactionManager {
 
             Map<byte[], CommitResponse> result = null;
             try {
-              HRegionLocation lv_hrl = table.getRegionLocation(startKey);
-              HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-              if ((location.getRegionInfo().compareTo(lv_hri) != 0)) {
-                 LOG.info("doCommitX -- " + table.toString() + " location being refreshed");
-                 if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- lv_hri: " + lv_hri);
-                 if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- location.getRegionInfo(): " + location.getRegionInfo());
-                 table.getRegionLocation(startKey, true);
-              }
               if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- before coprocessorService txid: " + transactionId +
                         " ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
 	      if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- " + table.toString() + " startKey: " + new String(startKey, "UTF-8") + " endKey: " + new String(endKey, "UTF-8"));
