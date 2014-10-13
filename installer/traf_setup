@@ -139,7 +139,6 @@ fi
 
 timestamp=$(date +%F-%H-%M-%S)
 echo "***INFO: Starting Trafodion environment setup ($timestamp)"
-mkdir -p $TRAF_WORKDIR/logs
 OPENSTACK_VM=$(grep openstack /etc/resolv.conf | wc -l)
 node_count=$(echo $NODE_LIST | wc -w)
 
@@ -147,7 +146,9 @@ node_count=$(echo $NODE_LIST | wc -w)
 # display license text and get acceptance
 echo "=== $timestamp ==="
 cat $( cd "$( dirname "$0" )" && pwd )/trafodion_license
-read -p "BY TYPING \"ACCEPT\" YOU AGREE TO THE TERMS OF THIS AGREEMENT: " answer
+echo -n "BY TYPING \"ACCEPT\" YOU AGREE TO THE TERMS OF THIS AGREEMENT: " 
+read answer
+
 answer=${answer,,}
 if [ "$answer" != "accept" ]; then
     echo "***ERROR: You must accept this license by typing \"accept\" to install."
@@ -249,8 +250,8 @@ echo "$MY_NODES" > $TRAF_WORKDIR/my_nodes
 
 #================================
 echo "***INFO: Installing required packages"
-echo "***INFO: Log file located in $TRAF_WORKDIR/logs"
-YUM_LOG=$TRAF_WORKDIR/logs/trafodion_yum_$timestamp.log
+echo "***INFO: Yum log file located in /var/log/trafodion"
+YUM_LOG=/var/log/trafodion/trafodion_yum_$timestamp.log
 
 # first install pdsh on each node so we can use it to install
 # everything else.  don't need pdsh if only a single node
@@ -263,7 +264,8 @@ if [ $node_count -ne 1 ]; then
         ssh $node rpm -qa | grep pdsh &> /dev/null
         if [ $? -ne 0 ]; then
             ssh $node sudo mkdir -p $TRAF_WORKDIR
-            ssh $node sudo mkdir -p $TRAF_WORKDIR/logs
+            ssh $node sudo mkdir -p /var/log/trafodion
+            ssh $node sudo chmod 777 /var/log/trafodion
             ssh $node sudo yum --assumeyes install pdsh &>> $YUM_LOG
             if [ $? != 0 ]; then
                 echo "***ERROR: Can't install pdsh on node $node"
@@ -273,7 +275,8 @@ if [ $node_count -ne 1 ]; then
     done
     # create working directory on all nodes
     $TRAF_PDSH mkdir -p $TRAF_WORKDIR &> /dev/null
-    $TRAF_PDSH mkdir -p $TRAF_WORKDIR/logs &> /dev/null
+    $TRAF_PDSH sudo mkdir -p /var/log/trafodion &> /dev/null
+    $TRAF_PDSH sudo chmod 777 /var/log/trafodion
  
 fi
 
@@ -410,9 +413,7 @@ if [ $? != 0 ]; then
     exit -1
 fi
 
-echo $TRAF_WORKDIR
 # Put build tar files in user's $HOME
-echo $HOME_DIR/$TRAF_USER
 sudo cp $TRAF_WORKDIR/trafodion_server*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_debug*.tgz $TRAF_WORKDIR/trafodion_build.tgz &> /dev/null
 sudo cp $TRAF_WORKDIR/trafodion_build.tgz $HOME_DIR/$TRAF_USER &> /dev/null

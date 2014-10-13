@@ -25,7 +25,9 @@ typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )"
 typeset TRAF_DIR="$( cd "$( dirname "$0" )" && pwd )/.."
 typeset MY_NODES=""
 typeset timestamp=$(date +%F-%H-%M-%S)
-typeset LOG="$TRAF_DIR/../logs/uninstall_mapr_$timestamp.log"
+typeset LOG="/var/log/trafodion/uninstall_mapr_$timestamp.log"
+sudo mkdir /var/log/trafodion
+sudo chmod 777 /var/log/trafodion
 #==============================================
 
 function print_usage {
@@ -90,7 +92,7 @@ node_count=$(echo $MY_NODES | wc -w)
 #============================================
 
 #Info for log file
-echo "***INFO: Log file located at $TRAF_DIR/../logs"
+echo "***INFO: Log file located at /var/log/trafodion"
 echo "***Log File: trafodion_mapr_uninstall script***" >> $LOG
 echo >> $LOG
 

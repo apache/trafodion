@@ -105,7 +105,7 @@ else
     TRAF_PDSH="pdsh -S $MY_NODES"
 fi
 
-YUM_LOG=$TRAF_WORKDIR/logs/mysql_yum_$timestamp.log
+YUM_LOG=/var/log/trafodion/mysql_yum_$timestamp.log
 
 # Is mysql already installed? if not install it
 MYSQL_INSTALLED=$(rpm -qa | grep mysql-server | wc -l)

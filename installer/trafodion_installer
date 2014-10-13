@@ -66,7 +66,7 @@ typeset DCS_SERVERS_PARM=""
 typeset USER_NAME="admin"
 typeset PASSWORD="admin"
 typeset timestamp=$(date +%F-%H-%M-%S)
-typeset INSTALL_LOG="$TRAF_WORKDIR/trafodion_install_$timestamp.log"
+typeset INSTALL_LOG="/var/log/trafodion/trafodion_install_$timestamp.log"
 #============================================
 
 CLOUDERA=$(rpm -qa | grep cloudera | wc -l)
@@ -161,7 +161,7 @@ done
 #============================================
 #Info for log file
 
-echo "***INFO: Log file location $TRAF_WORKDIR/logs"
+echo "***INFO: Log file location /var/log/trafodion"
 
 echo "***Log File: trafodion_installer script***" >> $INSTALL_LOG
 echo >> $INSTALL_LOG

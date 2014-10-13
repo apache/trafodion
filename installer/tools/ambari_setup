@@ -24,7 +24,7 @@
 # Default values
 typeset TRAF_WORKDIR="$( cd "$( dirname "$0" )" && pwd )/.."
 typeset timestamp=$(date +%F-%H-%M-%S)
-typeset SETUP_LOG="$TRAF_WORKDIR/../logs/traf_ambari_setup_$timestamp.log"
+typeset SETUP_LOG="/var/log/trafodion/traf_ambari_setup_$timestamp.log"
 
 AMBARI=$(rpm -qa | grep ambari | wc -l)
 #==============================================
@@ -60,8 +60,10 @@ done
 
 #==============================================
 #Info for log file
-mkdir -p $TRAF_WORKDIR/../logs
-echo "***INFO: Log file located $TRAF_WORKDIR/../logs"
+sudo mkdir -p /var/log/trafodion
+sudo chmod 777 /var/log/trafodion
+ 
+echo "***INFO: Log file located /var/log/trafodion"
 echo "***Log File: trafodion_ambari_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG
 echo "Working directory: $TRAF_WORKDIR" >> $SETUP_LOG

@@ -29,8 +29,9 @@ typeset NODE_LIST=""
 typeset CLUSTERNAME="$HOSTNAME"
 typeset HOME_DIR="/home"
 typeset timestamp=$(date +%F-%H-%M-%S)
-typeset SETUP_LOG="$TRAF_WORKDIR/logs/trafodion_setup_$timestamp.log"
-mkdir -p $TRAF_WORKDIR/logs
+typeset SETUP_LOG="/var/log/trafodion/trafodion_setup_$timestamp.log"
+sudo mkdir -p /var/log/trafodion
+sudo chmod 777 /var/log/trafodion
 #==============================================
 
 function print_usage {
@@ -128,7 +129,7 @@ fi
 
 #Info for log file
 echo
-echo "***INFO: Log file located at $TRAF_WORKDIR/logs"
+echo "***INFO: Log file located at /var/log/trafodion"
 echo
 echo "***Log File: trafodion_setup script***" >> $SETUP_LOG
 echo >> $SETUP_LOG

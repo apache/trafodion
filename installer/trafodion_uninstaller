@@ -89,7 +89,7 @@ fi
 
 # create logs directory and logfile name
 timestamp=$(date +%F-%H-%M-%S)
-logsdir="$TRAF_WORKDIR/logs"
+logsdir="var/log/trafodion"
 logfile="$logsdir/uninstall_$timestamp.log"
 
 node_count=$(echo $NODE_LIST | wc -w)

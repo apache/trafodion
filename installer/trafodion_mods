@@ -36,7 +36,7 @@ PASSWORD="admin"
 TRAF_BUILD="$TRAF_WORKDIR/trafodion_build.tgz"
 HADOOP_TYPE=""
 timestamp=$(date +%F-%H-%M-%S)
-MODS_LOG="$TRAF_WORKDIR/logs/trafodion_mods_$timestamp.log"
+MODS_LOG="/var/log/trafodion/trafodion_mods_$timestamp.log"
 HDFS_USER="hdfs"
 HBASE_USER="hbase"
 HBASE_GROUP="hbase"
@@ -44,6 +44,9 @@ TRAF_USER="trafodion"
  
 #============================================
 #Look for type of hadoop distro installed
+
+pdsh $MY_NODES sudo mkdir -p /var/log/trafodion
+pdsh $MY_NODES sudo chmod 777 /var/log/trafodion
 
 ambari_installed=$(rpm -qa | grep ambari | wc -l )
 
@@ -220,7 +223,7 @@ sudo rm -rf hbaseVersion.txt
 #Run correct mods script
 
 if [[ $HADOOP_TYPE == "cloudera" ]]; then
-   echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
+   echo "***INFO: Log file located at: /var/log/trafodion"
    if [[ "$hbaseVersion" == "98" ]]; then
       echo "***INFO: Cloudera installed will run traf_cloudera_mods98" 2>&1 | tee -a $MODS_LOG
       $TRAF_WORKDIR/installer/traf_cloudera_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
@@ -239,7 +242,7 @@ if [[ $HADOOP_TYPE == "cloudera" ]]; then
 fi
 
 if [[ $HADOOP_TYPE == "ambari" ]]; then
-   echo "***INFO: Log file located at: $TRAF_WORKDIR/logs"
+   echo "***INFO: Log file located at: /var/log/trafodion"
    if [[ "$hbaseVersion" == "98" ]]; then
       echo "***INFO: Hortonworks installed will run traf_ambari_mods98" 2>&1 | tee -a $MODS_LOG
        $TRAF_WORKDIR/installer/traf_hortonworks_mods98 $TRAF_BUILD $ADMIN $PASSWORD $URL $TRAF_VERSION \
