@@ -82,7 +82,7 @@ else
     sudo rm -rf /usr/lib/hbase/lib/hbase-trx* 2>/dev/null
     sudo rm -rf /usr/share/cmf/lib/plugins/hbase-trx* 2>/dev/null
     cp export/lib/$hbase_trx_jar $TRAF_WORKDIR
-    chmod 755 $TRAF_WORKDIR/$hbase_trx_jar
+    chmod 644 $TRAF_WORKDIR/$hbase_trx_jar
     sudo cp $TRAF_WORKDIR/$hbase_trx_jar /usr/lib/hbase/lib
 fi
 
@@ -98,7 +98,7 @@ else
     sudo rm -rf /usr/lib/hbase/lib/trafodion* 2>/dev/null
     sudo rm -rf /usr/share/cmf/lib/plugins/trafodion* 2>/dev/null
     cp export/lib/$bulkload_jar $TRAF_WORKDIR
-    chmod 755 $TRAF_WORKDIR/$bulkload_jar
+    chmod 644 $TRAF_WORKDIR/$bulkload_jar
     sudo cp $TRAF_WORKDIR/$bulkload_jar /usr/share/cmf/lib/plugins
 fi
 
