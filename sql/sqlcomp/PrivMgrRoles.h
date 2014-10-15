@@ -41,8 +41,9 @@ public:
 // Constructors and destructors:
 // -------------------------------------------------------------------
    PrivMgrRoles( 
+      const std::string & trafMetadataLocation,
       const std::string & metadataLocation,
-      ComDiagsArea * pDiags = NULL);
+      ComDiagsArea * pDiags);
    PrivMgrRoles(const PrivMgrRoles & other);
    virtual ~PrivMgrRoles();
 
@@ -107,13 +108,18 @@ public:
 private: 
    PrivMgrRoles();
    
+   bool areRemainingGrantedPrivsSufficient(
+      const std::string whereClause,
+      PrivType privType);
+      
    bool dependentObjectsExist(
-      int32_t userID,
-      int32_t roleID);
+      const int32_t userID,
+      const int32_t roleID,
+      PrivDropBehavior dropBehavior);
        
    bool hasWGO(
-      int32_t authID,
-      int32_t roleID);
+      const int32_t authID,
+      const int32_t roleID);
 
    bool grantExists(
       const int32_t roleID,

@@ -138,13 +138,16 @@ enum PrivMDStatus { PRIV_INITIALIZED           = 30,
 #define PUBLIC_GRANTEE_LIT                     "P "
 #define USER_GRANTEE_LIT                       "U "
 
-#define SYSTEM_UID          -2
-#define PUBLIC_UID          -1
+#define SYSTEM_AUTH_ID          -2
+#define PUBLIC_AUTH_ID          -1
 
-#define PUBLIC_NAME "PUBLIC"
+#define PUBLIC_AUTH_NAME "PUBLIC"
+#define SYSTEM_AUTH_NAME "_SYSTEM"
 
 #define DB_ROOTROLE_NAME "DB__ROOTROLE"
 #define DB_ROOTROLE_ID 1000000
+
+#define MAX_SQL_IDENTIFIER_NAME_LEN 256
 
 #endif // PRIVMGR_MD_DEFS_H
 

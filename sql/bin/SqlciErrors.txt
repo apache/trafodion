@@ -33,7 +33,7 @@
 1031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be dropped.
 1032 ZZZZZ 99999 BEGINNER MINOR DBADMIN The DISPLAY command completes and the query is not executed.
 1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN The table name is not specified.
-1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT SQL was not able to initialize.
+1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
 1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only services ID can execute DROP SQL.
 1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SQL is not installed on system $0~string0.
@@ -346,7 +346,7 @@
 1361 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Library $0~TableName does not exist.
 1362 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is not a library.
 1363 ZZZZZ 99999 BEGINNER MINOR DBADMIN Library $0~TableName already exists.
-1364 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot revoke role $0~String0. Dependent privileges exist on object $0~TableName. 
+1364 ZZZZZ 99999 BEGINNER MINOR DBADMIN Cannot revoke role $0~String0. Dependent privileges exist on object $1~String1. 
 1365 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unable to obtain necessary lock for user/role number $0~Int0.
 1366 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  One or more dependent procedures exist.
 1367 ZZZZZ 99999 BEGINNER MINOR DBADMIN Procedure uses a library object, EXTERNAL PATH cannot be altered.

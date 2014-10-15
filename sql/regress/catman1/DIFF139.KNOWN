@@ -1,32 +1,6 @@
-695c695,697
-< --- 1 row(s) updated.
+209c209,211
+< --- SQL operation complete.
 ---
-> *** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.T139SCH.PLAYERS_TEAMS on table TRAFODION.T139SCH.TEAMS.
+> *** ERROR[1034] Unable to obtain privileges
 > 
-> --- 0 row(s) updated.
-707c709
-<  4 Indians Ophelia 2344652934
----
->  4 Indians Matt 5128383748
-718c720,722
-< --- 1 row(s) updated.
----
-> *** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.T139SCH.PLAYERS_TEAMS on table TRAFODION.T139SCH.TEAMS.
-> 
-> --- 0 row(s) updated.
-771c775,777
-< --- 1 row(s) updated.
----
-> *** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.T139SCH.PLAYERS_TEAMS on table TRAFODION.T139SCH.TEAMS.
-> 
-> --- 0 row(s) updated.
-786c792
-<  4 Indians Ophelia 2344652934
----
->  4 Indians Matt 5128383748
-799c805,807
-< --- 1 row(s) updated.
----
-> *** ERROR[8103] The operation is prevented by referential integrity constraint TRAFODION.T139SCH.PLAYERS_TEAMS on table TRAFODION.T139SCH.TEAMS.
-> 
-> --- 0 row(s) updated.
+> --- SQL operation failed with errors.

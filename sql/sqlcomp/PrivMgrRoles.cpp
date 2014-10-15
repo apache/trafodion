@@ -21,6 +21,8 @@
   
 #include "PrivMgrMD.h"
 #include "PrivMgrMDTable.h"
+#include "PrivMgrObjects.h"
+#include "PrivMgrPrivileges.h"
 
 #include <string>
 #include <cstdio>
@@ -39,8 +41,12 @@
 
 static bool hasValue(
    std::vector<int32_t> container,
-   int32_t value);
-
+   int32_t value);  
+   
+static bool isDependentObjectPrivPair(
+   ComObjectType  objectType,
+   PrivMgrBitmap  objectPrivs);
+   
 namespace Roles 
 {
 // *****************************************************************************
@@ -140,9 +146,10 @@ using namespace Roles;
 // Construct a PrivMgrRoles object 
 // -----------------------------------------------------------------------
 PrivMgrRoles::PrivMgrRoles(
+   const std::string & trafMetadataLocation,
    const std::string & metadataLocation,
    ComDiagsArea * pDiags)
-: PrivMgr(metadataLocation,pDiags),
+: PrivMgr(trafMetadataLocation,metadataLocation,pDiags),
   fullTableName_(metadataLocation_ + ".ROLE_USAGE"),
   myTable_(*new MyTable(fullTableName_,pDiags)) 
 { };
@@ -167,13 +174,79 @@ PrivMgrRoles::~PrivMgrRoles()
    
 }
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrRoles::areRemainingGrantedPrivsSufficient                *
+// *                                                                           *
+// *    Determines if a set (possibly empty) of granted privileges contains    *
+// * the specified privilege.                                                  *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <whereClause>                   const std::string &             In       *
+// *    is the WHERE clause specifying the set of privileges.                  *
+// *                                                                           *
+// *  <privType>                      PrivType                        In       *
+// *    is the type of privilege that is needed.                               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: bool                                                             *
+// *                                                                           *
+// * true: Privilege was found.                                                *
+// * false: Privilege not found, or internal error occured.                    *
+// *                                                                           *
+// *****************************************************************************
+bool PrivMgrRoles::areRemainingGrantedPrivsSufficient(
+   const std::string whereClause,
+   PrivType privType)
+
+{
+                     
+std::vector<PrivMgrBitmap> privBitmaps;
+std::string orderByClause;
+PrivMgrPrivileges objectPrivileges(metadataLocation_,pDiags_);
+               
+PrivStatus privStatus = objectPrivileges.getPrivBitmaps(whereClause,
+                                                        orderByClause,
+                                                        privBitmaps);
+                                                        
+// If no rows match the criteria, that means the user does not
+// have privileges on this referenced object, so they can no
+// longer create the view after losing privileges from role.
+   if (privStatus == STATUS_NOTFOUND)
+      return false;
+      
+      
+   if (privStatus == STATUS_ERROR)
+   {
+      PRIVMGR_INTERNAL_ERROR("Could not fetch privileges for referenced objects");
+      return false;
+   }
+   
+// User has one or more privileges granted on the referenced object.  At least 
+// one of the granted privileges has to include the specified priv type.
+   for (size_t pb = 0; pb < privBitmaps.size(); pb++)
+      if (privBitmaps[pb].test(privType))
+         return true;
+          
+          
+// Priv not found among remaining granted privileges.
+   return false;
+   
+}
+//********* End of PrivMgrRoles::areRemainingGrantedPrivsSufficient ************
+
 // *****************************************************************************
 // *                                                                           *
 // * Function: PrivMgrRoles::dependentObjectsExist                             *
 // *                                                                           *
 // *    Determines if a specific user owns objects whose existence depend upon *
-// * one or more privileges granted to the specified role.  Used to determine  *
-// * if a role can be revoked from a user without consequence.                 *
+// * a privilege granted to the specified role.  Used to determine if a role   *
+// *  can be revoked from a user without consequence.                          *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -185,31 +258,256 @@ PrivMgrRoles::~PrivMgrRoles()
 // *  <roleID>                        const int32_t                   In       *
 // *    is the role ID.                                                        *
 // *                                                                           *
+// *  <dropBehavior>               PrivDropBehavior                   In       *
+// *    indicates whether restrict or cascade behavior is requested.           *
+// *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // * Returns: bool                                                             *
 // *                                                                           *
-// * true: One or more objects exist due to grants to role.                    *
+// * true: One or more objects exist due to grants to role, or internal error. *
 // * false: No user objects are dependent on privileges granted to this role.  *
 // *                                                                           *
 // *****************************************************************************
 bool PrivMgrRoles::dependentObjectsExist(
-   int32_t userID,
-   int32_t roleID) 
+   const int32_t userID,
+   const int32_t roleID, 
+   PrivDropBehavior dropBehavior) 
 
 {
 
-//TODO: Scan objects owned by user to see if user has privilege to create
-// the object without any privileges granted to the role.
-// Some options: 
-//    Short circuit if role has no granted privileges.
-//    Short circuit if user owns no objects (might be part of normal algorithm).
-// When locking is available, need to lock records related to the revoke.
-// This could be a long operation, could lock out other operations, especially
-// if following multi-branch grant trees.  
+// First, determine if the role has been granted any object privileges.
+// Only REFERENCES, SELECT and USAGE are relevant, but for now check all DML.
+// If no granted privileges, then there are no objects created by this user
+// depending on privileges granted to this role.
 
+std::vector<PrivClass> privClass;
+
+   privClass.push_back(PrivClass::OBJECT);
+
+   if (!isAuthIDGrantedPrivs(roleID,privClass))
+      return false;
+      
+// Second, see if the user owns any objects that are dependent, i.e., views,
+// referential integrity (RI) constraints, or UDFs/SPJs.
+
+std::string whereClause(" WHERE OBJECT_TYPE IN ('RC','SP','UR','VI') AND OBJECT_OWNER = ");
+
+   whereClause += authIDToString(userID);
+   
+PrivMgrObjects objects(trafMetadataLocation_);
+
+std::vector<UIDAndType> ownedUIDandTypes;
+
+PrivStatus privStatus = objects.fetchUIDandTypes(whereClause,ownedUIDandTypes);
+
+// If the user does not own any views, user defined functions, or referential
+// integrity constraints, they do not have any dependent objects.
+
+   if (privStatus == STATUS_NOTFOUND || ownedUIDandTypes.size() == 0)
+      return false;   
+      
+   if (privStatus == STATUS_ERROR)
+   {
+      PRIVMGR_INTERNAL_ERROR("Could not fetch objects owned by user");
+      return true;
+   }
+   
+//TODO: User owns dependent objects and role has been granted privileges.
+//      But do they correlate?  For instance, if a role is granted INSERT,
+//      losing that privilege does not affect any views the user may own.
+//      Could get list of privilege types granted the role, and then
+//      compare with types of dependent objects.  If no correlation,
+//      short-circuit this check.  See file private function 
+//      isDependentObjectPrivPair().
+   
+// OK, user owns dependent objects and role has been granted privileges.  
+// One of more of those objects could depend on privileges granted this role.
+// Get the name of the role to use in error messages.   
+int32_t length;
+
+char roleName[MAX_DBUSERNAME_LEN + 1];
+         
+Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
+                                               sizeof(roleName),length);
+// Should not fail, role ID was derived from name provided by user.
+   if (retCode != 0)
+   {
+      PRIVMGR_INTERNAL_ERROR("Role ID not found");
+      return true;
+   }
+
+// For each owned object, get the objects that the owned objects reference.
+// Determine if the user has the requisite privilege on each of the 
+// referenced objects if the privileges granted to the role are not included.
+// If the user has the privilege (either directly or through another role),
+// move on to the next referenced object, and then on to the next owned object.
+// If any dependency on a privilege granted to this role is found, it is an
+// error if the behavior is restrict.  For cascade (not yet supported), the
+// dependent object is automatically dropped.
+
+// For each referenced object, get privileges the user has on that object 
+// either directly or by another role granted to the user, but exclude 
+// any privileges from the role being revoked.  The first part of the query
+// can be built once, and the object UID for each referenced object added
+// within the loop.
+//
+// WHERE (GRANTEE_ID = userID OR
+//        GRANTEE_ID IN (SELECT ROLE_ID FROM ROLE_USAGE WHERE GRANTEE_ID = userID)) AND 
+//        GRANTEE_ID <> roleID AND OBJECT_UID = objectUID; 
+std::string whereClauseHeader(" WHERE (GRANTEE_ID = ");
+   
+   whereClauseHeader += authIDToString(userID);
+   whereClauseHeader += " OR GRANTEE_ID IN (SELECT RU.ROLE_ID FROM ";
+   whereClauseHeader += metadataLocation_;
+   whereClauseHeader += ".ROLE_USAGE RU WHERE RU.GRANTEE_ID = ";
+   whereClauseHeader += authIDToString(userID);
+   whereClauseHeader += ")) AND GRANTEE_ID <> ";
+   whereClauseHeader += authIDToString(roleID);
+   whereClauseHeader += " AND OBJECT_UID = ";
+
+//TODO: When support is added for schema and column privileges, will need to
+//      check those privileges as well. 
+
+// Assume no dependencies exist.
+bool dependencyFound = false; 
+PrivMgrMDAdmin admin(metadataLocation_,pDiags_);
+
+   for (size_t u3 = 0; u3 < ownedUIDandTypes.size(); u3++)
+   {
+      // Initialize the where clause each time through the loop.
+      std::string whereClause(whereClauseHeader);
+   
+      switch (ownedUIDandTypes[u3].objectType)
+      {
+         case COM_VIEW_OBJECT:
+         {
+            ViewUsage viewUsage;
+            
+            viewUsage.viewUID = ownedUIDandTypes[u3].UID;
+            // Get list of objects referenced by the view.  If list cannot be
+            // retrieved or is empty, there is a metadata inconsistency.
+            std::vector<ObjectReference *> referencedObjectsList;
+            privStatus = admin.getObjectsThatViewReferences(viewUsage,referencedObjectsList);
+            if (privStatus == STATUS_ERROR || privStatus == STATUS_NOTFOUND ||
+                referencedObjectsList.size() == 0)
+            {
+               PRIVMGR_INTERNAL_ERROR("Could not fetch objects referenced by view");
+               return true;
+            }
+               
+            for (size_t obj = 0; obj < referencedObjectsList.size(); obj++)
+            {
+               whereClause = whereClauseHeader +
+                             UIDToString(referencedObjectsList[obj]->objectUID);
+               
+               // If the user still has the SELECT privilage on the referenced 
+               // table or view without this role, the user is not dependent on   
+               // the role's privileges for this table or view.  
+               if (areRemainingGrantedPrivsSufficient(whereClause,SELECT_PRIV))
+                  continue;
+               
+               //TODO: for cascade, drop the object instead of reporting dependency error
+               dependencyFound = true;
+               break;
+            }   
+         
+            break;
+         }
+         case COM_USER_DEFINED_ROUTINE_OBJECT:
+         case COM_STORED_PROCEDURE_OBJECT:
+         {
+            // Fpr user-defined routines and stored procedures, a library
+            // is used to represent the code.  The owner needs to have the
+            // USAGE privileged on the referenced library.  The UID of the 
+            // library is found in the LIBRARIES_USAGE table.
+            whereClause += " (SELECT USING_LIBRARY_UID FROM ";
+            whereClause += trafMetadataLocation_ + ".";
+            whereClause += SEABASE_LIBRARIES_USAGE;
+            whereClause += " WHERE USED_UDR_UID = ";
+            whereClause += UIDToString(ownedUIDandTypes[u3].UID);
+            whereClause += ")";
+            
+            // If the user still has the USAGE privilage on the library without 
+            // this role, the user is not dependent on the role's privileges  
+            // for this UDR/SPJ.  
+            if (areRemainingGrantedPrivsSufficient(whereClause,USAGE_PRIV))
+               continue;
+            
+            //TODO: for cascade, drop the object instead of reporting dependency error
+            dependencyFound = true;
+            
+            break;
+         }
+         case COM_REFERENTIAL_CONSTRAINT_OBJECT:
+         {
+            // For referential integrity (aka foreign) constraints, the 
+            // constraint is associated with a refering table, but the 
+            // REFERENCES privilege is on the referenced table.  To get the 
+            // referenced table, use the RI/Foreign contraint UID to 
+            // obtain the unique contraint UID from the 
+            // UNIQUE_REF_CONSTR_USAGE table.  Then use that UID to find the 
+            // UID of the referenced table from the TABLE_CONSTRAINTS table.
+            //
+            // i.e., the desired object_UID is at:
+            //
+            // (SELECT TC.TABLE_UID FROM TABLE_CONSTRAINTS TC 
+            //         WHERE TC.CONSTRAINT_UID = 
+            //     (SELECT DISTINCT RCU.UNIQUE_CONSTRAINT_UID FROM UNIQUE_REF_CONSTR_USAGE RCU
+            //             WHERE RCU.FOREIGN_CONSTRAINT_UID = ownedConstraintUID))
+            //
+            
+            whereClause += "(SELECT TC.TABLE_UID FROM ";
+            whereClause += trafMetadataLocation_ + ".";
+            whereClause += SEABASE_TABLE_CONSTRAINTS;
+            whereClause += " TC WHERE TC.CONSTRAINT_UID = (SELECT DISTINCT RCU.UNIQUE_CONSTRAINT_UID FROM ";
+            whereClause += trafMetadataLocation_ + ".";
+            whereClause += SEABASE_UNIQUE_REF_CONSTR_USAGE;
+            whereClause += " RCU WHERE RCU.FOREIGN_CONSTRAINT_UID = ";
+            whereClause += UIDToString(ownedUIDandTypes[u3].UID);
+            whereClause += "))";
+            
+          
+            // If the user still has privileges on the referenced table without 
+            // this role, the user is not dependent on the role's privileges  
+            // for this RI constraint.  
+            if (areRemainingGrantedPrivsSufficient(whereClause,REFERENCES_PRIV))
+               continue;
+          
+            //TODO: for cascade, drop the object instead of reporting dependency error
+            dependencyFound = true;
+         
+            break;
+         }
+         default:
+         {
+            PRIVMGR_INTERNAL_ERROR("Switch statement in PrivMgrRoles::dependentObjectsExist");
+            return true;
+         }
+      }
+      
+      if (dependencyFound)
+      {
+         // Get name of dependent object.  
+         std::string dependentObjectName;
+         
+         privStatus = objects.fetchQualifiedName(ownedUIDandTypes[u3].UID,
+                                                 dependentObjectName);
+                                                 
+         if (privStatus != STATUS_GOOD)
+         {
+            PRIVMGR_INTERNAL_ERROR("Could not fetch name of dependent object");
+            return true;
+         }
+         
+         *pDiags_ << DgSqlCode(-CAT_DEPENDENT_ROLE_PRIVILEGES_EXIST) 
+                  << DgString0(roleName) 
+                  << DgString1(dependentObjectName.c_str());
+         return true;
+      }
+   }
+         
    return false;
-
 
 }
 //**************** End of PrivMgrRoles::dependentObjectsExist ******************
@@ -452,7 +750,7 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
       {
          // Currently roles cannot be granted to PUBLIC.  This restriction
          // could be lifted in the future.  Grants to _SYSTEM never make sense.
-         if (granteeIDs[g] == SYSTEM_UID || granteeIDs[g] == PUBLIC_UID)
+         if (granteeIDs[g] == SYSTEM_AUTH_ID || granteeIDs[g] == PUBLIC_AUTH_ID)
          {
             *pDiags_ << DgSqlCode(-CAT_NO_GRANT_ROLE_TO_PUBLIC_OR_SYSTEM);
             return STATUS_ERROR;
@@ -595,7 +893,7 @@ MyRow row(fullTableName_);
    row.granteeID_ = granteeID;
    row.granteeName_ = granteeName;
    row.granteeAuthClass_ = PrivAuthClass::USER;
-   row.grantorID_ = SYSTEM_UID;
+   row.grantorID_ = SYSTEM_AUTH_ID;
    row.grantorName_ = "_SYSTEM";
    row.grantorAuthClass_ = PrivAuthClass::USER;
    row.grantDepth_ = -1;
@@ -1209,17 +1507,12 @@ PrivStatus privStatus = STATUS_GOOD;
                                              isGOFSpecified,newGrantDepth,
                                              dropBehavior);
             if (privStatus != STATUS_GOOD)
-            {
                return STATUS_ERROR;
-            }
          }
          
-         if (dependentObjectsExist(granteeIDs[g],roleID))
-         {
-            *pDiags_ << DgSqlCode(-CAT_DEPENDENT_ROLE_PRIVILEGES_EXIST);
-            //TODO: include name of dependent object
+         if (dependentObjectsExist(granteeIDs[g],roleID,dropBehavior))
             return STATUS_ERROR;
-         }
+
       }
    }
 
@@ -1238,14 +1531,16 @@ std::string setClause("SET GRANT_DEPTH = ");
 
    for (size_t r2 = 0; r2 < roleIDs.size(); r2++)
    {
-      std::string whereClause(" WHERE ROLE_ID = ");
+      std::string whereClauseHeader(" WHERE ROLE_ID = ");
       
-      whereClause += authIDToString(roleIDs[r2]);
-      whereClause += " AND GRANTOR_ID = ";
-      whereClause += authIDToString(grantorIDs[r2]);
+      whereClauseHeader += authIDToString(roleIDs[r2]);
+      whereClauseHeader += " AND GRANTOR_ID = ";
+      whereClauseHeader += authIDToString(grantorIDs[r2]);
       
       for (size_t g2 = 0; g2 < granteeIDs.size(); g2++)
       {
+         std::string whereClause(whereClauseHeader);
+          
          whereClause += " AND GRANTEE_ID = ";
          whereClause += authIDToString(granteeIDs[g2]);
          
@@ -1272,7 +1567,7 @@ std::string setClause("SET GRANT_DEPTH = ");
    return STATUS_GOOD;
    
 }  
-//******************** End of PrivMgrRoles::revokePrivilege ********************
+//********************** End of PrivMgrRoles::revokeRole ***********************
 
 
 // *****************************************************************************
@@ -1317,7 +1612,7 @@ std::string whereClause(" WHERE ROLE_ID = ");
    return myTable.deleteWhere(whereClause);
 
 }
-//*********************** End of PrivMgrRoles::isGranted ***********************
+//**************** End of PrivMgrRoles::revokeRoleFromCreator ******************
 
 
 
@@ -1709,4 +2004,44 @@ static bool hasValue(
 }
 //***************************** End of hasValue ********************************
 
+// *****************************************************************************
+// *                                                                           *
+// * Function: isDependentObjectPrivPair                                       *
+// *                                                                           *
+// *   This function determines if a privilege bitmap contains the necessary   *
+// * privilege based on the dependent object type.                             *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectType>                 ComObjectType                      In       *
+// *    is the type of object.                                                 *
+// *                                                                           *
+// *  <objectPrivs>                PrivMgrBitmap                      In       *
+// *    is the bitmap of privileges.                                           *
+// *                                                                           *
+// *****************************************************************************
+static bool isDependentObjectPrivPair(
+   ComObjectType  objectType,
+   PrivMgrBitmap  objectPrivs)
 
+{
+
+   switch (objectType)
+   {
+      case COM_VIEW_OBJECT:
+         return objectPrivs.test(SELECT_PRIV);
+      case COM_USER_DEFINED_ROUTINE_OBJECT:
+      case COM_STORED_PROCEDURE_OBJECT:
+         return objectPrivs.test(USAGE_PRIV);
+      case COM_REFERENTIAL_CONSTRAINT_OBJECT:
+         return objectPrivs.test(REFERENCES_PRIV);
+      default:
+         return false;
+   }
+   
+   return false;   
+
+}
+//********************* End of isDependentObjectPrivPair ***********************

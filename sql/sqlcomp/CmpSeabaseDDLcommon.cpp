@@ -657,7 +657,8 @@ NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
       if ((catName == seabaseDefCatName) &&
           ((schName == SEABASE_MD_SCHEMA) ||
            (schName == SEABASE_DTM_SCHEMA) ||
-           (schName == SEABASE_REPOS_SCHEMA)))
+        //   (schName == SEABASE_PRIVMGR_SCHEMA) ||
+           (schName == SEABASE_REPOS_SCHEMA) ))
         return TRUE;
     }
 
@@ -1306,11 +1307,10 @@ NABoolean CmpSeabaseDDL::isAuthorizationEnabled()
   if (authorizationEnabled_ == -1)
   {
     // Initiate the privilege manager interface class
-    std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-    privMDLoc += std::string(".\"") +
-                 std::string(SEABASE_PRIVMGR_SCHEMA) +
-                 std::string("\"");
-    PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+    NAString privMgrMDLoc;
+    CONCAT_CATSCH (privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+    PrivMgrCommands privInterface
+      (std::string(privMgrMDLoc.data()), CmpCommon::diags());
 
     if (privInterface.isAuthorizationEnabled())
       authorizationEnabled_ = 1;
@@ -3798,7 +3798,7 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
 
       if (isAuthorizationEnabled())
         {
-          if (!deletePrivMgrInfo ( objectNamePart, objUID, NAString(objType) )) 
+          if (!deletePrivMgrInfo ( extTableName, objUID, NAString(objType) )) 
             {
               return -1;
             }
@@ -4344,6 +4344,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
   NAString quotedSeqObjName;
   ToQuotedString(quotedSeqObjName, seqNamePart, FALSE);
 
+  Int32 objOwner = ComUser::getCurrentUser();
   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedSeqObjName.data(),
@@ -4352,7 +4353,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
               createTime, 
               createTime,
               "Y",
-              SUPER_USER);
+              objOwner);
   cliRC = cliInterface.executeImmediate(buf);
   
   if (cliRC < 0)
@@ -4381,6 +4382,21 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       return;
     }
+
+  // Add privileges for the sequence
+  if (!insertPrivMgrInfo(seqObjUID, 
+                         extSeqName, 
+                         COM_SEQUENCE_GENERATOR_OBJECT_LIT, 
+                         objOwner))
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-CAT_UNABLE_TO_GRANT_PRIVILEGES)
+            << DgTableName(extSeqName);
+
+          processReturn();
+
+          return;
+        }
 
   return;
 }
@@ -4560,6 +4576,27 @@ void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode
      return;
   }
 
+  // remove any privileges
+  if (isAuthorizationEnabled())
+  {
+    Int64 seqUID = 0;
+    seqUID = getObjectUID(&cliInterface,
+                          catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
+                          COM_SEQUENCE_GENERATOR_OBJECT_LIT);
+
+    if (!deletePrivMgrInfo ( objectNamePart, 
+                             seqUID, 
+                             NAString(COM_SEQUENCE_GENERATOR_OBJECT_LIT) ))
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_ALL_PRIVILEGES_REVOKED);
+
+      processReturn();
+
+      return;
+    }
+
+  }
+
   if (deleteFromSeabaseMDTable(&cliInterface, 
                                catalogNamePart, schemaNamePart, objectNamePart, 
                                COM_SEQUENCE_GENERATOR_OBJECT_LIT))
@@ -4620,41 +4657,36 @@ void CmpSeabaseDDL::dropSeabaseMD()
 
 void CmpSeabaseDDL::initSeabaseAuthorization()
 { 
-  const char* sysCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
-  std::string privMDLoc(sysCat);
-  privMDLoc += ".\"";
-  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-  privMDLoc += "\"";
-  std::string objectsLocation(sysCat);
-  objectsLocation += ".\"";
-  objectsLocation += SEABASE_MD_SCHEMA;
-  objectsLocation += "\".";
-  std::string authsLocation(objectsLocation);
-  objectsLocation += SEABASE_OBJECTS;
-  authsLocation += SEABASE_AUTHS; 
-  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+  NAString objectsLocation;
+  CONCAT_CATSCH(objectsLocation, getSystemCatalog(), SEABASE_MD_SCHEMA);
+  objectsLocation += NAString(".") + SEABASE_OBJECTS;
+
+  NAString authsLocation;
+  CONCAT_CATSCH(authsLocation, getSystemCatalog(), SEABASE_MD_SCHEMA);
+  authsLocation += NAString(".") + SEABASE_AUTHS; 
+
+  PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
   PrivStatus retcode = privInterface.initializeAuthorizationMetadata
-    (objectsLocation, authsLocation); 
+    (std::string(objectsLocation.data()), std::string(authsLocation.data())); 
   if (retcode == STATUS_ERROR && 
       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-     SEABASEDDL_INTERNAL_ERROR("INITIALIZE AUTHORIZATION command");
-
+     SEABASEDDL_INTERNAL_ERROR("initialize authorization command");
   return;
 }
 
 void CmpSeabaseDDL::dropSeabaseAuthorization()
 {
-  const char* sysCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
-  std::string privMDLoc(sysCat);
-  privMDLoc += ".\"";
-  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-  privMDLoc += "\"";
-  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+  PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
   PrivStatus retcode = privInterface.dropAuthorizationMetadata(); 
   if (retcode == STATUS_ERROR && 
       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-     SEABASEDDL_INTERNAL_ERROR("DROP AUTHORIZATION command");
-
+     SEABASEDDL_INTERNAL_ERROR("drop authorization command");
   return;
 }
 
@@ -4675,20 +4707,21 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
                                            const NAString &objType,
                                            const Int32 objOwnerID)
 {
-  // Only the following object types have associated privileges
-  // If not in this list, return TRUE, no grants are needed
-  // or grants are done elsewhere (e.g. views)
-  if (!(objType == COM_BASE_TABLE_OBJECT_LIT ||
-        objType == COM_LIBRARY_OBJECT_LIT ||
-        objType == COM_USER_DEFINED_ROUTINE_OBJECT_LIT ))
-   return TRUE;
+  if (!PrivMgrCommands::isSecurableObject(std::string(objType.data())))
+    return TRUE;
+
+  // View privileges are handled differently than other objects.  For views,
+  // the creator does not automatically get all privileges.  Therefore, view 
+  // owner privileges are not granted through this mechanism - 
+  // see gatherViewPrivileges for details on how owner privileges are 
+  // calculated and granted. Just return TRUE.
+  if (objType == COM_VIEW_OBJECT_LIT)
+    return TRUE;
 
   // Initiate the privilege manager interface class
-  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-  privMDLoc += std::string(".\"") +
-               std::string(SEABASE_PRIVMGR_SCHEMA) +
-               std::string("\"");
-  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+  PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
 
   // If authorization is not enabled, return TRUE, no grants are needed
   // TDB: may want to add a "authorization enabled" flag in Context to 
@@ -4744,20 +4777,13 @@ NABoolean CmpSeabaseDDL::deletePrivMgrInfo(const NAString &objectName,
                                            const Int64 objUID, 
                                            const NAString objectType)
 {
-  // Only the following object types have associated privileges
-  // If not in this list, return TRUE, no revokes are needed
-  if (!(objectType == COM_BASE_TABLE_OBJECT_LIT ||
-        objectType == COM_LIBRARY_OBJECT_LIT ||
-        objectType == COM_USER_DEFINED_ROUTINE_OBJECT_LIT ||
-        objectType == COM_VIEW_OBJECT_LIT ))
+  if (!PrivMgrCommands::isSecurableObject(std::string(objectType.data())))
    return TRUE;
 
   // Initiate the privilege manager interface class
-  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-  privMDLoc += std::string(".\"") +
-               std::string(SEABASE_PRIVMGR_SCHEMA) +
-               std::string("\"");
-  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+  PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
 
   // If authorization is not enabled, return TRUE, no grants are needed
   // TDB: may want to add a "authorization enabled" flag in Context to 
@@ -5690,12 +5716,10 @@ int32_t currentUser = ComUser::getCurrentUser();
       //TODO: check schema owner when schemas have owners
    }
   
-   std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-   privMDLoc += std::string(".\"") +
-                std::string(SEABASE_PRIVMGR_SCHEMA) +
-                std::string("\"");
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
 
    if (componentPrivileges.hasSQLPriv(currentUser,operation,true))
       return true;   
@@ -5733,20 +5757,17 @@ static void createSeabaseComponentOperation(
    
 {
 
-std::string privMDLoc(systemCatalog);
+NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, systemCatalog.c_str(), SEABASE_PRIVMGR_SCHEMA);
 
-   privMDLoc += ".\"";
-   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-   privMDLoc += "\"";
-   
-PrivMgrCommands componentOperations(privMDLoc,CmpCommon::diags());
+PrivMgrCommands componentOperations(std::string(privMgrMDLoc.data()),CmpCommon::diags());
 
    if (!componentOperations.isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
    }
-   
+  
 const std::string componentName = pParseNode->getComponentName().data();
 const std::string operationName = pParseNode->getComponentPrivilegeName().data();
 const std::string operationCode = pParseNode->getComponentPrivilegeAbbreviation().data();
@@ -5792,13 +5813,10 @@ static void dropSeabaseComponentOperation(
    
 {
 
-std::string privMDLoc(systemCatalog);
+NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, systemCatalog.c_str(), SEABASE_PRIVMGR_SCHEMA);
 
-   privMDLoc += ".\"";
-   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-   privMDLoc += "\"";
-   
-PrivMgrCommands componentOperations(privMDLoc,CmpCommon::diags());
+PrivMgrCommands componentOperations(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
    if (!componentOperations.isAuthorizationEnabled())
    {
@@ -5856,13 +5874,17 @@ static void grantRevokeSeabaseRole(
    
 {
 
-std::string privMDLoc(systemCatalog);
+NAString trafMDLocation;
 
-   privMDLoc += ".\"";
-   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-   privMDLoc += "\"";
+  CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
+  
+NAString privMgrMDLoc;
+
+  CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrCommands roleCommand(privMDLoc,CmpCommon::diags());
+PrivMgrCommands roleCommand(std::string(trafMDLocation.data()),
+                            std::string(privMgrMDLoc.data()),
+                            CmpCommon::diags());
 
    if (!roleCommand.isAuthorizationEnabled())
    {
@@ -5907,7 +5929,7 @@ ElemDDLGrantee *grantedBy = pParseNode->getGrantedBy();
    {
       if (grantorID != ComUser::getRootUserID())
       {
-         PrivMgrComponentPrivileges componentPrivileges(privMDLoc,CmpCommon::diags());
+         PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
          
          if (!componentPrivileges.hasSQLPriv(grantorID,
                                              SQLOperation::MANAGE_ROLES,
@@ -6184,13 +6206,10 @@ static void grantSeabaseComponentPrivilege(
    
 {
 
-std::string privMDLoc(systemCatalog);
-
-   privMDLoc += ".\"";
-   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-   privMDLoc += "\"";
+NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, systemCatalog.c_str(), SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrCommands componentPrivileges(privMDLoc,CmpCommon::diags());
+PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
    if (!componentPrivileges.isAuthorizationEnabled())
    {
@@ -6350,11 +6369,10 @@ static bool hasValue(
 void CmpSeabaseDDL::registerSeabaseComponent(StmtDDLRegisterComponent *pParseNode)
 {
 
-  std::string privMDLoc = getSystemCatalog();
-  privMDLoc += ".\"";
-  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-  privMDLoc += "\"";
-  PrivMgrCommands component(privMDLoc,CmpCommon::diags());
+NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+
+  PrivMgrCommands component(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
    if (!component.isAuthorizationEnabled())
    {
@@ -6425,13 +6443,10 @@ static void revokeSeabaseComponentPrivilege(
    
 {
 
-std::string privMDLoc(systemCatalog);
+NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, systemCatalog.c_str(), SEABASE_PRIVMGR_SCHEMA);
 
-   privMDLoc += ".\"";
-   privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-   privMDLoc += "\"";
-   
-PrivMgrCommands componentPrivileges(privMDLoc,CmpCommon::diags());
+PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
    if (!componentPrivileges.isAuthorizationEnabled())
    {

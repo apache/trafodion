@@ -124,7 +124,13 @@ struct MDDescsInfo;
    *CmpCommon::diags() << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR) 	  \
                        << DgString0(__FILE__)   		   	  \
                        << DgInt0(__LINE__)			   	  \
-                       << DgString0(text) 			   	  
+                       << DgString1(text) 			   	  
+
+#define CONCAT_CATSCH(tgt,catname,schname)  \
+   (tgt += NAString(catname) + \
+         NAString(".\"") + \
+         NAString(schname) + \
+         NAString("\""))
 
 #define HBASE_OPTION_MAX_INTEGER_LENGTH 5
 

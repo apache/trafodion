@@ -342,19 +342,10 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
                                            PrivMgrBitmap &privilegesBitmap,
                                            PrivMgrBitmap &grantableBitmap)
 {
-  if (!isAuthorizationEnabled())
-    return 0;
-
-  std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-  privMDLoc += std::string(".\"") +
-               std::string(SEABASE_PRIVMGR_SCHEMA) +
-               std::string("\"");
-  PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
-
-  Int32 userID = ComUser::getCurrentUser();
-
-  std::vector<PrivMgrBitmap *> privilegesList;
-  std::vector<PrivMgrBitmap *> grantableList;
+  // set all bits to true initially, we will be ANDing with privileges
+  // from all referenced objects 
+  privilegesBitmap.set();
+  grantableBitmap.set();
 
   const ParViewUsages &vu = createViewNode->getViewUsages();
   const ParTableUsageList &vtul = vu.getViewTableUsageList();
@@ -371,81 +362,112 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
       const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
       const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
       const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
+      CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
 
-      char objType[10];
-      Int64 usedObjUID = getObjectUID(cliInterface,
-                                      catalogNamePart.data(), schemaNamePart.data(),
-                                      objectNamePart.data(),
-                                      NULL,
-                                      objType);
-      if (usedObjUID < 0)
+      // See if the referenced object is cached.  If so, grab privileges from
+      // the cache.
+      PrivMgrUserPrivs *pPrivInfo = NULL;
+      Int64 usedObjUID = 0;
+      BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+      NATable *naTable = bindWA.getNATable(cn);
+      if (naTable)
         {
-          return -1;
+          usedObjUID = (int64_t)naTable->objectUid().get_value();
+          pPrivInfo = naTable->getPrivInfo();
         }
 
-      // TBD:  should we be getting privileges from the NATable structure instead?
+      // If no privilege information is available, go get it
+      // TBD:  will the naTable structure always be setup? If so then this 
+      //       there is no need to gather privileges separately
       PrivMgrUserPrivs privInfo;
-      PrivStatus retcode = privInterface.getPrivileges(usedObjUID, userID, privInfo);
+      if (pPrivInfo == NULL)
+        {         
+          // if the objectUID is not found in naTable, 0 is returned
+          if (usedObjUID == 0)
+            {
+              char objType[COL_MAX_ATTRIBUTE_LEN]; 
+              Int64 usedObjUID = getObjectUID(cliInterface,
+                                              catalogNamePart.data(), 
+                                              schemaNamePart.data(),
+                                              objectNamePart.data(),
+                                              NULL,
+                                              objType);
+          
+              // method returns a -1 if could not select the objectUID from the metadata
+              if (usedObjUID == -1)
+                {
+                  if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+                     *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                                 << DgString0(__FILE__)
+                                 << DgInt0(__LINE__)
+                                 << DgString1("getting object UID gathering view privileges");
+                   return -1;
+                }
+            }
 
-      if ( privInfo.hasSelectPriv() )
-        {
-/*
- * Code needs to be added in the compiler to check privileges on views...
-          if (createViewNode->getIsUpdatable() && (!privInfo.hasUpdatePriv()))
-          {
-             *CmpCommon::diags() << DgSqlCode( -4481 )
-              << DgString0( "UPDATE" )
-              << DgString1( extUsedObjName.data());
- 
-              return -1;
-          }
-          if (createViewNode->getIsInsertable()&& (!privInfo.hasInsertPriv()))
-          {
-             *CmpCommon::diags() << DgSqlCode( -4481 )
-              << DgString0( "INSERT" )
-              << DgString1( extUsedObjName.data());
- 
-              return -1;
-          }
-          // set bits in the bitmaps
-          privilegesBitmap.set(SELECT_PRIV);
-*/
+          Int32 userID = ComUser::getCurrentUser();
+
+          NAString privMgrMDLoc;
+          CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+          PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), 
+                                        CmpCommon::diags());
+
+          PrivStatus retcode = privInterface.getPrivileges(usedObjUID, userID, privInfo);
+          if (retcode != STATUS_GOOD)
+           {
+              if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+                 *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                                     << DgString0(__FILE__)
+                                     << DgInt0(__LINE__)
+                                     << DgString1("error gathering view privileges");
+               return -1;
+            }
+          pPrivInfo = &privInfo;
         }
-      else
+
+      // privInfo should not be NULL at this time, if so return internal error
+      if (pPrivInfo == NULL)
+        {
+          *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                              << DgString0(__FILE__)
+                              << DgInt0(__LINE__)
+                              << DgString1("error gathering view privileges");
+           return -1;
+        }
+
+      // Requester must have at least select privilege
+      if ( !pPrivInfo->hasSelectPriv() )
         {
            *CmpCommon::diags() << DgSqlCode( -4481 )
-            << DgString0( "SELECT" )
-            << DgString1( extUsedObjName.data());
+                               << DgString0( "SELECT" )
+                               << DgString1( extUsedObjName.data());
  
             return -1;
         }
-      PrivMgrBitmap *pPrivilegesBitmap = new PrivMgrBitmap(privInfo.getObjectBitmap());
-      PrivMgrBitmap *pGrantableBitmap = new PrivMgrBitmap(privInfo.getGrantableBitmap());
-      privilegesList.push_back(pPrivilegesBitmap);
-      grantableList.push_back(pGrantableBitmap);
+
+      // retrieve bitmaps for current object
+      PrivMgrBitmap privBMap = pPrivInfo->getObjectBitmap();
+      PrivMgrBitmap WGOBMap  = pPrivInfo->getGrantableBitmap();
+
+      // If view is not updatable or insertable, turn off privs in bitmaps
+      if (!createViewNode->getIsUpdatable())
+        {
+          privBMap.set(UPDATE_PRIV,false);
+          WGOBMap.set(UPDATE_PRIV, false); 
+          privBMap.set(DELETE_PRIV,false);
+          WGOBMap.set(DELETE_PRIV, false); 
+        }
+
+      if (!createViewNode->getIsInsertable())
+        {
+          privBMap.set(INSERT_PRIV,false);
+          WGOBMap.set(INSERT_PRIV, false); 
+        }
+
+      // Summarize privileges
+      privilegesBitmap &= privBMap;
+      grantableBitmap &= WGOBMap;
     }
-
-  // intersect the bitmaps in the privileges and grantable lists 
-  // into single maps
-  size_t i = 0;
-  for (i = 0; i < privilegesList.size(); i++)
-  {
-    PrivMgrBitmap *pMap = privilegesList[i];
-    privilegesBitmap &= *pMap;
-  }
-  for (i = 0; i < grantableList.size(); i++)
-  {
-    PrivMgrBitmap *pMap = grantableList[i];
-    grantableBitmap &= *pMap;
-  }
-
-  // Delete the bitmap lists
-  for(i = 0; i < privilegesList.size(); i++)
-   delete privilegesList[i];
-  privilegesList.clear();
-  for(i = 0; i < grantableList.size(); i++)
-   delete grantableList[i];
-  grantableList.clear();
 
   return 0;
 }
@@ -568,19 +590,18 @@ void CmpSeabaseDDL::createSeabaseView(
   // privileges to create the view.
   PrivMgrBitmap privilegesBitmap;
   PrivMgrBitmap grantableBitmap;
-  if (isAuthorizationEnabled())
+  privilegesBitmap.set();
+  grantableBitmap.set();
+  if (gatherViewPrivileges(createViewNode, 
+                           &cliInterface, 
+                           privilegesBitmap, 
+                           grantableBitmap))
     {
-      privilegesBitmap.set();
-      grantableBitmap.set();
-      if (gatherViewPrivileges(createViewNode, 
-                               &cliInterface, 
-                               privilegesBitmap, 
-                               grantableBitmap))
-        {
-          processReturn();
+      processReturn();
 
-          return;
-        }
+      deallocEHI(ehi); 
+	  
+      return;
     }
 
   NAString viewText(STMTHEAP);
@@ -665,11 +686,10 @@ void CmpSeabaseDDL::createSeabaseView(
        }
 
       // Initiate the privilege manager interface class
-      std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-      privMDLoc += std::string(".\"") +
-                   std::string(SEABASE_PRIVMGR_SCHEMA) +
-                   std::string("\"");
-      PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
+      NAString privMgrMDLoc;
+      CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+      PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), 
+                                    CmpCommon::diags());
 
       retcode = privInterface.grantObjectPrivilege 
        (objUID, std::string(extViewName.data()), std::string (COM_VIEW_OBJECT_LIT), 

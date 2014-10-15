@@ -35,6 +35,7 @@ CPPSRC := CmpDescribe.cpp \
         PrivMgrComponents.cpp \
         PrivMgrComponentOperations.cpp \
         PrivMgrComponentPrivileges.cpp \
+        PrivMgrObjects.cpp \
         PrivMgrRoles.cpp \
 	DefaultValidator.cpp \
 	nadefaults.cpp \

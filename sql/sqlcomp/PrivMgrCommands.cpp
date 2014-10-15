@@ -35,6 +35,7 @@
 #include "PrivMgrRoles.h"
 #include "ComSecurityKey.h"
 #include <cstdio>
+#include <algorithm>
 
 // -----------------------------------------------------------------------
 // Default Constructor
@@ -46,6 +47,13 @@ PrivMgrCommands::PrivMgrCommands ()
 // -----------------------------------------------------------------------
 // Construct a PrivMgrCommands object for a new component.
 // -----------------------------------------------------------------------
+PrivMgrCommands::PrivMgrCommands ( const std::string trafMetadataLocation
+                                 , const std::string &metadataLocation
+                                 , ComDiagsArea *pDiags )
+: PrivMgr(trafMetadataLocation,metadataLocation,pDiags)
+{
+};
+
 PrivMgrCommands::PrivMgrCommands ( const std::string &metadataLocation
                                  , ComDiagsArea *pDiags )
 : PrivMgr(metadataLocation,pDiags)
@@ -346,31 +354,44 @@ PrivStatus PrivMgrCommands::getPrivileges(
   PrivMgrUserPrivs &userPrivs,
   std::vector <ComSecurityKey *>* secKeySet)
 {
-  PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
   PrivMgrBitmap objPrivs;
   PrivMgrBitmap grantablePrivs;
-  PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID, 
-                                                           userID, 
-                                                           objPrivs, 
-                                                           grantablePrivs);
-  if (retcode != STATUS_GOOD)
-    return retcode;
+
+  // If authorization is enabled, go get privilege bitmaps from metadata
+  if (authorizationEnabled())
+  {
+    PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
+    PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID, 
+                                                             userID, 
+                                                             objPrivs, 
+                                                             grantablePrivs);
+    if (retcode != STATUS_GOOD)
+      return retcode;
+  
+    // Add security keys to passed vector if non-null.
+    if (secKeySet)
+    {
+       PrivMgrCoreDesc privs(objPrivs,grantablePrivs);
+     
+       retcode = objectPrivs.buildSecurityKeys(userID,privs,*secKeySet);
+       if (retcode != STATUS_GOOD)
+        return retcode;
+    }
+  }
+
+  // authorization is not enabled, return bitmaps with all bits set
+  // With all bits set, privilege checks will always succeed
+  else
+  {
+    objPrivs.set();
+    grantablePrivs.set();
+  }
 
   userPrivs.setObjectBitmap(objPrivs);
   userPrivs.setGrantableBitmap(grantablePrivs);
-
-  // Add security keys to passed vector if non-null.
-  if (secKeySet)
-  {
-     PrivMgrCoreDesc privs(objPrivs,grantablePrivs);
-     
-     retcode = objectPrivs.buildSecurityKeys(userID,privs,*secKeySet);
-     if (retcode != STATUS_GOOD)
-        return retcode;
-  }
-
+    
   // TBD:  set column privileges
-  
+     
   return STATUS_GOOD;
 }
 
@@ -484,7 +505,16 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
    const bool isAllSpecified,
    const bool isWGOSpecified)
 {
+  if (!isSecurableObject(objectType))
+  {
+    *pDiags_ << DgSqlCode (-15455)
+             << DgString0 ("GRANT")
+             << DgString1 (objectName.c_str());
+     return STATUS_ERROR;
+  }
+
   PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  grantCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return grantCmd.grantObjectPriv
    (objectType, granteeUID, granteeName, grantorName, privsList, isAllSpecified, isWGOSpecified);
 }
@@ -498,8 +528,17 @@ PrivStatus PrivMgrCommands::grantObjectPrivilege (
       const PrivMgrBitmap &objectPrivs,
       const PrivMgrBitmap &grantablePrivs)
 {
-  int32_t grantorUID = SYSTEM_UID;
+  if (!isSecurableObject(objectType))
+  {
+    *pDiags_ << DgSqlCode (-15455)
+             << DgString0 ("GRANT")
+             << DgString1 (objectName.c_str());
+     return STATUS_ERROR;
+  }
+
+  int32_t grantorUID = SYSTEM_AUTH_ID;
   PrivMgrPrivileges grantCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  grantCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return grantCmd.grantObjectPriv
    (objectType, granteeUID, granteeName, objectPrivs, grantablePrivs);
 }
@@ -578,7 +617,7 @@ PrivStatus privStatus = STATUS_GOOD;
 
    try
    {
-      PrivMgrRoles roles(getMetadataLocation(),pDiags_);
+      PrivMgrRoles roles(trafMetadataLocation_,metadataLocation_,pDiags_);
       
       privStatus = roles.grantRole(roleIDs,
                                    roleNames,
@@ -634,12 +673,27 @@ PrivStatus PrivMgrCommands::initializeAuthorizationMetadata(
 // ----------------------------------------------------------------------------
 bool PrivMgrCommands::isPrivMgrTable(const std::string &objectName)
 {
+  char theQuote = '"';
+
+  // Delimited name issue.  The passed in objectName may enclose name parts in
+  // double quotes even if the name part contains only [a-z][A-Z][0-9]_
+  // characters. The same is true for the stored metadataLocation_.
+  // To allow equality checks to work, we strip off the double quote delimiters
+  // from both names. Fortunately, the double quote character is not allowed in
+  // any SQL identifier except as delimiters - so this works.
+  std::string nameToCheck(objectName);
+  nameToCheck.erase(std::remove(nameToCheck.begin(), nameToCheck.end(), theQuote), nameToCheck.end());
+
   size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
   for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
   {
     const PrivMgrTableStruct &tableDefinition = privMgrTables[ndx_tl];
-    std::string mdTable (tableDefinition.tableName);   
-    if (mdTable == objectName)
+
+    std::string mdTable = metadataLocation_;
+    mdTable.erase(std::remove(mdTable.begin(), mdTable.end(), theQuote), mdTable.end());
+
+    mdTable += std::string(".") + tableDefinition.tableName;   
+    if (mdTable == nameToCheck)
       return true;
   }
   return false;
@@ -805,6 +859,14 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
     const bool isAllSpecified,
     const bool isGOFSpecified)
 {
+  if (!isSecurableObject(objectType))
+  {
+    *pDiags_ << DgSqlCode (-15455)
+             << DgString0 ("REVOKE")
+             << DgString1 (objectName.c_str());
+     return STATUS_ERROR;
+  }
+
   // If we are revoking privileges on the authorization tables,
   // just return STATUS_GOOD.  Object_privileges will go away.
   if (isPrivMgrTable(objectName))
@@ -812,6 +874,7 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
 
   // set up privileges class
   PrivMgrPrivileges revokeCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  revokeCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return revokeCmd.revokeObjectPriv(objectType,
                                     granteeUID, 
                                     privList,
@@ -831,6 +894,7 @@ PrivStatus PrivMgrCommands::revokeObjectPrivilege(
 
   // set up privileges class
   PrivMgrPrivileges revokeCmd(objectUID, objectName, grantorUID, metadataLocation_, pDiags_);
+  revokeCmd.setTrafMetadataLocation(trafMetadataLocation_);
   return revokeCmd.revokeObjectPriv();
 }
 
@@ -894,7 +958,7 @@ PrivStatus privStatus = STATUS_GOOD;
 
    try
    {
-      PrivMgrRoles roles(getMetadataLocation(),pDiags_);
+      PrivMgrRoles roles(trafMetadataLocation_,metadataLocation_,pDiags_);
       
       privStatus = roles.revokeRole(roleIDs,
                                     granteeIDs,

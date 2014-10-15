@@ -71,6 +71,7 @@ Int32 ComUser::getCurrentUser(void)
   assert(dbUserID >= SUPER_USER)
 
   return dbUserID;
+  
 }
 
 // ----------------------------------------------------------------------------
@@ -145,16 +146,25 @@ Int16 ComUser::getEffectiveUserName( NAString &userNameStr,
   if (retcode != FEOK)
   {
     if (retcode == FENOTFOUND)
+    {
+      // there was a code review comment that instead of returning a user not
+      // exists error, we should return an INTERNAL error.  If we have a user ID
+      // then there should always be a corresponding username. This is currently
+      // true but maybe not in the future.  So leaving it as a regular error.
+      std::string param ("ID ");
+      param += std::to_string((long long int)effectiveUserID);
       *CmpCommon::diags() << DgSqlCode(-CAT_USER_NOT_EXIST)
-                          << DgString0((char *)&userName);
+                          << DgString0(param.c_str());
+    }
     else if (retcode == FEBUFTOOSMALL)
       *CmpCommon::diags() << DgSqlCode(-8941);
     else
     {
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
          *CmpCommon::diags() << DgSqlCode (-CAT_INTERNAL_EXCEPTION_ERROR)
+                             << DgString0(__FILE__)
                              << DgInt0(__LINE__)
-                             << DgString0("get effective username");
+                             << DgString1("get effective username");
     }
     return -1;
   }

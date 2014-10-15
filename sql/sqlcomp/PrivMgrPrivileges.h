@@ -23,6 +23,7 @@
 
 #include <string>
 #include <bitset>
+#include <vector>
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
 #include "PrivMgrMD.h"
@@ -41,6 +42,13 @@ class ComSecurityKey;
 // *
 // *****************************************************************************
 
+class UIDAndPrivs
+{
+public:
+   int64_t objectUID;
+   PrivMgrBitmap privsBitmap;
+};
+      
 // *****************************************************************************
 // * Class:         PrivMgrPrivileges
 // * Description:  This class represents the access rights for objects
@@ -80,6 +88,24 @@ public:
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
+   PrivStatus getPrivBitmaps(
+      const std::string & whereClause,
+      const std::string & orderByClause,
+      std::vector<PrivMgrBitmap> & privBitmaps);
+      
+   PrivStatus getPrivTextForObject(std::string &privilegeText);
+
+   PrivStatus getPrivsOnObjectForUser(
+      const int64_t objectUID,
+      const int32_t userID,
+      PrivMgrBitmap &userPrivs,
+      PrivMgrBitmap &grantablePrivs);
+
+   PrivStatus getUIDandPrivs(
+      const int32_t granteeID,
+      ComObjectType objectType,
+      std::vector<UIDAndPrivs> & UIDandPrivs);
+       
    PrivStatus grantObjectPriv(
       const std::string &objectType,
       const int32_t granteeID,
@@ -100,6 +126,10 @@ public:
       const std::string & objectsLocation,
       const std::string & authsLocation);
       
+   PrivStatus populateObjectPriv(
+      const std::string &objectsLocation,
+      const std::string &authsLocation);
+ 
    PrivStatus revokeObjectPriv(
       const std::string &objectType,
       const int32_t granteeID,
@@ -109,44 +139,21 @@ public:
        
    PrivStatus revokeObjectPriv();
 
-   PrivStatus populateObjectPriv(
-      const std::string &objectsLocation,
-      const std::string &authsLocation);
- 
-   PrivStatus getPrivTextForObject(std::string &privilegeText);
-
-   PrivStatus getPrivsOnObjectForUser(
-      const int64_t objectUID,
-      const int32_t userID,
-      PrivMgrBitmap &userPrivs,
-      PrivMgrBitmap &grantablePrivs);
-
-   bool isAuthIDGrantedPrivs(const int32_t authID);
-   
-  PrivStatus sendSecurityKeysToRMS(
+   PrivStatus sendSecurityKeysToRMS(
      const int32_t granteeID, const PrivMgrDesc &listOfRevokedPrivileges);
+
+   void setTrafMetadataLocation (const std::string &trafMetadataLocation)
+    { trafMetadataLocation_ = trafMetadataLocation; }
 
   // -------------------------------------------------------------------
   // helpers
   // -------------------------------------------------------------------
-  bool isSystemUser(int32_t userID) { return (userID == -2); }
-  bool isPublicUser(int32_t userID) { return (userID == -1); }
+  bool isAuthIDGrantedPrivs(const int32_t authID);
+  bool isPublicUser(int32_t userID) { return (userID == PUBLIC_AUTH_ID); }
+  bool isSystemUser(int32_t userID) { return (userID == SYSTEM_AUTH_ID); }
 
 protected:
 
-   PrivStatus getUserPrivs(
-     const int32_t grantee,
-     PrivMgrDesc &privs,
-     const bool withRoles = false
-     );
-     
-   PrivStatus getPrivsFromAllGrantors(
-     const int64_t objectUID,
-     const int32_t grantee,
-     PrivMgrDesc &privs,
-     const bool withRoles = false
-     );
-          
    PrivStatus convertPrivsToDesc( 
      const std::string objectType,
      const bool isAllSpecified,
@@ -155,6 +162,19 @@ protected:
      const std::vector<std::string> privs,
      PrivMgrDesc &privsToGrant);
 
+   PrivStatus getPrivsFromAllGrantors(
+     const int64_t objectUID,
+     const int32_t grantee,
+     PrivMgrDesc &privs,
+     const bool withRoles = false
+     );
+          
+   PrivStatus getUserPrivs(
+     const int32_t grantee,
+     PrivMgrDesc &privs,
+     const bool withRoles = false
+     );
+     
 private: 
 
 // -------------------------------------------------------------------
@@ -165,21 +185,13 @@ private:
     PrivMgrMDRow &rowIn,
     std::vector<PrivMgrMDRow *> &rowList );
 
-  PrivStatus getGrantedPrivs(
-    const int32_t granteeID,
-    PrivMgrMDRow &row);
-
-  void scanObjectBranch( 
-    const PrivType pType, // in
-    const int32_t& grantor,              // in
-    const std::vector<PrivMgrMDRow *>& rowList  );   // in
-
-  void scanPublic( 
-    const PrivType pType, // in
-    const std::vector<PrivMgrMDRow *>& rowList );    // in
-
-  PrivStatus getAffectedObjects(
+  PrivStatus dealWithConstraints (
     const ObjectUsage &objectUsage,
+    std::vector<ObjectUsage *> &listOfAffectedObjects);
+
+  PrivStatus dealWithViews (
+    const ObjectUsage &objectUsage,
+    const PrivCommand command,
     std::vector<ObjectUsage *> &listOfAffectedObjects);
 
   void deleteListOfAffectedObjects(
@@ -189,9 +201,28 @@ private:
        delete listOfAffectedObjects.back(), listOfAffectedObjects.pop_back();
   }
 
+  void deleteRowsForGrantee(std::vector<PrivMgrMDRow *> rowList)
+  {
+    while(!rowList.empty())
+       delete rowList.back(), rowList.pop_back();
+  }
+
+  PrivStatus gatherConstraintPrivileges(
+    ObjectUsage &constraintUsage,
+    const std::vector<ObjectUsage *> listOfAffectedObjects);
+
   PrivStatus gatherViewPrivileges(
     ViewUsage &viewUsage,
     const std::vector<ObjectUsage *> listOfAffectedObjects);
+
+  PrivStatus getAffectedObjects(
+    const ObjectUsage &objectUsage,
+    const PrivCommand command,
+    std::vector<ObjectUsage *> &listOfAffectedObjects);
+
+  PrivStatus getGrantedPrivs(
+    const int32_t granteeID,
+    PrivMgrMDRow &row);
 
   PrivStatus getRowsForGrantee(
     const int64_t objectUID,
@@ -199,11 +230,14 @@ private:
     const bool withroles,
     std::vector<PrivMgrMDRow *> &rowList);
 
-  void deleteRowsForGrantee(std::vector<PrivMgrMDRow *> rowList)
-  {
-    while(!rowList.empty())
-       delete rowList.back(), rowList.pop_back();
-  }
+  void scanObjectBranch( 
+    const PrivType pType, // in
+    const int32_t& grantor,              // in
+    const std::vector<PrivMgrMDRow *>& rowList  );   // in
+
+  void scanPublic( 
+    const PrivType pType, // in
+    const std::vector<PrivMgrMDRow *>& rowList );    // in
 
   PrivStatus summarizeCurrentAndOriginalPrivs(
     const int64_t objectUID,
@@ -222,6 +256,7 @@ std::string    objectName_;
 int32_t        grantorID_;   // is this needed as a member
 
 std::string    fullTableName_;
+std::string    trafMetadataLocation_;
 
 };
 #endif // PRIVMGR_PRIVILEGES_H

@@ -823,13 +823,16 @@ void CmpSeabaseDDLuser::unregisterUser(
     
     // User does not own any roles, but may have been granted roles.
     
-    std::string privMDLoc(systemCatalog);
+      NAString trafMDLocation;
 
-    privMDLoc += ".\"";
-    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-    privMDLoc += "\"";
-   
-    PrivMgrRoles role(privMDLoc,CmpCommon::diags());
+      CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
+        
+      NAString privMgrMDLoc;
+
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
+      
+      PrivMgrRoles role(std::string(trafMDLocation),std::string(privMgrMDLoc),
+                        CmpCommon::diags());
     
     if (role.isAuthorizationEnabled() &&
         role.isUserGrantedAnyRole(getAuthID()))
@@ -864,7 +867,7 @@ void CmpSeabaseDDLuser::unregisterUser(
        return;
     }
                 
-    PrivMgr privMgr(privMDLoc,CmpCommon::diags());
+    PrivMgr privMgr(std::string(privMgrMDLoc),CmpCommon::diags());
     std::vector<PrivClass> privClasses;
     
     privClasses.push_back(PrivClass::ALL);
@@ -1284,13 +1287,16 @@ void CmpSeabaseDDLrole::createRole(
       insertRow();
       
       // Grant this role to the creator of the role if authorization is enabled.
-      std::string privMDLoc(systemCatalog);
+      NAString trafMDLocation;
 
-      privMDLoc += ".\"";
-      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-      privMDLoc += "\"";
+      CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
+        
+      NAString privMgrMDLoc;
+
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
       
-      PrivMgrRoles roles(privMDLoc,CmpCommon::diags());
+      PrivMgrRoles roles(std::string(trafMDLocation),std::string(privMgrMDLoc),
+                         CmpCommon::diags());
       
       if (roles.isAuthorizationEnabled())
       { 
@@ -1385,88 +1391,129 @@ bool CmpSeabaseDDLrole::describe(
    const NAString & roleName, 
    const char * systemCatalog,
    NAString &roleText)
+   
 {
-  try
-  {
-    CmpSeabaseDDLauth::AuthStatus retcode = getRoleDetails(roleName.data());
-    
-    // If the role was not found, set up an error
-    if (retcode == STATUS_NOTFOUND)
-    {
-      *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_NOT_EXIST)
-                          << DgString0(roleName.data());
-      return false;
-    }
 
-    // If an error was detected, throw an exception so the catch handler will 
-    // put a value in ComDiags area in case no message exists
-    if (retcode == STATUS_ERROR)
-    {
-      UserException excp (NULL, 0);
-      throw excp;
-    }
-  
-    // Generate output text
-    roleText = "CREATE ROLE \"";
-    roleText += getAuthDbName();
-    roleText += "\"";
+   try
+   {
+      CmpSeabaseDDLauth::AuthStatus retcode = getRoleDetails(roleName.data());
+      
+      // If the role was not found, set up an error
+      if (retcode == STATUS_NOTFOUND)
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_NOT_EXIST)
+                            << DgString0(roleName.data());
+        return false;
+      }
+
+      // If an error was detected, throw an exception so the catch handler will 
+      // put a value in ComDiags area in case no message exists
+      if (retcode == STATUS_ERROR)
+      {
+        UserException excp (NULL, 0);
+        throw excp;
+      }
     
-    if (getAuthCreator() != ComUser::getRootUserID())
-    {
-       roleText += " WITH ADMIN \"";
-       
-       char creatorName[MAX_DBUSERNAME_LEN + 1];
-       int32_t length = 0;
-       
-       Int16 retCode = ComUser::getAuthNameFromAuthID(getAuthCreator(),creatorName,
-                                                      sizeof(creatorName),length);
-       if (retCode != 0)
-       {
-          SEABASEDDL_INTERNAL_ERROR("Role administrator not registered");
-          UserException excp (NULL, 0);
-          throw excp;
-       }
-       roleText += creatorName; 
-       roleText += "\"";
-    }
+      // Generate output text
+      roleText = "CREATE ROLE \"";
+      roleText += getAuthDbName();
+      roleText += "\"";
     
-    roleText += ";\n";
-    std::string privMDLoc(systemCatalog);
+      // If the role owner is not DB__ROOT, list the user who administers the role.
+      if (getAuthCreator() != ComUser::getRootUserID())
+      {
+         roleText += " WITH ADMIN \"";
+         
+         char creatorName[MAX_DBUSERNAME_LEN + 1];
+         int32_t length = 0;
+         
+         Int16 retCode = ComUser::getAuthNameFromAuthID(getAuthCreator(),creatorName,
+                                                        sizeof(creatorName),length);
+         if (retCode != 0)
+         {
+            SEABASEDDL_INTERNAL_ERROR("Role administrator not registered");
+            UserException excp (NULL, 0);
+            throw excp;
+         }
+         roleText += creatorName; 
+         roleText += "\"";
+      }
     
-    privMDLoc += ".\"";
-    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-    privMDLoc += "\"";
+      roleText += ";\n";
+      
+      // See if authorization is enable.  If so, need to list any grants of this
+      // role.  Otherwise, we are outta here.
+      NAString trafMDLocation;
+
+      CONCAT_CATSCH(trafMDLocation,systemCatalog,SEABASE_MD_SCHEMA);
+        
+      NAString privMgrMDLoc;
+
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog,SEABASE_PRIVMGR_SCHEMA);
+      
+      PrivMgrRoles roles(std::string(trafMDLocation),std::string(privMgrMDLoc),
+                         CmpCommon::diags());
     
-    PrivMgrRoles roles(privMDLoc,CmpCommon::diags());
-    
-    if (roles.isAuthorizationEnabled())
-    {
-       std::vector<std::string> granteeNames;
-       std::vector<int32_t> grantDepths;
-       std::vector<int32_t> grantorIDs;
-       
-       PrivStatus privStatus = PrivStatus::STATUS_GOOD;
-       
-       privStatus = roles.fetchUsersForRole(getAuthID(),granteeNames,
-                                            grantorIDs,grantDepths);
-                                          
-       if (privStatus == PrivStatus::STATUS_GOOD)
-       {
-          for (size_t r = 0; r < granteeNames.size(); r++)
-          {
-             if (grantorIDs[r] == ComUser::getSystemUserID())
-                roleText += "-- ";
-             roleText += "GRANT ROLE \"";
-             roleText += getAuthDbName();
-             roleText += "\" TO \"";
-             roleText += granteeNames[r].c_str();
-             roleText += "\"";
-             if (grantDepths[r] != 0)
-                roleText += " WITH ADMIN OPTION";
-             roleText += ";\n";
-          }
-       }
-    }
+      if (!roles.isAuthorizationEnabled())
+         return true;
+         
+      std::vector<std::string> granteeNames;
+      std::vector<int32_t> grantDepths;
+      std::vector<int32_t> grantorIDs;
+      
+      PrivStatus privStatus = PrivStatus::STATUS_GOOD;
+      
+      privStatus = roles.fetchUsersForRole(getAuthID(),granteeNames,
+                                           grantorIDs,grantDepths);
+      
+      // If no users were granted this role, nothing to do.                                     
+      if (privStatus == PrivStatus::STATUS_NOTFOUND || granteeNames.size() == 0)
+         return true;
+         
+      if (privStatus == PrivStatus::STATUS_ERROR)                                   
+         SEABASEDDL_INTERNAL_ERROR("Could not fetch users granted role.");
+         
+      // Report on each grantee.
+      for (size_t r = 0; r < granteeNames.size(); r++)
+      {
+         // If the grantor is system, we want to show the grant, but exclude 
+         // it from executing in a playback script.
+         if (grantorIDs[r] == ComUser::getSystemUserID())
+            roleText += "-- ";
+         roleText += "GRANT ROLE \"";
+         roleText += getAuthDbName();
+         roleText += "\" TO \"";
+         roleText += granteeNames[r].c_str();
+         roleText += "\"";
+         // Grant depth is either zero or non-zero for now.  If non-zero,
+         // report WITH ADMIN OPTION.
+         if (grantDepths[r] != 0)
+            roleText += " WITH ADMIN OPTION";
+            
+         // If the grantor is not DB__ROOT or _SYSTEM, list the grantor.
+         if (grantorIDs[r] != ComUser::getRootUserID() &&
+             grantorIDs[r] != ComUser::getSystemUserID())
+         {
+            roleText += " GRANTED BY \"";
+            char grantorName[MAX_DBUSERNAME_LEN + 1];
+            int32_t length = 0;
+            
+            Int16 retCode = ComUser::getAuthNameFromAuthID(grantorIDs[r],
+                                                           grantorName,
+                                                           sizeof(grantorName),
+                                                           length);
+            if (retCode != 0)
+            {
+               SEABASEDDL_INTERNAL_ERROR("Role grantor not registered");
+               UserException excp(NULL,0);
+               throw excp;
+            }
+            
+            roleText += grantorName; 
+            roleText += "\"";
+         }
+         roleText += ";\n";
+      }
   }
 
   catch (...)
@@ -1528,13 +1575,16 @@ void CmpSeabaseDDLrole::dropRole(
       if (ComUser::getCurrentUser() != getAuthCreator())
          verifyAuthority();
       
-      std::string privMDLoc(systemCatalog);
+      NAString trafMDLocation;
 
-      privMDLoc += ".\"";
-      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-      privMDLoc += "\"";
-   
-      PrivMgrRoles role(privMDLoc,CmpCommon::diags());
+      CONCAT_CATSCH(trafMDLocation,systemCatalog.c_str(),SEABASE_MD_SCHEMA);
+        
+      NAString privMgrMDLoc;
+
+      CONCAT_CATSCH(privMgrMDLoc,systemCatalog.c_str(),SEABASE_PRIVMGR_SCHEMA);
+      
+      PrivMgrRoles role(std::string(trafMDLocation),std::string(privMgrMDLoc),
+                        CmpCommon::diags());
       
       if (role.isAuthorizationEnabled())
       {
@@ -1551,7 +1601,7 @@ void CmpSeabaseDDLrole::dropRole(
          
          // Now see if the role has been granted any privileges.
          // TODO: could allow priv grants if no dependent objects.
-         PrivMgr privMgr(privMDLoc,CmpCommon::diags());
+         PrivMgr privMgr(std::string(privMgrMDLoc),CmpCommon::diags());
          std::vector<PrivClass> privClasses;
          
          privClasses.push_back(PrivClass::ALL);

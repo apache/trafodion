@@ -1,5 +1,6 @@
 >>sh rm -f LOG135-SECONDARY;
 >>obey TEST135(set_up);
+>>-- ============================================================================
 >>
 >>-- create schema
 >>create schema t135sch;
@@ -40,6 +41,7 @@ ROLE_USAGE
 --- SQL command prepared.
 >>
 >>obey TEST135(tbl_tests);
+>>-- ============================================================================
 >>set schema t135sch;
 
 --- SQL operation complete.
@@ -199,7 +201,713 @@ TRAFODION.T135SCH.T135_T2                                                       
 
 --- 0 row(s) selected.
 >>
+>>obey TEST135(view_tests);
+>>-- ============================================================================
+>>set schema t135sch;
+
+--- SQL operation complete.
+>>create table t135_t1 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>create table t135_t2 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>
+>>-- create a view referencing a single table where view creator has all privs
+>>create view t135_v1_t1 as select * from t135_t1;
+
+--- SQL operation complete.
+>>-- view should be granted all DML privileges
+>>showddl t135_v1_t1;
+
+CREATE VIEW TRAFODION.T135SCH.T135_V1_T1 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C1, TRAFODION.T135SCH.T135_T1.C2 FROM
+    TRAFODION.T135SCH.T135_T1 ;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_V1_T1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>drop view t135_v1_t1;
+
+--- SQL operation complete.
+>>
+>>-- create a non updatable, non insertable view
+>>create view t135_v2_t1 
++>as select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2;
+
+--- SQL operation complete.
+>>-- view should be granted only SELECT and REFERENCES privileges
+>>showddl t135_v2_t1;
+
+CREATE VIEW TRAFODION.T135SCH.T135_V2_T1 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C1, TRAFODION.T135SCH.T135_T2.C2 FROM
+    TRAFODION.T135SCH.T135_T1, TRAFODION.T135SCH.T135_T2 ;
+
+-- GRANT SELECT, REFERENCES ON TRAFODION.T135SCH.T135_V2_T1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>drop view t135_v2_t1;
+
+--- SQL operation complete.
+>>
+>>-- verify that users granted select privilege can create views
+>>-- user cannot create view
+>>sh sqlci -i "TEST135(user1_views)" -u sql_user1;
+>>create view user1_v1 as select * from t135_t1;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T135SCH.T135_T1.
+
+--- SQL operation failed with errors.
+>>showddl user1_v1;
+
+*** ERROR[4082] Object TRAFODION.T135SCH.USER1_V1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>drop view user1_v1;
+
+*** ERROR[1389] Object TRAFODION.T135SCH.USER1_V1 does not exist in Trafodion.
+
+*** ERROR[1389] Object TRAFODION.T135SCH.USER1_V1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user can create view but only have select priv
+>>grant select on t135_t1 to sql_user1;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST135(user1_views)" -u sql_user1;
+>>create view user1_v1 as select * from t135_t1;
+
+--- SQL operation complete.
+>>showddl user1_v1;
+
+CREATE VIEW TRAFODION.T135SCH.USER1_V1 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C1, TRAFODION.T135SCH.T135_T1.C2 FROM
+    TRAFODION.T135SCH.T135_T1 ;
+
+-- GRANT SELECT ON TRAFODION.T135SCH.USER1_V1 TO SQL_USER1;
+
+--- SQL operation complete.
+>>drop view user1_v1;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user can create view and have all_dml privs
+>>grant all_dml on t135_t1 to sql_user1;
+
+--- SQL operation complete.
+>>sh sqlci -i "TEST135(user1_views)" -u sql_user1;
+>>create view user1_v1 as select * from t135_t1;
+
+--- SQL operation complete.
+>>showddl user1_v1;
+
+CREATE VIEW TRAFODION.T135SCH.USER1_V1 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C1, TRAFODION.T135SCH.T135_T1.C2 FROM
+    TRAFODION.T135SCH.T135_T1 ;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.USER1_V1 TO SQL_USER1;
+
+--- SQL operation complete.
+>>drop view user1_v1;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- make sure creator privileges are set when multiple referenced
+>>-- objects are involved.
+>>grant all_dml on t135_t1 to sql_user2;
+
+--- SQL operation complete.
+>>-- should fail user2 does not have select privilege on t135_t2
+>>sh sqlci -i "TEST135(user2_views)" -u sql_user2;
+>>create view user2_v1 as
++>select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T135SCH.T135_T2.
+
+--- SQL operation failed with errors.
+>>showddl user2_v1;
+
+*** ERROR[4082] Object TRAFODION.T135SCH.USER2_V1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>drop view user2_v1;
+
+*** ERROR[1389] Object TRAFODION.T135SCH.USER2_V1 does not exist in Trafodion.
+
+*** ERROR[1389] Object TRAFODION.T135SCH.USER2_V1 does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>grant select on t135_t2 to sql_user2;
+
+--- SQL operation complete.
+>>-- user can create view and have select priv
+>>sh sqlci -i "TEST135(user2_views)" -u sql_user2;
+>>create view user2_v1 as
++>select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2;
+
+--- SQL operation complete.
+>>showddl user2_v1;
+
+CREATE VIEW TRAFODION.T135SCH.USER2_V1 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C1, TRAFODION.T135SCH.T135_T2.C2 FROM
+    TRAFODION.T135SCH.T135_T1, TRAFODION.T135SCH.T135_T2 ;
+
+-- GRANT SELECT ON TRAFODION.T135SCH.USER2_V1 TO SQL_USER2;
+
+--- SQL operation complete.
+>>drop view user2_v1;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>grant all_DML on t135_t2 to sql_user2;
+
+--- SQL operation complete.
+>>showddl t135_t1;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1 TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1
+  TO SQL_USER1;
+GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON
+  TRAFODION.T135SCH.T135_T1 TO SQL_USER2;
+
+--- SQL operation complete.
+>>showddl t135_t2;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T2
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T2 TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T2
+  TO SQL_USER2;
+
+--- SQL operation complete.
+>>-- user can create view but just have select and references, it is
+>>-- a not updatable and insertable view
+>>sh sqlci -i "TEST135(user2_views)" -u sql_user2;
+>>create view user2_v1 as
++>select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2;
+
+--- SQL operation complete.
+>>showddl user2_v1;
+
+CREATE VIEW TRAFODION.T135SCH.USER2_V1 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C1, TRAFODION.T135SCH.T135_T2.C2 FROM
+    TRAFODION.T135SCH.T135_T1, TRAFODION.T135SCH.T135_T2 ;
+
+-- GRANT SELECT, REFERENCES ON TRAFODION.T135SCH.USER2_V1 TO SQL_USER2;
+
+--- SQL operation complete.
+>>drop view user2_v1;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- test creating a view from several views and tables
+>>create view t135_v1_t1 as select c1 from t135_t1;
+
+--- SQL operation complete.
+>>create view t135_v2_t1 as select c2 from t135_t1;
+
+--- SQL operation complete.
+>>create view t135_v1_t2 as select * from t135_t2;
+
+--- SQL operation complete.
+>>
+>>-- have user3 create some objects
+>>sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
+>>create table t135_t3 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>create table t135_t4 (c1 int not null, c2 largeint not null primary key, c3 int);
+
+--- SQL operation complete.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>showddl t135_t4;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T4
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C3                               INT DEFAULT NULL
+  , PRIMARY KEY (C2 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T4 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- user3 create some views
+>>-- fails because user3 has no privs
+>>sh sqlci -i "TEST135(user3_views)" -u sql_user3;
+>>create view t135_v1_user3 as 
++>  select t135sch.t135_t1.c2, t135sch.t135_v1_t1.c1, t135_t4.c3
++>  from t135sch.t135_t1, t135sch.t135_v1_t1, t135_t4;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T135SCH.T135_T1.
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T135SCH.T135_V1_T1.
+
+--- SQL operation failed with errors.
+>>showddl t135_v1_user3;
+
+*** ERROR[4082] Object TRAFODION.T135SCH_USER3.T135_V1_USER3 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>grant select on t135_v1_t1 to sql_user3;
+
+--- SQL operation complete.
+>>grant select on t135_t1 to sql_user3;
+
+--- SQL operation complete.
+>>-- operations should succeed
+>>sh sqlci -i "TEST135(user3_views)" -u sql_user3;
+>>create view t135_v1_user3 as 
++>  select t135sch.t135_t1.c2, t135sch.t135_v1_t1.c1, t135_t4.c3
++>  from t135sch.t135_t1, t135sch.t135_v1_t1, t135_t4;
+
+--- SQL operation complete.
+>>showddl t135_v1_user3;
+
+CREATE VIEW TRAFODION.T135SCH_USER3.T135_V1_USER3 AS
+  SELECT TRAFODION.T135SCH.T135_T1.C2, TRAFODION.T135SCH.T135_V1_T1.C1,
+    TRAFODION.T135SCH_USER3.T135_T4.C3 FROM TRAFODION.T135SCH.T135_T1,
+    TRAFODION.T135SCH.T135_V1_T1, TRAFODION.T135SCH_USER3.T135_T4 ;
+
+-- GRANT SELECT ON TRAFODION.T135SCH_USER3.T135_V1_USER3 TO SQL_USER3;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- Since user3 now has a view, try to revoke privileges
+>>-- fails because of user3's views
+>>revoke select on t135_v1_t1 from sql_user3;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION.T135SCH_USER3.T135_V1_USER3 exists.
+
+--- SQL operation failed with errors.
+>>revoke all on t135_t1 from sql_user3;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION.T135SCH.T135_V1_T1 exists.
+
+--- SQL operation failed with errors.
+>>
+>>sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
+>>drop table t135_t3 cascade;
+
+--- SQL operation complete.
+>>drop table t135_t4 cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>drop table t135_t1 cascade;
+
+--- SQL operation complete.
+>>drop table t135_t2 cascade;
+
+--- SQL operation complete.
+>>
+>>obey TEST135(constraint_tests);
+>>-- ============================================================================
+>>set schema t135sch;
+
+--- SQL operation complete.
+>>create table t135_t1 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>
+>>-- have user3 create some objects
+>>sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
+>>create table t135_t3 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>create table t135_t4 (c1 int not null, c2 largeint not null primary key, c3 int);
+
+--- SQL operation complete.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>showddl t135_t4;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T4
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C3                               INT DEFAULT NULL
+  , PRIMARY KEY (C2 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T4 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- now have user3 create an RI constraint
+>>-- fails because user3 has no privs
+>>sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+>>alter table t135_t3 add constraint t1_t3 foreign key (c1) references t135sch.t135_t1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>grant references on t135_t1 to sql_user3;
+
+--- SQL operation complete.
+>>showddl t135_t1;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1 TO DB__ROOT WITH GRANT OPTION;
+  GRANT REFERENCES ON TRAFODION.T135SCH.T135_T1 TO SQL_USER3;
+
+--- SQL operation complete.
+>>-- operation should succeed
+>>sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+>>alter table t135_t3 add constraint t1_t3 foreign key (c1) references t135sch.t135_t1;
+
+--- SQL operation complete.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T135SCH_USER3.T135_T3 ADD CONSTRAINT
+  TRAFODION.T135SCH_USER3.T1_T3 FOREIGN KEY
+  (
+    C1
+  )
+ REFERENCES TRAFODION.T135SCH.T135_T1
+  (
+    C1
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- now try to revoke references privileges
+>>revoke references on t135_t1 from sql_user3;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T135SCH_USER3"."T1_T3" exists.
+
+--- SQL operation failed with errors.
+>>sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
+>>drop table t135_t3 cascade;
+
+--- SQL operation complete.
+>>drop table t135_t4 cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>revoke references on t135_t1 from sql_user3;
+
+--- SQL operation complete.
+>>showddl t135_t1;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1 TO DB__ROOT WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>-- repeat, but grant all privileges instead.
+>>-- have user3 create some objects
+>>sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
+>>create table t135_t3 (c1 int not null primary key, c2 int);
+
+--- SQL operation complete.
+>>create table t135_t4 (c1 int not null, c2 largeint not null primary key, c3 int);
+
+--- SQL operation complete.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>showddl t135_t4;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T4
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C3                               INT DEFAULT NULL
+  , PRIMARY KEY (C2 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T4 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- now have user3 create an RI constraint
+>>-- fails because user3 has no privs
+>>sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+>>alter table t135_t3 add constraint t1_t3 foreign key (c1) references t135sch.t135_t1;
+
+*** ERROR[1017] You are not authorized to perform this operation.
+
+--- SQL operation failed with errors.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>grant all on t135_t1 to sql_user3;
+
+--- SQL operation complete.
+>>showddl t135_t1;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1 TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1
+  TO SQL_USER3;
+
+--- SQL operation complete.
+>>-- operation should succeed
+>>sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+>>alter table t135_t3 add constraint t1_t3 foreign key (c1) references t135sch.t135_t1;
+
+--- SQL operation complete.
+>>showddl t135_t3;
+
+CREATE TABLE TRAFODION.T135SCH_USER3.T135_T3
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+ALTER TABLE TRAFODION.T135SCH_USER3.T135_T3 ADD CONSTRAINT
+  TRAFODION.T135SCH_USER3.T1_T3 FOREIGN KEY
+  (
+    C1
+  )
+ REFERENCES TRAFODION.T135SCH.T135_T1
+  (
+    C1
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH_USER3.T135_T3 TO SQL_USER3 WITH GRANT OPTION;
+
+--- SQL operation complete.
+>>exit;
+
+End of MXCI Session
+
+>>
+>>-- now try to revoke references privileges
+>>revoke references on t135_t1 from sql_user3;
+
+*** ERROR[1025] Request failed.  Dependent object TRAFODION."T135SCH_USER3"."T1_T3" exists.
+
+--- SQL operation failed with errors.
+>>sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
+>>drop table t135_t3 cascade;
+
+--- SQL operation complete.
+>>drop table t135_t4 cascade;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>revoke references on t135_t1 from sql_user3;
+
+--- SQL operation complete.
+>>showddl t135_t1;
+
+CREATE TABLE TRAFODION.T135SCH.T135_T1
+  (
+    C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , C2                               INT DEFAULT NULL
+  , PRIMARY KEY (C1 ASC)
+  )
+;
+
+-- GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON TRAFODION.T135SCH.T135_T1 TO DB__ROOT WITH GRANT OPTION;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON TRAFODION.T135SCH.T135_T1 TO
+  SQL_USER3;
+
+--- SQL operation complete.
+>>
+>>drop table t135_t1 cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>
+>>
 >>obey TEST135(udr_tests);
+>>-- ============================================================================
 >>set schema t135sch;
 
 --- SQL operation complete.
@@ -301,10 +1009,10 @@ TRAFODION.T135SCH.T135_L1                                                       
 --- 0 row(s) selected.
 >>
 >>obey TEST135(negative_tests);
+>>-- ============================================================================
 >>set schema t135sch;
 
 --- SQL operation complete.
 >>--initialize authorization, drop;
->>
 >>
 >>log;

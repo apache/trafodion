@@ -36,21 +36,37 @@ log LOG135 clear;
 sh rm -f LOG135-SECONDARY;
 obey TEST135(set_up);
 obey TEST135(tbl_tests);
+obey TEST135(view_tests);
+obey TEST135(constraint_tests);
 obey TEST135(udr_tests);
 obey TEST135(negative_tests);
 log;
+obey TEST135(clean_up);
 exit;
 
 ?section clean_up
-set schema t135sch;
+-- ============================================================================
+set schema t135sch; 
 -- drop mapping functions
 drop table_mapping function sessionize;
 -- drop database
 drop schema t135sch cascade;
+drop schema t135sch_user3 cascade;
 -- disables authorization
 initialize authorization, drop;
 
 ?section set_up
+-- ============================================================================
+register user sql_user1;
+register user sql_user2;
+register user sql_user3;
+register user sql_user4;
+register user sql_user5;
+register user sql_user6;
+register user sql_user7;
+register user sql_user8;
+register user sql_user9;
+register user sql_user10;
 
 -- create schema
 create schema t135sch;
@@ -74,6 +90,7 @@ where
 for read uncommitted access;
 
 ?section tbl_tests
+-- ============================================================================
 set schema t135sch;
  
 -- Verify that a create table adds privilege manager metadata
@@ -131,7 +148,127 @@ drop table t135_t2;
 -- return 0 rows
 execute check_privs;
 
+?section view_tests
+-- ============================================================================
+set schema t135sch;
+create table t135_t1 (c1 int not null primary key, c2 int);
+create table t135_t2 (c1 int not null primary key, c2 int);
+
+-- create a view referencing a single table where view creator has all privs
+create view t135_v1_t1 as select * from t135_t1;
+-- view should be granted all DML privileges
+showddl t135_v1_t1;
+drop view t135_v1_t1;
+
+-- create a non updatable, non insertable view
+create view t135_v2_t1 
+as select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2;
+-- view should be granted only SELECT and REFERENCES privileges
+showddl t135_v2_t1;
+drop view t135_v2_t1;
+
+-- verify that users granted select privilege can create views
+-- user cannot create view
+sh sqlci -i "TEST135(user1_views)" -u sql_user1;
+
+-- user can create view but only have select priv
+grant select on t135_t1 to sql_user1;
+sh sqlci -i "TEST135(user1_views)" -u sql_user1;
+
+-- user can create view and have all_dml privs
+grant all_dml on t135_t1 to sql_user1;
+sh sqlci -i "TEST135(user1_views)" -u sql_user1;
+
+-- make sure creator privileges are set when multiple referenced
+-- objects are involved.
+grant all_dml on t135_t1 to sql_user2;
+-- should fail user2 does not have select privilege on t135_t2
+sh sqlci -i "TEST135(user2_views)" -u sql_user2;
+
+grant select on t135_t2 to sql_user2;
+-- user can create view and have select priv
+sh sqlci -i "TEST135(user2_views)" -u sql_user2;
+ 
+grant all_DML on t135_t2 to sql_user2;
+showddl t135_t1;
+showddl t135_t2;
+-- user can create view but just have select and references, it is
+-- a not updatable and insertable view
+sh sqlci -i "TEST135(user2_views)" -u sql_user2;
+
+-- test creating a view from several views and tables
+create view t135_v1_t1 as select c1 from t135_t1;
+create view t135_v2_t1 as select c2 from t135_t1;
+create view t135_v1_t2 as select * from t135_t2;
+
+-- have user3 create some objects
+sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
+
+-- user3 create some views
+-- fails because user3 has no privs
+sh sqlci -i "TEST135(user3_views)" -u sql_user3;
+grant select on t135_v1_t1 to sql_user3;
+grant select on t135_t1 to sql_user3;
+-- operations should succeed
+sh sqlci -i "TEST135(user3_views)" -u sql_user3;
+
+-- Since user3 now has a view, try to revoke privileges
+-- fails because of user3's views
+revoke select on t135_v1_t1 from sql_user3;
+revoke all on t135_t1 from sql_user3;
+
+sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
+
+drop table t135_t1 cascade;
+drop table t135_t2 cascade;
+
+?section constraint_tests
+-- ============================================================================
+set schema t135sch;
+create table t135_t1 (c1 int not null primary key, c2 int);
+
+-- have user3 create some objects
+sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
+
+-- now have user3 create an RI constraint
+-- fails because user3 has no privs
+sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+grant references on t135_t1 to sql_user3;
+showddl t135_t1;
+-- operation should succeed
+sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+
+-- now try to revoke references privileges
+revoke references on t135_t1 from sql_user3;
+sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
+revoke references on t135_t1 from sql_user3;
+showddl t135_t1;
+
+-- repeat, but grant all privileges instead.
+-- have user3 create some objects
+sh sqlci -i "TEST135(user3_objects)" -u sql_user3;
+
+-- now have user3 create an RI constraint
+-- fails because user3 has no privs
+sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+grant all on t135_t1 to sql_user3;
+showddl t135_t1;
+-- operation should succeed
+sh sqlci -i "TEST135(user3_constraint)" -u sql_user3;
+
+-- now try to revoke references privileges
+revoke references on t135_t1 from sql_user3;
+sh sqlci -i "TEST135(user3_drops)" -u sql_user3;
+revoke references on t135_t1 from sql_user3;
+showddl t135_t1;
+
+drop table t135_t1 cascade;
+
+
+
+
 ?section udr_tests
+-- ============================================================================
 set schema t135sch;
 
 -- Verify metadata for libraries 
@@ -172,7 +309,55 @@ drop library t135_l1;
 execute check_privs;
 
 ?section negative_tests
+-- ============================================================================
 set schema t135sch;
 --initialize authorization, drop;
 
+?section user1_views
+-- ============================================================================
+set schema t135sch;
+log LOG135;
+create view user1_v1 as select * from t135_t1;
+showddl user1_v1;
+drop view user1_v1;
 
+?section user2_views
+-- ============================================================================
+set schema t135sch;
+log LOG135;
+create view user2_v1 as
+select t135_t1.c1, t135_t2.c2 from t135_t1, t135_t2;
+showddl user2_v1;
+drop view user2_v1;
+
+?section user3_objects
+-- ============================================================================
+set schema t135sch_user3;
+log LOG135;
+create table t135_t3 (c1 int not null primary key, c2 int);
+create table t135_t4 (c1 int not null, c2 largeint not null primary key, c3 int);
+showddl t135_t3;
+showddl t135_t4;
+
+?section user3_views
+-- ============================================================================
+set schema t135sch_user3;
+log LOG135;
+create view t135_v1_user3 as 
+  select t135sch.t135_t1.c2, t135sch.t135_v1_t1.c1, t135_t4.c3
+  from t135sch.t135_t1, t135sch.t135_v1_t1, t135_t4;
+showddl t135_v1_user3;
+
+?section user3_drops
+-- ============================================================================
+set schema t135sch_user3;
+log LOG135;
+drop table t135_t3 cascade;
+drop table t135_t4 cascade;
+
+?section user3_constraint
+-- ============================================================================
+set schema t135sch_user3;
+log LOG135;
+alter table t135_t3 add constraint t1_t3 foreign key (c1) references t135sch.t135_t1;
+showddl t135_t3;

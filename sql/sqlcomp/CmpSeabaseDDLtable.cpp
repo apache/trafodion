@@ -369,6 +369,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
+  Int32 ownerID = ComUser::getCurrentUser();
   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
@@ -377,7 +378,7 @@ short CmpSeabaseDDL::updatePKeyInfo(
               createTime, 
               createTime,
               " ",
-              SUPER_USER);
+              ownerID);
   cliRC = cliInterface->executeImmediate(buf);
   
   if (cliRC < 0)
@@ -664,6 +665,7 @@ short CmpSeabaseDDL::updateConstraintMD(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objectNamePart), FALSE);
 
+  Int32 ownerID = ComUser::getCurrentUser();
   str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedObjName.data(),
@@ -673,7 +675,7 @@ short CmpSeabaseDDL::updateConstraintMD(
               createTime, 
               createTime,
               " ",
-              SUPER_USER);
+              ownerID);
   cliRC = cliInterface->executeImmediate(buf);
   
   if (cliRC < 0)
@@ -3571,6 +3573,54 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       return;
     }
 
+  // User must have REFERENCES privilege on the referenced table 
+  PrivMgrUserPrivs* pPrivInfo = refdNaTable->getPrivInfo();
+  PrivMgrUserPrivs privs;
+  if (pPrivInfo == NULL)
+    {
+      // Changes are being added to always set up the privilege details at
+      // naTable construction time.  When these changes are available, the
+      // following error will be activated.
+      //*CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+      //     deallocEHI(ehi);
+      //     processReturn();
+      //    return;
+          
+      // For now, just go get privileges 
+      NAString privMDLoc;
+      CONCAT_CATSCH(privMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_MD_SCHEMA);
+      NAString privMgrMDLoc;
+      int64_t objectUID = (int64_t)refdNaTable->objectUid().get_value();
+
+      CONCAT_CATSCH(privMgrMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_PRIVMGR_SCHEMA);
+      PrivMgrCommands privInterface(std::string(privMDLoc.data()),
+                                    std::string(privMgrMDLoc.data()),
+                                    CmpCommon::diags());
+
+      Int32 userID = ComUser::getCurrentUser();
+      PrivStatus retcode = privInterface.getPrivileges(objectUID, userID, privs);
+      if (retcode == STATUS_ERROR)
+      {
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+          *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+          deallocEHI(ehi);
+          processReturn();
+          return;
+      }
+      pPrivInfo = &privs;
+    }
+
+  if (!pPrivInfo->hasReferencePriv())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+      deallocEHI(ehi);
+
+      processReturn();
+
+      return;
+    }
+
   ElemDDLColNameArray &ringCols = alterAddConstraint->getConstraint()->castToElemDDLConstraintRI()->getReferencingColumns();
 
   NAList<NAString> ringKeyColList(HEAP, ringCols.entries());
@@ -4864,16 +4914,18 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     }
 
   // Prepare to call privilege manager
-  const char* sysCat = ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG);
-  std::string metadataLocation(sysCat);
-  metadataLocation += ".\"";
-  metadataLocation += SEABASE_PRIVMGR_SCHEMA;
-  metadataLocation += "\"";
-  PrivMgrCommands command(metadataLocation, CmpCommon::diags());
+  NAString MDLoc;
+  CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
+  
+  PrivMgrCommands command(std::string(MDLoc.data()), 
+                          std::string(privMgrMDLoc.data()), 
+                          CmpCommon::diags());
 
   // If the object is a metadata table or a privilege manager table, don't 
   // allow the privilege to be grantable.
-  bool isPrivMgrTable = command.isPrivMgrTable(std::string(objectNamePart.data()));
+  bool isPrivMgrTable = command.isPrivMgrTable(std::string(extTableName.data()));
   NABoolean isMDTable = (isSeabaseMD(tableName) || isPrivMgrTable) ? TRUE : FALSE;
 
   if (isMDTable && isWGOSpecified)

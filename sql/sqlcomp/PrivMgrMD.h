@@ -26,6 +26,7 @@
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrDefs.h"
 #include "PrivMgrDesc.h"
+#include "ComSmallDefs.h"
 
 // following includes needed for cli and diags interface
 class Queue;
@@ -130,10 +131,10 @@ enum class SQLOperation {
 enum {SQL_OPERATIONS_COMPONENT_UID = 1};
 #define SQL_OPERATION_NAME "SQL_OPERATIONS"
 #define PRIVMGR_INTERNAL_ERROR(text)                                      \
-   *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)			  \
-            << DgString0(__FILE__)   					  \
-            << DgInt0(__LINE__)						  \
-            << DgString0(text) 						  
+   *pDiags_ << DgSqlCode(-CAT_INTERNAL_EXCEPTION_ERROR)                   \
+            << DgString0(__FILE__)                                        \
+            << DgInt0(__LINE__)                                           \
+            << DgString1(text)                                            
 
 // *****************************************************************************
 // * Class:         PrivMgr
@@ -159,12 +160,18 @@ class PrivMgr
     static bool isSQLAlterOperation(SQLOperation operation);
     static bool isSQLCreateOperation(SQLOperation operation);
     static bool isSQLDropOperation(SQLOperation operation);
+    static const char * ObjectEnumToLit(ComObjectType objectType);
+    static ComObjectType ObjectLitToEnum(const char *objectLiteral);    
     
     // -------------------------------------------------------------------
     // Constructors and destructors:
     // -------------------------------------------------------------------
     PrivMgr();
     PrivMgr( 
+       const std::string &metadataLocation,
+       ComDiagsArea * pDiags = NULL);
+    PrivMgr( 
+       const std::string &trafMetadataLocation,
        const std::string &metadataLocation,
        ComDiagsArea * pDiags = NULL);
     PrivMgr(const PrivMgrMDAdmin &rhs);
@@ -176,6 +183,8 @@ class PrivMgr
     // -------------------------------------------------------------------
     inline std::string getMetadataLocation (void) {return metadataLocation_;}
     inline const std::string & getMetadataLocation (void) const {return metadataLocation_;}
+    inline std::string getTrafMetadataLocation (void) {return trafMetadataLocation_;}
+    inline const std::string & getTrafMetadataLocation (void) const {return trafMetadataLocation_;}
     bool isAuthorizationEnabled(void); 
     bool isAuthIDGrantedPrivs(
        int32_t authID,
@@ -183,13 +192,16 @@ class PrivMgr
 
   protected:
     PrivMDStatus authorizationEnabled();
+    
     // -------------------------------------------------------------------
     // Data members:
     // -------------------------------------------------------------------
+    std::string  trafMetadataLocation_;
     std::string  metadataLocation_;
     ComDiagsArea * pDiags_;
     
-}; // class PrivMgr  
+}; // class PrivMgr      
+  
 
 // ****************************************************************************
 // class: PrivMgrMDAdmin
@@ -205,6 +217,10 @@ class PrivMgrMDAdmin : public PrivMgr
     // Constructors and destructors:
     // -------------------------------------------------------------------
     PrivMgrMDAdmin ();
+    PrivMgrMDAdmin(
+       const std::string & trafMetadataLocation,
+       const std::string & metadataLocation,
+       ComDiagsArea * pDiags = NULL);
     PrivMgrMDAdmin(
        const std::string & metadataLocation,
        ComDiagsArea * pDiags = NULL);
@@ -225,9 +241,18 @@ class PrivMgrMDAdmin : public PrivMgr
     inline void setMetadataLocation (const std::string metadataLocation)
       {metadataLocation_ = metadataLocation;};
 
+    bool getConstraintName(
+      const int64_t referencedTableUID,
+      const int64_t referencingTableUID, 
+      std::string &referencingTable);
+
     PrivStatus getObjectsThatViewReferences (
       const ViewUsage &viewUsage,
       std::vector<ObjectReference *> &objectReference );
+
+    PrivStatus getReferencingTablesForConstraints(
+      const ObjectUsage &objectUsage,
+      std::vector<ObjectReference *> &objectReferences );
 
     PrivStatus getViewsThatReferenceObject(
       const ObjectUsage &objectUsage, 

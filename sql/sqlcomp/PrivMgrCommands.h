@@ -69,6 +69,7 @@ class PrivMgrUserPrivs
   bool hasAlterPriv() const     {return objectBitmap_.test(ALTER_PRIV);}
   bool hasDropPriv() const      {return objectBitmap_.test(DROP_PRIV);}
   bool hasAllPriv() const       {return objectBitmap_.all();}
+  bool hasAnyPriv() const       {return objectBitmap_.any();}
 
   bool hasAllDMLPriv() const
   {
@@ -125,10 +126,26 @@ class PrivMgrCommands : public PrivMgr
 {
 public:
 
+// -------------------------------------------------------------------
+// Static functions:
+// -------------------------------------------------------------------
+   static bool isSecurableObject (const std::string objectType)
+   {
+     return (objectType == BASE_TABLE_OBJECT_LIT ||
+             objectType == LIBRARY_OBJECT_LIT ||
+             objectType == USER_DEFINED_ROUTINE_OBJECT_LIT ||
+             objectType == VIEW_OBJECT_LIT ||
+             objectType == SEQUENCE_GENERATOR_OBJECT_LIT);
+   }
+
 // ---------------------------------------------------------------------
 // Constructors/Destructor
 // ---------------------------------------------------------------------
    PrivMgrCommands ();
+   PrivMgrCommands ( 
+      const std::string trafMetadataLocation,
+      const std::string &metadataLocation,
+      ComDiagsArea *pDiags );
    PrivMgrCommands ( const std::string &metadataLocation 
                    , ComDiagsArea *pDiags );
    PrivMgrCommands ( const PrivMgrCommands &rhs ); 
@@ -213,7 +230,6 @@ public:
       const std::string &authsLocation);
 
    bool isPrivMgrTable(const std::string &objectName);
-
    PrivStatus registerComponent(
       const std::string &componentName,
       const bool isSystem,
@@ -259,17 +275,20 @@ public:
     // -------------------------------------------------------------------
     // Accessors:
     // -------------------------------------------------------------------
-    inline const std::string getMetadataLocation (void) {return metadataLocation_;}
     inline ComDiagsArea *    getDiags (void) {return pDiags_;}
+    inline const std::string getMetadataLocation (void) {return metadataLocation_;}
+    inline const std::string getTrafMetadataLocation (void) { return trafMetadataLocation_;}
 
   protected:
 
     // -------------------------------------------------------------------
     // Mutators:
     // -------------------------------------------------------------------
+    inline void setDiags (ComDiagsArea *pDiags) {pDiags_ = pDiags;}
     inline void setMetadataLocation (std::string &metadataLocation)
        { metadataLocation_ = metadataLocation; }
-    inline void setDiags (ComDiagsArea *pDiags) {pDiags_ = pDiags;}
+    inline void setTrafMetadataLocation (std::string &trafMetadataLocation)
+       { trafMetadataLocation_ = trafMetadataLocation; }
 
 
   private:

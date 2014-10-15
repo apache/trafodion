@@ -503,7 +503,7 @@ std::vector<std::string> operationCodes;
                                                      
    privStatus = componentPrivileges.grantPrivilegeInternal(componentUID,
                                                            operationCodes,
-                                                           SYSTEM_UID,
+                                                           SYSTEM_AUTH_ID,
                                                            ComUser::getSystemUserName(),
                                                            granteeID,
                                                            granteeName,grantDepth);

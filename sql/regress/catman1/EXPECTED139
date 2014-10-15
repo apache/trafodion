@@ -469,7 +469,7 @@ TYPE  GRANTOR                                   GRANTEE                         
 
 BT    DB__ROOT                                  SQL_USER1                                                   47                     0
 BT    _SYSTEM                                   DB__ROOT                                                    47                    47
-VI    _SYSTEM                                   DB__ROOT                                                    47                    47
+VI    _SYSTEM                                   DB__ROOT                                                    33                    33
 
 --- 3 row(s) selected.
 >>-- this query does not always return the correct rows 

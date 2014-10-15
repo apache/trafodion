@@ -334,7 +334,7 @@ CP.COMPONENT_UID = componentUIDString;
         grant_depth = *(reinterpret_cast<int32_t*>(ptr));
         
         //generate grant statement
-        if (grantor_id == SYSTEM_UID)
+        if (grantor_id == SYSTEM_AUTH_ID)
            componentText += "-- ";
         componentText += " GRANT COMPONENT PRIVILEGE ";
         componentText += operationName;
@@ -922,7 +922,7 @@ MyRow row(fullTableName_);
    row.operationCode_ = operationCode;
    row.granteeID_ = granteeID;
    row.granteeName_ = granteeName;
-   row.grantorID_ = SYSTEM_UID;
+   row.grantorID_ = SYSTEM_AUTH_ID;
    row.grantorName_ = "_SYSTEM";
    row.grantDepth_ = -1;
    
@@ -1113,7 +1113,7 @@ std::string whereClause(" WHERE COMPONENT_UID = 1 AND (OPERATION_CODE = '");
       std::vector<int32_t> roleIDs;
       std::vector<int32_t> grantDepths;
       
-      PrivMgrRoles roles(metadataLocation_,pDiags_);
+      PrivMgrRoles roles(" ",metadataLocation_,pDiags_);
       
       PrivStatus privStatus = roles.fetchRolesForUser(authID,roleNames,
                                                       roleIDs,grantDepths);
@@ -1683,7 +1683,7 @@ PrivStatus MyTable::fetchOwner(
 
 // Check the last row read before reading metadata.
 
-   if (lastRowRead_.grantorID_ == SYSTEM_UID &&
+   if (lastRowRead_.grantorID_ == SYSTEM_AUTH_ID &&
        lastRowRead_.componentUID_ == componentUID &&
        lastRowRead_.operationCode_ == operationCode)
    {

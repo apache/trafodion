@@ -37,6 +37,7 @@
 #include <string>
 #include <algorithm>
 #include "ComSmallDefs.h"
+#include "ComDistribution.h"
 // sqlcli.h included because ExExeUtilCli.h needs it (and does not include it!)
 #include "sqlcli.h"
 #include "ExExeUtilCli.h"
@@ -46,6 +47,31 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ComUser.h"
 
+// Specified in expected order of likelyhood. See sql/common/ComSmallDefs 
+// for actual values.
+static const literalAndEnumStruct objectTypeConversionTable [] =
+{
+  {COM_BASE_TABLE_OBJECT, COM_BASE_TABLE_OBJECT_LIT},
+  {COM_INDEX_OBJECT, COM_INDEX_OBJECT_LIT},
+  {COM_VIEW_OBJECT, COM_VIEW_OBJECT_LIT},
+  {COM_STORED_PROCEDURE_OBJECT, COM_STORED_PROCEDURE_OBJECT_LIT},
+  {COM_USER_DEFINED_ROUTINE_OBJECT, COM_USER_DEFINED_ROUTINE_OBJECT_LIT},
+  {COM_UNIQUE_CONSTRAINT_OBJECT, COM_UNIQUE_CONSTRAINT_OBJECT_LIT},
+  {COM_NOT_NULL_CONSTRAINT_OBJECT, COM_NOT_NULL_CONSTRAINT_OBJECT_LIT},
+  {COM_CHECK_CONSTRAINT_OBJECT, COM_CHECK_CONSTRAINT_OBJECT_LIT},
+  {COM_PRIMARY_KEY_CONSTRAINT_OBJECT, COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT},
+  {COM_REFERENTIAL_CONSTRAINT_OBJECT, COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT},
+  {COM_TRIGGER_OBJECT, COM_TRIGGER_OBJECT_LIT},
+  {COM_LOCK_OBJECT, COM_LOCK_OBJECT_LIT},
+  {COM_LOB_TABLE_OBJECT, COM_LOB_TABLE_OBJECT_LIT},
+  {COM_TRIGGER_TABLE_OBJECT, COM_TRIGGER_TABLE_OBJECT_LIT},
+  {COM_SYNONYM_OBJECT, COM_SYNONYM_OBJECT_LIT},
+  {COM_SCHEMA_LABEL_OBJECT, COM_SCHEMA_LABEL_OBJECT_LIT},
+  {COM_LIBRARY_OBJECT, COM_LIBRARY_OBJECT_LIT},
+  {COM_EXCEPTION_TABLE_OBJECT, COM_EXCEPTION_TABLE_OBJECT_LIT},
+  {COM_SEQUENCE_GENERATOR_OBJECT, COM_SEQUENCE_GENERATOR_OBJECT_LIT},
+  {COM_UNKNOWN_OBJECT, COM_UNKNOWN_OBJECT_LIT}
+};
 
 // *****************************************************************************
 //    PrivMgr methods
@@ -54,7 +80,8 @@
 // Default Constructor
 // -----------------------------------------------------------------------
 PrivMgr::PrivMgr() 
-: metadataLocation_ ("TRAFODION.\"_MD_\""),
+: trafMetadataLocation_ ("TRAFODION.\"_MD_\""),
+  metadataLocation_ ("TRAFODION.PRIVMGR_MD"),
   pDiags_(CmpCommon::diags())
 {}
 
@@ -76,6 +103,21 @@ PrivMgr::PrivMgr(
 
 }
 
+PrivMgr::PrivMgr( 
+   const std::string & trafMetadataLocation,
+   const std::string & metadataLocation,
+   ComDiagsArea * pDiags)
+: trafMetadataLocation_ (trafMetadataLocation),
+  metadataLocation_ (metadataLocation),
+  pDiags_(pDiags)
+  
+{
+
+  if (pDiags == NULL)
+     pDiags = CmpCommon::diags();
+
+}
+
 // -----------------------------------------------------------------------
 // Copy constructor
 // -----------------------------------------------------------------------
@@ -83,6 +125,7 @@ PrivMgr::PrivMgr(const PrivMgrMDAdmin &other)
 
 {
 
+  trafMetadataLocation_ = other.trafMetadataLocation_;
   metadataLocation_ = other.metadataLocation_;
   pDiags_ = other.pDiags_;
   
@@ -625,6 +668,74 @@ bool PrivMgr::isSQLDropOperation(SQLOperation operation)
 }
 //******************** End of PrivMgr::isSQLDropOperation **********************
 
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgr::ObjectEnumToLit                                        *
+// *                                                                           *
+// *    Returns the two character literal associated with the object type enum.*
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectType>                    ComObjectType                   In       *
+// *    is the object type enum.                                               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: const char                                                       *
+// *                                                                           *
+// *****************************************************************************
+const char * PrivMgr::ObjectEnumToLit(ComObjectType objectType)
+
+{
+
+   for (size_t i = 0; i < occurs(objectTypeConversionTable); i++)
+      if (objectType == objectTypeConversionTable[i].enum_)
+         return objectTypeConversionTable[i].literal_;
+
+   return COM_UNKNOWN_OBJECT_LIT;  
+    
+}
+//********************* End of PrivMgr::ObjectEnumToLit ************************
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgr::ObjectLitToEnum                                        *
+// *                                                                           *
+// *    Returns the enum associated with the object type literal.              *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <objectType>                    ComObjectType                   In       *
+// *    is the object type enum.                                               *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: ComObjectType                                                    *
+// *                                                                           *
+// *****************************************************************************
+ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
+
+{
+
+   for (size_t i = 0; i < occurs(objectTypeConversionTable); i++)
+   {
+      const literalAndEnumStruct & elem = objectTypeConversionTable[i];
+      if (!strncmp(elem.literal_,objectLiteral,2))
+         return static_cast<ComObjectType>(elem.enum_);
+   }
+   
+   return COM_UNKNOWN_OBJECT;
+   
+}
+//********************* End of PrivMgr::ObjectLitToEnum ************************
+
+
 // ----------------------------------------------------------------------------
 // method: isAuthorizationEnabled
 //
@@ -649,6 +760,16 @@ PrivMgrMDAdmin::PrivMgrMDAdmin ()
 : PrivMgr()
 {
 };
+
+// --------------------------------------------------------------------------
+// Construct a PrivMgrMDAdmin object for with a different metadata locations
+// --------------------------------------------------------------------------
+PrivMgrMDAdmin::PrivMgrMDAdmin ( 
+   const std::string & trafMetadataLocation,
+   const std::string & metadataLocation,
+   ComDiagsArea * pDiags)
+: PrivMgr(trafMetadataLocation, metadataLocation,pDiags)
+{ };
 
 // -----------------------------------------------------------------------
 // Construct a PrivMgrMDAdmin object for with a different metadata location
@@ -766,8 +887,8 @@ std::vector<std::string> ACDOperationCodes;
                                                            ACDOperationCodes,
                                                            ComUser::getRootUserID(),
                                                            ComUser::getRootUserName(),
-                                                           PUBLIC_UID,
-                                                           PUBLIC_NAME,0);
+                                                           PUBLIC_AUTH_ID,
+                                                           PUBLIC_AUTH_NAME,0);
                                       
    if (privStatus != STATUS_GOOD)
       return privStatus;
@@ -984,12 +1105,9 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
   const ObjectUsage &objectUsage,
   std::vector<ViewUsage> &viewUsages )
 {
-  std::string metadataLocation = getMetadataLocation();
-  size_t period = metadataLocation.find(".");
-  std::string catName = metadataLocation.substr(0, period);
-  std::string objectMDTable = catName + "." + "\"_MD_\"" + ".OBJECTS o";
-  std::string viewUsageMDTable = catName + "." + "\"_MD_\"" + ".VIEWS_USAGE u";
-  std::string viewsMDTable = catName + "." + "\"_MD_\"" + ".VIEWS v";
+  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
+  std::string viewUsageMDTable = trafMetadataLocation_ + ".VIEWS_USAGE u";
+  std::string viewsMDTable = trafMetadataLocation_ + ".VIEWS v";
 
   // Select all the views that are referenced by the table or view owned by the objectOwner
   std::string selectStmt = "select o.object_uid, o.object_owner, o.catalog_name, o.schema_name, o.object_name, v.is_insertable, v.is_updatable from ";
@@ -1024,7 +1142,7 @@ PrivStatus PrivMgrMDAdmin::getViewsThatReferenceObject (
 
   char * ptr = NULL;
   Int32 len = 0;
-  char value[500];
+  char value[MAX_SQL_IDENTIFIER_NAME_LEN + 1];
 
   // For each row returned, add it to the viewUsages structure.
   objectsQueue->position();
@@ -1089,11 +1207,8 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
    const ViewUsage &viewUsage,
    std::vector<ObjectReference *> &objectReferences )
 {
-  std::string metadataLocation = getMetadataLocation();
-  size_t period = metadataLocation.find(".");
-  std::string catName = metadataLocation.substr(0, period);
-  std::string objectMDTable = catName + "." + "\"_MD_\"" + ".OBJECTS o";
-  std::string viewUsageMDTable = catName + "." + "\"_MD_\"" + ".VIEWS_USAGE u";
+  std::string objectMDTable = trafMetadataLocation_ + ".OBJECTS o";
+  std::string viewUsageMDTable = trafMetadataLocation_ + ".VIEWS_USAGE u";
 
   // Select all the objects that are referenced by the view
   std::string selectStmt = "select o.object_uid, o.object_owner from ";
@@ -1123,7 +1238,7 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
 
   char * ptr = NULL;
   Int32 len = 0;
-  char value[500];
+  char value[MAX_SQL_IDENTIFIER_NAME_LEN + 1];
 
   // For each row returned, add it to the viewUsages structure.
   objectsQueue->position();
@@ -1146,6 +1261,220 @@ PrivStatus PrivMgrMDAdmin::getObjectsThatViewReferences (
   return STATUS_GOOD;
 }
 
+// ****************************************************************************
+//
+// method:  getReferencingTablesForConstraints
+//
+// This method returns the list of underlying tables that are associated with
+// RI constraints referencing an ObjectUsage.
+//
+// An RI constraint is a relationship between a set of columns on one table 
+// with a set of columns on another table.  Each set of columns must be
+// defined as an unique constraint (which include primary key constraints.  
+// Relationships are stored through the constraints not their underlying tables.
+//
+//  for example:
+//    user1:
+//      create table dept (dept_no int not null primary key, ... );
+//      grant references on dept to user2;
+//    
+//    user2:
+//      create table empl (empl_no int not null primary key, dept_no int, ... );
+//      alter table empl add constraint empl_dept foreign key references dept;
+//
+//  empl_dept is the name of the RI constraint
+//     The empl table references dept 
+//     The dept table is being referenced by empl
+//
+//  The following query is called to get the list of tables:  
+//    <Gets underlying table for the foreign key's constraint>
+//    select distinct o.object_uid, o.object_owner, o.create_time
+//    from table_constraints t, objects o
+//      where o.object_uid = t.table_uid;
+//      and t.constraint_uid in
+//
+//        <Gets foreign key's constraints referencing table>
+//        (select foreign_constraint_uid
+//        from table_constraints t, unique_ref_constr_usage u
+//           where t.table_uid = objectUsage.objectUID
+//           and t.constraint_uid = u.unique_constraint_uid)
+//        order by o.create_time
+//    
+// input:  ObjectUsage - object desiring list of referencing tables
+//         In the example above, this would be the DEPT table
+//
+// output: std::vector<ObjectReference *> - list of table references describing
+//         the underlying table of one or more referencing constraints
+//         In the example above, EMPL would be returned
+//
+// **************************************************************************** 
+PrivStatus PrivMgrMDAdmin::getReferencingTablesForConstraints (
+   const ObjectUsage &objectUsage,
+   std::vector<ObjectReference *> &objectReferences )
+{
+  std::string objectsMDTable = 
+    trafMetadataLocation_ + ".OBJECTS o";
+  std::string tblConstraintsMDTable = 
+    trafMetadataLocation_ + ".TABLE_CONSTRAINTS t";
+  std::string uniqueRefConstraintsMDTable = 
+    trafMetadataLocation_ + ".UNIQUE_REF_CONSTR_USAGE u";
+
+  // Select all the constraints that are referenced by the table
+  // create_time is included to order by the oldest to newest
+  std::string selectStmt = "select distinct o.object_uid, o.object_owner, o.create_time from ";
+  selectStmt += tblConstraintsMDTable + std::string(", ") + objectsMDTable;
+  selectStmt += " where o.object_uid = t.table_uid and t.constraint_uid in ";
+  selectStmt += "(select foreign_constraint_uid from ";
+  selectStmt += tblConstraintsMDTable + std::string(", ") + uniqueRefConstraintsMDTable;
+  selectStmt += " where t.table_uid = " + UIDToString(objectUsage.objectUID);
+  selectStmt += " and t.constraint_uid = u.unique_constraint_uid)";
+  selectStmt += " order by o.create_time ";
+
+  ExeCliInterface cliInterface(STMTHEAP);
+  Queue * objectsQueue = NULL;
+
+  int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    return STATUS_ERROR;
+  }
+
+  if (cliRC == 100) // did not find the row
+  {
+    cliInterface.clearGlobalDiags();
+    return STATUS_NOTFOUND;
+  }
+
+  char * ptr = NULL;
+  Int32 len = 0;
+  objectsQueue->position();
+
+  // Set up an objectReference for any objects found, the caller manages
+  // space for this list
+  for (int idx = 0; idx < objectsQueue->numEntries(); idx++)
+  {
+    OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
+    ObjectReference *pObjectReference = new ObjectReference;
+
+    // column 1:  object uid
+    pCliRow->get(0,ptr,len);
+    pObjectReference->objectUID = *(reinterpret_cast<int64_t*>(ptr));
+
+    // column 2: object owner
+    pCliRow->get(1,ptr,len);
+    pObjectReference->objectOwner = *(reinterpret_cast<int32_t*>(ptr));
+
+    objectReferences.push_back(pObjectReference);
+  }
+  return STATUS_GOOD;
+}
+
+// ****************************************************************************
+// method:  getConstraintName
+//
+// This method returns the the name of the first referenced constraint involved 
+// with a foreign key constraint between two tables (the referenced table and 
+// the referencing table)
+//
+// This method is only called to obtain the constraint name to include in an
+// error message.
+//
+//  assuming the example from getReferencingTablesForConstraints
+//    user1:
+//      create table dept (dept_no int not null primary key, ... );
+//      grant references on dept to user2;
+//    
+//    user2:
+//      create table empl (empl_no int not null primary key, dept_no int, ... );
+//      alter table empl add constraint empl_dept foreign key references dept;
+//
+// This method returns the constraint named empl_dept
+//
+// The following query is called to get the constraint name:
+//
+// select [first 1] object_name as referenced_constraint_name 
+//   from objects o, table_constraints t
+//   where o.object_uid = t.constraint_uid 
+//     and t.table_uid = <referencing table UID>
+//     and t.constraint_uid in 
+//        (select ref_constraint_uid from ref_constraints
+//         where unique_constraint_uid in 
+//            (select constraint_uid from table_constraints
+//             where t.table_uid = <referenced table uid>)) 
+//
+// input:   referencedTableUID - the referenced table
+//          in the example above, the is the DEPT table UID
+//
+//          referencingTableUID - the referencing table
+//          in the example above, this is the EMPL table UID
+//
+// returns:  true, found constraint name
+//           false, unable to get constraint name
+//
+//           This method does not clear out the ComDiags area in case of
+//           a failure.
+//
+// ****************************************************************************
+bool PrivMgrMDAdmin::getConstraintName(
+  const int64_t referencedTableUID,
+  const int64_t referencingTableUID,
+  std::string &constraintName)
+{
+  std::string objectsMDTable = trafMetadataLocation_ + ".OBJECTS o";
+  std::string tblConstraintsMDTable = 
+    trafMetadataLocation_ + ".TABLE_CONSTRAINTS t";
+  std::string refConstraintsMDTable = 
+    trafMetadataLocation_ + ".REF_CONSTRAINTS u";
+
+  // select object_name based on passed in object UID
+  std::string quote("\"");
+  std::string selectStmt = "select [first 1] ";
+  selectStmt += "trim(o.catalog_name) || '.\"' || ";
+  selectStmt += "trim (o.schema_name) || '\".\"' ||";
+  selectStmt += "trim (o.object_name)|| '\"' from ";
+  selectStmt += objectsMDTable + ", " + tblConstraintsMDTable;
+  selectStmt += " where o.object_uid = t.constraint_uid";
+  selectStmt += " and t.table_uid = " + UIDToString(referencingTableUID);
+  selectStmt += " and t.constraint_uid in (select ref_constraint_uid from ";
+  selectStmt += refConstraintsMDTable;
+  selectStmt += " where unique_constraint_uid in ";
+  selectStmt += " (select constraint_uid from " + tblConstraintsMDTable;
+  selectStmt += " where t.table_uid = " + UIDToString(referencedTableUID);
+  selectStmt += "))";
+
+  ExeCliInterface cliInterface(STMTHEAP);
+  Queue * objectsQueue = NULL;
+
+  int32_t cliRC =  cliInterface.fetchAllRows(objectsQueue, (char *)selectStmt.c_str(), 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(pDiags_);
+    return false;
+  }
+
+  // did not find a row, or found too many rows
+  if (cliRC == 100)
+  {
+    cliInterface.clearGlobalDiags();
+    return false;
+  }
+
+  // Return the constraint name.  
+  char * ptr = NULL;
+  Int32 len = 0;
+  char value[MAX_SQL_IDENTIFIER_NAME_LEN + 1];
+  objectsQueue->position();
+  OutputInfo * pCliRow = (OutputInfo*)objectsQueue->getNext();
+
+  // column 0: object name
+  pCliRow->get(0,ptr,len);
+  strncpy(value, ptr, len);
+  value[len] = 0;
+  constraintName += std::string(value);
+  
+  return true;
+}
 
 
 // ****************************************************************************
@@ -1180,7 +1509,7 @@ CmpSeabaseDDLrole role;
    
    if (shouldPopulateRoleGrants)
    {
-      PrivMgrRoles role(metadataLocation_,pDiags_);
+      PrivMgrRoles role(" ",metadataLocation_,pDiags_);
                         
       privStatus = role.populateCreatorGrants(authsLocation);
       if (privStatus != STATUS_GOOD)

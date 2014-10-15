@@ -3151,6 +3151,50 @@ short CmpDescribeSequence(
   outputShortLine(space, buf);
 
   outputShortLine(space, ";");
+  // If authorization enabled, display grant statements
+  NAString privMDLoc;
+  CONCAT_CATSCH(privMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_MD_SCHEMA);
+  NAString privMgrMDLoc;
+  CONCAT_CATSCH(privMgrMDLoc, CmpSeabaseDDL::getSystemCatalogStatic(), SEABASE_PRIVMGR_SCHEMA);
+  PrivMgrCommands privInterface(std::string(privMDLoc.data()), 
+                                std::string(privMgrMDLoc.data()),
+                                CmpCommon::diags());
+
+  if (privInterface.isAuthorizationEnabled())
+  {
+    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
+    PrivMgrUserPrivs* pPrivInfo = naTable->getPrivInfo();
+    PrivMgrUserPrivs privs;
+
+    if (pPrivInfo == NULL)
+    {
+      Int32 userID = ComUser::getCurrentUser();
+      PrivStatus retcode = privInterface.getPrivileges(objectUID, userID, privs);
+      if (retcode == STATUS_ERROR)
+      {
+        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+          *CmpCommon::diags() << DgSqlCode (-1001)
+                              << DgInt0(__LINE__)
+                              << DgString0("showddl sequence get privileges failed");
+      }
+      pPrivInfo = &privs;
+    }
+
+    if (!privs.hasAnyPriv())
+    {
+      *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+      return FALSE;
+    }
+
+    // now get the grant stmts
+    std::string objectName(seqName);
+    std::string privilegeText;
+    if (privInterface.describePrivileges(objectUID, objectName, privilegeText))
+    {
+      outputShortLine(space, " ");
+      outputLine(space, privilegeText.c_str(), 0);
+    }
+  }
 
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];

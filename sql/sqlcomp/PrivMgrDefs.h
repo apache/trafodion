@@ -63,6 +63,12 @@ enum class PrivDropBehavior {
    RESTRICT = 3
 };                
 
+enum class PrivCommand {
+   GRANT_OBJECT = 2,
+   REVOKE_OBJECT_RESTRICT = 3,
+   REVOKE_OBJECT_CASCADE = 4
+};
+  
 // NOTE: These values need to match the corresponding values in 
 // common/ComSmallDefs.h, ComIdClass.
 enum class PrivAuthClass {
