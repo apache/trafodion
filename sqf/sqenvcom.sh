@@ -693,7 +693,7 @@ SQ_CLASSPATH=$SQ_CLASSPATH:${HBASE_TRXDIR}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}:$MY_
 # Note: this will produce unwanted classpath entries if you do the
 # following: a) source in this file, b) prepend to the classpath and
 # c) source this file in again
-USER_CLASSPATH=${CLASSPATH#${SQ_CLASSPATH}}
+USER_CLASSPATH=${CLASSPATH##${SQ_CLASSPATH}}
 USER_CLASSPATH=${USER_CLASSPATH#:}
 
 # Check whether the environment changed from a previous execution of this

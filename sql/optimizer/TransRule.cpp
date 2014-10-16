@@ -2531,12 +2531,13 @@ NABoolean RoutineJoinToTSJRule::canBePruned(RelExpr * expr) const
 NABoolean JoinToTSJRule::topMatch (RelExpr * expr,
                                    Context * context)
 {
+  if (NOT Rule::topMatch(expr, context))
+    return FALSE;
+
   Join *joinExpr = (Join *) expr;
 
   if (joinExpr->isRoutineJoin()) 
     return FALSE; // don't want to to this for a routine join 
-  if (NOT Rule::topMatch(expr, context))
-    return FALSE;
 
 /*
    The block was added when JoinToTSJRule was a pass 2 rule by default
