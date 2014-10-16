@@ -1388,7 +1388,7 @@ $1~String1 --------------------------------
 4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY Indexes are not supported yet with $0~String0. Disable the indexes and try again.
 4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD $0~String0 
 4486 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraints are not supported with $0~String0. Disable the constraints and try again. 
-4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY --Not used. 
+4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path  $0~String0  
 4488 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option $0~String0 cannot be specified more than once. 
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
@@ -1779,6 +1779,7 @@ drop the default context
 8962 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD is unable to allocate buffers for data.
 8963 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD encountered a backup TSE switch.
 8964 ZZZZZ 99999 BEGINNER MAJOR DBADMIN LOAD is not currently supported with non empty tables.
+8965 ZZZZZ 99999 BEGINNER MAJOR DBADMIN File $0~String0 already exists.
 9200 ZZZZZ 99999 ADVANCED MAJOR DIALOUT UPDATE STATISTICS for table $0~CatalogName.$1~SchemaName.$2~TableName encountered an error$3~string2 from statement $4~string0.
 9201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unable to DROP object $0~string0.
 9202 ZZZZZ 99999 BEGINNER INFRM DBADMIN UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are $0~string0.

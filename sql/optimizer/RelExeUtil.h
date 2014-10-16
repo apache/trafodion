@@ -40,6 +40,7 @@
 #include "BinderUtils.h"
 #include "StmtNode.h"
 #include "charinfo.h"
+#include "RelFastTransport.h"
 //#include "LateBindInfo.h"
 
 
@@ -2881,39 +2882,32 @@ class ExeUtilHBaseBulkUnLoad : public ExeUtilExpr
 {
 public:
 
-
-  enum HBaseBulkUnLoadOptionType {
-    EMPTY_TARGET_,
-    LOG_ERRORS_,
-    STOP_AFTER_N_ERRORS_,
-    NO_OUTPUT_,
-    COMPRESS_,
-    ONE_FILE_
-  };
   enum CompressionType
   {
     NONE_ = 0,
     GZIP_ = 1
   };
 
-    class HBaseBulkUnLoadOption
+    ExeUtilHBaseBulkUnLoad(const CorrName &hBaseTableName,
+                     ExprNode * exprNode,
+                     char * stmtText,
+                     CharInfo::CharSet stmtTextCharSet,
+                     CollHeap *oHeap = CmpCommon::statementHeap())
+     : ExeUtilExpr(HBASE_UNLOAD_, hBaseTableName, exprNode, NULL,
+                   stmtText, stmtTextCharSet, oHeap),
+      emptyTarget_(FALSE),
+      logErrors_(FALSE),
+      noOutput_(FALSE),
+      oneFile_(FALSE),
+      compressType_(NONE_),
+      extractLocation_( oHeap),
+      overwriteMergeFile_(FALSE)
     {
-      friend class ExeUtilHBaseBulkUnLoad;
-    public:
-      HBaseBulkUnLoadOption(HBaseBulkUnLoadOptionType option, Lng32 numericVal, char * stringVal )
-      : option_(option), numericVal_(numericVal), stringVal_(stringVal)
-    {
-    }
-
-        private:
-          HBaseBulkUnLoadOptionType option_;
-          Lng32   numericVal_;
-          char * stringVal_;
     };
-
   ExeUtilHBaseBulkUnLoad(const CorrName &hBaseTableName,
                    ExprNode * exprNode,
                    char * stmtText,
+                   NAString * extractLocation,
                    CharInfo::CharSet stmtTextCharSet,
                    CollHeap *oHeap = CmpCommon::statementHeap())
    : ExeUtilExpr(HBASE_UNLOAD_, hBaseTableName, exprNode, NULL,
@@ -2921,9 +2915,10 @@ public:
     emptyTarget_(FALSE),
     logErrors_(FALSE),
     noOutput_(FALSE),
-    //compress_(FALSE),
     oneFile_(FALSE),
-    compressType_(NONE_)
+    compressType_(NONE_),
+    extractLocation_(*extractLocation, oHeap),
+    overwriteMergeFile_(FALSE)
   {
   };
 
@@ -2931,10 +2926,11 @@ public:
 
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
                                 CollHeap* outHeap = 0);
-
   virtual short codeGen(Generator*);
 
-   NABoolean getLogErrors() const
+  ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb * tdb, Generator *generator);
+
+  NABoolean getLogErrors() const
   {
     return logErrors_;
   }
@@ -2969,13 +2965,22 @@ public:
   void setOneFile(NABoolean onefile) {
     oneFile_ = onefile;
   }
-
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
   virtual NABoolean producesOutput() { return (noOutput_ ? FALSE : TRUE); }
 
-  short setOptions(NAList<ExeUtilHBaseBulkUnLoad::HBaseBulkUnLoadOption*> *
-      hBaseBulkLoadOptionList,
-      ComDiagsArea * da);
+  short setOptions(NAList<UnloadOption*> * unlodOptionList,  ComDiagsArea * da);
+  void buildWithClause(NAString & withClauseStr, char * str);
+
+  NABoolean getOverwriteMergeFile() const
+  {
+    return overwriteMergeFile_;
+  }
+
+  void setOverwriteMergeFile(NABoolean overwriteMergeFile)
+  {
+    overwriteMergeFile_ = overwriteMergeFile;
+  }
+
 private:
   NABoolean emptyTarget_;
   NABoolean logErrors_;
@@ -2984,75 +2989,8 @@ private:
   NABoolean oneFile_;
   NAString mergePath_;
   CompressionType compressType_;
-
-};
-
-//hbase bulk load task
-class ExeUtilHBaseBulkUnLoadTask : public ExeUtilExpr
-{
-public:
-
-  enum TaskType
-  {
-    NOT_SET_   = 0 ,
-    OVERWRITE_TARGET_ = 1,
-    MERGE_FILES_  = 2
-  };
-
-
-
-  ExeUtilHBaseBulkUnLoadTask(const CorrName &tgtTableName,
-                   ExprNode * exprNode,
-                   char * stmtText,
-                   CharInfo::CharSet stmtTextCharSet,
-                   TaskType ttype,
-                   CollHeap *oHeap = CmpCommon::statementHeap())
-   : ExeUtilExpr(HBASE_UNLOAD_TASK_, tgtTableName, exprNode, NULL,
-                 stmtText, stmtTextCharSet, oHeap),
-    taskType_(ttype),
-    destinationPath_(oHeap),
-    hdfsPort_(0)
-  {
-
-  };
-
-  ExeUtilHBaseBulkUnLoadTask(const CorrName &tgtTableName,
-                   ExprNode * exprNode,
-                   char * stmtText,
-                   CharInfo::CharSet stmtTextCharSet,
-                   TaskType ttype,
-                   NAString * destPath,
-                   CollHeap *oHeap = CmpCommon::statementHeap())
-   : ExeUtilExpr(HBASE_UNLOAD_TASK_, tgtTableName, exprNode, NULL,
-                 stmtText, stmtTextCharSet, oHeap),
-    taskType_(ttype),
-    destinationPath_(*destPath, oHeap),
-    hdfsPort_(0)
-  {
-
-  };
-
-  virtual const NAString getText() const;
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-                                CollHeap* outHeap = 0);
-
-  virtual RelExpr * bindNode(BindWA *bindWA);
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-
-  virtual NABoolean isExeUtilQueryType() { return TRUE; }
-
-private:
-
-  TaskType taskType_;
-  NAString hiveTablePath_;
-  NAString hostName_;
-  NAString tableDir_;
-  NAString destinationPath_;
-  Int32 hdfsPort_;
-
+  NAString extractLocation_;
+  NABoolean overwriteMergeFile_;
 };
 
 

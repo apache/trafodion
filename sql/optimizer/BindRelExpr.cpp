@@ -2226,26 +2226,6 @@ void RelExpr::synthPropForBindChecks()   // QSTUFF
 
 RelExpr *RelExpr::bindSelf(BindWA *bindWA)
 {
-
-
-  // FastExtract (UNLOAD) is supported only for simple SELECT statements
-  // Since bindSelf is called from all bindNode methods, we use this
-  // single block to raise the unsupported error whenever we see an
-  // unexpected RelExpr during FastExtract.
-  // Since bindSelf is called during the bottom up part of bindNode 
-  // methods we can detect RelExprs that are ancestors of FastExtract
-  // in the query tree also.
-  if (bindWA->isFastExtract() &&
-      (NOT((getOperatorType() == REL_SCAN)||
-         (getOperatorType() == REL_RENAME_TABLE) ||
-         (getOperatorType() == REL_FAST_EXTRACT) ||
-         (getOperatorType() == REL_ROOT))))
-  {
-    *CmpCommon::diags() << DgSqlCode(-4377);
-    bindWA->setErrStatus();
-    return this;
-  }
-  //
   // create the group attributes
   //
   if (NOT getGroupAttr())
@@ -16463,15 +16443,15 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
 
   if (getDelimiter().length() == 0)
   {
-    delimiter_ = "|";
+    delimiter_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_DELIMITER);
   }
   if (getNullString().length() == 0)
   {
-    nullString_ = "NULL";
+    nullString_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_NULL_STRING);
   }
   if (getRecordSeparator().length() == 0)
   {
-    recordSeparator_ = "\n";
+    recordSeparator_ = ActiveSchemaDB()->getDefaults().getValue(TRAF_UNLOAD_DEF_RECORD_SEPARATOR);
   }
 
 

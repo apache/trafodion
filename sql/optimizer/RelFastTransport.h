@@ -39,6 +39,33 @@
 class FastExtract ;
 class PhysicalFastExtract;
 
+  class UnloadOption
+  {
+    friend class FastExtract;
+    friend class ExeUtilHBaseBulkUnLoad;
+  public:
+    enum UnloadOptionType {
+      DELIMITER_,
+      NULL_STRING_,
+      RECORD_SEP_,
+      APPEND_,
+      HEADER_,
+      COMPRESSION_,
+      EMPTY_TARGET_,
+      LOG_ERRORS_,
+      STOP_AFTER_N_ERRORS_,
+      NO_OUTPUT_,
+      COMPRESS_,
+      ONE_FILE_
+    };
+    UnloadOption(UnloadOptionType option, Lng32 numericVal, char * stringVal, char * stringVal2 = NULL )
+    : option_(option), numericVal_(numericVal), stringVal_(stringVal)
+    {};
+  private:
+    UnloadOptionType option_;
+    Lng32   numericVal_;
+    char * stringVal_;
+  };
 
 // -----------------------------------------------------------------------
 /*!
@@ -53,36 +80,22 @@ class FastExtract: public RelExpr
 {
 public :
 
-	enum ExtractDest {INVALID = 0, FILE=1, SOCKET=2};
-	enum CompressionType {NONE=0, LZO=1};
-	enum UnloadOptionType {DELIMITER_, NULL_STRING_, RECORD_SEP_, APPEND_, HEADER_, COMPRESSION_};
+  enum ExtractDest {INVALID = 0, FILE=1, SOCKET=2};
+  enum CompressionType {NONE=0, LZO=1};
 
-	class UnloadOption
-	{
-	  friend class FastExtract;
-	public:
-	  UnloadOption(UnloadOptionType option, Lng32 numericVal, char * stringVal )
-	  : option_(option), numericVal_(numericVal), stringVal_(stringVal)
-	      {};
-
-	    private:
-	      UnloadOptionType option_;
-	      Lng32   numericVal_;
-	      char * stringVal_;
-	};
   // constructors
 
   //! FastExtract Constructor
   FastExtract(RelExpr* child,
-              NAString* targName,
-              NAString* delim ,
-              NAString* nullString ,
-              NAString* recordSep ,
-              ExtractDest targType = FILE,
-              NABoolean isAppend = FALSE,
-              NABoolean needsHeader = TRUE,
-              CompressionType cType= NONE,
-              CollHeap *oHeap = CmpCommon::statementHeap())
+      NAString* targName,
+      NAString* delim ,
+      NAString* nullString ,
+      NAString* recordSep ,
+      ExtractDest targType = FILE,
+      NABoolean isAppend = FALSE,
+      NABoolean needsHeader = TRUE,
+      CompressionType cType= NONE,
+      CollHeap *oHeap = CmpCommon::statementHeap())
   : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
     targetType_(targType),
     targetName_(*targName, oHeap),
@@ -101,71 +114,71 @@ public :
   { };
 
   FastExtract(RelExpr* child,
-  		  	  NAString* targName,
-  		  	  ExtractDest targType,
-               CollHeap *oHeap = CmpCommon::statementHeap())
-    : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
-      targetType_(targType),
-      targetName_(*targName, oHeap),
-      hdfsHostName_(oHeap),
-      hdfsPort_(0),
-      isHiveInsert_(FALSE),
-      delimiter_(oHeap),
-      isAppend_(FALSE),
-      includeHeader_(TRUE),
-      header_(oHeap),
-      cType_(NONE),
-      nullString_(oHeap),
-      recordSeparator_(oHeap),
-      overwriteHiveTable_(FALSE),
-      isSequenceFile_(FALSE)
-    { };
+      NAString* targName,
+      ExtractDest targType,
+      CollHeap *oHeap = CmpCommon::statementHeap())
+  : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
+    targetType_(targType),
+    targetName_(*targName, oHeap),
+    hdfsHostName_(oHeap),
+    hdfsPort_(0),
+    isHiveInsert_(FALSE),
+    delimiter_(oHeap),
+    isAppend_(FALSE),
+    includeHeader_(FALSE),
+    header_(oHeap),
+    cType_(NONE),
+    nullString_(oHeap),
+    recordSeparator_(oHeap),
+    overwriteHiveTable_(FALSE),
+    isSequenceFile_(FALSE)
+  { };
 
 
   FastExtract(RelExpr* child,
-              CollHeap *oHeap = CmpCommon::statementHeap())
-    : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
-      targetType_(INVALID),
-      targetName_(oHeap),
-      hdfsHostName_(oHeap),
-      hdfsPort_(0),
-      isHiveInsert_(FALSE),
-      delimiter_(oHeap),
-      isAppend_(FALSE),
-      includeHeader_(TRUE),
-      header_(oHeap),
-      cType_(NONE),
-      nullString_(oHeap),
-      recordSeparator_(oHeap),
-      overwriteHiveTable_(FALSE),
-      isSequenceFile_(FALSE)
-    { };
+      CollHeap *oHeap = CmpCommon::statementHeap())
+  : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
+    targetType_(INVALID),
+    targetName_(oHeap),
+    hdfsHostName_(oHeap),
+    hdfsPort_(0),
+    isHiveInsert_(FALSE),
+    delimiter_(oHeap),
+    isAppend_(FALSE),
+    includeHeader_(FALSE),
+    header_(oHeap),
+    cType_(NONE),
+    nullString_(oHeap),
+    recordSeparator_(oHeap),
+    overwriteHiveTable_(FALSE),
+    isSequenceFile_(FALSE)
+  { };
 
   FastExtract(RelExpr* child,
-              NAString* targName,
-              NAString* hostName,
-              Int32 portNum,
-              NABoolean isHiveInsert,
-              NAString* hiveTableName,
-              ExtractDest targType,
-               CollHeap *oHeap = CmpCommon::statementHeap())
-    : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
-      targetType_(targType),
-      targetName_(*targName, oHeap),
-      hdfsHostName_(*hostName, oHeap),
-      hdfsPort_(portNum),
-      isHiveInsert_(isHiveInsert),
-      hiveTableName_(*hiveTableName, oHeap),
-      delimiter_(oHeap),
-      isAppend_(FALSE),
-      includeHeader_(TRUE),
-      header_(oHeap),
-      cType_(NONE),
-      nullString_(oHeap),
-      recordSeparator_(oHeap),
-      overwriteHiveTable_(FALSE),
-      isSequenceFile_(FALSE)
-    { };
+      NAString* targName,
+      NAString* hostName,
+      Int32 portNum,
+      NABoolean isHiveInsert,
+      NAString* hiveTableName,
+      ExtractDest targType,
+      CollHeap *oHeap = CmpCommon::statementHeap())
+  : RelExpr(REL_FAST_EXTRACT, child, NULL, oHeap),
+    targetType_(targType),
+    targetName_(*targName, oHeap),
+    hdfsHostName_(*hostName, oHeap),
+    hdfsPort_(portNum),
+    isHiveInsert_(isHiveInsert),
+    hiveTableName_(*hiveTableName, oHeap),
+    delimiter_(oHeap),
+    isAppend_(FALSE),
+    includeHeader_(FALSE),
+    header_(oHeap),
+    cType_(NONE),
+    nullString_(oHeap),
+    recordSeparator_(oHeap),
+    overwriteHiveTable_(FALSE),
+    isSequenceFile_(FALSE)
+  { };
   //! FastExtract Copy Constructor
   FastExtract(const FastExtract &other);
 
@@ -243,7 +256,7 @@ public :
 
   virtual Int32 getArity() const {return 1 ;}
 
-  short setOptions(NAList<FastExtract::UnloadOption*> * feol, ComDiagsArea * da);
+  short setOptions(NAList<UnloadOption*> * feol, ComDiagsArea * da);
   const ValueIdList & getSelectList() const	      {return selectList_; }
   ValueIdList & getSelectListIds() {return selectList_; }
   void setSelectList(const ValueIdList & val)    {selectList_ = val; }
@@ -308,7 +321,6 @@ private:
   NAString hiveTableName_;
   NABoolean overwriteHiveTable_;
   NABoolean isSequenceFile_;
-  
 
 }; // class FastExtract
 
@@ -361,6 +373,7 @@ public:
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb) ;
 
   virtual short codeGen(Generator *);
+  NABoolean isSpecialChar(char * str , char & chr);
 
   
   virtual ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb * tdb, Generator *generator);

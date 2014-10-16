@@ -4223,7 +4223,15 @@ ex_tcb * ExExeUtilHBaseBulkUnLoadTdb::build(ex_globals * glob)
 
   return (exe_util_tcb);
 }
-
+void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 sfwRetCode)
+{
+  ComDiagsArea * diagsArea = NULL;
+  char* errorMsg = sequenceFileWriter_->getErrorText((SFW_RetCode)sfwRetCode);
+  ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
+                  NULL, NULL, NULL, errorMsg, NULL);
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  pentry_down->setDiagsArea(diagsArea);
+}
 ////////////////////////////////////////////////////////////////
 // Constructor for class ExExeUtilHbaseLoadTcb
 ///////////////////////////////////////////////////////////////
@@ -4235,6 +4243,7 @@ ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
        nextStep_(INITIAL_),
        rowsAffected_(0)
 {
+  sequenceFileWriter_ = NULL;
   qparent_.down->allocatePstate(this);
 
 }
@@ -4247,6 +4256,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
   Lng32 cliRC = 0;
   short retcode = 0;
   short rc;
+  SFW_RetCode sfwRetCode = SFW_OK;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -4277,7 +4287,48 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           *da << DgSqlCode(-8111);
           step_ = UNLOAD_ERROR_;
         }
-
+        if (!sequenceFileWriter_)
+        {
+          sequenceFileWriter_ = new(getSpace())
+                       SequenceFileWriter((NAHeap *)getSpace());
+          sfwRetCode = sequenceFileWriter_->init();
+          if (sfwRetCode != SFW_OK)
+            {
+             createHdfsFileError(sfwRetCode);
+             step_ = UNLOAD_END_ERROR_;
+            break;
+            }
+        }
+        if (!hblTdb().getOverwriteMergeFile() &&  hblTdb().getMergePath() != NULL)
+        {
+          NABoolean exists = FALSE;
+          sfwRetCode = sequenceFileWriter_->hdfsExists( hblTdb().getMergePath(), exists);
+          if (sfwRetCode != SFW_OK)
+          {
+            createHdfsFileError(sfwRetCode);
+            step_ = UNLOAD_END_ERROR_;
+            break;
+          }
+          if (exists)
+          {
+            //EXE_UNLOAD_FILE_EXISTS
+            ComDiagsArea * da = getDiagsArea();
+            *da << DgSqlCode(- EXE_UNLOAD_FILE_EXISTS)
+                  << DgString0(hblTdb().getMergePath());
+            step_ = UNLOAD_END_ERROR_;
+           break;
+          }
+        }
+        if (holdAndSetCQD("COMP_BOOL_226", "ON") < 0)
+        {
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
+        if (holdAndSetCQD("TRAF_UNLOAD_BYPASS_LIBHDFS", "ON") < 0)
+        {
+          step_ = UNLOAD_END_ERROR_;
+          break;
+        }
         if (hblTdb().getSkipWriteToFiles())
         {
           hblTdb().setEmptyTarget(FALSE);
@@ -4295,16 +4346,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           step_ = UNLOAD_END_ERROR_;
           break;
         }
-
-//        if (hblTdb().getCompressType() != 0)
-//          // setting io buffer size to smaller number to avoid out of
-//          // memory errors
-//         if (holdAndSetCQD("HDFS_IO_BUFFERSIZE", "1024") < 0)
-//         {
-//           step_ = UNLOAD_END_ERROR_;
-//           break;
-//         }
-
         step_ = UNLOAD_;
         if (hblTdb().getEmptyTarget())
           step_ = EMPTY_TARGET_;
@@ -4316,24 +4357,15 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
          if (setStartStatusMsgAndMoveToUpQueue(" EMPTY TARGET ", &rc, 0, TRUE))
            return rc;
 
-         char * mfQuery =
-           new(getMyHeap()) char[strlen("UNLOAD TABLE  CLEANUP ; ") +
-                                strlen(hblTdb().getTableName()) +
-                                100];
-         strcpy(mfQuery, "UNLOAD TABLE CLEANUP ");
-         strcat(mfQuery, hblTdb().getTableName());
-         strcat(mfQuery, " ;");
+         std::string uldPath = std::string( hblTdb().getExtractLocation());
 
-         cliRC = cliInterface()->executeImmediate(mfQuery, NULL,NULL,TRUE,NULL,TRUE);
-
-         NADELETEBASIC(mfQuery, getMyHeap());
-         mfQuery = NULL;
-
-         if (cliRC < 0) {
-           cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-           step_ = UNLOAD_END_ERROR_;
+         sfwRetCode = sequenceFileWriter_->hdfsCleanUnloadPath( uldPath);
+         if (sfwRetCode != SFW_OK)
+           {
+            createHdfsFileError(sfwRetCode);
+            step_ = UNLOAD_END_ERROR_;
            break;
-         }
+           }
          step_ = UNLOAD_;
 
          setEndStatusMsg(" EMPTY TARGET ", 0, TRUE);
@@ -4347,13 +4379,11 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           return rc;
 
         rowsAffected_ = 0;
-        char * uldQuery =hblTdb().uldQuery_;
-        cliRC = cliInterface()->executeImmediate(uldQuery,
+        cliRC = cliInterface()->executeImmediate(hblTdb().uldQuery_,
                                                  NULL,
                                                  NULL,
                                                  TRUE,
                                                  &rowsAffected_);
-        uldQuery = NULL;
         if (cliRC < 0)
         {
           rowsAffected_ = 0;
@@ -4381,27 +4411,15 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         if (setStartStatusMsgAndMoveToUpQueue(" MERGE FILES ", &rc, 0, TRUE))
           return rc;
 
-        char * mfQuery =
-          new(getMyHeap()) char[strlen("UNLOAD TABLE MERGE <tabname> into <dest>  ; ") +
-                               strlen(hblTdb().getTableName()) +
-                               strlen(hblTdb().getMergePath()) +
-                               100];
-        strcpy(mfQuery, "UNLOAD TABLE  MERGE ");
-        strcat(mfQuery, hblTdb().getTableName());
-        strcat(mfQuery, " INTO '");
-        strcat(mfQuery, hblTdb().getMergePath());
-        strcat(mfQuery, "' ;");
-
-        cliRC = cliInterface()->executeImmediate(mfQuery, NULL,NULL,TRUE,NULL,TRUE);
-
-        NADELETEBASIC(mfQuery, getMyHeap());
-        mfQuery = NULL;
-
-        if (cliRC < 0) {
-          cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
-          step_ = UNLOAD_END_ERROR_;
+        std::string srcPath = std::string( hblTdb().getExtractLocation());
+        std::string dstPath = std::string( hblTdb().getMergePath());
+        sfwRetCode = sequenceFileWriter_->hdfsMergeFiles( srcPath, dstPath);
+        if (sfwRetCode != SFW_OK)
+          {
+           createHdfsFileError(sfwRetCode);
+           step_ = UNLOAD_END_;
           break;
-        }
+          }
         step_ = UNLOAD_END_;
 
         setEndStatusMsg(" MERGE FILES ", 0, TRUE);
@@ -4416,6 +4434,16 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
 //          step_ = UNLOAD_ERROR_;
 //          break;
 //        }
+        if (restoreCQD("COMP_BOOL_226") < 0)
+        {
+          step_ = UNLOAD_ERROR_;
+          break;
+        }
+        if (restoreCQD("TRAF_UNLOAD_BYPASS_LIBHDFS") < 0)
+        {
+          step_ = UNLOAD_ERROR_;
+          break;
+        }
        if ( restoreCQD("TRAF_UNLOAD_HDFS_COMPRESS") < 0)
        {
          step_ = UNLOAD_ERROR_;
@@ -4539,7 +4567,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char 
   if (withtime)
     startTime_ = NA_JulianTimestamp();
 
-  getStatusString(operation, "Started",hblTdb().getTableName(), &statusMsgBuf_[bufPos]);
+  getStatusString(operation, "Started",NULL, &statusMsgBuf_[bufPos]);
   return moveRowToUpQueue(statusMsgBuf_,0,rc);
 }
 
@@ -4565,7 +4593,7 @@ void ExExeUtilHBaseBulkUnLoadTcb::setEndStatusMsg(const char * operation,
     getTimeAsString(elapsedTime, timeBuf);
   }
 
-  getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], withtime ? timeBuf : NULL);
+  getStatusString(operation, "Ended", NULL,&statusMsgBuf_[bufPos], withtime ? timeBuf : NULL);
 
 }
 

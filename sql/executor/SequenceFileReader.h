@@ -150,6 +150,10 @@ typedef enum {
  ,SFW_ERROR_HDFS_MERGE_FILES_EXCEPTION
  ,SFW_ERROR_HDFS_CLEANUP_PARAM
  ,SFW_ERROR_HDFS_CLEANUP_EXCEPTION
+ ,SFW_ERROR_HDFS_EXISTS_PARAM
+ ,SFW_ERROR_HDFS_EXISTS_EXCEPTION
+ ,SFW_ERROR_HDFS_EXISTS_FILE_EXISTS
+
  ,SFW_LAST
 } SFW_RetCode;
 
@@ -192,12 +196,13 @@ public:
   // Close the file.
   SFW_RetCode    close();
 
-  SFW_RetCode    hdfsCreate(const char* path);
-   SFW_RetCode    hdfsWrite(const char* data, Int64 size);
-   SFW_RetCode    hdfsMergeFiles(const std::string& srcPath,
+  SFW_RetCode    hdfsCreate(const char* path, NABoolean compress);
+  SFW_RetCode    hdfsWrite(const char* data, Int64 size);
+  SFW_RetCode    hdfsMergeFiles(const std::string& srcPath,
                                  const std::string& dstPath);
-   SFW_RetCode    hdfsCleanUnloadPath(const std::string& uldPath, NABoolean checkExistence,const std::string& mergePath );
-   SFW_RetCode    hdfsClose();
+  SFW_RetCode    hdfsCleanUnloadPath(const std::string& uldPath );
+  SFW_RetCode    hdfsExists(const std::string& uldPath,  NABoolean & exists );
+  SFW_RetCode    hdfsClose();
 
   virtual char*  getErrorText(SFW_RetCode errEnum);
 
@@ -216,6 +221,7 @@ private:
     JM_HDFS_CLOSE,
     JM_HDFS_MERGE_FILES,
     JM_HDFS_CLEAN_UNLOAD_PATH,
+    JM_HDFS_EXISTS,
     JM_LAST
   };
   

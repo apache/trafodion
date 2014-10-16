@@ -190,7 +190,7 @@ void FastExtract::synthEstLogProp(const EstLogPropSharedPtr& inputLP)
 
 };
 
-short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
+short FastExtract::setOptions(NAList<UnloadOption*> *
                               fastExtractOptionList,
                               ComDiagsArea * da)
 {
@@ -199,10 +199,10 @@ short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
 
   for (CollIndex i = 0; i < fastExtractOptionList->entries(); i++)
   {
-    UnloadOption * feo = (*fastExtractOptionList)[i];
+    UnloadOption::UnloadOption * feo = (*fastExtractOptionList)[i];
     switch (feo->option_)
     {
-      case DELIMITER_:
+      case UnloadOption::DELIMITER_:
       {
         if (delimiter_.length() == 0)
           delimiter_ = feo->stringVal_;
@@ -213,7 +213,7 @@ short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
         }
       }
       break;
-      case NULL_STRING_:
+      case UnloadOption::NULL_STRING_:
       {
         if (nullString_.length() == 0)
           nullString_ = feo->stringVal_;
@@ -224,7 +224,7 @@ short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
         }
       }
       break;
-      case RECORD_SEP_:
+      case UnloadOption::RECORD_SEP_:
       {
         if (recordSeparator_.length() == 0)
           recordSeparator_ = feo->stringVal_;
@@ -235,7 +235,7 @@ short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
         }
       }
       break;
-      case APPEND_:
+      case UnloadOption::APPEND_:
       {
         if (!isAppend_)
           isAppend_ = TRUE;
@@ -246,7 +246,7 @@ short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
         }
       }
       break;
-      case HEADER_:
+      case UnloadOption::HEADER_:
       {
         if (includeHeader_)
           includeHeader_ = FALSE;
@@ -257,7 +257,7 @@ short FastExtract::setOptions(NAList<FastExtract::UnloadOption*> *
         }
       }
       break;
-      case COMPRESSION_:
+      case UnloadOption::COMPRESSION_:
       {
         if (cType_ == NONE)
           cType_ = (CompressionType) feo->numericVal_;
@@ -325,7 +325,7 @@ PhysicalProperty* PhysicalFastExtract::synthPhysicalProperty(const Context* myCo
     PhysicalProperty * sppForMe =
     new(CmpCommon::statementHeap()) PhysicalProperty(
          myPartFunc,
-         (isHiveInsert()) ? EXECUTE_IN_MASTER_AND_ESP : EXECUTE_IN_DP2,
+         EXECUTE_IN_MASTER_AND_ESP,
          SOURCE_VIRTUAL_TABLE);
 
   // remove anything that's not covered by the group attributes

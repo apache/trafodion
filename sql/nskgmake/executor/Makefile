@@ -131,8 +131,7 @@ CPPSRC += vers_libexecutor.cpp \
 	ExSMExitHandler.cpp \
 	ExSMShortMessage.cpp \
 	ExSMReadyList.cpp \
-        ExFastTransport.cpp \
-        ExFastTransportIO.cpp 
+        ExFastTransport.cpp 
 
 INCLUDE_DIRS := sqlutils/SQ_tseInterface
 

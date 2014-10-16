@@ -3551,6 +3551,7 @@ void ComTdbExeUtilHBaseBulkLoad::displayContents(Space * space,ULng32 flag)
 ComTdbExeUtilHBaseBulkUnLoad::ComTdbExeUtilHBaseBulkUnLoad(char * tableName,
                            ULng32 tableNameLen,
                            char * uldStmtStr,
+                           char * extractLocation,
                            ex_cri_desc * work_cri_desc,
                            const unsigned short work_atp_index,
                            ex_cri_desc * given_cri_desc,
@@ -3572,7 +3573,8 @@ ComTdbExeUtilHBaseBulkUnLoad::ComTdbExeUtilHBaseBulkUnLoad(char * tableName,
                     num_buffers, buffer_size),
       uldQuery_(uldStmtStr),
       flags_(0),
-      compressType_(0)
+      compressType_(0),
+      extractLocation_(extractLocation)
     {
     setNodeType(ComTdb::ex_HBASE_UNLOAD);
     }
@@ -3584,6 +3586,8 @@ Long ComTdbExeUtilHBaseBulkUnLoad::pack(void * space)
 
   if (mergePath_)
     mergePath_.pack(space);
+  if (extractLocation_)
+    extractLocation_.pack(space);
 
   return ComTdbExeUtil::pack(space);
 }
@@ -3594,6 +3598,8 @@ Lng32 ComTdbExeUtilHBaseBulkUnLoad::unpack(void * base, void * reallocator)
     return -1;
   if(mergePath_.unpack(base))
     return -1;
+  if(extractLocation_.unpack(base))
+      return -1;
   return ComTdbExeUtil::unpack(base, reallocator);
 }
 void ComTdbExeUtilHBaseBulkUnLoad::displayContents(Space * space,ULng32 flag)
@@ -3638,86 +3644,3 @@ void ComTdbExeUtilHBaseBulkUnLoad::displayContents(Space * space,ULng32 flag)
     }
 }
 
-ComTdbExeUtilHBaseBulkUnLoadTask::ComTdbExeUtilHBaseBulkUnLoadTask(
-                                  char * tableName,
-                                  ULng32 tableNameLen,
-                                   ex_cri_desc * work_cri_desc,
-                                   const unsigned short work_atp_index,
-                                   ex_cri_desc * given_cri_desc,
-                                   ex_cri_desc * returned_cri_desc,
-                                   queue_index down,
-                                   queue_index up,
-                                   Lng32 num_buffers,
-                                   ULng32 buffer_size,
-                                   char * hiveTableLocation ,
-                                   char * mergeLocation ,
-                                   UInt16 taskType  )
-     : ComTdbExeUtil(ComTdbExeUtil::HBASE_UNLOAD_TASK_,
-                     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
-                     tableName, tableNameLen,
-                     NULL, 0,
-                     NULL, 0,
-                     NULL,
-                     work_cri_desc, work_atp_index,
-                     given_cri_desc, returned_cri_desc,
-                     down, up,
-                     num_buffers, buffer_size),
-       flags_(0),
-       hiveTableLocation_(hiveTableLocation),
-       mergeLocation_(mergeLocation),
-       taskType_(taskType)
-{
-    setNodeType(ComTdb::ex_HBASE_UNLOAD_TASK);
-}
-
-
-Long ComTdbExeUtilHBaseBulkUnLoadTask::pack(void * space)
-{
-  if (hiveTableLocation_)
-    hiveTableLocation_.pack(space);
-
-  if (mergeLocation_)
-    mergeLocation_.pack(space);
-
-
-  return ComTdbExeUtil::pack(space);
-}
-
-Lng32 ComTdbExeUtilHBaseBulkUnLoadTask::unpack(void * base, void * reallocator)
-{
-  if(hiveTableLocation_.unpack(base))
-      return -1;
-
-  if(mergeLocation_.unpack(base))
-      return -1;
-
-  return ComTdbExeUtil::unpack(base, reallocator);
-}
-
-void ComTdbExeUtilHBaseBulkUnLoadTask::displayContents(Space * space,
-                                              ULng32 flag)
-{
-  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
-
-  if(flag & 0x00000008)
-    {
-      char buf[500];
-      str_sprintf(buf, "\nFor ComTdbExeUtilHBaseBulkUnLoadTask :");
-      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-
-      if (getTableName() != NULL)
-        {
-          str_sprintf(buf,"Tablename = %s ",getTableName());
-          space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
-                                               sizeof(short));
-        }
-    }
-
-
-  if (flag & 0x00000001)
-    {
-      displayExpression(space,flag);
-      displayChildren(space,flag);
-    }
-
-}

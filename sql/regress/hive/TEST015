@@ -171,7 +171,7 @@ prepare s from load with no populate indexes into t015t2 select * from t015t1;
 explain options 'f' s;
 execute s;
 
-prepare s from load with no recovery,  no populate indexes  into t015t2 select * from t015t1;
+prepare s from load with no recovery  no populate indexes  into t015t2 select * from t015t1;
 explain options 'f' s;
 execute s;
 
@@ -183,7 +183,7 @@ prepare s from load with log error into t015t2 select * from t015t1;
 delete from t015t2;
 insert into t015t2 values (100),(200),(300);
 select * from t015t2 order by a;
-load with truncate table, no populate indexes  into t015t2 select * from t015t1;
+load with truncate table no populate indexes  into t015t2 select * from t015t1;
 
 select * from t015t2 order by a;
 

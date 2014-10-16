@@ -21,9 +21,8 @@
 
 set schema trafodion.hbase;
 cqd comp_bool_226 'on';
-cqd HDFS_IO_BUFFERSIZE '32768';
 
-
+cqd hive_max_string_length '60';
 
 
 obey TEST018(clean_up);
@@ -36,7 +35,7 @@ obey TEST018(setup);
 obey TEST018(test_bulk_unload_simple);
 
 log;
-obey TEST018(clean_up);
+--obey TEST018(clean_up);
 exit;
 
 ?section clean_up
@@ -44,6 +43,9 @@ drop table customer_demographics cascade;
 drop table customer_demographics_salt cascade;
 drop table customer_address cascade;
 drop table customer_address_NOPK cascade;
+drop table customer_salt;
+drop table store_sales_salt;
+drop table nulls;
 sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_address.gz ;
 sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs.gz ;
 sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_3;
@@ -52,6 +54,8 @@ sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_2.gz ;
 
 ?section setup
 --------------------------------------------------------------------------
+create table nulls (a char(5), b char(10));
+
 create table customer_demographics
 (
   cd_demo_sk              int not null,
@@ -101,112 +105,234 @@ create table customer_address
 );
 
 
-?section test_bulk_unload_simple
---------------------------------------------------------------------------
+
+create table customer_salt
+(
+    c_customer_sk             int not null,
+    c_customer_id             char(16),
+    c_current_cdemo_sk        int,
+    c_current_hdemo_sk        int,
+    c_current_addr_sk         int,
+    c_first_shipto_date_sk    int,
+    c_first_sales_date_sk     int,
+    c_salutation              char(10) character set utf8,
+    c_first_name              char(20)  character set utf8,
+    c_last_name               char(30)  character set utf8,
+    c_preferred_cust_flag     char(1),
+    c_birth_day               int,
+    c_birth_month             int,
+    c_birth_year              int,
+    c_birth_country           varchar(20)  character set utf8,
+    c_login                   char(13)  character set utf8,
+    c_email_address           char(50)  character set utf8,
+    c_last_review_date        char(50),
+    primary key (c_customer_sk)
+)
+salt using 4 partitions on (c_customer_sk); 
 
 
-select count(*) from hive.hive.customer_address;
-
-load with no populate indexes into customer_address 
-select * from hive.hive.customer_address;                                                                                              
-select count(*) from customer_address;
-
-load  with no populate indexes into customer_demographics 
-select * from hive.hive.customer_demographics where cd_demo_sk <= 50000;
-select count(*) from customer_demographics;
-
-load  with no populate indexes  into customer_demographics_salt 
-select * from hive.hive.customer_demographics where cd_demo_sk <= 50000;;                                                                                              
-select count(*) from customer_demographics_salt;
-
--------------------------------
-
-explain options 'f' 
-INSERT INTO hive.hive.tmp_unload_table
-select * from trafodion.hbase.customer_address 
-<<+ cardinality 10e10 >>;
-
-UNLOAD  
-WITH PURGEDATA FROM TARGET
-,MERGE FILE  '/bulkload/merged_customer_address.gz'
-,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
-select * from trafodion.hbase.customer_address 
+create table store_sales_salt
+(
+    ss_sold_date_sk           int,
+    ss_sold_time_sk           int,
+    ss_item_sk                int NOT NULL,
+    ss_customer_sk            int,
+    ss_cdemo_sk               int,
+    ss_hdemo_sk               int,
+    ss_addr_sk                int,
+    ss_store_sk               int,
+    ss_promo_sk               int,
+    ss_ticket_number          int NOT NULL,
+    ss_quantity               int,
+    ss_wholesale_cost         decimal(7,2),
+    ss_list_price             decimal(7,2),
+    ss_sales_price            decimal(7,2),
+    ss_ext_discount_amt       decimal(7,2),
+    ss_ext_sales_price        decimal(7,2),
+    ss_ext_wholesale_cost     decimal(7,2),
+    ss_ext_list_price         decimal(7,2),
+    ss_ext_tax                decimal(7,2),
+    ss_coupon_amt             decimal(7,2),
+    ss_net_paid               decimal(7,2),
+    ss_net_paid_inc_tax       decimal(7,2),
+    ss_net_profit             decimal(7,2),
+primary key (ss_item_sk, ss_ticket_number)                 
+)
+salt using 4 partitions 
 ;
 
 
+?section test_bulk_unload_simple
+--------------------------------------------------------------------------
+--nulls
+insert into nulls values ('aaa1','bbbbb1'),(null,'bbbbb2'),
+                         ('aaa3',null),(null,null),
+                          ('aaa5',null),(null,'bbbbb6');
+--load1
+load with no populate indexes into customer_address 
+select * from hive.hive.customer_address;    
+--
+select count(*) from hive.hive.customer_address;                                                                                          
+select count(*) from customer_address;
 
+--load2
+load  with no populate indexes into customer_demographics 
+select * from hive.hive.customer_demographics  where cd_demo_sk <= 200000;
+--
+select count(*) from hive.hive.customer_demographics   where cd_demo_sk <= 200000;
+select count(*) from customer_demographics;
+--load3
+load  with no populate indexes  into customer_demographics_salt 
+select * from hive.hive.customer_demographics  where cd_demo_sk <= 200000;      
+--                                                                              
+select count(*) from customer_demographics_salt;
+--load4
+load  with no populate indexes into customer_salt 
+select * from hive.hive.customer;
+--
+select count(*) from hive.hive.customer;
+select count(*) from customer_salt;
 
+--load5
+load  with no populate indexes into store_sales_salt 
+select * from hive.hive.store_sales where ss_item_sk <= 1000;
+--
+select count(*) from hive.hive.store_sales;
+select count(*) from store_sales_salt;
+-------------------------------
+--hive insert 0
+insert overwrite table hive.hive.nulls select * from nulls;
+select * from hive.hive.nulls order by a,b;
 
+---unload 0 -- nulls 
+unload with purgedata from target
+   into '/user/hive/exttables/nulls'
+   select * from nulls;
+select * from hive.hive.nulls order by a,b;
 
+--exp1
 explain options 'f' 
-INSERT INTO hive.hive.tmp_unload_table
+UNLOAD EXTRACT TO '/bulkload/customer_address'
+select * from trafodion.hbase.customer_address 
+<<+ cardinality 10e10 >>;
+--unload1
+UNLOAD  
+WITH 
+ PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' NULL_STRING 'NULL'
+MERGE FILE  'merged_customer_address.gz' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_address'
+select * from trafodion.hbase.customer_address 
+;
+log;
+sh echo "regrhadoop.ksh fs -copyToLocal  /bulkload/customer_address/merged_customer_address.gz /tmp " >> LOG018 ;;
+sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_address/merged_customer_address.gz /tmp ;
+sh echo "gunzip -f /tmp/merged_customer_address.gz" >> LOG018 ; ;
+sh gunzip -f /tmp/merged_customer_address.gz  ;
+sh echo "cat /tmp/merged_customer_address | wc -l" >> LOG018 ;
+sh cat /tmp/merged_customer_address | wc -l >> LOG018 ;
+log LOG018;
+--------------------------
+--exp2
+explain options 'f' 
+UNLOAD EXTRACT TO '/bulkload/customer_demographics'
 select * from trafodion.hbase.customer_demographics 
 <<+ cardinality 10e10 >>;
-
+--unload 2
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-,MERGE FILE  '/bulkload/merged_customer_demogs.gz'
-,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
+MERGE FILE  'merged_customer_demogs.gz' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_demographics'
 select * from trafodion.hbase.customer_demographics 
 <<+ cardinality 10e10 >>;
-
-
+log;
+sh echo "regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics/merged_customer_demogs.gz /tmp " >> LOG018 ;
+sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics/merged_customer_demogs.gz /tmp   ;
+sh echo "gunzip -f /tmp/merged_customer_demogs.gz" >> LOG018 ;
+sh gunzip -f /tmp/merged_customer_demogs.gz  ;
+sh echo "cat /tmp/merged_customer_demogs | wc -l" >> LOG018 ;
+sh cat /tmp/merged_customer_demogs | wc -l >> LOG018 ;
+log LOG018;
+-----------
+--unload 3
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+MERGE FILE  'merged_customer_demogs_2' OVERWRITE
+--COMPRESSION GZIP
+INTO '/bulkload/customer_demographics'
+select * from trafodion.hbase.customer_demographics 
+<<+ cardinality 10e10 >>;
+log;
+sh echo "regrhadoop.ksh fs -cat  /bulkload/customer_demographics/merged_customer_demogs_2 | wc -l " >> LOG018 ;
+sh regrhadoop.ksh fs -cat  /bulkload/customer_demographics/merged_customer_demogs_2 | wc -l >> LOG018  ;
+log LOG018;
+----------------------------------
+--exp 3
 explain options 'f' 
-INSERT INTO hive.hive.tmp_unload_table
+UNLOAD EXTRACT TO '/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
-
+--unload 4
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-,MERGE FILE  '/bulkload/merged_customer_demogs_3'
---,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
+MERGE FILE  'merged_customer_demogs_3' OVERWRITE
+--COMPRESSION GZIP
+INTO '/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
 log;
-sh echo "regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_3" >> LOG018 ;
-sh regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_3 >> LOG018 ;
+sh echo "regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_3" >> LOG018 ;
+sh regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_3 >> LOG018 ;
 log LOG018;
-
+-------------------
+--unload 5
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-,MERGE FILE  '/bulkload/merged_customer_demogs_4.gz'
-,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
+MERGE FILE  'merged_customer_demogs_4.gz' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
 log;
-sh echo "regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_4.gz" >> LOG018 ;
-sh regrhadoop.ksh fs -du -s /bulkload/merged_customer_demogs_4.gz >> LOG018 ;
+sh echo "regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz" >> LOG018 ;
+sh regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz >> LOG018 ;
 log LOG018;
 
+--exp4
+explain options 'f' 
+UNLOAD EXTRACT TO '/bulkload/customer_demographics_salt'
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+--unload 6
 UNLOAD  
 WITH PURGEDATA FROM TARGET
---,MERGE FILE  '/bulkload/merged_customer_demogs_2.gz'
---,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
+--MERGE FILE  '/bulkload/merged_customer_demogs_2.gz' OVERWRITE
+--COMPRESSION GZIP
+INTO '/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
 log;
-sh echo "regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l" >> LOG018 ;
-sh regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l >> LOG018 ;
+sh echo "regrhadoop.ksh fs -cat /bulkload/customer_demographics_salt/file* | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -cat /bulkload/customer_demographics_salt/file* | wc -l >> LOG018 ;
+sh echo "regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/file* |  grep file | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/file* |  grep file |  wc -l >> LOG018 ;
 log LOG018;
 
+--unload 7
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-,MERGE FILE  '/bulkload/merged_customer_demogs_2.gz'
-,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
+MERGE FILE  'merged_customer_demogs_2.gz' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
-sh regrhadoop.ksh fs -copyToLocal  /bulkload/merged_customer_demogs_2.gz /tmp ;
-sh gunzip -f /tmp/merged_customer_demogs_2.gz;
+sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics_salt/merged_customer_demogs_2.gz /tmp ;
+sh gunzip -f /tmp/merged_customer_demogs_2.gz  ;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/unload_customer_demographics/* ;
 sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/hive/exttables/unload_customer_demographics ;
 sh rm /bulkload/merged_customer_demogs_2 ;
@@ -214,26 +340,155 @@ sh rm /bulkload/merged_customer_demogs_2 ;
 cqd HIVE_MAX_STRING_LENGTH '100';
 select [first 100] * from hive.hive.unload_customer_demographics order by cd_demo_sk;
 
-cqd TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'on';
 
+
+--unkoad 8
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-,MERGE FILE  '/bulkload/merged_customer_demogs_4.gz'
-,COMPRESSION GZIP
-INTO hive.hive.tmp_unload_table
+MERGE FILE  'merged_customer_demogs_4.gz' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 log;
-sh echo "regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l" >> LOG018 ;
-sh regrhadoop.ksh fs -ls /user/hive/exttables/tmp_unload_table | wc -l >> LOG018 ;
+sh echo "regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* | grep merge | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* |  grep merge | wc -l >> LOG018 ;
 log LOG018;
 
 
+--unload 9
+-- should give error 
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+MERGE FILE  'merged_customer_demogs_2' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_demographics_salt'
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+--- unload directly to hive tables locations and then read data back by 
+--- queru=ying hive tables
+--unload 10
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+MERGE FILE  'merged_customer_demographics' OVERWRITE
+--COMPRESSION GZIP
+INTO '/user/hive/exttables/unload_customer_demographics'
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+select count(*) from hive.hive.unload_customer_demographics;
+select [first 20] * from hive.hive.unload_customer_demographics order by cd_demo_sk;
+
+--unload 11
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+--MERGE FILE  'merged_customer_demographics' OVERWRITE
+--COMPRESSION GZIP
+INTO '/user/hive/exttables/unload_customer_demographics'
+select * from trafodion.hbase.customer_demographics_salt 
+<<+ cardinality 10e10 >>;
+
+select count(*) from hive.hive.unload_customer_demographics;
+select [first 20] * from hive.hive.unload_customer_demographics order by cd_demo_sk;
+
+--unload 12
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+INTO '/user/hive/exttables/unload_customer_address'
+select * from trafodion.hbase.customer_address ;
+
+select count(*) from hive.hive.unload_customer_address;
+select [first 20] * from hive.hive.unload_customer_address order by ca_address_sk;
+
+--unload 12-2
+--test with numeric delimiers
+UNLOAD  
+WITH PURGEDATA FROM TARGET DELIMITER 124  RECORD_SEPARATOR 10
+INTO '/user/hive/exttables/unload_customer_address'
+select * from trafodion.hbase.customer_address ;
+
+select count(*) from hive.hive.unload_customer_address;
+select [first 20] * from hive.hive.unload_customer_address order by ca_address_sk;
+
+
+-- reduce buffer size--test work method
+cqd HDFS_IO_BUFFERSIZE '1024';
+cqd attempt_esp_parallelism 'off';
+--unload 13
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+--MERGE FILE  'merged_customer_demographics' OVERWRITE
+--COMPRESSION GZIP
+INTO '/user/hive/exttables/unload_customer'
+select * from trafodion.hbase.customer_salt;
+select count(*) from hive.hive.unload_customer;
+select [first 20] * from hive.hive.unload_customer order by c_customer_sk;
+
+--unload 14
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+--MERGE FILE  'merged_customer_demographics' OVERWRITE
+--COMPRESSION GZIP
+INTO '/user/hive/exttables/unload_customer_demographics'
+select * from trafodion.hbase.customer_demographics_salt;
+
+select count(*) from hive.hive.unload_customer_demographics;
+select [first 20] * from hive.hive.unload_customer_demographics order by cd_demo_sk;
+
+--unload 15
+UNLOAD  
+WITH 
+ PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' NULL_STRING 'NULL'
+MERGE FILE  'merged_customer_address.gz' OVERWRITE
+COMPRESSION GZIP
+INTO '/bulkload/customer_address'
+select * from trafodion.hbase.customer_address where ca_address_sk < 100;
+
+--unload 16
+UNLOAD  
+WITH 
+ PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' NULL_STRING 'NULL'
+MERGE FILE  'merged_customer_address.gz' 
+COMPRESSION GZIP
+INTO '/bulkload/customer_address'
+select * from trafodion.hbase.customer_address where ca_address_sk < 100;
+
+
+log;
+sh echo "regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/*" >> LOG018 ;
+sh regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/* ;
+log LOG018;
+
+--unload 17
+UNLOAD  
+WITH 
+ PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' 
+INTO '/user/hive/exttables/unload_store_sales_summary'
+select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales_salt group by  ss_sold_date_sk ,ss_store_sk; 
+
+select  [first 100] * from hive.hive.unload_store_sales_summary order by  ss_sold_date_sk,ss_store_sk; 
+
+--unload 18
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+INTO '/user/hive/exttables/unload_customer_and_address'
+select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
+
+select count(*) from hive.hive.unload_customer_and_address;
+select [first 20] * from hive.hive.unload_customer_and_address order by ca_address_sk,c_customer_sk;
+
+--unload 100
+CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
+UNLOAD  
+WITH PURGEDATA FROM TARGET
+INTO '/user/hive/exttables/unload_customer_demographics'
+(select * from trafodion.hbase.customer_demographics_salt) ;
+select count(*) from hive.hive.unload_customer_demographics;
+
+CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES reset;
 
 
 
 
-
-
-
-
+log;

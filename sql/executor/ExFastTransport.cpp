@@ -30,7 +30,6 @@
  *
  *****************************************************************************
  */
-#include "ExFastTransportIO.h"
 #include "ex_stdh.h"
 #include "ExFastTransport.h"
 #include "ex_globals.h"
@@ -63,14 +62,7 @@ ex_tcb *ExFastExtractTdb::build(ex_globals *glob)
 
   childTcb = childTdb_->build(glob);
 
-  if (!getIsHiveInsert())
-  {
-    feTcb = new (glob->getSpace()) ExFastExtractTcb(*this, *childTcb,glob);
-  }
-  else
-  {
     feTcb = new (glob->getSpace()) ExHdfsFastExtractTcb(*this, *childTcb,glob);
-  }
 
   feTcb->registerSubtasks();
   feTcb->registerResizeSubtasks();
@@ -88,16 +80,11 @@ ExFastExtractTcb::ExFastExtractTcb(
     outputPool_(NULL),
     inputPool_(NULL),
     childTcb_(&childTcb)
-  , fileWriter_(NULL)
   , inSqlBuffer_(NULL)
   , childOutputTD_(NULL)
   , sourceFieldsConvIndex_(NULL)
   , currBuffer_(NULL)
-  , trySleep_(TRUE)
-  , ioSyncState_(PENDING_NONE)
   , bufferAllocFailuresCount_(0)
-  , retCodet_(-1)
-  , writeQueue_(NULL)
 {
   
   ex_globals *stmtGlobals = getGlobals();
@@ -110,9 +97,6 @@ ExFastExtractTcb::ExFastExtractTcb(
   //convert to non constant to access the members.
   ExFastExtractTdb *mytdb = (ExFastExtractTdb*)&fteTdb;
   numBuffers_ = mytdb->getNumIOBuffers();
-  ioTimeout_  = (Float64) mytdb->getIoTimeout();
-
-   // NOT USED in M9
   /* 
   // Allocate output buffer pool
   if (myTdb().getOutputExpression() != NULL)
@@ -141,8 +125,6 @@ ExFastExtractTcb::ExFastExtractTcb(
   // get the queue that child use to communicate with me
   qChild_  = childTcb.getParentQueue();
     
-
-
   // Allocate the work ATP
   if (myTdb().getWorkCriDesc())
     workAtp_ = allocateAtp(myTdb().getWorkCriDesc(), globSpace);
@@ -181,22 +163,6 @@ ExFastExtractTcb::ExFastExtractTcb(
 
   endOfData_ = FALSE;
 
-  //Thread related stuff.
-  param_ = new(heap_)struct Params;
-
-  threadState_ = new(heap_)ThreadState;
-  *threadState_ = THREAD_OK;
-
-  threadFlag_ = new(heap_)ThreadFlag;
-  *threadFlag_ = FLAG_NORMAL_RUN;
-
-  errMsg_ = new(heap_)ErrorMsg;
-  errMsg_->ec = EXE_OK;
-
-  attr_ = new (heap_) pthread_attr_t;
-  queueMutex_ = new(heap_) pthread_mutex_t;
-  queueReadyCv_ = new(heap_) pthread_cond_t;
-
 } // ExFastExtractTcb::ExFastExtractTcb
 
 ExFastExtractTcb::~ExFastExtractTcb()
@@ -212,12 +178,6 @@ ExFastExtractTcb::~ExFastExtractTcb()
   {
     workAtp_->release();
     deallocateAtp(workAtp_, getSpace());
-  }
-
-  if (fileWriter_)
-  {
-    NADELETE( fileWriter_, FileReadWrite, getHeap());
-    fileWriter_ = NULL;
   }
 
   if (inSqlBuffer_ && getHeap())
@@ -237,28 +197,14 @@ ExFastExtractTcb::~ExFastExtractTcb()
 //
 void ExFastExtractTcb::freeResources()
 {
-	for(Int16 i=0; i < numBuffers_; i++)
-	{
-		if(bufferPool_[i])
-		{
-			NADELETE(bufferPool_[i], IOBuffer, getHeap());
-			bufferPool_[i] = NULL;
-		}
-	}
-	if(writeQueue_)
-	{
-		writeQueue_->cleanup();
-		NADELETE(writeQueue_, SimpleQueue, getHeap());
-		writeQueue_ = NULL;
-	}
-	NADELETEBASIC(param_, getHeap());
-	NADELETEBASIC(errMsg_, getHeap());
-
-	NADELETEBASIC(attr_, getHeap());
-	NADELETEBASIC(threadFlag_, getHeap());
-	NADELETEBASIC(threadState_, getHeap());
-	NADELETEBASIC(queueMutex_, getHeap());
-	NADELETEBASIC(queueReadyCv_, getHeap());
+  for(Int16 i=0; i < numBuffers_; i++)
+  {
+    if(bufferPool_[i])
+    {
+      NADELETE(bufferPool_[i], IOBuffer, getHeap());
+      bufferPool_[i] = NULL;
+    }
+  }
 }
 
 void ExFastExtractTcb::registerSubtasks()
@@ -397,6 +343,7 @@ EXTRACT_DATA_READY_TO_SEND<-           EXTRACT_CANCELLED
 ExWorkProcRetcode ExFastExtractTcb::work()
 {
 
+  assert(0);
   return WORK_OK;
 
 }//ExFastExtractTcb::work()
@@ -473,6 +420,7 @@ void ExFastExtractTcb::updateWorkATPDiagsArea(const char *file,
         << DgString1(msg);
 }
 
+
 NABoolean ExFastExtractTcb::needStatsEntry()
 {
   if ((getGlobals()->getStatsArea()->getCollectStatsType() == ComTdb::ALL_STATS) ||
@@ -504,6 +452,66 @@ ExOperStats * ExFastExtractTcb::doAllocateStatsEntry(
 ///////////////////////////////////
 ///////////////////////////////////
 
+Lng32 ExHdfsFastExtractTcb::lobInterfaceInsert(ssize_t bytesToWrite)
+{
+  Int64 requestTag = 0;
+  Int64 descSyskey = 0;
+  return ExpLOBInterfaceInsert(lobGlob_,
+      fileName_,
+      targetLocation_,
+      (Lng32)Lob_External_HDFS_File,
+      hdfsHost_,
+      hdfsPort_,
+      0,
+      NULL,  //lobHandle == NULL -->simpleInsert
+      NULL,
+      NULL,
+      0,
+      NULL,
+      requestTag,
+      0,
+      descSyskey,
+      NULL,
+      Lob_None,//LobsSubOper so
+      0,  //checkStatus
+      1,  //waitedOp
+      currBuffer_->data_,
+      bytesToWrite,
+      0,     //bufferSize
+      myTdb().getHdfsReplication(),     //replication
+      0      //blockSize
+      );
+}
+
+Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
+{
+  return   ExpLOBinterfaceCreate(lobGlob_,
+      fileName_,
+      targetLocation_,
+      (Lng32)Lob_External_HDFS_File,
+      hdfsHost_,
+      hdfsPort_,
+      0, //bufferSize -- 0 --> use default
+      myTdb().getHdfsReplication(), //replication
+      0 //bloclSize --0 -->use default
+      );
+
+}
+
+
+Lng32 ExHdfsFastExtractTcb::lobInterfaceClose()
+{
+  return
+      ExpLOBinterfaceCloseFile
+      (lobGlob_,
+       fileName_,
+       NULL, //(char*)"",
+       (Lng32)Lob_External_HDFS_File,
+       hdfsHost_,
+       hdfsPort_);
+
+}
+
 ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
     const ExFastExtractTdb &fteTdb,
     const ex_tcb & childTcb,
@@ -525,6 +533,8 @@ ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
     lobGlob_ = NULL;
   }
 
+  //release sequenceFileWriter_???
+
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 
@@ -534,11 +544,111 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   ex_tcb::fixup();
 
-  if(!myTdb().getSkipWritingToFiles())
+  if(!myTdb().getSkipWritingToFiles() &&
+     !myTdb().getBypassLibhdfs())
     ExpLOBinterfaceInit
       (lobGlob_, getGlobals()->getDefaultHeap());
 
   return 0;
+}
+
+void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
+                            ULng32 recSepLen,
+                            ULng32 delimLen,
+                            tupp_descriptor* dataDesc,
+                            char* targetData,
+                            NABoolean & convError) {
+  char* childRow = dataDesc->getTupleAddress();
+  ULng32 childRowLen = dataDesc->getAllocatedSize();
+  UInt32 vcActualLen = 0;
+
+  for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++) {
+    Attributes * attr = myTdb().getChildTableAttr(i);
+    Attributes * attr2 = myTdb().getChildTableAttr2(i);
+    char *childColData = NULL; //childRow + attr->getOffset();
+    UInt32 childColLen = 0;
+    UInt32 maxTargetColLen = attr2->getLength();
+
+    //format is aligned format--
+    //----------
+    // field is varchar
+    if (attr->getVCIndicatorLength() > 0) {
+      childColData = childRow + *((UInt16*) (childRow + attr->getVoaOffset()));
+      childColLen = attr->getLength(childColData);
+      childColData += attr->getVCIndicatorLength();
+    } else {              //source is fixed length
+      childColData = childRow + attr->getOffset();
+      childColLen = attr->getLength();
+      if ((attr->getCharSet() == CharInfo::ISO88591
+          || attr->getCharSet() == CharInfo::UTF8) && childColLen > 0) {
+        // trim trailing blanks
+        while (childColLen > 0 && childColData[childColLen - 1] == ' ') {
+          childColLen--;
+        }
+      } else if (attr->getCharSet() == CharInfo::UCS2 && childColLen > 1) {
+        ex_assert(childColLen % 2 == 0, "invalid ucs2");
+        NAWchar* wChildColData = (NAWchar*) childColData;
+        Int32 wChildColLen = childColLen / 2;
+        while (wChildColLen > 0 && wChildColData[wChildColLen - 1] == L' ') {
+          wChildColLen--;
+        }
+        childColLen = wChildColLen * 2;
+      }
+    }
+
+    if (attr->getNullFlag()
+        && ExpAlignedFormat::isNullValue(childRow + attr->getNullIndOffset(),
+            attr->getNullBitIndex())) {
+      if ( !getEmptyNullString()) // includes hive null which is empty string
+      {
+        memcpy(targetData, myTdb().getNullString(), nullLen);
+        targetData += nullLen;
+      }
+      currBuffer_->bytesLeft_ -= nullLen;
+    } else {
+      switch ((conv_case_index) sourceFieldsConvIndex_[i]) {
+      case CONV_ASCII_V_V:
+      case CONV_ASCII_F_V:
+      case CONV_UNICODE_V_V:
+      case CONV_UNICODE_F_V: {
+        if (childColLen > 0) {
+          memcpy(targetData, childColData, childColLen);
+          targetData += childColLen;
+          currBuffer_->bytesLeft_ -= childColLen;
+        }
+      }
+        break;
+
+      default:
+        ex_expr::exp_return_type err = convDoIt(childColData, childColLen,
+            attr->getDatatype(), attr->getPrecision(), attr->getScale(),
+            targetData, attr2->getLength(), attr2->getDatatype(),
+            attr2->getPrecision(), attr2->getScale(), (char*) &vcActualLen,
+            sizeof(vcActualLen), 0, 0,             // diags may need to be added
+            (conv_case_index) sourceFieldsConvIndex_[i]);
+
+        if (err == ex_expr::EXPR_ERROR) {
+          convError = TRUE;
+          // not exit loop -- we will log the errenous row later
+          // do not cancel processing for this type of error???
+        }
+        targetData += vcActualLen;
+        currBuffer_->bytesLeft_ -= vcActualLen;
+        break;
+      }                      //switch
+    }
+
+    if (i == myTdb().getChildTuple()->numAttrs() - 1) {
+      strncpy(targetData, myTdb().getRecordSeparator(), recSepLen);
+      targetData += recSepLen;
+      currBuffer_->bytesLeft_ -= recSepLen;
+    } else {
+      strncpy(targetData, myTdb().getDelimiter(), delimLen);
+      targetData += delimLen;
+      currBuffer_->bytesLeft_ -= delimLen;
+    }
+
+  }
 }
 
 ExWorkProcRetcode ExHdfsFastExtractTcb::work()
@@ -556,8 +666,9 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
   {
     recSepLen = 1;
     delimLen = 1;
-    nullLen = 0;
   }
+  if (getEmptyNullString()) //covers hive null case also
+    nullLen = 0;
 
   ExOperStats *stats = NULL;
   ExFastExtractStats *feStats = getFastExtractStats();
@@ -574,145 +685,125 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
     ExFastExtractPrivateState &pstate = *((ExFastExtractPrivateState *) pentry_down->pstate);
     switch (pstate.step_)
     {
-      case EXTRACT_NOT_STARTED:
+    case EXTRACT_NOT_STARTED:
+    {
+      pstate.step_= EXTRACT_INITIALIZE;
+    }
+    //  no break here
+    case EXTRACT_INITIALIZE:
+    {
+      pstate.processingStarted_ = FALSE;
+      errorOccurred_ = FALSE;
+
+      //Allocate writeBuffers.
+      numBuffers_ = 1;
+      for (Int16 i = 0; i < numBuffers_; i++)
       {
-         pstate.step_= EXTRACT_INITIALIZE;
-      }
-      //  no break here
-      case EXTRACT_INITIALIZE:
-      {
-
-        //ex_assert (lobGlobals != NULL, "lobGlobals is null");
-        //lobGlob_ = (void*)lobGlobals;
-
-        pstate.processingStarted_ = FALSE;
-        errorOccurred_ = FALSE;
-
-        //Allocate writeBuffers.
-        //
-        //
-        //
-
-        numBuffers_ = 1;
-        for (Int16 i = 0; i < numBuffers_; i++)
+        bool done = false;
+        Int64 input_datalen = myTdb().getHdfsIoBufferSize();
+        char * buf_addr = 0;
+        while ((!done) && input_datalen >= 32 * 1024)
         {
-          bool done = false;
-          Int64 input_datalen = myTdb().getHdfsIoBufferSize();
-          char * buf_addr = 0;
-          while ((!done) && input_datalen >= 32 * 1024)
+          buf_addr = 0;
+          buf_addr = (char *)((NAHeap *)heap_)->allocateAlignedHeapMemory((UInt32)input_datalen, 512, FALSE);
+          if (buf_addr)
           {
-            buf_addr = 0;
-            buf_addr = (char *)((NAHeap *)heap_)->allocateAlignedHeapMemory((UInt32)input_datalen, 512, FALSE);
-            if (buf_addr)
-            {
-              done = true;
-              bufferPool_[i] = new (heap_) IOBuffer((char*) buf_addr, (Int32)input_datalen);
-            }
-            else
-            {
-              bufferAllocFailuresCount_++;
-              input_datalen = input_datalen / 2;
-            }
+            done = true;
+            bufferPool_[i] = new (heap_) IOBuffer((char*) buf_addr, (Int32)input_datalen);
           }
-          if (!done)
+          else
           {
-            numBuffers_ = i;
-            break ; // if too few buffers have been allocated we will raise
-          }         // an error later
+            bufferAllocFailuresCount_++;
+            input_datalen = input_datalen / 2;
+          }
         }
-
-        if (feStats)
+        if (!done)
         {
-          feStats->setBufferAllocFailuresCount(bufferAllocFailuresCount_);
-          feStats->setBuffersCount(numBuffers_);
-        }
+          numBuffers_ = i;
+          break ; // if too few buffers have been allocated we will raise
+        }         // an error later
+      }
+
+      if (feStats)
+      {
+        feStats->setBufferAllocFailuresCount(bufferAllocFailuresCount_);
+        feStats->setBuffersCount(numBuffers_);
+      }
 
 
-        ComDiagsArea *da = NULL;
+      ComDiagsArea *da = NULL;
 
-       if (!myTdb().getSkipWritingToFiles())
+      if (!myTdb().getSkipWritingToFiles())
         if (myTdb().getTargetFile() )
         {
           Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
+          memset (hdfsHost_, '\0', sizeof(hdfsHost_));
+          strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
+          hdfsPort_ = myTdb().getHdfsPortNum();
+          memset (fileName_, '\0', sizeof(fileName_));
+          memset (targetLocation_, '\0', sizeof(targetLocation_));
+
+          time_t t;
+          time(&t);
+          char pt[30];
+          struct tm * curgmtime = gmtime(&t);
+          strftime(pt, 30, "%Y%m%d%H%M%S", curgmtime);
+          srand(getpid());
+          snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
+
           if (myTdb().getIsHiveInsert())
-          {
-            memset (hdfsHost_, '\0', sizeof(hdfsHost_)); 
-            strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
-            hdfsPort_ = myTdb().getHdfsPortNum();
-            memset (hdfsFileName_, '\0', sizeof(hdfsFileName_));
-            memset (hiveTableLocation_, '\0', sizeof(hiveTableLocation_));
-
-            time_t t;
-            time(&t);
-            char pt[30];
-            struct tm * curgmtime = gmtime(&t);
-            strftime(pt, 30, "%Y%m%d%H%M%S", curgmtime);
-            srand(getpid());
-            snprintf(hiveTableLocation_,999, "%s", myTdb().getTargetName());
-            snprintf(hdfsFileName_,999, "%s%d-%s-%d", myTdb().getHiveTableName(), fileNum, pt,rand() % 1000);
-          }
+            snprintf(fileName_,999, "%s%d-%s-%d", myTdb().getHiveTableName(), fileNum, pt,rand() % 1000);
           else
+            snprintf(fileName_,999, "%s%d-%s-%d", "file", fileNum, pt,rand() % 1000);
+
+          if ((isSequenceFile() || myTdb().getBypassLibhdfs()) &&
+              !sequenceFileWriter_)
           {
-             ex_assert(0, "hdfs files only");
-          }
-
-            if ((isSequenceFile() || isHdfsCompressed()) && !sequenceFileWriter_)
+            sequenceFileWriter_ = new(getSpace())
+                                     SequenceFileWriter((NAHeap *)getSpace());
+            sfwRetCode = sequenceFileWriter_->init();
+            if (sfwRetCode != SFW_OK)
             {
-              sequenceFileWriter_ = new(getSpace())
-                                 SequenceFileWriter((NAHeap *)getSpace());
-              sfwRetCode = sequenceFileWriter_->init();
-              if (sfwRetCode != SFW_OK)
-              {
-                  createSequenceFileError(sfwRetCode);
-                  pstate.step_ = EXTRACT_ERROR;
-                   break;
-              }
-           }
-
-          if (isSequenceFile()  || isHdfsCompressed())
-            {
-              strcat(hiveTableLocation_, "//");
-              strcat(hiveTableLocation_, hdfsFileName_);
-              //sfwRetCode = sequenceFileWriter_->open("hdfs://localhost:9000/user/hive/warehouse/promotion_seq/000001_0", SFW_COMP_NONE); //hiveTableLocation_);
-              if (isSequenceFile())
-                sfwRetCode = sequenceFileWriter_->open(hiveTableLocation_, SFW_COMP_NONE);
-              else
-                sfwRetCode = sequenceFileWriter_->hdfsCreate(hiveTableLocation_);
-              if (sfwRetCode != SFW_OK)
-                {
-                    createSequenceFileError(sfwRetCode);
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-                }
+              createSequenceFileError(sfwRetCode);
+              pstate.step_ = EXTRACT_ERROR;
+              break;
             }
-          else
-            {
-                retcode = 0;
-                retcode = ExpLOBinterfaceCreate(lobGlob_,
-                                                  hdfsFileName_,
-                                                  hiveTableLocation_,
-                                                  (Lng32)Lob_External_HDFS_File,
-                                                  hdfsHost_,
-                                                  hdfsPort_,
-                                                  0, //bufferSize -- 0 --> use default
-                                                  myTdb().getHdfsReplication(), //replication
-                                                  0 //bloclSize --0 -->use default
-                                                  );
-                if (retcode < 0)
-                  {
-                    Lng32 cliError = 0;
+          }
 
-                    Lng32 intParam1 = -retcode;
-                    ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea,
-                                    (ExeErrorCode)(8442), NULL, &intParam1,
-                                    &cliError, NULL, (char*)"ExpLOBinterfaceCreate",
-                                    getLobErrStr(intParam1));
-                    pentry_down->setDiagsArea(diagsArea);
-                    pstate.step_ = EXTRACT_ERROR;
-                    break;
-                  }
-              }
+          if (isSequenceFile()  ||  myTdb().getBypassLibhdfs())
+          {
+            strcat(targetLocation_, "//");
+            strcat(targetLocation_, fileName_);
+            if (isSequenceFile())
+              sfwRetCode = sequenceFileWriter_->open(targetLocation_, SFW_COMP_NONE);
+            else
+              sfwRetCode = sequenceFileWriter_->hdfsCreate(targetLocation_, isHdfsCompressed());
+            if (sfwRetCode != SFW_OK)
+            {
+              createSequenceFileError(sfwRetCode);
+              pstate.step_ = EXTRACT_ERROR;
+              break;
+            }
+          }
+          else
+          {
+            retcode = 0;
+            retcode = lobInterfaceCreate();
+            if (retcode < 0)
+            {
+              Lng32 cliError = 0;
+
+              Lng32 intParam1 = -retcode;
+              ComDiagsArea * diagsArea = NULL;
+              ExRaiseSqlError(getHeap(), &diagsArea,
+                  (ExeErrorCode)(8442), NULL, &intParam1,
+                  &cliError, NULL, (char*)"ExpLOBinterfaceCreate",
+                  getLobErrStr(intParam1));
+              pentry_down->setDiagsArea(diagsArea);
+              pstate.step_ = EXTRACT_ERROR;
+              break;
+            }
+          }
 
           if (feStats)
           {
@@ -726,539 +817,369 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           break;
         }
 
-        for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++)
-        {
-          Attributes * attr = myTdb().getChildTableAttr(i);
-          Attributes * attr2 = myTdb().getChildTableAttr2(i);
-
-          ex_conv_clause tempClause;
-          int convIndex = 0;
-          sourceFieldsConvIndex_[i] =
-              tempClause.find_case_index(
-                                   attr->getDatatype(),
-                                   0,
-                                   attr2->getDatatype(),
-                                   0,
-                                   0);
-
-        }
-
-        pstate.step_= EXTRACT_PASS_REQUEST_TO_CHILD;
-      }
-      break;
-
-      case EXTRACT_PASS_REQUEST_TO_CHILD:
+      for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++)
       {
-        // pass the parent request to the child downqueue
-        if (!qChild_.down->isFull())
-        {
-          ex_queue_entry * centry = qChild_.down->getTailEntry();
+        Attributes * attr = myTdb().getChildTableAttr(i);
+        Attributes * attr2 = myTdb().getChildTableAttr2(i);
 
-          if (request == ex_queue::GET_N)
-            centry->downState.request = ex_queue::GET_ALL;
-          else
-            centry->downState.request = request;
+        ex_conv_clause tempClause;
+        int convIndex = 0;
+        sourceFieldsConvIndex_[i] =
+            tempClause.find_case_index(
+                attr->getDatatype(),
+                0,
+                attr2->getDatatype(),
+                0,
+                0);
 
-          centry->downState.requestValue = pentry_down->downState.requestValue;
-          centry->downState.parentIndex = qParent_.down->getHeadIndex();
-          // set the child's input atp
-          centry->passAtp(pentry_down->getAtp());
-          qChild_.down->insert();
-          pstate.processingStarted_ = TRUE;
-        }
+      }
+
+      pstate.step_= EXTRACT_PASS_REQUEST_TO_CHILD;
+    }
+    break;
+
+    case EXTRACT_PASS_REQUEST_TO_CHILD:
+    {
+      // pass the parent request to the child downqueue
+      if (!qChild_.down->isFull())
+      {
+        ex_queue_entry * centry = qChild_.down->getTailEntry();
+
+        if (request == ex_queue::GET_N)
+          centry->downState.request = ex_queue::GET_ALL;
         else
-          // couldn't pass request to child, return
-          return WORK_OK;
+          centry->downState.request = request;
 
-        pstate.step_ = EXTRACT_RETURN_ROWS_FROM_CHILD;
+        centry->downState.requestValue = pentry_down->downState.requestValue;
+        centry->downState.parentIndex = qParent_.down->getHeadIndex();
+        // set the child's input atp
+        centry->passAtp(pentry_down->getAtp());
+        qChild_.down->insert();
+        pstate.processingStarted_ = TRUE;
       }
-        break;
-      case EXTRACT_RETURN_ROWS_FROM_CHILD:
+      else
+        // couldn't pass request to child, return
+        return WORK_OK;
+
+      pstate.step_ = EXTRACT_RETURN_ROWS_FROM_CHILD;
+    }
+    break;
+    case EXTRACT_RETURN_ROWS_FROM_CHILD:
+    {
+      if ((qChild_.up->isEmpty()))
       {
-        if ((qChild_.up->isEmpty()))
-        {
-          return WORK_OK;
-        }
+        return WORK_OK;
+      }
 
-        if (currBuffer_ == NULL)
-        {
-          currBuffer_ = bufferPool_[0];
-          memset(currBuffer_->data_, '\0',currBuffer_->bufSize_);
-          currBuffer_->bytesLeft_ = currBuffer_->bufSize_;
-        }
+      if (currBuffer_ == NULL)
+      {
+        currBuffer_ = bufferPool_[0];
+        memset(currBuffer_->data_, '\0',currBuffer_->bufSize_);
+        currBuffer_->bytesLeft_ = currBuffer_->bufSize_;
+      }
 
-        ex_queue_entry * centry = qChild_.up->getHeadEntry();
-        ComDiagsArea *cda = NULL;
-        ex_queue::up_status child_status = centry->upState.status;
+      ex_queue_entry * centry = qChild_.up->getHeadEntry();
+      ComDiagsArea *cda = NULL;
+      ex_queue::up_status child_status = centry->upState.status;
 
-        switch (child_status)
+      switch (child_status)
+      {
+      case ex_queue::Q_OK_MMORE:
+      {
+        // for the very first row retruned from child
+        // include the header row if necessary
+        if ((pstate.matchCount_ == 0) && myTdb().getIncludeHeader())
         {
-          case ex_queue::Q_OK_MMORE:
+          if (!myTdb().getIsAppend())
           {
-            // for the very first row retruned from child
-            // include the header row if necessary
-            if ((pstate.matchCount_ == 0) && myTdb().getIncludeHeader())
+            Int32 headerLength = strlen(myTdb().getHeader());
+            char * target = currBuffer_->data_;
+            if (headerLength + 1 < currBuffer_->bufSize_)
             {
-              if ((!myTdb().getIsAppend()) ||
-              (myTdb().getIsAppend() && fileWriter_->atStartOfFile()))
-              {
-                Int32 headerLength = strlen(myTdb().getHeader());
-                char * target = currBuffer_->data_;
-                if (headerLength + 1 < currBuffer_->bufSize_)
-                {
-                  strncpy(target, myTdb().getHeader(),headerLength);
-                  target[headerLength] = '\n' ;
-                  currBuffer_->bytesLeft_ -= headerLength+1 ;
-                }
-                else
-                {
-                  updateWorkATPDiagsArea(__FILE__,__LINE__,"header does not fit in buffer");
-                  pstate.step_ = EXTRACT_ERROR;
-                  break;
-                }
-              }
-            }
-
-            tupp_descriptor *dataDesc = childOutputTD_;
-            ex_expr::exp_return_type expStatus = ex_expr::EXPR_OK;
-            if (myTdb().getChildDataExpr())
-            {
-              UInt32 childTuppIndex = myTdb().childDataTuppIndex_;
-
-              workAtp_->getTupp(childTuppIndex) = dataDesc;
-
-              // Evaluate the child data expression. If diags are generated they
-              // will be left in the down entry ATP.
-              expStatus = myTdb().getChildDataExpr()->eval(centry->getAtp(), workAtp_);
-              workAtp_->getTupp(childTuppIndex).release();
-
-              if (expStatus == ex_expr::EXPR_ERROR)
-              {
-                updateWorkATPDiagsArea(centry);
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-              }
-
-            } // if (myTdb().getChildDataExpr())
-            char * targetData = currBuffer_->data_ + currBuffer_->bufSize_ - currBuffer_->bytesLeft_;
-            if (targetData == NULL)
-            {
-              updateWorkATPDiagsArea(__FILE__,__LINE__,"targetData is NULL");
-              pstate.step_ = EXTRACT_ERROR;
-              break;
-            }
-            char * childRow = dataDesc->getTupleAddress();
-            ULng32 childRowLen = dataDesc->getAllocatedSize();
-
-            UInt32 vcActualLen = 0;
-            NABoolean convError = FALSE;
-            for (UInt32 i = 0; i < myTdb().getChildTuple()->numAttrs(); i++)
-            {
-              Attributes * attr = myTdb().getChildTableAttr( i);
-              Attributes * attr2 = myTdb().getChildTableAttr2(i);
-              char *childColData = NULL; //childRow + attr->getOffset();
-              UInt32 childColLen = 0;
-              UInt32 maxTargetColLen = attr2->getLength();
-
-              //format is aligned format--
-              //----------
-              // field is varchar
-              if (attr->getVCIndicatorLength() > 0)
-              {
-                childColData = childRow + *((UInt16*)(childRow + attr->getVoaOffset()));
-                childColLen = attr->getLength(childColData);
-                childColData += attr->getVCIndicatorLength();
-              }
-              else
-              {//source is fixed length
-                childColData = childRow + attr->getOffset();
-                childColLen = attr->getLength();
-                if ((attr->getCharSet() == CharInfo::ISO88591 ||
-                     attr->getCharSet() == CharInfo::UTF8) &&
-                    childColLen > 0)
-                {
-                  // trim trailing blanks
-                  while (childColLen > 0 &&
-                         childColData[childColLen -1] == ' ' )
-                  {
-                    childColLen--;
-                  }
-                }
-                else
-                  if (attr->getCharSet() == CharInfo::UCS2 &&
-                      childColLen > 1)
-                  {
-                    ex_assert (childColLen % 2 == 0 , "invalid ucs2");
-                    NAWchar* wChildColData = (NAWchar*)childColData;
-                    Int32 wChildColLen = childColLen/2;
-                    while (wChildColLen > 0 &&
-                           wChildColData[wChildColLen -1 ] == L' ')
-                    {
-                      wChildColLen--;
-                    }
-                    childColLen = wChildColLen * 2;
-                  }
-              }
-
-              if (attr->getNullFlag() &&
-                  ExpAlignedFormat::isNullValue( childRow + attr->getNullIndOffset(), attr->getNullBitIndex() ))
-              {
-                if (!myTdb().getIsHiveInsert())// for hive null is empty string
-                {
-                  memcpy(targetData,myTdb().getNullString(), nullLen );
-                  targetData += nullLen;
-                }
-                currBuffer_->bytesLeft_ -= nullLen;
-              }
-              else
-              {
-                switch ((conv_case_index)sourceFieldsConvIndex_[i])
-                {
-                  case CONV_ASCII_V_V:
-                  case CONV_ASCII_F_V:
-                  case CONV_UNICODE_V_V:
-                  case CONV_UNICODE_F_V:
-                  {
-                    if (childColLen > 0)
-                    {
-                      memcpy(targetData,childColData, childColLen );
-                      targetData += childColLen;
-                      currBuffer_->bytesLeft_ -= childColLen;
-                    }
-                  }
-                  break;
-
-                  default:
-                   ex_expr::exp_return_type err =
-                       convDoIt(childColData,
-                                childColLen,
-                                attr->getDatatype(),
-                                attr->getPrecision(),
-                                attr->getScale(),
-                                targetData,
-                                attr2->getLength(),
-                                attr2->getDatatype(),
-                                attr2->getPrecision(),
-                                attr2->getScale(),
-                                (char*)&vcActualLen,
-                                sizeof(vcActualLen),
-                                0,
-                                0,// diags may need to be added
-                                (conv_case_index)sourceFieldsConvIndex_[i]
-                                );
-
-                   if (err == ex_expr::EXPR_ERROR)
-                   {
-                      convError = TRUE;
-                      // not exit loop -- we will log the errenous row later
-                      // do not cancel processing for this type of error???
-                   }
-                  targetData += vcActualLen;
-                  currBuffer_->bytesLeft_ -= vcActualLen;
-                  break;
-                }//switch
-              }
-
-              if (i == myTdb().getChildTuple()->numAttrs() - 1)
-              {
-                strncpy(targetData, myTdb().getRecordSeparator(), recSepLen);
-                targetData += recSepLen;
-                currBuffer_->bytesLeft_ -= recSepLen;
-              }
-              else
-              {
-                strncpy(targetData, myTdb().getDelimiter(), delimLen);
-                targetData += delimLen;
-                currBuffer_->bytesLeft_ -= delimLen;
-              }
-
-            }
-            pstate.matchCount_++;
-
-
-            if (!convError)
-            {
-              if (feStats)
-              {
-                feStats->incProcessedRowsCount();
-              }
-              pstate.successRowCount_ ++;
+              strncpy(target, myTdb().getHeader(),headerLength);
+              target[headerLength] = '\n' ;
+              currBuffer_->bytesLeft_ -= headerLength+1 ;
             }
             else
             {
-              if (feStats)
-              {
-                feStats->incErrorRowsCount();
-              }
-              pstate.errorRowCount_ ++;
-            }
-
-            if (currBuffer_->bytesLeft_ < (Int32) maxExtractRowLength_)
-            {
-              pstate.step_ = EXTRACT_DATA_READY_TO_SEND;
+              updateWorkATPDiagsArea(__FILE__,__LINE__,"header does not fit in buffer");
+              pstate.step_ = EXTRACT_ERROR;
+              break;
             }
           }
-            break;
-
-          case ex_queue::Q_NO_DATA:
-          {
-            pstate.step_ = EXTRACT_DATA_READY_TO_SEND;
-            endOfData_ = TRUE;
-            pstate.processingStarted_ = FALSE ; // so that cancel does not
-            //wait for this Q_NO_DATA
-          }
-           break;
-          case ex_queue::Q_SQLERROR:
-          {
-            pstate.step_ = EXTRACT_ERROR;
-          }
-            break;
-          case ex_queue::Q_INVALID:
-          {
-            updateWorkATPDiagsArea(__FILE__,__LINE__,
-                "ExFastExtractTcb::work() Invalid state returned by child");
-            pstate.step_ = EXTRACT_ERROR;
-          }
-            break;
-
-        } // switch
-        qChild_.up->removeHead();
-      }
-        break;
-
-      case EXTRACT_DATA_READY_TO_SEND:
-      {
-        ssize_t bytesToWrite = currBuffer_->bufSize_ - currBuffer_->bytesLeft_;
-        Int64 requestTag = 0;
-        Int64 descSyskey = 0;
-
-        if (!myTdb().getSkipWritingToFiles())
-          if (isSequenceFile())
-          {
-            sfwRetCode = sequenceFileWriter_->writeBuffer(currBuffer_->data_, bytesToWrite, myTdb().getRecordSeparator());
-            if (sfwRetCode != SFW_OK)
-              {
-                createSequenceFileError(sfwRetCode);
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-              }
-          }
-          else  if (isHdfsCompressed())
-          {
-            sfwRetCode = sequenceFileWriter_->hdfsWrite(currBuffer_->data_, bytesToWrite);
-            if (sfwRetCode != SFW_OK)
-              {
-                createSequenceFileError(sfwRetCode);
-                      pstate.step_ = EXTRACT_ERROR;
-                      break;
-              }
-          }
-          else
-          {
-            retcode = 0;
-            retcode = ExpLOBInterfaceInsert(lobGlob_,
-                                        hdfsFileName_,
-                                        hiveTableLocation_,
-                                        (Lng32)Lob_External_HDFS_File,
-                                        hdfsHost_,
-                                        hdfsPort_,
-                                        0,
-                                        NULL,  //lobHandle == NULL -->simpleInsert
-                                        NULL,
-                                        NULL,
-                                        0,
-                                        NULL,
-                                        requestTag,
-                                        0,
-                                        descSyskey,
-                                        NULL,
-                                        Lob_None,//LobsSubOper so
-                                        0,  //checkStatus
-                                        1,  //waitedOp
-                                        currBuffer_->data_,
-                                        bytesToWrite,
-                                        0,     //bufferSize
-                                        myTdb().getHdfsReplication(),     //replication
-                                        0      //blockSize
-                                        );
-            if (retcode < 0)
-              {
-                Lng32 cliError = 0;
-    
-                Lng32 intParam1 = -retcode;
-                ComDiagsArea * diagsArea = NULL;
-                ExRaiseSqlError(getHeap(), &diagsArea,
-                                (ExeErrorCode)(8442), NULL, &intParam1,
-                                &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-                                getLobErrStr(intParam1));
-                pentry_down->setDiagsArea(diagsArea);
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-              }
-          }
-          
-        if (feStats)
-        {
-          feStats->incReadyToSendBuffersCount();
-          feStats->incReadyToSendBytes(currBuffer_->bufSize_ - currBuffer_->bytesLeft_);
         }
 
-
-        currBuffer_ = NULL;
-
-        if (endOfData_)
+        tupp_descriptor *dataDesc = childOutputTD_;
+        ex_expr::exp_return_type expStatus = ex_expr::EXPR_OK;
+        if (myTdb().getChildDataExpr())
         {
-          pstate.step_ = EXTRACT_DONE;
+          UInt32 childTuppIndex = myTdb().childDataTuppIndex_;
 
+          workAtp_->getTupp(childTuppIndex) = dataDesc;
+
+          // Evaluate the child data expression. If diags are generated they
+          // will be left in the down entry ATP.
+          expStatus = myTdb().getChildDataExpr()->eval(centry->getAtp(), workAtp_);
+          workAtp_->getTupp(childTuppIndex).release();
+
+          if (expStatus == ex_expr::EXPR_ERROR)
+          {
+            updateWorkATPDiagsArea(centry);
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        } // if (myTdb().getChildDataExpr())
+        ///////////////////////
+        char * targetData = currBuffer_->data_ + currBuffer_->bufSize_ - currBuffer_->bytesLeft_;
+        if (targetData == NULL)
+        {
+          updateWorkATPDiagsArea(__FILE__,__LINE__,"targetData is NULL");
+          pstate.step_ = EXTRACT_ERROR;
+          break;
+        }
+        NABoolean convError = FALSE;
+        convertSQRowToString(nullLen, recSepLen, delimLen, dataDesc,
+            targetData, convError);
+        ///////////////////////////////
+        pstate.matchCount_++;
+        if (!convError)
+        {
+          if (feStats)
+          {
+            feStats->incProcessedRowsCount();
+          }
+          pstate.successRowCount_ ++;
         }
         else
         {
-          pstate.step_ = EXTRACT_RETURN_ROWS_FROM_CHILD;
+          if (feStats)
+          {
+            feStats->incErrorRowsCount();
+          }
+          pstate.errorRowCount_ ++;
         }
-      }
-       break;
-
-      case EXTRACT_ERROR:
-      {
-
-        // If there is no room in the parent queue for the reply,
-        // try again later.
-        //Later we may split this state into 2 one for cancel and one for query
-        if (qParent_.up->isFull())
-          return WORK_OK;
-
-         // Cancel the child request - there must be a child request in
-         // progress to get to the ERROR state.
-         if (pstate.processingStarted_)
-         {
-           qChild_.down->cancelRequestWithParentIndex(qParent_.down->getHeadIndex());
-           //pstate.processingStarted_ = FALSE;
-         }
-
-         while (pstate.step_ == EXTRACT_ERROR)
-         {
-           if (qChild_.up->isEmpty())
-             return WORK_OK;
-           ex_queue_entry * childEntry = qChild_.up->getHeadEntry();
-           ex_queue::up_status childStatus = childEntry->upState.status;
-
-           if (childStatus == ex_queue::Q_NO_DATA)
-           {
-             pstate.step_ = EXTRACT_DONE;
-           }
-           qChild_.up->removeHead();
-         }
-
-
-
-         ex_queue_entry *pentry_up = qParent_.up->getTailEntry();
-         pentry_up->copyAtp(pentry_down);
-         // Construct and return the error row.
-         //
-        if (workAtp_->getDiagsArea())
+        if (currBuffer_->bytesLeft_ < (Int32) maxExtractRowLength_)
         {
-          ComDiagsArea *diagsArea = pentry_up->getDiagsArea();
-          if (diagsArea == NULL)
-          {
-            diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-            pentry_up->setDiagsArea(diagsArea);
-          }
-          pentry_up->getDiagsArea()->mergeAfter(*workAtp_->getDiagsArea());
-          workAtp_->setDiagsArea(NULL);
+          pstate.step_ = EXTRACT_DATA_READY_TO_SEND;
         }
-         pentry_up->upState.status = ex_queue::Q_SQLERROR;
-         pentry_up->upState.parentIndex
-           = pentry_down->downState.parentIndex;
-         pentry_up->upState.downIndex = qParent_.down->getHeadIndex();
-         pentry_up->upState.setMatchNo(pstate.matchCount_);
-         qParent_.up->insert();
-         //
-         errorOccurred_ = TRUE;
-         pstate.step_ = EXTRACT_DONE;
       }
-       break;
+      break;
 
-      case EXTRACT_DONE:
+      case ex_queue::Q_NO_DATA:
       {
-        // If there is no room in the parent queue for the reply,
-        // try again later.
-        //
-        if (qParent_.up->isFull())
+        pstate.step_ = EXTRACT_DATA_READY_TO_SEND;
+        endOfData_ = TRUE;
+        pstate.processingStarted_ = FALSE ; // so that cancel does not
+        //wait for this Q_NO_DATA
+      }
+      break;
+      case ex_queue::Q_SQLERROR:
+      {
+        pstate.step_ = EXTRACT_ERROR;
+      }
+      break;
+      case ex_queue::Q_INVALID:
+      {
+        updateWorkATPDiagsArea(__FILE__,__LINE__,
+            "ExFastExtractTcb::work() Invalid state returned by child");
+        pstate.step_ = EXTRACT_ERROR;
+      }
+      break;
+
+      } // switch
+      qChild_.up->removeHead();
+    }
+    break;
+
+    case EXTRACT_DATA_READY_TO_SEND:
+    {
+      ssize_t bytesToWrite = currBuffer_->bufSize_ - currBuffer_->bytesLeft_;
+
+      if (!myTdb().getSkipWritingToFiles())
+        if (isSequenceFile())
+        {
+          sfwRetCode = sequenceFileWriter_->writeBuffer(currBuffer_->data_, bytesToWrite, myTdb().getRecordSeparator());
+          if (sfwRetCode != SFW_OK)
+          {
+            createSequenceFileError(sfwRetCode);
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        }
+        else  if (myTdb().getBypassLibhdfs())
+        {
+          sfwRetCode = sequenceFileWriter_->hdfsWrite(currBuffer_->data_, bytesToWrite);
+          if (sfwRetCode != SFW_OK)
+          {
+            createSequenceFileError(sfwRetCode);
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        }
+        else
+        {
+          retcode = 0;
+          retcode = lobInterfaceInsert(bytesToWrite);
+          if (retcode < 0)
+          {
+            Lng32 cliError = 0;
+
+            Lng32 intParam1 = -retcode;
+            ComDiagsArea * diagsArea = NULL;
+            ExRaiseSqlError(getHeap(), &diagsArea,
+                (ExeErrorCode)(8442), NULL, &intParam1,
+                &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
+                getLobErrStr(intParam1));
+            pentry_down->setDiagsArea(diagsArea);
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        }
+      if (feStats)
+      {
+        feStats->incReadyToSendBuffersCount();
+        feStats->incReadyToSendBytes(currBuffer_->bufSize_ - currBuffer_->bytesLeft_);
+      }
+      currBuffer_ = NULL;
+
+      if (endOfData_)
+      {
+        pstate.step_ = EXTRACT_DONE;
+      }
+      else
+      {
+        pstate.step_ = EXTRACT_RETURN_ROWS_FROM_CHILD;
+      }
+    }
+    break;
+
+    case EXTRACT_ERROR:
+    {
+      // If there is no room in the parent queue for the reply,
+      // try again later.
+      //Later we may split this state into 2 one for cancel and one for query
+      if (qParent_.up->isFull())
+        return WORK_OK;
+      // Cancel the child request - there must be a child request in
+      // progress to get to the ERROR state.
+      if (pstate.processingStarted_)
+      {
+        qChild_.down->cancelRequestWithParentIndex(qParent_.down->getHeadIndex());
+        //pstate.processingStarted_ = FALSE;
+      }
+      while (pstate.step_ == EXTRACT_ERROR)
+      {
+        if (qChild_.up->isEmpty())
           return WORK_OK;
+        ex_queue_entry * childEntry = qChild_.up->getHeadEntry();
+        ex_queue::up_status childStatus = childEntry->upState.status;
 
-        if (!myTdb().getSkipWritingToFiles())
-          if (isSequenceFile())
-          {
-            sfwRetCode = sequenceFileWriter_->close();
-            if (sfwRetCode != SFW_OK)
-              {
-                createSequenceFileError(sfwRetCode);
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-              }
-          }
-          else  if (isHdfsCompressed())
-          {
-            sfwRetCode = sequenceFileWriter_->hdfsClose();
-            if (sfwRetCode != SFW_OK)
-              {
-                createSequenceFileError(sfwRetCode);
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-              }
-          }
-          else
-          {
-            retcode = ExpLOBinterfaceCloseFile
-                                    (lobGlob_,
-                                        hdfsFileName_,
-                                     NULL, //(char*)"",
-                                     (Lng32)Lob_External_HDFS_File,
-                                     hdfsHost_,
-                                     hdfsPort_);
-            if (! errorOccurred_ && retcode < 0)
-              {
-                Lng32 cliError = 0;
-    
-                Lng32 intParam1 = -retcode;
-                ComDiagsArea * diagsArea = NULL;
-                ExRaiseSqlError(getHeap(), &diagsArea,
-                                (ExeErrorCode)(8442), NULL, &intParam1,
-                                &cliError, NULL,
-                                (char*)"ExpLOBinterfaceCloseFile",
-                                getLobErrStr(intParam1));
-                pentry_down->setDiagsArea(diagsArea);
-    
-                pstate.step_ = EXTRACT_ERROR;
-                break;
-              }
-          }
-    
-        //insertUpQueueEntry will insert Q_NO_DATA into the up queue and
-        //remove the head of the down queue
-        insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
-        errorOccurred_ = FALSE;
+        if (childStatus == ex_queue::Q_NO_DATA)
+        {
+          pstate.step_ = EXTRACT_DONE;
+        }
+        qChild_.up->removeHead();
+      }
+      ex_queue_entry *pentry_up = qParent_.up->getTailEntry();
+      pentry_up->copyAtp(pentry_down);
+      // Construct and return the error row.
+      //
+      if (workAtp_->getDiagsArea())
+      {
+        ComDiagsArea *diagsArea = pentry_up->getDiagsArea();
+        if (diagsArea == NULL)
+        {
+          diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+          pentry_up->setDiagsArea(diagsArea);
+        }
+        pentry_up->getDiagsArea()->mergeAfter(*workAtp_->getDiagsArea());
+        workAtp_->setDiagsArea(NULL);
+      }
+      pentry_up->upState.status = ex_queue::Q_SQLERROR;
+      pentry_up->upState.parentIndex
+      = pentry_down->downState.parentIndex;
+      pentry_up->upState.downIndex = qParent_.down->getHeadIndex();
+      pentry_up->upState.setMatchNo(pstate.matchCount_);
+      qParent_.up->insert();
+      //
+      errorOccurred_ = TRUE;
+      pstate.step_ = EXTRACT_DONE;
+    }
+    break;
 
-        endOfData_ = FALSE;
-
-        //we need to set the next state so that the query can get re-executed
-        //and we start from the beginning again. Not sure if pstate will be
-        //valid anymore because insertUpQueueEntry() might have cleared it
-        //already.
-        pstate.step_ = EXTRACT_NOT_STARTED;
-
-        //exit out now and not break.
+    case EXTRACT_DONE:
+    {
+      // If there is no room in the parent queue for the reply,
+      // try again later.
+      //
+      if (qParent_.up->isFull())
         return WORK_OK;
 
-      }
-      break;
+      if (!myTdb().getSkipWritingToFiles())
+        if (isSequenceFile())
+        {
+          sfwRetCode = sequenceFileWriter_->close();
+          if (sfwRetCode != SFW_OK)
+          {
+            createSequenceFileError(sfwRetCode);
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        }
+        else  if (myTdb().getBypassLibhdfs())
+        {
+          sfwRetCode = sequenceFileWriter_->hdfsClose();
+          if (sfwRetCode != SFW_OK)
+          {
+            createSequenceFileError(sfwRetCode);
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        }
+        else
+        {
+          retcode = lobInterfaceClose();
+          if (! errorOccurred_ && retcode < 0)
+          {
+            Lng32 cliError = 0;
 
-      default:
-      {
-        ex_assert(FALSE, "Invalid state in  ExHdfsFastExtractTcb ");
-      }
+            Lng32 intParam1 = -retcode;
+            ComDiagsArea * diagsArea = NULL;
+            ExRaiseSqlError(getHeap(), &diagsArea,
+                (ExeErrorCode)(8442), NULL, &intParam1,
+                &cliError, NULL,
+                (char*)"ExpLOBinterfaceCloseFile",
+                getLobErrStr(intParam1));
+            pentry_down->setDiagsArea(diagsArea);
 
-      break;
+            pstate.step_ = EXTRACT_ERROR;
+            break;
+          }
+        }
+      //insertUpQueueEntry will insert Q_NO_DATA into the up queue and
+      //remove the head of the down queue
+      insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);
+      errorOccurred_ = FALSE;
+
+      endOfData_ = FALSE;
+
+      //we need to set the next state so that the query can get re-executed
+      //and we start from the beginning again. Not sure if pstate will be
+      //valid anymore because insertUpQueueEntry() might have cleared it
+      //already.
+      pstate.step_ = EXTRACT_NOT_STARTED;
+
+      //exit out now and not break.
+      return WORK_OK;
+    }
+    break;
+
+    default:
+    {
+      ex_assert(FALSE, "Invalid state in  ExHdfsFastExtractTcb ");
+    }
+
+    break;
 
     } // switch(pstate.step_)
   } // while

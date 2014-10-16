@@ -5624,13 +5624,17 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
     uldQuery = space->allocateAlignedSpace(uldQueryNAS.length() + 1);
     strcpy(uldQuery, uldQueryNAS.data());
   }
-
   char * mergePathStr = NULL;
   if (mergePath_.length()>0){
     mergePathStr = space->allocateAlignedSpace(mergePath_.length() + 1);
     strcpy(mergePathStr, mergePath_.data());
   }
 
+  char * extractLocationStr = NULL;
+  if (extractLocation_.length()>0){
+    extractLocationStr = space->allocateAlignedSpace(extractLocation_.length() + 1);
+    strcpy(extractLocationStr, extractLocation_.data());
+  }
   // allocate a map table for the retrieved columns
   generator->appendAtEnd();
 
@@ -5691,8 +5695,10 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
 
   ComTdbExeUtilHBaseBulkUnLoad * exe_util_tdb = new(space)
   ComTdbExeUtilHBaseBulkUnLoad(
-         tablename, strlen(tablename),
+         tablename,
+         strlen(tablename),
          uldQuery,
+         extractLocationStr,
          0, 0, // no work cri desc
          givenDesc,
          returnedDesc,
@@ -5710,6 +5716,7 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
   exe_util_tdb->setOneFile(oneFile_);
   exe_util_tdb->setMergePath(mergePathStr);
   exe_util_tdb->setSkipWriteToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
+  exe_util_tdb->setOverwriteMergeFile(overwriteMergeFile_);
 
   generator->initTdbFields(exe_util_tdb);
 
@@ -5724,79 +5731,3 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
 
   return 0;
 }
-short ExeUtilHBaseBulkUnLoadTask::codeGen(Generator * generator)
-{
-  ExpGenerator * expGen = generator->getExpGenerator();
-  Space * space = generator->getSpace();
-
-  // allocate a map table for the retrieved columns
-  generator->appendAtEnd();
-
-  ex_cri_desc * givenDesc
-    = generator->getCriDesc(Generator::DOWN);
-
-  ex_cri_desc * returnedDesc
-#pragma nowarn(1506)   // warning elimination
-    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
-#pragma warn(1506)  // warning elimination
-
-  char * tablename = NULL;
-  if ((getUtilTableDesc()) &&
-      (getUtilTableDesc()->getNATable()) &&
-      (getUtilTableDesc()->getNATable()->isVolatileTable()))
-    {
-      tablename = space->AllocateAndCopyToAlignedSpace
-        (getTableName().getQualifiedNameObj().getObjectName(), 0);
-    }
-  else
-    {
-      tablename = space->AllocateAndCopyToAlignedSpace
-        (generator->genGetNameAsAnsiNAString(getTableName()), 0);
-    }
-
-
-   char * hiveTableLocation = NULL;
-   char * hdfsMergeLocation = NULL;
-
-
-   hiveTableLocation =
-       space->AllocateAndCopyToAlignedSpace (hiveTablePath_, 0);
-   hdfsMergeLocation =
-       space->AllocateAndCopyToAlignedSpace (destinationPath_, 0);
-
-   ComTdbExeUtilHBaseBulkUnLoadTask * exe_util_tdb = new(space)
-    ComTdbExeUtilHBaseBulkUnLoadTask(
-                            tablename,
-                            strlen(tablename),
-                            0,
-                            0, // no work cri desc
-                            (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-                            (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-                            (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
-                            (queue_index)getDefault(GEN_DDL_SIZE_UP),
-#pragma nowarn(1506)   // warning elimination
-                            getDefault(GEN_DDL_NUM_BUFFERS),
-                            getDefault(GEN_DDL_BUFFER_SIZE),
-                            hiveTableLocation,
-                            hdfsMergeLocation,
-                            taskType_);
-#pragma warn(1506)  // warning elimination
-
-  generator->initTdbFields(exe_util_tdb);
-
-  if(!generator->explainDisabled()) {
-    generator->setExplainTuple(
-       addExplainInfo(exe_util_tdb, 0, 0, generator));
-  }
-
-  // no tupps are returned
-  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
-                        Generator::UP);
-  generator->setGenObj(this, exe_util_tdb);
-
-  generator->setTransactionFlag(0); // transaction is not needed.
-
-
-  return 0;
-}
-

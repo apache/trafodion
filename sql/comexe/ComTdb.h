@@ -339,7 +339,6 @@ public:
     ex_METADATA_UPGRADE = 147,
     ex_HBASE_LOAD = 148,
     ex_HBASE_UNLOAD = 149,
-    ex_HBASE_UNLOAD_TASK = 150,
     ex_LAST = 9999              // not used
   };
 
