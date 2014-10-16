@@ -503,7 +503,15 @@ public:
 
   const ComUID &getCatalogUid() const           { return catalogUID_; }
   const ComUID &getSchemaUid() const            { return schemaUID_; }
-  const ComUID &objectUid() const               { return objectUID_; }
+  const ComUID &objectUid() const
+  {
+    // Metadata table will originate with 0 obj uid.
+    if (objectUID_.get_value() == 0 && isSeabaseMDTable())
+      const_cast<NATable*>(this)->lookupObjectUid();  // cast off const
+    return objectUID_;
+  }
+
+  void lookupObjectUid();    // Used to look up uid on demand for metadata tables
 
   const ComObjectType &getObjectType() const { return objectType_; }
 

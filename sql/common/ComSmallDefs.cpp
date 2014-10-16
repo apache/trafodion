@@ -157,3 +157,60 @@ ostream & operator << (ostream &s, const ComUID &uid)
   return s;
 }
 
+// Return the 2-character string literal corresponding to the ComObjectType
+// argument.
+const char* comObjectTypeLit(ComObjectType objType)
+{
+  switch(objType)
+    {
+      case COM_UNKNOWN_OBJECT:
+        return COM_UNKNOWN_OBJECT_LIT;
+      case COM_BASE_TABLE_OBJECT:
+        return COM_BASE_TABLE_OBJECT_LIT;
+      case COM_CHECK_CONSTRAINT_OBJECT:
+        return COM_CHECK_CONSTRAINT_OBJECT_LIT;
+      case COM_INDEX_OBJECT:
+        return COM_INDEX_OBJECT_LIT;
+      case COM_LIBRARY_OBJECT:
+        return COM_LIBRARY_OBJECT_LIT;
+      case COM_LOCK_OBJECT:
+        return COM_LOCK_OBJECT_LIT;
+      case COM_MODULE_OBJECT:
+        return COM_MODULE_OBJECT_LIT;
+      case COM_NOT_NULL_CONSTRAINT_OBJECT:
+        return COM_NOT_NULL_CONSTRAINT_OBJECT_LIT;
+      case COM_PRIMARY_KEY_CONSTRAINT_OBJECT:
+        return COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT;
+      case COM_REFERENTIAL_CONSTRAINT_OBJECT:
+        return COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT;
+      case COM_STORED_PROCEDURE_OBJECT:
+        return COM_STORED_PROCEDURE_OBJECT_LIT;
+      case COM_UNIQUE_CONSTRAINT_OBJECT:
+        return COM_UNIQUE_CONSTRAINT_OBJECT_LIT;
+      case COM_USER_DEFINED_ROUTINE_OBJECT:
+        return COM_USER_DEFINED_ROUTINE_OBJECT_LIT;
+      case COM_VIEW_OBJECT:
+        return COM_VIEW_OBJECT_LIT;
+      case COM_MV_OBJECT:
+        return COM_MV_OBJECT_LIT;
+      case COM_MVRG_OBJECT:
+        return COM_MVRG_OBJECT_LIT;
+      case COM_TRIGGER_OBJECT:
+        return COM_TRIGGER_OBJECT_LIT;
+      case COM_LOB_TABLE_OBJECT:
+        return COM_LOB_TABLE_OBJECT_LIT;
+      case COM_TRIGGER_TABLE_OBJECT:
+        return COM_TRIGGER_TABLE_OBJECT_LIT;
+      case COM_SYNONYM_OBJECT:
+        return COM_SYNONYM_OBJECT_LIT;
+      case COM_SCHEMA_LABEL_OBJECT:
+        return COM_SCHEMA_LABEL_OBJECT_LIT;
+      case COM_EXCEPTION_TABLE_OBJECT:
+        return COM_EXCEPTION_TABLE_OBJECT_LIT;
+      case COM_SEQUENCE_GENERATOR_OBJECT:
+        return COM_SEQUENCE_GENERATOR_OBJECT_LIT;
+    }
+
+  ComASSERT(FALSE);
+  return COM_UNKNOWN_OBJECT_LIT;
+}
