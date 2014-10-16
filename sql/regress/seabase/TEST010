@@ -329,3 +329,73 @@ select * from minotaur.events_load75<<+ cardinality 10e6 >>  where srcip = '120.
 execute s;
 
 showddl TRAFODION.MINOTAUR.EVENTS_LOAD75;
+
+drop table if exists t010t4;
+create table t010t4 (a int not null primary key, b int, c int) 
+salt using 4 partitions ;
+create index t010ix1 on t010t4 (b) 
+HBASE_OPTIONS
+  (
+    DATA_BLOCK_ENCODING = 'FAST_DIFF',
+    COMPRESSION = 'GZ'
+  )
+  SALT LIKE TABLE
+;
+showddl t010t4 ;
+insert into t010t4 values (1,1,1) ;
+prepare s from select a from t010t4 <<+cardinality 10e8>> where b > 0 ;
+explain options 'f' s ;
+execute s;
+
+cqd detailed_statistics 'all';
+
+prepare statsquery from
+select frag_num, inst_num, seq_num,
+       cast(substring(variable_info
+                      from position('AccessedRows' in variable_info)
+                      for position('DiskIOs' in variable_info) -
+                          position('AccessedRows' in variable_info))
+            as char(40) character set iso88591) as rows_accessed
+from table(statistics(null, 'S'))
+where tdb_name = 'EX_HBASE_ACCESS';
+
+prepare statsquery1 from
+select frag_num, inst_num, seq_num,
+       case when cast(substring(variable_info
+                      from position('AccessedRows' in variable_info)+14
+                      for position('UsedRows' in variable_info) -
+                          position('AccessedRows' in variable_info)-14)
+            as integer) > 4000 then 'PASS' else 'FAIL' end
+from table(statistics(null, 'S'))
+where tdb_name = 'EX_HBASE_ACCESS'
+order by 1,2,3;
+
+drop table if exists t010t5;
+
+create table T010t5(c1 numeric(12,2) not null,
+                     c2 largeint not null,
+                     c3 integer,
+                     c4 char(1000),
+                     primary key (c1, c2))
+salt using 2 partitions ;
+
+upsert using load into t010t5
+select num*0.01, num, num, 'dummy'
+from (select 1000*thousands+100*hundreds+10*tens+ones
+      from (values (0)) seed(c)
+      transpose 0,1,2,3,4,5,6,7,8,9 as ones
+      transpose 0,1,2,3,4,5,6,7,8,9 as tens
+      transpose 0,1,2,3,4,5,6,7,8,9 as hundreds
+      transpose 0,1,2,3,4,5,6,7,8,9 as thousands) gen(num)
+order by 3
+;
+
+create index t010t5idx1 on t010t5(c3) salt like table ;
+set parserflags 1;
+
+prepare s from
+select count(*) as cnt, min(c1) minc1, max(c1) maxc1, min(c2) minc2, max(c2) maxc2 from table(index_table t010t5idx1 )a;
+execute s;
+execute statsquery1;
+--use statsquery to see rows flowing through each ESP
+--execute statsquery ;

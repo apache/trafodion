@@ -182,6 +182,25 @@ Lng32 NAType::getPrefixSize() const
   return (SQLnullHdrSize_ + lengthHdrSize_);
 }
 
+Lng32 NAType::getPrefixSizeWithAlignment() const
+{
+  // Previous method does not consider alignment and is used by getTotalSize()
+  // the result must be the smallest number that is greater or equal
+  // to SQLnullHdrSize_ + lengthHdrSize_ and that is divisible by
+  // the data alignment.
+  Lng32 align  = getDataAlignment();  // must be divisible by data alignment
+ 
+  
+  // if the var length field has an alignment greater than that of the
+  // null indicator, there is an extra filler between those two fields
+  // for now this method does not handle length indicator > 2 bytes
+ // if (lengthHdrSize_ > 2 AND SQLnullHdrSize_ == 2)
+   // prefixLen = 2 * lengthHdrSize_;
+
+  // return the result
+  return (SQLnullHdrSize_ + lengthHdrSize_ + align - 1) / align * align;
+}
+
 // -- return the total size of this ADT just like NAType::getTotalSize,
 //    except add filler bytes such that the size is a multiple of its
 //    alignment (as returned by getByteAlignment())

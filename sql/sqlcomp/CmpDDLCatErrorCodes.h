@@ -224,6 +224,9 @@ enum CatErrorCode { CAT_FIRST_ERROR = 1000
                   
                   , CAT_DROP_LABEL_ERROR_FELABELBAD               = 1194
                   , CAT_INVALID_SYSTEM_NAME                       = 1196
+                  , CAT_INVALID_SALTED_UNIQUE_IDX                 = 1201
+                  , CAT_INVALID_SALT_LIKE_CLAUSE                  = 1202
+                  , CAT_INVALID_HBASE_OPTIONS_CLAUSE              = 1203
                   , CAT_CODE_MUST_CONTAIN_2_NONBLANKS             = 1220
                   , CAT_COMPONENT_NOT_SYSTEM                      = 1221
                   , CAT_AUTHORIZATION_NOT_ENABLED                 = 1222

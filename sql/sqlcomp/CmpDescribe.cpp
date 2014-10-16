@@ -2412,6 +2412,7 @@ static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
         }
       
       NABoolean isFirst = TRUE;
+      Int32 j = -1;
       for (Int32 jj = 0; jj < numKeys; jj++)
         {
           NAColumn * nac = naColArr[jj];
@@ -2421,6 +2422,8 @@ static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
             {
               continue;
             }
+          else
+            j++; // increment num of columns displayed
           
           const NAString &keyName = nac->getColName();
           if (displayCompact)
@@ -2439,7 +2442,6 @@ static short cmpDisplayPrimaryKey(const NAColumnArray & naColArr,
                        " "));
               
               NAString colString(buf);
-              Int32 j = jj;
               outputColumnLine(space, colString, j);
             }
 
@@ -2854,12 +2856,36 @@ short CmpDescribeSeabaseTable (
 	      outputShortLine(space, buf);
 	    }
 	  
-	  Lng32 numIndexCols =
-	    naf->getIndexKeyColumns().entries() - 
-	    (((type == 1) || naf->uniqueIndex()) ? 0 : numBTpkeys);
+	  Lng32 numIndexCols = ((type == 1) ? 
+                                naf->getIndexKeyColumns().entries() :
+                                naf->getCountOfUserSpecifiedIndexCols());
+
 	  cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), numIndexCols, 
 			       displaySystemCols,
 			       space, buf, FALSE, TRUE);
+
+          if ((naf->hbaseCreateOptions()) && (type == 2) &&
+               (naf->hbaseCreateOptions()->entries() > 0))
+           {
+             outputShortLine(space, "  HBASE_OPTIONS ");
+             outputShortLine(space, "  ( ");
+          
+             for (Lng32 i = 0; i < naf->hbaseCreateOptions()->entries(); i++)
+             {
+               HbaseCreateOption * hco = (*naf->hbaseCreateOptions())[i];
+               char separator = 
+                 ((i < naf->hbaseCreateOptions()->entries() - 1) ?
+                  ',' : ' ') ;
+               sprintf(buf, "    %s = '%s'%c", hco->key().data(), 
+                       hco->val().data(),separator);
+               outputShortLine(space, buf);
+             }
+
+             outputShortLine(space, "  ) ");
+           }
+
+          if ((naf->numSaltPartns() > 0) && (type == 2))
+            outputShortLine(space, " SALT LIKE TABLE ");
 	  
 	  if (type == 2)
 	    outputShortLine(space, ";");

@@ -3163,7 +3163,8 @@ ElemDDLSaltOptionsClause::ElemDDLSaltOptionsClause(ElemDDLNode * pSaltExprTree,
                                                    Int32 numPartitions)
   : ElemDDLNode(ELM_SALT_OPTIONS_ELEM),
     numPartitions_(numPartitions),
-    saltColumnArray_(PARSERHEAP())
+    saltColumnArray_(PARSERHEAP()),
+    likeTable_(FALSE)
 {
   setChild(INDEX_SALT_COLUMN_LIST, pSaltExprTree);
   //
@@ -3179,6 +3180,15 @@ ElemDDLSaltOptionsClause::ElemDDLSaltOptionsClause(ElemDDLNode * pSaltExprTree,
         saltColumnArray_.insert((*pSaltExprTree)[i]->castToElemDDLColRef());
       }
 }
+
+ElemDDLSaltOptionsClause::ElemDDLSaltOptionsClause(NABoolean likeTable)
+  : ElemDDLNode(ELM_SALT_OPTIONS_ELEM),
+    numPartitions_(0),
+    saltColumnArray_(PARSERHEAP()),
+    likeTable_(likeTable)
+{
+}
+
 
 // virtual destructor
 ElemDDLSaltOptionsClause::~ElemDDLSaltOptionsClause()
@@ -3225,6 +3235,13 @@ ElemDDLSaltOptionsClause::setChild(Lng32 index, ExprNode * pChildNode)
   {
     children_[index] = NULL;
   }
+}
+
+
+NABoolean
+ElemDDLSaltOptionsClause::getLikeTable() const
+{
+  return likeTable_;
 }
 
 //

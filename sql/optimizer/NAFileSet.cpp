@@ -75,6 +75,8 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
 		     NABoolean inMemObjectDefn,
                      desc_struct *keysDesc,
                      HHDFSTableStats *hHDFSTableStats,
+                     Lng32 numSaltPartns,
+                     NAList<HbaseCreateOption*>* hbaseCreateOptions,
                      CollHeap * h)
          : fileSetName_(fileSetName, h),
 	   extFileSetObj_(extFileSetObj, h),
@@ -111,7 +113,9 @@ NAFileSet::NAFileSet(const QualifiedName & fileSetName,
            isDecoupledRangePartitioned_(isDecoupledRangePartitioned),
            fileCode_(fileCode),
            keysDesc_(keysDesc),
-           hHDFSTableStats_(hHDFSTableStats)
+           hHDFSTableStats_(hHDFSTableStats),
+           numSaltPartns_(numSaltPartns),
+           hbaseCreateOptions_(hbaseCreateOptions)
 {
   setUniqueIndex(isUniqueSecondaryIndex);
   setIsVolatile(isVolatile);
@@ -255,6 +259,18 @@ void NAFileSet::setupForStatement()
   resetAfterStatement_= FALSE;
 }
 
+Lng32 NAFileSet::getCountOfUserSpecifiedIndexCols() const
+{
+  Lng32 userSpecifiedIndexCol = 0;
+
+  for(int i = 0; i < getIndexKeyColumns().entries(); i++)
+  {    
+    if (getIndexKeyColumns()[i]->getIndexColName() != 
+        getIndexKeyColumns()[i]->getColName())
+      userSpecifiedIndexCol++;
+  }
+  return userSpecifiedIndexCol ;
+}
 // load-time initialization
 static THREAD_P RandomSequence* random_ = NULL;
 static THREAD_P NABoolean seeded_ = FALSE;

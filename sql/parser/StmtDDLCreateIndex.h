@@ -39,6 +39,7 @@
 #include "ElemDDLNode.h"
 #include "ElemDDLColRefArray.h"
 #include "ElemDDLDivisionClause.h"
+#include "ElemDDLSaltOptions.h"
 #include "ElemDDLLocation.h"
 #include "ElemDDLPartitionArray.h"
 #include "NAString.h"
@@ -237,8 +238,23 @@ inline NABoolean isNoPopulateOptionSpecified() const;
         // returns TRUE if the DIVISION {BY|AS} clause appears;
         // returns FALSE otherwise.
 
+  inline NABoolean isHbaseOptionsSpecified() const;
+
+        // returns TRUE if HBASE_OPTIONS clause appears;
+        // returns FALSE otherwise.
+
+
   inline ElemDDLDivisionClause::divisionTypeEnum getDivisionType() const;
   inline ItemExprList * getDivisionExprList();
+
+  inline       ElemDDLSaltOptionsClause * getSaltOptions();
+
+  // this will return NULL in all cases as Traf 0.9 since SALT calumns
+  // cannot be be explicitly specified in the CREATE INDEX statement
+  // Only SALT LIKE TABLE is supported for an index
+  inline       ElemDDLColRefArray * getSaltColRefArray();
+
+  inline       ElemDDLHbaseOptions * getHbaseOptionsClause();
 
   //
   // mutators
@@ -400,6 +416,14 @@ private:
 
   NABoolean isDivisionClauseSpec_;
   ElemDDLDivisionClause *pDivisionClauseParseNode_;
+
+  // SALT clause for HBase tables
+  ElemDDLSaltOptionsClause *pSaltOptions_;
+
+  // HBASE OPTIONS clause
+
+  NABoolean isHbaseOptionsSpec_;
+  ElemDDLHbaseOptions *pHbaseOptionsParseNode_;
 
   // PARTITION BY clause
   NABoolean isPartitionByClauseSpec_;
@@ -589,6 +613,13 @@ inline NABoolean StmtDDLCreateIndex::isDivisionClauseSpecified() const
   return isDivisionClauseSpec_;
 }
 
+// is HBASE_OPTIONS specified?
+inline NABoolean StmtDDLCreateIndex::isHbaseOptionsSpecified() const
+{
+  return isHbaseOptionsSpec_;
+}
+
+
 inline ElemDDLDivisionClause::divisionTypeEnum StmtDDLCreateIndex::getDivisionType() const
 {
   return ( pDivisionClauseParseNode_ EQU NULL
@@ -601,6 +632,23 @@ inline ItemExprList * StmtDDLCreateIndex::getDivisionExprList()
   return ( pDivisionClauseParseNode_ EQU NULL
            ? NULL
            : pDivisionClauseParseNode_->getDivisionExprList() );
+}
+
+inline ElemDDLHbaseOptions * StmtDDLCreateIndex::getHbaseOptionsClause()
+{
+  return pHbaseOptionsParseNode_;
+}
+
+inline ElemDDLSaltOptionsClause * StmtDDLCreateIndex::getSaltOptions()
+{
+  return pSaltOptions_;
+}
+
+inline ElemDDLColRefArray * StmtDDLCreateIndex::getSaltColRefArray()
+{
+  return ( pSaltOptions_ EQU NULL
+           ? NULL
+           : &pSaltOptions_->getSaltColRefArray() );
 }
 
 //

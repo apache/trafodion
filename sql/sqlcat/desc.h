@@ -124,8 +124,6 @@ struct table_desc_struct {
   void *constraintInfo;
   ULng32 constraintInfoLen;
   ComBoolean isInsertOnly;
-  Lng32 numSaltPartns; // number of salted partns created for a seabase table.
-  char * hbaseCreateOptions;
   desc_struct *columns_desc;
   desc_struct *indexes_desc;
   desc_struct *constrnts_desc;
@@ -193,6 +191,8 @@ struct indexes_desc_struct {
   Int32 record_length;
   Int32 colcount;
   Int32 blocksize;
+  Lng32 numSaltPartns; // number of salted partns created for a seabase table.
+  char * hbaseCreateOptions;
   desc_struct *files_desc;
   // Clustering keys columns
   desc_struct *keys_desc;
