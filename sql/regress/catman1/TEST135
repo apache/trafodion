@@ -32,6 +32,16 @@
 
 obey TEST135(clean_up);
 set parserflags 64;
+register user sql_user1;
+register user sql_user2;
+register user sql_user3;
+register user sql_user4;
+register user sql_user5;
+register user sql_user6;
+register user sql_user7;
+register user sql_user8;
+register user sql_user9;
+register user sql_user10;
 log LOG135 clear;
 sh rm -f LOG135-SECONDARY;
 obey TEST135(set_up);
@@ -57,16 +67,6 @@ initialize authorization, drop;
 
 ?section set_up
 -- ============================================================================
-register user sql_user1;
-register user sql_user2;
-register user sql_user3;
-register user sql_user4;
-register user sql_user5;
-register user sql_user6;
-register user sql_user7;
-register user sql_user8;
-register user sql_user9;
-register user sql_user10;
 
 -- create schema
 create schema t135sch;

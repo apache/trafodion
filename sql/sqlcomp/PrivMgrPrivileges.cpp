@@ -2632,6 +2632,7 @@ PrivStatus ObjectPrivsMDTable::updateWhere(const std::string & setClause,
   return STATUS_GOOD;
 }
 
+
 // ----------------------------------------------------------------------------
 // method::insertSelect
 //
