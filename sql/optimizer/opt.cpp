@@ -3940,6 +3940,11 @@ OptDefaults::OptDefaults()
    ResourcePerformanceGoal_ = NULL;
 } 
 
+OptDefaults::~OptDefaults()
+{
+   CleanupCostVariables();
+}
+
 // Static methods of OptDefaults
 
 NABoolean OptDefaults::useNewMdam()

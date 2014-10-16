@@ -190,6 +190,7 @@ class OptDefaults
 public:
 
   OptDefaults ();
+  ~OptDefaults ();
 
   enum optLevelEnum
     {
