@@ -31,7 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
@@ -45,14 +45,15 @@ import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
 import org.apache.hadoop.hbase.client.transactional.UnknownTransactionException;
 import org.apache.hadoop.hbase.client.transactional.HBaseBackedTransactionLogger;
 import org.apache.hadoop.hbase.client.transactional.TransactionRegionLocation;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.TableExistsException;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.TableExistsException;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public class HBaseAuditControlPoint {
     public HBaseAuditControlPoint(Configuration config) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("Enter HBaseAuditControlPoint constructor()");
       CONTROL_POINT_TABLE_NAME = config.get("CONTROL_POINT_TABLE_NAME");
-      HTableDescriptor desc = new HTableDescriptor(CONTROL_POINT_TABLE_NAME);
+      HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(CONTROL_POINT_TABLE_NAME));
       HColumnDescriptor hcol = new HColumnDescriptor(CONTROL_POINT_FAMILY);
 
       disableBlockCache = false;
@@ -132,7 +133,7 @@ public class HBaseAuditControlPoint {
       try {
          if (LOG.isDebugEnabled()) LOG.debug("try new HTable");
          table = new HTable(config, desc.getName());
-         table.setAutoFlush(this.useAutoFlush);
+         table.setAutoFlushTo(this.useAutoFlush);
       }
       catch (IOException e) {
          LOG.error("new HTable IOException");
