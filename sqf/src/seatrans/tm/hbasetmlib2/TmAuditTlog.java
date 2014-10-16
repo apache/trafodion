@@ -29,6 +29,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
@@ -52,6 +54,7 @@ import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.LocalHBaseCluster;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableExistsException;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import org.apache.hadoop.hbase.regionserver.RegionSplitPolicy;
@@ -418,7 +421,7 @@ public class TmAuditTlog {
          String lv_tLogName = new String(TLOG_TABLE_NAME + "_LOG_" + Integer.toHexString(i));
          boolean lvTlogExists = admin.tableExists(lv_tLogName);
          if (LOG.isDebugEnabled()) LOG.debug("Tlog table " + lv_tLogName + (lvTlogExists? " exists" : " does not exist" ));
-         HTableDescriptor desc = new HTableDescriptor(lv_tLogName);
+         HTableDescriptor desc = new HTableDescriptor(TableName.valueOf(lv_tLogName));
          desc.addFamily(hcol);
 
           if (lvTlogExists == false) {
@@ -441,7 +444,7 @@ public class TmAuditTlog {
             throw new RuntimeException(e);
          }
 
-         table[i].setAutoFlush(this.useAutoFlush);
+         table[i].setAutoFlushTo(this.useAutoFlush);
 
       }
 
@@ -820,8 +823,8 @@ public class TmAuditTlog {
 
             try {
                for (Result r : ss) {
-                  for (KeyValue kv : r.raw()) {
-                     String valueString = new String(kv.getValue());
+                  for (Cell cell : r.rawCells()) {
+                     String valueString = new String(CellUtil.cloneValue(cell));
                      StringTokenizer st = new StringTokenizer(valueString, ",");
                      if (st.hasMoreElements()) {
                         String asnToken = st.nextElement().toString() ;
@@ -847,9 +850,9 @@ public class TmAuditTlog {
                               get.setMaxVersions(versions);  // will return last n versions of row
                               Result lvResult = table[i].get(get);
                              // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
-                              List<KeyValue> list = lvResult.getColumn(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
-                              for (KeyValue element : list) {
-                                 String value = new String(element.getValue());
+                              List<Cell> list = lvResult.getColumnCells(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
+                              for (Cell element : list) {
+                                 String value = new String(CellUtil.cloneValue(element));
                                  StringTokenizer stok = new StringTokenizer(value, ",");
                                  if (stok.hasMoreElements()) {
                                     if (LOG.isTraceEnabled()) LOG.trace("Performing secondary search on (" + transidToken + ")");
@@ -1038,9 +1041,9 @@ public class TmAuditTlog {
                get.setMaxVersions(versions);  // will return last n versions of row
                Result lvResult = table[lv_lockIndex].get(get);
                // byte[] b = lvResult.getValue(TLOG_FAMILY, ASN_STATE);  // returns current version of value
-               List<KeyValue> list = lvResult.getColumn(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
-               for (KeyValue element : list) {
-                  String stringValue = new String(element.getValue());
+               List<Cell> list = lvResult.getColumnCells(TLOG_FAMILY, ASN_STATE);  // returns all versions of this column
+               for (Cell element : list) {
+                  String stringValue = new String(CellUtil.cloneValue(element));
                   st = new StringTokenizer(stringValue, ",");
                   if (st.hasMoreElements()) {
                      if (LOG.isDebugEnabled()) LOG.debug("Performing secondary search on (" + transidToken + ")");

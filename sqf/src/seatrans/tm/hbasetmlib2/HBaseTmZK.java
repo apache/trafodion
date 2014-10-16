@@ -206,7 +206,7 @@ public class HBaseTmZK implements Abortable{
                  createRecoveryzNode(hostName, portNumber, region.getEncodedName(), lv_byte_region_info);
               }
               catch (Exception e2){
-                 LOG.error("postAllRegionEntries exception in createRecoveryzNode " + region.getTableName().toString() +
+                 LOG.error("postAllRegionEntries exception in createRecoveryzNode " + region.getTable().getNameAsString() +
                            " exception: " + e2);
               }
            }// while
