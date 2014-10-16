@@ -1935,6 +1935,7 @@ CoprocessorService, Coprocessor {
     long counter = 0l;
     List<Cell> results = new ArrayList<Cell>();
     RegionScanner scanner = null;
+    long transactionId = 0l;
     try {
       Scan scan = ProtobufUtil.toScan(request.getScan());
       byte[][] colFamilies = scan.getFamilies();
@@ -1947,7 +1948,7 @@ CoprocessorService, Coprocessor {
       }
       if (scan.getFilter() == null && qualifier == null)
         scan.setFilter(new FirstKeyOnlyFilter());
-      long transactionId = request.getTransactionId();
+      transactionId = request.getTransactionId();
       scanner = getScanner(transactionId, scan);
       boolean hasMoreRows = false;
       do {
@@ -1970,8 +1971,8 @@ CoprocessorService, Coprocessor {
         } catch (IOException ignored) {}
       }
     }
-    LOG.info("Row counter from this region is "
-        + env.getRegion().getRegionNameAsString() + ": " + counter);
+    LOG.info("Row counter for transactionId " + transactionId + " from this region: "
+        + env.getRegion().getRegionNameAsString() + " is " + counter);
     done.run(response);
   }
 
