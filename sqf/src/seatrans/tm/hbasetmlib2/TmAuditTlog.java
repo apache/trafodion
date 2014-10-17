@@ -86,7 +86,7 @@ public class TmAuditTlog {
 
    static final Log LOG = LogFactory.getLog(TmAuditTlog.class);
    private static HBaseAdmin admin;
-   private static Configuration config;
+   private Configuration config;
    private static String TLOG_TABLE_NAME;
    private static final byte[] TLOG_FAMILY = Bytes.toBytes("tf");
    private static final byte[] ASN_STATE = Bytes.toBytes("as");
@@ -96,7 +96,7 @@ public class TmAuditTlog {
    private static long tLogControlPointNum;
    private static long tLogHashKey;
    private static int  tLogHashShiftFactor;
-   private static int dtmid;
+   private int dtmid;
 
    // For performance metrics
    private static long[] startTimes;
@@ -127,10 +127,10 @@ public class TmAuditTlog {
    private static int     versions;
    private static int     tlogNumLogs;
    private static boolean distributedFS;
-   private static boolean useAutoFlush;
+   private boolean useAutoFlush;
    private static boolean ageCommitted;
    private static boolean forceControlPoint;
-   private static boolean disableBlockCache;
+   private boolean disableBlockCache;
  
    private static AtomicLong asn;  // Audit sequence number is the monotonic increasing value of the tLog write
 
@@ -1111,12 +1111,12 @@ public class TmAuditTlog {
                String tableNameToken = st.nextToken();
                HTable table = new HTable(config, tableNameToken);
                NavigableMap<HRegionInfo, ServerName> regions = table.getRegionLocations();
-               Iterator it =  regions.entrySet().iterator();
+               Iterator<Map.Entry<HRegionInfo, ServerName>> it =  regions.entrySet().iterator();
                while(it.hasNext()) { // iterate entries.
-                  NavigableMap.Entry pairs = (NavigableMap.Entry)it.next();
-                  HRegionInfo regionKey = (HRegionInfo) pairs.getKey();
+                  NavigableMap.Entry<HRegionInfo, ServerName> pairs = it.next();
+                  HRegionInfo regionKey = pairs.getKey();
                   if (LOG.isDebugEnabled()) LOG.debug("getTransactionState: transaction: " + transidToken + " adding region: " + regionKey.getRegionNameAsString());
-                  ServerName serverValue = (ServerName) regions.get(regionKey);
+                  ServerName serverValue = regions.get(regionKey);
                   String hostAndPort = new String(serverValue.getHostAndPort());
                   StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
                   String hostName = new String(tok.nextElement().toString());

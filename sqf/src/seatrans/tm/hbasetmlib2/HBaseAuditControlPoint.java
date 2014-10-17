@@ -77,8 +77,8 @@ public class HBaseAuditControlPoint {
     private static final byte[] CONTROL_POINT_FAMILY = Bytes.toBytes("cpf");
     private static final byte[] ASN_HIGH_WATER_MARK = Bytes.toBytes("hwm");
     private static HTable table;
-    private static boolean useAutoFlush;
-    private static boolean disableBlockCache;
+    private boolean useAutoFlush;
+    private boolean disableBlockCache;
 
     public HBaseAuditControlPoint(Configuration config) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("Enter HBaseAuditControlPoint constructor()");
@@ -187,7 +187,7 @@ public class HBaseAuditControlPoint {
       return highKey;
    }
 
-   public static long putRecord(final long ControlPt, final long startingSequenceNumber) throws Exception {
+   public long putRecord(final long ControlPt, final long startingSequenceNumber) throws Exception {
       if (LOG.isTraceEnabled()) LOG.trace("putRecord starting sequence number ("  + String.valueOf(startingSequenceNumber) + ")");
       String controlPtString = new String(String.valueOf(ControlPt));
       Put p = new Put(Bytes.toBytes(controlPtString));
@@ -208,7 +208,7 @@ public class HBaseAuditControlPoint {
       return ControlPt;
    }
 
-   public static ArrayList<String> getRecordList(String controlPt) throws IOException {
+   public ArrayList<String> getRecordList(String controlPt) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getRecord");
       ArrayList<String> transactionList = new ArrayList<String>();
       Get g = new Get(Bytes.toBytes(controlPt));
@@ -228,7 +228,7 @@ public class HBaseAuditControlPoint {
 
     }
 
-   public static long getRecord(final String controlPt) throws IOException {
+   public long getRecord(final String controlPt) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getRecord " + controlPt);
       long lvValue = -1;
       Get g = new Get(Bytes.toBytes(controlPt));
@@ -254,7 +254,7 @@ public class HBaseAuditControlPoint {
 
     }
 
-   public static long getStartingAuditSeqNum() throws IOException {
+   public long getStartingAuditSeqNum() throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("getStartingAuditSeqNum");
       String controlPtString = new String(String.valueOf(currControlPt));
       long lvAsn;
@@ -283,7 +283,7 @@ public class HBaseAuditControlPoint {
       return lvAsn;
     }
 
-   public static long doControlPoint(final long sequenceNumber) throws IOException {
+   public long doControlPoint(final long sequenceNumber) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("doControlPoint start");
       try {
          currControlPt++;
@@ -298,7 +298,7 @@ public class HBaseAuditControlPoint {
       return currControlPt;
    }
 
-   public static boolean deleteRecord(final long controlPoint) throws IOException {
+   public boolean deleteRecord(final long controlPoint) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("deleteRecord start for control point " + controlPoint);
       String controlPtString = new String(String.valueOf(controlPoint));
 
@@ -316,7 +316,7 @@ public class HBaseAuditControlPoint {
       return true;
    }
 
-   public static boolean deleteAgedRecords(final long controlPoint) throws IOException {
+   public boolean deleteAgedRecords(final long controlPoint) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("deleteAgedRecords start - control point " + controlPoint);
       String controlPtString = new String(String.valueOf(controlPoint));
 

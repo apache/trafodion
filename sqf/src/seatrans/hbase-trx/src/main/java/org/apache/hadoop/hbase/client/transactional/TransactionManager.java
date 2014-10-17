@@ -277,10 +277,16 @@ public class TransactionManager {
 
 		    HRegionLocation lv_hrl = table.getRegionLocation(startKey);
 		    HRegionInfo     lv_hri = lv_hrl.getRegionInfo();
-		    if ((location.getRegionInfo().compareTo(lv_hri) != 0)) {
+                    String          lv_node = lv_hrl.getHostname();
+                    int             lv_length = lv_node.indexOf('.');
+
+		    if ((location.getRegionInfo().getEncodedName().compareTo(lv_hri.getEncodedName()) != 0) ||  // Encoded name is different
+                        (location.getHostname().regionMatches(0, lv_node, 0, lv_length) == false)) {            // Node is different
 			    	LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
 			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
 			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
+			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_node: " + lv_node + " lv_length: " + lv_length);
+			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getHostname(): " + location.getHostname());
 				
 			    	table.getRegionLocation(startKey, true);
 			}
