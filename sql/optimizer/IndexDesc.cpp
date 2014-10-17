@@ -42,6 +42,8 @@
 #include "CmpContext.h"
 #include "CostScalar.h"
 #include "ScanOptimizer.h"
+#include "AppliedStatMan.h"
+
 // -----------------------------------------------------------------------
 // make an IndexDesc from an existing TableDesc and an NAFileSet
 // -----------------------------------------------------------------------
@@ -340,6 +342,27 @@ CollHeap* IndexDesc::wHeap()
 { 
   return (cmpContext_) ? cmpContext_->statementHeap() : 0; 
 }
+
+CostScalar IndexDesc::getKbForLocalPred() const
+{
+   AppliedStatMan * appStatMan = QueryAnalysis::ASM();
+   if ( !appStatMan ) 
+      return csZero;
+
+   const TableAnalysis * tAnalysis = getPrimaryTableDesc()->getTableAnalysis();
+
+   if ( !tAnalysis ) 
+      return csZero;
+
+   CANodeId tableId = tAnalysis->getNodeAnalysis()->getId();
+   const ValueIdList &keys = getIndexKey();
+   CostScalar rowsToScan = appStatMan->
+          getStatsForLocalPredsOnPrefixOfColList(tableId, keys)->
+                getResultCardinality();
+
+   return rowsToScan * getRecordSizeInKb();
+}
+
 CostScalar
 IndexDesc::getKbPerVolume() const
 {
@@ -800,24 +823,55 @@ void IndexProperty::updatePossibleIndexes(SET(IndexProperty *) & indexes, Scan *
     
 }
 
-COMPARE_RESULT IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
+COMPARE_RESULT 
+IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
 {
-    // This is just the first and simplest version of comparing index promises.
     // currently it is the same for indexOnlyScans ans alternateIndexScans.
     // If index key starts from the same (single column) then the smaller index 
     // (having smaller KbPerVolume attribute) is MORE promising, the bigger index
     // is LESS promising, and the same index size has the SAME promise.
-    // In the first version indexes starting from different columns are considered 
-    // INCOMPATIBLE.
-    // The next step will be to use predicates to define promise. For example if 
-    // one index has bigger leading prefix covered by predicates then it is MORE
-    // promising. This is not implemented in the current version.
+
 
     const IndexDesc * index = getIndexDesc();
     const IndexDesc * otherIndex = ixProp->getIndexDesc();
-    if ( ((IndexColumn *)(index->getIndexKey()[0]).getItemExpr())->getDefinition() == 
+    if ( ((IndexColumn *)(index->getIndexKey()[0]).getItemExpr())->getDefinition() != 
          ((IndexColumn *)(otherIndex->getIndexKey()[0]).getItemExpr())->getDefinition() )
-    {
+
+      return INCOMPATIBLE;
+
+
+     CostScalar myKbForLPred = index->getKbForLocalPred();
+     CostScalar othKbForLPred = otherIndex->getKbForLocalPred();
+
+     // If stats is available for this and the other index, compare the
+     // amount of data accessed through the local predicate. The one
+     // that accesses less is more promising. 
+
+     if ( myKbForLPred > csZero && othKbForLPred > csZero ) 
+     {
+        if ( myKbForLPred < othKbForLPred )
+            return MORE; // more promising
+        else {
+            if( myKbForLPred > othKbForLPred )
+               return LESS;
+            else {  
+
+               // When the amount of data to access is the same, prefer 
+               // the index with less # of index key columns
+
+               CollIndex myNumKeyCols = index->getIndexKey().entries();
+               CollIndex otherNumKeyCols = otherIndex->getIndexKey().entries();
+
+               if ( myNumKeyCols < otherNumKeyCols )
+                 return MORE; // more promissing
+
+               if ( myNumKeyCols > otherNumKeyCols )
+                 return LESS;
+               else
+                 return SAME;
+            }
+         }
+    } else {
         const CostScalar kbPerVol = index->getKbPerVolume();
         const CostScalar othKbPerVol = otherIndex->getKbPerVolume();
         if ( kbPerVol < othKbPerVol )
@@ -830,8 +884,6 @@ COMPARE_RESULT IndexProperty::compareIndexPromise(const IndexProperty *ixProp) c
                 return SAME;
         }
     }
-    else
-        return INCOMPATIBLE;
-
+    return INCOMPATIBLE;
 }
 // eof

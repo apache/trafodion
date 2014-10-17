@@ -15521,33 +15521,169 @@ void Scan::computeMyRequiredResources(RequiredResources & reqResources, EstLogPr
        QueryAnalysis::Instance()->isAnalysisON()))
     return;
 
+
   //Get a handle to ASM
   AppliedStatMan * appStatMan = QueryAnalysis::ASM();
   const TableAnalysis * tAnalysis = getTableDesc()->getTableAnalysis();
   CANodeId tableId = tAnalysis->getNodeAnalysis()->getId();
-  CostScalar dataAccessCost = csZero;
 
-  dataAccessCost = tAnalysis->getFactTableNJAccessCost();
+  // Find index joins and index-only scans
+  addIndexInfo();
 
+  // Base table scan is one of the index only scans.
+  CostScalar cpuCostIndexOnlyScan = 
+                computeCpuResourceForIndexOnlyScans(tableId);
+
+  CostScalar cpuCostIndexJoinScan = 
+                computeCpuResourceForIndexJoinScans(tableId);
+
+  CostScalar cpuResourcesRequired = cpuCostIndexOnlyScan;
+  if ( getTableDesc()->getNATable()->isHbaseTable()) 
+  {
+     if ( cpuCostIndexJoinScan < cpuResourcesRequired )
+       cpuResourcesRequired = cpuCostIndexJoinScan;
+  } 
+
+  CostScalar dataAccessCost = tAnalysis->getFactTableNJAccessCost();
   if(dataAccessCost < 0)
   {
-    // skip this for fact table under nested join
-    CostScalar numOfProbes(csZero);
-    CostScalar rowsToScan(csZero);
-
-    rowsToScan = appStatMan->
+    CostScalar rowsToScan = appStatMan->
                    getStatsForLocalPredsOnCKPOfJBBC(tableId)->
                      getResultCardinality();
 
+    CostScalar numOfProbes(csZero);
+
+    // skip this for fact table under nested join
     dataAccessCost =
       tAnalysis->computeDataAccessCostForTable(numOfProbes, rowsToScan);
   }
 
+
   CostScalar myMaxCard = getGroupAttr()->getResultMaxCardinalityForInput(inLP);
-  reqResources.accumulate(csZero, csZero, dataAccessCost, myMaxCard);
+  reqResources.accumulate(csZero, cpuResourcesRequired, 
+                          dataAccessCost, myMaxCard
+                         );
 
 }
 // Required Resource Estimate Methods - End
+
+CostScalar
+Scan::computeCpuResourceRequired(const CostScalar& rowsToScan, const CostScalar& rowSize)
+{
+  CostScalar A = csOne;
+  CostScalar B (getDefaultAsDouble(WORK_UNIT_ESP_DATA_COPY_COST));
+
+  CostScalar cpuResourcesRequired = (B * rowsToScan * rowSize);
+  cpuResourcesRequired += (A * rowsToScan);
+
+  return cpuResourcesRequired;
+}
+
+CostScalar Scan::computeCpuResourceForIndexOnlyScans(CANodeId tableId)
+{
+  // If index only scans are available, find the most
+  // promising index and compute the CPU resource for it.
+
+  const SET(IndexProperty *)& indexOnlyScans = getIndexOnlyIndexes();
+
+  IndexProperty* smallestIndex = findSmallestIndex(indexOnlyScans);
+
+  if ( !smallestIndex )
+    return COSTSCALAR_MAX;
+
+  IndexDesc* iDesc = smallestIndex->getIndexDesc();
+
+  const ValueIdList &ikeys = iDesc->getIndexKey();
+
+  AppliedStatMan * appStatMan = QueryAnalysis::ASM();
+
+  EstLogPropSharedPtr estLpropPtr = appStatMan->
+                  getStatsForLocalPredsOnPrefixOfColList(tableId, ikeys);
+
+  if ( !(estLpropPtr.get()) )
+    return COSTSCALAR_MAX;
+
+  return computeCpuResourceRequired(estLpropPtr->getResultCardinality(), 
+                                    iDesc->getRecordLength()
+                                   );
+}
+
+CostScalar Scan::computeCpuResourceForIndexJoinScans(CANodeId tableId)
+{
+ // If index scans are available, find the index with most promising and
+  // compute the CPU resource for it.
+  const LIST(ScanIndexInfo *)& scanIndexJoins = getPossibleIndexJoins();
+
+  if ( scanIndexJoins.entries() == 0 )
+    return COSTSCALAR_MAX;
+
+  IndexProperty* smallestIndex = findSmallestIndex(scanIndexJoins);
+  IndexDesc* iDesc = smallestIndex->getIndexDesc();
+
+  const ValueIdList &ikeys = iDesc->getIndexKey();
+
+  AppliedStatMan * appStatMan = QueryAnalysis::ASM();
+
+  EstLogPropSharedPtr estLpropPtr = appStatMan->
+                  getStatsForLocalPredsOnPrefixOfColList(tableId, ikeys);
+
+  if ( !(estLpropPtr.get()) )
+    return COSTSCALAR_MAX;
+
+  CostScalar rowsToScan = estLpropPtr->getResultCardinality();
+  CostScalar rowSize = iDesc->getRecordLength();
+
+  CostScalar cpuResourceForIndex = computeCpuResourceRequired(rowsToScan, rowSize);
+
+  rowSize = getTableDesc()->getClusteringIndex()->getRecordLength();
+
+  CostScalar cpuResourceForBaseTable = computeCpuResourceRequired(rowsToScan, rowSize);
+
+  return cpuResourceForIndex + cpuResourceForBaseTable;
+}
+
+
+IndexProperty* Scan::findSmallestIndex(const SET(IndexProperty *)& indexes) const
+{
+   CollIndex entries = indexes.entries();
+
+   if ( entries == 0 ) return NULL;
+
+   IndexProperty* smallestIndex = indexes[0];
+
+   for (CollIndex i=1; i<entries; i++ ) {
+     IndexProperty* current = indexes[i];
+
+     if ( smallestIndex->compareIndexPromise(current) == LESS ) {
+        smallestIndex = current;
+     }
+   }
+
+   return smallestIndex;
+}
+
+IndexProperty* Scan::findSmallestIndex(const LIST(ScanIndexInfo *)& possibleIndexJoins) const
+{
+   CollIndex entries = possibleIndexJoins_.entries();
+
+   if ( entries == 0 ) return NULL;
+
+   IndexProperty* smallestIndex = 
+            findSmallestIndex(possibleIndexJoins[0]->usableIndexes_);
+
+   for (CollIndex i=1; i<entries; i++ ) {
+     
+      IndexProperty* current = 
+            findSmallestIndex(possibleIndexJoins[i]->usableIndexes_);
+                        
+      if ( smallestIndex->compareIndexPromise(current) == LESS ) {
+          smallestIndex = current;
+      }
+   }
+
+   return smallestIndex;
+}
+
 
 
 // -----------------------------------------------------------------------

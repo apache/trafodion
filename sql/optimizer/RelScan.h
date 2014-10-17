@@ -588,6 +588,24 @@ public:
       matchingMVs_.insert(match);
   }
 
+protected:
+
+  // Find the most promising index from the LIST, for index joins
+  IndexProperty* findSmallestIndex(const LIST(ScanIndexInfo *)&) const;
+
+  // Find the most promising index from the set, for index only scans
+  IndexProperty* findSmallestIndex(const SET(IndexProperty *)& indexes) const;
+
+
+  // A help method to compute the cpu resource 
+  CostScalar
+  computeCpuResourceRequired(const CostScalar& rowsToScan, const CostScalar& rowSize);
+
+  // Compute the cpu resource for index join scan and index only scan.
+  CostScalar computeCpuResourceForIndexJoinScans(CANodeId tableId);
+  CostScalar computeCpuResourceForIndexOnlyScans(CANodeId tableId);
+
+
 private:
 
   // the first param to this method, vid, is assumed to a OR predicate

@@ -720,6 +720,22 @@ TableDesc::getBaseRowCntIfUniqueJoinCol(const ValueIdSet &joinedCols)
 } // TableDesc::getBaseRowCntIfUniqueJoinCol
 // LCOV_EXCL_STOP
 
+ValueIdSet TableDesc::getSaltColumnAsSet()
+{
+  ValueIdSet saltColSet;
+
+  for (CollIndex j=0; j<getClusteringIndex()->getIndexKey().entries(); j++)
+    {
+      ValueId vid = getClusteringIndex()->getIndexKey()[j];
+      if ( vid.isSaltedColumn() ) {
+         saltColSet += vid;
+         break;
+      }
+    }
+
+   return saltColSet;
+}
+
 ValueIdSet TableDesc::getDivisioningColumns() 
 {
   ValueIdSet divCols;
