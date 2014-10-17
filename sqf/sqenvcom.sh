@@ -437,9 +437,6 @@ fi
 
 # Common for local workstations, Cloudera, Hortonworks and MapR
 
-export HBASE_HBLDIR=$MY_SQROOT/export/lib
-export HBASE_HBL_JAR=trafodion-hbase-extensions-${TRAFODION_VER}.jar
-
 export ZOOKEEPER_DIR=$TOOLSDIR/zookeeper-3.4.5
 export MPICH_ROOT=$TOOLSDIR/dest-mpich-3.0.4
 
@@ -682,7 +679,7 @@ SQ_CLASSPATH=${SQ_CLASSPATH#:}
 
 # add Hadoop and HBase config dirs to classpath
 SQ_CLASSPATH=$SQ_CLASSPATH:$HADOOP_CNF_DIR:$HBASE_CNF_DIR:$HIVE_CNF_DIR
-SQ_CLASSPATH=$SQ_CLASSPATH:${HBASE_TRXDIR}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}:$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/jdbcT2.jar:$HBASE_HBLDIR/$HBASE_HBL_JAR
+SQ_CLASSPATH=$SQ_CLASSPATH:${HBASE_TRXDIR}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}:$MY_SQROOT/export/lib/trafodion-UDR-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/trafodion-HBaseAccess-${TRAFODION_VER}.jar:$MY_SQROOT/export/lib/jdbcT2.jar
 
 # check whether we executed this script previously
 

@@ -814,5 +814,291 @@ B@           B            C            (EXPR)
 
 --- 1 row(s) selected.
 >>
+>>drop  index T017TTCIDXb;
+
+--- SQL operation complete.
+>>
+>>create index T017TTCIDXb on T017TTC (b) HBASE_OPTIONS (DATA_BLOCK_ENCODING = 'FAST_DIFF', COMPRESSION = 'GZ') SALT LIKE TABLE;
+
+--- SQL operation complete.
+>>
+>>select * from table (index_table T017TTCIDXb) order by "_SALT_@","B@","A";
+
+_SALT_@     B@           A          
+----------  -----------  -----------
+
+         0         1000            0
+         0         1001            1
+         0         1002            2
+         0         1004            4
+         0         1009            9
+         0         1010           10
+         0         1012           12
+         0         1013           13
+         0         1014           14
+         0         1017           17
+         0         1019           19
+         0         1023           23
+         0         1027           27
+         0         1030           30
+         0         1034           34
+         0         1036           36
+         0         1037           37
+         0         1041           41
+         0         1043           43
+         0         1044           44
+         0         1045           45
+         0         1047           47
+         0         1049           49
+         0         1050           50
+         0         1051           51
+         0         1052           52
+         0         1053           53
+         0         1054           54
+         0         1055           55
+         0         1056           56
+         0         1058           58
+         0         1059           59
+         0         1061           61
+         0         1064           64
+         0         1067           67
+         0         1069           69
+         0         1072           72
+         0         1073           73
+         0         1076           76
+         0         1077           77
+         0         1078           78
+         0         1079           79
+         0         1080           80
+         0         1082           82
+         0         1084           84
+         0         1085           85
+         0         1086           86
+         0         1087           87
+         0         1088           88
+         0         1090           90
+         0         1093           93
+         0         1097           97
+         0         1098           98
+         0         1099           99
+         1         1003            3
+         1         1005            5
+         1         1006            6
+         1         1007            7
+         1         1008            8
+         1         1011           11
+         1         1015           15
+         1         1016           16
+         1         1018           18
+         1         1020           20
+         1         1021           21
+         1         1022           22
+         1         1024           24
+         1         1025           25
+         1         1026           26
+         1         1028           28
+         1         1029           29
+         1         1031           31
+         1         1032           32
+         1         1033           33
+         1         1035           35
+         1         1038           38
+         1         1039           39
+         1         1040           40
+         1         1042           42
+         1         1046           46
+         1         1048           48
+         1         1057           57
+         1         1060           60
+         1         1062           62
+         1         1063           63
+         1         1065           65
+         1         1066           66
+         1         1068           68
+         1         1070           70
+         1         1071           71
+         1         1074           74
+         1         1075           75
+         1         1081           81
+         1         1083           83
+         1         1089           89
+         1         1091           91
+         1         1092           92
+         1         1094           94
+         1         1095           95
+         1         1096           96
+
+--- 100 row(s) selected.
+>>
+>>explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "_SALT_","B","A" from T017TTC for read uncommitted access;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+002
+4    .    5    esp_exchange                    1:2(range)            1.00E+002
+2    3    4    tuple_flow                                            1.00E+002
+.    .    3    trafodion_load_prepa            T017TTCIDXB           1.00E+000
+1    .    2    esp_exchange                    2(range):1 (m)        1.00E+002
+.    .    1    trafodion_index_scan            T017TTC               1.00E+002
+
+--- SQL operation complete.
+>>
+>>explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "_SALT_","B","A" from T017TTC <<+ cardinality 10e1 >> for read uncommitted access;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+5    .    6    root                                                  1.00E+002
+4    .    5    esp_exchange                    1:2(range)            1.00E+002
+2    3    4    tuple_flow                                            1.00E+002
+.    .    3    trafodion_load_prepa            T017TTCIDXB           1.00E+000
+1    .    2    esp_exchange                    2(range):1 (m)        1.00E+002
+.    .    1    trafodion_index_scan            T017TTC               1.00E+002
+
+--- SQL operation complete.
+>>
+>>
+>>drop  index T017TTCIDXb;
+
+--- SQL operation complete.
+>>
+>>create index T017TTCIDXb on T017TTC (b);
+
+--- SQL operation complete.
+>>
+>>select * from table (index_table T017TTCIDXb) order by "B@","_SALT_","A";
+
+B@           _SALT_      A          
+-----------  ----------  -----------
+
+       1000           0            0
+       1001           0            1
+       1002           0            2
+       1003           1            3
+       1004           0            4
+       1005           1            5
+       1006           1            6
+       1007           1            7
+       1008           1            8
+       1009           0            9
+       1010           0           10
+       1011           1           11
+       1012           0           12
+       1013           0           13
+       1014           0           14
+       1015           1           15
+       1016           1           16
+       1017           0           17
+       1018           1           18
+       1019           0           19
+       1020           1           20
+       1021           1           21
+       1022           1           22
+       1023           0           23
+       1024           1           24
+       1025           1           25
+       1026           1           26
+       1027           0           27
+       1028           1           28
+       1029           1           29
+       1030           0           30
+       1031           1           31
+       1032           1           32
+       1033           1           33
+       1034           0           34
+       1035           1           35
+       1036           0           36
+       1037           0           37
+       1038           1           38
+       1039           1           39
+       1040           1           40
+       1041           0           41
+       1042           1           42
+       1043           0           43
+       1044           0           44
+       1045           0           45
+       1046           1           46
+       1047           0           47
+       1048           1           48
+       1049           0           49
+       1050           0           50
+       1051           0           51
+       1052           0           52
+       1053           0           53
+       1054           0           54
+       1055           0           55
+       1056           0           56
+       1057           1           57
+       1058           0           58
+       1059           0           59
+       1060           1           60
+       1061           0           61
+       1062           1           62
+       1063           1           63
+       1064           0           64
+       1065           1           65
+       1066           1           66
+       1067           0           67
+       1068           1           68
+       1069           0           69
+       1070           1           70
+       1071           1           71
+       1072           0           72
+       1073           0           73
+       1074           1           74
+       1075           1           75
+       1076           0           76
+       1077           0           77
+       1078           0           78
+       1079           0           79
+       1080           0           80
+       1081           1           81
+       1082           0           82
+       1083           1           83
+       1084           0           84
+       1085           0           85
+       1086           0           86
+       1087           0           87
+       1088           0           88
+       1089           1           89
+       1090           0           90
+       1091           1           91
+       1092           1           92
+       1093           0           93
+       1094           1           94
+       1095           1           95
+       1096           1           96
+       1097           0           97
+       1098           0           98
+       1099           0           99
+
+--- 100 row(s) selected.
+>>
+>>explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "B","_SALT_","A" from T017TTC for read uncommitted access;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
+.    .    1    trafodion_index_scan            T017TTC               1.00E+002
+
+--- SQL operation complete.
+>>
+>>explain options 'f' Load transform into table(index_table  T017TTCIDXb ) select "B","_SALT_","A" from T017TTC <<+ cardinality 10e1 >> for read uncommitted access;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
+.    .    1    trafodion_index_scan            T017TTC               1.00E+002
+
+--- SQL operation complete.
+>>
+>>
 >>
 >>log;
