@@ -68,6 +68,12 @@
 #include "HeapID.h"
 #endif
 
+#ifdef _DEBUG
+// forward declaration
+template <class T> class NAList;
+#define LIST(Type) NAList<Type>
+#endif // _DEBUG
+
 #if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID)
 #ifdef NA_STD_NAMESPACE
 #include <iosfwd>
@@ -600,6 +606,15 @@ private:
 #endif
 };
 
+
+#ifdef _DEBUG
+  struct TrafAddrStack {
+    void *addr;  // allocated memory address
+    size_t size; // size of stack trace entries, default 12
+    char **strings; // stack back trace
+  };
+#endif // _DEBUG
+
 ////////////////////////////////////////////////////////////////////////////
 // NAHeap is a NAMemory, which shrinks and grows.
 ////////////////////////////////////////////////////////////////////////////
@@ -663,6 +678,10 @@ NA_EIDPROC
   const inline bool getThreadSafe() { return threadSafe_; }
 #endif
 
+#ifdef _DEBUG
+  LIST(TrafAddrStack *) *getSAL() { return la_; }
+#endif // _DEBUG
+
 private:
 NA_EIDPROC
   NABlock* allocateBlock(size_t size, NABoolean failureIsFatal);
@@ -711,6 +730,11 @@ NA_EIDPROC
   bool threadSafe_;           // Heao is thread safe
   pthread_mutex_t mutex_;     // Mutex to serialize thread safe access
 #endif
+
+#ifdef _DEBUG
+  LIST(TrafAddrStack *) *la_; // List of back traces when centain size
+                              // of memory blocks got allocated
+#endif // _DEBUG
 
 public:
 // Operations from Doug Lea's malloc implementation
@@ -794,6 +818,9 @@ private:
 #endif // STAND_ALONE
 #endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) 
 
+#ifdef _DEBUG
+  NA_EIDPROC void      setAllocTrace();
+#endif // _DEBUG
 };
 
 
