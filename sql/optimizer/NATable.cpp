@@ -1391,7 +1391,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
   const char* encodedKeyP = NULL;
   char* varCharstr = NULL;
   Lng32 totalKeyLength = 0;
-  Lng32 numFullyProvidedCols = 0;
+  Lng32 numProvidedCols = 0;
   Lng32 lenOfFullyProvidedCols = 0;
 
   // in newer HBase versions, the region start key may be shorter than an actual key
@@ -1404,7 +1404,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
       if (totalKeyLength <= encodedKeyLen)
         {
           // this column is fully provided in the region start key
-          numFullyProvidedCols++;
+          numProvidedCols++;
           lenOfFullyProvidedCols = totalKeyLength;
         }
     }
@@ -1421,10 +1421,11 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
       // go through the partially or completely missing columns and make something up
       // so that we can treat the buffer as fully encoded in the final loop below
-      for (CollIndex j = numFullyProvidedCols; j < partColArray.entries(); j++)
+      for (CollIndex j = numProvidedCols; j < partColArray.entries(); j++)
         {
           const NAType *pkType = partColArray[j]->getType();
-          Lng32 colEncodedLength = pkType->getSQLnullHdrSize() + pkType->getNominalSize();
+          Lng32 nullHdrSize = pkType->getSQLnullHdrSize();
+          Lng32 colEncodedLength = nullHdrSize + pkType->getNominalSize();
           NABoolean isDescending = (partColArray[j]->getClusteringKeyOrdering() == DESCENDING);
 
           NABoolean columnIsPartiallyProvided = (currOffset < encodedKeyLen);
@@ -1489,9 +1490,9 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                   break;
                 }
 
-              if (!columnIsPartiallyProvided)
-                // not really needed, will be overwritten below
-                memset(&actEncodedKey[currOffset], 0, colEncodedLength);
+              if (columnIsPartiallyProvided)
+                // from now on, treat it as if it were fully provided
+                numProvidedCols++;
             }
 
           if (!columnIsPartiallyProvided)
@@ -1499,22 +1500,32 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // This column is not at all provided in the region start key
               // or we decided to erase the partial value.
               // Generate the min/max value for ASC/DESC key columns.
-              Lng32 remainingBufLen = colEncodedLength;
+              // NOTE: This is generating un-encoded values, unlike
+              //       the values we get from HBase. The next loop below
+              //       will skip decoding for any values generated here.
+              Lng32 remainingBufLen = colEncodedLength - nullHdrSize;
+
+              if (nullHdrSize)
+                {
+                  // generate a NULL indicator
+                  // NULL (-1) for descending columns, this is the max value
+                  // non-NULL (0) for ascending columns, min value is non-null
+                  short indicatorVal = (isDescending ? -1 : 0);
+
+                  CMPASSERT(nullHdrSize == sizeof(short));
+                  memcpy(&actEncodedKey[currOffset], &indicatorVal, sizeof(indicatorVal));
+                }
 
               if (isDescending)
                 {
-                  pkType->maxRepresentableValue(&actEncodedKey[currOffset],
+                  pkType->maxRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
                                                 &remainingBufLen,
                                                 NULL,
                                                 heap);
-
-                  // descending key values are stored inverted
-                  for (int b=currOffset; b<currOffset+remainingBufLen; b++)
-                    actEncodedKey[b] = ~actEncodedKey[b];
                 }
               else
                 {
-                  pkType->minRepresentableValue(&actEncodedKey[currOffset],
+                  pkType->minRepresentableValue(&actEncodedKey[currOffset + nullHdrSize],
                                                 &remainingBufLen,
                                                 NULL,
                                                 heap);
@@ -1534,7 +1545,10 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
         pkType->getNominalSize() + pkType->getSQLnullHdrSize();
       ItemExpr *keyColVal = NULL;
 
-      if (pkType->isEncodingNeeded())
+      // does this column need encoding (only if it actually came
+      // from an HBase split key, if we made up the value it's
+      // already in the decoded format)
+      if (pkType->isEncodingNeeded() && c < numProvidedCols)
         {
           encodedKeyP = &actEncodedKey[keyColOffset];
 
