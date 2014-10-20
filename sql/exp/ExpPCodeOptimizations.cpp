@@ -2796,7 +2796,9 @@ CollIndex* PCodeCfg::addConstant(PCodeOperand* op)
     Int32 strLen = ((vcLen == 2) ? (Int32)(*((Int16*)(stk + off - vcLen)))
                                  : (Int32)(*((Int32*)(stk + off - vcLen))));
 
-    memset((char*)(stk + off + strLen), 0, op->getVcMaxLen() - strLen);
+    // If space left over, zero it out
+    if ( op->getVcMaxLen() > strLen ) //Ensure arg3 to memset is positive
+       memset((char*)(stk + off + strLen), 0, op->getVcMaxLen() - strLen);
 
     data = (void*)((char *)data - vcLen - vcNullLen);
     off = op->getOffset() - vcLen - vcNullLen;
