@@ -11984,7 +11984,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
   // Regardless of how the ATTEMPT_ESP_PARALLELISM CQD is set, LRU
   // operations always execute under ESPs for partitioned tables. LRU ops
   // are indicated by containsLRU() == TRUE.
-
+  NABoolean isFastLoadIntoTrafodion = FALSE;
   if ( ((CURRSTMT_OPTDEFAULTS->attemptESPParallelism() != DF_OFF) OR containsLRU())
       // QSTUFF
       // we don't support paralled execution in the get_next
@@ -12023,7 +12023,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     OperatorTypeEnum childOpType = child(0).getLogExpr()->getOperatorType();
 
     // Decide if it is a fast trafodion load query
-    NABoolean isFastLoadIntoTrafodion = FALSE;
+    isFastLoadIntoTrafodion = FALSE;
     if ( childOpType == REL_UNARY_INSERT ) {
 
        RelExpr* c0 = child(0).getLogExpr();
@@ -12155,6 +12155,29 @@ Context* RelRoot::createContextForAChild(Context* myContext,
        }
     }
    
+    if (isFastLoadIntoTrafodion)
+    {
+      Insert *ins = (Insert*)(x->castToRelExpr());
+
+       PartitioningFunction *pf = ins->getTableDesc()
+                                     ->getClusteringIndex()
+                                     ->getPartitioningFunction();
+
+       const NodeMap* np;
+       Lng32 partns = 1;
+       if ( pf && (np = pf->getNodeMap()) )
+       {
+          partns = np->getNumEntries();
+       }
+       if (partns>1)
+       {
+         countOfCPUs = partns;
+         pipelinesPerCPU = 1;
+         CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
+         canAdjustDoP = FALSE;
+       }
+    }
+
     // for side-tree INSERT (expressed as INSERT USING SIDEINSERTS INTO <t> 
     // <source> )
 

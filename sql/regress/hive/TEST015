@@ -34,20 +34,15 @@ obey TEST015(setup);
 
 cqd COMPRESSED_INTERNAL_FORMAT 'ON';
 cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
+cqd COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO '100';
 cqd query_cache '0';
 cqd HIVE_NUM_ESPS_PER_DATANODE '3';
-
-control query default ARKCMP_FAKE_HW 'ON';
-control query default DEF_NUM_SMP_CPUS '2' ;
-control query default MAX_ESPS_PER_CPU_PER_OP '1';
-control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '2' ;
-
-
-
 
 obey TEST015(test_bulk_load_simple);
 
 log;
+
+obey TEST015(clean_up);
 exit;
 
 ?section clean_up
@@ -295,10 +290,6 @@ select [first 20] * from customer_demographics order by cd_demo_sk  ;
 select count(*) from hive.hive.customer_demographics where cd_demo_sk <= 500000;;
 select count(*) from customer_demographics_salt;
 
--- reset cluster settings 
-control query default ARKCMP_FAKE_HW reset;
-cqd MAX_ESPS_PER_CPU_PER_OP reset;
-CQD ATTEMPT_ESP_PARALLELISM reset;
 prepare s from 
 load transform into customer_demographics_salt 
 select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;;                                                                                              
@@ -560,7 +551,8 @@ select count(*) from customer_address;
 
 select [first 20] * from customer_address order by ca_address_sk ;
 
-
+cqd attempt_esp_parallelism 'off';
+load with no output into t015t4 select a,a,a from t015t1;
 
 
 

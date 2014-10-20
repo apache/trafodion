@@ -1394,6 +1394,7 @@ $1~String1 --------------------------------
 4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path  $0~String0  
 4488 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option $0~String0 cannot be specified more than once. 
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
+4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.

@@ -112,28 +112,15 @@
 >>cqd COMPRESSED_INTERNAL_FORMAT_BMO 'ON';
 
 --- SQL operation complete.
+>>cqd COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO '100';
+
+--- SQL operation complete.
 >>cqd query_cache '0';
 
 --- SQL operation complete.
 >>cqd HIVE_NUM_ESPS_PER_DATANODE '3';
 
 --- SQL operation complete.
->>
->>control query default ARKCMP_FAKE_HW 'ON';
-
---- SQL operation complete.
->>control query default DEF_NUM_SMP_CPUS '2' ;
-
---- SQL operation complete.
->>control query default MAX_ESPS_PER_CPU_PER_OP '1';
-
---- SQL operation complete.
->>control query default DEF_NUM_NODES_IN_ACTIVE_CLUSTERS '2' ;
-
---- SQL operation complete.
->>
->>
->>
 >>
 >>obey TEST015(test_bulk_load_simple);
 >>--------------------------------------------------------------------------
@@ -367,10 +354,12 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-4    .    5    root                                                  1.00E+001
-2    3    4    tuple_flow                                            1.00E+001
-.    .    3    trafodion_load_prepa            T015T4                1.00E+000
-1    .    2    sort                                                  1.00E+001
+6    .    7    root                                                  1.00E+001
+5    .    6    esp_exchange                    1:2(range)            1.00E+001
+3    4    5    tuple_flow                                            1.00E+001
+.    .    4    trafodion_load_prepa            T015T4                1.00E+000
+2    .    3    sort                                                  1.00E+001
+1    .    2    esp_exchange                    2(range):1            1.00E+001
 .    .    1    trafodion_scan                  T015T1                1.00E+001
 
 --- SQL operation complete.
@@ -440,11 +429,11 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 6    .    7    root                                                  5.19E+004
-5    .    6    esp_exchange                    1:4(hash2)            5.19E+004
+5    .    6    esp_exchange                    1:5(hash2)            5.19E+004
 3    4    5    tuple_flow                                            5.19E+004
 .    .    4    trafodion_load_prepa            CUSTOMER_ADDRESS      1.00E+000
 2    .    3    sort                                                  5.19E+004
-1    .    2    esp_exchange                    4(hash2):1            5.19E+004
+1    .    2    esp_exchange                    5(hash2):1            5.19E+004
 .    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
 
 --- SQL operation complete.
@@ -521,10 +510,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 5    .    6    root                                                  5.19E+004
-4    .    5    esp_exchange                    1:4(hash2)            5.19E+004
+4    .    5    esp_exchange                    1:5(hash2)            5.19E+004
 2    3    4    tuple_flow                                            5.19E+004
 .    .    3    trafodion_load_prepa            CUSTOMER_ADDRESS_NOP  1.00E+000
-1    .    2    esp_exchange                    4(hash2):1            5.19E+004
+1    .    2    esp_exchange                    5(hash2):1            5.19E+004
 .    .    1    hive_scan                       CUSTOMER_ADDRESS      5.19E+004
 
 --- SQL operation complete.
@@ -613,21 +602,21 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
 6    .    7    root                                                  8.96E+005
-5    .    6    esp_exchange                    1:4(hash2)            8.96E+005
+5    .    6    esp_exchange                    1:5(hash2)            8.96E+005
 3    4    5    tuple_flow                                            8.96E+005
 .    .    4    trafodion_load_prepa            CUSTOMER_DEMOGRAPHIC  1.00E+000
 2    .    3    sort                                                  8.96E+005
-1    .    2    esp_exchange                    4(hash2):2(hash2)     8.96E+005
+1    .    2    esp_exchange                    5(hash2):2(hash2)     8.96E+005
 .    .    1    hive_scan                       CUSTOMER_DEMOGRAPHIC  8.96E+005
 
 --- SQL operation complete.
 >>
 >>log LOG015_plan.log clear;
 ESP_EXCHANGE ==============================  SEQ_NO 6        ONLY CHILD 5
-  child_partitioning_func  hash2 partitioned 4 ways on
+  child_partitioning_func  hash2 partitioned 5 ways on
                              (HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
-  parent_partitioning_fun  hash2 partitioned 4 ways on
+  parent_partitioning_fun  hash2 partitioned 5 ways on
                              (HIVE.CUSTOMER_DEMOGRAPHICS.CD_DEMO_SK)
 >>
 >>load  with no populate indexes  into customer_demographics 
@@ -701,16 +690,6 @@ CD_DEMO_SK   CD_GENDER  CD_MARITAL_STATUS  CD_EDUCATION_STATUS   CD_PURCHASE_EST
 
 --- 1 row(s) selected.
 >>
->>-- reset cluster settings 
->>control query default ARKCMP_FAKE_HW reset;
-
---- SQL operation complete.
->>cqd MAX_ESPS_PER_CPU_PER_OP reset;
-
---- SQL operation complete.
->>CQD ATTEMPT_ESP_PARALLELISM reset;
-
---- SQL operation complete.
 >>prepare s from 
 +>load transform into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics where cd_demo_sk <= 500000;
@@ -1612,7 +1591,16 @@ CA_ADDRESS_SK  CA_ADDRESS_ID     CA_STREET_NUMBER  CA_STREET_NAME               
 
 --- 20 row(s) selected.
 >>
->>
+>>cqd attempt_esp_parallelism 'off';
+
+--- SQL operation complete.
+>>load with no output into t015t4 select a,a,a from t015t1;
+
+*** ERROR[4490] BULK LOAD into a salted table is not supported if ESP parallelism is turned off.
+
+*** ERROR[8822] The statement was not prepared.
+
+--- 0 row(s) loaded.
 >>
 >>
 >>

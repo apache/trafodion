@@ -9947,7 +9947,21 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     *CmpCommon::diags() << DgSqlCode(-4486)
                         <<  DgString0("bulk load") ;
   }
+  if (getIsTrafLoadPrep())
+  {
+    PartitioningFunction *pf = getTableDesc()->getClusteringIndex()->getPartitioningFunction();
 
+    const NodeMap* np;
+    Lng32 partns = 1;
+    if ( pf && (np = pf->getNodeMap()) )
+    {
+       partns = np->getNumEntries();
+       if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
+         // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
+         *CmpCommon::diags() << DgSqlCode(-4490);
+    }
+
+  }
   if (NOT isMerge())
     boundExpr = handleInlining(bindWA, boundExpr);
 
