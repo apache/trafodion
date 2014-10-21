@@ -186,12 +186,12 @@ public class HBaseTmZK implements Abortable{
         public void postAllRegionEntries(HTable recovTable) throws IOException {
            LOG.info("HBaseTmZK:postAllRegionEntries: recovTable: " + recovTable );
            NavigableMap<HRegionInfo, ServerName> regionMap = recovTable.getRegionLocations();
-           Iterator it =  regionMap.entrySet().iterator();
+           Iterator<Map.Entry<HRegionInfo, ServerName>> it =  regionMap.entrySet().iterator();
            while(it.hasNext()) { // iterate entries.
-              NavigableMap.Entry pairs = (NavigableMap.Entry)it.next();
-              HRegionInfo region = (HRegionInfo) pairs.getKey();
+              NavigableMap.Entry<HRegionInfo, ServerName> pairs = it.next();
+              HRegionInfo region = pairs.getKey();
               LOG.info("postAllRegionEntries: region: " + region.getRegionNameAsString());
-              ServerName serverValue = (ServerName) regionMap.get(region);
+              ServerName serverValue = regionMap.get(region);
               String hostAndPort = new String(serverValue.getHostAndPort());
               StringTokenizer tok = new StringTokenizer(hostAndPort, ":");
               String hostName = new String(tok.nextElement().toString());

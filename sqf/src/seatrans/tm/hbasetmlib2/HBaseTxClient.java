@@ -70,7 +70,7 @@ public class HBaseTxClient {
    private static HBaseTmZK tmZK;
    private static RecoveryThread recovThread;
    private short dtmID;
-   private static int stallWhere;
+   private int stallWhere;
 
    boolean useTlog;
    boolean useForgotten;
