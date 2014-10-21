@@ -44,11 +44,16 @@
 
 
 #ifdef _DEBUG
+#include <execinfo.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <cxxabi.h>
 #endif
 
 
@@ -888,6 +893,183 @@ void genLinuxCorefile(const char *eventMsg)
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, eventMsg, 0);
 //LCOV_EXCL_STOP
 }
+
+#ifdef _DEBUG
+void saveTrafStack(LIST(TrafAddrStack*) *la, void *addr)
+{
+  void *btArr[12];
+  size_t size;
+  char **strings;
+
+  size = backtrace(btArr, 12);
+  strings = backtrace_symbols(btArr, size);
+  TrafAddrStack *tas = NULL;
+
+  if (size > 0)
+    {
+      tas = (TrafAddrStack*) malloc(sizeof(TrafAddrStack));
+      if (tas)
+        {
+          tas->addr = addr;
+          tas->size = size;
+          tas->strings = strings;
+          la->insert(tas);
+        }
+    }
+}
+
+bool delTrafStack(LIST(TrafAddrStack*) *la, void *addr)
+{
+  for (CollIndex i = 0; i < la->entries(); i++)
+    {
+      TrafAddrStack * tas = la->at(i);
+
+      if (tas->addr == addr)
+        {
+          free(tas->strings);
+          la->removeAt(i);
+          delete tas;
+          return (true);
+        }
+    }
+  return false; // should not happen
+}
+
+// helper function to de-mangle c++ names
+void stackDemangle(char *stackString, char *callName, Int32 callNameLen)
+{
+  char *nameStart = NULL, *nameOffset = NULL, *nameEnd = NULL;
+
+  for (char *loc = stackString; *loc; loc++)
+    {
+      if (*loc == '(')
+        nameStart = loc;
+      else if (*loc == '+')
+        nameOffset = loc;
+      else if (*loc == ')' && nameOffset)
+        {
+          nameEnd = loc;
+          break;
+        }
+    }
+  if (nameStart && nameOffset && nameEnd && nameStart < nameOffset)
+    {
+      Int32 stat;
+      size_t realSize = callNameLen;
+      char retedName[800];
+      *nameStart = 0;
+      *nameOffset++ = 0;
+      *nameEnd = 0;
+      char *ret = abi::__cxa_demangle(++nameStart, retedName, &realSize, &stat);
+      if (stat == 0)
+        {
+          sprintf(callName, "  %s : %s+%s", stackString, ret, nameOffset);
+        }
+      else
+        { // C function name?
+          sprintf(callName, "  %s : %s()+%s", stackString, nameStart, nameOffset);
+        }
+    }
+  else // failed to parse
+    {
+      sprintf(callName, "  %s", stackString);
+    }
+}
+
+void dumpTrafStack(LIST(TrafAddrStack*) *la, const char *header, bool toFile)
+{
+  static THREAD_P Int32 fnValid = 0;
+  static THREAD_P char fn[120];
+  char funcName[800];
+  size_t size;
+  char **strings;
+  FILE *myFd = NULL;
+
+  if (la == NULL || la->entries() < 1)
+    return;
+
+  if (toFile)
+    {
+      if (fnValid == 0)
+        {
+          Int32 nid = 0;
+          Int32 pid = 0;
+          Int64 tid = 0;
+          char *progFileName = (char *) "noname";
+          char pName[MS_MON_MAX_PROCESS_NAME];
+          if (XZFIL_ERR_OK != msg_mon_get_my_info(&nid, &pid, &pName[0],
+                                sizeof(pName), NULL, NULL, NULL, &tid))
+            tid = rand();
+
+          char *fname = getenv("TRAF_STACK_TRACE_FILE_NAME");
+
+          if (fname == NULL || *fname == 0)
+            sprintf(fn, "proc_%lu", tid);
+          else
+            sprintf(fn, "%s_%lu", fname, tid);
+
+          fnValid = 1;
+        }
+
+      if (fnValid)
+        myFd = fopen(fn, "a");
+
+      if (myFd == NULL)
+        {
+          if (header)
+            printf("%s:\n", header);
+          fnValid = 0;
+        }
+      else
+        {
+          if (header)
+            fprintf(myFd, "%s:\n", header);
+        }
+    }
+
+  for (CollIndex i = 0; i < la->entries(); i++)
+    {
+      TrafAddrStack * tas = la->at(i);
+      size = tas->size;
+      strings = tas->strings;
+  
+      if (myFd)
+        {
+          if (header)
+            fprintf(myFd, ">>Unfreed at %p:\n", tas->addr);
+
+          for (size_t k = 0; k < size; k++)
+            {
+              stackDemangle(strings[k], funcName, 800);
+              fprintf(myFd, "%s\n", funcName);
+            }
+          fflush(myFd);
+        }
+      else
+        {
+          if (header)
+            printf(">>Unfreed at %p:\n", tas->addr);
+
+          for (size_t k = 0; k < size; k++)
+            {
+              stackDemangle(strings[k], funcName, 800);
+              printf("%s\n", funcName);
+            }
+        }
+      free(strings);  // free the memory allocated by backtrace_symbols()
+    }
+  la->clear();   // all gone
+
+  if (myFd)
+    {
+      fprintf(myFd, "\n");
+      fclose(myFd);
+      myFd = NULL;
+    }
+}
+
+#endif // _DEBUG
+
 Int16 getBDRClusterName(char *bdrClusterName)
 {
   MS_Mon_Reg_Get_Type regList;

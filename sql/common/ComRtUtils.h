@@ -293,6 +293,14 @@ Lng32 ComRtTransIdToText(Int64 transId, char *buf, short len);
 const char *ComRtGetUnknownString(Int32 val);
 
 void genLinuxCorefile(const char *eventMsg);   // no-op except on Linux.
+
+#ifdef _DEBUG
+static THREAD_P UInt32 TraceAllocSize = 0;
+void saveTrafStack(LIST(TrafAddrStack*) *la, void *addr);
+bool delTrafStack(LIST(TrafAddrStack*) *la, void *addr);
+void dumpTrafStack(LIST(TrafAddrStack *) *la, const char *header, bool toFile = false);
+#endif // DEBUG
+
 Int16 getBDRClusterName(char *bdrClusterName);
 
 SB_Phandle_Type *get_phandle_with_retry(char *pname, short *fserr = NULL);

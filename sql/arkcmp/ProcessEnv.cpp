@@ -241,12 +241,14 @@ void ProcessEnv::addOrChangeEnv(char **newenvs, Lng32 nEnvs)
       }
       if (!sameValue)
       {
+        CollIndex index = j;  // Put to the same location if value changed
         if ( envChanged )
         {
           NADELETEBASIC(envs_[j], heap_);
           envs_.remove(j);
         }
-        CollIndex index = envs_.unusedIndex();
+        else
+          index = envs_.unusedIndex();  // Insert a new env string
 
 	UInt32 len = strlen(newenvs[i]);
 	char *copyEnv = new (heap_) char[len + 1];

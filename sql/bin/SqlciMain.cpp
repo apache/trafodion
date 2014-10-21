@@ -64,6 +64,10 @@
 #include "seabed/fs.h"
 #include "SCMBuildStr.h"
 #include "SCMVersHelp.h"
+#ifdef _DEBUG
+#include "Globals.h"
+#endif  // _DEBUG
+
 DEFINE_DOVERS(sqlci)
 
 #if defined(_DEBUG) && !defined(NA_NSK)
@@ -325,7 +329,11 @@ Int32 main (Int32 argc, char *argv[])
 #ifdef _DEBUG_RTS
   removeProcess();
 #endif
-   return 0;
+#ifdef _DEBUG
+  // Delete all contexts
+  GetCliGlobals()->deleteContexts();
+#endif  // _DEBUG
+  return 0;
 }
 
 

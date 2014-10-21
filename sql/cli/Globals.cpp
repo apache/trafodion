@@ -1363,6 +1363,21 @@ void CliGlobals::initMyProgName()
   *(myProgName_ + bytesCopy) = '\0';  // null terminates
 }
 
+#ifdef _DEBUG
+// Delete the default context and all associated embedded CMP contexts
+// This eventually causes dumping of all heap debug info if enabled
+// Should ONLY be called right before process exits
+void CliGlobals::deleteContexts()
+{
+  if (defaultContext_)
+    {
+      defaultContext_->deleteMe();
+      delete defaultContext_;
+      defaultContext_ = NULL;
+    }
+}
+#endif  // _DEBUG
+
 void SQ_CleanupThread(void *arg)
 {
   if (tsCurrentContextMap != NULL && tsCurrentContextMap->context_ != NULL)

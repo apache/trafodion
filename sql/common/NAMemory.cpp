@@ -90,6 +90,48 @@
 #include "ComRtUtils.h"
 #include "StmtCompilationMode.h"
 
+#ifdef _DEBUG
+//-------------------------------------------------------------------------//
+// Using env variable TRACE_ALLOC_SIZE to record the call stacks when a 
+// given size of memory block was allocated but not de-allocated later.
+// The call stacks can be dumped to a file with name given by env variable
+// TRACE_ALLOC_SIZE appended by the process id when the heap is destructed.
+//
+// The tracing/logging is done via backtrace() and backtrace_symbols()
+// calls. The idea is when a specific size (specified by TRACE_ALLOC_SIZE)
+// is intercepted at allocation, use backtrace() and backtrace_symbols()
+// in saveTrafStack() to get the call stack at the time. The stack info is
+// saved to a list in the heap. When such block is freed, the stack info of
+// that block will be removed from the list. At the time when the heap is
+// to be destroyed, it dumps whatever left in the list via dumpTrafStack()
+// to a file or terminal.
+//
+// This can be combined with a memory debug method that detects memory
+// overflow (set the env MEMDEBUG to 2, see checkForOverFlow()). Once
+// memory overflow is found, use this tracing method to find where the
+// allocation was done and check if the allocation is adequate.
+//
+// As we may delete the entire heap without deallocating each individual
+// block we ever allocated for some heaps, the trace file may contains
+// blocks that are ok not to be explicitly deleted. One needs to separate
+// these from the real issues.
+//
+// Limitation: we don't track allocations for blocks greater than the
+// INT_MAX
+//
+// All related code are in common/NAMemory.h, common/NAMemory.cpp (this file),
+// common/ComRtUtils.h, and common/ComRtUtils.cpp
+//
+// Todos:
+//   1) Re-enabling Setting memory block to 0xfa after allocates and to 0xfc
+//      after de-allocates when env MEMDEBUG is set to 2
+//
+//   2) Ensure existing memory debug methods specified by env MEMDEBUG
+//      still work in multi-threaded environment
+//-------------------------------------------------------------------------//
+// static THREAD_P UInt32 TraceAllocSize = 0;
+#endif // _DEBUG
+
 const  UInt32 deallocTraceEntries = 4096;
 struct DeallocTraceEntry
 {
@@ -101,6 +143,9 @@ THREAD_P DeallocTraceEntry (*deallocTraceArray)[deallocTraceEntries] = 0;
 
 
 #include "NAMemory.h"
+#ifdef _DEBUG
+#include "Collections.h"
+#endif // _DEBUG
 
 #if defined(NA_LINUX) && !defined(__EID)
 class NAMutex
@@ -2816,6 +2861,10 @@ NAHeap::NAHeap()
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
 #endif
+
+#ifdef _DEBUG
+  setAllocTrace();
+#endif // _DEBUG
 }
 
 NAHeap::NAHeap(const char * name, 
@@ -2839,6 +2888,10 @@ NAHeap::NAHeap(const char * name,
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
 #endif
+
+#ifdef _DEBUG
+  setAllocTrace();
+#endif // _DEBUG
 }
 
 NAHeap::NAHeap(const char * name, 
@@ -2862,6 +2915,10 @@ NAHeap::NAHeap(const char * name,
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
 #endif
+
+#ifdef _DEBUG
+  setAllocTrace();
+#endif // _DEBUG
 }
 
 NAHeap::NAHeap(const char  * name,
@@ -2907,6 +2964,10 @@ NAHeap::NAHeap(const char  * name,
   threadSafe_ = false;
   memset(&mutex_, '\0', sizeof(mutex_));
 #endif
+
+#ifdef _DEBUG
+  setAllocTrace();
+#endif // _DEBUG
 }
 
 NAHeap::~NAHeap()
@@ -2952,6 +3013,16 @@ void NAHeap::destroy()
   NAMutex mutex(threadSafe_, &mutex_, true);
 #endif
 
+#ifdef _DEBUG
+  if (la_)
+    {
+      char header[120];
+      sprintf(header, "Stacks when block of %d bytes was askead from heap (%s)",
+              TraceAllocSize, getName());
+      dumpTrafStack(getSAL(), header, true);
+      delete la_;
+    }
+#endif // _DEBUG
   reInitialize();
 
   // remove this memory from the parents memoryList_
@@ -3189,6 +3260,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
       assert(p->fragmentSize() == fragSize);
       unlinkFirstSmallFragment(b, p, idx);
       p->setInuseAndPinuse(fragSize | firstFragBit);
+#ifdef _DEBUG
+          if (p->fragmentSize() == TraceAllocSize)
+            saveTrafStack(getSAL(), p);
+#endif // _DEBUG
       incrementStats(fragSize);
       allocDebugProcess(p, userSize);
       checkMallocedFragment(p, nb);
@@ -3220,6 +3295,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
         }
         allocDebugProcess(p, userSize);
         checkMallocedFragment(p, nb);
+#ifdef _DEBUG
+          if (p->fragmentSize() == TraceAllocSize)
+            saveTrafStack(getSAL(), p);
+#endif // _DEBUG
         return p->getMemory(cleanUpPrevNext);
       }
 
@@ -3228,6 +3307,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
         incrementStats(p->fragmentSize());
         allocDebugProcess(p, userSize);
         checkMallocedFragment(p, nb);
+#ifdef _DEBUG
+          if (p->fragmentSize() == TraceAllocSize)
+            saveTrafStack(getSAL(), p);
+#endif // _DEBUG
         return p->getMemory(cleanUpPrevNext);
       }
     }
@@ -3240,6 +3323,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
       allocDebugProcess(p, userSize);
       checkMallocedFragment(p, nb);
       incrementStats(p->fragmentSize());
+#ifdef _DEBUG
+          if (p->fragmentSize() == TraceAllocSize)
+            saveTrafStack(getSAL(), p);
+#endif // _DEBUG
       return p->getMemory(cleanUpPrevNext);
     }
   }
@@ -3266,6 +3353,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
     }
     allocDebugProcess(p, userSize);
     checkMallocedFragment(p, nb);
+#ifdef _DEBUG
+          if (p->fragmentSize() == TraceAllocSize)
+            saveTrafStack(getSAL(), p);
+#endif // _DEBUG
     return p->getMemory(cleanUpPrevNext);
   }
 
@@ -3372,6 +3463,10 @@ void * NAHeap::allocateHeapMemory(size_t userSize, NABoolean failureIsFatal)
   incrementStats(nb);
   allocDebugProcess(p, userSize);
   checkMallocedFragment(p, nb);
+#ifdef _DEBUG
+          if (p->fragmentSize() == TraceAllocSize)
+            saveTrafStack(getSAL(), p);
+#endif // _DEBUG
   return p->getMemory(cleanUpPrevNext);
 }
 
@@ -3423,6 +3518,11 @@ void NAHeap::deallocateHeapMemory(void* addr)
   {
     p = (NAHeapFragment *)((size_t)(p) - p->getPrevFoot());
   }
+
+#ifdef _DEBUG
+  if (p->fragmentSize() == TraceAllocSize)
+    delTrafStack(getSAL(), p);
+#endif // _DEBUG
 
   checkInuseFragment(p);
   if (!(RTCHECK(okAddress(p) && okCinuse(p)))) {
@@ -3785,18 +3885,16 @@ void
 NAHeap::doAllocDebugProcess(NAHeapFragment *p, size_t userSize)
 {
   // Reset the user requested memory to a 0xfafafafa pattern.
-  memset(p->getMemory(), 0xfa, userSize);
+  // Disabled for now, see Todo 1)
+  // memset(p->getMemory(), 0xfa, userSize);
 
 #ifndef STAND_ALONE
-  if (debugLevel_ == 2) {
+  if (debugLevel_ == 2 && p->fragmentSize() < INT_MAX) {
 
     // Determine location that the user requested size is stored
     // in the memory.
     size_t userSizeOffset = p->fragmentSize() - (2 * sizeof(size_t));
-    size_t* userSizePtr = (size_t*)((char*)p->getMemory() + userSizeOffset);
-
-    // Store the userSize in the buffer.
-    *userSizePtr = userSize;
+    UInt32 * userSizePtr = (UInt32 *)((char*)p->getMemory() + userSizeOffset);
 
     // Set the integer pointer to the last word in the user
     // requested memory
@@ -3811,6 +3909,9 @@ NAHeap::doAllocDebugProcess(NAHeapFragment *p, size_t userSize)
     // Set the bits in the next 2 words.
     lastWord[1] = buf_overflow_val; 
     lastWord[2] = buf_overflow_val; 
+    // Store the userSize in the buffer.
+    // Note that the userSizePtr may point to the same location of lastWord[2]
+    *userSizePtr = (UInt32) userSize;
 
   }
 #endif // !STAND_ALONE
@@ -3826,15 +3927,16 @@ void
 NAHeap::doDeallocDebugProcess(NAHeapFragment *p)
 {
 #ifndef STAND_ALONE
-  if (debugLevel_ == 2) {
+  if (debugLevel_ == 2 && p->fragmentSize() < INT_MAX) {
     // Check for buffer overflows (if not STAND_ALONE)
     p->checkBufferOverflow();
   }
 #endif
 
   // Reset the user memory to a 0xfdfdfdfd pattern.
-  size_t userSize = p->fragmentSize() - sizeof(size_t);
-  memset(p->getMemory(), 0xfd, userSize);
+  // size_t userSize = p->fragmentSize() - sizeof(size_t);
+  // Disabled for now, see Todo 1)
+  // memset(p->getMemory(), 0xfd, userSize);
 }
 // LCOV_EXCL_STOP
 
@@ -4152,15 +4254,14 @@ NAHeap::traverseAndCheck()
   return sum;
 }
 
-
 #ifndef STAND_ALONE
 // LCOV_EXCL_START
 void
 NAHeapFragment::checkBufferOverflow()
 {
   size_t userSizeOffset = fragmentSize() - (2 * sizeof(size_t));
-  size_t *userSizePtr = (size_t*)((char*)getMemory() + userSizeOffset);
-  size_t userSize = *userSizePtr;
+  UInt32 *userSizePtr = (UInt32*)((char*)getMemory() + userSizeOffset);
+  UInt32 userSize = *userSizePtr;
 
   // Set pointer to the last word of the user allocated memory.
   UInt32 *lastWord = (UInt32*)((char*)getMemory() 
@@ -4169,15 +4270,15 @@ NAHeapFragment::checkBufferOverflow()
   // Check for buffer overflow;
   UInt32 remainder = userSize & 0x3;
   if ((lastWord[0] & overflow_mask[remainder]) != overflow_val[remainder] || 
-      lastWord[1] != buf_overflow_val ||
-      lastWord[2] != buf_overflow_val) {
-    char buf[128];
-    sprintf(buf, "Buffer overflow of memory allocated at %p (Size=" PFSZ ")\n",
-            getMemory(), userSize);
-    cerr << buf;
-    NABoolean buffer_overflow_detected = FALSE;
-    assert(buffer_overflow_detected);
+      lastWord[1] != buf_overflow_val) {
+//    char buf[128];
+//    sprintf(buf, "Buffer overflow of memory allocated at %p (Size=" PFSZ ")\n",
+//            getMemory(), userSize);
+//    cerr << buf;
+    assert(0);  // overflow detected
   }
+  if (userSizePtr != &lastWord[2] && lastWord[2] != buf_overflow_val)
+    assert(0);  // overflow detected
 }
 
 // Traverse over all of the blocks for this NAHeap to see if any of them contain
@@ -4202,6 +4303,27 @@ NAHeap::checkForOverflow()
 #endif // !STAND_ALONE
 #endif // ( defined(_DEBUG) || defined(NSK_MEMDEBUG) ) && !defined(__EID) 
 
+#ifdef _DEBUG
+void
+NAHeap::setAllocTrace()
+{
+  static THREAD_P bool traceEnvChecked = 0;
+
+  if (!traceEnvChecked)
+    {
+      char *traceEnv = getenv("TRACE_ALLOC_SIZE");
+      if (traceEnv != NULL && atol(traceEnv) > 0)
+        TraceAllocSize = atol(traceEnv);
+      else
+        TraceAllocSize = 0;
+      traceEnvChecked = true;
+    }
+  if (TraceAllocSize != 0 && memcmp(name_, "Process Stats Heap", 18))
+    la_ = new LIST(TrafAddrStack *);
+  else
+    la_ = NULL;
+}
+#endif // _DEBUG
 
 
 // -----------------------------------------------------------------------

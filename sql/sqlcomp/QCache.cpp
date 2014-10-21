@@ -2547,6 +2547,7 @@ ULng32 QCache::maxPreParserEntries(ULng32 maxByteSz, ULng32 avgEntrySz)
 
 QueryCache::QueryCache(ULng32 maxSize, ULng32 maxVictims, ULng32 avgPlanSz)
 {
+  cache_ = NULL;
   resizeCache(maxSize, maxVictims, avgPlanSz);
   parameterTypes_ = new (CTXTHEAP) NAString(parmTypesInitStrLen, CTXTHEAP);
 }
