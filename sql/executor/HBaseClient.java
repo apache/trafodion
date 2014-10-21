@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
@@ -74,6 +76,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileScanner;
+import org.apache.hadoop.hbase.HConstants;
 
 public class HBaseClient {
 
@@ -665,7 +668,7 @@ public class HBaseClient {
     // hundred KeyValues to see how many are missing.
     public boolean estimateRowCount(String tblName, int partialRowSize,
                                     int numCols, long[] rc)
-                   throws MasterNotRunningException, IOException, ClassNotFoundException {
+                   throws MasterNotRunningException, IOException, ClassNotFoundException, URISyntaxException {
       if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called.");
 
       final String REGION_NAME_PATTERN = "[0-9a-f]*";
@@ -691,7 +694,9 @@ public class HBaseClient {
       nano2 = System.nanoTime();
       if (logger.isDebugEnabled()) logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
       CacheConfig cacheConf = new CacheConfig(config);
-      FileStatus[] fsArr = fileSystem.globStatus(new Path("/hbase/" + 
+      URI hbaseRootDirURI = new URI(config.get(HConstants.HBASE_DIR));
+      FileStatus[] fsArr = fileSystem.globStatus(new Path(
+                               hbaseRootDirURI.getPath() + "/data/default/" +
                                tblName + "/" + REGION_NAME_PATTERN +
                                "/#1/" + HFILE_NAME_PATTERN));
       for (FileStatus fs : fsArr) {
