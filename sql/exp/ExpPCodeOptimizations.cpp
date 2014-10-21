@@ -4115,6 +4115,24 @@ NABoolean PCodeCfg::localCSE(INSTLIST** parent, PCodeBlock* tailBlock,
                ((ex_conv_clause*)clauseTail)->get_case_index()) &&
               (((ex_conv_clause*)clauseHead)->treatAllSpacesAsZero() ==
                ((ex_conv_clause*)clauseTail)->treatAllSpacesAsZero()));
+            if ( match ) {
+               if ( ((ex_conv_clause*)clauseHead)->get_case_index() ==
+                    CONV_DATETIME_DATETIME )
+               {
+                  Attributes *tgtH = ((ex_conv_clause*)clauseHead)->getOperand(0);
+                  Attributes *tgtT = ((ex_conv_clause*)clauseTail)->getOperand(0);
+                  Attributes *srcH = ((ex_conv_clause*)clauseHead)->getOperand(1);
+                  Attributes *srcT = ((ex_conv_clause*)clauseTail)->getOperand(1);
+                  match = (
+                          ( srcH->getDatatype()  == srcT->getDatatype()  )
+                       && ( srcH->getPrecision() == srcT->getPrecision() )
+                       && ( srcH->getScale()     == srcT->getScale()     )
+                       && ( tgtH->getDatatype()  == tgtT->getDatatype()  )
+                       && ( tgtH->getPrecision() == tgtT->getPrecision() )
+                       && ( tgtH->getScale()     == tgtT->getScale()     )
+                       );
+               }
+            }
             break;
 
           case ex_clause::ARITH_TYPE:
