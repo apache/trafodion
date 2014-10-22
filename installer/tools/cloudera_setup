@@ -150,7 +150,7 @@ if [[ $cloudera_installed -eq 0 ]]; then
    
    sudo rm -rf oracle-j2sdk* 2>/dev/null
 
-   wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm
+   wget http://archive.cloudera.com/cm5/redhat/6/x86_64/cm/5/RPMS/x86_64/oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm
 
    if [ $? -ne 0 ]; then
       echo "****ERROR: Time our error. Please check http_proxy settings." | tee -a $SETUP_LOG
@@ -159,7 +159,7 @@ if [[ $cloudera_installed -eq 0 ]]; then
       exit -1
    fi
 
-   sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update55-2.x86_64.rpm 
+   sudo rpm -ivh oracle-j2sdk1.7-1.7.0+update67-1.x86_64.rpm 
 
    chmod +x cloudera-manager-installer.bin
 
