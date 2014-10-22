@@ -3204,6 +3204,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
+  DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
   DDint__(TRAF_LOAD_MAX_HFILE_SIZE,             "10240"), // in MB -->10GB by default
   DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,      "ON"),
   DDkwd__(TRAF_LOAD_PREP_CLEANUP,               "ON"),

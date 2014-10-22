@@ -404,6 +404,13 @@ Lng32 ExpHbaseInterface_JNI::cleanup()
       client_->releaseHTableClient(htc_);
       htc_ = NULL;    
     }
+
+    if (hblc_)
+    {
+      client_->releaseHBulkLoadClient(hblc_);
+      hblc_ = NULL;
+    }
+
   }
   return HBASE_ACCESS_SUCCESS;
 }

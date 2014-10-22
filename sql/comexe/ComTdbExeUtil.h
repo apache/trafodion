@@ -4616,9 +4616,9 @@ public:
   {(v ? flags_ |= LOG_ERRORS : flags_ &= ~LOG_ERRORS); };
   NABoolean getLogErrors() { return (flags_ & LOG_ERRORS) != 0; };
 
-  void setQuasiSecure(NABoolean v)
-  {(v ? flags_ |= QUASI_SECURE : flags_ &= ~QUASI_SECURE); };
-  NABoolean getQuasiSecure() { return (flags_ & QUASI_SECURE) != 0; };
+  void setSecure(NABoolean v)
+  {(v ? flags_ |= SECURE : flags_ &= ~SECURE); };
+  NABoolean getSecure() { return (flags_ & SECURE) != 0; };
 
   void setNoDuplicates(NABoolean v)
     {(v ? flags_ |= NO_DUPLICATES : flags_ &= ~NO_DUPLICATES); };
@@ -4643,6 +4643,10 @@ public:
     {(v ? flags_ |= UPSERT_USING_LOAD : flags_ &= ~UPSERT_USING_LOAD); };
   NABoolean getUpsertUsingLoad() { return (flags_ & UPSERT_USING_LOAD) != 0; };
 
+  void setForceCIF(NABoolean v)
+    {(v ? flags_ |= FORCE_CIF : flags_ &= ~FORCE_CIF); };
+  NABoolean getForceCIF() { return (flags_ & FORCE_CIF) != 0; };
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -4657,13 +4661,14 @@ private:
     TRUNCATE_TABLE   = 0x0008,
     NO_ROLLBACK      = 0x0010,
     LOG_ERRORS       = 0x0020,
-    QUASI_SECURE     = 0x0040,
+    SECURE           = 0x0040,
     NO_DUPLICATES    = 0x0080,
     INDEXES          = 0x0100,
     CONSTRAINTS      = 0x0200,
     NO_OUTPUT        = 0x0400,
     INDEX_TABLE_ONLY = 0x0800,
-    UPSERT_USING_LOAD= 0x1000
+    UPSERT_USING_LOAD= 0x1000,
+    FORCE_CIF        = 0x2000
   };
 
   // load stmt

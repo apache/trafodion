@@ -101,16 +101,10 @@ public class HBulkLoadClient
   String compression = COMPRESSION;
   int blockSize = BLOCKSIZE;
   DataBlockEncoding dataBlockEncoding = DataBlockEncoding.NONE;
- // DataBlockEncoding onDiskEncoding = DataBlockEncoding.NONE; deprecated
-  
-  
-  
-  HashMap< Integer, HTableClient.QualifiedColumn> qualifierMap = null;
 
   public HBulkLoadClient()
   {
     if (logger.isDebugEnabled()) logger.debug("HBulkLoadClient.HBulkLoadClient() called.");
-
   }
 
   public HBulkLoadClient(Configuration conf) throws IOException
@@ -484,5 +478,37 @@ public class HBulkLoadClient
       return true;
 
   }
+  
+  public boolean release( ) throws IOException {
+    if (writer != null)
+    {
+       writer.close();
+       writer = null;
+    }
+    if (fileSys !=null)
+    {
+      fileSys.close();
+      fileSys = null;
+    }
+    if (config != null) 
+    {
+      config = null;
+    }
+    if (hFileLocation != null)
+    {
+      hFileLocation = null;
+    }
+    if (hFileName != null)
+    {
+      hFileName = null;
+    }
+
+    if (compression != null)
+    {
+      compression = null;
+    }
+    return true;
+}
+
 
 }

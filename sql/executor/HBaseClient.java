@@ -826,7 +826,15 @@ public class HBaseClient {
     return hblc;
     
   }
-  
+  public void releaseHBulkLoadClient(HBulkLoadClient hblc) 
+      throws IOException 
+  {
+     if (hblc == null)
+       return;
+          
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHBulkLoadClient().");
+      hblc.release();
+   }
 }
 
     
