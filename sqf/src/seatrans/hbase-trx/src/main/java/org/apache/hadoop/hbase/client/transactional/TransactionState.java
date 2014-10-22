@@ -236,7 +236,7 @@ public class TransactionState {
         participatingRegions.clear();
     }
 
-    Set<TransactionRegionLocation> getRegionsToIngore() {
+    Set<TransactionRegionLocation> getRegionsToIgnore() {
         return regionsToIgnore;
     }
 
