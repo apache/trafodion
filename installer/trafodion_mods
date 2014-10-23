@@ -45,8 +45,13 @@ TRAF_USER="trafodion"
 #============================================
 #Look for type of hadoop distro installed
 
-pdsh $MY_NODES sudo mkdir -p /var/log/trafodion
-pdsh $MY_NODES sudo chmod 777 /var/log/trafodion
+if [[ $node_count -eq 1 ]]; then
+   sudo mkdir -p /var/log/trafodion
+   sudo chmod 777 /var/log/trafodion
+else
+   pdsh $MY_NODES sudo mkdir -p /var/log/trafodion
+   pdsh $MY_NODES sudo chmod 777 /var/log/trafodion
+fi
 
 ambari_installed=$(rpm -qa | grep ambari | wc -l )
 

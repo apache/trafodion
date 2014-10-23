@@ -1,4 +1,4 @@
-GFG#!/bin/bash
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # (C) Copyright 2014 Hewlett-Packard Development Company, L.P.
@@ -202,9 +202,11 @@ echo "***INFO: Deleting all ambari repos"
 
 listAmbariRepo=`sudo find / -name ambari.repo*`
 
-for i in ${listAmbariRepo[@]}; do
-    sudo rm -rf $i 
-done
+if [ ${#listAmbariRepo[@]} -ge 1 ]; then
+   for i in ${listAmbariRepo[@]}; do
+       sudo rm -rf $i 
+   done
+fi
 
 #==============================================
 #Deleting any leftover processes
