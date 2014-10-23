@@ -218,8 +218,12 @@ void CmpSeabaseDDL::createSeabaseTableLike(
       
       for (CollIndex i = 0; i < keyArray.entries(); i++) 
         {
-          const NAString &colName = keyArray[i]->getColumnName();
+          NAString colName = keyArray[i]->getColumnName();
           
+          // Generate a delimited identifier if source colName is delimited
+          // Launchpad bug: 1383531
+          colName/*InExternalFormat*/ = ToAnsiIdentifier (colName/*InInternalFormat*/);
+         
           keyClause += colName;
 
           if (i < (keyArray.entries() - 1))

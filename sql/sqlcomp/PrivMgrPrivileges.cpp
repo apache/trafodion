@@ -2739,7 +2739,7 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
            tableBits, libraryBits, sequenceBits);
   std::string grantableClause(buf);
 
-  sprintf(buf, "upsert into %s select distinct object_uid, trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', object_type, object_owner, (select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, '%s', %d, '%s', '%s', %s, %s from %s o where o.object_type in ('VI','BT','LB','UR')",
+  sprintf(buf, "insert into %s select distinct object_uid, trim(catalog_name) || '.\"' || trim(schema_name) ||  '\".\"' || trim(object_name) || '\"', object_type, object_owner, (select auth_db_name from %s where auth_id = o.object_owner) as auth_db_name, '%s', %d, '%s', '%s', %s, %s from %s o where o.object_type in ('VI','BT','LB','UR','SG')",
               tableName_.c_str(),
               authsLocation.c_str(),
               USER_GRANTEE_LIT,
@@ -2764,19 +2764,11 @@ PrivStatus ObjectPrivsMDTable::insertSelect(
   }
 
   // Make sure rows were inserted correctly.
+  // Get the expected number of rows
  sprintf(buf, "select count(*) from %s o where o.object_type in ('VI','BT','LB','UR', 'SG')",
               objectsLocation.c_str());
   Lng32 len = 0;
   cliRC = cliInterface.executeImmediate(buf, (char*)&rowsSelected, &len, NULL);
-  if (cliRC < 0)
-  {
-    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-    return STATUS_ERROR;
-  }
-
-  // Get the number of rows inserted
-  sprintf(buf, "select count(*) from %s", tableName_.c_str());
-  cliRC = cliInterface.executeImmediate(buf, (char*)&rowsInserted, &theLen, NULL);
   if (cliRC < 0)
   {
     cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
