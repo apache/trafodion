@@ -13,7 +13,7 @@
     </license>
   </licenses>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.hp.MY_APP_ID</groupId>
+  <groupId>org.trafodion.MY_APP_ID</groupId>
   <artifactId>MY_APP_ID</artifactId>
   <packaging>jar</packaging>
   <version>1.0</version>
