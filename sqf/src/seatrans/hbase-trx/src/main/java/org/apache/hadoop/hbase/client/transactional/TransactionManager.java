@@ -245,7 +245,7 @@ public class TransactionManager {
 	 */
   public Integer doPrepareX(final byte[] regionName, final long transactionId, final TransactionRegionLocation location) 
 	throws IOException, CommitUnsuccessfulException {
-
+	  if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- ENTRY txid: " + transactionId );
     int commitStatus = 0;
     boolean retry = false;
     int retryCount = 0;
@@ -392,6 +392,7 @@ public class TransactionManager {
   	 * Purpose : Call abort for a given regionserver  
   	 */
     public Integer doAbortX(final byte[] regionName, final long transactionId) throws IOException{
+        if(LOG.isTraceEnabled()) LOG.trace("doAbortX -- ENTRY txID: " + transactionId);
 	    boolean retry = false;
 	    int retryCount = 0;
 	    do {
@@ -438,7 +439,10 @@ public class TransactionManager {
 	          for (AbortTransactionResponse cresponse : result.values())
 	          {                                                  
 	            if(cresponse.getHasException()) {
-	              LOG.error("Abort HasException true: " + cresponse.getHasException());
+	              String exceptionString = cresponse.getException().toString();
+	              if(exceptionString.contains("UnknownTransactionException")) {
+                     throw new UnknownTransactionException();
+	              }
 	              LOG.error("Abort HasException true: " + cresponse.getException().toString());
 	              throw new Exception(cresponse.getException());
 	            }
@@ -446,9 +450,7 @@ public class TransactionManager {
 	          retry = false;
 	      } 
 	      catch (UnknownTransactionException ute) {
-		         LOG.error("exception in doAbortX (ignoring): " + ute);       
-		         LOG.info("Got unknown exception during abort. Transaction: ["
-		             + transactionState.getTransactionId() + "]");
+		         LOG.debug("UnknownTransactionException in doAbortX (ignoring): " + ute);
 	      }
 	      catch (Exception e)
 	      {        		    	  
@@ -482,6 +484,7 @@ public class TransactionManager {
       {
       	transactionLogger.forgetTransaction(transactionState.getTransactionId());
       }
+      if(LOG.isTraceEnabled()) LOG.trace("doAbortX -- EXIT txID: " + transactionId);
       return 0;
     }
   } // TransactionManagerCallable
@@ -599,41 +602,31 @@ public class TransactionManager {
              });
            }
         } catch (Exception e) {        	
-          LOG.error("exception in prepareCommit (during submit to pool): " + e);
-          // This happens on a NSRE that is triggered by a split
-          try {
-             abort(transactionState);
-          } catch (Exception abortException) {
-             LOG.warn("Exception during abort", abortException);
-          }
-           throw new CommitUnsuccessfulException(e);
+            LOG.error("exception in prepareCommit (during submit to pool): " + e);
+            throw new CommitUnsuccessfulException(e);
           }
 
         // loop to retrieve replies
         try {
+          int commitError = 0;
           for (int loopIndex = 0; loopIndex < loopCount; loopIndex ++) {
             int canCommit = compPool.take().get();
       	
           	if (canCommit == TM_COMMIT_FALSE) {
-          		LOG.warn("Aborting [" + transactionState.getTransactionId() + "]");
-          		abort(transactionState);
-          		return TransactionalReturn.COMMIT_UNSUCCESSFUL;
+          		// Commit conflict takes precedence
+          		if(commitError != TransactionalReturn.COMMIT_CONFLICT)
+          			commitError = TransactionalReturn.COMMIT_UNSUCCESSFUL;
           	}
           	if(canCommit == TM_COMMIT_FALSE_CONFLICT) {
-          		LOG.warn("Aborting [" + transactionState.getTransactionId() + "] due to Conflict");
-          		abort(transactionState);
-          		return TransactionalReturn.COMMIT_CONFLICT;
+          		commitError = TransactionalReturn.COMMIT_CONFLICT;
           	}
           	else if (canCommit == TM_COMMIT_TRUE)
           		allReadOnly = false;
          	}
+          if(commitError != 0) 
+        	  return commitError;
         }catch (Exception e) {        	
           LOG.error("exception in prepareCommit (during completion processing): " + e);
-          try {              
-            abort(transactionState);
-          } catch (Exception abortException) {
-            LOG.warn("Exception during abort", abortException);
-          }
           throw new CommitUnsuccessfulException(e);
         }        
         return allReadOnly ? TransactionalReturn.COMMIT_OK_READ_ONLY: 
@@ -698,7 +691,7 @@ public class TransactionManager {
             // (Asynchronously send commit
             for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
               if (LOG.isTraceEnabled()) LOG.trace("sending commits ... [" + transactionState.getTransactionId() + "]");
-                if (transactionState.getRegionsToIngore().contains(location)) {
+                if (transactionState.getRegionsToIgnore().contains(location)) {
                     continue;
                 }
 
@@ -748,14 +741,23 @@ public class TransactionManager {
      * @throws IOException
      */
     public void abort(final TransactionState transactionState) throws IOException {
+        if(LOG.isTraceEnabled()) LOG.trace("Abort -- ENTRY txID: " + transactionState.getTransactionId());
     	int loopCount = 0;
-
+           
+      /*
+      if(transactionState.getStatus().equals("ABORTED")) {
+          if(LOG.isTraceEnabled()) LOG.trace("Abort --EXIT already called, ignoring");
+          return;
+      }
+      */
+    	
       transactionLogger.setStatusForTransaction(transactionState.getTransactionId(),
-          TransactionLogger.TransactionStatus.ABORTED);
+              TransactionLogger.TransactionStatus.ABORTED);
       
+      transactionState.setStatus(TransactionState.TM_TX_STATE_ABORTED);
       // (Asynchronously send aborts
       for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
-          if (transactionState.getRegionsToIngore().contains(location)) {
+          if (transactionState.getRegionsToIgnore().contains(location)) {
               continue;
           }
           try {
@@ -785,6 +787,7 @@ public class TransactionManager {
          
         // all requests sent at this point, can record the count
         transactionState.completeSendInvoke(loopCount);
+        if(LOG.isTraceEnabled()) LOG.trace("Abort -- EXIT txID: " + transactionState.getTransactionId());
         
     }
 
