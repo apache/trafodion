@@ -3775,6 +3775,24 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_END_ERROR_;
           break;
         }
+        if (hblTdb().getForceCIF())
+        {
+          if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT", "ON") < 0)
+          {
+            step_ = LOAD_END_ERROR_;
+            break;
+          }
+          if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT_BMO", "ON") < 0)
+          {
+            step_ = LOAD_END_ERROR_;
+            break;
+          }
+          if (holdAndSetCQD("COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO", "100") < 0)
+          {
+            step_ = LOAD_END_ERROR_;
+            break;
+          }
+        }
 
         if (hblTdb().getPreloadCleanup())
           step_ = PRE_LOAD_CLEANUP_;
@@ -3944,7 +3962,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         //this case is mainly for debugging
         if (hblTdb().getKeepHFiles() &&
-            !hblTdb().getQuasiSecure() )
+            !hblTdb().getSecure() )
         {
           if (holdAndSetCQD("COMPLETE_BULK_LOAD_N_KEEP_HFILES", "ON") < 0)
           {
@@ -4039,11 +4057,29 @@ short ExExeUtilHBaseBulkLoadTcb::work()
            break;
          }
          cliRC = restoreCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES");
-          if (cliRC < 0)
-          {
-            step_ = LOAD_ERROR_;
-            break;
-          }
+         if (cliRC < 0)
+         {
+           step_ = LOAD_ERROR_;
+           break;
+         }
+         if (hblTdb().getForceCIF())
+         {
+           if (restoreCQD("COMPRESSED_INTERNAL_FORMAT") < 0)
+           {
+             step_ = LOAD_ERROR_;
+             break;
+           }
+           if (restoreCQD("COMPRESSED_INTERNAL_FORMAT_BMO") < 0)
+           {
+             step_ = LOAD_ERROR_;
+             break;
+           }
+           if (restoreCQD("COMPRESSED_INTERNAL_FORMAT_DEFRAG_RATIO") < 0)
+           {
+             step_ = LOAD_ERROR_;
+             break;
+           }
+         }
          if (step_ == LOAD_END_)
           step_ = DONE_;
          else

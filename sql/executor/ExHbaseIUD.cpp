@@ -1680,6 +1680,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           {
             ehi_->closeHFile(table_);
             hFileParamsInitialized_ = false;
+            retcode = ehi_->close();
           }
         }
       }

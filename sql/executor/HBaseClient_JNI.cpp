@@ -280,6 +280,7 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in getHBulkLoadClient()."
  ,"Preparing parameters for estimateRowCount()."
  ,"Java exception in estimateRowCount()."
+ ,"Java exception in releaseHBulkLoadClient()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -420,6 +421,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;";
     JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
     JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
+    JavaMethods_[JM_REL_HBLC   ].jm_name      = "releaseHBulkLoadClient";
+    JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBaseAccess/HBulkLoadClient;)V";
    
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
@@ -583,6 +586,9 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
   return HBC_OK;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//
+//////////////////////////////////////////////////////////////////////////////
 HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::getHBulkLoadClient() called.");
@@ -609,7 +615,7 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
     logError(CAT_HBASE, "HBaseClient_JNI::getHTableClient()", getLastError());
     return NULL;
   }
-  HBulkLoadClient_JNI *hblc = new HBulkLoadClient_JNI(heap, j_hblc);
+  HBulkLoadClient_JNI *hblc = new (heap) HBulkLoadClient_JNI(heap, j_hblc);
   jenv_->DeleteLocalRef(j_hblc);
   if ( hblc->init()!= HBLC_OK)
   {
@@ -621,6 +627,29 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
 
 //////////////////////////////////////////////////////////////////////////////
 // 
+//////////////////////////////////////////////////////////////////////////////
+HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
+{
+  HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::releaseHBulkLOadClient() called.");
+
+  jobject j_hblc = hblc->getJavaObject();
+
+  jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HBLC].methodID, j_hblc);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails();
+    logError(CAT_HBASE, __FILE__, __LINE__);
+    logError(CAT_HBASE, "HBaseClient_JNI::releaseHBulkLOadClient()", getLastError());
+    return HBC_ERROR_REL_HBLC_EXCEPTION;
+  }
+  NADELETE(hblc, HBulkLoadClient_JNI, hblc->getHeap());
+
+  return HBC_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//
 //////////////////////////////////////////////////////////////////////////////
 HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFamilies)
 {

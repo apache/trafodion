@@ -439,6 +439,7 @@ typedef enum {
  ,HBC_ERROR_GET_HBLC_EXCEPTION
  ,HBC_ERROR_ROWCOUNT_EST_PARAM
  ,HBC_ERROR_ROWCOUNT_EST_EXCEPTION
+ ,HBC_ERROR_REL_HBLC_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -465,6 +466,7 @@ public:
   HTableClient_JNI* getHTableClient(NAHeap *heap, const char* tableName, 
                bool useTRex);
   HBulkLoadClient_JNI* getHBulkLoadClient(NAHeap *heap);
+  HBC_RetCode releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc);
   HBC_RetCode releaseHTableClient(HTableClient_JNI* htc);
   HBC_RetCode create(const char* fileName, HBASE_NAMELIST& colFamilies);
   HBC_RetCode create(const char* fileName, NAText*  hbaseOptions, 
@@ -521,6 +523,7 @@ private:
    ,JM_REVOKE
    ,JM_GET_HBLC
    ,JM_EST_RC
+   ,JM_REL_HBLC
    ,JM_LAST
   };
   static jclass          javaClass_; 

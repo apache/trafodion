@@ -26,4 +26,8 @@ fi
 
 sed "
 s/ET:.*/ET:xxxxxxxxxx/g
+s/hash2 partitioned.*ways on/hash2 partitioned N ways on/g
+s/\(esp_exchange.*\)[1-9](hash2):[1-9]/\1 N(hash2):M/g
+s/\(esp_exchange.*\)1:[1-9](hash2)/\1 1:N(hash2)/g
+s/\(esp_exchange.*\)(range):[1-9](hash2)/\1 (range):N(hash2)/g
 " $fil

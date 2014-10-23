@@ -638,6 +638,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadTaskTcb::work()
           return rc;
 
         step_ = NOT_STARTED;
+        retcode = ehi_->close();
 
         return WORK_OK;
       }

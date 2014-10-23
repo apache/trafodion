@@ -5500,8 +5500,8 @@ short ExeUtilHBaseBulkLoad::codeGen(Generator * generator)
   exe_util_tdb->setNoOutput(noOutput_);
   exe_util_tdb->setIndexTableOnly(indexTableOnly_);
   exe_util_tdb->setUpsertUsingLoad(upsertUsingLoad_);
-
-  exe_util_tdb->setQuasiSecure(FALSE);
+  exe_util_tdb->setForceCIF(CmpCommon::getDefault(TRAF_LOAD_FORCE_CIF) == DF_ON);
+  exe_util_tdb->setSecure(FALSE);
 
 
   generator->initTdbFields(exe_util_tdb);
