@@ -256,6 +256,7 @@ Lng32  ExpHbaseInterface::fetchAllRows(
            retcode = getColName(colNo, &colName, colNameLen, timestamp);
            if (retcode != HBASE_ACCESS_SUCCESS)
               break;
+           Text columnName((char *)colName, colNameLen);
            BYTE *colVal = NULL;
            colValLen = 0;
            retcode = getColVal((NAHeap *)heap_, colNo, &colVal, colValLen);
@@ -263,11 +264,11 @@ Lng32  ExpHbaseInterface::fetchAllRows(
               break; 
            Text colValue((char *)colVal, colValLen);
            NADELETEBASIC(colVal, heap_);
-	   if (colName == col1NameStr)
+	   if (columnName == col1NameStr)
 	      col1ValueList.insert(colValue);
-	   else if (colName == col2NameStr)
+	   else if (columnName == col2NameStr)
 	      col2ValueList.insert(colValue);
-	   else if (colName == col3NameStr)
+	   else if (columnName == col3NameStr)
 	      col3ValueList.insert(colValue);
         }
      }

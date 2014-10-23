@@ -378,8 +378,8 @@ class CmpSeabaseMDupgrade : public CmpSeabaseDDL
     DONE_RETURN
   } ;
 
-  CmpSeabaseMDupgrade()
-    : CmpSeabaseDDL(NULL)
+  CmpSeabaseMDupgrade(NAHeap *heap)
+    : CmpSeabaseDDL(heap)
     {};
 
   NABoolean isOldMDtable(const NAString &objName);

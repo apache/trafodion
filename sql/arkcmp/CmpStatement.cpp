@@ -1078,7 +1078,7 @@ CmpStatement::process(const CmpMessageMDupgrade &statement)
   NAString inMsg;
   NAString outMsg;
 
-  CmpSeabaseMDupgrade cmpMDU;
+  CmpSeabaseMDupgrade cmpMDU(heap_);
   
   if (cmpMDU.executeSeabaseMDupgrade(mdi,
 				     currCatName, currSchName))
