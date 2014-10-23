@@ -280,7 +280,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   HHDFSMasterHostList::resetNumSQNodes();
   HHDFSMasterHostList::resethasVirtualSQNodes();
 
-  optDefaults_ = new (heap_) OptDefaults();
+  optDefaults_ = new (heap_) OptDefaults(heap_);
 
   // create dynamic metadata descriptors
   CmpSeabaseDDL cmpSeabaseDDL(heap_);

@@ -3737,7 +3737,7 @@ NABoolean CascadesBinding::advance()
   return( FALSE );
 } // CascadesBinding::advance
 
-OptDefaults::OptDefaults()
+OptDefaults::OptDefaults(CollHeap* h) : heap_(h)
 {
    // initialization  of members of OptDefaults
    // will be re-initialized by OptDefaults::initialize(..)
@@ -3935,10 +3935,10 @@ OptDefaults::OptDefaults()
 
    isSideTreeInsert_ = FALSE; 
 
-   DefaultCostWeight_ = NULL;
-   DefaultPerformanceGoal_ = NULL;
-   ResourcePerformanceGoal_ = NULL;
-} 
+   defaultCostWeight_ = NULL;
+   defaultPerformanceGoal_ = NULL;
+   resourcePerformanceGoal_ = NULL;
+}
 
 OptDefaults::~OptDefaults()
 {
@@ -4429,107 +4429,112 @@ RequiredResources * OptDefaults::estimateRequiredResources(RelExpr* rootExpr)
     NABoolean fakeEnv = FALSE;
     totalNumberOfCPUs_ = defs.getTotalNumOfESPsInCluster(fakeEnv);
 
-    // guard against any strange CQD(DEFAULT_DEGREE_OF_PARALLELISM), cqdDDoP.
-    // if cqdDDoP were 33 then dDoP should be 32
-    Lng32 cqdDDoP = getDefaultDegreeOfParallelism();
+    if ( !fakeEnv ) {
+      
+      // guard against any strange CQD(DEFAULT_DEGREE_OF_PARALLELISM), cqdDDoP.
+      // if cqdDDoP were 33 then dDoP should be 32
+      Lng32 cqdDDoP = getDefaultDegreeOfParallelism();
+  
+      if (cqdDDoP > totalNumberOfCPUs_) cqdDDoP = totalNumberOfCPUs_;
+      // We should also floor it by totalNumberOfCPUs_/16
+      // start dDoP with all available CPUs
+      Lng32 dDoP = totalNumberOfCPUs_;
+  
+      // keep halving dDoP until dDoP <= cqdDDoP
+      while (cqdDDoP < dDoP) dDoP /= 2;
+  
+      // dDDoP should be positive, since the minimal value for both cqdDDoP 
+      // and totalNumberOfCPUs_  is 1.
+      adjustedDegreeOfParallelism_ = dDoP;
+  
+      // set the memory and cpu resources to be use in computation of degree
+      // of parallelism below. Just for this method.
+      double memoryToConsider = requiredMemoryResourceEstimate_;
+      double cpuToConsider = requiredCpuResourceEstimate_;
+  
+      ULng32 useOperatorMaxForComputations =
+        getDefaultAsLong(USE_OPERATOR_MAX_FOR_DOP);
+  
+      ULng32 operatorResourceFactor =
+        useOperatorMaxForComputations;
+  
+      if (useOperatorMaxForComputations)
+      {
+        memoryToConsider = maxOperatorMemoryEstimate_;
+        cpuToConsider = MINOF(cpuToConsider,
+                              (operatorResourceFactor*maxOperatorCpuEstimate_));
+      }
+  
+      double mDoPm = computeRecommendedNumCPUsForMemory(memoryToConsider);
+      double mDoPc = computeRecommendedNumCPUs(cpuToConsider);
+  
+      double resourceDoP = MAXOF(mDoPm, mDoPc);
+  
+      // numCPUs = total number of CPUs (including any down CPUs)
+      Lng32 numCPUs = totalNumberOfCPUs_;
+  
+      // maxDoP = maximum degree of parallelism
+      Lng32 maxDoP;
+        // if  adaptive load balancing is OFF (-2), then don't increase Dop by power of 2
+      if (getDefaultAsLong(AFFINITY_VALUE) == -2)
+      {
+        // take the resouceDoP if it is within the range [dDop, maxDoP], 
+        // otherwise take either the low or the high value
+        if (resourceDoP < dDoP)
+            maxDoP = dDoP;
+        else if (resourceDoP > numCPUs)
+          maxDoP = numCPUs;
+        else
+          maxDoP = resourceDoP;
+       }
+      else {
+        maxDoP = dDoP;
+        if (resourceDoP > dDoP)
+          while ( (maxDoP < resourceDoP) && (maxDoP * 2 <= numCPUs) ) maxDoP *= 2;
+      }
+  
+      // Adjust max degree of parallelism to make sure that no plan will have
+      // higher degree of parallelism than the largest table in the query.
+      // It is meant to avoid expensive exchanges for the purpose of matching
+      // the high degree of parallelism only and to have a high degree of
+      // parallelism when needed for large tables while not risking the huge
+      // DoP for smaller table queries.
+      if (CmpCommon::getDefault(COMP_BOOL_24) == DF_ON)
+      {
+        QueryAnalysis *qa = QueryAnalysis::Instance();
+        Lng32 highestNumOfPartns = qa->getHighestNumOfPartns();
+        Lng32 adjustedMaxDoP = MAXOF(highestNumOfPartns, dDoP);
+  
+        // Cap maxDoP to adjustedMaxDoP
+        while (adjustedMaxDoP < maxDoP) maxDoP /= 2;
+      }
+  
+      maximumDegreeOfParallelism_ = maxDoP;
+  
+  #ifdef _DEBUG
+      if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
+          (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
+            CURRCONTEXT_OPTDEBUG->stream()
+          << endl
+          << "EMR = " << requiredMemoryResourceEstimate_ << endl
+          << "MaxOperMemory = " << maxOperatorMemoryEstimate_ << endl
+          << "Memory_Unit = " << memoryPerCPU_ << endl
+          << "MDOPm = " << mDoPm << endl
+          << "ECR = " << requiredCpuResourceEstimate_ << endl
+          << "MaxOperCpu = " << maxOperatorCpuEstimate_ << endl
+          << "Work_Unit = " << workPerCPU_ << endl
+          << "MDOPc = " << mDoPc << endl
+          << "MAX(MDOPm, MDOPc) = " << resourceDoP << endl
+          << "numCPUs = " << numCPUs << endl
+          << "DDoP = " << dDoP << endl
+          << "MDoP = " << maximumDegreeOfParallelism_ << endl
+          << "Data Access Cost = " << totalDataAccessCost_ << endl
+          << "Max Oper Data Access Cost = " << maxOperatorDataAccessCost_ << endl;
+      }
+  #endif
+    } else  // end of !fakeEnv
+       maximumDegreeOfParallelism_ = totalNumberOfCPUs_;
 
-    if (cqdDDoP > totalNumberOfCPUs_) cqdDDoP = totalNumberOfCPUs_;
-    // We should also floor it by totalNumberOfCPUs_/16
-    // start dDoP with all available CPUs
-    Lng32 dDoP = totalNumberOfCPUs_;
-
-    // keep halving dDoP until dDoP <= cqdDDoP
-    while (cqdDDoP < dDoP) dDoP /= 2;
-
-    // dDDoP should be positive, since the minimal value for both cqdDDoP 
-    // and totalNumberOfCPUs_  is 1.
-    adjustedDegreeOfParallelism_ = dDoP;
-
-    // set the memory and cpu resources to be use in computation of degree
-    // of parallelism below. Just for this method.
-    double memoryToConsider = requiredMemoryResourceEstimate_;
-    double cpuToConsider = requiredCpuResourceEstimate_;
-
-    ULng32 useOperatorMaxForComputations =
-      getDefaultAsLong(USE_OPERATOR_MAX_FOR_DOP);
-
-    ULng32 operatorResourceFactor =
-      useOperatorMaxForComputations;
-
-    if (useOperatorMaxForComputations)
-    {
-      memoryToConsider = maxOperatorMemoryEstimate_;
-      cpuToConsider = MINOF(cpuToConsider,
-                            (operatorResourceFactor*maxOperatorCpuEstimate_));
-    }
-
-    double mDoPm = computeRecommendedNumCPUsForMemory(memoryToConsider);
-    double mDoPc = computeRecommendedNumCPUs(cpuToConsider);
-
-    double resourceDoP = MAXOF(mDoPm, mDoPc);
-
-    // numCPUs = total number of CPUs (including any down CPUs)
-    Lng32 numCPUs = totalNumberOfCPUs_;
-
-    // maxDoP = maximum degree of parallelism
-    Lng32 maxDoP;
-      // if  adaptive load balancing is OFF (-2), then don't increase Dop by power of 2
-    if (getDefaultAsLong(AFFINITY_VALUE) == -2)
-    {
-      // take the resouceDoP if it is within the range [dDop, maxDoP], 
-      // otherwise take either the low or the high value
-      if (resourceDoP < dDoP)
-          maxDoP = dDoP;
-      else if (resourceDoP > numCPUs)
-        maxDoP = numCPUs;
-      else
-        maxDoP = resourceDoP;
-     }
-    else {
-      maxDoP = dDoP;
-      if (resourceDoP > dDoP)
-        while ( (maxDoP < resourceDoP) && (maxDoP * 2 <= numCPUs) ) maxDoP *= 2;
-    }
-
-    // Adjust max degree of parallelism to make sure that no plan will have
-    // higher degree of parallelism than the largest table in the query.
-    // It is meant to avoid expensive exchanges for the purpose of matching
-    // the high degree of parallelism only and to have a high degree of
-    // parallelism when needed for large tables while not risking the huge
-    // DoP for smaller table queries.
-    if (CmpCommon::getDefault(COMP_BOOL_24) == DF_ON)
-    {
-      QueryAnalysis *qa = QueryAnalysis::Instance();
-      Lng32 highestNumOfPartns = qa->getHighestNumOfPartns();
-      Lng32 adjustedMaxDoP = MAXOF(highestNumOfPartns, dDoP);
-
-      // Cap maxDoP to adjustedMaxDoP
-      while (adjustedMaxDoP < maxDoP) maxDoP /= 2;
-    }
-
-    maximumDegreeOfParallelism_ = maxDoP;
-
-#ifdef _DEBUG
-    if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
-        (CmpCommon::getDefault( NSK_DBG_GENERIC ) == DF_ON )) {
-          CURRCONTEXT_OPTDEBUG->stream()
-        << endl
-        << "EMR = " << requiredMemoryResourceEstimate_ << endl
-        << "MaxOperMemory = " << maxOperatorMemoryEstimate_ << endl
-        << "Memory_Unit = " << memoryPerCPU_ << endl
-        << "MDOPm = " << mDoPm << endl
-        << "ECR = " << requiredCpuResourceEstimate_ << endl
-        << "MaxOperCpu = " << maxOperatorCpuEstimate_ << endl
-        << "Work_Unit = " << workPerCPU_ << endl
-        << "MDOPc = " << mDoPc << endl
-        << "MAX(MDOPm, MDOPc) = " << resourceDoP << endl
-        << "numCPUs = " << numCPUs << endl
-        << "DDoP = " << dDoP << endl
-        << "MDoP = " << maximumDegreeOfParallelism_ << endl
-        << "Data Access Cost = " << totalDataAccessCost_ << endl
-        << "Max Oper Data Access Cost = " << maxOperatorDataAccessCost_ << endl;
-    }
-#endif
   }
   return requiredResources;
 }
@@ -4724,8 +4729,8 @@ void OptDefaults::initialize(RelExpr* rootExpr)
 
   OPHuseConservativeCL_ = (optimizerPruning_ AND
 	(CmpCommon::getDefault(OPH_USE_CONSERVATIVE_COST_LIMIT) == DF_ON)) OR
-         (optimizerPruning_ AND (DefaultPerformanceGoal_ != NULL) AND
-          DefaultPerformanceGoal_->isOptimizeForResourceConsumption());
+         (optimizerPruning_ AND (defaultPerformanceGoal_ != NULL) AND
+          defaultPerformanceGoal_->isOptimizeForResourceConsumption());
 
   OPHuseFailedPlanCost_ = optimizerPruning_ AND OPHreuseFailedPlan_ AND
 	(CmpCommon::getDefault(OPH_USE_FAILED_PLAN_COST) == DF_ON);
@@ -5012,8 +5017,8 @@ NABoolean OptDefaults::InitCostVariables()
 {
   NABoolean rtnStatus = TRUE;      // assume the best
 
-  if (DefaultCostWeight_ == NULL &&
-      (DefaultCostWeight_ = new ResourceConsumptionWeight(1,
+  if (defaultCostWeight_ == NULL &&
+      (defaultCostWeight_ = new (heap_) ResourceConsumptionWeight(1,
 						     1,
 						     1,
 						     0,
@@ -5024,43 +5029,43 @@ NABoolean OptDefaults::InitCostVariables()
   NAString goalText;
   DefaultToken goalTok = CmpCommon::getDefault(OPTIMIZATION_GOAL, goalText, -1);
 
-  if (DefaultPerformanceGoal_)
+  if (defaultPerformanceGoal_)
     {
       // Free the previous performance goal so there won't be
       // a leak in the global heap.
-      delete DefaultPerformanceGoal_;
-      DefaultPerformanceGoal_ = NULL;
+      NADELETEBASIC(defaultPerformanceGoal_, heap_);
+      defaultPerformanceGoal_ = NULL;
     }
 
   if (goalTok == DF_LASTROW)
     {
-      DefaultPerformanceGoal_ = new OptimizeForLastRow();
+      defaultPerformanceGoal_ = new (heap_) OptimizeForLastRow();
     }
 // LCOV_EXCL_START
   else if (goalTok == DF_FIRSTROW)
     {
-      DefaultPerformanceGoal_ = new OptimizeForFirstRow();
+      defaultPerformanceGoal_ = new (heap_) OptimizeForFirstRow();
     }
   else if (goalTok == DF_RESOURCES)
     {
-      DefaultPerformanceGoal_ = new OptimizeForResourceConsumption();
+      defaultPerformanceGoal_ = new (heap_) OptimizeForResourceConsumption();
     }
   else
     {
       // Unknown token.
       // Since NADefaults OPTIMIZATION_GOAL default-default is "LASTROW",
       // use that as a fallback.
-      DefaultPerformanceGoal_ = new OptimizeForLastRow();
+      defaultPerformanceGoal_ = new (heap_) OptimizeForLastRow();
       *CmpCommon::diags() << DgSqlCode(+2055)		// warning only
         << DgString0(goalText)
         << DgString1("OPTIMIZATION_GOAL");
     }
 // LCOV_EXCL_STOP
 
-  if (ResourcePerformanceGoal_ == NULL)
+  if (resourcePerformanceGoal_ == NULL)
     {
       // This one is a hardcoded performance goal, no consulting defaults
-      ResourcePerformanceGoal_ = new OptimizeForResourceConsumption();
+      resourcePerformanceGoal_ = new (heap_) OptimizeForResourceConsumption();
     }
 
   return(rtnStatus);
@@ -5068,16 +5073,16 @@ NABoolean OptDefaults::InitCostVariables()
 
 void OptDefaults::CleanupCostVariables()
 {
-  if (DefaultCostWeight_ != NULL)
-    delete DefaultCostWeight_;
-  if (DefaultPerformanceGoal_ != NULL)
-    delete DefaultPerformanceGoal_;
-  if (ResourcePerformanceGoal_ != NULL)
-    delete ResourcePerformanceGoal_;
+  if (defaultCostWeight_ != NULL)
+    delete defaultCostWeight_;
+  if (defaultPerformanceGoal_ != NULL)
+    NADELETEBASIC(defaultPerformanceGoal_, heap_);
+  if (resourcePerformanceGoal_ != NULL)
+    NADELETEBASIC(resourcePerformanceGoal_, heap_);
 
-  DefaultCostWeight_ = NULL;
-  DefaultPerformanceGoal_ = NULL;
-  ResourcePerformanceGoal_ = NULL;
+  defaultCostWeight_ = NULL;
+  defaultPerformanceGoal_ = NULL;
+  resourcePerformanceGoal_ = NULL;
 }
 
 // -----------------------------------------------------------------------
