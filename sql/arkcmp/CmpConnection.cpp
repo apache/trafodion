@@ -35,6 +35,10 @@
  */
 
 #define   SQLPARSERGLOBALS_NADEFAULTS   // should precede all other #include's
+#define   SQLPARSERGLOBALS_FLAGS
+#define   SQLPARSERGLOBALS_NADEFAULTS_SET
+#include "SqlParserGlobals.h"
+#include "SqlParserGlobalsCmn.h"
 
 #include <iostream>
 #include "Ipc.h"
@@ -46,10 +50,6 @@
 #include "NewDel.h"
 #include "opt.h"
 #include "NAExit.h"
-#define   SQLPARSERGLOBALS_FLAGS
-#define   SQLPARSERGLOBALS_NADEFAULTS_SET
-#include "SqlParserGlobals.h"
-#include "SqlParserGlobalsCmn.h"
 #include "SqlExportDllDefines.h"
 #include "QCache.h"
 #include "CompException.h"

@@ -189,6 +189,8 @@ class PrivMgr
     bool isAuthIDGrantedPrivs(
        int32_t authID,
        std::vector<PrivClass> privClasses);
+    void resetFlags();
+    void setFlags();
 
   protected:
     PrivMDStatus authorizationEnabled();
@@ -199,6 +201,7 @@ class PrivMgr
     std::string  trafMetadataLocation_;
     std::string  metadataLocation_;
     ComDiagsArea * pDiags_;
+    unsigned int parserFlags_;
     
 }; // class PrivMgr      
   

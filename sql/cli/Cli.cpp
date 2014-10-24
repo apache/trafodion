@@ -6598,6 +6598,15 @@ Lng32 SQLCLI_SetSessionAttr(/*IN*/ CliGlobals *cliGlobals,
       retcode = currContext.setDatabaseUserByName(string_value);
     }
     break;
+
+    case SESSION_DATABASE_USER:
+    {
+      // The call to setDatabaseUser set values in the Context
+      // it does not return any errors
+      currContext.setDatabaseUser(numeric_value, string_value);
+    }
+    break;
+
     //LCOV_EXCL_START
     case SESSION_PARENT_QID:
     {

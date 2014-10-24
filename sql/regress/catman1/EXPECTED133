@@ -171,6 +171,10 @@ Tom                                                 White Socks
 
 --- 1 row(s) inserted.
 >>
+>>create sequence team_number_sequence;
+
+--- SQL operation complete.
+>>
 >>obey TEST133(tests);
 >>-- =================================================================
 >>-- this set of tests run basic initialize authorization tests

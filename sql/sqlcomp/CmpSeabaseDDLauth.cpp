@@ -30,6 +30,9 @@
 // *
 // *****************************************************************************
 
+#define   SQLPARSERGLOBALS_FLAGS  
+#include "SqlParserGlobalsCmn.h"
+
 #include "CmpSeabaseDDLauth.h"
 #include "CmpSeabaseDDL.h"
 #include "StmtDDLRegisterUser.h"
@@ -47,15 +50,6 @@
 #include "PrivMgrRoles.h"
 #include "PrivMgrComponentPrivileges.h"
 
-#ifndef   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
-#define   SQLPARSERGLOBALS_CONTEXT_AND_DIAGS
-#endif
-#ifndef   SQLPARSERGLOBALS_LEX_AND_PARSE
-#define   SQLPARSERGLOBALS_LEX_AND_PARSE
-#endif
-#define   SQLPARSERGLOBALS_FLAGS
-#define   SQLPARSERGLOBALS_NADEFAULTS_SET
-#include "SqlParserGlobalsCmn.h"
 
 #define  RESERVED_AUTH_NAME_PREFIX  "DB__"
 
@@ -522,32 +516,15 @@ Int64 CmpSeabaseDDLauth::selectCount(const NAString & whereClause)
 // selectMaxAuthID - gets the last used auth ID
 Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
 {
-  bool nullTerminate = true;
   NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
   char buf[400];
-  str_sprintf(buf, "select max (auth_id) from %s.\"%s\".%s %s" , 
+  str_sprintf(buf, "select nvl(max (auth_id),0) from %s.\"%s\".%s %s" , 
               sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
               whereClause.data());
 
   Lng32 len = 0;
-
-
-// *****************************************************************************
-// *                                                                           *
-// *   CLI/Executor function executeImmediate (actually executeImmediateExec)  *
-// * may overwrite memory following maxValue.  To avoid this problem, the      *
-// * workaround is to surround maxValue with dummy variables to guard the      *
-// * memory.  Dummy variables need to be volatile to avoid elimination         *
-// * during optimization.                                                      *
-// *                                                                           *
-// *   The overwrite only occurs when nullTerminate is true, but if it is      *
-// * false, the maxValue is not set.                                           *
-// *                                                                           *
-// *****************************************************************************
-
-  volatile int dummy1 = -1;
-  UInt32 maxValue = 0;
-  volatile int dummy2 = -1;
+  Int64 maxValue = 0;
+  bool nullTerminate = false;
   ExeCliInterface cliInterface(STMTHEAP);
   Lng32 cliRC = cliInterface.executeImmediate(buf, (char *)&maxValue, &len, nullTerminate);
   if (cliRC != 0)
@@ -557,7 +534,7 @@ Int32 CmpSeabaseDDLauth::selectMaxAuthID(const NAString &whereClause)
     throw excp;
   }
 
-  return maxValue;
+  return static_cast<Int32>(maxValue);
 }
 
 // ****************************************************************************
@@ -645,7 +622,11 @@ Int32 CmpSeabaseDDLuser::getUniqueID()
   Int32 newUserID = 0;
   NAString whereClause ("where auth_id >= 33333 and auth_id < 999999");
   newUserID = selectMaxAuthID(whereClause);
-  newUserID++;
+  // DB__ROOT should always be registered at 33333.  Just in case ...
+  if (newUserID == 0)
+     newUserID = 33334;
+  else
+     newUserID++;
   return newUserID;
 }
 

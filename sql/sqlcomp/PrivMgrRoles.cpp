@@ -214,6 +214,8 @@ PrivStatus privStatus = objectPrivileges.getPrivBitmaps(whereClause,
                                                         orderByClause,
                                                         privBitmaps);
                                                         
+//TODO: instead of a vector of bitmaps, could get union of bitmaps.
+                                                        
 // If no rows match the criteria, that means the user does not
 // have privileges on this referenced object, so they can no
 // longer create the view after losing privileges from role.
@@ -301,18 +303,18 @@ std::vector<UIDAndType> ownedUIDandTypes;
 
 PrivStatus privStatus = objects.fetchUIDandTypes(whereClause,ownedUIDandTypes);
 
-// If the user does not own any views, user defined functions, or referential
-// integrity constraints, they do not have any dependent objects.
-
-   if (privStatus == STATUS_NOTFOUND || ownedUIDandTypes.size() == 0)
-      return false;   
-      
    if (privStatus == STATUS_ERROR)
    {
       PRIVMGR_INTERNAL_ERROR("Could not fetch objects owned by user");
       return true;
    }
    
+// If the user does not own any views, user defined functions, or referential
+// integrity constraints, they do not have any dependent objects.
+
+   if (privStatus == STATUS_NOTFOUND || ownedUIDandTypes.size() == 0)
+      return false;   
+      
 //TODO: User owns dependent objects and role has been granted privileges.
 //      But do they correlate?  For instance, if a role is granted INSERT,
 //      losing that privilege does not affect any views the user may own.
@@ -333,7 +335,10 @@ Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
 // Should not fail, role ID was derived from name provided by user.
    if (retCode != 0)
    {
-      PRIVMGR_INTERNAL_ERROR("Role ID not found");
+      std::string errorText("Unable to look up role name for role ID ");
+      
+      errorText += authIDToString(roleID);
+      PRIVMGR_INTERNAL_ERROR(errorText.c_str());
       return true;
    }
 
@@ -352,10 +357,10 @@ Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
 // can be built once, and the object UID for each referenced object added
 // within the loop.
 //
-// WHERE (GRANTEE_ID = userID OR
+// WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = userID OR
 //        GRANTEE_ID IN (SELECT ROLE_ID FROM ROLE_USAGE WHERE GRANTEE_ID = userID)) AND 
 //        GRANTEE_ID <> roleID AND OBJECT_UID = objectUID; 
-std::string whereClauseHeader(" WHERE (GRANTEE_ID = ");
+std::string whereClauseHeader(" WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = ");
    
    whereClauseHeader += authIDToString(userID);
    whereClauseHeader += " OR GRANTEE_ID IN (SELECT RU.ROLE_ID FROM ";
@@ -371,17 +376,18 @@ std::string whereClauseHeader(" WHERE (GRANTEE_ID = ");
 
 // Assume no dependencies exist.
 bool dependencyFound = false; 
-PrivMgrMDAdmin admin(metadataLocation_,pDiags_);
+PrivMgrMDAdmin admin(trafMetadataLocation_,metadataLocation_,pDiags_);
 
    for (size_t u3 = 0; u3 < ownedUIDandTypes.size(); u3++)
    {
+      std::string referencedObjectName;
       // Initialize the where clause each time through the loop.
-      std::string whereClause(whereClauseHeader);
    
       switch (ownedUIDandTypes[u3].objectType)
       {
          case COM_VIEW_OBJECT:
          {
+            std::string whereClause(whereClauseHeader);
             ViewUsage viewUsage;
             
             viewUsage.viewUID = ownedUIDandTypes[u3].UID;
@@ -407,7 +413,26 @@ PrivMgrMDAdmin admin(metadataLocation_,pDiags_);
                if (areRemainingGrantedPrivsSufficient(whereClause,SELECT_PRIV))
                   continue;
                
-               //TODO: for cascade, drop the object instead of reporting dependency error
+               //TODO: for cascade, drop the object instead of reporting dependency error.
+               // for CASCADE, need to handle case where views in this list
+               // no longer exist because a previous referenced object resulted
+               // in the referencing object being dropped.  Could short-circuit
+               // as beginning of for loop.  
+               //
+               // if (objectUID not found) continue;
+               //
+               // Likewise, object referenced by this view may no longer
+               // exist.  Example: referencing view references a table and view
+               // that the references the table.  
+               
+               privStatus = objects.fetchQualifiedName(referencedObjectsList[obj]->objectUID,
+                                                       referencedObjectName);
+                                                       
+               if (privStatus != STATUS_GOOD)
+               {
+                  PRIVMGR_INTERNAL_ERROR("Could not fetch name of referenced object");
+                  return true;
+               }
                dependencyFound = true;
                break;
             }   
@@ -417,24 +442,34 @@ PrivMgrMDAdmin admin(metadataLocation_,pDiags_);
          case COM_USER_DEFINED_ROUTINE_OBJECT:
          case COM_STORED_PROCEDURE_OBJECT:
          {
-            // Fpr user-defined routines and stored procedures, a library
+            // For user-defined routines and stored procedures, a library
             // is used to represent the code.  The owner needs to have the
             // USAGE privileged on the referenced library.  The UID of the 
             // library is found in the LIBRARIES_USAGE table.
-            whereClause += " (SELECT USING_LIBRARY_UID FROM ";
-            whereClause += trafMetadataLocation_ + ".";
-            whereClause += SEABASE_LIBRARIES_USAGE;
-            whereClause += " WHERE USED_UDR_UID = ";
-            whereClause += UIDToString(ownedUIDandTypes[u3].UID);
-            whereClause += ")";
+            std::string selectSubClause(" (SELECT USING_LIBRARY_UID FROM ");
+            
+            selectSubClause += trafMetadataLocation_ + ".";
+            selectSubClause += SEABASE_LIBRARIES_USAGE;
+            selectSubClause += " WHERE USED_UDR_UID = ";
+            selectSubClause += UIDToString(ownedUIDandTypes[u3].UID);
+            selectSubClause += ")";
             
             // If the user still has the USAGE privilage on the library without 
             // this role, the user is not dependent on the role's privileges  
             // for this UDR/SPJ.  
-            if (areRemainingGrantedPrivsSufficient(whereClause,USAGE_PRIV))
+            if (areRemainingGrantedPrivsSufficient(whereClauseHeader + selectSubClause,USAGE_PRIV))
                continue;
             
             //TODO: for cascade, drop the object instead of reporting dependency error
+            selectSubClause.insert(0," WHERE OBJECT_UID = ");
+            privStatus = objects.fetchQualifiedName(selectSubClause,
+                                                    referencedObjectName);
+                                                    
+            if (privStatus != STATUS_GOOD)
+            {
+               PRIVMGR_INTERNAL_ERROR("Could not fetch name of referenced object");
+               return true;
+            }
             dependencyFound = true;
             
             break;
@@ -457,24 +492,33 @@ PrivMgrMDAdmin admin(metadataLocation_,pDiags_);
             //             WHERE RCU.FOREIGN_CONSTRAINT_UID = ownedConstraintUID))
             //
             
-            whereClause += "(SELECT TC.TABLE_UID FROM ";
-            whereClause += trafMetadataLocation_ + ".";
-            whereClause += SEABASE_TABLE_CONSTRAINTS;
-            whereClause += " TC WHERE TC.CONSTRAINT_UID = (SELECT DISTINCT RCU.UNIQUE_CONSTRAINT_UID FROM ";
-            whereClause += trafMetadataLocation_ + ".";
-            whereClause += SEABASE_UNIQUE_REF_CONSTR_USAGE;
-            whereClause += " RCU WHERE RCU.FOREIGN_CONSTRAINT_UID = ";
-            whereClause += UIDToString(ownedUIDandTypes[u3].UID);
-            whereClause += "))";
+            std::string selectSubClause(" (SELECT TC.TABLE_UID FROM  ");
             
-          
+            selectSubClause += trafMetadataLocation_ + ".";
+            selectSubClause += SEABASE_TABLE_CONSTRAINTS;
+            selectSubClause += " TC WHERE TC.CONSTRAINT_UID = (SELECT DISTINCT RCU.UNIQUE_CONSTRAINT_UID FROM ";
+            selectSubClause += trafMetadataLocation_ + ".";
+            selectSubClause += SEABASE_UNIQUE_REF_CONSTR_USAGE;
+            selectSubClause += " RCU WHERE RCU.FOREIGN_CONSTRAINT_UID = ";
+            selectSubClause += UIDToString(ownedUIDandTypes[u3].UID);
+            selectSubClause += "))";
+            
             // If the user still has privileges on the referenced table without 
             // this role, the user is not dependent on the role's privileges  
             // for this RI constraint.  
-            if (areRemainingGrantedPrivsSufficient(whereClause,REFERENCES_PRIV))
+            if (areRemainingGrantedPrivsSufficient(whereClauseHeader + selectSubClause,REFERENCES_PRIV))
                continue;
           
             //TODO: for cascade, drop the object instead of reporting dependency error
+            selectSubClause.insert(0," WHERE OBJECT_UID = ");
+            privStatus = objects.fetchQualifiedName(selectSubClause,
+                                                    referencedObjectName);
+                                                    
+            if (privStatus != STATUS_GOOD)
+            {
+               PRIVMGR_INTERNAL_ERROR("Could not fetch name of referenced object");
+               return true;
+            }
             dependencyFound = true;
          
             break;
@@ -502,7 +546,8 @@ PrivMgrMDAdmin admin(metadataLocation_,pDiags_);
          
          *pDiags_ << DgSqlCode(-CAT_DEPENDENT_ROLE_PRIVILEGES_EXIST) 
                   << DgString0(roleName) 
-                  << DgString1(dependentObjectName.c_str());
+                  << DgString1(dependentObjectName.c_str()) 
+                  << DgString2(referencedObjectName.c_str());
          return true;
       }
    }
@@ -1497,8 +1542,60 @@ PrivStatus privStatus = STATUS_GOOD;
           
          if (!grantExists(roleID,grantorIDs[r],granteeIDs[g],grantDepth))
          {
-            *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
-            return STATUS_ERROR;
+            int32_t length;
+
+            char roleName[MAX_DBUSERNAME_LEN + 1];
+                     
+            Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
+                                                           sizeof(roleName),
+                                                           length);
+            // Should not fail, role ID was derived from name provided by user.
+            if (retCode != 0)
+            {
+               std::string errorText("Unable to look up role name for role ID ");
+               
+               errorText += authIDToString(roleID);
+               PRIVMGR_INTERNAL_ERROR(errorText.c_str());
+               return STATUS_ERROR;
+            }
+            
+            char grantorName[MAX_DBUSERNAME_LEN + 1];
+                     
+            retCode = ComUser::getAuthNameFromAuthID(grantorIDs[r],
+                                                     grantorName,
+                                                     sizeof(grantorName),
+                                                     length);
+            // Should not fail, grantor ID was derived from name provided by user.
+            if (retCode != 0)
+            {
+               std::string errorText("Unable to look up grantor name for ID ");
+               
+               errorText += authIDToString(grantorIDs[r]);
+               PRIVMGR_INTERNAL_ERROR(errorText.c_str());
+               return STATUS_ERROR;
+            }
+         
+            char granteeName[MAX_DBUSERNAME_LEN + 1];
+                     
+            retCode = ComUser::getAuthNameFromAuthID(granteeIDs[g],
+                                                     granteeName,
+                                                     sizeof(granteeName),
+                                                     length);
+            // Should not fail, grantee ID was derived from name provided by user.
+            if (retCode != 0)
+            {
+               std::string errorText("Unable to look up grantee name for ID ");
+               
+               errorText += authIDToString(granteeIDs[g]);
+               PRIVMGR_INTERNAL_ERROR(errorText.c_str());
+               return STATUS_ERROR;
+            }
+         
+            *pDiags_ << DgSqlCode(-CAT_GRANT_NOT_FOUND) 
+                     << DgString0(roleName) 
+                     << DgString1(grantorName) 
+                     << DgString2(granteeName);
+            continue;
          }
          
          if (hasWGO(granteeIDs[g],roleID))
@@ -1512,7 +1609,6 @@ PrivStatus privStatus = STATUS_GOOD;
          
          if (dependentObjectsExist(granteeIDs[g],roleID,dropBehavior))
             return STATUS_ERROR;
-
       }
    }
 
@@ -2003,7 +2099,6 @@ static bool hasValue(
    
 }
 //***************************** End of hasValue ********************************
-
 
 // *****************************************************************************
 // *                                                                           *

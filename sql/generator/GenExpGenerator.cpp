@@ -31,6 +31,11 @@
  */
 
 
+#define   SQLPARSERGLOBALS_FLAGS
+#define   SQLPARSERGLOBALS_NADEFAULTS
+#include "SqlParserGlobalsCmn.h"
+#include "SqlParserGlobals.h"	// Parser Flags
+
 #include <ctype.h>
 #include <math.h>
 #include "CmpContext.h"
@@ -62,10 +67,6 @@
 #include "ComQueue.h"
 
 #include "ControlDB.h"
-
-#define   SQLPARSERGLOBALS_FLAGS
-#define   SQLPARSERGLOBALS_NADEFAULTS
-#include "SqlParserGlobals.h"	// Parser Flags
 
 #include "ComSmallDefs.h"
 #include "sqlcli.h"

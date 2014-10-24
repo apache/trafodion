@@ -44,6 +44,7 @@ exit;
 
 ?section clean_up
 set schema privmgr_md;
+drop sequence t133sch.team_number_sequence;
 -- drop database
 drop schema t133sch cascade;
 
@@ -166,6 +167,8 @@ create volatile table home_games as
           extract(year  from current_timestamp) and
           extract(month from games.game_time) =
           extract(month from current_timestamp);
+
+create sequence team_number_sequence;
 
 ?section set_up
 set schema privmgr_md;

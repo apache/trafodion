@@ -23,6 +23,11 @@
 //   PrivMgrMDAdmmin
 // ==========================================================================
 
+// Needed for parser flag manipulation
+#define   SQLPARSERGLOBALS_FLAGS  
+#include "SqlParserGlobalsCmn.h"
+#include "SQLCLIdev.h"
+
 #include "PrivMgrMD.h"
 #include "PrivMgrMDDefs.h"
 #include "PrivMgrPrivileges.h"
@@ -101,6 +106,7 @@ PrivMgr::PrivMgr(
   if (pDiags == NULL)
      pDiags = CmpCommon::diags();
 
+  setFlags();
 }
 
 PrivMgr::PrivMgr( 
@@ -116,6 +122,7 @@ PrivMgr::PrivMgr(
   if (pDiags == NULL)
      pDiags = CmpCommon::diags();
 
+  setFlags();
 }
 
 // -----------------------------------------------------------------------
@@ -136,7 +143,9 @@ PrivMgr::PrivMgr(const PrivMgrMDAdmin &other)
 // -----------------------------------------------------------------------
 
 PrivMgr::~PrivMgr() 
-{}
+{
+  resetFlags();
+}
 
 // ----------------------------------------------------------------------------
 // method:  authorizationEnabled
@@ -746,6 +755,51 @@ bool PrivMgr::isAuthorizationEnabled()
 {
   PrivMDStatus retcode = authorizationEnabled();
   return (retcode == PRIV_INITIALIZED);
+}
+
+// ----------------------------------------------------------------------------
+// method: resetFlags
+//
+// Resets parserflag settings.
+// 
+// At PrivMgr construction time, existing parserflags are saved and additional
+// parserflags are turned on.  This is needed so privilege manager
+// requests work without requiring special privileges.
+//
+// The parserflags are restored at class destruction. 
+//
+// Generally, the PrivMgr class is constructed, the operation performed and the
+// class destructed.  If some code requires the class to be constructed and 
+// kept around for awhile, the coder may want reset any parserflags set
+// by the constructor between PrivMgr calls. This way code inbetween PrivMgr 
+// calls won't have any unexpected parser flags set.
+//
+// If parserflags are reset, then setFlags must be called before the next
+// PrivMgr request.
+// ----------------------------------------------------------------------------
+void PrivMgr::resetFlags()
+{
+  // restore parser flag settings
+  // The parserflag requests return a unsigned int return code of 0
+  SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(parserFlags_);
+}
+
+// ----------------------------------------------------------------------------
+// method: setFlags
+//
+// saves parserflag settings and sets the INTERNAL_QUERY_FROM_EXEUTIL 
+// parserflag
+//
+// See comments for PrivMgr::reset for more details
+//
+// ----------------------------------------------------------------------------
+void PrivMgr::setFlags()
+{
+  // set the EXEUTIL parser flag to allow all privmgr internal queries
+  // to pass security checks
+  // The parserflag requests return a unsigned int return code of 0
+  SQL_EXEC_GetParserFlagsForExSqlComp_Internal(parserFlags_);
+  SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
 }
 
 

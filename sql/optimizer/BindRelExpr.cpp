@@ -13215,8 +13215,28 @@ RelExpr * SetSessionDefault::bindNode(BindWA *bindWA)
     return this;
   }
 
-  // for now, allow any user to change parserflags
-  // TBD: Restrict to power users
+  if (getOperatorType() == REL_SET_SESSION_DEFAULT)
+    {
+      // trim leading and trailing spaces from token_ and value_
+      // and upcase token
+      token_ = token_.strip(NAString::both);
+      value_ = value_.strip(NAString::both);
+      token_.toUpper();
+
+      // TBD:  perhaps add a component privilege that allows others
+      //       to set parserflags
+      if ((token_ == "SET_PARSERFLAGS") ||
+          (token_ == "RESET_PARSERFLAGS"))
+        {
+          if (!ComUser::isRootUserID(ComUser::getCurrentUser()))
+            {
+              *CmpCommon::diags() << DgSqlCode(-1017);
+              bindWA->setErrStatus();
+              return this;
+            }
+        }
+
+    }
 
   return ControlAbstractClass::bindNode(bindWA);
 } // SetSessionDefault::bindNode()

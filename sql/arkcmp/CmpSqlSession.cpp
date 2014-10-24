@@ -149,12 +149,12 @@ Lng32 CmpSqlSession::getUserInfoFromCLI()
 // The method performs the following steps
 // 1. The method is a no-op if the new user ID is the same as the
 //    current user ID
-// 2. Call CLI with the new integer user ID. This establishes the new
-//    user identity.
+// 2. Call CLI with the new integer user ID and username. This establishes 
+//    the new user identity.
 // 3. Call a helper method that will retrieve the current user ID and
 //    user name from CLI and store copies of those values in data 
 //    members.
-Lng32 CmpSqlSession::setDatabaseUserID(Int32 userID)
+Lng32 CmpSqlSession::setDatabaseUser(Int32 userID, const char *userName)
 {
 
   NABoolean doDebug = FALSE;
@@ -162,7 +162,7 @@ Lng32 CmpSqlSession::setDatabaseUserID(Int32 userID)
   doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
   if (doDebug)
   {
-    printf("[DBUSER:%d] BEGIN CmpSqlSession::setDatabaseUserID\n",
+    printf("[DBUSER:%d] BEGIN CmpSqlSession::setDatabaseUser\n",
            (int) getpid());
     printf("[DBUSER:%d]   Current user ID %d, new user ID %d\n",
            (int) getpid(), (int) databaseUserID_, (int) userID);
@@ -170,21 +170,22 @@ Lng32 CmpSqlSession::setDatabaseUserID(Int32 userID)
 #endif
 
   // 1. The method is a no-op if the new user ID is the same as the
-  //    current user ID
+  //    current user ID.  This assumes that if the user ID match so
+  //    do the usernames.
   Int32 currentUserAsInt = (Int32) databaseUserID_;
   if (currentUserAsInt == userID)
   {
     if (doDebug)
-      printf("[DBUSER:%d] END CmpSqlSession::setDatabaseUserID\n",
+      printf("[DBUSER:%d] END CmpSqlSession::setDatabaseUser\n",
              (int) getpid());
     return 0;
   }
 
   Lng32 sqlcode = 0;
 
-  // 2. Call CLI with the new integer user ID
-  sqlcode = SQL_EXEC_SetSessionAttr_Internal(SESSION_DATABASE_USER_ID,
-                                             userID, NULL);
+  // 2. Call CLI with the new integer user identity
+  sqlcode = SQL_EXEC_SetSessionAttr_Internal(SESSION_DATABASE_USER,
+                                             userID, (char *)userName);
   if (sqlcode != 0)
   {
     SQL_EXEC_MergeDiagnostics_Internal(*CmpCommon::diags());
