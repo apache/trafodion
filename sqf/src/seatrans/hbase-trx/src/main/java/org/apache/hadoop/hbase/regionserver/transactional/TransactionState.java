@@ -288,6 +288,7 @@ public class TransactionState {
     public synchronized boolean hasConflict() {
         for (TransactionState transactionState : transactionsToCheck) {
             if (hasConflict(transactionState)) {
+                if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Returning true for " + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "]");
                 return true;
             }
         }
@@ -301,6 +302,11 @@ public class TransactionState {
 
         for (WriteAction otherUpdate : checkAgainst.writeOrdering) {
             byte[] row = otherUpdate.getRow();
+            if (this.getTransactionId() == checkAgainst.getTransactionId())
+            {
+              if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Continuing - this Transaction [" + this.toString() + "] is the same as the against Transaction [" + checkAgainst.toString() + "]");
+              continue;
+            }
             if (this.scans != null && !this.scans.isEmpty()) {
               int size = this.scans.size();
               for (int i = 0; i < size; i++) {

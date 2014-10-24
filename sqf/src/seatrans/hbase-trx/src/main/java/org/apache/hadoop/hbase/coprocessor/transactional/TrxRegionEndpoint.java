@@ -3368,6 +3368,7 @@ CoprocessorService, Coprocessor {
       if (other == null) {
         continue;
       }
+        //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: has Conflict state.getStartSequenceNumber  is " + i + ", nextSequenceId.get() is " + nextSequenceId.get() + ", state object is " + state.toString() + ", calling addTransactionToCheck");
       state.addTransactionToCheck(other);
     }
     }
