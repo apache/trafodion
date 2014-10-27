@@ -4065,6 +4065,76 @@ NestedJoin::getClusteringIndexPartFuncForRightChild() const
   return NULL;
 }
 
+NABoolean 
+NestedJoin::checkCompleteSortOrder(const PhysicalProperty* sppForChild0)
+{
+   // Map the target table sort key to the source. We could map
+   // from the source to the target and do the comparison that
+   // way. But any columns that are covered by constants will
+   // only be covered on the source side, not the target side.
+   // So we can only correctly identify target key columns that are
+   // covered by constants by mapping them to the source side first.
+
+   ValueIdList mappedTargetTableOrder;
+   updateSelectValueIdMap()->rewriteValueIdListDown(
+         updateTableDesc()->getClusteringIndex()->getOrderOfKeyValues(),
+         mappedTargetTableOrder);
+
+   // Remove from the mapped target table order any columns that are
+   // equal to constants or input values.
+   mappedTargetTableOrder.removeCoveredExprs(
+             getGroupAttr()->getCharacteristicInputs());
+
+   if (mappedTargetTableOrder.isEmpty())
+      return FALSE;
+   
+   // The outer table sort order will not help if #of sort key columns from 
+   // the child0 is less than #of the clustiner key columns of the target table.
+   CollIndex n = sppForChild0->getSortKey().entries();
+
+   if ( n < mappedTargetTableOrder.entries() )
+      return FALSE;
+
+
+   for ( CollIndex i=0; i<n; i++ ) {
+
+      ValueId targetKeyCol = mappedTargetTableOrder[i];
+      ValueId outerOrderCol = sppForChild0->getSortKey()[i];
+
+      if ( outerOrderCol.getItemExpr()->sameOrder(targetKeyCol.getItemExpr()) 
+           != SAME_ORDER )
+          return FALSE;
+  }
+
+  
+  // If there is a dp2SortOrderPartFunc, map it and see if it
+  // is exactly the same as the target partitioning function.
+  // If it is not, then we cannot use the outer table sort order.
+  PartitioningFunction* mappedDp2SortOrderPartFunc =
+                             sppForChild0->getDp2SortOrderPartFunc();
+  if (mappedDp2SortOrderPartFunc != NULL)
+  {
+     mappedDp2SortOrderPartFunc =
+           mappedDp2SortOrderPartFunc->copyAndRemap(
+                                        *updateSelectValueIdMap(),
+                                         TRUE);
+     PartitioningFunction* targetTablePartFunc =
+         updateTableDesc()->getClusteringIndex()-> getPartitioningFunction();
+                  
+     // If the target table is not partitioned, it cannot
+     // match the dp2SortOrderPartFunc, since we will never
+     // synthesize a sort order type of DP2 for an unpart table.
+     if ((targetTablePartFunc == NULL) OR
+           mappedDp2SortOrderPartFunc->
+              comparePartFuncToFunc(*targetTablePartFunc) != SAME)
+     {
+       return FALSE;
+     }
+  }
+
+  return TRUE;
+}
+
 //<pb>
 Context* NestedJoin::createContextForAChild(Context* myContext,
                                             PlanWorkSpace* pws,
@@ -4707,76 +4777,8 @@ Context* NestedJoin::createContextForAChild(Context* myContext,
           {
             if (updateTableDesc() != NULL) // WRITE
             {
-              // Map the target table sort key to the source. We could map
-              // from the source to the target and do the comparison that
-              // way. But any columns that are covered by constants will
-              // only be covered on the source side, not the target side.
-              // So we can only correctly identify target key columns that are
-              // covered by constants by mapping them to the source side first.
-              ValueIdList mappedTargetTableOrder;
-              updateSelectValueIdMap()->rewriteValueIdListDown(
-                updateTableDesc()->getClusteringIndex()->getOrderOfKeyValues(),
-                mappedTargetTableOrder);
-              // Remove from the mapped target table order any columns that are
-              // equal to constants or input values.
-              mappedTargetTableOrder.removeCoveredExprs(
-                getGroupAttr()->getCharacteristicInputs());
+                usableSortOrder = checkCompleteSortOrder(sppForChild0Plan0);
 
-              // The outer table sort order can help if it's leading key
-              // column is the same as the leading key column of the target.
-              if (NOT mappedTargetTableOrder.isEmpty())
-              {
-                // Remove any inverse node on the leading target table key
-                // column and remember if there was one.
-                ValueId targetKeyCol = mappedTargetTableOrder[0];
-                ValueId noInverseTargetKeyCol =
-                  targetKeyCol.getItemExpr()->removeInverseOrder()->getValueId();
-                NABoolean targetKeyColIsDesc = FALSE;
-                if (noInverseTargetKeyCol != targetKeyCol)
-                  targetKeyColIsDesc = TRUE;
-
-                // Remove any inverse node on the leading outer order column
-                // and remember if there was one.
-                ValueId outerOrderCol = sppForChild0Plan0->getSortKey()[0];
-                ValueId noInverseOuterOrderCol =
-                  outerOrderCol.getItemExpr()->removeInverseOrder()->getValueId();
-                NABoolean outerOrderColIsDesc = FALSE;
-                if (noInverseOuterOrderCol != outerOrderCol)
-                  outerOrderColIsDesc = TRUE;
-
-                // Leading column of the target table sort key and the
-                // leading column of the outer table sort key must be
-                // the same. If one is DESC, they must both be DESC.
-                if ((noInverseTargetKeyCol == noInverseOuterOrderCol) AND
-                    (targetKeyColIsDesc == outerOrderColIsDesc))
-                  usableSortOrder = TRUE;
-
-                // If there is a dp2SortOrderPartFunc, map it and see if it
-                // is exactly the same as the target partitioning function.
-                // If it is not, then we cannot use the outer table sort order.
-                PartitioningFunction* mappedDp2SortOrderPartFunc =
-                  sppForChild0Plan0->getDp2SortOrderPartFunc();
-                if (mappedDp2SortOrderPartFunc != NULL)
-                {
-                  mappedDp2SortOrderPartFunc =
-                    mappedDp2SortOrderPartFunc->copyAndRemap(
-                                          *updateSelectValueIdMap(),
-                                          TRUE);
-                  PartitioningFunction* targetTablePartFunc =
-                    updateTableDesc()->getClusteringIndex()->
-                      getPartitioningFunction();
-                  // If the target table is not partitioned, it cannot
-                  // match the dp2SortOrderPartFunc, since we will never
-                  // synthesize a sort order type of DP2 for an unpart table.
-                  if ((targetTablePartFunc == NULL) OR
-                      mappedDp2SortOrderPartFunc->
-                       comparePartFuncToFunc(*targetTablePartFunc) != SAME)
-                  {
-                    usableSortOrder = FALSE;
-                  }
-                } // end if the outer table synth a dp2SortOrderPartFunc
-
-              } // end if target table sort key is not empty
             } // end if write
             else // READ
             if ( OCRJoinIsConsideredInCase2 == FALSE )
