@@ -683,6 +683,7 @@ public class HBaseClient {
       long totalEntries = 0;   // KeyValues in all HFiles for table
       long totalSizeBytes = 0; // Size of all HFiles for table 
       long estimatedTotalPuts = 0;
+      boolean more = true;
 
       // Access the file system to go directly to the table's HFiles.
       // Create a reader for the file to access the entry count stored
@@ -718,7 +719,7 @@ public class HBaseClient {
               KeyValue kv = scanner.getKeyValue();
               if (kv.getType() == KeyValue.Type.Put.getCode()) {
                 nextQual = kv.getQualifier()[0];
-                if (nextQual < currQual)
+                if (nextQual <= currQual)
                   nullCount += ((numCols - currQual)  // nulls at end of this row
                               + (nextQual - 1));      // nulls at start of next row
                 else
@@ -729,7 +730,12 @@ public class HBaseClient {
                 nonPutKVsSampled++;  // don't count these toward the number
               }                      //   we want to scan
             } while ((putKVsSampled + nullCount) < (numCols * ROWS_TO_SAMPLE)
-                     && scanner.next());
+                     && (more = scanner.next()));
+
+            // If all rows were read, count any nulls at end of last row.
+            if (!more && putKVsSampled > 0)
+              nullCount += (numCols - currQual);
+
             if (logger.isDebugEnabled()) logger.debug("Sampled " + nullCount + " nulls.");
           }  // code for first file
       } // for
