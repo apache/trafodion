@@ -100,8 +100,8 @@ ExPackRowsTcb::ExPackRowsTcb(const ExPackRowsTdb& packTdb,
                                     packTdb.returnedCriDesc_,
                                     space);
   // Fix up the expressions.
-  packExpr()->fixup(0,getExpressionMode(),this,space,heap);
-  if(predExpr()) predExpr()->fixup(0,getExpressionMode(),this,space,heap);
+  packExpr()->fixup(0,getExpressionMode(),this,space,heap, FALSE, glob);
+  if(predExpr()) predExpr()->fixup(0,getExpressionMode(),this,space,heap, FALSE, glob);
 }
 
 // Destructor.

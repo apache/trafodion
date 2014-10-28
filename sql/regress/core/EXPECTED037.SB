@@ -74,8 +74,8 @@
 --- SQL operation complete.
 >>invoke table_name;
 
--- Definition of Seabase table SEABASE.SCH.TABLE_NAME
--- Definition current  Fri Nov 22 16:05:36 2013
+-- Definition of Trafodion table TRAFODION.SCH.TABLE_NAME
+-- Definition current  Fri Aug  8 22:34:29 2014
 
   (
     ABSOLUTE                         INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -222,8 +222,8 @@
 --- SQL operation complete.
 >>invoke system_name;
 
--- Definition of Seabase table SEABASE.SCH.SYSTEM_NAME
--- Definition current  Fri Nov 22 16:05:55 2013
+-- Definition of Trafodion table TRAFODION.SCH.SYSTEM_NAME
+-- Definition current  Fri Aug  8 22:34:33 2014
 
   (
     LARGEINT                         INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -305,7 +305,7 @@
 >>--
 >>create view abs  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view avg  as select usa from table_name;
@@ -318,32 +318,32 @@ create view avg  as select usa from table_name;
 
 >>create view converttimestamp  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view dateformat as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view dayofweek  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view encode_key as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view invoke  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view juliantimestamp  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view sqlerror  as select usa from table_name;
@@ -366,7 +366,7 @@ create view sqlstate  as select usa from table_name;
 
 >>create view stddev  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>create view table  as select usa from table_name;
@@ -389,7 +389,7 @@ create view upshift  as select usa from table_name;
 
 >>create view variance  as select usa from table_name;
 
-*** ERROR[4001] Column USA is not found.  Tables in scope: SEABASE.SCH.TABLE_NAME.  Default schema: SEABASE.SCH.
+*** ERROR[4001] Column USA is not found.  Tables in scope: TRAFODION.SCH.TABLE_NAME.  Default schema: TRAFODION.SCH.
 
 --- SQL operation failed with errors.
 >>
@@ -2254,9 +2254,11 @@ SELECT ISOLATION ISOLATION from (values(0)) ISOLATION(ISOLATION);
 >>-- Expect SYNTAX error
 >>prepare s1 from SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
 
+*** ERROR[3128] LANGUAGE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT LANGUAGE LANGUAGE from (values(0)) LANGUAGE(LANGUAGE);
-              ^ (15 characters from start of SQL statement)
+                       ^ (24 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -2789,9 +2791,11 @@ SELECT USING USING from (values(0)) USING(USING);
 >>-- Expect SYNTAX error
 >>prepare s1 from SELECT VALUE VALUE from (values(0)) VALUE(VALUE);
 
+*** ERROR[3128] VALUE is a reserved word.  It must be delimited by double-quotes to be used as an identifier.
+
 *** ERROR[15001] A syntax error occurred at or before: 
 SELECT VALUE VALUE from (values(0)) VALUE(VALUE);
-           ^ (12 characters from start of SQL statement)
+                 ^ (18 characters from start of SQL statement)
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -4039,7 +4043,12 @@ SELECT WORK WORK from (values(0)) WORK(WORK);
 >>-- Expect success
 >>prepare s1 from SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
 
---- SQL command prepared.
+*** ERROR[15001] A syntax error occurred at or before: 
+SELECT DUAL DUAL from (values(0)) DUAL(DUAL);
+          ^ (11 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- Expect success
 >>prepare s1 from SELECT DYNAMIC_FUNCTION DYNAMIC_FUNCTION from (values(0)) DYNAMIC_FUNCTION(DYNAMIC_FUNCTION);

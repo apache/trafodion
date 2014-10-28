@@ -2278,8 +2278,19 @@ static short cmpDisplayColumns(const NAColumnArray & naColArr,
 
       const NAString &colName = nac->getColName();
 
-      sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
-              ANSI_ID(colName.data()));
+      if (type == 3)
+        {
+          NAString quotedColName = "\"";
+          quotedColName += colName.data(); 
+          quotedColName += "\"";
+          sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+                  quotedColName.data());
+        }
+      else
+        {
+          sprintf(buf, "%-*s ", CM_SIM_NAME_LEN,
+                  ANSI_ID(colName.data()));
+        }
 
       if (namesOnly)
         {
@@ -2352,28 +2363,6 @@ static short cmpDisplayColumns(const NAColumnArray & naColArr,
                     (type == 3))
             attrStr += " NOT SERIALIZED";
         }
-
-#ifdef __ignore
-      char * sqlmxRegr = getenv("SQLMX_REGRESS");
-      if (! sqlmxRegr)
-	{
-	  if (CmpSeabaseDDL::isSerialized(nac->getHbaseColFlags()))
-	    {
-	      if (NOT CmpSeabaseDDL::isEncodingNeededForSerialization(nac))
-		attrStr += " /* SERIALIZED */";
-	      else
-		attrStr += " SERIALIZED";
-	    }
-	  else 
-            {
-              if ((CmpSeabaseDDL::enabledForSerialization(nac)) &&
-                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
-                {
-                  attrStr += " /* is serializable */ ";
-                }
-            }
-	}
-#endif
 
       if (nac->isAddedColumn())
 	{
@@ -2632,6 +2621,8 @@ short CmpDescribeSeabaseTable (
   NAFileSet * naf = naTable->getClusteringIndex();
   NABoolean isAudited = (naf ? naf->isAudited() : TRUE);
 
+  NABoolean isAligned = naTable->isSQLMXAlignedTable();
+
   NABoolean closeParan = FALSE;
   if ((type == 3) && (pkeyStr))
     {
@@ -2742,11 +2733,18 @@ short CmpDescribeSeabaseTable (
         }
 
       NABoolean attributesSet = FALSE;
-      if (NOT isAudited)
-      {
-        outputShortLine(space, " attributes no audit");
-        attributesSet = TRUE;
-      }
+      if ((NOT sqlmxRegr) && ((NOT isAudited) || (isAligned)))
+        {
+          char attrs[200];
+          strcpy(attrs, " ATTRIBUTES ");
+
+          if (NOT isAudited)
+            strcat(attrs, "NO AUDIT");
+          if (isAligned)
+            strcat(attrs, "ALIGNED FORMAT");
+          
+          outputShortLine(space, attrs);
+        }
 
       // For create table like, add the BY clause so the new table will
       // be owned by the effective user

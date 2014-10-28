@@ -574,6 +574,10 @@ public:
   {(v ? flags_ |= USE_HBASE_XN : flags_ &= ~USE_HBASE_XN); };
   NABoolean useHbaseXn() { return (flags_ & USE_HBASE_XN) != 0; };
  
+  void setAlignedFormat(NABoolean v)
+  {(v ? flags_ |= ALIGNED_FORMAT : flags_ &= ~ALIGNED_FORMAT); };
+  NABoolean alignedFormat() { return (flags_ & ALIGNED_FORMAT) != 0; };
+
   void setCanAdjustTrafParams(NABoolean v)
    {(v ? flags2_ |= TRAF_UPSERT_ADJUST_PARAMS : flags2_ &= ~TRAF_UPSERT_ADJUST_PARAMS); };
    NABoolean getCanAdjustTrafParams() { return (flags2_ & TRAF_UPSERT_ADJUST_PARAMS) != 0; };
@@ -685,7 +689,8 @@ public:
     CHECK_AND_UPDEL                  = 0x0400,
     READ_UNCOMMITTED_SCAN = 0x0800,
     UPDEL_COLNAME_IS_STR      = 0x1000,
-    USE_HBASE_XN                     = 0x2000
+    USE_HBASE_XN                     = 0x2000,
+    ALIGNED_FORMAT                 = 0x4000
   };
 
   enum

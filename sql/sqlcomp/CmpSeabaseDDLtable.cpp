@@ -1094,7 +1094,11 @@ void CmpSeabaseDDL::createSeabaseTable(
               else
                 saltExprText += ",";
               saltExprText += "CAST(";
+              if (NOT cnp.isDelimitedIdentifier())
+                saltExprText += "\"";
               saltExprText += cnp.getExternalName();
+              if (NOT cnp.isDelimitedIdentifier())
+                saltExprText += "\"";
               saltExprText += " AS ";
               saltExprText += typeText;
               if (!colType->supportsSQLnull())
@@ -1200,7 +1204,23 @@ void CmpSeabaseDDL::createSeabaseTable(
   ComTdbVirtTableKeyInfo * keyInfoArray = (ComTdbVirtTableKeyInfo*)
     new(STMTHEAP) char[numKeys * sizeof(ComTdbVirtTableKeyInfo)];
 
-  if (buildColInfoArray(&colArray, colInfoArray, implicitPK, numSysCols))
+  ParDDLFileAttrsCreateTable &fileAttribs =
+    createTableNode->getFileAttributes();
+
+  NABoolean alignedFormat = FALSE;
+  if (fileAttribs.isRowFormatSpecified() == TRUE)
+    {
+      if (fileAttribs.getRowFormat() == ElemDDLFileAttrRowFormat::eALIGNED)
+        {
+          alignedFormat = TRUE;
+        }
+    }
+  else if(CmpCommon::getDefault(TRAF_DEFAULT_ALIGNED_FORMAT) == DF_ON)
+    {
+      alignedFormat = TRUE;
+    }
+   
+  if (buildColInfoArray(&colArray, colInfoArray, implicitPK, numSysCols, alignedFormat))
     {
       processReturn();
       
@@ -1245,9 +1265,6 @@ void CmpSeabaseDDL::createSeabaseTable(
       }
   }
 
-  ParDDLFileAttrsCreateTable &fileAttribs =
-    createTableNode->getFileAttributes();
-
   ComTdbVirtTableTableInfo tableInfo;
   tableInfo.tableName = NULL;
   tableInfo.createTime = 0;
@@ -1272,6 +1289,7 @@ void CmpSeabaseDDL::createSeabaseTable(
   tableInfo.objOwnerID = objOwnerID;
 
   tableInfo.numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
+  tableInfo.rowFormat = (alignedFormat ? 1 : 0);
 
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
@@ -1285,6 +1303,11 @@ void CmpSeabaseDDL::createSeabaseTable(
     processReturn();
     return;
   }
+
+  if (alignedFormat)
+    {
+      hco += "ROW_FORMAT=>ALIGNED ";
+    }
 
   tableInfo.hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
      
@@ -2755,9 +2778,10 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
   ULng32 colFlags;
   LobsStorage lobStorage;
   if (getColInfo(pColDef,
-                 colName, 
-                 datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
-                 charset, defaultClass, defVal, heading, lobStorage, colFlags))
+		 colName, 
+                 naTable->isSQLMXAlignedTable(),
+		 datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
+		 charset, defaultClass, defVal, heading, lobStorage, colFlags))
     {
       processReturn();
       
@@ -2919,6 +2943,17 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
       return;
     }
+
+  if (naTable->isSQLMXAlignedTable())
+    {
+     *CmpCommon::diags()
+	<< DgSqlCode(-4222)
+	<< DgString0("\"DROP COLUMN on ALIGNED format tables\"");
+    
+      processReturn();
+
+      return;
+     }
 
   const NAColumnArray &nacolArr = naTable->getNAColumnArray();
   const NAString &colName = alterDropColNode->getColName();
@@ -3192,18 +3227,25 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   // if table doesnt have a user defined primary key, is empty and doesn't have any 
   // dependent objects (index, views, triggers, RI, etc), then drop it and recreate it with 
   // this new primary key.
-  char query[2000];
-  str_sprintf(query, "select [any 1] cast(1 as int not null) from \"%s\".\"%s\".\"%s\" for read committed access",
-              catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
+  // Do this optimization in mode_special_4 only.
   Lng32 len = 0;
   Lng32 rowCount = 0;
-  cliRC = cliInterface.executeImmediate(query, (char*)&rowCount, &len, NULL);
-  if (cliRC < 0)
+  NABoolean ms4 = FALSE;
+  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
     {
-      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
-      return;
+      ms4 = TRUE;
+
+      char query[2000];
+      str_sprintf(query, "select [any 1] cast(1 as int not null) from \"%s\".\"%s\".\"%s\" for read committed access",
+                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data());
+      cliRC = cliInterface.executeImmediate(query, (char*)&rowCount, &len, NULL);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return;
+        }
     }
-  
+
   // if the table is not empty, or there are dependent objects/constraints,
   //  or the table already has  a pkey/store by, then create a unique constraint.
   NABoolean isStoreBy = FALSE;
@@ -3226,6 +3268,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
     } // if
   
   if ((rowCount > 0) || // not empty
+      (NOT ms4) || // not mode_special_4
       (naTable->hasSecondaryIndexes()) || // user indexes
       (NOT naTable->getClusteringIndex()->hasSyskey()) || // user defined pkey
       (isStoreBy) ||     // user defined store by
@@ -3557,6 +3600,19 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       *CmpCommon::diags()
         << DgSqlCode(-4082)
         << DgTableName(cn2.getExposedNameAsAnsiString());
+
+      deallocEHI(ehi); 
+
+      processReturn();
+      
+      return;
+    }
+
+  if (refdNaTable->getViewText())
+    {
+     *CmpCommon::diags()
+	<< DgSqlCode(-1127)
+	<< DgTableName(cn2.getExposedNameAsAnsiString());
 
       deallocEHI(ehi); 
 
@@ -5908,6 +5964,17 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
         }
     }
 
+  NABoolean alignedFormat = FALSE;
+  if (hbaseCreateOptions)
+    {
+      // Row format stored as:  ROW_FORMAT=>ALIGNED
+      char * rfStr = strstr(hbaseCreateOptions, "ROW_FORMAT=>ALIGNED");
+      if (rfStr)
+	{
+          alignedFormat = TRUE;
+	}
+    }
+
   if (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0)
     {
       str_sprintf(query, "select k.column_name, c.column_number, k.keyseq_number, ordering, cast(0 as int not null)  from %s.\"%s\".%s k, %s.\"%s\".%s c where k.column_name = c.column_name and k.object_uid = c.object_uid and k.object_uid = %Ld and k.nonkeycol = 0 for read committed access order by keyseq_number",
@@ -5949,7 +6016,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       populateKeyInfo(keyInfoArray[idx], vi);
     }
 
-  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.hbase_create_options from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access ",
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.hbase_create_options from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid for read committed access order by 1,2,3",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
@@ -6130,7 +6197,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
     } // for
 
   // get constraint info
-  str_sprintf(query, "select O.object_name, C.constraint_type, C.col_count, C.constraint_uid from %s.\"%s\".%s O, %s.\"%s\".%s C where O.catalog_name = '%s' and O.schema_name = '%s' and C.table_uid = %Ld and O.object_uid = C.constraint_uid ",
+  str_sprintf(query, "select O.object_name, C.constraint_type, C.col_count, C.constraint_uid from %s.\"%s\".%s O, %s.\"%s\".%s C where O.catalog_name = '%s' and O.schema_name = '%s' and C.table_uid = %Ld and O.object_uid = C.constraint_uid order by 1",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               catName.data(), schName.data(), 
@@ -6253,7 +6320,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       if ((strcmp(constrType, COM_UNIQUE_CONSTRAINT_LIT) == 0) ||
           (strcmp(constrType, COM_PRIMARY_KEY_CONSTRAINT_LIT) == 0))
         {
-          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s U, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = U.foreign_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = U.foreign_constraint_uid and U.unique_constraint_uid = %Ld",
+          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s U, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = U.foreign_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = U.foreign_constraint_uid and U.unique_constraint_uid = %Ld order by 2, 1",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_UNIQUE_REF_CONSTR_USAGE,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -6295,7 +6362,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       // attach all the referencing constraints
       if (strcmp(constrType, COM_FOREIGN_KEY_CONSTRAINT_LIT) == 0)
         {
-          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s R, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = R.unique_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = R.unique_constraint_uid and R.ref_constraint_uid = %Ld",
+          str_sprintf(query, "select trim(O.catalog_name || '.' || '\"' || O.schema_name || '\"' || '.' || '\"' || O.object_name || '\"' ) constr_name, trim(O2.catalog_name || '.' || '\"' || O2.schema_name || '\"' || '.' || '\"' || O2.object_name || '\"' ) table_name from %s.\"%s\".%s R, %s.\"%s\".%s O, %s.\"%s\".%s O2, %s.\"%s\".%s T where  O.object_uid = R.unique_constraint_uid and O2.object_uid = T.table_uid and T.constraint_uid = R.unique_constraint_uid and R.ref_constraint_uid = %Ld order by 2,1",
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_REF_CONSTRAINTS,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                       getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -6426,6 +6493,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   tableInfo.objOwnerID = objectOwner;
   tableInfo.numSaltPartns = numSaltPartns;
   tableInfo.hbaseCreateOptions = hbaseCreateOptions;
+  tableInfo.rowFormat = (alignedFormat ? 1 : 0);
 
   tableDesc =
     Generator::createVirtualTableDesc

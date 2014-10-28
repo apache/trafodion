@@ -1221,7 +1221,7 @@ ItemExpr *literalOfInterval(NAString *strptr,
 }
 
 
-ItemExpr *literalOfDate(NAString *strptr)
+ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc)
 {
   ItemExpr *returnValue = NULL;
   UInt32 fractionPrec;
@@ -1235,7 +1235,8 @@ ItemExpr *literalOfDate(NAString *strptr)
 		    (void *) dtValue.getValue(),
 		    dtValue.getValueLen(),
 		    strptr);
-  delete strptr;
+  if (NOT noDealloc)
+    delete strptr;
   //assert (returnValue);	//don't assert; caller checks value for NULL
   return returnValue;
 }
@@ -2048,12 +2049,19 @@ NAType *picNAType(const NABoolean      isString,
       assert(precision > 0);
       switch (style) {
         case STYLE_DISPLAY:
-	    returnValue = new (PARSERHEAP())
-#pragma nowarn(1506)   // warning elimination 
-  		SQLChar(precision,TRUE,FALSE,isCaseinsensitive,FALSE,charset,collation,coerc);
-#pragma warn(1506)  // warning elimination 
+          {
+            CharInfo::CharSet eEncodingCharSet = charset;
+            Int32 maxLenInBytes = precision;
+            Int32 characterLimit = precision;
+            Int32 maxBytesPerChar = CharInfo::maxBytesPerChar(charset);
+            returnValue = new (PARSERHEAP())
+              //            SQLChar(precision,TRUE,FALSE,isCaseinsensitive,FALSE,charset,collation,coerc);
+              SQLChar(CharLenInfo(characterLimit, maxLenInBytes),
+                      TRUE,FALSE,isCaseinsensitive,FALSE,
+                      charset,collation,coerc,eEncodingCharSet);
             assert(returnValue);
-            break;
+          }
+          break;
         case STYLE_UPSHIFT:
 	    returnValue = new (PARSERHEAP())
 #pragma nowarn(1506)   // warning elimination 

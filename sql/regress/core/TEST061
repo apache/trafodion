@@ -131,12 +131,10 @@ create view vut4495 (inta, varchar20)
 
 create index  t061i1 on vut4495(a);
 
-#ifndef SEABASE_REGRESS
-create table t061t3(t061t3_c int references vut4495);
+create table t061t33(t061t3_c int references vut4495);
 create table t061t4(t061t4_c int references vut4495(a));
 create table t061t5(t061t5_c int, foreign key(t061t5_c) references vut4495);
 create table t061t6(t061t6_c int, foreign key(t061t6_c) references vut4495(a));
-#endif
 
 select * from vut4495;
 

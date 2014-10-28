@@ -206,3 +206,64 @@ ex_expr::exp_return_type ex_aggr_min_max_clause::eval(char * op_data[],
   
   return retcode;
 }
+
+/////////////////////////////////////////////////
+// class ex_pivot_group_clause
+/////////////////////////////////////////////////
+ex_expr::exp_return_type ex_pivot_group_clause::init()
+{
+  ex_expr::exp_return_type retcode = ex_expr::EXPR_OK;
+
+  currPos_ = 0;
+  currTgtLen_ = 0;
+  setOvflWarn(FALSE);
+
+  return retcode;
+}
+
+ex_expr::exp_return_type ex_pivot_group_clause::eval(char * op_data[],
+                                                     CollHeap       *heap,
+                                                     ComDiagsArea  **diagsArea)
+{
+  Attributes * tgtOp = getOperand(0);
+  Attributes * srcOp = getOperand(1);
+
+  Lng32 src_length = srcOp->getLength(op_data[-MAX_OPERANDS + 1]);
+
+  char * tgt = op_data[0];
+  char * src = op_data[1];
+
+  Lng32 currSrcPos = currPos_;
+
+  Lng32 delimSize = strlen(delim_);
+  Lng32 tgtBufNeeded = (currPos_ > 0 ? delimSize : 0)  + src_length;
+
+  if ((currTgtLen_ + tgtBufNeeded) > maxLen_)
+    {
+      // not enough space in tgt buffer to move source.
+      // return a warning, if it has not already been returned.
+      if (NOT ovflWarn())
+        {
+          ExRaiseSqlWarning(heap, diagsArea, (ExeErrorCode)(8402));
+
+          setOvflWarn(TRUE);
+        }
+
+      return ex_expr::EXPR_OK;
+    }
+
+  if (currPos_ > 0)
+    {
+      str_cpy_all(&tgt[currPos_], delim_, strlen(delim_));
+      currPos_ += strlen(delim_);
+    }
+
+  str_cpy_all(&tgt[currPos_], src, src_length);
+  currPos_ += src_length;
+
+  currTgtLen_ += (currPos_ - currSrcPos);
+  
+  tgtOp->setVarLength(currTgtLen_, op_data[- MAX_OPERANDS]);
+  
+  return ex_expr::EXPR_OK;
+}

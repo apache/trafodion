@@ -153,7 +153,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
      SQLCHARSET_CODE charset = SQLCHARSETCODE_UNKNOWN;
      CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
      ULng32 colFlags = 0;
-     retcode = getTypeInfo(naType, FALSE,
+     retcode = getTypeInfo(naType, FALSE, FALSE,
 			   colInfoArray[i].datatype, colInfoArray[i].length, 
 			   precision, scale, dtStart, dtEnd, upshifted, 
 			   colInfoArray[i].nullable,
@@ -296,7 +296,7 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
       ULng32 colFlags = 0;
       
-      retcode = getTypeInfo(naType, FALSE,
+      retcode = getTypeInfo(naType, FALSE, FALSE,
 			    colInfoArray[i].datatype, colInfoArray[i].length, 
 			    precision, scale, dtStart, dtEnd, upshifted, 
 			    colInfoArray[i].nullable,
@@ -416,6 +416,8 @@ void CmpSeabaseDDL::createSeabaseIndex(
     }
 
   ExeCliInterface cliInterface(STMTHEAP);
+  NABoolean isVolatileTable = FALSE;
+  ComObjectName volTabName ;
 
   if ((NOT createIndexNode->isVolatile()) &&
        (CmpCommon::context()->sqlSession()->volatileSchemaInUse()))
@@ -436,7 +438,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 	   return;
          }
 
-        ComObjectName volTabName (qn->getQualifiedNameAsAnsiString());
+       volTabName = qn->getQualifiedNameAsAnsiString() ;
 	volTabName.applyDefaults(currCatAnsiName, currSchAnsiName);
 
 	NAString vtCatNamePart = volTabName.getCatalogNamePartAsAnsiString();
@@ -464,6 +466,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
               {
                 // Valid volatile table. Create index on it.
                 extTableName = volTabName.getExternalName(TRUE);
+                isVolatileTable = TRUE;
 
 		btCatalogNamePart = vtCatNamePart;
 		btSchemaNamePart = vtSchNamePart;
@@ -755,6 +758,12 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
+
+  if (naTable->isSQLMXAlignedTable())
+    {
+      hco += "ROW_FORMAT=>ALIGNED ";
+    }
+
   short retVal = setupHbaseOptions(createIndexNode->getHbaseOptionsClause(), 
                                    numSplits, extIndexName,
                                    hbaseCreateOptions, hco);
@@ -803,7 +812,9 @@ void CmpSeabaseDDL::createSeabaseIndex(
     // populate index
       if (populateSeabaseIndexFromTable(&cliInterface,
 					createIndexNode->isUniqueSpecified(),
-					extIndexName, extTableName, selColList,
+					extIndexName, 
+                                        isVolatileTable ? volTabName : tableName, 
+                                        selColList,
                                         useLoad))
 	{
 	  if (dropSeabaseObject(ehi, createIndexNode->getIndexName(),
@@ -856,11 +867,41 @@ void CmpSeabaseDDL::createSeabaseIndex(
 short CmpSeabaseDDL::populateSeabaseIndexFromTable(
 					  ExeCliInterface * cliInterface,
 					  NABoolean isUnique,
-					  const NAString &indexName, const NAString &tableName,
+					  const NAString &indexName, 
+                                          const ComObjectName &tableName,
 					  NAList<NAString> &selColList,
 					  NABoolean useLoad)
 {
   Lng32 cliRC = 0;
+  Lng32 saltRC = 0;
+
+  NABoolean useHiveSrc = FALSE;
+  NAString saltText;
+  NAString hiveSrc = CmpCommon::getDefaultString(USE_HIVE_SOURCE);
+  if ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
+      (! hiveSrc.isNull()))
+    {
+      for (CollIndex i = 0; i < selColList.entries(); i++)
+      {
+      NAString &colName = selColList[i];
+      if (colName == "SYSKEY")
+        break;
+      if (i == selColList.entries() -1)
+        useHiveSrc = TRUE;
+     }
+      if (useHiveSrc)
+      {
+        saltRC = getSaltText(cliInterface, 
+                             tableName.getCatalogNamePartAsAnsiString().data(),
+                             tableName.getSchemaNamePartAsAnsiString().data(),
+                             tableName.getObjectNamePartAsAnsiString().data(),
+                             COM_BASE_TABLE_OBJECT_LIT,
+                             saltText);
+        if (saltRC < 0)
+          useHiveSrc = FALSE;
+      }
+    }
+
   NAString query = 
     (isUnique ? "insert with no rollback " : "upsert using load ");
   if (useLoad)
@@ -875,17 +916,29 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   for (CollIndex i = 0; i < selColList.entries(); i++)
     {
       NAString &colName = selColList[i];
-
-      query += "\"";
-      query += colName;
-      query += "\"";
+      if ((colName == "_SALT_") && useHiveSrc)
+        query += saltText;
+      else
+      {
+        query += "\"";
+        query += colName;
+        query += "\"";
+      }
 
       if (i < selColList.entries() - 1)
 	query += ",";
     }
 
   query += " from ";
-  query += tableName;
+  if (useHiveSrc)
+    {
+      query += "HIVE.HIVE.";
+      query += tableName.getObjectNamePartAsAnsiString(); 
+      query += hiveSrc; //will not work for delim tab names
+    }
+  else
+    query += tableName.getExternalName(TRUE);
+
   query += " for read uncommitted access; ";
 
   UInt32 savedCliParserFlags = 0;
@@ -1066,7 +1119,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	  NABoolean useLoad = (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_INDEXES) == DF_ON);
 	  if (populateSeabaseIndexFromTable(&cliInterface,
 					    naf->uniqueIndex(),
-					    nafIndexName, extTableName, selColList,
+					    nafIndexName, tableName, selColList,
 	                                    useLoad))
 	    {
 	      // need to purgedata seabase index. TBD.

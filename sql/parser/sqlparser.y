@@ -94,6 +94,13 @@
      yyerror(""); \
      YYERROR; \
   }
+  
+#define CheckModeSpecial4 \
+  if (CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON) \
+  { \
+     yyerror(""); \
+     YYERROR; \
+  }
                                
 #pragma warning (disable : 4065)//don't complain about empty switch statements
 
@@ -299,6 +306,8 @@ THREAD_P Int32 NumOfArrays  = 0 ;
 //or not the user specified a CHARACTER SET clause for the target
 //[var]char type.
 THREAD_P NABoolean cast_target_cs_specified = FALSE ;
+
+THREAD_P NABoolean in_col_defn = FALSE;
 
 // to be moved to ParNameLocList.h
 void ParSetTextStartPosForDisplayExplain(ParNameLocList * pNameLocList);
@@ -685,6 +694,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_GO
 %token <tokval> TOK_GOTO
 %token <tokval> TOK_GREATER_EQUAL
+%token <tokval> TOK_GREATEST
 %token <tokval> TOK_GROUP
 %token <tokval> TOK_GZIP
 %token <tokval> TOK_HAVING
@@ -768,6 +778,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LASTSYSKEY
 %token <tokval> TOK_LCASE               /* ODBC extension   */
 %token <tokval> TOK_LEADING
+%token <tokval> TOK_LEAST
 %token <tokval> TOK_LEFT
 %token <tokval> TOK_LESS_EQUAL
 %token <tokval> TOK_LIBRARY
@@ -904,6 +915,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PERTABLE
 %token <tokval> TOK_PHASE				// MV _REFRESH
 %token <tokval> TOK_PI
+%token <tokval> TOK_PIVOT
+%token <tokval> TOK_PIVOT_GROUP
 %token <tokval> TOK_POS
 %token <tokval> TOK_POSITION
 %token <tokval> TOK_POWER
@@ -975,6 +988,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ROUND
 %token <tokval> TOK_ROW
 %token <tokval> TOK_ROW_COUNT           /* ANSI SQL non-reserved word */
+%token <tokval> TOK_ROWNUM
 %token <tokval> TOK_ROWS_DELETED	// MV _REFRESH
 %token <tokval> TOK_ROWS_INSERTED	// MV _REFRESH
 %token <tokval> TOK_ROWS_UPDATED	// MV _REFRESH 
@@ -1088,6 +1102,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_TO_CHAR
 %token <tokval> TOK_TO_DATE
 %token <tokval> TOK_TO_NUMBER
+%token <tokval> TOK_TO_TIMESTAMP
 %token <tokval> TOK_TOKENSTR
 %token <tokval> TOK_TRAILING
 %token <tokval> TOK_TRANSACTION
@@ -1150,6 +1165,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 // QSTUFF
 %token <tokval> TOK_WORK
 %token <tokval> TOK_WRITE
+%token <tokval> TOK_XMLAGG
+%token <tokval> TOK_XMLELEMENT
 %token <tokval> TOK_YEAR
 
 %token <tokval> TOK_ACTION
@@ -1659,6 +1676,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
   NAList<ExeUtilReplicate::ReplicateOption*> * replicateOptionsList;
   ExeUtilReplicate::ReplicateOption * replicateOption;
 
+  NAList<PivotGroup::PivotOption*> * pivotOptionsList;
+  PivotGroup::PivotOption * pivotOption;
+
   NAList<ExeUtilMaintainObject::MaintainObjectOption*> * maintainObjectOptionsList;
   ExeUtilMaintainObject::MaintainObjectOption * maintainObjectOption;
 
@@ -1895,6 +1915,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hint>      		optimizer_hint
 %type <hint>      		hints
 %type <hint>      		index_hints
+%type <hint>      		ignore_ms4_hints
 %type <stringval>    	index_hint
 %type <doubleVal>       number
 %type <doubleVal>       selectivity_number
@@ -2524,6 +2545,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		table_constraint_definition
 %type <pElemDDLConstraint>  	table_constraint
 %type <pElemDDL>  		column_definition
+%type <uint>      		        set_in_column_defn
+%type <uint>      		        reset_in_column_defn
 %type <pElemDDL>  		optional_column_attributes
 %type <pElemDDL>  		column_attributes
 %type <pElemDDL>  		column_attribute
@@ -2866,6 +2889,10 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pConstStringList>	    col_fam_quoted_string_list
 %type <boolean>                     optional_only
 %type <stringval>                   optional_qid
+
+%type <pivotOptionsList>        pivot_options_list
+%type <pivotOptionsList>        pivot_options
+%type <pivotOption>             pivot_option
 
 %type <maintainObjectOptionsList>    maintain_object_options
 %type <maintainObjectOptionsList>    maintain_object_options_list
@@ -3919,9 +3946,12 @@ entity_name_as_item : identifier
 		
             | simple_host_variable
                {
-		 TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
-
-                 $$ = $1;
+                  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+                    {
+                      TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
+                      
+                      $$ = $1;
+                    }
                }
 
 /* Note that there is a default on the scope_spec which is: local.          */
@@ -4665,9 +4695,12 @@ simple_value_spec : literal_as_string
           }
       | simple_host_variable
           {
-             // don't delete the hostvar since it is shared with AllHostVars...
-             TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
-             $$ = 0;  // just set 0 as a don't care value
+            if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+              {
+                // don't delete the hostvar since it is shared with AllHostVars...
+                TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
+                $$ = 0;  // just set 0 as a don't care value
+              }
           }
 
 // The ALLOCATE DESCRIPTOR has an optional "max value," so we yet
@@ -5859,8 +5892,10 @@ qualified_name : identifier
                       YYERROR;
                     }
                   $1->append($3);
-                  if (! $1->isValid()) YYABORT;
-                  $$ = $1;
+                  if (! $1->isValid()) 
+                    YYABORT;
+
+                    $$ = $1;
                 }
 
 /* type strSeq */
@@ -6705,6 +6740,17 @@ table_reference : table_name_and_hint
 
               | rel_subquery_as_clause_and_col_list
                 { $$ = $1; }
+
+              | rel_subquery
+                 {
+                   Int64 sqAddr = (Int64)$1;
+                   char sqAddrStr[100];
+                   str_itoa(sqAddr, sqAddrStr);
+                   NAString corrName("X");
+                   corrName += sqAddrStr;
+                   $$ = new (PARSERHEAP()) RenameTable($1, corrName);
+                 }
+
              | joined_table  /* default action is fine: $$ = $1  */
                                 {
                                   $$ = $1;
@@ -6738,13 +6784,31 @@ table_reference : table_name_and_hint
 					((TableMappingUDF*)$1)->setCorrName(*$2);
                                   delete $2;
 				 } 
-			  | table_as_tmudf_function as_clause '(' derived_column_list ')'
+	     | table_as_tmudf_function as_clause '(' derived_column_list ')'
                 {
                     $$ = new(PARSERHEAP()) RenameTable($1,*$2,$4);
                     ((TableMappingUDF*)$1)->setCorrName(*$2);
                     delete $2;
                 } 
-	      
+            | TOK_DUAL
+              {
+                CheckModeSpecial4;
+
+                ConstValue * cv = 
+                  (ConstValue*)literalOfNumericNoScale(new (PARSERHEAP()) NAString("0", PARSERHEAP()));
+                
+                Tuple * t = new (PARSERHEAP()) Tuple(cv);
+                
+                NAString id("x");
+                RelRoot * root = new (PARSERHEAP())
+                  RelRoot(t, 
+                          ACCESS_TYPE_NOT_SPECIFIED_, 
+                          LOCK_MODE_NOT_SPECIFIED_, 
+                          REL_ROOT);
+                
+                $$ = new (PARSERHEAP()) RenameTable(root, id);
+              }
+
 table_as_tmudf_function : TOK_UDF '(' user_defined_table_mapping_function ')'
   {
     $$ = $3;
@@ -7409,6 +7473,32 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
 					    '!');
                               }
 			   }
+              | TOK_PIVOT '(' set_quantifier value_expression pivot_options ')'
+                  {
+                    CheckModeSpecial4;
+
+                    $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
+                  }
+              | TOK_PIVOT_GROUP '(' set_quantifier value_expression pivot_options ')'
+                  {
+                    CheckModeSpecial4;
+
+                    $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
+                  }
+              | TOK_XMLAGG '(' TOK_XMLELEMENT '(' identifier ',' value_expression ')' order_by_clause ')' '.' TOK_EXTRACT '(' QUOTED_STRING ')' '.' identifier '(' ')'
+                 {
+                   CheckModeSpecial4;
+
+                   PivotGroup::PivotOption * po = 
+                     new (PARSERHEAP ()) PivotGroup::PivotOption
+                     (PivotGroup::DELIMITER_, NULL, (char*)"", -1);
+
+                   NAList<PivotGroup::PivotOption*> * frol =
+                     new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+                   frol->insert(po);
+                   
+                   $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $7, frol);
+                  }
 
 /* type operator_type */
 set_function_type :   TOK_AVG 		{ $$ = ITM_AVG; }
@@ -7418,6 +7508,57 @@ set_function_type :   TOK_AVG 		{ $$ = ITM_AVG; }
                     | TOK_COUNT 	{ $$ = ITM_COUNT; }
                     | TOK_VARIANCE 	{ $$ = ITM_VARIANCE; }
                     | TOK_STDDEV 	{ $$ = ITM_STDDEV; }
+
+pivot_options : empty
+                       {
+                         $$ = NULL;
+                       }
+                    | ',' pivot_options_list
+                      {
+                        $$ = $2;
+                      }
+
+pivot_options_list : pivot_option
+                      {
+			NAList<PivotGroup::PivotOption*> * frol =
+			  new (PARSERHEAP ()) NAList<PivotGroup::PivotOption*>;
+			frol->insert($1);
+			$$ = frol;
+		      }
+                    | pivot_option ',' pivot_options_list
+                      {
+			$3->insert($1);
+			$$ = $3;
+		      }
+;
+
+pivot_option : TOK_DELIMITER QUOTED_STRING
+                      {
+			PivotGroup::PivotOption * po = 
+			  new (PARSERHEAP ()) PivotGroup::PivotOption
+			  (PivotGroup::DELIMITER_, NULL, (char*)$2->data(), -1);
+			
+			$$ = po;
+		      }
+                   | TOK_ORDER TOK_BY '('  sort_spec_list  ')'
+                      {
+			PivotGroup::PivotOption * po = 
+			  new (PARSERHEAP ()) PivotGroup::PivotOption
+			  (PivotGroup::ORDER_BY_, $4, NULL, -1);
+			
+			$$ = po;
+		      }
+                   | TOK_MAX TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE
+                      {
+                        Int64 value = atoInt64($3->data()); 
+  
+			PivotGroup::PivotOption * po = 
+			  new (PARSERHEAP ()) PivotGroup::PivotOption
+			  (PivotGroup::MAX_LENGTH_, NULL, NULL, (Lng32)value);
+			
+			$$ = po;
+		      }
+
 
 /* type item */
 sequence_func_specification : offset_sequence_function
@@ -8054,8 +8195,11 @@ primary :     '(' value_expression ')'
 
               | hostvar_expression
                         {
-	   		  TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
-			  $$ = $1;
+                          if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+                            {
+                              TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
+                              $$ = $1;
+                            }
 			}
               | literal
                         {
@@ -8499,65 +8643,50 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                 {
                                   /* ODBC extension, map to  */
                                   /* TOK_CURRENT_DATE        */
-                                  $$ = new (PARSERHEAP())
-                                    Cast(new (PARSERHEAP())
-                                        CurrentTimestamp(),
-                                        new (PARSERHEAP())
-                                        SQLDate(TRUE, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                 DatetimeType::SUBTYPE_SQLDate, 0);
                                 }
      | TOK_CURRENT_DATE
                                 {
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLDate(TRUE, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLDate, 0);
                                 }
      | TOK_SYSDATE
                                 {
-				  //				  CheckModeSpecial3;
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLDate(TRUE, PARSERHEAP()));
-				  //                                  $$ = new (PARSERHEAP())
-				  //				    CurrentTimestamp();
+                                  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) 
+                                    {
+                                      $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                           DatetimeType::SUBTYPE_SQLTimestamp, 0);
+                                    }
+                                  else
+                                    {
+                                      $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                           DatetimeType::SUBTYPE_SQLDate, 0);
+                                    }
                                 }
      | TOK_DATE
                                 {
 				  CheckModeSpecial1();
 
 				  /* special1 mode extenstion*/
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLDate(TRUE, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLDate, 0);
                                 }
      | TOK_TIME
 				{
 				  CheckModeSpecial1();
 
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-                                         new (PARSERHEAP())
-					 SQLTime(TRUE,
-                                                 SQLTime::DEFAULT_FRACTION_PRECISION,
-                                                 PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLTime, 
+                                                                       SQLTime::DEFAULT_FRACTION_PRECISION);
 				}
 
      | TOK_LPAREN_BEFORE_DATE_AND_LPAREN TOK_DATE TOK_LPAREN_BEFORE_FORMAT TOK_FORMAT character_string_literal ',' TOK_TITLE character_string_literal ')' ')'
                                 {
                                   // DEFAULT_CHARSET has no effect on character_string_literal in this context
 				  CheckModeSpecial1();
-
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLDate(TRUE, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLDate, 0);
                                 }
 
      | TOK_LPAREN_BEFORE_DATE_AND_LPAREN TOK_DATE TOK_LPAREN_BEFORE_FORMAT TOK_FORMAT character_string_literal ')' ')'
@@ -8565,39 +8694,29 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                   // DEFAULT_CHARSET has no effect on character_string_literal in this context
 				  CheckModeSpecial1();
 
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLDate(TRUE, PARSERHEAP()));
-                                }
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLDate, 0);
+                                 }
 
      | TOK_CURRENT
 				{
-				  $$ = new (PARSERHEAP())
-				    CurrentTimestamp();
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP());
 				}
 
      | TOK_CURRENT ts_left_unsigned_right
 				{
 				  if ($2 > DatetimeType::MAX_FRACTION_PRECISION)
 				    {
-#pragma nowarn(1506)   // warning elimination 
 				      *SqlParser_Diags << DgSqlCode(-3134)
 						       << DgInt0($2);
-#pragma warn(1506)   // warning elimination 
 				      YYERROR;
 				    }
-
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLTimestamp(FALSE, $2, PARSERHEAP()));
+                                  
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLTimestamp, $2);
 				}
 
      /* CURRENT for MP DATETIME with start-end fields */
-
      | TOK_CURRENT datetime_qualifier
              {
                  DatetimeType *dt = DatetimeType::constructSubtype( 
@@ -8614,63 +8733,48 @@ datetime_value_function : TOK_CURDATE '(' ')'
                                      YYERROR;
                                      }
 
-                 $$ = new (PARSERHEAP()) Cast (new (PARSERHEAP())
-                                     CurrentTimestamp(), dt);
+                                 $$ = new (PARSERHEAP()) Cast (new (PARSERHEAP())
+                                                               CurrentTimestamp(), dt);
                  }
 
      | TOK_CURRENT_TIME
 				{
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-                                         new (PARSERHEAP())
-					 SQLTime(FALSE,
-                                                 SQLTime::DEFAULT_FRACTION_PRECISION,
-                                                 PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLTime, 
+                                                                       SQLTime::DEFAULT_FRACTION_PRECISION);
 				}
      | TOK_CURRENT_TIME ts_left_unsigned_right
 				{
 				  if ($2 > DatetimeType::MAX_FRACTION_PRECISION)
 				    {
-#pragma nowarn(1506)   // warning elimination 
 				      *SqlParser_Diags << DgSqlCode(-3134)
 						       << DgInt0($2);
-#pragma warn(1506)   // warning elimination 
 				      YYERROR;
 				    }
 
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLTime(FALSE, $2, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLTime, 
+                                                                       $2);
 				}
      | TOK_CURRENT_TIMESTAMP
 				{
-				  $$ = new (PARSERHEAP())
-				    CurrentTimestamp();
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP());
 				}
      | TOK_SYSTIMESTAMP
 				{
-				  $$ = new (PARSERHEAP())
-				    CurrentTimestamp();
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP());
 				}
      | TOK_CURRENT_TIMESTAMP ts_left_unsigned_right
 				{
 				  if ($2 > DatetimeType::MAX_FRACTION_PRECISION)
 				    {
-#pragma nowarn(1506)   // warning elimination 
 				      *SqlParser_Diags << DgSqlCode(-3134)
 						       << DgInt0($2);
-#pragma warn(1506)   // warning elimination 
 				      YYERROR;
 				    }
 
-                                  $$ = new (PARSERHEAP())
-				    Cast(new (PARSERHEAP())
-					 CurrentTimestamp(),
-					 new (PARSERHEAP())
-					 SQLTimestamp(FALSE, $2, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLTimestamp, $2);
 				}
      | TOK_CURRENT_RUNNING
 				{
@@ -8684,28 +8788,24 @@ datetime_value_function : TOK_CURDATE '(' ')'
 				    CurrentTimestampRunning();
 				}
      | TOK_CURRENT_TIMESTAMP_UTC
-     {
-       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_CURRENT_TIMESTAMP_UTC);
-     }
+        {
+          $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_CURRENT_TIMESTAMP_UTC);
+        }
      | TOK_CURRENT_TIME_UTC
-     {
-       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_CURRENT_TIME_UTC);
-     }
+        {
+          $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_CURRENT_TIME_UTC);
+        }
       /* ODBC extension, map TOK_CURTIME to TOK_CURRENT_TIME */
      | TOK_CURTIME '(' ')'
                                 {
-                                  $$ = new (PARSERHEAP())
-                                    Cast(new (PARSERHEAP())
-                                         CurrentTimestamp(),
-                                         new (PARSERHEAP())
-                                         SQLTime(FALSE, SQLTime::DEFAULT_FRACTION_PRECISION, PARSERHEAP()));
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP(),
+                                                                       DatetimeType::SUBTYPE_SQLTime, 
+                                                                       SQLTime::DEFAULT_FRACTION_PRECISION);
                                 }
      | TOK_NOW '(' ')'
                                 {
   /* ODBC extension, map TOK_NOW to TOK_CURRENT_TIMESTAMP */
-
-	                          $$ = new (PARSERHEAP())
-	                            CurrentTimestamp();
+                                  $$ = CurrentTimestamp::construct(PARSERHEAP());
                                 }
 
 /* type item */
@@ -8844,6 +8944,11 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				 $$ = new (PARSERHEAP()) 
 				   Format($3, *$5, FALSE, Format::FORMAT_TO_CHAR);
 			       }
+    | TOK_TO_CHAR '(' value_expression ')'
+                               {
+				 CheckModeSpecial4;
+                                 $$ = $3;
+			       }
     | TOK_TO_DATE '(' value_expression ',' character_string_literal ')'
                                {
 				 CheckModeSpecial3;
@@ -8851,12 +8956,26 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
 				 $$ = new (PARSERHEAP()) 
 				   Format($3, *$5, TRUE, Format::FORMAT_TO_DATE);
 			       }
+   | TOK_TO_DATE '(' value_expression  ')'
+                               {
+				 CheckModeSpecial4;
+
+				 $$ = new (PARSERHEAP()) 
+				   Format($3, "YYYY-MM-DD", TRUE, Format::FORMAT_TO_DATE);
+			       }
     | TOK_TO_NUMBER '(' value_expression ')'
                                {
 				 CheckModeSpecial3;
 
 				 $$ = new (PARSERHEAP()) 
 				   ZZZBinderFunction(ITM_TO_NUMBER, $3);
+			       }
+    | TOK_TO_TIMESTAMP '(' value_expression ')'
+                               {
+				 CheckModeSpecial4;
+
+				 $$ = new (PARSERHEAP()) 
+				   ZZZBinderFunction(ITM_TO_TIMESTAMP, $3);
 			       }
 
 CHAR_FUNC_optional_character_set : ',' CHAR_FUNC_character_set
@@ -9064,6 +9183,12 @@ string_function :
 	{ 
             $$ = new (PARSERHEAP()) Trim((Int32)Trim::TRAILING,
 	              new (PARSERHEAP()) SystemLiteral(" ", WIDE_(" ")), $3); 
+        }
+
+     | TOK_RTRIM '(' value_expression ',' value_expression ')'
+	{ 
+            $$ = new (PARSERHEAP()) Trim((Int32)Trim::TRAILING,
+                                         $5, $3);
         }
 
      | TOK_SPACE '(' value_expression optional_character_set ')'
@@ -9287,12 +9412,6 @@ identity_function :
 
 	          } 
 
-                  | TOK_NEXT TOK_VALUE TOK_FOR actual_table_name
-                  {
-		    // TDB - Hema.
-		    // $$ = SequenceGenerator::createSequenceSubqueryExpression(PARSERHEAP());
-                  }
-                   
  /* type pElemDDL */
 sg_identity_function : 
                   TOK_IDENTITY
@@ -9624,7 +9743,7 @@ math_func_2_operands :
 
 /* type item */
 misc_function :
-      TOK_OS_USERID '(' value_expression ')'
+     TOK_OS_USERID '(' value_expression ')'
                                 {
                                   $$ = new (PARSERHEAP())
 				    MonadicUSERIDFunction($3);
@@ -9652,6 +9771,22 @@ misc_function :
 				{
 				  $$ = $2;
 				}
+
+     | TOK_GREATEST '(' value_expression ',' value_expression ')'
+                  {
+                    CheckModeSpecial4;
+
+                    $$ = new (PARSERHEAP())
+                      ZZZBinderFunction(ITM_GREATEST, $3, $5);
+                  }
+
+     | TOK_LEAST '(' value_expression ',' value_expression ')'
+                  {
+                    CheckModeSpecial4;
+
+                    $$ = new (PARSERHEAP())
+                      ZZZBinderFunction(ITM_LEAST, $3, $5);
+                  }
 
      | TOK_NULLIFZERO '(' value_expression ')'
                                 {
@@ -9811,6 +9946,7 @@ misc_function :
                         if      ( *$5 == "YEAR"   ) OperTyp = ITM_DATE_TRUNC_YEAR;
                         else if ( *$5 == "MONTH"  ) OperTyp = ITM_DATE_TRUNC_MONTH;
                         else if ( *$5 == "DAY"    ) OperTyp = ITM_DATE_TRUNC_DAY;
+                        else if ( *$5 == "D"    ) OperTyp = ITM_DATE_TRUNC_DAY;
                         else if ( *$5 == "HOUR"   ) OperTyp = ITM_DATE_TRUNC_HOUR;
                         else if ( *$5 == "MINUTE" ) OperTyp = ITM_DATE_TRUNC_MINUTE;
                         else if ( *$5 == "SECOND" ) OperTyp = ITM_DATE_TRUNC_SECOND;
@@ -9979,14 +10115,14 @@ misc_function :
 				$$ = new (PARSERHEAP()) 
 				    HbaseColumnLookup($3, *$5, type);
 			      }
-        | TOK_COLUMN_LOOKUP '(' dml_column_reference ',' QUOTED_STRING ',' TOK_CAST TOK_AS data_type ')'
+        | TOK_COLUMN_LOOKUP '(' dml_column_reference ',' QUOTED_STRING ',' TOK_CAST TOK_AS Set_Cast_Global_False_and_data_type ')'
                               {
 				  HbaseColumnLookup * hcl = new (PARSERHEAP()) 
 				    HbaseColumnLookup($3, *$5);
 
 				  $$ = new (PARSERHEAP()) Cast(hcl, $9);
 			      }
-        | TOK_COLUMN_LOOKUP '(' dml_column_reference ',' QUOTED_STRING ',' TOK_TYPE TOK_AS data_type ')'
+        | TOK_COLUMN_LOOKUP '(' dml_column_reference ',' QUOTED_STRING ',' TOK_TYPE TOK_AS Set_Cast_Global_False_and_data_type ')'
                               {
 				  HbaseColumnLookup * hcl = new (PARSERHEAP()) 
 				    HbaseColumnLookup($3, *$5, $9);
@@ -10060,6 +10196,12 @@ misc_function :
 				$$ = new(PARSERHEAP()) SequenceValue(cn, FALSE, TRUE);
 			      }
 
+       | TOK_ROWNUM '(' ')'
+                                {
+                                  $$ = new (PARSERHEAP()) RowNumFunc();
+                                }
+
+
 hbase_column_create_list : '(' hbase_column_create_value ')'
                                    {
 				     NAList<HbaseColumnCreate::HbaseColumnCreateOptions *> * hccol =
@@ -10081,7 +10223,7 @@ hbase_column_create_list : '(' hbase_column_create_value ')'
 				   $5->insert($2);
 				   $$ = $5;
 				 }
-hbase_column_create_value : QUOTED_STRING ',' value_expression ',' TOK_TYPE TOK_AS data_type
+hbase_column_create_value : QUOTED_STRING ',' value_expression ',' TOK_TYPE TOK_AS Set_Cast_Global_False_and_data_type
                                 {
 				  HbaseColumnCreate::HbaseColumnCreateOptions * hcco =
 				    new (PARSERHEAP()) HbaseColumnCreate::HbaseColumnCreateOptions
@@ -10906,8 +11048,13 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
          | TOK_NUMERIC signed_option
 	     {
 	       // Default (precision,scale) for NUMERIC is (9,0)
+               // But in MS4, it is 18.
+               Lng32 prec = 9;
+               if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) 
+                 prec = 18; 
+
 	       const Int16 DisAmbiguate = 0; // added for 64bit project
-	       $$ = new (PARSERHEAP()) SQLNumeric($2, 9, 0, DisAmbiguate);
+	       $$ = new (PARSERHEAP()) SQLNumeric($2, prec, 0, DisAmbiguate);
 	     }
 	 | TOK_LSDECIMAL left_uint_uint_right signed_option
              {
@@ -10999,15 +11146,18 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 	     }
 float_type : TOK_FLOAT
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE);
+               //               $$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, SQL_DOUBLE_PRECISION, TRUE);
+               $$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, 0, TRUE);
              }
 	 | TOK_FLOAT left_unsigned_right
              {
-#pragma nowarn(1506)  // warning elimination
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, $2);
-#pragma warn(1506)  // warning elimination
-                if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
-                   YYERROR;
+               $$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, $2, TRUE);
+
+               if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF)
+                 {
+                   if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
+                     YYERROR;
+                 }
              }
 	 | TOK_REAL
              {
@@ -11180,15 +11330,24 @@ signed_option :   { $$ = TRUE; // default is SIGNED
 /* type na_type */
 string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char_set collation_option upshift_flag notcasespecific_option
             {
+              CharInfo::CharSet eCharSet = $3; // char_set
+              if ((NOT $2/*new_optional_left_charlen_right*/->isCharLenUnitSpecified()) &&
+                  (eCharSet EQU CharInfo::UTF8) &&
+                  (in_col_defn) &&
+                  (CmpCommon::getDefault(TRAF_COL_LENGTH_IS_CHAR) == DF_OFF))
+                {
+                  $2->setCharLenUnit(ParAuxCharLenSpec::eBYTES);
+                }
+
                ParAuxCharLenSpec::ECharLenUnit parCLU = $2/*new_optional_left_charlen_right*/->getCharLenUnit();
-               CharInfo::CharSet eCharSet = $3; // char_set
-               if (( $2/*new_optional_left_charlen_right*/->isCharLenUnitSpecified()  AND
-                    $1/*tok_char_or_character_or_byte*/ EQU TOK_BYTE )  OR
-                  ( eCharSet EQU CharInfo::UCS2 AND parCLU EQU ParAuxCharLenSpec::eBYTES ) )
-               {
-                 emitError3435( $1, eCharSet, parCLU ); // BYTE[S] not allowed with UCS2 or type BYTE
-                 YYERROR;
-               }
+
+               if (( $2/*new_optional_left_charlen_right*/->isCharLenUnitSpecified() AND
+                     $1/*tok_char_or_character_or_byte*/ EQU TOK_BYTE )  OR
+                   ( eCharSet EQU CharInfo::UCS2 AND parCLU EQU ParAuxCharLenSpec::eBYTES ) )
+                 {
+                   emitError3435( $1, eCharSet, parCLU ); // BYTE[S] not allowed with UCS2 or type BYTE
+                   YYERROR;
+                 }
                Int32 specifiedLength = $2/*new_optional_left_charlen_right*/->getCharLen();
                if (parCLU EQU ParAuxCharLenSpec::eBYTES OR eCharSet EQU CharInfo::UTF8 /* OR eCharSet EQU CharInfo::SJIS */)
                { // SeaQuest Unicode
@@ -11239,8 +11398,17 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
      | tok_char_or_character_or_byte TOK_VARYING toggled_optional_left_charlen_right char_set 
        collation_option upshift_flag notcasespecific_option
             {
+              CharInfo::CharSet eCharSet = $4; // char_set
+              if ((NOT $3/*new_optional_left_charlen_right*/->isCharLenUnitSpecified()) &&
+                  (eCharSet EQU CharInfo::UTF8) &&
+                  (in_col_defn) &&
+                  (CmpCommon::getDefault(TRAF_COL_LENGTH_IS_CHAR) == DF_OFF))
+                {
+                  $3->setCharLenUnit(ParAuxCharLenSpec::eBYTES);
+                }
+
                ParAuxCharLenSpec::ECharLenUnit parCLU = $3/*toggled_optional_left_charlen_right*/->getCharLenUnit();
-               CharInfo::CharSet eCharSet = $4; // char_set
+
                if ( $3/*toggled_optional_left_charlen_right*/->isCharLenUnitSpecified()  AND
                     $1/*tok_char_or_character_or_byte*/ EQU TOK_BYTE )
                {
@@ -11289,8 +11457,17 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
             }
      | TOK_VARCHAR toggled_optional_left_charlen_right char_set collation_option upshift_flag notcasespecific_option
             {
+              CharInfo::CharSet eCharSet = $3; // char_set
+              if ((NOT $2/*new_optional_left_charlen_right*/->isCharLenUnitSpecified()) &&
+                  (eCharSet EQU CharInfo::UTF8) &&
+                  (in_col_defn) &&
+                  (CmpCommon::getDefault(TRAF_COL_LENGTH_IS_CHAR) == DF_OFF))
+                {
+                  $2->setCharLenUnit(ParAuxCharLenSpec::eBYTES);
+                }
+
                ParAuxCharLenSpec::ECharLenUnit parCLU = $2/*toggled_optional_left_charlen_right*/->getCharLenUnit();
-               CharInfo::CharSet eCharSet = $3; // char_set
+
                if ( eCharSet EQU CharInfo::UCS2 AND parCLU EQU ParAuxCharLenSpec::eBYTES )
                {
                  emitError3435( TOK_VARCHAR, eCharSet, parCLU ); // BYTE[S] not allowed with UCS2
@@ -11368,9 +11545,17 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
 
      | TOK_LONG TOK_VARCHAR new_left_charlen_right char_set collation_option upshift_flag notcasespecific_option
        {
+         CharInfo::CharSet eCharSet = $4; // char_set
+         if ((NOT $3/*new_optional_left_charlen_right*/->isCharLenUnitSpecified()) &&
+             (eCharSet EQU CharInfo::UTF8) &&
+             (in_col_defn) &&
+             (CmpCommon::getDefault(TRAF_COL_LENGTH_IS_CHAR) == DF_OFF))
+           {
+             $3->setCharLenUnit(ParAuxCharLenSpec::eBYTES);
+           }
+
          Int32 maxLenInBytes = $3/*new_left_charlen_right*/->getCharLen();
          ParAuxCharLenSpec::ECharLenUnit parCLU = $3/*new_left_charlen_right*/->getCharLenUnit();
-         CharInfo::CharSet eCharSet = $4; // char_set
 
          Int32 maxSize = getDefaultMaxLengthForLongVarChar(eCharSet);
 #pragma warning (disable : 4018)   //warning elimination
@@ -11640,7 +11825,14 @@ nchar_varying: TOK_NATIONAL tok_char_or_character TOK_VARYING { cast_target_cs_s
                | TOK_NCHAR TOK_VARYING                        { cast_target_cs_specified = TRUE; }
 
 /* type charSetVal */
-char_set :	{ $$ = SqlParser_DEFAULT_CHARSET; }
+char_set :	
+           { 
+             if ((in_col_defn) &&
+                 (SqlParser_CurrentParser->defaultColCharset() != CharInfo::UnknownCharSet))
+               $$ = SqlParser_CurrentParser->defaultColCharset();
+             else
+               $$ = SqlParser_DEFAULT_CHARSET; 
+           }
       | TOK_CHARACTER TOK_SET character_set 
 	  	{
 	  	  $$ = $3;
@@ -11792,7 +11984,8 @@ optional_charlen_unit : TOK_CHARACTERS
 /* type pCharLenSpec */
 new_left_charlen_right : left_unsigned new_optional_charlen_unit ')'
     {
-      ParAuxCharLenSpec::ECharLenUnit eUnit = ParAuxCharLenSpec::eCHAR_LEN_UNIT_NOT_SPECIFIED;
+      ParAuxCharLenSpec::ECharLenUnit eUnit = 
+        ParAuxCharLenSpec::eCHAR_LEN_UNIT_NOT_SPECIFIED;
       switch ( $2 /*new_optional_charlen_unit */ )
       {
       case 0:
@@ -11935,35 +12128,20 @@ left_uint_uint_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE ',' NUMERIC_LITERAL_EXA
 /* type na_type */
 date_time_type : TOK_DATE disableCharsetInference format_attributes
                           {
-                              $$ = new (PARSERHEAP()) SQLDate(TRUE,PARSERHEAP());
-                              SQLDate *pDate = (SQLDate *)$$;
-                              // Leave the field blank if FORMAT clause not
-                              // specified to leave SHOWDDL output remain
-                              // unchanged so we don't need to update
-                              // expected results in regression test suites
-                              if ($3 /*format_attributes*/ != NULL) 
+                            $$ = new (PARSERHEAP()) SQLDate(TRUE,PARSERHEAP());
+                            SQLDate *pDate = (SQLDate *)$$;
+                            // Leave the field blank if FORMAT clause not
+                            // specified to leave SHOWDDL output remain
+                            // unchanged so we don't need to update
+                            // expected results in regression test suites
+                            if ($3 /*format_attributes*/ != NULL) 
                               {
                                 NAString format (*$3 /*format_attributes*/, PARSERHEAP());
                                 NAStringUpshiftASCII(format);
                                 pDate->setDisplayFormat(format);
-				
-				// For regular users, only format "YY/MM/DD" is accepted.
-				// For mode_special_1, all formats are accepted.
-				// In both cases(regular or mode_special_1), the returned
-				// value is formatted as "YY/MM/DD".
-/* externalize various DATE FORMAT strings to regular users */
-//                                if ((format EQU "YY/MM/DD") ||
-//				    (SqlParser_CurrentParser->modeSpecial1()) ||
-//				    (SqlParser_CurrentParser->modeSpecial2()))
-//                                {  /* do nothing */ }                                  
-//                                else if (format NEQ DEFAULT_DATE_DISPLAY_FORMAT)
-//                                {
-//                                  yyerror("");	// emits syntax error 15001
-//                                  YYERROR;
-//                                }
                                 delete $3 /*format_attributes*/;
                               }
-                              restoreInferCharsetState();
+                            restoreInferCharsetState();
                           }
                | TOK_TIME
                           {
@@ -12429,10 +12607,21 @@ dynamic_parameter_array : PARAMETER '[' unsigned_integer ']'
 /* item */
 simple_host_variable : HOSTVAR
 	{
-          $$ = makeHostVar($1,NULL);
-	  delete $1;  // okay to delete, we made a copy in makeHostVar
-	  AllHostVars->insert($$);
-	  TheHostVarRoles->addUnassigned();
+          if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) 
+            {
+              $$ = new (PARSERHEAP()) DynamicParam(*$1, PARSERHEAP());
+              TheHostVarRoles->addARole(HV_IS_DYNPARAM);
+              AllHostVars->insert($$);
+              setHVorDPvarIndex ( $$, $1 );
+              delete $1;
+            }
+          else
+            {
+              $$ = makeHostVar($1,NULL);
+              delete $1;  // okay to delete, we made a copy in makeHostVar
+              AllHostVars->insert($$);
+              TheHostVarRoles->addUnassigned();
+            }
 	}
 
 // This production is for a host variable, with a prototype required,
@@ -12628,20 +12817,31 @@ mvs_umd_option: empty
 /* item */
 input_hostvar_expression :  HOSTVAR
                  {
-		     $$ = makeHostVar($1,NULL);
-		     delete $1;
-
-		     AllHostVars->insert($$);
-		     TheHostVarRoles->addUnassigned();
-
-             // If we are in an Assignment statement of a 
-             //Compound Statement, and this
-		     // is a host variable on the left-hand side of 
-             //the statement, we store it.
-
-		     if (InAssignmentSt) {
-		       AssignmentHostVars->insert($$);  
-		     }
+                   if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) 
+                     {
+                       $$ = new (PARSERHEAP()) DynamicParam(*$1, PARSERHEAP());
+                       TheHostVarRoles->addARole(HV_IS_DYNPARAM);
+                       AllHostVars->insert($$);
+                       setHVorDPvarIndex ( $$, $1 );
+                       delete $1;
+                     }
+                   else
+                     {
+                       $$ = makeHostVar($1,NULL);
+                       delete $1;
+                       
+                       AllHostVars->insert($$);
+                       TheHostVarRoles->addUnassigned();
+                       
+                       // If we are in an Assignment statement of a 
+                       //Compound Statement, and this
+                       // is a host variable on the left-hand side of 
+                       //the statement, we store it.
+                       
+                       if (InAssignmentSt) {
+                         AssignmentHostVars->insert($$);  
+                       }
+                     }
 		   }
                  
 	      | HOSTVAR HOSTVAR
@@ -13394,9 +13594,22 @@ select_token : TOK_SELECT
 		  SqlParser_CurrentParser->pushHasOlapFunctions(FALSE);
 		  SqlParser_CurrentParser->pushHasTDFunctions(FALSE);
 		}
+               | TOK_SELECT TOK_BEGIN_HINT ignore_ms4_hints TOK_END_HINT
+                {
+                  CheckModeSpecial4;
+
+		  SqlParser_CurrentParser->pushHasOlapFunctions(FALSE);
+		  SqlParser_CurrentParser->pushHasTDFunctions(FALSE);
+		}
+
+/* type hint */
+ignore_ms4_hints : identifier '(' NUMERIC_LITERAL_EXACT_NO_SCALE  ')'
+                              { $$ = NULL; }
+                          | identifier 
+                               { $$ = NULL; }
 
 /* type relx */
-query_specification : select_token set_quantifier query_spec_body
+query_specification : select_token set_quantifier query_spec_body 
      {
        if ($2) {
          $$ = new (PARSERHEAP())
@@ -13540,13 +13753,19 @@ set_quantifier : { $$ = FALSE; /* by default, set quantifier is ALL */
              {
                 $$ = TRUE;
              }
+          | TOK_UNIQUE
+             {
+               CheckModeSpecial4;
+
+                $$ = TRUE;
+             }
 
 /* type relx */
-query_spec_body : query_select_list table_expression access_type optional_lock_mode
+query_spec_body : query_select_list table_expression access_type  optional_lock_mode
 			{
 			  // use a compute node to attach select list
 			  RelRoot *temp=  new (PARSERHEAP())
-			    RelRoot($2, $3, $4, REL_ROOT, $1);
+                            RelRoot($2, $3, $4, REL_ROOT, $1);
 			    // set relroot olap here
 			    if (SqlParser_CurrentParser->topHasOlapFunctions()) {
 			      temp->setHasOlapFunctions(TRUE);
@@ -13793,6 +14012,8 @@ starting_production2:
                    SqlParser_CurrentParser->clearHasOlapFunctions();			
                    SqlParser_CurrentParser->clearHasTDFunctions();
 		   cast_target_cs_specified = FALSE;
+
+                   in_col_defn = FALSE;
 		 }
 	       sql_statement
 	       	      { 
@@ -13845,7 +14066,6 @@ rowset_index : TOK_KEY TOK_BY identifier
                      ColReference (new (PARSERHEAP()) ColRefName(*$3));
             delete $3;
           }            	    
-
 
 /* type relx */
 rowset_for_output : TOK_ROWSET TOK_FOR rowset_input_size ',' rowset_output_size ',' rowset_index
@@ -14168,8 +14388,13 @@ diagnostics_size :    TOK_DIAGNOSTICS TOK_SIZE number_of_conditions
 
 number_of_conditions :   literal
                        | simple_host_variable
-			 { TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT); 
-			 $$ = $1 ;}
+			 { 
+                           if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+                             {
+                               TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT); 
+                               $$ = $1 ;
+                             }
+                         }
                        | dynamic_parameter
 		      
 rollback_mode_on_off : TOK_NO TOK_ROLLBACK on_off
@@ -20495,7 +20720,7 @@ simple_table  : query_specification
 
 
 /* type relx */
-rel_subquery : '(' query_expression ')'
+rel_subquery : '(' query_expression order_by_clause ')'
 				{
                                   if (InIfCondition) {
                                      *SqlParser_Diags << DgSqlCode(-3176);
@@ -20503,11 +20728,24 @@ rel_subquery : '(' query_expression ')'
 		                     YYERROR;
                                   }
 
-
                                   RelExpr *temp = $2;
 
                                   if ( temp->getOperatorType() != REL_ROOT )
                                     temp = new (PARSERHEAP()) RelRoot($2);
+
+                                  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF) 
+                                    {
+                                      if ($3)
+                                        {
+                                          yyerror("");	// emits syntax error 15001
+                                          YYERROR;
+                                        }
+                                    }
+                                  else
+                                    {
+                                      if ($3)
+                                        ((RelRoot *)temp)->addOrderByTree($3);
+                                    }
 
                                   $$ = temp;
 				}
@@ -24934,20 +25172,30 @@ ordering_spec : TOK_ASC
               | TOK_DESCENDING
 
 /* type item */
-sort_or_group_key :     NUMERIC_LITERAL_EXACT_NO_SCALE
-		  {
-		    $$ = new (PARSERHEAP()) SelIndex(atoi(*$1));
-		    delete $1;
-		  }
-              | dml_column_reference
-	      | dml_column_reference TOK_LPAREN_BEFORE_FORMAT TOK_FORMAT character_string_literal ')'
-                  {
-                    // DEFAULT_CHARSET has no effect on character_string_literal in this context
-		    CheckModeSpecial1();
+sort_or_group_key :   value_expression
+                   {
+                     ItemExpr * ie = $1;
+                     ConstValue * cv = NULL;
+                     if ((ie->getOperatorType() == ITM_CONSTANT) &&
+                         ((cv = (ConstValue*)ie)->canGetExactNumericValue()) &&
+                         (cv->getType()->getScale() == 0))
+                       {
+                         Int64 val = cv->getExactNumericValue();
+                         ie = new (PARSERHEAP()) SelIndex(val);
+                       }
+                     else if (ie->getOperatorType() == ITM_REFERENCE)
+                       {
+                         ie = $1;
+                       }
+                     else
+                       {
+                         CheckModeSpecial4;
 
-		    $$ = $1;
-		  }
+                         ie = $1;
+                       }
 
+                     $$ = ie;
+                   }
 
 /* type item */
 dml_column_reference : qualified_name 
@@ -24997,11 +25245,11 @@ order_by_clause_non_empty : TOK_ORDER TOK_BY sort_spec_list
 
 /* item */
 order_by_clause : TOK_ORDER TOK_BY sort_spec_list
-{ $$ = $3; }
-     |  empty
-           {
-             $$ = NULL;
-           }
+                              { $$ = $3; }
+                          |  empty
+                             {
+                               $$ = NULL;
+                             }
 
 
 /* type relx */
@@ -27251,6 +27499,14 @@ create_table_start_tokens : TOK_CREATE TOK_TABLE
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
 		     $$ = 3;
 		   }
+                   | TOK_CREATE TOK_GLOBAL TOK_TEMPORARY TOK_TABLE 
+                   {
+                     CheckModeSpecial4;
+ 
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+		     $$ = 3;
+		   }
                    | TOK_CREATE ghost TOK_TABLE 
                    {
                      ParNameCTLocListPtr = new (PARSERHEAP())
@@ -27370,17 +27626,64 @@ table_elements : table_element
                                 }
 
 /* type pElemDDL */
-table_element : column_definition
+table_element : set_in_column_defn column_definition reset_in_column_defn
+                        {
+                          $$ = $2;
+                        }
                       | table_constraint_definition
+
+set_in_column_defn : 
+                  {
+                    in_col_defn = TRUE; 
+                    $$=1;
+                  }
+reset_in_column_defn : 
+                  {
+                    in_col_defn = FALSE;
+                    $$  = 0;
+                  }
 
 /* type pElemDDL */
 column_definition : column_name data_type optional_col_def_default_clause
                                 optional_column_attributes
                                 {
+                                  NAType * type = $2;
+
+                                  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) 
+                                    {
+                                      // change DATE to TIMESTAMP(0)
+                                      if ((type->getTypeQualifier() == NA_DATETIME_TYPE) &&
+                                          (type->getPrecision() == SQLDTCODE_DATE))
+                                        {
+                                          type = new (PARSERHEAP()) SQLTimestamp(TRUE, 0, PARSERHEAP());
+                                        }
+
+                                      // change FLOAT(p) to NUMERIC(p)
+                                      else if ((type->getFSDatatype() == REC_FLOAT64) &&
+                                               (((SQLDoublePrecision*)type)->fromFloat()))
+                                        {
+                                          SQLDoublePrecision* f = (SQLDoublePrecision*) type;
+                                          Lng32 numPrec = f->origPrecision();
+                                          if (numPrec == 0)
+                                            numPrec = 18;
+
+                                          if (numPrec > MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION)
+                                            type = new (PARSERHEAP()) 
+                                              SQLBigNum(numPrec, 0, TRUE, TRUE, TRUE, NULL);
+                                          else
+                                            {
+                                              const Int16 DisAmbiguate = 0; // added for 64bit project
+
+                                              type = new (PARSERHEAP()) 
+                                                SQLNumeric(TRUE, numPrec, 0, DisAmbiguate);
+                                            }
+                                        }
+                                    }
+
                                   $$ = new (PARSERHEAP())
 				    ElemDDLColDef(
 						  *$1 /*column_name*/,
-						  $2 /*data_type*/,
+						  type /*data_type*/,
 						  $3 /*optional_col_def_default_clause*/,
 						  $4 /*optional_column_attributes*/);
                                   delete $1 /*column_name*/;
@@ -27590,6 +27893,13 @@ constraint_name_definition : TOK_CONSTRAINT constraint_name
 /* type pElemDDLConstraint */
 column_constraint :  TOK_NOT TOK_NULL
                                 {
+			          NonISO88591LiteralEncountered = FALSE;
+                                  $$ = new (PARSERHEAP()) ElemDDLConstraintNotNull(TRUE, PARSERHEAP());
+                                }
+                            |  TOK_NOT TOK_NULL TOK_ENABLE
+                                {
+                                  CheckModeSpecial4;
+                                  
 			          NonISO88591LiteralEncountered = FALSE;
                                   $$ = new (PARSERHEAP()) ElemDDLConstraintNotNull(TRUE, PARSERHEAP());
                                 }
@@ -28750,11 +29060,17 @@ file_attribute_owner_clause : TOK_BY authorization_identifier
 /* type pElemDDL */
 file_attribute_row_format_clause : TOK_ALIGNED TOK_FORMAT
                                 {
+                                  yyerror("");
+                                  YYERROR;
+ 
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::eALIGNED);
                                 }
 				| TOK_PACKED TOK_FORMAT
 				{
+                                  yyerror("");
+                                  YYERROR;
+                                  
                                   $$ = new (PARSERHEAP()) ElemDDLFileAttrRowFormat
 				    (ElemDDLFileAttrRowFormat::ePACKED);
 				}
@@ -34833,8 +35149,8 @@ nonreserved_word :      TOK_ABORT
                       | TOK_AUTOCOMMIT
                       | TOK_AUDITCOMPRESS
                       | TOK_AUTHENTICATION
-					  |	TOK_AVERAGE_STREAM_WAIT
-					  | TOK_BACKUP
+		      | TOK_AVERAGE_STREAM_WAIT
+		      | TOK_BACKUP
 	        //          | TOK_BIGINT      //->nonreserved_datatype         
                       | TOK_BLOCKSIZE
                       | TOK_BT
@@ -35003,6 +35319,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_HORIZONTAL
                       | TOK_HIGH_VALUE
 		      | TOK_HOURS
+                        //                      | TOK_KEY
                       | TOK_SHOW
                       | TOK_SHOWSTATS
 		      | TOK_SHOWTRANSACTION
@@ -35044,6 +35361,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_LABEL_DROP
 		      | TOK_LABEL_ALTER
                       | TOK_LABEL_PURGEDATA
+                      | TOK_LANGUAGE
 	              | TOK_LAST_FSCODE
 		      | TOK_LAST_SYSKEY
                       | TOK_LASTSYSKEY
@@ -35146,6 +35464,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_PARSERFLAGS
                       | TOK_ENVVAR
                       | TOK_ENVVARS
+                        //                      | TOK_PARTIAL
                       | TOK_PARTITION
                       | TOK_PARTITIONING
                       | TOK_PARTITIONS
@@ -35307,6 +35626,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_USA				
 		      | TOK_USE				// MV REFRESH
                       | TOK_USERS
+                      | TOK_VALUE
                       | TOK_VARIABLE_DATA
                       | TOK_VARIABLE_POINTER
                       | TOK_VOLATILE			
@@ -35419,6 +35739,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_FIRSTDAYOFYEAR
                       | TOK_FLOOR
                       | TOK_FN
+                      | TOK_GREATEST
                       | TOK_HASHPARTFUNC
                       | TOK_HASH2PARTFUNC
                       | TOK_HIVEMD
@@ -35429,6 +35750,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_LASTNOTNULL
                       | TOK_LAST_DAY
                       | TOK_LCASE
+                      | TOK_LEAST
                       | TOK_LENGTH
                       | TOK_LOCATE
                       | TOK_LOG
@@ -35454,6 +35776,8 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_OSIM_CAPTURE
                       | TOK_OS_USERID
                       | TOK_PI
+                      | TOK_PIVOT
+                      | TOK_PIVOT_GROUP
                       | TOK_POWER
                       | TOK_QUARTER
                       | TOK_QUERYID_EXTRACT
@@ -35469,6 +35793,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_RMAX
                       | TOK_RMIN
                       | TOK_ROUND
+                      | TOK_ROWNUM
                       | TOK_ROW_NUMBER
                       | TOK_RPAD
                       | TOK_RRANK 
@@ -35494,6 +35819,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_TO_CHAR
                       | TOK_TO_DATE
                       | TOK_TO_NUMBER
+                      | TOK_TO_TIMESTAMP
                       | TOK_TRUNC
                       | TOK_TRUNCATE
                       | TOK_TYPECAST
@@ -35504,6 +35830,8 @@ nonreserved_func_word:  TOK_ABS
 		      | TOK_USERNAMEINTTOEXT
                       | TOK_VARIANCE
                       | TOK_WEEK
+                      | TOK_XMLAGG
+                      | TOK_XMLELEMENT
                       | TOK_ZEROIFNULL
 
                       | TOK_PERFORM
@@ -35531,7 +35859,6 @@ nonreserved_func_word:  TOK_ABS
 		      | TOK_FALLBACK
 		      | TOK_PROTECTION
 		      | TOK_FREESPACE
-		      | TOK_DUAL
 		      | TOK_JOURNAL
 		      | TOK_MULTISET
 		      | TOK_CASESPECIFIC

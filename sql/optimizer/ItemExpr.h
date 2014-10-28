@@ -1117,6 +1117,10 @@ public:
   // and no noncacheable nodes
   virtual NABoolean hasNoLiterals(CacheWA& cwa);
 
+  // return TRUE if this node can be used in a group by or order by expr.
+  // returns FALSE otherwise. Optionally sets error in diags area.
+  virtual NABoolean canBeUsedInGBorOB(NABoolean setErr);
+
   // Defined only for HV's and Dynamic parameters
   virtual ComColumnDirection getParamMode () const;
   virtual Int32 getOrdinalPosition () const;
@@ -1137,6 +1141,10 @@ public:
   NABoolean inGroupByOrdinal()   { return (flags_ & IN_GROUPBY_ORDINAL) != 0; }
   void setInGroupByOrdinal(NABoolean v)
   { (v ? flags_ |= IN_GROUPBY_ORDINAL : flags_ &= ~IN_GROUPBY_ORDINAL); }
+
+  NABoolean inOrderByOrdinal()   { return (flags_ & IN_ORDERBY_ORDINAL) != 0; }
+  void setInOrderByOrdinal(NABoolean v)
+  { (v ? flags_ |= IN_ORDERBY_ORDINAL : flags_ &= ~IN_ORDERBY_ORDINAL); }
 
   NABoolean isSelectivitySetUsingHint()   { return (flags_ & SELECTIVITY_SET_USING_HINT) != 0; }
   void setSelectivitySetUsingHint(NABoolean v = TRUE)
@@ -1209,7 +1217,11 @@ private:
     // (see OptRangeSpec::getRangeItemExpr()). This flag is consulted to avoid
     // repeating the rangespec analysis process when the expression is in more
     // than one node.
-    IS_RANGESPEC_ITEM_EXPR = 0x0010
+    IS_RANGESPEC_ITEM_EXPR = 0x0010,
+
+    // if set, then subtree rooted below this ItemExpr has been referenced
+    // as an order by ordinal.
+    IN_ORDERBY_ORDINAL = 0x0020
   };
 
   // ---------------------------------------------------------------------

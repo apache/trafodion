@@ -1334,10 +1334,13 @@ public:
   // Constructor functions
   // ---------------------------------------------------------------------
    SQLDoublePrecision (NABoolean allowSQLnull = TRUE,
-			     CollHeap * heap =0,
-			     Lng32 precision = SQL_DOUBLE_PRECISION)
+                       CollHeap * heap =0,
+                       Lng32 precision = SQL_DOUBLE_PRECISION,
+                       NABoolean fromFloat = FALSE)
   : SQLFloat(allowSQLnull, SQL_DOUBLE_PRECISION_SIZE, 
-	     precision, LiteralDoublePrecision,heap)
+	     precision, LiteralDoublePrecision,heap),
+    fromFloat_(fromFloat),
+    origPrecision_(precision)
   {}
 
   // sqlparser.y calls the above constructor with zero precision. This can
@@ -1353,7 +1356,7 @@ public:
   // ---------------------------------------------------------------------
   virtual NAType *newCopy(CollHeap* h=0) const
   {
-    return new(h) SQLDoublePrecision(supportsSQLnull(),h,getPrecision());
+    return new(h) SQLDoublePrecision(supportsSQLnull(),h,getPrecision(), fromFloat());
   }
 
   // ---------------------------------------------------------------------
@@ -1367,8 +1370,13 @@ public:
     return FALSE;
   } // operator==()
 
+  const NABoolean fromFloat() const { return fromFloat_;}
+  const Lng32 origPrecision() const { return origPrecision_;}
 private:
-  
+  // if this type was created through the use of FLOAT keyword and not
+  // DOUBLE or DOUBLE PRECISION.
+  NABoolean fromFloat_;
+  Lng32 origPrecision_;
 }; // class SQLDoublePrecision
 
 

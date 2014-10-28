@@ -34,6 +34,9 @@
 #include "exp_function.h"
 #include "jni.h"
 
+// forward declare
+Int64 generateUniqueValueFast ();
+
 Int64 getTransactionIDFromContext()
 {
   ExTransaction *ta = GetCliGlobals()->currContext()->getTransaction();
@@ -946,8 +949,18 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
     return 0;
 }
 
-
 Lng32 ExHbaseAccessTcb::createSQRowDirect()
+{
+  short retcode = 0;
+     
+  if (hbaseAccessTdb().alignedFormat())
+    retcode = createSQRowFromAlignedFormat();
+  else
+    retcode = createSQRowFromHbaseFormat();
+   return retcode;
+}
+
+Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat()
 {
   // no columns are being fetched from hbase, do not create a row.
   if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
@@ -1102,6 +1115,151 @@ Lng32 ExHbaseAccessTcb::createSQRowDirect()
     }
 
   return 0;
+}
+
+Lng32 ExHbaseAccessTcb::createSQRowFromAlignedFormat()
+{
+  // TBD: need to be fixed by following the same format as create...FromHbaseFormat
+  return -HBASE_CREATE_ROW_ERROR;
+
+#ifdef __ignore
+  // no columns are being fetched from hbase, do not create a row.
+  if (hbaseAccessTdb().listOfFetchedColNames()->numEntries() == 0)
+    return 0;
+  
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  
+  ExpTupleDesc * convertTuppTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (hbaseAccessTdb().convertTuppIndex_);
+  
+  hbaseAccessTdb().listOfFetchedColNames()->position();
+  Lng32 idx = -1;
+  
+  Int32 kvLength, valueLength, valueOffset, qualLength, qualOffset;
+  Int32 familyLength, familyOffset;
+  Int64 timestamp = 0;
+  Int64 latestTimestamp = 0;
+
+  char *kvBuf = (char *) rowResult;
+
+  Int32 numCols = *(Int32 *)kvBuf;
+  kvBuf += sizeof(numCols);
+  if (numCols == 0)
+    return 0;
+
+  Int32 rowIDLen = *(Int32 *)kvBuf;
+  kvBuf += sizeof(rowIDLen);
+  kvBuf += rowIDLen;
+
+  Int32 *temp;
+  char *value;
+  char *buffer;
+  char *colName;
+  char *family;
+  char inlineColName[INLINE_COLNAME_LEN+1];
+  char *fullColName;
+  char *colVal; 
+  Lng32 colValLen;
+  Lng32  colNameLen;
+  Int32 allocatedLength = 0;
+
+  // sometimes updated rows return 2 versions.
+  // see comments in method createSQRowFromHbaseFormat. 
+  if (numCols > 2)
+    {
+      // error
+      return -HBASE_CREATE_ROW_ERROR;
+    }
+
+  for (Lng32 i = 0; i < numCols; i++)
+    {
+      temp = (Int32 *)kvBuf;
+      kvLength = *temp++;
+      valueLength = *temp++;
+      valueOffset = *temp++;
+      qualLength = *temp++;
+      qualOffset = *temp++;
+      familyLength = *temp++;
+      familyOffset = *temp++;
+      timestamp = *(Int64 *)temp;
+      temp += 2;
+      buffer = (char *)temp;
+      value = buffer + valueOffset; 
+      
+      colName = (char*)buffer + qualOffset;
+      family = (char *)buffer + familyOffset;
+      colNameLen = familyLength + qualLength + 1; // 1 for ':'
+      
+      if (allocatedLength == 0 && colNameLen < INLINE_COLNAME_LEN)
+        fullColName = inlineColName;
+      else
+        {
+          if (colNameLen > allocatedLength)
+            {
+              if (allocatedLength > 0)
+                {
+                  NADELETEBASIC(fullColName, getHeap());
+                }
+              fullColName = new (getHeap()) char[colNameLen + 1];
+              allocatedLength = colNameLen;
+            }
+        }
+      strncpy(fullColName, family, familyLength);
+      fullColName[familyLength] = '\0';
+      strcat(fullColName, ":");
+      strncat(fullColName, colName, qualLength); 
+      fullColName[colNameLen] = '\0';
+      
+      colName = fullColName;
+      
+      colVal = (char*)value;
+      colValLen = valueLength;
+      
+      if (! getColPos(colName, colNameLen, idx)) // not found
+        {
+          if (allocatedLength  > 0)
+            NADELETEBASIC(fullColName, getHeap());
+          // error
+          return -HBASE_CREATE_ROW_ERROR;
+        }
+      
+      if (timestamp > latestTimestamp)
+        latestTimestamp = timestamp;
+
+      if (timestamp == latestTimestamp) 
+        {
+          char * srcPtr = asciiRow_;
+          str_cpy_all(srcPtr, colVal, colValLen);
+        }
+
+      kvBuf = (char *)temp + kvLength;
+    }
+  
+    if (allocatedLength > 0)
+    {
+      NADELETEBASIC(fullColName, getHeap());
+    }
+    
+    workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
+      .setDataPointer(convertRow_);
+    workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
+      .setDataPointer(asciiRow_);
+  
+  if (convertExpr())
+    {
+      UInt32 datalen = colValLen;
+      ex_expr::exp_return_type evalRetCode =
+	convertExpr()->eval(pentry_down->getAtp(), workAtp_,
+                            NULL, datalen);
+      if (evalRetCode == ex_expr::EXPR_ERROR)
+	{
+	  return -1;
+	}
+    }
+
+  return 0;
+#endif
 }
 
 // returns:
@@ -1623,6 +1781,32 @@ Lng32 ExHbaseAccessTcb::setupSubsetKeysAndCols()
   return 0;
 }
 
+Lng32 ExHbaseAccessTcb::genAndAssignSyskey(UInt16 tuppIndex, char * tuppRow)
+{
+  if (hbaseAccessTdb().addSyskeyTS())
+    {
+      char * syskeyPtr;
+      if (hbaseAccessTdb().alignedFormat())
+        {
+          // syskey is the first attribute
+          ExpTupleDesc * rowTD =
+            hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+            (tuppIndex);
+          
+          Attributes * attr = rowTD->getAttr(0);
+	  syskeyPtr = &tuppRow[attr->getOffset()];
+        }
+      else
+        {
+          syskeyPtr = tuppRow;
+        }
+
+      *(Int64*)syskeyPtr = generateUniqueValueFast();
+    }
+  
+  return 0;
+}
+
 void ExHbaseAccessTcb::allocateDirectBufferForJNI(UInt32 rowLen)
 {
 
@@ -1810,7 +1994,10 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
                   NABoolean isUpdate,
                   std::vector<UInt32> * posVec )
 {
-  
+  if (hbaseAccessTdb().alignedFormat())
+    return createDirectAlignedRowBuffer(tuppIndex, tuppRow, listOfColNames,
+                                        isUpdate, posVec);
+
   ExpTupleDesc * rowTD =
     hbaseAccessTdb().workCriDesc_->getTupleDescriptor
     (tuppIndex);
@@ -1899,6 +2086,52 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
       listOfColNames->advance();
     }	// for
   *numColsPtr = bswap_16(numCols);
+  return 0;
+}
+
+short ExHbaseAccessTcb::createDirectAlignedRowBuffer( UInt16 tuppIndex, 
+                                                      char * tuppRow,
+                                                      Queue * listOfColNames, 
+                                                      NABoolean isUpdate,
+                                                      std::vector<UInt32> * posVec )
+{
+  
+  ExpTupleDesc * rowTD =
+    hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+    (tuppIndex);
+  
+  short colNameLen;
+  char * colName;
+  short nullVal = 0;
+  short nullValLen = 0;
+  short colValLen;
+  char *colVal;
+  char *str;
+  short * numColsPtr;
+
+  //  allocateDirectRowBufferForJNI(rowTD->numAttrs());
+  allocateDirectRowBufferForJNI(1);
+
+  BYTE *rowCurPtr = (BYTE *)row_.val;
+  numColsPtr = (short *)rowCurPtr;
+  row_.len += sizeof(short);
+  rowCurPtr += sizeof(short);
+  listOfColNames->position();
+  
+  colNameLen = *(short*)listOfColNames->getCurr();
+  colName = &((char*)listOfColNames->getCurr())[sizeof(short)];
+  colVal = tuppRow; 
+  
+  colValLen =  insertRowlen_;
+  Int32 bytesCopied = 
+    copyColToDirectBuffer(rowCurPtr, colName, colNameLen, 
+                          FALSE, 0,
+                          colVal, colValLen);
+  rowCurPtr += bytesCopied;
+  row_.len += bytesCopied;
+  
+  *numColsPtr = bswap_16(1);
+
   return 0;
 }
 

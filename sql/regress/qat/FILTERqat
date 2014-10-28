@@ -26,7 +26,7 @@ if [ "$fil" = "" ]; then
   exit 1
 fi
 
-SYSKEY='[0-9]\{16,19\}'
+SYSKEY='[0-9]\{15,19\}'
 
 sed "
 s/$SYSKEY/@syskey@/g

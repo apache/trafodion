@@ -3656,6 +3656,24 @@ public:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC  ExFunctionRowNum : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionRowNum(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionRowNum();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+  
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  
+ private:
+  char fillers_[64];
+  // ---------------------------------------------------------------------
+};
+
 class SQLEXP_LIB_FUNC  ExFunctionHbaseColumnLookup : public ex_function_clause {
 public:
   NA_EIDPROC ExFunctionHbaseColumnLookup(OperatorTypeEnum oper_type,

@@ -3447,32 +3447,32 @@ Hello
 >>-- negative test on cast VAR/NCAR to smallint
 >>select cast(N'-1' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-1 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,ISO88591) Source Value:-1 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-32769' as SMALLINT) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-32769 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,6 BYTES,ISO88591) Source Value:-32769 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'50000' as SMALLINT) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:50000 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591) Source Value:50000 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-32769' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-32769 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,6 BYTES,ISO88591) Source Value:-32769 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'70000' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'70000' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>
@@ -3513,7 +3513,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast(N'-1' as bit precision integer(15) UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-1 to Target Type:BIT PRECISION INTEGER(REC_BPINT_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,ISO88591) Source Value:-1 to Target Type:BIT PRECISION INTEGER(REC_BPINT_UNSIGNED).
 
 --- 0 row(s) selected.
 >>
@@ -3558,22 +3558,22 @@ Hello
 >>-- negative test on cast VAR/NCAR to integer
 >>select cast(N'4294967296' as integer unsigned) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-1' as integer unsigned) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-1 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,ISO88591) Source Value:-1 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'2147483648' as integer) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-2147483649' as integer) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,11 BYTES,ISO88591) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>
@@ -3591,7 +3591,7 @@ Hello
 >>-- test on cast VAR/NCAR to DEC 
 >>select cast(N'42949672960000' as DEC) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,14 BYTES,ISO88591) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
 
 --- 0 row(s) selected.
 >>select cast(N'12345.56' as DEC (7,2) unsigned) from t022u;
@@ -3727,12 +3727,12 @@ Hello
 >>-- negative test on cast smallint to VAR/NCAR 
 >>select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(1)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:65535 to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:65535 to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(1)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-5535 to Target Type:VARCHAR(REC_BYTE_V_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-5535 to Target Type:VARCHAR(REC_BYTE_V_ASCII,1 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>
@@ -3777,29 +3777,29 @@ Hello
 >>-- negative test on cast integer to VAR/NCAR
 >>select cast(cast(N'4294967296' as integer unsigned) as nchar(1)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-10' as integer) as nchar(1)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'2147483648' as integer) as nchar varying(1)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-2147483649' as integer) as nchar(1)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,11 BYTES,ISO88591) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>
 >>-- test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'42949672960000' as DEC) as nchar(10)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,14 BYTES,ISO88591) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(20)) from t022u;
@@ -3815,7 +3815,7 @@ Hello
 >>-- negative test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:12345.56 to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:12345.56 to Target Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>
@@ -3891,7 +3891,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2012-03-02 17:36:16.911565
+10:13:14.0000  10:13:14.0000  2014-08-18 23:03:27.240987
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -4206,15 +4206,15 @@ C1
 >>
 >>-- PCode bug fix validation
 >>-- PCode constant and jump table setup for ALM CR5679 (64-bit)
->>create table t022bug (t1 date not null
-+> , f2 real not null
-+> , z char (8)
-+> , vc1 varchar(15)
-+> , primary key (t1)) no partition;
+>>create table t022bug (t1  date  not null
++>                    , f2  real not null
++>                    , z   char (8)
++>                    , vc1 varchar(15)
++>                    , primary key (t1)) no partition;
 
 --- SQL operation complete.
 >>create view vt022bug as select * from t022bug where trim(z) < 'Row05' or
-+> vc1 in ('~!#$%^\&', '~', '~');
++>                       vc1 in ('~!#$%^\&', '~', '~');
 
 --- SQL operation complete.
 >>insert into t022bug values ( date '1959-12-31', 9, null, '~!#$%^\&');
@@ -4223,10 +4223,10 @@ C1
 >>
 >>-- Expect 1 row selected
 >>select f2 from vt022bug where f2 > 8.2399999E-1 and f2 < 9.1234567E01
-+> group by vc1, f2 having vc1 in ('~', '~!#$%^\&');
++>       group by vc1, f2 having vc1 in ('~', '~!#$%^\&');
 
-F2
-----------
+F2             
+---------------
 
  9.0000000E+000
 
@@ -7768,32 +7768,32 @@ Hello
 >>-- negative test on cast VAR/NCAR to smallint
 >>select cast(N'-1' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-1 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,ISO88591) Source Value:-1 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-32769' as SMALLINT) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-32769 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,6 BYTES,ISO88591) Source Value:-32769 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'50000' as SMALLINT) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:50000 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591) Source Value:50000 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-32769' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-32769 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,6 BYTES,ISO88591) Source Value:-32769 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'70000' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'70000' as SMALLINT UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591) Source Value:70000 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>
@@ -7834,7 +7834,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast(N'-1' as bit precision integer(15) UNSIGNED) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-1 to Target Type:BIT PRECISION INTEGER(REC_BPINT_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,ISO88591) Source Value:-1 to Target Type:BIT PRECISION INTEGER(REC_BPINT_UNSIGNED).
 
 --- 0 row(s) selected.
 >>
@@ -7879,22 +7879,22 @@ Hello
 >>-- negative test on cast VAR/NCAR to integer
 >>select cast(N'4294967296' as integer unsigned) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-1' as integer unsigned) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-1 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,ISO88591) Source Value:-1 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'2147483648' as integer) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(N'-2147483649' as integer) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,11 BYTES,ISO88591) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>
@@ -7912,7 +7912,7 @@ Hello
 >>-- test on cast VAR/NCAR to DEC 
 >>select cast(N'42949672960000' as DEC) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,14 BYTES,ISO88591) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
 
 --- 0 row(s) selected.
 >>select cast(N'12345.56' as DEC (7,2) unsigned) from t022u;
@@ -8048,12 +8048,12 @@ Hello
 >>-- negative test on cast smallint to VAR/NCAR 
 >>select cast(cast(N'65535' as SMALLINT UNSIGNED) as NCHAR(1)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:65535 to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:65535 to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-5535' as SMALLINT SIGNED) as NCHAR VARYING(1)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-5535 to Target Type:VARCHAR(REC_BYTE_V_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-5535 to Target Type:VARCHAR(REC_BYTE_V_ASCII,1 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>
@@ -8098,29 +8098,29 @@ Hello
 >>-- negative test on cast integer to VAR/NCAR
 >>select cast(cast(N'4294967296' as integer unsigned) as nchar(1)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:4294967296 to Target Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-10' as integer) as nchar(1)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:CHAR(REC_BYTE_F_ASCII,1 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'2147483648' as integer) as nchar varying(1)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:2147483648 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'-2147483649' as integer) as nchar(1)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,11 BYTES,ISO88591) Source Value:-2147483649 to Target Type:INTEGER SIGNED(REC_BIN32_SIGNED).
 
 --- 0 row(s) selected.
 >>
 >>-- test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'42949672960000' as DEC) as nchar(10)) from t022u;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Intermediate conversion of Source Type:CHAR(REC_BYTE_F_ASCII,14 BYTES,ISO88591) Source Value:42949672960000 to Target Type:DECIMAL SIGNED(REC_DECIMAL_LSE).
 
 --- 0 row(s) selected.
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(20)) from t022u;
@@ -8136,7 +8136,7 @@ Hello
 >>-- negative test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from t022u;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:12345.56 to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:12345.56 to Target Type:CHAR(REC_BYTE_F_ASCII,2 BYTES,UTF8).
 
 --- 0 row(s) selected.
 >>
@@ -8212,7 +8212,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2012-03-02 17:36:44.911386
+10:13:14.0000  10:13:14.0000  2014-08-18 23:05:21.330991
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -8527,15 +8527,15 @@ C1
 >>
 >>-- PCode bug fix validation
 >>-- PCode constant and jump table setup for ALM CR5679 (64-bit)
->>create table t022bug (t1 date not null
-+> , f2 real not null
-+> , z char (8)
-+> , vc1 varchar(15)
-+> , primary key (t1)) no partition;
+>>create table t022bug (t1  date  not null
++>                    , f2  real not null
++>                    , z   char (8)
++>                    , vc1 varchar(15)
++>                    , primary key (t1)) no partition;
 
 --- SQL operation complete.
 >>create view vt022bug as select * from t022bug where trim(z) < 'Row05' or
-+> vc1 in ('~!#$%^\&', '~', '~');
++>                       vc1 in ('~!#$%^\&', '~', '~');
 
 --- SQL operation complete.
 >>insert into t022bug values ( date '1959-12-31', 9, null, '~!#$%^\&');
@@ -8544,10 +8544,10 @@ C1
 >>
 >>-- Expect 1 row selected
 >>select f2 from vt022bug where f2 > 8.2399999E-1 and f2 < 9.1234567E01
-+> group by vc1, f2 having vc1 in ('~', '~!#$%^\&');
++>       group by vc1, f2 having vc1 in ('~', '~!#$%^\&');
 
-F2
-----------
+F2             
+---------------
 
  9.0000000E+000
 

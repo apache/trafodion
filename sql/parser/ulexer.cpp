@@ -2200,6 +2200,14 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
               doBeforeAction();
               return setStringval(HOSTVAR, DBGMSG("Host variable %s\n"), lvalp);
             }
+          else if ((SqlParser_CurrentParser->modeSpecial4()) &&
+                   (U_isdigit(cc)))
+            {
+              // hostvar specified as :<num>
+              do { advance(); } while (U_isdigit(peekChar()));
+              doBeforeAction();
+              return setStringval(HOSTVAR, DBGMSG("Host variable %s\n"), lvalp);
+            }
           else
             {
               /* illegal character seen, not inside a

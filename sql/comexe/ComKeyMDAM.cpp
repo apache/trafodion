@@ -291,17 +291,17 @@ ex_expr::exp_return_type MdamColumnGen::fixup(Lng32 base, unsigned short mode,
   ex_expr::exp_return_type rc;
   ex_expr::exp_return_type rc1;
 
-  rc = loExpr_->fixup(base,mode,tcb,space,heap); 
+  rc = loExpr_->fixup(base,mode,tcb,space,heap,FALSE,NULL); 
 
-  rc1 = hiExpr_->fixup(base,mode,tcb,space,heap);
+  rc1 = hiExpr_->fixup(base,mode,tcb,space,heap,FALSE,NULL);
   if (rc == ex_expr::EXPR_OK)
     rc = rc1;
 
-  rc1 = nonNullLoExpr_->fixup(base,mode,tcb,space,heap);
+  rc1 = nonNullLoExpr_->fixup(base,mode,tcb,space,heap,FALSE,NULL);
   if (rc == ex_expr::EXPR_OK)
     rc = rc1;
 
-  rc1 = nonNullHiExpr_->fixup(base,mode,tcb,space,heap);
+  rc1 = nonNullHiExpr_->fixup(base,mode,tcb,space,heap,FALSE,NULL);
   if (rc == ex_expr::EXPR_OK)
     rc = rc1;
 
@@ -627,10 +627,10 @@ ex_expr::exp_return_type MdamPred::fixup(Lng32 base, unsigned short mode,
   ex_expr::exp_return_type rc = ex_expr::EXPR_OK;
 
   if (value_)
-    rc = value_->fixup(base,mode,tcb,space,heap);
+    rc = value_->fixup(base,mode,tcb,space,heap,FALSE,NULL);
 
   if (rc == ex_expr::EXPR_OK && value2_)
-    rc = value2_->fixup(base,mode,tcb,space,heap);
+    rc = value2_->fixup(base,mode,tcb,space,heap,FALSE,NULL);
 
   return rc;
 }

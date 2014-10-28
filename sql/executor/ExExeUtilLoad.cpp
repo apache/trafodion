@@ -2758,21 +2758,21 @@ ExExeUtilUserLoadFastTcb::ExExeUtilUserLoadFastTcb(
   // fixup expressions
   (void) ulTdb().rwrsInputSizeExpr()->fixup
     (0, getExpressionMode(), this, 
-     glob->getSpace(), glob->getDefaultHeap());
+     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   (void) ulTdb().rwrsMaxInputRowlenExpr()->fixup
     (0, getExpressionMode(), this, 
-     glob->getSpace(), glob->getDefaultHeap());
+     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   (void) ulTdb().rwrsBufferAddrExpr()->fixup
     (0, getExpressionMode(), this, 
-     glob->getSpace(), glob->getDefaultHeap());
+     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (ulTdb().excpRowExpr_)
     {
       (void) ulTdb().excpRowExpr_->fixup
 	(0, getExpressionMode(), this, 
-	 glob->getSpace(), glob->getDefaultHeap());
+	 glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
       pool_->get_free_tuple(excpRowTupp_, exe_util_tdb.excpRowLen_); 
       

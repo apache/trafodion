@@ -87,15 +87,15 @@ ExIarTcb::ExIarTcb (const ExIarTdb& iarTdb,
 
    // Fixup the column extraction expression, if any.
    if (iarTdb.getExtractExpr())
-      iarTdb.getExtractExpr()->fixup(0, getExpressionMode(), this, space, heap);
+      iarTdb.getExtractExpr()->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 
    // Fixup the scan expression, if any.
    if (iarTdb.getScanExpr())
-      iarTdb.getScanExpr()->fixup(0, getExpressionMode(), this, space, heap);
+      iarTdb.getScanExpr()->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 
    // Fixup the projection expression.
    if (iarTdb.getProjExpr())
-      iarTdb.getProjExpr()->fixup(0, getExpressionMode(), this, space, heap);
+      iarTdb.getProjExpr()->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 
    // Allocate the work ATP.
    workAtp_ = allocateAtp(iarTdb.workCriDesc_, space);

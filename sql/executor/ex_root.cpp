@@ -421,7 +421,7 @@ ex_root_tcb::ex_root_tcb(
   if (root_tdb.inputExpr_)
     {
       (root_tdb.inputExpr_)->fixup(0, getExpressionMode(), this,
-				   glob->getSpace(), glob->getDefaultHeap());
+				   glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
     }
 
   if (root_tdb.outputExpr_)
@@ -434,7 +434,13 @@ ex_root_tcb::ex_root_tcb(
   if (root_tdb.pkeyExpr_)
     {
       (root_tdb.pkeyExpr_)->fixup(0, getExpressionMode(), this, 
-				  glob->getSpace(), glob->getDefaultHeap());
+				  glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
+    }
+
+ if (root_tdb.predExpr_)
+    {
+      (root_tdb.predExpr_)->fixup(0, getExpressionMode(), this, 
+				  glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
     }
 
   workAtp_ = allocateAtp(root_tdb.criDesc_, glob->getSpace());
@@ -773,6 +779,9 @@ Int32 ex_root_tcb::execute(CliGlobals *cliGlobals,
 #endif
   
   ex_queue_entry *entry = qchild.down->getTailEntry();
+
+  // Initialize rownum.
+  getGlobals()->rowNum() = 1;
 
   if (root_tdb().isEmbeddedUpdateOrDelete())
     {
@@ -1345,6 +1354,23 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
               {
               case ex_queue::Q_OK_MMORE:
                 {
+                  if (predExpr())
+                    {
+                      ex_expr::exp_return_type exprRetCode =
+                        predExpr()->eval(centry->getAtp(), NULL) ;
+                          
+                      if (exprRetCode == ex_expr::EXPR_ERROR)
+                        {
+                          retcode = -1;
+                          break;
+                        }
+                      else if (exprRetCode == ex_expr::EXPR_FALSE)
+                        {
+                          dontReturn = TRUE;
+                          break;
+                        }
+                    }
+
 		  // Remember how many rows have been returned before a
 		  // Q_GET_DONE or Q_NO_DATA tuple is encountered.  Needed for
 		  // destructive cursors and dynamic rowset selects .
@@ -1732,6 +1758,11 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 	else if (doneWithRowsets) 
           {
             ipcEnv->deleteCompletedMessages(); // cleanup messages
+
+            // row is being returned now.
+            // Increment rownum.
+            getGlobals()->rowNum()++;
+
             return retcode;
           } 
 	}

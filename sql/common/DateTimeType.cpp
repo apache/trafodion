@@ -119,13 +119,44 @@ NAString DatetimeType::getSimpleTypeName() const
 //
 // ***********************************************************************
 
-NABoolean DatetimeType::isCompatible(const NAType& other) const
+NABoolean DatetimeType::isCompatible(const NAType& other, UInt32 * flags) const
 {
   // DATEs are compatible only with DATEs, TIMEs with TIMEs, TIMESTAMPS w/ TS.
   //
-  return NAType::isCompatible(other) &&
-    (getStartField() == ((DatetimeType&) other).getStartField()) &&
-    (getEndField() == ((DatetimeType&) other).getEndField());
+  if (NOT NAType::isCompatible(other, flags))
+    return FALSE;
+
+  if (getStartField() != ((DatetimeType&) other).getStartField())
+    return FALSE;
+
+  NABoolean modeSpecial4 = 
+    ((flags) && ((*flags & NAType::MODE_SPECIAL_4) != 0));
+  
+  const DatetimeType* datetime2 = (DatetimeType*) &other;
+
+  if (NOT modeSpecial4)
+    {
+      if (getEndField() == datetime2->getEndField())
+        return TRUE;
+      else
+        return FALSE;
+    }
+  else
+    {
+      // modespecial 4 
+      // DATE/DATE, TIME/TIME, DATE/TIMESTAMP(0), TIMESTAMP(0)/DATE,
+      // TIMESTAMP(*)/TIMESTAMP(*) are compatible.( '*' is 0-6 )
+      // Others are not.
+      if (getEndField() == datetime2->getEndField())
+        return TRUE;
+      else if ((getFractionPrecision() == 0) && 
+               (datetime2->getFractionPrecision() == 0))
+        return TRUE;
+      else
+        return FALSE;
+    }
+  
+  return FALSE;
 }
 
 #if defined( NA_LITTLE_ENDIAN )
@@ -571,20 +602,35 @@ const NAType* DatetimeType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
             (datetime1->getEndField()   != datetime2->getEndField()))
           return NULL;
 
+        NABoolean modeSpecial4 = 
+          ((flags) && ((*flags & NAType::MODE_SPECIAL_4) != 0));
+        
         NABoolean allowNulls = (((datetime1->supportsSQLnull()) ||
                                  (datetime2->supportsSQLnull())) ? TRUE : FALSE);
 
         UInt32 fractionPrecision = MAXOF(datetime1->getFractionPrecision(),
 					   datetime2->getFractionPrecision());
 
-        return new(h) SQLInterval(allowNulls, datetime1->getEndField(),
-				  12, datetime1->getEndField(),
-				  fractionPrecision,h);
+        if ((modeSpecial4) &&
+            (fractionPrecision == 0) &&
+            (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate) &&
+            (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate))
+          {
+            // this is DATE subtraction in modespecial4.
+            // Result is numeric.
+            return new(h) SQLInt(); 
+          }
+        else
+          {
+            return new(h) SQLInterval(allowNulls, datetime1->getEndField(),
+                                      12, datetime1->getEndField(),
+                                      fractionPrecision,h);
+          }
       }
     break;
 
   case SYNTH_RULE_UNION: {
-    if (! operand1.isCompatible(operand2))
+    if (! operand1.isCompatible(operand2, flags))
       return NULL;
     const DatetimeType& op1 = (DatetimeType&) operand1;
     const DatetimeType& op2 = (DatetimeType&) operand2;
@@ -1349,12 +1395,12 @@ const NAType*SQLMPDatetime::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 //
 // ***********************************************************************
 
-NABoolean SQLMPDatetime::isCompatible(const NAType& other) const
+NABoolean SQLMPDatetime::isCompatible(const NAType& other, UInt32 * flags) const
  {
   if (!this->isSupportedType() || !other.isSupportedType())
     return FALSE;
   else
-    return DatetimeType::isCompatible(other);
+    return DatetimeType::isCompatible(other, flags);
  }
 
 // ***********************************************************************

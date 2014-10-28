@@ -122,8 +122,10 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     Int32 srcLength,
                                     Int16 srcType,
                                     Int32 srcScale,
-                                    Int16 trgType,
-                                    UInt32 flags);
+                                    Int16 tgtType,
+                                    UInt32 flags,
+                                    Int32 tgtLength = -1,
+                                    Int32 tgtScale = -1);
                                                                 
 #endif /* EXP_ERROR_H */
 

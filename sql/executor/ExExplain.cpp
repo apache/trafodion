@@ -146,11 +146,11 @@ ExExplainTcb::ExExplainTcb(const ExExplainTdb &explainTdb, ex_globals *glob)
 
   if (getScanPred())
     (void) getScanPred()->fixup(0, getExpressionMode(), this,
-				space, heap);
+				space, heap, FALSE, glob);
 
   if (getParamsExpr())
     (void) getParamsExpr()->fixup(0, getExpressionMode(), this,
-				  space, heap);
+				  space, heap, FALSE, glob);
 
 }
 

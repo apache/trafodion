@@ -427,21 +427,21 @@ ExUdrTcb::ExUdrTcb(const ExUdrTdb &udrTdb,
   // Fixup expressions
   if (udrTdb.getInputExpression())
     udrTdb.getInputExpression()->fixup(0, getExpressionMode(), this,
-                                       globSpace, globHeap);
+                                       globSpace, globHeap, FALSE, glob);
   
   if (udrTdb.getOutputExpression())
     udrTdb.getOutputExpression()->fixup(0, getExpressionMode(), this,
-                                        globSpace, globHeap);
+                                        globSpace, globHeap, FALSE, glob);
  
   Int32 i;
   for (i=0; i<numChildren(); i++)
     {
       udrTdb.getChildInputExpr(i)->fixup(0,getExpressionMode(),this,
-				  globSpace, globHeap);
+				  globSpace, globHeap, FALSE, glob);
     }
   if (udrTdb.getPredicate())
     udrTdb.getPredicate()->fixup(0, getExpressionMode(), this,
-                                 globSpace, globHeap);
+                                 globSpace, globHeap, FALSE, glob);
   
   // Register subtasks with the scheduler
   registerSubtasks();

@@ -183,6 +183,8 @@ public:
   Lng32		   getAsLong	(Int32 attrEnum) const;
   ULng32	   getAsULong	(Int32 attrEnum) const;
 
+  NAString        getString(Int32 attrEnum) const;
+
   // get the number of configured ESPs per node.
   ULng32           getNumOfESPsPerNode() const;
 

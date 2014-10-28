@@ -127,13 +127,13 @@ ExHdfsScanTcb::ExHdfsScanTcb(
 
   // fixup expressions
   if (selectPred())
-    selectPred()->fixup(0, getExpressionMode(), this,  space, heap);
+    selectPred()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (moveExpr())
-    moveExpr()->fixup(0, getExpressionMode(), this,  space, heap);
+    moveExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (convertExpr())
-    convertExpr()->fixup(0, getExpressionMode(), this,  space, heap);
+    convertExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
   if (moveColsConvertExpr())
-    moveColsConvertExpr()->fixup(0, getExpressionMode(), this,  space, heap);
+    moveColsConvertExpr()->fixup(0, getExpressionMode(), this,  space, heap, FALSE, glob);
 
 
   // Register subtasks with the scheduler

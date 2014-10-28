@@ -229,14 +229,14 @@ public:
   }
   // Both types must be year-month intervals or both must be day-time intervals
   // (y-m interval can be just y, just m, or both y-m; see ANSI 4.5.2).
-  virtual NABoolean isCompatible(const NAType& other) const
+  virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const
   {
     const IntervalType& o = (IntervalType&)other;
     if (!isSupportedType() || !other.isSupportedType())
      return FALSE;
     else
     {
-     return NAType::isCompatible(other) &&
+      return NAType::isCompatible(other, flags) &&
        (getEndField() <= REC_DATE_MONTH) == (o.getEndField() <= REC_DATE_MONTH);
     }
   }

@@ -231,7 +231,7 @@ ex_send_bottom_tcb::ex_send_bottom_tcb(
   if (moveOutputValues())
     (void) moveOutputValues()->fixup(0, getExpressionMode(), this,
 				     glob->getSpace(),
-				     glob->getDefaultHeap());
+				     glob->getDefaultHeap(), FALSE, glob);
 
   nextToSend_ = qSplit_.down->getHeadIndex();
 

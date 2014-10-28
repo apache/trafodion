@@ -163,29 +163,6 @@ NAWcharBuf* csetToUnicode(const charBuf& input,
         
     output->setStrLen/*in_NAWchar_s*/(byteCount/BYTES_PER_NAWCHAR); // excluding the NULL terminator
 
-    if (outputBufferAllocatedByThisRoutine &&
-        output->getBufSize() > output->getStrLen() + 500) // allocated too much space
-    {
-      // Try to save space in the heap but still allocate 50 extra NAWchars so we do not need
-      // to resize the buffer if there is a need to append a few more characters later on.
-      // The additional 1 NAWchar is for the NULL terminator.
-
-      NAWcharBuf * outNAWcharBuf2 = new (heap) NAWcharBuf ( output->getStrLen() + 51 // in NAWchars
-                                                          , heap );
-      if (outNAWcharBuf2 != NULL) // successful allocation
-      {
-        // Copy data to the newly allocated, smaller buffer.
-        NAWstrncpy(outNAWcharBuf2->data(), output->data(), output->getStrLen());
-        outNAWcharBuf2->setStrLen/*in_NAWchar_s*/(output->getStrLen());
-        // Always append a UCS-2 NULL terminator but exclude it from the string length count.
-        outNAWcharBuf2->data()[outNAWcharBuf2->getStrLen()] = 0;
-
-        // Remove the old buffer and set up for the returned value and out parameter.
-        unicodeString = outNAWcharBuf2; // return via the out parameter NAWcharBuf*& unicodeString
-        NADELETE(output, NAWcharBuf, heap);
-        output = outNAWcharBuf2;
-      }
-    }
     return output;
 
 }

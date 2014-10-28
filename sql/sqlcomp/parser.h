@@ -207,11 +207,19 @@ ItemExpr *get_w_ItemExprTree(const NAWchar * str,
   CharInfo::CharSet charset_;
   CharInfo::CharSet initialInputCharSet_;
 
+  // if this is not set to UnknownCharSet, then it is used during col create if one
+  // is not explicitly specified.
+  CharInfo::CharSet defaultColCharset_;
+
+  CharInfo::CharSet defaultColCharset() { return defaultColCharset_;}
+
   void setmodeSpecial1(NABoolean v) { modeSpecial1_ = v; }
   NABoolean modeSpecial1() { return modeSpecial1_; }
   void setmodeSpecial2(NABoolean v) { modeSpecial2_ = v; }
   NABoolean modeSpecial2() { return modeSpecial2_; }
-  
+  void setmodeSpecial4(NABoolean v) { modeSpecial4_ = v; }
+  NABoolean modeSpecial4() { return modeSpecial4_; }
+ 
   void pushHasOlapFunctions(NABoolean v) { hasOlapFunctions_.insert( v ); }
   NABoolean topHasOlapFunctions() { return hasOlapFunctions_[hasOlapFunctions_.entries()-1]; }
   void setTopHasOlapFunctions( NABoolean v) { hasOlapFunctions_[hasOlapFunctions_.entries()-1] = v; }
@@ -270,6 +278,7 @@ private:
 
   NABoolean modeSpecial1_;
   NABoolean modeSpecial2_;
+  NABoolean modeSpecial4_;
 
   LIST(NABoolean )  hasOlapFunctions_;
   LIST(NABoolean )  hasTDFunctions_;

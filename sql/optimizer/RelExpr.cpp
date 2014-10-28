@@ -8255,6 +8255,7 @@ void Scan::removeIndexInfo()
 {
 	possibleIndexJoins_.clear();
 	indexOnlyIndexes_.clear();
+        indexJoinScans_.clear();
 	forcedIndexInfo_ = FALSE;
 }
 
@@ -8273,7 +8274,6 @@ const SET(IndexDesc *) & Scan::deriveIndexOnlyIndexDesc()
     return indexOnlyScans_;
 
 }
-
 
 void Scan::addIndexInfo()
 {
@@ -8706,6 +8706,11 @@ void Scan::addIndexInfo()
 			ixProp = new(CmpCommon::statementHeap())
 					      IndexProperty(idesc, mdamFlag, isGoodIndexJoin);
 		  ixi->usableIndexes_.insert(ixProp);
+                  // Also save index in indexJoinScan so that optimizer explores NJ, otherwise
+                  // optimizer doesn't explore NJ thinking it's keyless risky NJ.
+                  if (isHbaseTable() && 
+                      (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON))
+                    indexJoinScans_.insert(idesc);
 		} // ixi == NULL
 	    } // index delivers new values
 	} // not indexOnly access
@@ -10554,6 +10559,7 @@ RelRoot::RelRoot(RelExpr *input,
     partReqType_(ANY_PARTITIONING),
     partitionByTree_(NULL),
     isUniqueSGInsertType_(FALSE),
+    predExprTree_(NULL),
     flags_(0)
 {
   accessOptions().accessType() = ACCESS_TYPE_NOT_SPECIFIED_;
@@ -10625,6 +10631,7 @@ RelRoot::RelRoot(RelExpr *input,
     partReqType_(ANY_PARTITIONING),
     partitionByTree_(NULL),
     isUniqueSGInsertType_(FALSE),
+    predExprTree_(NULL),
     flags_(0)
 {
   accessOptions().accessType() = at;
@@ -10702,6 +10709,7 @@ RelRoot::RelRoot(const RelRoot & other)
     partitionByTree_(other.partitionByTree_),
     isUniqueSGInsertType_(other.isUniqueSGInsertType_),
     isCIFOn_(other.isCIFOn_),
+    predExprTree_(other.predExprTree_),
     flags_(other.flags_)
 {
   oltOptInfo() = ((RelRoot&)other).oltOptInfo();
@@ -10853,6 +10861,9 @@ RelExpr * RelRoot::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   if (outputVarTree_ != NULL)
     result->outputVarTree_ = outputVarTree_->copyTree(outHeap)->castToItemExpr();
 
+  if (predExprTree_ != NULL)
+    result->predExprTree_ = predExprTree_->copyTree(outHeap)->castToItemExpr();
+
   result->compExpr_ = compExpr_;
   result->inputVars_ = inputVars_;
 
@@ -10935,6 +10946,23 @@ ItemExpr * RelRoot::removeCompExprTree()
   ItemExpr * result = compExprTree_;
 
   compExprTree_ = NULL;
+
+  return result;
+}
+
+void RelRoot::addPredExprTree(ItemExpr *predExpr)
+{
+  ExprValueId c = predExprTree_;
+
+  ItemExprTreeAsList(&c, ITM_ITEM_LIST).insert(predExpr);
+  predExprTree_ = c.getPtr();
+}
+
+ItemExpr * RelRoot::removePredExprTree()
+{
+  ItemExpr * result = predExprTree_;
+
+  predExprTree_ = NULL;
 
   return result;
 }

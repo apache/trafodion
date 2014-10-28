@@ -647,7 +647,7 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
 	if (!delimited)
 	{
 	  // Check if it is a SQL reserved word
-	  if (doCheck && ComResWords::isSqlReservedWord(parts_[noOfParts_]))
+	  if (doCheck && IsSqlReservedWord(parts_[noOfParts_]))
 	    return -1;
 	}
 	delimited = FALSE;
@@ -805,7 +805,7 @@ Int16 AnsiOrNskName::convertAnsiOrNskName(bool doCheck)
   if (!delimited)
   {
     // Check if it is a SQL reserved word
-    if (doCheck && ComResWords::isSqlReservedWord(parts_[noOfParts_]))
+    if (doCheck && IsSqlReservedWord(parts_[noOfParts_]))
       return -1;
   }
   noOfParts_++;
@@ -1258,7 +1258,7 @@ Int16 AnsiOrNskName::updateNSKInternalName(char *inName)
 
     if (*ptr == '\0')
       return -1;
-    if (ComResWords::isSqlReservedWord(parts_[2]))
+    if (IsSqlReservedWord(parts_[2]))
     {
       *tgt = '\"';
       tgt++;
@@ -1291,7 +1291,7 @@ Int16 AnsiOrNskName::quoteNSKExtName()
     return -1;
   if (noOfParts_ != 4)
     return -1;
-  if (ComResWords::isSqlReservedWord(parts_[3]))
+  if (IsSqlReservedWord(parts_[3]))
   {
     // copy just the table name with quotes
     extName_[0] = '\"';
@@ -1303,7 +1303,7 @@ Int16 AnsiOrNskName::quoteNSKExtName()
     return updateNSKInternalName(intName_);
   }
   else
-  if (ComResWords::isSqlReservedWord(parts_[2]))
+  if (IsSqlReservedWord(parts_[2]))
   {
     // copy just the table name
     len = str_len(parts_[3]);

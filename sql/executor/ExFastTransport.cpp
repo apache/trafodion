@@ -143,7 +143,7 @@ ExFastExtractTcb::ExFastExtractTcb(
 
   if (myTdb().getChildDataExpr())
     myTdb().getChildDataExpr()->fixup(0,getExpressionMode(),this,
-                                       globSpace, globHeap);
+                                       globSpace, globHeap, FALSE, glob);
 
 
   //maybe we can move the below few line to the init section od work methods??

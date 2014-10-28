@@ -38,6 +38,7 @@
 #include "NAAssert.h"
 #include "BaseTypes.h"
 #include "Int64.h"
+#include "NAString.h"
 
 #include <stdarg.h>
 
@@ -1125,7 +1126,8 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
     {
 
       // Check if it is a SQL reserved word
-      if (ComResWords::isSqlReservedWord(tgt))
+      //      if (ComResWords::isSqlReservedWord(tgt))
+      if (IsSqlReservedWord(tgt))
 	return -1;
     }
 

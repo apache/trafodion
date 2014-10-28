@@ -3083,6 +3083,9 @@ enum DefaultConstants
   // are of type CHAR of unequal length
   TYPE_UNIONED_CHAR_AS_VARCHAR,
 
+  // enable special features to be used for compatability with certain vendors.
+  MODE_SPECIAL_4,
+
   // ***** END REGULAR DEFAULTS *********************************
   
   // Add regular default values (CQDs) before this line.
@@ -3581,12 +3584,32 @@ enum DefaultConstants
   HBASE_SALTED_TABLE_MAX_FILE_SIZE,
   HBASE_SALTED_TABLE_SET_SPLIT_POLICY,
 
+  HBASE_DATA_BLOCK_ENCODING_OPTION,
+  HBASE_COMPRESSION_OPTION,
+
   // if ON limits DoP of Hbase scan to number of partitions
   LIMIT_HBASE_SCAN_DOP,
   TRAF_LOAD_TAKE_SNAPSHOT,
   TRAF_LOAD_PREP_SKIP_DUPLICATES,
 
+  // if not set to UNKNOWN, then this is the charset of a column that is not
+  // being declared with an explicit charset.
+  TRAF_DEFAULT_COL_CHARSET,
+
+  // if set to ON, then the length specified for a char/varchar datatype is 
+  // in characters unless it is explicitly qualified as BYTES or CHARACTERS.
+  TRAF_COL_LENGTH_IS_CHAR,
+
+  // if set to on, table will be created in aligned row format.
+  // SQ row will be created in aligned format and stored as a single col in hbase.
+  TRAF_DEFAULT_ALIGNED_FORMAT,
+
   TRAF_LOAD_MAX_HFILE_SIZE,
+
+  USTAT_USE_BULK_LOAD,
+
+  // if not null, then add this suffix to the original name and select from that hive table.
+  USE_HIVE_SOURCE,
 
   // HBASE_HASH2_PARTITIONING (ON - OFF for now):
   // - OFF: Treat salted table like a non-salted table
@@ -3599,7 +3622,6 @@ enum DefaultConstants
   // HBASE_STATS_PARTITIONING (ON):
   // - OFF: Don't use stats split
   // - ON: Use stats split if possible, except for HASH2
-
   HBASE_HASH2_PARTITIONING,
   HBASE_RANGE_PARTITIONING,
   HBASE_STATS_PARTITIONING,
@@ -3614,6 +3636,8 @@ enum DefaultConstants
   TRAF_UNLOAD_HDFS_COMPRESS,
   TRAF_UNLOAD_SKIP_WRITING_TO_FILES,
 
+  NCM_IND_JOIN_COST_ADJ_FACTOR,
+  NCM_IND_SCAN_COST_ADJ_FACTOR,
   GROUP_BY_PARTIAL_ROOT_THRESHOLD,
   TRAF_UNLOAD_BYPASS_LIBHDFS,
   TRAF_UNLOAD_DEF_DELIMITER,

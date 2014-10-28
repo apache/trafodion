@@ -268,6 +268,83 @@ private:
 
   // ---------------------------------------------------------------------
 };
+
+class SQLEXP_LIB_FUNC  ex_pivot_group_clause : public ex_aggregate_clause {
+public:	
+  // Construction
+  //
+  NA_EIDPROC ex_pivot_group_clause(){};
+  NA_EIDPROC ex_pivot_group_clause(OperatorTypeEnum oper_type,
+                                   short num_operands,
+                                   Attributes ** attr,
+                                   char * delim,
+                                   Lng32 maxLen,
+                                   NABoolean isOrderBy,
+                                   Space * space)
+    : ex_aggregate_clause(oper_type, num_operands, attr, space),
+    maxLen_(maxLen)
+    {
+      setOrderBy(isOrderBy);
+      strcpy(delim_, delim);
+    }
+
+ 
+  // Execution
+  //
+  ex_expr::exp_return_type init();
+  ex_expr::exp_return_type eval(char *op_data[],
+                                CollHeap * = 0,
+                                ComDiagsArea ** = 0);
+
+  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
+  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
+  
+  // Display
+  //
+  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+                                  Int32 clauseNum, char * constsArea);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_aggregate_clause::populateImageVersionIDArray();
+  }
+
+  virtual short getClassSize() { return (short)sizeof(*this); }
+
+  NABoolean orderBy()   
+  { return (flags_ & ORDER_BY) != 0;}
+  void setOrderBy(NABoolean v)      
+  { (v ? flags_ |= ORDER_BY : flags_ &= ~ORDER_BY); }
+
+  NABoolean ovflWarn()   
+  { return (flags_ & OVFL_WARN) != 0;}
+  void setOvflWarn(NABoolean v)      
+  { (v ? flags_ |= OVFL_WARN : flags_ &= ~OVFL_WARN); }
+
+private:  
+  enum
+  {
+    ORDER_BY   = 0x0001,
+    OVFL_WARN = 0x0002
+  };
+
+  Lng32 currPos_;
+  Lng32 currTgtLen_;
+  char delim_[112];
+  Lng32 maxLen_;
+  UInt32 flags_;
+
+  // ---------------------------------------------------------------------
+};
   
 /////////////////////////////////////////
 // Class arith_clause                  //

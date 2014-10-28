@@ -192,6 +192,8 @@ NA_EIDPROC
   void initLOBglobal();
   
   SequenceValueGenerator * seqGen();
+  
+  Int64 &rowNum() { return rowNum_; }
 
 private:
   enum FlagsTypeEnum 
@@ -258,6 +260,8 @@ private:
   // For usage, see the actual executor operators.
   UInt32                planVersion_;                     
 
+  Int64 rowNum_;
+
   // pool shared by among PAs under PAPA
   sql_buffer_pool *sharedPool_;
 
@@ -272,8 +276,6 @@ private:
   //  void * lobGlob_;
 
 };
-
-//SequenceValueGenerator * ExExeStmtGlobals_seqGen(ex_globals * g);
 
 #endif
 

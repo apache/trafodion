@@ -41,6 +41,7 @@
 // -----------------------------------------------------------------------
 #include "IntervalType.h"
 #include "CharType.h"
+#include "DatetimeType.h"
 #include "ItemExpr.h"
 #include "NATable.h"
 #include "exp_like.h"
@@ -452,6 +453,104 @@ public:
 
 private:
 }; // class Variance
+
+class PivotGroup : public Aggregate
+{
+public:
+  enum PivotOptionType
+  {
+    DELIMITER_,
+    ORDER_BY_,
+    MAX_LENGTH_
+  };
+
+  enum {
+    DEFAULT_MAX_LEN = 1024
+  };
+
+  class PivotOption
+  {
+    friend class PivotGroup;
+  public:
+  PivotOption(PivotOptionType option, 
+              void * optionNode = NULL,
+              char * stringVal = NULL,
+              Long numericVal = 0)
+    : option_(option), 
+      optionNode_(optionNode),
+      stringVal_(stringVal),
+      numericVal_(numericVal)
+    {}
+    
+  private:
+    PivotOptionType option_;
+    void * optionNode_;
+    Long   numericVal_;
+    char * stringVal_;
+  };
+
+  // PivotGroup implements the Item ITM_PIVOT_GROUP.
+  // This is used to implement pivot groups.
+
+  // Constructor. - This aggregate can have one or two children.
+  // The optional second parameter (child) is the weighting factor.
+  //
+  PivotGroup(OperatorTypeEnum otype,
+             ItemExpr *child0,
+             NAList<PivotOption*> * pivotOptionsList,
+             NABoolean isDistinct = FALSE);
+
+  PivotGroup(OperatorTypeEnum otype,
+             ItemExpr *child0,
+             NAString &delim,
+             NABoolean orderBy,
+             ValueIdList &reqdOrder,
+             Lng32 maxLen,
+             NABoolean isDistinct = FALSE)
+  : Aggregate(otype, child0, NULL, isDistinct),
+    delim_(delim),
+    orderBy_(orderBy),
+    reqdOrder_(reqdOrder),
+    maxLen_(maxLen)
+    {}
+  
+  // virtual destructor
+  virtual ~PivotGroup();
+
+  const NAType *synthesizeType();
+
+  // a virtual function for performing name binding within the query tree.
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+
+  virtual ItemExpr * copyTopNode(ItemExpr * = NULL, CollHeap* = 0);
+
+  virtual ItemExpr * preCodeGen(Generator * generator);
+
+  virtual short codeGen(Generator*);
+
+  // append an ascii-version of BETWEEN into cachewa.qryText_
+  virtual void generateCacheKey(CacheWA& cwa) const;
+
+  virtual NABoolean evaluationCanBeStaged() const {return TRUE;}
+  virtual ItemExpr * rewriteForStagedEvaluation(
+       ValueIdList &initialAggrs,
+       ValueIdList &finalAggrs,
+       NABoolean sameFormat = FALSE);
+
+  NAString &delim() { return delim_; }
+  NABoolean orderBy() { return orderBy_;}
+  ValueIdList &reqdOrder() { return reqdOrder_; }
+  Lng32 maxLen() { return maxLen_; }
+private:
+  NAList<PivotOption*> * pivotOptionsList_;
+
+  NAString delim_;
+
+  NABoolean orderBy_;
+  ValueIdList reqdOrder_;   	// ORDER BY list
+  
+  Lng32 maxLen_;
+}; // class PivotGroup
 
 // -----------------------------------------------------------------------
 // Function operators supporting a variable number of children
@@ -1538,8 +1637,12 @@ public:
 class CurrentTimestamp : public CacheableBuiltinFunction
 {
 public:
-  CurrentTimestamp()
-	: CacheableBuiltinFunction(ITM_CURRENT_TIMESTAMP) {}
+ CurrentTimestamp(DatetimeType::Subtype dtCode = DatetimeType::SUBTYPE_SQLTimestamp,
+                  Lng32 fractPrec = SQLTimestamp::DEFAULT_FRACTION_PRECISION)
+   : CacheableBuiltinFunction(ITM_CURRENT_TIMESTAMP),
+    dtCode_(dtCode),
+    fractPrec_(fractPrec)
+  {}
 
   // virtual destructor
   virtual ~CurrentTimestamp();
@@ -1558,10 +1661,17 @@ public:
 
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
 				 CollHeap* outHeap = 0);
-  
-  
 
   virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+  static ItemExpr * construct
+    (CollHeap * heap, 
+     DatetimeType::Subtype dtCode = DatetimeType::SUBTYPE_SQLTimestamp,
+     Lng32 fractPrec = SQLTimestamp::DEFAULT_FRACTION_PRECISION);
+
+ private:
+  DatetimeType::Subtype dtCode_;
+  Lng32 fractPrec_;
 }; // class CurrentTimestamp
 
 class CurrentTimestampRunning : public CacheableBuiltinFunction
@@ -4956,5 +5066,36 @@ public:
 
 }; // class SequenceValue
 
+
+// ROWNUM().
+// Returns the current number of row being returned to application.
+// Starts at 1 and increments after it is returned.
+// Can only be used in the outermost select and in the outermost
+// where predicate.
+class RowNumFunc : public BuiltinFunction
+{
+public:
+  RowNumFunc()
+       : BuiltinFunction(ITM_ROWNUM, CmpCommon::statementHeap(),
+                         0, NULL) {}
+
+  // virtual destructor
+  virtual ~RowNumFunc();
+
+  virtual ItemExpr * bindNode(BindWA *bindWA);
+  virtual const NAType * synthesizeType();
+
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  virtual NABoolean isCovered(const ValueIdSet& newExternalInputs,
+			      const GroupAttributes& newRelExprAnchorGA,
+	   	              ValueIdSet& referencedInputs,
+			      ValueIdSet& coveredSubExpr,
+			      ValueIdSet& unCoveredExpr) const;
+
+  NABoolean canBeUsedInGBorOB(NABoolean setErr);
+
+}; // class RowNumFunc
 
 #endif /* ITEMFUNC_H */

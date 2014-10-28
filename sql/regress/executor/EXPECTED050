@@ -407,7 +407,7 @@ aa     BB     CC               1            1            1
 >>-- Genesis 10-970902-0878
 >>select * from T050a where a="Lower";
 
-*** ERROR[4001] Column "Lower" is not found.  Tables in scope: CAT.SCH.T050A.  Default schema: CAT.SCH.
+*** ERROR[4001] Column "Lower" is not found.  Tables in scope: TRAFODION.SCH.T050A.  Default schema: TRAFODION.SCH.
 
 *** WARNING[4104] If a character literal was intended, you must use the single quote delimiter: 'Lower'. The use of double quotes causes SQL to interpret "Lower" as a delimited identifier column name.
 
@@ -416,7 +416,7 @@ aa     BB     CC               1            1            1
 >>		-- 4001, 4104
 >>select * from T050a where e="Lower";
 
-*** ERROR[4001] Column "Lower" is not found.  Tables in scope: CAT.SCH.T050A.  Default schema: CAT.SCH.
+*** ERROR[4001] Column "Lower" is not found.  Tables in scope: TRAFODION.SCH.T050A.  Default schema: TRAFODION.SCH.
 
 *** WARNING[4104] If a character literal was intended, you must use the single quote delimiter: 'Lower'. The use of double quotes causes SQL to interpret "Lower" as a delimited identifier column name.
 
@@ -432,7 +432,7 @@ aa     BB     CC               1            1            1
 >>	-- 4003
 >>select * from T050a,T050a x where x.e="f";
 
-*** ERROR[4004] Column name "f" is ambiguous.  Tables in scope: CAT.SCH.T050A, X.  Default schema: CAT.SCH.
+*** ERROR[4004] Column name "f" is ambiguous.  Tables in scope: TRAFODION.SCH.T050A, X.  Default schema: TRAFODION.SCH.
 
 *** WARNING[4104] If a character literal was intended, you must use the single quote delimiter: 'f'. The use of double quotes causes SQL to interpret "f" as a delimited identifier column name.
 
@@ -467,15 +467,12 @@ zz     ZZ     ZZ               1            1            1
 >>		-- aa,BB,CC; Low,UPP,?; zz,ZZ,ZZ
 >>
 >>-- Ansi 6.13 GR 2:  char and varchar concats are different vis-a-vis length
->>#ifndef SEABASE_REGRESS
->>-- skip this update until transaction support is in
 >>update T050a set b=a, c=trim(lower(b))||trim(a);
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII) Source Value:UPPLOW to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:VARCHAR(REC_BYTE_V_ASCII,6 BYTES,ISO88591) Source Value:UPPLOW to Target Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591).
 
 --- 0 row(s) updated.
 >>		-- 1 warn 8402
->>#endif
 >>execute a;
 
 A      B      C      D            E            f          
@@ -489,7 +486,7 @@ zz     ZZ     ZZ               1            1            1
 >>		-- aa,AA,BBAA; Low,LOW,UPPLO; zz,ZZ,ZZZZ
 >>update T050a set b=a, c=lower(b)||a;
 
-*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII) Source Value:BB   AA    to Target Type:CHAR(REC_BYTE_F_ASCII).
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression. Conversion of Source Type:CHAR(REC_BYTE_F_ASCII,10 BYTES,ISO88591) Source Value:BB   AA    to Target Type:CHAR(REC_BYTE_F_ASCII,5 BYTES,ISO88591).
 
 --- 0 row(s) updated.
 >>				-- 3 ERROR 8402

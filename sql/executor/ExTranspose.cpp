@@ -158,7 +158,7 @@ ExTransposeTcb::ExTransposeTcb(const ExTransposeTdb &transTdbLocal,
       transTdb().transColExprs_[i]->fixup(0,
 					  getExpressionMode(), this,
 					  glob->getSpace(),
-					  glob->getDefaultHeap());
+					  glob->getDefaultHeap(), FALSE, glob);
   }
 
   // Predicates to be applied after perform the transpose.
@@ -167,7 +167,7 @@ ExTransposeTcb::ExTransposeTcb(const ExTransposeTdb &transTdbLocal,
     afterTransPred()->fixup(0,
 			    getExpressionMode(), this,
 			    glob->getSpace(),
-			    glob->getDefaultHeap());
+			    glob->getDefaultHeap(), FALSE, glob);
 
 }
 

@@ -515,8 +515,10 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     Int32 srcLength,
                                     Int16 srcType,
                                     Int32 srcScale,
-                                    Int16 trgType,
-                                    UInt32 flags)
+                                    Int16 tgtType,
+                                    UInt32 flags,
+                                    Int32 tgtLength,
+                                    Int32 tgtScale)
 {
   //if looping situation, no need to proceed further, return back.
   if(flags & CONV_CONTROL_LOOPING)
@@ -557,15 +559,39 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                          opString,
                          OPVALUE_LEN);
 
+  char srcDatatypeDetail[200];
+  if ((DFS2REC::isAnyCharacter(srcType)) &&
+      (srcLength >= 0) &&
+      (srcScale > 0))
+    str_sprintf(srcDatatypeDetail, "%s,%d BYTES,%s", 
+                getDatatypeAsString(srcType, false), 
+                //                srcLength/CharInfo::bytesPerChar((CharInfo::CharSet)srcScale),
+                srcLength,
+                (srcScale == CharInfo::ISO88591 ? "ISO88591" : "UTF8"));
+  else
+    strcpy(srcDatatypeDetail, getDatatypeAsString(srcType, false));
+  
+  char tgtDatatypeDetail[200];
+  if ((DFS2REC::isAnyCharacter(tgtType)) &&
+      (tgtLength >= 0) &&
+      (tgtScale > 0))
+    str_sprintf(tgtDatatypeDetail, "%s,%d BYTES,%s", 
+                getDatatypeAsString(tgtType, false), 
+                tgtLength,
+                //                tgtLength/CharInfo::bytesPerChar((CharInfo::CharSet)tgtScale),
+                (tgtScale == CharInfo::ISO88591 ? "ISO88591" : "UTF8"));
+  else
+    strcpy(tgtDatatypeDetail, getDatatypeAsString(tgtType, false));
+
   str_sprintf(buf,
-             " %s of Source Type:%s(%s) Source Value:%s to Target Type:%s(%s).",
+              " %s of Source Type:%s(%s) Source Value:%s to Target Type:%s(%s).",
               intermediate? "Intermediate conversion" : "Conversion",
               getDatatypeAsString(srcType, true),
-              getDatatypeAsString(srcType, false),
+              srcDatatypeDetail,
               opString,
-              getDatatypeAsString(trgType,true),
-              getDatatypeAsString(trgType, false));
-    
+              getDatatypeAsString(tgtType,true),
+              tgtDatatypeDetail);
+  
   **diagsArea << DgSqlCode(-err);
   **diagsArea<<DgString0(buf);
   

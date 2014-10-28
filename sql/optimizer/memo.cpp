@@ -140,6 +140,7 @@ void CascadesGroup::addLogExpr(RelExpr * expr, RelExpr *src)
 
 	scanNode->addIndexInfo();
     getGroupAttr()->addToAvailableBtreeIndexes(scanNode->deriveIndexOnlyIndexDesc());
+    getGroupAttr()->addToAvailableBtreeIndexes(scanNode->getIndexJoinIndexDesc());
   }
 
   // 12 years later, and the kludge continues

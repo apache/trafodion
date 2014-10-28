@@ -216,6 +216,7 @@ public:
   inline InputOutputExpr * inputExpr() const { return root_tdb().inputExpr_; }
   inline InputOutputExpr * outputExpr() const {return root_tdb().outputExpr_;}
   inline ex_expr * pkeyExpr() const { return root_tdb().pkeyExpr_; }
+  inline ex_expr * predExpr() const { return root_tdb().predExpr_; }
 
   virtual NABoolean needStatsEntry();
 

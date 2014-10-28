@@ -156,7 +156,7 @@ ExUnPackRowsTcb::ExUnPackRowsTcb(const ExUnPackRowsTdb &unPackRowsTdbLocal,
     unPackColsExpr()->fixup(0,
                             getExpressionMode(), this,
                             glob->getSpace(),
-                            glob->getDefaultHeap());
+                            glob->getDefaultHeap(), FALSE, glob);
 
   // Initialize the workAtp_ and the Tupp used to hold the
   // index value. This index value is an integer local to the
@@ -176,7 +176,7 @@ ExUnPackRowsTcb::ExUnPackRowsTcb(const ExUnPackRowsTdb &unPackRowsTdbLocal,
   packingFactor()->fixup(0,
                          getExpressionMode(), this,
                          glob->getSpace(),
-                         glob->getDefaultHeap());
+                         glob->getDefaultHeap(), FALSE, glob);
 
   // Initialize the numRowsAtp_ and the numRowsTupp.  These are used
   // to hold the result of the move expression (packingFactor()) used
@@ -867,19 +867,19 @@ ExUnPackRowwiseRowsTcb::ExUnPackRowwiseRowsTcb(
     uprTdb().rwrsInputSizeExpr()->fixup(0,
 					getExpressionMode(), this,
 					glob->getSpace(),
-					glob->getDefaultHeap());
+					glob->getDefaultHeap(), FALSE, glob);
   
   if (uprTdb().rwrsMaxInputRowlenExpr())
     uprTdb().rwrsMaxInputRowlenExpr()->fixup(0,
 					     getExpressionMode(), this,
 					     glob->getSpace(),
-					     glob->getDefaultHeap());
+					     glob->getDefaultHeap(), FALSE, glob);
   
   if (uprTdb().rwrsBufferAddrExpr())
     uprTdb().rwrsBufferAddrExpr()->fixup(0,
 					 getExpressionMode(), this,
 					 glob->getSpace(),
-					 glob->getDefaultHeap());
+					 glob->getDefaultHeap(), FALSE, glob);
   
   rwrsInputValuesTuppDesc_.init();
   //rwrsInputValuesTupp_.init();

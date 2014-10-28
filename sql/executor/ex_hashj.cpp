@@ -373,66 +373,66 @@ ex_hashj_tcb::ex_hashj_tcb(const ex_hashj_tdb & hashJoinTdb,
   
   // fixup expressions
   if (minMaxExpr_)
-    (void) minMaxExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) minMaxExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (rightHashExpr_)
-    (void) rightHashExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) rightHashExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (rightMoveInExpr_)
-    (void) rightMoveInExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) rightMoveInExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (rightMoveOutExpr_) 
     (void) rightMoveOutExpr_->fixup(0, getExpressionMode(), this, 
-				    space_, heap_);
+				    space_, heap_, FALSE, glob);
   if (rightSearchExpr_) 
     (void) rightSearchExpr_->fixup(0, getExpressionMode(), this,
-				   space_, heap_);
+				   space_, heap_, FALSE, glob);
   else {
     // ASJ, and no join search expr and no before predicate -- then either
     // return all left rows, or none, based on having ANY right rows
     isAllOrNothing_ = isAntiSemiJoin() && ! beforeJoinPred1_ ;
   }
   if (leftHashExpr_) 
-    (void) leftHashExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) leftHashExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (leftMoveExpr_) 
-    (void) leftMoveExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) leftMoveExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (leftMoveInExpr_) 
-    (void) leftMoveInExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) leftMoveInExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (leftMoveOutExpr_) 
-    (void) leftMoveOutExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) leftMoveOutExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (probeSearchExpr1_) 
     (void) probeSearchExpr1_->fixup(0, getExpressionMode(), this,
-				    space_, heap_);
+				    space_, heap_, FALSE, glob);
   if (probeSearchExpr2_) 
-    (void) probeSearchExpr2_->fixup(0, getExpressionMode(), this,space_, heap_);
+    (void) probeSearchExpr2_->fixup(0, getExpressionMode(), this,space_, heap_, FALSE, glob);
   if (leftJoinExpr_) 
-    (void) leftJoinExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) leftJoinExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (nullInstForLeftJoinExpr_) 
     (void) nullInstForLeftJoinExpr_->fixup(0, getExpressionMode(), this,
-					   space_, heap_);
+					   space_, heap_, FALSE, glob);
   if (rightJoinExpr_) 
-    (void) rightJoinExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) rightJoinExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (nullInstForRightJoinExpr_) 
     (void) nullInstForRightJoinExpr_->fixup(0, getExpressionMode(), this,
-					    space_, heap_);
+					    space_, heap_, FALSE, glob);
   
   if (beforeJoinPred1_) 
-    (void) beforeJoinPred1_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) beforeJoinPred1_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (beforeJoinPred2_) 
-    (void) beforeJoinPred2_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) beforeJoinPred2_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred1_) 
-    (void) afterJoinPred1_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) afterJoinPred1_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred2_) 
-    (void) afterJoinPred2_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) afterJoinPred2_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred3_) 
-    (void) afterJoinPred3_->fixup(0, getExpressionMode(), this,space_, heap_);
+    (void) afterJoinPred3_->fixup(0, getExpressionMode(), this,space_, heap_, FALSE, glob);
   if (afterJoinPred4_) 
-    (void) afterJoinPred4_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) afterJoinPred4_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred5_) 
-    (void) afterJoinPred5_->fixup(0, getExpressionMode(), this, space_, heap_);
+    (void) afterJoinPred5_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if ( isReuse() ) {
     if (checkInputPred_)
-      (void) checkInputPred_->fixup(0, getExpressionMode(),this,space_, heap_);
+      (void) checkInputPred_->fixup(0, getExpressionMode(),this,space_, heap_, FALSE, glob);
     
     if (moveInputExpr_)
-      (void) moveInputExpr_->fixup(0, getExpressionMode(), this, space_, heap_);
+      (void) moveInputExpr_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
     
     // allocate space to keep the current input values for next time
     Lng32 neededBufferSize = 
@@ -442,10 +442,10 @@ ex_hashj_tcb::ex_hashj_tcb(const ex_hashj_tdb & hashJoinTdb,
   } // if isReuse
   
   if (checkInnerNullExpr_) 
-    (void) checkInnerNullExpr_->fixup(0, getExpressionMode(), this,space_, heap_);
+    (void) checkInnerNullExpr_->fixup(0, getExpressionMode(), this,space_, heap_, FALSE, glob);
 
   if (checkOuterNullExpr_) 
-    (void) checkOuterNullExpr_->fixup(0, getExpressionMode(), this,space_, heap_);
+    (void) checkOuterNullExpr_->fixup(0, getExpressionMode(), this,space_, heap_, FALSE, glob);
 
   // get initial head index
   nextRequest_ = parentQueue_.down->getHeadIndex();

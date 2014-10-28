@@ -154,27 +154,27 @@ ex_union_tcb::ex_union_tcb(const ex_union_tdb &  union_tdb,  //
   // fixup left expression
   if (moveExpr(0))
     (void) moveExpr(0)->fixup(0, getExpressionMode(), this,
-			      glob->getSpace(), glob->getDefaultHeap());
+			      glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   // fixup right expression
   if (moveExpr(1))
     (void) moveExpr(1)->fixup(0, getExpressionMode(), this, 
-			      glob->getSpace(), glob->getDefaultHeap());
+			      glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   // fixup merge expression
   if (mergeExpr())
     (void) mergeExpr()->fixup(0, getExpressionMode(), this, 
-			      glob->getSpace(), glob->getDefaultHeap());
+			      glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   // fixup conditional expression
   if (condExpr())
     (void) condExpr()->fixup(0, getExpressionMode(), this,
-			     glob->getSpace(), glob->getDefaultHeap());
+			     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   // fixup triggered action exception expression
   if (trigExceptExpr())
     (void) trigExceptExpr()->fixup(0, getExpressionMode(), this,
-			     glob->getSpace(), glob->getDefaultHeap());
+			     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 };
 #pragma warn(770)  // warning elimination 
 

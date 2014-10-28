@@ -1136,7 +1136,7 @@ ExTransTcb::ExTransTcb(const ExTransTdb & trans_tdb,
 			    sizeof(Lng32));
 
       (void) diagAreaSizeExpr()->fixup(0, getExpressionMode(), this,
-				       space, heap);
+				       space, heap, FALSE, glob);
     }
   else
     workAtp_ = 0;

@@ -543,7 +543,15 @@ short BuiltinFunction::codeGen(Generator * generator)
 							space);
       }
     break;
-    
+ 
+    case ITM_ROWNUM:
+      {
+	function_clause =
+	  new(generator->getSpace()) ExFunctionRowNum(getOperatorType(),
+							attr,
+							space);
+      }
+    break;
       
     default:
       break;
@@ -1553,6 +1561,29 @@ short HiveHash::codeGen(Generator * generator)
   return 0;
 }
 
+short PivotGroup::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+  
+  ex_clause * function_clause = 
+    new(generator->getSpace()) ex_pivot_group_clause(getOperatorType(),
+                                                     (short) (1+getArity()),
+                                                     attr, 
+                                                     (char*)delim_.data(),
+                                                     maxLen_,
+                                                     orderBy_,
+                                                     generator->getSpace());
+  
+  generator->getExpGenerator()->linkClause(this, function_clause);
+  
+  return 0;
+}
+
 short ReplaceNull::codeGen(Generator * generator)
 {
   Attributes ** attr;
@@ -1923,7 +1954,9 @@ short DateFormat::codeGen(Generator * generator)
 	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
 		== "MM/DD/YYYY HH24:MI:SS")
 	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS7;
-
+	    else if (NAString((char*)(cv->getConstValue()), cv->getStorageSize())
+                     == "DD-MON-YYYY HH:MI:SS")
+	      expDateFormat = ExpDatetime::DATETIME_FORMAT_TS8;
 	    else
 	      {
 		expDateFormat = ExpDatetime::DATETIME_FORMAT_DATE_STR;

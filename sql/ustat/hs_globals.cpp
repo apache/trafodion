@@ -3686,10 +3686,16 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     // INSERTS for better performance. A current bug in the HBase interface
     // requires the use of Upsert.
     if (hs_globals->isHbaseTable)
-      if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
-        insertType = "LOAD WITH NO OUTPUT, NO RECOVERY, NO POPULATE INDEXES, NO DUPLICATE CHECK INTO  ";
-       else
-         insertType = "UPSERT USING LOAD INTO ";
+      {
+        if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
+          {
+            insertType = "LOAD WITH NO OUTPUT, NO RECOVERY, NO POPULATE INDEXES, NO DUPLICATE CHECK INTO ";
+          }
+        else
+          {
+            insertType = "UPSERT USING LOAD INTO ";
+          }
+      }
     else if (TM->InTransaction())
       insertType = "INSERT INTO ";
     else
@@ -3711,7 +3717,16 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
     dml  = insertType;
     dml += sampleTable;
     dml += " SELECT * FROM ";
-    dml += getTableName(objDef->getObjectFullName(), objDef->getNameSpace());
+
+    NAString hiveSrc = CmpCommon::getDefaultString(USE_HIVE_SOURCE);
+    if (! hiveSrc.isNull())
+      {
+        dml += "HIVE.HIVE.";
+        dml += objDef->getObjectName();
+        dml += hiveSrc;
+      }
+    else
+      dml += getTableName(objDef->getObjectFullName(), objDef->getNameSpace());
 
     char cardHint[50];
     sprintf(cardHint, " <<+ cardinality %e >> ", (double)hs_globals->actualRowCount);
@@ -3826,7 +3841,10 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
         LM->Log(LM->msg);
       }
 
-    if (sampleRowCount == 0)                     // sample set is empty;
+    // TEMP: ignore empty sample set if bulk load is on as rowcount is currently not 
+    // being returned by bulk load.
+    if ((sampleRowCount == 0) &&                    // sample set is empty;
+        (CmpCommon::getDefault(USTAT_USE_BULK_LOAD) == DF_OFF))
       {                                          // cannot generate histograms
         HSFuncMergeDiags(- UERR_SAMPLE_SET_IS_ZERO);
         retcode = -1;

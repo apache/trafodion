@@ -274,47 +274,47 @@ ex_mj_tcb::ex_mj_tcb(const ex_mj_tdb & mj_tdb,
   // fixup expressions
   if (mergeExpr())
     (void) mergeExpr()->fixup(0, getExpressionMode(), this,
-			      glob->getSpace(), glob->getDefaultHeap());
+			      glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (compExpr())
     (void) compExpr()->fixup(0, getExpressionMode(), this,
-			     glob->getSpace(), glob->getDefaultHeap());
+			     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (leftEncodedKeyExpr())
     (void) leftEncodedKeyExpr()->fixup(0, getExpressionMode(), this,
 				       glob->getSpace(),
-				       glob->getDefaultHeap());
+				       glob->getDefaultHeap(), FALSE, glob);
 
   if (rightEncodedKeyExpr())
     (void) rightEncodedKeyExpr()->fixup(0, getExpressionMode(), this,
 					glob->getSpace(),
-					glob->getDefaultHeap());
+					glob->getDefaultHeap(), FALSE, glob);
 
   if (postJoinExpr())
     (void) postJoinExpr()->fixup(0, getExpressionMode(), this,
-				 glob->getSpace(), glob->getDefaultHeap());
+				 glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (preJoinExpr())
     (void) preJoinExpr()->fixup(0, getExpressionMode(), this,
-				glob->getSpace(), glob->getDefaultHeap());
+				glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (leftCheckDupExpr())
     (void) leftCheckDupExpr()->fixup(0, getExpressionMode(), this,
-				     glob->getSpace(), glob->getDefaultHeap());
+				     glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (rightCheckDupExpr())
     (void) rightCheckDupExpr()->fixup(0, getExpressionMode(), this,
 				      glob->getSpace(),
-				      glob->getDefaultHeap());
+				      glob->getDefaultHeap(), FALSE, glob);
 
   if (ljExpr())
     (void) ljExpr()->fixup(0, getExpressionMode(), this,
-			   glob->getSpace(), glob->getDefaultHeap());
+			   glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (rightCopyDupExpr())
     (void) rightCopyDupExpr()->fixup(0, getExpressionMode(), this,
 				     glob->getSpace(),
-				     glob->getDefaultHeap());
+				     glob->getDefaultHeap(), FALSE, glob);
 
 }
 

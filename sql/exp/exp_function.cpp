@@ -175,6 +175,7 @@ ex_function_nullifzero::ex_function_nullifzero(){};
 ex_function_nvl::ex_function_nvl(){};
 ex_function_queryid_extract::ex_function_queryid_extract(){};
 ExFunctionUniqueId::ExFunctionUniqueId(){};
+ExFunctionRowNum::ExFunctionRowNum(){};
 ExFunctionHbaseColumnLookup::ExFunctionHbaseColumnLookup() {};
 ExFunctionHbaseColumnsDisplay::ExFunctionHbaseColumnsDisplay() {};
 ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate() {};
@@ -553,6 +554,12 @@ ex_function_queryid_extract::ex_function_queryid_extract(OperatorTypeEnum oper_t
 };
 
 ExFunctionUniqueId::ExFunctionUniqueId(OperatorTypeEnum oper_type,
+				       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 1, attr, space)
+{
+};
+
+ExFunctionRowNum::ExFunctionRowNum(OperatorTypeEnum oper_type,
 				       Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 1, attr, space)
 {
@@ -2353,10 +2360,33 @@ ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,
 						   ComDiagsArea**)
 {
-  ExpDatetime::currentTimeStamp(op_data[0],
-				REC_DATE_YEAR,
-				REC_DATE_SECOND,
-				ExpDatetime::MAX_DATETIME_FRACT_PREC);
+  if (getOperand())
+    {
+      ExpDatetime *datetimeOpType = (ExpDatetime *) getOperand(0);
+      
+      rec_datetime_field srcStartField;
+      rec_datetime_field srcEndField;
+      
+      if (datetimeOpType->getDatetimeFields(datetimeOpType->getPrecision(),
+                                            srcStartField,
+                                            srcEndField) != 0) 
+        {
+          return ex_expr::EXPR_ERROR;
+        }
+
+      ExpDatetime::currentTimeStamp(op_data[0],
+                                    srcStartField,
+                                    srcEndField,
+                                    datetimeOpType->getScale());
+    }
+  else
+    {
+      ExpDatetime::currentTimeStamp(op_data[0],
+                                    REC_DATE_YEAR,
+                                    REC_DATE_SECOND,
+                                    ExpDatetime::MAX_DATETIME_FRACT_PREC);
+    }
+
   return ex_expr::EXPR_OK;
 };
 
@@ -6634,6 +6664,20 @@ ex_expr::exp_return_type ExFunctionUniqueId::eval(char *op_data[],
 #endif
 
   str_cpy_all(result, (char*)&uniqueUID, sizeof(Int64));
+  str_pad(&result[sizeof(Int64)], sizeof(Int64), '\0');
+  
+  return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionRowNum::eval(char *op_data[],
+						  CollHeap *heap,
+						  ComDiagsArea** diagsArea)
+{
+  char * result = op_data[0];
+
+  Int64 rowNum = getExeGlobals()->rowNum();
+
+  str_cpy_all(result, (char*)&rowNum, sizeof(Int64));
   str_pad(&result[sizeof(Int64)], sizeof(Int64), '\0');
   
   return ex_expr::EXPR_OK;

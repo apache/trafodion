@@ -180,6 +180,11 @@ public:
   NABoolean hasOrderBy()	{ return orderByTree_ || reqdOrder_.entries(); }
   ItemExpr * getOrderByTree() const { return orderByTree_; }
 
+  // get and set the where predicate as a parse tree
+  ItemExpr * getPredExprTree() const	{ return predExprTree_; }
+  void addPredExprTree(ItemExpr *predExpr);
+  ItemExpr * removePredExprTree();
+
   // partitioning type, TMUDF only
   TMUDFInputPartReq getPartReqType() {return partReqType_;}
   void setPartReqType(TMUDFInputPartReq val) {partReqType_= val;}
@@ -208,6 +213,7 @@ public:
 
   ValueIdList & reqdOrder() 		{ return reqdOrder_; }
   const ValueIdList & reqdOrder() const { return reqdOrder_; }
+
   // TMUDF only
   ValueIdSet & partitionArrangement() 		{ return partArrangement_; }
   const ValueIdSet & partitionArrangement() const { return partArrangement_; }
@@ -221,6 +227,8 @@ public:
   NABoolean &updatableSelect() 		{ return updatableSelect_; }
   NABoolean &updateCurrentOf() 		{ return updateCurrentOf_; }
   NABoolean &rollbackOnError()		{ return rollbackOnError_; }
+
+  void processRownum(BindWA * bindWA);
 
   // a virtual function for performing name binding within the query tree
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
@@ -423,6 +431,7 @@ public:
 
   RelRoot * transformGroupByWithOrdinalPhase1(BindWA *bindWA);
   RelRoot * transformGroupByWithOrdinalPhase2(BindWA *bindWA);
+  RelRoot * transformOrderByWithExpr(BindWA *bindWA);
 
   // MV --
   NABoolean virtual isIncrementalMV() { return getFirstNRows()==-1 && !needFirstSortedRows(); }
@@ -542,6 +551,10 @@ public:
   ItemExpr    * assignList_;       // List of assign nodes. Used by assignment statement;
                                    // contains first and last value id of host variables
                                    // in the statement. Used at code generation time
+  // predicate to be evaluated before returning a row. If specified, rows are returned
+  // only if this pred passes
+  ItemExpr    * predExprTree_;
+
   ValueIdList compExpr_;    	// select list
   ValueIdList inputVars_;   	// list of input host variables or parameters
   ValueIdList reqdOrder_;   	// ORDER BY list

@@ -174,14 +174,14 @@ ExExeUtilTcb::ExExeUtilTcb(const ComTdbExeUtil & exe_util_tdb,
   
   if (exe_util_tdb.inputExpr_)
     (void)exe_util_tdb.inputExpr_->fixup(0, getExpressionMode(), this,
-					 space, heap);
+					 space, heap, FALSE, glob);
   if (exe_util_tdb.outputExpr_)
     (void)exe_util_tdb.outputExpr_->fixup(0, getExpressionMode(), this, 
-					  space, heap);
+					  space, heap, FALSE, glob);
 
   if (exe_util_tdb.scanExpr_)
     (void)exe_util_tdb.scanExpr_->fixup(0, getExpressionMode(), this, 
-					  space, heap);
+					  space, heap, FALSE, glob);
 
   ContextCli * currContext = 
     (glob->castToExExeStmtGlobals()->castToExMasterStmtGlobals() ?

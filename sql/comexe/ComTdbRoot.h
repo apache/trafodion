@@ -562,8 +562,12 @@ protected:
   Int16 cursorType_;                                                // 298-299
   Int16 subqueryType_;                                              //  300-301
   char fillersComTdbRoot1_[2];                                      // 302-303
+
   SecurityInvKeyInfoPtr sikPtr_;                                    // 304-311
   char fillersComTdbRoot2_[40];                                     // 312-351
+
+  // predicate to be applied before a row is returned.
+  ExExprPtr predExpr_;                                              // 344-351
 
 public:
   
@@ -628,6 +632,7 @@ public:
 	    Lng32 input_vars_size,
 	    ex_expr * pkey_expr,
 	    ULng32 pkey_len,
+            ex_expr * pred_expr,
 	    ex_cri_desc * work_cri_desc,
 	    ExFragDir *fragDir,
 	    TransMode * transMode,
@@ -1130,7 +1135,7 @@ public:
   virtual const ComTdb* getChild(Int32 pos) const;
   virtual Int32 numChildren() const { return 1; }
   virtual const char *getNodeName() const { return "EX_ROOT"; };
-  virtual Int32 numExpressions() const { return 3; }
+  virtual Int32 numExpressions() const { return 4; }
   virtual ex_expr* getExpressionNode(Int32 pos) {
       if (pos == 0)
 	 return inputExpr_;
@@ -1138,6 +1143,8 @@ public:
 	 return outputExpr_;
       else if (pos == 2)
 	 return pkeyExpr_;
+      else if (pos == 3)
+	 return predExpr_;
       return NULL;
   }
 
@@ -1148,7 +1155,9 @@ public:
 	 return "outputExpr_";      
       else if (pos == 2)
 	 return "pkeyExpr_";      
-      return NULL;
+      else if (pos == 3)
+	 return "predExpr_";      
+       return NULL;
   }
   // BertBert VV
   inline NABoolean isEmbeddedUpdateOrDelete(void)

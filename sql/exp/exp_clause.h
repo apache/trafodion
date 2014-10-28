@@ -192,7 +192,9 @@ public:
     FUNC_HBASE_COLUMNS_DISPLAY     = 110,
     FUNC_HBASE_COLUMN_CREATE = 111,
     FUNC_CAST_TYPE = 112,
-    FUNC_SEQUENCE_VALUE = 113
+    FUNC_SEQUENCE_VALUE = 113,
+    FUNC_PIVOT_GROUP = 114,
+    FUNC_ROWNUM    = 115
   };
 
   // max number of operands (including result) in a clause.

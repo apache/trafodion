@@ -229,7 +229,7 @@ const NAType* SQLRecord::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 // ---------------------------------------------------------------------
 // Are the two types compatible for comparison or assignment?
 // ---------------------------------------------------------------------
-NABoolean SQLRecord::isCompatible (const NAType& other) const
+NABoolean SQLRecord::isCompatible (const NAType& other, UInt32 * flags) const
 {
   return FALSE;
 }
@@ -270,11 +270,11 @@ SQLRowset::SQLRowset(NAType *elementType, Lng32 maxNumElements,
 {
 } // SQLRowset::SQLRowset()
 
-NABoolean SQLRowset::isCompatible (const NAType& other) const
+NABoolean SQLRowset::isCompatible (const NAType& other, UInt32 * flags) const
 {
 
   // Both types must be Rowsets of the same element type and dimensions
-  if (NAType::isCompatible(other)) { 
+  if (NAType::isCompatible(other, flags)) { 
     if (other.getTypeQualifier() == NA_ROWSET_TYPE) { 
       const SQLRowset &otherRowset = *(const SQLRowset *)&other;
       if (elementType_->isCompatible(*otherRowset.getElementType()) &&

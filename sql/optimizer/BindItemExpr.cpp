@@ -86,6 +86,10 @@ void emitDyadicTypeSQLnameMsg(Lng32 sqlCode,
 			      ComDiagsArea * diagsArea = NULL,
                               const Lng32 int1 = -999999);
 
+// defined in parser/SqlParserAux.h
+extern
+ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc = FALSE);
+
 #define BINDITEMEXPR_STMTCHARSET CharInfo::UTF8
 
 // -----------------------------------------------------------------------
@@ -2196,7 +2200,8 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
   if (((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) &&
        (!CmpCommon::statement()->isDDL())) ||
       (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-      (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON))
+      (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON) ||
+      (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON))
   {
     // if left and right operands are incompatible, convert
     // one of them to the other type.
@@ -2424,7 +2429,8 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
     else if (NOT (((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) &&
 		   (!CmpCommon::statement()->isDDL())) ||
 		  (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-		  (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)))
+		  (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON) ||
+		  (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)))
       {
 	return NULL;
       }
@@ -3700,9 +3706,94 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
   const NAType *naType0 = &child(0)->getValueId().getType();
   const NumericType * nType0 = NULL;
 
+  // a quick optimization for the date format.
+  if ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
+      (child(0)->getOperatorType() == ITM_CONSTANT) &&
+      (formatStr_ == "DD-MON-YYYY") &&
+      (NOT naType0->isVaryingLen()) &&
+      (naType0->getFSDatatype() == REC_BYTE_F_ASCII) &&
+      (formatStr_.length() == naType0->getNominalSize()))
+    {
+      NABoolean canXfrm = TRUE;
+      ConstValue * cNode = (ConstValue*)child(0)->castToItemExpr();
+      NAString cv = *cNode->getRawText();
+      const char * str = cv.data();
+      if (NOT ((str[2] == '-') && (str[6] == '-')))
+        canXfrm = FALSE;
+
+      NAString dv;
+      if (canXfrm)
+        {
+          dv.append(&str[7], 4);
+          dv += "-";
+          NAString mon(&str[3], 3);
+          mon.toUpper();
+          if (mon == "JAN")
+            dv += "01";
+          else if (mon == "FEB")
+            dv += "02";
+          else if (mon == "MAR")
+            dv += "03";
+          else if (mon == "APR")
+            dv += "04";
+          else if (mon == "MAY")
+            dv += "05";
+          else if (mon == "JUN")
+            dv += "06";
+          else if (mon == "JUL")
+            dv += "07";
+          else if (mon == "AUG")
+            dv += "08";
+          else if (mon == "SEP")
+            dv += "09";
+          else if (mon == "OCT")
+            dv += "10";
+          else if (mon == "NOV")
+            dv += "11";
+          else if (mon == "DEC")
+            dv += "12";
+          else
+            canXfrm = FALSE;
+        }
+
+      ItemExpr * newNode = NULL;
+      if (canXfrm)
+        {
+          dv += "-";
+          dv.append(&str[0], 2);
+
+          // nuke the Format node and return a DATE constant
+          newNode = literalOfDate(&dv, TRUE);
+          if (newNode)
+            {
+              newNode = newNode->bindNode(bindWA);
+              if (bindWA->errStatus())
+                {
+                  canXfrm = FALSE;
+                }
+            }
+          else
+            {
+              canXfrm = FALSE;
+            }
+        }
+      
+      if ((canXfrm) && (newNode))
+        {
+          return newNode;
+        }
+      
+      SqlParser_Diags->clear();
+      bindWA->resetErrStatus();
+    }
+
+
   Int32 dateFormat = DateFormat::DEFAULT;
   NABoolean formatAsDate = FALSE;
   NABoolean formatX = FALSE;
+  NABoolean format9 = FALSE;
+  NABoolean formatExtract = FALSE;
+  Lng32 dotPos = 0;
   NABoolean formatNumericAsX = FALSE;
   NABoolean formatStringAsX  = FALSE;
   if ((formatStr_ == "YYYY-MM-DD") ||
@@ -3722,6 +3813,7 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
       (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
       (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
       (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
+      (formatStr_ == "DD-MON-YYYY HH:MI:SS") ||
       (formatStr_ == "HH24:MI:SS") ||
       (formatStr_ == "YYYYMM") ||
       (formatStr_ == "YYYY-MM") ||
@@ -3756,18 +3848,8 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 	  return this;
 	}
       
-      if (CmpCommon::getDefault(IS_DB_TRANSPORTER) == DF_ON)
-	{
-	  if (naType0->getTypeQualifier() == NA_UNKNOWN_TYPE)
-	    {
-	      Lng32 len = formatStr_.length();
-	      SQLChar cType(len);
-	      child(0)->getValueId().coerceType(cType, NA_CHARACTER_TYPE);
-	      formatCharToDate_ = TRUE;
-	    }
-	}
-      else if ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	       (formatCharToDate_ == FALSE))
+      if ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+          (formatCharToDate_ == FALSE))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
 			      << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
@@ -3792,13 +3874,11 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 	   (formatStr_ == "MM-DD-YYYY")) &&
 	  (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_OFF))
 	{
-// LCOV_EXCL_START - cnu
 	  *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
 			      << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
 					   : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
 	  bindWA->setErrStatus();
 	  return this;
-// LCOV_EXCL_STOP
 	}
 
       if (formatStr_ == "SYYYYMM")
@@ -3876,12 +3956,46 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 	  (formatStr_ == "DD.MM.YYYY:HH24:MI:SS") ||
 	  (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
 	  (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
-	  (formatStr_ == "MM/DD/YYYY HH24:MI:SS"))
+	  (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
+          (formatStr_ == "DD-MON-YYYY HH:MI:SS"))
 	dateFormat = DateFormat::TIMESTAMP_FORMAT_STR;
       else if (formatStr_ == "HH24:MI:SS")
 	dateFormat = DateFormat::TIME_FORMAT_STR;
       else
 	dateFormat = DateFormat::DATE_FORMAT_STR;
+    }
+
+  else if ((formatStr_ == "HH24") ||
+           (formatStr_ == "D") ||
+           (formatStr_ == "MM") ||
+           (formatStr_ == "YYYY"))
+    {
+      if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
+                              << DgString1(formatType_ == FORMAT_GENERIC ? "FORMAT" 
+                                           : (formatType_ == FORMAT_TO_CHAR ? "TO_CHAR" : "TO_DATE"));
+          bindWA->setErrStatus();
+          return this;
+        }
+
+      if ((formatType_ != FORMAT_TO_CHAR)  &&
+	  (naType0->getTypeQualifier() != NA_DATETIME_TYPE))
+        {
+          *CmpCommon::diags() << DgSqlCode(-4071) << DgString0("TO_CHAR");
+          bindWA->setErrStatus();
+          return this;
+        }
+
+      if ((naType0->getPrecision() != SQLDTCODE_TIMESTAMP) &&
+          (naType0->getPrecision() != SQLDTCODE_TIME))
+        {
+          *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");;
+          bindWA->setErrStatus();
+          return this;
+	}
+      
+      formatExtract = TRUE;
     }
 
   else if ((formatStr_ == "99:99:99:99") ||
@@ -3921,6 +4035,27 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 	  else
 	    formatX = FALSE;
 	}
+
+      if (NOT formatX)
+        {
+          format9 = TRUE;
+          // check if format is of the form:   99999[.99]
+          Lng32 numDots = 0;
+          dotPos = -1;
+          for (CollIndex i = 0; i < formatStr_.length(); i++)
+            {
+              if ((formatStr_.data()[i] != '9') &&
+                  (formatStr_.data()[i] != '.'))
+                format9 = FALSE;
+              else if (formatStr_.data()[i] == '.')
+                {
+                  numDots++;
+                  dotPos = i;
+                }
+            }
+          if ((format9) && (numDots > 1))
+            format9 = FALSE;
+        }
     }
 
   ItemExpr * newIE= NULL;
@@ -3967,7 +4102,8 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 		   (formatStr_ == "DD.MM.YYYY:HH24:MI:SS") ||
 		   (formatStr_ == "YYYY-MM-DD HH24:MI:SS") ||
 		   (formatStr_ == "MMDDYYYY HH24:MI:SS") ||
-		   (formatStr_ == "MM/DD/YYYY HH24:MI:SS"))
+		   (formatStr_ == "MM/DD/YYYY HH24:MI:SS") ||
+                   (formatStr_ == "DD-MON-YYYY HH:MI:SS"))
 	    {
 	      // do nothing
 	    }
@@ -4004,7 +4140,7 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
       if (bindWA->errStatus())
 	return NULL;
     }
-  else if (formatX)
+  else if ((formatX) || (format9) || (formatExtract))
     {
       Parser parser(bindWA->currentCmpContext());
       char buf[200];
@@ -4043,7 +4179,31 @@ ItemExpr * Format::bindNode(BindWA * bindWA)
 	      sprintf(buf, "CAST(@A1 as CHAR(" PFSZ "))", formatStr_.length());
 	    }
 	}
-      else
+      else if (format9)
+        {
+          if (dotPos == -1)
+            dotPos = 0;
+          else
+            dotPos = formatStr_.length() - dotPos -1;
+          sprintf(buf, "CAST(@A1 as NUMERIC(%d,%d))", (Lng32)formatStr_.length(), dotPos);
+        }
+      else if (formatExtract)
+        {
+          if (formatStr_ == "YYYY")
+            sprintf(buf, "CAST(EXTRACT (YEAR FROM @A1) AS CHAR(4))");
+          else if (formatStr_ == "MM")
+            sprintf(buf, "CAST(EXTRACT (MONTH FROM @A1) AS CHAR(2))");
+          else if (formatStr_ == "HH24")
+            sprintf(buf, "CAST(EXTRACT (HOUR FROM @A1) AS CHAR(2))");
+          else if (formatStr_ == "D")
+            sprintf(buf, "CAST(DAYOFWEEK(@A1) AS CHAR(2));");
+          else
+            {
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+       else
 	{
 	  bindWA->setErrStatus();
 	  return NULL;
@@ -5225,6 +5385,24 @@ ItemExpr *Variance::bindNode(BindWA *bindWA)
 } // Variance::bindNode()
 
 // -----------------------------------------------------------------------
+// member functions for class PivotGroup
+// -----------------------------------------------------------------------
+
+ItemExpr *PivotGroup::bindNode(BindWA *bindWA)
+{
+  ItemExpr * result = NULL;
+  
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+  
+  result = Aggregate::bindNode(bindWA);
+  if (! result || bindWA->errStatus()) 
+    return NULL;
+  
+  return result;
+}
+
+// -----------------------------------------------------------------------
 // member functions for class BiArith
 // -----------------------------------------------------------------------
 
@@ -5317,6 +5495,8 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
   // of <datetime> for datetime computation.
   NABoolean modeSpecial1 = (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
+  NABoolean modeSpecial4 = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
+
   const NAType *naType0 = &child(0)->getValueId().getType();
   const NAType *naType1 = &child(1)->getValueId().getType();
   if (isDateMathFunction() &&
@@ -5336,9 +5516,9 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
        ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
 	(naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ) ||
    	   
-   	   (isDateMathFunction() &&
-   	   (naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
-	   (naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
+      (isDateMathFunction() &&
+       (naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
+       (naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
 
        ((modeSpecial1) &&
        (((naType0->getTypeQualifier() == NA_INTERVAL_TYPE) &&
@@ -5346,7 +5526,17 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
        ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	(naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
        ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
-	 (naType1->getTypeQualifier() == NA_CHARACTER_TYPE))))  )
+	 (naType1->getTypeQualifier() == NA_CHARACTER_TYPE)))) ||
+
+       ((modeSpecial4) &&
+       (((naType0->getTypeQualifier() == NA_INTERVAL_TYPE) &&
+	(naType1->getTypeQualifier() == NA_INTERVAL_TYPE)) ||
+       ((naType0->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+	(naType1->getTypeQualifier() == NA_NUMERIC_TYPE)) ||
+       ((naType0->getTypeQualifier() == NA_NUMERIC_TYPE) &&
+	 (naType1->getTypeQualifier() == NA_CHARACTER_TYPE)) ||
+       ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
+        (naType1->getTypeQualifier() == NA_DATETIME_TYPE)))) )
     {
       // if datetime +|- numeric, then cast numeric to interval type.
       // Validate that this is being done for
@@ -5507,6 +5697,48 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	      setChild(1, newChild->bindNode(bindWA));
 	      if (bindWA->errStatus())
 		return this;
+	    }
+	}
+      else if ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
+	       (naType1->getTypeQualifier() == NA_DATETIME_TYPE) &&
+               (getOperatorType() == ITM_MINUS))
+	{
+          // in mode_special_4, datetime subtraction follows special orc semantics.
+          // Column of DATE datatype is internally created as TIMESTAMP(0).
+          // timestamp(0) - date               =  diff in days
+          // timestamp(0) - timestamp(0)  = diff in days
+          // date - date                            = diff in days
+	  const DatetimeType* datetime1 = (DatetimeType*)naType0;
+	  const DatetimeType* datetime2 = (DatetimeType*)naType1;
+          if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
+               (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) &&
+              ((datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) &&
+              (datetime1->getScale() == 0) &&
+              (datetime2->getScale() == 0))
+            {
+              ItemExpr * newChild = NULL;
+              if (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp)
+                {
+                  newChild = new (bindWA->wHeap())
+                    Cast(child(0),
+                         new (bindWA->wHeap())
+                         SQLDate(datetime1->supportsSQLnull()));
+                  setChild(0, newChild->bindNode(bindWA));
+                  if (bindWA->errStatus())
+                    return this;
+                }
+ 
+              if (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp)
+                {
+                  newChild = new (bindWA->wHeap())
+                    Cast(child(1),
+                         new (bindWA->wHeap())
+                         SQLDate(datetime2->supportsSQLnull()));
+                  setChild(1, newChild->bindNode(bindWA));
+                  if (bindWA->errStatus())
+                    return this;
+                }
 	    }
 	}
       else
@@ -5743,7 +5975,8 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 
   if ((NOT child(0)->getValueId().getType().
        isCompatible(child(1)->getValueId().getType())) &&
-      (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) &&
+      ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
+       (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON)) &&
       ((child(1)->getOperatorType() != ITM_CONSTANT) ||
        (NOT ((ConstValue *) child(1).getPtr() )->isNull())))
     {
@@ -7107,33 +7340,89 @@ void BindWA::markAsReferencedColumn(const ValueId &vid,
 ItemExpr *ColReference::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound()) 
-  {
-    if (getColRefNameObj().isStar())
-      return this;
-    BindScope *bindScope;
-    ColumnNameMap *xcnmEntry = bindWA->findColumn(getColRefNameObj(), bindScope);
-    if (bindScope != bindWA->getCurrentScope() &&
-        (bindWA->getCurrentScope()->context()->inOlapOrderBy() || 
-        bindWA->getCurrentScope()->context()->inOlapPartitionBy()))
     {
-      *CmpCommon::diags() << DgSqlCode(-4391);
-      bindWA->setErrStatus();
-      return this;
-    }    return getValueId().getItemExpr();
+      if (getColRefNameObj().isStar())
+        return this;
 
-    // In case the first time this Colreference was seen it was on
-    // left side of a set clause
-    NAColumn *nacol = getValueId().getNAColumn(TRUE/*okIfNotColumn*/);
-    const NATable * naTable = nacol->getNATable();
-    NAString fileName( naTable->getViewText() ?
-                    (NAString)naTable->getViewFileName() :
-                    naTable->getClusteringIndex()->
-                        getFileSetName().getQualifiedNameAsString(),
-                    bindWA->wHeap());
+      BindScope *bindScope;
+      ColumnNameMap *xcnmEntry = bindWA->findColumn(getColRefNameObj(), bindScope);
+      if (bindScope != bindWA->getCurrentScope() &&
+          (bindWA->getCurrentScope()->context()->inOlapOrderBy() || 
+           bindWA->getCurrentScope()->context()->inOlapPartitionBy()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-4391);
+          bindWA->setErrStatus();
+          return this;
+        }    
+      
+      // this return has been there for a long time.
+      // No idea what the code below it is doing since it will never be reached.
+      return getValueId().getItemExpr();
+      
+      // In case the first time this Colreference was seen it was on
+      // left side of a set clause
+      NAColumn *nacol = getValueId().getNAColumn(TRUE/*okIfNotColumn*/);
+      const NATable * naTable = nacol->getNATable();
+      NAString fileName( naTable->getViewText() ?
+                         (NAString)naTable->getViewFileName() :
+                         naTable->getClusteringIndex()->
+                         getFileSetName().getQualifiedNameAsString(),
+                         bindWA->wHeap());
+      
+      bindWA->setColumRefsInStoi(fileName.data(),nacol->getPosition());
+      
+    }
+  
+  // In mode_special_4,
+  // if name is of the form:   IDENTIFIER.NEXTVAL or IDENTIFIER.CURRVAL,
+  // then change it to:  seqnum(identifier, next) or seqnum(identifier, current)
+  // If name is: ROWNUM, change it to ROWNUM() function.
+  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) 
+    {
+      ColRefName &colRefName = getColRefNameObj();
+      CorrName &cn = getCorrNameObj();
+      
+      const NAString &catName = cn.getQualifiedNameObj().getCatalogName();	       
+      const NAString &schName = cn.getQualifiedNameObj().getSchemaName();		
+      const NAString &objName = cn.getQualifiedNameObj().getObjectName();		
+      const NAString &colName = colRefName.getColName();
 
-    bindWA->setColumRefsInStoi(fileName.data(),nacol->getPosition());
+      if (((catName.isNull()) &&
+          (schName.isNull()) &&
+          ((colName == "NEXTVAL") ||
+           (colName == "CURRVAL"))) ||
+          (((catName.isNull()) &&
+            (schName.isNull()) &&
+            (objName.isNull())) &&
+           (colName == "ROWNUM")))
+        {
+          ItemExpr * itemExpr = NULL;
 
-  }
+          if (colName == "ROWNUM")
+            {
+              itemExpr = new(bindWA->wHeap()) RowNumFunc();
+            }
+          else
+            {
+              CorrName seqName(objName);
+              seqName.setSpecialType(ExtendedQualName::SG_TABLE);
+              
+              itemExpr = 
+                new(bindWA->wHeap()) SequenceValue(seqName, 
+                                                   (colName == "NEXTVAL" ? FALSE : TRUE),
+                                                   (colName == "NEXTVAL" ? TRUE : FALSE));
+            }
+
+          itemExpr = itemExpr->bindNode(bindWA);
+          if (bindWA->errStatus()) 
+            return this;
+          ValueId valId = itemExpr->getValueId();
+          setValueId(valId);
+
+          bindSelf(bindWA);
+          return itemExpr;
+        }
+    }
 
   // override schema
   if ( ( bindWA->overrideSchemaEnabled() ) 
@@ -10510,6 +10799,18 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       }
     break;
 
+   case ITM_GREATEST:
+      {
+	strcpy(buf, "CASE WHEN @A1 is NULL or @A2 is null then NULL WHEN @A1 > @A2 then @A1 else @A2 END;");
+      }
+    break;
+
+   case ITM_LEAST:
+      {
+	strcpy(buf, "CASE WHEN @A1 is NULL or @A2 is null then NULL WHEN @A1 < @A2 then @A1 else @A2 END;");
+      }
+    break;
+
     case ITM_INSERT_STR:
       {
 	// Make sure that the third child(length) is of unsigned numeric with
@@ -11562,19 +11863,32 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	if (bindWA->errStatus()) 
 	  return this;
 
-	if (tempBoundTree->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
-	  {
-	    // 4043 The first operand must be numeric.
-	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0("TO_NUMBER");
-	    bindWA->setErrStatus();
-	    return this;
-	  }
+        if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF)
+          {
+            if (tempBoundTree->getValueId().getType().getTypeQualifier() != NA_CHARACTER_TYPE)
+              {
+                // 4043 The first operand must be numeric.
+                *CmpCommon::diags() << DgSqlCode(-4043) << DgString0("TO_NUMBER");
+                bindWA->setErrStatus();
+                return this;
+              }
+          }
 
 	NAType &type_op1 =
 	  (NAType&)tempBoundTree->getValueId().getType();
 	
 	str_sprintf(buf, "CAST(@A1 as NUMERIC(%d));",
 		    type_op1.getNominalSize());
+      }
+    break;
+
+    case ITM_TO_TIMESTAMP:
+      {
+	ItemExpr *tempBoundTree = child(0)->castToItemExpr()->bindNode(bindWA); 
+	if (bindWA->errStatus()) 
+	  return this;
+
+	str_sprintf(buf, "CAST(@A1 as TIMESTAMP(6));");
       }
     break;
 
@@ -12407,3 +12721,79 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
   return boundExpr;
 }
 
+ItemExpr *RowNumFunc::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+  // For now user(x) is allowed only in the top most select list
+  // check that first, or else give an error
+
+  BindScope * currScope = bindWA->getCurrentScope();
+  BindContext *context = currScope->context();
+
+  if (!(context->inSelectList()))
+    //      (! context->inWhereClause()))
+  {
+    *CmpCommon::diags() << DgSqlCode(-4311)
+			<< DgString0("ROWNUM");
+    bindWA->setErrStatus();
+    return NULL;
+  }
+
+  // Check for case like select (select user(1) ...).
+  // or select * from t1, (select user(x) from t1) t3 etc.
+  // Here the user function is in the select list of a
+  // sub-query and in join, hence is not allowed.
+  // Also it is not allowed at any other place example orderBy
+  BindScope *prevScope   = NULL;
+
+  while (currScope)
+  {
+    BindContext *currContext = currScope->context();
+    if (currContext->inSubquery() ||
+        currContext->inOrderBy() ||
+        currContext->inExistsPredicate() ||
+        currContext->inGroupByClause() ||
+        currContext->inGroupByOrdinal() ||
+        currContext->inWhereClause() ||
+        currContext->inHavingClause() ||
+        currContext->inUnion() ||
+        currContext->inJoin()       )
+      {
+ 	*CmpCommon::diags() << DgSqlCode(-4311)
+			    << DgString0("ROWNUM");
+	bindWA->setErrStatus();
+	return NULL;
+      }
+    prevScope = currScope;
+    currScope = bindWA->getPreviousScope(prevScope);
+  }
+
+  return BuiltinFunction::bindNode(bindWA);
+} // RowNumFunc::bindNode
+
+NABoolean ItemExpr::canBeUsedInGBorOB(NABoolean setErr)
+{
+  Int32 arity = getArity();
+  for (Int32 i=0; i<arity; i++) 
+    {
+      ItemExpr *ieChild = child(i);
+      if (NOT ieChild->canBeUsedInGBorOB(setErr))
+        return FALSE;
+    }
+  
+  return TRUE;
+}
+
+NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
+{
+  // cannot be used in a group by or order by clause.
+  if (setErr)
+    {
+      *CmpCommon::diags() << DgSqlCode(-4311)
+                          << DgString0("ROWNUM");
+    }
+
+  return FALSE;
+}

@@ -258,8 +258,11 @@ protected:
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
   short createColumnwiseRow();
   short createRowwiseRow();
+  Lng32 createSQRowFromHbaseFormat();
+  Lng32 createSQRowFromAlignedFormat();
   short copyCell();
   Lng32 createSQRowDirect();
+
   short getColPos(char * colName, Lng32 colNameLen, Lng32 &idx);
   short applyPred(ex_expr * expr,UInt16 tuppIndex = 0,
 		  char * tuppRow = NULL);
@@ -278,6 +281,13 @@ protected:
     (ComTdbHbaseAccess::HbaseGetRows*hgr);
   Lng32 setupSubsetRowIdsAndCols
     (ComTdbHbaseAccess::HbaseScanRows* hsr);
+  Lng32 genAndAssignSyskey(UInt16 tuppIndex, char * tuppRow);
+
+  short createDirectAlignedRowBuffer( UInt16 tuppIndex, 
+                                      char * tuppRow,
+                                      Queue * listOfColNames, 
+                                      NABoolean isUpdate,
+                                      std::vector<UInt32> * posVec );
 
   short createDirectRowBuffer(UInt16 tuppIndex, char * tuppRow, 
                         Queue * listOfColNames,
@@ -381,6 +391,9 @@ protected:
   Lng32 currRowidIdx_;
 
   HbaseStr rowID_;
+
+  // length of aligned format row created by eval method. 
+  ULng32 insertRowlen_; 
 
   Lng32 rowIDAllocatedLen_;
   char *rowIDAllocatedVal_;
@@ -738,6 +751,7 @@ public:
 			  ex_globals *glob );
   
   virtual ExWorkProcRetcode work(); 
+
  protected:
   enum {
     NOT_STARTED

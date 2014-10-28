@@ -330,10 +330,10 @@ public:
   //                (like assigning tempsArea, assigning generated pcode, etc).
   NA_EIDPROC virtual exp_return_type fixup(Lng32, unsigned short,
                                            const ex_tcb * tcb,
-					   ComSpace * space = 0,
-					   CollHeap * exHeap = 0,
-					   NABoolean computeSpaceOnly = FALSE,
-					   ex_globals * glob = FALSE);
+					   ComSpace * space,
+					   CollHeap * exHeap,
+					   NABoolean computeSpaceOnly,
+					   ex_globals * glob);
 
   ////////////////////////////////////////////////////////////////////
   // eval() -- evaluates the expression.

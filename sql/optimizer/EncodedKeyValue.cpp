@@ -371,7 +371,7 @@ short encodeKeyValues(desc_struct   * column_descs,
 						     space);
   
   keyEncodeExpr->getExpr()->fixup(0,expGen.getPCodeMode(), 
-                           (ex_tcb *)space,space, h);
+                                  (ex_tcb *)space,space, h, FALSE, NULL);
 
   atp_struct * workAtp = keyEncodeExpr->getWorkAtp();
   workAtp->getTupp(keyAtpIndex).setDataPointer(encodedKeyBuffer);

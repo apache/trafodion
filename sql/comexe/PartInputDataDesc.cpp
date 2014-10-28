@@ -266,7 +266,7 @@ Lng32 ExRangePartInputData::evalExpressions(Space * space,
       workAtp->getTupp(partRangeExprAtpIndex_).setDataPointer
         (&((char*)partRanges_)[offs]);
 
-      partRangeExpressions_[i]->fixup(0,ex_expr::PCODE_NONE,0,space,exHeap);
+      partRangeExpressions_[i]->fixup(0,ex_expr::PCODE_NONE,0,space,exHeap,FALSE,NULL);
       if (partRangeExpressions_[i]->eval(workAtp,NULL) == ex_expr::EXPR_ERROR)
 	result = -1;
     }

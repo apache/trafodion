@@ -104,13 +104,13 @@ ExSampleTcb::ExSampleTcb
   // Fixup the sample expression
   //
   if (initExpr())
-    initExpr()->fixup(0, getExpressionMode(), this, space, heap);
+    initExpr()->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 
   if (balanceExpr())
-    balanceExpr()->fixup(0, getExpressionMode(), this, space, heap);
+    balanceExpr()->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 
   if (postPred())
-    postPred()->fixup(0, getExpressionMode(), this, space, heap);
+    postPred()->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 }
 
 // Destructor

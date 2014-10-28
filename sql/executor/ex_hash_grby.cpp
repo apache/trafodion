@@ -268,44 +268,44 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
   //
   if (hashExpr_)
     (void) hashExpr_->fixup(0, getExpressionMode(), this,
-			    space_, heap_, glob->computeSpace());
+			    space_, heap_, glob->computeSpace(), glob);
   if (bitMuxExpr_) {
     (void) bitMuxExpr_->fixup(0, getExpressionMode(), this, 
-			      space_, heap_, glob->computeSpace());
+			      space_, heap_, glob->computeSpace(), glob);
     if (bitMuxAggrExpr_)
       (void) bitMuxAggrExpr_->fixup(0, getExpressionMode(), this,
-				    space_, heap_, glob->computeSpace());
+				    space_, heap_, glob->computeSpace(), glob);
   }
   if (hbMoveInExpr_)
     (void) hbMoveInExpr_->fixup(0, getExpressionMode(), this,
-				space_, heap_, glob->computeSpace());
+				space_, heap_, glob->computeSpace(), glob);
   if (ofMoveInExpr_)
     (void) ofMoveInExpr_->fixup(0, getExpressionMode(), this,
-				space_, heap_, glob->computeSpace());
+				space_, heap_, glob->computeSpace(), glob);
   if (resMoveInExpr_)
     (void) resMoveInExpr_->fixup(0, getExpressionMode(), this,
-				 space_, heap_, glob->computeSpace());
+				 space_, heap_, glob->computeSpace(), glob);
   if (hbAggrExpr_)
     (void) hbAggrExpr_->fixup(0, getExpressionMode(), this,
-			      space_, heap_, glob->computeSpace());
+			      space_, heap_, glob->computeSpace(), glob);
   if (ofAggrExpr_)
     (void) ofAggrExpr_->fixup(0, getExpressionMode(), this,
-			      space_, heap_, glob->computeSpace());
+			      space_, heap_, glob->computeSpace(), glob);
   if (resAggrExpr_)
     (void) resAggrExpr_->fixup(0, getExpressionMode(), this,
-			       space_, heap_, glob->computeSpace());
+			       space_, heap_, glob->computeSpace(), glob);
   if (havingExpr_)
     (void) havingExpr_->fixup(0, getExpressionMode(), this,
-			      space_, heap_, glob->computeSpace());
+			      space_, heap_, glob->computeSpace(), glob);
   if (moveOutExpr_)
     (void) moveOutExpr_->fixup(0, getExpressionMode(), this,
-			       space_, heap_, glob->computeSpace());
+			       space_, heap_, glob->computeSpace(), glob);
   if (hbSearchExpr_)
     (void) hbSearchExpr_->fixup(0, getExpressionMode(), this,
-				space_, heap_, glob->computeSpace());
+				space_, heap_, glob->computeSpace(), glob);
   if (ofSearchExpr_)
     (void) ofSearchExpr_->fixup(0, getExpressionMode(), this,
-				space_, heap_, glob->computeSpace());
+				space_, heap_, glob->computeSpace(), glob);
   // LCOV_EXCL_STOP
   // Allocate the ATP's that are used internally in the work
   // methods.

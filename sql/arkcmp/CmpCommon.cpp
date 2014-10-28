@@ -162,6 +162,11 @@ double CmpCommon::getDefaultNumeric(DefaultConstants id)
   return result;
 }
 
+NAString CmpCommon::getDefaultString(DefaultConstants id)
+{
+  return ActiveSchemaDB()->getDefaults().getString(id);
+}
+
 DefaultToken CmpCommon::getDefault(DefaultConstants id,
 				   Int32 errOrWarn)
 {

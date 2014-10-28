@@ -44,6 +44,7 @@ ComTdbRoot::ComTdbRoot()
      : ComTdb(ComTdb::ex_ROOT,eye_ROOT),
        childTdb(NULL), criDesc_(NULL), inputExpr_(NULL), outputExpr_(NULL),
        pkeyExpr_(NULL), firstNRows_(-1), stoiList_(NULL),
+       predExpr_(NULL),
        uniqueExecuteIdOffset_(-1), compoundStmtsInfo_(0), qCacheInfo_(NULL),
        cacheVarsSize_(0), // Triggers
        triggersStatusOffset_(-1),
@@ -78,6 +79,7 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 		      Lng32 input_vars_size,
 		      ex_expr * pkey_expr,
 		      ULng32 pkey_len,
+                      ex_expr * pred_expr,
 		      ex_cri_desc * work_cri_desc,
 		      ExFragDir *fragDir,
 		      TransMode * transMode,
@@ -139,6 +141,8 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 
   pkeyExpr_ = pkey_expr;
   pkeyLen_  = pkey_len;
+
+  predExpr_ = pred_expr;
   workCriDesc_ = work_cri_desc;
 
   fragDir_ = fragDir;
@@ -286,6 +290,7 @@ Long ComTdbRoot::pack(void * space)
   inputExpr_.pack(space);
   outputExpr_.pack(space);
   pkeyExpr_.pack(space);
+  predExpr_.pack(space);
   workCriDesc_.pack(space);
   fragDir_.pack(space);
   transMode_.pack(space);
@@ -337,6 +342,7 @@ Lng32 ComTdbRoot::unpack(void * base, void * reallocator)
   if(inputExpr_.unpack(base, reallocator)) return -1;
   if(outputExpr_.unpack(base, reallocator)) return -1;
   if(pkeyExpr_.unpack(base, reallocator)) return -1;
+  if(predExpr_.unpack(base, reallocator)) return -1;
   if(workCriDesc_.unpack(base, reallocator)) return -1;
   if(fragDir_.unpack(base, reallocator)) return -1;
   if(transMode_.unpack(base, reallocator)) return -1;

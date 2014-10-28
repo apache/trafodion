@@ -195,7 +195,7 @@ ex_send_top_tcb::ex_send_top_tcb(const ex_send_top_tdb& sendTopTdb,
   // fixup expressions
   if (moveInputValues())
     (void) moveInputValues()->fixup(0, getExpressionMode(), this,
-				    glob->getSpace(), glob->getDefaultHeap());
+				    glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   nextToSendDown_ = qParent_.down->getHeadIndex();
 
