@@ -7263,7 +7263,7 @@ Int64 NATable::estimateHBaseRowCount()
   else
     {
       HbaseStr fqTblName;
-      NAString tblName = getTableName().getQualifiedNameAsAnsiString();
+      NAString tblName = getTableName().getQualifiedNameAsString();
       fqTblName.len = tblName.length();
       fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
       strncpy(fqTblName.val, tblName.data(), fqTblName.len);
