@@ -695,9 +695,12 @@ public class HBaseClient {
       nano2 = System.nanoTime();
       if (logger.isDebugEnabled()) logger.debug("FileSystem.get() took " + ((nano2 - nano1) + 500000) / 1000000 + " milliseconds.");
       CacheConfig cacheConf = new CacheConfig(config);
-      URI hbaseRootDirURI = new URI(config.get(HConstants.HBASE_DIR));
+      String hbaseRootPath = config.get(HConstants.HBASE_DIR).trim();
+      if (hbaseRootPath.charAt(0) != '/')
+        hbaseRootPath = new URI(hbaseRootPath).getPath();
+      if (logger.isDebugEnabled()) logger.debug("hbaseRootPath = " + hbaseRootPath);
       FileStatus[] fsArr = fileSystem.globStatus(new Path(
-                               hbaseRootDirURI.getPath() + "/data/default/" +
+                               hbaseRootPath + "/data/default/" +
                                tblName + "/" + REGION_NAME_PATTERN +
                                "/#1/" + HFILE_NAME_PATTERN));
       for (FileStatus fs : fsArr) {
