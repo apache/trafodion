@@ -197,18 +197,29 @@ MyTable &myTable = static_cast<MyTable &>(myTable_);
 
 // *****************************************************************************
 // *                                                                           *
-// * Function: PrivMgrObjects::fetchUIDandTypes                                *
+// * Function: PrivMgrObjects::fetchQualifiedName                              *
 // *                                                                           *
+// *    Returns the fully qualified (cat.sch.obj) name for the object that     *
+// * matches the unique ID.                                                    *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
 // *                                                                           *
+// *  <objectUID>                     const int64_t                   In       *
+// *    is the unique ID representing the object.                              *
+// *                                                                           *
+// *  <qualifiedObjectName>           std::string &                   Out      *
+// *    passes back the name of the object, fully qualified.                   *
+// *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // * Returns: PrivStatus                                                       *
 // *                                                                           *
+// *  STATUS_GOOD: Name of object was returned.                                *
+// * STATUS_ERROR: Name of object was not returned.  A CLI error is put into   *
+// *               the diags area.                                             *
 // *                                                                           *
 // *****************************************************************************
 PrivStatus PrivMgrObjects::fetchQualifiedName(
@@ -236,8 +247,64 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
    return STATUS_GOOD;
     
 }
-//******************* End of PrivMgrObjects::fetchUIDandTypes ******************
+//****************** End of PrivMgrObjects::fetchQualifiedName *****************
 
+
+
+
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrObjects::fetchQualifiedName                              *
+// *                                                                           *
+// *                                                                           *
+// *    Returns the fully qualified (cat.sch.obj) name for the object that     *
+// * matches the specifications of the WHERE clause.                           *
+// *                                                                           *
+// * NOTE: WHERE clause must specify a unique object or behavior is            *
+// *       unsupported.                                                        *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *                                                                           *
+// *  <whereClause>                   const std::string &             In       *
+// *    is the WHERE clause specifying a unique object.                        *
+// *                                                                           *
+// *  <qualifiedObjectName>           std::string &                   Out      *
+// *    passes back the name of the object, fully qualified.                   *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// *  STATUS_GOOD: Name of object was returned.                                *
+// * STATUS_ERROR: Name of object was not returned.  A CLI error is put into   *
+// *               the diags area.                                             *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrObjects::fetchQualifiedName(
+   const std::string & whereClause,
+   std::string & qualifiedObjectName) 
+        
+{
+
+MyTable &myTable = static_cast<MyTable &>(myTable_);
+MyRow row(fullTableName_);
+
+PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
+
+   if (privStatus != STATUS_GOOD)
+      return STATUS_ERROR;
+
+   qualifiedObjectName = row.catalogName_ + ".";
+   qualifiedObjectName += row.schemaName_ + ".";
+   qualifiedObjectName += row.objectName_;   
+
+   return STATUS_GOOD;
+    
+}
+//****************** End of PrivMgrObjects::fetchQualifiedName *****************
 
 
 
@@ -246,16 +313,26 @@ PrivStatus privStatus = myTable.selectWhereUnique(whereClause,row);
 // *                                                                           *
 // * Function: PrivMgrObjects::fetchUIDandTypes                                *
 // *                                                                           *
+// *    Returns a vector of object UIDs and their object type for all rows     *
+// * in the OBJECTS table specified by a WHERE clause.                         *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // *  Parameters:                                                              *
 // *                                                                           *
+// *  <whereClause>                   const std::string &             In       *
+// *    is the WHERE clause specifying a unique object.                        *
+// *                                                                           *
+// *  <UIDandTypes>                   vector<UIDAndType> &            Out      *
+// *    passes back a vector of object UIDs and their object type.             *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
 // * Returns: PrivStatus                                                       *
 // *                                                                           *
+// *  STATUS_GOOD: A vector of object UIDs and object types was returned.      *
+// * STATUS_ERROR: Error reading OBJECTS table or no matches found.  A CLI     *
+// *               error is put into the diags area.                           *
 // *                                                                           *
 // *****************************************************************************
 PrivStatus PrivMgrObjects::fetchUIDandTypes(
@@ -302,7 +379,8 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
 // *                                                                           *
 // * Function: MyTable::insert                                                 *
 // *                                                                           *
-// *    Inserts a row into the COMPONENTS table.                               *
+// *    Function defined because base class requires it.  This is not the      *
+// * way to insert into the OBJECTS table.                                     *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -323,21 +401,7 @@ PrivStatus MyTable::insert(const PrivMgrMDRow & rowIn)
 {
 
 char insertStatement[1000];
-#if 0
-const MyRow & row = static_cast<const MyRow &>(rowIn);
-char isSystem[3] = {0};
 
-   if (row.isSystem_)
-      isSystem[0] = 'Y';
-   else
-      isSystem[0] = 'N';
-   sprintf(insertStatement, "insert into %s values (%ld, '%s', '%s', '%s')",
-           tableName_.c_str(),
-           row.componentUID_,
-           row.componentName_.c_str(),
-           isSystem,
-           row.componentDescription_.c_str());
-#endif           
    return CLIImmediate(insertStatement);
 
 }

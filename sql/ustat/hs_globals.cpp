@@ -33,6 +33,8 @@
 
 #define HS_FILE "hs_globals"
 
+#define   SQLPARSERGLOBALS_FLAGS				  
+#include "SqlParserGlobalsCmn.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -57,8 +59,6 @@
 #include "csconvert.h"
 #include "ReadTableDef.h"
 #include "exp_clause_derived.h"  // convDoIt
-#define   SQLPARSERGLOBALS_FLAGS				  
-#include "SqlParserGlobalsCmn.h"
 #include "ExSqlComp.h" // for NAExecTrans()
 #include "sql_id.h"
 #include "parser.h"

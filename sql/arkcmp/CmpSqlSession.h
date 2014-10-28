@@ -72,9 +72,9 @@ public:
   void setSessionUsername(NAString &userName);
 
   NAString &getDatabaseUserName() { return databaseUserName_; }
-
   Int32 &getDatabaseUserID() { return databaseUserID_; }
-  Lng32 setDatabaseUserID(Int32 userID);
+
+  Lng32 setDatabaseUser(Int32 userID, const char *userName);
 
   NAString &volatileSchemaName() { return volatileSchemaName_;}
   void setVolatileSchemaName(NAString &volatileSchemaName);

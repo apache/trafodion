@@ -77,6 +77,7 @@
 #include "ComTransInfo.h"
 #include "ExUdrServer.h"
 #include "ComSqlId.h"
+#include "NAUserId.h"
 
 #include "stringBuf.h"
 #include "NLSConversion.h"
@@ -3728,6 +3729,10 @@ void ContextCli::createMxcmpSession()
 
   // Send the user ID
   Int32 userAsInt = (Int32) databaseUserID_;
+  char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1];
+  str_sprintf(userMessage, "%d,%s", userAsInt, databaseUserName_);
+  char *pMessage = (char *)&userMessage;
+
 
 #ifdef NA_CMPDLL
   Int32 cmpStatus = 2;  // assume failure
@@ -3737,8 +3742,8 @@ void ContextCli::createMxcmpSession()
     {
       char *dummyReply = NULL;
       ULng32 dummyLen;
-      cmpStatus = CmpCommon::context()->compileDirect((char *) &userAsInt,
-                               (ULng32) sizeof(userAsInt), &exHeap_,
+      cmpStatus = CmpCommon::context()->compileDirect(pMessage,
+                               (ULng32) sizeof(userMessage), &exHeap_,
                                SQLCHARSETCODE_UTF8, EXSQLCOMP::DATABASE_USER,
                                dummyReply, dummyLen, getSqlParserFlags());
       if (cmpStatus != 0)
@@ -3769,8 +3774,8 @@ void ContextCli::createMxcmpSession()
   ExSqlComp *exSqlComp = cliGlobals_->getArkcmp(indexIntoCompilerArray);
   ex_assert(exSqlComp, "CliGlobals::getArkcmp() returned NULL");
   exSqlComp->sendRequest(EXSQLCOMP::DATABASE_USER,
-                         (const char *) &userAsInt,
-                         (ULng32) sizeof(userAsInt));
+                         (const char *) &pMessage,
+                         (ULng32) sizeof(pMessage));
 #ifdef NA_CMPDLL
     }
 #endif // NA_CMPDLL
@@ -4772,28 +4777,56 @@ RETCODE ContextCli::usersQuery(AuthQueryType queryType,      // IN
 
 }
 
-// Private method to update the databaseUserID_ and databaseUserName_
-// members and at the same time, call dropSession() to create a
+// Public method to update the databaseUserID_ and databaseUserName_
+// members and at the same time. It also calls dropSession() to create a
 // session boundary.
 void ContextCli::setDatabaseUser(const Int32 &uid, const char *uname)
 {
-  if (databaseUserID_ == uid)
+  // Since this was moved from private to public, do some sanity checks
+  // to make sure the passed in parameters are valid.  We don't want to
+  // read any metadata since this could get into an infinte loop.
+  if (uid >= MIN_USERID && uid <= MAX_USERID)
+    ex_assert(uid, "Invalid userID specified");
+  if (uname == NULL || strlen(uname) == 0)
+    ex_assert(uname, "No username was specified");
+
+  // If the passed in credentials match what is stored, nothing needs
+  // to be done.
+  if (databaseUserID_ == uid &&
+      strlen(uname) == strlen(databaseUserName_) &&
+      str_cmp(databaseUserName_, uname, strlen(uname)) == 0)
     return;
 
+  // Is this the place to drop any compiler contexts?
   dropSession();
 
+  // Save changed user credentials
   databaseUserID_ = uid;
-
   strncpy(databaseUserName_, uname, MAX_DBUSERNAME_LEN);
   databaseUserName_[MAX_DBUSERNAME_LEN] = 0;
 }
 
 // Public method to establish a new user identity. userID will be
-// verified against metadata in the USERS table. If a matching row is
+// verified against metadata in the AUTHS table. If a matching row is
 // not found an error code will be returned and diagsArea_ populated.
 RETCODE ContextCli::setDatabaseUserByID(Int32 userID)
 {
-  return ERROR;
+  char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
+  Int32 userIDFromUsersTable;
+
+  // See if the USERS row exists
+  RETCODE result = usersQuery(USERS_QUERY_BY_USER_ID,
+                              NULL,        // IN user name (ignored)
+                              userID,      // IN user ID
+                              usersNameFromUsersTable, //OUT
+                              userIDFromUsersTable);    //OUT
+
+  // Update the instance if the USERS lookup was successful
+  if (result != ERROR)
+    setDatabaseUser(userIDFromUsersTable, usersNameFromUsersTable);
+
+  return result;
+
 }
 
 // Public method to establish a new user identity. userName will be
@@ -4801,7 +4834,7 @@ RETCODE ContextCli::setDatabaseUserByID(Int32 userID)
 // not found an error code will be returned and diagsArea_ populated.
 RETCODE ContextCli::setDatabaseUserByName(const char *userName)
 {
-  char usersNameFromUsersTable[600];
+  char usersNameFromUsersTable[MAX_USERNAME_LEN +1];
   Int32 userIDFromUsersTable;
   // See if the USERS row exists
   RETCODE result = usersQuery(USERS_QUERY_BY_USER_NAME,
@@ -4813,9 +4846,10 @@ RETCODE ContextCli::setDatabaseUserByName(const char *userName)
   // Update the instance if the USERS lookup was successful
   if (result != ERROR)
      setDatabaseUser(userIDFromUsersTable, usersNameFromUsersTable);
-  
+
   return result;
 }
+
 
 // *****************************************************************************
 // *                                                                           *

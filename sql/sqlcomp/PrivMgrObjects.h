@@ -70,6 +70,10 @@ public:
       const int64_t objectUID,
       std::string & qualifiedObjectName);
        
+   PrivStatus fetchQualifiedName(
+      const std::string & whereClause,
+      std::string & qualifiedObjectName);
+       
    PrivStatus fetchUIDs(
       const std::string whereClause,
       vector<int64_t> &UIDs);

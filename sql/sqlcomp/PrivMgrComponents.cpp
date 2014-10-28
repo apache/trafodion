@@ -447,42 +447,16 @@ PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
 int64_t PrivMgrComponents::getUniqueID()
 {
 
-#if 0
-volatile int x1;
-std::string selectStmt ("SELECT MAX (component_uid) FROM ");
-volatile int x2;
-
-   selectStmt += fullTableName_;
-#endif 
-
 Lng32 len = 0;
 char stmtBuf[1000];
 
-   strcpy(stmtBuf,"SELECT MAX (component_uid) FROM ");
+   strcpy(stmtBuf,"SELECT NVL(MAX(component_uid),0) FROM ");
    strcat(stmtBuf,fullTableName_.c_str());
 
-// *****************************************************************************
-// *                                                                           *
-// *   CLI/Executor function executeImmediate (actually executeImmediateExec)  *
-// * may overwrite memory following maxValue.  To avoid this problem, the      *
-// * workaroudn is to surround maxValue with dummy variables to guard the      *
-// * memory.  Dummy variables need to be volatile to avoid elimination         *
-// * during optimization.                                                      *
-// *                                                                           *
-// *   The overwrite only occurs when nullTerminate fourth param) is true, but *
-// * if it is false, maxValue may not be set.                                  *
-// *                                                                           *
-// * Prior to this "fix", core would occur when selectStmt was freed at the    *
-// * end of function.  The variable len was optimized out at O2.               *
-// *                                                                           *
-// *****************************************************************************
-
-volatile int dummy1 = -1;
 int64_t maxValue = 0;
-volatile int dummy2 = -1;
 
 ExeCliInterface cliInterface(STMTHEAP);
-Lng32 cliRC = cliInterface.executeImmediate(stmtBuf,(char *)&maxValue,&len,true);
+Lng32 cliRC = cliInterface.executeImmediate(stmtBuf,(char *)&maxValue,&len,false);
 
    if (cliRC != 0)
    {

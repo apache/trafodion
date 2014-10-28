@@ -671,22 +671,28 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
 
   if (ret != ERROR)
   {
-    // Send database user ID as a 4-byte integer
+    // Send database credentials in a string as follows:
+    //    Database userID
+    //    Delimiter
+    //    Database username
     Int32 *userID = ctxt->getDatabaseUserID();
     Int32 userAsInt = *((Int32 *) userID);
+    char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1];
+    str_sprintf(userMessage, "%d,%s", userAsInt, ctxt->getDatabaseUserName());
+
 #if defined(NA_DEBUG_C_RUNTIME)
     NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
     if (doDebug)
     {
-      printf("[DBUSER:%d] ExSqlComp::resendControls sending user ID %d\n",
-             (int) getpid(), (int) userAsInt);
+      printf("[DBUSER:%d] Sending CMP user credentials through ExSqlComp::resendControls,  %s\n",
+             (int) getpid(), userMessage);
       fflush(stdout);
     }
 #endif
     
     ret = sendRequest(EXSQLCOMP::DATABASE_USER,
-                      (const char *) &userAsInt,
-                      (ULng32) sizeof(userAsInt));
+                      (const char *) &userMessage,
+                      (ULng32) sizeof(userMessage));
   }
 
   ComDiagsArea loopDiags(h_);

@@ -2719,6 +2719,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		}
 		break;
 	      }
+         
+             if (step_ == HANDLE_ERROR_)
+               break;
 
 	     Int32 qryArraySize = sizeOfqs / sizeof(QueryString);
 	     char * gluedQuery;

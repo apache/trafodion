@@ -84,6 +84,7 @@
 #include "RelExeUtil.h"
 #include "CmpSeabaseDDL.h"
 #include "CmpSeabaseDDLupgrade.h"
+#include "NAUserId.h"
 
 #include "Generator.h"
 
@@ -1035,19 +1036,29 @@ CmpStatement::process(const CmpMessageDatabaseUser &statement)
 {
   NABoolean doDebug = FALSE;
 
-  Int32 userID = 0;
-  memcpy(&userID, statement.data(), sizeof(Int32));
+  NAString message = statement.data();
+  size_t delimPos = message.first(',');
+  CMPASSERT(delimPos <= MAX_AUTHID_AS_STRING_LEN);
+
+  NAString userIDStr (message.data(), delimPos);
+  Int32 userID = atoi(userIDStr.data());
+  char * userName = (char *)message.data();
+  userName += delimPos + 1;
 
   if (doDebug)
+  {
     printf("[DBUSER:%d]   Received user ID %d\n",
            (int) getpid(), (int) userID);
+    printf("[DBUSER:%d]   Received username %s\n",
+           (int) getpid(), userName);
+  }
 
   CmpSqlSession *session = CmpCommon::context()->sqlSession();
   CMPASSERT(session);
 
-  Lng32 sqlcode = session->setDatabaseUserID(userID);
+  Lng32 sqlcode = session->setDatabaseUser(userID, userName);
   if (doDebug)
-    printf("[DBUSER:%d]   session->setDatabaseUserID() returned %d\n",
+    printf("[DBUSER:%d]   session->setDatabaseUser() returned %d\n",
            (int) getpid(), (int) sqlcode);
   
   if (doDebug)

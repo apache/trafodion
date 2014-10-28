@@ -72,7 +72,7 @@ enum SqlParser_Flags_Enum {
     // set in sqlcomp/parser.cpp Parser::parseSQL and used in
     // parser/SqlParserAux.cpp literalOfNumericPassingScale to
     // allow generator & binder to specify arbitrary precision
-    // exact numeric literals (to fix genesis case: 10-030515-7344).
+    // for exact numeric literals 
     ALLOW_ARB_PRECISION_LITERALS  =      0x100,
     ALLOW_UNKNOWN_CHARSET         = 0x200,  // used by SqlParser.y for charsets
 

@@ -1559,7 +1559,48 @@ PrivStatus privStatus = STATUS_GOOD;
       if (!grantExists(componentUIDString,operationCodes[oc],grantorID,
                        granteeID,grantDepth))
       {
-         *pDiags_ << DgSqlCode(-CAT_NOT_AUTHORIZED);
+         int32_t length;
+         char grantorName[MAX_DBUSERNAME_LEN + 1];
+                  
+         Int16 retCode = ComUser::getAuthNameFromAuthID(grantorID,
+                                                        grantorName,
+                                                        sizeof(grantorName),
+                                                        length);
+         // Should not fail, grantor ID was derived from name provided by user.
+         if (retCode != 0)
+         {
+            std::string errorText("Unable to look up grantor name for ID ");
+            
+            errorText += authIDToString(grantorID);
+            PRIVMGR_INTERNAL_ERROR(errorText.c_str());
+            return STATUS_ERROR;
+         }
+      
+         char granteeName[MAX_DBUSERNAME_LEN + 1];
+                  
+         retCode = ComUser::getAuthNameFromAuthID(granteeID,
+                                                  granteeName,
+                                                  sizeof(granteeName),
+                                                  length);
+         // Should not fail, grantee ID was derived from name provided by user.
+         if (retCode != 0)
+         {
+            std::string errorText("Unable to look up grantee name for ID ");
+            
+            errorText += authIDToString(granteeID);
+            PRIVMGR_INTERNAL_ERROR(errorText.c_str());
+            return STATUS_ERROR;
+         }
+         
+         std::string operationOnComponent(operations[oc]);
+         
+         operationOnComponent += " on component ";
+         operationOnComponent += componentName;
+      
+         *pDiags_ << DgSqlCode(-CAT_GRANT_NOT_FOUND) 
+                  << DgString0(operationOnComponent.c_str()) 
+                  << DgString1(grantorName) 
+                  << DgString2(granteeName);
          return STATUS_ERROR;
       }
    

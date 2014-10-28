@@ -904,19 +904,15 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
       *outputBufLen = 0;
       if (retcode != 100)
 	{
-	  if (nullTerminate)
-	    {
-	      char * ptr;
-	      Lng32 len;
-	      getPtrAndLen(1, ptr, len);
+	  char * ptr;
+	  Lng32 len;
+	  getPtrAndLen(1, ptr, len);
 
-	      str_cpy_all(outputBuf, ptr, len);
-	      
-	      outputBuf[len] = 0;
-	      *outputBufLen = len;
-	    }
-	  else
-	    *outputBufLen = outputDatalen_;
+	  str_cpy_all(outputBuf, ptr, len);
+	  
+	  if (nullTerminate)
+	    outputBuf[len] = 0;
+	  *outputBufLen = len;
 	}
     }
 

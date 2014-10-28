@@ -111,6 +111,9 @@ public:
   RETCODE setDatabaseUserByID(Int32 userID);
   RETCODE setDatabaseUserByName(const char *userName);
 
+  void setDatabaseUser(const Int32 &uid, // IN
+                       const char *uname);   // IN
+
   // Functions to map between Trafodion authentication IDs and names. The 
   // mapping operation is not supported on other platforms.
   RETCODE getAuthIDFromName(
@@ -481,11 +484,6 @@ private:
   {
     (v ? flags_ |= DELETE_MERGED_STATS_ : flags_ &= ~DELETE_MERGED_STATS_); 
   }
-
-  // Private method to update databaseUserID_ and databaseUserName_
-  // data members and manage session boundaries
-  void setDatabaseUser(const Int32 &uid, // IN
-                       const char *uname);   // IN
 
   // An enumeration for different types of lookups into the AUTHS table 
   //   USER BY USER NAME      -- Find the row matching a database user name
