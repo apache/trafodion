@@ -45,17 +45,9 @@ MPICH_ROOT="$TOOLSDIR/dest-mpich-3.0.4"
 ZOOKEEPER_DIR="$TOOLSDIR/zookeeper-3.4.5"
 THRIFT_LIB_DIR="$TOOLSDIR/thrift-0.9.0/lib"
 THRIFT_INC_DIR="$TOOLSDIR/thrift-0.9.0/include"
-PROTOBUFS="$TOOLSDIR/protobuf-2.4.1"
+PROTOBUFS="/usr"
 QT_TOOLKIT="$TOOLSDIR/Qt-4.8.5-64"
 # Explicitly unset QT_TOOLKIT here if Qt is not installed and you don't want to build the SqlCompilerDebugger
 # unset QT_TOOLKIT
 
-# These paths do not need to be set if Cloudera or Hortonworks are installed in
-# the standard location.
-# HBASE_CNF_DIR
-# HADOOP_CNF_DIR
-# HBASE_JAR_FILES
-# HADOOP_JAR_FILES
-# HADOOP_JAR_DIRS
-# HADOOP_INC_DIR
-# HADOOP_LIB_DIR
+# HBASE*, HIVE*, HADOOP* locations may be overridden here - see sqf/sqenvcom.sh
