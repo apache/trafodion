@@ -118,22 +118,22 @@ ex_sort_grby_tcb::ex_sort_grby_tcb(const ex_sort_grby_tdb &  sort_grby_tdb,
   // fixup aggr expression
   if (aggrExpr())
     (void) aggrExpr()->fixup(0, getExpressionMode(), this, space, heap,
-			     glob->computeSpace());
+			     glob->computeSpace(), glob);
 
   // fixup move expression
   if (moveExpr())
     (void) moveExpr()->fixup(0, getExpressionMode(), this, space, heap,
-			     glob->computeSpace());
+			     glob->computeSpace(), glob);
 
   // fixup grby expression
   if (grbyExpr())
     (void) grbyExpr()->fixup(0, getExpressionMode(), this, space, heap,
-			     glob->computeSpace());
+			     glob->computeSpace(), glob);
 
   // fixup having expression
   if (havingExpr())
     (void) havingExpr()->fixup(0, getExpressionMode(), this, space, heap,
-			       glob->computeSpace());
+			       glob->computeSpace(), glob);
 
 }
 

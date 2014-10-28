@@ -109,12 +109,12 @@ ExTupleTcb::ExTupleTcb(const ComTdbTuple & tupleTdb,
       tupleExprList()->position();
       while ((currExpr = (ex_expr *)(tupleExprList()->getNext())) != NULL)
 	{
-	  (void) currExpr->fixup(0, getExpressionMode(), this, space, heap);
+	  (void) currExpr->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 	}
     }
   if (tupleTdb.predExpr_)
     (void) tupleTdb.predExpr_
-           ->fixup(0, getExpressionMode(), this, space, heap);
+      ->fixup(0, getExpressionMode(), this, space, heap, FALSE, glob);
 
   workAtp_ = allocateAtp(tupleTdb.criDescUp_, space);
 };

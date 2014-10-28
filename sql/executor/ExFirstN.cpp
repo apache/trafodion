@@ -181,8 +181,7 @@ short ExFirstNTcb::work()
 	    // FIRST N rows are requested.
 	    // It is set to 0 or a negative number, if last N rows are needed.
 	    // 0 means process all but don't return any rows.
-	    // -1 means get all rows but we should not be in this method
-	    // in case of get all rows.
+	    // -1 means get all rows. Should not reach this state.
 	    // -ve number means return the last '-(N+2)' rows.
 	    if (firstnTdb().firstNRows() >= 0)
 	      {
@@ -192,27 +191,19 @@ short ExFirstNTcb::work()
 		// my child with the N value being firstNRows_.
 		// if I got a GET_N request, then send the minimum of the
 		// GET_N request value and firstNRows_ to my child.
-#pragma warning (disable : 4244)   //warning elimination
 		if ((pentry_down->downState.request != ex_queue::GET_N) ||
 		    (pentry_down->downState.requestValue == firstnTdb().firstNRows()))
-#pragma nowarn(1506)   // warning elimination 
 		  centry->downState.requestValue = firstnTdb().firstNRows();
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 		else
 		  {
-#pragma warning (disable : 4244)   //warning elimination
-#pragma nowarn(1506)   // warning elimination 
 		    centry->downState.requestValue = 
 		      MINOF(pentry_down->downState.requestValue,
 			    firstnTdb().firstNRows());
-#pragma warn(1506)  // warning elimination 
-#pragma warning (default : 4244)   //warning elimination
 		  }
 
 		pstate->step_ = PROCESS_FIRSTN_;
 	      }
-	    else
+            else
 	      {
 		// last N processing, retrieve all rows.
 		centry->downState.request = ex_queue::GET_ALL;

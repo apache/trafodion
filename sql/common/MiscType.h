@@ -145,7 +145,7 @@ public:
   // ---------------------------------------------------------------------
   // Are the two types compatible?
   // ---------------------------------------------------------------------
-  virtual NABoolean isCompatible (const NAType& other) const;
+  virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
   virtual NABoolean operator==(const NAType& other) const;
 
   // ---------------------------------------------------------------------
@@ -261,7 +261,7 @@ public:
   // ---------------------------------------------------------------------
   // Are the two types compatible?
   // ---------------------------------------------------------------------
-  virtual NABoolean isCompatible (const NAType& other) const;
+  virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
 
   // ---------------------------------------------------------------------
   // A method which tells if a conversion error can occur when converting

@@ -194,6 +194,13 @@ class CmpSeabaseDDL
                         const char * objType,
                         Int32 * objectOwner);
 
+  short getSaltText(ExeCliInterface *cliInterface,
+                    const char * catName,
+                    const char * schName,
+                    const char * objName,
+                    const char * inObjType,
+                    NAString& saltText) ;
+
   static short genHbaseCreateOptions(
 				     const char * hbaseCreateOptionsStr,
 				     NAList<HbaseCreateOption*>* &hbaseCreateOptions,
@@ -227,6 +234,7 @@ class CmpSeabaseDDL
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  NABoolean implicitPK,
 			  CollIndex numSysCols,
+                          NABoolean alignedFormat,
 			  NAMemory * heap = NULL);
 
 
@@ -359,6 +367,7 @@ class CmpSeabaseDDL
 			  ElemDDLColDef   * colNode);
   
   short getTypeInfo(const NAType * naType,
+                    NABoolean alignedFormat,
 		    Lng32 serializedOption,
 		    Lng32 &datatype,
 		    Lng32 &length,
@@ -374,6 +383,7 @@ class CmpSeabaseDDL
 
   short getColInfo(ElemDDLColDef * colNode, 
 		   NAString &colName,
+                   NABoolean alignedFormat,
 		   Lng32 &datatype,
 		   Lng32 &length,
 		   Lng32 &precision,
@@ -544,7 +554,8 @@ class CmpSeabaseDDL
   short populateSeabaseIndexFromTable(
 				      ExeCliInterface * cliInterface,
 				      NABoolean uniqueIndex,
-				      const NAString &indexName, const NAString &tableName,
+				      const NAString &indexName, 
+                                      const ComObjectName &tableName,
 				      NAList<NAString> &selColList,
 				      NABoolean useLoad );
   

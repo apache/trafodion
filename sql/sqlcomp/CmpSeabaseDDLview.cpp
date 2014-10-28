@@ -628,7 +628,7 @@ void CmpSeabaseDDL::createSeabaseView(
   ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
    new(STMTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
 
-  if (buildColInfoArray(&colDefArray, colInfoArray, FALSE, 0))
+  if (buildColInfoArray(&colDefArray, colInfoArray, FALSE, 0, FALSE))
     {
       processReturn();
       

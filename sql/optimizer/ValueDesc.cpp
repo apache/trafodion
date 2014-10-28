@@ -4477,7 +4477,7 @@ ex_expr::exp_return_type ValueIdList::evalAtCompileTime
   ExpDP2Expr * keyEncodeExpr = new(space) ExpDP2Expr(keExpr,
                                                      workCriDesc,
                                                      space);
-  keyEncodeExpr->getExpr()->fixup(0,0,0,space,STMTHEAP);
+  keyEncodeExpr->getExpr()->fixup(0,0,0,space,STMTHEAP, FALSE, NULL);
 
   atp_struct * workAtp = keyEncodeExpr->getWorkAtp();
   workAtp->getTupp(keyAtpIndex).setDataPointer(resultBuffer);

@@ -1038,6 +1038,26 @@ SimpleFileScanOptimizer::scmComputeCostVectorsMultiProbes()
     scmCost(tuplesProcessed, tuplesProduced, csZero, ioRand, ioSeq, numProbes,
 	    rowSize, csZero, outputRowSize, probeRowSize);
 
+  // temporary fix to cost index join cheaper than base table scan.
+  // when we allow salted indexes, then this can be removed
+  if (isAnIndexJoin &&
+      getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable())
+  {
+    CostScalar redFactor = CostScalar(1.0) /
+               ActiveSchemaDB()->getDefaults().getAsDouble(NCM_IND_JOIN_COST_ADJ_FACTOR);
+    scanCostMultiProbes->cpScmlr().scaleByValue(redFactor);
+  }
+
+  // temporary fix to cost index scan cheaper than base table scan.
+  // when we allow salted indexes, then this can be removed
+  if ( !(getIndexDesc()->isClusteringIndex()) &&
+       getIndexDesc()->getPrimaryTableDesc()->getNATable()->isHbaseTable()) 
+  {
+    CostScalar redFactor = CostScalar(1.0) /
+               ActiveSchemaDB()->getDefaults().getAsDouble(NCM_IND_SCAN_COST_ADJ_FACTOR);
+    scanCostMultiProbes->cpScmlr().scaleByValue(redFactor);
+  }
+
   // fix Bugzilla #1110.
   setEstRowsAccessed(getDataRows());
 
@@ -1333,6 +1353,15 @@ SimpleFileScanOptimizer::scmComputeCostVectorsForHbase()
   Cost* hbaseScanCost =
     scmCost(tuplesProcessed, tuplesProduced, tcRcvdByHCS, csZero,
             seqIOsInHRS, csOne, rowSize, csZero, outputRowSize, csZero);
+
+  // temporary fix to cost index scan cheaper than base table scan.
+  // when we allow salted indexes, then this can be removed
+  if ( !(getIndexDesc()->isClusteringIndex()) )
+  {
+    CostScalar redFactor = CostScalar(1.0) /
+               ActiveSchemaDB()->getDefaults().getAsDouble(NCM_IND_SCAN_COST_ADJ_FACTOR);
+    hbaseScanCost->cpScmlr().scaleByValue(redFactor);
+  }
 
   return hbaseScanCost;
 }

@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Fri Oct  3 19:52:59 2014
+-- Definition current  Tue Aug  5 10:10:06 2014
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -48,7 +48,7 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Fri Oct  3 19:53:02 2014
+-- Definition current  Tue Aug  5 10:10:09 2014
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -125,6 +125,9 @@ G0
 *** ERROR[1135] Clustering key column G0 must be assigned a NOT NULL NOT DROPPABLE constraint.
 
 --- SQL operation failed with errors.
+>>drop table if exists test020t31;
+
+--- SQL operation complete.
 >>
 >>-- The following Create Table statement should fail
 >>create table test020t31 (g0 smallint default 32768 not null primary key);
@@ -155,7 +158,7 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Fri Oct  3 19:53:18 2014
+-- Definition current  Tue Aug  5 10:10:24 2014
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -248,7 +251,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Fri Oct  3 19:53:47 2014
+-- Definition current  Tue Aug  5 10:10:46 2014
 
   (
     C                                INT DEFAULT NULL

@@ -352,8 +352,8 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
 
-  str_sprintf(buf, "      Precision = %d, Scale = %d, Collation = %d",
-	  getPrecision(), getScale(), getCollation());
+  str_sprintf(buf, "      Precision = %d, Scale = %d, Collation = %d, flags_ = %b",
+              getPrecision(), getScale(), getCollation(), flags_);
 
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
@@ -431,12 +431,11 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
   if ((getTupleFormat() == ExpTupleDesc::SQLMX_FORMAT) ||
       (getTupleFormat() == ExpTupleDesc::SQLMX_ALIGNED_FORMAT))
     {
-      str_sprintf(buf, "      RelOffset = %d, VoaOffset = %d",
-	      getRelOffset(),
-#pragma nowarn(161)   // warning elimination 
-	      (getVoaOffset() == ExpOffsetMax ? -1 : getVoaOffset()));
+      str_sprintf(buf, "      RelOffset = %d, VoaOffset = %d, NullBitIdx = %d",
+                  getRelOffset(),
+                  (getVoaOffset() == ExpOffsetMax ? -1 : getVoaOffset()),
+                  getNullBitIndex());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#pragma warn(161)  // warning elimination 
     }
 
   str_sprintf(buf, "      NullIndLength = %d, VClenIndLength = %d",

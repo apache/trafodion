@@ -105,10 +105,10 @@ ExDDLTcb::ExDDLTcb(const ComTdbDDL & ddl_tdb,
   
   if (ddl_tdb.inputExpr_)
     (void)ddl_tdb.inputExpr_->fixup(0, getExpressionMode(), this,
-				    space, heap);
+				    space, heap, FALSE, glob);
   if (ddl_tdb.outputExpr_)
     (void)ddl_tdb.outputExpr_->fixup(0, getExpressionMode(), this, 
-				     space, heap);
+				     space, heap, FALSE, glob);
 };
 
 

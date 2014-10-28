@@ -363,6 +363,8 @@ enum OperatorTypeEnum {
                         ITM_MAX_INCL_NULL = 2074,
                         ITM_AGGR_MIN_MAX = 2075,
                         ITM_ONEROW = 2076,
+  
+                        ITM_PIVOT_GROUP = 2077,
 
                         // custom functions
                         ITM_USER_DEF_FUNCTION = 2100,
@@ -616,6 +618,7 @@ enum OperatorTypeEnum {
                         ITM_MONTHS_BETWEEN     = 2342,
                         ITM_YEARWEEK           = 2343,
                         ITM_YEARWEEKD          = 2344,
+                        ITM_TO_TIMESTAMP          = 2345,
 
                         // misc. functions
                         ITM_NARROW = 2350, // a variant on Cast used for key building
@@ -666,6 +669,9 @@ enum OperatorTypeEnum {
 
                         ITM_LOBLOAD = 2383,
                         ITM_LOBEXTRACT = 2384,
+
+                        ITM_GREATEST = 2385,
+                        ITM_LEAST = 2386,
 
 			ITM_UNIQUE_EXECUTE_ID = 2391,
 			ITM_GET_TRIGGERS_STATUS = 2392,
@@ -743,6 +749,9 @@ enum OperatorTypeEnum {
 
                         // generate sequence numbers
                         ITM_SEQUENCE_VALUE = 2511,
+
+                        // return number of the row being returned. Starts at 1
+                        ITM_ROWNUM = 2512,
 
                         // list of item expressions
                         ITM_ITEM_LIST = 2550,

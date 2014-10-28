@@ -939,6 +939,9 @@ short RelRoot::codeGen(Generator * generator)
 
   ex_expr * pkey_expr = NULL;
   ULng32 pkey_len = 0;
+  
+  ex_expr* pred_expr = NULL;
+
   ULng32 cacheVarsSize = 0;
   //  unsigned long tablenameCacheVarsSize = 0;
 
@@ -1457,6 +1460,13 @@ short RelRoot::codeGen(Generator * generator)
                                 colNamesForExpr,
                                 tblNamesForExpr);
   }
+
+  if (getPredExprTree())
+    {
+      //      ItemExpr * newPredTree = executorPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      exp_gen->generateExpr(getPredExprTree()->getValueId(), ex_expr::exp_SCAN_PRED,
+			    &pred_expr);
+    }
 
   // if child's primary key columns are to be returned to be passed
   // on to UPDATE WHERE CURRENT OF query, generate an
@@ -2443,6 +2453,7 @@ short RelRoot::codeGen(Generator * generator)
 #pragma warn(1506)  // warning elimination
                  pkey_expr,
                  pkey_len,
+                 pred_expr,
                  work_cri_desc,
                  exFragDir,
                  transMode,

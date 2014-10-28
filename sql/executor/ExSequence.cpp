@@ -320,28 +320,28 @@ ExSequenceTcb::ExSequenceTcb (const ExSequenceTdb &  myTdb,
   {
     ((ExpSequenceExpression*)sequenceExpr())->seqFixup
       ((void*)this, GetHistoryRow, GetHistoryRowOLAP);
-    sequenceExpr()->fixup(0, getExpressionMode(), this, space, heap_);
+    sequenceExpr()->fixup(0, getExpressionMode(), this, space, heap_, FALSE, glob);
   }
 
   if (returnExpr())
   {
     ((ExpSequenceExpression*)returnExpr())->seqFixup
       ((void*)this, GetHistoryRow, GetHistoryRowFollowingOLAP);
-    returnExpr()->fixup(0, getExpressionMode(), this, space, heap_);
+    returnExpr()->fixup(0, getExpressionMode(), this, space, heap_, FALSE, glob);
   }
 
   if (postPred())
-    postPred()->fixup(0, getExpressionMode(), this, space, heap_);
+    postPred()->fixup(0, getExpressionMode(), this, space, heap_, FALSE, glob);
 
 
   if (cancelExpr())
-    cancelExpr()->fixup(0, getExpressionMode(), this, space, heap_);
+    cancelExpr()->fixup(0, getExpressionMode(), this, space, heap_, FALSE, glob);
 
   if (checkPartitionChangeExpr())
   {
     ((ExpSequenceExpression*)checkPartitionChangeExpr())->seqFixup
       ((void*)this, GetHistoryRow, GetHistoryRowOLAP);
-    checkPartitionChangeExpr()->fixup(0, getExpressionMode(), this, space, heap_);
+    checkPartitionChangeExpr()->fixup(0, getExpressionMode(), this, space, heap_, FALSE, glob);
   }
 }
 

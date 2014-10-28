@@ -147,13 +147,13 @@ ExOnljTcb::ExOnljTcb(const ExOnljTdb &  nljTdb,  //
   // fixup expressions
   if (beforePred_)
     (void) beforePred_->fixup(0, getExpressionMode(), this,
-                         glob->getSpace(), glob->getDefaultHeap());
+                         glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
   if (afterPred_)
     (void) afterPred_->fixup(0, getExpressionMode(), this,
-                         glob->getSpace(), glob->getDefaultHeap());
+                         glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
   if (onljTdb().ljExpr_)
     (void) onljTdb().ljExpr_->fixup(0, getExpressionMode(), this,
-                                    glob->getSpace(), glob->getDefaultHeap());
+                                    glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 }
 
 /////////////////////////////////////////////////////////////////////////////

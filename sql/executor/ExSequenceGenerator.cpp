@@ -1122,7 +1122,7 @@ ExNextValueForTcb::ExNextValueForTcb
        getExpressionMode(),
        this,
        glob->getSpace(),
-       glob->getDefaultHeap()
+       glob->getDefaultHeap(), FALSE, glob
        );
 
   // Allocate the work ATP.

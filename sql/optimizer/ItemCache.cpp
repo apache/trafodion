@@ -734,6 +734,18 @@ NABoolean HostVar::isCacheableExpr(CacheWA& cwa)
   return TRUE;
 }
 
+// append an ascii-version of PivotGroup into cachewa.qryText_
+void PivotGroup::generateCacheKey(CacheWA& cwa) const
+{
+  Aggregate::generateCacheKey(cwa); 
+  cwa += delim_;
+
+  char xFld[20]; str_itoa(maxLen_, xFld); 
+  cwa += xFld;
+
+  cwa += orderBy_ ? "1" : "0";
+}
+
 // append an ascii-version of ItemExpr into cachewa.qryText_
 void ItemExpr::generateCacheKey(CacheWA& cwa) const
 {

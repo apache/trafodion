@@ -305,11 +305,11 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
  // fixup sort input expression
   if (sortKeyExpr())
     (void) sortKeyExpr()->fixup(0, getExpressionMode(), this,
-				glob->getSpace(), glob->getDefaultHeap());
+				glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   if (sortRecExpr())
     (void) sortRecExpr()->fixup(0, getExpressionMode(), this, 
-				glob->getSpace(), glob->getDefaultHeap());
+				glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 				
   
 };

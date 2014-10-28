@@ -111,6 +111,11 @@ enum SqlParser_Flags_Enum {
     // of the Where clause of an incremental update stats (IUS) statement.
     PARSING_IUS_WHERE_CLAUSE      = 0x1000000,
 
+    // special mode_special_4 mode. Used to enable specialized and non-ansi
+    // functionality.
+    // See cqd mode_special_4.
+    IN_MODE_SPECIAL_4                           = 0x2000000,
+
     // The bits of the flag word are divided into copiable and uncopiable portions.
     // See the comments for function receiveAndSetUp() in arkcmp/cmpconnection.cpp.
     // Enum values above are copiable, those below are uncopiable.

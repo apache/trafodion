@@ -1651,11 +1651,11 @@ ex_expr::exp_return_type ExAuditImage::fixup(Space * space,
 				     // We porbably don't need it, so setting it to NULL
 				     space, 
 				     exHeap, 
-				     spaceCompOnly // computeSpaceOnly: if TRUE, then compute space 
+				     spaceCompOnly, // computeSpaceOnly: if TRUE, then compute space 
 				     // requirement only. Do not make any changes to the
 				     // generated expressions,(like assigning tempsArea
 				     // , assigning generated pcode, etc).
-				     );
+				     NULL);
   
   if (retcode != ex_expr::EXPR_OK) 
     return retcode;

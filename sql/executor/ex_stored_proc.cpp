@@ -124,13 +124,13 @@ ExStoredProcTcb::ExStoredProcTcb(const ExStoredProcTdb &  sp_tdb,
   numInputRequests_ = 0;
 
   if (sp_tdb.inputExpr_)
-    (void) sp_tdb.inputExpr_->fixup(0, getExpressionMode(), this, space);
+    (void) sp_tdb.inputExpr_->fixup(0, getExpressionMode(), this, space, glob->getDefaultHeap(), FALSE, glob);
 
   if (sp_tdb.outputExpr_)
-    (void) sp_tdb.outputExpr_->fixup(0, getExpressionMode(), this, space);
+    (void) sp_tdb.outputExpr_->fixup(0, getExpressionMode(), this, space, glob->getDefaultHeap(), FALSE, glob);
 
   if (sp_tdb.predExpr_)
-    (void) sp_tdb.predExpr_->fixup(0, getExpressionMode(), this, space, glob->getDefaultHeap());
+    (void) sp_tdb.predExpr_->fixup(0, getExpressionMode(), this, space, glob->getDefaultHeap(), FALSE, glob);
 
 }
 

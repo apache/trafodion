@@ -64,13 +64,15 @@ enum {
   COMPAQ_      = 0x20,          // Indicates that the word is reserved by
                                 // COMPAQ. This flag is used only for notation.
 
-  ALLOWOLDNEW_ = 0x40           // Indicates that the word is allowed if the
+  ALLOWOLDNEW_ = 0x40,           // Indicates that the word is allowed if the
                                 // ALLOWOLDNEW parser flag is set.  In certain
                                 // contexts the words OLD and NEW are allowed
                                 // as identifiers.  This flag identifies the
                                 // extra words which are allowed in this
                                 // context.
 
+  // see cqd mode_special_4
+  MODE_SPECIAL_4_ = 0x80
 };
 
 // ***********************************************************************

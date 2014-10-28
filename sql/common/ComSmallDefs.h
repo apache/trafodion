@@ -1028,14 +1028,16 @@ enum ComPartitioningScheme { COM_UNSPECIFIED_PARTITIONING
 
 
 enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
-                   , COM_PACKED_FORMAT_TYPE
-                   , COM_ALIGNED_FORMAT_TYPE
-                  };
+                     , COM_PACKED_FORMAT_TYPE
+                     , COM_ALIGNED_FORMAT_TYPE
+                     , COM_HBASE_FORMAT_TYPE
+};
 
 #define COM_ROWFORMAT_LIT_LEN                2
 #define COM_UNKNOWN_FORMAT_LIT               "  "
 #define COM_PACKED_FORMAT_LIT                "PF"
 #define COM_ALIGNED_FORMAT_LIT               "AF"
+#define COM_HBASE_FORMAT_LIT                   "HF"
 
 // table load action: regular, SET or MULTISET.
 // Regular:  will error out if duplicate key is inserted.

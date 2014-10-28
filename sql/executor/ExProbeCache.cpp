@@ -105,7 +105,7 @@ ExProbeCacheTcb::ExProbeCacheTcb(const ExProbeCacheTdb &probeCacheTdb,
   workAtp_->getTupp(probeCacheTdb.hashValIdx_) = &probeHashTupp_;
 
   hashProbeExpr()->fixup(0, getExpressionMode(), this, space, heap,
-                glob->computeSpace());
+                glob->computeSpace(), glob);
 
   probeEncodeTupp_.init(probeCacheTdb.probeLen_,
 		    NULL,
@@ -113,15 +113,15 @@ ExProbeCacheTcb::ExProbeCacheTcb(const ExProbeCacheTdb &probeCacheTdb,
   workAtp_->getTupp(probeCacheTdb.encodedProbeDataIdx_) = &probeEncodeTupp_;
 
   encodeProbeExpr()->fixup(0, getExpressionMode(), this, space, heap,
-                glob->computeSpace());
+                glob->computeSpace(), glob);
 
   if (moveInnerExpr())
     moveInnerExpr()->fixup(0, getExpressionMode(), this, space, heap,
-                glob->computeSpace());
+                glob->computeSpace(), glob);
 
   if (selectPred())
     selectPred()->fixup(0, getExpressionMode(), this, space, heap,
-                glob->computeSpace());
+                glob->computeSpace(), glob);
 
   pcm_ = new(space) ExPCMgr(space, 
                 probeCacheTdb.cacheSize_, probeCacheTdb.probeLen_, this);

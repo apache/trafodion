@@ -761,9 +761,9 @@ NABoolean CharType::operator==(const NAType& other) const
 // -----------------------------------------------------------------------
 // Check compatibility for string types.
 // -----------------------------------------------------------------------
-NABoolean CharType::isCompatible(const NAType& other) const
+NABoolean CharType::isCompatible(const NAType& other, UInt32 * flags) const
 {
-  return (NAType::isCompatible(other) &&
+  return (NAType::isCompatible(other, flags) &&
 	  getCharSet() == ((CharType&)other).getCharSet() &&
 	  getCharSet() != CharInfo::UnknownCharSet);
 }

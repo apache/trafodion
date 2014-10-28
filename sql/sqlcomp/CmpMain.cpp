@@ -1748,6 +1748,23 @@ fixupCompilationStats(ComTdbRoot *rootTdb,
   }
 }
 
+void CmpMain::setSqlParserFlags(ULng32 f) 
+{ 
+  // set special flags
+  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
+    {
+      f |= IN_MODE_SPECIAL_4;
+
+      Set_SqlParser_Flags(IN_MODE_SPECIAL_4);
+    }
+
+  if (f) 
+    {
+      attrs.addStmtAttribute(SQL_ATTR_SQLPARSERFLAGS, f); 
+    } 
+
+}
+
 CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
                                        Lng32 charset,                    //IN
                                        RelExpr *&queryExpr,             //INOUT

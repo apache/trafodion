@@ -150,11 +150,11 @@ ex_split_top_tcb::ex_split_top_tcb(
   if (childInputPartFunction())
     (void) childInputPartFunction()->fixup(0, getExpressionMode(), this,
                                            glob->getSpace(), 
-                                           glob->getDefaultHeap());
+                                           glob->getDefaultHeap(), FALSE, glob);
 
   if (mergeKeyExpr())
     (void) mergeKeyExpr()->fixup(0, getExpressionMode(), this, 
-                                 glob->getSpace(), glob->getDefaultHeap());
+                                 glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
 
   processedInputs_ = qParent_.down->getHeadIndex();
   paPartNumTupps_  = NULL;

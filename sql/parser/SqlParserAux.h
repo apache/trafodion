@@ -270,7 +270,7 @@ ItemExpr *literalOfInterval(NAString *strptr,
                             IntervalQualifier *qualifier,
                             char sign = '+');
 
-ItemExpr *literalOfDate(NAString *strptr);
+ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc = FALSE);
 
 ItemExpr *literalOfTime(NAString *strptr);
 
@@ -625,8 +625,9 @@ public:
   virtual ~ParAuxCharLenSpec() { }
   UInt32 getCharLen() const { return uiCharLen_; }
   ECharLenUnit getCharLenUnit() const { return eCharLenUnit_; }
+  void setCharLenUnit(ECharLenUnit u) {eCharLenUnit_ = u;}
+
   NABoolean isCharLenUnitSpecified() const { return(eCharLenUnit_ NEQ eCHAR_LEN_UNIT_NOT_SPECIFIED); }
-  
 private:
   ParAuxCharLenSpec(); // DO NOT USE
   UInt32 uiCharLen_;

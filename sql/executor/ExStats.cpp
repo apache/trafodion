@@ -8428,15 +8428,15 @@ ExStatsTcb::ExStatsTcb(const ExStatsTdb & statsTdb, ex_globals *glob)
   // fixup expressions
   if (statsTdb.scanExpr_)
     (void) statsTdb.scanExpr_->fixup(0, getExpressionMode(), this,
-				     space, heap);
+				     space, heap, FALSE, glob);
 
   if (statsTdb.inputExpr_)
     (void) statsTdb.inputExpr_->fixup(0, getExpressionMode(), this,
-				     space, heap);
+				     space, heap, FALSE, glob);
  
   if (statsTdb.projExpr_)
     (void) statsTdb.projExpr_->fixup(0, getExpressionMode(), this,
-				     space, heap);
+				     space, heap, FALSE, glob);
  
   stats_ = NULL;
   inputModName_ = NULL;

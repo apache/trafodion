@@ -354,7 +354,10 @@ NABoolean IsSqlReservedWord(const char *sqlText)
   UInt32 flags = 0;
 
   if (Get_SqlParser_Flags(ALLOW_OLD_AND_NEW_KEYWORD))
-     flags = ALLOWOLDNEW_;
+     flags |= ALLOWOLDNEW_;
+
+  if (Get_SqlParser_Flags(IN_MODE_SPECIAL_4))
+    flags |= MODE_SPECIAL_4_;
 
   return ComResWords::isSqlReservedWord(sqlText,FALSE,flags);
 }

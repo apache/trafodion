@@ -6036,6 +6036,9 @@ const NAString Aggregate::getText() const
     case ITM_ONEROW:
       result = "oneRow";
       break;
+    case ITM_PIVOT_GROUP:
+      result = "pivot_group";
+      break;
     default:
       result = "unknown aggr";
       break;
@@ -6189,6 +6192,7 @@ ItemExpr * Aggregate::rewriteForElimination()
     case ITM_SUM:
     case ITM_ONEROW:
     case ITM_ANY_TRUE:
+    case ITM_PIVOT_GROUP:
       // return the value of the aggregate function's argument
       result = child(0);
       break;
@@ -6416,6 +6420,7 @@ ItemExpr * Aggregate::rewriteForStagedEvaluation(ValueIdList &initialAggrs,
       initialAggrs.insert(result->child(0)->getValueId());
       finalAggrs.insert(result->getValueId());
       break;
+
     case ITM_ONE_ROW:
       // need another aggregate function that handles the case where
       // some servers return NULL rows
@@ -6426,6 +6431,53 @@ ItemExpr * Aggregate::rewriteForStagedEvaluation(ValueIdList &initialAggrs,
       ABORT("unknown aggregate function encountered");
     }
 
+  return result;
+}
+
+ItemExpr * PivotGroup::rewriteForStagedEvaluation(ValueIdList &initialAggrs,
+                                                  ValueIdList &finalAggrs,
+                                                  NABoolean sameFormat)
+{
+  // Split the aggregate function into three parts: the initial part is
+  // executed in multiple groupby nodes whose results are sent to a
+  // single, "final" groupby node that executes the final aggregate expression.
+  // More than one aggregate function may be evaluated in the initial and/or
+  // final nodes, therefore a set parameter is used. The return value is
+  // an item expression equivalent to the original expression "this". The
+  // return value is not necessarily an aggregate function, while
+  // initialAggr and finalAggr contain only aggregate functions.
+
+  // NOTE: this method doesn't delete the existing aggregate node, and it
+  // produces new value ids for all three parts returned.
+
+  ItemExpr *result = NULL;
+  Aggregate *partial;
+
+  partial = new (CmpCommon::statementHeap())
+    PivotGroup(getOperatorType(), child(0), pivotOptionsList_, isDistinct());
+  
+  result = new (CmpCommon::statementHeap())
+    PivotGroup(ITM_PIVOT_GROUP, partial, NULL);
+  
+  if (inScalarGroupBy())
+    {
+      partial->setInScalarGroupBy();
+      ((Aggregate *)result)->setInScalarGroupBy();
+    }
+  
+  result->synthTypeAndValueId();
+  
+  // If we have to force the same type for the initial and final
+  // aggregate expressions, then force the type of the sum to
+  // be the same as the type of the sum/min/max etc...
+  if (sameFormat)
+    result->getValueId().changeType(&(result->child(0)->
+					  getValueId().getType()));
+  
+  // execute the nested aggregate function in the initial set
+  initialAggrs.insert(result->child(0)->getValueId());
+  finalAggrs.insert(result->getValueId());
+  
   return result;
 }
 
@@ -6906,6 +6958,69 @@ ItemExpr * Variance::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 }
 
 // -----------------------------------------------------------------------
+// member functions for class PivotGroup
+// -----------------------------------------------------------------------
+PivotGroup::PivotGroup(OperatorTypeEnum otype,
+                       ItemExpr *child0,
+                       NAList<PivotOption*> * pivotOptionsList,
+                       NABoolean isDistinct)
+  : Aggregate(otype, child0, NULL, isDistinct),
+    pivotOptionsList_(pivotOptionsList),
+    maxLen_(DEFAULT_MAX_LEN),
+    delim_(","),
+    orderBy_(FALSE)
+{
+  if (pivotOptionsList)
+    {
+      for (CollIndex i = 0; i < pivotOptionsList->entries(); i++)
+	{
+	  PivotOption * po = (*pivotOptionsList)[i];
+	  switch (po->option_)
+	    {
+	    case DELIMITER_:
+	      {
+		delim_ = *po->stringVal_;
+              }
+              break;
+
+	    case MAX_LENGTH_:
+	      {
+		maxLen_ = po->numericVal_;
+              }
+              break;
+
+            case ORDER_BY_:
+              {
+                orderBy_ = TRUE;
+                // TBD: populate reqdOrder. May need to move to bindNode
+              }
+              break;
+            }
+        }
+    }
+}
+
+PivotGroup::~PivotGroup() {}
+
+ItemExpr * PivotGroup::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  PivotGroup *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) PivotGroup(getOperatorType(), NULL, NULL, isDistinct());
+  else
+    result = (PivotGroup *) derivedNode;
+
+  result->pivotOptionsList_ = pivotOptionsList_;
+  result->delim_ = delim_;
+  result->orderBy_ = orderBy_;
+  result->reqdOrder_ = reqdOrder_;
+  result->maxLen_ = maxLen_;
+
+  return Aggregate::copyTopNode(result, outHeap);
+}
+
+// -----------------------------------------------------------------------
 // member functions for class Function
 // -----------------------------------------------------------------------
 #pragma nowarn(262)   // warning elimination
@@ -7185,6 +7300,10 @@ const NAString BuiltinFunction::getText() const
       return "extract";
     case ITM_EXTRACT_ODBC:
       return "extract_odbc";
+    case ITM_GREATEST:
+     return "greatest";
+    case ITM_LEAST:
+     return "least";
     case ITM_IN:
       return "in";
     case ITM_INSTANTIATE_NULL:
@@ -7290,7 +7409,9 @@ const NAString BuiltinFunction::getText() const
     case ITM_HBASE_COLUMN_CREATE:
       return "hbase_column_create";
     case ITM_SEQUENCE_VALUE:
-      return "sequence_value";
+      return "seqnum";
+    case ITM_ROWNUM:
+      return "rownum";
     case ITM_USER:
       return "user";
     case ITM_UNIQUE_EXECUTE_ID:
@@ -7876,7 +7997,7 @@ ItemExpr * CurrentTimestamp::copyTopNode(ItemExpr *derivedNode,
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) CurrentTimestamp();
+    result = new (outHeap) CurrentTimestamp(dtCode_, fractPrec_);
   else
     result = derivedNode;
 
@@ -7886,6 +8007,29 @@ ItemExpr * CurrentTimestamp::copyTopNode(ItemExpr *derivedNode,
 
 NABoolean CurrentTimestamp::isAUserSuppliedInput() const    { return TRUE; }
 
+ItemExpr * CurrentTimestamp::construct
+(CollHeap * heap, 
+ DatetimeType::Subtype dtCode ,
+ Lng32 fractPrec)
+{
+  ItemExpr * ie = new(heap) CurrentTimestamp(dtCode, fractPrec);
+
+  if ((fractPrec != SQLTimestamp::DEFAULT_FRACTION_PRECISION) ||
+      (dtCode != DatetimeType::SUBTYPE_SQLTimestamp))
+    {
+      if (dtCode == DatetimeType::SUBTYPE_SQLDate)
+        ie = new (heap)
+          Cast(ie, new (heap) SQLDate(FALSE, heap));
+      else if (dtCode == DatetimeType::SUBTYPE_SQLTime)
+        ie = new (heap)
+          Cast(ie, new (heap) SQLTime(FALSE, fractPrec, heap));
+      else
+        ie = new (heap)
+          Cast(ie, new (heap) SQLTimestamp(FALSE, fractPrec, heap));
+    }
+
+  return ie;
+}
 
 // -----------------------------------------------------------------------
 // member functions for class CurrentTimestampRunning
@@ -12934,6 +13078,8 @@ ItemExpr * MonadicUSERIDFunction::copyTopNode(ItemExpr *derivedNode, CollHeap* o
 
 } // MonadicUSERIDFunction::copyTopNode()
 
+
+
 // -----------------------------------------------------------------------
 // member functions for class Translate
 // -----------------------------------------------------------------------
@@ -13132,6 +13278,33 @@ ItemExpr * SequenceValue::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 } // SequenceValue::copyTopNode()
                                                   
+RowNumFunc::~RowNumFunc()
+{
+}
+
+ItemExpr * RowNumFunc::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  RowNumFunc *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) RowNumFunc();
+  else
+    result = (RowNumFunc*)derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+
+} // RowNumFunc::copyTopNode()
+                                                  
+NABoolean RowNumFunc::isCovered
+                   (const ValueIdSet& newExternalInputs,
+		    const GroupAttributes& coveringGA,
+		    ValueIdSet& referencedInputs,
+		    ValueIdSet& coveredSubExpr,
+		    ValueIdSet& unCoveredExpr) const
+{
+  // The ROWNUM function is not pushed down.
+  return FALSE;
+} // RowNumFunc::isCovered
                                                   
 // -----------------------------------------------------------------------
 // Member functions for ItmSequenceFunction

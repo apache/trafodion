@@ -171,7 +171,7 @@ public:
   // ---------------------------------------------------------------------
   // Are the two types compatible?
   // ---------------------------------------------------------------------
-  virtual NABoolean isCompatible(const NAType& other) const
+  virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const
 				  { return qualifier_ == other.qualifier_; }
 
   // ---------------------------------------------------------------------
@@ -409,7 +409,12 @@ public:
     MAKE_UNION_RESULT_BINARY = 0x0020,
 
     // if the result of IfThenElse or Union synthesis should be a varchar
-    MAKE_RESULT_VARCHAR = 0x0040
+    MAKE_RESULT_VARCHAR = 0x0040,
+
+    // indicates that special4 mode is on. Special handling of
+    // syntax, expressions is done in some cases.
+    // See other parts of code for what all is done in this case.
+    MODE_SPECIAL_4 = 0x0080
   };
 
   // ---------------------------------------------------------------------

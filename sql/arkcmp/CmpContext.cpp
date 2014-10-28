@@ -257,7 +257,7 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   
   // set the QCache memory upper limit - currently only used to test setjmp/lonjmp logic
   qcache_->setHeapUpperLimit((size_t) 1024 * CmpCommon::getDefaultLong(MEMORY_LIMIT_QCACHE_UPPER_KB));
-  
+
   tableIdent_ = 0;
 
 

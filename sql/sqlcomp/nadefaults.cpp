@@ -1726,9 +1726,13 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HBASE_CATALOG,                        "HBASE"),
   DDkwd__(HBASE_CHECK_AND_UPDEL_OPT,		"ON"),
 
+ DDkwd__(HBASE_COMPRESSION_OPTION,		             ""),
+
  DDkwd__(HBASE_COPROCESSORS,		             "ON"),
 
  DDkwd__(HBASE_CREATE_OLD_MD_FOR_UPGRADE_TESTING,   "OFF"),
+
+ DDkwd__(HBASE_DATA_BLOCK_ENCODING_OPTION,		             ""),
 
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
@@ -2205,6 +2209,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
   // enable special  features in R2.93
   DDkwd__(MODE_SPECIAL_3,                       "OFF"),
+  DDkwd__(MODE_SPECIAL_4,                       "OFF"),
 
   DDnsklo(MP_CATALOG,				"$SYSTEM.SQL"),
   DDnsksv(MP_SUBVOLUME,				"SUBVOL"),
@@ -2392,6 +2397,8 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDkwd__(NCM_EXCH_NDCS_FIX,                    "ON"), // change to ON
   DDkwd__(NCM_HGB_OVERFLOW_COSTING,		"ON"),
   DDkwd__(NCM_HJ_OVERFLOW_COSTING,		"ON"),
+  DDflt__(NCM_IND_JOIN_COST_ADJ_FACTOR,         "1.0"),
+  DDflt__(NCM_IND_SCAN_COST_ADJ_FACTOR,         "1.0"),
   DDflt__(NCM_MAP_CPU_FACTOR,                   "4.0"),
   DDflt__(NCM_MAP_MSG_FACTOR,                   "4.0"),
   DDflt__(NCM_MAP_RANDIO_FACTOR,                "4.0"),
@@ -3188,7 +3195,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDflte_(TARGET_MSG_REMOTE_TIME,		"0.00125"),
 
   DDvol__(TEMPORARY_TABLE_HASH_PARTITIONS,     	"" ),
-  DDkwd__(TERMINAL_CHARSET,             (char *)SQLCHARSETSTRING_ISO88591), // SQLCHARSETSTRING_UTF8
+  DDkwd__(TERMINAL_CHARSET,             (char *)SQLCHARSETSTRING_ISO88591),
 
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
   DDint__(TEST_PASS_TWO_ASSERT_TASK_NUMBER,	"-1"),
@@ -3202,10 +3209,18 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"),   
 
+  DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
+
   DDansi_(TRAF_CREATE_TABLE_WITH_UID,          ""),
 
+ DDkwd__(TRAF_DEFAULT_ALIGNED_FORMAT,                 "OFF"),   
+
+ DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
+ 
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
+
   DDint__(TRAF_LOAD_MAX_HFILE_SIZE,             "10240"), // in MB -->10GB by default
+
   DDkwd__(TRAF_LOAD_PREP_ADJUST_PART_FUNC,      "ON"),
   DDkwd__(TRAF_LOAD_PREP_CLEANUP,               "ON"),
   DDkwd__(TRAF_LOAD_PREP_KEEP_HFILES,           "OFF"),
@@ -3289,6 +3304,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(USE_DENSE_BUFFERS,			"ON"),
 
+ // Use Hive tables as source for traf ustat and popindex
+  DDkwd__(USE_HIVE_SOURCE,            ""),
   // Use large queues on RHS of Flow/Nested Join when appropriate
   DDkwd__(USE_LARGE_QUEUES,                     "ON"),
 
@@ -3403,6 +3420,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_SHOW_MFV_INFO,                  "OFF"),
   DDflte_(USTAT_UEC_HI_RATIO,                   "0.5"),
   DDflte_(USTAT_UEC_LOW_RATIO,                  "0.1"),
+  DDkwd__(USTAT_USE_BULK_LOAD,      "OFF"),
   DDkwd__(USTAT_USE_GROUPING_FOR_SAMPLING,      "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
@@ -4715,6 +4733,12 @@ NABoolean NADefaults::getValue(Int32 attrEnum, NAString &result) const
   return TRUE;		// we always have a STRING REPRESENTATION value
 }
 
+NAString NADefaults::getString(Int32 attrEnum) const
+{
+  ATTR_RANGE_ASSERT;
+  return currentDefaults_[attrEnum];
+}
+
 const char * NADefaults::getValue(Int32 attrEnum) const
 {
   ATTR_RANGE_ASSERT;
@@ -5421,6 +5445,60 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	}
       break;
 
+      case MODE_SPECIAL_4:
+	{
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
+          
+          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
+          
+          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
+          
+          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
+          
+          insert(MODE_SPECIAL_3, val, errOrWarn);
+          
+          NAString csVal;
+          if (value == "ON")
+            csVal = SQLCHARSETSTRING_UTF8;
+          else
+            csVal = "";
+          
+          validateAndInsert("TRAF_DEFAULT_COL_CHARSET", csVal, FALSE, errOrWarn);
+
+          NAString notVal;
+          if (value == "ON")
+            notVal = "OFF";
+          else
+            notVal = "ON";
+          insert(TRAF_COL_LENGTH_IS_CHAR, notVal, errOrWarn);
+
+          NAString costVal1;
+          NAString costVal2;
+          if (value == "ON") {
+            costVal1 = "8.0";
+            costVal2 = "16.0" ;
+          }
+          else {
+            costVal1 = "1.0";
+            costVal2 = "1.0" ;
+          }
+          validateAndInsert("NCM_IND_JOIN_COST_ADJ_FACTOR", costVal1, 
+                            FALSE, errOrWarn);
+          validateAndInsert("NCM_IND_SCAN_COST_ADJ_FACTOR", costVal2, 
+                            FALSE, errOrWarn);
+ 
+          if (value == "ON")
+            Set_SqlParser_Flags(IN_MODE_SPECIAL_4);
+          else
+            Reset_SqlParser_Flags(IN_MODE_SPECIAL_4);
+	}
+      break;
+
       case MODE_SEABASE:
 	{
 	  if (value == "ON")
@@ -6123,17 +6201,21 @@ DefaultToken NADefaults::token(Int32 attrEnum,
   if (value.isNull())
     tok = DF_SYSTEM;
   else {
-    if (attrEnum == TERMINAL_CHARSET)
+    if ((attrEnum == TERMINAL_CHARSET) ||
+        (attrEnum == USE_HIVE_SOURCE) ||
+        (attrEnum == HBASE_DATA_BLOCK_ENCODING_OPTION) ||
+        (attrEnum == HBASE_COMPRESSION_OPTION))
       return DF_USER;
 
     if ( attrEnum == NATIONAL_CHARSET ||
          attrEnum == DEFAULT_CHARSET ||
          attrEnum == HIVE_DEFAULT_CHARSET ||
          attrEnum == ISO_MAPPING ||
-         attrEnum == INPUT_CHARSET )
+         attrEnum == INPUT_CHARSET ||
+         attrEnum == TRAF_DEFAULT_COL_CHARSET )
       {
 	CharInfo::CharSet cs = CharInfo::getCharSetEnum(value);
- Int32 err_found = 0;
+        Int32 err_found = 0;
 
 	if ( !CharInfo::isCharSetSupported(cs) )
 	  {
@@ -6153,6 +6235,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 		err_found = 1;
 	      break;
 	    case HIVE_DEFAULT_CHARSET:
+            case TRAF_DEFAULT_COL_CHARSET:
 	      if ((cs != CharInfo::UTF8) && (cs != CharInfo::ISO88591))
 		err_found = 1;
 	      break;
@@ -6164,12 +6247,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
 	      break;
 	    }
 	  }
+
 	if ( (err_found != 0) && errOrWarn )
 	  *CmpCommon::diags() << DgSqlCode(ERRWARN(3010)) << DgString0(value);
 	else
 	  return DF_USER;			// kludge, return any valid token
-
-
       } //else
 	//else fall thru to see if value is SYSTEM
 
@@ -6672,7 +6754,12 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     case HBASE_INTERFACE:
       if (tok==DF_THRIFT || tok==DF_JNI || tok==DF_JNI_TRX)
         isValid = TRUE;
-        
+      break;
+
+    case USE_HIVE_SOURCE:
+      isValid = TRUE;
+      break;
+
     // Nothing needs to be added here for ON/OFF/SYSTEM keywords --
     // instead, add to DEFAULT_ALLOWS_SEPARATE_SYSTEM code in the ctor.
 

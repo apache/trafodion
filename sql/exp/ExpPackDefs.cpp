@@ -460,6 +460,11 @@ NA_EIDPROC Long ExFunctionUniqueId::pack(void * space_)
   return packClause(space_, sizeof(ExFunctionUniqueId));
 }  
 
+NA_EIDPROC Long ExFunctionRowNum::pack(void * space_)
+{
+  return packClause(space_, sizeof(ExFunctionUniqueId));
+}  
+
 NA_EIDPROC Long ExFunctionHbaseColumnLookup::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionHbaseColumnLookup));

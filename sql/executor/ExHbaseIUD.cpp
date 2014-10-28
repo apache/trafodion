@@ -27,9 +27,6 @@
 #include "ex_exe_stmt_globals.h"
 #include "ExpHbaseInterface.h"
 
-// forward declare
-Int64 generateUniqueValueFast ();
-
 ExHbaseAccessDeleteTcb::ExHbaseAccessDeleteTcb(
           const ExHbaseAccessTdb &hbaseAccessTdb, 
           ex_globals * glob ) :
@@ -424,6 +421,7 @@ ExHbaseAccessInsertTcb::ExHbaseAccessInsertTcb(
   ExHbaseAccessTcb( hbaseAccessTdb, glob),
   step_(NOT_STARTED)
 {
+  insertRowlen_ = 0;
 }
 
 ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
@@ -825,8 +823,10 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	    
 	    if (convertExpr())
 	      {
+                insertRowlen_ = hbaseAccessTdb().convertRowLen_;
 		ex_expr::exp_return_type evalRetCode =
-		  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+		  convertExpr()->eval(pentry_down->getAtp(), workAtp_,
+                                      NULL, -1, &insertRowlen_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
 		    step_ = HANDLE_ERROR;
@@ -834,10 +834,13 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 		  }
 	      }
 
+            genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
+#ifdef __ignore
 	    if (hbaseAccessTdb().addSyskeyTS())
 	      {
 		*(Int64*)convertRow_ = generateUniqueValueFast();
 	      }
+#endif
 
 	    step_ = EVAL_CONSTRAINT;
 	  }
@@ -858,9 +861,9 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	case CREATE_MUTATIONS:
 	  {
 	    retcode = createDirectRowBuffer( hbaseAccessTdb().convertTuppIndex_,
-				      convertRow_,
-				      hbaseAccessTdb().listOfUpdatedColNames(),
-				      (hbaseAccessTdb().hbaseSqlIUD() ? FALSE : TRUE));
+                                             convertRow_,
+                                             hbaseAccessTdb().listOfUpdatedColNames(),
+                                             (hbaseAccessTdb().hbaseSqlIUD() ? FALSE : TRUE));
 
 	    if (retcode == -1)
 	      {
@@ -1178,8 +1181,10 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    
 	    if (convertExpr())
 	      {
+                insertRowlen_ = hbaseAccessTdb().convertRowLen_;
 		ex_expr::exp_return_type evalRetCode =
-		  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
+		  convertExpr()->eval(pentry_down->getAtp(), workAtp_,
+                                      NULL, -1, &insertRowlen_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
 		    step_ = HANDLE_ERROR;
@@ -1187,10 +1192,14 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 		  }
 	      }
 
+            genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
+
+#ifdef __ignore
 	    if (hbaseAccessTdb().addSyskeyTS())
 	      {
 		*(Int64*)convertRow_ = generateUniqueValueFast();
 	      }
+#endif
 
           if (getHbaseAccessStats())
 	    {
@@ -1513,20 +1522,25 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           .setDataPointer(convertRow_);
 
         if (convertExpr())
-        {
-                ex_expr::exp_return_type evalRetCode =
-                  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
-          if (evalRetCode == ex_expr::EXPR_ERROR)
           {
-            step_ = HANDLE_ERROR;
-            break;
+            insertRowlen_ = hbaseAccessTdb().convertRowLen_;
+            ex_expr::exp_return_type evalRetCode =
+              convertExpr()->eval(pentry_down->getAtp(), workAtp_,
+                                  NULL, -1, &insertRowlen_);
+            if (evalRetCode == ex_expr::EXPR_ERROR)
+              {
+                step_ = HANDLE_ERROR;
+                break;
+              }
           }
-        }
 
+        genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
+#ifdef __ignore
         if (hbaseAccessTdb().addSyskeyTS())
         {
           *(Int64*) convertRow_ = generateUniqueValueFast();
         }
+#endif
 
         if (getHbaseAccessStats())
         {
@@ -1592,7 +1606,7 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
                                       hbaseAccessTdb().convertTuppIndex_,
                                       convertRow_,
                                       hbaseAccessTdb().listOfUpdatedColNames(),
-                                      TRUE,
+                                      FALSE, //TRUE,
                                       &posVec_);
         if (retcode == -1)
         {
@@ -1888,8 +1902,10 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    
 	    if (tcb_->updateExpr())
 	      {
+                tcb_->insertRowlen_ = tcb_->hbaseAccessTdb().updateRowLen_;
 		ex_expr::exp_return_type evalRetCode =
-		  tcb_->updateExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_);
+		  tcb_->updateExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_,
+                                           NULL, -1, &tcb_->insertRowlen_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
 		    step_ = HANDLE_ERROR;
@@ -1924,14 +1940,16 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
             {
               ExpTupleDesc * rowTD = NULL;
               if (tcb_->mergeInsertExpr())
-                rowTD = 
-                  tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
-                  (tcb_->hbaseAccessTdb().mergeInsertTuppIndex_);
-                else
-                  rowTD = 
-                    tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                {
+                  rowTD = tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                    (tcb_->hbaseAccessTdb().mergeInsertTuppIndex_);
+                }
+              else
+                {
+                  rowTD = tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
                     (tcb_->hbaseAccessTdb().updateTuppIndex_);
-                  
+                }
+                
                if (rowTD->numAttrs() > 0)
                   tcb_->allocateDirectRowBufferForJNI(rowTD->numAttrs());
             } 
@@ -1968,8 +1986,10 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	    
 	    if (tcb_->mergeInsertExpr())
 	      {
+                tcb_->insertRowlen_ = tcb_->hbaseAccessTdb().mergeInsertRowLen_;
 		ex_expr::exp_return_type evalRetCode =
-		  tcb_->mergeInsertExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_);
+		  tcb_->mergeInsertExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_,
+                                                NULL, -1, &tcb_->insertRowlen_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
 		    step_ = HANDLE_ERROR;
@@ -2536,7 +2556,8 @@ ExWorkProcRetcode ExHbaseUMDnativeUniqueTaskTcb::work(short &rc)
 	    if (tcb_->updateExpr())
 	      {
 		ex_expr::exp_return_type evalRetCode =
-		  tcb_->updateExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_);
+		  tcb_->updateExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_,
+                                           NULL, -1, &tcb_->insertRowlen_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
 		    step_ = HANDLE_ERROR;
@@ -2770,8 +2791,10 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 	    
 	    if (tcb_->updateExpr())
 	      {
+                tcb_->insertRowlen_ = tcb_->hbaseAccessTdb().updateRowLen_;
 		ex_expr::exp_return_type evalRetCode =
-		  tcb_->updateExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_);
+		  tcb_->updateExpr()->eval(pentry_down->getAtp(), tcb_->workAtp_,
+                                           NULL, -1, &tcb_->insertRowlen_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
 		    step_ = HANDLE_ERROR;
@@ -2798,6 +2821,28 @@ ExWorkProcRetcode ExHbaseUMDtrafSubsetTaskTcb::work(short &rc)
 
 	case CREATE_MUTATIONS:
 	  {
+            // Merge can result in inserting rows
+            // Use Number of columns in insert rather number
+            // of columns in update if an insert is involved in this tcb
+            if (tcb_->hbaseAccessTdb().getAccessType() 
+                  == ComTdbHbaseAccess::MERGE_)
+            {
+              ExpTupleDesc * rowTD = NULL;
+              if (tcb_->mergeInsertExpr())
+                {
+                  rowTD = tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                    (tcb_->hbaseAccessTdb().mergeInsertTuppIndex_);
+                }
+              else
+                {
+                  rowTD = tcb_->hbaseAccessTdb().workCriDesc_->getTupleDescriptor
+                    (tcb_->hbaseAccessTdb().updateTuppIndex_);
+                }
+                
+               if (rowTD->numAttrs() > 0)
+                  tcb_->allocateDirectRowBufferForJNI(rowTD->numAttrs());
+            } 
+
 	    retcode = tcb_->createDirectRowBuffer(
 				 tcb_->hbaseAccessTdb().updateTuppIndex_,
 				 tcb_->updateRow_,
@@ -3701,6 +3746,8 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	    if (hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::UPDATE_
                  || hbaseAccessTdb().getAccessType() == ComTdbHbaseAccess::DELETE_)
                 allocateDirectRowIDBufferForJNI(ROWSET_MAX_NO_ROWS);
+
+            //	    rowIds_.clear();
 
 	    setupListOfColNames(hbaseAccessTdb().listOfFetchedColNames(),
 				columns_);

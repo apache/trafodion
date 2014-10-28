@@ -128,7 +128,7 @@ ExTupleFlowTcb::ExTupleFlowTcb(const ExTupleFlowTdb &  tuple_flow_tdb,
   // fixup expressions
   if (tflowTdb().tgtExpr_)
     (void) tflowTdb().tgtExpr_->fixup(0, getExpressionMode(), this,
-  				      glob->getSpace());
+  				      glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
   // LCOV_EXCL_STOP
     
 }

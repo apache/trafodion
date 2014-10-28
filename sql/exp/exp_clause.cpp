@@ -471,6 +471,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_UNIQUE_ID:
 	  setClassID(FUNC_UNIQUE_ID);
 	  break;
+	case ITM_ROWNUM:
+	  setClassID(FUNC_ROWNUM);
+	  break;
 	case ITM_HBASE_COLUMN_LOOKUP:
 	  setClassID(FUNC_HBASE_COLUMN_LOOKUP);
 	  break;
@@ -488,6 +491,9 @@ ex_clause::ex_clause(clause_type type,
 	  break;
 	case ITM_SEQUENCE_VALUE:
 	  setClassID(FUNC_SEQUENCE_VALUE);
+	  break;
+	case ITM_PIVOT_GROUP:
+	  setClassID(FUNC_PIVOT_GROUP);
 	  break;
 	case ITM_HEADER:
 	  setClassID(FUNC_HEADER);
@@ -926,6 +932,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_UNIQUE_ID:
       GetVTblPtr(vtblPtr, ExFunctionUniqueId);
       break;
+    case ex_clause::FUNC_ROWNUM:
+      GetVTblPtr(vtblPtr, ExFunctionRowNum);
+      break;
     case ex_clause::FUNC_HBASE_COLUMN_LOOKUP:
       GetVTblPtr(vtblPtr, ExFunctionHbaseColumnLookup);
       break;
@@ -940,6 +949,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_SEQUENCE_VALUE:
       GetVTblPtr(vtblPtr, ExFunctionSequenceValue);
+      break;
+    case ex_clause::FUNC_PIVOT_GROUP:
+      GetVTblPtr(vtblPtr, ex_pivot_group_clause);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1096,6 +1108,9 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_ANY_TRUE: return "ITM_ANY_TRUE";
     case ITM_ANY_TRUE_MAX: return "ITM_ANY_TRUE_MAX";
     case ITM_MAX_INCL_NULL: return "ITM_MAX_INCL_NULL";
+
+    case ITM_PIVOT_GROUP: return "ITM_PIVOT_GROUP";
+
     // LCOV_EXCL_STOP
     case ITM_AGGR_MIN_MAX: return "ITM_AGGR_MIN_MAX";
 
@@ -1422,6 +1437,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_LAST_ITEM_OP: return "ITM_LAST_ITEM_OP";
     case ITM_AUDIT_IMAGE: return "ITM_AUDIT_IMAGE";
     case ITM_UNIQUE_ID: return "ITM_UNIQUE_ID";
+    case ITM_ROWNUM: return "ITM_ROWNUM";
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
     case ITM_HBASE_COLUMNS_DISPLAY: return "ITM_HBASE_COLUMNS_DISPLAY";
     case ITM_HBASE_COLUMN_CREATE: return "ITM_HBASE_COLUMN_CREATE";
@@ -1754,6 +1770,11 @@ void ex_aggr_any_true_max_clause::displayContents(Space * space, const char * /*
 void ex_aggr_min_max_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_aggr_min_max_clause", clauseNum, constsArea);
+}
+
+void ex_pivot_group_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  ex_clause::displayContents(space, "ex_pivot_group_clause", clauseNum, constsArea);
 }
 
 void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)

@@ -855,8 +855,10 @@ void ExpGenerator::addDefaultValues(const ValueIdList & val_id_list,
           ithAttr->setDefaultFieldNum(i);
 
 	  if (attr)
-            attr->setDefaultFieldNum(i);
-
+            {
+              attr->setSpecialField();
+              attr->setDefaultFieldNum(i);
+            }
 	}
     } // for
 
@@ -1470,6 +1472,15 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
             newExpr = NULL;
 	  }
 	  break;
+
+	case ITM_PIVOT_GROUP:
+	  {
+	    generator->getMapInfo(val_id)->codeGenerated();
+            newExpr = new(wHeap())
+              Cast(new(wHeap()) ConstValue(""), &(val_id.getType()));
+	  }
+	  break;
+
 	default:
 	  newExpr = NULL;
 	  break;
@@ -1530,6 +1541,7 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
             case ITM_MIN:
             case ITM_MAX:
             case ITM_ONEROW:
+            case ITM_PIVOT_GROUP:
 	      {
 		generator->getMapInfo(val_id)->codeGenerated();
 		ConstValue * const_value =
@@ -1843,6 +1855,17 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
 	    newExpr = item_expr;
 	  }
 	  break;
+
+	case ITM_PIVOT_GROUP:
+	  {
+            PivotGroup * pg = (PivotGroup*)item_expr;
+            newExpr = 
+              new(wHeap()) PivotGroup(ITM_PIVOT_GROUP, item_expr->child(0), 
+                                      pg->delim(), pg->orderBy(), pg->reqdOrder(),
+                                      pg->maxLen(), pg->isDistinct());
+	  }
+	  break;
+
 	case ITM_ONEROW:
 	  {
 	   generator->getMapInfo(val_id)->codeGenerated();
@@ -5234,7 +5257,7 @@ NABoolean GenEvalPredicate(ItemExpr * rootPtr)
   dp2Expr->setPCodeMode( expGen.getPCodeMode() );
 #pragma warn(1506)  // warning elimination
 
-  dp2Expr->getExpr()->fixup(0,0,0);
+  dp2Expr->getExpr()->fixup(0,0,0,NULL,NULL,FALSE,NULL);
 
   atp_struct * workAtp = dp2Expr->getWorkAtp();
 

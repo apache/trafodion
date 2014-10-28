@@ -567,27 +567,28 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 	// between date and timestamp.
 
 	// Check if this is char and numeric comparison
-	// only supported for single byte ascii charset.
 	if (((operand1->getTypeQualifier() == NA_CHARACTER_TYPE) &&
 	     (operand2->getTypeQualifier() == NA_NUMERIC_TYPE) &&
-	     (((CharType*)operand1)->getCharSet() == CharInfo::ISO88591)) ||
+	     ((((CharType*)operand1)->getCharSet() == CharInfo::ISO88591) ||
+              (((CharType*)operand1)->getCharSet() == CharInfo::UTF8))) ||
 	    ((operand1->getTypeQualifier() == NA_NUMERIC_TYPE) &&
 	     (operand2->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	     (((CharType*)operand2)->getCharSet() == CharInfo::ISO88591)))
+	     ((((CharType*)operand2)->getCharSet() == CharInfo::ISO88591) ||
+              (((CharType*)operand2)->getCharSet() == CharInfo::UTF8))))
 	  {
 	    return TRUE;
 	  }
 
 	// Check if this is char and date comparison
-	// only supported for single byte ascii charset.
 	if (((operand1->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	     (operand2->getTypeQualifier() == NA_DATETIME_TYPE)   &&
-	     //             (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT) &&
-             (((CharType*)operand1)->getCharSet() == CharInfo::ISO88591))||
+	     (operand2->getTypeQualifier() == NA_DATETIME_TYPE) &&
+	     ((((CharType*)operand1)->getCharSet() == CharInfo::ISO88591) ||
+              (((CharType*)operand1)->getCharSet() == CharInfo::UTF8))) ||
 	    ((operand1->getTypeQualifier() == NA_DATETIME_TYPE) &&
 	     (operand2->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	     //             (vid2.getItemExpr()->getOperatorType() == ITM_CONSTANT) &&
-             (((CharType*)operand2)->getCharSet() == CharInfo::ISO88591)))
+	     ((((CharType*)operand2)->getCharSet() == CharInfo::ISO88591) ||
+              (((CharType*)operand2)->getCharSet() == CharInfo::UTF8))))
+
 	  {
 	    return TRUE;
 	  }
@@ -596,11 +597,9 @@ static NABoolean synthItemExprLists(ItemExprList &exprList1,
 	  {
 	    // Check if this is numeric literal and date comparison
 	    if (((operand1->getTypeQualifier() == NA_NUMERIC_TYPE) &&
-		 (operand2->getTypeQualifier() == NA_DATETIME_TYPE))
-		 /*(vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT))*/ ||
+		 (operand2->getTypeQualifier() == NA_DATETIME_TYPE)) ||
 		((operand1->getTypeQualifier() == NA_DATETIME_TYPE) &&
 		 (operand2->getTypeQualifier() == NA_NUMERIC_TYPE)))
-		 /*(vid2.getItemExpr()->getOperatorType() == ITM_CONSTANT)))*/
 	      {
 		NumericType *numOper;
 		DatetimeType *dtOper;
@@ -1461,6 +1460,14 @@ const NAType *AggrMinMax::synthesizeType()
 }
 
 // -----------------------------------------------------------------------
+// member functions for class PivotGroup
+// -----------------------------------------------------------------------
+const NAType *PivotGroup::synthesizeType()
+{
+  return new HEAP SQLVarChar(maxLen_, TRUE);
+}
+
+// -----------------------------------------------------------------------
 // member functions for class AnsiUSERFunction
 // -----------------------------------------------------------------------
 
@@ -1741,22 +1748,18 @@ const NAType *Between::synthesizeType()
     {
       if(((op1.getTypeQualifier() == NA_DATETIME_TYPE) &&
           (op2.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-          (vid2.getItemExpr()->getOperatorType() == ITM_CONSTANT) &&
-          (((CharType&)op2).getCharSet() == CharInfo::ISO88591)) ||
+          (vid2.getItemExpr()->getOperatorType() == ITM_CONSTANT)) ||
           ((op2.getTypeQualifier() == NA_DATETIME_TYPE) &&
 	   (op1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	   (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT) &&
-          (((CharType&)op1).getCharSet() == CharInfo::ISO88591)))
+	   (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT)))
         compareOp2 = FALSE;
 
       if(((op1.getTypeQualifier() == NA_DATETIME_TYPE) &&
           (op3.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-          (vid3.getItemExpr()->getOperatorType() == ITM_CONSTANT) &&
-          (((CharType&)op3).getCharSet() == CharInfo::ISO88591)) ||
+          (vid3.getItemExpr()->getOperatorType() == ITM_CONSTANT)) ||
           ((op3.getTypeQualifier() == NA_DATETIME_TYPE) &&
 	   (op1.getTypeQualifier() == NA_CHARACTER_TYPE) &&
-	   (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT) &&
-          (((CharType&)op1).getCharSet() == CharInfo::ISO88591)))
+	   (vid1.getItemExpr()->getOperatorType() == ITM_CONSTANT)))
         compareOp3 = FALSE;
 
       if (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)
@@ -1774,6 +1777,17 @@ const NAType *Between::synthesizeType()
 	    compareOp3 = FALSE;
 	}
     }
+
+    if (op1.getTypeQualifier() == NA_CHARACTER_TYPE &&
+        op2.getTypeQualifier() == NA_CHARACTER_TYPE &&
+        op3.getTypeQualifier() == NA_CHARACTER_TYPE)
+      {
+        if ( CmpCommon::getDefault(ALLOW_IMPLICIT_CHAR_CASTING) == DF_ON )
+          {
+            compareOp2 = FALSE;
+            compareOp3 = FALSE;
+          }
+      }
 
     if ((compareOp2) && (NOT op1.isComparable(op2, this)))  //## errmsg 4034 w/ unparse?
       return FALSE;
@@ -1838,6 +1852,11 @@ const NAType *BiArith::synthesizeType()
   if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
     {
       flags |= NAType::MODE_SPECIAL_2;
+    }
+
+  if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
+    {
+      flags |= NAType::MODE_SPECIAL_4;
     }
 
   NABoolean limitPrecision = 
@@ -1968,10 +1987,11 @@ const NAType *BiRelat::synthesizeType()
   // a CAST node on top of it.
   // This incompatible comparison is not allowed if the statement is a DDL
   NABoolean allowIncompatibleComparison = FALSE;
-  if ((!CmpCommon::statement()->isDDL()) &&
-      ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) ||
-       (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-       (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON)) &&
+  if ((((!CmpCommon::statement()->isDDL()) &&
+        ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_COMPARISON) == DF_ON) ||
+         (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
+         (CmpCommon::getDefault(MODE_SPECIAL_3) == DF_ON))) ||
+       (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)) &&
       (child(0)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
       (child(1)->castToItemExpr()->getOperatorType() != ITM_ONE_ROW) &&
       (exprList1.entries() == 1) &&
@@ -2745,8 +2765,8 @@ const NAType *ConvertTimestamp::synthesizeType()
 const NAType *CurrentTimestamp::synthesizeType()
 {
   return new HEAP SQLTimestamp (FALSE,
-                               SQLTimestamp::DEFAULT_FRACTION_PRECISION,
-                               HEAP);
+                                SQLTimestamp::DEFAULT_FRACTION_PRECISION,
+                                HEAP);
 }
 
 // -----------------------------------------------------------------------
@@ -5254,6 +5274,11 @@ const NAType *ValueIdUnion::synthesizeType()
       if (CmpCommon::getDefault(TYPE_UNIONED_CHAR_AS_VARCHAR) == DF_ON)
         flags |= NAType::MAKE_RESULT_VARCHAR;
 
+      if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
+        {
+          flags |= NAType::MODE_SPECIAL_4;
+        }
+      
       result = result->synthesizeType(SYNTH_RULE_UNION, opR, opI, HEAP, &flags);
 
 
@@ -6323,6 +6348,15 @@ const NAType * HbaseColumnCreate::synthesizeType()
 }
 
 const NAType * SequenceValue::synthesizeType()
+{
+  NAType * type = NULL;
+
+  type = new HEAP SQLLargeInt(TRUE, FALSE);
+
+  return type;
+}
+
+const NAType * RowNumFunc::synthesizeType()
 {
   NAType * type = NULL;
 

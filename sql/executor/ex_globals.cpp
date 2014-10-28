@@ -60,7 +60,8 @@ ex_globals::ex_globals(short num_temps,
        flags_(0),
        planVersion_(0),
        jmpInScope_(FALSE),
-       sharedPool_(NULL)
+       sharedPool_(NULL),
+       rowNum_(1)
 {
   // Small data items are allocated using space rather than heap so that
   // the allocation of memory for the heap can be avoided in simple queries.

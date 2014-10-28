@@ -206,6 +206,7 @@ public:
          numIndexJoins_(0),
          indexOnlyIndexes_(oHeap),
 	 indexOnlyScans_(oHeap),
+         indexJoinScans_(oHeap),
          possibleIndexJoins_(oHeap),
          isSingleVPScan_(FALSE),
          stoi_(NULL),
@@ -232,6 +233,7 @@ public:
          numIndexJoins_(0),
          indexOnlyIndexes_(CmpCommon::statementHeap()),
 	 indexOnlyScans_(CmpCommon::statementHeap()),
+         indexJoinScans_(CmpCommon::statementHeap()),
          possibleIndexJoins_(CmpCommon::statementHeap()),
          isSingleVPScan_(FALSE),
          stoi_(NULL),
@@ -261,6 +263,7 @@ public:
          numIndexJoins_(0),
          indexOnlyIndexes_(oHeap),
 	 indexOnlyScans_(oHeap),
+         indexJoinScans_(oHeap),
          possibleIndexJoins_(oHeap),
          isSingleVPScan_(FALSE),
          stoi_(NULL),
@@ -288,6 +291,7 @@ public:
          numIndexJoins_(0),
          indexOnlyIndexes_(CmpCommon::statementHeap()),
 	 indexOnlyScans_(CmpCommon::statementHeap()),
+         indexJoinScans_(CmpCommon::statementHeap()),
          possibleIndexJoins_(CmpCommon::statementHeap()),
          isSingleVPScan_(FALSE),
          stoi_(NULL),
@@ -421,6 +425,7 @@ public:
   void setIndexOnlyScans(const SET(IndexProperty *) &ixonly)
                                            { indexOnlyIndexes_ = ixonly; }
   const SET(IndexDesc *)& deriveIndexOnlyIndexDesc();
+  const SET(IndexDesc *)& getIndexJoinIndexDesc(){ return indexJoinScans_; }
 
   const LIST(ScanIndexInfo *) &getIndexInfo()
                                            { return possibleIndexJoins_; }
@@ -636,6 +641,7 @@ private:
   // all indexes that can deliver all the required values
   SET(IndexProperty *) indexOnlyIndexes_;
   SET(IndexDesc *) indexOnlyScans_;
+  SET(IndexDesc *) indexJoinScans_;
   // all indexes that can't deliver all the required values plus
   // some info about each of those indexes, calculated by addIndexInfo
   LIST(ScanIndexInfo *) possibleIndexJoins_;
@@ -1301,7 +1307,8 @@ public:
 				       ItemExpr * colNode,
 				       const NAType &givenType,
 				       ItemExpr *&asciiValue,
-				       ItemExpr *&castValue);
+				       ItemExpr *&castValue,
+                                       NABoolean alignedFormat = FALSE);
 
   static short genRowIdExpr(Generator * generator,
 			    const NAColumnArray & keyColumns,				

@@ -1780,7 +1780,7 @@ public:
   void clearVisitedFlags();
 
   // Setup Routines
-  NABoolean canPCodeBeOptimized(PCodeBinary* pCode);
+  NABoolean canPCodeBeOptimized( PCodeBinary * pCode );
   void createCfg();
   NABoolean createInsts (PCodeBinary* pcode);
   NABoolean addOverlappingOperands(NABoolean detectOnly);

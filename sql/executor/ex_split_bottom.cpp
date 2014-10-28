@@ -278,7 +278,7 @@ ex_split_bottom_tcb::ex_split_bottom_tcb (
       if (splitBottomTdb.partFuncUsesNarrow_)
 	expMode = 0; // don't use PCODE with Narrow
       partFunction()->fixup(0, expMode, this,
-			    glob->getSpace(), glob->getDefaultHeap());
+			    glob->getSpace(), glob->getDefaultHeap(), FALSE, glob);
     }
 
   // allocate message stream to receive partition input data

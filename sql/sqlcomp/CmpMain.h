@@ -220,8 +220,7 @@ public:
   ULng32 getInputArrayMaxsize() const;
 
   // save non-zero parserFlags
-  void setSqlParserFlags(ULng32 f) 
-    { if (f) { attrs.addStmtAttribute(SQL_ATTR_SQLPARSERFLAGS, f); } }
+  void setSqlParserFlags(ULng32 f);
 
   // get query statement attributes
   const QryStmtAttributeSet& getStmtAttributes() const { return attrs; }

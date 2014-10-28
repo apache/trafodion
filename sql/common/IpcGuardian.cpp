@@ -1019,6 +1019,23 @@ void GuaConnectionToServer::populateDiagsArea(ComDiagsArea *&diags,
     getEnvironment()->getMyOwnProcessId(IPC_DOM_GUA_PHANDLE).
       addProcIdToDiagsArea(*diags,0);
     getOtherEnd().addProcIdToDiagsArea(*diags,1);
+    if (guaErrorInfo_ == FETIMEDOUT)
+    {
+      static __thread bool bugcatcherInitialized = false;
+      static __thread bool doBugCatcher = true;
+      if (!bugcatcherInitialized)
+       {
+         bugcatcherInitialized = true;
+         char *dbc = getenv("ESP_TIMEOUT_BUGCATCHER");
+         if (dbc && (*dbc != '1'))
+           doBugCatcher = false;
+       }
+      if (doBugCatcher)
+      {
+        getOtherEnd().getPhandle().dumpAndStop(TRUE, FALSE);
+        genLinuxCorefile("Timeout on ESP.");
+      }
+     }
   }
 
   if (getIpcMsgBufCheckFailed())

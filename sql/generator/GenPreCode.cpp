@@ -2244,9 +2244,13 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 
           child(0) = wi;
         }
-    }
 
-
+      if (getPredExprTree())
+        {
+          getPredExprTree()->preCodeGen(generator);
+        }
+    } // isTrueRoot
+  
   setHdfsAccess(generator->hdfsAccess());
 
   markAsPreCodeGenned();
@@ -4683,7 +4687,9 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
 	  			      (item_expr->child(0)->castToItemExpr()))->
 				      getColName();
 
-	  if (strcmp(key_colname, upd_colname) == 0)
+	  if ((strcmp(key_colname, upd_colname) == 0) &&
+              (item_expr->getOperatorType() == ITM_ASSIGN) &&
+              (((Assign*)item_expr)->isUserSpecified()))
 	    {
 	      *CmpCommon::diags() << DgSqlCode(-4033) 
 				  << DgColumnName(key_colname);
@@ -5523,7 +5529,8 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
       HbaseAccess::addColReferenceFromVIDset(executorPred(), colRefSet);
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-	  (getTableDesc()->getNATable()->isHbaseCellTable()))
+	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+          (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
 	{
 	  for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
 	    {
@@ -5583,7 +5590,8 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 		   (listOfDelUniqueRows_.entries() == 0))
 	    {
 	      if ((CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON) &&
-		  (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON))
+		  (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
+                  (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
 	      canDoCheckAndUpdel() = TRUE;
 	    }
 	}
@@ -5659,6 +5667,41 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   if (! UpdateCursor::preCodeGen(generator, externalInputs, pulledNewInputs))
     return NULL;
 
+  CollIndex totalColCount = getTableDesc()->getColumnList().entries();
+  if ((getTableDesc()->getNATable()->isSQLMXAlignedTable()) &&
+      (newRecExprArray().entries() <  totalColCount))
+    {
+      ValueIdArray holeyArray(totalColCount);
+      
+      Lng32 i;
+      for (i = 0; i < newRecExprArray().entries(); i++)
+        {
+          ItemExpr * assign = newRecExprArray()[i].getItemExpr();
+          const NAColumn *nacol = assign->child(0).getNAColumn();
+          Lng32 colPos = nacol->getPosition();
+          holeyArray.insertAt(colPos, assign->getValueId());
+        } // for
+      
+      for (i = 0; i < totalColCount; i++)
+       {
+         if (! (holeyArray.used(i)))
+           {
+             BaseColumn * bc = (BaseColumn*)getTableDesc()->getColumnList()[i].getItemExpr();
+             CMPASSERT(bc->getOperatorType() == ITM_BASECOLUMN);
+
+             ValueId srcId = getIndexDesc()->getIndexColumns()[i];
+             
+             ItemExpr * an = 
+               new(generator->wHeap()) Assign(bc, srcId.getItemExpr(), FALSE);
+             an->bindNode(generator->getBindWA());
+             holeyArray.insertAt(i, an->getValueId());
+           } // if
+       } // for
+      
+      newRecExprArray().clear();
+      newRecExprArray() = holeyArray;
+    } // if aligned
+
   if ((isMerge()) &&
       (mergeInsertRecExpr().entries() > 0))
     {
@@ -5704,7 +5747,8 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	HbaseAccess::addColReferenceFromVIDset(mergeUpdatePred(), colRefSet);
 
       if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-	  (getTableDesc()->getNATable()->isHbaseCellTable()))
+	  (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+          (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
 	{
 	  for (Lng32 i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
 	    {
@@ -5776,7 +5820,8 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	  else if ((NOT generator->oltOptInfo()->multipleRowsReturned()) &&
 		   (listOfUpdUniqueRows_.entries() == 0))
 	    {
-	      if (CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON)
+	      if ((CmpCommon::getDefault(HBASE_CHECK_AND_UPDEL_OPT) == DF_ON) &&
+                  (NOT getTableDesc()->getNATable()->isSQLMXAlignedTable()))
 		canDoCheckAndUpdel() = TRUE;
 	    }
 	}
@@ -10389,6 +10434,49 @@ ItemExpr * Parameter::preCodeGen(Generator * generator)
   return i;
 }
 
+ItemExpr * PivotGroup::preCodeGen(Generator * generator)
+{
+  if (nodeIsPreCodeGenned())
+    return getReplacementExpr();
+
+  if (! ItemExpr::preCodeGen(generator))
+    return NULL;
+
+  ItemExpr * childExpr = child(0)->castToItemExpr();
+
+  const NAType &type1 = 
+    childExpr->getValueId().getType();
+ 
+  if (type1.getTypeQualifier() != NA_CHARACTER_TYPE) 
+    {
+      Lng32 displayLen = type1.getDisplayLength(
+                                                type1.getFSDatatype(),
+                                                type1.getNominalSize(),
+                                                type1.getPrecision(),
+                                                type1.getScale(),
+                                                0);
+
+      NAType * newType = new(generator->getBindWA()->wHeap()) 
+        SQLVarChar(displayLen, type1.supportsSQLnull());
+
+      childExpr = new (generator->getBindWA()->wHeap()) Cast(childExpr, newType);
+      
+      childExpr = childExpr->bindNode(generator->getBindWA());
+      if (! childExpr || generator->getBindWA()->errStatus())
+        return NULL;
+
+      childExpr = childExpr->preCodeGen(generator);
+      if (! childExpr)
+	return NULL;
+
+      child(0) = childExpr;
+    }
+
+  markAsPreCodeGenned();
+
+  return this;
+}
+
 ItemExpr * RandomNum::preCodeGen(Generator * generator)
 {
   if (nodeIsPreCodeGenned())
@@ -11781,7 +11869,6 @@ ItemExpr * Trim::preCodeGen(Generator * generator)
 
 } // Trim::preCodeGen()
 
-
 ItemExpr * NotIn::preCodeGen(Generator * generator)
 {
   if (child(0)->getOperatorType() == ITM_ITEM_LIST)
@@ -12203,6 +12290,11 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
   if (CmpCommon::getDefault(HBASE_FILTER_PREDS) == DF_OFF)
     return 0;
 
+  // cannot push preds for aligned format row
+  if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
+      (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
+    return 0;
+ 
   Lng32 numFilters = 0;
   for (ValueId vid = preds.init(); 
        (preds.next(vid)); 

@@ -147,10 +147,7 @@ insert into T050a values('zz','zz','zz', 1, 1, 1);
 execute a;		-- aa,BB,CC; Low,UPP,?; zz,ZZ,ZZ
 
 -- Ansi 6.13 GR 2:  char and varchar concats are different vis-a-vis length
-#ifndef SEABASE_REGRESS
--- skip this update until transaction support is in
 update T050a set b=a, c=trim(lower(b))||trim(a);		-- 1 warn 8402
-#endif
 execute a;		-- aa,AA,BBAA; Low,LOW,UPPLO; zz,ZZ,ZZZZ
 update T050a set b=a, c=lower(b)||a;				-- 3 ERROR 8402
 execute a;		-- aa,AA,AA; Low,LOW,LOW; zz,ZZ,ZZ

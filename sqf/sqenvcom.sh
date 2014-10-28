@@ -255,7 +255,8 @@ if [ $? -eq 0 ]; then
                           /usr/lib/hbase/hbase-protocol.jar
 			  /usr/lib/hbase/lib/htrace-core.jar
                           /usr/lib/hbase/lib/zookeeper.jar
-                          /usr/lib/hbase/lib/protobuf-*.jar"
+                          /usr/lib/hbase/lib/protobuf-*.jar
+                         /usr/lib/hbase/lib/snappy-java-*.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar"
 
@@ -293,7 +294,8 @@ elif [ -n "$(ls /usr/lib/hadoop/*HDP* /usr/lib/hbase/*HDP* /etc/init.d/ambari* 2
                           /usr/lib/hbase/lib/hbase-protocol.jar
                           /usr/lib/hbase/lib/htrace-core*.jar
                           /usr/lib/hbase/lib/zookeeper.jar
-                          /usr/lib/hbase/lib/protobuf-*.jar"
+                          /usr/lib/hbase/lib/protobuf-*.jar
+                         /usr/lib/hbase/lib/snappy-java-*.jar "
   export HIVE_JAR_DIRS="/usr/lib/hive/lib"
   export HIVE_JAR_FILES="/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core*.jar"
 
@@ -351,7 +353,8 @@ elif [ -d /opt/mapr ]; then
   export HADOOP_JAR_FILES="$MAPR_HADOOPDIR/client/hadoop-hdfs-*.jar"
   export HBASE_JAR_FILES="$MAPR_HBASEDIR/hbase-*.jar
                           $MAPR_HBASEDIR/lib/zookeeper.jar
-                          $MAPR_HBASEDIR/lib/protobuf-*.jar"
+                          $MAPR_HBASEDIR/lib/protobuf-*.jar
+                          $MAPR_HBASEDIR/lib/snappy-java-*.jar "
   export HIVE_JAR_DIRS="$MAPR_HIVEDIR/lib"
   # Could not find a hadoop-mapreduce-client-core*.jar on my MapR test cluster,
   # this jar file is required by other distros.
@@ -596,7 +599,7 @@ export PROTOBUFS_INC=$PROTOBUFS/include
 
 ######################
 # Library Path may include local over-rides
-export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$LOC_JVMLIBS:$HWMSLIBS:${SP_EXPORT_LIB}:.
+export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$LOC_JVMLIBS:$HWMSLIBS:${SP_EXPORT_LIB}:/usr/lib/hadoop/libexec/../lib/native/Linux-amd64-64:.
 
 ######################
 # Class Path calculation may include local over-rides

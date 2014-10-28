@@ -247,7 +247,7 @@ virtual NAString* getKey(CollHeap* h=0) const; // compute hash key from SQL name
 
 virtual NABoolean operator==(const NAType& other) const;
 
-virtual NABoolean isCompatible(const NAType& other) const;
+ virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
 
 #ifndef CLI_SRL
 virtual NABoolean isComparable(const NAType &other,

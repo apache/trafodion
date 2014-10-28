@@ -115,7 +115,7 @@ ExTimeoutTcb::ExTimeoutTcb(const ExTimeoutTdb & timeout_tdb,
 			  sizeof(Lng32));
     
     (void) timeoutValueExpr()->fixup(0, getExpressionMode(), this,
-				     space, heap);
+				     space, heap, FALSE, glob);
   }
   else
     workAtp_ = 0;

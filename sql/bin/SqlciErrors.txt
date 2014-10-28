@@ -1229,7 +1229,7 @@ $1~String1 --------------------------------
 4194 42000 99999 BEGINNER MAJOR DBADMIN Table $0~TableName is a volatile table and not allowed within this sql statement.
 4195 42000 99999 BEGINNER MAJOR DBADMIN The name, $0~string0, specified in the GROUP BY or HAVING clause is ambiguous.
 4196 42000 99999 BEGINNER MAJOR DBADMIN A HAVING clause that uses a renamed column cannot contain an aggregate or a subquery.
-4197 42000 99999 BEGINNER MAJOR DBADMIN This expression cannot be used in the GROUP BY clause.
+4197 42000 99999 BEGINNER MAJOR DBADMIN This expression cannot be used in the $0~string0 clause.
 4198 42000 99999 BEGINNER MAJOR DBADMIN Clustering key columns cannot be specified in the SET clause of an embedded UPDATE statement.
 4199 42000 99999 BEGINNER MAJOR DBADMIN The SET ON ROLLBACK clause cannot be specified when clustering key columns are specified in the SET clause of an UPDATE statement.
 4200 0A000 99999 BEGINNER MAJOR DBADMIN Stream expressions are not supported for compound statements.
@@ -1274,8 +1274,8 @@ $1~String1 --------------------------------
 4307 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Rowset parameters are not allowed in a CALL statement.
 4308 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error: Unsupported SQL data type $0~Int0 specified for a CALL statement parameter.
 4309 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName is registered to return result sets and stored procedure result sets are not yet supported.
-4310 0A000 99999 BEGINNER MAJOR DBADMIN $0~string0 is currently supported only in the outermost SELECT list. For example, it cannot be a part of the subquery.
-4311 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused as of 03/17/04 ---
+4310 0A000 99999 BEGINNER MAJOR DBADMIN $0~string0 is currently supported only in the outermost SELECT list. For example, it cannot be a part of the subquery. 
+4311 0A000 99999 BEGINNER MAJOR DBADMIN This query has an incorrect use of $0~string0. It can only be specified in the outermost select list or in the outermost selection predicate with a '<' or '<=' clause. It also cannot be part of a GROUP BY or ORDER BY operation if used in select list.
 4312 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~TableName is an MXCS metadata table and cannot be directly updated.
 4313 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Function rand() is not supported.
 4314 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error was detected while creating an audit row image for $0~TableName. AUDIT_IMAGE function is only supported on index tables.

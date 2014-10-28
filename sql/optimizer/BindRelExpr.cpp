@@ -3624,6 +3624,108 @@ static void fixUpSelectIndeciesInSet(ValueIdSet & expr,
     }
 }
 
+RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
+{
+  NABoolean specialMode = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
+  
+  if (NOT specialMode)
+    return this;
+  
+  ItemExprList origSelectList(bindWA->wHeap());
+  ItemExprList origOrderByList(bindWA->wHeap());
+  
+  CollIndex origSelectListCount ;
+  if ((getCompExprTree() == NULL) &&
+      (child(0)->getOperatorType() != REL_GROUPBY))
+    {
+      return this;
+    }
+  
+  ItemExpr *orderByTree = getOrderByTree();
+  if (!orderByTree) 
+    return this;
+  
+  if (orderByTree)
+    {
+      origOrderByList.insertTree(orderByTree);
+    }
+  
+  if (getCompExprTree())
+    origSelectList.insertTree(getCompExprTree());
+  else if (child(0)->getOperatorType() == REL_GROUPBY)
+    {
+      // this is the case:  select distinct <expr> from t order by <expr>
+      GroupByAgg * grby = (GroupByAgg *)(child(0)->castToRelExpr());
+      if (grby->child(0) && grby->child(0)->getOperatorType() == REL_ROOT)
+        {
+          RelRoot * selRoot = (RelRoot*)grby->child(0)->castToRelExpr();
+          if (selRoot->getCompExprTree())
+            origSelectList.insertTree(selRoot->getCompExprTree());
+        }
+    }
+  
+  Lng32 selListCount = origSelectList.entries();
+
+  // if there is an expression in the order by list and this expression matches
+  // a select list expression, then replace it with the index of that select list item.
+  ItemExprList newOrderByList((Lng32)origOrderByList.entries(), bindWA->wHeap());
+  NABoolean orderByExprFound = FALSE;
+  for (Lng32 i = 0; i < origOrderByList.entries(); i++)
+    {
+      ItemExpr * currOrderByItemExpr = origOrderByList[i];
+
+      NABoolean isDesc = FALSE;
+      if (currOrderByItemExpr->getOperatorType() == ITM_INVERSE)
+        {
+          currOrderByItemExpr = currOrderByItemExpr->child(0)->castToItemExpr();
+          isDesc = TRUE;
+        }
+
+      if (NOT ((currOrderByItemExpr->getOperatorType() == ITM_SEL_INDEX) ||
+               (currOrderByItemExpr->getOperatorType() == ITM_REFERENCE) ||
+               (currOrderByItemExpr->getOperatorType() == ITM_CONSTANT)))
+        {
+          NABoolean found = FALSE;
+          Lng32 selListIndex = 0;
+          ItemExpr * selItem = NULL;
+          while ((NOT found) && (selListIndex < selListCount))
+            {
+              selItem = origSelectList[selListIndex];
+              found = currOrderByItemExpr->duplicateMatch(*selItem);
+              if (NOT found)
+                selListIndex++;
+            }
+          
+          if (NOT found)
+            {
+              *CmpCommon::diags() << DgSqlCode(-4197) 
+                                  << DgString0("ORDER BY");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+
+          selItem->setInOrderByOrdinal(TRUE);
+          currOrderByItemExpr = new(bindWA->wHeap()) SelIndex(selListIndex+1);
+          if (isDesc)
+            {
+              currOrderByItemExpr = new(bindWA->wHeap()) InverseOrder(currOrderByItemExpr);
+            }
+
+          orderByExprFound = TRUE;
+        } // if order by expr
+      
+      newOrderByList.insert(currOrderByItemExpr);
+    }
+  
+  if ((orderByExprFound) &&
+      (newOrderByList.entries() > 0))
+    {
+      removeOrderByTree();
+      addOrderByTree(newOrderByList.convertToItemExpr());
+    }
+
+  return this;
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -3653,7 +3755,8 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 {
   NABoolean specialMode =
     ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
+     (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
 
   if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) == DF_OFF) &&
       (NOT specialMode))
@@ -3706,7 +3809,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
     origSelectList.insertTree(getCompExprTree());
     origSelectListCount = origSelectList.entries();
   }
-
 
   ItemExprList newGroupByList((Lng32)origGrbyList.entries(), bindWA->wHeap());
   
@@ -3959,7 +4061,8 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
             newGroupByItemExpr = currGroupByItemExpr;
       else
         {
-          *CmpCommon::diags() << DgSqlCode(-4197) ;
+          *CmpCommon::diags() << DgSqlCode(-4197) 
+                              << DgString0("GROUP BY");
           bindWA->setErrStatus();
           return NULL;
         }
@@ -4035,7 +4138,8 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 {
   NABoolean specialMode =
     ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
+     (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
 
   // make sure child of root is a groupby node.or a sequence node 
   // whose child is a group by node
@@ -4544,6 +4648,99 @@ void RelRoot::resolveSequenceFunctions(BindWA *bindWA)
   }
 }
 
+// if a where pred is specified on an immediate child scan or rename node,
+// and it contains an 'and'ed rownum() predicate of the form:
+//    rownum < val, or rownum <= val, or rownum = val
+// then get the val and make it the firstN value.
+// Also, remove this predicate from selPredTree.
+void RelRoot::processRownum(BindWA * bindWA)
+{
+  NABoolean specialMode = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
+  if (NOT specialMode)
+    return;
+
+  if (! child(0))
+    return;
+
+  if ((child(0)->getOperatorType() != REL_SCAN) &&
+      (child(0)->getOperatorType() != REL_RENAME_TABLE))
+    return;
+
+  if (! child(0)->selPredTree())
+    return;
+  
+  ItemExpr * wherePred = child(0)->selPredTree();
+  ItemExprList iel(wherePred, bindWA->wHeap(), ITM_AND, FALSE, FALSE);
+
+  NABoolean found = FALSE;
+  for (Lng32 i = 0; ((NOT found) && (i < iel.entries())); i++)
+    {
+      ItemExpr * ie = iel[i];
+      if (ie->getArity() != 2)
+        continue; 
+
+      if (NOT ((ie->getOperatorType() == ITM_LESS) ||
+               (ie->getOperatorType() == ITM_EQUAL) ||
+               (ie->getOperatorType() == ITM_LESS_EQ)))
+        continue;
+      
+      ItemExpr * child0 = ie->child(0)->castToItemExpr();
+      ItemExpr * child1 = ie->child(1)->castToItemExpr();
+
+      if (NOT ((child0->getOperatorType() == ITM_REFERENCE) &&
+               (child1->getOperatorType() == ITM_CONSTANT)))
+        continue;
+               
+      ColReference * col = (ColReference*)child0;
+      ColRefName &colRefName = col->getColRefNameObj();
+      CorrName &cn = col->getCorrNameObj();
+      
+      const NAString &catName = cn.getQualifiedNameObj().getCatalogName();	       
+      const NAString &schName = cn.getQualifiedNameObj().getSchemaName();		
+      const NAString &objName = cn.getQualifiedNameObj().getObjectName();		
+      const NAString &colName = colRefName.getColName();
+      
+      if (NOT ((catName.isNull()) &&
+               (schName.isNull()) &&                
+               (objName.isNull()) &&
+               (colName == "ROWNUM")))
+        continue;
+
+      ConstValue * cv = (ConstValue*)child1;
+      if (NOT cv->canGetExactNumericValue())
+        continue;
+
+      Int64 val = cv->getExactNumericValue();
+      if (val < 0)
+        continue;
+
+      if ((ie->getOperatorType() == ITM_EQUAL) &&
+          (val != 1))
+        continue;
+
+      if ((ie->getOperatorType() == ITM_LESS) &&
+          (val > 0))
+        val--;
+
+      setFirstNRows(val);
+
+      // remove this pred from the list
+      iel.removeAt(i);
+
+      found = TRUE;
+    }
+
+  if (found)
+    {
+      // convert the list back to selection pred.
+      ItemExpr * ie = iel.convertToItemExpr();
+      child(0)->removeSelPredTree();
+      child(0)->addSelPredTree(ie);
+    }
+
+  return;
+}
+
 RelExpr *RelRoot::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
@@ -4655,6 +4852,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
           }
 	}
 
+      processRownum(bindWA);
+      
     } // isTrueRoot
 
   if (getHasTDFunctions()) 
@@ -4665,6 +4864,11 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
   RelRoot * returnedRoot = 
     transformGroupByWithOrdinalPhase1(bindWA);
+  if (! returnedRoot)
+    return NULL;
+
+  returnedRoot = 
+    transformOrderByWithExpr(bindWA);
   if (! returnedRoot)
     return NULL;
 
@@ -5348,6 +5552,7 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (! returnedRoot)
     return NULL;
 
+  //  ItemExpr *orderByTree = removeOrderByTree();
   ItemExpr *orderByTree = removeOrderByTree();
   if (orderByTree) {
     //
@@ -5428,7 +5633,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
       NABoolean specialMode =
         ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
+         (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
+         (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
       
       // In specialMode, we want to support order by on columns
       // which are not explicitely specified in the select list.
@@ -5505,7 +5711,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
                          getParentForRowsetReqdOrder()->rowsetReqdOrder_ :
                          reqdOrder();
 
-
       // Replace any selIndexies in the orderByTree with what it refers to
       // before we expand it.
       // This is done so that we can deal with subqueries with degree > 1
@@ -5547,6 +5752,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
           ePtr->child(childIdx) = orderById.getItemExpr();
         else
           ePtr = orderById.getItemExpr();
+
+        orderById.getItemExpr()->setInOrderByOrdinal(TRUE);
       }
       if ((ePtr->getArity() == 2) && ePtr->child(1) != NULL && 
           ePtr->child(1)->getOperatorType() != ITM_ITEM_LIST &&
@@ -5555,7 +5762,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       else
         childIdx = 0;
       sPtr = (childIdx == 1) ? ePtr->child(1) : NULL;
-      
     }
 
     if (onlyOneEntry)
@@ -5565,17 +5771,32 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       // are any UDFs or subquery of degree > 1.
       // Also expand any directly referenced UDFs and subqueries of degree > 1.
     ItemExprList origOrderByList(orderByTree, bindWA->wHeap());
-                                 
 
     origOrderByList.convertToItemExpr()->
-                    convertToValueIdList(pRRO, bindWA, ITM_ITEM_LIST);
-
+      convertToValueIdList(pRRO, bindWA, ITM_ITEM_LIST);
+    
     // end fix for defect 10-010522-2978
 
-    if (bindWA->errStatus()) return NULL;
+    if (bindWA->errStatus()) 
+      return NULL;
+
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
     bindWA->getCurrentScope()->context()->inOrderBy() = FALSE;
   }
+
+  // validate that select list doesn't contain any expressions that cannot be
+  // grouped or ordered.
+  for (Lng32 selIndex = 0; selIndex < compExpr().entries(); selIndex++)
+    {
+      ItemExpr * ie = compExpr()[selIndex].getItemExpr();
+      if ((ie->inGroupByOrdinal()) || (ie->inOrderByOrdinal()))
+        {
+          if (NOT ie->canBeUsedInGBorOB(TRUE))
+            {
+              return NULL;
+            }
+        }
+    }
 
   if (hasPartitionBy())
   {
@@ -5862,6 +6083,18 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     bindWA->setErrStatus();
     return NULL;
   }
+
+  if (getPredExprTree())
+    {
+      CMPASSERT(isTrueRoot());
+
+      ItemExpr * ie = removePredExprTree();
+      ie = ie->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return NULL;
+      
+      addPredExprTree(ie);
+    }
 
   if ((NOT hasOrderBy()) &&
       (getFirstNRows() != -1))
@@ -9891,6 +10124,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     bindWA->getCurrentScope()->context()->inOrderBy() = TRUE;
     bindWA->getCurrentScope()->setRETDesc(child(0)->getRETDesc());
     orderByTree->convertToValueIdList(reqdOrder(), bindWA, ITM_ITEM_LIST);
+
     bindWA->getCurrentScope()->context()->inOrderBy() = FALSE;
     if (bindWA->errStatus()) return NULL;
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
@@ -10355,7 +10589,7 @@ RelExpr *Update::bindNode(BindWA *bindWA)
   NABoolean transformUpdateKey = updatesClusteringKeyOrUniqueIndexKey(bindWA);
   if (bindWA->errStatus()) // error occurred in updatesCKOrUniqueIndexKey()
     return this;
-  
+
   NABoolean xnsfrmHbaseUpdate = FALSE;
   if ((hbaseOper()) && (NOT isMerge()))
     {      
@@ -10383,7 +10617,9 @@ RelExpr *Update::bindNode(BindWA *bindWA)
       boundExpr = transformHbaseUpdate(bindWA);
     }
   else if ((transformUpdateKey) && (NOT isMerge()))
+    {
       boundExpr = transformUpdatePrimaryKey(bindWA);
+    }
   else
     boundExpr = handleInlining(bindWA, boundExpr);
   
@@ -10955,7 +11191,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
 
   CollIndex     i, j;
   CollIndexList colnoList;                  // map of col nums (row positions)
-  const CollIndex a = assignList.entries();
+  CollIndex a = assignList.entries();
 
   const ColumnDescList *viewColumns = NULL;
 
@@ -11140,6 +11376,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
      }
      holeyArray.insertAt(j, assignId);
    }
+
    //
    // Now we have the holey array.  The next loop ignores unused entries
    // and copies the used entries into newRecExprArray(), with no holes.
@@ -11193,6 +11430,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
        // as updated to prevent indices covering this column from
        // being used for access
        ItemExpr *left = assignExpr.getItemExpr()->child(0);
+
        scanDesc->addColUpdated(left->getValueId());
 
        if (right->containsColumn())

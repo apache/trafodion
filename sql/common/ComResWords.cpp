@@ -389,10 +389,12 @@ const ComResWord ComResWords::resWords_[] = {
   ComResWord("UNNEST",           COMPAQ_|RESWORD_),
   ComResWord("UPDATE",           ANS_|RESWORD_|MPWORD_),
   ComResWord("UPPER",            ANS_|RESWORD_),
+  ComResWord("UPSERT",           RESWORD_),
   ComResWord("UPSHIFT",          COMPAQ_|RESWORD_),
   ComResWord("USAGE",            ANS_|RESWORD_),
   ComResWord("USER",             ANS_|RESWORD_),
   ComResWord("USING",            ANS_|RESWORD_),
+  ComResWord("UUID",            ANS_|RESWORD_),
   ComResWord("VALUE",            ANS_|RESWORD_),
   ComResWord("VALUES",           ANS_|RESWORD_|MPWORD_),
   ComResWord("VARCHAR",          ANS_|RESWORD_),
@@ -466,6 +468,10 @@ NABoolean
 ComResWords::isSqlReservedWord(const char *word,NABoolean mp_context,
 			       UInt32 ifSetFlags)
 {
+  // no reserved words in mode_special_4
+  if ((ifSetFlags & MODE_SPECIAL_4_) != 0)
+    return FALSE;
+
   char uword[MAX_RESWORD_LENGTH];
 
   NABoolean lookup = TRUE;

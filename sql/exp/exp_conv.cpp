@@ -558,6 +558,7 @@ NA_EIDPROC
 ex_expr::exp_return_type convInt64ToAscii(char *target,
 					  Lng32 targetLen,
                                           Lng32 targetPrecision, // max. characters
+                                          Lng32 targetScale,
 					  Int64 source,
 					  Lng32 scale,
 					  char * varCharLen,
@@ -627,9 +628,10 @@ if ((negative) && (source == 0x8000000000000000LL)) // = -2 ** 63
   if (padLen < 0) {
     // target string is not long enough - overflow
     ExRaiseDetailSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
-      (char*)&source,
-      sizeof(Int64), REC_BIN64_SIGNED, scale, trgType,
-      flags);
+                          (char*)&source,
+                          sizeof(Int64), REC_BIN64_SIGNED, scale, trgType,
+                          flags,
+                          targetLen, targetScale);
     return ex_expr::EXPR_ERROR;   
   } 
   
@@ -700,9 +702,9 @@ if ((negative) && (source == 0x8000000000000000LL)) // = -2 ** 63
   if (newSource != 0 || currPos < -1)
     { // Sanity check fails.
       ExRaiseDetailSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
-        (char*)&source,
-        sizeof(Int64), REC_BIN64_SIGNED, scale, trgType,
-        flags);
+                            (char*)&source,
+                            sizeof(Int64), REC_BIN64_SIGNED, scale, trgType,
+                            flags, targetLen, targetScale);
       return ex_expr::EXPR_ERROR;   
     }
 
@@ -733,6 +735,7 @@ NA_EIDPROC
 short convFloat64ToAscii(char *target,
 			Lng32 targetLen,
                         Lng32 targetPrecision, // max. characters
+                         Lng32 targetScale,
 			double source,
 			// maximum # of fraction digits
 			Lng32 digits,
@@ -868,7 +871,7 @@ short convFloat64ToAscii(char *target,
 
   short error;
   error =
-    convInt64ToAscii(tempTarget, digits+3, 0,
+    convInt64ToAscii(tempTarget, digits+3, 0, targetScale,
                      (neg ? -intMantissa : intMantissa),
 		     digits, NULL, 0, ' ',
 		     neg, TRUE, NULL, NULL);
@@ -887,7 +890,7 @@ short convFloat64ToAscii(char *target,
 
   tempTarget[digits+3] = 'E';
   error =
-    convInt64ToAscii(&tempTarget[digits+4], 4, 0,
+    convInt64ToAscii(&tempTarget[digits+4], 4, 0, targetScale,
                      (expPos ? expon : -expon), 
 		     0, NULL, 0, '0',
 		     TRUE, TRUE, NULL, NULL);
@@ -2891,6 +2894,7 @@ ex_expr::exp_return_type convIntervalToAscii(char *source,
     str_pad(target+targetIndex, fractionPrecision, '0');
     if (convInt64ToAscii(target + targetIndex,
 			 fractionPrecision, // targetLen
+                         0, 
                          0,
                          (Int64) fieldVal,
                          0, // scale,
@@ -2921,6 +2925,7 @@ ex_expr::exp_return_type convIntervalToAscii(char *source,
     if (convInt64ToAscii(target + targetIndex,
                          2, // targetLen
                          0,
+                         0, 
                          (Int64) fieldVal,
                          0, // scale,
                          NULL, // varCharLen
@@ -2939,6 +2944,7 @@ ex_expr::exp_return_type convIntervalToAscii(char *source,
   // leading field
   if (convInt64ToAscii(target + (sign == '-' ? 1 : 0),
                        leadingPrecision, // targetLen
+                       0,
                        0,
                        (Int64) value,
                        0, // scale,
@@ -5095,6 +5101,7 @@ convDoIt(char * source,
     if (convInt64ToAscii(target,
 			 targetLen,
                          targetPrecision,
+                         targetScale,
 			 (Int64) *(short *)source,
 			 sourceScale,
 			 varCharLen,
@@ -5278,6 +5285,7 @@ convDoIt(char * source,
     if (convInt64ToAscii(target,
 			 targetLen,
                          targetPrecision,
+                         targetScale,
 			 (Int64) *(unsigned short *)source,
 			 sourceScale,
 			 varCharLen,
@@ -5588,6 +5596,7 @@ convDoIt(char * source,
     if (convInt64ToAscii(target,
 		         targetLen,
                          targetPrecision,
+                         targetScale,
 		         (Int64) *(Lng32 *)source,
 			 sourceScale,
 			 varCharLen,
@@ -5854,6 +5863,7 @@ convDoIt(char * source,
     if (convInt64ToAscii(target,
 			 targetLen,
                          targetPrecision,
+                         targetScale,
 			 (Int64) *(ULng32 *)source,
 			 sourceScale,
 			 varCharLen,
@@ -6230,6 +6240,7 @@ convDoIt(char * source,
     if (convInt64ToAscii(target,
 			 targetLen,
                          targetPrecision,
+                         targetScale,
 			 *(Int64 *)source,
 			 sourceScale,
 			 varCharLen,
@@ -6413,6 +6424,7 @@ convDoIt(char * source,
     if (convInt64ToAscii(target,
 			 targetLen,
                          targetPrecision,
+                         targetScale,
 			 intermediate,
 			 ((targetType == REC_DECIMAL_LS) ? 0 : sourceScale),
 			 varCharLen,
@@ -6998,6 +7010,7 @@ convDoIt(char * source,
     if (convFloat64ToAscii(target,
 		           targetLen,
                            targetPrecision,
+                           targetScale,
 		           intermediate,
 		           SQL_REAL_FRAG_DIGITS,
 		           varCharLen,
@@ -7684,6 +7697,7 @@ convDoIt(char * source,
     if (convFloat64ToAscii(target,
 		           targetLen,
                            targetPrecision,
+                           targetScale,
 		           *doubleSrcPtr,
 		           SQL_DOUBLE_PRECISION_FRAG_DIGITS,
 		           varCharLen,
@@ -10476,15 +10490,17 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
     Int32 counter = warningMark2 - warningMark;
     while (counter) {
       if (((*diagsArea)->getWarningEntry(warningMark2 - counter + 1))->
-		getSQLCODE() == EXE_STRING_OVERFLOW) {
+          getSQLCODE() == EXE_STRING_OVERFLOW) {
 	(*diagsArea)->deleteWarning(warningMark2-counter);
         ExRaiseDetailSqlError(heap, diagsArea, EXE_STRING_OVERFLOW,
-          op_data[1],
-          src->getLength(op_data[-MAX_OPERANDS + 1]),
-          src->getDatatype(),
-          src->getScale(),
-          tgt->getDatatype(),
-          0);
+                              op_data[1],
+                              src->getLength(op_data[-MAX_OPERANDS + 1]),
+                              src->getDatatype(),
+                              src->getScale(),
+                              tgt->getDatatype(),
+                              0,
+                              tgt->getLength(),
+                              tgt->getScale());
         retcode = ex_expr::EXPR_ERROR;
       }
       else if (((*diagsArea)->getWarningEntry(warningMark2 - counter + 1))->

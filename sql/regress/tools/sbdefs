@@ -25,6 +25,8 @@ cqd hbase_async_drop_table 'OFF';
 cqd hbase_serialization 'ON';
 --cqd hbase_coprocessors 'OFF';
 cqd hbase_filter_preds 'ON';
+--cqd traf_default_aligned_format 'ON';
+--cqd traf_default_col_charset 'UTF8';
 set SCHEMA $$TEST_SCHEMA$$;
 #endif
 

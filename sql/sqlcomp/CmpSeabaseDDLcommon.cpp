@@ -236,13 +236,13 @@ short CmpSeabaseDDL::convertColAndKeyInfoArrays(
   return 0;
 }
 
-static short resetCQD(NABoolean cqdWasSet, short retval)
+static short resetCQDs(NABoolean hbaseSerialization, NAString hbVal,
+                       short retval)
 {
-  if (cqdWasSet)
+  if (hbaseSerialization)
     {
-      NAString value("ON");
       ActiveSchemaDB()->getDefaults().validateAndInsert(
-                                                        "hbase_serialization", value, FALSE);
+							"hbase_serialization", hbVal, FALSE);
     }
 
   return retval;
@@ -287,19 +287,22 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   glueQueryFragments(qryArraySize,  qs,
                      gluedQuery, gluedQuerySize);
 
-  NABoolean cqdWasSet = FALSE;
+  NABoolean hbaseSerialization = FALSE;
+  NABoolean defaultColCharset = FALSE;
+  NAString hbVal;
   if (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON)
     {
       NAString value("OFF");
+      hbVal = "ON";
       ActiveSchemaDB()->getDefaults().validateAndInsert(
-                                                        "hbase_serialization", value, FALSE);
-      cqdWasSet = TRUE;
+							"hbase_serialization", value, FALSE);
+      hbaseSerialization = TRUE;
     }
 
   exprNode = parser.parseDML((const char*)gluedQuery, strlen(gluedQuery), 
                              CharInfo::ISO88591);
   if (! exprNode)
-    return resetCQD(cqdWasSet, -1);
+    return resetCQDs(hbaseSerialization, hbVal, -1);
   
   RelExpr * rRoot = NULL;
   if (exprNode->getOperatorType() EQU STM_QUERY)
@@ -312,7 +315,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
     }
   
   if (! rRoot)
-    return resetCQD(cqdWasSet, -1);
+    return resetCQDs(hbaseSerialization, hbVal, -1);
   
   ExprNode * ddlNode = NULL;
   DDLExpr * ddlExpr = NULL;
@@ -320,7 +323,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   ddlExpr = (DDLExpr*)rRoot->getChild(0);
   ddlNode = ddlExpr->getDDLNode();
   if (! ddlNode)
-    return resetCQD(cqdWasSet, -1);
+    return resetCQDs(hbaseSerialization, hbVal, -1);
   
   if (ddlNode->getOperatorType() == DDL_CREATE_TABLE)
     {
@@ -339,16 +342,16 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = (ComTdbVirtTableKeyInfo*)
         new(CTXTHEAP) char[numKeys * sizeof(ComTdbVirtTableKeyInfo)];
       
-      if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, CTXTHEAP))
-        {
-          return resetCQD(cqdWasSet, -1);
-        }
+      if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, FALSE, CTXTHEAP))
+	{
+	  return resetCQDs(hbaseSerialization, hbVal, -1);
+	}
 
       if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
-                            CTXTHEAP))
-        {
-          return resetCQD(cqdWasSet, -1);
-        }
+			    CTXTHEAP))
+	{
+	  return resetCQDs(hbaseSerialization, hbVal, -1);
+	}
 
       // if index table defn, append "@" to the hbase col qual.
       if (isIndexTable)
@@ -397,9 +400,9 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       NAColumnArray btNAKeyArr;
 
       if (convertColAndKeyInfoArrays(btNumCols, btColInfoArray,
-                                     btNumKeys, btKeyInfoArray,
-                                     &btNAColArray, &btNAKeyArr))
-        return resetCQD(cqdWasSet, -1);
+				     btNumKeys, btKeyInfoArray,
+				     &btNAColArray, &btNAKeyArr))
+	return resetCQDs(hbaseSerialization, hbVal, -1);
 
       Lng32 keyColCount = 0;
       Lng32 nonKeyColCount = 0;
@@ -425,7 +428,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
                                          selColList,
                                          keyLength,
                                          CTXTHEAP))
-        return resetCQD(cqdWasSet, -1);
+	return resetCQDs(hbaseSerialization, hbVal, -1);
 
       numIndexNonKeys = numIndexCols - numIndexKeys;
       
@@ -484,9 +487,9 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = NULL;
     }
   else
-    return resetCQD(cqdWasSet, -1);
+    return resetCQDs(hbaseSerialization, hbVal, -1);
 
-  return resetCQD(cqdWasSet, 0);
+  return resetCQDs(hbaseSerialization, hbVal, 0);
 }
 
 // RETURN: -1, error.  0, all ok.
@@ -957,6 +960,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
       if (hbaseErrNum)
         *hbaseErrNum = retcode;
 
+      if (hbaseErrStr)
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
+
       retcode = -1398;
       goto label_return;
     }
@@ -985,6 +991,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
     {
       if (hbaseErrNum)
         *hbaseErrNum = retcode;
+
+      if (hbaseErrStr)
+        *hbaseErrStr = (char*)GetCliGlobals()->getJniErrorStr().data();
 
       retcode = -1394;
       goto label_return;
@@ -1913,18 +1922,19 @@ short CmpSeabaseDDL::checkDefaultValue(
 }
 
 short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
-                                 Lng32 serializedOption,
-                                 Lng32 &datatype,
-                                 Lng32 &length,
-                                 Lng32 &precision,
-                                 Lng32 &scale,
-                                 Lng32 &dtStart,
-                                 Lng32 &dtEnd,
-                                 Lng32 &upshifted,
-                                 Lng32 &nullable,
-                                 NAString &charset,
-                                 CharInfo::Collation &collationSequence,
-                                 ULng32 &colFlags)
+                                 NABoolean alignedFormat,
+				 Lng32 serializedOption,
+				 Lng32 &datatype,
+				 Lng32 &length,
+				 Lng32 &precision,
+				 Lng32 &scale,
+				 Lng32 &dtStart,
+				 Lng32 &dtEnd,
+				 Lng32 &upshifted,
+				 Lng32 &nullable,
+				 NAString &charset,
+				 CharInfo::Collation &collationSequence,
+				 ULng32 &colFlags)
 {
   short rc = 0;
 
@@ -1944,6 +1954,15 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
   length = naType->getNominalSize();
   nullable = naType->supportsSQLnull();
 
+  if ((serializedOption == 1) && (alignedFormat))
+    {
+      *CmpCommon::diags()
+	<< DgSqlCode(-4222)
+	<< DgString0("\"SERIALIZED option on ALIGNED format tables\"");
+      
+      return -1;
+    }
+
   switch (naType->getTypeQualifier())
     {
     case NA_CHARACTER_TYPE:
@@ -1962,7 +1981,8 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
             setFlags(colFlags, SEABASE_SERIALIZED);
           }
         else if ((serializedOption == -1) && // not specified
-                 (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON))
+                 (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
+                 (NOT alignedFormat))
           {
             setFlags(colFlags, SEABASE_SERIALIZED);
           }
@@ -1993,7 +2013,8 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
           }
         else if ((serializedOption == -1) && // not specified
                  (CmpCommon::getDefault(HBASE_SERIALIZATION) == DF_ON) &&
-                 (DFS2REC::isBinary(datatype)))
+                 (DFS2REC::isBinary(datatype)) &&
+                 (NOT alignedFormat))
           {
             setFlags(colFlags, SEABASE_SERIALIZED);
           }
@@ -2035,21 +2056,22 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
 }
 
 short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode, 
-                                NAString &colName,
-                                Lng32 &datatype,
-                                Lng32 &length,
-                                Lng32 &precision,
-                                Lng32 &scale,
-                                Lng32 &dtStart,
-                                Lng32 &dtEnd,
-                                Lng32 &upshifted,
-                                Lng32 &nullable,
-                                NAString &charset,
-                                ComColumnDefaultClass &defaultClass, 
-                                NAString &defVal,
-                                NAString &heading,
-                                LobsStorage &lobStorage,
-                                ULng32 &colFlags)
+				NAString &colName,
+                                NABoolean alignedFormat,
+				Lng32 &datatype,
+				Lng32 &length,
+				Lng32 &precision,
+				Lng32 &scale,
+				Lng32 &dtStart,
+				Lng32 &dtEnd,
+				Lng32 &upshifted,
+				Lng32 &nullable,
+				NAString &charset,
+				ComColumnDefaultClass &defaultClass, 
+				NAString &defVal,
+				NAString &heading,
+				LobsStorage &lobStorage,
+				ULng32 &colFlags)
 {
   short rc = 0;
 
@@ -2067,11 +2089,16 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
     }
 
   NAType * naType = colNode->getColumnDataType();
+  if (! naType)
+    {
+      *CmpCommon::diags() << DgSqlCode(-2004);
+      return -1;
+    }
 
   CharInfo::Collation collationSequence = CharInfo::DefaultCollation;
-  rc = getTypeInfo(naType, serializedOption,
-                   datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
-                   charset, collationSequence, colFlags);
+  rc = getTypeInfo(naType, alignedFormat, serializedOption,
+		   datatype, length, precision, scale, dtStart, dtEnd, upshifted, nullable,
+		   charset, collationSequence, colFlags);
 
   if (colName == "SYSKEY")
     {
@@ -2711,6 +2738,55 @@ short CmpSeabaseDDL::getUsingViews(ExeCliInterface *cliInterface,
     }
   
   return 0;
+}
+/* 
+Get the salt column text for a given table or index.
+Returns 0 for object does not have salt column
+Returns 1 for object has salt column and it is being returned in saltText
+Returns -1 for error, which for now is ignored as we have an alternate code path.
+ */
+
+short CmpSeabaseDDL::getSaltText(
+				   ExeCliInterface *cliInterface,
+				   const char * catName,
+				   const char * schName,
+				   const char * objName,
+				   const char * inObjType,
+				   NAString& saltText)
+{
+  Lng32 cliRC = 0;
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, NAString(schName), FALSE);
+  NAString quotedObjName;
+  ToQuotedString(quotedObjName, NAString(objName), FALSE);
+
+  char buf[4000];
+  char *data;
+  Lng32 len;
+  str_sprintf(buf, "select cast(default_value as varchar(512) character set iso88591) from %s.\"%s\".%s o, %s.\"%s\".%s c where o.catalog_name = '%s' and o.schema_name = '%s' and o.object_name = '%s'  and o.object_type = '%s'  and o.object_uid = c.object_uid and c.column_name = '_SALT_' ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+              catName, quotedSchName.data(), quotedObjName.data(),
+              inObjType);
+
+  Queue * saltQueue = NULL;
+  cliRC = cliInterface->fetchAllRows(saltQueue, buf, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+ 
+  // did not find row
+  if (saltQueue->numEntries() == 0)
+    return 0;
+
+  saltQueue->position();
+  OutputInfo * vi = (OutputInfo*)saltQueue->getNext(); 
+  saltText = vi->get(0);
+
+  return 1;
 }
 
 // Convert from hbase options string format to list of structs.
@@ -3455,7 +3531,8 @@ short CmpSeabaseDDL::buildColInfoArray(
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        NABoolean implicitPK,
                                        CollIndex numSysCols,
-                                       NAMemory * heap)
+                                       NABoolean alignedFormat,
+				       NAMemory * heap)
 {
   size_t index = 0;
   for (index = 0; index < colArray->entries(); index++)
@@ -3470,10 +3547,11 @@ short CmpSeabaseDDL::buildColInfoArray(
       ULng32 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(colNode,
-                     colName,
-                     datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
-                     charset, defaultClass, defVal, heading, lobStorage, colFlags))
-        return -1;
+		     colName,
+                     alignedFormat,
+		     datatype, length, precision, scale, dt_start, dt_end, upshifted, nullable,
+		     charset, defaultClass, defVal, heading, lobStorage, colFlags))
+	return -1;
 
       colInfoArray[index].hbaseColFlags = colFlags;
       
@@ -3561,8 +3639,9 @@ short CmpSeabaseDDL::buildColInfoArray(
       ULng32 colFlags;
       LobsStorage lobStorage;
       if (getColInfo(&colNode,
-                     colName,
-                     datatype, length, precision, scale, dt_start, dt_end, 
+		     colName,
+                     FALSE,
+		     datatype, length, precision, scale, dt_start, dt_end, 
                      upshifted, nullable, charset, defaultClass, defVal, 
                      heading, lobStorage, colFlags))
         return -1;
@@ -6544,6 +6623,11 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
   const char *maxFileSizeOptionString = "MAX_FILESIZE";
   const char *splitPolicyOptionString = "SPLIT_POLICY";
 
+  NABoolean dataBlockEncodingOptionSpecified = FALSE;
+  NABoolean compressionOptionSpecified = FALSE;
+  const char *dataBlockEncodingOptionString = "DATA_BLOCK_ENCODING";
+  const char *compressionOptionString = "COMPRESSION";
+
   Lng32 numHbaseOptions = 0;
   if (hbaseOptionsClause)
   {
@@ -6559,7 +6643,11 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
         maxFileSizeOptionSpecified = TRUE;
       else if (hbaseOption->key() == splitPolicyOptionString)
         splitPolicyOptionSpecified = TRUE;
-
+      else if (hbaseOption->key() == dataBlockEncodingOptionString)
+        dataBlockEncodingOptionSpecified = TRUE;
+      else if (hbaseOption->key() == compressionOptionString)
+        compressionOptionSpecified = TRUE;
+      
       hbaseOptionsStr += hbaseOption->key();
       hbaseOptionsStr += "=''";
       hbaseOptionsStr += hbaseOption->val();
@@ -6627,6 +6715,43 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
     }  
   }
   
+  NAString dataBlockEncoding =
+    CmpCommon::getDefaultString(HBASE_DATA_BLOCK_ENCODING_OPTION);
+  NAString compression = 
+    CmpCommon::getDefaultString(HBASE_COMPRESSION_OPTION);
+  HbaseCreateOption * hbaseOption = NULL;
+  
+  char optionStr[200];
+  if (!dataBlockEncoding.isNull() && !dataBlockEncodingOptionSpecified)
+    {
+      hbaseOption = new(STMTHEAP) HbaseCreateOption("DATA_BLOCK_ENCODING", 
+                                                    dataBlockEncoding.data());
+      hbaseCreateOptions.insert(hbaseOption);
+
+      if (ActiveSchemaDB()->getDefaults().userDefault
+          (HBASE_DATA_BLOCK_ENCODING_OPTION) == TRUE)
+        {
+          numHbaseOptions += 1;
+          sprintf(optionStr, "DATA_BLOCK_ENCODING=''%s''|", dataBlockEncoding.data());
+          hbaseOptionsStr += optionStr;
+        }
+    }
+
+  if (!compression.isNull() && !compressionOptionSpecified)
+    {
+      hbaseOption = new(STMTHEAP) HbaseCreateOption("COMPRESSION", 
+                                                    compression.data());
+      hbaseCreateOptions.insert(hbaseOption);
+
+      if (ActiveSchemaDB()->getDefaults().userDefault
+          (HBASE_COMPRESSION_OPTION) == TRUE)
+        {
+          numHbaseOptions += 1;
+          sprintf(optionStr, "COMPRESSION=''%s''|", compression.data());
+          hbaseOptionsStr += optionStr;
+        }
+    }
+
   /////////////////////////////////////////////////////////////////////
   // update HBASE_CREATE_OPTIONS field in metadata TABLES table.
   // Format of data stored in this field, if applicable.

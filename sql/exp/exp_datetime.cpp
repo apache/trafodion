@@ -1034,11 +1034,27 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
     return -1;
   }
   rec_datetime_field intervalEndField;
-  if (ExpInterval::getIntervalEndField(intervalOpType->getDatatype(),
-                       intervalEndField) != 0) {
-    ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
-    return -1;
-  }
+  if (DFS2REC::isInterval(intervalOpType->getDatatype()))
+    {
+      if (ExpInterval::getIntervalEndField(intervalOpType->getDatatype(),
+                                           intervalEndField) != 0) {
+        ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+        return -1;
+      }
+    }
+  else if ((DFS2REC::isBinary(intervalOpType->getDatatype())) &&
+           (datetimeEndField == REC_DATE_DAY))
+    {
+      // special modeSpecial4 case.
+      // DATE - DATE with result as NUMBER.
+      intervalEndField = REC_DATE_DAY;
+    }
+  else
+    {
+      ExRaiseSqlError(heap, diagsArea, EXE_INTERNAL_ERROR);
+      return -1;
+    }
+
   Int64 value1;
   convertDatetimeToInterval(datetimeStartField,
                             datetimeEndField,
@@ -3432,6 +3448,7 @@ Lng32 ExpDatetime::getDatetimeFormatLen(Lng32 format, NABoolean to_date,
     case DATETIME_FORMAT_TS5:       return DATETIME_FORMAT_TS5_LEN;
     case DATETIME_FORMAT_TS6:       return DATETIME_FORMAT_TS6_LEN;
     case DATETIME_FORMAT_TS7:       return DATETIME_FORMAT_TS7_LEN;
+    case DATETIME_FORMAT_TS8:       return DATETIME_FORMAT_TS8_LEN;
 
     default:                        return -1;
     }
@@ -3600,6 +3617,7 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
   case DATETIME_FORMAT_EUROPEAN3:
   case DATETIME_FORMAT_EUROPEAN4:
   case DATETIME_FORMAT_TS2:
+  case DATETIME_FORMAT_TS8:
     if (day) {
       convertToAscii(day, dstDataPtr, 2);
       if (startField < REC_DATE_DAY) {
@@ -3612,7 +3630,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
     }
     if (month) {
       if ((format == DATETIME_FORMAT_EUROPEAN3) ||
-	  (format == DATETIME_FORMAT_EUROPEAN4))
+	  (format == DATETIME_FORMAT_EUROPEAN4) ||
+          (format == DATETIME_FORMAT_TS8))
 	convertMonthToStr(month, dstDataPtr, 3);
       else
 	convertToAscii(month, dstDataPtr, 2);

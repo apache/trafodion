@@ -2005,7 +2005,8 @@ void PCodeCfg::optimize()
 
   // If this pcode sequence can't be optimized, or if decided to disable opts,
   // return.
-  if (!canPCodeBeOptimized(pCode) || !enableOpt)
+
+  if ( !canPCodeBeOptimized(pCode) || !enableOpt )
     return;
 
   // Initialize counters
@@ -2261,12 +2262,14 @@ void PCodeCfg::optimize()
 
 #if defined(NA_LINUX) && ! defined(__EID)
 
+
   Int32 debugNE = ( NExprDbgLvl_ >= VV_BD ) ; // Debugging Native Expr ?
 
   DUMP_PHASE("Before NE [15.5]", debugSome || debugNE , debugAll || debugNE );
 
   // Native code generation
-  if (optFlags_ & NATIVE_EXPR) {
+  
+  if ( (optFlags_ & NATIVE_EXPR) ) {
     cfgRewiring(rewiringFlags);
     computeLiveness(FALSE /* no DCE */);
     layoutNativeCode(NULL);
@@ -2276,7 +2279,7 @@ void PCodeCfg::optimize()
 
 #endif // defined(NA_LINUX) && ! defined(__EID)
 
-  // Lay out any new constants back into the space object.
+    // Lay out any new constants back into the space object.
   layoutConstants();
 
   DUMP_PHASE("Layout [16]", debugSome, debugAll);
@@ -2902,17 +2905,17 @@ void PCodeCfg::layoutConstants()
   char* newConstsArea = space_->allocateAlignedSpace(newConstsAreaLen_);
   str_cpy_all(newConstsArea, stk, oldConstsAreaLen);
 
-  PCodeConstants* key;
-  CollIndex* value;
-  NAHashDictionaryIterator<PCodeConstants, CollIndex> iter(*constToOffsetMap_);
+     PCodeConstants* key;
+     CollIndex* value;
+     NAHashDictionaryIterator<PCodeConstants, CollIndex> iter(*constToOffsetMap_);
 
-  for (i=0; i < iter.entries(); i++) {
-    iter.getNext(key, value);
+     for (i=0; i < iter.entries(); i++) {
+       iter.getNext(key, value);
 
-    // If constant added goes beyond that in the constants area, add it
-    if (*value >= oldConstsAreaLen) {
-      str_cpy_all(newConstsArea + *value, (char*)key->getData(), key->getLen());
-    }
+       // If constant added goes beyond that in the constants area, add it
+       if (*value >= oldConstsAreaLen) {
+         str_cpy_all(newConstsArea + *value, (char*)key->getData(), key->getLen());
+     }
   }
 
   expr_->setConstantsArea(newConstsArea);
@@ -6745,7 +6748,7 @@ void PCodeCfg::createCfg()
 // limiting factor is if the pcode graph contains a clause that will violate
 // the assumptions made by this infrastructure.
 //
-NABoolean PCodeCfg::canPCodeBeOptimized(PCodeBinary * pCode)
+NABoolean PCodeCfg::canPCodeBeOptimized( PCodeBinary * pCode )
 {
   // Obviously if we have no pCode then we should return FALSE :)
   if (pCode == NULL)
@@ -6782,7 +6785,6 @@ NABoolean PCodeCfg::canPCodeBeOptimized(PCodeBinary * pCode)
   // opts framework.  This solution is, however, draconian, in that the entire
   // expression is un-optimized.
 
-  // Remove if-def when cases are to be added.
   Int32 length = *(pCode++);
   pCode += (2*length);
 
@@ -6798,7 +6800,6 @@ NABoolean PCodeCfg::canPCodeBeOptimized(PCodeBinary * pCode)
     }
     pCode += PCode::getInstructionLength(pCode);
   }
-
   return TRUE;
 }
 

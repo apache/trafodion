@@ -136,7 +136,15 @@ Parser::Parser(const CmpContext* cmpContext)
 
   modeSpecial1_ = (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
   modeSpecial2_ = (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON);
-  
+  modeSpecial4_ = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
+
+  defaultColCharset_ = CharInfo::UnknownCharSet;
+  NAString cs = CmpCommon::getDefaultString(TRAF_DEFAULT_COL_CHARSET);
+  if (! cs.isNull())
+    {
+      defaultColCharset_ = CharInfo::getCharSetEnum(cs);
+    }
+ 
   clearHasOlapFunctions();
 
 }

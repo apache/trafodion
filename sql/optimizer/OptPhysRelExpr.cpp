@@ -12262,7 +12262,6 @@ Context* RelRoot::createContextForAChild(Context* myContext,
                   countOfCPUs = esps;
              }
           }
-   
           pipelinesPerCPU = 1;
    
        }
@@ -14684,8 +14683,10 @@ PhysicalProperty * FileScan::synthHbaseScanPhysicalProperty(
                 minESPs = MINOF(minESPs, ixDescPartFunc->getCountOfPartitions());
              }
            }
-        } else 
+        }
+        else  {
            maxESPs = totalESPsAllowed;
+        }
      }
    
      numESPs = MINOF(minESPs, maxESPs);

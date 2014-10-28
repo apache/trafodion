@@ -197,7 +197,7 @@ public:
 
   virtual const NAString getDatetimeQualifierAsString(NABoolean includeFractionalPrec) const;
 
-  virtual NABoolean isCompatible(const NAType& other) const;
+  virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
 
 #if defined( NA_LITTLE_ENDIAN )
   virtual NABoolean isEncodingNeeded() const;
@@ -511,8 +511,8 @@ public:
  
         virtual Lng32 getScale() const { return getFractionPrecision(); }
 
-        virtual NABoolean isCompatible(const NAType& other) const;                   // in common\DateTime.cpp
-
+        virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
+  
         virtual const NAType* synthesizeType(enum NATypeSynthRuleEnum synthRule,     // in common\DateTime.cpp
 					     const NAType& operand1,
 					     const NAType& operand2,
