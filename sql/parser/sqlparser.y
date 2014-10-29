@@ -20329,13 +20329,10 @@ hbb_upsert_using_load : TOK_UPSERT TOK_USING TOK_LOAD
 
 unload_statement : TOK_UNLOAD optional_hbb_unload_options TOK_INTO std_char_string_literal  non_join_query_primary 
                 {
-                  if (CmpCommon::getDefault(COMP_BOOL_226) != DF_ON)
-                      YYERROR;                     
                   CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
                   NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
                                                   , PARSERHEAP() // in  - NAMemory * 
                                                   );
-
                   // If we can not get a variable-width multi-byte or single-byte string here, report error 
                   if ( stmt == NULL )
                   {

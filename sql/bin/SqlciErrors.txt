@@ -1391,7 +1391,7 @@ $1~String1 --------------------------------
 4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY Indexes are not supported yet with $0~String0. Disable the indexes and try again.
 4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD $0~String0 
 4486 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraints are not supported with $0~String0. Disable the constraints and try again. 
-4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path  $0~String0  
+4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path $0~String0  
 4488 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option $0~String0 cannot be specified more than once. 
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
 4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 

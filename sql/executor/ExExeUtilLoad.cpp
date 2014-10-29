@@ -4265,8 +4265,8 @@ void ExExeUtilHBaseBulkUnLoadTcb::createHdfsFileError(Int32 sfwRetCode)
   char* errorMsg = sequenceFileWriter_->getErrorText((SFW_RetCode)sfwRetCode);
   ExRaiseSqlError(getHeap(), &diagsArea, (ExeErrorCode)(8447), NULL,
                   NULL, NULL, NULL, errorMsg, NULL);
-  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-  pentry_down->setDiagsArea(diagsArea);
+  ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
+  pentry_up->setDiagsArea(diagsArea);
 }
 ////////////////////////////////////////////////////////////////
 // Constructor for class ExExeUtilHbaseLoadTcb

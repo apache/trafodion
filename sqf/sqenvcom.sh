@@ -308,7 +308,7 @@ then
   # -------------------------------------------
 
   # native library directories and include directories
-  export HADOOP_LIB_DIR=/usr/lib64
+  export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native 
   export HADOOP_INC_DIR=/usr/include
 
   ### Thrift not supported on Cloudera yet (so use TOOLSDIR download)
@@ -347,8 +347,10 @@ elif [ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]; then
   # ----------------------------------------------
 
   # native library directories and include directories
-  export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native
+  export HADOOP_LIB_DIR=/usr/lib/hadoop/lib/native/Linux-*-${SQ_MTYPE}:/usr/lib/hadoop/lib/native
   export HADOOP_INC_DIR=/usr/include
+  # The supported HDP version, HDP 1.3 uses Hadoop 1
+  export USE_HADOOP_1=1
 
   ### Thrift not supported on Hortonworks yet (so use TOOLSDIR download)
   export THRIFT_LIB_DIR=$TOOLSDIR/thrift-0.9.0/lib
@@ -634,7 +636,7 @@ export PROTOBUFS_INC=$PROTOBUFS/include
 
 ######################
 # Library Path may include local over-rides
-export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$LOC_JVMLIBS:$HWMSLIBS:${SP_EXPORT_LIB}:/usr/lib/hadoop/libexec/../lib/native/Linux-amd64-64:.
+export LD_LIBRARY_PATH=$CC_LIB:$MPI_ROOT/lib/$MPILIB:$MY_SQROOT/export/lib"$SQ_MBTYPE":$HADOOP_LIB_DIR:$LOC_JVMLIBS:$HWMSLIBS:${SP_EXPORT_LIB}:.
 
 ######################
 # Class Path calculation may include local over-rides

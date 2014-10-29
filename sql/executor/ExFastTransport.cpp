@@ -1067,7 +1067,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         qChild_.down->cancelRequestWithParentIndex(qParent_.down->getHeadIndex());
         //pstate.processingStarted_ = FALSE;
       }
-      while (pstate.step_ == EXTRACT_ERROR)
+      while (pstate.processingStarted_ && pstate.step_ == EXTRACT_ERROR)
       {
         if (qChild_.up->isEmpty())
           return WORK_OK;
@@ -1119,7 +1119,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         if (isSequenceFile())
         {
           sfwRetCode = sequenceFileWriter_->close();
-          if (sfwRetCode != SFW_OK)
+          if (!errorOccurred_ && sfwRetCode != SFW_OK )
           {
             createSequenceFileError(sfwRetCode);
             pstate.step_ = EXTRACT_ERROR;
@@ -1129,7 +1129,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         else  if (myTdb().getBypassLibhdfs())
         {
           sfwRetCode = sequenceFileWriter_->hdfsClose();
-          if (sfwRetCode != SFW_OK)
+          if (!errorOccurred_ && sfwRetCode != SFW_OK )
           {
             createSequenceFileError(sfwRetCode);
             pstate.step_ = EXTRACT_ERROR;

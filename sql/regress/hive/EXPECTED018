@@ -690,7 +690,7 @@ regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* | grep merge 
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 
-*** ERROR[4487] Invalid Path  : compressed merge file needs to end with .gz .
+*** ERROR[4487] Invalid Path : compressed merge file needs to end with .gz.
 
 *** ERROR[8822] The statement was not prepared.
 
