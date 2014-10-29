@@ -45,16 +45,14 @@
       xmlns:db="http://docbook.org/ns/docbook">
   <info>
     
-    <title><link xlink:href="http://www.trafodion.org">
-    Trafodion Database Connectivity Services Reference Guide
-    </link></title>
-    <subtitle><link xlink:href="http://www.trafodion.org">
+    <title>Trafodion Database Connectivity Services Reference Guide
+    </title>
+    <subtitle>
            <inlinemediaobject>
                <imageobject>
                    <imagedata align="middle" valign="middle" fileref="Trafodion_DCS_logo.png" />
                </imageobject>
            </inlinemediaobject>
-      </link>
     </subtitle>
    <copyright>
        <year>2014</year>
@@ -66,17 +64,16 @@
         </para>
         <para>
         NOTICE REGARDING OPEN SOURCE SOFTWARE: Project Trafodion is licensed under the Apache License, Version 2.0 (the "License"); you may not use software from Project Trafodion except in compliance with the License. 
-        You may obtain a copy of the License at <link xlink:href="http://www.apache.org/licenses/LICENSE-2.0"></link> 
+        You may obtain a copy of the License at <link xlink:href="http://www.apache.org/licenses/LICENSE-2.0" xlink:show="new"></link> 
         Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
         See the License for the specific language governing permissions and limitations under the License.
        </para>
        </holder>
     </copyright>
       <abstract>
-    <para>This is the official reference guide of
-    <link xlink:href="http://www.trafodion.org">Trafodion DCS (Database Connectivity Services)</link>,
-    a distributed, ODBC, JDBC connectivity component of Trafodion, built on top of 
-    <link xlink:href="http://zookeeper.apache.org/">Apache ZooKeeper</link>
+    <para>This is the official reference guide of <emphasis role="bold">Trafodion DCS (Database Connectivity Services)</emphasis>, 
+a distributed, ODBC, JDBC connectivity component of <link xlink:href="http://www.trafodion.org" xlink:show="new">Trafodion</link>, built on top of 
+    <link xlink:href="http://zookeeper.apache.org/" xlink:show="new">Apache ZooKeeper</link>.
       </para>
       </abstract>
 
@@ -102,7 +99,7 @@
 	<section xml:id="arch.overview">
 	<title>Overview</title>
 	  <section xml:id="arch.overview.dcs">
-	  <title>DCS?</title>
+	  <title>DCS</title>
 	  <para>DCS, see figure <xref linkend='architecture.overview.dcs.graphic'></xref>, is a framework that connects 
 	      ODBC/JDBC Type 4 clients to Trafodion user programs (MXOSRVR servers). In a nutshell, clients connect to a listening 
 	      DcsMaster on a well known port. DcsMaster looks in ZooKeeper for an "available"

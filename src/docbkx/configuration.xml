@@ -54,15 +54,13 @@
         in <filename>conf/dcs-env.sh</filename> -- this configuration
         is used mostly by the launcher shell scripts getting the cluster
         off the ground -- and then add configuration to an XML file to
-        do things like override DCS defaults, tell the location of the ZooKeeper ensemble
-        <footnote>
+        do things like override DCS defaults, tell the location of the ZooKeeper ensemble.<footnote>
 <para>
 Be careful editing XML.  Make sure you close all elements.
 Run your file through <command>xmllint</command> or similar
 to ensure well-formedness of your document after an edit session.
 </para>
         </footnote>
-        .
     </para>
 
     <para>After you make an edit to an DCS configuration, make sure you copy the
@@ -74,7 +72,7 @@ to ensure well-formedness of your document after an edit session.
         <title>Java</title>
 
         <para>DCS requires java 6 from <link
-        xlink:href="http://www.java.com/download/">Oracle</link>. Usually
+        xlink:href="http://www.java.com/download/" xlink:show="new">Oracle</link>. Usually
         you'll want to use the latest version available except the problematic
         u18 (u24 is the latest version as of this writing).</para>
     </section>
@@ -118,7 +116,7 @@ to ensure well-formedness of your document after an edit session.
         <para>The clocks on cluster members should be in basic alignments.
         Some skew is tolerable but wild skew could generate odd behaviors. Run
         <link
-        xlink:href="http://en.wikipedia.org/wiki/Network_Time_Protocol">NTP</link>
+        xlink:href="http://en.wikipedia.org/wiki/Network_Time_Protocol" xlink:show="new">NTP</link>
         on your cluster, or an equivalent.</para>
       </section>
 
@@ -175,7 +173,7 @@ to ensure well-formedness of your document after an edit session.
          modify <filename>conf/servers</filename>. The
          <filename>servers</filename> file
          lists all hosts that you would have running
-         <application>DcsServer</application>s, one host per line. 
+         <application>DcsServer</application>s, one host per line or the host name followed by the number of servers. 
          All servers listed in this file will be started and stopped
          when DCS start or stop is run.</para>
         </section>
@@ -381,10 +379,10 @@ ${DCS_HOME}/bin/dcs-daemons.sh {start,stop} zookeeper
               DCS shuts down, it doesn't take ZooKeeper down with it.</para>
 
               <para>For more information about running a distinct ZooKeeper
-              cluster, see the ZooKeeper <link
-              xlink:href="http://hadoop.apache.org/zookeeper/docs/current/zookeeperStarted.html">Getting
-              Started Guide</link>.  Additionally, see the <link xlink:href="http://wiki.apache.org/hadoop/ZooKeeper/FAQ#A7">ZooKeeper Wiki</link> or the 
-          <link xlink:href="http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_zkMulitServerSetup">ZooKeeper documentation</link> 
+              cluster, see the <link
+              xlink:href="http://hadoop.apache.org/zookeeper/docs/current/zookeeperStarted.html" xlink:show="new">ZooKeeper Getting
+              Started Guide</link>.  Additionally, see the <link xlink:href="http://wiki.apache.org/hadoop/ZooKeeper/FAQ#A7" xlink:show="new">ZooKeeper Wiki</link> or the 
+          <link xlink:href="http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_zkMulitServerSetup" xlink:show="new">ZooKeeper documentation</link> 
           for more information on ZooKeeper sizing.
             </para>
             </section>
@@ -459,13 +457,13 @@ ${DCS_HOME}/bin/dcs-daemons.sh {start,stop} zookeeper
       <section>
         <title>Basic Distributed DCS Install</title>
 
-        <para>Here is an example basic configuration for a distributed ten
-        node cluster. The nodes are named <varname>example1</varname>,
-        <varname>example1</varname>, etc., through node
-        <varname>example9</varname> in this example. The DCS Master
+        <para>This example shows a basic configuration for a distributed four-node
+        cluster. The nodes are named <varname>example1</varname>,
+        <varname>example2</varname>, and so on, through node
+        <varname>example4</varname> in this example. The DCS Master
         is running on the node <varname>example1</varname>.
         DCS Servers run on nodes
-        <varname>example1</varname>-<varname>example9</varname>. A 3-node
+        <varname>example1</varname>-<varname>example4</varname>. A 3-node
         ZooKeeper ensemble runs on <varname>example1</varname>,
         <varname>example2</varname>, and <varname>example3</varname> on the
         default ports. ZooKeeper data is persisted to the directory
@@ -504,20 +502,30 @@ ${DCS_HOME}/bin/dcs-daemons.sh {start,stop} zookeeper
         <section xml:id="servers">
           <title><filename>servers</filename></title>
 
-          <para>In this file you list the nodes that will run servers.
+          <para>In this file, you list the nodes that will run servers. In this case, 
+          there are two servers per node:
           </para>
 
           <programlisting>
-    example1
-    example2
-    example3
-    example4
-    example5
-    example6
-    example7
-    example8
-    example9
-    </programlisting>
+  example1
+  example2
+  example3
+  example4
+  example1
+  example2
+  example3
+  example4
+          </programlisting>
+
+          <para>Alternatively, you can list the nodes followed by the number of servers:
+          </para>
+
+          <programlisting>
+  example1 2
+  example2 2
+  example3 2
+  example4 2
+           </programlisting>
         </section>
 
         <section xml:id="dcs_env">

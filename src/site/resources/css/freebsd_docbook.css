@@ -50,29 +50,35 @@ BODY BLOCKQUOTE {
 	margin-top: .75em;
 	line-height: 1.5;
 	margin-bottom: .75em;
+        font-family: "Arial", "sans-serif";
 }
 
 HTML BODY {
 	margin: 1em 8% 1em 10%;
 	line-height: 1.2;
+        font-family: "Arial", "sans-serif";
 }
 
 .LEGALNOTICE {
 	font-size: small;
 	font-variant: small-caps;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY DIV {
 	margin: 0;
+        font-family: "Arial", "sans-serif";
 }
 
 DL {
 	margin: .8em 0;
 	line-height: 1.2;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY FORM {
 	margin: .6em 0;
+        font-family: "Arial", "sans-serif";
 }
 
 H1, H2, H3, H4, H5, H6,
@@ -81,27 +87,33 @@ DIV.EXAMPLE P B,
 DIV.TABLE P B,
 DIV.PROCEDURE P B {
 	color: #990000;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY H1, BODY H2, BODY H3, BODY H4, BODY H5, BODY H6 {
 	line-height: 1.3;
 	margin-left: 0;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY H1, BODY H2 {
 	margin: .8em 0 0 -4%;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY H3, BODY H4 {
 	margin: .8em 0 0 -3%;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY H5 {
 	margin: .8em 0 0 -2%;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY H6 {
 	margin: .8em 0 0 -1%;
+        font-family: "Arial", "sans-serif";
 }
 
 BODY HR {
@@ -128,6 +140,7 @@ BODY PRE {
 
 BODY TD, BODY TH {
 	line-height: 1.2;
+        font-family: "Arial", "sans-serif";
 }
 
 UL, BODY DIR, BODY MENU {
@@ -146,6 +159,7 @@ BODY P B.APPLICATION {
 
 .FILENAME {
 	color: #007a00;
+	font-family: monospace;
 }
 
 .GUIMENU, .GUIMENUITEM, .GUISUBMENU,
@@ -184,6 +198,7 @@ BLOCKQUOTE.NOTE {
 	border: 1px solid #ccc;
 	padding: 0.4em 0.4em;
 	width: 85%;
+        font-family: "Arial", "sans-serif";
 }
 
 BLOCKQUOTE.TIP {
@@ -192,6 +207,7 @@ BLOCKQUOTE.TIP {
 	border: 1px solid green;
 	padding: 0.2em 2em;
 	width: 85%;
+        font-family: "Arial", "sans-serif";
 }
 
 BLOCKQUOTE.IMPORTANT {
@@ -199,6 +215,7 @@ BLOCKQUOTE.IMPORTANT {
 	border: 1px solid #a00;
 	border-left: 12px solid #c00;
 	padding: 0.1em 1em;
+        font-family: "Arial", "sans-serif";
 }
 
 BLOCKQUOTE.WARNING {
@@ -207,6 +224,7 @@ BLOCKQUOTE.WARNING {
 	border: 1px solid #e59595;
 	padding: 0.2em 2em;
 	width: 85%;
+        font-family: "Arial", "sans-serif";
 }
 
 .EXAMPLE {
@@ -215,6 +233,7 @@ BLOCKQUOTE.WARNING {
 	margin: 1em 0;
 	padding: 0.2em 2em;
 	width: 90%;
+	font-family: monospace;
 }
 
 .INFORMALTABLE TABLE.CALSTABLE TR TD {

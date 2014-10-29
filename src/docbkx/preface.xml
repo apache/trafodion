@@ -45,13 +45,13 @@
 -->
   <title>Preface</title>
 
-  <para>This is the official reference guide for the <link
-  xlink:href="https://wiki.trafodion.org/wiki/index.php/Architecture#Connectivity_Subsystem">DCS</link> version it ships with.
+  <para>This is the official reference guide for the DCS version it ships with. (DCS is packaged within the trafodion-*.*.*.tar.gz file
+  on the <link xlink:href="http://downloads.trafodion.org" xlink:show="new">Trafodion download site</link>.)
   This document describes DCS version <emphasis><?eval ${project.version}?></emphasis>.
-  Herein you will find either the definitive documentation on an DCS topic
+  Herein you will find either the definitive documentation on a DCS topic
   as of its standing when the referenced DCS version shipped, or it
   will point to the location in <link
-  xlink:href="https://wiki.trafodion.org/wiki/index.php/Architecture#Connectivity_Subsystem/docs/apidocs/index.html">javadoc</link>, where
+  xlink:href="http://docs.trafodion.org/dcs_docs/apidocs/index.html" xlink:show="new">javadoc</link>, where
   the pertinent information can be found.</para>
 
   <para>This reference guide is a work in progress.</para>

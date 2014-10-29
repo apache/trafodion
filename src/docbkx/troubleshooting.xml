@@ -145,7 +145,7 @@ Swap: 16008732k total,	14348k used, 15994384k free, 11106908k cached
         </programlisting>
         </para>
         <para>
-        Here we can see that the system load average during the last five minutes is 3.75, which very roughly means that on average 3.75 threads were waiting for CPU time during these 5 minutes.  In general, the “perfect” utilization equals to the number of cores, under that number the machine is under utilized and over that the machine is over utilized.  This is an important concept, see this article to understand it more: <link xlink:href="http://www.linuxjournal.com/article/9001">http://www.linuxjournal.com/article/9001</link>.
+        Here we can see that the system load average during the last five minutes is 3.75, which very roughly means that on average 3.75 threads were waiting for CPU time during these 5 minutes.  In general, the “perfect” utilization equals to the number of cores, under that number the machine is under utilized and over that the machine is over utilized.  This is an important concept, see this article to understand it more: <link xlink:href="http://www.linuxjournal.com/article/9001" xlink:show="new">http://www.linuxjournal.com/article/9001</link>.
         </para>
         <para>
         Apart from load, we can see that the system is using almost all its available RAM but most of it is used for the OS cache (which is good). The swap only has a few KBs in it and this is wanted, high numbers would indicate swapping activity which is the nemesis of performance of Java systems. Another way to detect swapping is when the load average goes through the roof (although this could also be caused by things like a dying disk, among others).
@@ -182,7 +182,7 @@ Swap: 16008732k total,	14348k used, 15994384k free, 11106908k cached
           <para>ZooKeeper is the cluster's "canary in the mineshaft". It'll be the first to notice issues if any so making sure its happy is the short-cut to a humming cluster.
           </para> 
           <para>
-          See the <link xlink:href="http://wiki.apache.org/hadoop/ZooKeeper/Troubleshooting">ZooKeeper Operating Environment Troubleshooting</link> page. It has suggestions and tools for checking disk and networking performance; i.e. the operating environment your ZooKeeper and DCS are running in.
+          See the <link xlink:href="http://wiki.apache.org/hadoop/ZooKeeper/Troubleshooting" xlink:show="new">ZooKeeper Operating Environment Troubleshooting</link> page. It has suggestions and tools for checking disk and networking performance; i.e. the operating environment your ZooKeeper and DCS are running in.
           </para>
          <para>Additionally, the utility <xref linkend="trouble.tools.builtin.zkcli"/> may help investigate ZooKeeper issues.
          </para>
