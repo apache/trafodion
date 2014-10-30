@@ -534,7 +534,8 @@ class CmpSeabaseDDL
 
   short createEncodedKeysBuffer(char** &encodedKeysBuffer,
 				desc_struct * colDescs, desc_struct * keyDescs,
-				Lng32 numSplits, Lng32 numKeys, Lng32 keyLength);
+				Lng32 numSplits, Lng32 numKeys, 
+                                Lng32 keyLength, NABoolean isIndex);
 
   short validateRoutine( 
                         ExeCliInterface *cliInterface,

@@ -1571,12 +1571,23 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
 
           if (pkType->getTypeName() == "VARCHAR")
           {
-              varCharstr = new (heap) char[decodedValueLen + pkType->getVarLenHdrSize()];
-              // careful, this works on little-endian systems only!!
-              str_cpy_all(varCharstr, (char*) &decodedValueLen, pkType->getVarLenHdrSize());
-              str_cpy_all(varCharstr+pkType->getVarLenHdrSize(), encodedKeyP, decodedValueLen);
-              decodedValueLen += pkType->getVarLenHdrSize();
-              encodedKeyP = varCharstr;
+            Int32 varLenSize = pkType->getVarLenHdrSize() ;
+            Int32 nullHdrSize = pkType->getSQLnullHdrSize();
+            // Format of encodedKeyP :| null hdr | varchar data|
+            // Format of VarcharStr : | null hdr | var len hdr | varchar data|
+            varCharstr = new (heap) char[decodedValueLen + varLenSize];
+            
+            if (nullHdrSize > 0)
+              str_cpy_all(varCharstr, encodedKeyP, nullHdrSize);
+
+            // careful, this works on little-endian systems only!!
+            str_cpy_all(varCharstr+nullHdrSize, (char*) &decodedValueLen, 
+                        varLenSize);
+            str_cpy_all(varCharstr+nullHdrSize+varLenSize, 
+                        encodedKeyP+nullHdrSize, 
+                        decodedValueLen-nullHdrSize);
+            decodedValueLen += pkType->getVarLenHdrSize();
+            encodedKeyP = varCharstr;
           }
 
           // un-encode the key value by using an expression
@@ -1584,26 +1595,17 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
             new (heap) ConstValue(pkType,
                                   (void *) encodedKeyP,
                                   decodedValueLen,
-                                  new(heap) NAString("<encRegionKey>"),
+                                  NULL,
                                   heap);
           CMPASSERT(keyColEncVal);
 
           if (keyColEncVal->isNull())
           {
             // do not call the expression evaluator if the value 
-            // to be decoded is NULL. We cannot use keyColEncVal created
-            // a few lines above since the string literal passed in to
-            // the constructor (4th argument) has a specific value in that 
-            // case. This argument will be used to set the text_ field of 
-            // ConstValue. If the constructor called as shown below text_ will
-            // contain the literal "NULL", when the value passed in as 
-            // second argument is null.
-            keyColVal =
-                new (heap) ConstValue(pkType,
-                                      (void *) encodedKeyP,
-                                      decodedValueLen,
-                                      NULL,
-                                      heap);
+            // to be decoded is NULL. 
+
+            keyColVal = keyColEncVal ;
+
           }
           else 
           {

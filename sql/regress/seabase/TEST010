@@ -399,3 +399,30 @@ execute s;
 execute statsquery1;
 --use statsquery to see rows flowing through each ESP
 --execute statsquery ;
+
+cqd ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT 'ON' ;
+
+drop table if exists LOGITEM;
+
+CREATE TABLE LOGITEM
+  (
+    D_GROUP                   VARCHAR(80 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , L_ORDER_NO                  VARCHAR(30 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , I_SLN                         VARCHAR(10 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+ 
+  , PRIMARY KEY (L_ORDER_NO ASC, I_SLN ASC)
+  )
+  SALT USING 16 PARTITIONS
+  HBASE_OPTIONS
+  (
+    DATA_BLOCK_ENCODING = 'FAST_DIFF',
+    COMPRESSION = 'GZ'
+  )
+;
+
+cqd hbase_hash2_partitioning 'off' ;
+
+select * from logitem ;

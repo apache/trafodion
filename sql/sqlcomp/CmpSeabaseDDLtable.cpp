@@ -1257,7 +1257,8 @@ void CmpSeabaseDDL::createSeabaseTable(
                                                 numKeys) ;
 
     if (createEncodedKeysBuffer(encodedKeysBuffer,
-                                colDescs, keyDescs, numSplits, numKeys, keyLength))
+                                colDescs, keyDescs, numSplits, numKeys, 
+                                keyLength, FALSE))
       {
         processReturn();
         
