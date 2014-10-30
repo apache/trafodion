@@ -4478,6 +4478,7 @@ NATable::NATable(BindWA *bindWA,
     partnsDesc_(NULL),
     colsWithMissingStats_(NULL),
     originalCardinality_(-1.0),
+    hbaseCardEstimated_(FALSE),
     tableIdList_(heap),
     rcb_(NULL),
     rcbLen_(0),
@@ -5244,6 +5245,7 @@ NATable::NATable(BindWA *bindWA,
     partnsDesc_(NULL),
     colsWithMissingStats_(NULL),
     originalCardinality_(-1.0),
+    hbaseCardEstimated_(FALSE),
     tableIdList_(heap),
     rcb_(NULL),
     rcbLen_(0),
@@ -5522,21 +5524,29 @@ NATable::getStatistics()
       CURRCONTEXT_HISTCACHE->getHistograms(*this);
 
       Cardinality defaultCard = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
-      NABoolean usingDefaultCard = FALSE;
+      NABoolean assignedDefaultCard = FALSE;
       if ((*colStats_).entries() > 0)
         {
-          originalCardinality_ = (*colStats_)[0]->getRowcount();
-          if (originalCardinality_ == defaultCard && (*colStats_)[0]->isFakeHistogram())
-            usingDefaultCard = TRUE;
+          if (!(*colStats_)[0]->isFakeHistogram())
+            originalCardinality_ = (*colStats_)[0]->getRowcount();
+          else if (!hbaseCardEstimated_)
+            {
+              originalCardinality_ = (*colStats_)[0]->getRowcount();
+              assignedDefaultCard = TRUE;
+            }
         }
-      else
+      else if (!hbaseCardEstimated_)
         {
           originalCardinality_ = defaultCard;
-          usingDefaultCard = TRUE;
+          assignedDefaultCard = TRUE;
         }
 
-      if (usingDefaultCard && isHbaseTable() && CmpCommon::getDefault(ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
-        originalCardinality_ = estimateHBaseRowCount();
+      if (assignedDefaultCard && isHbaseTable() && !isSeabaseMDTable() &&
+          CmpCommon::getDefault(ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+        {
+          originalCardinality_ = estimateHBaseRowCount();
+          hbaseCardEstimated_ = TRUE;
+        }
 
       // Set cardinality for Indexes on the table.
       for (CollIndex i=0; i<indexes_.entries(); i++)
@@ -7236,7 +7246,9 @@ Int32 NATable::computeHBaseRowSizeFromMetaData()
 // other considerations).
 Int64 NATable::estimateHBaseRowCount()
 {
-  if (!isHbaseTable())
+  if (!isHbaseTable() || isSeabaseMDTable() ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME)
     return ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
 
   NADefaults* defs = &ActiveSchemaDB()->getDefaults();

@@ -76,6 +76,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileScanner;
+import org.apache.hadoop.hbase.regionserver.StoreFileInfo;
 import org.apache.hadoop.hbase.HConstants;
 
 public class HBaseClient {
@@ -704,7 +705,13 @@ public class HBaseClient {
                                tblName + "/" + REGION_NAME_PATTERN +
                                "/#1/" + HFILE_NAME_PATTERN));
       for (FileStatus fs : fsArr) {
-          HFile.Reader reader = HFile.createReader(fileSystem, fs.getPath(), cacheConf, config);
+        // Make sure the file name conforms to HFile name pattern.
+        if (!StoreFileInfo.isHFile(fs.getPath())) {
+          if (logger.isDebugEnabled()) logger.debug("Skipped file " + fs.getPath() + " -- not a valid HFile name.");
+          continue;
+        }
+        HFile.Reader reader = HFile.createReader(fileSystem, fs.getPath(), cacheConf, config);
+        try {
           totalEntries += reader.getEntries();
           totalSizeBytes += reader.length();
           //printQualifiers(reader, 100);
@@ -741,6 +748,9 @@ public class HBaseClient {
 
             if (logger.isDebugEnabled()) logger.debug("Sampled " + nullCount + " nulls.");
           }  // code for first file
+        } finally {
+          reader.close(false);
+        }
       } // for
 
       long estimatedEntries = (ROWS_TO_SAMPLE > 0
