@@ -478,6 +478,15 @@ select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_addr
 select count(*) from hive.hive.unload_customer_and_address;
 select [first 20] * from hive.hive.unload_customer_and_address order by ca_address_sk,c_customer_sk;
 
+--unload 19 --should give error [8447]
+unload into '//\a//c' select * from CUSTOMER_ADDRESS;
+
+--unload 20 --should give syntax error
+unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
+
+--unload 21 --should give an error
+unload with MERGE FILE 'folder/cust_addr' into '/bulkload/test' select * from customer_address;
+
 --unload 100
 CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
 UNLOAD  

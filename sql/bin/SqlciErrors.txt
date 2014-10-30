@@ -1391,7 +1391,7 @@ $1~String1 --------------------------------
 4484 ZZZZZ 99999 BEGINNER MINOR LOGONLY Indexes are not supported yet with $0~String0. Disable the indexes and try again.
 4485 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid option for BULK LOAD or BULK UNLOAD $0~String0 
 4486 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraints are not supported with $0~String0. Disable the constraints and try again. 
-4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path $0~String0  
+4487 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid Path: $0~String0  
 4488 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option $0~String0 cannot be specified more than once. 
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
 4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 
@@ -1516,7 +1516,7 @@ $1~String1 --------------------------------
 8444 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only one lob handle can be returned by child for data extract.
 8445 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during transformation of hdfs row to sql row. Error Detail: $0~string0 
 8446 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs buffer fetch. Error Detail: $0~string0 
-8447 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs SequenceFile access. Error Detail: $0~string0 
+8447 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during hdfs access. Error Detail: $0~string0 
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.

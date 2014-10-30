@@ -690,7 +690,7 @@ regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* | grep merge 
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 
-*** ERROR[4487] Invalid Path : compressed merge file needs to end with .gz.
+*** ERROR[4487] Invalid Path: MERGE FILE 'merged_customer_demogs_2' must end with the characters '.gz'.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1225,6 +1225,33 @@ C_CUSTOMER_SK  C_CUSTOMER_ID                                                    
         36673  AAAAAAAABEPIAAAA                                                                                                 1071833                1320                  7                 2450242                2450212  Dr.                                                                                                   Christopher                                                                                           Smith                                                                                                 N                                                                                                               6              3          1935  BERMUDA                                                                                               ?                                                                                                     Christopher.Smith@1XyfnXzQcmMv.com                                                                    2452646                                                                                                           7  AAAAAAAAHAAAAAAA                                                                                      ?                                                                                                     Hill 7th                                                                                              Road                                                                                                  Suite U                                                                                               Farmington                                                                                            ?                                                                                                     ?                                                                                                     39145                                                                                                 United States                                                                                                       ?  ?                                                                                                   
 
 --- 20 row(s) selected.
+>>
+>>--unload 19 --should give error [8447]
+>>unload into '//\a//c' select * from CUSTOMER_ADDRESS;
+Task: UNLOAD           Status: Started
+Task:  EXTRACT         Status: Started
+
+*** ERROR[8447] An error occurred during hdfs access. Error Detail: Java exception in hdfsCreate().
+
+--- 0 row(s) unloaded.
+>>
+>>--unload 20 --should give syntax error
+>>unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
+
+*** ERROR[15001] A syntax error occurred at or before: 
+unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
+                      ^ (23 characters from start of SQL statement)
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--unload 21 --should give an error
+>>unload with MERGE FILE 'folder/cust_addr' into '/bulkload/test' select * from customer_address;
+
+*** ERROR[4487] Invalid Path: MERGE FILE 'folder/cust_addr' cannot contain the '/' character.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>--unload 100
 >>CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';

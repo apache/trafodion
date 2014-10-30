@@ -20439,7 +20439,8 @@ hbb_unload_option:   hbb_unload_empty_target
                 }
                 | TOK_DELIMITER unsigned_smallint
                 {
-                  if ($2 < 256)
+                //only 1-255 are supported
+                  if ($2 > 0 && $2 < 256 )
                   {
                     char * charVal = new (PARSERHEAP()) char[2];
                     charVal[0] = (char)$2;
@@ -20459,7 +20460,8 @@ hbb_unload_option:   hbb_unload_empty_target
                 }
                 | TOK_RECORD_SEPARATOR unsigned_smallint
                 {
-                  if ($2 < 256)
+                  //only 1-255 are supported
+                  if ($2 > 0 && $2 < 256)
                   {
                     char * charVal = new (PARSERHEAP()) char[2];
                     charVal[0] = (char)$2;

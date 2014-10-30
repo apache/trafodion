@@ -1077,6 +1077,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         if (childStatus == ex_queue::Q_NO_DATA)
         {
           pstate.step_ = EXTRACT_DONE;
+          pstate.processingStarted_ = FALSE;
         }
         qChild_.up->removeHead();
       }
