@@ -3017,7 +3017,7 @@ void NAHeap::destroy()
   if (la_)
     {
       char header[120];
-      sprintf(header, "Stacks when block of %d bytes was askead from heap (%s)",
+      sprintf(header, "Stacks when block of %d bytes was asked from heap (%s)",
               TraceAllocSize, getName());
       dumpTrafStack(getSAL(), header, true);
       delete la_;

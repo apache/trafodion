@@ -97,7 +97,7 @@ Lng32 ExpHbaseInterface_JNI::deleteColumns(
 
   int numReqRows = 100;
   retcode = htc_->startScan(transID, "", "", columns, -1, FALSE, numReqRows, FALSE, 
-       NULL, NULL, NULL, 0);
+       NULL, NULL, NULL, NULL, 0);
   if (retcode != HTC_OK)
     return retcode;
 
@@ -575,6 +575,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      const TextVec *inColNamesToFilter, 
 				      const TextVec *inCompareOpList,
 				      const TextVec *inColValuesToCompare,
+                                      ExHbaseAccessStats *hbs,
                                       Float32 samplePercent)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
@@ -595,8 +596,8 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 					  inColNamesToFilter,
 					  inCompareOpList,
 					  inColValuesToCompare,
+					  hbs,
 					  samplePercent);
-                                          //NULL, NULL, NULL);
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -620,7 +621,8 @@ Lng32 ExpHbaseInterface_JNI::getRowOpen(
 	HbaseStr &tblName,
 	const Text &row, 
 	const std::vector<Text> & columns,
-	const int64_t timestamp)
+	const int64_t timestamp,
+	ExHbaseAccessStats *hbs)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
   if (htc_ == NULL)
@@ -630,7 +632,7 @@ Lng32 ExpHbaseInterface_JNI::getRowOpen(
   }
   
   Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc_->startGet(transID, row, columns, timestamp);
+  retCode_ = htc_->startGet(transID, row, columns, timestamp, hbs);
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -642,7 +644,8 @@ Lng32 ExpHbaseInterface_JNI::getRowsOpen(
 	HbaseStr &tblName,
 	const std::vector<Text> & rows, 
 	const std::vector<Text> & columns,
-	const int64_t timestamp)
+	const int64_t timestamp,
+	ExHbaseAccessStats *hbs)
 {
   htc_ = client_->getHTableClient((NAHeap *)heap_, tblName.val, useTRex_);
   if (htc_ == NULL)
@@ -652,7 +655,7 @@ Lng32 ExpHbaseInterface_JNI::getRowsOpen(
   }
   
   Int64 transID = getTransactionIDFromContext();
-  retCode_ = htc_->startGets(transID, rows, columns, timestamp);
+  retCode_ = htc_->startGets(transID, rows, columns, timestamp, hbs);
   if (retCode_ == HBC_OK)
     return HBASE_ACCESS_SUCCESS;
   else
@@ -1198,10 +1201,10 @@ Lng32 ExpHbaseInterface_JNI::getColName(int colNo,
   return HBASE_ACCESS_SUCCESS;
 }
 
-Lng32 ExpHbaseInterface_JNI::nextRow()
+Lng32 ExpHbaseInterface_JNI::nextRow(ExHbaseAccessStats *hbs)
 {
   if (htc_ != NULL)
-     retCode_ = htc_->nextRow();
+     retCode_ = htc_->nextRow(hbs);
   else
      return HBC_ERROR_GET_HTC_EXCEPTION;
 

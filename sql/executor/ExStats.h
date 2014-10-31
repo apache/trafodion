@@ -2616,10 +2616,10 @@ NA_EIDPROC
   Int64 numBytesRead() const {return numBytesRead_;}
 
 NA_EIDPROC
-  ULng32 rowsAccessed() const {return accessedRows_;}
+  Int64 rowsAccessed() const {return accessedRows_;}
 
 NA_EIDPROC
-  ULng32 rowsUsed() const {return usedRows_;}
+  Int64 rowsUsed() const {return usedRows_;}
 
 NA_EIDPROC
   ExHdfsScanStats * castToExHdfsScanStats();
@@ -2645,8 +2645,8 @@ private:
   char * tableName_;
 
   Int64  numBytesRead_;
-  ULng32 accessedRows_;
-  ULng32 usedRows_;
+  Int64  accessedRows_;
+  Int64  usedRows_;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -2702,6 +2702,7 @@ class ExHbaseAccessStats : public ExOperStats {
   
   NA_EIDPROC
     inline void incAccessedRows() {++accessedRows_;}
+    inline void incAccessedRows(Int64 v) {accessedRows_ += v;}
   
   NA_EIDPROC
     inline void incUsedRows() {++usedRows_;}
@@ -2712,10 +2713,10 @@ class ExHbaseAccessStats : public ExOperStats {
     Int64 numBytesRead() const {return numBytesRead_;}
   
   NA_EIDPROC
-    ULng32 rowsAccessed() const {return accessedRows_;}
+    Int64 rowsAccessed() const {return accessedRows_;}
   
   NA_EIDPROC
-    ULng32 rowsUsed() const {return usedRows_;}
+    Int64 rowsUsed() const {return usedRows_;}
   
   NA_EIDPROC
     ExHbaseAccessStats * castToExHbaseAccessStats();
@@ -2739,13 +2740,12 @@ class ExHbaseAccessStats : public ExOperStats {
   
   ExTimeStats timer_;
   ExLobStats lobStats_;
-  //  ExHbaseStats hbaseStats_;
   
   char * tableName_;
   
   Int64  numBytesRead_;
-  ULng32 accessedRows_;
-  ULng32 usedRows_;
+  Int64  accessedRows_;
+  Int64  usedRows_;
 };
 
    

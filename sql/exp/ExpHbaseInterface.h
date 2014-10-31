@@ -57,6 +57,7 @@
 
 class ex_globals;
 class CliGlobals;
+class ExHbaseAccessStats;
 
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
@@ -140,6 +141,7 @@ class ExpHbaseInterface : public NABasicObject
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
 			 const TextVec *inColValuesToCompare,
+			 ExHbaseAccessStats *hbs = NULL,
 			 Float32 samplePercent = -1.0f) = 0;
 
   virtual Lng32 scanClose() = 0;
@@ -158,7 +160,8 @@ class ExpHbaseInterface : public NABasicObject
 		HbaseStr &tblName,
 		const Text &row, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp) = 0;
+		const int64_t timestamp,
+		ExHbaseAccessStats *hbs = NULL) = 0;
 
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
@@ -169,9 +172,10 @@ class ExpHbaseInterface : public NABasicObject
 		HbaseStr &tblName,
 		const std::vector<Text> & rows, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp) = 0;
+		const int64_t timestamp,
+		ExHbaseAccessStats *hbs = NULL) = 0;
 
-  virtual Lng32 nextRow() = 0;
+  virtual Lng32 nextRow(ExHbaseAccessStats *hbs = NULL) = 0;
   
   virtual Lng32 nextCell(HbaseStr &rowId,
           HbaseStr &colFamName,
@@ -376,6 +380,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
 			 const TextVec *inColValuesToCompare,
+                         ExHbaseAccessStats *hbs = NULL,
                          Float32 samplePercent = -1.0f);
   
   virtual Lng32 scanClose();
@@ -384,7 +389,8 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		HbaseStr &tblName,
 		const Text &row, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp);
+		const int64_t timestamp,
+		ExHbaseAccessStats *hbs = NULL);
  
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
@@ -395,9 +401,10 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		HbaseStr &tblName,
 		const std::vector<Text> & rows, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp);
+		const int64_t timestamp,
+		ExHbaseAccessStats *hbs = NULL);
 
-  virtual Lng32 nextRow();
+  virtual Lng32 nextRow(ExHbaseAccessStats *hbs = NULL);
 
   virtual Lng32 nextCell( HbaseStr &rowId,
           HbaseStr &colFamName,
