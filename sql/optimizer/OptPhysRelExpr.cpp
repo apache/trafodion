@@ -4095,6 +4095,8 @@ NestedJoin::checkCompleteSortOrder(const PhysicalProperty* sppForChild0)
    if ( n < mappedTargetTableOrder.entries() )
       return FALSE;
 
+   if ( n > mappedTargetTableOrder.entries() )
+     n = mappedTargetTableOrder.entries();
 
    for ( CollIndex i=0; i<n; i++ ) {
 
