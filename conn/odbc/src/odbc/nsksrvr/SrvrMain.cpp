@@ -76,6 +76,8 @@ int clientConnTimeOut;
 int zkSessionTimeout;
 short stopOnDisconnect;
 char trafIPAddr[20];
+long maxHeapPctExit;
+long initSessMemSize;
 
 void watcher(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx);
 bool verifyPortAvailable(const char * idForPort, int portNumber);
@@ -939,6 +941,8 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 	zkSessionTimeout = 30;	// Default to 30 secs
 	strName[0] = 0;
 	strValue[0] = 0;
+	maxHeapPctExit = 0; 
+	initSessMemSize = 0;
 	initParam.timeLogger=false;
 	initTcpProcessNameTemp(initParam.TcpProcessName);
 	initParam.ASProcessName[0]	= '\0';
@@ -1132,6 +1136,26 @@ BOOL getInitParamSrvr(int argc, char *argv[], SRVR_INIT_PARAM_Def &initParam, ch
 				argEmpty = TRUE;
 				break;
 			}
+		}
+		else
+		if (strcmp(arg, "-MAXHEAPPCT") == 0)
+		{
+			if (++count < argc && argv[count][0] != '-' )
+			{
+				if( getNumberTemp( argv[count], number ) == TRUE )
+					maxHeapPctExit = number;
+				else
+				{
+					argWrong = TRUE;
+					break;
+				}
+			}
+			else
+			{
+				argEmpty = TRUE;
+				break;
+			}
+
 		}
 		count++;
 	}
