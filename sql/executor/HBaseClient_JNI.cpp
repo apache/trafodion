@@ -1854,6 +1854,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 					const TextVec *inColNamesToFilter, 
 					const TextVec *inCompareOpList,
 					const TextVec *inColValuesToCompare,
+					ExHbaseAccessStats *hbs,
 					Float32 samplePercent)
 
 {
@@ -1964,11 +1965,15 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 
   jfloat j_smplPct = samplePercent;
 
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_SCAN_OPEN].methodID, 
             j_tid, jba_startRowID, jba_stopRowID, j_cols, j_ts, j_cb, j_ncr,
             j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
             j_smplPct, j_preFetch);
+  if (hbs)
+    hbs->getTimer().stop();
 
   jenv_->DeleteLocalRef(jba_startRowID);  
   jenv_->DeleteLocalRef(jba_stopRowID);  
@@ -2003,7 +2008,7 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID, 
-      const TextVec& cols, Int64 timestamp)
+      const TextVec& cols, Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::startGet(%s) called.", rowID.data());
   int len = rowID.size();
@@ -2034,11 +2039,15 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID,
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_GET_OPEN].methodID, j_tid, jba_rowID, 
             j_cols, j_ts);
 
   jenv_->DeleteLocalRef(jba_rowID);  
+  if (hbs)
+    hbs->getTimer().stop();
   if (j_cols != NULL)
      jenv_->DeleteLocalRef(j_cols);
 
@@ -2062,7 +2071,7 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs, 
-	const TextVec& cols, Int64 timestamp)
+	const TextVec& cols, Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::startGet(multi-row) called.");
   jobjectArray j_cols = NULL;
@@ -2094,9 +2103,13 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
   
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
       JavaMethods_[JM_GETS_OPEN].methodID, j_tid, j_rows, j_cols, j_ts);
   jenv_->DeleteLocalRef(j_rows);
+  if (hbs)
+    hbs->getTimer().stop();
   if (j_cols != NULL)
       jenv_->DeleteLocalRef(j_cols);
 
@@ -3281,7 +3294,7 @@ void HTableClient_JNI::cleanupResultInfo()
    return;
 }
 
-HTC_RetCode HTableClient_JNI::nextRow()
+HTC_RetCode HTableClient_JNI::nextRow(ExHbaseAccessStats *hbs)
 {
     HTC_RetCode retCode;
 
@@ -3309,7 +3322,7 @@ HTC_RetCode HTableClient_JNI::nextRow()
                 break;
             }
         }
-        retCode = fetchRows();
+        retCode = fetchRows(hbs);
         if (retCode != HTC_OK)
         {
            cleanupResultInfo();
@@ -3562,13 +3575,17 @@ HTC_RetCode HTableClient_JNI::getRowID(HbaseStr &rowID)
     return HTC_OK;
 }
 
-HTC_RetCode HTableClient_JNI::fetchRows()
+HTC_RetCode HTableClient_JNI::fetchRows(ExHbaseAccessStats *hbs)
 {
    HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::fetchRows() called.");
    jlong jniObject = (jlong)this;
+   if (hbs)
+     hbs->getTimer().start();
    jlong jRowsReturned = jenv_->CallLongMethod(javaObj_, 
              JavaMethods_[JM_FETCH_ROWS].methodID,
              jniObject);
+   if (hbs)
+     hbs->getTimer().stop();
 
    if (jenv_->ExceptionCheck())
    {
@@ -3587,6 +3604,8 @@ HTC_RetCode HTableClient_JNI::fetchRows()
    else
    if (numRowsReturned_ == 0)
       return HTC_DONE;
+   if (hbs)
+     hbs->incAccessedRows(numRowsReturned_);
    return HTC_OK; 
 }
 

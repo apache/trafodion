@@ -2086,7 +2086,8 @@ short HbaseAccess::codeGen(Generator * generator)
   // Change the atp and atpindex of the returned values to indicate that.
   expGen->assignAtpAndAtpIndex(columnList,
 			       0, returnedDesc->noTuples()-1);
- 
+
+  Cardinality expectedRows = (Cardinality) getEstRowsUsed().getValue();
   ULng32 buffersize = 3 * getDefault(GEN_DPSO_BUFFER_SIZE);
   queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
   queue_index downqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_DOWN);
@@ -2212,6 +2213,7 @@ short HbaseAccess::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
+		      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -2357,6 +2359,7 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 			   &scanExpr);
     }
 
+  Cardinality expectedRows = (Cardinality) getEstRowsUsed().getValue();
   ULng32 buffersize = 3 * getDefault(GEN_DPSO_BUFFER_SIZE);
   queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
   queue_index downqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_DOWN);
@@ -2466,6 +2469,7 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
+		      expectedRows,
 		      numBuffers,
 		      buffersize,
 

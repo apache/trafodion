@@ -32,6 +32,9 @@
 #include "NAMemory.h"
 #include "HTableClient.h"
 
+// forward declare
+class ExHbaseAccessStats;
+
 using namespace apache::hadoop::hbase::thrift;
 
 namespace {
@@ -253,11 +256,12 @@ public:
 			const TextVec *inColNamesToFilter, 
 			const TextVec *inCompareOpList,
 			const TextVec *inColValuesToCompare,
+			ExHbaseAccessStats *hbs = NULL,
 			Float32 samplePercent = -1.0f);
   HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, 
-		Int64 timestamp);
+		Int64 timestamp, ExHbaseAccessStats *hbs = NULL);
   HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, 
-		Int64 timestamp);
+		Int64 timestamp, ExHbaseAccessStats *hbs = NULL);
   HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
   HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
   HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
@@ -285,8 +289,8 @@ public:
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned);
   void cleanupResultInfo();
-  HTC_RetCode fetchRows();
-  HTC_RetCode nextRow();
+  HTC_RetCode fetchRows(ExHbaseAccessStats *hbs = NULL);
+  HTC_RetCode nextRow(ExHbaseAccessStats *hbs = NULL);
   HTC_RetCode getColName(int colNo,
               char **colName,
               short &colNameLen,
