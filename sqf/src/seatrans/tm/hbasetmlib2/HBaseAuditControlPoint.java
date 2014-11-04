@@ -121,15 +121,16 @@ public class HBaseAuditControlPoint {
       boolean lvControlPointExists = admin.tableExists(CONTROL_POINT_TABLE_NAME);
       if (LOG.isDebugEnabled()) LOG.debug("HBaseAuditControlPoint lvControlPointExists " + lvControlPointExists);
       currControlPt = -1;
-      try {
-         if (LOG.isDebugEnabled()) LOG.debug("Creating the table " + CONTROL_POINT_TABLE_NAME);
-         admin.createTable(desc);
-         currControlPt = 1;
+      if (lvControlPointExists == false) {
+         try {
+            if (LOG.isDebugEnabled()) LOG.debug("Creating the table " + CONTROL_POINT_TABLE_NAME);
+            admin.createTable(desc);
+            currControlPt = 1;
+         }
+         catch (TableExistsException e) {
+            LOG.error("Table " + CONTROL_POINT_TABLE_NAME + " already exists");
+         }
       }
-      catch (TableExistsException e) {
-         LOG.error("Table " + CONTROL_POINT_TABLE_NAME + " already exists");
-      }
-
       try {
          if (LOG.isDebugEnabled()) LOG.debug("try new HTable");
          table = new HTable(config, desc.getName());
