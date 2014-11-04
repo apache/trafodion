@@ -1459,9 +1459,7 @@ CoprocessorService, Coprocessor {
    TransactionalRegionScannerHolder rsh = 
       scanners.get(scannerId);
 
-   // Joanie: Activate when client side transactional scanner changes
-   // are available
-   //nextCallSeq++;
+   nextCallSeq++;
 
    rsh.nextCallSeq = nextCallSeq;
 
