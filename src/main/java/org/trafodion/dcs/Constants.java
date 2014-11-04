@@ -125,7 +125,14 @@ public final class Constants {
   
   /** Default value for DCS server user program exit after disconnect */
   public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT = 0;  
-    
+   
+  /** Configuration key for DCS server user program exit when heap size becomes too large */
+  public static final String  DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT= "dcs.server.user.program.max.heap.pct.exit";
+  
+  /** Default value for DCS server user program exit when heap size becomes too large */
+  public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT = 0;  
+ 
+ 
   /** Name of ZooKeeper quorum configuration parameter. */
   public static final String ZOOKEEPER_QUORUM = "dcs.zookeeper.quorum";
 

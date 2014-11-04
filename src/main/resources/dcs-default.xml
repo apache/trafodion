@@ -130,7 +130,14 @@
         Length of time user program waits for client to connect.
         Default 60 seconds.
     </description>
-  </property>    
+  </property>
+  <property>
+    <name>dcs.server.user.program.max.heap.pct.exit</name>
+    <value>0</value>
+    <description>
+       Set this value to a percentage of the initial heap size (for example, value: 80), which you do not want the current heap size to exceed. When        the Trafodion session disconnects, the DCS server's user program checks its current heap size. If the difference between its current and             initial heap sizes exceeds this percentage, the user program will exit, and the DCS server will restart it. If the difference between its            current and initial heap sizes does not exceed this percentage, the user program will be allowed to keep running. The default is 0, which            means that the heap size is not checked after the session disconnects and the user program keeps running.
+    </description>
+  </property>
   <property>
     <name>dcs.server.user.program.zookeeper.session.timeout</name>
     <value>180</value>

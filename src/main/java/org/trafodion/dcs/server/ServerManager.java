@@ -71,6 +71,7 @@ public final class ServerManager implements Callable {
 	private static int zkSessionTimeout;
 	private static int userProgExitAfterDisconnect;
 	private static int infoPort;
+	private static int maxHeapPctExit;
 	
 	class ServerMonitor {
 		ScriptManager scriptManager;
@@ -133,6 +134,7 @@ public final class ServerManager implements Callable {
 			progParams.append(" -ZKSTO " + zkSessionTimeout);
 			progParams.append(" -EADSCO " + userProgExitAfterDisconnect);
 			progParams.append(" -TCPADD " + netConf.getExtHostAddress());
+			progParams.append(" -MAXHEAPPCT " + maxHeapPctExit);
 			scriptContext.setCommand(userProgCommand + progParams.toString());
 		}
 
@@ -211,6 +213,7 @@ public final class ServerManager implements Callable {
 		this.connectingTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_CONNECTING_TIMEOUT);	   	
 		this.zkSessionTimeout = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_ZOOKEEPER_SESSION_TIMEOUT);	   	
 		this.userProgExitAfterDisconnect = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_EXIT_AFTER_DISCONNECT);
+		this.maxHeapPctExit = this.conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT,Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_MAX_HEAP_PCT_EXIT);
 	}
 
 	@Override
