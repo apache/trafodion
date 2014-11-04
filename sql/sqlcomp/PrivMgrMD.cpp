@@ -754,7 +754,7 @@ ComObjectType PrivMgr::ObjectLitToEnum(const char *objectLiteral)
 bool PrivMgr::isAuthorizationEnabled()
 {
   PrivMDStatus retcode = authorizationEnabled();
-  return (retcode == PRIV_INITIALIZED);
+  return (retcode != PRIV_UNINITIALIZED);
 }
 
 // ----------------------------------------------------------------------------
@@ -933,9 +933,7 @@ PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_);
 // Grant SQL_OPERATIONS ALTER, CREATE, and DROP to PUBLIC 
 std::vector<std::string> ACDOperationCodes;
 
-   ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::ALTER));
    ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::CREATE));
-   ACDOperationCodes.push_back(PrivMgr::getSQLOperationCode(SQLOperation::DROP));
                                      
    privStatus = componentPrivileges.grantPrivilegeInternal(SQL_OPERATIONS_COMPONENT_UID,
                                                            ACDOperationCodes,
@@ -951,9 +949,9 @@ std::vector<std::string> ACDOperationCodes;
 // Verify counts for tables.
 
 // Expected number of privileges granted is 2 for each operation (one each
-// for DB__ROOT and DB__ROOTROLE) plus the three grants to PUBLIC.
+// for DB__ROOT and DB__ROOTROLE) plus the one grants to PUBLIC.
 
-int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) * 2 + 3;
+int64_t expectedPrivCount = static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) * 2 + 1;
 
    if (components.getCount() != 1 ||
        componentOperations.getCount() != static_cast<int64_t>(SQLOperation::NUMBER_OF_OPERATIONS) ||

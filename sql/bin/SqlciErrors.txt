@@ -217,7 +217,7 @@
 1231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined routine $0~String0 could not be created.
 1232 ZZZZZ 99999 BEGINNER MINOR DBADMIN A file error ($0~int0) occurred when saving dropped table DDL for table $1~TableName to $2~String0.
 1233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating schema in SQL system catalog $0~String0 is prohibited.
-1234 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 ---
+1234 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Authorization need to be reinitialized due to missing or corrupted privilege manager metadata. To reinitialize, do 'initialize authorization, drop' followed by 'initialize authorization'. This deletes and recreates privilege manager metadata. Trafodion metadata is not affected. 
 1235 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid combination of EXTENT sizes and MAXEXTENTS was specified for table or index $0~TableName. File system error returned $1~int0.
 1236 3F000 99999 BEGINNER MAJOR DBADMIN The schema name specified for SQL object $0~String0 is not valid. The schema name must be the same as the schema being created.
 1237 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused as of 05/7/12 ---
@@ -1395,6 +1395,7 @@ $1~String1 --------------------------------
 4488 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option $0~String0 cannot be specified more than once. 
 4489 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK UNLOAD option $0~String0 cannot be specified more than once. 
 4490 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD into a salted table is not supported if ESP parallelism is turned off. 
+4491 42000 99999 BEGINNER MINOR LOGONLY The user does not have $0~string0 privilege on sequence $1~string1$2~string2.
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.

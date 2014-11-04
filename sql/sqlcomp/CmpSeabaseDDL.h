@@ -158,6 +158,8 @@ class CmpSeabaseDDL
 
   void processSystemCatalog(NADefaults * defs);
 
+  short isPrivMgrMetadataInitialized(NADefaults *defs = NULL);
+
   short readAndInitDefaultsFromSeabaseDefaultsTable
     (NADefaults::Provenance overwriteIfNotYet, Int32 errOrWarn,
      NADefaults * defs);
@@ -218,8 +220,7 @@ class CmpSeabaseDDL
   
   bool isDDLOperationAuthorized(
      SQLOperation operation,
-     const ComObjectName & objName,
-     const char * objType);
+     const Int32 objOwnerId);
   
 
   static NABoolean enabledForSerialization(NAColumn * nac);
@@ -447,7 +448,8 @@ class CmpSeabaseDDL
 		     NAString &btCatName,
 		     NAString &btSchName,
 		     NAString &btObjName,
-		     Int64 &btUID);
+		     Int64 &btUID,
+		     Int32 &btObjOwner);
   
   short getUsingObject(ExeCliInterface *cliInterface,
 		       Int64 objUID,
@@ -948,7 +950,6 @@ class CmpSeabaseDDL
 
   NAString seabaseSysCat_;
 
-  Int16 authorizationEnabled_;
   const char * param_[NUM_MAX_PARAMS];
 
 };

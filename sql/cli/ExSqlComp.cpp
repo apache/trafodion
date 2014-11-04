@@ -676,7 +676,7 @@ ExSqlComp::ReturnStatus ExSqlComp::resendControls(NABoolean ctxSw)   // Genesis 
     //    Delimiter
     //    Database username
     Int32 *userID = ctxt->getDatabaseUserID();
-    Int32 userAsInt = *((Int32 *) userID);
+    Int32 userAsInt = *userID;
     char userMessage [MAX_AUTHID_AS_STRING_LEN + 1 + MAX_USERNAME_LEN + 1];
     str_sprintf(userMessage, "%d,%s", userAsInt, ctxt->getDatabaseUserName());
 

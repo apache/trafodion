@@ -189,16 +189,24 @@ Tom                                                 White Socks
 >>
 >>create table t133_t1 (c1 int not null primary key, c2 int);
 
---- SQL operation complete.
+*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_T1 is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
 >>create view t133_v1 as select * from t133_t1;
 
---- SQL operation complete.
+*** ERROR[4082] Object TRAFODION.PRIVMGR_MD.T133_T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
 >>create index t133_i1 on t133_t1(c2);
 
---- SQL operation complete.
+*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_I1 is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
 >>create table t133_t2 like t133_t1;
 
---- SQL operation complete.
+*** ERROR[1118] Creating object TRAFODION.PRIVMGR_MD.T133_T2 is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
 >>
 >>initialize authorization;
 
@@ -236,8 +244,6 @@ COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
-T133_T1
-T133_T2
 
 --- SQL operation complete.
 >>execute get_owner_privs;
@@ -250,9 +256,6 @@ TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                        
 TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."PRIVMGR_MD"."ROLE_USAGE"                                                                                                                               BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."T133_T1"                                                                                                                                  BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."T133_T2"                                                                                                                                  BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."T133_V1"                                                                                                                                  VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
@@ -262,18 +265,45 @@ TRAFODION."T133SCH"."STANDINGS"                                                 
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
 
---- 16 row(s) selected.
+--- 13 row(s) selected.
 >>
 >>initialize authorization, drop;
 
 --- SQL operation complete.
 >>get tables;
 
+--- SQL operation complete.
+>>
+>>initialize authorization;
+
+--- SQL operation complete.
+>>get tables;
+
 Tables in Schema TRAFODION.PRIVMGR_MD
 =====================================
 
-T133_T1
-T133_T2
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
+ROLE_USAGE
+
+--- SQL operation complete.
+>>set parserflags 131072;
+
+--- SQL operation complete.
+>>drop table role_usage;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.PRIVMGR_MD
+=====================================
+
+COMPONENTS
+COMPONENT_OPERATIONS
+COMPONENT_PRIVILEGES
+OBJECT_PRIVILEGES
 
 --- SQL operation complete.
 >>
@@ -290,41 +320,6 @@ COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
-T133_T1
-T133_T2
-
---- SQL operation complete.
->>drop table object_privileges;
-
---- SQL operation complete.
->>get tables;
-
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
-
-COMPONENTS
-COMPONENT_OPERATIONS
-COMPONENT_PRIVILEGES
-ROLE_USAGE
-T133_T1
-T133_T2
-
---- SQL operation complete.
->>initialize authorization;
-
---- SQL operation complete.
->>get tables;
-
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
-
-COMPONENTS
-COMPONENT_OPERATIONS
-COMPONENT_PRIVILEGES
-OBJECT_PRIVILEGES
-ROLE_USAGE
-T133_T1
-T133_T2
 
 --- SQL operation complete.
 >>execute get_owner_privs;
@@ -336,10 +331,6 @@ TRAFODION."PRIVMGR_MD"."COMPONENTS"                                             
 TRAFODION."PRIVMGR_MD"."COMPONENT_OPERAT                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."PRIVMGR_MD"."COMPONENT_PRIVIL                                                                                                                          BT    DB__ROOT                      47                    47
 TRAFODION."PRIVMGR_MD"."OBJECT_PRIVILEGE                                                                                                                          BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."ROLE_USAGE"                                                                                                                               BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."T133_T1"                                                                                                                                  BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."T133_T2"                                                                                                                                  BT    DB__ROOT                      47                    47
-TRAFODION."PRIVMGR_MD"."T133_V1"                                                                                                                                  VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."GAMES"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."GAMES_BY_PLAYER"                                                                                                                             VI    DB__ROOT                       1                     0
 TRAFODION."T133SCH"."HOME_TEAMS_GAMES"                                                                                                                            VI    DB__ROOT                       1                     0
@@ -348,8 +339,9 @@ TRAFODION."T133SCH"."PLAYERS_ON_TEAM"                                           
 TRAFODION."T133SCH"."STANDINGS"                                                                                                                                   BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAMS"                                                                                                                                       BT    DB__ROOT                      47                    47
 TRAFODION."T133SCH"."TEAM_STATISTICS"                                                                                                                             BT    DB__ROOT                      47                    47
+TRAFODION.PRIVMGR_MD.ROLE_USAGE                                                                                                                                   BT    DB__ROOT                      47                    47
 
---- 16 row(s) selected.
+--- 13 row(s) selected.
 >>
 >>drop table components;
 
@@ -363,20 +355,12 @@ COMPONENT_OPERATIONS
 COMPONENT_PRIVILEGES
 OBJECT_PRIVILEGES
 ROLE_USAGE
-T133_T1
-T133_T2
 
 --- SQL operation complete.
 >>initialize authorization, drop;
 
 --- SQL operation complete.
 >>get tables;
-
-Tables in Schema TRAFODION.PRIVMGR_MD
-=====================================
-
-T133_T1
-T133_T2
 
 --- SQL operation complete.
 >>

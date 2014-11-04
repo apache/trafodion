@@ -29,6 +29,7 @@
 
 #include <string>
 #include <cstdio>
+#include <algorithm>
 #include "sqlcli.h"
 #include "ComSmallDefs.h"
 #include "ExExeUtilCli.h"
@@ -37,6 +38,7 @@
 #include "CmpCommon.h"
 #include "CmpDDLCatErrorCodes.h"
 #include "ComSecurityKey.h"
+#include "NAUserId.h"
 
 // ****************************************************************************
 // File: PrivMgrPrivileges.h
@@ -355,6 +357,24 @@ PrivStatus PrivMgrPrivileges::grantObjectPriv(
     PRIVMGR_INTERNAL_ERROR("objectUID is 0 for grant command");
     return STATUS_ERROR;
   }
+
+  // If this grant request is called during the creation of the OBJECT_PRIVILEGES
+  // table, just return okay.  Fixes a chicken and egg problem.
+  char theQuote = '"';
+  std::string nameRequested(objectName_);
+  std::string nameToCheck(fullTableName_);
+
+  // Delimited name issue.  The passed in objectName may enclose name parts in
+  // double quotes even if the name part contains only [a-z][A-Z][0-9]_
+  // characters. The same is true for the stored metadataLocation_.
+  // To allow equality checks to work, we strip off the double quote delimiters
+  // from both names. Fortunately, the double quote character is not allowed in
+  // any SQL identifier except as delimiters - so this works.
+  nameRequested.erase(std::remove(nameRequested.begin(), nameRequested.end(), theQuote), nameRequested.end());
+  nameToCheck.erase(std::remove(nameToCheck.begin(), nameToCheck.end(), theQuote), nameToCheck.end());
+
+  if (nameRequested == nameToCheck && grantorID_ == SYSTEM_AUTH_ID)
+    return STATUS_GOOD;
 
   // TDB:  add support for the BY clause
 
@@ -2812,8 +2832,8 @@ PrivStatus ObjectPrivsMDTable::insertSelectOnAuthsToPublic(
   char buf[2000];
 
   sprintf(buf, "insert into %s select o.object_uid,'%s','BT',-1,'PUBLIC','U',"
-               "33333,'DB__ROOT','U',1,0 FROM %s O WHERE O.OBJECT_NAME = 'AUTHS'", 
-              tableName_.c_str(),authsLocation.c_str(),objectsLocation.c_str());
+               "%d,'DB__ROOT','U',1,0 FROM %s O WHERE O.OBJECT_NAME = 'AUTHS'", 
+              tableName_.c_str(),authsLocation.c_str(), MIN_USERID, objectsLocation.c_str());
 
   Int64 rowsInserted = 0;
   ExeCliInterface cliInterface(STMTHEAP);

@@ -6220,17 +6220,19 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   // See if there is anything to check
   if (bindWA->getStoiList().entries() == 0 &&
       bindWA->getUdrStoiList().entries() == 0 &&
-      bindWA->getCoProcAggrList().entries() == 0)
+      bindWA->getCoProcAggrList().entries() == 0 &&
+      bindWA->getSeqValList().entries() == 0)
     return TRUE;
 
   // If authorization is not enabled, then return TRUE
+  if (!CmpCommon::context()->isAuthorizationEnabled())
+    return TRUE;
+
   std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
   privMDLoc += std::string(".\"") +
                std::string(SEABASE_PRIVMGR_SCHEMA) +
                std::string("\"");
   PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags());
-  if (!privInterface.isAuthorizationEnabled())
-    return TRUE;
 
   ComBoolean QI_enabled = (CmpCommon::getDefault(CAT_ENABLE_QUERY_INVALIDATION) == DF_ON);
 
@@ -6238,7 +6240,6 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   OptSqlTableOpenInfo * optStoi = NULL;
   NABoolean privCheckSuccess = TRUE;
 
- //
   // Have the ComSecurityKey constructor compute the hash value for the the User's ID.
   // Note: The following code doesn't care about the object's hash value or the resulting 
   // ComSecurityKey's ActionType....we just need the hash value for the User's ID.
@@ -6252,6 +6253,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   NABoolean RemoveNATableEntryFromCache = FALSE ;
   NABoolean thisPrivCheckSuccess = TRUE;
 
+  // Check privileges for tables used in the query.
   for(Int32 i=0; i<(Int32)bindWA->getStoiList().entries(); i++)
   {
     RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
@@ -6406,7 +6408,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
        tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
        privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
     }
-  }
+  }  // for loop over tables in stoi list
 
   // We currently do NOT cache the NARoutine objects for SPJs.
   // We currently do NOT support UDFs which are the other users of NARoutine objects.
@@ -6463,13 +6465,14 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 
     if ( ! thisPrivCheckSuccess )        // Accumulate overall failure (if any)
          privCheckSuccess = FALSE ;
-  }
+  }  // for loop over UDRs
 
   // Check privs on any CoprocAggrs used in the query.
   ExeUtilHbaseCoProcAggr* coProcAggr = NULL;
   for (Int32 i=0; i<(Int32)bindWA->getCoProcAggrList().entries(); i++)
   {
-    thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
+    RemoveNATableEntryFromCache = FALSE ;  // Initialize each time through loop
+    thisPrivCheckSuccess = TRUE ;          // Initialize each time through loop
     coProcAggr = (bindWA->getCoProcAggrList())[i];
     NATable* tab = bindWA->getSchemaDB()->getNATableDB()->
                                    get(coProcAggr->getCorrName(), bindWA, NULL);
@@ -6524,7 +6527,51 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
       privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
    }
-  }
+  }  // for loop over coprocs
+
+  // Check privs on any sequence generators used in the query.
+  SequenceValue* seqVal = NULL;
+  for (Int32 i=0; i<(Int32)bindWA->getSeqValList().entries(); i++)
+  {
+    thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
+    seqVal = (bindWA->getSeqValList())[i];
+    NATable* tab = const_cast<NATable*>(seqVal->getNATable());
+    PrivStatus retcode = STATUS_GOOD;
+    // No need to save priv info in NATable object representing a sequence;
+    // these NATables are not cached.
+    PrivMgrUserPrivs privInfo;
+    retcode = privInterface.getPrivileges(tab->objectUid().get_value(),
+                                          thisUserID, privInfo);
+    if (retcode != STATUS_GOOD)
+     return false;
+
+    NABoolean ErrorPutInDiags = FALSE ;
+    Int32 numSecKeys = 0;
+
+    if ( privInfo.hasUsagePriv() )
+    {
+      if ( QI_enabled && numSecKeys > 0 &&
+           ! findKeyAndInsertInOutputList(tab->getSecKeySet(),
+                               userHashValue, USAGE_PRIV ) )
+      {
+         thisPrivCheckSuccess = FALSE;
+      }
+    }
+    else
+    {
+      thisPrivCheckSuccess        = FALSE;
+      ErrorPutInDiags             = FALSE;
+    }
+    if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
+    {
+      *CmpCommon::diags() << DgSqlCode( -4491 )
+       << DgString0( "USAGE" )
+       << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+    }
+
+    if ( !thisPrivCheckSuccess )
+      privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
+  }  // for loop over sequences
 
   bindWA->setFailedForPrivileges( ! privCheckSuccess );
 

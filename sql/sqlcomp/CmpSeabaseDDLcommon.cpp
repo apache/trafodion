@@ -39,6 +39,8 @@
 #include "CmpDDLCatErrorCodes.h"
 #include "ValueDesc.h"
 #include "Globals.h"
+#include "Context.h"
+#include "ExSqlComp.h"
 #include "CmpSeabaseDDLauth.h"
 #include "NAUserId.h"
 #include "StmtDDLCreateView.h"
@@ -95,7 +97,6 @@ CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
 {
   savedCmpParserFlags_ = 0;
   savedCliParserFlags_ = 0;
-  authorizationEnabled_ = -1;
   heap_ = heap;
 
   if ((syscatInit) && (ActiveSchemaDB()))
@@ -660,7 +661,7 @@ NABoolean CmpSeabaseDDL::isSeabaseReservedSchema(
       if ((catName == seabaseDefCatName) &&
           ((schName == SEABASE_MD_SCHEMA) ||
            (schName == SEABASE_DTM_SCHEMA) ||
-        //   (schName == SEABASE_PRIVMGR_SCHEMA) ||
+           (schName == SEABASE_PRIVMGR_SCHEMA) ||
            (schName == SEABASE_REPOS_SCHEMA) ))
         return TRUE;
     }
@@ -1311,22 +1312,95 @@ short CmpSeabaseDDL::isOldMetadataInitialized(ExpHbaseInterface * ehi)
   return -1;
 }
 
-NABoolean CmpSeabaseDDL::isAuthorizationEnabled()
+NABoolean CmpSeabaseDDL::isAuthorizationEnabled ()
 {
-  if (authorizationEnabled_ == -1)
-  {
-    // Initiate the privilege manager interface class
-    NAString privMgrMDLoc;
-    CONCAT_CATSCH (privMgrMDLoc, getSystemCatalog(), SEABASE_PRIVMGR_SCHEMA);
-    PrivMgrCommands privInterface
-      (std::string(privMgrMDLoc.data()), CmpCommon::diags());
+  return CmpCommon::context()->isAuthorizationEnabled();
+}
 
-    if (privInterface.isAuthorizationEnabled())
-      authorizationEnabled_ = 1;
-    else
-      authorizationEnabled_ = 0;
-  }
-  return authorizationEnabled_;
+// ----------------------------------------------------------------------------
+// method: isPrivMgrMetadataInitialized
+//
+// This method checks to see if the PrivMgr metadata is initialized
+//
+// Parameters:
+//    defs - pointer to the NADefaults class
+//
+// returns the result of the request:
+//  (return codes based as same values returned for isMetadataInitialized)
+//   0: no metadata tables exist, authorization is not enabled
+//   1: all metadata tables exists, authorization is enabled
+//   2: some metadata tables exist, privmgr metadata is corrupted
+//  -nnnn: an unexpected error occurred
+// ----------------------------------------------------------------------------               
+short CmpSeabaseDDL::isPrivMgrMetadataInitialized(NADefaults *defs)
+{
+  CMPASSERT(defs != NULL);
+
+  // We could call the PrivMgr "isAuthorizationEnabled" method but this causes
+  // a CLI request to be executed during startup which causes another compiler 
+  // process/context to be started which then causes another compiler instance
+  // to be started - ad infinitem. So for now Hbase is called directly
+   
+  // This code verifies that the PrivMgr tables exist in HBase but it does not  
+  // verify that the tables are defined correctly in the Trafodion metadata.
+  // A subsequent call to access a PrivMgr table returns an error if the 
+  // Trafodion metadata is corrupted.
+  const char * server = defs->getValue(HBASE_SERVER);
+  const char * port = defs->getValue(HBASE_THRIFT_PORT);
+  const char * interface = defs->getValue(HBASE_INTERFACE);
+  const char * zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
+
+  ExpHbaseInterface * ehi = allocEHI(server, port, interface, zkPort, FALSE);
+  if (! ehi)
+    {
+      // This code is not expected to be called, perhaps a core dump should be
+      // generated?
+      CmpCommon::diags()->clear();
+      deallocEHI(ehi);
+      return -1398;
+    }
+
+  // Call existsInHbase for each PrivMgr tables. 
+  NAString hbaseObjPrefix = getSystemCatalog();
+  hbaseObjPrefix += ".";
+  hbaseObjPrefix += SEABASE_PRIVMGR_SCHEMA;
+  hbaseObjPrefix += ".";
+
+  HbaseStr hbaseObjStr;
+  NAString hbaseObject;
+  int numTablesFound = 0;
+  short retcode = 0;
+  size_t numTables = sizeof(privMgrTables)/sizeof(PrivMgrTableStruct);
+  for (int ndx_tl = 0; ndx_tl < numTables; ndx_tl++)
+    {
+      const PrivMgrTableStruct &tableDef = privMgrTables[ndx_tl];
+
+      hbaseObject = hbaseObjPrefix + tableDef.tableName;
+      hbaseObjStr.val = (char*)hbaseObject.data();
+      hbaseObjStr.len = hbaseObject.length();
+
+      // existsInHbase returns 1 - found, 0 not found, anything else error
+      retcode = existsInHbase(hbaseObject, ehi);
+      if (retcode == 1) // found the table
+         numTablesFound ++;
+  
+      // If an unexpected error occurs, just return the error
+      if (retcode < 0)
+        {
+           deallocEHI(ehi);
+           return retcode;
+        }
+    }
+  deallocEHI(ehi);
+
+  if (numTablesFound == 0)
+    retcode = 0;
+  else if (numTablesFound == numTables)
+    retcode = 1;
+  else
+    retcode = 2;
+
+  return retcode;
 }
 
 short CmpSeabaseDDL::existsInHbase(const NAString &objName,
@@ -2670,14 +2744,15 @@ short CmpSeabaseDDL::getBaseTable(ExeCliInterface *cliInterface,
                                   NAString &btCatName,
                                   NAString &btSchName,
                                   NAString &btObjName,
-                                  Int64 &btUID)
+                                  Int64 &btUID,
+                                  Int32 &btObjOwner)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
   char buf[4000];
 
-  str_sprintf(buf, "select trim(O.catalog_name), trim(O.schema_name), trim(O.object_name), O.object_uid from %s.\"%s\".%s O where O.object_uid = (select I.base_table_uid from %s.\"%s\".%s I where I.index_uid = (select O2.object_uid from %s.\"%s\".%s O2 where O2.catalog_name = '%s' and O2.schema_name = '%s' and O2.object_name = '%s' and O2.object_type = 'IX')) ",
+  str_sprintf(buf, "select trim(O.catalog_name), trim(O.schema_name), trim(O.object_name), O.object_uid, O.object_owner from %s.\"%s\".%s O where O.object_uid = (select I.base_table_uid from %s.\"%s\".%s I where I.index_uid = (select O2.object_uid from %s.\"%s\".%s O2 where O2.catalog_name = '%s' and O2.schema_name = '%s' and O2.object_name = '%s' and O2.object_type = 'IX')) ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -2707,6 +2782,7 @@ short CmpSeabaseDDL::getBaseTable(ExeCliInterface *cliInterface,
   btSchName = vi->get(1);
   btObjName = vi->get(2);
   btUID         = *(Int64*)vi->get(3);
+  btObjOwner    = *(Int32*)vi->get(4);
 
   return 0;
 }
@@ -4373,13 +4449,10 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
 
   ExeCliInterface cliInterface(STMTHEAP);
   
-  NABoolean trustedCaller = FALSE;
-  trustedCaller = TRUE;
 
   // Verify that the current user has authority to perform operation
-  if (!trustedCaller && 
-      !isDDLOperationAuthorized(SQLOperation::CREATE_SEQUENCE,seqName,
-                                COM_SEQUENCE_GENERATOR_OBJECT_LIT))
+  if (!isDDLOperationAuthorized(SQLOperation::CREATE_SEQUENCE,
+                                ComUser::getCurrentUser()))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
      processReturn ();
@@ -4504,18 +4577,6 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
 
   ExeCliInterface cliInterface(STMTHEAP);
   
-  NABoolean trustedCaller = FALSE;
-  trustedCaller = TRUE;
-
-  // Verify that the current user has authority to perform operation
-  if (!trustedCaller && 
-      !isDDLOperationAuthorized(SQLOperation::ALTER_SEQUENCE,seqName,
-                                COM_SEQUENCE_GENERATOR_OBJECT_LIT))
-  {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     return;
-  }
-
   retcode = existsInSeabaseMDTable(&cliInterface, 
                                    catalogNamePart, schemaNamePart, seqNamePart, NULL);
   if (retcode < 0)
@@ -4537,11 +4598,33 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
       return;
     }
 
-  Int64 seqUID = 
-    getObjectUID(&cliInterface,
-                 catalogNamePart.data(), schemaNamePart.data(), seqNamePart.data(),
-                 COM_SEQUENCE_GENERATOR_OBJECT_LIT);
+  Int32 objOwnerID = 0;
+  Int64 seqUID = getObjectUIDandOwner(&cliInterface,
+                                       catalogNamePart.data(), schemaNamePart.data(),
+                                       seqNamePart.data(), COM_SEQUENCE_GENERATOR_OBJECT_LIT,
+                                       NULL, &objOwnerID);
   
+  // Check for error getting metadata information
+  if (seqUID == -1 || objOwnerID == 0)
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for alter sequence");
+
+      processReturn();
+
+      return;
+     }
+
+  // Verify that the current user has authority to perform operation
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_SEQUENCE, objOwnerID))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+ 
+     processReturn();
+
+     return;
+  }
+
   char setOptions[2000];
   char tmpBuf[1000];
 
@@ -4640,28 +4723,35 @@ void  CmpSeabaseDDL::dropSeabaseSequence(StmtDDLDropSequence  * dropSequenceNode
       return;
     }
 
-  // Check to see if the user has the authority to drop the table
-  NABoolean trustedCaller = FALSE;
-  trustedCaller = TRUE;
-
-  ComObjectName verifyName;
-  verifyName = seqName;
-  if (!trustedCaller && 
-      !isDDLOperationAuthorized(SQLOperation::DROP_SEQUENCE,verifyName,
-                                COM_SEQUENCE_GENERATOR_OBJECT_LIT))
-  {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
-     return;
-  }
-
   // remove any privileges
   if (isAuthorizationEnabled())
-  {
-    Int64 seqUID = 0;
-    seqUID = getObjectUID(&cliInterface,
-                          catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-                          COM_SEQUENCE_GENERATOR_OBJECT_LIT);
+    {
+      Int32 objOwnerID = 0;
+      Int64 seqUID = getObjectUIDandOwner(&cliInterface,
+                                           catalogNamePart.data(), schemaNamePart.data(),
+                                           objectNamePart.data(), COM_SEQUENCE_GENERATOR_OBJECT_LIT,
+                                           NULL, &objOwnerID);
+  
+      // Check for error getting metadata information
+      if (seqUID == -1 || objOwnerID == 0)
+        {
+          if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+            SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for drop sequence");
+
+          processReturn();
+
+          return;
+       }
+
+      // Check to see if the user has the authority to drop the table
+      if (!isDDLOperationAuthorized(SQLOperation::DROP_SEQUENCE, objOwnerID))
+      {
+         *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+         processReturn ();
+
+         return;
+      }
 
     if (!deletePrivMgrInfo ( objectNamePart, 
                              seqUID, 
@@ -4753,6 +4843,13 @@ void CmpSeabaseDDL::initSeabaseAuthorization()
   if (retcode == STATUS_ERROR && 
       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
      SEABASEDDL_INTERNAL_ERROR("initialize authorization command");
+  if (retcode != STATUS_ERROR)
+    CmpCommon::context()->setIsAuthorizationEnabled(TRUE);
+
+  // define context changed, kill arkcmps, if they are running.
+  for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+    GetCliGlobals()->getArkcmp(i)->endConnection();
+
   return;
 }
 
@@ -4766,6 +4863,13 @@ void CmpSeabaseDDL::dropSeabaseAuthorization()
   if (retcode == STATUS_ERROR && 
       CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
      SEABASEDDL_INTERNAL_ERROR("drop authorization command");
+  if (retcode != STATUS_ERROR)
+    CmpCommon::context()->setIsAuthorizationEnabled(FALSE);
+
+  // define context changed, kill arkcmps, if they are running.
+  for (short i = 0; i < GetCliGlobals()->currContext()->getNumArkcmps(); i++)
+    GetCliGlobals()->getArkcmp(i)->endConnection();
+
   return;
 }
 
@@ -4803,10 +4907,8 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
 
   // If authorization is not enabled, return TRUE, no grants are needed
-  // TDB: may want to add a "authorization enabled" flag in Context to 
-  //      avoid extra I/O
-  if (!privInterface.isAuthorizationEnabled())
-    return TRUE;
+  if (!isAuthorizationEnabled())
+   return TRUE;
 
   // get the username from the objOwnerID
   char userName[MAX_USERNAME_LEN+1];
@@ -4816,15 +4918,17 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
                                                , MAX_USERNAME_LEN
                                                , lActualLen );
   if (status != FEOK)
+  {
     *CmpCommon::diags() << DgSqlCode(-20235)
                         << DgInt0(status)
                         << DgInt1(objOwnerID);
+    return FALSE;
+  }
 
+  // Grant the ownership privileges
   std::string grantee(userName);
   std::string grantor("_SYSTEM");
 
-  // Once grant all works, there is no need to set up each privilege
-  // this code needs to change 
   vector<std::string> userPermissions;
   userPermissions.push_back("ALL");
 
@@ -4865,9 +4969,7 @@ NABoolean CmpSeabaseDDL::deletePrivMgrInfo(const NAString &objectName,
   PrivMgrCommands privInterface(std::string(privMgrMDLoc.data()), CmpCommon::diags());
 
   // If authorization is not enabled, return TRUE, no grants are needed
-  // TDB: may want to add a "authorization enabled" flag in Context to 
-  //      avoid extra I/O
-  if (!privInterface.isAuthorizationEnabled())
+  if (!isAuthorizationEnabled())
     return TRUE;
 
   const std::string objName(objectName.data());
@@ -5735,18 +5837,13 @@ void CmpSeabaseDDL::unregisterSeabaseUser(StmtDDLRegisterUser * authParseNode)
 // *  <operation>                  SQLOperation                       In       *
 // *    is operation the user wants to perform.                                *
 // *                                                                           *
-// *  <objName>                    const ComObjectName &              In       *
-// *    is the object the user wants to perform the DDL operation on.          *
-// *                                                                           *
-// *  <objType>                    const char *                       In       *
-// *    is the two character code for the object type, one of                  *
-// *  COM_*_OBJECT_LIT defined in common/ComSmallDefs.h.                       *
+// *  <objOwner>                   const Int32                        In       *
+// *    is the userID of the object owner, or current user for creations       *
 // *                                                                           *
 // *****************************************************************************
 bool CmpSeabaseDDL::isDDLOperationAuthorized(
    SQLOperation operation,
-   const ComObjectName & objName,
-   const char * objType)
+   const Int32 objOwner)
 
 {
 
@@ -5754,7 +5851,7 @@ bool CmpSeabaseDDL::isDDLOperationAuthorized(
 // security, all users are mapped to root database user, so all users have
 // full DDL authority.
 
-int32_t currentUser = ComUser::getCurrentUser();
+int32_t currentUser = ComUser::getCurrentUser(); 
 
    if (currentUser == ComUser::getRootUserID())
       return true;
@@ -5767,32 +5864,14 @@ int32_t currentUser = ComUser::getCurrentUser();
    if (!isAuthorizationEnabled())
       return true;
 
-// Authorization is enabled.  If the user owns the target object or the 
+// Authorization is enabled.  If the current user owns the target object or the 
 // schema containing the object, they have full DDL authority on the object.
-
-// For create operations, the object does not exist so there is no owner.
-// Get the owner from the OBJECTS table
+// For create operations, the object does not exist so there is no owner, so 
+// skip the ownership check.
    if (!PrivMgr::isSQLCreateOperation(operation))
    {
-      const NAString catName = objName.getCatalogNamePartAsAnsiString();
-      const NAString schName = objName.getSchemaNamePartAsAnsiString(true);
-      const NAString objectName = objName.getObjectNamePartAsAnsiString(true);
-  
-      // TBD: check to see if the object exists in the NATable structure, if so
-      // get the objectOwner from there instead of doing a separate I/O.
-      ExeCliInterface cliInterface(STMTHEAP);
-      Int32 objOwnerID;
-      Int32 retcode = getObjectOwner(&cliInterface,
-                                     catName.data(),
-                                     schName.data(),
-                                     objectName.data(),
-                                     objType,
-                                     &objOwnerID);
-
-      // -1 is returned if object owner could not be extracted, 0 otherwise
-      if (retcode == 0 && currentUser == objOwnerID)
-         return true;
-      //TODO: check schema owner when schemas have owners
+     if (currentUser == objOwner)
+       return true;
    }
   
   NAString privMgrMDLoc;
@@ -5841,7 +5920,7 @@ NAString privMgrMDLoc;
 
 PrivMgrCommands componentOperations(std::string(privMgrMDLoc.data()),CmpCommon::diags());
 
-   if (!componentOperations.isAuthorizationEnabled())
+   if (!CmpCommon::context()->isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
@@ -5897,7 +5976,7 @@ NAString privMgrMDLoc;
 
 PrivMgrCommands componentOperations(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
-   if (!componentOperations.isAuthorizationEnabled())
+   if (!CmpCommon::context()->isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
@@ -5965,7 +6044,7 @@ PrivMgrCommands roleCommand(std::string(trafMDLocation.data()),
                             std::string(privMgrMDLoc.data()),
                             CmpCommon::diags());
 
-   if (!roleCommand.isAuthorizationEnabled())
+   if (!CmpCommon::context()->isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
@@ -6290,7 +6369,7 @@ NAString privMgrMDLoc;
    
 PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
-   if (!componentPrivileges.isAuthorizationEnabled())
+   if (!CmpCommon::context()->isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
@@ -6453,7 +6532,7 @@ NAString privMgrMDLoc;
 
   PrivMgrCommands component(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
-   if (!component.isAuthorizationEnabled())
+   if (!isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;
@@ -6527,7 +6606,7 @@ NAString privMgrMDLoc;
 
 PrivMgrCommands componentPrivileges(std::string(privMgrMDLoc.data()),CmpCommon::diags());
   
-   if (!componentPrivileges.isAuthorizationEnabled())
+   if (!CmpCommon::context()->isAuthorizationEnabled())
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_AUTHORIZATION_NOT_ENABLED);
       return;

@@ -130,7 +130,8 @@ public :
 
 		  IS_UNINITIALIZED_SEABASE = 0x100,
 
-		  IS_CATALOG_SEABASE = 0x200
+		  IS_CATALOG_SEABASE = 0x200,
+		  IS_AUTHORIZATION_ENABLED = 0x400
 		};
 
   CmpContext (UInt32 flags,
@@ -161,6 +162,7 @@ public :
   NABoolean isEmbeddedArkcmp() const { return flags_ & IS_EMBEDDED_ARKCMP;}
   NABoolean isUninitializedSeabase() const { return flags_ & IS_UNINITIALIZED_SEABASE;}
   NABoolean isCatalogSeabase() const { return flags_ & IS_CATALOG_SEABASE;}
+  NABoolean isAuthorizationEnabled() const { return flags_ & IS_AUTHORIZATION_ENABLED; }
   NABoolean isRuntimeCompile() const { return isRuntimeCompile_; }
   const NABoolean isDoNotAbort() const { return flags_ & IS_DO_NOT_ABORT; }
   Int16 getRecursionLevel() { return recursionLevel_;}
@@ -191,6 +193,11 @@ public :
     (v ? flags_ |= IS_CATALOG_SEABASE : flags_ &= ~IS_CATALOG_SEABASE);
   }
 
+  void setIsAuthorizationEnabled(NABoolean v)
+  {
+    (v ? flags_ |= IS_AUTHORIZATION_ENABLED : flags_ &= ~IS_AUTHORIZATION_ENABLED);
+  }
+  
   // access the NAHeap* for context
   NAHeap* statementHeap();
   NAHeap* heap() { return heap_; }

@@ -1482,9 +1482,17 @@ public:
   LIST(OptSqlTableOpenInfo *) &getStoiList()  { return stoiList_; }
   LIST(OptUdrOpenInfo *) &getUdrStoiList()  { return udrStoiList_; }
   LIST(ExeUtilHbaseCoProcAggr *) &getCoProcAggrList() { return coProcAggrList_; }
+  LIST(SequenceValue *) &getSeqValList() { return seqValList_; }
+
   BindWA& insertCoProcAggr(ExeUtilHbaseCoProcAggr *coProcAggr)
   {
     coProcAggrList_.insert(coProcAggr);
+    return *this;
+  }
+
+  BindWA& insertSeqVal(SequenceValue *seqVal)
+  {
+    seqValList_.insert(seqVal);
     return *this;
   }
 
@@ -1738,6 +1746,11 @@ private:
   // All coprocessors referenced in a statement
   // --------------------------------------------------------------------
   LIST(ExeUtilHbaseCoProcAggr *) coProcAggrList_;
+
+  // --------------------------------------------------------------------
+  // All sequence generators referenced in a statement
+  // --------------------------------------------------------------------
+  LIST(SequenceValue *) seqValList_;
 
   // --------------------------------------------------------------------
   // All UDF's referenced in a statement

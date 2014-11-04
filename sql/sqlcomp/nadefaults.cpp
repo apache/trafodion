@@ -4526,7 +4526,7 @@ void NADefaults::readFromSQLTable(const char *tname,
       if (sqlcode < 0 && errOrWarn && initializeSQLdone()) {
 	if (ABS(sqlcode) == ABS(CLI_MODULEFILE_OPEN_ERROR) &&
 	    cmpCurrentContext->isInstalling()) {
-	  // Genesis 10-990513-6196: emit no warning when (re)installing,
+	  // Emit no warning when (re)installing,
 	  // because obviously the module will not exist before we have
 	  // (re)arkcmp'd it!
 	}
@@ -4578,13 +4578,62 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
       NAString hbaseErrStr;
       Lng32 errNum = cmpSBD.validateVersions(this, NULL, NULL, NULL, NULL, NULL, 
                                              NULL, NULL, NULL,
-					     &hbaseErr, &hbaseErrStr);
+                                             &hbaseErr, &hbaseErrStr);
       if (errNum == 0) // seabase is initialized properly
-	{
-	  // read from seabase defaults table
-	  cmpSBD.readAndInitDefaultsFromSeabaseDefaultsTable
-	    (overwriteIfNotYet, errOrWarn, this);
-	}
+        {
+          // read from seabase defaults table
+          cmpSBD.readAndInitDefaultsFromSeabaseDefaultsTable
+            (overwriteIfNotYet, errOrWarn, this);
+          
+          errNum = cmpSBD.isPrivMgrMetadataInitialized(this);
+          switch (errNum)
+            {
+              // errNum = 0, not initialized
+              case 0:
+                CmpCommon::context()->setIsAuthorizationEnabled(FALSE);
+                break;
+
+              // errNum = 1, initialized
+              case 1:               
+                CmpCommon::context()->setIsAuthorizationEnabled(TRUE);
+                break;
+
+              // errNum = 2, partially initialized
+              // This code assumes that authorization is desired so
+              // it turns on authorization.  
+              case 2:
+                *CmpCommon::diags() << DgSqlCode(ERRWARN(1234));
+                CmpCommon::context()->setIsAuthorizationEnabled(TRUE);
+                break;
+
+              // else unexpected error 
+              // unable to determine authorization status from metadata
+              default:
+
+                // Get status from the TRAFODION_ENABLE_AUTHORIZATION envvar.
+                // The TRAFODION_ENABLE_AUTHENTICATION envvar is changed by
+                // running the traf_authentication_setup script and its value is
+                // stored in the sqenvcom.sh file.  Since authorization can be
+                // initialized independently from setting the envvar, we cannot
+                // necessarily depend on its value. So we only use it if we can't
+                // get the information from anywhere else.
+                char * env = getenv("TRAFODION_ENABLE_AUTHENTICATION");
+                if (env)
+                  CmpCommon::context()->setIsAuthorizationEnabled
+                    ((strcmp(env, "YES") == 0) ? TRUE : FALSE);
+                else
+                 {
+                    // Can't determine status, so be on the safe side and set 
+                    // to TRUE
+                    *CmpCommon::diags() 
+                      << DgSqlCode(ERRWARN(1001))
+                      << DgString0(__FILE__)                             
+                      << DgInt0(__LINE__)                                
+                      << DgString1("Unable to determine authorization status");  
+                    CmpCommon::context()->setIsAuthorizationEnabled(TRUE);
+                 }
+            }
+        }
       else
 	{
 	  CmpCommon::context()->setIsUninitializedSeabase(TRUE);
