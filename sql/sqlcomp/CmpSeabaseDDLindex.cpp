@@ -319,7 +319,8 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
       colInfoArray[i].dtStart = dtStart;
       colInfoArray[i].dtEnd = dtEnd;
       colInfoArray[i].upshifted = upshifted;
-      colInfoArray[i].charset = charset;
+      colInfoArray[i].charset = 
+        (SQLCHARSET_CODE)CharInfo::getCharSetEnum(charsetStr.data());;
       colInfoArray[i].defaultClass = COM_NO_DEFAULT;
       colInfoArray[i].defVal = NULL;
       colInfoArray[i].colHeading = NULL;
@@ -719,7 +720,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
     if (createEncodedKeysBuffer(encodedKeysBuffer,
                                 colDescs, keyDescs, numSplits, 
-                                keyColCount, keyLength))
+                                keyColCount, keyLength, TRUE))
       {
         deallocEHI(ehi);
         processReturn();

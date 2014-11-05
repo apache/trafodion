@@ -120,6 +120,7 @@ NAString ** createInArrayForLowOrHighKeys(desc_struct   * column_descs,
 					  desc_struct   * key_descs,
 					  Lng32 numKeys,
 					  NABoolean highKey,
+                                          NABoolean isIndex,
                                           CollHeap * h)
 {
   NAString ** inValuesArray = new (h) NAString * [numKeys];
@@ -129,14 +130,18 @@ NAString ** createInArrayForLowOrHighKeys(desc_struct   * column_descs,
   Int32 i = 0;
   while (key)
     {
-      column = column_descs;
-      for (Int32 j = 0; j < key->body.keys_desc.tablecolnumber; j++)
-	column = column->header.next;
+      if (!isIndex) {
+        column = column_descs;
+        for (Int32 j = 0; j < key->body.keys_desc.tablecolnumber; j++)
+          column = column->header.next;
+      }
 
       inValuesArray[i] = getMinMaxValue(column, key, highKey, h) ;
       
       i++;
       key = key->header.next;
+      if (isIndex)
+        column = column->header.next;
     }
   
   return inValuesArray;
@@ -296,6 +301,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
 short encodeKeyValues(desc_struct   * column_descs,
 		      desc_struct   * key_descs,
 		      NAString      * inValuesArray[],          // INPUT
+                      NABoolean isIndex,
 		      char * encodedKeyBuffer,                  // OUTPUT
                       CollHeap * h,
 		      ComDiagsArea * diagsArea)
@@ -332,9 +338,13 @@ short encodeKeyValues(desc_struct   * column_descs,
 
   while (key)
     {
+      // for an index, keys_desc has columns in the same order as columns_desc,
+      // the following for loop is not needed.
+      if (!isIndex) {
       column = column_descs;
       for (Int32 j = 0; j < key->body.keys_desc.tablecolnumber; j++)
 	column = column->header.next;
+      }
 
       if (inValuesArray[i] == NULL)
 	inValuesArray[i] = getMinMaxValue(column, key, FALSE, h);
@@ -348,6 +358,8 @@ short encodeKeyValues(desc_struct   * column_descs,
       
       i++;
       key = key->header.next;
+      if (isIndex)
+        column = column->header.next;
     }
   
   // allocate a work cri desc to encode keys. It has

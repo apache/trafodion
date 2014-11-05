@@ -1343,6 +1343,7 @@ short encodeKeyValues(const ComObjectName * objectName, // INPUT
       inArray = createInArrayForLowOrHighKeys(column_descs, key_descs,
 					      keyCount,
 					      highKey, 
+                                              FALSE, // isIndex
                                               h);
     }
   else
@@ -1352,7 +1353,7 @@ short encodeKeyValues(const ComObjectName * objectName, // INPUT
 
   if (inArray != NULL)
     {
-      error = encodeKeyValues(column_descs, key_descs, inArray,
+      error = encodeKeyValues(column_descs, key_descs, inArray, FALSE, //IsIndex
 			      encodedKeyBuffer, h, diagsArea);
       if (h == NULL)
       {
@@ -1397,7 +1398,8 @@ short encodeHashKeyValues(char* inValuesArray[],            // INPUT
 
   if (inArray != NULL)
     {
-      error = encodeKeyValues(&column, &key, inArray, encodedKeyBuffer, (CollHeap*)0, diagsArea);
+      error = encodeKeyValues(&column, &key, inArray, FALSE, //IsIndex
+                              encodedKeyBuffer, (CollHeap*)0, diagsArea);
       delete inArray[0];
       delete [] inArray;
     }
@@ -1667,40 +1669,4 @@ short generateRCBforResourceFork(void *& rcbPtr,
 
 }
 
-/*
-static
-short testRforkKeyEncode(char* inValuesArray[], char * encodedKeyBuffer)
-{
-  // create objectName, keyDescs and colDescs that corresponds to
-  // the resource fork structure. 
-  char * objectName      = NULL;
-  desc_struct * colDescs = NULL;
-  desc_struct * keyDescs = NULL;
-
-  if (createDescStructsForRfork(objectName, colDescs, keyDescs) == -1)
-    return -1;
-
-  // if no inValuesArray has been passed in, then create one.
-  // This is the case of creating the FIRST KEY for the first
-  // partition, since that key value is not stored in catalogs.
-  NAString ** inArray;
-  if (inValuesArray == NULL)
-    {
-      inArray = createInArrayForLowOrHighKeys(colDescs, keyDescs,
-					      2, FALSE, (CollHeap*)0 ); // NULL CollHeap* 
-      if (inArray == NULL)
-	return -1;
-    }
-  else
-    {
-      inArray = createNAStringFromCharArray(inValuesArray, 2, (CollHeap*)0 ); // NULL CollHeap*
-    }
-  
-  if (encodeKeyValues(colDescs, keyDescs, inArray, encodedKeyBuffer, (CollHeap*)0 , NULL) == -1) // NULL CollHeap*
-    return -1;
-  
-  
-  return 0;
-}
-*/
 #endif

@@ -47,6 +47,7 @@ NAString ** createInArrayForLowOrHighKeys(desc_struct   * column_descs,
 					  desc_struct   * key_descs,
 					  Lng32 numKeys,
 					  NABoolean highKey,
+                                          NABoolean isIndex,
                                           CollHeap * h);
 
 
@@ -59,6 +60,7 @@ ItemExpr * buildEncodeTree(desc_struct * column,
 short encodeKeyValues(desc_struct   * column_descs,
 		      desc_struct   * key_descs,
 		      NAString      * inValuesArray[],          // INPUT
+                      NABoolean isIndex,
 		      char * encodedKeyBuffer,                  // OUTPUT
                       CollHeap * h,
 		      ComDiagsArea * diagsArea);

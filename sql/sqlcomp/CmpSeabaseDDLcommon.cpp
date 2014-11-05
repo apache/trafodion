@@ -3782,8 +3782,10 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
 }
 
 short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
-                                             desc_struct * colDescs, desc_struct * keyDescs,
-                                             Lng32 numSplits, Lng32 numKeys, Lng32 keyLength)
+                                             desc_struct * colDescs, 
+                                             desc_struct * keyDescs,
+                                             Lng32 numSplits, Lng32 numKeys, 
+                                             Lng32 keyLength, NABoolean isIndex)
 {
   encodedKeysBuffer = NULL;
   
@@ -3792,8 +3794,9 @@ short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
 
     NAString ** inArray = createInArrayForLowOrHighKeys(colDescs, 
                                                         keyDescs,
-                                                        numKeys, 
-                                                        FALSE, 
+                                                        numKeys,
+                                                        FALSE,
+                                                        isIndex,
                                                         STMTHEAP ); 
 
     char splitNumCharStr[5];
@@ -3826,6 +3829,7 @@ short CmpSeabaseDDL::createEncodedKeysBuffer(char** &encodedKeysBuffer,
       retVal = encodeKeyValues(colDescs,
                                keyDescs,
                                inArray, // INPUT
+                               isIndex,
                                encodedKeysBuffer[i],  // OUTPUT
                                STMTHEAP,
                                CmpCommon::diags());
@@ -5118,7 +5122,8 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
   desc_struct * colDescs = tableDesc->body.table_desc.columns_desc; 
   desc_struct * keyDescs = (desc_struct*)naf->getKeysDesc();
   if (createEncodedKeysBuffer(encodedKeysBuffer,
-                              colDescs, keyDescs, numSplits, numKeys, keyLength))
+                              colDescs, keyDescs, numSplits, numKeys, 
+                              keyLength, FALSE))
     {
       deallocEHI(ehi); 
 
