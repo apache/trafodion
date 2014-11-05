@@ -56,7 +56,6 @@ sql/scripts/stdout*
 sql/scripts/unmountalldisks
 sql/scripts/start_se*
 sql/scripts/sw*
-tools/make*
 tools/sqlcount
 tst.*
 var/hp/seaquest/sonar/*dummy
