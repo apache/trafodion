@@ -2782,6 +2782,9 @@ public:
   NABoolean openLog( const char* filename );
   void closeLog();
 
+  
+  void setCompileInstanceClass(const char* str);
+
   // ---------------------------------------------------------------------
   // Accessor functions.
   // ---------------------------------------------------------------------
@@ -2827,6 +2830,12 @@ private:
   char      logFileName_[1024];  // log file name
   fstream   fstream_;            // log file stream
   FILE     *file_;               // log file object
+
+  CmpContextInfo::CmpContextClassType ciClass_;  // the class of compile instances
+                                 // to which the compilation activities as
+                                 // specified by NSK_DBG_<nnn> will be reported.
+                                 // The values are defined by 
+                                 // CmpContextInfo::setCompileInstanceClass.
 
   // ---------------------------------------------------------------------
   // Helper functions

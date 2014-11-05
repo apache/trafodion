@@ -347,20 +347,23 @@ CostScalar IndexDesc::getKbForLocalPred() const
 {
    AppliedStatMan * appStatMan = QueryAnalysis::ASM();
    if ( !appStatMan ) 
-      return csZero;
+      return csMinusOne;
 
    const TableAnalysis * tAnalysis = getPrimaryTableDesc()->getTableAnalysis();
 
    if ( !tAnalysis ) 
-      return csZero;
+      return csMinusOne;
 
    CANodeId tableId = tAnalysis->getNodeAnalysis()->getId();
    const ValueIdList &keys = getIndexKey();
-   CostScalar rowsToScan = appStatMan->
-          getStatsForLocalPredsOnPrefixOfColList(tableId, keys)->
-                getResultCardinality();
 
-   return rowsToScan * getRecordSizeInKb();
+   EstLogPropSharedPtr estLPPtr = appStatMan->
+             getStatsForLocalPredsOnPrefixOfColList(tableId, keys);
+
+   if ( ! estLPPtr->getColStats().containsAtLeastOneFake() )
+      return estLPPtr->getResultCardinality() * getRecordSizeInKb();
+   else
+      return csMinusOne;
 }
 
 CostScalar
@@ -839,7 +842,6 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
 
       return INCOMPATIBLE;
 
-
      CostScalar myKbForLPred = index->getKbForLocalPred();
      CostScalar othKbForLPred = otherIndex->getKbForLocalPred();
 
@@ -847,14 +849,14 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
      // amount of data accessed through the local predicate. The one
      // that accesses less is more promising. 
 
-     if ( myKbForLPred > csZero && othKbForLPred > csZero ) 
-     {
-        if ( myKbForLPred < othKbForLPred )
-            return MORE; // more promising
-        else {
-            if( myKbForLPred > othKbForLPred )
-               return LESS;
-            else {  
+     if ( myKbForLPred >= 0 && othKbForLPred >=0 ) 
+        {
+          if ( myKbForLPred < othKbForLPred )
+              return MORE; // more promising
+          else {
+              if( myKbForLPred > othKbForLPred )
+                 return LESS;
+              else {  
 
                // When the amount of data to access is the same, prefer 
                // the index with less # of index key columns
@@ -869,21 +871,10 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
                  return LESS;
                else
                  return SAME;
-            }
+              }
          }
-    } else {
-        const CostScalar kbPerVol = index->getKbPerVolume();
-        const CostScalar othKbPerVol = otherIndex->getKbPerVolume();
-        if ( kbPerVol < othKbPerVol )
-            return MORE;
-        else
-        {
-            if ( kbPerVol > othKbPerVol )
-                return LESS;
-            else 
-                return SAME;
-        }
-    }
+       } 
+     
     return INCOMPATIBLE;
 }
 // eof

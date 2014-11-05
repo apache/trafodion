@@ -145,7 +145,12 @@ public:
   // Is it recommended by user hint
   NABoolean isHintIndex() const;
 
-  // return the amount of data that the local predicate will produce
+  // On return:
+  //   the amount of data that the local predicate will produce, when 
+  //    table analysis is performed and all stats on the referenced
+  //    columns are available and not faked;
+  //   -1; otherwise.
+  //
   CostScalar getKbForLocalPred() const;
 
   // new methods added for costing purposes:

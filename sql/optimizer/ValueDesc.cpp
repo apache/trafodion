@@ -2628,6 +2628,8 @@ NABoolean ValueIdSet::containsAsEquiLocalPred(ValueId x) const
 
   ItemExpr* constExpr = NULL;
 
+  NABoolean found = FALSE;
+
   for (ValueId vid = init(); next(vid); advance(vid))
     {
       ItemExpr *expr = vid.getItemExpr();
@@ -2644,23 +2646,28 @@ NABoolean ValueIdSet::containsAsEquiLocalPred(ValueId x) const
           break;
 
         case ITM_EQUAL:
+
           // consider equi-predicate "a=1", or "1=a" 
-          if (expr->child(0) == x) {
+          for (CollIndex i=0; i<2; i++ ) {
+             if ( expr->child(i)->getOperatorType() == ITM_VEG_REFERENCE ) 
+             {
+               ItemExpr* childExpr = expr->child(i);
+               found = ((VEGReference*)(childExpr))->getVEG()
+                                   ->getAllValues().contains(x);
+   
+   
+             } else
+                 found = (expr->child(i) == x);
+   
+             if (found) {
+   
+               CollIndex j = (i==0) ? 1 : 0;
+               ValueIdSet vset(expr->child(j));
+               if ( vset.entries() == 1 &&
+                    vset.referencesAConstExpr(&constExpr) == TRUE )
+                  return TRUE;
 
-            ValueIdSet vset(expr->child(1));
-            if ( vset.entries() == 1 &&
-                 vset.referencesAConstExpr(&constExpr) == TRUE )
-               return TRUE;
-
-          }
-
-          if ( expr->child(1) == x  ) {
-
-            ValueIdSet vset(expr->child(0));
-            if ( vset.entries() == 1 &&
-                 vset.referencesAConstExpr(&constExpr) == TRUE )
-               return TRUE;
-
+             }
           }
 
           break;
@@ -6368,3 +6375,18 @@ void ValueIdSet::addMember(ItemExpr* x)
 { 
    (*this) += (x->getValueId()); 
 }
+
+Lng32 ValueIdList::findPrefixLength(const ValueIdSet& x) const
+{
+  CollIndex count = this->entries();
+  Lng32 ct = 0;
+  for (CollIndex i=0; i<count; i++)
+    {
+      if ( x.contains((*this)[i]) )
+         ct++;
+      else
+         break;
+    }
+  return ct;
+}
+

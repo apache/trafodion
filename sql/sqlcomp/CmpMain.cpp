@@ -1931,17 +1931,33 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
     NABoolean queryOnly = 
         ( CmpCommon::getDefault(NSK_DBG_QUERY_LOGGING_ONLY) == DF_ON );
 
-    CURRCONTEXT_OPTDEBUG->stream() << endl;
+    const char* qPrefix = ActiveSchemaDB()->getDefaults().getValue(NSK_DBG_QUERY_PREFIX);
 
-    if ( !queryOnly ) 
-      CURRCONTEXT_OPTDEBUG->stream() << "Query to optimize:" << endl;
+    NABoolean doPrint = TRUE;
 
-    CURRCONTEXT_OPTDEBUG->stream() << input_str ;
+    if ( qPrefix && strcmp(qPrefix, "") != 0 ) {
 
-    if ( queryOnly ) 
-      CURRCONTEXT_OPTDEBUG->stream() << ";" << endl;
+       const char* p = input_str;
+       while (*p == ' ')
+         p++;
 
-    CURRCONTEXT_OPTDEBUG->stream() << endl << endl;
+       if ( strncmp(p, qPrefix, strlen(qPrefix)) != 0 )
+         doPrint = FALSE;
+    }
+
+    if ( doPrint ) {
+      CURRCONTEXT_OPTDEBUG->stream() << endl;
+
+      if ( !queryOnly ) 
+        CURRCONTEXT_OPTDEBUG->stream() << "Query to optimize:" << endl;
+
+      CURRCONTEXT_OPTDEBUG->stream() << input_str ;
+
+      if ( queryOnly ) 
+        CURRCONTEXT_OPTDEBUG->stream() << ";" << endl;
+
+      CURRCONTEXT_OPTDEBUG->stream() << endl << endl;
+    }
   }
   // LCOV_EXCL_STOP
 

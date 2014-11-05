@@ -8396,12 +8396,40 @@ void Scan::addIndexInfo()
 	   OR
 	   (tableDesc->hasHintIndexes()) // xxx this could be done better
           );
+
+		      
+  const TableAnalysis * tAnalysis = getTableDesc()->getTableAnalysis();
+
+  // with this CQD value set, try to consider minimum indexes possible
+  // if ixProp is no better than any of indexOnlyIndexes_ - don't add
+  // it. If ixProp is better than some of this set - remove them.
+  NABoolean tryToEliminateIndex = 
+             CURRSTMT_OPTDEFAULTS->indexEliminationLevel() == OptDefaults::AGGRESSIVE
+             AND NOT unlimitedIndexJoinsAllowed 
+             AND tAnalysis;
+
+  CostScalar indexEliminationThreshold = 
+                ActiveSchemaDB()->getDefaults().getAsLong(INDEX_ELIMINATION_THRESHOLD); 
+
+
+  NABoolean printIndexElimination = 
+         CmpCommon::getDefault(NSK_DBG_PRINT_INDEX_ELIMINATION) == DF_ON &&
+         CmpCommon::getDefault(NSK_DBG) == DF_ON;
+
+  ostream &out = CURRCONTEXT_OPTDEBUG->stream();
+
+  if ( printIndexElimination ) {
+    out << endl << "call addIndexInfo()" << endl;
+    out << "tryToEliminateIndex=" << (Lng32)tryToEliminateIndex << endl;
+  }
+
   // ---------------------------------------------------------------------
   // For each index, check whether it provides any useful values
   // ---------------------------------------------------------------------
   for (CollIndex indexNo = 0; indexNo < ixlist.entries(); indexNo++)
     {
       IndexDesc *idesc = ixlist[indexNo];
+
 
       // Determine if this index can be used for a scan during an update.
       if (updatingCol AND NOT updateableIndex(idesc))
@@ -8473,8 +8501,7 @@ void Scan::addIndexInfo()
 	  IndexProperty * ixProp = new(CmpCommon::statementHeap())
 			       IndexProperty(idesc,
 					     flag);
-          if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() == OptDefaults::AGGRESSIVE
-              AND NOT unlimitedIndexJoinsAllowed )
+          if (tryToEliminateIndex) 
           {
             // with this CQD value set, try to consider minimum indexes possible
             // if ixProp is no better than any of indexOnlyIndexes_ - don't add
@@ -8604,7 +8631,6 @@ void Scan::addIndexInfo()
 	      // - we can find out the selection predicates covered
 	      //   by the index by intersecting them with coveredSubexpr
 
-              ScanIndexInfo *ixi = NULL;
 	      ValueIdSet newOutputsFromIndex(coveredSubexpr);
 	      ValueIdSet newIndexPredicates(coveredSubexpr);
 	      ValueIdSet newOutputsFromRightScan(unCoveredExpr);
@@ -8630,26 +8656,28 @@ void Scan::addIndexInfo()
 	      }
 	      newOutputsFromRightScan += clusteringKeyColumns;
 
+              NABoolean idescAbsorbed = FALSE;
+
+
               // does another index have the same covered values?
-              for (CollIndex i = 0;
-                   ixi == NULL AND i < possibleIndexJoins_.entries();
-                   i++)
+              for (CollIndex i = 0; i < possibleIndexJoins_.entries(); i++)
                 {
-                 // Simplified the condition ((A & !B) or (A & B & C)) to
-		// (A & (!B or C))
-                  if ((possibleIndexJoins_[i]->outputsFromIndex_ == newOutputsFromIndex)
-		      && (possibleIndexJoins_[i]->inputsToIndex_ == referencedInputs)
-		      && (possibleIndexJoins_[i]->indexPredicates_ == newIndexPredicates)
+                  NABoolean isASupersetIndex =
+                      possibleIndexJoins_[i]->outputsFromIndex_.contains(newOutputsFromIndex);
+
+                  NABoolean isASubsetIndex =
+                      newOutputsFromIndex.contains(possibleIndexJoins_[i]->outputsFromIndex_) ;
+
+                  NABoolean isASuperOrSubsetIndex = isASupersetIndex || isASubsetIndex;
+
+                  NABoolean produceSameIndexOutputs = isASupersetIndex && isASubsetIndex;
+
+                  if ((possibleIndexJoins_[i]->inputsToIndex_ == referencedInputs)
 		      && ((accessOptions().lockMode() != EXCLUSIVE_)
 			  || possibleIndexJoins_[i]->outputsFromRightScan_ ==
 			  newOutputsFromRightScan))
                     {
-		      // Another index produces the same characteristic
-		      // outputs. Combine the two indexes in a single
-		      // scan.
-		      ixi = possibleIndexJoins_[i];
-		      // add this index to the list of indexes,
-		      // everything else should be set already
+                      ScanIndexInfo *ixi = possibleIndexJoins_[i];
 
 		      IndexJoinSelectivityEnum isGoodIndexJoin = INDEX_JOIN_VIABLE;
 		      MdamFlags mdamFlag = idesc->pruneMdam(ixi->indexPredicates_,FALSE,
@@ -8664,57 +8692,189 @@ void Scan::addIndexInfo()
                         ixProp = new(CmpCommon::statementHeap())
                            IndexProperty(idesc, mdamFlag, isGoodIndexJoin);
 
-		      if(CURRSTMT_OPTDEFAULTS->indexEliminationLevel() == OptDefaults::AGGRESSIVE
-                          AND NOT unlimitedIndexJoinsAllowed )
-                      {
-                        // with this CQD value set, try to consider minimum indexes possible
-                        // if ixProp is no better than any of indexOnlyIndexes_ - don't add
-                        // it. If ixProp is better than some of this set - remove them.
-                        ixProp->updatePossibleIndexes(ixi->usableIndexes_, this);
-                      }
-                      else
-                        ixi->usableIndexes_.insert(ixProp);
+                      if ( !tryToEliminateIndex ) {
 
-		    }
+                         if ( produceSameIndexOutputs && ixi->indexPredicates_ == newIndexPredicates )
+                         {
+                             ixi->usableIndexes_.insert(ixProp);
+                             idescAbsorbed = TRUE;
+                             break;
+                         } 
+
+                      } else {
+
+                         CANodeId tableId = tAnalysis->getNodeAnalysis()->getId();
+
+                         // keep the index that provides the maximal coverage of the
+                         // predicate. Do this only when the output from one index is
+                         // the super set of the other. For example (a,b) in I1 
+                         // (CREATE INDEX T1 on T(a, b)) is a superset of (a) in I2 
+                         // (CREATE INDEX T2 on T(a)). 
+                         if ( isASuperOrSubsetIndex && !produceSameIndexOutputs ) {
+   
+                             // Score the index's coverage by computing the remaining length of the 
+                             // key columns not covering the index predicates. The one with remaining
+                             // length of 0 is the best.
+
+                             ValueIdSet indexCols;
+                             newIndexPredicates.findAllReferencedIndexCols(indexCols);
+
+                             Lng32 currentPrefixLen =
+                                     idesc->getIndexKey().findPrefixLength(indexCols);
+   
+                             Lng32 currentSuffixLen = idesc->getIndexKey().entries() - currentPrefixLen;
+   
+                             Lng32 previousPrefixLen = 
+                                  ixi->usableIndexes_[0]->getIndexDesc()
+                                     ->getIndexKey().findPrefixLength(indexCols);
+   
+                             Lng32 previousSuffixLen = ixi->usableIndexes_[0]->getIndexDesc()
+                                     ->getIndexKey().entries() - previousPrefixLen;
+   
+                             if ( currentSuffixLen < previousSuffixLen ) {
+   
+                               if ( printIndexElimination )
+                                  out << "Eliminate index join heuristics 1: remove " 
+                                      << ixi->usableIndexes_[0]->getIndexDesc()->getExtIndexName().data() 
+                                      << endl;
+
+                               ixi = new (CmpCommon::statementHeap())
+                                          ScanIndexInfo(referencedInputs, newOutputsFromIndex,
+                                          newIndexPredicates, indexJoinPreds,
+                                          newOutputsFromRightScan, idesc->getIndexKey(),
+                                          ixProp);
+   
+                                possibleIndexJoins_[i] = ixi;
+
+
+                             } else {
+                                // do nothing. The current index is less useful.
+                                 if ( printIndexElimination )
+                                    out << "Eliminate index join heuristics 1: remove " 
+                                        << idesc->getExtIndexName().data() 
+                                        << endl;
+                               }
+
+                             idescAbsorbed = TRUE;
+
+                         } else 
+                         // if no index is a prefix of the other and the two do not produce
+                         // same output, pick one with high selectivity.
+                         if ( !isASuperOrSubsetIndex && !produceSameIndexOutputs ) {
+
+                            // two indexes do not produce the same outputs. Select
+                            // one with the most selectivity.
+
+                            CostScalar rowsToScan;
+
+                            CostScalar currentDataAccess = 
+                                computeCpuResourceForIndexJoin(tableId, idesc, 
+                                                               newIndexPredicates, rowsToScan);
+
+                            if ( rowsToScan > indexEliminationThreshold )
+                              break;
+
+                            CostScalar previousDataAccess = 
+                                  computeCpuResourceForIndexJoin(tableId, 
+                                                                ixi->usableIndexes_[0]->getIndexDesc(),
+                                                                ixi->indexPredicates_, rowsToScan);
+
+
+                            if ( currentDataAccess < previousDataAccess ) {
+   
+                               if ( printIndexElimination )
+                                  out << "Eliminate index join heuristics 2: remove " 
+                                      << ixi->usableIndexes_[0]->getIndexDesc()->getExtIndexName().data() 
+                                      << endl;
+
+                               ixi = new (CmpCommon::statementHeap()) 
+                                       ScanIndexInfo(referencedInputs, newOutputsFromIndex,
+                                                     newIndexPredicates, indexJoinPreds, 
+                                                     newOutputsFromRightScan, idesc->getIndexKey(),
+                                                     ixProp);
+
+                               possibleIndexJoins_[i] = ixi;
+                             } else {
+
+                                // do nothing. The current index is less useful.
+                                if ( printIndexElimination )
+                                  out << "Eliminate index join heuristics 2: remove " 
+                                      << idesc->getExtIndexName().data() << endl;
+                             }
+
+                             idescAbsorbed = TRUE;
+
+                         } else {
+   
+                           // must be produceSameIndexOutputs when reach here. 
+                           CMPASSERT(produceSameIndexOutputs);
+
+                           // Another index produces the same characteristic
+                           // outputs. Combine the two indexes in a single
+                           // scan. Add this index to the list of indexes,
+                           // everything else should be set already
+                           if ( possibleIndexJoins_[i]->indexPredicates_ == newIndexPredicates &&
+                                ixProp->compareIndexPromise(ixi->usableIndexes_[0]) == MORE ) 
+                           {
+                               if ( printIndexElimination )
+                                  out << "Eliminate index join heuristics 0: remove " 
+                                      << ixi->usableIndexes_[0]->getIndexDesc()->getExtIndexName().data() 
+                                      << endl;
+
+                               ixi = new (CmpCommon::statementHeap()) 
+                                       ScanIndexInfo(referencedInputs, newOutputsFromIndex,
+                                                     newIndexPredicates, indexJoinPreds, 
+                                                     newOutputsFromRightScan, idesc->getIndexKey(),
+                                                     ixProp);
+
+                               possibleIndexJoins_[i] = ixi;
+
+                               idescAbsorbed = TRUE;
+                           }
+                         }
+
+                         break;
+                      }
+		   }
 		}
 
-	      if (ixi == NULL)
+	      if (!idescAbsorbed)
 		{
 		  // create a new index info struct and add this into the
 		  // possible index joins list
-
-		  ixi = new (CmpCommon::statementHeap()) ScanIndexInfo;
-		  possibleIndexJoins_.insert(ixi);
-		  ixi->indexColumns_	     = idesc->getIndexKey();
-
-		  ixi->indexPredicates_      = newIndexPredicates;
-		  ixi->outputsFromIndex_     = newOutputsFromIndex;
-		  ixi->inputsToIndex_        = referencedInputs;
-		  ixi->joinPredicates_       = indexJoinPreds;
-		  ixi->outputsFromRightScan_ = newOutputsFromRightScan;
-		  ixi->transformationDone_   = FALSE;
 		  IndexJoinSelectivityEnum isGoodIndexJoin = INDEX_JOIN_VIABLE;
-		  MdamFlags mdamFlag = idesc->pruneMdam(ixi->indexPredicates_,FALSE,
+
+		  MdamFlags mdamFlag = idesc->pruneMdam(newIndexPredicates,FALSE,
 						 isGoodIndexJoin,
-						 getGroupAttr(),&(ixi->inputsToIndex_));
-		  IndexProperty * ixProp;
-		  if(getGroupAttr()->getInputLogPropList().entries() >0)
-			ixProp = new(CmpCommon::statementHeap())
+						 getGroupAttr(),&referencedInputs);
+
+		  IndexProperty * ixProp = (getGroupAttr()->getInputLogPropList().entries() >0) ?
+			new(CmpCommon::statementHeap())
 					      IndexProperty(idesc, mdamFlag, isGoodIndexJoin,
-					      (getGroupAttr()->getInputLogPropList())[0]);
-		      else
-			ixProp = new(CmpCommon::statementHeap())
+					      (getGroupAttr()->getInputLogPropList())[0])
+		        :
+			new(CmpCommon::statementHeap())
 					      IndexProperty(idesc, mdamFlag, isGoodIndexJoin);
-		  ixi->usableIndexes_.insert(ixProp);
-                  // Also save index in indexJoinScan so that optimizer explores NJ, otherwise
-                  // optimizer doesn't explore NJ thinking it's keyless risky NJ.
-                  if (isHbaseTable() && 
-                      (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON))
-                    indexJoinScans_.insert(idesc);
-		} // ixi == NULL
+
+                  ScanIndexInfo *ixi = new (CmpCommon::statementHeap()) 
+                                ScanIndexInfo(referencedInputs, newOutputsFromIndex,
+                                              newIndexPredicates, indexJoinPreds, 
+                                              newOutputsFromRightScan, idesc->getIndexKey(),
+                                              ixProp);
+
+		  possibleIndexJoins_.insert(ixi);
+
+		} // !idescAbsorbed 
 	    } // index delivers new values
 	} // not indexOnly access
     } // for each index
+
+                               
+  if ( printIndexElimination ) {
+    out << "# of index join scans=" << possibleIndexJoins_.entries() << endl;
+    out << "# of index only scans=" << indexOnlyIndexes_.entries() << endl;
+    out << "==================" << endl;
+  }
 
   CMPASSERT(indexOnlyIndexes_.entries() > 0);
 
@@ -9236,6 +9396,27 @@ ScanIndexInfo::ScanIndexInfo(const ScanIndexInfo & other) :
   indexColumns_ (other.indexColumns_),
   usableIndexes_        (other.usableIndexes_)
 {}
+
+ScanIndexInfo::ScanIndexInfo(
+              const ValueIdSet& inputsToIndex,
+              const ValueIdSet& outputsFromIndex,
+              const ValueIdSet& indexPredicates,
+              const ValueIdSet& joinPredicates,
+              const ValueIdSet& outputsFromRightScan,
+              const ValueIdSet& indexColumns,
+              IndexProperty* ixProp
+             ) :
+   inputsToIndex_(inputsToIndex),
+   outputsFromIndex_(outputsFromIndex),
+   indexPredicates_(indexPredicates),
+   joinPredicates_(joinPredicates),
+   outputsFromRightScan_(outputsFromRightScan),
+   indexColumns_(indexColumns),
+   transformationDone_(FALSE),
+   usableIndexes_(CmpCommon::statementHeap())
+{
+   usableIndexes_.insert(ixProp);
+}
 
 
 // -----------------------------------------------------------------------
@@ -15636,6 +15817,7 @@ CostScalar Scan::computeCpuResourceForIndexOnlyScans(CANodeId tableId)
                                    );
 }
 
+
 CostScalar Scan::computeCpuResourceForIndexJoinScans(CANodeId tableId)
 {
  // If index scans are available, find the index with most promising and
@@ -15648,17 +15830,43 @@ CostScalar Scan::computeCpuResourceForIndexJoinScans(CANodeId tableId)
   IndexProperty* smallestIndex = findSmallestIndex(scanIndexJoins);
   IndexDesc* iDesc = smallestIndex->getIndexDesc();
 
-  const ValueIdList &ikeys = iDesc->getIndexKey();
+  CostScalar rowsToScan;
+  return computeCpuResourceForIndexJoin(tableId, iDesc, iDesc->getIndexKey(), rowsToScan);
+}
 
+CostScalar Scan::computeCpuResourceForIndexJoin(CANodeId tableId, IndexDesc* iDesc, 
+                                                ValueIdSet& indexPredicates, 
+                                                CostScalar& rowsToScan)
+{
+  ValueIdList ikeysCovered;
+
+  UInt32 sz = iDesc->getIndexKey().entries();
+  for (CollIndex i=0; i<sz; i++) {
+    ValueId x = iDesc->getIndexKey()[i];
+    if ( indexPredicates.containsAsEquiLocalPred(x) )
+      ikeysCovered.insertAt(i, x);
+    else
+      break;
+  }
+
+  return computeCpuResourceForIndexJoin(tableId, iDesc, ikeysCovered, rowsToScan);
+}
+
+CostScalar 
+Scan::computeCpuResourceForIndexJoin(CANodeId tableId, IndexDesc* iDesc, 
+                                     const ValueIdList& ikeys, CostScalar& rowsToScan)
+{
   AppliedStatMan * appStatMan = QueryAnalysis::ASM();
 
   EstLogPropSharedPtr estLpropPtr = appStatMan->
                   getStatsForLocalPredsOnPrefixOfColList(tableId, ikeys);
 
-  if ( !(estLpropPtr.get()) )
+  if ( !(estLpropPtr.get()) ) {
+    rowsToScan = COSTSCALAR_MAX;
     return COSTSCALAR_MAX;
+  }
 
-  CostScalar rowsToScan = estLpropPtr->getResultCardinality();
+  rowsToScan = estLpropPtr->getResultCardinality();
   CostScalar rowSize = iDesc->getRecordLength();
 
   CostScalar cpuResourceForIndex = computeCpuResourceRequired(rowsToScan, rowSize);
@@ -15669,7 +15877,6 @@ CostScalar Scan::computeCpuResourceForIndexJoinScans(CANodeId tableId)
 
   return cpuResourceForIndex + cpuResourceForBaseTable;
 }
-
 
 IndexProperty* Scan::findSmallestIndex(const SET(IndexProperty *)& indexes) const
 {

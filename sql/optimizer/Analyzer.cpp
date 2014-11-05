@@ -2754,7 +2754,7 @@ void ValueIdSet::removeNonReferencingExpressions(const ValueIdSet & otherSet,
 // ValueIdSet::findAllReferencedBaseCols()
 //
 // This method find all base columns referenced directly or indirectly
-// via this ValueIdSet. This includes degging into VEGs and recursively
+// via this ValueIdSet. This includes digging into VEGs and recursively
 // walking ItemExpr trees until the leaf nodes.
 // -----------------------------------------------------------------------
 void ValueIdSet::findAllReferencedBaseCols(ValueIdSet & result) const
@@ -2765,6 +2765,23 @@ void ValueIdSet::findAllReferencedBaseCols(ValueIdSet & result) const
     x.getItemExpr()->findAll(ITM_BASECOLUMN, result, TRUE, TRUE);
   }
 }
+
+// -----------------------------------------------------------------------
+// ValueIdSet::findAllReferencedIndexCols()
+//
+// This method find all index columns referenced directly or indirectly
+// via this ValueIdSet. This includes digging into VEGs and recursively
+// walking ItemExpr trees until the leaf nodes.
+// -----------------------------------------------------------------------
+void ValueIdSet::findAllReferencedIndexCols(ValueIdSet & result) const
+{
+  // Simply loop over all the expressions in the set
+  for (ValueId x= init(); next(x); advance(x) )
+  {
+    x.getItemExpr()->findAll(ITM_INDEXCOLUMN, result, TRUE, TRUE);
+  }
+}
+
 
 // -----------------------------------------------------------------------
 // ValueIdSet::findAllEqualityCols()

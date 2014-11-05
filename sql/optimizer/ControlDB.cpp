@@ -283,6 +283,14 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
 
     // LCOV_EXCL_STOP
   }
+
+  if (def->getAttrEnum() == NSK_DBG_COMPILE_INSTANCE)
+  {
+      const char * compileInstance =
+        ActiveSchemaDB()->getDefaults().getValue(NSK_DBG_COMPILE_INSTANCE);
+
+      CURRCONTEXT_OPTDEBUG->setCompileInstanceClass(compileInstance);
+  }
   
   if (def->getAttrEnum() == MEMORY_MONITOR ||
       def->getAttrEnum() == MEMORY_MONITOR_IN_DETAIL ||

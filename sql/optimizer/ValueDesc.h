@@ -320,6 +320,15 @@ public:
 
   void addMember(ItemExpr* x);
 
+  // find the length of the maximal prefix of this such that each element
+  // in the prefix is in x.
+  //  return 1 when this = [1, 2, 3, 4], and x = {1]
+  //  return 2 when this = [1, 2, 3, 4], and x = {1, 2}
+  //  return 2 when this = [1, 2, 3, 4], and x = {1, 2, 4}
+  //  return 0 when this = [1, 2, 3, 4], and x = {2, 4}
+  //  return 1 when this = [1], and x = {1, 2}
+  Lng32 findPrefixLength(const ValueIdSet& x) const;
+
   // --------------------------------------------------------------------
   // transformNode()
   //
@@ -1353,6 +1362,8 @@ public:
   // walking ItemExpr trees until the leaf nodes.
   // -----------------------------------------------------------------------
   void findAllReferencedBaseCols(ValueIdSet & result) const;
+
+  void findAllReferencedIndexCols(ValueIdSet & result) const;
 
   // -----------------------------------------------------------------------
   // ValueIdSet::findAllEqualityCols()
