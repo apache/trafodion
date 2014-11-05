@@ -246,6 +246,32 @@ CoprocessorService, Coprocessor {
   private int regionState = 0; 
   private Path recoveryTrxPath = null;
   private int cleanAT = 0;
+  private long[] commitCheckTimes   = new long[100];
+  private long[] hasConflictTimes   = new long[100];
+  private long[] putBySequenceTimes = new long[100];
+  private long[] writeToLogTimes    = new long[100];
+
+  private AtomicInteger  timeIndex               =    new AtomicInteger (0);
+  private AtomicInteger  totalCommits            =    new AtomicInteger (0);
+  private AtomicInteger  writeToLogOperations    =    new AtomicInteger (0);
+  private AtomicInteger  putBySequenceOperations =    new AtomicInteger (0);
+  private long   totalCommitCheckTime =    0;
+  private long   totalConflictTime    =    0;
+  private long   totalPutTime         =    0;
+  private long   totalWriteToLogTime  =    0;
+  private long   minCommitCheckTime   =    1000000000;
+  private long   maxCommitCheckTime   =    0;
+  private double avgCommitCheckTime   =    0;
+  private long   minConflictTime      =    1000000000;
+  private long   maxConflictTime      =    0;
+  private double avgConflictTime      =    0;
+  private long   minPutTime           =    1000000000;
+  private long   maxPutTime           =    0;
+  private double avgPutTime           =    0;
+  private long   minWriteToLogTime    =    1000000000;
+  private long   maxWriteToLogTime    =    0;
+  private double avgWriteToLogTime    =    0;
+
   private HRegionInfo regionInfo = null;
   private HRegion m_Region = null;
   private TransactionalRegion t_Region = null;
@@ -3287,6 +3313,26 @@ CoprocessorService, Coprocessor {
     checkClosing(transactionId);
     TransactionState state;
 
+    int lv_totalCommits;
+    int lv_timeIndex;
+    synchronized (totalCommits){
+       lv_totalCommits = totalCommits.incrementAndGet();
+       lv_timeIndex = (timeIndex.getAndIncrement() % 500);
+    }
+
+    long commitCheckStartTime = 0;
+    long commitCheckEndTime = 0;
+    long hasConflictStartTime = 0;
+    long hasConflictEndTime = 0;
+    long putBySequenceStartTime = 0;
+    long putBySequenceEndTime = 0;
+    long writeToLogEndTime = 0;
+
+    boolean returnPending = false;
+
+    if (LOG.isDebugEnabled())LOG.debug("commitRequest timeIndex is " + lv_timeIndex);
+    commitCheckStartTime = System.nanoTime();
+
     synchronized (commitCheckLock) {
     try {
       state = getTransactionState(transactionId);
@@ -3303,7 +3349,11 @@ CoprocessorService, Coprocessor {
         return COMMIT_UNSUCCESSFUL;
       }
 
+      hasConflictStartTime = System.nanoTime();
       if (hasConflict(state)) {
+        hasConflictEndTime = System.nanoTime();
+        hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
+        totalConflictTime += hasConflictTimes[lv_timeIndex];
         state.setStatus(Status.ABORTED);
         retireTransaction(state);
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered conflict txId: " + transactionId + "returning COMMIT_CONFLICT");
@@ -3317,7 +3367,9 @@ CoprocessorService, Coprocessor {
 		+ ". Voting for commit");
 
       // If there are writes we must keep record of the transaction
+      putBySequenceStartTime = System.nanoTime();
       if (state.hasWrite()) {
+        putBySequenceOperations.getAndIncrement();
         // Order is important
 	state.setStatus(Status.COMMIT_PENDING);
 	commitPendingTransactions.add(state);
@@ -3325,6 +3377,7 @@ CoprocessorService, Coprocessor {
 	commitedTransactionsBySequenceNumber.put(
 	state.getSequenceNumber(), state);
       }
+      commitCheckEndTime = putBySequenceEndTime = System.nanoTime();
     } // exit sync block of commitCheckLock
                 
     if (state.hasWrite()) {
@@ -3335,14 +3388,121 @@ CoprocessorService, Coprocessor {
                   state.getEdit(), new ArrayList<UUID>(), EnvironmentEdgeManager.currentTimeMillis(), this.m_Region.getTableDesc(),
                   nextLogSequenceId, false, HConstants.NO_NONCE, HConstants.NO_NONCE);
              this.tHLog.sync(txid);
+             writeToLogEndTime = System.nanoTime();
+             writeToLogTimes[lv_timeIndex] = writeToLogEndTime - commitCheckEndTime;
+             writeToLogOperations.getAndIncrement();
              if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: " + transactionId + " HLog seq " + txid);
       } catch (IOException exp) {
-          LOG.info("TrxRegionEndpoint coprocessor:commitRequest IOException caught in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
+          if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor:commitRequest IOException caught in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
           throw exp;
       }      
       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId);
-      return COMMIT_OK;
+      returnPending = true;
     }
+    else {
+      writeToLogTimes[lv_timeIndex] = 0;
+    }
+
+    commitCheckTimes[lv_timeIndex] = commitCheckEndTime - commitCheckStartTime;
+    hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
+    putBySequenceTimes[lv_timeIndex] = putBySequenceEndTime - putBySequenceStartTime;
+    totalCommitCheckTime += commitCheckTimes[lv_timeIndex];
+    totalConflictTime += hasConflictTimes[lv_timeIndex];
+    totalPutTime += putBySequenceTimes[lv_timeIndex];
+    totalWriteToLogTime += writeToLogTimes[lv_timeIndex];
+    if (commitCheckTimes[lv_timeIndex] > maxCommitCheckTime) {
+       maxCommitCheckTime = commitCheckTimes[lv_timeIndex];
+    }
+    if (commitCheckTimes[lv_timeIndex] < minCommitCheckTime) {
+       minCommitCheckTime = commitCheckTimes[lv_timeIndex];
+    }
+    if (hasConflictTimes[lv_timeIndex] > maxConflictTime) {
+       maxConflictTime = hasConflictTimes[lv_timeIndex];
+    }
+    if (hasConflictTimes[lv_timeIndex] < minConflictTime) {
+       minConflictTime = hasConflictTimes[lv_timeIndex];
+    }
+    if (putBySequenceTimes[lv_timeIndex] > maxPutTime) {
+       maxPutTime = putBySequenceTimes[lv_timeIndex];
+    }
+    if (putBySequenceTimes[lv_timeIndex] < minPutTime) {
+       minPutTime = putBySequenceTimes[lv_timeIndex];
+    }
+    if (writeToLogTimes[lv_timeIndex] > maxWriteToLogTime) {
+       maxWriteToLogTime = writeToLogTimes[lv_timeIndex];
+    }
+    if (writeToLogTimes[lv_timeIndex] < minWriteToLogTime) {
+       minWriteToLogTime = writeToLogTimes[lv_timeIndex];
+    }
+
+    if (lv_timeIndex == 49) {
+       timeIndex.set(1);  // Start over so we don't exceed the array size
+    }
+
+    if (lv_totalCommits == 9999) {
+       avgCommitCheckTime = (double) (totalCommitCheckTime/lv_totalCommits);
+       avgConflictTime = (double) (totalConflictTime/lv_totalCommits);
+       avgPutTime = (double) (totalPutTime/lv_totalCommits);
+       avgWriteToLogTime = (double) ((double)totalWriteToLogTime/(double)lv_totalCommits);
+       if (LOG.isInfoEnabled()) LOG.info("commitRequest Report\n" +
+                      "                        Total commits: "
+                         + lv_totalCommits + "\n" +
+                      "                        commitCheckLock time:\n" +
+                      "                                     Min:  "
+                         + minCommitCheckTime / 1000 + " microseconds\n" +
+                      "                                     Max:  "
+                         + maxCommitCheckTime / 1000 + " microseconds\n" +
+                      "                                     Avg:  "
+                         + avgCommitCheckTime / 1000 + " microseconds\n" +
+                      "                        hasConflict time:\n" +
+                      "                                     Min:  "
+                         + minConflictTime / 1000 + " microseconds\n" +
+                      "                                     Max:  "
+                         + maxConflictTime / 1000 + " microseconds\n" +
+                      "                                     Avg:  "
+                         + avgConflictTime / 1000 + " microseconds\n" +
+                      "                        putBySequence time:\n" +
+                      "                                     Min:  "
+                         + minPutTime / 1000 + " microseconds\n" +
+                      "                                     Max:  "
+                         + maxPutTime / 1000 + " microseconds\n" +
+                      "                                     Avg:  "
+                         + avgPutTime / 1000 + " microseconds\n" +
+                      "                                     Ops:  "
+                         + putBySequenceOperations.get() + "\n" +
+                      "                        writeToLog time:\n" +
+                      "                                     Min:  "
+                         + minWriteToLogTime / 1000 + " microseconds\n" +
+                      "                                     Max:  "
+                         + maxWriteToLogTime / 1000 + " microseconds\n" +
+                      "                                     Avg:  "
+                         + avgWriteToLogTime / 1000 + " microseconds\n" +
+                      "                                     Ops:  "
+                         + writeToLogOperations.get() + "\n\n");
+                   totalCommits.set(0);
+                   writeToLogOperations.set(0);
+                   putBySequenceOperations.set(0);
+                   totalCommitCheckTime    =    0;
+                   totalConflictTime =    0;
+                   totalPutTime      =    0;
+                   totalWriteToLogTime     =    0;
+                   minCommitCheckTime      =    1000000000;
+                   maxCommitCheckTime      =    0;
+                   avgCommitCheckTime      =    0;
+                   minConflictTime   =    1000000000;
+                   maxConflictTime   =    0;
+                   avgConflictTime   =    0;
+                   minPutTime        =    1000000000;
+                   maxPutTime        =    0;
+                   avgPutTime        =    0;
+                   minWriteToLogTime =    1000000000;
+                   maxWriteToLogTime =    0;
+                   avgWriteToLogTime =    0;
+                }
+
+                if (returnPending) {
+                  return COMMIT_OK;
+                }
 
     // Otherwise we were read-only and commitable, so we can forget it.
     state.setStatus(Status.COMMITED);
