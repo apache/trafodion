@@ -68,10 +68,10 @@ public class TransactionalRegion extends HRegion {
 	 */
 
 	public TransactionalRegion(final HRegionFileSystem fs,
-                                   final HLog log,
-			           final Configuration conf,
-			           final HTableDescriptor htd,
-			           final RegionServerServices rsServices) {
+                               final HLog log,
+                               final Configuration conf,
+                               final HTableDescriptor htd,
+                               final RegionServerServices rsServices) {
 		super(fs, log, conf, htd, rsServices);
 	}
 
@@ -99,10 +99,10 @@ public class TransactionalRegion extends HRegion {
 	 * Allows for access to the protected HRegion getScanner method.
 	 */
         @Override
-	public RegionScanner getScanner(final Scan scan, 
+        public RegionScanner getScanner(final Scan scan, 
                                         final List<KeyValueScanner> scanners)
-			throws IOException {
-                if (LOG.isTraceEnabled()) LOG.trace("TransactionalRegion getScanner -- Calling super getScanner" );
-		return super.getScanner(scan, scanners);
-        }
+            throws IOException {
+                // if (LOG.isTraceEnabled()) LOG.trace("TransactionalRegion getScanner -- Calling super getScanner" );
+                return super.getScanner(scan, scanners);
+       }
 }
