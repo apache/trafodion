@@ -126,6 +126,7 @@ SRVR_STMT_HDL::SRVR_STMT_HDL()
 	IRD = NULL;
 	outputDataValue._length = 0;
 	outputDataValue._buffer = NULL;
+	outputDataValue.pad_to_offset_8_ = {'\0', '\0', '\0', '\0'};
 	inputDataValue._length = 0;
 	inputDataValue._buffer = NULL;
 	delayedOutputDataValue._length = 0;

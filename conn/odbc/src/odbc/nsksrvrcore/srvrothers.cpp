@@ -5678,6 +5678,7 @@ odbc_SQLSrvr_FetchPerf_sme_(
 
 	SRVR_STMT_HDL *pSrvrStmt = NULL;
 	SQLRETURN rc = SQL_SUCCESS;
+	int outputDataOffset = 0;
 
 	*returnCode = SQL_SUCCESS;
 
@@ -5890,15 +5891,16 @@ odbc_SQLSrvr_FetchPerf_sme_(
 		}
 		else
 		{ // Catalog APIs
+			outputDataOffset  = *(int*)pSrvrStmt->outputDataValue.pad_to_offset_8_;
 
 			*outValuesFormat = COLUMNWISE_ROWSETS;
-                        rc = FETCHPERF(pSrvrStmt, &pSrvrStmt->outputDataValue);
+			rc = FETCHPERF(pSrvrStmt, &pSrvrStmt->outputDataValue);
 			if (pSrvrStmt->sqlError.errorList._buffer != NULL)
 			{
 				*returnCode = SQL_ERROR;
-                 GETSQLWARNINGORERROR2(pSrvrStmt);
-	            *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
-	             sqlWarningOrError = pSrvrStmt->sqlWarningOrError;
+				GETSQLWARNINGORERROR2(pSrvrStmt);
+				*sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+				sqlWarningOrError = pSrvrStmt->sqlWarningOrError;
 				if (pSrvrStmt->outputDataValue._buffer != NULL)
 					delete pSrvrStmt->outputDataValue._buffer;
 				pSrvrStmt->outputDataValue._buffer = NULL;
@@ -5911,6 +5913,8 @@ odbc_SQLSrvr_FetchPerf_sme_(
 						pSrvrStmt->cleanupSQLMessage();
 				pSrvrStmt->outputDataValue._buffer = NULL;
 				pSrvrStmt->outputDataValue._length = 0;
+				*(int*)pSrvrStmt->outputDataValue.pad_to_offset_8_=0;
+				outputDataOffset = 0;
 				pSrvrStmt->InternalStmtClose(SQL_CLOSE);
 				*returnCode = SQL_NO_DATA_FOUND;
 			}
@@ -5927,21 +5931,26 @@ odbc_SQLSrvr_FetchPerf_sme_(
 				}
 				else
 				{
+					char *tmpByte = (char*)&pSrvrStmt->outputDataValue._length;
+					for(int i=0; i<sizeof(pSrvrStmt->outputDataValue.pad_to_offset_8_); i++) {
+						pSrvrStmt->outputDataValue.pad_to_offset_8_[i] = *tmpByte;
+						tmpByte++;
+					}
+					
 					*returnCode = SQL_SUCCESS;
 				}
 
 				pSrvrStmt->rowsAffected = 0;
 			}
 
-			outputDataValue->_length = pSrvrStmt->outputDataValue._length;
-			outputDataValue->_buffer = pSrvrStmt->outputDataValue._buffer;
-
+			outputDataValue->_length = pSrvrStmt->outputDataValue._length - outputDataOffset;
+			outputDataValue->_buffer = pSrvrStmt->outputDataValue._buffer + outputDataOffset;
 		}
 
 ret:
 
 		if (*returnCode != SQL_SUCCESS &&
-			*returnCode != SQL_SUCCESS_WITH_INFO)
+				*returnCode != SQL_SUCCESS_WITH_INFO)
 		{
 			if (pSrvrStmt->outputDataValue._buffer != NULL)
 				delete pSrvrStmt->outputDataValue._buffer;
