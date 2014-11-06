@@ -969,8 +969,8 @@ public class TmAuditTlog {
                throw e;
             }
          }
-      } catch (IOException e){
-          LOG.error("addControlPoint IOException 2");
+      } catch (Exception e){
+          LOG.error("addControlPoint Exception " + e);
           e.printStackTrace();
           throw e;
       }
