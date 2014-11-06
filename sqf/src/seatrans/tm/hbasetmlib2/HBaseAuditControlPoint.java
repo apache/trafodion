@@ -154,7 +154,7 @@ public class HBaseAuditControlPoint {
       return;
     }
 
-   public static long getCurrControlPt() throws Exception {
+   public long getCurrControlPt() throws Exception {
       if (LOG.isTraceEnabled()) LOG.trace("getCurrControlPt:  start");
       long highKey = -1;
       if (LOG.isDebugEnabled()) LOG.debug("new Scan");
