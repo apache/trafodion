@@ -927,16 +927,13 @@ void CmpSeabaseDDL::createSeabaseTable(
       createTableNode->getKeyColumnArray() :
       createTableNode->getPrimaryKeyColRefArray()));
 
-  NABoolean trustedCaller = FALSE;
-  if ((isSeabaseReservedSchema(tableName)) &&
-      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-    trustedCaller = TRUE;
-  
-  if (!trustedCaller && 
-      !isDDLOperationAuthorized(SQLOperation::CREATE_TABLE,tableName,
-                                COM_BASE_TABLE_OBJECT_LIT))
+  if (!isDDLOperationAuthorized(SQLOperation::CREATE_TABLE,
+                                ComUser::getCurrentUser()))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn();
+
      return;
   }
 
@@ -1932,20 +1929,6 @@ void CmpSeabaseDDL::dropSeabaseTable(
   else
      verifyName = tableName;
 
-  NABoolean trustedCaller = FALSE;
-  if ((isSeabaseReservedSchema(tableName)) &&
-      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-    trustedCaller = TRUE;
-
-  if (!trustedCaller && 
-      !isDDLOperationAuthorized(SQLOperation::DROP_TABLE,tableName,
-                                COM_BASE_TABLE_OBJECT_LIT))
-  {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
-     return;
-  }
-
   if (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_OFF)
     ActiveSchemaDB()->getNATableDB()->useCache();
 
@@ -2008,6 +1991,17 @@ void CmpSeabaseDDL::dropSeabaseTable(
       return;
     }
 
+  // Make sure user has necessary privileges to perform drop
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
   Queue * usingViewsQueue = NULL;
   if (dropTableNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR)
     {
@@ -2041,7 +2035,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
         }
     }
 
-  // return error is cascade is not specified and a referential constraint exists on
+  // return error if cascade is not specified and a referential constraint exists on
   // any of the unique constraints.
   const AbstractRIConstraintList &uniqueList = naTable->getUniqueConstraints();
   
@@ -2556,6 +2550,17 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
  
+  // Make sure user has the privilege to perform the rename
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
  CorrName newcn(newObjectNamePart,
               STMTHEAP,
               schemaNamePart,
@@ -2723,6 +2728,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddColumn(
 
       return;
     }
+
+  // Make sure user has the privilege to perform the add column
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
 
   const NAColumnArray &nacolArr = naTable->getNAColumnArray();
 
@@ -2944,6 +2960,17 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
 
       return;
     }
+
+  // Make sure user has the privilege to perform the drop column
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
 
   if (naTable->isSQLMXAlignedTable())
     {
@@ -3195,6 +3222,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
       return;
     }
 
+  // Make sure user has the privilege to perform the add pk constraint
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
   ElemDDLColRefArray &keyColumnArray = alterAddConstraint->getConstraint()->castToElemDDLConstraintPK()->getKeyColumnArray();
 
   NAList<NAString> keyColList(HEAP, keyColumnArray.entries());
@@ -3408,6 +3446,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
       return;
     }
 
+  // Make sure user has the privilege to perform the create unique constraint
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
   ElemDDLColRefArray &keyColumnArray = alterAddConstraint->getConstraint()->castToElemDDLConstraintUnique()->getKeyColumnArray();
 
   NAList<NAString> keyColList(HEAP, keyColumnArray.entries());
@@ -3583,6 +3632,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
       
       return;
     }
+
+  // Make sure user has the privilege to perform the add RI constraint
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                ringNaTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
 
   const ElemDDLConstraintRI *constraintNode = 
     alterAddConstraint->getConstraint()->castToElemDDLConstraintRI();
@@ -4179,6 +4239,17 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
       return;
     }
 
+  // Make sure user has the privilege to perform the add check constraint
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
+
   const ParCheckConstraintColUsageList &colList = 
     alterAddCheckNode->getColumnUsageList();
   for (CollIndex cols = 0; cols < colList.entries(); cols++)
@@ -4341,6 +4412,17 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       
       return;
     }
+
+  // Make sure user has the privilege to perform the drop constraint
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn ();
+
+     return;
+  }
 
   const NAString &dropConstrName = alterDropConstraint->
     getConstraintNameAsQualifiedName().getQualifiedNameAsAnsiString();
@@ -4627,10 +4709,10 @@ void CmpSeabaseDDL::dropSeabaseSchema(
   NAString catName = schemaName.getCatalogNamePartAsAnsiString();
   ComAnsiNamePart schNameAsComAnsi = schemaName.getSchemaNamePart();
   NAString schName = schNameAsComAnsi.getInternalName();
-//TODO: expects a complete name, but will operate correctly (albeit not
-// efficiently) with a partial name.  
-  if (!isDDLOperationAuthorized(SQLOperation::CREATE_SCHEMA,schName,
-                                COM_SCHEMA_LABEL_OBJECT_LIT))
+
+  // TODO: schema ownership support
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_SCHEMA,
+                                ComUser::getCurrentUser()))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
      return;

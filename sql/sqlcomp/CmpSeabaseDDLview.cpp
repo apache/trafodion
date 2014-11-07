@@ -490,8 +490,8 @@ void CmpSeabaseDDL::createSeabaseView(
   const NAString extViewName = viewName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
   
-  if (!isDDLOperationAuthorized(SQLOperation::CREATE_VIEW,extViewName,
-                                COM_VIEW_OBJECT_LIT))
+  if (!isDDLOperationAuthorized(SQLOperation::CREATE_VIEW,
+                                ComUser::getCurrentUser()))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
      processReturn ();
@@ -782,14 +782,6 @@ void CmpSeabaseDDL::dropSeabaseView(
   const NAString objectNamePart = viewName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extViewName = viewName.getExternalName(TRUE);
 
-  if (!isDDLOperationAuthorized(SQLOperation::DROP_VIEW,extViewName,
-                                COM_VIEW_OBJECT_LIT))
-  {
-     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     processReturn ();
-     return;
-  }
- 
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -832,14 +824,18 @@ void CmpSeabaseDDL::dropSeabaseView(
       return;
     }
 
-  Int64 objUID = getObjectUID(&cliInterface,
-			      catalogNamePart.data(), schemaNamePart.data(), 
+  Int32 objOwnerID = 0;
+  Int64 objUID = getObjectUIDandOwner(&cliInterface,
+			              catalogNamePart.data(), schemaNamePart.data(), 
+			              objectNamePart.data(),
+			              COM_VIEW_OBJECT_LIT,
+                                      NULL, &objOwnerID);
 
-			      objectNamePart.data(),
-			      COM_VIEW_OBJECT_LIT);
-
-  if (objUID < 0)
+  if (objUID < 0 || objOwnerID == 0)
     {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for drop view");
+
       deallocEHI(ehi); 
 
       processReturn();
@@ -847,6 +843,15 @@ void CmpSeabaseDDL::dropSeabaseView(
       return;
     }
 
+  // Verify user can perform operation
+  if (!isDDLOperationAuthorized(SQLOperation::DROP_VIEW,objOwnerID))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     deallocEHI(ehi);
+     processReturn ();
+     return;
+  }
+ 
   Queue * usingViewsQueue = NULL;
   if (dropViewNode->getDropBehavior() == COM_RESTRICT_DROP_BEHAVIOR)
     {

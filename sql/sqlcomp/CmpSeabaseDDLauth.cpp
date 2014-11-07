@@ -620,11 +620,19 @@ CmpSeabaseDDLuser::getUserDetails(const char *pUserName, bool isExternal)
 Int32 CmpSeabaseDDLuser::getUniqueID()
 {
   Int32 newUserID = 0;
-  NAString whereClause ("where auth_id >= 33333 and auth_id < 999999");
+  char userIDString[MAX_AUTHID_AS_STRING_LEN];
+
+  NAString whereClause ("where auth_id >= ");
+  sprintf(userIDString,"%d",MIN_USERID);
+  whereClause += userIDString;
+  whereClause += " and auth_id < ";
+  sprintf(userIDString, "%d", MAX_USERID);
+  whereClause += userIDString;
+ 
   newUserID = selectMaxAuthID(whereClause);
-  // DB__ROOT should always be registered at 33333.  Just in case ...
+  // DB__ROOT should always be registered as MIN_USERID.  Just in case ...
   if (newUserID == 0)
-     newUserID = 33334;
+     newUserID = MIN_USERID + 1;
   else
      newUserID++;
   return newUserID;
@@ -1721,10 +1729,15 @@ CmpSeabaseDDLauth::AuthStatus authStatus = getAuthDetails(roleName,false);
 Int32 CmpSeabaseDDLrole::getUniqueID()
 {
   Int32 newRoleID = 0;
-  NAString whereClause ("where auth_id > 1000000");
+  char roleIDString[MAX_AUTHID_AS_STRING_LEN];
+
+  NAString whereClause ("where auth_id >= ");
+  sprintf(roleIDString,"%d",DB_ROOTROLE_ID);
+  whereClause += roleIDString;
+
   newRoleID = selectMaxAuthID(whereClause);
   if (newRoleID == 0)
-     newRoleID = 1000001;
+     newRoleID = DB_ROOTROLE_ID + 1;
   else
      newRoleID++;
   return newRoleID;

@@ -12718,6 +12718,9 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return this;
 
+  // BindWA keeps list of sequence generators used, so privileges can be checked.
+  bindWA->insertSeqVal(this);
+
   return boundExpr;
 }
 

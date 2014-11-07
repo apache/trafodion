@@ -267,8 +267,6 @@ CREATE VIEW TRAFODION.T135SCH.T135_V2_T1 AS
 
 *** ERROR[1389] Object TRAFODION.T135SCH.USER1_V1 does not exist in Trafodion.
 
-*** ERROR[1389] Object TRAFODION.T135SCH.USER1_V1 does not exist in Trafodion.
-
 --- SQL operation failed with errors.
 >>
 >>exit;
@@ -347,8 +345,6 @@ End of MXCI Session
 
 --- SQL operation failed with errors.
 >>drop view user2_v1;
-
-*** ERROR[1389] Object TRAFODION.T135SCH.USER2_V1 does not exist in Trafodion.
 
 *** ERROR[1389] Object TRAFODION.T135SCH.USER2_V1 does not exist in Trafodion.
 

@@ -57,6 +57,7 @@
 #include "desc.h"
 
 #include "ComCextdecs.h"
+#include "ComUser.h"
 
 #include "NumericType.h"
 
@@ -502,7 +503,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
   NATable *naTable = bindWA.getNATable(cn); 
 
-  // Restore parser flags settings to what they originally were
+  // Save parser flags settings so they can be restored later
   Set_SqlParser_Flags (savedParserFlags);
 
   if (naTable == NULL || bindWA.errStatus())
@@ -521,6 +522,18 @@ void CmpSeabaseDDL::createSeabaseIndex(
 	}
 
       deallocEHI(ehi); 
+
+      processReturn();
+
+      return;
+    }
+
+  // Verify that current user has authority to create an index
+  // The user must own the base table or have the ALTER_TABLE privilege
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
 
       processReturn();
 
@@ -1063,6 +1076,17 @@ void CmpSeabaseDDL::populateSeabaseIndex(
       return;
     }
 
+  // Verify that current user has authority to populate the index
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE,
+                                naTable->getOwner()))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn();
+
+     return;
+  }
+
   const NAFileSetList &indexList = naTable->getIndexList();
   for (Int32 i = 0; i < indexList.entries(); i++)
     {
@@ -1307,9 +1331,10 @@ void CmpSeabaseDDL::dropSeabaseIndex(
   NAString btSchName;
   NAString btObjName;
   Int64 btUID;
+  Int32 btObjOwner;
   if (getBaseTable(&cliInterface,
 		   catalogNamePart, schemaNamePart, objectNamePart,
-		   btCatName, btSchName, btObjName, btUID))
+		   btCatName, btSchName, btObjName, btUID, btObjOwner))
     {
       processReturn();
       
@@ -1318,6 +1343,16 @@ void CmpSeabaseDDL::dropSeabaseIndex(
       return;
     }
   
+  // Verify that current user has authority to drop the index
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn();
+
+     return;
+  }
+
   if (dropIndexNode->getDropBehavior() != COM_NO_CHECK_DROP_BEHAVIOR)    
     {
       // get index UID
@@ -1496,14 +1531,25 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
   NAString btSchName;
   NAString btObjName;
   Int64 btUID;
+  Int32 btObjOwner;
   if (getBaseTable(&cliInterface,
 		   catalogNamePart, schemaNamePart, objectNamePart,
-		   btCatName, btSchName, btObjName, btUID))
+		   btCatName, btSchName, btObjName, btUID, btObjOwner))
     {
       processReturn();
 
       return;
     }
+
+  // Verify that current user has authority to drop the index
+  if (!isDDLOperationAuthorized(SQLOperation::ALTER_TABLE, btObjOwner))
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+
+     processReturn();
+
+     return;
+  }
 
   if (updateObjectValidDef(&cliInterface, 
 			   catalogNamePart, schemaNamePart, objectNamePart,
@@ -1537,7 +1583,7 @@ short CmpSeabaseDDL::alterSeabaseTableDisableOrEnableIndex(
 
   ExeCliInterface cliInterface(STMTHEAP);
 
-  sprintf (buf, " ALTER TABLE \"%s\".\"%s\".\"%s\"  %s INDEX %s ;", catName, schName, tabName,
+  sprintf (buf, " ALTER TABLE \"%s\".\"%s\".\"%s\"  %s INDEX \"%s\" ;", catName, schName, tabName,
       isDisable ? "DISABLE" : "ENABLE",idxName);
 
   cliRC = cliInterface.executeImmediate(buf);
@@ -1568,10 +1614,31 @@ void CmpSeabaseDDL::alterSeabaseTableDisableOrEnableAllIndexes(
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
 
+  // If you try to perform an alter table <table> disable/enable all constraints
+  // and the current schema does not match the schema where the table resides, the
+  // following CMPASSERT will fail.
   CMPASSERT (catalogNamePart == currCatName);
   CMPASSERT (schemaNamePart == currSchName);
 
   ExeCliInterface cliInterface(STMTHEAP);
+
+  // Fix for launchpad bug 1381621
+  Lng32 retcode = existsInSeabaseMDTable(&cliInterface,
+                                         catalogNamePart, schemaNamePart, objectNamePart,
+                                         COM_BASE_TABLE_OBJECT_LIT);
+  if (retcode < 0)
+    {
+      processReturn();
+      return;
+    }
+
+  if (retcode == 0) // does not exist
+    {
+      *CmpCommon::diags() << DgSqlCode(-1389) 
+                          << DgString0(tableName.getExternalName(TRUE));
+      processReturn();
+      return;
+    }
 
   str_sprintf(buf,
       " select catalog_name,schema_name,object_name from  %s.\"%s\".%s  " \

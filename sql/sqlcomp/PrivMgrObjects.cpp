@@ -402,7 +402,9 @@ PrivStatus MyTable::insert(const PrivMgrMDRow & rowIn)
 
 char insertStatement[1000];
 
-   return CLIImmediate(insertStatement);
+   //return CLIImmediate(insertStatement);
+   PRIVMGR_INTERNAL_ERROR("Insert request not yet supported");
+   return STATUS_ERROR;
 
 }
 //************************** End of MyTable::insert ****************************

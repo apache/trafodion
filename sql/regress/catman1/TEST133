@@ -32,6 +32,8 @@
 --   authorized - runs authorization tests
 -- ============================================================================
 
+cqd metadata_cache_size '0';
+cqd QUERY_CACHE '0';
 obey TEST133(clean_up);
 register user sql_user4;
 log LOG133 clear;
@@ -49,7 +51,7 @@ drop sequence t133sch.team_number_sequence;
 drop schema t133sch cascade;
 
 -- removes privilege metadata
-drop schema privmgr_md cascade;
+initialize authorization, drop;
 
 ?section create_db
 set schema t133sch;
@@ -212,8 +214,10 @@ get tables;
 
 initialize authorization;
 get tables;
-drop table object_privileges;
+set parserflags 131072;
+drop table role_usage;
 get tables;
+
 initialize authorization;
 get tables;
 execute get_owner_privs;
