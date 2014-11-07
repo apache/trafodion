@@ -2389,8 +2389,7 @@ CoprocessorService, Coprocessor {
     TransactionState state = null;
     boolean throwUTE = false;
 
-    synchronized (transactionsById) {
-      state = transactionsById.get(getTransactionalUniqueId(transactionId));
+    state = transactionsById.get(getTransactionalUniqueId(transactionId));
 
     if (state == null) 
     {
@@ -2415,7 +2414,6 @@ CoprocessorService, Coprocessor {
     }
         }
       }
-    }
 
     if (throwUTE)
       throw new UnknownTransactionException();
@@ -2452,12 +2450,11 @@ CoprocessorService, Coprocessor {
 
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction clearTransactionsById: " + key + " from list");
     state.clearTransactionsToCheck();
-    synchronized (transactionsById) {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction calling Removing transaction: " + key + " from list");
-      transactionsById.remove(key);
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction Removed transaction: " + key + " from list");
-      // Logging to catch error 97
-     }
+
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction calling Removing transaction: " + key + " from list");
+    transactionsById.remove(key);
+    if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  retireTransaction Removed transaction: " + key + " from list");
+
    }
 
   public void deleteRecoveryzNode(int node, String encodedName) throws IOException {
@@ -3061,7 +3058,7 @@ CoprocessorService, Coprocessor {
    * @throws IOException
    */
 
-  public synchronized void put(final long transactionId, final Put put)
+  public void put(final long transactionId, final Put put)
     throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: put - txid " + transactionId);
     if (LOG.isTraceEnabled()) LOG.trace("Enter TrxRegionEndpoint coprocessor: put, txid: " + transactionId);
@@ -3219,13 +3216,14 @@ CoprocessorService, Coprocessor {
    * @return String 
    */
   private String getTransactionalUniqueId(final long transactionId) {
-    String lstring = m_Region.getRegionInfo().getRegionNameAsString() + transactionId;
 
-    synchronized (transactionsById) {
-      if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:  getTransactionalUniqueId -- EXIT txId: " 
+    if (LOG.isTraceEnabled()) {
+	String lstring = m_Region.getRegionInfo().getRegionNameAsString() + transactionId;
+	LOG.trace("TrxRegionEndpoint coprocessor:  getTransactionalUniqueId -- EXIT txId: " 
              + transactionId + " transactionsById size: "
              + transactionsById.size() + " name " + lstring);
     }
+
     return m_Region.getRegionInfo().getRegionNameAsString() + transactionId;
   }
                                                              
@@ -3333,7 +3331,6 @@ CoprocessorService, Coprocessor {
     if (LOG.isDebugEnabled())LOG.debug("commitRequest timeIndex is " + lv_timeIndex);
     commitCheckStartTime = System.nanoTime();
 
-    synchronized (commitCheckLock) {
     try {
       state = getTransactionState(transactionId);
     } catch (UnknownTransactionException e) {
@@ -3349,7 +3346,9 @@ CoprocessorService, Coprocessor {
         return COMMIT_UNSUCCESSFUL;
       }
 
-      hasConflictStartTime = System.nanoTime();
+    hasConflictStartTime = System.nanoTime();
+
+    synchronized (commitCheckLock) {
       if (hasConflict(state)) {
         hasConflictEndTime = System.nanoTime();
         hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;

@@ -229,7 +229,6 @@ public class TransactionManager {
       	// will do it.
       	if (transactionState.requestAllComplete())
       	{
-      		transactionLogger.forgetTransaction(transactionState.getTransactionId());
       	}
       	if (LOG.isTraceEnabled()) LOG.trace("doCommitX -- EXIT txid: " + transactionId);
       	return 0;
@@ -282,7 +281,7 @@ public class TransactionManager {
 
 		    if ((location.getRegionInfo().getEncodedName().compareTo(lv_hri.getEncodedName()) != 0) ||  // Encoded name is different
                         (location.getHostname().regionMatches(0, lv_node, 0, lv_length) == false)) {            // Node is different
-			    	LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
+ 			    	LOG.info("doPrepareX -- " + table.toString() + " location being refreshed");
 			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_hri: " + lv_hri);
 			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- location.getRegionInfo(): " + location.getRegionInfo());
 			    	if (LOG.isTraceEnabled()) LOG.trace("doPrepareX -- lv_node: " + lv_node + " lv_length: " + lv_length);
@@ -290,7 +289,6 @@ public class TransactionManager {
 				
 			    	table.getRegionLocation(startKey, true);
 			}
-		    
 		    result = table.coprocessorService(TrxRegionService.class, startKey, endKey, callable);
 	        } catch (Throwable e) {	          
 	          LOG.error("doPrepareX coprocessor error for " + Bytes.toString(regionName) + " txid: " + transactionId + ":" + e);
@@ -482,7 +480,6 @@ public class TransactionManager {
       //  otherwise another thread will do it
       if (transactionState.requestAllComplete())
       {
-      	transactionLogger.forgetTransaction(transactionState.getTransactionId());
       }
       if(LOG.isTraceEnabled()) LOG.trace("doAbortX -- EXIT txID: " + transactionId);
       return 0;
@@ -566,12 +563,8 @@ public class TransactionManager {
     public TransactionState beginTransaction(long transactionId) {
         //long transactionId =
       if (LOG.isTraceEnabled()) LOG.trace("Enter beginTransaction, txid: " + transactionId);
-      if(transactionLogger.createNewTransactionLog(transactionId) == 0) {
-	      LOG.error("beginTransaction, error in createNewTransactionLog");
-              // Error creating new txn log, throw exception
-              return null;
-      }
-        return new TransactionState(transactionId);
+
+      return new TransactionState(transactionId);
     }
 
     /**
@@ -651,7 +644,6 @@ public class TransactionManager {
         } else if (status == TransactionalReturn.COMMIT_OK_READ_ONLY) {
         	// no requests sent for fully read only transaction
           transactionState.completeSendInvoke(0);
-          transactionLogger.forgetTransaction(transactionState.getTransactionId());
         } else if (status == TransactionalReturn.COMMIT_UNSUCCESSFUL) {
           // We have already aborted at this point
           throw new CommitUnsuccessfulException();
@@ -684,9 +676,6 @@ public class TransactionManager {
         try {
             if (LOG.isTraceEnabled()) LOG.trace("Committing [" + transactionState.getTransactionId() +
                       "] ignoreUnknownTransactionException: " + ignoreUnknownTransactionException);
-
-            transactionLogger.setStatusForTransaction(transactionState.getTransactionId(),
-                TransactionLogger.TransactionStatus.COMMITTED);
 
             // (Asynchronously send commit
             for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
@@ -751,9 +740,6 @@ public class TransactionManager {
       }
       */
     	
-      transactionLogger.setStatusForTransaction(transactionState.getTransactionId(),
-              TransactionLogger.TransactionStatus.ABORTED);
-      
       transactionState.setStatus(TransactionState.TM_TX_STATE_ABORTED);
       // (Asynchronously send aborts
       for (TransactionRegionLocation location : transactionState.getParticipatingRegions()) {
