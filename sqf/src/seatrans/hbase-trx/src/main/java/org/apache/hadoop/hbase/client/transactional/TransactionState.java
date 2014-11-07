@@ -213,15 +213,28 @@ public class TransactionState {
 	   	}
 	}
     
-    public boolean addRegion(final HRegionLocation hregion) {        
-        TransactionRegionLocation trRegion   = new TransactionRegionLocation(hregion.getRegionInfo(), 
-                                                                             hregion.getServerName());
+    public boolean addRegion(final TransactionRegionLocation trRegion) {        
 
 // Save hregion for now
         boolean added = participatingRegions.add(trRegion);
 
         if (added) {
-            if (LOG.isTraceEnabled()) LOG.trace("Adding new hregion [" + hregion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
+            if (LOG.isTraceEnabled()) LOG.trace("Adding new hregion [" + trRegion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
+                    + transactionId + "]");
+        }
+
+        return added;
+    }
+
+    public boolean addRegion(final HRegionLocation hregion) {        
+
+        TransactionRegionLocation trRegion   = new TransactionRegionLocation(hregion.getRegionInfo(), 
+                                                                             hregion.getServerName());
+// Save hregion for now
+        boolean added = participatingRegions.add(trRegion);
+
+        if (added) {
+            if (LOG.isTraceEnabled()) LOG.trace("Adding new hregion [" + trRegion.getRegionInfo().getRegionNameAsString() + "] to transaction ["
                     + transactionId + "]");
         }
 

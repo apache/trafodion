@@ -20,7 +20,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
-//NG98 import org.apache.hadoop.hbase.client.ServerCallable;
 import org.apache.hadoop.hbase.client.transactional.TransactionManager;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
 import org.apache.hadoop.hbase.client.transactional.CommitUnsuccessfulException;
@@ -38,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RMInterface extends TransactionalTable{
     static final Log LOG = LogFactory.getLog(RMInterface.class);
 
-    Map<Long, TransactionState> mapTransactionStates;
+    static Map<Long, TransactionState> mapTransactionStates;
     
     static Map<Long, Set<RMInterface>> mapRMsPerTransaction = new HashMap<Long,  Set<RMInterface>>();
 
@@ -98,15 +97,9 @@ public class RMInterface extends TransactionalTable{
 	    } catch (DeserializationException de) {
 		LOG.error("RMInterface:registerTransaction. error in deserializing HRegionInfo" + de);
 	    }
+
     	    registerRegion(lv_port, lv_hostname, lv_startcode, lv_byte_region_info);
-    	    
-    	    Set<RMInterface> lv_set_rm = mapRMsPerTransaction.get(transactionID);
-    	    if (lv_set_rm == null) {
-    	      lv_set_rm = new HashSet<RMInterface>();
-    	      mapRMsPerTransaction.put(transactionID, lv_set_rm);
-    	    }
-    	    lv_set_rm.add(this);
-    	    if (LOG.isTraceEnabled()) LOG.trace("txid: " + transactionID + " mapRMsPerTransaction.lv_set_rm length: " + lv_set_rm.size());
+
         }
 
         if ((ts == null) || (ret != 0)) {
@@ -121,33 +114,25 @@ public class RMInterface extends TransactionalTable{
     
     static public void clearTransactionStates(final long transactionID) {
 	if (LOG.isTraceEnabled()) LOG.trace("cts1 Enter txid: " + transactionID);
-	Set<RMInterface> lv_set_rm = mapRMsPerTransaction.get(transactionID);
-	if (lv_set_rm == null) {
-	    LOG.warn("No entry for txid: " + transactionID);
-	    return;
-	}
-	if (LOG.isTraceEnabled()) LOG.trace("cts2 txid: " + transactionID + " mapRMsPerTransaction.lv_set_rm length: " + lv_set_rm.size());
-	for (RMInterface lv_rm : lv_set_rm) {
-	    lv_rm.unregisterTransaction(transactionID);
-	}
-	
-	mapRMsPerTransaction.remove(transactionID);
-	if (LOG.isTraceEnabled()) LOG.trace("cts3 txid: " + transactionID);
+
+	unregisterTransaction(transactionID);
+
+	if (LOG.isTraceEnabled()) LOG.trace("cts2 txid: " + transactionID);
     }
     
-    public synchronized void unregisterTransaction(final long transactionID) {
+    static public synchronized void unregisterTransaction(final long transactionID) {
 	if (LOG.isTraceEnabled()) LOG.trace("Enter txid: " + transactionID);
         mapTransactionStates.remove(transactionID);
     }
 
-    public synchronized void unregisterTransaction(TransactionState ts) {
+    static public synchronized void unregisterTransaction(TransactionState ts) {
         mapTransactionStates.remove(ts.getTransactionId());
     }
     
     public synchronized Result get(final long transactionID, final Get get) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("get txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, get.getRow());
-        Result res = super.get(ts, get);
+        Result res = super.get(ts, get, false);
         if (LOG.isTraceEnabled()) LOG.trace("EXIT get -- result: " + res.toString());
         return res;	
     }
@@ -155,7 +140,7 @@ public class RMInterface extends TransactionalTable{
     public synchronized void delete(final long transactionID, final Delete delete) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("delete txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, delete.getRow());
-        super.delete(ts, delete);
+        super.delete(ts, delete, false);
     }
     
     public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
@@ -180,7 +165,7 @@ public class RMInterface extends TransactionalTable{
     public synchronized void put(final long transactionID, final Put put) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter Put txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, put.getRow());
-        super.put(ts, put);
+        super.put(ts, put, false);
         if (LOG.isTraceEnabled()) LOG.trace("Exit Put txid: " + transactionID);
     }
 

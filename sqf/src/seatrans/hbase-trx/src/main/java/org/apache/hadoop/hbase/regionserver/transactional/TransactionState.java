@@ -286,6 +286,7 @@ public class TransactionState {
     }
 
     public synchronized boolean hasConflict() {
+
         for (TransactionState transactionState : transactionsToCheck) {
             if (hasConflict(transactionState)) {
                 if (LOG.isTraceEnabled()) LOG.trace("TransactionState hasConflict: Returning true for " + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "]");

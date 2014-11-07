@@ -108,9 +108,15 @@ public class TransactionalTable extends HTable {
      */
     
     public Result get(final TransactionState transactionState, final Get get) throws IOException {
+
+	return get(transactionState, get, true);
+
+    }
+
+    public Result get(final TransactionState transactionState, final Get get, final boolean bool_addLocation) throws IOException {
       if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.get");
       
-      addLocation(transactionState, super.getRegionLocation(get.getRow()));
+      if (bool_addLocation) addLocation(transactionState, super.getRegionLocation(get.getRow()));
       final String regionName = super.getRegionLocation(get.getRow()).getRegionInfo().getRegionNameAsString();
       Batch.Call<TrxRegionService, GetTransactionalResponse> callable = 
       new Batch.Call<TrxRegionService, GetTransactionalResponse>() {
@@ -159,8 +165,14 @@ public class TransactionalTable extends HTable {
      * @since 0.20.0
      */
     public void delete(final TransactionState transactionState, final Delete delete) throws IOException {
+
+	delete(transactionState, delete, true);
+
+    }
+
+    public void delete(final TransactionState transactionState, final Delete delete, final boolean bool_addLocation) throws IOException {
         SingleVersionDeleteNotSupported.validateDelete(delete);
-        addLocation(transactionState, super.getRegionLocation(delete.getRow()));
+        if (bool_addLocation) addLocation(transactionState, super.getRegionLocation(delete.getRow()));
         final String regionName = super.getRegionLocation(delete.getRow()).getRegionInfo().getRegionNameAsString();
         
         Batch.Call<TrxRegionService, DeleteTransactionalResponse> callable =
@@ -217,11 +229,16 @@ public class TransactionalTable extends HTable {
      * @since 0.20.0
      */
     public synchronized void put(final TransactionState transactionState, final Put put) throws IOException {
+
+	put(transactionState, put, true);
+
+    }
+
+    public synchronized void put(final TransactionState transactionState, final Put put, final boolean bool_addLocation) throws IOException {
       validatePut(put);
     	if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put ENTRY");
     
-      
-      addLocation(transactionState, super.getRegionLocation(put.getRow()));
+      if (bool_addLocation) addLocation(transactionState, super.getRegionLocation(put.getRow()));
       final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
       
       Batch.Call<TrxRegionService, PutTransactionalResponse> callable =
