@@ -1,0 +1,270 @@
+-- Test: TEST131 (Executor)
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2002-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Functionality: Executor support for REVOKE (query invalidation).
+-- Expected files: EXPECTED131
+-- Table created: T131a, T131b, T131c
+--      
+-- 
+
+obey TEST131(clnup);
+
+log LOG131 ;
+
+initialize authorization;
+
+-- run the test in sqlci sessions which start after authorization
+-- is enabled.
+log;
+sh sqlci -i"TEST131(test_session1)";
+log LOG131 ;
+
+obey TEST131(clnup);
+
+log;
+exit;
+
+?section test_session1
+
+log LOG131 ;
+
+obey TEST131(setup);
+log;
+
+sh sqlci -i"TEST131(dml)" -u"SQL_User7"  ;
+
+log LOG131;
+grant all on t131a to SQL_USER7;
+insert into t131a values(1, 1, 1, 1, 1, 1);
+log;
+
+sh sqlci -i"TEST131(update_where_current_of)" -u"SQL_User7"  ;
+
+
+log LOG131;
+grant all on t131a to SQL_USER7;
+log;
+
+?section clnup
+
+drop table T131c;
+drop table T131b;
+drop table T131a;
+initialize authorization, drop;
+
+?section setup
+
+create table T131a
+  (uniq int not null,
+   c10K int ,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )  no partition;
+
+create table T131b
+  (uniq int not null,
+   c10K int ,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )  no partition;
+
+create table T131c
+  (uniq int not null,
+   c10K int ,
+   c1K   int,
+   c100  int,
+   c10   int,
+   c1    int,
+   primary key (uniq)
+  )  no partition;
+
+grant all on t131a to SQL_USER7;
+grant all on t131b to SQL_USER7;
+grant all on t131c to SQL_USER7;
+
+
+?section dml
+
+log LOG131;
+
+cqd AUTO_QUERY_RETRY 'OFF';
+
+cqd CAT_ENABLE_QUERY_INVALIDATION 'ON';
+
+prepare sel_abc from select * from t131a, t131b, t131c;
+
+log; log EXPLAIN131 clear;
+explain sel_abc;
+log;
+
+sh echo "Query_Invalidation_Keys explain output"   >> LOG131; 
+sh grep "Query_Invalidation_Keys *{[-0-9]" EXPLAIN131 | cut -c 1-28 >> LOG131; 
+
+log LOG131;
+
+-- run a session to revoke privs for this user.
+
+log;
+
+sh sqlci -i"TEST131(revoke1)";
+
+log LOG131;
+
+execute sel_abc;
+
+-- test the GET STATISTICS reporting of No. Query Invalidation Keys
+log; log STATS131 clear;
+get statistics for rms all;
+get statistics for rms 0;
+
+select
+ substr(variable_info,
+ position('numQueryInvKeys' in variable_info),
+ position('numQueryInvKeys' in variable_info) +
+ 17 + (position(' ' in
+ substr(variable_info,
+ 17 + position('numQueryInvKeys:' in variable_info))) -
+ position('numQueryInvKeys:' in variable_info)))
+from table(statistics(NULL, 'RMS_INFO=-1'));
+
+log;
+
+sh grep "Query Invalidation Keys *[1-9]" STATS131 | cut -c 1-28 >> LOG131;
+sh grep "^numQueryInvKeys: *[1-9]" STATS131 | cut -c 1-17>> LOG131;
+
+
+log LOG131;
+
+?section update_where_current_of
+log LOG131;
+
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+
+set envvar sqlci_cursor '1';
+declare c3 cursor for
+select * from t131a for update of c10k;
+prepare s3 from update t131a set c10k = c10k+22 where current of c3;
+
+-- run a session to revoke UPDATE for this user, then grant it again.
+
+log;
+sh sqlci -i"TEST131(revoke_and_regrant_upd)";
+log LOG131;
+
+begin work;
+open c3;
+fetch c3;
+execute s3;
+commit;
+select * from t131a;
+
+-- run a session to revoke UPDATE for this user.
+
+declare c4 cursor for
+select * from t131a for update of c10k;
+prepare s4 from update t131a set c10k = c10k+22 where current of c4;
+
+log;
+sh sqlci -i"TEST131(revoke_update)";
+log LOG131;
+
+begin work;
+open c4;
+fetch c4;
+execute s4;
+commit;
+select * from t131a;
+
+?section revoke1
+
+log LOG131;
+
+revoke all on t131c from SQL_USER7;
+
+-- Test that identical revokes do not make new RMS siks.
+grant all on t131a to SQL_USER3;
+grant all on t131b to SQL_USER3;
+grant all on T131c to SQL_USER3;
+
+revoke all on t131a from SQL_USER3;
+revoke all on t131b from SQL_USER3;
+revoke all on t131c from SQL_USER3;
+
+log; log STATS131 clear;
+get statistics for RMS 0;
+log LOG131;
+sh grep "Query Invalidation Keys *[1-9]" STATS131 >> STATS131_1;
+
+grant all on t131a to SQL_USER3;
+grant all on t131b to SQL_USER3;
+grant all on T131c to SQL_USER3;
+
+revoke all on t131a from SQL_USER3;
+revoke all on t131b from SQL_USER3;
+revoke all on t131c from SQL_USER3;
+
+log; log STATS131 clear;
+get statistics for RMS 0;
+sh grep "Query Invalidation Keys *[1-9]" STATS131 >> STATS131_2;
+
+sh diff --brief STATS131_1 STATS131_2 >> LOG131;
+
+log LOG131;
+
+log;
+
+?section revoke_and_regrant_upd
+
+log LOG131;
+
+revoke UPDATE on t131a from SQL_USER7;
+
+grant UPDATE on t131a to SQL_USER7;
+
+
+?section revoke_update
+
+log LOG131;
+
+revoke UPDATE on t131a from SQL_USER7;
+
+?section revoke_and_regrant_sel
+
+log LOG131;
+
+revoke SELECT on t131a from SQL_USER7;
+
+grant SELECT on t131a to SQL_USER7;
+
+
+?section revoke_select
+
+log LOG131;
+
+revoke SELECT on t131a from SQL_USER7;
+
+?section end_of_test
+-- end of test.

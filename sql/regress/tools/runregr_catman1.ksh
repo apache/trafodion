@@ -284,8 +284,8 @@ for ix in $testfiles; do
          cp -f $REGRTSTDIR/$ix $REGRRUNDIR/$ix 2>$NULL
       fi
 
-      cat $tfile > $ix.tmp
-      echo "obey $scriptsdir/tools/reg_users.sql" >> $ix.tmp
+      echo "obey $scriptsdir/tools/reg_users.sql;" > $ix.tmp
+      cat $tfile >> $ix.tmp
 
       echo "Executing: $sqlci -i$ix.tmp"
       $sqlci -i$ix.tmp

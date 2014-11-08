@@ -6261,7 +6261,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     optStoi = (bindWA->getStoiList())[i];
     stoi = optStoi->getStoi();
     NATable* tab = optStoi->getTable();
-    if (tab->isSeabaseMDTable())
+    if (tab->isSeabaseMDTable() || tab->isSeabasePrivSchemaTable())
       continue;
 
     // Privilege info for the user/table combination is stored in the NATable
@@ -6269,20 +6269,11 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     PrivStatus retcode = STATUS_GOOD;
     PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
     if (!privInfo)
-      {
-        // If tab->getHeap() is used, the priv error is added to diags area
-        // correctly, but does not appear in output; also, subsequent
-        // queries will not even get to checkPrivilege -- they display
-        // results even if priv is not held.
-        privInfo = new(CmpCommon::contextHeap()) PrivMgrUserPrivs;
-        std::vector <ComSecurityKey *> secKeyVec;
-        retcode = privInterface.getPrivileges(tab->objectUid().get_value(),
-                                              thisUserID, *privInfo, &secKeyVec);
-        if (retcode != STATUS_GOOD)
-          return FALSE;
-        tab->setPrivInfo(privInfo);
-        //tab->setSecKeySet(secKeyVec); -- causes weird problems; under investigation
-      }
+    {
+       tab->setRemoveFromCacheBNC(TRUE);
+       bindWA->setFailedForPrivileges(TRUE);
+       return FALSE;
+    }
 
    // if this is an explain query, validate that user has SELECT priv.
    // If they do, access is allowed.
@@ -6418,54 +6409,64 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 
   // NABoolean RemoveNARoutineEntryFromCache = FALSE ;
   OptUdrOpenInfo * udrStoi = NULL;
-
-  for(Int32 i=0; i<(Int32)bindWA->getUdrStoiList().entries(); i++)
+  if (bindWA->getUdrStoiList().entries())
   {
-    thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
-    // RemoveNARoutineEntryFromCache = FALSE ; // Initialize each time through loop
+    NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+    privMDLoc += ".\"";
+    privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+    privMDLoc += "\"";
 
-    udrStoi = (bindWA->getUdrStoiList())[i];
-    if (udrStoi->getUdrStoi()->checkSecurity() == FALSE)
-      continue;
+    PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags());
 
-   NARoutine* rtn = udrStoi->getNARoutine();
-   PrivMgrUserPrivs privInfo;
-   PrivStatus retcode = privInterface.getPrivileges(rtn->getRoutineID(), thisUserID, privInfo);
-
-    // If we have object EXECUTE priv
-    if ( privInfo.hasExecutePriv() )
+    for(Int32 i=0; i<(Int32)bindWA->getUdrStoiList().entries(); i++)
     {
-      if ( QI_enabled && ! findKeyAndInsertInOutputList(
-                                         udrStoi->getNARoutine()->getSecKeySet(),
-                                         userHashValue,
-                                         EXECUTE_PRIV ) )
+      thisPrivCheckSuccess = TRUE ;  // Initialize each time through loop
+     // RemoveNARoutineEntryFromCache = FALSE ; // Initialize each time through loop
+
+      udrStoi = (bindWA->getUdrStoiList())[i];
+      if (udrStoi->getUdrStoi()->checkSecurity() == FALSE)
+        continue;
+
+     NARoutine* rtn = udrStoi->getNARoutine();
+     PrivMgrUserPrivs privInfo;
+     PrivStatus retcode = privInterface.getPrivileges(
+       rtn->getRoutineID(), thisUserID, privInfo);
+
+      // If we have object EXECUTE priv
+      if ( privInfo.hasExecutePriv() )
+      {
+        if ( QI_enabled && ! findKeyAndInsertInOutputList(
+                               udrStoi->getNARoutine()->getSecKeySet(),
+                               userHashValue,
+                               EXECUTE_PRIV ) )
+        {
+          thisPrivCheckSuccess = FALSE;
+          // RemoveNARoutineEntryFromCache = TRUE;
+        }
+      }
+      else
       {
         thisPrivCheckSuccess = FALSE;
         // RemoveNARoutineEntryFromCache = TRUE;
       }
-    }
-    else
-    {
-      thisPrivCheckSuccess = FALSE;
-      // RemoveNARoutineEntryFromCache = TRUE;
-    }
 
-    if ( thisPrivCheckSuccess == FALSE )
-    {
-      *CmpCommon::diags() << DgSqlCode(-4482)
-                          << DgString0("EXECUTE")
-                          << DgString1(udrStoi->getUdrName());
-    }
+      if ( thisPrivCheckSuccess == FALSE )
+      {
+        *CmpCommon::diags() << DgSqlCode(-4482)
+                            << DgString0("EXECUTE")
+                            << DgString1(udrStoi->getUdrName());
+      }
 
-    // if ( RemoveNARoutineEntryFromCache )
-    //{
-       // Mark as to be removed by CmpMain before Compilation retry
-       // udrStoi->getNARoutine()->setRemoveFromCacheBNC(TRUE); 
-    //}
-
-    if ( ! thisPrivCheckSuccess )        // Accumulate overall failure (if any)
-         privCheckSuccess = FALSE ;
-  }  // for loop over UDRs
+     // if ( RemoveNARoutineEntryFromCache )
+     // {
+          // Mark as to be removed by CmpMain before Compilation retry
+          // udrStoi->getNARoutine()->setRemoveFromCacheBNC(TRUE);
+     // }
+  
+      if ( ! thisPrivCheckSuccess )  // Accumulate overall failure (if any)
+        privCheckSuccess = FALSE ;
+    }  // for loop over UDRs
+  }  // end if any UDRs.
 
   // Check privs on any CoprocAggrs used in the query.
   ExeUtilHbaseCoProcAggr* coProcAggr = NULL;
@@ -6476,57 +6477,55 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     coProcAggr = (bindWA->getCoProcAggrList())[i];
     NATable* tab = bindWA->getSchemaDB()->getNATableDB()->
                                    get(coProcAggr->getCorrName(), bindWA, NULL);
-    if (tab->isSeabaseMDTable())
+    if (tab->isSeabaseMDTable() || tab->isSeabasePrivSchemaTable())
       continue;
+
     PrivMgrUserPrivs* privInfo = tab->getPrivInfo();
     PrivStatus retcode = STATUS_GOOD;
+
+    const NAString * val = 
+      ActiveControlDB()->getControlSessionValue("EXPLAIN");
+    if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+        ((val) && (*val == "ON")) &&
+        (privInfo->hasSelectPriv()))
+      continue;
+
+    NABoolean ErrorPutInDiags = FALSE ;
+    Int32 numSecKeys = 0;
+
     if (!privInfo)
-      {
-        privInfo = new(CmpCommon::contextHeap()) PrivMgrUserPrivs;
-        retcode = privInterface.getPrivileges(tab->objectUid().get_value(),
-                                              thisUserID, *privInfo);
-        if (retcode != STATUS_GOOD)
-         return false;
-        tab->setPrivInfo(privInfo);
-      }
-
-   const NAString * val = ActiveControlDB()->getControlSessionValue("EXPLAIN");
-   if ((Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
-       ((val) && (*val == "ON")) &&
-       (privInfo->hasSelectPriv()))
-     continue;
-
-   NABoolean ErrorPutInDiags = FALSE ;
-   Int32 numSecKeys = 0;
-
-   if ( privInfo->hasSelectPriv() )
-   {
-     if ( QI_enabled && numSecKeys > 0 &&
-          ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
+    {
+      thisPrivCheckSuccess = FALSE;
+      RemoveNATableEntryFromCache = TRUE;
+    }
+    else if ( privInfo->hasSelectPriv() )
+    {
+      if ( QI_enabled && numSecKeys > 0 &&
+           ! findKeyAndInsertInOutputList( tab->getSecKeySet(),
                               userHashValue, SELECT_PRIV ) )
-     {
+      {
         thisPrivCheckSuccess = FALSE;
         RemoveNATableEntryFromCache = TRUE;
-     }
-   }
-   else
-   {
+      }
+    }
+    else
+    {
       thisPrivCheckSuccess        = FALSE;
       RemoveNATableEntryFromCache = TRUE;
       ErrorPutInDiags             = FALSE;
-   }
-   if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
-   {
+    }
+    if ( thisPrivCheckSuccess == FALSE  &&  ErrorPutInDiags == FALSE )
+    {
       *CmpCommon::diags() << DgSqlCode( -4481 )
-       << DgString0( "SELECT" )
-       << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
-   }
+        << DgString0( "SELECT" )
+        << DgString1( tab->getTableName().getQualifiedNameAsAnsiString() );
+    }
 
-   if ( RemoveNATableEntryFromCache )
-   {
+    if ( RemoveNATableEntryFromCache )
+    {
       tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
       privCheckSuccess = FALSE ; // Accumulate overall failure (if any)
-   }
+    }
   }  // for loop over coprocs
 
   // Check privs on any sequence generators used in the query.
@@ -11855,7 +11854,8 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
   }
 
   if ((naTable->isSeabaseTable()) &&
-      (naTable->isSeabaseMDTable()) &&
+      (naTable->isSeabaseMDTable() || 
+       naTable->isSeabasePrivSchemaTable()) &&
       (NOT naTable->isUserUpdatableSeabaseMDTable()) &&
       (NOT Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {

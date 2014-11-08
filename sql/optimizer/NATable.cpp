@@ -78,6 +78,7 @@
 #include "ExExeUtilCli.h"
 #include "CmpDescribe.h"
 #include "Globals.h"
+#include "ComUser.h"
 
 #define MAX_NODE_NAME 9
 
@@ -4491,6 +4492,7 @@ NATable::NATable(BindWA *bindWA,
     isHbaseRow_(FALSE),
     isSeabase_(FALSE),
     isSeabaseMD_(FALSE),
+    isSeabasePrivSchemaTable_(FALSE),
     isUserUpdatableSeabaseMD_(FALSE),
     resetHDFSStatsAfterStmt_(FALSE),
     hiveDefaultStringLen_(0),
@@ -4643,6 +4645,9 @@ NATable::NATable(BindWA *bindWA,
 
   objectType_ = table_desc->body.table_desc.objectType;
   partitioningScheme_ = table_desc->body.table_desc.partitioningScheme;
+
+  if (!(corrName.isSeabaseMD() || corrName.isSpecialTable()))
+    setupPrivInfo();
 
   rcb_ = table_desc->body.table_desc.rcb;
   rcbLen_ = table_desc->body.table_desc.rcbLen;
@@ -5258,11 +5263,13 @@ NATable::NATable(BindWA *bindWA,
     isHbaseRow_(FALSE),
     isSeabase_(FALSE),
     isSeabaseMD_(FALSE),
+    isSeabasePrivSchemaTable_(FALSE),
     isUserUpdatableSeabaseMD_(FALSE),
     resetHDFSStatsAfterStmt_(FALSE),
     hiveDefaultStringLen_(0),
     hiveTableId_(htbl->tblID_),
     tableDesc_(NULL),
+    secKeySet_(heap),
     privInfo_(NULL)
 {
 
@@ -5420,6 +5427,9 @@ NATable::NATable(BindWA *bindWA,
     tableConstructionHadWarnings_=TRUE;
 
   hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+
+  if (!(corrName.isSeabaseMD() || corrName.isSpecialTable()))
+    setupPrivInfo();
 
 // LCOV_EXCL_STOP
   initialSize_ = heap_->getAllocSize();
@@ -6253,6 +6263,66 @@ NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
   return constrFound;
 }
 
+void NATable::setupPrivInfo()
+{
+  if (!CmpCommon::context()->isAuthorizationEnabled())
+    return;
+
+  Int32 thisUserID = ComUser::getCurrentUser();
+
+  NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+  privMDLoc += ".\"";
+  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+  privMDLoc += "\"";
+
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags());
+
+  if (privInterface.isPrivMgrTable(
+    qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString().data()))
+    {
+      isSeabasePrivSchemaTable_ = TRUE;
+      return;
+    }
+
+
+  privInfo_ = new(heap_) PrivMgrUserPrivs;
+  std::vector <ComSecurityKey *> secKeyVec;
+
+  bool testError = false;
+#ifndef NDEBUG
+  char *tpie = getenv("TEST_PRIV_INTERFACE_ERROR");
+  if (tpie && *tpie == '1')
+    testError = true;
+#endif
+
+  if (testError || (STATUS_GOOD !=
+       privInterface.getPrivileges(objectUid().get_value(), thisUserID,
+                                    *privInfo_, &secKeyVec)))
+  {
+    if (testError)
+#ifndef NDEBUG
+      *CmpCommon::diags() << DgSqlCode(-8142) <<
+         DgString0("TEST_PRIV_INTERFACE_ERROR")  << DgString1(tpie) ;
+#else
+      abort();
+#endif
+    NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
+    privInfo_ = NULL;
+    return;
+  }
+
+  for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec.begin();
+       iter != secKeyVec.end();
+       iter++)
+  {
+    // Insertion of the dereferenced pointer results in NASet making
+    // a copy of the object, and then we delete the original.
+    secKeySet_.insert(**iter);
+    delete *iter;
+  }
+
+}
+
 // Query the metadata to find the object uid of the table. This is used when
 // the uid for a metadata table is requested, since 0 is usually stored for
 // these tables.
@@ -6356,12 +6426,13 @@ NATable::~NATable()
   {
     gpClusterInfo->removeFromTableToClusterMap(tableIdList[i]);
   }
+  if (privInfo_)
+  {
+    NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
+    privInfo_ = NULL;
+  }
   // implicitly destructs all subcomponents allocated out of this' private heap
   // hence no need to write a complicated destructor!
-
-  // privInfo_ is allocated on context heap. If on NATable's private heap, weird
-  // behvior results.
-  delete privInfo_;
 }
 
 //some stuff of historical importance
@@ -7154,19 +7225,6 @@ NABoolean NATable::hasSaltedColumn()
       return TRUE;
   }
   return FALSE;
-}
-
-void NATable::setSecKeySet(std::vector <ComSecurityKey*>& secKeys)
-{
-  for (std::vector<ComSecurityKey*>::iterator iter = secKeys.begin();
-       iter != secKeys.end();
-       iter++)
-    {
-      // Insertion of the dereferenced pointer results in NASet making a copy of
-      // the object, and then we delete the original.
-      secKeySet_.insert(**iter);
-      delete *iter;
-    }
 }
 
 // Get the part of the row size that is computable with info we have available

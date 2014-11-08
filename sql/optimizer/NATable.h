@@ -505,8 +505,7 @@ public:
   const ComUID &getSchemaUid() const            { return schemaUID_; }
   const ComUID &objectUid() const
   {
-    // Metadata table will originate with 0 obj uid.
-    if (objectUID_.get_value() == 0 && isSeabaseMDTable())
+    if (objectUID_.get_value() == 0)
       const_cast<NATable*>(this)->lookupObjectUid();  // cast off const
     return objectUID_;
   }
@@ -657,7 +656,6 @@ public:
   {  return( (flags_ & REMOVE_FROM_CACHE_BNC) != 0 ); }
 
   ComSecurityKeySet getSecKeySet() { return secKeySet_ ; }
-  void setSecKeySet(std::vector <ComSecurityKey*>& secKeys);
 
   void setDroppableTable( NABoolean value )
   {  value ? flags_ |= DROPPABLE : flags_ &= ~DROPPABLE; }
@@ -791,6 +789,9 @@ public:
   NABoolean isHbaseRowTable() const { return isHbaseRow_; }
   NABoolean isSeabaseTable() const { return isSeabase_; }
   NABoolean isSeabaseMDTable() const { return isSeabaseMD_; }
+  NABoolean isSeabasePrivSchemaTable() const 
+    { return isSeabasePrivSchemaTable_; }
+
   NABoolean isUserUpdatableSeabaseMDTable() const { return isUserUpdatableSeabaseMD_; }
 
   void setIsHbaseTable(NABoolean v) { isHbase_ = v; }
@@ -813,7 +814,6 @@ public:
   NATableHeapType getHeapType() { return heapType_; }
 
   PrivMgrUserPrivs* getPrivInfo() const { return privInfo_; }
-  void setPrivInfo(PrivMgrUserPrivs* privInfo) { privInfo_ = privInfo; }
 
   // Get the part of the row size that is computable with info we have available
   // without accessing HBase. The result is passed to estimateHBaseRowCount(),
@@ -826,6 +826,7 @@ private:
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
 
   void setRecordLength(Int32 recordLength) { recordLength_ = recordLength; }
+  void setupPrivInfo();
 
   //size of All NATable related data after construction
   //this is used when NATables are cached and only then
@@ -1103,6 +1104,7 @@ private:
   NABoolean isHbaseRow_;
   NABoolean isSeabase_;
   NABoolean isSeabaseMD_;
+  NABoolean isSeabasePrivSchemaTable_;
   NABoolean isUserUpdatableSeabaseMD_;
 
   NABoolean resetHDFSStatsAfterStmt_;
