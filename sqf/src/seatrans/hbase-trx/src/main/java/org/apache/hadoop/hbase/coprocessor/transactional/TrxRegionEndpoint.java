@@ -3315,7 +3315,7 @@ CoprocessorService, Coprocessor {
     int lv_timeIndex;
     synchronized (totalCommits){
        lv_totalCommits = totalCommits.incrementAndGet();
-       lv_timeIndex = (timeIndex.getAndIncrement() % 500);
+       lv_timeIndex = (timeIndex.getAndIncrement() % 50 );
     }
 
     long commitCheckStartTime = 0;
