@@ -107,6 +107,7 @@ CmpSeabaseDDL::CmpSeabaseDDL(NAHeap *heap, NABoolean syscatInit)
     }
 }
 
+// Return:  TRUE, table desc found. FALSE, not found or error.
 NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
                                         Lng32 &colInfoSize,
                                         const ComTdbVirtTableColumnInfo* &colInfo,
@@ -119,13 +120,22 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
   indexInfoSize = 0;
   indexInfo = NULL;
 
+  if (objName.isNull())
+    return FALSE;
+
   for (Int32 i = 0; i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo); i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
       
+      if (! mdti.newName)
+        return FALSE;
+
+      if (! CmpCommon::context()->getTrafMDDescsInfo())
+        return FALSE;
+
       MDDescsInfo &mddi = CmpCommon::context()->getTrafMDDescsInfo()[i];
 
-      if (mdti.newName && (objName == mdti.newName))
+      if (objName == mdti.newName)
         {
           if (strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0)
             {
@@ -154,31 +164,40 @@ NABoolean CmpSeabaseDDL::getMDtableInfo(const NAString &objName,
 
           return TRUE;
         }
-      else  if (mdti.oldName && (objName == mdti.oldName))
+      else  //if (mdti.oldName && (objName == mdti.oldName))
         {
-          if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
-            {
-              colInfoSize = mddi.numOldCols;
-              colInfo = mddi.oldColInfo;
-            }
-          else
-            {
-              colInfoSize = mddi.numNewCols;
-              colInfo = mddi.newColInfo;
-            }
+          const char * oldName = NULL;
+          const QString * oldDDL = NULL;
+          Lng32 sizeOfoldDDL = 0;
+          if (getOldMDInfo(mdti, oldName, oldDDL, sizeOfoldDDL) == FALSE)
+            return FALSE;
 
-          if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
+          if ((oldName) && (objName == oldName))
             {
-              keyInfoSize = mddi.numOldKeys;
-              keyInfo = mddi.oldKeyInfo;
-            }
-          else
-            {
-              keyInfoSize = mddi.numNewKeys;
-              keyInfo = mddi.newKeyInfo;
-            }
+              if ((mddi.numOldCols > 0) && (mddi.oldColInfo))
+                {
+                  colInfoSize = mddi.numOldCols;
+                  colInfo = mddi.oldColInfo;
+                }
+              else
+                {
+                  colInfoSize = mddi.numNewCols;
+                  colInfo = mddi.newColInfo;
+                }
+              
+              if ((mddi.numOldKeys > 0) && (mddi.oldKeyInfo))
+                {
+                  keyInfoSize = mddi.numOldKeys;
+                  keyInfo = mddi.oldKeyInfo;
+                }
+              else
+                {
+                  keyInfoSize = mddi.numNewKeys;
+                  keyInfo = mddi.newKeyInfo;
+                }
 
-          return TRUE;
+              return TRUE;
+            } // oldName
         }
         
     } // for
@@ -325,7 +344,8 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   ddlNode = ddlExpr->getDDLNode();
   if (! ddlNode)
     return resetCQDs(hbaseSerialization, hbVal, -1);
-  
+
+  Lng32 keyLength = 0;
   if (ddlNode->getOperatorType() == DDL_CREATE_TABLE)
     {
       StmtDDLCreateTable * createTableNode =
@@ -349,7 +369,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
 	}
 
       if (buildKeyInfoArray(&colArray, &keyArray, colInfoArray, keyInfoArray, FALSE,
-			    CTXTHEAP))
+			    &keyLength, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
 	}
@@ -418,7 +438,6 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
       NAList<NAString> selColList;
-      Lng32 keyLength = 0;
       
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
@@ -506,6 +525,13 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
   for (Lng32 i = 0; i < numTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
+
+      const char * oldName = NULL;
+      const QString * oldDDL = NULL;
+      Lng32 sizeOfoldDDL = 0;
+      if (getOldMDInfo(mdti, oldName, oldDDL, sizeOfoldDDL) == FALSE)
+        goto label_error;
+
       MDDescsInfo &mddi = trafMDDescsInfo[i];
       
       if (!mdti.newDDL)
@@ -513,7 +539,7 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
       
       Lng32 numCols = 0;
       Lng32 numKeys = 0;
-      
+
       ComTdbVirtTableColumnInfo * colInfoArray = NULL;
       ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
       ComTdbVirtTableIndexInfo * indexInfo = NULL;
@@ -525,7 +551,7 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
                                    numCols, colInfoArray,
                                    numKeys, keyInfoArray,
                                    indexInfo))
-        return -1;
+        goto label_error;
 
       mddi.numNewCols = numCols;
       mddi.newColInfo = colInfoArray;
@@ -533,16 +559,16 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
       mddi.numNewKeys = numKeys;
       mddi.newKeyInfo = keyInfoArray;
       
-      if (mdti.oldDDL)
+      if (oldDDL)
         {
           if (processDDLandCreateDescs(parser,
-                                       mdti.oldDDL, mdti.sizeOfoldDDL,
+                                       oldDDL, sizeOfoldDDL,
                                        (mdti.isIndex ? TRUE : FALSE),
                                        0, NULL, 0, NULL,
                                        numCols, colInfoArray,
                                        numKeys, keyInfoArray,
                                        indexInfo))
-            return -1;
+            goto label_error;
         }
       
       mddi.numOldCols = numCols;
@@ -553,6 +579,7 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
 
       mddi.numIndexes = 0;
       mddi.indexInfo = NULL;
+      mddi.tableInfo = NULL;
 
       if (mdti.indexDDL)
         {
@@ -573,13 +600,19 @@ short CmpSeabaseDDL::createMDdescs(MDDescsInfo *&trafMDDescsInfo)
                                        numIndexCols, indexColInfoArray,
                                        numIndexKeys, indexKeyInfoArray,
                                        indexInfo))
-            return -1;
+            goto label_error;
 
           mddi.indexInfo = indexInfo;
         }
     } // for
 
   return 0;
+
+ label_error:
+  if (trafMDDescsInfo)
+    NADELETEBASIC(trafMDDescsInfo, CTXTHEAP);
+  trafMDDescsInfo = NULL;
+  return -1;
 }
                                               
 NABoolean CmpSeabaseDDL::isHbase(const NAString &catName)
@@ -1030,7 +1063,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
               if (isOldMetadataInitialized(ehi))
                 retcode = -1395;
               else
-                retcode = -1394;
+                {
+                  retcode = -1394;
+                }
               goto label_return;
             }
         }
@@ -1220,12 +1255,6 @@ short CmpSeabaseDDL::isMetadataInitialized(ExpHbaseInterface * ehi)
     {
       const MDTableInfo &mdi = allMDtablesInfo[i];
       
-      if (! mdi.newName)
-        continue;
-
-      if (mdi.droppedTable)
-        continue;
-
       numTotal++;
       HbaseStr hbaseTables;
       NAString hbaseTablesStr(getSystemCatalog());
@@ -1259,60 +1288,7 @@ short CmpSeabaseDDL::isMetadataInitialized(ExpHbaseInterface * ehi)
   return -1;
 }
 
-// Return value:
-//   0: not all old metadata tables exist, metadata is not initialized
-//   1: all old metadata tables exists, metadata is initialized
-//  -ve: error code
-short CmpSeabaseDDL::isOldMetadataInitialized(ExpHbaseInterface * ehi)
-{
-  short retcode ;
-
-  Lng32 numTotal = 0;
-  Lng32 numExists = 0;
-  retcode = 0;
-  for (Int32 i = 0; 
-       (((retcode == 0) || (retcode == -1)) && (i < sizeof(allMDtablesInfo)/sizeof(MDTableInfo))); i++)
-    {
-      const MDTableInfo &mdi = allMDtablesInfo[i];
-      
-      if (! mdi.oldName)
-        continue;
-
-      if (mdi.addedTable)
-        continue;
-
-      NAString oldName(mdi.oldName);
-      size_t pos = oldName.index(OLD_MD_EXTENSION);
-      oldName = oldName.remove(pos, sizeof(OLD_MD_EXTENSION));
-
-      numTotal++;
-      HbaseStr hbaseTables;
-      NAString hbaseTablesStr(getSystemCatalog());
-      hbaseTablesStr += ".";
-      hbaseTablesStr += SEABASE_MD_SCHEMA;
-      hbaseTablesStr += ".";
-      hbaseTablesStr += oldName;
-      hbaseTables.val = (char*)hbaseTablesStr.data();
-      hbaseTables.len = hbaseTablesStr.length();
-      
-      retcode = ehi->exists(hbaseTables);
-      if (retcode == -1) // exists
-        numExists++;
-    }
-  
-  if ((retcode != 0) && (retcode != -1))
-    return retcode; // error accessing metadata
-
-  if (numExists < numTotal) 
-    return 0; // corrupted or uninitialized old metadata
-
-  if (numExists == numTotal)
-    return 1; // metadata is initialized
-  
-  return -1;
-}
-
-NABoolean CmpSeabaseDDL::isAuthorizationEnabled ()
+NABoolean CmpSeabaseDDL::isAuthorizationEnabled()
 {
   return CmpCommon::context()->isAuthorizationEnabled();
 }
@@ -1502,6 +1478,14 @@ short CmpSeabaseDDL::rollbackXn(ExeCliInterface *cliInterface)
   Lng32 cliRC = 0;
 
   cliRC = cliInterface->rollbackWork();
+  return cliRC;
+}
+
+short CmpSeabaseDDL::autoCommit(ExeCliInterface *cliInterface, NABoolean v)
+{
+  Lng32 cliRC = 0;
+
+  cliRC = cliInterface->autoCommit(v);
   return cliRC;
 }
 
@@ -2270,25 +2254,55 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
               ie = colNode->getDefaultValueExpr();
 
               ConstValue * cv = ie->castToConstValue(negateIt);
-              NAString nas(NAW_TO_NASTRING(cv->getConstWStr()));
-
-              char def_val[1000];
-              str_convertToHexAscii(nas.data(), nas.length()-2, def_val, 1000, TRUE);
-
-              Lng32 currPos = 0;
-              Lng32 totalLen = strlen(def_val);
-              while (currPos < totalLen)
+              
+              if (cv->getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
                 {
-                  short first2Bytes = *(short*)&def_val[currPos];
-                  short last2Bytes = *(short*)&def_val[currPos+2];
-                  
-                  *(short*)&def_val[currPos] = last2Bytes;
-                  *(short*)&def_val[currPos+2] = first2Bytes;
+                  if (((CharType*)(cv->getType()))->getCharSet() == CharInfo::UNICODE)
+                    {
+                      NAWString naws(CharInfo::UNICODE, (char*)cv->getConstValue(), cv->getStorageSize());
+                      NAString * nas = unicodeToChar(naws.data(), naws.length(), 
+                                                     CharInfo::UTF8, STMTHEAP);
+                      if (nas)
+                        {
+                          defVal = "_UCS2'";
+                          defVal += *nas;
+                          defVal += "'";
+                        }
+                      else
+                        {
+                          defVal = cv->getConstStr();
+                        }
+                    } // ucs2
+                  else if (((CharType*)(cv->getType()))->getCharSet() == CharInfo::ISO88591)
+                    {
+                      char * cvalue = (char*)cv->getConstValue();
+                      Lng32 cvlen = cv->getStorageSize();
+                      if (cv->getType()->isVaryingLen())
+                        {
+                          cvlen = *(short*)cvalue;
+                          cvalue = cvalue + sizeof(short);
+                        }
 
-                  currPos += 4;
+                      // convert iso to utf8
+                     NAString * nas = charToChar(CharInfo::UTF8, 
+                                                 cvalue, cvlen,
+                                                 CharInfo::ISO88591, STMTHEAP);
+                      if (nas)
+                        {
+                          defVal = "_ISO88591'";
+                          defVal += *nas;
+                          defVal += "'";
+                        }
+                      else
+                        {
+                          defVal = cv->getConstStr();
+                        }
+                    }
+                  else
+                    defVal = cv->getConstStr();
                 }
-
-              defVal.insert(0, def_val);
+              else
+                defVal = cv->getConstStr();
             }
         }
       else
@@ -2969,7 +2983,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
   NAString quotedObjName;
   ToQuotedString(quotedObjName, NAString(objName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objType,
@@ -2977,7 +2991,9 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
               createTime, 
               createTime,
               validDef,
-              objOwnerID);
+              COM_NO_LIT,
+              objOwnerID,
+              SUPER_USER);
   cliRC = cliInterface->executeImmediate(buf);
   
   if (cliRC < 0)
@@ -2986,79 +3002,12 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
       return -1;
     }
 
-  if ((strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0) ||
-      (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0))
-    {
-      Lng32 isAudited = 1;
-      const char * hbaseCreateOptions = NULL;
-      if (tableInfo)
-        {
-          isAudited = tableInfo->isAudited;
-          hbaseCreateOptions = tableInfo->hbaseCreateOptions;
-        }
-
-
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s') ",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
-                  objUID, (isAudited ? "Y" : "N"),
-                  (hbaseCreateOptions ? hbaseCreateOptions : ""));
-      cliRC = cliInterface->executeImmediate(buf);
-      if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-          return -1;
-        }
-      
-    } // BT
-
-  for (Lng32 i = 0; i < numCols; i++)
-    {
-      NAString quotedColHeading;
-      if (colInfo->colHeading)
-        {
-          ToQuotedString(quotedColHeading, colInfo->colHeading, FALSE);
-        }
-
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, %s'%s', '%s', '%s', '%s', '%s', '%s')",
-                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
-                  objUID,
-                  colInfo->colName, 
-                  colInfo->colNumber,
-                  colInfo->columnClass,
-                  colInfo->datatype, 
-                  colInfo->length,
-                  colInfo->precision, 
-                  colInfo->scale, 
-                  colInfo->dtStart, 
-                  colInfo->dtEnd,
-                  (colInfo->upshifted ? "Y" : "N"),
-                  colInfo->hbaseColFlags,
-                  colInfo->nullable,
-                  CharInfo::getCharSetName((CharInfo::CharSet)colInfo->charset),
-                  (Lng32)colInfo->defaultClass,
-                  colInfo->defVal ?
-                  (colInfo->defaultClass == COM_USER_DEFINED_DEFAULT) ? "_UCS2 X" : "_UCS2" : " ",
-                  colInfo->defVal ? colInfo->defVal : " ",
-                  (colInfo->colHeading ? quotedColHeading.data() : ""),
-                  colInfo->hbaseColFam ? colInfo->hbaseColFam : "" , 
-                  colInfo->hbaseColQual ? colInfo->hbaseColQual : "",
-                  colInfo->paramDirection,
-                  colInfo->isOptional ? "Y" : "N");
-
-      cliRC = cliInterface->executeImmediate(buf);
-      if (cliRC < 0)
-        {
-          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-
-          return -1;
-        }
-
-      colInfo += 1;
-    }
-
+  Lng32 keyLength = 0;
+  Lng32 rowDataLength = 0;
+  Lng32 rowTotalLength = 0;
   for (Lng32 i = 0; i < numKeys; i++)
     {
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d)",
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, %d, %d, 0)",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_KEYS,
                   objUID,
                   keyInfo->colName, 
@@ -3074,10 +3023,131 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
 
           return -1;
         }
-      
+
+      const ComTdbVirtTableColumnInfo * ci = &colInfo[keyInfo->tableColNum];
+      keyLength += ci->length + (colInfo->nullable ? 2 : 0);
       keyInfo += 1;
     }
 
+  for (Lng32 i = 0; i < numCols; i++)
+    {
+      NAString quotedColHeading;
+      if (colInfo->colHeading)
+        {
+          ToQuotedString(quotedColHeading, colInfo->colHeading, FALSE);
+        }
+
+      NAString quotedDefVal;
+      if (colInfo->defVal)
+        {
+          NAString defVal = colInfo->defVal;
+           if (DFS2REC::isAnyCharacter(colInfo->datatype))
+            {
+              // double quote any quotes within outer quotes
+              TrimNAStringSpace(defVal);
+              size_t startPos =  defVal.index("'");
+              char endChar = defVal.data()[defVal.length()-1];
+              if ((startPos >= 0) && (endChar == '\'') && ((defVal.length()-startPos) > 2))
+                {
+                  NAString innerStr(&defVal.data()[startPos+1], defVal.length() - startPos - 2);
+                  NAString innerQuotedStr;
+                  ToQuotedString(innerQuotedStr, innerStr, TRUE);
+                  
+                  NAString defVal2(defVal.data(), startPos);
+                  defVal2 += innerQuotedStr;
+                  defVal = defVal2;
+                }
+            }
+
+           ToQuotedString(quotedDefVal, defVal, FALSE);
+        }
+
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, '%s', %d, '%s', %d, %d, %d, %d, %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s', '%s', '%s', '%s', 0)",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_COLUMNS,
+                  objUID,
+                  colInfo->colName, 
+                  colInfo->colNumber,
+                  colInfo->columnClass,
+                  colInfo->datatype, 
+                  getAnsiTypeStrFromFSType(colInfo->datatype),
+                  colInfo->length,
+                  colInfo->precision, 
+                  colInfo->scale, 
+                  colInfo->dtStart, 
+                  colInfo->dtEnd,
+                  (colInfo->upshifted ? "Y" : "N"),
+                  colInfo->hbaseColFlags,
+                  colInfo->nullable,
+                  CharInfo::getCharSetName((CharInfo::CharSet)colInfo->charset),
+                  (Lng32)colInfo->defaultClass,
+                  (colInfo->defVal ? quotedDefVal.data() : ""),
+                  (colInfo->colHeading ? quotedColHeading.data() : ""),
+                  colInfo->hbaseColFam ? colInfo->hbaseColFam : "" , 
+                  colInfo->hbaseColQual ? colInfo->hbaseColQual : "",
+                  colInfo->paramDirection,
+                  colInfo->isOptional ? "Y" : "N");
+
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+          return -1;
+        }
+
+      rowDataLength += colInfo->length + (colInfo->nullable ? 1 : 0);
+      rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
+        keyLength +
+        sizeof(Int64)/*timestamp*/ +
+        (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
+         (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+
+      colInfo += 1;
+    }
+
+  if ((strcmp(objType, COM_BASE_TABLE_OBJECT_LIT) == 0) ||
+      (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0))
+    {
+      Lng32 isAudited = 1;
+      Lng32 numSaltPartns = 0;
+      const char * hbaseCreateOptions = NULL;
+      char rowFormat[10];
+      strcpy(rowFormat, COM_HBASE_FORMAT_LIT);
+      if (tableInfo)
+        {
+          isAudited = tableInfo->isAudited;
+          if (tableInfo->rowFormat == 1)
+            strcpy(rowFormat, COM_ALIGNED_FORMAT_LIT);
+          numSaltPartns = tableInfo->numSaltPartns;
+          hbaseCreateOptions = tableInfo->hbaseCreateOptions;
+        }
+
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, '%s', '%s', %d, %d, %d, %d, 0) ",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
+                  objUID, 
+                  rowFormat,
+                  (isAudited ? "Y" : "N"),
+                  rowDataLength,
+                  rowTotalLength,
+                  keyLength,
+                  numSaltPartns);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+
+      if (hbaseCreateOptions)
+        {
+          NAString nas(hbaseCreateOptions);
+          if (updateTextTable(cliInterface, objUID, COM_HBASE_OPTIONS_TEXT, 0, nas))
+            {
+              return -1;
+            }
+        }
+
+    } // BT
   if ((strcmp(objType, COM_INDEX_OBJECT_LIT) == 0) &&
       (numIndexes > 0))
     {
@@ -3095,7 +3165,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                      catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
                      COM_BASE_TABLE_OBJECT_LIT);
                         
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, %d, %d, %Ld) ",
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, %d, %d, %Ld, 0) ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   baseTableUID,
                   indexInfo->keytag,
@@ -3162,14 +3232,16 @@ short CmpSeabaseDDL::updateSeabaseMDSPJ(
   NAString quotedLibObjName;
   ToQuotedString(quotedLibObjName, NAString(libName), FALSE);
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0 )",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedLibObjName.data(),
               COM_LIBRARY_OBJECT_LIT,
               libObjUID,
               createTime, 
               createTime,
-              "Y",
+              COM_YES_LIT,
+              COM_NO_LIT,
+              SUPER_USER,
               SUPER_USER);
   cliRC = cliInterface->executeImmediate(buf);
   
@@ -3417,7 +3489,7 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
         }
 
       // delete data from TEXT table
-      str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld",
+      str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
                   objUID);
       cliRC = cliInterface->executeImmediate(buf);
@@ -3490,7 +3562,7 @@ short CmpSeabaseDDL::deleteConstraintInfoFromSeabaseMDTables(
     }
 
   // delete data from TEXT table
-  str_sprintf(buf, "delete from %s.\"%s\".%s where object_uid = %Ld",
+  str_sprintf(buf, "delete from %s.\"%s\".%s where text_uid = %Ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
               constrUID);
   cliRC = cliInterface->executeImmediate(buf);
@@ -3779,8 +3851,12 @@ short CmpSeabaseDDL::buildKeyInfoArray(
                                        ComTdbVirtTableColumnInfo * colInfoArray,
                                        ComTdbVirtTableKeyInfo * keyInfoArray,
                                        NABoolean allowNullableUniqueConstr,
+                                       Lng32 *keyLength,
                                        NAMemory * heap)
 {
+  if (keyLength)
+    *keyLength = 0;
+
   size_t index = 0;
   for ( index = 0; index < keyArray->entries(); index++)
     {
@@ -3818,13 +3894,25 @@ short CmpSeabaseDDL::buildKeyInfoArray(
 
       keyInfoArray[index].hbaseColFam = NULL;
       keyInfoArray[index].hbaseColQual = NULL;
+
+      if (keyLength)
+        {
+          NAType *colType = 
+            (*colArray)[keyInfoArray[index].tableColNum]->getColumnDataType();
+          *keyLength += colType->getEncodedKeyLength();
+        }
     }
 
   return 0;
 }
 
+// textType:   0, view text.  1, constraint text.  2, computed col text.
+// subID: 0, for text that belongs to table. colNumber, for column based text.
 short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
-                                     Int64 objUID, NAString &text)
+                                     Int64 objUID, 
+                                     Lng32 textType, 
+                                     Lng32 subID, 
+                                     NAString &text)
 {
   Lng32 cliRC = 0;
 
@@ -3838,9 +3926,11 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
         (i < numRows-1 ? text(currPos, TEXTLEN)
          : text(currPos, (textLen - currPos)));
 
-      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, '%s')",
+      str_sprintf(buf, "insert into %s.\"%s\".%s values (%Ld, %d, %d, %d, 0, '%s')",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TEXT,
                   objUID,
+                  textType,
+                  subID,
                   i,
                   temp.data());
       cliRC = cliInterface->executeImmediate(buf);
@@ -4078,7 +4168,7 @@ short CmpSeabaseDDL::updateSeabaseAuths(
 
   Int64 initTime = NA_JulianTimestamp();
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, 'DB__ROOT', 'TRAFODION', 'U', %d, 'Y', %d,%d) ",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values (%d, 'DB__ROOT', 'TRAFODION', 'U', %d, 'Y', %Ld,%Ld, 0) ",
               sysCat, SEABASE_MD_SCHEMA, SEABASE_AUTHS,
               SUPER_USER, SUPER_USER, initTime, initTime);
   cliRC = cliInterface->executeImmediate(buf);
@@ -4201,7 +4291,7 @@ void CmpSeabaseDDL::initSeabaseMD()
                                sysCat, SEABASE_MD_SCHEMA, mdti.newName,
                                COM_BASE_TABLE_OBJECT_LIT,
                                "Y",
-                               NULL,
+                               mddi.tableInfo,
                                mddi.numNewCols,
                                mddi.newColInfo,
                                mddi.numNewKeys,
@@ -4217,16 +4307,6 @@ void CmpSeabaseDDL::initSeabaseMD()
     } // for
 
   // update metadata with metadata indexes information
-  ComTdbVirtTableTableInfo tableInfo;
-  tableInfo.tableName = NULL,
-  tableInfo.createTime = 0;
-  tableInfo.redefTime = 0;
-  tableInfo.objUID = 0;
-  tableInfo.isAudited = 1;
-  tableInfo.validDef = 0;
-  tableInfo.hbaseCreateOptions = NULL;
-  tableInfo.objOwnerID = SUPER_USER;
-
   for (Lng32 i = 0; i < numTables; i++)
     {
       const MDTableInfo &mdti = allMDtablesInfo[i];
@@ -4240,7 +4320,7 @@ void CmpSeabaseDDL::initSeabaseMD()
                                sysCat, SEABASE_MD_SCHEMA, mdti.newName,
                                COM_INDEX_OBJECT_LIT,
                                "Y",
-                               &tableInfo,
+                               NULL,
                                mddi.numNewCols,
                                mddi.newColInfo,
                                mddi.numNewKeys,
@@ -4248,8 +4328,6 @@ void CmpSeabaseDDL::initSeabaseMD()
                                0, NULL,
                                SUPER_USER,
                                objUID))
-                               //                              1, // numIndex
-                               //                              seabaseMDObjectsUniqIdxIndexInfo))
         {
           goto label_error;
         }
@@ -4282,11 +4360,6 @@ void CmpSeabaseDDL::initSeabaseMD()
 
   CmpCommon::context()->setIsUninitializedSeabase(FALSE);
   CmpCommon::context()->uninitializedSeabaseErrNum() = 0;
-
-  if (createSeqTable(&cliInterface))
-    {
-      goto label_error;
-    }
 
   if (createMetadataViews(&cliInterface))
     {
@@ -4501,15 +4574,17 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
   ToQuotedString(quotedSeqObjName, seqNamePart, FALSE);
 
   Int32 objOwner = ComUser::getCurrentUser();
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', %d )",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', '%s', '%s', '%s', %Ld, %Ld, %Ld, '%s', '%s', %d, %d, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catalogNamePart.data(), quotedSchName.data(), quotedSeqObjName.data(),
               COM_SEQUENCE_GENERATOR_OBJECT_LIT,
               seqObjUID,
               createTime, 
               createTime,
-              "Y",
-              objOwner);
+              COM_YES_LIT,
+              COM_NO_LIT,
+              objOwner,
+              SUPER_USER);
   cliRC = cliInterface.executeImmediate(buf);
   
   if (cliRC < 0)
@@ -4518,7 +4593,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
       return;
     }
 
-  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', %Ld, %d, %Ld, %Ld, %Ld, %Ld, '%s', %Ld, %Ld, %Ld)",
+  str_sprintf(buf, "insert into %s.\"%s\".%s values ('%s', %Ld, %d, %Ld, %Ld, %Ld, %Ld, '%s', %Ld, %Ld, %Ld, %Ld, %Ld, 0)",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
               (sgo->isExternalSG() ? COM_EXTERNAL_SG_LIT : COM_INTERNAL_SG_LIT),
               seqObjUID, 
@@ -4527,9 +4602,11 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
               sgo->getIncrement(),
               sgo->getMaxValue(),
               sgo->getMinValue(),
-              (sgo->getCycle() ? "Y" : "N"), 
+              (sgo->getCycle() ? COM_YES_LIT : COM_NO_LIT), 
               sgo->getCache(),
               sgo->getStartValue(),
+              0LL,
+              createTime,
               0LL);
 
   cliRC = cliInterface.executeImmediate(buf);
@@ -5183,7 +5260,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
 
   retcode = updateObjectValidDef(&cliInterface, 
                                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-                                 "BT", "N");
+                                 COM_BASE_TABLE_OBJECT_LIT, COM_NO_LIT);
   if (retcode)
     {
       deallocEHI(ehi); 
@@ -5298,7 +5375,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
 
   retcode = updateObjectValidDef(&cliInterface, 
                                  catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
-                                 "BT", "Y");
+                                 COM_BASE_TABLE_OBJECT_LIT, COM_YES_LIT);
   if (retcode)
     {
       deallocEHI(ehi); 
@@ -6840,7 +6917,6 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
   // update HBASE_CREATE_OPTIONS field in metadata TABLES table.
   // Format of data stored in this field, if applicable.
   //    HBASE_OPTIONS=>numOptions(4bytes)option='val'| ...
-  //    NUM_SPLITS=>4_bytes(int)
   ///////////////////////////////////////////////////////////////////////
   if  (hbaseOptionsStr.size() > 0)
   {
@@ -6852,17 +6928,6 @@ CmpSeabaseDDL::setupHbaseOptions(ElemDDLHbaseOptions * hbaseOptionsClause,
 
     hco += hbaseOptionsStr.data();
       
-    hco += " "; // separator
-  }
-  
-  if (numSplits > 0)
-  {
-    char splitNumCharStr[HBASE_OPTION_MAX_INTEGER_LENGTH];
-    sprintf(splitNumCharStr, "%04d", numSplits+1);
- 
-    hco += "NUM_SALT_PARTNS=>";
-    hco+=splitNumCharStr;
-                 
     hco += " "; // separator
   }
 

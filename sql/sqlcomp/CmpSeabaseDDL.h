@@ -118,6 +118,8 @@ class NAColumnArray;
 struct routine_desc_struct;
 struct MDDescsInfo;
 
+class MDUpgradeInfo;
+
 #include "CmpSeabaseDDLmd.h"
 
 #define SEABASEDDL_INTERNAL_ERROR(text)                                   \
@@ -208,10 +210,14 @@ class CmpSeabaseDDL
 				     NAList<HbaseCreateOption*>* &hbaseCreateOptions,
 				     NAMemory * heap);
 
-   desc_struct *getSeabaseRoutineDesc(const NAString &catName,
-                                      const NAString &schName,
-                                      const NAString &objName);
-
+  desc_struct *getSeabaseRoutineDesc(const NAString &catName,
+                                     const NAString &schName,
+                                     const NAString &objName);
+  
+  static NABoolean getOldMDInfo(const MDTableInfo  &mdti,
+                                const char* &oldName,
+                                const QString* &oldDDL, Lng32 &sizeOfOldDDL);
+  
   short createMDdescs(MDDescsInfo *&);
 
   static NAString getSystemCatalogStatic();
@@ -262,10 +268,10 @@ class CmpSeabaseDDL
  protected:
 
   enum { 
-    METADATA_MAJOR_VERSION = 2,
+    METADATA_MAJOR_VERSION = 3,
     METADATA_OLD_MAJOR_VERSION = 2,
-    METADATA_MINOR_VERSION = 3,
-    METADATA_OLD_MINOR_VERSION = 2,
+    METADATA_MINOR_VERSION = 0,
+    METADATA_OLD_MINOR_VERSION = 3,
     DATAFORMAT_MAJOR_VERSION = 1,
     DATAFORMAT_MINOR_VERSION = 1,
 
@@ -349,6 +355,7 @@ class CmpSeabaseDDL
   short beginXn(ExeCliInterface *cliInterface);
   short commitXn(ExeCliInterface *cliInterface);
   short rollbackXn(ExeCliInterface *cliInterface);
+  short autoCommit(ExeCliInterface *cliInterface, NABoolean v);
 
   short dropSeabaseObject(ExpHbaseInterface *ehi,
 			  const NAString &objName,
@@ -532,7 +539,13 @@ class CmpSeabaseDDL
 			    NABoolean audited,
                             const NAString& objType);
 
-  short updateTextTable(ExeCliInterface * cliInterface, Int64 objUID, NAString &text);
+  // textType:   0, view text.  1, constraint text.  2, computed col text.
+  // subID: 0, for text that belongs to table. colNumber, for column based text.
+  short updateTextTable(ExeCliInterface *cliInterface,
+                        Int64 objUID, 
+                        Lng32 textType, 
+                        Lng32 subID, 
+                        NAString &text);
 
   short createEncodedKeysBuffer(char** &encodedKeysBuffer,
 				desc_struct * colDescs, desc_struct * keyDescs,
@@ -577,6 +590,7 @@ class CmpSeabaseDDL
 			  ComTdbVirtTableColumnInfo * colInfoArray,
 			  ComTdbVirtTableKeyInfo * keyInfoArray,
 			  NABoolean allowNullableUniqueConstr,
+                          Lng32 *keyLength = NULL,
 			  NAMemory * heap = NULL);
 
   const char * computeCheckOption(StmtDDLCreateView * createViewParseNode);
@@ -729,6 +743,7 @@ class CmpSeabaseDDL
   short getTextFromMD(
 		      ExeCliInterface * cliInterface,
 		      Int64 constrUID,
+                      Lng32 textType,
 		      NAString &constrText);
     
   void alterSeabaseTableAddCheckConstraint(

@@ -9829,10 +9829,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
 
         if (isASystemColumn) {
           if (isRRTable) {
-// LCOV_EXCL_START
             bindInsertRRKey(bindWA, this, sysColList, sysColIx);
             if (bindWA->errStatus()) return boundExpr;
-// LCOV_EXCL_END
           }
 
           if (nacol->isComputedColumn())
@@ -9874,116 +9872,10 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             castType = nacol->getType()->newCopy(bindWA->wHeap());
           }
 
-          // Solution 10-040308-3929. Apply the ISO88591-to-UCS2 translation if the
-          // target column is a Unicode character column and the default value is
-          // CURRENT_USER/USER.
-          if ( nacol->getType() &&
-               nacol->getType()->getTypeQualifier() == NA_CHARACTER_TYPE &&
-               ((CharType*)(nacol->getType()))->getCharSet() == CharInfo::UNICODE &&
-               NAWstrcmp(WIDE_("USER"), (NAWchar*)defaultValueStr) == 0 )
-          {
-            if (SqlParser_DEFAULT_CHARSET == CharInfo::ISO88591)
-            {
-              defaultValueStr = (char*) WIDE_("translate(USER using ISO88591ToUCS2)");
-            }
-            else // SqlParser_DEFAULT_CHARSET == CharInfo::UCS2
-            {
-              //                    ----- Solution 10-090324-0251 -----
-              //
-              // Use the internal CURRNT_USR_INTN built-in function keyword instead of
-              // USER to avoid the following problem when DEFAULT_CHARSET CQD is set to UCS2:
-              //
-              // translate(TRANSLATE(CURRNT_USR_INTN USING ISO88591ToUCS2) using ISO88591ToUCS2)
-              //
-              // The SQL Parser, via the Parser::get_w_ItemExprTree() call below, forms
-              // the parse node ZZZBinderFunction(ITM_CURRNT_USER) when encountering a USER
-              // function call. The Binder, via the ZZZBinderFunction::bindNode(), then
-              // transforms USER to TRANSLATE(CURRNT_USR_INTN USING ISO88591ToUCS2) and
-              // produces the problem.
-              //
-              defaultValueStr = (char*) WIDE_("translate(CURRNT_USR_INTN using ISO88591ToUCS2)");
-            }
-          }
-
-          CharInfo::CharSet mapCS = CharInfo::ISO88591;
-          NABoolean mapCS_hasVariableWidth = CharInfo::isVariableWidthMultiByteCharSet(mapCS);
-          size_t defaultValueWcsLen = 0;
-          NAWchar *defaultValueWcs = (NAWchar *) defaultValueStr;
-          NABoolean ucs2StrLitPrefix = FALSE;
-          if (nacol->getDefaultClass() == COM_USER_DEFINED_DEFAULT &&
-              nacol->getType() &&
-              nacol->getType()->getTypeQualifier() == NA_CHARACTER_TYPE &&
-              ((CharType*)(nacol->getType()))->getCharSet() == CharInfo::ISO88591 &&
-              mapCS_hasVariableWidth &&
-              defaultValueWcs != NULL &&
-              nacol->getNATable()->getObjectSchemaVersion() >= COM_VERS_2300 &&
-              (defaultValueWcsLen = NAWstrlen(defaultValueWcs)) > 6 &&
-              ( ( ucs2StrLitPrefix = ( NAWstrncmp(defaultValueWcs, NAWSTR("_UCS2\'"), 6) == 0 )) ||
-                ( defaultValueWcsLen > 10 &&
-                  NAWstrncmp(defaultValueWcs, NAWSTR("_ISO88591\'"), 10) == 0 )) &&
-              defaultValueWcs[defaultValueWcsLen-1] == NAWCHR('\''))
-          {
-            NAWcharBuf *pWcharBuf = NULL;
-            if (ucs2StrLitPrefix)
-            {
-              // Convert the UTF-16 literal string, without the _UCS2 string
-              // literal prefix, to the ISO_MAPPING character set
-              pWcharBuf =
-                new (bindWA->wHeap()) NAWcharBuf(&defaultValueWcs[5],
-                                                 defaultValueWcsLen - 5,
-                                                 bindWA->wHeap());
-            }
-            else
-            {
-              // Convert the UTF-16 literal string, including the _ISO88591
-              // string literal prefix, to the ISO_MAPPING character set
-              pWcharBuf =
-                new (bindWA->wHeap()) NAWcharBuf(defaultValueWcs,
-                                                 defaultValueWcsLen,
-                                                 bindWA->wHeap());
-            }
-            charBuf *pCharBuf = NULL; // must set this variable to NULL so the
-                                      // following function call will allocate
-                                      // space for the output literal string
-            Int32 errorcode = 0;
-            pCharBuf = unicodeTocset(*pWcharBuf, bindWA->wHeap(),
-                                     pCharBuf, mapCS, errorcode);
-            // Kludge implementation: Treated the converted multibyte character
-            // string, in ISO_MAPPING character set, as if it is a string of
-            // ISO88591 characters and then convert it back to UCS-2 format;
-            // i.e., for each byte in the string, insert an extra byte
-            // containing the binary zero value.
-            NADELETE(pWcharBuf, NAWcharBuf, bindWA->wHeap());
-            pWcharBuf = NULL; // must set this variable to NULL to force the
-                              // following call to allocate space for the
-                              // the output literal string
-            pWcharBuf = ISO88591ToUnicode(*pCharBuf, bindWA->wHeap(), pWcharBuf);
-            // Prepare the converted literal string for the following CAST
-            // function by setting pColDefaultValueStr to point to the string
-            NAWchar *pWcs = NULL;
-            if (ucs2StrLitPrefix)
-            {
-              pWcs = new (bindWA->wHeap()) NAWchar[10+NAWstrlen(pWcharBuf->data())];
-              NAWstrcpy(pWcs, NAWSTR("_ISO88591"));
-            }
-            else
-            {
-              pWcs = new (bindWA->wHeap()) NAWchar[1+NAWstrlen(pWcharBuf->data())];
-              pWcs[0] = NAWCHR('\0');
-            }
-            NAWstrcat(pWcs, pWcharBuf->data());
-            defaultValueStr = (char *)pWcs;
-            needToDeallocateColDefaultValueStr = TRUE;
-            NADELETE(pWcharBuf, NAWcharBuf, bindWA->wHeap());
-            NADELETE(pCharBuf, charBuf, bindWA->wHeap());
-          }
-
           // Bind the default value, make an Assign, etc, as above
-
-
           Parser parser(bindWA->currentCmpContext());
 
-          defaultValueExpr = parser.get_w_ItemExprTree((const NAWchar *) defaultValueStr);
+          defaultValueExpr = parser.getItemExprTree(defaultValueStr);
 
           // Reset Flags to the previous settings.
           //
@@ -10051,25 +9943,11 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         // Note: Parser or Binder errors from MP texts are possible.
         //
         if (!defaultValueExpr || bindWA->errStatus()) {
-#pragma nowarn(1506)   // warning elimination
-//UR2
-          NAString *defStr = unicodeToChar(
-               (const NAWchar *)defaultValueStr,
-               NAWstrlen((const NAWchar *)defaultValueStr),
-               CharInfo::ISO88591,
-               bindWA->wHeap()
-                                          );
-#pragma warn(1506)  // warning elimination
             // 7001 Error preparing default on <column> for <table>.
             *CmpCommon::diags() << DgSqlCode(-7001)
-                                << DgString0(defStr->data())
+                                << DgString0(defaultValueStr)
                                 << DgString1(nacol->getFullColRefNameAsAnsiString());
             bindWA->setErrStatus();
-            if (needToDeallocateColDefaultValueStr && defaultValueStr != NULL)
-            {
-              NADELETEBASIC((NAWchar*)defaultValueStr, bindWA->wHeap());
-              defaultValueStr = NULL;
-            }
             return boundExpr;
           }
 

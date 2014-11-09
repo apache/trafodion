@@ -8143,8 +8143,7 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
       Parser parser(bindWA->currentCmpContext());
 
       ItemExpr *defaultValueExpr =
-           parser.get_w_ItemExprTree((NAWchar *)defaultValueStr);
-
+           parser.getItemExprTree(defaultValueStr);
 
       // It is possible to have a SQL/MP default value that SQL/MX
       // cannot parser.  In these case SQL/MX is not compatible with

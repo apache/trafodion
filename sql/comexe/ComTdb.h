@@ -879,7 +879,7 @@ struct ComTdbVirtTableTableInfo
   Int32 objOwnerID;
   const char * hbaseCreateOptions;
   Lng32 numSaltPartns; // num of salted partitions this table was created with.
-  Lng32 rowFormat;
+  Lng32 rowFormat; //hbase format = 0, aligned format = 1
 };
 
 struct ComTdbVirtTableColumnInfo

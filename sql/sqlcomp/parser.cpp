@@ -486,10 +486,18 @@ static NAWcharBuf* parserCharSetToUTF16(const charBuf& inCharBuf,
   if (outErrorCode)
   {
     if(outErrorCode == CNV_ERR_INVALID_CHAR)
+      {
+        Lng32 ij=0;
+        while (ij)
+          {
+            ij = 2 - ij;
+          }
+ 
       *CmpCommon::diags() << DgSqlCode(-2109)
                           << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)inStrCharSet))
                           << DgString1("UCS2")
                           << DgInt0(*outCharCount) << DgInt1(*outErrorByteOff); 
+      }
     else if(outErrorCode == CNV_ERR_BUFFER_OVERRUN)
       *CmpCommon::diags() << DgSqlCode(-2110)
                           << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)inStrCharSet))
@@ -530,10 +538,17 @@ charBuf* parserUTF16ToCharSet(const NAWcharBuf& pr_UTF16StrBuf,
   if (outErrorCode)
   {
     if (outErrorCode == CNV_ERR_INVALID_CHAR)
+      {
+        Lng32 ij=1;
+        while (ij)
+          {
+            ij = 2 - ij;
+          }
       *CmpCommon::diags() << DgSqlCode(-2109)
                           << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)inStrCharSet))
                           << DgString1("UCS2")
                           << DgInt0(*outCharCount) << DgInt1(*outErrorByteOff);
+      }
     else if (outErrorCode == CNV_ERR_BUFFER_OVERRUN)
       *CmpCommon::diags() << DgSqlCode(-2110)
                           << DgString0(CharInfo::getCharSetName((CharInfo::CharSet)inStrCharSet))

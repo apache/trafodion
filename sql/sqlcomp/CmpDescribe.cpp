@@ -436,74 +436,12 @@ NAString &replaceAll(NAString &source, NAString &searchFor,
   return source;
 }
 
-
 static Int32 displayDefaultValue(const char * defVal, const char * colName,
                                  NAString &displayableDefVal)
 {
-  CharInfo::CharSet charset = CharInfo::UTF8;
-  
-  //
-  // Check to see if all characters in the specified column default
-  // value can be successfully translated to the ISO_MAPPING character
-  // set for displaying.
-  //
-  char buf[2032];  // the output buffer - should be big enough
-  buf[0] = '\0';
-  enum cnv_charset eCnvCS = cnv_UTF8;
-  const char * pInStr = defVal;
-  Int32 inStrLen = BYTES_PER_NAWCHAR * NAWstrlen((NAWchar *)(defVal));
-  char * p1stUnstranslatedChar = NULL;
-  UInt32 outStrLenInBytes = 0;
-  UInt32 charCount = 0;  // number of characters translated/converted
-  Int32 cnvErrStatus = 0;
-  char *pSubstitutionChar = NULL;
-  Int32 convFlags = 0;
-  cnvErrStatus =
-    UTF16ToLocale
-    ( cnv_version1            // in  - const enum cnv_version version
-      , pInStr                  // in  - const char *in_bufr
-      , inStrLen                // in  - const Int32 in_len
-      , buf                     // out - const char *out_bufr
-      , 2016                    // in  - const Int32 out_len
-      , eCnvCS                  // in  - enum cnv_charset charset
-      , p1stUnstranslatedChar   // out - char * & first_untranslated_char
-      , &outStrLenInBytes       // out - UInt32 *output_data_len_p
-      , convFlags               // in  - const Int32 cnv_flags
-      , (Int32)TRUE               // in  - const Int32 addNullAtEnd_flag
-      , (Int32)FALSE              // in  - const Int32 allow_invalids
-      , &charCount              // out - UInt32 * translated_char_cnt_p
-      , pSubstitutionChar       // in  - const char *substitution_char
-      );
-  NABoolean isConvOkay = FALSE;
-  switch (cnvErrStatus)
-    {
-    case 0: // success
-    case CNV_ERR_NOINPUT: // note that an empty input string will
-      isConvOkay = TRUE;  // also get this error so be careful
-      break;
-    case CNV_ERR_INVALID_CHAR:
-      {
-        *CmpCommon::diags() << DgSqlCode(CAT_SHOWDDL_UNABLE_TO_CONVERT_COLUMN_DEFAULT_VALUE);
-        *CmpCommon::diags() << DgColumnName(ANSI_ID(colName));
-        *CmpCommon::diags() << DgString0("UTF8");
-      }
-      break;
-    case CNV_ERR_BUFFER_OVERRUN: // output buffer not big enough
-    case CNV_ERR_INVALID_CS:
-    default:
-      CMPABORT_MSG("SHOWDDL internal logic error");
-      break;
-    } // switch
-  
-  if (isConvOkay)
-    {
-      displayableDefVal.append(buf);
-      return 0;
-    }
-  
-  return -1;
+  displayableDefVal.append(defVal);
+  return 0;
 }
-
 
 static short CmpDescribeShowQryStats(
    const char    *query,

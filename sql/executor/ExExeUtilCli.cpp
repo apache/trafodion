@@ -1889,6 +1889,14 @@ Lng32 ExeCliInterface::rollbackWork()
   return executeImmediate("rollback work;");
 }
 
+Lng32 ExeCliInterface::autoCommit(NABoolean v)
+{
+  if (v)
+    return executeImmediate("set transaction autocommit ON;");
+  else
+    return executeImmediate("set transaction autocommit OFF;");
+}
+
 Lng32 ExeCliInterface::beginXn()
 {
   return SQL_EXEC_Xact(SQLTRANS_BEGIN, 0);

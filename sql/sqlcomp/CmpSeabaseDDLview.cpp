@@ -296,7 +296,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 	}
 
       char query[1000];
-      str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s' )",
+      str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  usedObjUID,
@@ -707,7 +707,7 @@ void CmpSeabaseDDL::createSeabaseView(
 
 
   query = new(STMTHEAP) char[newViewText.length() + 1000];
-  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d)",
+  str_sprintf(query, "insert into %s.\"%s\".%s values (%Ld, '%s', %d, %d, 0)",
 	      getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS,
 	      objUID,
 	      computeCheckOption(createViewNode),
@@ -730,7 +730,7 @@ void CmpSeabaseDDL::createSeabaseView(
       return;
     }
 
-  if (updateTextTable(&cliInterface, objUID, newViewText))
+  if (updateTextTable(&cliInterface, objUID, COM_VIEW_TEXT, 0, newViewText))
     {
       processReturn();
       return;
@@ -1008,7 +1008,10 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 	  param_[4] = SEABASE_OBJECTS;
 	  param_[5] = getSystemCatalog();
 	  param_[6] = SEABASE_MD_SCHEMA;
-	  param_[7] = COM_BASE_TABLE_OBJECT_LIT;
+	  param_[7] = SEABASE_TABLES;
+	  param_[8] = getSystemCatalog();
+	  param_[9] = SEABASE_MD_SCHEMA;
+	  param_[10] = COM_BASE_TABLE_OBJECT_LIT;
 	}
       else if (strcmp(mdi.viewName, TRAF_COLUMNS_VIEW) == 0)
 	{
@@ -1141,17 +1144,24 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
       else if (cliRC < 0)
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	  return -1;
 	}
       
       if (xnWasStartedHere)
 	{
-	  cliRC = cliInterface->commitXn();
-	  if (cliRC < 0)
-	    {
-	      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-	      return -1;
-	    }
+          if (cliRC < 0)
+            {
+              cliRC = cliInterface->rollbackXn();
+              return -1;
+            }
+          else
+            {
+              cliRC = cliInterface->commitXn();
+              if (cliRC < 0)
+                {
+                  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+                  return -1;
+                }
+            }
 	}
 
     } // for

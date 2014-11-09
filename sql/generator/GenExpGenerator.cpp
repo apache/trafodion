@@ -460,23 +460,13 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
     {
       // invalid default value
       da = (diagsArea ? diagsArea : CmpCommon::diags());
-      NAString *cTemp = unicodeToChar(
-                          (const NAWchar *) (col->getDefaultValue())
-                          ,(Int32)NAWstrlen((const NAWchar *)
-                                          (col->getDefaultValue()))
-                          , ComGetErrMsgInterfaceCharSet()
-                          , CmpCommon::statementHeap());
-      
-      if ( cTemp == NULL ) /* Prevent null ptr reference */
-	cTemp = new (CmpCommon::statementHeap()) NAString(CmpCommon::statementHeap());
-      
       *da << DgSqlCode(-7001)
-	  << DgString0(convertNAString(*cTemp,  CmpCommon::statementHeap()))
+	  << DgString0(col->getDefaultValue() ? col->getDefaultValue() : " ")
 	  << DgString1(col->getFullColRefNameAsAnsiString());
       return -1;
     }
 
-  NAWString *castStr;
+  NAString *castStr;
 
   if ((col) && (col->isAddedColumn()))
     {
@@ -490,7 +480,7 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
     case Attributes::DEFAULT_CURRENT:
       // This value is for the old rows before the alter table with add column
       // For new rows compiler will produce a node with CURRENT exp
-      castStr = new(wHeap()) NAWString(CharInfo::ISO88591, "CAST(TIMESTAMP '0001-01-01:12:00:00.000000' AS ", wHeap());
+      castStr = new(wHeap()) NAString("CAST(TIMESTAMP '0001-01-01:12:00:00.000000' AS ", wHeap());
       break;
     case Attributes::DEFAULT_NULL:
       if (attr->getNullFlag())
@@ -506,104 +496,23 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
     case Attributes::DEFAULT_USER_FUNCTION:
      {
       const NAType* colType = col->getType();
-      if ( colType->getTypeQualifier() == NA_CHARACTER_TYPE ) {
-         NAString prefix(CharType::getCharSetAsPrefix(((CharType*)colType)->getCharSet()));
-         castStr = new(wHeap()) NAWString(CharInfo::ISO88591,"CAST(", wHeap());
-         castStr->append(NAWString(CharInfo::ISO88591, prefix, wHeap()));
-         castStr->append(NAWString(CharInfo::ISO88591, "' ' AS ", wHeap()));
-      }
-      else
-         castStr = new(wHeap()) NAWString(CharInfo::ISO88591,"CAST('\' \'' AS ", wHeap());
+         castStr = new(wHeap()) NAString("CAST('\' \'' AS ", wHeap());
      }
       break;
     case Attributes::DEFAULT_USER:
       if (col->getDefaultValue() != NULL)
       {
-        NABoolean needToDeallocateColDefaultValueStr = FALSE;
-        NAWchar *pColDefaultValueStr = (NAWchar *)col->getDefaultValue();
         if (col->getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
-        {
-          const CharType *colCharType = (const CharType *)col->getType();
-          CharInfo::CharSet colCharSet = colCharType->getCharSet();
-          size_t colDefaultValueStrLen = NAWstrlen(pColDefaultValueStr);
-          NABoolean ucs2StrLitPrefix = FALSE;
-          if (colCharSet == CharInfo::ISO88591 &&
-              (objectSchemaVersion == COM_VERS_UNKNOWN || objectSchemaVersion >= COM_VERS_2300) &&
-              // col->getNATable()->getObjectSchemaVersion() might not be populated yet
-              // col->getNATable()->getObjectSchemaVersion() >= COM_VERS_2300 &&
-              ((colDefaultValueStrLen > 6 &&
-                (ucs2StrLitPrefix = (NAWstrncmp(pColDefaultValueStr, L"_UCS2\'", 6) == 0))) ||
-               (colDefaultValueStrLen > 10 &&
-                NAWstrncmp(pColDefaultValueStr, L"_ISO88591\'", 10) == 0)) &&
-              pColDefaultValueStr[colDefaultValueStrLen-1] == L'\'')
           {
-            NAWcharBuf *pWcharBuf = NULL;
-            if (ucs2StrLitPrefix)
-            {
-              // Convert the UTF-16 literal string, without the _UCS2 string
-              // literal prefix, to the ISO_MAPPING character set ()
-              // or the character set of the defined column (for SeaQuest Unicode).
-              pWcharBuf =
-                new (wHeap()) NAWcharBuf(&pColDefaultValueStr[5],
-                                         colDefaultValueStrLen - 5,
-                                         wHeap());
-            }
-            else
-            {
-              // Convert the UTF-16 literal string, including the _ISO88591
-              // string literal prefix, to the ISO_MAPPING character set ()
-              // or the character set of the defined column (for SeaQuest Unicode).
-              pWcharBuf =
-                new (wHeap()) NAWcharBuf(pColDefaultValueStr,
-                                         colDefaultValueStrLen,
-                                         wHeap());
-            }
-            charBuf *pCharBuf = NULL; // must set this variable to NULL so the
-                                      // following function call will allocate
-                                      // space for the output literal string
-            Int32 errorcode = 0;
-            pCharBuf = unicodeTocset(*pWcharBuf, wHeap(), pCharBuf, colCharSet, errorcode);
-            // Kludge implementation: Treated the converted multibyte character
-            // string, in ISO_MAPPING character set, as if it is a string of
-            // ISO88591 characters and then convert it back to UCS-2 format;
-            // i.e., for each byte in the string, insert an extra byte
-            // containing the binary zero value.
-            NADELETE(pWcharBuf, NAWcharBuf, wHeap());
-            pWcharBuf = NULL; // must set this variable to NULL to force the
-                              // following call to allocate space for the
-                              // the output literal string
-            pWcharBuf = ISO88591ToUnicode(*pCharBuf, wHeap(), pWcharBuf);
-            // Prepare the converted literal string for the following CAST
-            // function by setting pColDefaultValueStr to point to the string
-            NAWchar *pWcs = NULL;
-            if (ucs2StrLitPrefix)
-            {
-              pWcs = new (wHeap()) NAWchar[10+NAWstrlen(pWcharBuf->data())];
-              NAWstrcpy(pWcs, L"_ISO88591");
-            }
-            else
-            {
-              pWcs = new (wHeap()) NAWchar[1+NAWstrlen(pWcharBuf->data())];
-              pWcs[0] = L'\0';
-            }
-            NAWstrcat(pWcs, pWcharBuf->data());
-            pColDefaultValueStr = pWcs;
-            needToDeallocateColDefaultValueStr = TRUE;
-            NADELETE(pWcharBuf, NAWcharBuf, wHeap());
-            NADELETE(pCharBuf, charBuf, wHeap());
-            // intentionally not deallocate memory pointed by pWcs/pColDefaultValueStr
-            // the memory will be deallocated later
+            const CharType *colCharType = (const CharType *)col->getType();
+ 
+            if (colCharType->isUpshifted())
+              isUpshifted = TRUE;
           }
 
-	  if (colCharType->isUpshifted())
-	    isUpshifted = TRUE;
-	  
-        }
-	castStr = new(wHeap()) NAWString(CharInfo::ISO88591,"CAST(", wHeap());
-	castStr->append(NAWString(pColDefaultValueStr, wHeap()));
-	castStr->append(NAWString(CharInfo::ISO88591, " AS ", wHeap()));
-	if (needToDeallocateColDefaultValueStr)
-	  NADELETEBASIC(pColDefaultValueStr, wHeap());
+	castStr = new(wHeap()) NAString("CAST(", wHeap());
+	castStr->append(NAString(col->getDefaultValue(), wHeap()));
+	castStr->append(NAString(" AS ", wHeap()));
       }
       else
       {
@@ -617,7 +526,7 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
     case Attributes::DEFAULT_IDENTITY:
       // since this is used only for AddColumn and that we don't allow to add
       // IDENTITY column, it is Ok. to cast it to zero.
-      castStr = new(wHeap()) NAWString(CharInfo::ISO88591, "CAST(0 AS ", wHeap());
+      castStr = new(wHeap()) NAString("CAST(0 AS ", wHeap());
       break;
 
     case Attributes::NO_DEFAULT:
@@ -626,13 +535,13 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
       return 0;
   }
   // Append Type Name
-  castStr->append(NAWString(CharInfo::ISO88591, col->getType()->getTypeSQLname(TRUE), wHeap()));
+  castStr->append(NAString(col->getType()->getTypeSQLname(TRUE), wHeap()));
   if (isUpshifted)
-    castStr->append(NAWString(CharInfo::ISO88591," UPSHIFT ", wHeap()));
+    castStr->append(NAString(" UPSHIFT ", wHeap()));
   if (! attr->getNullFlag())
-      castStr->append(NAWString(CharInfo::ISO88591," NOT NULL)", wHeap()));
+      castStr->append(NAString(" NOT NULL)", wHeap()));
   else
-      castStr->append(NAWString(CharInfo::ISO88591,")", wHeap()));
+      castStr->append(NAString(")", wHeap()));
 
   BindWA *bindWA = generator->getBindWA();
 
@@ -640,8 +549,7 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
   // addDefaultValuesToRCB) the NATable is NULL.  
   Parser parser(bindWA->currentCmpContext());
 
-  ItemExpr *defaultValueExpr =
-	parser.get_w_ItemExprTree((const NAWchar *)(*castStr));
+  ItemExpr *defaultValueExpr = parser.getItemExprTree(*castStr);
 
   // if this column is serialized, then encode the default value.
   if (CmpSeabaseDDL::isEncodingNeededForSerialization(col))
@@ -652,25 +560,12 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
 
   if (!defaultValueExpr || bindWA->errStatus())
   {
-    // 7001 Error preparing default on <column> for <table>.
+    // invalid default value
     da = (diagsArea ? diagsArea : CmpCommon::diags());
-    NAString *cTemp = NULL;
-    const NAWchar* colDefValue = (const NAWchar *) (col->getDefaultValue());
-
-    if ( colDefValue )
-      cTemp = unicodeToChar(colDefValue
-                          , (Int32)NAWstrlen(colDefValue)
-                          , ComGetErrMsgInterfaceCharSet()
-                          , CmpCommon::statementHeap());
-
-    if ( cTemp == NULL )
-      cTemp = new (CmpCommon::statementHeap()) NAString(CmpCommon::statementHeap());
-
     *da << DgSqlCode(-7001)
-        << DgString0(convertNAString(*cTemp,CmpCommon::statementHeap()))
+        << DgString0(col->getDefaultValue() ? col->getDefaultValue() : " ")
         << DgString1(col->getFullColRefNameAsAnsiString());
-
-    NADELETE(cTemp, NAString, CmpCommon::statementHeap());
+    
     return -1;
   }
 
@@ -678,9 +573,6 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
 
   ValueIdList defaultValueIdList;
   defaultValueIdList.insert(defaultValueExpr->getValueId());
-  // Tandem Real is treated as IEEE double precision and then converted back to Tandem Real
-  if (fsDataType == REC_TDM_FLOAT32)
-      extraFltLen = 4;
   defaultValue = new(generator->getSpace()) char[attr->getDefaultValueStorageLength()];
   Lng32 length;
   Lng32 offset;
@@ -714,54 +606,7 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
     delete cTemp;
     return -1;
   }
-  // Convert to Tandem float, since cast returns IEEE float values
-  if (fsDataType == REC_TDM_FLOAT32 || fsDataType == REC_TDM_FLOAT64)
-  {
-    char *defaultValueAdj =
-           new(generator->getSpace()) char[attr->getDefaultValueStorageLength()];
-    str_pad(defaultValueAdj, ExpTupleDesc::NULL_INDICATOR_LENGTH,0);
 
-    ex_expr::exp_return_type rc;
-    Lng32 dataConversionErrorFlag;
-    rc = convDoIt(defaultValue+offset,
-		 length,
-		  REC_IEEE_FLOAT64 ,
-		  0,
-	          0,
-		  defaultValueAdj + ExpTupleDesc::NULL_INDICATOR_LENGTH,
-		  length,
-		  fsDataType,
-		  0,
-		  0,
-		  NULL,
-		  0,
-		  generator->wHeap(),
-		  &da,
-		  CONV_UNKNOWN,
-		  &dataConversionErrorFlag);
-    if ((rc != ex_expr::EXPR_OK) || (da->getNumber() != daMark))
-    {
-      // remove all the errors inserted in expression evaluation
-      da->rewind(daMark, TRUE);
-      // invalid default value
-      NAString *cTemp;
-      cTemp = unicodeToChar((const NAWchar *) (col->getDefaultValue())
-			  , (Int32)NAWstrlen((const NAWchar *) (col->getDefaultValue()))
-                          , SQLCHARSETCODE_UTF8
-			  , CmpCommon::statementHeap());
-
-    if ( cTemp == NULL ) /* Prevent null ptr reference */
-      cTemp = new (CmpCommon::statementHeap()) NAString(CmpCommon::statementHeap());
-
-      *da << DgSqlCode(-7001)
-	  << DgString0(convertNAString(*cTemp,CmpCommon::statementHeap()))
-	  << DgString1(col->getFullColRefNameAsAnsiString());
-      delete cTemp;
-      return -1;
-    }
-    attr->setDefaultValue(dc, defaultValueAdj);
-  }
-  else
   // Adjusting the resultBuffer's variable Character indicator length to
   // attr VCIndicatorLength
   if (attr->getVCIndicatorLength() > 0)

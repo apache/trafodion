@@ -2893,31 +2893,24 @@ NABoolean createNAColumns(desc_struct *column_desc_list	/*IN*/,
          NABoolean isDivisioningColumn = FALSE;
 
          if (column_desc->defaultClass == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT)
-           if (computed_column_text ||
-               defaultValue == NULL ||
-               str_len(defaultValue) == 0)
-             // divisioning column, expression stored in TEXT metadata table
-             isDivisioningColumn = TRUE;
-           else
-             {
-               // HBase salt column, expression is stored in default value
-               // computed column text is in UTF-8, default is in UCS-2, convert
-               NAWString ccValUCS2((NAWchar*) defaultValue);
-               Int32 ccValLengthWChars = ccValUCS2.length();
-               NAString *ccValUTF8 = unicodeToChar(ccValUCS2,
-                                                   ccValLengthWChars,
-                                                   CharInfo::UTF8,
-                                                   STMTHEAP);
-               computed_column_text = (char *) ccValUTF8->data();
-               defaultValue = NULL;
-             }
+           {
+             if (computed_column_text ||
+                 defaultValue == NULL ||
+                 str_len(defaultValue) == 0)
+               // divisioning column, expression stored in TEXT metadata table
+               isDivisioningColumn = TRUE;
+             else
+               {
+                 computed_column_text = defaultValue;
+                 defaultValue = NULL;
+               }
+           }
 
          if(ActiveSchemaDB()->getNATableDB()->cachingMetaData()){
            //make copies of stuff onto the heap passed in
            if(defaultValue){
-             Int32 defaultValueLength = NAWstrlen((NAWchar*)defaultValue)+1;
-             defaultValue = (char*) new (heap) NAWchar [defaultValueLength];
-             NAWstrcpy((NAWchar*)defaultValue,(NAWchar*)column_desc->defaultvalue);
+             defaultValue = (char*) new (heap) char[strlen(defaultValue)+1];
+             strcpy(defaultValue, column_desc->defaultvalue);
            }
 
            if(heading){
@@ -3101,8 +3094,8 @@ NABoolean createNAColumns(struct hive_column_desc* hcolumn /*IN*/,
                              table,
                              USER_COLUMN, // colClass,
                              COM_NULL_DEFAULT  ,//defaultClass,
-                             (char*)L"", // defaultValue,
-                             (char*)L"", // heading,
+                             (char*)"", // defaultValue,
+                             (char*)"", // heading,
                              FALSE, // column_desc->upshift,
                              FALSE, // added column
                              COM_UNKNOWN_DIRECTION,

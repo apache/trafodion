@@ -85,6 +85,8 @@ void NAColumn::deepDelete()
 NAColumn *NAColumn::deepCopy(const NAColumn & nac, NAMemory * heap)
 {
   NAColumn *column = new(heap) NAColumn(nac,heap);
+
+#ifdef __ignore
   if(nac.defaultValue_)
   {
     UInt32 length = na_wcslen((NAWchar*)nac.defaultValue_);
@@ -92,6 +94,15 @@ NAColumn *NAColumn::deepCopy(const NAColumn & nac, NAMemory * heap)
     na_wcscpy(newDefaultValue, (NAWchar*)nac.defaultValue_);
     column->defaultValue_ = (char*)newDefaultValue;
   }
+#endif
+  if (nac.defaultValue_)
+  {
+    UInt32 length = strlen(nac.defaultValue_);
+    char* newDefaultValue = new (heap) char[length+1];
+    strcpy(newDefaultValue, (char*)nac.defaultValue_);
+    column->defaultValue_ = (char*)newDefaultValue;
+  }
+
   if(nac.heading_)
   {
     Int32 length = str_len(nac.heading_) + 1;

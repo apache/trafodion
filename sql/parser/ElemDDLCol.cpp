@@ -187,24 +187,7 @@ ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
 	    const NAType *cvTyp = cvDef->getType();
             NABoolean isAnErrorAlreadyIssued = FALSE;
 
-            // Fix for Bugzilla bug 2406
-#if 0 /* DISABLE THIS NOW THAT Implicit Casting And Translation is enabled */
-            if (NOT isAnErrorAlreadyIssued &&
-                pColumnDataType->getTypeQualifier() == NA_CHARACTER_TYPE &&
-                cvTyp->getTypeQualifier() == NA_CHARACTER_TYPE &&
-                cvDef->isStrLitWithCharSetPrefixSpecified() &&
-                ((const CharType *)pColumnDataType)->getCharSet() != ((const CharType *)cvTyp)->getCharSet())
-            {
-              *SqlParser_Diags << DgSqlCode(-1186)
-                               << DgColumnName(ToAnsiIdentifier(getColumnName()))
-                               << DgString0(pColumnDataType->getTypeSQLname(TRUE/*terse*/))
-                               << DgString1(cvTyp->getTypeSQLname(TRUE/*terse*/));
-              isAnErrorAlreadyIssued = TRUE;
-            }
-#endif /* 0 */
-
-            if ( NOT isAnErrorAlreadyIssued &&
-                 cvTyp->getTypeQualifier() == NA_CHARACTER_TYPE )
+            if ( cvTyp->getTypeQualifier() == NA_CHARACTER_TYPE )
             {
               CharInfo::CharSet defaultValueCS = ((const CharType *)cvTyp)->getCharSet();
               // Always check for INFER_CHARSET setting before the ICAT setting.
@@ -253,57 +236,7 @@ ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
               CharInfo::CharSet cvCharSet = cvCharType->getCharSet(); // cv = constant value
               if (cvCharSet == CharInfo::ISO88591)  // default value is a _ISO88591 str lit
               {
-                NAString originalColDefaultStrLit(cvDef->getConstStr());
-                // convert the string literal saved in cvDef
-                // from cvCharSet to UNICODE (i.e. UTF16)
-                const NAString * pMbsOrig = cvDef->getRawText();
-                // Fix for Bugzilla bug 2467 - begin
-                NAString defaultValMbs(*pMbsOrig, STMTHEAP);
-                if (NOT IsNAStringSpaceOrEmpty(defaultValMbs)) // Note that leading spaces are signifcant
-                {
-                  TrimNAStringSpace ( defaultValMbs  // in/out - NAString &ns
-                                    , FALSE          // in     - NABoolean leading
-                                    , TRUE           // in     - NABoolean trailing
-                                    );
-                }
-                const NAString * pMbs = &defaultValMbs;
-                // Fix for Bugzilla bug 2467 - end
-                size_t mbsLenInBytes = pMbs->length();
-                NAWString wcs(PARSERHEAP());
-                if (mbsLenInBytes > 0)
-                  wcs.append(NAWString((Lng32)cvCharSet, pMbs->data(),
-                                       mbsLenInBytes, PARSERHEAP()));
-                ConstValue *pUnicodeLiteralStringCV =
-                  new(PARSERHEAP()) ConstValue(wcs,
-                                               CharInfo::UNICODE,
-                                               CharInfo::DefaultCollation,
-                                               CharInfo::COERCIBLE,
-                                               PARSERHEAP(),
-                                               cdCharSet); // use this str lit prefix
-                delete pDefault_; // deallocate the old ConstValue object
-                cvDef = NULL; pMbs = NULL; // do not use cvDef and pMbs anymore
-                pDefault_ = pUnicodeLiteralStringCV;
-                pColDefault->setDefaultValueExpr(pDefault_);
 
-                // make sure that the target (column definition) has enough
-                // room to contain the default value
-                if (NOT isAnErrorAlreadyIssued &&
-                    (( cdCharSet == CharInfo::UNICODE &&
-                       cdCharType->getStrCharLimit() < (Lng32)wcs.length() )
-                     ||
-                     ( cdCharSet == CharInfo::ISO88591 &&
-                       (
-                         CmpCommon::getDefault(ALLOW_IMPLICIT_CHAR_CASTING) == DF_ON ) &&
-                       cdCharType->getDataStorageSize() < (Lng32)mbsLenInBytes )))
-                {
-                  // issue an error message because the target size is too small
-                  // use error 7001 and the original column default string literal
-                  // to keep the existing behavior so the regression tests pass.
-                  *SqlParser_Diags << DgSqlCode(-7001)
-                                   << DgString0(originalColDefaultStrLit.data())
-                                   << DgString1(ToAnsiIdentifier(getColumnName()));
-                  isAnErrorAlreadyIssued = TRUE;
-                }
               }
               else if ( (cvCharSet == CharInfo::UNICODE ||  // default value is a _UCS2 string literal
                          cvCharSet == CharInfo::UTF8)   &&  // or a _UTF8 string literal

@@ -218,6 +218,7 @@ private:
   Lng32 beginWork();
   Lng32 commitWork();
   Lng32 rollbackWork();
+  Lng32 autoCommit(NABoolean v); // TRUE, set to ON. FALSE, set to OFF.
   Lng32 beginXn();
   Lng32 commitXn();
   Lng32 rollbackXn();
