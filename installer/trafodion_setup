@@ -126,9 +126,11 @@ if [[ $NODE_LIST == "" ]]; then
 fi
 
 #==============================================
-
-#Info for log file
 echo
+echo "***Starting Trafodion Setup***"
+echo "***Installer Version 0.9.0_v3***" | tee -a $SETUP_LOG
+echo
+#Info for log file
 echo "***INFO: Log file located at /var/log/trafodion"
 echo
 echo "***Log File: trafodion_setup script***" >> $SETUP_LOG
@@ -157,3 +159,4 @@ if [ ${PIPESTATUS[0]} != "0" ]; then
 fi
 
 echo "***INFO: Trafodion setup completed" | tee -a $SETUP_LOG
+

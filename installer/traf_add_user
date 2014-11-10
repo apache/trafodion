@@ -281,8 +281,10 @@ if [ "$node_count" -ne "1" ]; then
     #       file requires a range instead of a comma separated list.
     #       So, we convert the comma to a dash to cover this case.
     cores=$(lscpu | grep "CPU(s) list" | awk '{print $4}' | sed -e "s@,@-@" )
-    #TODO: add check to make sure cores are not more than 16 (i.e. "0-15")
-
+    maxCores=`echo $cores | sed 's/.*\-//'`
+    if [[ "$maxCores" -gt "15" ]]; then
+       cores="0-15"
+    fi 
     processors=$(lscpu | grep "Socket(s)" | awk '{print $2}')
 
     # On some VMs it seems that "Socket(s)" is not listed in

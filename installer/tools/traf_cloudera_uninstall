@@ -138,3 +138,8 @@ if [[ -f /cloudera-scm-server-db ]]; then
    sudo rm -rf /cloudera-scm-server-db
 fi
 #============================================
+echo "***INFO: Performing additional clean up"
+sudo rm -rf /var/cache/yum/x86_64/6/cloudera*
+sudo yum clean all
+sudo rpm --rebuilddb
+

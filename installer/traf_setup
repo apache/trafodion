@@ -57,6 +57,22 @@ while [[ $# -gt 0 ]]; do
 done
 
 #==============================================
+#Check for Cloudera parcels of packages.
+
+cloudera_installed=$(rpm -qa | grep cloudera | wc -l )
+
+if [[ $cloudera_installed -gt 0 ]]; then
+
+   parcelsInstalled=`sudo ls /opt/cloudera/parcels/ | wc -l`
+   if [[ $parcelsInstalled -gt "0" ]]; then
+      echo "***ERROR: Cloudera parcels installed"
+      echo "***ERROR: Trafodion only supports Cloudera packages at this time."
+      echo "***ERROR: Exiting..."
+      exit -1
+   fi
+fi
+
+#==============================================
 #Test Clustername for any syntax errors.
 
 clusterName=`echo $CLUSTERNAME | grep [A-Z]`
