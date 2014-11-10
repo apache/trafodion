@@ -132,6 +132,7 @@ public class TmAuditTlog {
    private static boolean ageCommitted;
    private static boolean forceControlPoint;
    private boolean disableBlockCache;
+   private boolean controlPointDeferred;
  
    private static AtomicLong asn;  // Audit sequence number is the monotonic increasing value of the tLog write
 
@@ -234,6 +235,7 @@ public class TmAuditTlog {
       if (LOG.isTraceEnabled()) LOG.trace("Enter TmAuditTlog constructor for dtmid " + dtmid);
       TLOG_TABLE_NAME = config.get("TLOG_TABLE_NAME");
       int fillerSize = 2;
+      controlPointDeferred = false;
 
       if (LocalHBaseCluster.isLocal(config)) {
          distributedFS = false;
@@ -363,10 +365,10 @@ public class TmAuditTlog {
       }
       filler = new byte[fillerSize];
       Arrays.fill(filler, (byte) ' ');
-      startTimes      =    new long[1000];
-      endTimes        =    new long[1000];
-      synchTimes      =    new long[1000];
-      bufferSizes     =    new long[1000];
+      startTimes      =    new long[50];
+      endTimes        =    new long[50];
+      synchTimes      =    new long[50];
+      bufferSizes     =    new long[50];
       totalWriteTime  =    0;
       totalSynchTime  =    0;
       totalPrepTime   =    0;
@@ -474,7 +476,7 @@ public class TmAuditTlog {
       long startSynch = 0;
       long endSynch = 0;
       int lv_lockIndex = 0;
-      int lv_TimeIndex = (timeIndex.getAndIncrement() % 500 );
+      int lv_TimeIndex = (timeIndex.getAndIncrement() % 50 );
       long lv_TotalWrites = totalWrites.incrementAndGet();
       long lv_TotalRecords = totalRecords.incrementAndGet();
       if (regions != null) {
@@ -902,17 +904,13 @@ public class TmAuditTlog {
      return true;
    }
 
-   public long addControlPoint (final Map<Long, TransactionState> map) throws IOException, Exception {
-      if (LOG.isTraceEnabled()) LOG.trace("addControlPoint start with map size " + map.size());
+   public long writeControlPointRecords (final Map<Long, TransactionState> map) throws IOException, Exception {
+      int lv_lockIndex;
+      int cpWrites = 0;
       long startTime = System.nanoTime();
       long endTime;
-      long lvCtrlPt = 0L;
-      long agedAsn;  // Writes older than this audit seq num will be deleted
-      long lvAsn;    // local copy of the asn
-      long key;
-      boolean success = false;
-      int cpWrites = 0;
-      int lv_lockIndex;
+
+      if (LOG.isTraceEnabled()) LOG.trace("writeControlPointRecords start with map size " + map.size());
 
       try {
         for (Map.Entry<Long, TransactionState> e : map.entrySet()) {
@@ -921,7 +919,7 @@ public class TmAuditTlog {
             lv_lockIndex = (int)(transid & tLogHashKey);
             TransactionState value = e.getValue();
             if (value.getStatus().equals("COMMITTED")){
-               if (LOG.isDebugEnabled()) LOG.debug("addControlPoint adding record for trans (" + transid + ") : state is " + value.getStatus());
+               if (LOG.isDebugEnabled()) LOG.debug("writeControlPointRecords adding record for trans (" + transid + ") : state is " + value.getStatus());
                cpWrites++;
                if (forceControlPoint) {
                   putSingleRecord(transid, value.getStatus(), value.getParticipatingRegions(), true);
@@ -938,8 +936,9 @@ public class TmAuditTlog {
          }
         }
       } catch (ConcurrentModificationException cme){
-          LOG.info("addControlPoint ConcurrentModificationException;  delaying control point ");
+          LOG.info("writeControlPointRecords ConcurrentModificationException;  delaying control point ");
           // Return the current value rather than incrementing this interval.
+          controlPointDeferred = true;
           return tLogControlPoint.getCurrControlPt() - 1;
       } 
 
@@ -948,6 +947,36 @@ public class TmAuditTlog {
                    "                        Total records: " 
                        +  map.size() + " in " + cpWrites + " write operations\n" +
                    "                        Write time: " + (endTime - startTime) / 1000 + " microseconds\n" );
+  
+      if (LOG.isTraceEnabled()) LOG.trace("writeControlPointRecords exit ");
+      return -1L;
+
+   }
+
+
+   public long addControlPoint (final Map<Long, TransactionState> map) throws IOException, Exception {
+      if (LOG.isTraceEnabled()) LOG.trace("addControlPoint start with map size " + map.size());
+      long lvCtrlPt = 0L;
+      long agedAsn;  // Writes older than this audit seq num will be deleted
+      long lvAsn;    // local copy of the asn
+      long key;
+      boolean success = false;
+
+      if (controlPointDeferred) {
+         // We deferred the control point once already due to concurrency.  We'll synchronize this timeIndex
+         synchronized (map) {
+            if (LOG.isDebugEnabled()) LOG.debug("Writing synchronized control point records");
+            lvAsn = writeControlPointRecords(map);
+         }
+
+         controlPointDeferred = false;
+      }
+      else {
+         lvAsn = writeControlPointRecords(map);
+         if (lvAsn != -1L){
+            return lvAsn;
+         }
+      }
 
       try {
          lvAsn = asn.getAndIncrement();
