@@ -42,18 +42,62 @@ Running Tests
 
 * Next, run ``phoenix_test.py`` to configure the Trafodion Phoenix test and run it.
 
-  **Example 1 - Running ALL Trafodion Phoenix Tests** ::
+  **Example 1 - Running ALL Trafodion T4 Phoenix Tests** ::
 
     ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
     --user=<Some_User> --pw=<Some_Password> --targettype=TR \
     --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T4_Driver>
     
-  **Example 2 - Running specific Trafodion Phoenix Tests** ::
+  **Example 2 - Running a specific Trafodion T4 Phoenix Tests** ::
 
     ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
     --user=<Some_User> --pw=<Some_Password> --targettype=TR \
     --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T4_Driver> \
     --tests=<List_of_Tests_seperated_by_comma_and_no_space>
+
+  **Example 3 - Running ALL Trafodion T2 Phoenix Tests**
+
+    * Make sure the Trafodion sqenv.sh file has been sourced into the environment
+    * Set environment variable LD_PRELOAD ::
+
+        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib${SQ_MBTYPE}/libseabasesig.so
+
+    * Run ``phoenix_test.py`` with the following options
+        * For Cloudera 5.1.x ::
+
+            ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
+            --user=<Some_User> --pw=<Some_Password> --targettype=TR \
+            --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
+            --jdbctype=T2 --hadoop=CDH51
+
+        * For Hortonworks 2.1.x ::
+
+            ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
+            --user=<Some_User> --pw=<Some_Password> --targettype=TR \
+            --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
+            --jdbctype=T2 --hadoop=HDP21
+
+  **Example 4 - Running a specific Trafodion T2 Phoenix Tests**
+
+    * Make sure the Trafodion sqenv.sh file has been sourced into the environment
+    * Set environment variable LD_PRELOAD ::
+
+        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib${SQ_MBTYPE}/libseabasesig.so
+
+    * Run ``phoenix_test.py`` with the following options
+        * For Cloudera 5.1.x ::
+
+            ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
+            --user=<Some_User> --pw=<Some_Password> --targettype=TR \
+            --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
+            --jdbctype=T2 --hadoop=CDH51 --tests=<List_of_Tests_seperated_by_comma_and_no_space>
+
+        * For Hortonworks 2.1.x ::
+
+            ./phoenix_test.py --target=<Trafodion_Instance>:<Trafodion_Port> \
+            --user=<Some_User> --pw=<Some_Password> --targettype=TR \
+            --javahome=<PATH_to_JAVA_JDK_1.7_Home> --jdbccp=<PATH_to_Trafodion_JDBC_T2_Driver> \
+            --jdbctype=T2 --hadoop=HDP21 --tests=<List_of_Tests_seperated_by_comma_and_no_space>
 
 
 About this README

@@ -18,15 +18,19 @@
 #
 # @@@ END COPYRIGHT @@@
 
+import xml.etree.ElementTree as ET
 import errno
 import fcntl
+import glob
 import inspect
 import optparse
 import os
+import re
 import select
 import string
 import subprocess
 import sys
+import urllib2
 
 
 #----------------------------------------------------------------------------
@@ -90,6 +94,7 @@ def ArgList():
     _export_str5 = None
     _jdbc_type = None
     _tests = None
+    _hadoop_distro = None
 
 
 #----------------------------------------------------------------------------
@@ -175,53 +180,173 @@ def get_substr_after_string(s1, s2):
 
 
 #----------------------------------------------------------------------------
+# Get Hadoop component version (hadoop, hbase, hive, zookeeper) based
+# on distribution
+#----------------------------------------------------------------------------
+def get_hadoop_component_version(distro, component):
+    # Hortonworks 2.x Maven URL dictionary
+    hw_mvn_url_base = "http://repo.hortonworks.com/content/repositories/releases/"
+    hw_mvn_url_dict = {
+        'hadoop': (hw_mvn_url_base + "org/apache/hadoop/hadoop-common/maven-metadata.xml"),
+        'hbase': (hw_mvn_url_base + "org/apache/hbase/hbase-common/maven-metadata.xml"),
+        'hive': (hw_mvn_url_base + "org/apache/hive/hive-exec/maven-metadata.xml"),
+        'zookeeper': (hw_mvn_url_base + "org/apache/zookeeper/zookeeper/maven-metadata.xml")
+    }
+
+    # find version number of component using rpm command
+    rpm_ver = subprocess.Popen(["rpm", "-q", "--qf", '%{VERSION}', component],
+                               stdout=subprocess.PIPE).communicate()[0]
+
+    # if distro is Cloudera (CDH) then parse string from rpm_ver
+    # if distro is HortonWorks (HW) then fetch Maven XML files and
+    # parse those for the actual version of the component
+
+    if distro.startswith("CDH"):
+        return(rpm_ver[:rpm_ver.rfind("+")].replace("+", "-"))
+    elif distro.startswith("HDP"):
+        proxy = urllib2.ProxyHandler()
+        opener = urllib2.build_opener(proxy)
+        mvn_xml = opener.open(hw_mvn_url_dict[component]).read()
+        mvn_xml_content = ET.fromstring(mvn_xml)
+        return([version.text for version in mvn_xml_content.findall(".//version")
+               if version.text.startswith(rpm_ver)][0])
+
+
+#----------------------------------------------------------------------------
 # Generate pom.xml
 #----------------------------------------------------------------------------
-def generate_pom_xml(targettype, jdbccp):
-    fd1 = open(os.path.join(gvars.my_ROOT, 'pom.xml.template'), 'r')
-    fd2 = open(os.path.join(gvars.my_ROOT, 'pom.xml'), 'w')
+def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_distro):
+    # dictionary for Hadoop Distribution dependent dependencies
+    hadoop_dict = {
+        'CDH51': {'MY_HADOOP_DISTRO': 'cloudera',
+                  'MY_HADOOP_VERSION': get_hadoop_component_version(hadoop_distro, "hadoop"),
+                  'MY_MVN_URL': 'http://repository.cloudera.com/artifactory/cloudera-repos',
+                  'MY_HBASE_VERSION': get_hadoop_component_version(hadoop_distro, "hbase"),
+                  'MY_HIVE_VERSION': get_hadoop_component_version(hadoop_distro, "hive"),
+                  'MY_ZOOKEEPER_VERSION': get_hadoop_component_version(hadoop_distro, "zookeeper"),
+                  'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-[\d\.]{3,}jar"),
+                  'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
+                  'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
+                               ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
+                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP')]
+                  },
+        'HDP21': {'MY_HADOOP_DISTRO': 'HDPReleases',
+                  'MY_HADOOP_VERSION': get_hadoop_component_version(hadoop_distro, "hadoop"),
+                  'MY_MVN_URL': 'http://repo.hortonworks.com/content/repositories/releases/',
+                  'MY_HBASE_VERSION': get_hadoop_component_version(hadoop_distro, "hbase"),
+                  'MY_HIVE_VERSION': get_hadoop_component_version(hadoop_distro, "hive"),
+                  'MY_ZOOKEEPER_VERSION': get_hadoop_component_version(hadoop_distro, "zookeeper"),
+                  'TRAF_HBASE_TRX_REGEX': re.compile("^hbase-trx-hdp2_1-[\d\.]{3,}jar"),
+                  'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
+                  'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
+                               ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
+                               ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP')]
+                  }
+    }
 
-    for line in fd1:
-        line = string.replace(line, 'MY_HPT4JDBC', jdbccp)
-        fd2.write(line)
+    # read template file into multiline string
+    with open(os.path.join(gvars.my_ROOT, 'pom.xml.template'), 'r') as fd1:
+        template_text = fd1.read()
 
-    fd1.close()
-    fd2.close()
+    # substitute template variables with real info
+    with open(os.path.join(gvars.my_ROOT, 'pom.xml'), 'w') as fd2:
+        # remove T2 only specifications when using T4 driver
+        if jdbc_artid == 't4driver':
+            remove_t2 = re.compile('<!-- START_FOR_T2_ONLY -->.*?<!-- END_FOR_T2_ONLY -->',
+                                   re.MULTILINE | re.DOTALL)
+            template_text = remove_t2.sub("", template_text)
+        elif jdbc_artid == 't2driver':
+            dep_string = ""
+            # generate Hadoop Distribution dependent dependency multiline string
+            for groupid, artid, version, exclusion in hadoop_dict[hadoop_distro]['MVN_DEPS']:
+                dep_string = dep_string + "    <dependency>\n"
+                dep_string = dep_string + "        <groupId>" + groupid + "</groupId>\n"
+                dep_string = dep_string + "        <artifactId>" + artid + "</artifactId>\n"
+                dep_string = dep_string + "        <version>" + version + "</version>\n"
+                dep_string = dep_string + "        <scope>test</scope>\n"
+
+                # check to see if we need to include/exclude transitive dependencies
+                if exclusion != 'IDEP':
+                    dep_string = dep_string + "        <exclusions>\n"
+                    dep_string = dep_string + "          <exclusion>\n"
+                    dep_string = dep_string + "            <groupId>*</groupId>\n"
+                    dep_string = dep_string + "            <artifactId>*</artifactId>\n"
+                    dep_string = dep_string + "          </exclusion>\n"
+                    dep_string = dep_string + "        </exclusions>\n"
+
+                dep_string = dep_string + "    </dependency>\n"
+
+            template_text = re.sub('<!-- START_DISTRO_DEP -->', dep_string, template_text)
+
+            # look for Trafodion Hbase TRX file and Trafodion Hbase Access file
+            # assume in $MY_SQROOT/export/lib
+            traf_lib_file_list = os.listdir(os.environ['MY_SQROOT'] + '/export/lib')
+
+            # assume regular expression used for traf_hbase_trx_file and traf_hbase_access_file
+            # is precise enough to ever return only 1 value
+            traf_hbase_trx_file = [m.group(0) for l in traf_lib_file_list for m in
+                                   [hadoop_dict[hadoop_distro]['TRAF_HBASE_TRX_REGEX'].search(l)]
+                                   if m][0]
+            template_text = re.sub('TRAF_HBASE_TRX_FILE', traf_hbase_trx_file, template_text)
+
+            traf_hbase_access_file = [m.group(0) for l in traf_lib_file_list for m in
+                                      [hadoop_dict[hadoop_distro]['TRAF_HBASE_ACS_REGEX'].search(l)]
+                                      if m][0]
+            template_text = re.sub('TRAF_HBASE_ACS_FILE', traf_hbase_access_file, template_text)
+
+            # find the Trafodion HBase version being used
+            hbaseVerRegex = re.compile("^hbase-trx(-hdp2_1)?-([\d\.]{3,})jar")
+            traf_hbase_version = hbaseVerRegex.match(traf_hbase_trx_file).group(2)[:-1]
+            template_text = re.sub('MY_TRAF_HBASE_VERSION', traf_hbase_version, template_text)
+
+            # fix up T2 Hadoop properties
+            for hprop in ['MY_HADOOP_DISTRO', 'MY_HADOOP_VERSION', 'MY_MVN_URL', 'MY_HBASE_VERSION',
+                          'MY_HIVE_VERSION', 'MY_ZOOKEEPER_VERSION']:
+                template_text = re.sub(hprop, hadoop_dict[hadoop_distro][hprop], template_text)
+
+        # fix up properties common to T2 and T4
+        template_text = re.sub('MYJDBC_GROUP_ID', jdbc_groupid, template_text)
+        template_text = re.sub('MYJDBC_ART_ID', jdbc_artid, template_text)
+        template_text = re.sub('MYJDBC_PATH', jdbc_path, template_text)
+
+        fd2.write(template_text)
 
 
 #----------------------------------------------------------------------------
 # Generate propfile
 #----------------------------------------------------------------------------
 def generate_t4_propfile(propfile, target, user, pw, role, dsn, targettype):
-    fd = open(propfile, 'w')
-    fd.write('url=jdbc:t4jdbc://' + target + '/\n')
-    fd.write('user=' + user + '\n')
-    fd.write('roleName=' + role + '\n')
-    fd.write('password=' + pw + '\n')
-    fd.write('catalog=trafodion\n')
-    fd.write('schema=phoenix\n')
-    fd.write('serverDataSource=' + dsn + '\n')
-    fd.write('targettype=' + targettype + '\n')
-    fd.write('sessionName=phoenix\n')
-    fd.write('applicationName=phoenix\n')
-
-    fd.close()
+    with open(propfile, 'w') as fd:
+        fd.write('url=jdbc:t4jdbc://' + target + '/\n')
+        fd.write('user=' + user + '\n')
+        fd.write('roleName=' + role + '\n')
+        fd.write('password=' + pw + '\n')
+        fd.write('catalog=trafodion\n')
+        fd.write('schema=phoenixT4\n')
+        fd.write('serverDataSource=' + dsn + '\n')
+        fd.write('targettype=' + targettype + '\n')
+        fd.write('sessionName=phoenix\n')
+        fd.write('applicationName=phoenix\n')
 
 
 def generate_t2_propfile(propfile, targettype):
-    fd = open(propfile, 'w')
-    fd.write('url=jdbc:sql:\n')
-    fd.write('user=DONTCARE\n')
-    fd.write('roleName=DONTCARE\n')
-    fd.write('gassword=DONTCARE\n')
-    fd.write('catalog=trafodion\n')
-    fd.write('schema=phoenix\n')
-    fd.write('serverDataSource=DONTCARE\n')
-    fd.write('targettype=' + targettype + '\n')
-    fd.write('sessionName=phoenix\n')
-    fd.write('applicationName=phoenix\n')
-
-    fd.close()
+    with open(propfile, 'w') as fd:
+        fd.write('url=jdbc:t2jdbc:\n')
+        fd.write('user=DONTCARE\n')
+        fd.write('roleName=DONTCARE\n')
+        fd.write('password=DONTCARE\n')
+        fd.write('catalog=trafodion\n')
+        fd.write('schema=phoenixT2\n')
+        fd.write('serverDataSource=DONTCARE\n')
+        fd.write('targettype=' + targettype + '\n')
+        fd.write('sessionName=phoenix\n')
+        fd.write('applicationName=phoenix\n')
 
 
 #----------------------------------------------------------------------------
@@ -287,6 +412,10 @@ def prog_parse_args():
         optparse.make_option('', '--jdbctype', action='store', type='string',
                              dest='jdbctype', default='T4',
                              help='jdbctype, defaulted to T4'),
+        optparse.make_option('', '--hadoop', action='store', type='string',
+                             dest='hadoop', default='CDH51',
+                             help='Hadoop Distro, possible values are CDH51 (Cloudera 5.1.x), ' +
+                                  'HDP21 (Hortonworks 2.1.x). Defaulted to CDH51.'),
         optparse.make_option('', '--export1', action='store', type='string',
                              dest='exportstr1', default='NONE',
                              help='any export string, defaulted to NONE'),
@@ -329,6 +458,10 @@ def prog_parse_args():
         parser.error('Invalid --targettype.  Only SQ aor TR is supported: ' +
                      options.targettype)
 
+    if options.hadoop != 'CDH51' and options.hadoop != 'HDP21':
+        parser.error('Invalid --hadoop.  Only CDH51 (Cloudera 5.1.x) or HDP21 ' +
+                     '(Hortonworks 2.1.x) + is supported: ' + options.targettype)
+
     if options.jdbctype != 'T2' and options.jdbctype != 'T4':
         parser.error('Invalid --jdbctype.  Only T2 or T4 is supported: ' +
                      options.jdbctype)
@@ -342,6 +475,23 @@ def prog_parse_args():
                 not_found.append('--' + r)
         if not_found:
             parser.error('Required option(s) not found: ' + str(not_found))
+
+        myjdbc_groupid = 'org.trafodion.jdbc.t4.T4Driver'
+        myjdbc_artid = 't4driver'
+    elif options.jdbctype == 'T2':
+        # check for Trafodion ENV variables to be set
+        req_envs_error_string = ""
+        for req_env in ['SQ_MBTYPE', 'MY_SQROOT', 'MPI_TMPDIR', 'LD_PRELOAD',
+                        'LD_LIBRARY_PATH', 'PATH', 'LANG']:
+            if req_env not in os.environ:
+                req_envs_error_string = (req_envs_error_string + 'Required environment variable ' +
+                                         req_env + ' for T2 test has NOT been set!\n')
+
+        if req_envs_error_string:
+            parser.error(req_envs_error_string)
+
+        myjdbc_groupid = 'org.trafodion.jdbc.t2.T2Driver'
+        myjdbc_artid = 't2driver'
 
     # Automatically generate the prop file if the user did not specify one
     if options.propfile == DEFAULT_PROP_FILE:
@@ -363,6 +513,7 @@ def prog_parse_args():
     ArgList._prop_file = os.path.abspath(options.propfile)
     ArgList._target_type = options.targettype
     ArgList._jdbc_type = options.jdbctype
+    ArgList._hadoop_distro = options.hadoop
     ArgList._export_str1 = options.exportstr1
     ArgList._export_str2 = options.exportstr2
     ArgList._export_str3 = options.exportstr3
@@ -378,7 +529,8 @@ def prog_parse_args():
         ArgList._tests = options.tests
 
     # Generate the pom.xml file from the template according to target type
-    generate_pom_xml(ArgList._target_type, ArgList._jdbc_classpath)
+    generate_pom_xml(ArgList._target_type, myjdbc_groupid, myjdbc_artid,
+                     ArgList._jdbc_classpath, ArgList._hadoop_distro)
 
     print 'target:                ', ArgList._target
     print 'user:                  ', ArgList._user
@@ -390,6 +542,7 @@ def prog_parse_args():
     print 'prop file:             ', ArgList._prop_file
     print 'target type:           ', ArgList._target_type
     print 'jdbc type:             ', ArgList._jdbc_type
+    print 'hadoop distro:         ', ArgList._hadoop_distro
     print 'export string 1:       ', ArgList._export_str1
     print 'export string 2:       ', ArgList._export_str2
     print 'export string 3:       ', ArgList._export_str3
