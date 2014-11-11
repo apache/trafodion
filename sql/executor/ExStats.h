@@ -933,6 +933,17 @@ NA_EIDPROC
 NA_EIDPROC
   inline char * getTdbName() {return tdbName_;}
 
+  inline void setTdbName(const char *nm, Int32 len)
+  {
+    if (len > MAX_TDB_NAME_LEN)
+      len = MAX_TDB_NAME_LEN;
+    if (len > 0)
+      {
+        str_cpy_all(tdbName_, nm, len); 
+        tdbName_[len] = 0;
+      }
+  }
+
 NA_EIDPROC
   inline ComTdb::ex_node_type getTdbType() const {return tdbType_;}
    
@@ -2704,10 +2715,10 @@ class ExHbaseAccessStats : public ExOperStats {
     inline void incAccessedRows() {++accessedRows_;}
     inline void incAccessedRows(Int64 v) {accessedRows_ += v;}
   
-  NA_EIDPROC
     inline void incUsedRows() {++usedRows_;}
-  
-   inline void incUsedRows(Int64 v) {usedRows_ += v;}
+    inline void incUsedRows(Int64 v) {usedRows_ += v;}
+ 
+    inline void incHbaseCalls() {++numHbaseCalls_;}
  
   NA_EIDPROC
     Int64 numBytesRead() const {return numBytesRead_;}
@@ -2715,8 +2726,9 @@ class ExHbaseAccessStats : public ExOperStats {
   NA_EIDPROC
     Int64 rowsAccessed() const {return accessedRows_;}
   
-  NA_EIDPROC
     Int64 rowsUsed() const {return usedRows_;}
+  
+    Int64 hbaseCalls() const {return numHbaseCalls_;}
   
   NA_EIDPROC
     ExHbaseAccessStats * castToExHbaseAccessStats();
@@ -2746,6 +2758,7 @@ class ExHbaseAccessStats : public ExOperStats {
   Int64  numBytesRead_;
   Int64  accessedRows_;
   Int64  usedRows_;
+  Int64  numHbaseCalls_;
 };
 
    

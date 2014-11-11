@@ -10191,7 +10191,7 @@ A
 +>                          position('AccessedRows' in variable_info))
 +>            as char(40) character set iso88591) as rows_accessed
 +>from table(statistics(null, 'S'))
-+>where tdb_name = 'EX_HBASE_ACCESS';
++>where tdb_name like 'SELECT_SEABASE_%';
 
 --- SQL command prepared.
 >>
@@ -10203,7 +10203,7 @@ A
 +>                          position('AccessedRows' in variable_info)-14)
 +>            as integer) > 4000 then 'PASS' else 'FAIL' end
 +>from table(statistics(null, 'S'))
-+>where tdb_name = 'EX_HBASE_ACCESS'
++>where tdb_name like 'SELECT_SEABASE_%'
 +>order by 1,2,3;
 
 --- SQL command prepared.

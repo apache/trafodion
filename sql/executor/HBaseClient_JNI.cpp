@@ -1411,7 +1411,7 @@ HBLC_RetCode HBulkLoadClient_JNI::initHFileParams(
 }
 
 HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
-            HbaseStr &rows)
+            HbaseStr &rows, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBulkLoadClient_JNI::addToHFile called.");
 
@@ -1431,9 +1431,16 @@ HBLC_RetCode HBulkLoadClient_JNI::addToHFile( short rowIDLen, HbaseStr &rowIDs,
 
   jshort j_rowIDLen = rowIDLen;
 
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_ADD_TO_HFILE_DB].methodID, 
             j_rowIDLen, jRowIDs, jRows);
+  if (hbs)
+  {
+    hbs->getTimer().stop();
+    hbs->incHbaseCalls();
+  }
   jenv_->DeleteLocalRef(jRowIDs);
   jenv_->DeleteLocalRef(jRows);
 
@@ -1973,7 +1980,10 @@ HTC_RetCode HTableClient_JNI::startScan(Int64 transID, const Text& startRowID,
             j_colnamestofilter, j_compareoplist, j_colvaluestocompare, 
             j_smplPct, j_preFetch);
   if (hbs)
-    hbs->getTimer().stop();
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_startRowID);  
   jenv_->DeleteLocalRef(jba_stopRowID);  
@@ -2044,10 +2054,13 @@ HTC_RetCode HTableClient_JNI::startGet(Int64 transID, const Text& rowID,
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
             JavaMethods_[JM_GET_OPEN].methodID, j_tid, jba_rowID, 
             j_cols, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_rowID);  
-  if (hbs)
-    hbs->getTimer().stop();
   if (j_cols != NULL)
      jenv_->DeleteLocalRef(j_cols);
 
@@ -2107,9 +2120,13 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
     hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
       JavaMethods_[JM_GETS_OPEN].methodID, j_tid, j_rows, j_cols, j_ts);
-  jenv_->DeleteLocalRef(j_rows);
   if (hbs)
-    hbs->getTimer().stop();
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
+
+  jenv_->DeleteLocalRef(j_rows);
   if (j_cols != NULL)
       jenv_->DeleteLocalRef(j_cols);
 
@@ -2134,7 +2151,7 @@ HTC_RetCode HTableClient_JNI::startGets(Int64 transID, const TextVec& rowIDs,
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& cols, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& cols, Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRow(%ld, %s) called.", transID, rowID.val);
   jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
@@ -2159,8 +2176,15 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
   }  
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
           JavaMethods_[JM_DELETE].methodID, j_tid, jba_rowID, j_cols, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_rowID);  
   if (j_cols != NULL)
@@ -2186,7 +2210,7 @@ HTC_RetCode HTableClient_JNI::deleteRow(Int64 transID, HbaseStr &rowID, const Te
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp)
+HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::deleteRows() called.");
 
@@ -2200,7 +2224,14 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
 
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_DELETE_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jRowIDs);  
 
@@ -2231,7 +2262,7 @@ HTC_RetCode HTableClient_JNI::deleteRows(Int64 transID, short rowIDLen, HbaseStr
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
 	    const Text &columnToCheck, const Text &colValToCheck,
-	    Int64 timestamp)
+	    Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndDeleteRow(%s, %s, %s) called.", rowID.val, columnToCheck.data(), colValToCheck.data());
   jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
@@ -2273,7 +2304,14 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
   }
 
   // public boolean checkAndDeleteRow(long, byte[], byte[], long);
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CHECKANDDELETE].methodID, j_tid, jba_rowID, jba_columntocheck, jba_colvaltocheck, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_rowID);  
   jenv_->DeleteLocalRef(jba_columntocheck);  
@@ -2300,7 +2338,7 @@ HTC_RetCode HTableClient_JNI::checkAndDeleteRow(Int64 transID, HbaseStr &rowID,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID, 
-     HbaseStr &row, Int64 timestamp)
+     HbaseStr &row, Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::insertRow(%s) direct called.", rowID.val);
 
@@ -2322,7 +2360,14 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
 
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_rowID);  
   jenv_->DeleteLocalRef(jDirectBuffer);  
@@ -2348,7 +2393,7 @@ HTC_RetCode HTableClient_JNI::insertRow(Int64 transID, HbaseStr &rowID,
 // 
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, 
-      HbaseStr &rows, Int64 timestamp, bool autoFlush)
+      HbaseStr &rows, Int64 timestamp, bool autoFlush, ExHbaseAccessStats *hbs)
 {
   jobject jRowIDs = jenv_->NewDirectByteBuffer(rowIDs.val, rowIDs.len);
   if (jRowIDs == NULL)
@@ -2368,7 +2413,14 @@ HTC_RetCode HTableClient_JNI::insertRows(Int64 transID, short rowIDLen, HbaseStr
   jshort j_rowIDLen = rowIDLen;
   jboolean j_af = autoFlush;
  
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_INSERT_ROWS].methodID, j_tid, j_rowIDLen, jRowIDs, jRows, j_ts, j_af);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jRowIDs);  
   jenv_->DeleteLocalRef(jRows);  
@@ -2451,7 +2503,7 @@ HTC_RetCode HTableClient_JNI::setWriteToWAL(bool WAL)
 //   3-way return value!!!
 //////////////////////////////////////////////////////////////////////////////
 HTC_RetCode HTableClient_JNI::checkAndInsertRow(Int64 transID, HbaseStr &rowID,
-HbaseStr &row, Int64 timestamp)
+HbaseStr &row, Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndInsertRow(%s) called.", rowID.val);
   jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
@@ -2472,7 +2524,14 @@ HbaseStr &row, Int64 timestamp)
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
 
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DIRECT_CHECKANDINSERT].methodID, j_tid, jba_rowID, jDirectBuffer, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_rowID);  
   jenv_->DeleteLocalRef(jDirectBuffer);
@@ -2492,7 +2551,7 @@ HbaseStr &row, Int64 timestamp)
 HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
             HbaseStr &row,
 	    const Text &columnToCheck, const Text &colValToCheck, 
-            Int64 timestamp)
+            Int64 timestamp, ExHbaseAccessStats *hbs)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HTableClient_JNI::checkAndUpdateRow(%s) called.", rowID.val);
   jbyteArray jba_rowID = jenv_->NewByteArray(rowID.len);
@@ -2533,10 +2592,17 @@ HTC_RetCode HTableClient_JNI::checkAndUpdateRow(Int64 transID, HbaseStr &rowID,
   jlong j_tid = transID;  
   jlong j_ts = timestamp;
 
+  if (hbs)
+    hbs->getTimer().start();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, 
                 JavaMethods_[JM_CHECKANDUPDATE].methodID, 
                 j_tid, jba_rowID, jDirectBuffer, 
 	        jba_columntocheck, jba_colvaltocheck, j_ts);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_rowID);  
   jenv_->DeleteLocalRef(jba_columntocheck);  
@@ -2599,6 +2665,7 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
 					 const Text &colName,
 					 const NABoolean cacheBlocks,
 					 const Lng32 numCacheRows,
+					 ExHbaseAccessStats *hbs,
 					 Text &aggrVal) // returned value
 {
 
@@ -2652,10 +2719,17 @@ HTC_RetCode HTableClient_JNI::coProcAggr(Int64 transID,
   jboolean j_cb = cacheBlocks;
   jint j_ncr = numCacheRows;
 
+  if (hbs)
+    hbs->getTimer().start();
   jarray jresult = (jarray)jenv_->CallObjectMethod(javaObj_, 
               JavaMethods_[JM_COPROC_AGGR].methodID, j_tid, 
               j_aggrtype, jba_startrowid, jba_stoprowid, jba_colfamily, 
               jba_colname, j_cb, j_ncr);
+  if (hbs)
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
   jenv_->DeleteLocalRef(jba_startrowid);  
   jenv_->DeleteLocalRef(jba_stoprowid);  
@@ -3585,7 +3659,10 @@ HTC_RetCode HTableClient_JNI::fetchRows(ExHbaseAccessStats *hbs)
              JavaMethods_[JM_FETCH_ROWS].methodID,
              jniObject);
    if (hbs)
-     hbs->getTimer().stop();
+    {
+      hbs->getTimer().stop();
+      hbs->incHbaseCalls();
+    }
 
    if (jenv_->ExceptionCheck())
    {
@@ -3605,7 +3682,7 @@ HTC_RetCode HTableClient_JNI::fetchRows(ExHbaseAccessStats *hbs)
    if (numRowsReturned_ == 0)
       return HTC_DONE;
    if (hbs)
-     hbs->incAccessedRows(numRowsReturned_);
+      hbs->incAccessedRows(numRowsReturned_);
    return HTC_OK; 
 }
 

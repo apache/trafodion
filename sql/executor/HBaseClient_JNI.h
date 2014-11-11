@@ -256,23 +256,23 @@ public:
 			const TextVec *inColNamesToFilter, 
 			const TextVec *inCompareOpList,
 			const TextVec *inColValuesToCompare,
-			ExHbaseAccessStats *hbs = NULL,
+			ExHbaseAccessStats *hbs,
 			Float32 samplePercent = -1.0f);
   HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, 
-		Int64 timestamp, ExHbaseAccessStats *hbs = NULL);
+		Int64 timestamp, ExHbaseAccessStats *hbs);
   HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, 
-		Int64 timestamp, ExHbaseAccessStats *hbs = NULL);
-  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
-  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
-  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+		Int64 timestamp, ExHbaseAccessStats *hbs);
+  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp, ExHbaseAccessStats *hbs);
+  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp, ExHbaseAccessStats *hbs);
+  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, ExHbaseAccessStats *hbs);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       Int64 timestamp);
-  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush);
+       Int64 timestamp, ExHbaseAccessStats *hbs);
+  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush, ExHbaseAccessStats *hbs);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp);
+  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp, ExHbaseAccessStats *hbs);
   HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
+       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, ExHbaseAccessStats *hbs);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 
@@ -281,6 +281,7 @@ public:
 			 const Text &colName,
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
+			 ExHbaseAccessStats *hbs,
 			 Text &aggrVal); // returned value
   void setResultInfo( jintArray jKvValLen, jintArray jKvValOffset,
         jintArray jKvQualLen, jintArray jKvQualOffset,
@@ -289,8 +290,8 @@ public:
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned);
   void cleanupResultInfo();
-  HTC_RetCode fetchRows(ExHbaseAccessStats *hbs = NULL);
-  HTC_RetCode nextRow(ExHbaseAccessStats *hbs = NULL);
+  HTC_RetCode fetchRows(ExHbaseAccessStats *hbs);
+  HTC_RetCode nextRow(ExHbaseAccessStats *hbs);
   HTC_RetCode getColName(int colNo,
               char **colName,
               short &colNameLen,
@@ -680,7 +681,7 @@ public:
 
   HBLC_RetCode initHFileParams(const HbaseStr &tblName, const Text& hFileLoc, const Text& hfileName, Int64 maxHFileSize);
 
-  HBLC_RetCode addToHFile( short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows);
+  HBLC_RetCode addToHFile( short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, ExHbaseAccessStats *hbs);
 
   HBLC_RetCode closeHFile(const HbaseStr &tblName);
 

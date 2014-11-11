@@ -57,9 +57,9 @@
 SEQ_NUM     TDB_NAME                
 ----------  ------------------------
 
-         1  EX_HBASE_ACCESS         
+         1  SELECT_TRAFODION_KEY_         
          2  EX_SORT                 
-         3  EX_HBASE_ACCESS         
+         3  INSERT_TRAFODION_         
          4  EX_TUPLE_FLOW           
          5  EX_ROOT                 
 
@@ -95,9 +95,9 @@ SEQ_NUM     TDB_NAME
 SEQ_NUM     TDB_NAME                
 ----------  ------------------------
 
-         1  EX_HBASE_ACCESS         
+         1  SELECT_TRAFODION_KEY_         
          2  EX_SORT                 
-         3  EX_HBASE_ACCESS         
+         3  INSERT_TRAFODION_         
          4  EX_TUPLE_FLOW           
          5  EX_ROOT                 
 

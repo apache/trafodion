@@ -2879,6 +2879,66 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap,
       tableName_ = NULL;
     }
 
+  NAString operNm(hbaseTdb->getAccessTypeStr(hbaseTdb->getAccessType()),
+		  heap);
+  if ((hbaseTdb->sqHbaseTable()) &&
+      ((hbaseTdb->getAccessType() == ComTdbHbaseAccess::UPDATE_) ||
+       (hbaseTdb->getAccessType() == ComTdbHbaseAccess::MERGE_) ||
+       (hbaseTdb->getAccessType() == ComTdbHbaseAccess::DELETE_)))
+    {
+      operNm += (hbaseTdb->rowsetOper() ? "SEABASE_ROWSET_" : "SEABASE_");
+    }
+  else if ((hbaseTdb->sqHbaseTable()) &&
+           (hbaseTdb->getAccessType() == ComTdbHbaseAccess::SELECT_) &&
+           (hbaseTdb->rowsetOper()))
+    {
+       operNm += (hbaseTdb->rowsetOper() ? "SEABASE_ROWSET_" : "SEABASE_");
+    }
+  else if (hbaseTdb->getAccessType() == ComTdbHbaseAccess::SELECT_)
+    {
+      if (hbaseTdb->keyMDAMGen())
+        {
+          // must be SQ Seabase table and no listOfScan/Get keys
+          if ((hbaseTdb->sqHbaseTable()) &&
+              (! hbaseTdb->listOfGetRows()) &&
+              (! hbaseTdb->listOfScanRows()))
+            {
+              operNm += "SEABASE_MDAM_";
+            }
+        }
+      else
+        {
+          operNm += (hbaseTdb->sqHbaseTable() ? "SEABASE_" : "HBASE_");
+          operNm += "KEY_";
+        }
+    }
+  else if ((hbaseTdb->getAccessType() == ComTdbHbaseAccess::INSERT_) ||
+           (hbaseTdb->getAccessType() == ComTdbHbaseAccess::UPSERT_))
+    {
+      if (hbaseTdb->sqHbaseTable())
+        {
+          if ((hbaseTdb->vsbbInsert()) && (NOT hbaseTdb->hbaseSqlIUD()))
+            {
+	      operNm += (hbaseTdb->sqHbaseTable() ? "SEABASE_" : "HBASE_");
+              operNm += "VSBB_";
+            }
+          else
+            {
+	      operNm += "SEABASE_";
+            }
+        }
+      else
+        {
+	  operNm += "HBASE_";
+        }
+    }
+
+  Int32 len = operNm.length();
+  if (len > MAX_TDB_NAME_LEN)
+    len = MAX_TDB_NAME_LEN;
+  if (len > 0)
+    setTdbName(operNm.data(), len);
+
   init();
 }
 
@@ -2900,6 +2960,7 @@ void ExHbaseAccessStats::init()
   numBytesRead_ = 0;
   accessedRows_ = 0;
   usedRows_     = 0;
+  numHbaseCalls_ = 0;
 }
 
 ExHbaseAccessStats::~ExHbaseAccessStats()
@@ -2922,6 +2983,7 @@ UInt32 ExHbaseAccessStats::packedLength()
   size += sizeof(numBytesRead_);
   size += sizeof(accessedRows_);
   size += sizeof(usedRows_);
+  size += sizeof(numHbaseCalls_);
   return size;
 }
 
@@ -2937,6 +2999,7 @@ UInt32 ExHbaseAccessStats::pack(char *buffer)
   size += packIntoBuffer(buffer, numBytesRead_);
   size += packIntoBuffer(buffer, accessedRows_);
   size += packIntoBuffer(buffer, usedRows_);
+  size += packIntoBuffer(buffer, numHbaseCalls_);
 
   return size;
 }
@@ -2953,6 +3016,7 @@ void ExHbaseAccessStats::unpack(const char* &buffer)
   unpackBuffer(buffer, numBytesRead_);
   unpackBuffer(buffer, accessedRows_);
   unpackBuffer(buffer, usedRows_);
+  unpackBuffer(buffer, numHbaseCalls_);
 }
 
 void ExHbaseAccessStats::merge(ExHbaseAccessStats *other)
@@ -2962,7 +3026,8 @@ void ExHbaseAccessStats::merge(ExHbaseAccessStats *other)
   lobStats_ = lobStats_ + other->lobStats_;
   numBytesRead_ += other->numBytesRead_;
   accessedRows_ += other->accessedRows_;
-  usedRows_     += other->usedRows_;
+  usedRows_ += other->usedRows_;
+  numHbaseCalls_ += other->numHbaseCalls_;
 }
 
 void ExHbaseAccessStats::copyContents(ExHbaseAccessStats *other)
@@ -2982,7 +3047,8 @@ void ExHbaseAccessStats::copyContents(ExHbaseAccessStats *other)
   lobStats_ = other->lobStats_;
   numBytesRead_ = other->numBytesRead_;
   accessedRows_ = other->accessedRows_;
-  usedRows_     = other->usedRows_;
+  usedRows_ = other->usedRows_;
+  numHbaseCalls_ = other->numHbaseCalls_;
 }
 
 ExOperStats * ExHbaseAccessStats::copyOper(NAMemory * heap)
@@ -3012,6 +3078,8 @@ const char *ExHbaseAccessStats::getNumValTxt(Int32 i) const
       return "AccessedRows";
     case 5:
       return "UsedRows";
+    case 6:
+      return "NumHbaseCalls";
     }
   return NULL;
 }
@@ -3030,6 +3098,8 @@ Int64 ExHbaseAccessStats::getNumVal(Int32 i) const
       return accessedRows_;
     case 5:
       return usedRows_;
+    case 6:
+      return numHbaseCalls_;
     }
   return 0;
 }
@@ -3047,16 +3117,16 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
   buf += *((short *) dataLen);
 
   str_sprintf (buf, 
-	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld  DiskIOs: %Ld ProcessBusyTime: %Ld ",
+	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseCalls: %Ld TimeWaitingOnHbase: %Ld",
 	       (char*)tableName_,
 	       numBytesRead(), //lobStats()->bytesRead,
 	       rowsAccessed(),
 	       rowsUsed(),
-	       lobStats()->numReadReqs, 
-	       timer_.getTime());
+	       hbaseCalls(), //lobStats()->numReadReqs, 
+	       timer_.getTime()
   //	       lobStats()->hdfsAccessLayerTime/1000 
-	       //	       lobStats()->CumulativeReadTime/1000 
-  //	       );
+  //	       lobStats()->CumulativeReadTime/1000 
+	       );
   buf += str_len(buf);
   
  *(short*)dataLen = (short) (buf - dataBuffer);

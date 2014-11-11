@@ -584,6 +584,9 @@ short ExHbaseAccessTcb::moveRowToUpQueue(short * rc)
   up_entry->upState.setMatchNo(++matches_);
   up_entry->upState.status = ex_queue::Q_OK_MMORE;
 
+  if (getHbaseAccessStats())
+    getHbaseAccessStats()->incActualRowsReturned();
+
   // insert into parent
   qparent_.up->insert();
 
@@ -638,6 +641,9 @@ short ExHbaseAccessTcb::moveRowToUpQueue(const char * row, Lng32 len,
   
   up_entry->upState.setMatchNo(++matches_);
   up_entry->upState.status = ex_queue::Q_OK_MMORE;
+
+  if (getHbaseAccessStats())
+    getHbaseAccessStats()->incActualRowsReturned();
 
   // insert into parent
   qparent_.up->insert();
