@@ -1027,6 +1027,15 @@ Lng32 HSHbaseTableDef::getNumPartitions() const
   return getNATable()->getClusteringIndex()->getCountOfPartitions();
 }
 
+Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate)
+{
+  isEstimate = TRUE;
+  if (!naTbl_->isSeabaseMDTable() && CmpCommon::getDefault(ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
+    return naTbl_->estimateHBaseRowCount();
+  else
+    return 0;
+}
+
 Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate,
                                   Int64 &numInserts,
                                   Int64 &numDeletes,

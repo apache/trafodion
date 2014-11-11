@@ -394,12 +394,7 @@ class HSHbaseTableDef : public HSTableDef
       }
     void resetRowCounts()
       {}
-    Int64 getRowCount(NABoolean &isEstimate)
-      {
-        isEstimate = TRUE;
-        //return tableStats_->getEstimatedRowCount();
-        return 0;
-      }
+    Int64 getRowCount(NABoolean &isEstimate);
     Int64 getRowCount(NABoolean &isEstimate,
                       Int64 &numInserts,
                       Int64 &numDeletes,
