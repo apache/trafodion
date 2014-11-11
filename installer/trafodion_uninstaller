@@ -65,7 +65,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --all)
             UNINSTALL_ALL="Y"
-            shift
             ;;
         --help)
             print_usage
@@ -145,7 +144,7 @@ else
     echo "***INFO remove the Trafodion userid and group"
     $TRAF_PDSH sudo rm -rf $TRAF_WORKDIR/$TRAF_USER
     $TRAF_PDSH sudo /usr/sbin/userdel --force --remove $TRAF_USER
-    $TRAF_PDSH "sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null"
+    $TRAF_PDSH sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null
 
     # remove all download files
     echo "***DEBUG: skipping deleting downloaded directory"
