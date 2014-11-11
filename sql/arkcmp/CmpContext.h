@@ -88,6 +88,64 @@ typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
 // Template changes for Yosemite compiler incompatible with others
 typedef HASHDICTIONARY(NAString, CollIndex) CursorSelectColumns;
 
+class CmpContext;
+
+#define CMPCONTEXT_CLASS_NAME_LEN 7
+
+class CmpContextInfo
+{
+public :
+
+  // CmpContxt Class list
+  enum CmpContextClassType
+    {
+      CMPCONTEXT_TYPE_UNKNOWN = -1,
+      CMPCONTEXT_TYPE_NONE = 0,     // CmpContext without type
+      CMPCONTEXT_TYPE_META,         // for metadata compilation
+      CMPCONTEXT_TYPE_USTATS,       // for update stats query compilation
+      CMPCONTEXT_TYPE_LAST
+    };
+
+  static const char * getCmpContextClassName(Int32 t)
+    {
+      switch(t) {
+        case CMPCONTEXT_TYPE_NONE: return("NONE");
+        case CMPCONTEXT_TYPE_META: return("META");
+        case CMPCONTEXT_TYPE_USTATS: return("USTATS");
+        default: return NULL;
+        }
+    }
+
+  CmpContextInfo(CmpContext *cntxt, const char *name = 0)
+  {
+    if (name)
+     strncpy(name_, name, CMPCONTEXT_CLASS_NAME_LEN);
+    else
+     strncpy(name_, "NONE", CMPCONTEXT_CLASS_NAME_LEN);
+    cmpContext_ = cntxt;
+    useCount_ = 0;
+  }
+  ~CmpContextInfo()
+  {
+  }
+
+  void incrUseCount() { useCount_++; }
+  void decrUseCount() { useCount_--; }
+
+  // access methods
+  Int32 getUseCount() { return useCount_; }
+  CmpContext *getCmpContext() { return cmpContext_; }
+  bool isSameClass (const char *name)
+  {
+    return !(strncmp(name_, name, CMPCONTEXT_CLASS_NAME_LEN));
+  }
+
+private :
+  char name_[CMPCONTEXT_CLASS_NAME_LEN]; // care upto CMPCONTEXT_CLASS_NAME_LEN
+  CmpContext *cmpContext_;
+  Int32 useCount_;
+}; 
+
 #pragma nowarn(1506)   // warning elimination 
 class CmpContext
 {
@@ -364,6 +422,9 @@ public :
     
   MDDescsInfo *getTrafMDDescsInfo() { return trafMDDescsInfo_; }
 
+  void setCIClass(CmpContextInfo::CmpContextClassType x) { ciClass_ = x; }
+  CmpContextInfo::CmpContextClassType getCIClass() { return ciClass_; }
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -502,65 +563,13 @@ private:
   EstLogPropSharedPtr emptyInLogProp_;
 
   MDDescsInfo * trafMDDescsInfo_;
+
+  CmpContextInfo::CmpContextClassType ciClass_;
+  
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 
 
 static inline CmpContext::InternalCompileEnum &InternalCompile() 
 { return cmpCurrentContext->internalCompile(); }
 
-#define CMPCONTEXT_CLASS_NAME_LEN 7
-
-class CmpContextInfo
-{
-public :
-
-  // CmpContxt Class list
-  enum CmpContextClassType
-    {
-      CMPCONTEXT_TYPE_UNKNOWN = -1,
-      CMPCONTEXT_TYPE_NONE = 0,     // CmpContext without type
-      CMPCONTEXT_TYPE_META,         // for metadata compilation
-      CMPCONTEXT_TYPE_USTATS,       // for update stats query compilation
-      CMPCONTEXT_TYPE_LAST
-    };
-
-  static const char * getCmpContextClassName(Int32 t)
-    {
-      switch(t) {
-        case CMPCONTEXT_TYPE_NONE: return("NONE");
-        case CMPCONTEXT_TYPE_META: return("META");
-        case CMPCONTEXT_TYPE_USTATS: return("USTATS");
-        default: return NULL;
-        }
-    }
-
-  CmpContextInfo(CmpContext *cntxt, const char *name = 0)
-  {
-    if (name)
-     strncpy(name_, name, CMPCONTEXT_CLASS_NAME_LEN);
-    else
-     strncpy(name_, "NONE", CMPCONTEXT_CLASS_NAME_LEN);
-    cmpContext_ = cntxt;
-    useCount_ = 0;
-  }
-  ~CmpContextInfo()
-  {
-  }
-
-  void incrUseCount() { useCount_++; }
-  void decrUseCount() { useCount_--; }
-
-  // access methods
-  Int32 getUseCount() { return useCount_; }
-  CmpContext *getCmpContext() { return cmpContext_; }
-  bool isSameClass (const char *name)
-  {
-    return !(strncmp(name_, name, CMPCONTEXT_CLASS_NAME_LEN));
-  }
-
-private :
-  char name_[CMPCONTEXT_CLASS_NAME_LEN]; // care upto CMPCONTEXT_CLASS_NAME_LEN
-  CmpContext *cmpContext_;
-  Int32 useCount_;
-}; 
 #endif

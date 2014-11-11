@@ -5275,6 +5275,8 @@ Int32 ContextCli::switchToCmpContext(Int32 cmpCntxtType)
         }
       
       cmpCntxt = CmpCommon::context();
+      cmpCntxt->setCIClass((CmpContextInfo::CmpContextClassType)cmpCntxtType);
+
       cmpCntxtInfo = new(exCollHeap()) CmpContextInfo(cmpCntxt, cmpCntxtName);
       cmpCntxtInfo->incrUseCount();
       cmpContextInfo_.insert(i, cmpCntxtInfo);

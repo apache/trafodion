@@ -5375,6 +5375,7 @@ OptDebug::OptDebug()
   fileIsGood_     = FALSE;
   logFileName_[0] = '\0';
   file_           = NULL;
+  ciClass_        = CmpContextInfo::CMPCONTEXT_TYPE_NONE;
 }
 
 OptDebug::~OptDebug()
@@ -5451,6 +5452,13 @@ ostream& OptDebug::stream()
   if ( fileIsGood_ )
   {
     fstream_.seekp( 0, ios::end );
+
+    if ( CmpCommon::context() &&
+         ciClass_ != CmpCommon::context()->getCIClass() ) 
+      fstream_.setstate(std::ios_base::badbit);
+    else
+      fstream_.clear();
+
     return fstream_;
   }
   else
@@ -5466,6 +5474,18 @@ FILE* OptDebug::fp()
   }
   else
    return stdout;
+}
+
+void OptDebug::setCompileInstanceClass(const char* str) 
+{
+   if ( strcmp(str, "NONE") == 0 || strcmp(str, "USER") == 0 )
+      ciClass_ = CmpContextInfo::CMPCONTEXT_TYPE_NONE;
+   else
+   if ( strcmp(str, "META") == 0 )
+      ciClass_ = CmpContextInfo::CMPCONTEXT_TYPE_META;
+   else
+   if ( strcmp(str, "USTATS") == 0 )
+      ciClass_ = CmpContextInfo::CMPCONTEXT_TYPE_USTATS;
 }
 
 // ---------------------------------------------------------------------

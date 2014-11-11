@@ -3644,6 +3644,19 @@ enum DefaultConstants
   TRAF_UNLOAD_DEF_NULL_STRING,
   TRAF_UNLOAD_DEF_RECORD_SEPARATOR,
   TRAF_LOAD_FORCE_CIF,
+
+  // The threshold on the number of rows scanned in an index join scan. 
+  // If the estimated value is below the threshold, the index will be 
+  // subjected to the elimination heuristics.
+  INDEX_ELIMINATION_THRESHOLD,
+
+  NSK_DBG_PRINT_INDEX_ELIMINATION,
+
+  NSK_DBG_COMPILE_INSTANCE,
+
+  NSK_DBG_QUERY_PREFIX,
+
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
