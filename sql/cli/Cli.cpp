@@ -256,10 +256,8 @@ static Lng32 SQLCLI_Prepare_Setup_Post(
      ULng32 flags
      )
 {
-  Int64 compEndTime = NA_JulianTimestamp();
-  if (stmt)
-    stmt->setCompileEndTime(compEndTime);
   StmtStats * stmtStats = stmt->getStmtStats();
+  Int64 compEndTime = stmt->getCompileEndTime();
   ExMasterStats *masterStats;
   ex_root_tdb *rootTdb = NULL;
   if (stmtStats != NULL)
@@ -5989,7 +5987,16 @@ Lng32 SQLCLI_Prepare2(/*IN*/ CliGlobals * cliGlobals,
   
 	  if( cmpData )
 	    {
-	      cmpData->translateToExternalFormat(query_cmp_data);
+              StmtStats  *stmtStats = stmt->getStmtStats();
+              ExMasterStats *masterStats;
+              Int64 cmpStartTime = -1;
+              Int64 cmpEndTime = NA_JulianTimestamp();
+              if (stmtStats != NULL && (masterStats = stmtStats->getMasterStats()) != NULL)
+                 cmpStartTime = masterStats->getCompStartTime();
+              
+	      cmpData->translateToExternalFormat(query_cmp_data, 
+                      cmpStartTime, cmpEndTime);
+              stmt->setCompileEndTime(cmpEndTime);
 	    }   
 	}
 	

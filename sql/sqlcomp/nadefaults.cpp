@@ -1366,6 +1366,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPLAIN_DISPLAY_FORMAT,		"EXTERNAL"),
 
+  DDkwd__(EXPLAIN_IN_RMS, 		        "OFF"),
+
   DDui___(EXPLAIN_OUTPUT_ROW_SIZE,   "80"),
 
   DDui1__(EXPLAIN_ROOT_INPUT_VARS_MAX,           "2000"), // maximum number of inputs that we can tolerate to 
@@ -3465,8 +3467,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(VOLATILE_TABLE_FIRST_COL_IS_CLUSTERING_KEY, "ON"),
 
   DDkwd__(VSBB_TEST_MODE,			"OFF"),
- XDDkwd__(WMS_CHILD_QUERY_MONITORING,                       "ON"),
- XDDkwd__(WMS_QUERY_MONITORING,                       "ON"),
+ XDDkwd__(WMS_CHILD_QUERY_MONITORING,                       "OFF"),
+ XDDkwd__(WMS_QUERY_MONITORING,                       "OFF"),
   // amount of work we are willing to assign per CPU for any query
   // not running at full system parallelism
  SDDflte_(WORK_UNIT_ESP,      "0.08"),

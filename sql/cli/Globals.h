@@ -74,6 +74,7 @@ class ContextCli;
 class CliStatement;  // $$$ possibly a stub for QuasiFileberManager
 class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
 class ExEspManager;
+class ExSsmpManager;
 class ExSqlComp;
 class IpcEnvironment;
 class MemoryMonitor;
@@ -409,6 +410,7 @@ inline
 
   void setSavedPriority(short val) { savedPriority_ = val; }
   short getSavedPriority() { return savedPriority_; }
+  ExSsmpManager *getSsmpManager();
   NABoolean getIsBeingInitialized() { return inConstructor_; }
 
   // For debugging (dumps) only -- keep current fragment root tcb

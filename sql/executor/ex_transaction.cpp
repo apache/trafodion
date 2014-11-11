@@ -528,7 +528,7 @@ short ExTransaction::rollbackTransaction()
     }
 
   Int32 rc = ABORTTRANSACTION();
-  if (rc != 0)
+  if (rc != 0 && rc != FENOTRANSID)
     {
       createDiagsArea (EXE_ROLLBACK_ERROR_FROM_TRANS_SUBSYS, rc,
 		       "TMF");
@@ -576,7 +576,7 @@ short ExTransaction::rollbackTransactionWaited()
     }
 
   Int32 rc = ABORTTRANSACTION();
-  if (rc != 0)
+  if (rc != 0 && rc != FENOTRANSID)
     {
       createDiagsArea (EXE_ROLLBACK_WAITED_ERROR_TRANS_SUBSYS, rc,
 		       "TMF");

@@ -108,7 +108,6 @@ public:
     ESP_PRIORITY_DELTA,
     ESP_STOP_IDLE_TIMEOUT,
     ESP_RELEASE_WORK_TIMEOUT,
-    EXPLAIN_IN_RMS,
     INTERNAL_FORMAT_IO,
     ISO_MAPPING,
     MASTER_PRIORITY,
@@ -571,9 +570,7 @@ public:
 
   void setExplainInRMS(NABoolean v = TRUE)
   {
-    const Int16 DisAmbiguate = 0;
     explainInRMS_ = v;
-    updateDefaultsValueString(EXPLAIN_IN_RMS, DisAmbiguate, explainInRMS_);
   }
 
   NABoolean isExplainInRMS() { return explainInRMS_; }
@@ -938,6 +935,7 @@ class  AQRStatementAttributes : public NABasicObject {
   Lng32 uniqueStmtIdLen_;
   char *parentQID_;
   char parentQIDSystem_[25];
+  Int64 exeStartTime_;
  
 };
 

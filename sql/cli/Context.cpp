@@ -4238,6 +4238,7 @@ ExStatisticsArea *ContextCli::getMergedStats(
                         short &retryAttempts)
 {
   ExStatisticsArea *stats = NULL;
+  ExStatisticsArea *statsTmp = NULL;
   short tmpStatsMergeType;
 
   CliGlobals *cliGlobals = getCliGlobals();
@@ -4250,9 +4251,41 @@ ExStatisticsArea *ContextCli::getMergedStats(
   }
   else
       tmpStatsMergeType = statsMergeType;
-  if (statsReqType == SQLCLI_STATS_REQ_QID_CURRENT)
+  NABoolean deleteStats = FALSE;
+  if (statsReqType == SQLCLI_STATS_REQ_STMT ||
+          statsReqType == SQLCLI_STATS_REQ_QID_CURRENT)
   {
-    if (getStats() != NULL)
+    if (statsReqType == SQLCLI_STATS_REQ_STMT)
+    {
+       SQLMODULE_ID module;
+       SQLSTMT_ID stmt_id;
+       init_SQLMODULE_ID(&module);
+       init_SQLCLI_OBJ_ID(&stmt_id, SQLCLI_CURRENT_VERSION, stmt_name, &module,
+                     statsReqStr, NULL, SQLCHARSETSTRING_ISO88591, statsReqStrLen);
+       Statement *stmt = getStatement(&stmt_id);
+       ExMasterStats *masterStats, *tmpMasterStats;
+
+       if (stmt != NULL)
+       {
+          statsTmp = stmt->getStatsArea();
+          if (statsTmp == NULL && stmt->getStmtStats() != NULL &&
+                       (masterStats = stmt->getStmtStats()->getMasterStats()) != NULL)
+          {
+             tmpStatsMergeType = masterStats->compilerStatsInfo().collectStatsType();
+             statsTmp = new (exCollHeap()) ExStatisticsArea((NAMemory *)exCollHeap(), 0,
+                        (ComTdb::CollectStatsType)tmpStatsMergeType,
+                        (ComTdb::CollectStatsType)tmpStatsMergeType);
+             tmpMasterStats = new(exHeap())
+             ExMasterStats(exHeap());
+             tmpMasterStats->copyContents(masterStats);
+             statsTmp->setMasterStats(tmpMasterStats);
+             deleteStats = TRUE;
+          }
+       }
+     }
+     else if (statsReqType == SQLCLI_STATS_REQ_QID_CURRENT)
+        statsTmp = getStats(); 
+    if (statsTmp != NULL)
     {
       if (getStats()->getCollectStatsType() ==
           (ComTdb::CollectStatsType) SQLCLI_ALL_STATS)
@@ -4261,13 +4294,13 @@ ExStatisticsArea *ContextCli::getMergedStats(
           (tmpStatsMergeType == getStats()->getCollectStatsType()))
       {
         setDeleteStats(FALSE);
-        stats = getStats();
+        stats = statsTmp;
       }
       else
       {
         stats = new (exCollHeap()) ExStatisticsArea((NAMemory *)exCollHeap(), 0, 
                         (ComTdb::CollectStatsType)tmpStatsMergeType,
-                        getStats()->getOrigCollectStatsType());
+                        statsTmp->getOrigCollectStatsType());
         StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
         if (statsGlobals != NULL)
         {
@@ -4277,14 +4310,14 @@ ExStatisticsArea *ContextCli::getMergedStats(
                                                       savedPriority, savedStopMode,
                                                       FALSE );
           ex_assert(error == 0, "getStatsSemaphore() returned an error");
-          stats->merge(getStats(), tmpStatsMergeType);
+          stats->merge(statsTmp, tmpStatsMergeType);
           setDeleteStats(TRUE);
           statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
                           savedPriority, savedStopMode);
         }
         else
         {
-          stats->merge(getStats(), tmpStatsMergeType);
+          stats->merge(statsTmp, tmpStatsMergeType);
           setDeleteStats(TRUE);
         }
       }
@@ -4300,9 +4333,224 @@ ExStatisticsArea *ContextCli::getMergedStats(
     else
       return NULL;
   }
-  return NULL;
-  return NULL;
+  short cpu = -1;
+  pid_t pid = (pid_t)-1;
+  Int64 timeStamp = -1;
+  Lng32 queryNumber = -1;
+  char nodeName[MAX_SEGMENT_NAME_LEN+1];
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return NULL;
+  }
+  switch (statsReqType)
+  {
+    case SQLCLI_STATS_REQ_QID:
+      if (statsReqStr == NULL)
+      {
+        (diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0("NULL");
+        return NULL;
+      }
+      if (getMasterCpu(statsReqStr, statsReqStrLen, nodeName, MAX_SEGMENT_NAME_LEN+1, cpu) == -1)
+      {
+        (diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0(statsReqStr);
+        return NULL;
+      }
+      break;
+    case SQLCLI_STATS_REQ_CPU:
+    case SQLCLI_STATS_REQ_PID:
+    case SQLCLI_STATS_REQ_RMS_INFO:
+    case SQLCLI_STATS_REQ_PROCESS_INFO:
+    case SQLCLI_STATS_REQ_QID_INTERNAL:
+      if (parse_statsReq(statsReqType, statsReqStr, statsReqStrLen, nodeName,
+                cpu, pid, timeStamp, queryNumber) == -1)
+      {
+        (diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_CPU_PID);
+        return NULL;
+      }
+      break;
+    default:
+      (diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0(statsReqStr);
+      return NULL;
+  }
+  ComDiagsArea *tempDisgsArea = &diagsArea_;
+  ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, 
+           (cpu == -1 ?  cliGlobals->myCpu() : cpu), tempDisgsArea);
+  if (ssmpServer == NULL)
+    return NULL; // diags are in diagsArea_
+
+ //Create the SsmpClientMsgStream on the IpcHeap, since we don't dispose of it immediately.
+ //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
+ //If we create it on the ExStatsTcb's heap, that heap gets deallocated when the statement is
+ //finished, and we can corrupt some other statement's heap later on when we deallocate this stream.
+  SsmpClientMsgStream *ssmpMsgStream  = new (cliGlobals->getIpcHeap())
+        SsmpClientMsgStream((NAHeap *)cliGlobals->getIpcHeap(), ssmpManager);
+
+  ssmpMsgStream->addRecipient(ssmpServer->getControlConnection());
+  RtsHandle rtsHandle = (RtsHandle) this;
+  SessionDefaults *sd = getSessionDefaults();
+  Lng32 RtsTimeout;
+  // Retrieve the Rts collection interval and active queries. If they are valid, calculate the timeout
+  // and send to the SSMP process.
+  NABoolean wmsProcess;
+  if (sd)
+  {
+    RtsTimeout = sd->getRtsTimeout();
+    wmsProcess = sd->getWmsProcess();
+  }
+  else
+  {
+    RtsTimeout = 0;
+    wmsProcess = FALSE;
+  }
+  RtsCpuStatsReq *cpuStatsReq = NULL;
+  RtsStatsReq *statsReq = NULL;
+  RtsQueryId *rtsQueryId = NULL;
+  setDeleteStats(TRUE);
+  if (statsReqType == SQLCLI_STATS_REQ_RMS_INFO)
+  {
+    cpuStatsReq = new (cliGlobals->getIpcHeap())RtsCpuStatsReq(rtsHandle, cliGlobals->getIpcHeap(),
+        nodeName, cpu, activeQueryNum, statsReqType);
+    *ssmpMsgStream << *cpuStatsReq;
+  }
+  else
+  {
+    statsReq = new (cliGlobals->getIpcHeap())RtsStatsReq(rtsHandle,
+                cliGlobals->getIpcHeap(), wmsProcess);
+    *ssmpMsgStream << *statsReq;
+    switch (statsReqType)
+    {
+      case SQLCLI_STATS_REQ_QID:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(),
+              statsReqStr, statsReqStrLen,
+              (UInt16)tmpStatsMergeType, activeQueryNum);
+        break;
+      case SQLCLI_STATS_REQ_CPU:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(),
+          nodeName, cpu,
+          (UInt16)tmpStatsMergeType, activeQueryNum);
+        break;
+      case SQLCLI_STATS_REQ_PID:
+      case SQLCLI_STATS_REQ_PROCESS_INFO:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(),
+          nodeName,  cpu, pid,
+          (UInt16)tmpStatsMergeType, activeQueryNum, statsReqType);
+        break;
+      case SQLCLI_STATS_REQ_QID_INTERNAL:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(),
+           nodeName, cpu, pid, timeStamp, queryNumber,
+           (UInt16)tmpStatsMergeType, activeQueryNum);
+        break;
+      default:
+        rtsQueryId = NULL;
+        break;
+      break;
+    }
+    *ssmpMsgStream << *rtsQueryId;
+  }
+  if (RtsTimeout != 0)
+  {
+   // We have a valid value for the timeout, so we use it by converting it to centiseconds.
+   RtsTimeout = RtsTimeout * 100;
+  }
+  else
+    //Use the default value of 4 seconds, or 400 centiseconds.
+    RtsTimeout = 400;
+  // Send the message
+  ssmpMsgStream->send(FALSE, -1);
+  Int64 startTime = NA_JulianTimestamp();
+  Int64 currTime;
+  Int64 elapsedTime;
+  IpcTimeout timeout = (IpcTimeout) RtsTimeout;
+  while (timeout > 0 && ssmpMsgStream->hasIOPending())
+  {
+    ssmpMsgStream->waitOnMsgStream(timeout);
+    currTime = NA_JulianTimestamp();
+    elapsedTime = (Int64)(currTime - startTime) / 10000;
+    timeout = (IpcTimeout)(RtsTimeout - elapsedTime);
+  }
+  // Callbacks would have placed broken connections into
+  // ExSsmpManager::deletedSsmps_.  Delete them now.
+  ssmpManager->cleanupDeletedSsmpServers();
+  if (ssmpMsgStream->getState() == IpcMessageStream::ERROR_STATE && retryAttempts < 3)
+  {
+    if (statsReqType != SQLCLI_STATS_REQ_RMS_INFO)
+    {
+      rtsQueryId->decrRefCount();
+      statsReq->decrRefCount();
+    }
+    else
+      cpuStatsReq->decrRefCount();
+    DELAY(100);
+    retryAttempts++;
+    stats = getMergedStats(statsReqType,
+                          statsReqStr,
+                          statsReqStrLen,
+                          activeQueryNum,
+                          statsMergeType,
+                          retryAttempts);
+    return stats;
+  }
+ if (ssmpMsgStream->getState() == IpcMessageStream::BREAK_RECEIVED)
+  {
+   // Break received - set diags area
+   (diagsArea_) << DgSqlCode(-EXE_CANCELED);
+    return NULL;
+  }
+  if (! ssmpMsgStream->isReplyReceived())
+  {
+    char lcStatsReqStr[ComSqlId::MAX_QUERY_ID_LEN+1];
+    Lng32 len;
+    if (statsReqStrLen > ComSqlId::MAX_QUERY_ID_LEN)
+      len = ComSqlId::MAX_QUERY_ID_LEN;
+    else
+      len = statsReqStrLen;
+    str_cpy_all(lcStatsReqStr, statsReqStr, len);
+    lcStatsReqStr[len] = '\0';
+    (diagsArea_) << DgSqlCode(-EXE_RTS_TIMED_OUT)
+        << DgString0(lcStatsReqStr) << DgInt0(RtsTimeout/100);
+    return NULL;
+  }
+  if (ssmpMsgStream->getRtsQueryId() != NULL)
+  {
+    rtsQueryId->decrRefCount();
+    statsReq->decrRefCount();
+    retryAttempts = 0;
+    stats = getMergedStats(SQLCLI_STATS_REQ_QID,
+                          ssmpMsgStream->getRtsQueryId()->getQueryId(),
+                          ssmpMsgStream->getRtsQueryId()->getQueryIdLen(),
+                          1,
+                          statsMergeType,
+                          retryAttempts);
+    ssmpMsgStream->getRtsQueryId()->decrRefCount();
+    return stats;
+  }
+  stats = ssmpMsgStream->getStats();
+  if (stats != NULL && stats->getMasterStats() != NULL)
+  {
+    if (tmpStatsMergeType == SQLCLIDEV_SAME_STATS)
+      stats->getMasterStats()->setCollectStatsType(stats->getCollectStatsType());
+    else
+      stats->getMasterStats()->setCollectStatsType(( ComTdb::CollectStatsType)tmpStatsMergeType);
+  }
+  if (statsReqType != SQLCLI_STATS_REQ_RMS_INFO)
+  {
+    rtsQueryId->decrRefCount();
+    statsReq->decrRefCount();
+  }
+  else
+    cpuStatsReq->decrRefCount();
+  if (ssmpMsgStream->getNumSscpReqFailed() > 0)
+  {
+    (diagsArea_) << DgSqlCode(EXE_RTS_REQ_PARTIALY_SATISFIED)
+        << DgInt0(ssmpMsgStream->getNumSscpReqFailed());
+    if (stats != NULL && stats->getMasterStats() != NULL)
+        stats->getMasterStats()->setStatsErrorCode(EXE_RTS_REQ_PARTIALY_SATISFIED);
+  }
+  return stats;
 }
+
 
 Lng32 ContextCli::GetStatistics2(
             /* IN */    short statsReqType,
@@ -4361,13 +4609,14 @@ Lng32 ContextCli::GetStatistics2(
 void ContextCli::setStatsArea(ExStatisticsArea *stats, NABoolean isStatsCopy,
                               NABoolean inSharedSegment, NABoolean getSemaphore)
 {
+   StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
+   short savedPriority, savedStopMode, error;
+
   // Delete Stats only when it is different from the incomng stats
   if (statsCopy() && stats_ != NULL && stats != stats_)
   {
     if (statsInSharedSegment() && getSemaphore)
     {
-      StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
-      short savedPriority, savedStopMode;
       if (statsGlobals != NULL)
       {
         short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
@@ -4388,7 +4637,26 @@ void ContextCli::setStatsArea(ExStatisticsArea *stats, NABoolean isStatsCopy,
   setStatsInSharedSegment(inSharedSegment);
   if (prevStmtStats_ != NULL)
   {
-    prevStmtStats_->setStmtStatsUsed(FALSE);
+    if (prevStmtStats_->canbeGCed() && 
+             (!prevStmtStats_->isWMSMonitoredCliQuery()))
+    {
+      if (statsGlobals != NULL)
+      {
+        if (getSemaphore)
+        {
+           error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+                  cliGlobals_->myPin(), savedPriority, savedStopMode, FALSE );
+           ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        }
+        prevStmtStats_->setStmtStatsUsed(FALSE);
+        statsGlobals->removeQuery(cliGlobals_->myPin(), prevStmtStats_); 
+        if (getSemaphore)
+           statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),
+              cliGlobals_->myPin(), savedPriority, savedStopMode);
+      }
+    }
+    else
+       prevStmtStats_->setStmtStatsUsed(FALSE);
     prevStmtStats_ = NULL;
   }
 }
@@ -4422,17 +4690,22 @@ Lng32 ContextCli::resetCS(const char * csName)
 }
 
 Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,
-                     char *nodeName, short &cpu, pid_t &pid)
+                     char *nodeName, short &cpu, pid_t &pid,
+                     Int64 &timeStamp, Lng32 &queryNumber)
 {
   char tempStr[ComSqlId::MAX_QUERY_ID_LEN+1];
   char *ptr;
   Int64 tempNum;
   char *cpuTempPtr;
   char *pinTempPtr;
+  char *timeTempPtr = (char *)NULL;
+  char *queryNumTempPtr = (char *)NULL;
   short pHandle[10];
   Int32 error;
   Int32 tempCpu;
   pid_t tempPid;
+  Int64 tempTime = -1;
+  Lng32 tempQnum = -1;
   short len;
   Int32 cpuMinRange;
   CliGlobals *cliGlobals;
@@ -4519,6 +4792,50 @@ Lng32 parse_statsReq(short statsReqType,char *statsReqStr, Lng32 statsReqStrLen,
       cpu = tempCpu;                                  
       pid = tempPid;                            
     }
+    break;
+   case SQLCLI_STATS_REQ_QID_INTERNAL:
+    str_cpy_all(tempStr, statsReqStr, statsReqStrLen);
+    tempStr[statsReqStrLen] = '\0';
+    nodeName[0] = '\0';
+    ptr = tempStr;
+    cpuTempPtr = ptr;
+    if ((ptr = str_chr(cpuTempPtr, ',')) != NULL)
+    {
+      *ptr++ = '\0';
+      pinTempPtr = ptr;
+    }
+    else
+      return -1;
+    tempCpu = str_atoi(cpuTempPtr, str_len(cpuTempPtr));
+    if (tempCpu < 0)
+             return -1;
+    cpu = tempCpu;
+    if ((ptr = str_chr(pinTempPtr, ',')) != NULL)
+    {
+       *ptr++ = '\0';
+       timeTempPtr = ptr;
+    }
+    else
+       return -1;
+    tempPid = str_atoi(pinTempPtr, str_len(pinTempPtr));
+    if (tempPid < 0 )
+        return -1;
+    pid = (pid_t)tempPid;
+    if ((ptr = str_chr(timeTempPtr, ',')) != NULL)
+    {
+       *ptr++ = '\0';
+       queryNumTempPtr = ptr;
+    }
+    else
+       return -1;
+    tempTime = str_atoi(timeTempPtr, str_len(timeTempPtr));
+    if (tempTime < 0)
+       return -1;
+    timeStamp = tempTime;
+    tempQnum = str_atoi(queryNumTempPtr, str_len(queryNumTempPtr));
+    if (tempQnum < 0)
+       return -1;
+    queryNumber = tempQnum;
     break;
   default:
     return -1;

@@ -539,6 +539,7 @@ public:
   inline UInt32 * getEventConsumed() { return &eventConsumed_; }
   inline IpcEnvironment * getEnvironment() { return env_; }
   inline ExEspManager * getEspManager() { return espManager_; }
+  inline ExSsmpManager *getSsmpManager() { return ssmpManager_; }
   inline ExeTraceInfo *getExeTraceInfo() { return exeTraceInfo_; }
   NAHeap *getIpcHeap() { return ipcHeap_; }
   inline ExUdrServerManager *getUdrServerManager() { return udrServerManager_; }
@@ -1046,4 +1047,5 @@ ContextCli::getOpenStatementList() const
 #endif
 
 Lng32 parse_statsReq(short statsReqType,char *statsReqPtr, Lng32 statsReqStrLen,
-                     char *nodeName, short &cpu, pid_t &pid);
+                     char *nodeName, short &cpu, pid_t &pid, Int64 &timeStamp,
+                     Lng32 &queryNumber);

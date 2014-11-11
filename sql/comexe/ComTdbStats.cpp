@@ -324,18 +324,13 @@ void CompilerStatsInfo :: translateToExternalFormat(SQL_QUERY_COMPILER_STATS_INF
 
 }
 
-void CompilationStatsData :: translateToExternalFormat(SQL_COMPILATION_STATS_DATA *query_cmp_data)
+void CompilationStatsData :: translateToExternalFormat(
+        SQL_COMPILATION_STATS_DATA *query_cmp_data, 
+        Int64 cmpStartTime, Int64 cmpEndTime)
 {
-  query_cmp_data->compileStartTime 
-    = compileStartTime();
+  query_cmp_data->compileStartTime  = cmpStartTime;
 
-  query_cmp_data->compileEndTime
-    = compileEndTime();
-
-  if ( query_cmp_data->compileEndTime == 0)
-    {
-      query_cmp_data->compileEndTime = NA_ConvertTimestamp(NA_JulianTimestamp()) ;
-    }
+  query_cmp_data->compileEndTime = cmpEndTime;
 
   str_cpy_all(query_cmp_data->compilerId,
 	      compilerId(),

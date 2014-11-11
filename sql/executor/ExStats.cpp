@@ -3132,6 +3132,87 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
  *(short*)dataLen = (short) (buf - dataBuffer);
 }
 
+Lng32 ExHbaseAccessStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
+{
+  sqlStats_item->error_code = 0;
+  Int32 len;
+  Int32 len1;
+  const char *tableName;
+  char tmpBuf[100];
+
+  switch (sqlStats_item->statsItem_id)
+  {
+  case SQLSTATS_TABLE_ANSI_NAME:
+    if (sqlStats_item->str_value != NULL)
+    {
+      if (tableName_ != NULL)
+        tableName = tableName_;
+      else
+        tableName = "NO_NAME_YET";
+      len = str_len(tableName);
+      if (len > sqlStats_item->str_max_len)
+      {
+        len = sqlStats_item->str_max_len;
+        sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+      }
+      str_cpy(sqlStats_item->str_value, tableName, len);
+      sqlStats_item->str_ret_len = len;
+    }
+    break;
+  case SQLSTATS_EST_ROWS_ACCESSED:
+    sqlStats_item->double_value = getEstRowsAccessed();
+    break;
+  case SQLSTATS_EST_ROWS_USED:
+    sqlStats_item->double_value = getEstRowsUsed();
+    break;
+  case SQLSTATS_ACT_ROWS_ACCESSED:
+    sqlStats_item->int64_value = accessedRows_;
+    break;
+  case SQLSTATS_ACT_ROWS_USED:
+    sqlStats_item->int64_value = usedRows_;
+    break;
+  case SQLSTATS_HBASE_IOS:
+    sqlStats_item->int64_value = numHbaseCalls_;
+    break;
+  case SQLSTATS_HBASE_IO_BYTES:
+    sqlStats_item->int64_value = numBytesRead_;
+    break;
+  case SQLSTATS_HBASE_IO_ELAPSED_TIME:
+    sqlStats_item->int64_value = timer_.getTime();
+    break;
+  case SQLSTATS_DETAIL:
+    if (sqlStats_item->str_value != NULL)
+    {
+      if (tableName_ != NULL)
+      {
+        len = str_len(tableName_);
+        if (len > sqlStats_item->str_max_len)
+        {
+           sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+           str_cpy_all(sqlStats_item->str_value, tableName_, sqlStats_item->str_max_len);
+        }
+        else
+           str_cpy_all(sqlStats_item->str_value, tableName_, len);
+      }
+      else 
+        len = 0; 
+      str_sprintf(tmpBuf, "|%Ld|%Ld", accessedRows_,
+               numBytesRead_);
+      len1 = str_len(tmpBuf);
+      if ((len+len1) > sqlStats_item->str_max_len)
+        sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+      else
+        str_cpy(sqlStats_item->str_value+len, tmpBuf, len1);
+      sqlStats_item->str_ret_len = len+len1;
+    }
+    break;
+  default:
+    ExOperStats::getStatsItem(sqlStats_item);
+    break;
+  }
+  return 0;
+}
+
 //////////////////////////////////////////////////////////////////
 // class ExProbeCacheStats
 //////////////////////////////////////////////////////////////////
@@ -7177,7 +7258,7 @@ ExOperStats * ExStatisticsArea::get(ExOperStats::StatType type,
   {
     if ((collectStatsType_ == ComTdb::PERTABLE_STATS 
       || collectStatsType_ == ComTdb::PROGRESS_STATS) &&
-      stat->statType() == ExOperStats::PERTABLE_STATS &&
+      (stat->statType() == ExOperStats::PERTABLE_STATS) &&
       stat->statType() == type &&
       stat->getPertableStatsId() == tdbId)
       return stat;
@@ -7989,9 +8070,18 @@ Lng32 ExStatisticsArea::getStatsDesc(short *statsCollectType,
         sqlstats_desc[1].tdb_name[0] = '\0';
       }
       else 
-      if(stat->statType() == ExOperStats::PERTABLE_STATS)
+      if (stat->statType() == ExOperStats::PERTABLE_STATS )
       {
         sqlstats_desc[i].tdb_id = (short)stat->getPertableStatsId();
+        sqlstats_desc[i].stats_type = stat->statType();
+        sqlstats_desc[i].tdb_name[0] = '\0';
+        i++;
+      }
+      else
+      if (stat->statType() == ExOperStats::HBASE_ACCESS_STATS ||
+         stat->statType() == ExOperStats::HDFSSCAN_STATS)
+      {
+        sqlstats_desc[i].tdb_id = (short)stat->getTdbId();
         sqlstats_desc[i].stats_type = stat->statType();
         sqlstats_desc[i].tdb_name[0] = '\0';
         i++;
@@ -8163,6 +8253,7 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
   ComTdb::ex_node_type tdbType;
   collectStatsType = other->getCollectStatsType();
   appendStatsType = getCollectStatsType(); 
+  short subReqType = getSubReqType();
   // It is possible that StatisticsArea at the ESP might contain
   // ROOT_OPER_STATS entries from other ESPs/EID. We should not
   // be looking at those ROOT_OPER_STATS when CPU offender stats is requested
@@ -8358,7 +8449,8 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
       else
       { 
          tdbType = stat->getTdbType();
-         if (tdbType  == ComTdb::ex_EID_ROOT && detailLevel_ == -1)
+         if (tdbType  == ComTdb::ex_EID_ROOT && 
+                subReqType == SQLCLI_STATS_REQ_SE_ROOT)
          {
             if (((ExFragRootOperStats *)stat)->filterForCpuStats())
             {
@@ -8370,7 +8462,8 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
             }
          }
          else
-         if (detailLevel_ == -2 && statType == ExOperStats::PERTABLE_STATS)
+         if (subReqType == SQLCLI_STATS_REQ_SE_OPERATOR  && 
+                 statType == ExOperStats::PERTABLE_STATS)
          {
             if (((ExPertableStats *)stat)->filterForCpuStats())
             {
@@ -8513,7 +8606,9 @@ ExStatsTcb::ExStatsTcb(const ExStatsTdb & statsTdb, ex_globals *glob)
   inputStmtName_ = NULL;
   cpu_ = -1;
   pid_ = -1;
-  nodeName_[0] ='\0';
+  nodeName_[0] = '\0';
+  timeStamp_ = -1;
+  queryNumber_ = -1;
   qid_ = NULL;
   reqType_ = SQLCLI_STATS_REQ_STMT;
   retryAttempts_ = 0;
@@ -8712,6 +8807,7 @@ short ExStatsTcb::work()
                   case SQLCLI_STATS_REQ_PID:
                   case SQLCLI_STATS_REQ_QID:
                   case SQLCLI_STATS_REQ_QID_DETAIL:
+                  case SQLCLI_STATS_REQ_QID_INTERNAL:
                   case SQLCLI_STATS_REQ_CPU_OFFENDER:
                   case SQLCLI_STATS_REQ_SE_OFFENDER:
                   case SQLCLI_STATS_REQ_RMS_INFO:
@@ -9238,9 +9334,260 @@ void ExStatsTcb::getColumnValues(ExOperStats *stat)
 
 ExStatisticsArea *ExStatsTcb::sendToSsmp()
 {
-  return NULL;
-  return NULL;
+  ExStatisticsArea *stats = NULL;
+  CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
+	                castToExMasterStmtGlobals()->getCliGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    // Runtime Stats not running.
+    // Fill in diagsArea with details and return NULL
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return NULL; 
+  }
+
+  // Verify that we have valid parameters for each kind of request. If not, fill in the diagsArea
+  // and return NULL.
+  switch (reqType_)
+  {
+    case SQLCLI_STATS_REQ_QID:
+    case SQLCLI_STATS_REQ_QID_DETAIL:
+      if (nodeName_[0] == '\0' || cpu_ == -1)
+      {
+        // Invalid queryID. We were unable to extract the NodeNumber and/or CPU from it.
+        IpcAllocateDiagsArea(diagsArea_, getHeap());
+        (*diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0(qid_);
+        return NULL;
+      }
+      break;
+    case SQLCLI_STATS_REQ_CPU:
+      if (cpu_ == -1)
+      {
+        //Invalid CPU number. We will not be able to retrieve runtime stats for it.
+        IpcAllocateDiagsArea(diagsArea_, getHeap());
+        (*diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_CPU_PID);
+        return NULL;
+      }
+      break;
+    case SQLCLI_STATS_REQ_PID:
+    case SQLCLI_STATS_REQ_PROCESS_INFO:
+      if (cpu_ == -1 || pid_ == -1)
+      {
+        //Invalid CPU number or PID number. We will not be able to retrieve runtime stats for it.
+        IpcAllocateDiagsArea(diagsArea_, getHeap());
+        (*diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_CPU_PID);
+        return NULL;
+      }
+      break;
+    case SQLCLI_STATS_REQ_CPU_OFFENDER:
+    case SQLCLI_STATS_REQ_MEM_OFFENDER:
+    case SQLCLI_STATS_REQ_SE_OFFENDER:
+    case SQLCLI_STATS_REQ_RMS_INFO:
+    case SQLCLI_STATS_REQ_ET_OFFENDER:
+      break;
+    case SQLCLI_STATS_REQ_QID_INTERNAL:
+      if (cpu_ == -1 || pid_ == -1 || timeStamp_ == -1 || queryNumber_ == -1 )
+      {
+         // Invalid internal QID we will not be able to retrieve runtime stats for it.
+         IpcAllocateDiagsArea(diagsArea_, getHeap());
+         (*diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID_INTERNAL);
+         return NULL;
+      }
+      break;
+    default:
+      // Invalid queryID. We were unable to extract the NodeNumber and/or CPU from it.
+      IpcAllocateDiagsArea(diagsArea_, getHeap());
+      (*diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0(inputStmtName_);
+      return NULL;
+  }
+
+  ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
+  short cpu;
+  if (cpu_ == -1)
+    cpu = cliGlobals->myCpu();
+  else
+    cpu = cpu_;
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName_, cpu, diagsArea_);
+  if (ssmpServer == NULL)
+    return NULL; // diags are in diagsArea_
+
+  //Create the SsmpClientMsgStream on the IpcHeap, since we don't dispose of it immediately.
+  //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
+  //If we create it on the ExStatsTcb's heap, that heap gets deallocated when the statement is 
+  //finished, and we can corrupt some other statement's heap later on when we deallocate this stream.
+
+  SsmpClientMsgStream *ssmpMsgStream  = new (cliGlobals->getIpcHeap())
+        SsmpClientMsgStream((NAHeap *)cliGlobals->getIpcHeap(), ssmpManager);
+
+  ssmpMsgStream->addRecipient(ssmpServer->getControlConnection());
+  RtsHandle rtsHandle = (RtsHandle) this;
+  RtsStatsReq *statsReq = NULL;
+  RtsCpuStatsReq *cpuStatsReq = NULL;
+  RtsQueryId *rtsQueryId = NULL;
+
+  // Retrieve the Rts collection interval and active queries. If they are valid, calculate the timeout
+  // and send to the SSMP process.
+  SessionDefaults *sd = cliGlobals->currContext()->getSessionDefaults();
+  Lng32 RtsTimeout;
+  NABoolean wmsProcess;
+  if (sd)
+  {
+    RtsTimeout = sd->getRtsTimeout();
+    wmsProcess = sd->getWmsProcess();
+  }
+  else
+  {
+    RtsTimeout = 0;
+    wmsProcess = FALSE;
+  }
+
+  if (reqType_ == SQLCLI_STATS_REQ_CPU_OFFENDER || 
+      reqType_ == SQLCLI_STATS_REQ_MEM_OFFENDER || 
+      reqType_ == SQLCLI_STATS_REQ_SE_OFFENDER || 
+      reqType_ == SQLCLI_STATS_REQ_ET_OFFENDER || 
+      reqType_ == SQLCLI_STATS_REQ_RMS_INFO)
+  {
+    cpuStatsReq = new (cliGlobals->getIpcHeap())RtsCpuStatsReq(rtsHandle, cliGlobals->getIpcHeap(),
+        nodeName_, cpu_, activeQueryNum_, reqType_);
+    cpuStatsReq->setSubReqType(subReqType_);
+    cpuStatsReq->setFilter(filter_);
+    *ssmpMsgStream << *cpuStatsReq;
+  }
+  else
+  {
+    statsReq = new (cliGlobals->getIpcHeap()) RtsStatsReq(rtsHandle, cliGlobals->getIpcHeap(), wmsProcess);
+    *ssmpMsgStream << *statsReq;
+    switch (reqType_)
+    {
+      case SQLCLI_STATS_REQ_QID:
+      case SQLCLI_STATS_REQ_QID_DETAIL:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(), qid_, (Lng32)str_len(qid_), 
+            statsMergeType_, activeQueryNum_, reqType_, detailLevel_);
+        break;
+      case SQLCLI_STATS_REQ_CPU:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(), nodeName_,  cpu_, 
+          statsMergeType_, activeQueryNum_);
+        break;
+      case SQLCLI_STATS_REQ_PID:
+      case SQLCLI_STATS_REQ_PROCESS_INFO:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(), nodeName_,  cpu_, pid_, 
+          statsMergeType_, activeQueryNum_, reqType_);
+        rtsQueryId->setSubReqType(subReqType_);
+        break;
+      case SQLCLI_STATS_REQ_QID_INTERNAL:
+        rtsQueryId = new (cliGlobals->getIpcHeap()) RtsQueryId(cliGlobals->getIpcHeap(), nodeName_, cpu_, pid_,
+          timeStamp_, queryNumber_, statsMergeType_, activeQueryNum_);
+        break;
+      default:
+        rtsQueryId = NULL;
+        break;
+    }
+    *ssmpMsgStream << *rtsQueryId;
+  }
+  if (RtsTimeout != 0)
+  {
+    // We have a valid value for the timeout, so we use it by converting it to centiseconds.
+    RtsTimeout = RtsTimeout * 100;
+  }
+  else
+    //Use the default value of 4 seconds, or 400 centiseconds.
+    RtsTimeout = 400;
+  
+  // Send the message
+  ssmpMsgStream->send(FALSE, -1); 
+  Int64 startTime = NA_JulianTimestamp();
+  Int64 currTime;
+  Int64 elapsedTime;
+  IpcTimeout timeout = (IpcTimeout) RtsTimeout;
+  while (timeout > 0 && ssmpMsgStream->hasIOPending())
+  {
+    ssmpMsgStream->waitOnMsgStream(timeout);
+    currTime = NA_JulianTimestamp();
+    elapsedTime = (Int64)(currTime - startTime) / 10000;
+    timeout = (IpcTimeout)(RtsTimeout - elapsedTime);
+  }
+  // Callbacks would have placed broken connections into 
+  // ExSsmpManager::deletedSsmps_.  Delete them now.
+  ssmpManager->cleanupDeletedSsmpServers();
+  if (ssmpMsgStream->getState() == IpcMessageStream::ERROR_STATE && retryAttempts_ < 3) 
+  {
+    switch (reqType_)
+    {
+        case SQLCLI_STATS_REQ_CPU_OFFENDER:
+        case SQLCLI_STATS_REQ_MEM_OFFENDER:
+        case SQLCLI_STATS_REQ_SE_OFFENDER:
+        case SQLCLI_STATS_REQ_RMS_INFO:
+        case SQLCLI_STATS_REQ_ET_OFFENDER:
+           cpuStatsReq->decrRefCount();
+           break;
+        default:
+           rtsQueryId->decrRefCount();
+           statsReq->decrRefCount();
+           break;
+    }
+    DELAY(100);
+    retryAttempts_++;
+    stats = sendToSsmp();
+    retryAttempts_ = 0;
+    return stats;
+  }    
+  if (ssmpMsgStream->getState() == IpcMessageStream::BREAK_RECEIVED)
+  {     
+    // Break received - set diags area
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_CANCELED);
+    
+    return NULL;
+  }
+  if (! ssmpMsgStream->isReplyReceived())
+  {
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_RTS_TIMED_OUT) 
+      << DgString0(inputStmtName_) << DgInt0(RtsTimeout/100) ;
+    return NULL;
+  }
+  retryAttempts_ = 0;
+  if (ssmpMsgStream->getRtsQueryId() != NULL)
+  {
+    rtsQueryId->decrRefCount();
+    statsReq->decrRefCount();
+    if (inputStmtName_)
+      NADELETEBASIC(inputStmtName_, getHeap());
+    inputStmtName_ = new(getHeap()) 
+        char[ssmpMsgStream->getRtsQueryId()->getQueryIdLen()+1+4]; // 4 for QID=
+                                                                                       
+    str_cat("QID=", ssmpMsgStream->getRtsQueryId()->getQueryId(), inputStmtName_);
+    Lng32 retcode = parse_stmt_name(inputStmtName_, str_len(inputStmtName_));
+    ssmpMsgStream->getRtsQueryId()->decrRefCount();
+    stats = sendToSsmp();
+    return stats;
+  }
+  stats = ssmpMsgStream->getStats();
+  switch (reqType_)
+  {
+     case SQLCLI_STATS_REQ_CPU_OFFENDER:
+     case SQLCLI_STATS_REQ_MEM_OFFENDER:
+     case SQLCLI_STATS_REQ_SE_OFFENDER:
+     case SQLCLI_STATS_REQ_RMS_INFO:
+     case SQLCLI_STATS_REQ_ET_OFFENDER:
+        cpuStatsReq->decrRefCount();
+        break;
+     default:
+        rtsQueryId->decrRefCount();
+        statsReq->decrRefCount();
+        break;
+  }
+  if (ssmpMsgStream->getNumSscpReqFailed() > 0)
+  {
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(EXE_RTS_REQ_PARTIALY_SATISFIED) 
+        << DgInt0(ssmpMsgStream->getNumSscpReqFailed());
+    if (stats != NULL && stats->getMasterStats() != NULL)
+        stats->getMasterStats()->setStatsErrorCode(EXE_RTS_REQ_PARTIALY_SATISFIED);
+  }
+  return stats;
 }
+
 
 Lng32 ExStatsTcb::parse_stmt_name(char *string, Lng32 len)
 {
@@ -9248,7 +9595,7 @@ Lng32 ExStatsTcb::parse_stmt_name(char *string, Lng32 len)
   short idLen;
 
   reqType_ = (short)str_parse_stmt_name(string, len, nodeName_, &cpu_, 
-    &pid_, &idOffset, &idLen, &activeQueryNum_, 
+    &pid_, &timeStamp_, &queryNumber_, &idOffset, &idLen, &activeQueryNum_, 
     &statsMergeType_, &detailLevel_, &subReqType_, &filter_);
   if (reqType_ == SQLCLI_STATS_REQ_QID || reqType_ == SQLCLI_STATS_REQ_QID_DETAIL)
   {
@@ -9272,6 +9619,8 @@ Lng32 ExStatsTcb::parse_stmt_name(char *string, Lng32 len)
     str_cpy_all(stmtName_, string+idOffset, idLen);
     stmtName_[idLen] ='\0';
   }
+  if (reqType_ == SQLCLI_STATS_REQ_QID_INTERNAL)
+     nodeName_[0] = '\0';
   return reqType_;
 }
 
@@ -10377,6 +10726,8 @@ void ExMasterStats::setSIKeys(CliGlobals *cliGlobals,
 }
 Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
                          short *cpu, pid_t *pid, 
+                         Int64 *timeStamp,
+                         Lng32 *queryNumber,
                          short *idOffset,
                          short *idLen,
                          short *activeQueryNum,
@@ -10391,6 +10742,8 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   char *nodeNameTemp = NULL;
   char *pidTemp = NULL;
   char *cpuTemp = NULL;
+  char *timeTemp = NULL;
+  char *queryNumTemp = NULL;
   char *qidTemp = NULL;
   char *etTemp = NULL;
   char *stmtTemp = NULL;
@@ -10410,7 +10763,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   NABoolean memOffender = FALSE;
   NABoolean processStats  = FALSE;
   NABoolean pidStats = FALSE;
-
+  NABoolean qidInternalStats = FALSE;
 
  *cpu = -1;
  *pid = -1;
@@ -10433,6 +10786,19 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
         *idLen = (short)str_len(ptr);
       else
         *idLen = 0;
+    }
+    else
+    if (strncasecmp(ptr, "QID_INTERNAL", 12) == 0)
+    {
+      ptr = str_tok(NULL, ',', &internal);
+      cpuTemp = ptr;
+      ptr = str_tok(NULL, ',', &internal);
+      pidTemp = ptr;
+      ptr = str_tok(NULL, ',', &internal);
+      timeTemp = ptr;
+      ptr = str_tok(NULL, ',', &internal);
+      queryNumTemp = ptr;
+      qidInternalStats = TRUE;
     }
     else
     if (strncasecmp(ptr, "QID", 3) == 0)
@@ -10660,7 +11026,8 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       retcode = SQLCLI_STATS_REQ_PROCESS_INFO;
     else if (pidStats)
       retcode = SQLCLI_STATS_REQ_PID;
-
+    else if (qidInternalStats)
+      retcode = SQLCLI_STATS_REQ_QID_INTERNAL;
     else
       retcode = SQLCLI_STATS_REQ_CPU;
   }
@@ -10671,7 +11038,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
         tempNum = -1; 
     if (diskOffender)
       retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
-    if (tempNum = -1)
+    if (tempNum == -2)
         *subReqType = SQLCLI_STATS_REQ_SE_ROOT;
      else
         *subReqType = SQLCLI_STATS_REQ_SE_OPERATOR;
@@ -10693,6 +11060,20 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
           tempNum = -1;
        *pid = (short)tempNum;
     }
+  }
+  if (timeTemp != NULL)
+  {
+     tempNum = str_atoi(timeTemp, str_len(timeTemp));
+     if (tempNum < 0)
+        tempNum = -1;
+     *timeStamp = (Int64)tempNum;
+  }
+  if (queryNumTemp != NULL)
+  {
+     tempNum = str_atoi(queryNumTemp, str_len(queryNumTemp));
+     if (tempNum < 0)
+        tempNum = -1;
+     *queryNumber = (Lng32)tempNum;
   }
   if (memThreshold != NULL)
   {
@@ -10771,6 +11152,17 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       *activeQueryNum = RtsQueryId::ANY_QUERY_;
       break;
     }
+  }
+  if (qidInternalStats)
+  {
+     retcode = SQLCLI_STATS_REQ_QID_INTERNAL;
+     if ( -1 == *cpu || -1 == *pid || -1 == *timeStamp || -1 == *queryNumber )
+     {
+         *cpu = -1;
+         *pid = -1;
+         *timeStamp = -1;
+         *queryNumber = -1;
+     }
   }
   if (retcode == SQLCLI_STATS_REQ_NONE)
   {
@@ -10948,7 +11340,12 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
             status = 1;
          strcat(buf, tmpbuf);
       }   
-      short statsHeapFreePercent = 20;
+      short statsHeapFreePercent = 0;
+      char *tempCValue = GetCliGlobals()->getEnv("STATS_HEAP_FREE_PERCENT");
+      if (tempCValue != NULL)
+          statsHeapFreePercent = atoi(tempCValue);
+      if (statsHeapFreePercent <= 0)
+          statsHeapFreePercent = 40;
       if (((double) currGlobalStatsHeapUsage_  * 100 /
                   (double) currGlobalStatsHeapAlloc_) > 
                     (100 - statsHeapFreePercent))
@@ -10957,6 +11354,15 @@ void ExRMSStats::getVariableStatsInfo(char * dataBuffer,
                   currGlobalStatsHeapUsage_,
                   currGlobalStatsHeapAlloc_,
                   globalStatsHeapWatermark_);
+         if (status < 1)
+            status = 1;
+         strcat(buf, tmpbuf);
+      } 
+      if ((currNoOfProcessStatsHeap_ - currNoOfRegProcesses_) > 100)
+      {
+         str_sprintf(tmpbuf, "noOfProcessRegd: %d  noOfProcessStatsHeaps: %d ",
+                   currNoOfRegProcesses_,
+                   currNoOfProcessStatsHeap_);
          if (status < 1)
             status = 1;
          strcat(buf, tmpbuf);

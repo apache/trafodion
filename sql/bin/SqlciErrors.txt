@@ -1772,6 +1772,7 @@ drop the default context
 8934 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The MAXVALUE for the sequence generator has been exceeded.
 8935 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The sequence generator update failed, see additional diagnostics for failure details.
 8936 ZZZZZ 99999 BEGINNER MINOR LOGONLY Reorg status for this qid could not be retrieved. Either the provided qid does not exist or the reorg operation has not started or the reorg operation has finished or reorg stats are not being collected.
+8937 ZZZZZ 99999 BEGINNER MINOR LOGONLY Invalid CPU, PID, TimeStamp, or QueryNumber passed in. Unable to retrieve Runtime Statistics.
 8940 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined function $0~String0 returned invalid data for output value $1~Int0. Details: $2~String1.
 8941 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The buffer to return the session attribute is either null or too small.
 8942 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The buffer to return the database user name is either null or too small.

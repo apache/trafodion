@@ -370,6 +370,8 @@ public:
     statsMergeType_ = SQLCLI_SAME_STATS;
     cpu_ = -1;
     pid_ = -1;
+    timeStamp_ = -1;
+    queryNumber_ = -1;
     nodeName_[0] ='\0';
     reqType_ = SQLCLI_STATS_REQ_NONE;
     activeQueryNum_ = ANY_QUERY_;
@@ -392,6 +394,8 @@ public:
     reqType_ = reqType;
     cpu_ = -1;
     pid_ = -1;
+    timeStamp_ = -1;
+    queryNumber_ = -1;
     nodeName_[0] ='\0';
     activeQueryNum_ = activeQueryNum;
   }   
@@ -401,12 +405,19 @@ public:
   RtsQueryId(NAMemory *heap, char *nodeName, short cpu, pid_t pid, 
         UInt16 statsMergeType = SQLCLI_SAME_STATS, short activeQueryNum = 1,
         short reqType = SQLCLI_STATS_REQ_PID);
+  RtsQueryId(NAMemory *heap, char *nodeName, short cpu, pid_t pid, 
+        Int64 timeStamp, Lng32 queryNumber,
+        UInt16 statsMergeType = SQLCLI_SAME_STATS, short activeQueryNum = 1,
+        short reqType = SQLCLI_STATS_REQ_QID_INTERNAL);
   char *getQid() { return queryId_; }
   UInt16 getStatsMergeType() { return statsMergeType_; }
   short getStatsReqType() { return reqType_; }
   short getSubReqType() { return subReqType_; }
   void setSubReqType(short subReqType) { subReqType_ = subReqType; }
+  short getCpu() { return cpu_; }
   pid_t getPid() { return pid_; }
+  Int64 getTimeStamp() { return timeStamp_; }
+  Lng32 getQueryNumber() { return queryNumber_; }
   short getActiveQueryNum() { return activeQueryNum_; }
   short getDetailLevel() { return detailLevel_; }
    
@@ -461,6 +472,8 @@ private:
   char nodeName_[MAX_SEGMENT_NAME_LEN+1];
   short cpu_;
   pid_t pid_;
+  Int64 timeStamp_;
+  Lng32 queryNumber_;
   short reqType_;
   UInt16 statsMergeType_;
   short activeQueryNum_; 

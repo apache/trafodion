@@ -373,15 +373,66 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
   Lng32 filter = request->getFilter();
   switch (reqType)
   {
+  case SQLCLI_STATS_REQ_CPU_OFFENDER:
+    mergedStats = new (getHeap())
+      ExStatisticsArea(getHeap(), 0, ComTdb::CPU_OFFENDER_STATS, ComTdb::CPU_OFFENDER_STATS);
+    break;
+  case SQLCLI_STATS_REQ_SE_OFFENDER:
+    mergedStats = new (getHeap())
+      ExStatisticsArea(getHeap(), 0, ComTdb::SE_OFFENDER_STATS, ComTdb::SE_OFFENDER_STATS);
+    mergedStats->setSubReqType(subReqType);
+    break;
+  case SQLCLI_STATS_REQ_ET_OFFENDER:
+    mergedStats = new (getHeap())
+      ExStatisticsArea(getHeap(), 0, ComTdb::ET_OFFENDER_STATS, ComTdb::ET_OFFENDER_STATS);
+    break;
   case SQLCLI_STATS_REQ_RMS_INFO:
     mergedStats = new (getHeap())
       ExStatisticsArea(getHeap(), 0, ComTdb::RMS_INFO_STATS, ComTdb::RMS_INFO_STATS);
+    mergedStats->setSubReqType(subReqType);
+    break;
+  case SQLCLI_STATS_REQ_MEM_OFFENDER:
+    mergedStats = new (getHeap())
+           ExStatisticsArea(getHeap(), 0, ComTdb::MEM_OFFENDER_STATS,
+                     ComTdb::MEM_OFFENDER_STATS);
     mergedStats->setSubReqType(subReqType);
     break;
   default:
     ex_assert(0, "Unsupported Request Type");
   }
   mergedStats->setDetailLevel(request->getNoOfQueries());
+  if (reqType != SQLCLI_STATS_REQ_RMS_INFO &&
+          reqType != SQLCLI_STATS_REQ_MEM_OFFENDER)
+  {
+    short savedPriority, savedStopMode;
+    short error = statsGlobals->getStatsSemaphore(sscpGlobals->getSemId(),
+            sscpGlobals->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
+    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+    stmtStatsList->position();
+    if (reqType == SQLCLI_STATS_REQ_ET_OFFENDER)
+    {
+       currTimestamp = NA_JulianTimestamp();
+       while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
+       {
+          masterStats = stmtStats->getMasterStats();
+          if (masterStats != NULL)
+             mergedStats->appendCpuStats(masterStats, FALSE,
+                subReqType, filter, currTimestamp);
+       }
+    }
+    else
+    {
+       currTimestamp = -1;
+       while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
+       {
+          stats = stmtStats->getStatsArea();
+          if (stats != NULL)
+             mergedStats->appendCpuStats(stats, FALSE);
+       }
+    }
+    statsGlobals->releaseStatsSemaphore(sscpGlobals->getSemId(), sscpGlobals->myPin(), savedPriority, savedStopMode);
+  }
   if (reqType == SQLCLI_STATS_REQ_RMS_INFO)
   {
     ExRMSStats *rmsStats = new (getHeap()) ExRMSStats(getHeap());
@@ -396,6 +447,10 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
     mergedStats->insert(rmsStats);
     if (request->getNoOfQueries() == RtsCpuStatsReq::INIT_RMS_STATS_)
         statsGlobals->getRMSStats()->reset();
+  }
+  if (reqType == SQLCLI_STATS_REQ_MEM_OFFENDER)
+  {
+    statsGlobals->getMemOffender(mergedStats, filter);
   }
   if (mergedStats->numEntries() > 0)
     *this << *mergedStats;

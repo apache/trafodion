@@ -512,6 +512,11 @@ ExEspManager *CliGlobals::getEspManager()
   return currContext()->getEspManager();
 }
 
+ExSsmpManager *CliGlobals::getSsmpManager()
+{
+  return currContext()->getSsmpManager();
+}
+
 ExeTraceInfo *CliGlobals::getExeTraceInfo()
 {
   return currContext()->getExeTraceInfo();

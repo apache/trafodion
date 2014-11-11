@@ -135,12 +135,10 @@ public:
 
   NABoolean deleteStats()
   {
-    return (flags_ & STATS_DELETE_) != 0; 
-  }
-
-  void setDeleteStats(NABoolean v)      
-  {
-    (v ? flags_ |= STATS_DELETE_ : flags_ &= ~STATS_DELETE_); 
+    if (isMaster())
+       return TRUE;
+    else
+       return FALSE;
   }
  
   NABoolean isStmtStatsUsed()
@@ -179,8 +177,8 @@ public:
 
   void setWMSMonitoredCliQuery(NABoolean v)      
   {
+    (v ? flags_ |= WMS_MONITORED_CLI_QUERY_ : flags_ &= ~WMS_MONITORED_CLI_QUERY_);
   }
-
   
   char *getQueryId() { return queryId_; }
   Lng32 getQueryIdLen() { return queryIdLen_; }
@@ -189,14 +187,16 @@ public:
   void setParentQid(char *parentQid, Lng32 parentQidLen, char *parentQidSystem,
                     Lng32 parentQidSystemLen, short myCpu, short myNodeId);
   inline NABoolean updateChildQid() { return updateChildQid_; }
-#ifndef __EID
-#endif
+  void setExplainFrag(void *explainFrag, Lng32 len, Lng32 topNodeOffset);
+  RtsExplainFrag *getExplainInfo() { return explainInfo_; }
+  void deleteExplainFrag();
+  ULng32 getFlags() const { return flags_; }
 private:
   enum Flags
   {
     IS_MASTER_     = 0x0001,
     CAN_BE_GCED_   = 0x0002,
-    STATS_DELETE_  = 0x0004,
+    NOT_USED_1     = 0x0004,
     FORCE_MERGE_   = 0x0008,
     STMT_STATS_USED_ = 0x0010, // Unused Flag
     IS_DELETE_ERROR_ = 0x0020,
@@ -220,8 +220,7 @@ private:
                      // for Esps
   short refCount_;
   Lng32 fragId_;
-#ifndef __EID
-#endif
+  RtsExplainFrag *explainInfo_;
   NABoolean updateChildQid_;
 };
 
@@ -349,7 +348,7 @@ public:
   short removeQuery(pid_t pid, StmtStats *stmtStats, 
                   NABoolean removeAlways = FALSE, 
                   NABoolean globalScan = FALSE,
-                  NABoolean retainStats = FALSE); 
+                  NABoolean calledFromRemoveProcess = FALSE); 
 
   // global scan when the stmtList is positioned from begining and searched for pid
   short openStatsSemaphore(Long &semId);
@@ -372,6 +371,7 @@ public:
   StmtStats *getStmtStats(short activeQueryNum);
   StmtStats *getStmtStats(pid_t pid, char *queryId, Lng32 queryIdLen, 
            Lng32 fragId);
+  StmtStats *getStmtStats(short cpu, pid_t pid, Int64 timeStamp, Lng32 queryNumber);
   ExRMSStats *getRMSStats() { return rmsStats_; }
   void doFullGC();
   Lng32 registerQuery(ComDiagsArea &diags, pid_t pid, SQLQUERY_ID *queryId, 

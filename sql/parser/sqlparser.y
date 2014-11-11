@@ -1403,6 +1403,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ALIGNED             /* Tandem extension non-reserved word */
 %token <tokval> TOK_PACKED              /* Tandem extension non-reserved word */
 %token <tokval> TOK_QID              /* Tandem extension non-reserved word */
+%token <tokval> TOK_QID_INTERNAL     /* Tandem extension non-reserved word */
 %token <tokval> TOK_PID              /* Tandem extension non-reserved word */
 %token <tokval> TOK_CPU              /* Tandem extension non-reserved word */
 %token <tokval> TOK_ACTIVE           /* Tandem extension non-reserved word */
@@ -2932,6 +2933,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval>              cpu_identifier
 %type <stringval>              cpu_identifier_with_all
 %type <stringval>              pid_identifier
+%type <stringval>              qid_internal_identifier
+%type <uint>                   qid_internal_stats_merge_clause
 %type <uint>                   stats_active_clause
 %type <uint>                   stats_merge_clause
 %type <uint>                    reset_clause  
@@ -15483,7 +15486,14 @@ exe_util_get_statistics : TOK_GET TOK_STATISTICS stats_merge_clause get_statisti
                   }
                   $$ = stats;
                 }
-
+              | TOK_GET TOK_STATISTICS TOK_FOR TOK_QID_INTERNAL qid_internal_identifier qid_internal_stats_merge_clause
+                {
+                  ExeUtilGetStatistics *stats =
+                     new (PARSERHEAP ()) ExeUtilGetStatistics
+                     (*$5, NULL,
+                       PARSERHEAP (), SQLCLI_STATS_REQ_QID_INTERNAL, (short)$6, -1); /*RtsQueryId::ANY_QUERY_*/
+                  $$ = stats;
+                }
               | TOK_GET TOK_STATISTICS TOK_FOR TOK_PID pid_identifier stats_active_clause stats_merge_clause
                 {
                   ExeUtilGetStatistics * stats =
@@ -35061,6 +35071,23 @@ pid_identifier : cpu_identifier ',' NUMERIC_LITERAL_EXACT_NO_SCALE
                   $$ = new (PARSERHEAP()) NAString("CURRENT", PARSERHEAP());
                 }
 
+qid_internal_identifier : NUMERIC_LITERAL_EXACT_NO_SCALE  /* cpu */
+                      ',' NUMERIC_LITERAL_EXACT_NO_SCALE  /* pid */ 
+                      ',' NUMERIC_LITERAL_EXACT_NO_SCALE  /* timestamp */
+                      ',' NUMERIC_LITERAL_EXACT_NO_SCALE  /* query number */
+               {
+                  $1->append(",");
+                  $1->append(*$3);
+                  $1->append(",");
+                  $1->append(*$5);
+                  $1->append(",");
+                  $1->append(*$7);
+                  $$ = $1;
+                  delete $3;
+                  delete $5;
+                  delete $7;
+               }
+
 stats_active_clause : /* empty */
                 { $$ = 1;}
              |   TOK_ACTIVE NUMERIC_LITERAL_EXACT_NO_SCALE    
@@ -35073,6 +35100,11 @@ reset_clause : /* empty */
              |  TOK_RESET
                   { $$ = 2; } /* same as RMS_INIT_STATS Positive value because we can't return negative */ 
                 
+
+qid_internal_stats_merge_clause : /* empty */
+                                 { $$ = 0; } /* use the session default view type */
+                                | ',' stats_merge_clause
+                                 { $$ = $2; }
 
 stats_merge_clause : /*empty */
                { $$ = 0; } /* use the session default view type */
@@ -35487,6 +35519,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_PROMPT
                       | TOK_PUBLISH
                       | TOK_QID
+                      | TOK_QID_INTERNAL
 	              | TOK_QUERY
                       | TOK_QUERY_CACHE
                       | TOK_QUERY_CACHE_ENTRIES

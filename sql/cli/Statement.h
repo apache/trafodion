@@ -410,6 +410,7 @@ private:
   Lng32 childQueryIdLen_;
   SQL_QUERY_COST_INFO *childQueryCostInfo_;
   SQL_QUERY_COMPILER_STATS_INFO *childQueryCompStatsInfo_;
+  Int64 aqrInitialExeStartTime_;
 
 // Private Functions
   void buildConsumerQueryTemplate();
@@ -724,7 +725,8 @@ public:
   char *getParentQid();
   void  setParentQidSystem(char *parentQidSystem);
   char *getParentQidSystem(); 
-
+  Int64 getExeStartTime();
+  void  setExeStartTime(Int64 exeStartTime);
  
   Lng32 getCliLevel() const                { return cliLevel_; }
 

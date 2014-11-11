@@ -177,6 +177,7 @@ public:
 		       Lng32 lengthStmtPattern);
   void setQid(char *qid, Lng32 len);
 
+  RtsExplainFrag *sendToSsmp();
 
 private:
 

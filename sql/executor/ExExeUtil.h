@@ -2540,7 +2540,12 @@ private:
     GET_REPLICATOR_STATS_ENTRY_,
     FORMAT_AND_RETURN_REPLICATOR_STATS_,
     GET_PROCESS_STATS_ENTRY_,
-    FORMAT_AND_RETURN_PROCESS_STATS_
+    FORMAT_AND_RETURN_PROCESS_STATS_,
+    GET_HBASE_STATS_ENTRY_,
+    DISPLAY_HBASE_STATS_HEADING_,
+    FORMAT_AND_RETURN_HBASE_STATS_,
+    GET_HIVE_STATS_ENTRY_,
+    FORMAT_AND_RETURN_HIVE_STATS_
   };
 
   Step step_;
@@ -2565,6 +2570,8 @@ private:
   SQLSTATS_ITEM *replicateStatsItems_;
   SQLSTATS_ITEM *replicatorStatsItems_;
   SQLSTATS_ITEM *processStatsItems_;
+  SQLSTATS_ITEM *hbaseStatsItems_;
+  SQLSTATS_ITEM *hiveStatsItems_;
   Lng32 maxMasterStatsItems_;
   Lng32 maxMeasStatsItems_;
   Lng32 maxOperatorStatsItems_;
@@ -2578,10 +2585,14 @@ private:
   Lng32 maxReplicateStatsItems_;
   Lng32 maxReplicatorStatsItems_;
   Lng32 maxProcessStatsItems_;
+  Lng32 maxHbaseStatsItems_;
+  Lng32 maxHiveStatsItems_;
 
   NABoolean isHeadingDisplayed_;
   NABoolean isBMOHeadingDisplayed_;
   NABoolean isUDRBaseHeadingDisplayed_;
+  NABoolean isHbaseHeadingDisplayed_;
+  NABoolean isHiveHeadingDisplayed_;
 
   static const Int32 numOperStats = 14;
   void formatOperStatItems(SQLSTATS_ITEM operStatsItems[]);

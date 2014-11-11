@@ -558,7 +558,7 @@ void SsmpGlobals::work()
           GcInterval = 10*1000*1000;
       }
       else
-        GcInterval = 20 * 60 *  1000 * 1000; // 20 minutes
+        GcInterval = 10 * 60 *  1000 * 1000; // 10 minutes
     }
   if (SikGcInterval < 0)
     {
@@ -1654,7 +1654,10 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
   StatsGlobals *statsGlobals;
   short error;
   char *qid;
-  pid_t pid;
+  pid_t pid = 0;
+  short cpu;
+  Int64 timeStamp;
+  Lng32 queryNumber;
   RtsQueryId *rtsQueryId = NULL;
   short savedPriority, savedStopMode;
   StmtStats *stmtStats = NULL;
@@ -1745,6 +1748,26 @@ void SsmpNewIncomingConnectionStream::actOnStatsReq(IpcConnection *connection)
                 reply->decrRefCount();
                 rtsQueryId->decrRefCount();
               }
+            }
+            break;
+          case SQLCLI_STATS_REQ_QID_INTERNAL:
+            cpu = queryId->getCpu();
+            pid = queryId->getPid();
+            timeStamp = queryId->getTimeStamp();
+            queryNumber = queryId->getQueryNumber();
+            error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                    ssmpGlobals_->myPin(),savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
+            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+            stmtStats = statsGlobals->getStmtStats(cpu, pid, timeStamp, queryNumber);
+            if (stmtStats != NULL)
+              stmtStats->setStmtStatsUsed(TRUE);
+            statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
+                        savedPriority, savedStopMode);
+            if (stmtStats != NULL)
+            {
+                ex_assert(stmtStats->isMaster() == TRUE, "Should be Master here");
+                getMergedStats(request, NULL, stmtStats,
+                    reqType, queryId->getStatsMergeType());
             }
             break;
           case SQLCLI_STATS_REQ_CPU:
@@ -1951,6 +1974,81 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
         statsGlobals->getRMSStats()->reset();
       break;
      }
+   case SQLCLI_STATS_REQ_ET_OFFENDER:
+     {
+       cpuStats = new (getHeap())
+           ExStatisticsArea(getHeap(), 0, ComTdb::ET_OFFENDER_STATS,
+                     ComTdb::ET_OFFENDER_STATS);
+       cpuStats->setStatsEnabled(TRUE);
+       short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+            ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE);
+       ex_assert(error == 0, "getStatsSemaphore() returned an error");
+       HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
+       stmtStatsList->position();
+       Int64 currTimestamp = NA_JulianTimestamp();
+       while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
+       {
+          masterStats = stmtStats->getMasterStats();
+          if (masterStats != NULL)
+             cpuStats->appendCpuStats(masterStats, FALSE,
+                  subReqType, filter, currTimestamp);
+       }
+       statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
+          ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+       break;
+
+     }
+    case SQLCLI_STATS_REQ_MEM_OFFENDER:
+     {
+       cpuStats = new (getHeap())
+           ExStatisticsArea(getHeap(), 0, ComTdb::MEM_OFFENDER_STATS,
+                     ComTdb::MEM_OFFENDER_STATS);
+       cpuStats->setStatsEnabled(TRUE);
+       cpuStats->setSubReqType(subReqType);
+       statsGlobals->getMemOffender(cpuStats, filter);
+     }
+     break;
+    case SQLCLI_STATS_REQ_CPU_OFFENDER:
+     {
+      short noOfQueries = request->getNoOfQueries();
+      short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                        ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
+      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      HashQueue * stmtStatsList = statsGlobals->getStmtStatsList();
+      stmtStatsList->position();
+     switch (noOfQueries)
+      {
+       case RtsCpuStatsReq::INIT_CPU_STATS_HISTORY_:
+        while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
+        {
+          stats = stmtStats->getStatsArea();
+          if (stats != NULL)
+            stats->setCpuStatsHistory();
+        }
+        break;
+       default:
+        if ( noOfQueries == RtsCpuStatsReq::ALL_ACTIVE_QUERIES_)
+           noOfQueries = 32767;
+        cpuStats = new (getHeap())
+             ExStatisticsArea(getHeap(), 0, ComTdb::CPU_OFFENDER_STATS,
+                    ComTdb::CPU_OFFENDER_STATS);
+        cpuStats->setStatsEnabled(TRUE);
+       while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL
+                 && currQueryNum <= noOfQueries)
+        {
+          stats = stmtStats->getStatsArea();
+          if (stats != NULL)
+          {
+              if (cpuStats->appendCpuStats(stats))
+                 currQueryNum++;
+          }
+        }
+        break;
+      }
+      statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(),
+          ssmpGlobals_->myPin(), savedPriority, savedStopMode);
+      break;
+     }
     default:
       break;
     }
@@ -1980,7 +2078,52 @@ void SsmpNewIncomingConnectionStream::actOnCpuStatsReq(IpcConnection *connection
 
 void SsmpNewIncomingConnectionStream::actOnExplainReq(IpcConnection *connection)
 {
-  ex_assert(0, "No code calls this yet.");
+  IpcMessageObjVersion msgVer;
+  StmtStats *stmtStats;
+  StatsGlobals *statsGlobals;
+  short savedPriority, savedStopMode;
+  RtsExplainFrag *explainFrag = NULL;
+  RtsExplainFrag *srcExplainFrag;
+
+  short currQueryNum = 0;
+  msgVer = getNextObjVersion();
+
+  if (msgVer > currRtsExplainReqVersionNumber)
+    // Send Error
+    ;
+
+  RtsExplainReq *request = new (getHeap())
+      RtsExplainReq(INVALID_RTS_HANDLE, getHeap());
+
+  *this >> *request;
+  setHandle(request->getHandle());
+  clearAllObjects();
+  setType(RTS_MSG_EXPLAIN_REPLY);
+  setVersion(currRtsExplainReplyVersionNumber);
+  RtsExplainReply *reply = new (getHeap())
+                RtsExplainReply(request->getHandle(), getHeap());
+  *this << *reply;
+  statsGlobals = ssmpGlobals_->getStatsGlobals();
+  short error = statsGlobals->getStatsSemaphore(ssmpGlobals_->getSemId(),
+                    ssmpGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
+  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  stmtStats = statsGlobals->getMasterStmtStats(request->getQid(), request->getQidLen(),
+              RtsQueryId::ANY_QUERY_);
+  if (stmtStats != NULL)
+  {
+    srcExplainFrag = stmtStats->getExplainInfo();
+    if (srcExplainFrag != NULL)
+      explainFrag = new (getHeap()) RtsExplainFrag(getHeap(), srcExplainFrag);
+  }
+  statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
+                        savedPriority, savedStopMode);
+  if (explainFrag)
+    *this << *(explainFrag);
+  send(FALSE);
+  reply->decrRefCount();
+  request->decrRefCount();
+  if (explainFrag)
+    explainFrag->decrRefCount();
 }
 
 void SsmpNewIncomingConnectionStream::sscpIpcError(IpcConnection *conn)
@@ -2052,6 +2195,11 @@ void SscpClientMsgStream::actOnStatsReply(IpcConnection *connection)
                       savedPriority, savedStopMode);
             break;
           }
+          case SQLCLI_STATS_REQ_QID_DETAIL:
+          case SQLCLI_STATS_REQ_CPU_OFFENDER:
+          case SQLCLI_STATS_REQ_SE_OFFENDER:
+          case SQLCLI_STATS_REQ_ET_OFFENDER:
+          case SQLCLI_STATS_REQ_MEM_OFFENDER:
           case SQLCLI_STATS_REQ_RMS_INFO:
           {
             if (mergedStats_ == NULL)
@@ -2300,7 +2448,11 @@ void SsmpNewIncomingConnectionStream::sendMergedStats(ExStatisticsArea *mergedSt
       statsGlobals->releaseStatsSemaphore(ssmpGlobals_->getSemId(), ssmpGlobals_->myPin(),
                   savedPriority, savedStopMode);
       break;
+    case SQLCLI_STATS_REQ_CPU_OFFENDER:
+    case SQLCLI_STATS_REQ_SE_OFFENDER:
+    case SQLCLI_STATS_REQ_ET_OFFENDER:
     case SQLCLI_STATS_REQ_RMS_INFO:
+    case SQLCLI_STATS_REQ_MEM_OFFENDER:
     case SQLCLI_STATS_REQ_PROCESS_INFO:
       if (mergedStats != NULL)
         *this << *(mergedStats);
@@ -2308,6 +2460,7 @@ void SsmpNewIncomingConnectionStream::sendMergedStats(ExStatisticsArea *mergedSt
       break;
     case SQLCLI_STATS_REQ_PID:
     case SQLCLI_STATS_REQ_CPU:
+    case SQLCLI_STATS_REQ_QID_INTERNAL:
       if (mergedStats != NULL &&
              mergedStats->getMasterStats() != NULL)
            *this << *(mergedStats);
