@@ -86,15 +86,6 @@ NAColumn *NAColumn::deepCopy(const NAColumn & nac, NAMemory * heap)
 {
   NAColumn *column = new(heap) NAColumn(nac,heap);
 
-#ifdef __ignore
-  if(nac.defaultValue_)
-  {
-    UInt32 length = na_wcslen((NAWchar*)nac.defaultValue_);
-    NAWchar* newDefaultValue = new (heap) NAWchar[length+1];
-    na_wcscpy(newDefaultValue, (NAWchar*)nac.defaultValue_);
-    column->defaultValue_ = (char*)newDefaultValue;
-  }
-#endif
   if (nac.defaultValue_)
   {
     UInt32 length = strlen(nac.defaultValue_);

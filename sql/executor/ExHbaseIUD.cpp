@@ -835,12 +835,6 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 	      }
 
             genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
-#ifdef __ignore
-	    if (hbaseAccessTdb().addSyskeyTS())
-	      {
-		*(Int64*)convertRow_ = generateUniqueValueFast();
-	      }
-#endif
 
 	    step_ = EVAL_CONSTRAINT;
 	  }
@@ -1193,19 +1187,12 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	      }
 
             genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
-
-#ifdef __ignore
-	    if (hbaseAccessTdb().addSyskeyTS())
-	      {
-		*(Int64*)convertRow_ = generateUniqueValueFast();
-	      }
-#endif
-
-          if (getHbaseAccessStats())
-	    {
-	      getHbaseAccessStats()->incAccessedRows();
-	    }
-
+            
+            if (getHbaseAccessStats())
+              {
+                getHbaseAccessStats()->incAccessedRows();
+              }
+            
 	    step_ = EVAL_CONSTRAINT;
 	  }
 	  break;
@@ -1535,12 +1522,6 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
           }
 
         genAndAssignSyskey(hbaseAccessTdb().convertTuppIndex_, convertRow_);
-#ifdef __ignore
-        if (hbaseAccessTdb().addSyskeyTS())
-        {
-          *(Int64*) convertRow_ = generateUniqueValueFast();
-        }
-#endif
 
         if (getHbaseAccessStats())
         {

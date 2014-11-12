@@ -67,9 +67,9 @@ ComDiagsArea *ExAddCondition(NAMemory * heap, ComDiagsArea** diagsArea,
 			     Lng32 * intParam1 = NULL,
 			     Lng32 * intParam2 = NULL,
 			     Lng32 * intParam3 = NULL,
-			     char * stringParam1 = NULL,
-			     char * stringParam2 = NULL,
-			     char * stringParam3 = NULL);
+			     const char * stringParam1 = NULL,
+			     const char * stringParam2 = NULL,
+			     const char * stringParam3 = NULL);
 
 NA_EIDPROC
 SQLEXP_LIB_FUNC
@@ -78,9 +78,9 @@ ComDiagsArea *ExRaiseSqlError(NAMemory * heap, ComDiagsArea** diagsArea,
 			      Lng32 * intParam1 = NULL,
 			      Lng32 * intParam2 = NULL,
 			      Lng32 * intParam3 = NULL,
-			      char * stringParam1 = NULL,
-			      char * stringParam2 = NULL,
-			      char * stringParam3 = NULL);
+			      const char * stringParam1 = NULL,
+			      const char * stringParam2 = NULL,
+			      const char * stringParam3 = NULL);
 
 NA_EIDPROC
 SQLEXP_LIB_FUNC

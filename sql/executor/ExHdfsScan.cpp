@@ -20,6 +20,14 @@
 
 #include "Platform.h"
 
+#include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <poll.h>
+
+#include <iostream>
+
 #include "ex_stdh.h"
 #include "ComTdb.h"
 #include "ex_tcb.h"
@@ -27,6 +35,9 @@
 #include "ex_exe_stmt_globals.h"
 #include "ExpLOBinterface.h"
 #include "SequenceFileReader.h" 
+#include "Hbase_types.h"
+
+#include "ExpORCinterface.h"
 
 ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 {
@@ -36,23 +47,45 @@ ex_tcb * ExHdfsScanTdb::build(ex_globals * glob)
 
   ExHdfsScanTcb *tcb = NULL;
   
-  tcb = new(exe_glob->getSpace()) 
-    ExHdfsScanTcb(
-		  *this,
-		  exe_glob);
+  if ((isTextFile()) || (isSequenceFile()))
+    {
+      tcb = new(exe_glob->getSpace()) 
+        ExHdfsScanTcb(
+                      *this,
+                      exe_glob);
+    }
+  else if (isOrcFile())
+    {
+      tcb = new(exe_glob->getSpace()) 
+        ExOrcScanTcb(
+                     *this,
+                     exe_glob);
+    }
 
   ex_assert(tcb, "Error building ExHdfsScanTcb.");
 
   return (tcb);
 }
 
+ex_tcb * ExOrcFastAggrTdb::build(ex_globals * glob)
+{
+  ExHdfsScanTcb *tcb = NULL;
+  tcb = new(glob->getSpace()) 
+    ExOrcFastAggrTcb(
+                     *this,
+                     glob);
+  
+  ex_assert(tcb, "Error building ExHdfsScanTcb.");
+
+  return (tcb);
+}
 
 ////////////////////////////////////////////////////////////////
 // Constructor and initialization.
 ////////////////////////////////////////////////////////////////
 
 ExHdfsScanTcb::ExHdfsScanTcb(
-          const ExHdfsScanTdb &hdfsScanTdb, 
+          const ComTdbHdfsScan &hdfsScanTdb, 
           ex_globals * glob ) :
   ex_tcb( hdfsScanTdb, 1, glob)
   , workAtp_(NULL)
@@ -67,7 +100,6 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , matches_(0)
   , matchBrkPoint_(0)
   , endOfRequestedRange_(NULL)
-  , isSequenceFile_(false)
   , sequenceFileReader_(NULL)
   , seqScanAgain_(false)
   , hdfo_(NULL)
@@ -80,7 +112,6 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   hdfsScanBuffer_ = new(space) char[ readBufSize + 1 ]; 
   hdfsScanBuffer_[readBufSize] = '\0';
 
-  
   moveExprColsBuffer_ = new(space) ExSimpleSQLBuffer( 1, // one row 
 						      (Int32)hdfsScanTdb.moveExprColsRowLength_,
 						      space);
@@ -277,6 +308,29 @@ Int32 ExHdfsScanTcb::fixup()
 
 void brkpoint()
 {}
+
+short ExHdfsScanTcb::setupError(Lng32 exeError, Lng32 retcode, 
+                                const char * str, const char * str2, const char * str3)
+{
+  // Make sure retcode is positive.
+  if (retcode < 0)
+    retcode = -retcode;
+    
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  
+  Lng32 intParam1 = retcode;
+  Lng32 intParam2 = 0;
+  ComDiagsArea * diagsArea = NULL;
+  ExRaiseSqlError(getHeap(), &diagsArea, 
+                  (ExeErrorCode)(exeError), NULL, &intParam1, 
+                  &intParam2, NULL, 
+                  (str ? (char*)str : (char*)" "),
+                  (str2 ? (char*)str2 : (char*)" "),
+                  (str3 ? (char*)str3 : (char*)" "));
+                  
+  pentry_down->setDiagsArea(diagsArea);
+  return -1;
+}
 
 ExWorkProcRetcode ExHdfsScanTcb::work()
 {
@@ -513,9 +567,13 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    Lng32 intParam1 = -retcode;
 		    ComDiagsArea * diagsArea = NULL;
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
-		    		(ExeErrorCode)(8442), NULL, &intParam1, 
-		    		&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/open",
-		    		getLobErrStr(intParam1));
+                                    (ExeErrorCode)(8442), NULL, 
+                                    &intParam1, 
+                                    &cliError, 
+                                    NULL, 
+                                    "HDFS",
+                                    (char*)"ExpLOBInterfaceSelectCursor/open",
+                                    getLobErrStr(intParam1));
 		    pentry_down->setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR;
 		    break;
@@ -637,9 +695,13 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    Lng32 intParam1 = -retcode;
 		    ComDiagsArea * diagsArea = NULL;
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
-		    		(ExeErrorCode)(8442), NULL, &intParam1, 
-		    		&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/read",
-		    		getLobErrStr(intParam1));
+                                    (ExeErrorCode)(8442), NULL, 
+                                    &intParam1, 
+                                    &cliError, 
+                                    NULL, 
+                                    "HDFS",
+                                    (char*)"ExpLOBInterfaceSelectCursor/read",
+                                    getLobErrStr(intParam1));
 		    pentry_down->setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR;
 		    break;
@@ -1056,10 +1118,13 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    Lng32 intParam1 = -retcode;
 		    ComDiagsArea * diagsArea = NULL;
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
-		    		(ExeErrorCode)(8442), NULL, &intParam1, 
-		    		&cliError, NULL, 
+                                    (ExeErrorCode)(8442), NULL, 
+                                    &intParam1, 
+                                    &cliError, 
+                                    NULL, 
+                                    "HDFS",
                                     (char*)"ExpLOBInterfaceSelectCursor/close",
-		    		getLobErrStr(intParam1));
+                                    getLobErrStr(intParam1));
 		    pentry_down->setDiagsArea(diagsArea);
 		    step_ = HANDLE_ERROR;
 		    break;
@@ -1163,8 +1228,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     Lng32 intParam1 = -retcode;
                     ComDiagsArea * diagsArea = NULL;
                     ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8442), NULL, &intParam1, 
-                                    &cliError, NULL, 
+                                    (ExeErrorCode)(8442), NULL, 
+                                    &intParam1, 
+                                    &cliError, 
+                                    NULL, 
+                                    "HDFS",
                                     (char*)"ExpLOBinterfaceCloseFile",
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
@@ -1341,4 +1409,693 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   return sourceDataEnd+1;
 }
 
-                                       
+short ExHdfsScanTcb::moveRowToUpQueue(const char * row, Lng32 len, 
+                                      short * rc, NABoolean isVarchar)
+{
+  if (qparent_.up->isFull())
+    {
+      if (rc)
+	*rc = WORK_OK;
+      return -1;
+    }
+
+  Lng32 length;
+  if (len <= 0)
+    length = strlen(row);
+  else
+    length = len;
+
+  tupp p;
+  if (pool_->get_free_tuple(p, (Lng32)
+			    ((isVarchar ? SQL_VARCHAR_HDR_SIZE : 0)
+			     + length)))
+    {
+      if (rc)
+	*rc = WORK_POOL_BLOCKED;
+      return -1;
+    }
+  
+  char * dp = p.getDataPointer();
+  if (isVarchar)
+    {
+      *(short*)dp = (short)length;
+      str_cpy_all(&dp[SQL_VARCHAR_HDR_SIZE], row, length);
+    }
+  else
+    {
+      str_cpy_all(dp, row, length);
+    }
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+  
+  up_entry->copyAtp(pentry_down);
+  up_entry->getAtp()->getTupp((Lng32)hdfsScanTdb().tuppIndex_) = p;
+
+  up_entry->upState.parentIndex = 
+    pentry_down->downState.parentIndex;
+  
+  up_entry->upState.setMatchNo(++matches_);
+  up_entry->upState.status = ex_queue::Q_OK_MMORE;
+
+  // insert into parent
+  qparent_.up->insert();
+
+  return 0;
+}
+
+short ExHdfsScanTcb::handleError(short &rc)
+{
+  if (qparent_.up->isFull())
+    {
+      rc = WORK_OK;
+      return -1;
+    }
+
+  if (qparent_.up->isFull())
+    return WORK_OK;
+  
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  ex_queue_entry *up_entry = qparent_.up->getTailEntry();
+  up_entry->copyAtp(pentry_down);
+  up_entry->upState.parentIndex =
+    pentry_down->downState.parentIndex;
+  up_entry->upState.downIndex = qparent_.down->getHeadIndex();
+  up_entry->upState.status = ex_queue::Q_SQLERROR;
+  qparent_.up->insert();
+
+  return 0;
+}
+
+short ExHdfsScanTcb::handleDone(ExWorkProcRetcode &rc)
+{
+  if (qparent_.up->isFull())
+    {
+      rc = WORK_OK;
+      return -1;
+    }
+
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  ex_queue_entry *up_entry = qparent_.up->getTailEntry();
+  up_entry->copyAtp(pentry_down);
+  up_entry->upState.parentIndex =
+    pentry_down->downState.parentIndex;
+  up_entry->upState.downIndex = qparent_.down->getHeadIndex();
+  up_entry->upState.status = ex_queue::Q_NO_DATA;
+  up_entry->upState.setMatchNo(matches_);
+  qparent_.up->insert();
+  
+  qparent_.down->removeHead();
+
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////
+// ORC files
+////////////////////////////////////////////////////////////////////////
+ExOrcScanTcb::ExOrcScanTcb(
+          const ComTdbHdfsScan &orcScanTdb, 
+          ex_globals * glob ) :
+  ExHdfsScanTcb( orcScanTdb, glob),
+  step_(NOT_STARTED)
+{
+  orci_ = ExpORCinterface::newInstance(glob->getDefaultHeap(),
+                                       (char*)orcScanTdb.hostName_,
+                                       orcScanTdb.port_);
+}
+
+ExOrcScanTcb::~ExOrcScanTcb()
+{
+}
+
+short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
+                                                         char * orcRow,
+                                                         Int64 orcRowLen,
+                                                         Lng32 numOrcCols,
+                                                         ComDiagsArea* &diagsArea)
+{
+  short err = 0;
+
+  if ((!orcRow) || (orcRowLen <= 0))
+    return -1;
+
+  char *sourceData = orcRow;
+
+  ExpTupleDesc * asciiSourceTD =
+     hdfsScanTdb().workCriDesc_->getTupleDescriptor(hdfsScanTdb().asciiTuppIndex_);
+  if (asciiSourceTD->numAttrs() == 0)
+    {
+      // no columns need to be converted. For e.g. count(*) with no predicate
+      return 0;
+    }
+  
+  Lng32 neededColIndex = 0;
+  Attributes * attr = NULL;
+
+  Lng32 numCurrCols = 0;
+  Lng32 currColLen;
+  for (Lng32 i = 0; i <  hdfsScanTdb().convertSkipListSize_; i++)
+    {
+      if (hdfsScanTdb().convertSkipList_[i] > 0)
+        {
+          attr = asciiSourceTD->getAttr(neededColIndex);
+          neededColIndex++;
+        }
+      else
+        attr = NULL;
+      
+      currColLen = *(Lng32*)sourceData;
+      sourceData += sizeof(currColLen);
+
+      if (attr) // this is a needed column. We need to convert
+        {
+          *(short*)&hdfsAsciiSourceData_[attr->getVCLenIndOffset()] = currColLen;
+          if (attr->getNullFlag())
+            {
+              if (currColLen == 0)
+                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+	      else if (memcmp(sourceData, "\\N", currColLen) == 0)
+                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
+              else
+                *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = 0;
+            }
+          
+          if (currColLen > 0)
+            {
+              // move address of data into the source operand.
+              // convertExpr will dereference this addr and get to the actual
+              // data.
+              *(Int64*)&hdfsAsciiSourceData_[attr->getOffset()] =
+                (Int64)sourceData;
+            }
+
+        } // if(attr)
+
+      numCurrCols++;
+      sourceData += currColLen;
+    }
+
+  if (numCurrCols != numOrcCols)
+    {
+      return -1;
+    }
+
+  workAtp_->getTupp(hdfsScanTdb().workAtpIndex_) = hdfsSqlTupp_;
+  workAtp_->getTupp(hdfsScanTdb().asciiTuppIndex_) = hdfsAsciiSourceTupp_;
+  // for later
+  workAtp_->getTupp(hdfsScanTdb().moveExprColsTuppIndex_) = moveExprColsTupp_;
+
+  err = 0;
+  if (convertExpr())
+  {
+    ex_expr::exp_return_type evalRetCode =
+      convertExpr()->eval(workAtp_, workAtp_);
+    if (evalRetCode == ex_expr::EXPR_ERROR)
+      err = -1;
+    else
+      err = 0;
+  }
+
+  return err;
+}
+
+ExWorkProcRetcode ExOrcScanTcb::work()
+{
+  Lng32 retcode = 0;
+  short rc = 0;
+
+  while (!qparent_.down->isEmpty())
+    {
+      ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+	step_ = DONE;
+      
+      switch (step_)
+	{
+	case NOT_STARTED:
+	  {
+	    matches_ = 0;
+	    
+	    hdfsStats_ = NULL;
+	    if (getStatsEntry())
+	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
+
+	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
+
+	    if (hdfsStats_)
+	      hdfsStats_->init();
+
+	    beginRangeNum_ = -1;
+	    numRanges_ = -1;
+
+	    if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
+	      {
+		step_ = DONE;
+		break;
+	      }
+
+	    myInstNum_ = getGlobals()->getMyInstanceNumber();
+
+	    beginRangeNum_ =  
+	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeBeginList()->get(myInstNum_);
+
+	    numRanges_ =  
+	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeNumList()->get(myInstNum_);
+
+	    currRangeNum_ = beginRangeNum_;
+
+	    if (numRanges_ > 0)
+              step_ = INIT_ORC_CURSOR;
+            else
+              step_ = DONE;
+	  }
+	  break;
+
+	case INIT_ORC_CURSOR:
+	  {
+            /*            orci_ = ExpORCinterface::newInstance(getHeap(),
+                                                 (char*)hdfsScanTdb().hostName_,
+                                                 hdfsScanTdb().port_);
+            */
+
+            hdfo_ = (HdfsFileInfo*)
+              hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
+            
+            orcStartRowNum_ = hdfo_->getStartRow();
+            orcNumRows_ = hdfo_->getNumRows();
+            
+            hdfsFileName_ = hdfo_->fileName();
+            sprintf(cursorId_, "%d", currRangeNum_);
+
+            if (orcNumRows_ == -1) // select all rows
+              orcStopRowNum_ = -1;
+            else
+              orcStopRowNum_ = orcStartRowNum_ + orcNumRows_ - 1;
+
+	    step_ = OPEN_ORC_CURSOR;
+	  }
+	  break;
+
+	case OPEN_ORC_CURSOR:
+	  {
+            retcode = orci_->scanOpen(hdfsFileName_,
+                                      orcStartRowNum_, orcStopRowNum_);
+            if (retcode < 0)
+              {
+                setupError(8442, retcode, "ORC", "scanOpen", 
+                           orci_->getErrorText(-retcode));
+
+                step_ = HANDLE_ERROR;
+                break;
+              }
+
+	    step_ = GET_ORC_ROW;
+	  }
+          break;
+          
+        case GET_ORC_ROW:
+          {
+            orcRow_ = hdfsScanBuffer_;
+            orcRowLen_ =  hdfsScanTdb().hdfsBufSize_;
+            retcode = orci_->scanFetch(orcRow_, orcRowLen_, orcRowNum_,
+                                       numOrcCols_);
+            if (retcode < 0)
+              {
+                setupError(8442, retcode, "ORC", "scanFetch", 
+                          orci_->getErrorText(-retcode));
+
+                step_ = HANDLE_ERROR;
+                break;
+              }
+            
+            if (retcode == 100)
+              {
+                step_ = CLOSE_ORC_CURSOR;
+                break;
+              }
+
+            step_ = PROCESS_ORC_ROW;
+          }
+          break;
+          
+	case PROCESS_ORC_ROW:
+	  {
+	    int formattedRowLength = 0;
+	    ComDiagsArea *transformDiags = NULL;
+            short err =
+	      extractAndTransformOrcSourceToSqlRow(orcRow_, orcRowLen_,
+                                                   numOrcCols_, transformDiags);
+            
+	    bool rowWillBeSelected = true;
+	    if (err)
+	      {
+		if (transformDiags)
+		  pentry_down->setDiagsArea(transformDiags);
+		step_ = HANDLE_ERROR;
+		break;
+	      }	    
+	    
+	    if (hdfsStats_)
+	      hdfsStats_->incAccessedRows();
+	    
+	    workAtp_->getTupp(hdfsScanTdb().workAtpIndex_) = 
+	      hdfsSqlTupp_;
+
+	    if (selectPred())
+	      {
+		ex_expr::exp_return_type evalRetCode =
+		  selectPred()->eval(pentry_down->getAtp(), workAtp_);
+		if (evalRetCode == ex_expr::EXPR_FALSE)
+		  rowWillBeSelected = false;
+		else if (evalRetCode == ex_expr::EXPR_ERROR)
+		  {
+		    step_ = HANDLE_ERROR;
+		    break;
+		  }
+		else 
+		  ex_assert(evalRetCode == ex_expr::EXPR_TRUE,
+			    "invalid return code from expr eval");
+	      }
+	    
+	    if (rowWillBeSelected)
+	      {
+                if (moveColsConvertExpr())
+                  {
+                    ex_expr::exp_return_type evalRetCode =
+                      moveColsConvertExpr()->eval(workAtp_, workAtp_);
+                    if (evalRetCode == ex_expr::EXPR_ERROR)
+                      {
+                        step_ = HANDLE_ERROR;
+                        break;
+                      }
+                  }
+		if (hdfsStats_)
+		  hdfsStats_->incUsedRows();
+
+		step_ = RETURN_ROW;
+		break;
+	      }
+
+            step_ = GET_ORC_ROW;
+          }
+          break;
+
+	case RETURN_ROW:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+	    
+	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
+	    up_entry->copyAtp(pentry_down);
+	    up_entry->upState.parentIndex = 
+	      pentry_down->downState.parentIndex;
+	    up_entry->upState.downIndex = qparent_.down->getHeadIndex();
+	    up_entry->upState.status = ex_queue::Q_OK_MMORE;
+	    
+	    if (moveExpr())
+	      {
+	        UInt32 maxRowLen = hdfsScanTdb().outputRowLength_;
+	        UInt32 rowLen = maxRowLen;
+                
+                if (hdfsScanTdb().useCifDefrag() &&
+                    !pool_->currentBufferHasEnoughSpace((Lng32)hdfsScanTdb().outputRowLength_))
+                  {
+                    up_entry->getTupp(hdfsScanTdb().tuppIndex_) = defragTd_;
+                    defragTd_->setReferenceCount(1);
+                    ex_expr::exp_return_type evalRetCode =
+                      moveExpr()->eval(up_entry->getAtp(), workAtp_,0,-1,&rowLen);
+                    if (evalRetCode ==  ex_expr::EXPR_ERROR)
+                      {
+                        // Get diags from up_entry onto pentry_down, which
+                        // is where the HANDLE_ERROR step expects it.
+                        ComDiagsArea *diagsArea = pentry_down->getDiagsArea();
+                        if (diagsArea == NULL)
+                          {
+                            diagsArea =
+                              ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                            pentry_down->setDiagsArea (diagsArea);
+                          }
+                        pentry_down->getDiagsArea()->
+                          mergeAfter(*up_entry->getDiagsArea());
+                        up_entry->setDiagsArea(NULL);
+                        step_ = HANDLE_ERROR;
+                        break;
+                      }
+                    if (pool_->get_free_tuple(
+                                              up_entry->getTupp(hdfsScanTdb().tuppIndex_),
+                                              rowLen))
+                      return WORK_POOL_BLOCKED;
+                    str_cpy_all(up_entry->getTupp(hdfsScanTdb().tuppIndex_).getDataPointer(),
+                                defragTd_->getTupleAddress(),
+                                rowLen);
+                    
+                  }
+                else
+                  {
+                    if (pool_->get_free_tuple(
+                                              up_entry->getTupp(hdfsScanTdb().tuppIndex_),
+                                              (Lng32)hdfsScanTdb().outputRowLength_))
+                      return WORK_POOL_BLOCKED;
+                    ex_expr::exp_return_type evalRetCode =
+                      moveExpr()->eval(up_entry->getAtp(), workAtp_,0,-1,&rowLen);
+                    if (evalRetCode ==  ex_expr::EXPR_ERROR)
+                      {
+                        // Get diags from up_entry onto pentry_down, which
+                        // is where the HANDLE_ERROR step expects it.
+                        ComDiagsArea *diagsArea = pentry_down->getDiagsArea();
+                        if (diagsArea == NULL)
+                          {
+                            diagsArea =
+                              ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                            pentry_down->setDiagsArea (diagsArea);
+                          }
+                        pentry_down->getDiagsArea()->
+                          mergeAfter(*up_entry->getDiagsArea());
+                        up_entry->setDiagsArea(NULL);
+                        step_ = HANDLE_ERROR;
+                        break;
+                      }
+                    if (hdfsScanTdb().useCif() && rowLen != maxRowLen)
+                      {
+                        pool_->resizeLastTuple(rowLen,
+                                               up_entry->getTupp(hdfsScanTdb().tuppIndex_).getDataPointer());
+                      }
+                  }
+	      }
+	    
+	    up_entry->upState.setMatchNo(++matches_);
+            if (matches_ == matchBrkPoint_)
+              brkpoint();
+	    qparent_.up->insert();
+	    
+	    // use ExOperStats now, to cover OPERATOR stats as well as 
+	    // ALL stats. 
+	    if (getStatsEntry())
+	      getStatsEntry()->incActualRowsReturned();
+	    
+	    workAtp_->setDiagsArea(NULL);    // get rid of warnings.
+	    
+	    if ((pentry_down->downState.request == ex_queue::GET_N) &&
+		(pentry_down->downState.requestValue == matches_))
+	      step_ = CLOSE_ORC_CURSOR;
+	    else
+	      step_ = GET_ORC_ROW;
+	    break;
+	  }
+
+        case CLOSE_ORC_CURSOR:
+          {
+            retcode = orci_->scanClose();
+            if (retcode < 0)
+              {
+                setupError(8442, retcode, "ORC", "scanClose", 
+                           orci_->getErrorText(-retcode));
+                
+                step_ = HANDLE_ERROR;
+                break;
+              }
+            
+            currRangeNum_++;
+            
+            if (currRangeNum_ < (beginRangeNum_ + numRanges_))
+              {
+                // move to the next file.
+                step_ = INIT_ORC_CURSOR;
+                break;
+              }
+
+            step_ = DONE;
+          }
+          break;
+          
+	case HANDLE_ERROR:
+	  {
+	    if (handleError(rc))
+	      return rc;
+
+	    step_ = DONE;
+	  }
+          break;
+
+	case DONE:
+	  {
+	    if (handleDone(rc))
+	      return rc;
+
+	    step_ = NOT_STARTED;
+	  }
+          break;
+	  
+	default: 
+	  {
+	    break;
+	  }
+        } // switch
+      
+    } // while
+
+  return WORK_OK;
+}
+
+ExOrcFastAggrTcb::ExOrcFastAggrTcb(
+          const ComTdbOrcFastAggr &orcAggrTdb, 
+          ex_globals * glob ) :
+  ExOrcScanTcb(orcAggrTdb, glob),
+  step_(NOT_STARTED)
+{
+  if (orcAggrTdb.outputRowLength_ > 0)
+    aggrRow_ = new(glob->getDefaultHeap()) char[orcAggrTdb.outputRowLength_];
+}
+
+ExOrcFastAggrTcb::~ExOrcFastAggrTcb()
+{
+}
+
+ExWorkProcRetcode ExOrcFastAggrTcb::work()
+{
+  Lng32 retcode = 0;
+  short rc = 0;
+
+  while (!qparent_.down->isEmpty())
+    {
+      ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+	step_ = DONE;
+
+      switch (step_)
+	{
+	case NOT_STARTED:
+	  {
+	    matches_ = 0;
+
+	    hdfsStats_ = NULL;
+	    if (getStatsEntry())
+	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
+            
+	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
+
+            orcAggrTdb().getHdfsFileInfoList()->position();
+
+            rowCount_ = 0;
+
+	    step_ = ORC_AGGR_INIT;
+	  }
+	  break;
+
+	case ORC_AGGR_INIT:
+	  {
+            if (orcAggrTdb().getHdfsFileInfoList()->atEnd())
+              {
+                step_ = ORC_AGGR_PROJECT;
+                break;
+              }
+
+            hdfo_ = (HdfsFileInfo*)orcAggrTdb().getHdfsFileInfoList()->getNext();
+            
+            hdfsFileName_ = hdfo_->fileName();
+
+	    step_ = ORC_AGGR_EVAL;
+	  }
+	  break;
+
+	case ORC_AGGR_EVAL:
+	  {
+            Int64 currRowCount = 0;
+            retcode = orci_->getRowCount(hdfsFileName_, currRowCount);
+            if (retcode < 0)
+              {
+                setupError(8442, retcode, "ORC", "getRowCount", 
+                           orci_->getErrorText(-retcode));
+
+                step_ = HANDLE_ERROR;
+                break;
+              }
+
+            rowCount_ += currRowCount;
+
+            step_ = ORC_AGGR_INIT;
+          }
+          break;
+
+        case ORC_AGGR_PROJECT:
+          {
+	    ExpTupleDesc * projTuppTD =
+	      orcAggrTdb().workCriDesc_->getTupleDescriptor
+	      (orcAggrTdb().workAtpIndex_);
+
+	    Attributes * attr = projTuppTD->getAttr(0);
+	    if (! attr)
+	      {
+		step_ = HANDLE_ERROR;
+		break;
+	      }
+
+	    if (attr->getNullFlag())
+	      {
+		*(short*)&aggrRow_[attr->getNullIndOffset()] = 0;
+	      }
+
+	    str_cpy_all(&aggrRow_[attr->getOffset()], (char*)&rowCount_, sizeof(rowCount_));
+
+            step_ = ORC_AGGR_RETURN;
+	  }
+	  break;
+
+	case ORC_AGGR_RETURN:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    short rc = 0;
+	    if (moveRowToUpQueue(aggrRow_, orcAggrTdb().outputRowLength_, 
+				 &rc, FALSE))
+	      return rc;
+	    
+	    step_ = DONE;
+	  }
+	  break;
+
+	case HANDLE_ERROR:
+	  {
+	    if (handleError(rc))
+	      return rc;
+
+	    step_ = DONE;
+	  }
+	  break;
+
+	case DONE:
+	  {
+	    if (handleDone(rc))
+	      return rc;
+
+	    step_ = NOT_STARTED;
+	  }
+	  break;
+
+	} // switch
+    } // while
+
+  return WORK_OK;
+}
+

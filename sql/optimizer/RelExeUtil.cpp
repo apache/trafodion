@@ -355,11 +355,11 @@ const NAString ExeUtilExpr::getText() const
     case GET_DP2_STATS_:
       result = "GET_DP2_STATS";
       break;
-
+      
     case GET_FORMATTED_DISK_STATS_:
       result = "GET_FORMATTED_DISK_STATS";
       break;
-
+      
     case POP_IN_MEM_STATS_:  
       result = "POP_IN_MEM_STATS";
       break;
@@ -368,23 +368,27 @@ const NAString ExeUtilExpr::getText() const
       result = "REPLICATE";
       break;
 
-   case ST_INSERT_:
+    case ST_INSERT_:
       result = "ST_INSERT";
       break;
 
-   case LOB_EXTRACT_:
+    case LOB_EXTRACT_:
       result = "LOB_EXTRACT";
       break;
-
+      
     case HBASE_COPROC_AGGR_:
       result = "HBASE_COPROC_AGGR";
       break;
-
-   case WNR_INSERT_:
+      
+    case ORC_FAST_AGGR_:
+      result = "ORC_FAST_AGGR";
+      break;
+      
+    case WNR_INSERT_:
       result = "NO_ROLLBACK_INSERT";
       break;
-
-   case METADATA_UPGRADE_:
+      
+    case METADATA_UPGRADE_:
       result = "METADATA_UPGRADE";
       break;
 
@@ -8394,6 +8398,56 @@ void ExeUtilHbaseCoProcAggr::getPotentialOutputValues(
   
   outputValues += aggregateExpr();
 } // HbaseAccessCoProcAggr::getPotentialOutputValues()
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilOrcFastAggr
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilOrcFastAggr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilOrcFastAggr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) 
+      ExeUtilOrcFastAggr(getTableName(), aggregateExpr(), outHeap);
+  else
+    result = (ExeUtilOrcFastAggr *) derivedNode;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilOrcFastAggr::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  NATable *naTable = NULL;
+
+  naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return this;
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  // Allocate a TableDesc and attach it to this.
+  //
+  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
+  if (bindWA->errStatus())
+    return this;
+
+  return boundExpr;
+}
+
+void ExeUtilOrcFastAggr::getPotentialOutputValues(
+						      ValueIdSet & outputValues) const
+{
+  outputValues.clear();
+  
+  outputValues += aggregateExpr();
+} // ExeUtilOrcFastAggr::getPotentialOutputValues()
 
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilHbaseDDL

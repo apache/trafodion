@@ -126,6 +126,7 @@ struct ex_eye_catcher
 #define eye_HBASE_COPROC_AGGR                       "HBCA"
 #define eye_AQR_WNR_INS                                             "UAWI"
 #define eye_METADATA_UPGRADE                             "UPGD"
+#define eye_ORC_AGGR                                             "ORCA"
 
 // -----------------------------------------------------------------------
 // Template instantiation to produce a 64-bit pointer emulator class
@@ -339,6 +340,7 @@ public:
     ex_METADATA_UPGRADE = 147,
     ex_HBASE_LOAD = 148,
     ex_HBASE_UNLOAD = 149,
+    ex_ORC_AGGR    = 150,
     ex_LAST = 9999              // not used
   };
 

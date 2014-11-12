@@ -152,13 +152,11 @@ public:
                 Int32& samples,
                 HHDFSDiags &diags,
                 NABoolean doEstimation = TRUE,
-                char recordTerminator = '\n',
-                NABoolean isSequenceFile = FALSE
+                char recordTerminator = '\n'
                 );
   const NAString & getFileName() const                   { return fileName_; }
   Int32 getReplication() const                        { return replication_; }
   Int64 getBlockSize() const                            { return blockSize_; }
-  NABoolean isSequenceFile() const                 { return isSequenceFile_; }
   HostId getHostId(Int32 replicate, Int64 blockNum) const
                         { return blockHosts_[replicate*numBlocks_+blockNum]; }
   void print(FILE *ofd);
@@ -168,7 +166,6 @@ private:
   NAString fileName_;
   Int32 replication_;
   Int64 blockSize_;
-  NABoolean isSequenceFile_;
 
   // list of blocks for this file
   HostId *blockHosts_;
@@ -191,7 +188,6 @@ public:
                HHDFSDiags &diags,
                NABoolean doEstimate = TRUE,
                char recordTerminator = '\n',
-               NABoolean isSequenceFile = FALSE,
                CollIndex pos = NULL_COLL_INDEX);
                     
   void removeAt(CollIndex i);
@@ -210,10 +206,10 @@ class HHDFSListPartitionStats : public HHDFSStatsBase
 {
 public:
   HHDFSListPartitionStats(NAMemory *heap) : heap_(heap), partitionDir_(heap),
-                                            bucketStatsList_(heap),
-                                            doEstimation_(FALSE),
-                                            recordTerminator_(0),
-                                            isSequenceFile_(FALSE) {}
+    bucketStatsList_(heap),
+    doEstimation_(FALSE),
+    recordTerminator_(0)
+    {}
   ~HHDFSListPartitionStats();
 
   const NAString &getDirName() const                 { return partitionDir_; }
@@ -223,10 +219,10 @@ public:
 
   Int32 getNumOfBuckets() const { return (defaultBucketIdx_ ? defaultBucketIdx_ : 1); }
   Int32 getLastValidBucketIndx() const               { return defaultBucketIdx_; }
-  NABoolean isSequenceFile() const { return isSequenceFile_; }
 
-  void populate(hdfsFS fs, const NAString &dir, Int32 numOfBuckets, HHDFSDiags &diags,
-                NABoolean doEsTimation, char recordTerminator, NABoolean isSequenceFile);
+  void populate(hdfsFS fs, const NAString &dir, Int32 numOfBuckets, 
+                HHDFSDiags &diags,
+                NABoolean doEsTimation, char recordTerminator);
   NABoolean validateAndRefresh(hdfsFS fs, HHDFSDiags &diags, NABoolean refresh);
   Int32 determineBucketNum(const char *fileName);
   void print(FILE *ofd);
@@ -247,8 +243,6 @@ private:
   NABoolean doEstimation_;
   char recordTerminator_;
   
-  NABoolean isSequenceFile_;
-
   NAMemory *heap_;
 };
 
@@ -291,8 +285,8 @@ public:
                           Int32 &hdfsPort,
                           NAString &tableDir);
 
-  void processDirectory(const NAString &dir, Int32 numOfBuckets, NABoolean doEstimation, char recordTerminator, NABoolean isSequenceFile);
-
+  void processDirectory(const NAString &dir, Int32 numOfBuckets, 
+                        NABoolean doEstimation, char recordTerminator);
 
   void setPortOverride(Int32 portOverride)         { hdfsPortOverride_ = portOverride; }
 
@@ -323,7 +317,20 @@ public:
   const HHDFSDiags &getDiags() const { return diags_; }
   const NABoolean hasError() const { return !diags_.isSuccess(); }
 
+  const NABoolean isTextFile() const { return (type_ == TEXT_);}
+  const NABoolean isSequenceFile() const { return (type_ == SEQUENCE_);}  
+  const NABoolean isOrcFile() const { return (type_ == ORC_);}
+
+  const NAString &tableDir() const { return tableDir_; }
+
 private:
+  enum FileType
+  {
+    UNKNOWN_ = 0,
+    TEXT_ = 1,
+    SEQUENCE_ = 2,
+    ORC_ = 3
+  };
 
   NABoolean connectHDFS(const NAString &host, Int32 port);
   void disconnectHDFS();
@@ -364,6 +371,8 @@ private:
   HHDFSDiags diags_;
 
   NAMemory *heap_;
+
+  FileType type_;
 };
 
 #endif

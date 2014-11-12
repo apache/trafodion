@@ -28,51 +28,41 @@ ComTdbHdfsScan::ComTdbHdfsScan():
 
 // Constructor
 
-  ComTdbHdfsScan::ComTdbHdfsScan(
-	         char * tableName,
-                 ex_expr * select_pred,
-		 ex_expr * move_expr,
-                 ex_expr * convert_expr,
-                 ex_expr * move_convert_expr,
-                 UInt16 convertSkipListSize,
-                 Int16 * convertSkipList,
-                 char * hostName,
-                 tPort port,
-		 Queue * hdfsFileInfoList,
-		 Queue * hdfsFileRangeBeginList,
-		 Queue * hdfsFileRangeNumList,
-		 char recordDelimiter,
-                 char columnDelimiter,
-		 Int64 hdfsBufSize,
-                 UInt32 rangeTailIOSize,
-		 Int64 hdfsSqlMaxRecLen,
-                 Int64 outputRowLength,
-		 Int64 asciiRowLen,
-                 Int64 moveColsRowLen,
-		 const unsigned short tuppIndex,
-		 const unsigned short asciiTuppIndex,
-		 const unsigned short workAtpIndex,
-                 const unsigned short moveColsTuppIndex,
-		 ex_cri_desc * work_cri_desc,
-		 ex_cri_desc * given_cri_desc,
-		 ex_cri_desc * returned_cri_desc,
-		 queue_index down,
-		 queue_index up,
-		 Cardinality estimatedRowCount,
-#ifdef NA_64BIT
-				 // dg64 - match signature
-				 Int32  numBuffers,
-#else
-				 Lng32 numBuffers,
-#endif
-#ifdef NA_64BIT
-				 // dg64 - match signature
-				 UInt32  bufferSize
-#else
-				 ULng32 bufferSize
-#endif
-				 )
-
+ComTdbHdfsScan::ComTdbHdfsScan(
+                               char * tableName,
+                               short type,
+                               ex_expr * select_pred,
+                               ex_expr * move_expr,
+                               ex_expr * convert_expr,
+                               ex_expr * move_convert_expr,
+                               UInt16 convertSkipListSize,
+                               Int16 * convertSkipList,
+                               char * hostName,
+                               tPort port,
+                               Queue * hdfsFileInfoList,
+                               Queue * hdfsFileRangeBeginList,
+                               Queue * hdfsFileRangeNumList,
+                               char recordDelimiter,
+                               char columnDelimiter,
+                               Int64 hdfsBufSize,
+                               UInt32 rangeTailIOSize,
+                               Int64 hdfsSqlMaxRecLen,
+                               Int64 outputRowLength,
+                               Int64 asciiRowLen,
+                               Int64 moveColsRowLen,
+                               const unsigned short tuppIndex,
+                               const unsigned short asciiTuppIndex,
+                               const unsigned short workAtpIndex,
+                               const unsigned short moveColsTuppIndex,
+                               ex_cri_desc * work_cri_desc,
+                               ex_cri_desc * given_cri_desc,
+                               ex_cri_desc * returned_cri_desc,
+                               queue_index down,
+                               queue_index up,
+                               Cardinality estimatedRowCount,
+                               Int32  numBuffers,
+                               UInt32  bufferSize
+                               )
 : ComTdb( ComTdb::ex_HDFS_SCAN,
             eye_HDFS_SCAN,
             estimatedRowCount,
@@ -82,34 +72,34 @@ ComTdbHdfsScan::ComTdbHdfsScan():
             up,
             numBuffers,        // num_buffers - we use numInnerTuples_ instead.
             bufferSize),       // buffer_size - we use numInnerTuples_ instead.
-    tableName_(tableName),
-    selectPred_(select_pred),
-    moveExpr_(move_expr),
-    convertExpr_(convert_expr),
-    moveColsConvertExpr_(move_convert_expr),
-    convertSkipListSize_(convertSkipListSize),
-    convertSkipList_(convertSkipList),
-    hostName_(hostName),
-    port_(port),
-    hdfsFileInfoList_(hdfsFileInfoList),
-    hdfsFileRangeBeginList_(hdfsFileRangeBeginList),
-    hdfsFileRangeNumList_(hdfsFileRangeNumList),
-    recordDelimiter_(recordDelimiter),
-    columnDelimiter_(columnDelimiter),
-    hdfsBufSize_(hdfsBufSize),
-    rangeTailIOSize_(rangeTailIOSize),
-    hdfsSqlMaxRecLen_(hdfsSqlMaxRecLen),
-    outputRowLength_(outputRowLength),
-    asciiRowLen_(asciiRowLen),
-    moveExprColsRowLength_(moveColsRowLen),
-    tuppIndex_(tuppIndex),
-    asciiTuppIndex_(asciiTuppIndex),
-    workAtpIndex_(workAtpIndex),
-    moveExprColsTuppIndex_(moveColsTuppIndex),
-    workCriDesc_(work_cri_desc),
-    flags_(0)
+  tableName_(tableName),
+  type_(type),
+  selectPred_(select_pred),
+  moveExpr_(move_expr),
+  convertExpr_(convert_expr),
+  moveColsConvertExpr_(move_convert_expr),
+  convertSkipListSize_(convertSkipListSize),
+  convertSkipList_(convertSkipList),
+  hostName_(hostName),
+  port_(port),
+  hdfsFileInfoList_(hdfsFileInfoList),
+  hdfsFileRangeBeginList_(hdfsFileRangeBeginList),
+  hdfsFileRangeNumList_(hdfsFileRangeNumList),
+  recordDelimiter_(recordDelimiter),
+  columnDelimiter_(columnDelimiter),
+  hdfsBufSize_(hdfsBufSize),
+  rangeTailIOSize_(rangeTailIOSize),
+  hdfsSqlMaxRecLen_(hdfsSqlMaxRecLen),
+  outputRowLength_(outputRowLength),
+  asciiRowLen_(asciiRowLen),
+  moveExprColsRowLength_(moveColsRowLen),
+  tuppIndex_(tuppIndex),
+  asciiTuppIndex_(asciiTuppIndex),
+  workAtpIndex_(workAtpIndex),
+  moveExprColsTuppIndex_(moveColsTuppIndex),
+  workCriDesc_(work_cri_desc),
+  flags_(0)
 {};
-
 
 ComTdbHdfsScan::~ComTdbHdfsScan()
 {};
@@ -213,10 +203,14 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "moveExprColsTuppIndex_ = %d, moveExprColsRowLength_ = %d",
                           moveExprColsTuppIndex_ ,      moveExprColsRowLength_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-      // only the first element of the skip list is printed for now
-      str_sprintf(buf, "convertSkipListSize_ = %d, convertSkipList_ = %d",
-                           convertSkipListSize_ ,      convertSkipList_[0]);
-      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+      if (convertSkipListSize_)
+        {
+          // only the first element of the skip list is printed for now
+          str_sprintf(buf, "convertSkipListSize_ = %d, convertSkipList_ = %d",
+                      convertSkipListSize_ ,      convertSkipList_[0]);
+          space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+        }
 
       str_sprintf(buf, "outputRowLength_ = %d", outputRowLength_);
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -265,10 +259,16 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
           for (Int32 i=0; i<4096; i++) 
 	    bytesPerESP[i] = 0;
 
-	  str_sprintf(
-                   buf, 
-		   "%6s %6s %12s %12s  %s",
-		   "  Esp#", "Range#", " StartOffset", "   BytesRead", "    FileName");
+          if (isOrcFile())
+            str_sprintf(
+                        buf, 
+                        "%6s %6s %12s %12s  %s",
+                        "  Esp#", "Range#", " StartRowNum", "     NumRows", "    FileName");
+          else
+            str_sprintf(
+                        buf, 
+                        "%6s %6s %12s %12s  %s",
+                        "  Esp#", "Range#", " StartOffset", "   BytesRead", "    FileName");
 
            space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                    sizeof(short));
@@ -325,7 +325,7 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
 	      else if (isLocal)
 		strcat(splitInfo, ")");
 
-              if (hdfo->isSequenceFile())
+              if (isSequenceFile())
                 {
                   if ( isLocal ||
                        (hdfo->fileIsSplitBegin()) ||
@@ -380,8 +380,8 @@ void ComTdbHdfsScan::displayContents(Space * space,ULng32 flag)
 
               space->allocateAndCopyToAlignedSpace(buf, str_len(buf),
                                                    sizeof(short));
-              bytesPerESP[currInstNum] += hdfo->getBytesToRead();
-              totalBytes += hdfo->getBytesToRead();
+              bytesPerESP[currInstNum] += (hdfo->getBytesToRead() >= 0 ? hdfo->getBytesToRead() : 0);
+              totalBytes += (hdfo->getBytesToRead() >= 0 ? hdfo->getBytesToRead() : 0);
               currEntryNum++;
             }
 
@@ -419,4 +419,69 @@ Int32 ComTdbHdfsScan::orderedQueueProtocol() const
   return 1;
 }
 
+///////////////////////////////////////////////////////////////
+// ComTdbOrcAggr
+///////////////////////////////////////////////////////////////
+
+// Dummy constructor for "unpack" routines.
+ComTdbOrcFastAggr::ComTdbOrcFastAggr():
+ ComTdbHdfsScan()
+{
+  setNodeType(ComTdb::ex_ORC_AGGR);
+  setEyeCatcher(eye_ORC_AGGR);
+};
+
+// Constructor
+ComTdbOrcFastAggr::ComTdbOrcFastAggr(
+                                     char * tableName,
+                                     OrcAggrType type,
+                                     Queue * hdfsFileInfoList,
+                                     Queue * hdfsFileRangeBeginList,
+                                     Queue * hdfsFileRangeNumList,
+                                     ex_expr * proj_expr,
+                                     Int64 projRowLen,
+                                     const unsigned short projTuppIndex,
+                                     const unsigned short returnedTuppIndex,
+                                     ex_cri_desc * work_cri_desc,
+                                     ex_cri_desc * given_cri_desc,
+                                     ex_cri_desc * returned_cri_desc,
+                                     queue_index down,
+                                     queue_index up,
+                                     Int32  numBuffers,
+                                     UInt32  bufferSize
+                                     )
+  : ComTdbHdfsScan( 
+                   tableName,
+                   type,
+                   NULL, NULL,
+                   proj_expr,
+                   NULL,
+                   0, NULL, NULL, 0,
+                   hdfsFileInfoList,
+                   hdfsFileRangeBeginList,
+                   hdfsFileRangeNumList,
+                   0, 0, 0, 0, 0,
+                   projRowLen, 
+                   0, 0,
+                   returnedTuppIndex,
+                   0, 
+                   projTuppIndex, 
+                   0,
+                   work_cri_desc,
+                   given_cri_desc,
+                   returned_cri_desc,
+                   down,
+                   up,
+                   0,
+                   numBuffers,        // num_buffers - we use numInnerTuples_ instead.
+                   bufferSize),       // buffer_size - we use numInnerTuples_ instead.
+    type_(type)
+{
+  setNodeType(ComTdb::ex_ORC_AGGR);
+  setEyeCatcher(eye_ORC_AGGR);
+}
+
+ComTdbOrcFastAggr::~ComTdbOrcFastAggr()
+{
+}
 

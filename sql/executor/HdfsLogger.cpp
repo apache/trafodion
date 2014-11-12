@@ -25,6 +25,7 @@
 #include <log4cpp/Configurator.hh>
 
 const char CAT_JNI_TOP        []      = "JniTop";
+const char CAT_ORC_FILE_READER[]      = "OrcFileReader";
 const char CAT_SEQ_FILE_READER[]      = "SeqFileReader";
 const char CAT_SEQ_FILE_WRITER[]      = "SeqFileWriter";
 const char CAT_HBASE          []      = "HBase";

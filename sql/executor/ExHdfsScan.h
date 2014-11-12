@@ -48,12 +48,15 @@ class ExBlockingHdfsScanPrivateState;
 class ex_tcb;
 class ExHdfsScanStats;
 class SequenceFileReader;
+class ExpORCinterface;
 
 // -----------------------------------------------------------------------
 // ExHdfsScanTdb
 // -----------------------------------------------------------------------
 class ExHdfsScanTdb : public ComTdbHdfsScan
 {
+  friend class ExOrcScanTdb;
+
 public:
 
   // ---------------------------------------------------------------------
@@ -107,7 +110,7 @@ class ExHdfsScanTcb  : public ex_tcb
 #endif
 
 public:
-  ExHdfsScanTcb( const ExHdfsScanTdb &tdb,
+  ExHdfsScanTcb( const ComTdbHdfsScan &tdb,
                          ex_globals *glob );
 
   ~ExHdfsScanTcb();
@@ -184,7 +187,7 @@ protected:
     { return hdfsScanTdb().moveColsConvertExpr_; }
 
   inline bool isSequenceFile() const
-    { return hdfo_->isSequenceFile(); }
+  {return hdfsScanTdb().isSequenceFile(); }
 
   // returns ptr to start of next row, if any. Returning NULL 
   // indicates that no complete row was found. Beware of boundary 
@@ -193,6 +196,15 @@ protected:
   // row still waiting to be processed).
   char * extractAndTransformAsciiSourceToSqlRow(int &err,
 						ComDiagsArea * &diagsArea);
+
+  short moveRowToUpQueue(const char * row, Lng32 len, 
+                         short * rc, NABoolean isVarchar);
+
+  short handleError(short &rc);
+  short handleDone(ExWorkProcRetcode &rc);
+
+  short setupError(Lng32 exeError, Lng32 retcode, 
+                   const char * str, const char * str2, const char * str3);
 
   /////////////////////////////////////////////////////
   // Private data.
@@ -249,13 +261,154 @@ protected:
   Lng32 currRangeNum_;
   char *endOfRequestedRange_ ; // helps rows span ranges.
   char * hdfsFileName_;
-  bool isSequenceFile_;
   SequenceFileReader* sequenceFileReader_;
   Int64 stopOffset_;
   bool  seqScanAgain_;
   char cursorId_[8];
 
   tupp_descriptor * defragTd_;
+};
+
+class ExOrcScanTcb  : public ExHdfsScanTcb
+{
+  friend class ExOrcFastAggrTcb;
+
+public:
+  ExOrcScanTcb( const ComTdbHdfsScan &tdb,
+                 ex_globals *glob );
+
+  ~ExOrcScanTcb();
+
+  virtual ExWorkProcRetcode work(); 
+  
+protected:
+  enum {
+    NOT_STARTED
+  , INIT_ORC_CURSOR
+  , OPEN_ORC_CURSOR
+  , GET_ORC_ROW
+  , PROCESS_ORC_ROW
+  , CLOSE_ORC_CURSOR
+  , RETURN_ROW
+  , CLOSE_FILE
+  , ERROR_CLOSE_FILE
+  , COLLECT_STATS
+  , HANDLE_ERROR
+  , DONE
+  } step_;
+
+  /////////////////////////////////////////////////////
+  // Private methods.
+  /////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////
+  // Private data.
+  /////////////////////////////////////////////////////
+ private:
+  short extractAndTransformOrcSourceToSqlRow(
+                                             char * orcRow,
+                                             Int64 orcRowLen,
+                                             Lng32 numOrcCols,
+                                             ComDiagsArea* &diagsArea);
+  
+  ExpORCinterface * orci_;
+
+  Int64 orcStartRowNum_;
+  Int64 orcNumRows_;
+  Int64 orcStopRowNum_;
+
+  // returned row from orc scanFetch
+  char * orcRow_;
+  Int64 orcRowLen_;
+  Int64 orcRowNum_;
+  Lng32 numOrcCols_;
+};
+
+// -----------------------------------------------------------------------
+// ExOrcFastAggrTdb
+// -----------------------------------------------------------------------
+class ExOrcFastAggrTdb : public ComTdbOrcFastAggr
+{
+public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExOrcFastAggrTdb()
+  {}
+
+  NA_EIDPROC virtual ~ExOrcFastAggrTdb()
+  {}
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDB's
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the appropriate ComTdb subclass instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  // 
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
+// class ExOrcFastAggrTcb
+class ExOrcFastAggrTcb  : public ExOrcScanTcb
+{
+public:
+  ExOrcFastAggrTcb( const ComTdbOrcFastAggr &tdb,
+                    ex_globals *glob );
+  
+  ~ExOrcFastAggrTcb();
+
+  virtual ExWorkProcRetcode work(); 
+
+  inline ExOrcFastAggrTdb &orcAggrTdb() const
+  { return (ExOrcFastAggrTdb &) tdb; }
+  
+protected:
+  enum {
+    NOT_STARTED
+    , ORC_AGGR_INIT
+    , ORC_AGGR_EVAL
+    , ORC_AGGR_PROJECT
+    , ORC_AGGR_RETURN
+    , CLOSE_FILE
+    , ERROR_CLOSE_FILE
+    , COLLECT_STATS
+    , HANDLE_ERROR
+    , DONE
+  } step_;
+
+  /////////////////////////////////////////////////////
+  // Private data.
+  /////////////////////////////////////////////////////
+ private:
+  Int64 rowCount_;
+  char * aggrRow_;
 };
 
 #endif

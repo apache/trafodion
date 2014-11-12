@@ -319,16 +319,22 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
 }
 
    
+NABoolean hive_sd_desc::isOrcFile() const
+{
+  return strstr(inputFormat_, "Orc") && 
+    strstr(outputFormat_, "Orc");
+}
+
 NABoolean hive_sd_desc::isSequenceFile() const
 {
-   return strstr(inputFormat_, "Sequence") && 
-          strstr(outputFormat_, "Sequence");
+  return strstr(inputFormat_, "Sequence") && 
+    strstr(outputFormat_, "Sequence");
 }
 
 NABoolean hive_sd_desc::isTextFile() const
 {
-   return strstr(inputFormat_, "Text") && 
-          strstr(outputFormat_, "Text");
+  return strstr(inputFormat_, "Text") && 
+    strstr(outputFormat_, "Text");
 }
 
 struct hive_column_desc* populateColumns(HiveMetaData *md, Int32 cdID,  

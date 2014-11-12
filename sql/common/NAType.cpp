@@ -459,6 +459,15 @@ NABoolean NAType::errorsCanOccur (const NAType& target, NABoolean lax) const
   return TRUE;
 }
 
+Lng32 NAType::getDisplayLength() const
+{
+  return getDisplayLength(getFSDatatype(),
+                          getNominalSize(),
+                          getPrecision(),
+                          getScale(),
+                          0);
+}
+
 // Gets the length that a given data type would use in the display tool
 Lng32 NAType::getDisplayLength(Lng32 datatype,
 		    Lng32 length,

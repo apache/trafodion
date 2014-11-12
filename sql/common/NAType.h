@@ -531,6 +531,8 @@ public:
 		        Lng32 scale,
                         Lng32 heading_len) const;
 
+  virtual Lng32  getDisplayLength() const;
+
   // A helper function.
   // This method returns a text representation of the datatype
   // based on the datatype information input to this method/

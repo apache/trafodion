@@ -1110,10 +1110,25 @@ public:
 
   virtual short codeGen(Generator*);
 
-  short codeGenForHDFS(Generator*);
-  short codeGenForHBASE(Generator*);
-
-  static desc_struct *createHbaseTableDesc(const char * table_name);
+  short codeGenForHive(Generator*);
+  short genForTextAndSeq(Generator * generator,
+                             Queue * &hdfsFileInfoList,
+                             Queue * &hdfsFileRangeBeginList,
+                             Queue * &hdfsFileRangeNumList,
+                             char* &hdfsHostName,
+                             Int32 &hdfsPort,
+                             NABoolean &doMultiCursor,
+                             NABoolean &doSplitFileOpt);
+  static short genForOrc(Generator * generator,
+                         const HHDFSTableStats* hTabStats,
+                         const PartitioningFunction * mypart,
+                         Queue * &hdfsFileInfoList,
+                         Queue * &hdfsFileRangeBeginList,
+                         Queue * &hdfsFileRangeNumList,
+                         char* &hdfsHostName,
+                         Int32 &hdfsPort);
+  
+ static desc_struct *createHbaseTableDesc(const char * table_name);
 
   NABoolean &fastReplyDataMove() {return fastReplyDataMove_;};
 

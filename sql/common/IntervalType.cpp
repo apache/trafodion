@@ -485,7 +485,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 } // synthesizeType()
 
 #pragma nowarn(1319)   // warning elimination 
-size_t IntervalType::getDisplayLength() const
+Lng32 IntervalType::getDisplayLength() const
   {
     //
     // Return the string size excluding the null terminator.

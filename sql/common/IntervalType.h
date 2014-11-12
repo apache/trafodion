@@ -189,7 +189,7 @@ public:
 			 getEndField(),   getFractionPrecision());
   }
   
-  size_t getDisplayLength() const;
+  virtual Lng32  getDisplayLength() const;
 
   UInt32 getTotalPrecision() const
   {

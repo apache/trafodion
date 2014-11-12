@@ -176,7 +176,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210605899019
+PLAN_ID .................. 212282282878662471
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 915.03
 STATEMENT ................ select f,count(f)
@@ -285,6 +285,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART7
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -317,7 +318,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210606216440
+PLAN_ID .................. 212282282878991741
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 942.45
 STATEMENT ................ select f,count(f)
@@ -426,6 +427,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART5
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -458,7 +460,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210606531193
+PLAN_ID .................. 212282282879326177
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 942.45
 STATEMENT ................ select f,count(f)
@@ -567,6 +569,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART3
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -599,7 +602,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210606849223
+PLAN_ID .................. 212282282879656971
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 889.15
 STATEMENT ................ select f,count(f)
@@ -708,6 +711,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART6
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -740,7 +744,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210607165808
+PLAN_ID .................. 212282282880026637
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 889.15
 STATEMENT ................ select f,count(f)
@@ -849,6 +853,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART2
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -881,7 +886,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210607482693
+PLAN_ID .................. 212282282880358992
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 915.03
 STATEMENT ................ select f,count(f)
@@ -990,6 +995,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART1
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -1022,7 +1028,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212277210607797955
+PLAN_ID .................. 212282282880683382
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 942.45
 STATEMENT ................ select f,count(f)
@@ -1131,6 +1137,7 @@ DESCRIPTION
   parent_frag ............ 0
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART8
+  object_type ............ Trafodion
   cache_size ........ 10,000
   probes ................. 1
   rows_accessed .......... 1e+09

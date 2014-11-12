@@ -465,7 +465,7 @@ DatetimeType* DatetimeType::constructSubtype(NABoolean allowSQLnull,
 //
 // ***********************************************************************
 
-size_t DatetimeType::getDisplayLength() const
+Lng32 DatetimeType::getDisplayLength() const
 {
   Int32 field = getStartField() - REC_DATE_YEAR;
   size_t displayLength = maxFieldLen[field];

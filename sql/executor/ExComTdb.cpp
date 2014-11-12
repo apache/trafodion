@@ -695,6 +695,17 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 
       break;
     }
+
+  case ex_ORC_AGGR:
+    {
+#pragma nowarn(1506)   // warning elimination
+      GetVTblPtr(vtblptr,ExOrcFastAggrTdb);
+#pragma warn(1506)  // warning elimination
+
+      break;
+    }
+
+
 #endif
     default:
       ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId"); // LCOV_EXCL_LINE

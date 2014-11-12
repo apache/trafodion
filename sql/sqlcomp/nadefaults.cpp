@@ -3221,6 +3221,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
  DDkwd__(TRAF_DEFAULT_COL_CHARSET,            (char *)SQLCHARSETSTRING_ISO88591),
  
+ DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
+
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
 
   DDint__(TRAF_LOAD_MAX_HFILE_SIZE,             "10240"), // in MB -->10GB by default

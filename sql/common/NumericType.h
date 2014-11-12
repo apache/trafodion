@@ -1002,7 +1002,7 @@ public:
   // For NAType::getDisplayLength().
   // ---------------------------------------------------------------------
  
-  inline Lng32 getDisplayLength()
+  virtual Lng32 getDisplayLength() const
                    { return getPrecision() + (getScale() > 0 ? 2 : 1); }
 
   // ---------------------------------------------------------------------

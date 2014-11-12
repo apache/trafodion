@@ -4103,6 +4103,14 @@ NABoolean createNAFileSets(hive_tbl_desc* hvt_desc        /*IN*/,
           return TRUE;
         }
 
+      if ((hiveHDFSTableStats->isOrcFile()) &&
+          (CmpCommon::getDefault(TRAF_ENABLE_ORC_FORMAT) == DF_OFF))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3069)
+                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+          return TRUE;
+        }
+
 #ifndef NDEBUG
       NAString logFile = 
         ActiveSchemaDB()->getDefaults().getValue(HIVE_HDFS_STATS_LOG_FILE);

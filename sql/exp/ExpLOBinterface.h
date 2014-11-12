@@ -27,8 +27,15 @@ class HdfsFileInfo
 {
  public:
   char * fileName() { return fileName_; }
+
+  // used for text/seq file access
   Int64 getStartOffset() { return startOffset_; }
   Int64 getBytesToRead() { return bytesToRead_; }
+
+  // used for ORC access
+  Int64 getStartRow() { return startOffset_; }
+  Int64 getNumRows() { return bytesToRead_; }
+
   Lng32 getFlags() { return flags_; }
 
   void setFileIsLocal(NABoolean v)
@@ -43,16 +50,11 @@ class HdfsFileInfo
   {(v ? flags_ |= HDFSFILE_IS_SPLIT_END : flags_ &= ~HDFSFILE_IS_SPLIT_END); };
   NABoolean fileIsSplitEnd() { return (flags_ & HDFSFILE_IS_SPLIT_END) != 0; };
 
-  void setSequenceFile(NABoolean v)
-  {(v ? flags_ |= HDFSFILE_IS_SEQUENCE_FILE : flags_ &= ~HDFSFILE_IS_SEQUENCE_FILE); };
-  NABoolean isSequenceFile() { return (flags_ & HDFSFILE_IS_SEQUENCE_FILE) != 0; };
-
   enum HdfsFileInfoFlags 
   { 
     HDFSFILEFLAGS_LOCAL          = 0x0001,
     HDFSFILE_IS_SPLIT_BEGIN      = 0x0002,
-    HDFSFILE_IS_SPLIT_END        = 0x0004,
-    HDFSFILE_IS_SEQUENCE_FILE    = 0x0008
+    HDFSFILE_IS_SPLIT_END        = 0x0004
   };
   Lng32 entryNum_; // 0 based, first entry is entry num 0.
   Lng32 flags_;

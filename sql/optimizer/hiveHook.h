@@ -162,6 +162,7 @@ struct hive_sd_desc
    char getRecordTerminator() const { return recordTerminator_;}
 
    NABoolean isSequenceFile() const;
+   NABoolean isOrcFile() const;
    NABoolean isTextFile() const;
    NABoolean isTrulyText() const 
      { return !isSequenceFile() && isTextFile(); };

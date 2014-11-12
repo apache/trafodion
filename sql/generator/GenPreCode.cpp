@@ -12544,3 +12544,26 @@ RelExpr * ExeUtilHbaseCoProcAggr::preCodeGen(Generator * generator,
   // Done.
   return this;
 }
+
+RelExpr * ExeUtilOrcFastAggr::preCodeGen(Generator * generator,
+                                         const ValueIdSet & externalInputs,
+                                         ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  if (! ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  // Rebuild the aggregate expressions tree
+  ValueIdSet availableValues;
+  getInputValuesFromParentAndChildren(availableValues);
+  aggregateExpr().replaceVEGExpressions
+                     (availableValues,
+  	 	      getGroupAttr()->getCharacteristicInputs());
+
+  markAsPreCodeGenned();
+  
+  // Done.
+  return this;
+}

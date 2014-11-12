@@ -86,6 +86,7 @@
 
 #include "CmpSeabaseDDL.h"
 #include "CmpSeabaseDDLauth.h"
+#include "HDFSHook.h"
 #include "PrivMgrCommands.h"
 
 #include "Analyzer.h"
@@ -2186,7 +2187,22 @@ short CmpDescribeHiveTable (
     }
 
   outputShortLine(space, "  )");
- 
+
+  const HHDFSTableStats* hTabStats = 
+    naTable->getClusteringIndex()->getHHDFSTableStats();
+  if (hTabStats->isOrcFile())
+    {
+      outputShortLine(space, "   /* stored as orc */");
+    }
+  else if (hTabStats->isTextFile())
+    {
+      outputShortLine(space, "   /* stored as text */");
+    }
+  else if (hTabStats->isSequenceFile())
+    {
+      outputShortLine(space, "   /* stored as sequence */");
+    }
+
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];
   space.makeContiguous(outbuf, outbuflen);

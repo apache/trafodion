@@ -32,6 +32,10 @@ class ComTdbHdfsScan : public ComTdb
 {
   friend class ExHdfsScanTcb;
   friend class ExHdfsScanPrivateState;
+  friend class ExOrcScanTcb;
+  friend class ExOrcScanPrivateState;
+  friend class ExOrcFastAggrTcb;
+  friend class ExOrcFastAggrPrivateState;
 
  protected:
   enum
@@ -71,7 +75,8 @@ class ComTdbHdfsScan : public ComTdb
   Int64 moveExprColsRowLength_;                              // 48 - 55
   UInt16 moveExprColsTuppIndex_;                             // 56 - 57
 
-  char filler1_[6];                                          // 58 - 63
+  short type_;                                      
+  char filler1_[4];                                          // 58 - 63
 
   // I/O buffer for interface to hdfs access layer.
   Int64 hdfsBufSize_;                                        // 64 - 71
@@ -120,11 +125,20 @@ class ComTdbHdfsScan : public ComTdb
   char fillersComTdbHdfsScan1_[28];                             // 156 - 183
 
 public:
+  enum HDFSFileType
+  {
+    UNKNOWN_ = 0,
+    TEXT_ = 1,
+    SEQUENCE_ = 2,
+    ORC_ = 3
+  };
+
   // Constructor
   ComTdbHdfsScan(); // dummy constructor. Used by 'unpack' routines.
   
   ComTdbHdfsScan(
 		 char * tableName,
+                 short type,
                  ex_expr * select_pred,
 		 ex_expr * move_expr,
                  ex_expr * convert_expr,
@@ -154,16 +168,8 @@ public:
 		 queue_index down,
 		 queue_index up,
 		 Cardinality estimatedRowCount,
-#ifdef NA_64BIT
                  Int32  numBuffers,
-#else
-                 Lng32 numBuffers,
-#endif
-#ifdef NA_64BIT
                  UInt32  bufferSize
-#else
-                 ULng32 bufferSize
-#endif
                  );
 
   ~ComTdbHdfsScan();
@@ -198,6 +204,10 @@ public:
   Queue* getHdfsFileInfoList() {return hdfsFileInfoList_;}
   Queue* getHdfsFileRangeBeginList() {return hdfsFileRangeBeginList_;}
   Queue* getHdfsFileRangeNumList() {return hdfsFileRangeNumList_;}
+
+  const NABoolean isTextFile() const { return (type_ == TEXT_);}
+  const NABoolean isSequenceFile() const { return (type_ == SEQUENCE_);}  
+  const NABoolean isOrcFile() const { return (type_ == ORC_);}
 
   void setUseCursorMulti(NABoolean v)
   {(v ? flags_ |= USE_CURSOR_MULTI : flags_ &= ~USE_CURSOR_MULTI); };
@@ -291,6 +301,53 @@ inline ComTdb * ComTdbHdfsScan::getChildTdb()
 inline const ComTdb* ComTdbHdfsScan::getChild(Int32 pos) const
 {
   return NULL;
+};
+
+// ComTdbOrcFastAggr 
+class ComTdbOrcFastAggr : public ComTdbHdfsScan
+{
+  friend class ExOrcFastAggrTcb;
+  friend class ExOrcFastAggrPrivateState;
+
+public:
+  enum OrcAggrType
+  {
+    UNKNOWN_ = 0,
+    COUNT_      = 1,
+    MIN_           = 2,
+    MAX_          = 3
+  };
+
+  // Constructor
+  ComTdbOrcFastAggr(); // dummy constructor. Used by 'unpack' routines.
+  
+  ComTdbOrcFastAggr(
+                char * tableName,
+                OrcAggrType type,
+                Queue * hdfsFileInfoList,
+                Queue * hdfsFileRangeBeginList,
+                Queue * hdfsFileRangeNumList,
+                ex_expr * proj_expr,
+                Int64 projRowLen,
+                const unsigned short projTuppIndex,
+                const unsigned short returnedTuppIndex,
+                ex_cri_desc * work_cri_desc,
+                ex_cri_desc * given_cri_desc,
+                ex_cri_desc * returned_cri_desc,
+                queue_index down,
+                queue_index up,
+                Int32  numBuffers,
+                UInt32  bufferSize
+                );
+  
+  ~ComTdbOrcFastAggr();
+
+  virtual short getClassSize() { return (short)sizeof(ComTdbOrcFastAggr); }  
+
+  virtual const char *getNodeName() const { return "EX_ORC_FAST_AGGR"; };
+
+ private:
+   OrcAggrType type_;
 };
 
 #endif

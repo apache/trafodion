@@ -114,6 +114,7 @@ CPPSRC := Allocator.cpp \
         ExHdfsScan.cpp \
         JavaObjectInterface.cpp \
         SequenceFileReader.cpp \
+        OrcFileReader.cpp \
         HBaseClient_JNI.cpp \
         HdfsLogger.cpp \
         CommonLogger.cpp 
@@ -147,6 +148,7 @@ DEP_LIBS += log4cpp
 ################################################
 
 PACKAGE := org/trafodion/sql/HBaseAccess
+ORCPACKAGE := org/apache/hadoop/hive/ql/io/orc
 JARPREFIX := trafodion-HBaseAccess-$(TRAFODION_VER)
 
 JSRC := RowToInsert.java \
@@ -160,7 +162,8 @@ JSRC := RowToInsert.java \
         HTableClient.java \
         HBaseClient.java \
 	HiveClient.java \
-        HBulkLoadClient.java
+        HBulkLoadClient.java \
+	OrcFileReader.java
 
 
 

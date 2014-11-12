@@ -1035,7 +1035,9 @@ short CmpSeabaseDDL::validateVersions(NADefaults *defs,
   else
     retcode = 0;
 
-  if (col1ValueList.entries() == 0)
+  if ((col1ValueList.entries() == 0) ||
+      (col2ValueList.entries() == 0) ||
+      (col3ValueList.entries() == 0))      
     {
       retcode = -1394;
       goto label_return;

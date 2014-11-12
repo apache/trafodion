@@ -6056,18 +6056,6 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
      return NULL;                     
   } 
 
-#ifdef __ignore
-  if (hbaseCreateOptions)
-    {
-      // Row format stored as:  ROW_FORMAT=>ALIGNED
-      char * rfStr = strstr(hbaseCreateOptions, "ROW_FORMAT=>ALIGNED");
-      if (rfStr)
-	{
-          alignedFormat = TRUE;
-	}
-    }
-#endif
-
   if (strcmp(objType, COM_INDEX_OBJECT_LIT) == 0)
     {
       str_sprintf(query, "select k.column_name, c.column_number, k.keyseq_number, ordering, cast(0 as int not null)  from %s.\"%s\".%s k, %s.\"%s\".%s c where k.column_name = c.column_name and k.object_uid = c.object_uid and k.object_uid = %Ld and k.nonkeycol = 0 for read committed access order by keyseq_number",

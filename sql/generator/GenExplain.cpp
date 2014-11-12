@@ -56,6 +56,7 @@
 #include "ComTdbSequence.h"
 #include "ComTdbSequenceGenerator.h"
 #include "ComTdbCancel.h"
+#include "HDFSHook.h"
 
 #include "StmtDDLCreateTable.h"
 #include "StmtDDLCreateIndex.h"
@@ -506,7 +507,15 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     description += " object_type: inMemory ";
   else if (getTableName().isVolatile())
     description += " object_type: volatile ";
-
+  else if (getTableDesc()->getNATable()->isHiveTable())
+    {    
+      if (getTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats()->isOrcFile())
+        description += " object_type: Hive_Orc ";
+      else if (getTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats()->isTextFile())
+        description += " object_type: Hive_Text ";
+      else if (getTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats()->isSequenceFile())
+        description += " object_type: Hive_Sequence ";
+    }
   // find direction
 
   if (getOperatorType() != REL_DP2_SCAN_UNIQUE)
@@ -668,6 +677,18 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 				    Generator *generator)
 {
   NAString description("scan_type: " + getTypeText());
+  
+  if (getTableDesc()->getNATable()->isSeabaseTable())
+    {
+      if (getTableDesc()->getNATable()->isSeabaseMDTable())
+        description += " object_type: Trafodion_MD ";
+      else
+        description += " object_type: Trafodion ";
+    }
+  else if (getTableDesc()->getNATable()->isHbaseCellTable())
+    description += " object_type: Hbase_Cell ";
+  else if (getTableDesc()->getNATable()->isHbaseRowTable())
+    description += " object_type: Hbase_Row ";
 
   // add HbaseSearch info
 

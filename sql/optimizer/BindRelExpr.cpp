@@ -4786,7 +4786,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
 		  if (((naTable->getObjectType() == COM_BASE_TABLE_OBJECT) ||
 		       (naTable->getObjectType() == COM_INDEX_OBJECT)) &&
-		      (naTable->isSeabaseTable()))
+		      ((naTable->isSeabaseTable()) ||
+                       ((naTable->isHiveTable()) &&
+                        (naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile()))))
 		    {
 		      Aggregate * agg = 
 			new(bindWA->wHeap()) Aggregate(ITM_COUNT,
@@ -4802,17 +4804,26 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 
 		      ValueIdSet aggrSet;
 		      aggrSet.insert(agg->getValueId());
-		      ExeUtilHbaseCoProcAggr * hbaseCP = new(CmpCommon::statementHeap())
-			ExeUtilHbaseCoProcAggr(scan->getTableName(),
-					       aggrSet);
+		      ExeUtilExpr * eue = NULL;
+                      
+                      if (naTable->isSeabaseTable())
+                        eue = 
+                          new(CmpCommon::statementHeap())
+                          ExeUtilHbaseCoProcAggr(scan->getTableName(),
+                                                 aggrSet);
+                      else
+                        eue = 
+                          new(CmpCommon::statementHeap())
+                          ExeUtilOrcFastAggr(scan->getTableName(),
+                                             aggrSet);
 		      
-		      hbaseCP->bindNode(bindWA);
+		      eue->bindNode(bindWA);
 		      if (bindWA->errStatus())
 			{	  
 			  return this;
 			}
 		      
-		      setChild(0, hbaseCP);
+		      setChild(0, eue);
 
                       removeCompExprTree();
                       addCompExprTree(agg);
@@ -9218,7 +9229,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         return this;
     }
      
-    NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
+    //    NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
+    const NABoolean isSequenceFile = hTabStats->isSequenceFile();
     
     RelExpr * unloadRelExpr =
                     new (bindWA->wHeap())

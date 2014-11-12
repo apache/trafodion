@@ -62,9 +62,9 @@ ComDiagsArea *ExAddCondition(CollHeap* heap, ComDiagsArea** diagsArea,
 			     Lng32 * intParam1,
 			     Lng32 * intParam2,
 			     Lng32 * intParam3,
-			     char * stringParam1,
-			     char * stringParam2,
-			     char * stringParam3)
+			     const char * stringParam1,
+			     const char * stringParam2,
+			     const char * stringParam3)
 {
   //
   // This version of ExRaiseSqlError is used by the expressions code.  In
@@ -127,9 +127,9 @@ ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ComDiagsArea** diagsArea,
 			      Lng32 * intParam1,
 			      Lng32 * intParam2,
 			      Lng32 * intParam3,
-			      char * stringParam1,
-			      char * stringParam2,
-			      char * stringParam3)
+			      const char * stringParam1,
+			      const char * stringParam2,
+			      const char * stringParam3)
 {
   return ExAddCondition(heap, diagsArea, - (Lng32) err, cond,
 			intParam1, intParam2, intParam3, 

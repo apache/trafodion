@@ -257,6 +257,7 @@ if [ "$seabase" -ne 0 ]; then
     skipTheseTests="TEST004"
   fi
 fi
+skipTheseTests="TEST020"
 
 # Skip exclusive tests during concurrent execution
 if [ "$REGRCONCURRENT" -ne 0 ]; then

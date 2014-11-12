@@ -179,7 +179,7 @@ short DP2Scan::codeGen(Generator * generator)
 {
   if (getTableDesc()->getNATable()->isHiveTable())
   {
-    short retval = codeGenForHDFS(generator);
+    short retval = codeGenForHive(generator);
     return retval ;
   }
 
@@ -306,6 +306,328 @@ int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
   return 1;
 }
 
+short DP2Scan::genForTextAndSeq(Generator * generator,
+                                Queue * &hdfsFileInfoList,
+                                Queue * &hdfsFileRangeBeginList,
+                                Queue * &hdfsFileRangeNumList,
+                                char* &hdfsHostName,
+                                Int32 &hdfsPort,
+                                NABoolean &useCursorMulti,
+                                NABoolean &doSplitFileOpt)
+{
+  Space * space          = generator->getSpace();
+
+  const HHDFSTableStats* hTabStats = 
+    getIndexDesc()->getNAFileSet()->getHHDFSTableStats();
+
+  const NABoolean isSequenceFile = hTabStats->isSequenceFile();
+
+  HiveFileIterator hfi;
+  NABoolean firstFile = TRUE;
+  hdfsPort = 0;
+  hdfsHostName = NULL;
+  
+  while (firstFile && getHiveSearchKey()->getNextFile(hfi))
+    {
+      const HHDFSFileStats * hFileStats = hfi.getFileStats();
+      if (firstFile)
+        {
+          // determine connection info (host and port) from the first file
+          NAString dummy, hostName;
+          NABoolean result;
+          result = ((HHDFSTableStats*)hTabStats)->splitLocation
+            (hFileStats->getFileName().data(), hostName, hdfsPort, dummy) ;
+          
+          GenAssert(result, "Invalid Hive directory name");
+
+          hdfsHostName = 
+            space->AllocateAndCopyToAlignedSpace(hostName, 0);
+
+          firstFile = FALSE;
+        }
+    }
+
+  hdfsFileInfoList = new(space) Queue(space);
+  hdfsFileRangeBeginList = new(space) Queue(space);
+  hdfsFileRangeNumList = new(space) Queue(space);
+
+  useCursorMulti = FALSE;
+  if (CmpCommon::getDefault(HDFS_USE_CURSOR_MULTI) == DF_ON)
+    useCursorMulti = TRUE;
+    
+  PartitioningFunction * mypart =
+    getPhysicalProperty()->getPartitioningFunction();
+  
+  const NodeMap* nmap = (mypart ? mypart->getNodeMap() : NULL);
+
+  doSplitFileOpt = 
+    (useCursorMulti ? FALSE : TRUE);
+
+  if  ((nmap && nmap->type() == NodeMap::HIVE) &&
+       (mypart))
+    {
+      Lng32 entryNum = 0;
+      for (CollIndex i=0; i < nmap->getNumEntries(); i++ )
+	{
+	  HiveNodeMapEntry* hEntry = (HiveNodeMapEntry*)(nmap->getNodeMapEntry(i));
+	  LIST(HiveScanInfo)&  scanInfo = hEntry->getScanInfo();
+
+	  Lng32 beginRangeNum = entryNum;
+	  Lng32 numRanges = 0;
+	  for (CollIndex j=0; j<scanInfo.entries(); j++ ) 
+	    {
+	      HHDFSFileStats* file = scanInfo[j].file_;
+	      const char * fname = file->getFileName();
+	      Int64 offset = scanInfo[j].offset_;
+	      Int64 span = scanInfo[j].span_;
+
+	      numRanges++;
+
+	      char * fnameInList = 
+		space->allocateAndCopyToAlignedSpace
+		(fname, strlen(fname), 0);
+	      
+	      NABoolean fileIsSplitEnd = 
+                (offset + span != file->getTotalSize());
+
+	      HdfsFileInfo hfi;
+	      hfi.flags_ = 0;
+	      hfi.entryNum_ = entryNum;
+	      entryNum++;
+
+	      if (scanInfo[j].isLocal_)
+		hfi.setFileIsLocal(TRUE);
+
+	      if (offset > 0)
+		hfi.setFileIsSplitBegin(TRUE);
+
+	      if (fileIsSplitEnd)
+		hfi.setFileIsSplitEnd(TRUE);
+
+	      hfi.startOffset_ = offset;
+	      hfi.bytesToRead_ = span;
+	      hfi.fileName_ = fnameInList;
+	      
+	      char * hfiInList = space->allocateAndCopyToAlignedSpace
+		((char*)&hfi, sizeof(HdfsFileInfo));
+	      
+	      hdfsFileInfoList->insert((char*)hfiInList);
+	    } // for
+
+	  char * beginRangeInList = 
+	    space->allocateAndCopyToAlignedSpace
+	    ((char *)&beginRangeNum, sizeof(beginRangeNum), 0);
+
+	  char * numRangeInList = 
+	    space->allocateAndCopyToAlignedSpace
+	    ((char *)&numRanges, sizeof(numRanges), 0);
+
+	  hdfsFileRangeBeginList->insert(beginRangeInList);
+	  hdfsFileRangeNumList->insert(numRangeInList);
+	} // for nodemap
+    } // if hive
+  else
+    {
+      // not support for non-hives
+      useCursorMulti = FALSE;
+      doSplitFileOpt = FALSE;
+    }
+
+  return 0;
+}
+
+short DP2Scan::genForOrc(Generator * generator,
+                         const HHDFSTableStats* hTabStats,
+                         const PartitioningFunction * mypart,
+                         Queue * &hdfsFileInfoList,
+                         Queue * &hdfsFileRangeBeginList,
+                         Queue * &hdfsFileRangeNumList,
+                         char* &hdfsHostName,
+                         Int32 &hdfsPort)
+{
+  Space * space          = generator->getSpace();
+
+  const NABoolean isSequenceFile = hTabStats->isSequenceFile();
+
+  hdfsPort = 0;
+  hdfsHostName = NULL;
+
+  hdfsFileInfoList = new(space) Queue(space);
+  hdfsFileRangeBeginList = new(space) Queue(space);
+  hdfsFileRangeNumList = new(space) Queue(space);
+
+  const NodeMap* nmap = (mypart ? mypart->getNodeMap() : NULL);
+
+  NABoolean emptyScan = FALSE;
+
+  if ((! nmap) || (! mypart))
+    emptyScan = TRUE;
+  else 
+    {
+      HiveNodeMapEntry* hEntry = (HiveNodeMapEntry*)(nmap->getNodeMapEntry(0));
+      LIST(HiveScanInfo)&  scanInfo = hEntry->getScanInfo();
+      
+      if (scanInfo.entries() == 0)
+        emptyScan = TRUE;
+    }
+
+  char * beginRangeInList = NULL;
+  char * numRangeInList = NULL;
+  Lng32 beginRangeNum = 0;
+  Lng32 numRanges = 0;
+
+  // If no scanInfo entries are specified, then scan all rows.
+  if (emptyScan)
+    {
+      // If no scanInfo entries are specified, then scan all rows.
+      const char * fname = hTabStats->tableDir();
+      
+      if (hTabStats->entries() > 0)
+        {
+          const HHDFSListPartitionStats * ps = (*hTabStats)[0];
+
+          if (ps->entries() > 0)
+            {
+              const HHDFSBucketStats * bs = (*ps)[0];
+              if (bs->entries() > 0)
+                {
+                  for (Lng32 i = 0; i < bs->entries(); i++)
+                    {
+                      const HHDFSFileStats * fs = (*bs)[i];
+
+                      char * fnameInList = 
+                        space->allocateAndCopyToAlignedSpace
+                        (fs->getFileName().data(), fs->getFileName().length(), 0);
+                      
+                      HdfsFileInfo hfi;
+                      hfi.flags_ = 0;
+                      hfi.entryNum_ = 0;
+                      
+                      hfi.startOffset_ = 1; // start at rownum 1.
+                      hfi.bytesToRead_ = -1; // stop at last row.
+                      hfi.fileName_ = fnameInList;
+                       
+                      char * hfiInList = space->allocateAndCopyToAlignedSpace
+                        ((char*)&hfi, sizeof(HdfsFileInfo));
+                      
+                      hdfsFileInfoList->insert((char*)hfiInList);
+                      
+                      beginRangeNum = 0;
+                      numRanges = 1;
+                      
+                      beginRangeInList = 
+                        space->allocateAndCopyToAlignedSpace
+                        ((char *)&beginRangeNum, sizeof(beginRangeNum), 0);
+                      
+                      numRangeInList = 
+                        space->allocateAndCopyToAlignedSpace
+                        ((char *)&numRanges, sizeof(numRanges), 0);
+                      
+                      hdfsFileRangeBeginList->insert(beginRangeInList);
+                      hdfsFileRangeNumList->insert(numRangeInList);
+                    } // for
+
+                } // if bs
+            } // if ps
+
+        } // if hTabStats
+
+      if (hdfsFileInfoList->entries() == 0)
+        {
+          // append "000000_0" to fname
+          NAString fnameStr(fname);
+          fnameStr += "/000000_0";
+          
+          char * fnameInList = 
+            space->allocateAndCopyToAlignedSpace
+            (fnameStr.data(), fnameStr.length(), 0);
+          
+          HdfsFileInfo hfi;
+          hfi.flags_ = 0;
+          hfi.entryNum_ = 0;
+          
+          hfi.startOffset_ = 1; // start at rownum 1.
+          hfi.bytesToRead_ = -1; // stop at last row.
+          hfi.fileName_ = fnameInList;
+          
+          char * hfiInList = space->allocateAndCopyToAlignedSpace
+            ((char*)&hfi, sizeof(HdfsFileInfo));
+          
+          hdfsFileInfoList->insert((char*)hfiInList);
+
+          beginRangeNum = 0;
+          numRanges = 1;
+          
+          beginRangeInList = 
+            space->allocateAndCopyToAlignedSpace
+            ((char *)&beginRangeNum, sizeof(beginRangeNum), 0);
+          
+          numRangeInList = 
+            space->allocateAndCopyToAlignedSpace
+            ((char *)&numRanges, sizeof(numRanges), 0);
+          
+          hdfsFileRangeBeginList->insert(beginRangeInList);
+          hdfsFileRangeNumList->insert(numRangeInList);
+        }
+    }
+
+  if  ((NOT emptyScan) &&
+       ((nmap && nmap->type() == NodeMap::HIVE) &&
+        (mypart)))
+    {
+      Lng32 entryNum = 0;
+      for (CollIndex i=0; i < nmap->getNumEntries(); i++ )
+	{
+	  HiveNodeMapEntry* hEntry = (HiveNodeMapEntry*)(nmap->getNodeMapEntry(i));
+	  LIST(HiveScanInfo)&  scanInfo = hEntry->getScanInfo();
+
+	  beginRangeNum = entryNum;
+	  numRanges = 0;
+
+	  for (CollIndex j=0; j<scanInfo.entries(); j++ ) 
+	    {
+	      HHDFSFileStats* file = scanInfo[j].file_;
+	      const char * fname = file->getFileName();
+	      Int64 startRowNum = scanInfo[j].offset_; // start row num
+	      Int64 numRows = scanInfo[j].span_;    // num rows
+
+	      numRanges++;
+
+	      char * fnameInList = 
+		space->allocateAndCopyToAlignedSpace
+		(fname, strlen(fname), 0);
+	      
+	      HdfsFileInfo hfi;
+	      hfi.flags_ = 0;
+	      hfi.entryNum_ = entryNum;
+	      entryNum++;
+
+              // for now, scan all rows.
+	      hfi.startOffset_ = 1; // startRowNum
+	      hfi.bytesToRead_ = -1; // numRows
+	      hfi.fileName_ = fnameInList;
+	      
+	      char * hfiInList = space->allocateAndCopyToAlignedSpace
+		((char*)&hfi, sizeof(HdfsFileInfo));
+	      
+	      hdfsFileInfoList->insert((char*)hfiInList);
+	    } // for
+
+	  beginRangeInList = 
+	    space->allocateAndCopyToAlignedSpace
+	    ((char *)&beginRangeNum, sizeof(beginRangeNum), 0);
+
+	  numRangeInList = 
+	    space->allocateAndCopyToAlignedSpace
+	    ((char *)&numRanges, sizeof(numRanges), 0);
+
+	  hdfsFileRangeBeginList->insert(beginRangeInList);
+	  hdfsFileRangeNumList->insert(numRangeInList);
+	} // for nodemap
+    } // if hive
+
+  return 0;
+}
 
 /*
 Sequence of tuples used by a single row is as follows
@@ -352,10 +674,10 @@ move_expr is the outputTupp which is in the upEntry's atp.
 
 /////////////////////////////////////////////////////////////
 //
-// DP2Scan::codeGenForHDFS()
+// DP2Scan::codeGenForHive()
 //
 /////////////////////////////////////////////////////////////
-short DP2Scan::codeGenForHDFS(Generator * generator)
+short DP2Scan::codeGenForHive(Generator * generator)
 {
 
   Space * space          = generator->getSpace();
@@ -472,6 +794,9 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
   ValueIdList executorPredCastVids;
   ValueIdList projectExprOnlyCastVids;
 
+  // ORC row is returned by hdfs as len/value pair for each column.
+  // Compute the length of this row.
+  Lng32 orcRowLen = 0;
 
   // Create two new ValueId lists
   // - ASCII representation of each column from hdfs files
@@ -515,7 +840,9 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
     else
       projectExprOnlyCastVids.insert(castValue->getValueId());
 
-      
+    orcRowLen += sizeof(Lng32);
+    orcRowLen += givenType.getDisplayLength();
+
   } // for (ii = 0; ii < hdfsVals; ii++)
     
 
@@ -559,7 +886,6 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
       FALSE,
       NULL,
       FALSE /* doBulkMove */);
-
 
   exp_gen->generateContiguousMoveExpr(
       projectExprOnlyCastVids,              // [IN] source ValueIds
@@ -679,130 +1005,47 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
   
   // Now we can start preparing data that goes in the TDB.
 
-  
   const HHDFSTableStats* hTabStats = 
     getIndexDesc()->getNAFileSet()->getHHDFSTableStats();
-
-  HiveFileIterator hfi;
-  NABoolean firstFile = TRUE;
-  Int32 hdfsPort = 0;
+  Queue * hdfsFileInfoList = NULL;
+  Queue * hdfsFileRangeBeginList = NULL;
+  Queue * hdfsFileRangeNumList = NULL;
+  Int64 expirationTimestamp = 0;
   char * hdfsHostName = NULL;
-
-  while (getHiveSearchKey()->getNextFile(hfi))
-    {
-      const HHDFSFileStats * hFileStats = hfi.getFileStats();
-      if (firstFile)
-        {
-          // determine connection info (host and port) from the first file
-          NAString dummy, hostName;
-          NABoolean result;
-          result = ((HHDFSTableStats*)hTabStats)->splitLocation
-            (hFileStats->getFileName().data(), hostName, hdfsPort, dummy) ;
-          
-          GenAssert(result, "Invalid Hive directory name");
-
-          hdfsHostName = 
-            space->AllocateAndCopyToAlignedSpace(hostName, 0);
-        }
-    }
-
-  Queue * hdfsFileInfoList = new(space) Queue(space);
-  Queue * hdfsFileRangeBeginList = new(space) Queue(space);
-  Queue * hdfsFileRangeNumList = new(space) Queue(space);
-
+  Int32 hdfsPort = 0;
   NABoolean useCursorMulti = FALSE;
-  if (CmpCommon::getDefault(HDFS_USE_CURSOR_MULTI) == DF_ON)
-    useCursorMulti = TRUE;
-    
-  PartitioningFunction * mypart =
-    getPhysicalProperty()->getPartitioningFunction();
-  
-  const NodeMap* nmap = (mypart ? mypart->getNodeMap() : NULL);
+  NABoolean doSplitFileOpt = FALSE;
 
-  NABoolean doSplitFileOpt = 
-    (useCursorMulti ? FALSE : TRUE);
-
-  if  ((nmap && nmap->type() == NodeMap::HIVE) &&
-       (mypart))
+  if ((hTabStats->isTextFile()) || (hTabStats->isSequenceFile()))
     {
-      Lng32 entryNum = 0;
-      for (CollIndex i=0; i < nmap->getNumEntries(); i++ )
-	{
-	  HiveNodeMapEntry* hEntry = (HiveNodeMapEntry*)(nmap->getNodeMapEntry(i));
-	  LIST(HiveScanInfo)&  scanInfo = hEntry->getScanInfo();
-
-	  Lng32 beginRangeNum = entryNum;
-	  Lng32 numRanges = 0;
-	  for (CollIndex j=0; j<scanInfo.entries(); j++ ) 
-	    {
-	      HHDFSFileStats* file = scanInfo[j].file_;
-	      const char * fname = file->getFileName();
-	      Int64 offset = scanInfo[j].offset_;
-	      Int64 span = scanInfo[j].span_;
-
-	      numRanges++;
-
-	      char * fnameInList = 
-		space->allocateAndCopyToAlignedSpace
-		(fname, strlen(fname), 0);
-	      
-	      NABoolean fileIsSplitEnd = 
-                (offset + span != file->getTotalSize());
-
-	      HdfsFileInfo hfi;
-	      hfi.flags_ = 0;
-	      hfi.entryNum_ = entryNum;
-	      entryNum++;
-
-	      if (scanInfo[j].isLocal_)
-		hfi.setFileIsLocal(TRUE);
-
-	      if (offset > 0)
-		hfi.setFileIsSplitBegin(TRUE);
-
-	      if (fileIsSplitEnd)
-		hfi.setFileIsSplitEnd(TRUE);
-
-	      hfi.startOffset_ = offset;
-	      hfi.bytesToRead_ = span;
-	      hfi.fileName_ = fnameInList;
-	      
-	      if (file->isSequenceFile())
-	        hfi.setSequenceFile(TRUE);
-	        
-	      char * hfiInList = space->allocateAndCopyToAlignedSpace
-		((char*)&hfi, sizeof(HdfsFileInfo));
-	      
-	      hdfsFileInfoList->insert((char*)hfiInList);
-	    } // for
-
-	  char * beginRangeInList = 
-	    space->allocateAndCopyToAlignedSpace
-	    ((char *)&beginRangeNum, sizeof(beginRangeNum), 0);
-
-	  char * numRangeInList = 
-	    space->allocateAndCopyToAlignedSpace
-	    ((char *)&numRanges, sizeof(numRanges), 0);
-
-	  hdfsFileRangeBeginList->insert(beginRangeInList);
-	  hdfsFileRangeNumList->insert(numRangeInList);
-	} // for nodemap
-    } // if hive
-  else
+      genForTextAndSeq(generator, 
+                       hdfsFileInfoList, hdfsFileRangeBeginList, hdfsFileRangeNumList,
+                       hdfsHostName, hdfsPort,
+                       useCursorMulti, doSplitFileOpt);
+    }
+  else if (hTabStats->isOrcFile())
     {
-      // not support for non-hives
-      useCursorMulti = FALSE;
-      doSplitFileOpt = FALSE;
+      genForOrc(generator, 
+                hTabStats,
+                getPhysicalProperty()->getPartitioningFunction(),
+                hdfsFileInfoList, hdfsFileRangeBeginList, hdfsFileRangeNumList,
+                hdfsHostName, hdfsPort);
     }
 
   // set expiration timestamp
-  Int64 expirationTimestamp = hTabStats->getValidationTimestamp();
+  expirationTimestamp = hTabStats->getValidationTimestamp();
   if (expirationTimestamp > 0)
     expirationTimestamp += 1000000 *
       (Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
   generator->setPlanExpirationTimestamp(expirationTimestamp);
 
-  //UInt16 hdfsPort = 9000 ; 
+  short type = (short)ComTdbHdfsScan::UNKNOWN_;
+  if (hTabStats->isTextFile())
+    type = (short)ComTdbHdfsScan::TEXT_;
+  else if (hTabStats->isSequenceFile())
+    type = (short)ComTdbHdfsScan::SEQUENCE_;
+  else if (hTabStats->isOrcFile())
+    type = (short)ComTdbHdfsScan::ORC_;
 
   ULng32 buffersize = getDefault(GEN_DPSO_BUFFER_SIZE);
   queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
@@ -824,12 +1067,23 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
   buffersize = buffersize > cbuffersize ? buffersize : cbuffersize;
 
   // default value is in K bytes
-  Int64 hdfsBufSize = (Int64)CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE);
-  hdfsBufSize = hdfsBufSize * 1024; // convert to bytes
-  Int64 hdfsBufSizeTesting = (Int64)
+  Int64 hdfsBufSize = 0;
+
+if (hTabStats->isOrcFile())
+  {
+    hdfsBufSize = (orcRowLen + 1000) * 2; // alloc space for 2 rows plus some buffer
+  }
+ else
+   {
+     hdfsBufSize = (Int64)CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE);
+     hdfsBufSize = hdfsBufSize * 1024; // convert to bytes
+     
+     Int64 hdfsBufSizeTesting = (Int64)
        CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES);
-  if (hdfsBufSizeTesting)
-    hdfsBufSize = hdfsBufSizeTesting;
+     if (hdfsBufSizeTesting)
+       hdfsBufSize = hdfsBufSizeTesting;
+   }
+
   UInt32 rangeTailIOSize = (UInt32)
       CmpCommon::getDefaultNumeric(HDFS_IO_RANGE_TAIL);
 
@@ -840,6 +1094,7 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
   ComTdbHdfsScan *hdfsscan_tdb = new(space) 
     ComTdbHdfsScan(
 		   tablename,
+                   type,
 		   executor_expr,
 		   proj_expr,
 		   convert_expr,
@@ -916,8 +1171,6 @@ short DP2Scan::codeGenForHDFS(Generator * generator)
 
   return 0;
 }
-
-
 
 /////////////////////////////////////////////////////////////
 //

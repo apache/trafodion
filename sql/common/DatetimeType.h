@@ -167,7 +167,7 @@ public:
     return (validate(getStartField(), getEndField(), getFractionPrecision()));
   }
 
-  size_t getDisplayLength() const;
+  virtual Lng32 getDisplayLength() const;
 
   virtual Lng32 getDisplayLength(Lng32 datatype,
  		        Lng32 length,
