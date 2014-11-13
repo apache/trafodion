@@ -88,6 +88,9 @@
 #include <dlfcn.h>
 #include "secsrvrmxo.h"
 
+#include <sys/types.h>   
+#include <sys/stat.h>   
+#include <fcntl.h>
 
 #ifdef PERF_TEST	// Added for performance testing
 #include "PerformanceMeasure.h"
@@ -110,6 +113,11 @@ extern char zkRootNode[256];
 extern int sdconn;
 extern int clientConnTimeOut;
 extern short stopOnDisconnect;
+
+extern long maxHeapPctExit;
+extern long initSessMemSize ;
+int fd = -1;
+bool heapSizeExit = false;
 
 bool updateZKState(DCS_SERVER_STATE currState, DCS_SERVER_STATE newState);
 
@@ -912,6 +920,63 @@ odbcas_ASSvc_RegProcess_ccf_(
 	SRVRTRACE_EXIT(FILE_AME+4);
 }
 
+
+long getMemSize(char *sessionPhase)
+{
+	//int fd = -1;
+	char tmpString[128];
+	int  local_n;
+	char nameBuf[1000];
+       	char dataBuf[1000];
+	char sessionPhaseStr[40];
+	long memSize =0 ;
+
+	memset(sessionPhaseStr,'\0', 40);
+	if(!memcmp(sessionPhase,"Initial",7))
+		memcpy(sessionPhaseStr,"odbc_SQLSvc_InitializeDialogue_ame_",35);
+	else if(!memcmp(sessionPhase,"Terminate",9))
+		memcpy(sessionPhaseStr,"odbc_SQLSvc_TerminateDialogue_ame_",34);
+	else if(!memcmp(sessionPhase,"Break",5))
+		memcpy(sessionPhaseStr,"BreakDialogue",13);
+
+       	memset(nameBuf,'\0',1000);
+       	memset(dataBuf,'\0',1000);
+       	sprintf(nameBuf, "/proc/%d/statm", srvrGlobal->nskProcessInfo.processId);
+
+	if(fd == -1){
+		if ((fd = open(nameBuf, O_RDONLY)) == -1) {
+			memset(tmpString,'\0',128);
+    			sprintf(tmpString, "open %s error in %s", nameBuf,sessionPhaseStr);
+               		SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
+                       		srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                     		1, tmpString);
+        	} else {
+			if ((local_n = read(fd, dataBuf, sizeof dataBuf - 1)) < 0) {
+				memset(tmpString,'\0',128);
+    				sprintf(tmpString, "read %s error in %s", nameBuf,sessionPhaseStr);
+               			SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
+                       			srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                      			1, tmpString);
+			} else 
+				sscanf(dataBuf, "%*ld %ld ", &memSize);
+			}
+		} else {
+			lseek(fd, 0L, SEEK_SET);
+			if ((local_n = read(fd, dataBuf, sizeof dataBuf - 1)) < 0) {
+				memset(tmpString,'\0',128);
+    				sprintf(tmpString, "read %s error %s", nameBuf,sessionPhaseStr);
+                		SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
+                       			srvrGlobal->nskProcessInfo.processId, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                       			1, tmpString);
+			} else 
+				sscanf(dataBuf, "%*ld %ld ", &memSize);
+		
+
+	}
+
+	return memSize;
+
+}
 /*
  * Asynchronous method function prototype for
  * operation 'odbc_SQLSvc_InitializeDialogue'
@@ -2856,7 +2921,8 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 	}
 //
 
-
+	if( (maxHeapPctExit != 0) &&  (initSessMemSize == 0))
+		initSessMemSize = getMemSize("Initial");
 
 	return;
 
@@ -2950,6 +3016,8 @@ odbc_SQLSvc_TerminateDialogue_ame_(
 	odbc_SQLSvc_MonitorCall_exc_	monitorException_={0,0};
 
 	exception_.exception_nr = CEE_SUCCESS;
+    
+    long exitSesMemSize = 0;
 
     char tmpStringEnv[1024];
     sprintf(tmpStringEnv,
@@ -3034,16 +3102,38 @@ odbc_SQLSvc_TerminateDialogue_ame_(
                 srvrGlobal->dialogueId = -1;
 	}
 
-	if( !updateZKState(CONNECTED, AVAILABLE) )
-	{
-		exception_.exception_nr = odbc_SQLSvc_TerminateDialogue_SQLError_exn_;
-		exception_.exception_detail = 25000;
-		odbc_SQLSvc_TerminateDialogue_ts_res_(objtag_, call_id_, &exception_);
-		exitServerProcess();
+	exitSesMemSize = 0; 
+	if( maxHeapPctExit != 0 && initSessMemSize != 0 )
+		exitSesMemSize = getMemSize("Terminate"); 
+
+	if((exitSesMemSize - initSessMemSize) > initSessMemSize*maxHeapPctExit/100   )
+		heapSizeExit = true;
+	else
+		heapSizeExit = false;
+	
+
+	if( heapSizeExit == false ){
+		if( !updateZKState(CONNECTED, AVAILABLE) )
+		{
+			exception_.exception_nr = odbc_SQLSvc_TerminateDialogue_SQLError_exn_;
+			exception_.exception_detail = 25000;
+			odbc_SQLSvc_TerminateDialogue_ts_res_(objtag_, call_id_, &exception_);
+			exitServerProcess();
+		}
 	}
 
-
 	odbc_SQLSvc_TerminateDialogue_ts_res_(objtag_, call_id_, &exception_);
+
+        if( heapSizeExit == true ) 
+	{
+		odbc_SQLSvc_StopServer_exc_ StopException;
+		StopException.exception_nr=0;
+		if (srvrGlobal->traceLogger != NULL)
+		{
+			srvrGlobal->traceLogger->TraceStopServerExit(StopException);
+		}
+		exitServerProcess();
+	}
 
 bailout:
 	if (srvrGlobal->traceLogger != NULL)
@@ -3198,6 +3288,7 @@ bool __cdecl SRVR::CompilerCacheReset(char *errorMsg)
 
 void __cdecl SRVR::BreakDialogue(CEE_tag_def monitor_tag)
 {
+	long exitSesMemSize = 0;
 	SRVRTRACE_ENTER(FILE_AME+7);
 	if (srvrGlobal->srvrState == SRVR_AVAILABLE)
 	{
@@ -3219,6 +3310,23 @@ void __cdecl SRVR::BreakDialogue(CEE_tag_def monitor_tag)
 		{
 			srvrGlobal->traceLogger->TraceStopServerExit(StopException);
 		}
+		exitServerProcess();
+	}
+
+	
+	exitSesMemSize = 0; 
+	if( maxHeapPctExit != 0  && initSessMemSize != 0 )
+		exitSesMemSize = getMemSize("Break"); 
+
+	if((exitSesMemSize - initSessMemSize) > initSessMemSize*maxHeapPctExit/100   )
+	{
+		odbc_SQLSvc_StopServer_exc_ StopException;
+		StopException.exception_nr=0;
+		if (srvrGlobal->traceLogger != NULL)
+		{
+			srvrGlobal->traceLogger->TraceStopServerExit(StopException);
+		}
+
 		exitServerProcess();
 	}
 
