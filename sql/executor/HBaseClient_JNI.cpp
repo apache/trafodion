@@ -493,6 +493,9 @@ HBC_RetCode HBaseClient_JNI::cleanup()
   if (! (isInitialized_ && isConnected_))
      return HBC_OK;
 
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
   // boolean cleanup();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLEANUP].methodID);
 
@@ -525,6 +528,10 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
     GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_GET_HTC_EXCEPTION));
     return NULL;
   }
+
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return NULL;
 
   jstring js_tblName = jenv_->NewStringUTF(tableName);
   if (js_tblName == NULL) 
@@ -571,6 +578,10 @@ HBC_RetCode HBaseClient_JNI::releaseHTableClient(HTableClient_JNI* htc)
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::releaseHTableClient() called.");
 
   jobject j_htc = htc->getJavaObject();
+
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
     
   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HTC].methodID, j_htc);
 
@@ -598,9 +609,11 @@ HBulkLoadClient_JNI* HBaseClient_JNI::getHBulkLoadClient(NAHeap *heap)
     return NULL;
   }
 
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return NULL;
 
   jobject j_hblc = jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_HBLC].methodID);
-
 
   if (jenv_->ExceptionCheck())
   {
@@ -634,6 +647,10 @@ HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 
   jobject j_hblc = hblc->getJavaObject();
 
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
+
   jenv_->CallVoidMethod(javaObj_, JavaMethods_[JM_REL_HBLC].methodID, j_hblc);
 
   if (jenv_->ExceptionCheck())
@@ -654,6 +671,9 @@ HBC_RetCode HBaseClient_JNI::releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc)
 HBC_RetCode HBaseClient_JNI::create(const char* fileName, HBASE_NAMELIST& colFamilies)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -703,6 +723,9 @@ HBC_RetCode HBaseClient_JNI::create(const char* fileName,
                                     const char ** splitValues)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::create(%s) called.", fileName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -984,6 +1007,9 @@ HBC_RetCode HBaseClient_JNI::flushAllTablesStatic()
 HBC_RetCode HBaseClient_JNI::flushAllTables()
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::flushAllTablescalled.");
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
 
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_FLUSHALL].methodID);
 
@@ -1046,6 +1072,9 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::dropAll(%s) called.", pattern);
 
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
   if (async) {
     // not supported yet.
     return HBC_ERROR_DROP_EXCEPTION;
@@ -1086,6 +1115,9 @@ HBC_RetCode HBaseClient_JNI::dropAll(const char* pattern, bool async)
 HBC_RetCode HBaseClient_JNI::copy(const char* currTblName, const char* oldTblName)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::copy(%s,%s) called.", currTblName, oldTblName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
 
   jstring js_currTblName = jenv_->NewStringUTF(currTblName);
   if (js_currTblName == NULL) 
@@ -1131,6 +1163,9 @@ HBC_RetCode HBaseClient_JNI::copy(const char* currTblName, const char* oldTblNam
 HBC_RetCode HBaseClient_JNI::exists(const char* fileName)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::exists(%s) called.", fileName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
   jstring js_fileName = jenv_->NewStringUTF(fileName);
   if (js_fileName == NULL) 
   {
@@ -1164,6 +1199,9 @@ HBC_RetCode HBaseClient_JNI::exists(const char* fileName)
 HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const TextVec& actions)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::grant(%s, %s, %s) called.", user.data(), tblName.data(), actions.data());
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
 
   int len = user.size();
   jbyteArray jba_user = jenv_->NewByteArray(len);
@@ -1235,6 +1273,9 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
                                               Int64& rowCount)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
@@ -1600,6 +1641,9 @@ NAString HBulkLoadClient_JNI::getLastJavaError()
 HBC_RetCode HBaseClient_JNI::revoke(const Text& user, const Text& tblName, const TextVec& actions)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HBaseClient_JNI::revoke(%s, %s, %s) called.", user.data(), tblName.data(), actions.data());
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
 
   int len = user.size();
   jbyteArray jba_user = jenv_->NewByteArray(len);
@@ -2990,6 +3034,9 @@ HVC_RetCode HiveClient_JNI::close()
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HiveClient_JNI::close() called.");
 
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HVC_ERROR_INIT_PARAM;
   // boolean close();
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CLOSE].methodID);
   if (jenv_->ExceptionCheck())
@@ -3015,6 +3062,9 @@ HVC_RetCode HiveClient_JNI::close()
 HVC_RetCode HiveClient_JNI::exists(const char* schName, const char* tabName)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "HiveClient_JNI::exists(%s, %s) called.", schName, tabName);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HVC_ERROR_INIT_PARAM;
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -3056,6 +3106,9 @@ HVC_RetCode HiveClient_JNI::getHiveTableStr(const char* schName,
                                             Text& hiveTblStr)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getHiveTableStr(%s, %s, %s).", schName, tabName, hiveTblStr.data());
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HVC_ERROR_INIT_PARAM;
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -3111,6 +3164,9 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
                                          Int64& redefTime)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getRedefTime(%s, %s, %lld).", schName, tabName, redefTime);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HVC_ERROR_INIT_PARAM;
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
   {
@@ -3156,6 +3212,9 @@ HVC_RetCode HiveClient_JNI::getRedefTime(const char* schName,
 HVC_RetCode HiveClient_JNI::getAllSchemas(LIST(Text *)& schNames)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllSchemas(%p) called.", (void *) &schNames);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HVC_ERROR_INIT_PARAM;
 
   jarray j_schNames= 
      (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ASH].methodID);
@@ -3185,6 +3244,9 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
                                          LIST(Text *)& tblNames)
 {
   HdfsLogger::log(CAT_HBASE, LL_DEBUG, "Enter HiveClient_JNI::getAllTables(%s, %p) called.", schName, (void *) &tblNames);
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HVC_ERROR_INIT_PARAM;
 
   jstring js_schName = jenv_->NewStringUTF(schName);
   if (js_schName == NULL) 
