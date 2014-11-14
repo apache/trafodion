@@ -42,6 +42,7 @@
 #include "PortProcessCalls.h"
 #include "ComTdb.h"
 #include "ComSqlId.h"
+#include "ComDistribution.h"
 
 SscpGlobals::SscpGlobals(NAHeap *sscpheap, StatsGlobals *statsGlobals)
   : heap_(sscpheap),
@@ -746,33 +747,38 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
     HashQueue *stmtStatsList = statsGlobals->getStmtStatsList();
     StmtStats *kqStmtStats = NULL;
     stmtStatsList->position();
+    // Look at each StmtStats
     while (NULL != (kqStmtStats = (StmtStats *)stmtStatsList->getNext()))
     {
       ExMasterStats *masterStats = kqStmtStats->getMasterStats();
       if (masterStats)
       {
         bool privsAreInvalid = false;
-        for (Int32 i = 0; i < numSiks; i++)
+        // for each new invalidation key
+        for (Int32 i = 0; i < numSiks && !privsAreInvalid; i++)
         {
-          SQL_SIKEY revokedKey = request->getSik()[i];
-          for (Int32 m = 0; m < masterStats->getNumSIKeys(); m++)
+          if (COM_QI_OBJECT_REDEF == 
+            ComQIActionTypeLiteralToEnum(request->getSik()[i].operation))
           {
-            SQL_SIKEY queryKey = masterStats->getSIKeys()[m];
-            if ((revokedKey.subject == queryKey.subject)           &&
-                (revokedKey.object  == queryKey.object)            &&
-                (revokedKey.operation[0] == queryKey.operation[0]) &&
-                (revokedKey.operation[1] == queryKey.operation[1]))
-            {
-              privsAreInvalid = true;
-              masterStats->setValidPrivs(false);
-            }
-            if (privsAreInvalid)
-              break; // don't need to check any other SIK of this query.
+            // tbd -- use objectUID list
           }
-          if (privsAreInvalid)
-            break; // don't need to check any other SIK of this request.
-        }
-      }
+          else
+          {
+            // compare the new invalidation key to each key in the 
+            // master stats.
+            for (Int32 m = 0; m < masterStats->getNumSIKeys() 
+                              && !privsAreInvalid; m++)
+            {
+              if (!memcmp(&masterStats->getSIKeys()[m], 
+                          &request->getSik()[i], sizeof(SQL_QIKEY)))
+              {
+                privsAreInvalid = true;
+                masterStats->setValidPrivs(false);
+              } 
+            }  // for each key in master stats.
+          }  // revoke 
+        }  // for each new invalidation key
+      }  // if masterstats
     }
     statsGlobals->mergeNewSikeys(numSiks, request->getSik());
 

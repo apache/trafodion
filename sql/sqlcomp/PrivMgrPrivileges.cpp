@@ -1453,7 +1453,7 @@ PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
   const int32_t granteeID, 
   const PrivMgrDesc &listOfRevokedPrivileges)
 {
-  // Go through the list of table privileges and generate SQL_SIKEYs
+  // Go through the list of table privileges and generate SQL_QIKEYs
 #if 0
   // Only need to generate keys for SELECT, INSERT, UPDATE, and DELETE
   std::vector<ComSecurityKey *> keyList;
@@ -1489,14 +1489,14 @@ PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
      return privStatus;
   // TDB: add column privileges
   
-  // Create an array of SQL_SIKEYs
+  // Create an array of SQL_QIKEYs
   int32_t numKeys = keyList.size();
-  SQL_SIKEY siKeyList[numKeys];
+  SQL_QIKEY siKeyList[numKeys];
   for (size_t j = 0; j < keyList.size(); j++)
   {
     ComSecurityKey *pKey = keyList[j];
-    siKeyList[j].subject = pKey->getSubjectHashValue();
-    siKeyList[j].object = pKey->getObjectHashValue();
+    siKeyList[j].revokeKey.subject = pKey->getSubjectHashValue();
+    siKeyList[j].revokeKey.object = pKey->getObjectHashValue();
     std::string actionString;
     pKey->getSecurityKeyTypeAsLit(actionString);
     strncpy(siKeyList[j].operation, actionString.c_str(), 2);

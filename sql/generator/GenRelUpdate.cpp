@@ -1309,7 +1309,7 @@ short HbaseDelete::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
-		      expectedRows,
+                      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -1335,6 +1335,10 @@ short HbaseDelete::codeGen(Generator * generator)
       if ((CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
 	  (NOT noCheck()))
 	hbasescan_tdb->setHbaseSqlIUD(TRUE);
+
+      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+        generator->objectUids().insert(
+          getTableDesc()->getNATable()->objectUid().get_value());
     }
 
   if (keyInfo && getSearchKey() && getSearchKey()->isUnique())
@@ -2115,7 +2119,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
-		      expectedRows,
+                      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -2140,6 +2144,10 @@ short HbaseUpdate::codeGen(Generator * generator)
 
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
 	hbasescan_tdb->setHbaseSqlIUD(TRUE);
+
+      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+        generator->objectUids().insert(
+          getTableDesc()->getNATable()->objectUid().get_value());
     }
 
   if (keyInfo && getSearchKey() && getSearchKey()->isUnique())
@@ -2711,7 +2719,7 @@ short HbaseInsert::codeGen(Generator *generator)
 
 		      downqueuelength,
 		      upqueuelength,
-		      expectedRows,
+                      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -2782,6 +2790,9 @@ short HbaseInsert::codeGen(Generator *generator)
 
 
       }
+      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+        generator->objectUids().insert(
+          getTableDesc()->getNATable()->objectUid().get_value());
     }
   else
     {

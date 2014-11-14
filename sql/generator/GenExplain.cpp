@@ -1416,6 +1416,21 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     statement += " ";
   }
 
+  const Int64 *objectUIDs = rootTdb->getObjectUIDs();
+  if (objectUIDs)
+  {
+    char buf[64];
+    str_sprintf(buf, "ObjectUIDs: %Ld", objectUIDs[0]);
+    statement += buf; 
+    Int32 numO = rootTdb->getNumObjectUIDs();
+    for (Int32 i = 1; i < numO; i++)
+    {
+      str_sprintf(buf, ", %Ld", objectUIDs[i]);
+      statement += buf;
+    }
+    statement += " ";
+  }
+
   explainTuple->setDescription(statement);
   return(explainTuple);
 }

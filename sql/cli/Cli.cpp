@@ -8953,14 +8953,14 @@ Lng32 SQLCLI_UTF16ToLocale (
 
 Lng32 SQLCLI_SetSecInvalidKeys(CliGlobals *cliGlobals,
            /* IN */    Int32 numSiKeys,
-           /* IN */    SQL_SIKEY siKeys[])
+           /* IN */    SQL_QIKEY siKeys[])
 {
   return cliGlobals->currContext()->setSecInvalidKeys(numSiKeys, siKeys);
 }
 
 Lng32 SQLCLI_GetSecInvalidKeys(CliGlobals *cliGlobals,
             /* IN */      Int64 prevTimestamp,
-            /* IN/OUT */  SQL_SIKEY siKeys[],
+            /* IN/OUT */  SQL_QIKEY siKeys[],
             /* IN */      Int32 maxNumSiKeys,
             /* IN/OUT */  Int32 *returnedNumSiKeys,
             /* IN/OUT */  Int64 *maxTimestamp)
@@ -8993,7 +8993,7 @@ Lng32 SQLCLI_GetSecInvalidKeys(CliGlobals *cliGlobals,
     // without having the instance up.  This is too early for a 
     // revoke, so we handle the scenario by returning success, but 
     // leave the maxTimestamp to the same value as the prevTimestamp,
-    // so that the compiler will continue asking for SQL_SIKEYs each 
+    // so that the compiler will continue asking for SQL_QIKEYs each 
     // time it compiles a query, until the RMS shared segment is 
     // ready.
     *maxTimestamp = prevTimestamp; 

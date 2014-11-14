@@ -983,7 +983,7 @@ public:
 
   Lng32 setSecInvalidKeys( 
            /* IN */    Int32 numSiKeys,
-           /* IN */    SQL_SIKEY siKeys[]);
+           /* IN */    SQL_QIKEY siKeys[]);
 
   Lng32 holdAndSetCQD(const char * defaultName, const char * defaultValue);
   Lng32 restoreCQD(const char * defaultName);

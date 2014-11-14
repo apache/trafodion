@@ -309,7 +309,7 @@ private:
 class RecentSikey
 {
 public:
-  SQL_SIKEY s_;
+  SQL_QIKEY s_;
   Int64     revokeTimestamp_;
 };
 
@@ -463,12 +463,12 @@ public:
   Lng32 getSecInvalidKeys(
                           CliGlobals * cliGlobals,
                           Int64 lastCallTimestamp,
-                          SQL_SIKEY [],
+                          SQL_QIKEY [],
                           Int32 maxNumSiKeys,
                           Int32 *returnedNumSiKeys);
 
   void mergeNewSikeys(Int32 numSikeys, 
-                    SQL_SIKEY sikeys[]);
+                    SQL_QIKEY sikeys[]);
 #endif
 
   void init();

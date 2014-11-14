@@ -234,7 +234,7 @@ skippedfiles=
 
 # sbtestfiles contains the list of tests to be run in seabase mode
 if [ "$seabase" -ne 0 ]; then
-  sbtestfiles="TEST001 TEST002 TEST012 TEST013 TEST014 TEST015 TEST016 TEST020 TEST022 TEST025 TEST050 TEST063 TEST088 TEST101 TEST107"
+  sbtestfiles="TEST001 TEST002 TEST012 TEST013 TEST014 TEST015 TEST016 TEST020 TEST022 TEST025 TEST050 TEST063 TEST088 TEST101 TEST107 TEST122"
   sbprettyfiles=
   for i in $prettyfiles; do
     for j in $sbtestfiles; do

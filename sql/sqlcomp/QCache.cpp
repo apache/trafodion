@@ -2218,17 +2218,16 @@ void QCache::incNOfDisplacedPreParserEntries(ULng32 howMany)
   nOfDisplacedPreParserEntries_ += howMany;
 }
 
-// Free all entries with specified QI Security Key
-void QCache::free_entries_with_QI_keys( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry )
+// Free all entries with specified QI Object Redefinition or Security Key
+void QCache::free_entries_with_QI_keys( Int32 pNumKeys, SQL_QIKEY * pSiKeyEntry )
 {
   LRUList::iterator lru = clruQ_.end();
+  // loop thru query cache entries
   while ( (clruQ_.size() > 0) && (lru != clruQ_.begin()) )
   {
      KeyDataPair& entry = *(--lru);
      CacheData * cdata = (CacheData*)entry.second_ ;
      ComTdbRoot * rootTdb = (ComTdbRoot *)cdata->getPlan()->getPlan();
-
-     Int32 found = 0;
 
      char * base = (char *) rootTdb;
      const ComSecurityKey * planSet = rootTdb->getPtrToUnpackedSecurityInvKeys( base );
@@ -2236,32 +2235,51 @@ void QCache::free_entries_with_QI_keys( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry
      char SiKeyOpVal[4] ;
      SiKeyOpVal[2] = '\0'; //Put null terminator after first 2 chars
 
-     for ( CollIndex ii = 0; ii < numPlanSecKeys; ii ++ )
+     NABoolean found = FALSE;
+     // loop thru the keys passed as params
+     for ( Int32 jj = 0; jj < pNumKeys  && !found; jj ++ )
      {
-         for ( Int32 jj = 0; jj < NumSiKeys ; jj ++ )
-         {
-            SiKeyOpVal[0] = pSiKeyEntry[jj].operation[0];
-            SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
-
-            ComQIActionType siKeyType =
-              ComQIActionTypeLiteralToEnum( SiKeyOpVal );
-            if ( ( (pSiKeyEntry[jj]).subject == planSet[ii].getSubjectHashValue() ) &&
-                 ( (pSiKeyEntry[jj]).object == planSet[ii].getObjectHashValue() ) &&
+        SiKeyOpVal[0] = pSiKeyEntry[jj].operation[0];
+        SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
+        ComQIActionType siKeyType =
+          ComQIActionTypeLiteralToEnum( SiKeyOpVal );
+        if ((siKeyType == COM_QI_OBJECT_REDEF) &&
+             rootTdb->getNumObjectUIDs() > 0)
+        {
+          // this key passed in as a param is for object redefinition
+          // (DDL) so look for matching ObjectUIDs.
+          const Int64 *planObjectUIDs = rootTdb->
+            getUnpackedPtrToObjectUIDs(base);
+          for (Int32 ii = 0; ii < rootTdb->getNumObjectUIDs() &&
+                             !found; ii++)  
+          {
+            if (planObjectUIDs[ii] ==  pSiKeyEntry[jj].ddlObjectUID)
+              found = TRUE;
+          }
+        }
+        else
+        {
+          // this key passed in as a param is for REVOKE so look
+          // thru the plan's revoke keys.
+          for ( CollIndex ii = 0; ii < numPlanSecKeys &&
+                                  !found; ii ++ )
+          {
+            if ( ( (pSiKeyEntry[jj]).revokeKey.subject == 
+                      planSet[ii].getSubjectHashValue() ) &&
+                 ( (pSiKeyEntry[jj]).revokeKey.object ==
+                      planSet[ii].getObjectHashValue() ) &&
                  ( siKeyType == planSet[ii].getSecurityKeyType() ) )
-            {
-                 found = 1;
-                 break;
-            }
-         }
-         if ( found )
-            break;
-     }
+            found = TRUE;
+          }
+        }
+     } // end loop thru the keys passed as params
+
      if ( found )
      {
         ++lru; // restart backward scan from entry's previous neighbor
         deCache((CacheKey*)(entry.first_)); // decache entry
      }
-  }
+  } // end loop thru query cache entries
 }
 
 // free least recently used entries to make room for a new entry
@@ -2756,7 +2774,7 @@ void QueryCache::addPreParserEntry
   }
 }
 
-void QueryCache::free_entries_with_QI_keys( Int32 NumSiKeys , SQL_SIKEY * pSiKeyEntry )
+void QueryCache::free_entries_with_QI_keys( Int32 NumSiKeys , SQL_QIKEY * pSiKeyEntry )
 {
   if (cache_) {
     cache_->free_entries_with_QI_keys( NumSiKeys, pSiKeyEntry );

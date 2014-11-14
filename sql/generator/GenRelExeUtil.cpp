@@ -5192,10 +5192,9 @@ short ExeUtilHbaseDDL::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
-		      0,  // Cardinality expectedRows,
+                      0,  // Cardinality expectedRows,
 		      numBuffers,
 		      buffersize,
-
 		      server,
 		      port,
 		      interface,
@@ -5362,7 +5361,7 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
-		      expectedRows,
+                      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -5375,7 +5374,14 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
 
   generator->initTdbFields(hbasescan_tdb);
 
-  //  if (getTableDesc()->getNATable()->isSeabaseTable())
+  TableDesc *tableDesc = getUtilTableDesc();
+  if (tableDesc->getNATable()->isSeabaseTable())
+  {
+    if (!tableDesc->getNATable()->isSeabaseMDTable())
+      generator->objectUids().insert(
+        tableDesc->getNATable()->objectUid().get_value());
+  }
+
   hbasescan_tdb->setSQHbaseTable(TRUE);
 
   if(!generator->explainDisabled()) {

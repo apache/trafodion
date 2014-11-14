@@ -732,7 +732,7 @@ void SuspendActivateServersRequest::unpackObj(IpcMessageObjType objType,
 
 SecInvalidKeyRequest::SecInvalidKeyRequest(NAMemory *heap,
                                            Int32 numSiks,
-                                           SQL_SIKEY *sikPtr) :
+                                           SQL_QIKEY *sikPtr) :
     RtsMessageObj(SECURITY_INVALID_KEY_REQ,
                     CurrSecurityInvalidKeyVersionNumber, heap)
     , numSiks_(numSiks)
@@ -740,8 +740,8 @@ SecInvalidKeyRequest::SecInvalidKeyRequest(NAMemory *heap,
 {
   if (numSiks_ > 0)
   {
-    sikPtr_ = new(heap) SQL_SIKEY[numSiks_];
-    memcpy((void *)sikPtr_, sikPtr, numSiks_*sizeof(SQL_SIKEY));
+    sikPtr_ = new(heap) SQL_QIKEY[numSiks_];
+    memcpy((void *)sikPtr_, sikPtr, numSiks_*sizeof(SQL_QIKEY));
   }
 }
 
@@ -759,7 +759,7 @@ IpcMessageObjSize SecInvalidKeyRequest::packedLength()
 {
   IpcMessageObjSize result = baseClassPackedLength();
   result += sizeof(numSiks_);
-  result += numSiks_ * sizeof(SQL_SIKEY);
+  result += numSiks_ * sizeof(SQL_QIKEY);
   return result;
 }
 
@@ -769,7 +769,7 @@ IpcMessageObjSize SecInvalidKeyRequest::packObjIntoMessage(
   IpcMessageObjSize result = packBaseClassIntoMessage(buffer);
   result += packIntoBuffer(buffer, numSiks_);
   result += packStrIntoBuffer(buffer, (char *) sikPtr_,
-                              numSiks_ * sizeof(SQL_SIKEY));
+                              numSiks_ * sizeof(SQL_QIKEY));
   return result;
 }
 
@@ -784,8 +784,8 @@ void SecInvalidKeyRequest::unpackObj(IpcMessageObjType objType,
   unpackBuffer(buffer, numSiks_);
   if (numSiks_ > 0)
   {
-    sikPtr_ = new (getHeap()) SQL_SIKEY[numSiks_];
-    unpackStrFromBuffer(buffer, (char *) sikPtr_, sizeof(SQL_SIKEY)*numSiks_);
+    sikPtr_ = new (getHeap()) SQL_QIKEY[numSiks_];
+    unpackStrFromBuffer(buffer, (char *) sikPtr_, sizeof(SQL_QIKEY)*numSiks_);
   }
   else
     sikPtr_ = NULL;

@@ -1,1222 +1,150 @@
->>obey TEST122(setup);
 >>
->>create table T122a
-+>  (uniq int not null,
-+>   c10K int ,
-+>   c1K   int,
-+>   c100  int,
-+>   c10   int,
-+>   c1    int,
-+>   primary key (uniq)
-+>  );
+>>obey TEST122(test1);
+>>
+>>obey TEST122(crdb);
+>>
+>>create table t122t1 ( a int not null );
 
 --- SQL operation complete.
 >>
->>create table T122b
-+>  (uniq int not null,
-+>   c10K int ,
-+>   c1K   int,
-+>   c100  int,
-+>   c10   int,
-+>   c1    int,
-+>   primary key (uniq)
-+>  );
-
---- SQL operation complete.
 >>
->>create table t122a_seed (a int not null ) no partition;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
+>>prepare s1 from insert into t122t1 values
++>  (0)
++>, (5)
++>, (1)
 +>;
 
---- 100 row(s) inserted.
->>
->>
->>obey TEST122(dml);
->>control query default HIST_MISSING_STATS_WARNING_LEVEL '0';
-
---- SQL operation complete.
->>
->>cqd AQR_WNR 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_INSERT_CLEANUP 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_EXPLAIN_INSERT 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-
---- SQL operation complete.
->>set envvar LOG_AQR_WNR_INSERT '1';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
---- SQL operation complete.
->>
->>-- target table is empty.
->>
->>delete  from t122a_seed;
-
---- 0 row(s) deleted.
->>
->>delete from t122a;
-
---- 0 row(s) deleted.
->>
->>obey TEST122(blow_away_source);
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
 --- SQL command prepared.
 >>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
---- SQL operation complete.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>
->>obey TEST122(blow_away_target);
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
---- 0 row(s) inserted.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
---- SQL operation complete.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
---- 0 row(s) inserted.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>
->>-- target table is not empty.
->>delete from t122a;
-
---- 0 row(s) deleted.
->>
->>insert into t122a_seed values(1);
-
---- 1 row(s) inserted.
->>
->>obey TEST122(blow_away_source);
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
---- SQL operation complete.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>
->>obey TEST122(blow_away_target);
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
---- 1 row(s) inserted.
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) inserted.
->>
->>delete from t122a;
-
---- 1 row(s) deleted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
---- SQL operation complete.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
-
---- 1 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
---- 1 row(s) inserted.
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) inserted.
->>
->>delete from t122a;
-
---- 1 row(s) deleted.
->>
->>
->>delete from t122a_seed ;
-
---- 1 row(s) deleted.
->>
->>-- raise an error in ExExeUtilAqrWnrInsertTcb at specifics steps.
->>
->>-- Raise one during LOCK_TARGET_
->>
->>begin work;
-
---- SQL operation complete.
->>
->>lock table t122a_seed in exclusive mode;
-
---- SQL operation complete.
->>
->>sh sh ./runmxci.ksh -i"TEST122(fail_lock)" ;
->>
->>cqd AQR_WNR 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_INSERT_CLEANUP 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_EXPLAIN_INSERT 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-
---- SQL operation complete.
->>set envvar LOG_AQR_WNR_INSERT '1';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
---- SQL operation complete.
->>set table * timeout '200';
-
---- SQL operation complete.
->>
->>-- will fail during LOCK_TARGET_.
->>prepare s1 from insert with no rollback into t122a_seed select uniq from t122b;
-
---- SQL command prepared.
->>execute s1;
-
-*** ERROR[8601] Error returned from file system while locking/unlocking.
-
-*** ERROR[8551] Error 40 was returned by the file system on CAT.SCH.T122A_SEED (partition \NSK.$DATA3.ZSDLF3J9.TMPXWC00).
-
-*** ERROR[8811] Trying to close a statement that is either not in the open state or has not reached EOF.
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 60 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8551] Error 40 was returned by the file system on CAT.SCH.T122A_SEED (partition \NSK.$DATA3.ZSDLF3J9.TMPXWC00).
-
---- 0 row(s) inserted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>-- will fail in GET_REPLY_FROM_CHILD_. The CLEANUP_TARGET_ should get an error
->>-- too.
->>prepare s1 from insert with no rollback into t122a_seed select uniq from t122b;
-
---- SQL command prepared.
->>execute s1;
-
-*** ERROR[8551] Error 73 was returned by the file system on CAT.SCH.T122A_SEED (partition \NSK.$DATA3.ZSDLF3J9.TMPXWC00).
-
-*** ERROR[8551] Error 73 was returned by the file system on CAT.SCH.T122A_SEED (partition \NSK.$DATA3.ZSDLF3J9.TMPXWC00).
-
-*** ERROR[8811] Trying to close a statement that is either not in the open state or has not reached EOF.
-
---- 0 row(s) inserted.
->>
+>>obey TEST122(uid_in_plan);
 >>log;
+look for one uid only
+  ObjectUIDs .......
+look for more than one uid
 >>
->>commit;
+>>
+>>execute s1;
 
---- SQL operation complete.
+--- 3 row(s) inserted.
 >>
->>cqd AQR_WNR_INSERT_CLEANUP 'OFF';
-
---- SQL operation complete.
->>
->>delete from t122a;
-
---- 0 row(s) deleted.
->>
->>obey TEST122(blow_away_source);
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
+>>prepare s1 from select * from t122t1;
 
 --- SQL command prepared.
 >>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
+>>obey TEST122(uid_in_plan);
+>>log;
+look for one uid only
+  ObjectUIDs .......
+look for more than one uid
 >>
 >>
 >>execute s1;
 
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+A          
+-----------
 
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
+          0
+          5
+          1
 
---- 100 row(s) inserted.
+--- 3 row(s) selected.
 >>
->>delete from t122a;
+>>invoke t122t1;
 
---- 100 row(s) deleted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Thu Nov  6 22:00:11 2014
 
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
 
 --- SQL operation complete.
 >>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
+>>select count(*) from t122t1;
 
---- 0 row(s) selected.
->>
->>execute s1;
+(EXPR)              
+--------------------
 
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 100 row(s) inserted.
->>
->>delete from t122a;
-
---- 100 row(s) deleted.
->>
->>
->>obey TEST122(blow_away_target);
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
---- 0 row(s) inserted.
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) inserted.
->>
->>delete from t122a;
-
---- 0 row(s) deleted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a 
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
---- SQL operation complete.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 100 row(s) inserted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
---- 0 row(s) inserted.
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) inserted.
->>
->>delete from t122a;
-
---- 0 row(s) deleted.
->>
->>
->>obey TEST122(delete_test);
->>
->>cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR 'ON';
-
---- SQL operation complete.
->>
->>prepare s1 from delete with no rollback 
-+>from t122a where c10k = (select max(c10k) from t122b);
-
---- SQL command prepared.
->>
->>-- make sure we have a plan with scan of t122a 
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
-TNAME                                                       
-------------------------------------------------------------
-
-CAT.SCH.T122A                                               
-CAT.SCH.T122B                                               
-
---- 2 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) deleted.
->>
->>prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
---- SQL command prepared.
->>
->>-- make sure we do not have a plan with scan of t122a
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
-*** WARNING[8737] Unknown number of rows affected, due to NO ROLLBACK transaction.
-
---- 0 row(s) deleted.
->>
->>cqd AQR_WNR_DELETE_NO_ROWCOUNT 'OFF';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR 'ON';
-
---- SQL operation complete.
->>
->>prepare s1 from delete with no rollback 
-+>from t122a where c10k = (select max(c10k) from t122b);
-
---- SQL command prepared.
->>
->>-- make sure we have a plan with scan of t122a
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
-TNAME                                                       
-------------------------------------------------------------
-
-CAT.SCH.T122A                                               
-CAT.SCH.T122B                                               
-
---- 2 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) deleted.
->>
->>prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
---- SQL command prepared.
->>
->>-- make sure we do not have a plan with scan of t122a
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) deleted.
->>
->>cqd AQR_WNR_DELETE_NO_ROWCOUNT 'OFF';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from delete with no rollback
-+>from t122a where c10k = (select max(c10k) from t122b);
-
---- SQL command prepared.
->>
->>-- make sure we have a plan with scan of t122a
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
-TNAME                                                       
-------------------------------------------------------------
-
-CAT.SCH.T122A                                               
-CAT.SCH.T122B                                               
-
---- 2 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122b;
-
---- SQL operation complete.
->>
->>obey TEST122(populate_source);
->>
->>insert into T122b
-+>select
-+>0 + (10 * x10) + (1 * x1),
-+>0 + (1 * x1),
-+>0, 1, 2, 3
-+>from (values(0))t
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x10
-+>transpose 0,1,2,3,4,5,6,7,8,9 as x1
-+>;
-
---- 100 row(s) inserted.
->>
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122B.
-
---- 0 row(s) deleted.
->>
->>-- reestablish open on t122a so it can be blown-away.
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** ERROR[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
---- 0 row(s) deleted.
->>
->>prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
---- SQL command prepared.
->>
->>-- make sure we do not have a plan with scan of t122a
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>-- This query is "retryable" (an old form of AQR) so it handles the error
->>-- without using AQR.
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>-- Add an index so that the ts mismatch is found while handling 
->>-- blown away open.
->>create index it122a on t122a(c10k);
-
---- SQL operation complete.
->>
->>drop index it122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** ERROR[8575] Timestamp mismatch on table CAT.SCH.T122A.
-
-*** ERROR[8579] Similarity check failed: Similarity check disabled.
-
---- 0 row(s) deleted.
->>
->>cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-
---- SQL operation complete.
->>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
---- SQL operation complete.
->>cqd AQR_WNR 'ON';
-
---- SQL operation complete.
->>
->>prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
---- SQL command prepared.
->>
->>-- make sure we do not have a plan with scan of t122a
->>select TNAME from table(explain(NULL,'S1'))
-+>where operator = 'FILE_SCAN' order by TNAME;
-
---- 0 row(s) selected.
->>
->>execute s1;
-
---- 0 row(s) deleted.
->>
->>purgedata t122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
-*** WARNING[8737] Unknown number of rows affected, due to NO ROLLBACK transaction.
-
---- 0 row(s) deleted.
->>
->>create index it122a on t122a(c10k);
-
---- SQL operation complete.
->>
->>drop index it122a;
-
---- SQL operation complete.
->>
->>execute s1;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8574] An OPEN was blown away on table CAT.SCH.T122A.
-
-*** WARNING[8737] Unknown number of rows affected, due to NO ROLLBACK transaction.
-
---- 0 row(s) deleted.
->>
->>
->>-- Raise one during IS_TARGET_EMPTY_
->>
->>delete from t122a;
-
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[8575] Timestamp mismatch on table CAT.SCH.T122A.
-
---- 0 row(s) deleted.
->>
->>cqd AQR_WNR_INSERT_CLEANUP 'ON';
-
---- SQL operation complete.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
---- SQL operation complete.
->>
->>prepare s1 from insert with no rollback into T122a
-+>select * from t122b;
-
---- SQL command prepared.
->>
->>select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-+>where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-(EXPR)            
-------------------
-
-ExExeUtilAqrWnrTdb
+                   3
 
 --- 1 row(s) selected.
 >>
->>execute s1;
+>>update t122t1 set a = 55 where a = 5;
 
---- 100 row(s) inserted.
+--- 1 row(s) updated.
 >>
->>drop table t122a;
+>>delete from t122t1 where a = 55;
+
+--- 1 row(s) deleted.
+>>
+>>sh sqlci -i"TEST122(redefine1)";
+>>
+>>drop table t122t1;
 
 --- SQL operation complete.
 >>
->>execute s1;
-
-*** ERROR[4082] Object CAT.SCH.T122A does not exist or is inaccessible.
-
-*** ERROR[8822] The statement was not prepared.
-
---- 0 row(s) inserted.
->>
->>cqd AQR_WNR_LOCK_INSERT_TARGET 'ON';
+>>create table t122t1 ( a char(4) not null );
 
 --- SQL operation complete.
 >>
->>create table T122a
-+>  (uniq int not null,
-+>   c10K int ,
-+>   c1K   int,
-+>   c100  int,
-+>   c10   int,
-+>   c1    int,
-+>   primary key (uniq)
-+>  );
+>>insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+--- 4 row(s) inserted.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>select * from t122t1;
+
+A   
+----
+
+i   
+ii  
+iii 
+iv  
+
+--- 4 row(s) selected.
+>>
+>>invoke t122t1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Thu Nov  6 22:00:31 2014
+
+  (
+    A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
 
 --- SQL operation complete.
+>>
+>>insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+--- 4 row(s) inserted.
+>>
+>>select count(*) from t122t1;
+
+(EXPR)              
+--------------------
+
+                   8
+
+--- 1 row(s) selected.
+>>
+>>update t122t1 set a = 'ix' where a = 'ii';
+
+--- 2 row(s) updated.
+>>
+>>delete from t122t1 where a = 'i';
+
+--- 2 row(s) deleted.
 >>
 >>
 >>obey TEST122(clnup);
->>drop table t122a cascade;
-
---- SQL operation complete.
->>drop table t122b cascade;
-
---- SQL operation complete.
->>drop table t122a_seed cascade;
+>>
+>>drop table t122t1 cascade;
 
 --- SQL operation complete.
 >>
