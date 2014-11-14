@@ -720,25 +720,10 @@ TableDesc::getBaseRowCntIfUniqueJoinCol(const ValueIdSet &joinedCols)
 } // TableDesc::getBaseRowCntIfUniqueJoinCol
 // LCOV_EXCL_STOP
 
-ValueIdSet TableDesc::getSaltColumnAsSet()
+
+ValueIdSet TableDesc::getComputedColumns(NAColumnBooleanFuncPtrT fptr)
 {
-  ValueIdSet saltColSet;
-
-  for (CollIndex j=0; j<getClusteringIndex()->getIndexKey().entries(); j++)
-    {
-      ValueId vid = getClusteringIndex()->getIndexKey()[j];
-      if ( vid.isSaltedColumn() ) {
-         saltColSet += vid;
-         break;
-      }
-    }
-
-   return saltColSet;
-}
-
-ValueIdSet TableDesc::getDivisioningColumns() 
-{
-  ValueIdSet divCols;
+  ValueIdSet computedColumns;
 
   for (CollIndex j=0; j<getClusteringIndex()->getIndexKey().entries(); j++)
     {
@@ -748,12 +733,24 @@ ValueIdSet TableDesc::getDivisioningColumns()
         ck = ((IndexColumn *) ck)->getDefinition().getItemExpr();
 
       CMPASSERT(ck->getOperatorType() == ITM_BASECOLUMN);
-      if (((BaseColumn *) ck)->getNAColumn()->isDivisioningColumn())
-         // accumulate the divisioning column
-         divCols += ck->getValueId();
-    }
 
-   return divCols;
+      NAColumn* x = ((BaseColumn *) ck)->getNAColumn();
+
+      if (((*x).*fptr)()) 
+         computedColumns += ck->getValueId();
+    }
+   return computedColumns;
+}
+
+
+ValueIdSet TableDesc::getSaltColumnAsSet()
+{
+  return getComputedColumns(&NAColumn::isSaltColumn);
+}
+
+ValueIdSet TableDesc::getDivisioningColumns() 
+{
+  return getComputedColumns(&NAColumn::isDivisioningColumn);
 }
 
 void TableDesc::validateDivisionByClauseForDDL(BindWA *bindWA)

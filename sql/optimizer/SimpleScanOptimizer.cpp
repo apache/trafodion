@@ -437,11 +437,13 @@ SimpleFileScanOptimizer::computeSingleSubsetSize()
       
       singleSubsetPreds_.clear();
 
+      const ValueIdSet& cckp = getSearchKey()->getComputedKeyPredicates();
+
       for (CollIndex pred = 0; pred <= singleSubsetPrefixColumn; pred++)
         {
           const ValueIdSet *preds = keyPredsByCol[pred];
           if(preds) {
-            singleSubsetPreds_ += *preds;
+             singleSubsetPreds_ += *preds;
           }
         }
       
@@ -451,8 +453,12 @@ SimpleFileScanOptimizer::computeSingleSubsetSize()
       const SelectivityHint * selHint = getIndexDesc()->getPrimaryTableDesc()->getSelectivityHint();
       const CardinalityHint * cardHint = getIndexDesc()->getPrimaryTableDesc()->getCardinalityHint();
 
+      // Exclude the added computed predicates since they do not contribute
+      // to the cardinality. 
+      ValueIdSet predicatesToUse(singleSubsetPreds_);
+      predicatesToUse -= getSearchKey()->getComputedKeyPredicates();
 
-      innerHistograms.applyPredicates(singleSubsetPreds_, getRelExpr(), selHint, cardHint, REL_SCAN);
+      innerHistograms.applyPredicates(predicatesToUse, getRelExpr(), selHint, cardHint, REL_SCAN);
 
       // Now, compute the number of rows:
       singleSubsetSize_ = innerHistograms.getRowCount();

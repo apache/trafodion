@@ -229,14 +229,14 @@ public:
   inline NABoolean isSystemColumn() const       { return columnClass_ == SYSTEM_COLUMN;}
   inline NABoolean isSyskeyColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "SYSKEY" &&
                                                          defaultClass_ == COM_NO_DEFAULT;}
-  inline NABoolean isSaltColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "_SALT_" &&
+  inline virtual NABoolean isSaltColumn() const       { return columnClass_ == SYSTEM_COLUMN && colName_ == "_SALT_" &&
                                                           defaultClass_ == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;}
 
   inline NABoolean isIdentityColumn() const {return (defaultClass_ == COM_IDENTITY_GENERATED_BY_DEFAULT ||
                                                      defaultClass_ == COM_IDENTITY_GENERATED_ALWAYS);}
   inline NABoolean isIdentityColumnByDefault() const {return defaultClass_ == COM_IDENTITY_GENERATED_BY_DEFAULT;}
   inline NABoolean isIdentityColumnAlways() const {return defaultClass_ == COM_IDENTITY_GENERATED_ALWAYS;}
-  inline NABoolean isComputedColumn() const { return (defaultClass_ == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
+  inline virtual NABoolean isComputedColumn() const { return (defaultClass_ == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT ||
                                                       defaultClass_ == COM_ALWAYS_DEFAULT_COMPUTED_COLUMN_DEFAULT);}
   inline NABoolean isComputedColumnAlways() const { return defaultClass_ == COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT; }
   inline const char* getComputedColumnExprString() const { return computedColumnExpression_; }
@@ -550,6 +550,8 @@ private:
   ULng32 hbaseColFlags_;
 
 }; // class NAColumn
+
+typedef NABoolean (NAColumn::*NAColumnBooleanFuncPtrT)() const;
 
 // ***********************************************************************
 // An array of column pointers

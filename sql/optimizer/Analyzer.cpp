@@ -2809,8 +2809,7 @@ void ValueIdSet::findAllEqualityCols(ValueIdSet & result) const
 // connection-by-VEG means that the two columns are in the same VEG.
 //
 // Another version of this method (which is commented) include also connection
-// via range predicates and equal (non-VEG) predicates. This part is not
-// for post Neo EAP
+// via range predicates and equal (non-VEG) predicates. 
 // -----------------------------------------------------------------------
 void ValueIdSet::columnAnalysis(QueryAnalysis* qa, NABoolean predOnSemiOrLeftJoin) const
 {
@@ -4170,7 +4169,7 @@ ValueIdSet TableAnalysis::getLocalPredsOnPrefixOfList(const ValueIdList & cols,
   // good for key positioning. Moreover a=c will be in a local preds but it needs
   // both a and c to execute. i.e. its local for the table but not the col.
   // We need to introduce positioning local preds for columns. This will be done
-  // post Neo EAP.
+  // in the future.
 
   ValueIdSet result;
   prefixSize = 0;
@@ -4179,15 +4178,17 @@ ValueIdSet TableAnalysis::getLocalPredsOnPrefixOfList(const ValueIdList & cols,
   {
     ColAnalysis* colAn = cols[i].colAnalysis();
     if (!colAn) break; // no preds on this column
-    // xxx should change this to positioning local preds post Neo EAP
     const ValueIdSet & colLocalPreds = colAn->getLocalPreds();
     if (colLocalPreds.entries())
     {
       result += colLocalPreds;
       prefixSize++;
     }
-    else
-      break;
+    else {
+
+      if ( !cols[i].isSaltedColumn() )
+        break;
+    }
   }
 
   return result;
@@ -9932,7 +9933,7 @@ CANodeIdSet ColAnalysis::getConnectedJBBCs()
   {
     ValueIdSet commonPreds = i.getNodeAnalysis()->getJBBC()->getJoinPreds();
     // xxx for now we only consider veg preds
-    // Post Neo EAP we may include range and non-Veg-equality as well (still not decided)
+    // In the future we may include range and non-Veg-equality as well (still not decided)
     commonPreds.intersectSet(vegPreds_);
     if (commonPreds.entries() > 0)
     {
@@ -9982,7 +9983,7 @@ ValueIdSet ColAnalysis::getConnectingPreds(JBBC* jbbc)
 {
   ValueIdSet commonPreds = jbbc->getJoinPreds();
   // xxx for now we only consider veg preds
-  // Post Neo EAP we may include range and non-Veg-equality as well (still not decided)
+  // In the future we may include range and non-Veg-equality as well (still not decided)
   commonPreds.intersectSet(vegPreds_);
   return commonPreds;
 }
@@ -9993,7 +9994,7 @@ ValueIdSet ColAnalysis::getAllConnectingPreds(JBBC* jbbc)
 {
   ValueIdSet commonPreds = jbbc->getJoinPreds();
   // xxx for now we only consider veg preds
-  // Post Neo EAP we may include range and non-Veg-equality as well (still not decided)
+  // In the future we may include range and non-Veg-equality as well (still not decided)
   ValueIdSet connectingPreds = vegPreds_;
   if(equalityConnectedJBBCs_.contains(jbbc->getId()))
   {
@@ -10124,4 +10125,5 @@ JBBSubsetAnalysis* Scan::getJBBSubsetAnalysis()
 }
 
 // ****************************************************************
+
 

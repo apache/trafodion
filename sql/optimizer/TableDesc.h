@@ -216,6 +216,8 @@ public:
 
 private:
 
+  ValueIdSet getComputedColumns(NAColumnBooleanFuncPtrT fptr);
+
   // compress the histograms based on query predicates on this table
   void compressHistogramsForCurrentQuery();
 

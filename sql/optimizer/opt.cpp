@@ -4479,10 +4479,14 @@ RequiredResources * OptDefaults::estimateRequiredResources(RelExpr* rootExpr)
       if (getDefaultAsLong(AFFINITY_VALUE) == -2)
       {
         // take the resouceDoP if it is within the range [dDop, maxDoP], 
-        // otherwise take either the low or the high value
-        if (resourceDoP < dDoP)
-            maxDoP = dDoP;
-        else if (resourceDoP > numCPUs)
+        // otherwise take either 1 (when no CQS in effect) or the high value
+        if (resourceDoP < dDoP) {
+            if (ActiveControlDB()->getRequiredShape() &&
+                ActiveControlDB()->getRequiredShape()->getShape())
+               maxDoP = dDoP;
+            else
+               maxDoP = 1;
+        } else if (resourceDoP > numCPUs)
           maxDoP = numCPUs;
         else
           maxDoP = resourceDoP;
