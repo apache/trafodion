@@ -36,7 +36,7 @@ function Usage {
 
 function GetSQcnfg {
 # Get SQ Node configuration
- TempList=`grep -o 'node-name=.[A-Za-z0-9\-]*' $MY_SQROOT/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
+ TempList=`grep -o 'node-name=.[A-Za-z0-9\-\.]*' $MY_SQROOT/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
 
  i=0
  for NODE in $TempList
