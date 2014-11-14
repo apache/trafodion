@@ -246,10 +246,10 @@ CoprocessorService, Coprocessor {
   private int regionState = 0; 
   private Path recoveryTrxPath = null;
   private int cleanAT = 0;
-  private long[] commitCheckTimes   = new long[100];
-  private long[] hasConflictTimes   = new long[100];
-  private long[] putBySequenceTimes = new long[100];
-  private long[] writeToLogTimes    = new long[100];
+  private long[] commitCheckTimes   = new long[50];
+  private long[] hasConflictTimes   = new long[50];
+  private long[] putBySequenceTimes = new long[50];
+  private long[] writeToLogTimes    = new long[50];
 
   private AtomicInteger  timeIndex               =    new AtomicInteger (0);
   private AtomicInteger  totalCommits            =    new AtomicInteger (0);
@@ -3358,6 +3358,7 @@ CoprocessorService, Coprocessor {
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered conflict txId: " + transactionId + "returning COMMIT_CONFLICT");
         return COMMIT_CONFLICT;
       }
+      hasConflictEndTime = System.nanoTime();
 
       // No conflicts, we can commit.
       if (LOG.isTraceEnabled()) LOG.trace("No conflicts for transaction " + transactionId
@@ -3373,8 +3374,7 @@ CoprocessorService, Coprocessor {
 	state.setStatus(Status.COMMIT_PENDING);
 	commitPendingTransactions.add(state);
 	state.setSequenceNumber(nextSequenceId.getAndIncrement());
-	commitedTransactionsBySequenceNumber.put(
-	state.getSequenceNumber(), state);
+	commitedTransactionsBySequenceNumber.put(state.getSequenceNumber(), state);
       }
       commitCheckEndTime = putBySequenceEndTime = System.nanoTime();
     } // exit sync block of commitCheckLock
@@ -3394,10 +3394,11 @@ CoprocessorService, Coprocessor {
       } catch (IOException exp) {
           if (LOG.isInfoEnabled()) LOG.info("TrxRegionEndpoint coprocessor:commitRequest IOException caught in HLOG appendNoSync -- EXIT txId: " + transactionId + " HLog seq " + txid);
           throw exp;
-      }      
+      }
       if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest COMMIT_OK -- EXIT txId: " + transactionId);
       returnPending = true;
     }
+    // No write pending
     else {
       writeToLogTimes[lv_timeIndex] = 0;
     }
@@ -3444,6 +3445,7 @@ CoprocessorService, Coprocessor {
        avgPutTime = (double) (totalPutTime/lv_totalCommits);
        avgWriteToLogTime = (double) ((double)totalWriteToLogTime/(double)lv_totalCommits);
        if (LOG.isInfoEnabled()) LOG.info("commitRequest Report\n" +
+                      "  Region: " + m_Region.getRegionInfo().getRegionNameAsString() + "\n" +
                       "                        Total commits: "
                          + lv_totalCommits + "\n" +
                       "                        commitCheckLock time:\n" +
