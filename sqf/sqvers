@@ -178,9 +178,6 @@ sub find_jars ($) {
 	my $file;
 	foreach $file (@files) {
 		my $dochk = 1;
-		if ($file =~ /jdbcT2.jar|jdbcT4.jar/) {
-			$dochk = 0;
-		}
 		if ($dochk) {
 			version_jar($dir, $file);
 		}
