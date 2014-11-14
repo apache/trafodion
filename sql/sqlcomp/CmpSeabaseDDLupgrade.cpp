@@ -1219,19 +1219,18 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 
                       // get num salt partns from hbaseCreateOptions.
                       // It is stored as:  NUM_SALT_PARTNS=>NNNN
-                      size_t idx = hbaseCreateOptions.index("NUM_SALT_PARTNS=>");
-
-                      if (idx >= 0)
+                      size_t idx2 = hbaseCreateOptions.index("NUM_SALT_PARTNS=>");
+                      if ((int)idx2 >= 0)
                         {
                           char  numSaltPartnsCharStr[5];
                           const char * startNumSaltPartns = 
-                            &hbaseCreateOptions.data()[idx + strlen("NUM_SALT_PARTNS=>")];
+                            &hbaseCreateOptions.data()[idx2 + strlen("NUM_SALT_PARTNS=>")];
                           memcpy(numSaltPartnsCharStr, startNumSaltPartns, 4);
                           numSaltPartnsCharStr[4] = 0;
                           
                           numSaltPartns = str_atoi(numSaltPartnsCharStr, 4);
 
-                          hbaseCreateOptions.remove(idx, strlen("NUM_SALT_PARTNS=>")+4);
+                          hbaseCreateOptions.remove(idx2, strlen("NUM_SALT_PARTNS=>")+4);
                           hbaseCreateOptions = hbaseCreateOptions.strip();
 
                           if (NOT hbaseCreateOptions.isNull())
@@ -1274,6 +1273,9 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
                             }
                         }
 		    } // for
+
+ 		  if (mdui.step() != CUSTOMIZE_NEW_MD)
+		    break;
 
                  str_sprintf(buf, "merge into %s.\"%s\".%s using (select C.object_uid, sum(C.column_size  + case when C.nullable != 0 then 1 else 0 end) from %s.\"%s\".%s C, %s.\"%s\".%s K where C.object_uid = K.object_uid and C.column_number = K.column_number group by 1) T(a, b) on table_uid = T.a when matched then update set key_length = T.b",
                               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
@@ -1491,6 +1493,12 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpMDupgradeInfo &mdui,
 		}
 		break;
 	      }
+          default:
+            {
+              mdui.setStep(UPGRADE_FAILED_RESTORE_OLD_MD);
+              mdui.setSubstep(0);
+            }
+            break;
 	  }
 	  break;
 
