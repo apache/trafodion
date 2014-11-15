@@ -500,6 +500,8 @@ class Generator : public NABasicObject
   // >0: Recompile after this timestamp
   Int64 planExpirationTimestamp_;
 
+  NASet<Int64> objectUids_;
+
 public:
   enum HalloweenProtectionType {
     DP2LOCKS,
@@ -1619,6 +1621,8 @@ public:
   ItemExpr * addCompDecodeForDerialization(ItemExpr * ie);
 
   void setHBaseNumCacheRows(double rowsAccessed, ComTdbHbaseAccess::HbasePerfAttributes * hbpa);
+
+  NASet<Int64> &objectUids() { return objectUids_; }
 
 }; // class Generator
 #pragma warn(1506)   // warning elimination

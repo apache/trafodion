@@ -239,8 +239,6 @@ public:
   static SqlcmpdbgExpFuncs* pExpFuncs_;
 #endif
 
-static THREAD_P SQL_SIKEY * SiKeyArray_     ; // Anchor for dynamically sized array
-static THREAD_P Int32       SiKeyArraySize_ ; // Number of entries in the array
 #ifndef NDEBUG
 static Lng32       prev_QI_Priv_Value ;
 #endif
@@ -278,16 +276,19 @@ private:
    NABoolean& bPatchOK, //(OUT): true iff backpatch succeeded
    TimeVal&   begTime); //(IN):  start time for this compile
 
-   void getAndProcessAnySiKeys(TimeVal begTime, CollHeap * heap);
+   void getAndProcessAnySiKeys(TimeVal begTime);
 
-   void getAnySiKeys( TimeVal   begTime,            // (IN) start time for compilation
-                      TimeVal   prev_QI_inval_time, // (IN) previous Query Invalidation time
-                      Int32 *   retNumSiKeys,       // (OUT) Rtn'd size of results array
-                      TimeVal * pMaxTimestamp,      // (OUT) Rtn'd max Time Stamp
-                      CollHeap* heap );             // (IN) heap to use for memory
+   Int32 getAnySiKeys( 
+     TimeVal   begTime,           // (IN) start time for compilation
+     TimeVal   prev_QI_inval_time, // (IN) previous Query Invalidation time
+     Int32 *   retNumSiKeys,       // (OUT) Rtn'd size of results array
+     TimeVal * pMaxTimestamp,      // (OUT) Rtn'd max Time Stamp
+     SQL_QIKEY *qiKeyArray,        // (OUT) Rtn'd keys stored here
+     Int32 qiKeyArraySize );       // (IN) Size of of results array
 
-   void InvalidateNATableCacheEntries( Int32 NumSiKeys, SQL_SIKEY * pSiKeyArray );
-   void CheckForSpecialRoleRevoke( Int32 NumSiKeys, SQL_SIKEY * pSiKeyArray );
+   void InvalidateNATableCacheEntries(Int32 returnedNumSiKeys, 
+                                      SQL_QIKEY *qiKeyArray);
+   void CheckForSpecialRoleRevoke( Int32 NumSiKeys, SQL_QIKEY * pSiKeyArray );
    void RemoveMarkedNATableCacheEntries();
    void UnmarkMarkedNATableCacheEntries();
 
@@ -298,7 +299,7 @@ private:
    //       If we ever support UDFs or if we start caching the NARoutine objects
    //       associated with SPJs, we will probably need the folowing:
 
-   // void InvalidateNARoutineCacheEntries( Int32 NumSiKeys, SQL_SIKEY * pSiKeyArray );
+   // void InvalidateNARoutineCacheEntries( Int32 NumSiKeys, SQL_QIKEY * pSiKeyArray );
    // void RemoveMarkedNARoutineCacheEntries();
    // void UnmarkMarkedNARoutineCacheEntries();
 };

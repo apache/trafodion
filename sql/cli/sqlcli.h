@@ -1258,12 +1258,23 @@ enum PREPARE_FLAGS
   PREPARE_USE_EMBEDDED_ARKCMP = 0x0080 
 };
 
+/* used to put and get DDL redefinition invalidation keys */
+typedef Int64 InvalidObjectUID;
+
 /* used to put and get security invalidation keys */
 typedef struct {
   UInt32 subject;
   UInt32 object;
+} InvalidSecurityKey;
+
+typedef struct {
   char  operation[2];
-} SQL_SIKEY;
+  char  filler[6];
+  union {
+    InvalidObjectUID ddlObjectUID;
+    InvalidSecurityKey revokeKey;
+  };
+} SQL_QIKEY;
 
 SQLCLI_LIB_FUNC Int32  SQL_EXEC_AddModule (
 		/*IN*/ SQLMODULE_ID * module_name);
@@ -1987,11 +1998,11 @@ SQLCLI_LIB_FUNC Int32 SQL_EXEC_UTF16ToLocale(
    );
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_SetSecInvalidKeys(
             /* IN */   Int32 numSiKeys,
-           /* IN */    SQL_SIKEY siKeys[]);
+           /* IN */    SQL_QIKEY siKeys[]);
 
 SQLCLI_LIB_FUNC Int32 SQL_EXEC_GetSecInvalidKeys(
             /* IN */      Int64 prevTimestamp,
-            /* IN/OUT */  SQL_SIKEY siKeys[],
+            /* IN/OUT */  SQL_QIKEY siKeys[],
             /* IN */      Int32 maxNumSiKeys,
             /* IN/OUT */  Int32 *returnedNumSiKeys,
             /* IN/OUT */  Int64 *maxTimestamp);

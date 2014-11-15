@@ -79,6 +79,8 @@
 #include "CmpDescribe.h"
 #include "Globals.h"
 #include "ComUser.h"
+#include "ComSmallDefs.h"
+#include "CmpMain.h"
 
 #define MAX_NODE_NAME 9
 
@@ -1603,10 +1605,8 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
           if (keyColEncVal->isNull())
           {
             // do not call the expression evaluator if the value 
-            // to be decoded is NULL. 
-
+            // to be decoded is NULL.
             keyColVal = keyColEncVal ;
-
           }
           else 
           {
@@ -6331,97 +6331,108 @@ void NATable::setupPrivInfo()
 
 }
 
+Int64 lookupObjectUid( const QualifiedName& qualName
+                     , ComObjectType objectType
+                    )
+{
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int64 objectUID = 0;
+
+  const size_t BUF_SIZE = 2000;
+  char buf[BUF_SIZE];
+  snprintf(buf, BUF_SIZE,
+         "select object_uid from %s.\"%s\".%s "
+         "where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s'",
+         ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG),
+         SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+         qualName.getCatalogName().data(),
+         qualName.getSchemaName().data(),
+         qualName.getObjectName().data(),
+         comObjectTypeLit(objectType)
+         );
+
+  Lng32 diagsMark = CmpCommon::diags()->mark();
+
+  Lng32 cliRC = 0;
+  NABoolean switched = FALSE;
+  ULng32 savedCmpParserFlags, savedExeParserFlags;
+  CmpContext* prevContext = CmpCommon::context();
+
+  // For compiling the query to get the object UID, the parser flags will be
+  // overwritten by those stored in the current CLI context, as modified by
+  // SQL_EXEC_SetParserFlagsForExSqlComp_Internal below. We need to store the
+  // current ones in case of a cmp context switch, so they can be restored
+  // when we switch back.
+  savedCmpParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+
+  if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
+     if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
+       {
+         // Failed to switch/create metadata CmpContext; continue using current CmpContext.
+       }
+     else
+       {
+         switched = TRUE;
+         // send controls to the context we are switching to
+         sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, TRUE, prevContext);
+         // Turn off hbase predicate filtering and esp parallelism, as they
+         // currently can cause problems.
+         cliInterface.holdAndSetCQD("hbase_filter_preds", "OFF");
+         cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
+         // Mark as an internal query to avoid privilege check, which would
+         // result in infinite recursion looking up object UID of Tables table.
+         SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedExeParserFlags);
+         SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
+       }
+
+     
+  cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
+
+  // Ignore any CLI error and just avoid setting objectUID_.
+  NABoolean failed = FALSE;
+   if (cliRC < 0)
+     {
+       CmpCommon::diags()->rewind(diagsMark);
+       failed = TRUE;
+     }
+   cliRC = cliInterface.clearExecFetchClose(NULL, 0);
+   if (cliRC < 0)
+     {
+       CmpCommon::diags()->rewind(diagsMark);
+       failed = TRUE;
+     }
+   if (cliRC == 100) // did not find the row
+     failed = TRUE;
+
+  if (!failed)
+    {
+      char * ptr = NULL;
+      Lng32 len = 0;
+      cliInterface.getPtrAndLen(1, ptr, len);
+      objectUID = *(Int64*)ptr;
+    }
+
+  cliInterface.fetchRowsEpilogue(NULL, TRUE);
+
+  if (switched == TRUE)
+    {
+      SQL_EXEC_SWITCH_BACK_COMPILER();
+      cliInterface.restoreCQD("hbase_filter_preds");
+      cliInterface.restoreCQD("attempt_esp_parallelism");
+      SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedExeParserFlags);
+      Set_SqlParser_Flags(savedCmpParserFlags);
+    }
+
+  return objectUID;
+}
+
 // Query the metadata to find the object uid of the table. This is used when
 // the uid for a metadata table is requested, since 0 is usually stored for
 // these tables.
 void NATable::lookupObjectUid()
 {
-    ExeCliInterface cliInterface(STMTHEAP);
     QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
-
-    const size_t BUF_SIZE = 2000;
-    char buf[BUF_SIZE];
-    snprintf(buf, BUF_SIZE,
-             "select object_uid from %s.\"%s\".%s "
-             "where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s'",
-             ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG),
-             SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-             qualName.getCatalogName().data(),
-             qualName.getSchemaName().data(),
-             qualName.getObjectName().data(),
-             comObjectTypeLit(objectType_)
-             );
-
-    Lng32 diagsMark = CmpCommon::diags()->mark();
-
-    Lng32 cliRC = 0;
-    NABoolean switched = FALSE;
-    ULng32 savedCmpParserFlags, savedExeParserFlags;
-    CmpContext* prevContext = CmpCommon::context();
-
-    // For compiling the query to get the object UID, the parser flags will be
-    // overwritten by those stored in the current CLI context, as modified by
-    // SQL_EXEC_SetParserFlagsForExSqlComp_Internal below. We need to store the
-    // current ones in case of a cmp context switch, so they can be restored
-    // when we switch back.
-    savedCmpParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
-
-    if (IdentifyMyself::GetMyName() == I_AM_EMBEDDED_SQL_COMPILER)
-       if (SQL_EXEC_SWITCH_TO_COMPILER_TYPE(CmpContextInfo::CMPCONTEXT_TYPE_META))
-         {
-           // Failed to switch/create metadata CmpContext; continue using current CmpContext.
-         }
-       else
-         {
-           switched = TRUE;
-           // send controls to the context we are switching to
-           sendAllControls(FALSE, FALSE, FALSE, COM_VERS_COMPILER_VERSION, TRUE, prevContext);
-           // Turn off hbase predicate filtering and esp parallelism, as they
-           // currently can cause problems.
-           cliInterface.holdAndSetCQD("hbase_filter_preds", "OFF");
-           cliInterface.holdAndSetCQD("attempt_esp_parallelism", "OFF");
-           // Mark as an internal query to avoid privilege check, which would
-           // result in infinite recursion looking up object UID of Tables table.
-           SQL_EXEC_GetParserFlagsForExSqlComp_Internal(savedExeParserFlags);
-           SQL_EXEC_SetParserFlagsForExSqlComp_Internal(INTERNAL_QUERY_FROM_EXEUTIL);
-         }
-
-    cliRC = cliInterface.fetchRowsPrologue(buf, TRUE/*no exec*/);
-
-    // Ignore any CLI error and just avoid setting objectUID_.
-    NABoolean failed = FALSE;
-    if (cliRC < 0)
-      {
-        CmpCommon::diags()->rewind(diagsMark);
-        failed = TRUE;
-      }
-    cliRC = cliInterface.clearExecFetchClose(NULL, 0);
-    if (cliRC < 0)
-      {
-        CmpCommon::diags()->rewind(diagsMark);
-        failed = TRUE;
-      }
-    if (cliRC == 100) // did not find the row
-      failed = TRUE;
-
-    if (!failed)
-      {
-        char * ptr = NULL;
-        Lng32 len = 0;
-        cliInterface.getPtrAndLen(1, ptr, len);
-        objectUID_ = *(Int64*)ptr;
-      }
-
-    cliInterface.fetchRowsEpilogue(NULL, TRUE);
-
-    if (switched == TRUE)
-      {
-        SQL_EXEC_SWITCH_BACK_COMPILER();
-        cliInterface.restoreCQD("hbase_filter_preds");
-        cliInterface.restoreCQD("attempt_esp_parallelism");
-        SQL_EXEC_AssignParserFlagsForExSqlComp_Internal(savedExeParserFlags);
-        Set_SqlParser_Flags(savedCmpParserFlags);
-      }
+    objectUID_ = ::lookupObjectUid(qualName, objectType_);
 }
 
 NATable::~NATable()
@@ -7890,25 +7901,17 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
   return table;
 }
 
-void NATableDB::removeNATable(CorrName &corrName, NABoolean matchNameOnly)
+void NATableDB::removeNATable(CorrName &corrName, NABoolean global)
 {
   const ExtendedQualName* toRemove = &(corrName.getExtendedQualNameObj());
   NAHashDictionaryIterator<ExtendedQualName,NATable> iter(*this); 
   ExtendedQualName *key = NULL;
   NATable *cachedNATable = NULL;
+  NASet<Int64> objectUIDs(CmpCommon::statementHeap(), 1);
 
-  if (matchNameOnly)
-    {
-      // iterate over all entries and remove the ones that match the name
-      // ignoring any partition clauses and other additional info
-      iter.getNext(key,cachedNATable);
-    }
-  else
-    {
-      // delete only a perfect match
-      key = const_cast<ExtendedQualName *>(toRemove);
-      cachedNATable = NAKeyLookup<ExtendedQualName,NATable>::get(key);
-    }
+  // iterate over all entries and remove the ones that match the name
+  // ignoring any partition clauses and other additional info
+  iter.getNext(key,cachedNATable);
 
   while(key)
     {
@@ -7952,15 +7955,40 @@ void NATableDB::removeNATable(CorrName &corrName, NABoolean matchNameOnly)
           //remove pointer to NATable from cache
           remove(key);
 
+          objectUIDs.insert(cachedNATable->objectUid().castToInt64());
           statementCachedTableList_.remove(cachedNATable);
           statementTableList_.remove(cachedNATable);
         }
       
-      // advance the iterator (if matching names only), or end the loop
-      if (matchNameOnly)
-        iter.getNext(key,cachedNATable);
-      else
-        key = NULL;
+      iter.getNext(key,cachedNATable);
+    }
+
+    // clear out the other users' caches too.
+    if (global)
+    {
+      // There are some scenarios where the affected object
+      // does not have an NATable cache entry. Need to get one and 
+      // add its objectUID to the set.
+      if (0 == objectUIDs.entries())
+      {
+        Int64 ouid = lookupObjectUid(
+                       toRemove->getQualifiedNameObj(), 
+                       COM_BASE_TABLE_OBJECT); 
+        if (ouid > 0)
+          objectUIDs.insert(ouid);
+      }
+      Int32 numKeys = objectUIDs.entries();
+      if (numKeys > 0)
+      {                 
+        SQL_QIKEY qiKeys[numKeys];
+        for (CollIndex i = 0; i < numKeys; i++)
+        {
+          qiKeys[i].ddlObjectUID = objectUIDs[i];
+          qiKeys[i].operation[0] = 'O';
+          qiKeys[i].operation[1] = 'R';
+        }
+        long retcode = SQL_EXEC_SetSecInvalidKeys(numKeys, qiKeys);
+      }
     }
 }
 
@@ -8277,7 +8305,7 @@ Int32 NATableDB::end()
 }
 
 void
-NATableDB::free_entries_with_QI_key( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry )
+NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
 {
   UInt32 currIndx = 0;
 
@@ -8286,37 +8314,45 @@ NATableDB::free_entries_with_QI_key( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry )
      NABoolean found = FALSE;
      NATable * currTable = cachedTableList_[currIndx];
 
-     //
-     // For this NATable entry in the cache, we now scan the Security Invalidation Key SET
-     // and, if we find any of the specified SQL_SIKEYs,
-     // we remove the NATable entry from the cache.
-     //
-     Int32 numSikEntries = currTable->secKeySet_.entries();
-     for (Int32 ii = 0; ii < numSikEntries; ii++ )
+     char SiKeyOpVal[4] ;
+     SiKeyOpVal[2] = '\0'; //Put null terminator after first 2 chars
+
+     for ( Int32 jj = 0; jj < numKeys && !found; jj++ )
      {
-        char SiKeyOpVal[4] ;
-        SiKeyOpVal[2] = '\0'; //Put null terminator after first 2 chars
+        SiKeyOpVal[0] = qiKeyArray[jj].operation[0];
+        SiKeyOpVal[1] = qiKeyArray[jj].operation[1];
 
-        for ( Int32 jj = 0; jj < NumSiKeys; jj++ )
+        ComQIActionType siKeyType =
+          ComQIActionTypeLiteralToEnum( SiKeyOpVal );
+        if (siKeyType == COM_QI_OBJECT_REDEF) 
         {
-           SiKeyOpVal[0] = pSiKeyEntry[jj].operation[0];
-           SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
-
-           ComQIActionType siKeyType =
-             ComQIActionTypeLiteralToEnum( SiKeyOpVal );
-           if ( ( pSiKeyEntry[jj].subject ==
-                  currTable->secKeySet_[ii].getSubjectHashValue() ) &&
-                ( pSiKeyEntry[jj].object ==
-                  currTable->secKeySet_[ii].getObjectHashValue() ) &&
-                ( siKeyType ==
-                  currTable->secKeySet_[ii].getSecurityKeyType() ) )
-           {
+          if ((currTable->isSeabaseTable())      &&
+              (!currTable->isSeabaseMDTable()))
+          {
+            SQL_QIKEY qp = qiKeyArray[jj];
+            Int64 ouid = qp.ddlObjectUID;
+            Int64 tOuid =  currTable->objectUid().get_value();
+            if (ouid == tOuid)
               found = TRUE;
-              break;  // Break out of loop since we know we must remove the NATable entry
-           }
+          }
         }
-        if ( found )
-           break;
+        else
+        {
+          // We now scan the NATable's Security Invalidation Key SET
+          // to find any that match the passed-in SQL_QIKEY, 
+          //
+          Int32 numSikEntries = currTable->secKeySet_.entries();
+          for (Int32 ii = 0; ii < numSikEntries && !found; ii++ )
+          {
+            if ( ( qiKeyArray[jj].revokeKey.subject ==
+                     currTable->secKeySet_[ii].getSubjectHashValue() ) &&
+               ( qiKeyArray[jj].revokeKey.object ==
+                     currTable->secKeySet_[ii].getObjectHashValue() )  &&
+               ( siKeyType ==
+                     currTable->secKeySet_[ii].getSecurityKeyType() ) )
+              found = TRUE;
+          }
+        }
      }
      if ( found )
      {
@@ -8330,7 +8366,6 @@ NATableDB::free_entries_with_QI_key( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry )
      else currIndx++; //Increment if NOT found ... else currIndx already pointing at next entry!
   }
 }
-
 //
 // Remove a specifed NATable entry from the NATable Cache
 //

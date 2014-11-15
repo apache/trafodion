@@ -94,6 +94,7 @@
 #include "ExRsInfo.h"
 #include "../../dbsecurity/auth/inc/dbUserAuth.h"
 #include "HBaseClient_JNI.h"
+#include "ComDistribution.h"
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
 #ifdef NA_DEBUG_C_RUNTIME
@@ -4176,13 +4177,22 @@ void ContextCli::closeAllTables()
 
 Lng32 ContextCli::setSecInvalidKeys(
            /* IN */    Int32 numSiKeys,
-           /* IN */    SQL_SIKEY siKeys[])
+           /* IN */    SQL_QIKEY siKeys[])
 {
   CliGlobals *cliGlobals = getCliGlobals();
   if (cliGlobals->getStatsGlobals() == NULL)
   {
     (diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
     return diagsArea_.mainSQLCODE();
+  }
+  for (int i = 0; i < numSiKeys; i++)
+  {
+    // Initialize the filler so that functions like memcmp can be 
+    // used.
+    memset(siKeys[i].filler, 0, sizeof(siKeys[i].filler));
+    // Bad operation values cause problems down-stream, so catch
+    // them here by letting ComQIActionTypeLiteralToEnum assert.
+    ComQIActionTypeLiteralToEnum(siKeys[i].operation);
   }
 
   ComDiagsArea *tempDiagsArea = &diagsArea_;

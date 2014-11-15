@@ -154,7 +154,22 @@ short Describe::codeGen(Generator * generator)
   // don't need a transaction for showtransaction statement.
   if (format_ != TRANSACTION_)
     generator->setTransactionFlag(-1);
-  
+
+  if (maybeInMD())
+  {
+    BindWA * bindWA = generator->getBindWA();
+    CorrName descCorrName = getDescribedTableName();
+    Lng32 daMark = CmpCommon::diags()->mark();
+    NATable * describedTable = bindWA->getSchemaDB()-> 
+      getNATableDB()->get(descCorrName, bindWA, NULL);
+    CmpCommon::diags()->rewind(daMark, TRUE);
+
+    if (describedTable && describedTable->isSeabaseTable() &&
+        (!describedTable->isSeabaseMDTable()))
+      generator->objectUids().insert(
+        describedTable->objectUid().get_value());
+  }
+
   return 0;
 }
 
@@ -2339,7 +2354,7 @@ short HbaseAccess::codeGen(Generator * generator)
   // Change the atp and atpindex of the returned values to indicate that.
   expGen->assignAtpAndAtpIndex(columnList,
 			       0, returnedDesc->noTuples()-1);
-
+ 
   Cardinality expectedRows = (Cardinality) getEstRowsUsed().getValue();
   ULng32 buffersize = 3 * getDefault(GEN_DPSO_BUFFER_SIZE);
   queue_index upqueuelength = (queue_index)getDefault(GEN_DPSO_SIZE_UP);
@@ -2466,7 +2481,7 @@ short HbaseAccess::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
-		      expectedRows,
+                      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -2489,6 +2504,9 @@ short HbaseAccess::codeGen(Generator * generator)
 
       if (getTableDesc()->getNATable()->isSQLMXAlignedTable())
         hbasescan_tdb->setAlignedFormat(TRUE);
+      if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+        generator->objectUids().insert(
+          getTableDesc()->getNATable()->objectUid().get_value());
     }
 
   if (keyInfo && searchKey() && searchKey()->isUnique())
@@ -2722,7 +2740,7 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 		      returnedDesc,
 		      downqueuelength,
 		      upqueuelength,
-		      expectedRows,
+                      expectedRows,
 		      numBuffers,
 		      buffersize,
 
@@ -2736,7 +2754,12 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
   generator->initTdbFields(hbasescan_tdb);
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
+  {
     hbasescan_tdb->setSQHbaseTable(TRUE);
+    if (!getTableDesc()->getNATable()->isSeabaseMDTable())
+      generator->objectUids().insert(
+        getTableDesc()->getNATable()->objectUid().get_value());
+  }
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(

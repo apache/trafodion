@@ -9347,7 +9347,7 @@ void ExMasterStats::init()
   if ((sIKeys_ != NULL) && (sIKeys_ != &preallocdSiKeys_[0]))
     NADELETEBASIC(sIKeys_, getHeap());
   sIKeys_ = &preallocdSiKeys_[0];
-  memset(sIKeys_, 0, PreAllocatedSikKeys * sizeof(SQL_SIKEY));
+  memset(sIKeys_, 0, PreAllocatedSikKeys * sizeof(SQL_QIKEY));
   isBlocking_ = false;
   lastActivity_ = 0;
   blockOrUnblockSince_.tv_sec = blockOrUnblockSince_.tv_usec = 0;
@@ -9511,7 +9511,7 @@ UInt32 ExMasterStats::packedLength()
   size += parentQidLen_;
   size += childQidLen_;
   size += cancelCommentLen_;
-  // the SQL_SIKEY array is not packed or unpacked.
+  // the SQL_QIKEY array is not packed or unpacked.
   return size;
 }
 
@@ -9563,7 +9563,7 @@ void ExMasterStats::unpack(const char* &buffer)
   }
   else
     cancelComment_ = NULL;
-  // SQL_SIKEY array was not packed, so make sure the local copy's values are
+  // SQL_QIKEY array was not packed, so make sure the local copy's values are
   // consistent.  We don't pack them because they aren't reported in GET
   // STATISTICS and so they don't need to leave the local node.
   numSIKeys_ = 0;
@@ -9588,7 +9588,7 @@ UInt32 ExMasterStats::pack(char* buffer)
     size += packStrIntoBuffer(buffer, childQid_, childQidLen_);
   if (cancelCommentLen_ != 0 && cancelComment_ != NULL)
     size += packStrIntoBuffer(buffer, cancelComment_, cancelCommentLen_);
-  // Don't pack the SQL_SIKEY array.  See comment and compensating code 
+  // Don't pack the SQL_QIKEY array.  See comment and compensating code 
   // in this class' unpack method.
   return size;
 }
@@ -9857,11 +9857,11 @@ void ExMasterStats::copyContents(ExMasterStats * other)
   {
     if (other->numSIKeys_ > PreAllocatedSikKeys)
       sIKeys_ =
-       new ((NAHeap *) getHeap()) SQL_SIKEY[other->numSIKeys_];
+       new ((NAHeap *) getHeap()) SQL_QIKEY[other->numSIKeys_];
     else
       sIKeys_ = &preallocdSiKeys_[0];
     memcpy((void *)sIKeys_, other->sIKeys_, 
-                            (other->numSIKeys_* sizeof(SQL_SIKEY)));
+                            (other->numSIKeys_* sizeof(SQL_QIKEY)));
     numSIKeys_ = other->numSIKeys_;
   }
   else
@@ -10348,7 +10348,7 @@ void ExMasterStats::setSIKeys(CliGlobals *cliGlobals,
 
     if (sIKeys_ != &preallocdSiKeys_[0])
       NADELETEBASIC(sIKeys_, (NAHeap *) getHeap());
-    sIKeys_ = new ((NAHeap *)(getHeap())) SQL_SIKEY[numSIKeys];
+    sIKeys_ = new ((NAHeap *)(getHeap())) SQL_QIKEY[numSIKeys];
 
     if (statsGlobals)
       statsGlobals->releaseStatsSemaphore(
@@ -10359,11 +10359,13 @@ void ExMasterStats::setSIKeys(CliGlobals *cliGlobals,
   numSIKeys_ = numSIKeys;
   if (numSIKeys_ > 0)
   {
+    // Make sure filler bytes are zero so that memcmp can be used.
+    memset(sIKeys_, 0, numSIKeys_ * sizeof(SQL_QIKEY));
     const ComSecurityKey *pComSecurityKey = sikInfo->getSikValues();
     for (int i = 0; i < numSIKeys_; i++)
     {
-      sIKeys_[i].subject = pComSecurityKey[i].getSubjectHashValue();
-      sIKeys_[i].object  = pComSecurityKey[i].getObjectHashValue();
+      sIKeys_[i].revokeKey.subject = pComSecurityKey[i].getSubjectHashValue();
+      sIKeys_[i].revokeKey.object  = pComSecurityKey[i].getObjectHashValue();
       char sikOpLit[4];
       ComQIActionTypeEnumToLiteral(pComSecurityKey[i].getSecurityKeyType(),
                                   sikOpLit  );

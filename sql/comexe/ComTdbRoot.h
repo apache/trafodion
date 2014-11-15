@@ -564,10 +564,12 @@ protected:
   char fillersComTdbRoot1_[2];                                      // 302-303
 
   SecurityInvKeyInfoPtr sikPtr_;                                    // 304-311
-  char fillersComTdbRoot2_[40];                                     // 312-351
+  Int64Ptr objectUidList_;                                          // 312-319
+  Int32 numObjectUids_;                                             // 320-323
+  char fillersComTdbRoot2_[28];                                     // 324-351
 
   // predicate to be applied before a row is returned.
-  ExExprPtr predExpr_;                                              // 344-351
+  ExExprPtr predExpr_;                                              // 352-359
 
 public:
   
@@ -675,6 +677,8 @@ public:
                 Int16 schCount,
   	  SchemaLabelInfoPtrPtr schemaLabelInfoList,
 	   NABasicPtr rwrsInfo,
+           Int32 numObjectUIDs,
+           Int64 *objectUIDs,
            CompilationStatsData *compilationStatsData);
 
   ~ComTdbRoot();
@@ -1336,6 +1340,19 @@ public:
   NABoolean childTdbIsNull() const
   { return (rtFlags4_ & CHILD_TDB_IS_NULL) ? TRUE : FALSE; }
   void setChildTdbIsNull() { rtFlags4_ |= CHILD_TDB_IS_NULL; }
+
+  const Int64 * getUnpackedPtrToObjectUIDs(char * base ) const
+  {
+    return ( (Int64 *) (base - (char *) objectUidList_.getPointer()));
+  }
+
+  const Int64 * getObjectUIDs() const 
+  {
+    return objectUidList_.getPointer();
+  }
+  
+  Int32 getNumObjectUIDs() const { return numObjectUids_;}
+
 };
 #pragma warn(1506)  // warning elimination 
 

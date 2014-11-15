@@ -1318,13 +1318,13 @@ public:
   NATable * get(CorrName& corrName, BindWA * bindWA,
                 desc_struct *inTableDescStruct);
 
-  void removeNATable(CorrName &corrName, NABoolean matchNameOnly = TRUE);
+  void removeNATable(CorrName &corrName, NABoolean global = TRUE);
   
   void RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx );
   static void remove_entries_marked_for_removal();
   static void unmark_entries_marked_for_removal();
 
-  void free_entries_with_QI_key( Int32 NumSiKeys, SQL_SIKEY * SiKeyArray );
+  void free_entries_with_QI_key( Int32 numSiKeys, SQL_QIKEY* qiKeyArray );
 
   void setCachingOFF()
   {

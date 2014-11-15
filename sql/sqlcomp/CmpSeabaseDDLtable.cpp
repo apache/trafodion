@@ -1389,7 +1389,7 @@ void CmpSeabaseDDL::createSeabaseTable(
     }
 
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
-  ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
+  ActiveSchemaDB()->getNATableDB()->removeNATable(cn, FALSE);
   
   processReturn();
 

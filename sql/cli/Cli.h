@@ -739,11 +739,11 @@ Lng32 SQLCLI_SetErrorCodeInRTS(
 
 Lng32 SQLCLI_SetSecInvalidKeys(CliGlobals *cliGlobals,
             /* IN */   Int32 numSiKeys,
-           /* IN */    SQL_SIKEY siKeys[]);
+           /* IN */    SQL_QIKEY siKeys[]);
 
 Lng32 SQLCLI_GetSecInvalidKeys(CliGlobals *cliGlobals,
             /* IN */      Int64 prevTimestamp,
-            /* IN/OUT */  SQL_SIKEY siKeys[],
+            /* IN/OUT */  SQL_QIKEY siKeys[],
             /* IN */      Int32 maxNumSiKeys,
             /* IN/OUT */  Int32 *returnedNumSiKeys,
             /* IN/OUT */  Int64 *maxTimestamp);

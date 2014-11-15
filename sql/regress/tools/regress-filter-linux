@@ -429,6 +429,8 @@ s/^\([ ]*HBASE_ASYNC_DROP_TABLE[ ]*\) .*/\1 removed/g
 s/^\([ ]*HBASE_SERIALIZATION[ ]*\) .*/\1 removed/g
 s/^\([ ]*HBASE_FILTER_PREDS[ ]*\) .*/\1 removed/g
 
+# For ObjectUIDs , which are now included in EXPLAIN.
+s/^ ObjectUIDs \.\.\.\.\.\.\.\.\.\.\.\.\. [0-9,]*$/  ObjectUIDs filtered/g
 " $sedInput
 
 #

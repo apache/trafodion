@@ -353,8 +353,6 @@ CmpContext::~CmpContext()
     qcache_->finalize((char *)"Drop Session");
   resetContext();
   // reset thread global variables
-  CmpMain::SiKeyArray_ = NULL;
-  CmpMain::SiKeyArraySize_ = 0;
   HSGlobalsClass::resetJitLogThresholdHash();
 }
 

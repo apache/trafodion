@@ -6838,7 +6838,7 @@ try
 SQLCLI_LIB_FUNC 
 Lng32 SQL_EXEC_SetSecInvalidKeys(
             /* IN */   Int32 numSiKeys,
-           /* IN */    SQL_SIKEY siKeys[])
+           /* IN */    SQL_QIKEY siKeys[])
 {
    Lng32 retcode;
    CLISemaphore *tmpSemaphore;
@@ -6875,7 +6875,7 @@ Lng32 SQL_EXEC_SetSecInvalidKeys(
 SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetSecInvalidKeys(
             /* IN */      Int64 prevTimestamp,
-            /* IN/OUT */  SQL_SIKEY siKeys[],
+            /* IN/OUT */  SQL_QIKEY siKeys[],
             /* IN */      Int32 maxNumSiKeys,
             /* IN/OUT */  Int32 *returnedNumSiKeys,
             /* IN/OUT */  Int64 *maxTimestamp)

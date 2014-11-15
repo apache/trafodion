@@ -1,420 +1,82 @@
--- Test: TEST122 (Executor)
--- @@@ START COPYRIGHT @@@
---
--- (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.
---
---  Licensed under the Apache License, Version 2.0 (the "License");
---  you may not use this file except in compliance with the License.
---  You may obtain a copy of the License at
---
---      http://www.apache.org/licenses/LICENSE-2.0
---
---  Unless required by applicable law or agreed to in writing, software
---  distributed under the License is distributed on an "AS IS" BASIS,
---  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
---  See the License for the specific language governing permissions and
---  limitations under the License.
---
--- @@@ END COPYRIGHT @@@
---
--- Functionality: WITH NO ROLLBACK combined with AQR
--- Expected files: EXPECTED122
--- Table created: T122a, T122b
--- Limitations: 
--- 
--- To Do:   
---      
--- Revision history:
---     (08/12/2013) - Created.
--- 
-
 
 obey TEST122(clnup);
 
 log LOG122 clear;
-obey TEST122(setup);
-obey TEST122(dml);
+
+obey TEST122(test1);
+
 obey TEST122(clnup);
+
 exit;
 
+?section test1
 
-?section clnup
-drop table t122a cascade;
-drop table t122b cascade;
-drop table t122a_seed cascade;
+obey TEST122(crdb);
 
-
-?section setup
-
-create table T122a
-  (uniq int not null,
-   c10K int ,
-   c1K   int,
-   c100  int,
-   c10   int,
-   c1    int,
-   primary key (uniq)
-  );
-
-create table T122b
-  (uniq int not null,
-   c10K int ,
-   c1K   int,
-   c100  int,
-   c10   int,
-   c1    int,
-   primary key (uniq)
-  );
-
-create table t122a_seed (a int not null ) no partition;
-
-obey TEST122(populate_source);
-
-?section populate_source
-
-insert into T122b
-select
-0 + (10 * x10) + (1 * x1),
-0 + (1 * x1),
-0, 1, 2, 3
-from (values(0))t
-transpose 0,1,2,3,4,5,6,7,8,9 as x10
-transpose 0,1,2,3,4,5,6,7,8,9 as x1
+prepare s1 from insert into t122t1 values
+  (0)
+, (5)
+, (1)
 ;
 
-?section dml
-control query default HIST_MISSING_STATS_WARNING_LEVEL '0';
-
-cqd AQR_WNR 'ON';
-cqd AQR_WNR_INSERT_CLEANUP 'ON';
-cqd AQR_WNR_EXPLAIN_INSERT 'ON';
-cqd AQR_WNR_LOCK_INSERT_TARGET 'ON';
-cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-set envvar LOG_AQR_WNR_INSERT '1';
-cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-
--- target table is empty.
-
-delete  from t122a_seed;
-
-delete from t122a;
-
-obey TEST122(blow_away_source);
-
-obey TEST122(blow_away_target);
-
--- target table is not empty.
-delete from t122a;
-
-insert into t122a_seed values(1);
-
-obey TEST122(blow_away_source);
-
-obey TEST122(blow_away_target);
-
-delete from t122a_seed ;
-
--- raise an error in ExExeUtilAqrWnrInsertTcb at specifics steps.
-
--- Raise one during LOCK_TARGET_
-
-begin work;
-
-lock table t122a_seed in exclusive mode;
-
-sh sh ./runmxci.ksh -i"TEST122(fail_lock)" ;
-
-commit;
-
-cqd AQR_WNR_INSERT_CLEANUP 'OFF';
-
-delete from t122a;
-
-obey TEST122(blow_away_source);
-
-obey TEST122(blow_away_target);
-
-obey TEST122(delete_test);
-
--- Raise one during IS_TARGET_EMPTY_
-
-delete from t122a;
-
-cqd AQR_WNR_INSERT_CLEANUP 'ON';
-
-cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
-prepare s1 from insert with no rollback into T122a
-select * from t122b;
-
-select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-where OPERATOR = 'NO_ROLLBACK_INSERT';
+obey TEST122(uid_in_plan);
 
 execute s1;
 
-drop table t122a;
+prepare s1 from select * from t122t1;
+
+obey TEST122(uid_in_plan);
 
 execute s1;
 
-cqd AQR_WNR_LOCK_INSERT_TARGET 'ON';
+invoke t122t1;
 
-create table T122a
-  (uniq int not null,
-   c10K int ,
-   c1K   int,
-   c100  int,
-   c10   int,
-   c1    int,
-   primary key (uniq)
-  );
+select count(*) from t122t1;
 
+update t122t1 set a = 55 where a = 5;
 
-?section blow_away_source
+delete from t122t1 where a = 55;
+    
+sh sqlci -i"TEST122(redefine1)";
 
-prepare s1 from insert with no rollback into T122a 
-select * from t122b;
+select * from t122t1;
 
-select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-where OPERATOR = 'NO_ROLLBACK_INSERT';
+invoke t122t1;
 
-execute s1;
+insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
 
-delete from t122a;
+select count(*) from t122t1;
 
-purgedata t122b;
+update t122t1 set a = 'ix' where a = 'ii';
 
-obey TEST122(populate_source);
+delete from t122t1 where a = 'i';
 
-execute s1;
+?section clnup
 
-delete from t122a;
+drop table t122t1 cascade;
 
-cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
+?section crdb
 
-prepare s1 from insert with no rollback into T122a 
-select * from t122b;
+create table t122t1 ( a int not null );
 
-cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
-select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-execute s1;
-
-delete from t122a;
-
-purgedata t122b;
-
-obey TEST122(populate_source);
-
-execute s1;
-
-delete from t122a;
-
-?section blow_away_target
-
-prepare s1 from insert with no rollback into T122a 
-select * from t122b;
-
-select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-execute s1;
-
-purgedata t122a;
-
-insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
-execute s1;
-
-delete from t122a;
-
-cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
-
-prepare s1 from insert with no rollback into T122a 
-select * from t122b;
-
-cqd AQR_WNR_LOCK_INSERT_TARGET 'RESET';
-
-select 'ExExeUtilAqrWnrTdb' from table(explain(NULL, 'S1'))
-where OPERATOR = 'NO_ROLLBACK_INSERT';
-
-execute s1;
-
-purgedata t122a;
-
-insert into t122a select -1, -1, -1, -1, -1, -1 from t122a_seed;
-
-execute s1;
-
-delete from t122a;
-
-?section fail_lock
+?section uid_in_plan
+log;
+log PLAN122 clear;
+explain s1;
+log;
+sh echo "look for one uid only" >> LOG122; 
+sh grep "^  ObjectUIDs .* [1-9][0-9]*$" PLAN122 | cut -c 1-20 >> LOG122; 
+sh echo "look for more than one uid" >> LOG122; 
+sh grep "^  ObjectUIDs .* [1-9][0-9]*," PLAN122;
 log LOG122;
 
-cqd AQR_WNR 'ON';
-cqd AQR_WNR_INSERT_CLEANUP 'ON';
-cqd AQR_WNR_EXPLAIN_INSERT 'ON';
-cqd AQR_WNR_LOCK_INSERT_TARGET 'ON';
-cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-set envvar LOG_AQR_WNR_INSERT '1';
-cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-set table * timeout '200';
+?section redefine1
 
--- will fail during LOCK_TARGET_.
-prepare s1 from insert with no rollback into t122a_seed select uniq from t122b;
-execute s1;
+log LOG122;
 
-cqd AQR_WNR_LOCK_INSERT_TARGET 'OFF';
+drop table t122t1;
 
--- will fail in GET_REPLY_FROM_CHILD_. The CLEANUP_TARGET_ should get an error
--- too.
-prepare s1 from insert with no rollback into t122a_seed select uniq from t122b;
-execute s1;
+create table t122t1 ( a char(4) not null );
 
-log;
-
-exit;
-
-?section delete_test
-
-cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-cqd AQR_WNR 'ON';
-
-prepare s1 from delete with no rollback 
-from t122a where c10k = (select max(c10k) from t122b);
-
--- make sure we have a plan with scan of t122a 
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122b;
-
-obey TEST122(populate_source);
-
-execute s1;
-
-purgedata t122a;
-
-execute s1;
-
-prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
--- make sure we do not have a plan with scan of t122a
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122a;
-
-execute s1;
-
-cqd AQR_WNR_DELETE_NO_ROWCOUNT 'OFF';
-cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-cqd AQR_WNR 'ON';
-
-prepare s1 from delete with no rollback 
-from t122a where c10k = (select max(c10k) from t122b);
-
--- make sure we have a plan with scan of t122a
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122b;
-
-obey TEST122(populate_source);
-
-execute s1;
-
-purgedata t122a;
-
-execute s1;
-
-prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
--- make sure we do not have a plan with scan of t122a
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122a;
-
-execute s1;
-
-cqd AQR_WNR_DELETE_NO_ROWCOUNT 'OFF';
-cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-cqd AQR_WNR 'OFF';
-
-prepare s1 from delete with no rollback
-from t122a where c10k = (select max(c10k) from t122b);
-
--- make sure we have a plan with scan of t122a
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122b;
-
-obey TEST122(populate_source);
-
-execute s1;
-
--- reestablish open on t122a so it can be blown-away.
-execute s1;
-
-purgedata t122a;
-
-execute s1;
-
-prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
--- make sure we do not have a plan with scan of t122a
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122a;
-
--- This query is "retryable" (an old form of AQR) so it handles the error
--- without using AQR.
-execute s1;
-
--- Add an index so that the ts mismatch is found while handling 
--- blown away open.
-create index it122a on t122a(c10k);
-
-drop index it122a;
-
-execute s1;
-
-cqd AQR_WNR_DELETE_NO_ROWCOUNT 'ON';
-cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-cqd AQR_WNR 'ON';
-
-prepare s1 from delete with no rollback  from  t122a where c10k = 4;
-
--- make sure we do not have a plan with scan of t122a
-select TNAME from table(explain(NULL,'S1'))
-where operator = 'FILE_SCAN' order by TNAME;
-
-execute s1;
-
-purgedata t122a;
-
-execute s1;
-
-create index it122a on t122a(c10k);
-
-drop index it122a;
-
-execute s1;
+insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
 

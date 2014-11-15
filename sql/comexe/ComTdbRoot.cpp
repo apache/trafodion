@@ -66,6 +66,7 @@ ComTdbRoot::ComTdbRoot()
        rtFlags4_(0),
        rtFlags5_(0),
        compilationStatsData_(NULL),
+       objectUidList_(NULL),
        cursorType_(SQL_READONLY_CURSOR)	   
 {
   //setPlanVersion(ComVersion_GetCurrentPlanVersion());
@@ -122,6 +123,8 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 		      Int16 schCount,
 		      SchemaLabelInfoPtrPtr schemaLabelInfoList,
 		      NABasicPtr rwrsInfo,
+                      Int32 numObjectUIDs,
+                      Int64 *objectUIDs,
                       CompilationStatsData *compilationStatsData)
 {
   rtFlags1_ = 0;
@@ -233,6 +236,9 @@ void ComTdbRoot::init(ComTdb * child_tdb,
 
   rwrsInfo_ = rwrsInfo;
 
+  numObjectUids_ = numObjectUIDs;
+  objectUidList_ = objectUIDs; 
+
   compilationStatsData_ = compilationStatsData;
 
   explainPlanId_ = explainPlanId;
@@ -310,6 +316,7 @@ Long ComTdbRoot::pack(void * space)
   compilerStatsInfo_.pack(space);
 
   rwrsInfo_.pack(space);
+  objectUidList_.pack(space);
 
   compilationStatsData_.pack(space);
 
@@ -362,6 +369,7 @@ Lng32 ComTdbRoot::unpack(void * base, void * reallocator)
   if(compilerStatsInfo_.unpack(base)) return -1;
 
   if(rwrsInfo_.unpack(base)) return -1;
+  if(objectUidList_.unpack(base)) return -1;
 
   if(compilationStatsData_.unpack(base, reallocator)) return -1;
 

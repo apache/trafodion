@@ -1932,6 +1932,16 @@ public:
     *pUUDFName_ = src;
   }
 
+  NABoolean maybeInMD() const
+  {
+    return (
+      format_ == INVOKE_    ||
+      format_ == SHOWSTATS_ ||
+      format_ == SHORT_     ||
+      format_ == LONG_      ||
+      format_ == LABEL_) ;
+  }
+
 private:
   CorrName describedTableName_;
   // pUUDFName_ is only used when describedTableName_ contains a routine action

@@ -654,7 +654,18 @@ Lng32 ExeCliInterface::getPtrAndLen(short entry, char* &ptr, Lng32 &len, short**
 				 &len, 0, 0, 0, 0);
   if (retcode != SUCCESS)
     return retcode;
-  
+
+  short *nullIndPtr = (short *)ind_addr;
+  if (nullIndPtr && *nullIndPtr < 0)  
+    {
+      // without this test, when "showddl component sql_operations"
+      // ran some child query which returned a nullable column
+      // with a SQL NULL value, junk from data_addr was interpreted
+      // as a length and the caller of this method tried to allocate
+      // too many bytes.
+      len = 0;
+    }
+  else 
   if (datatype == REC_BYTE_V_ASCII ||
       datatype == REC_BYTE_V_ASCII_LONG ||
       datatype == REC_BYTE_V_DOUBLE ||

@@ -46,11 +46,7 @@
 +>primary key(pk4a,pk4b,pk4c)
 +>);
 
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[1254] Duplicate unique constraints are not allowed with same set of columns.
-
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>
 >>create table t020t2
 +>(
@@ -87,11 +83,7 @@ A            B
 >>
 >>drop table t020t3;
 
-*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
-
-*** WARNING[1389] Object T020T3_127512884_2898 does not exist in Trafodion.
-
---- SQL operation completed with warnings.
+--- SQL operation complete.
 >>
 >>-- TEST3 
 >>

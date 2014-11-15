@@ -4348,7 +4348,7 @@ NA_EIDPROC
   bool getValidPrivs()       { return validPrivs_; }
   // Security Invalidation Keys -- no need to pack or unpack.
   Int32 getNumSIKeys() const { return numSIKeys_; }
-  SQL_SIKEY *getSIKeys() const { return sIKeys_; }
+  SQL_QIKEY *getSIKeys() const { return sIKeys_; }
   void setSIKeys( CliGlobals *cliGlobals, SecurityInvKeyInfo *sikInfo);
 
 private:
@@ -4441,8 +4441,8 @@ private:
 #endif
   };
   Int32 numSIKeys_;
-  SQL_SIKEY * sIKeys_;
-  SQL_SIKEY preallocdSiKeys_[PreAllocatedSikKeys];
+  SQL_QIKEY * sIKeys_;
+  SQL_QIKEY preallocdSiKeys_[PreAllocatedSikKeys];
 
 };
 

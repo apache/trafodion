@@ -82,9 +82,10 @@
 ///////////////////////////////////////////////////
 // class Generator
 //////////////////////////////////////////////////
-Generator::Generator(CmpContext* currentCmpContext)
+Generator::Generator(CmpContext* currentCmpContext) :
+    currentCmpContext_(currentCmpContext)
+ ,  objectUids_(wHeap(), 1)
 {
-  currentCmpContext_ = currentCmpContext;
   // nothing generated yet.
   genObj = 0;
   genObjLength = 0;
@@ -230,7 +231,6 @@ Generator::Generator(CmpContext* currentCmpContext)
      NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
   else
      NExDbgInfoObj_.setNExLogPath( NULL );
-
 }
 
 void Generator::initTdbFields(ComTdb *tdb)

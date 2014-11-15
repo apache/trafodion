@@ -45,6 +45,8 @@
 #include <signal.h>
 #include "seabed/ms.h"
 #include "seabed/fserr.h"
+#include "ComDistribution.h"
+
 void *StatsGlobals::operator new (size_t size, void* loc)
 {
   if (loc)
@@ -1084,7 +1086,7 @@ Lng32 StatsGlobals::updateStats(ComDiagsArea &diags, SQLQUERY_ID *query_id, void
 Lng32 StatsGlobals::getSecInvalidKeys(
                           CliGlobals * cliGlobals,
                           Int64 lastCallTimestamp,
-                          SQL_SIKEY siKeys[],
+                          SQL_QIKEY siKeys[],
                           Int32 maxNumSiKeys,
                           Int32 *returnedNumSiKeys)
 {
@@ -1116,21 +1118,32 @@ Lng32 StatsGlobals::getSecInvalidKeys(
   return retcode;
 }
 
-void StatsGlobals::mergeNewSikeys(Int32 numSikeys, SQL_SIKEY sikeys[])
+void StatsGlobals::mergeNewSikeys(Int32 numSikeys, SQL_QIKEY sikeys[])
 {
   newestRevokeTimestamp_ = NA_JulianTimestamp();
   for (Int32 i=0; i < numSikeys; i++)
   {
+    SQL_QIKEY newKey;
+    memset(&newKey, 0, sizeof(SQL_QIKEY));
+    newKey.operation[0] = sikeys[i].operation[0];
+    newKey.operation[1] = sikeys[i].operation[1];
+    if (COM_QI_OBJECT_REDEF ==
+            ComQIActionTypeLiteralToEnum(newKey.operation))
+    {    
+      newKey.ddlObjectUID = sikeys[i].ddlObjectUID;
+    }
+    else
+    {
+      newKey.revokeKey.object = sikeys[i].revokeKey.object;
+      newKey.revokeKey.subject = sikeys[i].revokeKey.subject;
+    }
     bool updatedExistingRecentKey = false;
-    recentSikeys_->position((char *) &sikeys[i], sizeof(sikeys[i]));
+    recentSikeys_->position((char *) &newKey, sizeof(newKey));
     RecentSikey *existingRecentKey = NULL;
     while (NULL != 
            (existingRecentKey = (RecentSikey *) recentSikeys_->getNext()))
     {
-      if ((existingRecentKey->s_.subject == sikeys[i].subject)           &&
-          (existingRecentKey->s_.object  == sikeys[i].object )           &&
-          (existingRecentKey->s_.operation[0] == sikeys[i].operation[0]) &&
-          (existingRecentKey->s_.operation[1] == sikeys[i].operation[1]))
+      if (!memcmp(&existingRecentKey->s_, &newKey, sizeof(newKey)))
       {
         existingRecentKey->revokeTimestamp_ = newestRevokeTimestamp_;
         updatedExistingRecentKey = true;
@@ -1140,7 +1153,7 @@ void StatsGlobals::mergeNewSikeys(Int32 numSikeys, SQL_SIKEY sikeys[])
     if (!updatedExistingRecentKey)
     {
       RecentSikey *newRecentKey = new(&statsHeap_) RecentSikey;
-      newRecentKey->s_ = sikeys[i];
+      newRecentKey->s_ = newKey;
       newRecentKey->revokeTimestamp_ = newestRevokeTimestamp_;
       recentSikeys_->insert((char *) &newRecentKey->s_, 
                             sizeof(newRecentKey->s_), newRecentKey);

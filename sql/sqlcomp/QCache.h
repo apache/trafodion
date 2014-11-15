@@ -1093,7 +1093,7 @@ class QCache : public NABasicObject {
   void clearStats();
 
   // free Query Cache entries with specified QI Security Key
-  void free_entries_with_QI_keys( Int32 NumSiKeys, SQL_SIKEY * pSiKeyArray );
+  void free_entries_with_QI_keys( Int32 NumSiKeys, SQL_QIKEY * pSiKeyArray );
 
  private:
   // decache a postparser cache entry
@@ -1381,8 +1381,8 @@ class QueryCache {
   // reset counters
   void clearStats() { if (cache_) cache_->clearStats(); }
 
-  // free (remove) entires in the Query Cache that have a particular SQL_SIKEY
-  void free_entries_with_QI_keys( Int32 NumSiKeys, SQL_SIKEY * pSiKeyEntry );
+  // free (remove) entires in the Query Cache that have a particular SQL_QIKEY
+  void free_entries_with_QI_keys( Int32 NumSiKeys, SQL_QIKEY * pSiKeyEntry );
   void setQCache(QCache *qCache);
  private:
 

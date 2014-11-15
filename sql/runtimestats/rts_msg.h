@@ -1158,7 +1158,7 @@ public:
   }
 
   SecInvalidKeyRequest(NAMemory *heap,
-                       Int32 numSiks, SQL_SIKEY *sikPtr);
+                       Int32 numSiks, SQL_QIKEY *sikPtr);
 
   virtual ~SecInvalidKeyRequest();
 
@@ -1171,11 +1171,11 @@ public:
 		 IpcConstMessageBufferPtr buffer);
 
   Int32 getNumSiks() const {return numSiks_; }
-  SQL_SIKEY *getSik() const { return sikPtr_; }
+  SQL_QIKEY *getSik() const { return sikPtr_; }
 
 private:
   Int32 numSiks_;
-  SQL_SIKEY *sikPtr_;
+  SQL_QIKEY *sikPtr_;
 
 };
 

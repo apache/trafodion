@@ -1808,7 +1808,6 @@ short RelRoot::codeGen(Generator * generator)
 	      generator->addLateNameInfo(lateNameInfo);
 
 	    } // hv
-
 	} // for
     }
 
@@ -2410,6 +2409,14 @@ short RelRoot::codeGen(Generator * generator)
     }
   }
 
+  CollIndex numObjectUIDs = generator->objectUids().entries();
+  Int64 *objectUIDsPtr = NULL;
+  if (numObjectUIDs > 0)
+    {
+      objectUIDsPtr  = new (space) Int64[numObjectUIDs];
+      for (CollIndex i = 0; i < numObjectUIDs; i++)
+        objectUIDsPtr[i] = generator->objectUids()[i];
+    }
   
   // for describe type commands(showshape, showplan, explain) we don't
   // need to pass in the actual param values even if the query contains
@@ -2504,6 +2511,8 @@ short RelRoot::codeGen(Generator * generator)
 		 numOfUniqueSchemaNames,
 		 tdbSchemaLabelInfoList,
 		 rwrsInfoBuf,
+                 numObjectUIDs ,
+                 objectUIDsPtr,
                  compilationStatsData);
 #pragma warning (default : 4244)  //warning elimination
 
