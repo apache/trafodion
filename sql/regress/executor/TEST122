@@ -3,15 +3,17 @@ obey TEST122(clnup);
 
 log LOG122 clear;
 
-obey TEST122(test1);
+obey TEST122(test_drop_tab);
+
+obey TEST122(test_alter_tab);
 
 obey TEST122(clnup);
 
 exit;
 
-?section test1
+?section test_drop_tab
 
-obey TEST122(crdb);
+create table t122t1 ( a int not null );
 
 prepare s1 from insert into t122t1 values
   (0)
@@ -37,7 +39,7 @@ update t122t1 set a = 55 where a = 5;
 
 delete from t122t1 where a = 55;
     
-sh sqlci -i"TEST122(redefine1)";
+sh sqlci -i"TEST122(drop_tab)";
 
 select * from t122t1;
 
@@ -51,13 +53,111 @@ update t122t1 set a = 'ix' where a = 'ii';
 
 delete from t122t1 where a = 'i';
 
+?section test_alter_tab
+
+create table t122t3 (c1 int not null primary key, c2 int);
+insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3;
+
+create table t122t3_col (c1 int not null primary key, c2 int);
+insert into t122t3_col values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_col;
+
+create table t122t3_ck (c1 int not null primary key, c2 int);
+insert into t122t3_ck values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_ck;
+
+create table t122t3_unique (c1 int not null primary key, c2 int);
+insert into t122t3_unique values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_unique;
+
+create table t122t3_ri (c1 int not null primary key, c2 int);
+insert into t122t3_ri values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t3_ri;
+
+create table t122t4 (c1 int, c2 int);
+insert into t122t4 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t4;
+
+create table t122t4_pk (c1 int, c2 int);
+insert into t122t4_pk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t4_pk;
+
+create table t122t4_fk (c1 int, c2 int);
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,7);
+select * from t122t4_fk;
+
+
+sh sqlci -i "TEST122(alter_tbl_add)"
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+-- see new column in t122t3_col;
+select * from t122t3_col;
+
+-- see new constraint in t122t3_ck
+insert into t122t3_ck values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,0);
+
+-- see new unique constraint in t122t3_unique 
+explain options 'f' 
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+-- see new pk in t122t4_pk 
+explain options 'f' 
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+-- see new ri in t122t4_fk
+explain options 'f'
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+-- see new index in t122t3
+explain options 'f'
+insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+sh sqlci -i "TEST122(alter_tbl_drop)"
+
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+-- see only 2 columns in t122t3_col;
+select * from t122t3_col;
+
+-- no more check constraint in t122t3_ck
+insert into t122t3_ck values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,0);
+
+-- no more unique constraint in t122t3_unique 
+explain options 'f' 
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+insert into t122t3_unique values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (17,7);
+
+-- no more pk in t122t4_pk 
+explain options 'f' 
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+insert into t122t4_pk values (11,1), (12,2), (13,3), (14,4), (15,5), (16,6), (7,17);
+
+-- no ri contraint in t122t4_fk
+explain options 'f'
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+insert into t122t4_fk values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+-- no more index in t122t3
+explain options 'f'
+insert into t122t3 values (1,1), (2,2), (3,3), (4,4), (5,5), (6,6), (7,0);
+
+
 ?section clnup
 
 drop table t122t1 cascade;
-
-?section crdb
-
-create table t122t1 ( a int not null );
+drop table t122t3 cascade;
+drop table t122t3_col cascade;
+drop table t122t3_ck cascade;
+drop table t122t3_unique cascade;
+drop table t122t3_ri cascade;
+drop table t122t4 cascade;
+drop table t122t4_pk cascade;
+drop table t122t4_fk cascade;
 
 ?section uid_in_plan
 log;
@@ -70,7 +170,7 @@ sh echo "look for more than one uid" >> LOG122;
 sh grep "^  ObjectUIDs .* [1-9][0-9]*," PLAN122;
 log LOG122;
 
-?section redefine1
+?section drop_tab
 
 log LOG122;
 
@@ -79,4 +179,27 @@ drop table t122t1;
 create table t122t1 ( a char(4) not null );
 
 insert into t122t1 values ('i'), ('ii'), ('iii'), ('iv');
+
+?section alter_tbl_add
+log LOG122;
+-- add columns, constraints, and indexes
+alter table t122t3_col add column c3 int default 0;
+alter table t122t3_ck add constraint t122_ck check (c2 > 0);
+alter table t122t3_unique add constraint t122_uq unique (c2);
+alter table t122t4_pk add constraint t122_pk primary key (c1);
+alter table t122t4_fk add constraint t122_fk foreign key (c2) references t122t3_ri;
+create index t122t3_index on t122t3(c2);
+
+?section alter_tbl_drop
+log LOG122;
+-- drop columns, constraints, and indexes
+alter table t122t3_col drop column c3;
+alter table t122t3_ck drop constraint t122_ck;
+alter table t122t3_unique drop constraint t122_uq;
+alter table t122t4_pk drop constraint t122_pk;
+alter table t122t4_fk drop constraint t122_fk;
+drop index t122t3_index;
+
+
+
 
