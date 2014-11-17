@@ -2570,12 +2570,20 @@ void PCodeCfg::generateShowPlan(PCodeBinary* pCode, Space* space)
 
   // Dump out the native expr assembly code
   if (expr_->getPCodeNative()) {
+
+#if 0 /* Sometimes causes us to core dump.  Disabling for now.  */
     // Initialize constant vectors and hash tables
     initConstants();
 
     // Native code generation
     computeLiveness(FALSE /* no DCE */);
     layoutNativeCode(space);
+#else
+    space->allocateAndCopyToAlignedSpace("Native Expression exists but is not being displayed.\n",
+                                  sizeof("Native Expression exists but is not being displayed.\n"),
+                                  sizeof(short) );
+#endif /* ... Disabling for now. */
+
   }
 
 
