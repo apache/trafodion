@@ -3869,8 +3869,7 @@ public:
   RandomNum(ItemExpr * seed = NULL, NABoolean simpleRandom = FALSE) 
        : BuiltinFunction(ITM_RANDOMNUM, CmpCommon::statementHeap(), 1, seed),
 	 simpleRandom_(simpleRandom)
-    { allowsSQLnullArg() = FALSE; 
-      identityRandom_ = FALSE;}
+         { allowsSQLnullArg() = FALSE; }
 
   virtual ~RandomNum();
 
@@ -3887,13 +3886,8 @@ public:
 
   virtual RandomNum *castToRandomNum() { return this; }
 
-  void setIdentityRandom( NABoolean value) {identityRandom_ = value;}
-  NABoolean isIdentityRandom() const {return identityRandom_;}
-
 private:
   NABoolean simpleRandom_;
-  NABoolean identityRandom_;
-
 }; // class RandomNum
 
 // Function to right/left shift a 32 or 64 bit integer.

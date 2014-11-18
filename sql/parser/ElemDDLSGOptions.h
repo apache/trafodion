@@ -36,6 +36,7 @@
 
 #include "BaseTypes.h"
 #include "ElemDDLNode.h"
+#include "SequenceGeneratorAttributes.h"
 
 // -----------------------------------------------------------------------
 // contents of this file
@@ -154,12 +155,23 @@ public:
   inline void setNoMaxValue(NABoolean maxValue)       { isNoMaxValue_ = maxValue; }
   inline void setCycle(NABoolean cycle)               { cycle_ = cycle; }
   inline void setCache(Int64 cache)               { cache_ = cache; }
+  
+  ComFSDataType getFSDataType() { return fsDataType_; }
+  void setFSDataType (ComFSDataType dt) { fsDataType_ = dt;}
 
   //
   // method for binding
   //
 
   virtual ExprNode * bindNode(BindWA * pBindWA);
+
+  // queryType:  0, create sequence.  1, alter sequence.  2, IDENTITY col.
+  short validate(short queryType);
+
+  short genSGA(SequenceGeneratorAttributes &sga);
+
+  short importSGA(const SequenceGeneratorAttributes *sga);
+  short importSGO(const ElemDDLSGOptions *sgo);
 
   //
   // pointer to child parse nodes
@@ -217,6 +229,10 @@ private:
   NABoolean isNoCache_;
   Int64 cache_;
 
+  // Datatype
+  NABoolean isDatatypeSpec_;
+  ComFSDataType   fsDataType_;
+
   // Internal or External SG
   SG_IE_TYPE ieType_;
 
@@ -225,6 +241,6 @@ private:
 
   // Number of options in list
   CollIndex numOptions_;
- 
+
 }; // class ElemDDLSGOptions
 #endif 

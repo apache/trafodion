@@ -1126,7 +1126,7 @@ desc_struct * Generator::createVirtualTableDesc(
 
   if (numViews > 0)
     table_desc->body.table_desc.objectType = COM_VIEW_OBJECT;
-  else if (seqInfo)
+  else if ((seqInfo) && (! columnInfo))
     table_desc->body.table_desc.objectType = COM_SEQUENCE_GENERATOR_OBJECT;
   else
     table_desc->body.table_desc.objectType = COM_BASE_TABLE_OBJECT;
@@ -1351,6 +1351,7 @@ desc_struct * Generator::createVirtualTableDesc(
       seq_desc->body.sequence_generator_desc.objectUID = seqInfo->seqUID;
       
       seq_desc->body.sequence_generator_desc.nextValue = seqInfo->nextValue;
+      seq_desc->body.sequence_generator_desc.redefTime = seqInfo->redefTime;
     }
 
   // cannot simply point to same files desc as the table one,

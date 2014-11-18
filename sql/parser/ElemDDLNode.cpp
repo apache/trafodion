@@ -1080,6 +1080,12 @@ ElemDDLNode::castToElemDDLSGOptionCacheOption()
   return NULL;
 }
  
+ElemDDLSGOptionDatatype *
+ElemDDLNode::castToElemDDLSGOptionDatatype()
+{
+  return NULL;
+}
+ 
 ElemDDLStoreOpt *
 ElemDDLNode::castToElemDDLStoreOpt()
 {
@@ -1389,12 +1395,6 @@ ElemDDLNode::castToStmtDDLAlterTableAlterColumnDefaultValue()
 
 StmtDDLAlterTableAlterColumnSetSGOption *
 ElemDDLNode::castToStmtDDLAlterTableAlterColumnSetSGOption()
-{
-  return NULL;
-}
-
-StmtDDLAlterTableAlterColumnRecalibrateSG *
-ElemDDLNode::castToStmtDDLAlterTableAlterColumnRecalibrateSG()
 {
   return NULL;
 }

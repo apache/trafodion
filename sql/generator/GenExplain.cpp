@@ -54,7 +54,6 @@
 #include "ComTdbHashGrby.h"
 #include "ComTdbMj.h"
 #include "ComTdbSequence.h"
-#include "ComTdbSequenceGenerator.h"
 #include "ComTdbCancel.h"
 #include "HDFSHook.h"
 
@@ -1435,19 +1434,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   return(explainTuple);
 }
 
-// The following function gets called in PartitionAccess::codeGen().
-// A partition access node always has an ex_dp2exe_root_tcb node as its
-// child. Only one row is generated in the Explain output for both
-// nodes
-
-ExplainTuple *
-PartitionAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
-					      ComTdb * tdb,
-					      Generator *generator)
-{
-  return(explainTuple);
-}
-
 // Here we deal with the cases when we either have the nodes split_top,
 // send_top, send_bottom, or when we have an split_top and then a
 // partition access.  These node define process boundaries and always
@@ -1904,84 +1890,6 @@ ExeUtilLongRunning::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     buffer += predicate_;
     buffer += " ";
   }
-
-  explainTuple->setDescription(buffer);
-
-  return(explainTuple);
-}
-
-ExplainTuple*
-SequenceGenerator::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
-	    		                  ComTdb * tdb,
-				          Generator *generator)
-{
-
-  char buf[256];
-  NAString buffer = "sg_start_with_option: ";
-  Int64 sg = 0;
-
-  char str[24];
-  char *int64Str = str;
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGAttributes()->getStartValue();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "%s ", int64Str);
-  buffer += buf; 
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGAttributes()->getSGIncrement();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_increment_option: %s ", int64Str);
-  buffer += buf; 
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGAttributes()->getSGMaxValue();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_maximum_option: %s ", int64Str);
-  buffer += buf; 
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGAttributes()->getSGMinValue();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_minimum_option: %s ", int64Str);
-  buffer += buf; 
-
-  UInt32 sgu32 = ((ComTdbSequenceGenerator*)tdb)->getSGAttributes()->getSGDataType();
-
-  if (sgu32 == COM_LARGEINT_SIGNED_SDT)
-    sprintf(buf, "sg_datatype: SIGNED LARGEINT ");
-  else if (sgu32 == COM_SMALLINT_UNSIGNED_SDT)
-    sprintf(buf, "sg_datatype: UNSIGNED SMALLINT ");
-  else if (sgu32 == COM_INTEGER_UNSIGNED_SDT)
-    sprintf(buf, "sg_datatype: UNSIGNED INTEGER ");
-  else
-    sprintf(buf, "sg_datatype: %d ", sgu32);
-  buffer += buf; 
-
-  Int32 sgi32 = ((ComTdbSequenceGenerator*)tdb)->getSGAttributes()->getSGCycleOption();
-
-  if (sgi32)
-    sprintf(buf, "sg_cycle_option: CYCLE ");
-  else
-    sprintf(buf, "sg_cycle_option: NO CYCLE ");
-  buffer += buf; 
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGCacheOverride();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_cache: %s ", int64Str);
-  buffer += buf;
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGCacheInitial();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_cache_initial: %s ", int64Str);
-  buffer += buf;
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGCacheIncrement();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_cache_increment: %s ", int64Str);
-  buffer += buf;
-
-  sg = ((ComTdbSequenceGenerator*)tdb)->getSGCacheMaximum();
-  convertInt64ToAscii(sg, int64Str);
-  sprintf(buf, "sg_cache_maximum: %s ", int64Str);
-  buffer += buf;
 
   explainTuple->setDescription(buffer);
 

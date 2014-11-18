@@ -89,8 +89,6 @@ public:
   // Classification of the subquery
   virtual NABoolean isASubquery() const;
 
-  virtual NABoolean isASeqGenSubquery() const { return FALSE; };
-
   NABoolean isARowSubquery() const 
                       { return (getOperatorType() == ITM_ROW_SUBQUERY); }; 
   NABoolean isAnExistsSubquery() const 
@@ -231,35 +229,6 @@ public:
                        enum NABuiltInTypeEnum defaultQualifier);
 
   virtual ItemExpr * getBlackBoxExpr(NormWA & normWARef, ValueIdSet & aggSet);
-
-  // get a printable string that identifies the operator
-  virtual const NAString getText() const;
-
-  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap); //<aviv>
-
-};
-
-// ***********************************************************************
-// Sequence Generator subquery 
-// ***********************************************************************
-class SeqGenSubquery : public RowSubquery
-{
-  // ITM_ROW_SUBQUERY
-public:
-
-  SeqGenSubquery(RelExpr * tableExpr)
-         : RowSubquery(tableExpr) {}
-
-  virtual ~SeqGenSubquery() {}
-
-  // Each operator supports a (virtual) method for transforming its
-  // scalar expressions to a canonical form
-  virtual void transformNode(NormWA & normWARef,
-			     ExprValueId & locationOfPointerToMe, 
-                             ExprGroupId & introduceSemiJoinHere,
-			     const ValueIdSet & externalInput);
-  
-  virtual NABoolean isASeqGenSubquery() const { return TRUE; };
 
   // get a printable string that identifies the operator
   virtual const NAString getText() const;

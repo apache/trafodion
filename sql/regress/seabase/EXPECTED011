@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Thu Jul 17 16:39:24 2014
+-- Definition current  Wed Nov 12 01:06:16 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -605,10 +605,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>prepare s from 
 +>upsert using load into t011t3 (a,b) values (1,2);
 
-*** ERROR[4246] All column values must be specified when loading data by UPSERT USING LOAD syntax.
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>prepare s from
 +>upsert with no rollback into t011t3

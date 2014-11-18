@@ -129,7 +129,6 @@ GenericUpdate(const CorrName &name,
     avoidHalloween_(FALSE),
     halloweenCannotUseDP2Locks_(FALSE),
     mtsStatement_(FALSE),
-    identityColumnUniqueIndex_(FALSE),
     noRollback_(FALSE),
     isMergeUpdate_(FALSE),
     isMergeDelete_(FALSE),
@@ -141,7 +140,8 @@ GenericUpdate(const CorrName &name,
     cursorHbaseOper_(FALSE),
     uniqueRowsetHbaseOper_(FALSE),
     canDoCheckAndUpdel_(FALSE),
-    noCheck_(FALSE)
+    noDTMxn_(FALSE),
+     noCheck_(FALSE)
   {}
 
   // copy ctor
@@ -204,7 +204,6 @@ GenericUpdate(const CorrName &name,
   void setPartKey(SearchKey *partKey)             { partKeys_ = partKey; }
 
   ValueIdSet    &usedColumns()                    { return usedColumns_; }
-  ValueId &identityColumn() {return identityColumnId_;}
 
   NABoolean isMerge() const { return (isMergeUpdate_ || isMergeDelete_); }
 
@@ -238,9 +237,6 @@ GenericUpdate(const CorrName &name,
                          { return mtsStatement_; }
   void setMtsStatement(NABoolean lastRow)
                          { mtsStatement_ = lastRow; }
-
-  NABoolean getIdentityColumnUniqueIndex() const  { return identityColumnUniqueIndex_; }
-  void setIdentityColumnUniqueIndex(NABoolean flag) { identityColumnUniqueIndex_ = flag; }
 
   //No rollback - Transaction Type support
   NABoolean isNoRollback() const
@@ -512,6 +508,8 @@ GenericUpdate(const CorrName &name,
   const NABoolean &uniqueRowsetHbaseOper() const { return uniqueRowsetHbaseOper_; }
   NABoolean &canDoCheckAndUpdel() { return canDoCheckAndUpdel_; }
 
+  NABoolean &noDTMxn() { return noDTMxn_; }
+
   NABoolean noCheck() { return noCheck_; }
   void setNoCheck(NABoolean v) { noCheck_ = v; }
 protected:
@@ -687,12 +685,7 @@ private:
   //
   NABoolean checkForHalloweenR2(Int32 numScansToFind);
 
-
-  virtual void fixupIdentityColumn(BindWA *bindWA) {};
-  virtual NABoolean doesIdentityColumnHaveAUniqueIndex(ItemExpr *nacol) const {return FALSE;}
-
   NABoolean checkForNotAtomicStatement(BindWA *bindWA, Lng32 sqlcode, NAString objname, NAString tabname);
-
 
   // name of the table affected by the operation
   CorrName updatedTableName_;
@@ -770,10 +763,6 @@ private:
   ValueIdSet executorPred_;
   ItemExpr  *executorPredTree_;
 
-  // Identity Column value id. Used during CodeGen() for partition access
-  // and ex_split_top method to generate the sequenceGenerationExpr_.
-  ValueId          identityColumnId_;
-
   // SQL/MP check constraints on the table to be updated.
   ValueIdList checkConstraints_;
 
@@ -812,12 +801,6 @@ private:
   NABoolean updateOnRollback_;
 
   ValueIdMap oldToNewMap_;
-
-  // QSTUFF
-
-  // Indicates that the update is on a table/index with
-  // IDENTITY column as the clustering index(key)/unique index.
-  NABoolean identityColumnUniqueIndex_;
 
   //MTS - Multi Transaction Support
   // this indicates that the update is part of an MTS query
@@ -883,6 +866,11 @@ private:
   NABoolean cursorHbaseOper_;
   NABoolean uniqueRowsetHbaseOper_;
   NABoolean canDoCheckAndUpdel_;
+
+  // if set to ON, then this operator is not run as part of an enclosing DTM transaction 
+  // nor is a transaction needed to execute it.
+  // It is executed using underlying hbase single row transaction consistency.
+  NABoolean noDTMxn_;
 
   // If set, then for seabase tables, no check of rows existence or non-existence
   // is done during an insert or delete operation. 
@@ -1136,16 +1124,6 @@ protected:
   NABoolean enableAqrWnrEmpty_;
 
 private:
-
-  // Fixup GenericUpdate::identityColumnId_. (i.e)
-  // If the insert is dealing with a tuple list then the
-  // \:sys_Identity_Value is cast to its type.
-  // In this case grab the cast(\:sys_Identity_value) and store it
-  // GenericUpdate::identityColumnId_ in place of \:sys_Identity_value
-  //
-  virtual void fixupIdentityColumn(BindWA *bindWA);
-
-  virtual NABoolean doesIdentityColumnHaveAUniqueIndex(ItemExpr *nacol) const;
 
   ItemExpr        *insertColTree_;
   ItemExpr        *orderByTree_;

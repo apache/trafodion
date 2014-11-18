@@ -425,6 +425,61 @@ NAString ElemDDLSGOptionCacheOption::getSyntax() const
   return syntax; 
 } // getSyntax
 
+// -----------------------------------------------------------------------
+// methods for class ElemDDLSGOptionDatatype
+// -----------------------------------------------------------------------
+
+// constructor
+
+ElemDDLSGOptionDatatype::ElemDDLSGOptionDatatype(ComFSDataType dt)
+: ElemDDLSGOption(ELM_SG_OPT_DATATYPE_ELEM),
+  dt_(dt)
+{
+} // ElemDDLSGOptionDatatype::ElemDDLSGOptionDatatype()
+
+ElemDDLSGOptionDatatype::ElemDDLSGOptionDatatype()
+: ElemDDLSGOption(ELM_SG_OPT_DATATYPE_ELEM),
+  dt_(COM_UNKNOWN_FSDT)
+{
+} // ElemDDLSGOptionDatatype::ElemDDLSGOptionDatatype()
+
+// virtual destructor
+ElemDDLSGOptionDatatype::~ElemDDLSGOptionDatatype()
+{
+}
+
+// casting
+ElemDDLSGOptionDatatype *
+ElemDDLSGOptionDatatype::castToElemDDLSGOptionDatatype()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString
+ElemDDLSGOptionDatatype::displayLabel1() const
+{
+  return (NAString("DATATYPE "));
+}
+
+const NAString
+ElemDDLSGOptionDatatype::getText() const
+{
+  return "ElemDDLSGOptionDatatype";
+}
+
+// method for building text
+// virtual 
+NAString ElemDDLSGOptionDatatype::getSyntax() const
+{
+  NAString syntax = "Datatype: ";
+   
+  return syntax; 
+} // getSyntax
+
 //
 // End of File
 //

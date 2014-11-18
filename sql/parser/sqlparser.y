@@ -951,7 +951,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REAL
 %token <tokval> TOK_REAL_IEEE
 %token <tokval> TOK_REAL_TANDEM
-%token <tokval> TOK_RECALIBRATE         /* Internal sequence generator non-reserved */
 %token <tokval> TOK_RECOMPUTE             
 %token <tokval> TOK_RECORD_SEPARATOR
 %token <tokval> TOK_RECOVER
@@ -1989,7 +1988,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <hbaseColumnCreateOptions>                hbase_column_create_value
 %type <item>      			cast_specification
 %type <item>      			value_function
-%type <item>      			identity_function
 %type <item>                    optional_round_scale
 %type <item>                    math_function
 %type <operator_type>           math_func_0_operand
@@ -2493,7 +2491,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>  		alter_table_alter_column_clause //++ MV
 %type <pStmtDDL>  		alter_table_alter_column_default_value 
 %type <pStmtDDL>  		alter_table_alter_column_set_sg_option 
-%type <pStmtDDL>  		alter_table_alter_column_recalibrate_sg 
 %type <boolean>   		alter_column_type //++ MV
 %type <pStmtDDL>  		alter_table_set_constraint_clause
 %type <pStmtDDL>                alter_table_disable_constraint_clause
@@ -2568,6 +2565,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pElemDDL>  		min_value_option
 %type <pElemDDL>  		cache_option
 %type <pElemDDL>  		cycle_option
+%type <pElemDDL>                   datatype_option
 %type <item>      		datetime_value_function
 %type <item>      		datetime_misc_function
 %type <stringval>  		format_attributes
@@ -8295,8 +8293,6 @@ value_function :
 
      | string_function
 
-     | identity_function
-
      | user_defined_scalar_function
 
      | select_lob_to_obj_function
@@ -9382,36 +9378,6 @@ builtin_function_user : TOK_USER
 				    AnsiUSERFunction(ITM_SESSION_USER);
 				}
 
-
-/* type item */
-identity_function : 
-                  TOK_IDENTITY
-                  {
-#ifdef _DEBUG
-		  if (getenv("IDENTITY_RANDOM"))
-		    {
-		      if (allowRandFunction()) {
-			$$ = new (PARSERHEAP()) RandomNum(/* NULL */);
-			$$->castToRandomNum()->setIdentityRandom(TRUE);
-		      } else {
-			*SqlParser_Diags << DgSqlCode(-4313); 
-			yyerror(""); YYABORT;
-		      }
-		    }
-		  else
-#endif
-		    {
-		      $$ = new (PARSERHEAP()) 
-			IdentityVar(ITM_IDENTITY,
-				    "_sys_IdentityValue",
-				    new (PARSERHEAP()) SQLLargeInt(TRUE, 
-								   FALSE),
-				    TRUE 
-				    );
-		    }
-
-	          } 
-
  /* type pElemDDL */
 sg_identity_function : 
                   TOK_IDENTITY
@@ -9463,20 +9429,22 @@ sequence_generator_option : start_with_option
                       | min_value_option
                       | cycle_option
                       | cache_option
+                      | datatype_option
 
 /* type pElemDDL */
 start_with_option : TOK_START TOK_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
     {
-      // Validate that the START WITH number is not negative.
-      // Also validate that the value is not larger than
+      // Validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
-         
-      NABoolean result = validateSGOption($3, FALSE,(char *)$4->data(), "START WITH", "SEQUENCE");
+
+      NABoolean result = validateSGOption(TRUE, FALSE,(char *)$4->data(), "START WITH", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
-      
+
       Int64 value = atoInt64($4->data()); 
+     if (NOT $3)
+        value = -value;
        
       $$ = new (PARSERHEAP())
 	ElemDDLSGOptionStartValue(value); 
@@ -9486,16 +9454,16 @@ start_with_option : TOK_START TOK_WITH sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
 /* type pElemDDL */                                
 max_value_option : TOK_MAXVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
     {
-      // Validate that the MAXVALUE number is not negative.
-      // Also validate that the value is not larger than
+      // Validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
-         
-      NABoolean result = validateSGOption($2, FALSE, (char *)$3->data(), "MAXVALUE", "SEQUENCE");
+      NABoolean result = validateSGOption(TRUE, FALSE, (char *)$3->data(), "MAXVALUE", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
-      
+
       Int64 value = atoInt64($3->data()); 
+      if (NOT $2)
+        value = -value;
       $$ = new (PARSERHEAP())
 	ElemDDLSGOptionMaxValue(value /*Int64*/); 
     }
@@ -9511,16 +9479,17 @@ max_value_option : TOK_MAXVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
  /* type pElemDDL */
  min_value_option : TOK_MINVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
     {
-      // Validate that the MINVALUE number is not negative.
-      // Also validate that the value is not larger than
+      // Validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
          
-      NABoolean result = validateSGOption($2, FALSE, (char *)$3->data(), "MINVALUE", "SEQUENCE");
+      NABoolean result = validateSGOption(TRUE, FALSE, (char *)$3->data(), "MINVALUE", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
-      
+
       Int64 value = atoInt64($3->data()); 
+      if (NOT $2)
+        value = -value;
       $$ = new (PARSERHEAP())
 	ElemDDLSGOptionMinValue(value /*Int64*/); 
      }
@@ -9536,15 +9505,14 @@ max_value_option : TOK_MAXVALUE sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
  /* type pElemDDL */                             
  increment_option : TOK_INCREMENT TOK_BY sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
      {
-      // Validate that the INCREMENT BY number is not negative.
-      // Also validate that the value is not larger than
+      // Validate that the value is not larger than
       // the maximum allowed for a LARGEINT. 
          
-      NABoolean result = validateSGOption($3, TRUE, (char *)$4->data(), "INCREMENT BY", "SEQUENCE");
+       NABoolean result = validateSGOption(TRUE, TRUE, (char *)$4->data(), "INCREMENT BY", "SEQUENCE");
       
       if (result == FALSE)
         YYERROR;
-       
+
       Int64 value = atoInt64($4->data()); 
       if (NOT $3)
 	value = -value;
@@ -9588,7 +9556,20 @@ cache_option : TOK_CACHE NUMERIC_LITERAL_EXACT_NO_SCALE
 	  ElemDDLSGOptionCacheOption(FALSE, 0);
   
      }
-      
+ 
+/* type pElemDDL */
+datatype_option : int_type
+     {
+       NumericType * type = (NumericType*)$1;
+       if (NOT DFS2REC::isBinary(type->getFSDatatype()))
+         YYERROR;
+
+        // CACHE Option
+        $$ = new (PARSERHEAP())
+	  ElemDDLSGOptionDatatype((ComFSDataType)type->getFSDatatype());
+     } 
+                                          
+     
 /* type boolean */
 sg_sign : empty { $$ = TRUE; }  // sequence generator option value sign
         | '+' { $$ = TRUE; }   
@@ -27791,19 +27772,10 @@ sg_type : TOK_BY TOK_DEFAULT TOK_AS
  /* type pElemDDL */                              
  sg_identity_option : sg_identity_function
                                 { /* sg_identity_option */
-                                
-                                IdentityVar *iv = new (PARSERHEAP()) 
-			            IdentityVar(ITM_IDENTITY,
-				    "_sys_IdentityValue",
-				    new (PARSERHEAP()) SQLLargeInt(TRUE, 
-								   FALSE),
-				    TRUE 
-				    );
-				    
 				  $$ = new (PARSERHEAP())
 				    ElemDDLColDefault(
 						      ElemDDLColDefault::COL_DEFAULT,
-						      iv, /*IdentityVar HostVar */	 
+						      NULL,
 						      (ElemDDLSGOptions *)$1  /* ElemDDLSGOptions */
 						      );
                                 }                               
@@ -32281,7 +32253,7 @@ create_sequence_statement : TOK_CREATE TOK_SEQUENCE ddl_qualified_name sequence_
 		      {
 			ElemDDLSGOptions *sgOptions = 
 			  new (PARSERHEAP()) ElemDDLSGOptions(
-							      2, /* SG_EXTERNAL */
+							      COM_EXTERNAL_SG,
 							      $4 /*sequence_generator_option_list*/);
 			
 			$$ = new (PARSERHEAP())
@@ -32289,6 +32261,24 @@ create_sequence_statement : TOK_CREATE TOK_SEQUENCE ddl_qualified_name sequence_
 					      *$3 /*seq_name_clause*/,
 					      sgOptions /*seq gen options*/);
 			delete $3 /*seq_name*/;
+		      }
+                   | TOK_CREATE TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+		      {
+                        if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                          {
+                            yyerror(""); YYERROR; /*internal syntax only!*/
+                          }
+
+			ElemDDLSGOptions *sgOptions = 
+			  new (PARSERHEAP()) ElemDDLSGOptions(
+							      COM_INTERNAL_SG, 
+							      $5 /*sequence_generator_option_list*/);
+			
+			$$ = new (PARSERHEAP())
+			  StmtDDLCreateSequence(
+					      *$4 /*seq_name_clause*/,
+					      sgOptions /*seq gen options*/);
+			delete $4 /*seq_name*/;
 		      }
 
 alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_generator_options
@@ -32304,6 +32294,26 @@ alter_sequence_statement : TOK_ALTER TOK_SEQUENCE ddl_qualified_name sequence_ge
 					      sgOptions /*seq gen options*/,
 					      TRUE /*alter*/);
 			delete $3 /*seq_name*/;
+		      }
+
+alter_sequence_statement : TOK_ALTER TOK_INTERNAL TOK_SEQUENCE ddl_qualified_name sequence_generator_options
+		      {
+                        if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                          {
+                            yyerror(""); YYERROR; /*internal syntax only!*/
+                          }
+
+			ElemDDLSGOptions *sgOptions = 
+			  new (PARSERHEAP()) ElemDDLSGOptions(
+							      1, /* SG_INTERNAL */
+							      $5 /*sequence_generator_option_list*/);
+			
+			$$ = new (PARSERHEAP())
+			  StmtDDLCreateSequence(
+					      *$4 /*seq_name_clause*/,
+					      sgOptions /*seq gen options*/,
+					      TRUE /*alter*/);
+			delete $4 /*seq_name*/;
 		      }
 
 /* type pStmtDDL */
@@ -33694,11 +33704,6 @@ alter_table_action : add_table_constraint_definition
 
 			}
 			
-		      | alter_table_alter_column_recalibrate_sg 
-			{
-      				$$ = $1;
-
-			}
 
 /* type pStmtDDL */
 alter_synonym_statement : TOK_ALTER TOK_SYNONYM ddl_qualified_name 
@@ -33766,76 +33771,6 @@ alter_table_alter_column_set_sg_option : TOK_ALTER TOK_COLUMN column_name TOK_SE
 				  delete $3;
 				}
 				
-// type pStmtDDL
-alter_table_alter_column_recalibrate_sg : TOK_ALTER TOK_COLUMN column_name TOK_RECALIBRATE
-				{
-				                                      
-				  $$ = new (PARSERHEAP())
-				    StmtDDLAlterTableAlterColumnRecalibrateSG(
-				      *$3         /* column name */,
-				      (Int64)0,
-				      FALSE,
-				      TRUE);
-				      
-				  delete $3;
-				}
-				| TOK_ALTER TOK_COLUMN column_name TOK_RECALIBRATE TOK_TO sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE
-				{
-				
-				  // Validate that the MAXVALUE number is not negative.
-				  // Also validate that the value is not larger than
- 				  // the maximum allowed for a LARGEINT. 
-         
-				  NABoolean result = validateSGOption($6, FALSE, (char *)$7->data(), "RECALIBRATE", "IDENTITY column");
-      
-				  if (result == FALSE)
-				    YYERROR;
-				    
-				  Int64 value = atoInt64($7->data());  
-				  
-				  // For recalibration, the user has provided
-				  // a value to be used for the CURRENT_VALUE.
-				  // The maximum of the IDENTITY column will
-				  // be selected and used for error comparisons. 
-				                                   
-				  $$ = new (PARSERHEAP())
-				    StmtDDLAlterTableAlterColumnRecalibrateSG(
-				      *$3         /* column name */,
-				      value,
-				      TRUE        /* user specified value */,
-				      TRUE        /* perform select on IDENTITY column */);
-				      
-				  delete $3;
-				}								
-| TOK_ALTER TOK_COLUMN column_name TOK_RECALIBRATE TOK_TO sg_sign NUMERIC_LITERAL_EXACT_NO_SCALE TOK_NO TOK_SELECT
-				{
-				
-				  // Validate that the MAXVALUE number is not negative.
-				  // Also validate that the value is not larger than
- 				  // the maximum allowed for a LARGEINT. 
-         
-				  NABoolean result = validateSGOption($6, FALSE, (char *)$7->data(), "RECALIBRATE", "IDENTITY column");
-      
-				  if (result == FALSE)
-				    YYERROR;
-				    
-				  Int64 value = atoInt64($7->data());  
-				
-				  // For recalibration, the user has provided
-				  // a value to be used for the CURRENT_VALUE.
-				  // The maximum of the IDENTITY column will
-				  // NOT be selected and used for error comparisons.
-				                                  
-				  $$ = new (PARSERHEAP())
-				    StmtDDLAlterTableAlterColumnRecalibrateSG(
-				      *$3         /* column name */,
-				      value,
-				      TRUE        /* Is user specified */,
-				      FALSE       /* Perform select on IDENTITY column */);
-				      
-				  delete $3;
-				}							
-
 /* type pElemDDL */
 alter_col_default_clause_arg : literal
                                {
@@ -35500,7 +35435,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RATE 
                       | TOK_REAL_IEEE
                       | TOK_REAL_TANDEM
-                      | TOK_RECALIBRATE // Internal sequence generator
                       | TOK_RECOMPUTE // MV 
                       | TOK_RECORD_SEPARATOR
                       | TOK_RECOVER

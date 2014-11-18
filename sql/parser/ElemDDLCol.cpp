@@ -167,22 +167,24 @@ ElemDDLColDef::ElemDDLColDef(const NAString & columnName,
     case ElemDDLColDefault::COL_DEFAULT:
       {
 	defaultClauseStatus_ = DEFAULT_CLAUSE_SPEC;
-	ComASSERT(pColDefault->getDefaultValueExpr() NEQ NULL);
-	pDefault_ = pColDefault->getDefaultValueExpr();
 
-	// Is this an IDENTITY column?
-	if(pDefault_->getOperatorType() == ITM_IDENTITY)
-	{
-	  isIdentityColumn = TRUE;
-          pSGOptions_ = pColDefault->getSGOptions();
-          pSGLocation_ = pColDefault->getSGLocation();
-	}
+        if (pColDefault->getSGOptions())
+          {
+            isIdentityColumn = TRUE;
+            pSGOptions_ = pColDefault->getSGOptions();
+            pSGLocation_ = pColDefault->getSGLocation();
+          }
+        else
+          {
+            ComASSERT(pColDefault->getDefaultValueExpr() NEQ NULL);
+            pDefault_ = pColDefault->getDefaultValueExpr();
+          }
 
 	// The cast ItemExpr to ConstValue for (ConstValue *)pDefault_; 
 	// statement below sets arbitary value for the isNULL_. 
 	// Bypass these checks for ID column (basically ITM_IDENTITY).
 	ConstValue *cvDef = (ConstValue *)pDefault_;
-	if (!cvDef->isNull() && (!isIdentityColumn))
+	if ((cvDef && !cvDef->isNull()) && (!isIdentityColumn))
 	  {
 	    const NAType *cvTyp = cvDef->getType();
             NABoolean isAnErrorAlreadyIssued = FALSE;

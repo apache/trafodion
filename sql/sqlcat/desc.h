@@ -392,6 +392,7 @@ struct sequence_generator_desc_struct {
   ComSInt64                  objectUID;
   char *                          sgLocation;
   ComSInt64                 nextValue;
+  ComSInt64                 redefTime;
 #ifdef NA_LITTLE_ENDIAN
   void encode() {}
 #endif  

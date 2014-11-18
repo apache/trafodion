@@ -41,21 +41,21 @@
 //**************************************************************************
 // class SeqGenEntry
 //**************************************************************************
-SeqGenEntry::SeqGenEntry(SequenceGeneratorAttributes &sga, CollHeap * heap)
-  : sga_(sga),
-    heap_(heap)
+SeqGenEntry::SeqGenEntry(Int64 sgUID, CollHeap * heap)
+  : heap_(heap),
+    sgUID_(sgUID)
 {
   fetchNewRange_ = TRUE;
   cliInterfaceArr_ = NULL;
 }
 
-short SeqGenEntry::fetchNewRange()
+short SeqGenEntry::fetchNewRange(SequenceGeneratorAttributes &inSGA)
 {
   Lng32 cliRC = 0;
 
   // fetch new range from Seq Generator database
   SequenceGeneratorAttributes sga;
-  sga = sga_;
+  sga = inSGA;
   if (sga.getSGCache() == 0)
     sga.setSGCache(1); 
   cliRC = SQL_EXEC_SeqGenCliInterface(&cliInterfaceArr_, &sga);
@@ -76,20 +76,20 @@ short SeqGenEntry::fetchNewRange()
   return 0;
 }
 
-short SeqGenEntry::getNextSeqVal(Int64 &seqVal)
+short SeqGenEntry::getNextSeqVal(SequenceGeneratorAttributes &sga, Int64 &seqVal)
 {
   short rc = 0;
 
   if (NOT fetchNewRange_)
     {
-      cachedCurrValue_ += sga_.getSGIncrement();
+      cachedCurrValue_ += sga.getSGIncrement();
       if (cachedCurrValue_ > cachedEndValue_)
 	fetchNewRange_ = TRUE;
     }
 
   if (fetchNewRange_)
     {
-      rc = fetchNewRange();
+      rc = fetchNewRange(sga);
       if (rc)
 	return rc;
     }
@@ -99,13 +99,13 @@ short SeqGenEntry::getNextSeqVal(Int64 &seqVal)
   return 0;
 }
 
-short SeqGenEntry::getCurrSeqVal(Int64 &seqVal)
+short SeqGenEntry::getCurrSeqVal(SequenceGeneratorAttributes &sga, Int64 &seqVal)
 {
   short rc = 0;
 
   if (fetchNewRange_)
     {
-      rc = fetchNewRange();
+      rc = fetchNewRange(sga);
       if (rc)
 	return rc;
     }
@@ -130,13 +130,13 @@ SeqGenEntry * SequenceValueGenerator::getEntry(SequenceGeneratorAttributes &sga)
   SeqGenEntry * sge = NULL;
   while ((sge = (SeqGenEntry *)sgQueue()->getNext()) != NULL)
     {
-      if (sge->seqGenAttrs().getSGObjectUID().get_value() == hashVal)
+      if (sge->getSGObjectUID() == hashVal)
 	break;
     }
 
   if (! sge)
     {
-      sge = new(getHeap()) SeqGenEntry(sga, getHeap());
+      sge = new(getHeap()) SeqGenEntry(hashVal, getHeap());
       sgQueue()->insert((char*)&hashVal, sizeof(hashVal), sge);
     }
 
@@ -148,7 +148,7 @@ short SequenceValueGenerator::getNextSeqVal(SequenceGeneratorAttributes &sga,
 {
 
   SeqGenEntry * sge = getEntry(sga);
-  return sge->getNextSeqVal(seqVal);
+  return sge->getNextSeqVal(sga, seqVal);
 }
 
 short SequenceValueGenerator::getCurrSeqVal(SequenceGeneratorAttributes &sga,
@@ -156,6 +156,6 @@ short SequenceValueGenerator::getCurrSeqVal(SequenceGeneratorAttributes &sga,
 {
 
   SeqGenEntry * sge = getEntry(sga);
-  return sge->getCurrSeqVal(seqVal);
+  return sge->getCurrSeqVal(sga, seqVal);
 }
 

@@ -64,7 +64,6 @@
 #include "ComTdbSplitBottom.h"
 #include "ComTdbSendTop.h"
 #include "ComTdbSendBottom.h"
-#include "ComTdbSequenceGenerator.h"
 #include "ComTdbSequence.h"
 #include "ComTdbStoredProc.h"
 #include "ComTdbTupleFlow.h"

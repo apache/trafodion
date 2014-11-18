@@ -736,10 +736,6 @@ const char * NodeTypeToString(ComTdb::ex_node_type nodeType)
       tdbName = "ExLock";
       break;
 
-    case ComTdb::ex_SEQGEN:
-      tdbName = "ExSequenceGenerator";
-      break;
-
     case ComTdb::ex_SORT:
       tdbName = "ExSort";
       break;
@@ -808,10 +804,6 @@ const char * NodeTypeToString(ComTdb::ex_node_type nodeType)
 
     case ComTdb::ex_PROBE_CACHE:		
       tdbName = "ExProbeCache";
-      break;
-
-    case ComTdb::ex_NEXTVALUEFOR:
-      tdbName = "ExNextValueFor";
       break;
 
     case ComTdb::ex_HDFS_SCAN:

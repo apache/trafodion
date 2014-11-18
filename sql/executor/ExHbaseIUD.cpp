@@ -1969,7 +1969,13 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case UPDATE_ROW:
 	  {
-             HbaseStr rowID;
+            Lng32 ij = 0;
+            while (ij)
+              {
+                ij = 2 - ij;
+              }
+
+            HbaseStr rowID;
             rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
             rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();
             retcode =  tcb_->ehi_->insertRow(tcb_->table_,
@@ -2014,9 +2020,9 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 						     tcb_->row_,
 						     columnToCheck,
 						     colValToCheck,
+                                                     (tcb_->hbaseAccessTdb().useHbaseXn() ? TRUE : FALSE),
 						     -1, //colTS_,
 						     tcb_->getHbaseAccessStats());
-
 	    if (retcode == HBASE_ROW_NOTFOUND_ERROR)
 	      {
 		step_ = NEXT_ROW_AFTER_UPDATE;

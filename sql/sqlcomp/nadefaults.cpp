@@ -1946,8 +1946,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDint__(HJ_SCAN_TO_NJ_PROBE_SPEED_RATIO,        "2000"),
   DDkwd__(HJ_TYPE,				"HYBRID"),
   DD_____(HP_ROUTINES_SCHEMA,                   "NEO.HP_ROUTINES"), // Must be in form <cat>.<sch>
-  DD16_64(IDENTITY_MASK_BITS,                     "16"),
-  DDkwd__(IDENTITY_USER_DUPLICATE_VALUE,        "OFF"),
   DDkwd__(IF_LOCKED,				"WAIT"),
 
     // ignore_duplicate_keys is no more valid. It is still
@@ -3051,23 +3049,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  SDDkwd__(SEMIJOIN_TO_INNERJOIN_TRANSFORMATION, "SYSTEM"),
   // Disallow/Allow semi and anti-semi joins in MultiJoin framework
   DDkwd__(SEMI_JOINS_SPOIL_JBB,        "OFF"),
-  DDui___(SEQUENCE_GENERATOR_BUFFER_SIZE,      "10240"), // size of each buffer
- // If not zero, is an SG cache override.
- XDDui___(SEQUENCE_GENERATOR_CACHE,           "0"),
- // Increment, initial and maximum
- XDDui1__(SEQUENCE_GENERATOR_CACHE_INCREMENT, "10"),
- // values are used for dynamic calculation
- XDDui1__(SEQUENCE_GENERATOR_CACHE_INITIAL,   "1"),
- // of the SG cache.
- XDDui1__(SEQUENCE_GENERATOR_CACHE_MAXIMUM,   "10000"),
- // Number of times to retry
-  DDui___(SEQUENCE_GENERATOR_CACHE_RETRY,     "0"),
- // number of buffers
-  DDui___(SEQUENCE_GENERATOR_NUM_BUFFERS,      "2"),
-  // Whether to lock the base table containing the IDENTITY column during SG recalibration
-  DDkwd__(SEQUENCE_GENERATOR_RECALIBRATION_TABLE_LOCK,	        "ON"),
-  DDui1__(SEQUENCE_GENERATOR_SIZE_DOWN,       "4"),
-  DDui1__(SEQUENCE_GENERATOR_SIZE_UP,        "4"),
 
   DDkwd__(SEQUENTIAL_BLOCKSPLIT,                "SYSTEM"),
 
@@ -3241,9 +3222,14 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
+  DDkwd__(TRAF_NO_DTM_XN,      "OFF"),
+
   DDint__(TRAF_NUM_OF_SALT_PARTNS,                     "-1"),
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
+
+  DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),   
+ 
   DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
   DD_____(TRAF_UNLOAD_DEF_NULL_STRING,                 "" ),

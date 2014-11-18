@@ -1578,9 +1578,6 @@ public:
   inline NABoolean getDupWarning () const {return dupWarning_;}
   inline void setDupWarning (NABoolean val) {dupWarning_ = val;}
 
-  inline NABoolean getDupIdentity () const {return dupIdentity_;}
-  inline void setDupIdentity (NABoolean val) {dupIdentity_ = val;}
-
   inline Int32 getRoutineInvocationNum() { return routineInvocationNum_++ ; }
   void setInliningInfoFlagsToSetRecursivly(Int32 flags) { inliningInfoFlagsToSetRecursivly_ = flags; }
   Int32  getInliningInfoFlagsToSetRecursivly() const { return inliningInfoFlagsToSetRecursivly_; }
@@ -1896,9 +1893,6 @@ private:
   LIST (ItemExpr *) spHVDPs_;
   NABoolean dupWarning_;
 
-  // Should we generate 8108 for duplicate IDENTITY column values?
-  NABoolean dupIdentity_;
-   
   // Set these flags recursivly in every RelExpr node being bound.
   Int32  inliningInfoFlagsToSetRecursivly_;
 

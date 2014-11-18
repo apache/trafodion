@@ -62,6 +62,8 @@ class StmtDDLAlterTableRename;
 class StmtDDLAlterTableAddColumn;
 class StmtDDLAlterTableDropColumn;
 
+class StmtDDLAlterTableAlterColumnSetSGOption;
+
 class StmtDDLCreateView;
 class StmtDDLDropView;
 
@@ -242,6 +244,7 @@ class CmpSeabaseDDL
 			  NABoolean implicitPK,
 			  CollIndex numSysCols,
                           NABoolean alignedFormat,
+                          Lng32 *identityColPos = NULL,
 			  NAMemory * heap = NULL);
 
 
@@ -523,6 +526,14 @@ class CmpSeabaseDDL
 			 const char * schName,
 			 const char * objName);
 
+  short updateObjectRedefTime(
+                              ExeCliInterface *cliInterface,
+                              const NAString &catName,
+                              const NAString &schName,
+                              const NAString &objName,
+                              const char * objType,
+                              Int64 rt = -1);
+
   short updateObjectValidDef(
 			     ExeCliInterface *cliInterface,
 			     const char * catName,
@@ -719,6 +730,10 @@ class CmpSeabaseDDL
 				   StmtDDLAlterTableDropColumn * alterDropColNode,
 				   NAString &currCatName, NAString &currSchName);
   
+  void alterSeabaseTableAlterIdentityColumn(
+				   StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode,
+				   NAString &currCatName, NAString &currSchName);
+  
   void alterSeabaseTableAddPKeyConstraint(
 					  StmtDDLAddConstraint * alterAddConstraint,
 					  NAString &currCatName, NAString &currSchName);
@@ -867,17 +882,29 @@ class CmpSeabaseDDL
 					const NAString &schName, 
 					const NAString &objName);
 
+  ComTdbVirtTableSequenceInfo * getSeabaseSequenceInfo
+    (const NAString &catName, 
+     const NAString &schName, 
+     const NAString &seqName,
+     NAString &extSeqName,
+     Int32 objectOwner,
+     Int64 seqUID);
+
   desc_struct * getSeabaseSequenceDesc(const NAString &catName, 
 				       const NAString &schName, 
 				       const NAString &seqName);
     
   Lng32 getSeabaseColumnInfo(ExeCliInterface *cliInterface,
-                                   Int64 objUID,
-                                   char *direction,
-                                   NABoolean *tableIsSalted,
-                                   Lng32 *numCols,
-                                   ComTdbVirtTableColumnInfo **colInfoArray);
- 
+                             Int64 objUID,
+                             const NAString &catName,
+                             const NAString &schName,
+                             const NAString &objName,
+                             char *direction,
+                             NABoolean *tableIsSalted,
+                             Lng32 * identityColPos,
+                             Lng32 *numCols,
+                             ComTdbVirtTableColumnInfo **colInfoArray);
+  
   desc_struct * getSeabaseUserTableDesc(const NAString &catName, 
 					const NAString &schName, 
 					const NAString &objName,

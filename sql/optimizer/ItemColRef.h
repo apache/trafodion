@@ -54,7 +54,6 @@ class SelParameter;
 class DynamicParam;
 class RoutineParam;
 class HostVar;
-class IdentityVar;
 class IndexColumn;
 class SelIndex;
 class RoutineDesc;
@@ -1030,30 +1029,6 @@ private:
   NAString tablename_;
 }; // class HostVar
 
-
-class IdentityVar : public HostVar
-{
-
-public:
-
-//ctor
-IdentityVar(OperatorTypeEnum otype,
-	  const NAString & varName, 
-  	  const NAType  *type, 
-          NABoolean isSystemGen = FALSE) 
-  : HostVar(otype, varName, type, isSystemGen){}
-
-  // copy ctor
-  IdentityVar(const IdentityVar& orig)
-    : HostVar(orig) {}
-  
-  virtual ~IdentityVar() {}
-
-  // a virtual function for performing name binding within the query tree
-  virtual ItemExpr * bindNode(BindWA *bindWA);
-
-
-}; //class IdentityVar
 
 // -----------------------------------------------------------------------
 // Parameter is the base class of DynamicParam and ConstantParameter

@@ -7391,7 +7391,9 @@ Lng32 SQLCLI_Xact(/*IN*/ CliGlobals * cliGlobals,
 	if ((currContext.getTransaction()->xnInProgress()) &&
 	    (currContext.getTransaction()->exeStartedXn()))
 	  {
-	    currContext.getTransaction()->commitTransaction();
+	    retcode = currContext.getTransaction()->commitTransaction();
+            if (retcode)
+              return -1;
 	  }
       }
       //LCOV_EXCL_STOP
@@ -10744,22 +10746,20 @@ Lng32 SQLCLI_SEcliInterface
 ///////////////////////////////////////////////////////////////////////
 // Current design to update sequence metadata:
 //
-//    A unique select...update is done which updates next_value in the row and returns 
-//    back the original(pre-update) and updated next_value.
-//    Another select is done after update to retrieve the after-update next_value.
+// If there is no Xn running:
+//    A transaction is started, update is done within it, and then that Xn is committed.
+//    If there is a conflict during commit, then update is retried.
+//   
+// If there is a user Xn running:
+//    Seq Gen table is not updated as part of user xn. It is run in non-transactional
+//    mode using hbase transactions.
+//    To avoid concurrent updates to seq gen table,
+//    Sequence gen table col upd_ts is updated with a generated unique value.
+//    Table is then updated with new nextValue and current value is retrieved.
+//    At the end, upd_ts value is retrieved and compared to the generated unique
+//    value. If they are different, update is retried.
 //
-//    If a transaction is already running when update is issued, then this update
-//    is not done as part of that enclosing transaction.
-//    It is done in non-transactional mode using hbase's single row xn mechanism.
-//    This way seq metadata update can finish without being part of the user Xn.
-// 
-//    To validate that no one else has updated the row between the times it was
-//    selected and updated, the updated next_value returned by the update stmt
-//    is compared with the next_value returned by the after-update select stmt.
-//    If they dont match, then it indicates that
-//    someone updated the row between the 2 statements.
-// 
-//    In this case, the update and select sequence is retried for max 10 times.
+//    seq gen update is retried max 10 times.
 //    An error is returned if we dont get consistent result after that.
 //
 //
@@ -10777,10 +10777,11 @@ Lng32 SQLCLI_SEcliInterface
 ////////////////////////////////////////////////////////////////////////////
 
 #define SEQ_GEN_NUM_PREPS 4
-#define SEQ_GEN_REGULAR_QRY_IDX 0
-#define SEQ_GEN_RECYCLE_QRY_IDX 1
-#define SEQ_GEN_SELECT_QRY_IDX 2
+#define SEQ_UPD_TS_QRY_IDX 0
+#define SEQ_SEL_TS_QRY_IDX 1
+#define SEQ_PROCESS_QRY_IDX 2
 #define SEQ_CQD_IDX  3
+
 
 static Lng32 SeqGenCliInterfacePrepQry(
 				       const char * qryStr,
@@ -10862,10 +10863,12 @@ static Lng32 SeqGenCliInterfacePrepQry(
   return 0;
 }
 
+//static Int64 globalUID = 0;
 static Lng32 SeqGenCliInterfaceUpdAndValidate(
 					      ExeCliInterface ** cliInterfaceArr,
 					      SequenceGeneratorAttributes* sga,
 					      NABoolean recycleQry,
+                                              NABoolean startLocalXn,
 					      ComDiagsArea * myDiags,
 					      ContextCli &currContext,
 					      ComDiagsArea & diags,
@@ -10875,48 +10878,89 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
 {
   Lng32 cliRC;
 
-  Int64 currValues[3];
+  Int64 outputValues[5];
+  Int64 inputValues[5];
 
-  Lng32 currValueLen = 0;
+  Lng32 outputValuesLen = 0;
+  Lng32 inputValuesLen = 0;
+
   Int64 rowsAffected = 0;
 
   ExeCliInterface * cliInterface = NULL;
+  
+  char queryBuf[2000];
 
-  if (NOT recycleQry)
+  Int64 updUID = 0;
+
+  if (NOT startLocalXn)
     {
-      if (! cliInterfaceArr[SEQ_GEN_REGULAR_QRY_IDX])
-	{
-	  cliRC = SeqGenCliInterfacePrepQry(
-					    "select  t.oldCurrVal, t.oldMaxVal, t.updCurrVal from (update %s.\"%s\".%s set next_value = (case when next_value + increment * (case when cache_size > 0 then cache_size else 1 end) > max_value then max_value+1 else next_value + increment * (case when cache_size > 0 then cache_size else 1 end) end), num_calls = num_calls + 1 where seq_uid = %Ld return old.next_value, old.max_value, new.next_value) t(oldCurrVal, oldMaxVal, updCurrVal);",
-					    SEQ_GEN_REGULAR_QRY_IDX,
-					    "SEQ_GEN_REGULAR_QRY_IDX",
-					    cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
-	  if (cliRC < 0)
-	    return cliRC;
-	}
-
-      cliInterface = cliInterfaceArr[SEQ_GEN_REGULAR_QRY_IDX];
+      if (! cliInterfaceArr[SEQ_UPD_TS_QRY_IDX])
+        {
+          cliRC = SeqGenCliInterfacePrepQry(
+                                            "update %s.\"%s\".%s set upd_ts = cast(? as largeint not null) where seq_uid = %Ld",
+                                            SEQ_UPD_TS_QRY_IDX,
+                                            "SEQ_UPD_TS_QRY_IDX",
+                                            cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+          if (cliRC < 0)
+            return cliRC;
+        }
+      
+      cliInterface = cliInterfaceArr[SEQ_UPD_TS_QRY_IDX];
+      
+      // generated a unique id and update it. If this value changes later, then
+      // this operation will be retried.
+      ComUID comUID;
+      comUID.make_UID();
+      updUID = comUID.get_value();
+      inputValues[0] = updUID;
+      inputValuesLen = sizeof(updUID);
+      cliRC = cliInterface->clearExecFetchCloseOpt
+        ((char*)inputValues, inputValuesLen, NULL, NULL, &rowsAffected);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(myDiags);
+          diags.mergeAfter(*myDiags);
+          
+          return cliRC;
+        }
+      
+      // if not found, aqr
+      if (rowsAffected == 0)
+        {
+          ComDiagsArea * da = &diags;
+          ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1584));
+          
+          return -1584;
+        }
+      
     }
-  else
+
+  if (! cliInterfaceArr[SEQ_PROCESS_QRY_IDX])
     {
-      // recycle query resets sequence to the start value.
-      if (! cliInterfaceArr[SEQ_GEN_RECYCLE_QRY_IDX])
-	{
-	  cliRC = SeqGenCliInterfacePrepQry(
-					    "select  t.oldCurrVal, t.oldMaxVal, t.updCurrVal from (update %s.\"%s\".%s set next_value = start_value + increment * cache_size, num_calls = num_calls + 1 where seq_uid = %Ld return old.start_value, old.max_value, new.next_value) t(oldCurrVal, oldMaxVal, updCurrVal);",
-					    SEQ_GEN_RECYCLE_QRY_IDX,
-					    "SEQ_GEN_RECYCLE_QRY_IDX",
-					    cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
-	  if (cliRC < 0)
-	    return cliRC;
-	}
-
-      cliInterface = cliInterfaceArr[SEQ_GEN_RECYCLE_QRY_IDX];
+      cliRC = SeqGenCliInterfacePrepQry(
+                                        "select  case when cast(? as largeint not null) = 1 then t.startVal else t.nextVal end, t.redefTS from (update %s.\"%s\".%s set next_value = (case when cast(? as largeint not null) = 1 then start_value + cast(? as largeint not null) else (case when next_value + cast(? as largeint not null) > max_value then max_value+1 else next_value + cast(? as largeint not null) end) end), num_calls = num_calls + 1 where seq_uid = %Ld return old.start_value, old.next_value, old.redef_ts) t(startVal, nextVal, redefTS);",
+                                        SEQ_PROCESS_QRY_IDX,
+                                        "SEQ_PROCESS_QRY_IDX",
+                                        cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+      if (cliRC < 0)
+        return cliRC;
     }
+  
+  cliInterface = cliInterfaceArr[SEQ_PROCESS_QRY_IDX];
 
   // execute using optimized path
+  Int64 delta = sga->getSGIncrement() * 
+    (sga->getSGCache() > 0 ? sga->getSGCache() : 1);
+  inputValues[0] = (recycleQry ? 1 : 0);
+  inputValues[1] = (recycleQry ? 1 : 0);
+  inputValues[2] = delta;
+  inputValues[3] = delta;
+  inputValues[4] = delta;
+  inputValuesLen = 5 * sizeof(Int64);
+
   cliRC = cliInterface->clearExecFetchCloseOpt
-    (NULL, 0, (char*)currValues, &currValueLen);
+    ((char*)inputValues, inputValuesLen, (char*)outputValues, &outputValuesLen, 
+     &rowsAffected);
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(myDiags);
@@ -10925,74 +10969,75 @@ static Lng32 SeqGenCliInterfaceUpdAndValidate(
       return cliRC;
     }
 
-  // must find this uid in seq generator. if not found, is an error.
-  if (cliRC == 100) 
+  // must find this uid in seq generator. if not found, aqr.
+  if (rowsAffected == 0)
     {
       ComDiagsArea * da = &diags;
-      ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1582));
+      ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1584));
       
-      return -1582;
+      return -1584;
     }
 
-  Int64 origCurrValue = currValues[0];
-  Int64 maxValue = currValues[1];
-  Int64 updatedCurrValue = currValues[2];
+  Int64 startValue = outputValues[0];
+  Int64 redefTS = outputValues[1];
 
-  Int64 afterUpdCurrValue = 0;
-  Lng32 afterUpdCurrValueLen = 0;
-
-  if (! cliInterfaceArr[SEQ_GEN_SELECT_QRY_IDX])
+  // if timestamp mismatch, aqr
+  if  (redefTS != sga->getSGRedefTime())
     {
-      // this query retrieves next_value after it has been updated.
-      // used to validate that it didn't get updated by someone else
-      // after my update and this select.
-      cliRC = SeqGenCliInterfacePrepQry(
-					"select  next_value from %s.\"%s\".%s where seq_uid = %Ld",
-					SEQ_GEN_SELECT_QRY_IDX,
-					"SEQ_GEN_SELECR_QRY_IDX",
-					cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+      ComDiagsArea * da = &diags;
+      ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1584));
+      
+      return -1584;
+     }
+
+  if (NOT startLocalXn)
+    {
+      // this query retrieves upd_ts after this seqgen has been updated.
+      // it is used to validate that it didn't get updated by someone else
+      // after my update.
+      if (! cliInterfaceArr[SEQ_SEL_TS_QRY_IDX])
+        {
+          cliRC = SeqGenCliInterfacePrepQry(
+                                            "select upd_ts from %s.\"%s\".%s where seq_uid = %Ld",
+                                            SEQ_SEL_TS_QRY_IDX,
+                                            "SEQ_SEL_TS_QRY_IDX",
+                                            cliInterfaceArr, sga, myDiags, currContext, diags, exHeap);
+          if (cliRC < 0)
+            return cliRC;
+        }
+      
+      cliInterface = cliInterfaceArr[SEQ_SEL_TS_QRY_IDX];
+      cliRC = cliInterface->clearExecFetchCloseOpt
+        (NULL, 0, (char*)outputValues, &outputValuesLen, &rowsAffected);
       if (cliRC < 0)
-	return cliRC;
-    }
-
-  cliInterface = cliInterfaceArr[SEQ_GEN_SELECT_QRY_IDX];
-  
-  cliRC = cliInterface->clearExecFetchCloseOpt
-    (NULL, 0, (char*)currValues, &afterUpdCurrValueLen);
-  if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(myDiags);
-      diags.mergeAfter(*myDiags);
+        {
+          cliInterface->retrieveSQLDiagnostics(myDiags);
+          diags.mergeAfter(*myDiags);
+          
+          return cliRC;
+        }
       
-      return cliRC;
-    }
-
-  // must find this uid in seq generator. if not found, is an error.
-  if (cliRC == 100) 
-    {
-      ComDiagsArea * da = &diags;
-      ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1582));
+      // must find this uid in seq generator. if not found, is an error.
+      if (rowsAffected == 0)
+        {
+          ComDiagsArea * da = &diags;
+          ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1582));
+          
+          return -1582;
+        }
       
-      return -1582;
+      // if update time different than my upd time, retry.
+      if (outputValues[0] != updUID)
+        {
+          return -2;
+        }
     }
 
-  afterUpdCurrValue = currValues[0];
-
-  if (afterUpdCurrValue != updatedCurrValue)
-    {
-      // someone updated this value after my update.
-      // return and retry.
-      return -2;
-    }
-
-  nextValue = origCurrValue;
+  nextValue = startValue;
   endValue = nextValue + sga->getSGIncrement() * (sga->getSGCache() - 1);
 
-  if (maxValue != sga->getSGMaxValue())
-    sga->setSGMaxValue(maxValue);
-
-  if (endValue > maxValue)
-    endValue = maxValue;
+  if (endValue > sga->getSGMaxValue())
+    endValue = sga->getSGMaxValue();
 
   return 0;
 }
@@ -11009,15 +11054,52 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
 						   Int64 &endValue)
 {
   Lng32 cliRC = 0;
+  Lng32 retCliRC = 0;
+
+  if (! cliInterfaceArr[SEQ_CQD_IDX])
+    cliInterfaceArr[SEQ_CQD_IDX] = new (currContext.exHeap()) 
+      ExeCliInterface(currContext.exHeap(),
+                      SQLCHARSETCODE_UTF8,
+                      &currContext,
+                      NULL);
+  ExeCliInterface * cqdCliInterface = cliInterfaceArr[SEQ_CQD_IDX];
+
+  NABoolean startLocalXn = FALSE;
+  if (cqdCliInterface->statusXn())
+    {
+      // no xn in progress. Start one.
+      startLocalXn = TRUE;
+    }
+  else
+    {
+      // a transaction is already running. Do not run seq queries as part of
+      // that transaction.
+      cliRC = cqdCliInterface->holdAndSetCQD("traf_no_dtm_xn", "ON");
+    }
 
   Lng32 numTries = 0;
   NABoolean isOk = FALSE;
   while ((NOT isOk) && (numTries < 10))
     {
+      if (startLocalXn)
+        {
+          // no xn in progress. Start one.
+          cliRC = cqdCliInterface->beginWork();
+          if (cliRC < 0)
+            {
+              cqdCliInterface->retrieveSQLDiagnostics(myDiags);
+              diags.mergeAfter(*myDiags);
+
+              retCliRC = cliRC;
+              goto label_return;
+            }
+        }
+
       cliRC = SeqGenCliInterfaceUpdAndValidate(
 					       cliInterfaceArr,
 					       sga,
 					       recycleQry,
+                                               startLocalXn,
 					       myDiags,
 					       currContext,
 					       diags,
@@ -11025,13 +11107,43 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
 					       nextValue,
 					       endValue);
 
+     if (cliRC == 0)
+        {
+          if (startLocalXn)
+            {
+              // xn was started here, commit it.
+              // If an error happens during commit, retry.
+              cliRC = cqdCliInterface->commitWork();
+              if (cliRC < 0)
+                {
+                  currContext.diags().clear();
+
+                  cliRC = -2; // retry
+                }
+            }
+        }
+     else 
+       {
+         if (startLocalXn)
+            {
+              // error case. If xn was started here, abort it.
+              cqdCliInterface->rollbackWork();
+            }
+       }
+
       if (cliRC == 0)
-	isOk = TRUE;
-
-      if (cliRC != -2)
-	return cliRC;
-
+        {
+          isOk = TRUE;
+        }
+      else if (cliRC != -2)
+        {
+          retCliRC = cliRC;
+          goto label_return;
+        }
+      
       numTries++;
+      
+      DELAY(100 + numTries*25);
     }
 
     // could not update it after 10 tries. Return error.
@@ -11039,11 +11151,16 @@ static Lng32 SeqGenCliInterfaceUpdAndValidateMulti(
     {
       ComDiagsArea * da = &diags;
       ExRaiseSqlError(exHeap, &da,  (ExeErrorCode)(1583));
-      
-      return -1583;
+
+      retCliRC = -1583;
+      goto label_return;
     }
 
-  return 0;
+ label_return:
+  if (NOT startLocalXn)
+    cliRC = cqdCliInterface->restoreCQD("traf_no_dtm_xn");
+  
+  return retCliRC;
 }
 
 Lng32 SQLCLI_SeqGenCliInterface
@@ -11121,3 +11238,4 @@ Lng32 SQLCLI_SeqGenCliInterface
 }
 
 //LCOV_EXCL_STOP
+

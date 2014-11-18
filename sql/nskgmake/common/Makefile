@@ -78,6 +78,7 @@ CPPSRC := \
 	ComSecurityKey.cpp \
 	NLSConversion.cpp \
 	NumericType.cpp \
+	SequenceGeneratorAttributes.cpp \
 	str.cpp \
 	stringBuf.cpp  \
 	TempIncludes.cpp \

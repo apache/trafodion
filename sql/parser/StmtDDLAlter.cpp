@@ -1860,53 +1860,6 @@ StmtDDLAlterTableAlterColumnSetSGOption::getText() const
   return "StmtDDLAlterTableAlterColumnSetSGOption" ;
 }
 
-//----------------------------------------------------------------------------
-// CLASS StmtDDLAlterTableAlterColumnRecalibrateSG
-//----------------------------------------------------------------------------
-StmtDDLAlterTableAlterColumnRecalibrateSG::StmtDDLAlterTableAlterColumnRecalibrateSG( const NAString &columnName
-										      , Int64 value
-										      , NABoolean userSpecified 
-										      , NABoolean performSelect
-                                                                                      , CollHeap *heap)
-    : StmtDDLAlterTable(DDL_ALTER_TABLE_ALTER_COLUMN_RECALIBRATE_SG, 
-			QualifiedName(PARSERHEAP()) /*no table name*/,
-			NULL),	
- 			columnName_(columnName, heap),
-			value_(value),
-			userSpecified_(userSpecified),
-			performSelect_(performSelect)
-{
-
-
-}
-
-//
-// Virtual destructor
-//
-
-StmtDDLAlterTableAlterColumnRecalibrateSG::~StmtDDLAlterTableAlterColumnRecalibrateSG()
-{
-  if (columnName_)
-    delete columnName_;
-}
-
-//
-// Cast function: to provide the safe castdown to the current object
-//
-
-StmtDDLAlterTableAlterColumnRecalibrateSG *
-StmtDDLAlterTableAlterColumnRecalibrateSG::castToStmtDDLAlterTableAlterColumnRecalibrateSG()
-{
-  return this;
-}
-
-const NAString
-StmtDDLAlterTableAlterColumnRecalibrateSG::getText() const
-{
-  return "StmtDDLAlterTableAlterColumnRecalibrateSG" ;
-}
-
-
 // -----------------------------------------------------------------------
 // methods for class StmtDDLAlterTableAddColumn
 // -----------------------------------------------------------------------

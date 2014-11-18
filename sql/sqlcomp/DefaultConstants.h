@@ -2143,8 +2143,6 @@ enum DefaultConstants
   MAINTAIN_REORG_RATE,
   MAINTAIN_REORG_SLACK,
 
-  IDENTITY_USER_DUPLICATE_VALUE,
-  IDENTITY_MASK_BITS ,
   // System IDentity buffer specification
   GEN_SID_BUFFER_SIZE,
   GEN_SID_NUM_BUFFERS,
@@ -2604,14 +2602,7 @@ enum DefaultConstants
   SCRATCH_IO_VECTOR_SIZE_HASH,
   SCRATCH_IO_VECTOR_SIZE_SORT,
 
-// Sequence Generator
   OVERRIDE_GENERATED_IDENTITY_VALUES,
-  SEQUENCE_GENERATOR_CACHE,
-  SEQUENCE_GENERATOR_CACHE_INITIAL,
-  SEQUENCE_GENERATOR_CACHE_INCREMENT,
-  SEQUENCE_GENERATOR_CACHE_MAXIMUM,
-  SEQUENCE_GENERATOR_CACHE_RETRY,
-  SEQUENCE_GENERATOR_RECALIBRATION_TABLE_LOCK,
 
   ELIMINATE_REDUNDANT_JOINS,
   MULTI_PASS_JOIN_ELIM_LIMIT,
@@ -2652,10 +2643,6 @@ enum DefaultConstants
 
   // Specifies whether sample tables should be created for fetch count
   HIST_AUTO_GENERATION_OF_SAMPLE, 
-  SEQUENCE_GENERATOR_BUFFER_SIZE,
-  SEQUENCE_GENERATOR_NUM_BUFFERS,
-  SEQUENCE_GENERATOR_SIZE_DOWN,
-  SEQUENCE_GENERATOR_SIZE_UP,
 
   NEXT_VALUE_FOR_BUFFER_SIZE,
   NEXT_VALUE_FOR_NUM_BUFFERS,
@@ -3604,12 +3591,21 @@ enum DefaultConstants
   // SQ row will be created in aligned format and stored as a single col in hbase.
   TRAF_DEFAULT_ALIGNED_FORMAT,
 
+  // this is used to change cache size of sequence numbers for a session.
+  // It overwrites the cache size that was specified during sequence creation.
+  TRAF_SEQUENCE_CACHE_SIZE,
+
   TRAF_LOAD_MAX_HFILE_SIZE,
 
   USTAT_USE_BULK_LOAD,
 
   // if not null, then add this suffix to the original name and select from that hive table.
   USE_HIVE_SOURCE,
+
+  // if set to ON, then query is not run as part of an enclosing DTM transaction 
+  // nor is a transaction started to execute it.
+  // It is run using underlying hbase single row transaction consistency.
+  TRAF_NO_DTM_XN,
 
   // HBASE_HASH2_PARTITIONING (ON - OFF for now):
   // - OFF: Treat salted table like a non-salted table

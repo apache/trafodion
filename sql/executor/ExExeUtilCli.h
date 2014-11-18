@@ -123,7 +123,8 @@ private:
 
   short clearExecFetchCloseOpt(char * inputBuf, Lng32 inputBufLen,
 			       char * outputBuf = NULL,
-			       Lng32 * outputBufLen = 0);
+			       Lng32 * outputBufLen = 0,
+                               Int64 * rowsAffected = NULL);
   
   Lng32 executeImmediateCEFC(const char * stmtStr,
 			     char * outputBuf = NULL,
@@ -219,10 +220,10 @@ private:
   Lng32 commitWork();
   Lng32 rollbackWork();
   Lng32 autoCommit(NABoolean v); // TRUE, set to ON. FALSE, set to OFF.
-  Lng32 beginXn();
-  Lng32 commitXn();
-  Lng32 rollbackXn();
-  Lng32 statusXn();
+  static Lng32 beginXn();
+  static Lng32 commitXn();
+  static Lng32 rollbackXn();
+  static Lng32 statusXn();
 
   Lng32 createContext(char* contextHandle); // out buf will return context handle
   Lng32 switchContext(char* contextHandle); // in buf contains context handle

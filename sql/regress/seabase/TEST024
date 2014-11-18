@@ -42,6 +42,7 @@ drop sequence test024seq5;
 drop sequence test024seq6;
 drop sequence test024seq7;
 drop sequence test024seq8;
+drop sequence error_seq;
 
 drop table test024t1;
 drop table test024t2;
@@ -58,7 +59,7 @@ create sequence test024seq0;
 create sequence test024seq0;
 
 create sequence test024seq1;
-create sequence test024seq2 start with 10 minvalue 1 maxvalue 15 increment by 3 cache 5;
+create sequence test024seq2 start with 10 minvalue 1 maxvalue 15 increment by 3 cache 2;
 create sequence test024seq3 maxvalue 3 cycle;
 create sequence test024seq4 maxvalue 3 no cache;
 create sequence test024seq5 minvalue 2 maxvalue 5 cache 4;
@@ -189,6 +190,8 @@ showddl  sequence test024seq8;
 execute s;
 execute s;
 execute s;
+execute s;
+execute s;
 
 -- select from metadata sequences view
 invoke trafodion."_MD_".sequences_view;
@@ -207,6 +210,8 @@ create sequence error_seq minvalue 5 maxvalue 10 start with 3;
 create sequence error_seq minvalue 5 maxvalue 10 start with 20;  
 create sequence error_seq cache 1;
 create sequence error_seq minvalue 1 maxvalue 3 cache 10;
+alter sequence error_seq start with 50;
+create sequence error_seq;
 alter sequence error_seq start with 50;
 
 

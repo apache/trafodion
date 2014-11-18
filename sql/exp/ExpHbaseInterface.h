@@ -284,6 +284,7 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr& row,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
+                                  NABoolean noXn,
 				  const int64_t timestamp,
 				  ExHbaseAccessStats *hbs);
  
@@ -523,6 +524,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr& row,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
+                                  NABoolean noXn,
 				  const int64_t timestamp,
 				  ExHbaseAccessStats *hbs);
 

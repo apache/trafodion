@@ -5512,14 +5512,7 @@ const NAType *RowsetArrayInto::synthesizeType()
 
 const NAType *RandomNum::synthesizeType()
 {
-
-
   NAType *result = NULL;
-
-  // Return SQLLargeInt if it is identityRandom. Identity random is
-  // used to generate values for IDENTITY column, which is a 64-bit
-  // number.
-  NABoolean identityRandom = isIdentityRandom();
 
   if (getArity() == 1)
     {
@@ -5554,16 +5547,13 @@ const NAType *RandomNum::synthesizeType()
 	  return NULL;
 	}
 
-     // return: signed int64 not null for identity random and int unsigned otherwise.
-      result = (identityRandom ?
-		(NAType *) new HEAP SQLLargeInt(TRUE, FALSE)
-		: (NAType *) new HEAP SQLInt(FALSE, ntyp1.supportsSQLnullLogical()));
+     // return: int unsigned 
+      result = (NAType *) new HEAP SQLInt(FALSE, ntyp1.supportsSQLnullLogical());
     }
   else
     {
-      // return: signed int64 not null for identity random and int unsigned not null otherwise.
-      result = (identityRandom ?  (NAType *) new HEAP SQLLargeInt(TRUE, FALSE)
-		: (NAType *) new HEAP SQLInt(FALSE,FALSE));
+      // return: int unsigned not null 
+      result = (NAType *) new HEAP SQLInt(FALSE,FALSE);
     }
 
   return result;

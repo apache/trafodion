@@ -141,6 +141,11 @@ enum SqlParser_Flags_Enum {
       SqlParser_Flags = 0;
   }
 
+  inline static void Assign_SqlParser_Flags(ULng32 flagbits)
+  {
+    SqlParser_Flags = flagbits;
+  }
+
  inline static void Reset_SqlParser_Flags(ULng32 flagbits)
   {
     if (flagbits)

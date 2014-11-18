@@ -2073,13 +2073,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 
   oltOptInfo().setOltCliOpt(generator->oltOptInfo()->oltCliOpt());
 
-  // If we are using an internal sequence generator
-  // then we will always run within an ESP.
-  // Do not create a simple olt optimized plan.
-
-  if (containsSG())
-    oltOptInfo().setOltCliOpt(FALSE);
-
   if ((isTrueRoot()) &&
       (CmpCommon::getDefault(LAST0_MODE) == DF_ON) &&
       (child(0)))
@@ -5838,32 +5831,21 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
 
-  // if seq gen metadata is being updated through an internal query 
-  // and we are running under a user Xn,
-  // do not mark this stmt as a transactional stmt.
-  // This is done so those updates can run in its own transaction and not be
-  // part of the enclosing user Xn.
-  // When we have support for local transactions and repeatable read, we
-  // will then run this update in local transactional mode.
-  NABoolean seqGenUpd = FALSE;
-  if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
-      (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
-      (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-    {
-      seqGenUpd = TRUE;
-    }
+  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
+    noDTMxn() = TRUE;
 
   // if unique oper with no index maintanence and autocommit is on, then
   // do not require a transaction. Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if ((uniqueHbaseOper()) &&
-      (NOT isMerge()) &&
-      (NOT cursorHbaseOper()) &&
-      (NOT uniqueRowsetHbaseOper()) &&
-      (NOT inlinedActions) &&
-      (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-      ((! NAExecTrans(0, transId)) || (seqGenUpd)) &&
-      (NOT generator->oltOptInfo()->multipleRowsReturned()))
+  if (((uniqueHbaseOper()) &&
+       (NOT isMerge()) &&
+       (NOT cursorHbaseOper()) &&
+       (NOT uniqueRowsetHbaseOper()) &&
+       (NOT inlinedActions) &&
+       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+       (! NAExecTrans(0, transId)) &&
+       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
+      (noDTMxn()))
     {
       // no transaction needed
     }
@@ -6839,8 +6821,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
     PivsReplaced = TRUE;
   }
 
-
-  PartitionAccess *childPA = NULL;
   RelExpr *result = this;
 
   // ---------------------------------------------------------------------
@@ -6977,44 +6957,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   // as its child.
   // ---------------------------------------------------------------------
   NABoolean savedOltMsgOpt = generator->oltOptInfo()->oltMsgOpt();
-  if (isDP2Exchange())
-    {
-      useCharInputs = ( child(0)->getOperatorType() == REL_DP2_UPDATE_UNIQUE ||
-                        child(0)->getOperatorType() == REL_DP2_UPDATE_CURSOR ||
-                        child(0)->getOperatorType() == REL_DP2_UPDATE_SUBSET  ||
-                        child(0)->getOperatorType() == REL_DP2_INSERT_CURSOR ||
-                        child(0)->getOperatorType() == REL_DP2_INSERT_SIDETREE ||
-                        child(0)->getOperatorType() == REL_DP2_INSERT_VSBB );
-
-      childPA = new(generator->wHeap())
-	PartitionAccess
-	(getIndexDesc(),
-	 partSearchKey_,
-	 child(0),
-	 paPartFunc);
-      childPA->setGroupAttr(new(generator->wHeap())
-			    GroupAttributes(*(child(0)->getGroupAttr())));
-
-      childPA->setEstRowsUsed(child(0)->getEstRowsUsed());
-      childPA->setMaxCardEst(child(0)->getMaxCardEst());
-      childPA->setInputCardinality(child(0)->getInputCardinality());
-      childPA->setPhysicalProperty(getPhysicalProperty());
-
-      if (isOverReverseScan_)
-         childPA->setReversePartitionAccess();
-
-      // propagate the cost from the exchange to the PA:
-      childPA->setOperatorCost(getOperatorCost());
-      childPA->setRollUpCost(getRollUpCost());
-
-      childPA->oltOptInfo().setMaxOneRowReturned(oltOptInfo().maxOneRowReturned());
-      childPA->oltOptInfo().setMaxOneInputRow(oltOptInfo().maxOneInputRow());
-
-      child(0) = childPA;
-
-      generator->compilerStatsInfo().dp2Ops()++;
-
-    }
 
   NABoolean inputOltMsgOpt = generator->oltOptInfo()->oltMsgOpt();
 
@@ -7187,29 +7129,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   if (! child(0).getPtr())
     return NULL;
 
-  // do not make this a PAPA node, if olt qry opt is being done since
-  // only one partition will be accessed.
-  // Also, do not make a PAPA node if unique partition is being accessed
-  // and this node cannot get multiple input rows, that is, it is not the
-  // right child of a nestedjoin operator.
-  if ((isDP2Exchange()) &&
-      ((generator->oltOptInfo()->oltMsgOpt()) ||
-       (partSearchKey_ &&
-	partSearchKey_->isUnique() &&
-	inputOltMsgOpt)))
-    makeThisExchangeAPapa = FALSE;
-
-  if ((isDP2Exchange()) &&
-      (childPA) &&
-      (childPA->child(0)) &&
-      ((childPA->child(0)->castToRelExpr()->getOperatorType() == REL_DP2_DELETE_UNIQUE) ||
-       (childPA->child(0)->castToRelExpr()->getOperatorType() == REL_DP2_DELETE_CURSOR) ||   
-       (childPA->child(0)->castToRelExpr()->getOperatorType() == REL_DP2_DELETE_SUBSET)) &&
-      (((Delete *)(childPA->child(0)->castToRelExpr()))->isFastDelete()))
-    {
-      makeThisExchangeAPapa = FALSE;
-    }
-
   generator->oltOptInfo()->setOltMsgOpt(savedOltMsgOpt);
 
   // Decide whether this Exchange should try to eliminate itself.
@@ -7373,379 +7292,6 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
   return result;
   
 } // Exchange::preCodeGen()
-
-RelExpr * PartitionAccess::preCodeGen(Generator * generator,
-				      const ValueIdSet & externalInputs,
-				      ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  // Check for fast reply optimization. See class DP2Scan in RelScan.h
-  // for details.
-  OperatorTypeEnum ot = child(0)->castToRelExpr()->getOperatorType();
-  if ((ot == REL_DP2_SCAN) ||
-      (ot == REL_DP2_SCAN_UNIQUE) ||
-      (ot == REL_FILE_SCAN))
-    {
-      if (CmpCommon::getDefault(FAST_REPLYDATA_MOVE) == DF_ON)
-        ((DP2Scan *)(child(0)->castToRelExpr()))->fastReplyDataMove() = TRUE;
-    }
-
-  generator->clearPartnAccessChildIUD();
-
-  // can do 'olt lean' opt only if my child is a dp2 leaf IUD or Scan oper.
-  // The individual operator will turn off olt and lean olt opt if it
-  // is not a unique dp2 leaf oper.
-  if (NOT ((ot == REL_DP2_SCAN_UNIQUE) ||
-	   ((ot >= REL_DP2_INSUPDDEL_FIRST) &&
-	    (ot <= REL_DP2_INSUPDDEL_LAST))))
-    generator->oltOptInfo()->setOltEidLeanOpt(FALSE);
-
-  // ---------------------------------------------------------------------
-  // Allocate a new GroupAttributes for the Exchange, which is a copy
-  // of its child's GroupAttributes.
-  // ---------------------------------------------------------------------
-  if (NOT getGroupAttr())
-    setGroupAttr(new(generator->wHeap()) GroupAttributes(*child(0)->getGroupAttr()));
-
-  // ---------------------------------------------------------------------
-  // Resolve the VEGReferences, if any, that appear in the Characteristic
-  // Inputs, in terms of the externalInputs.
-  // ---------------------------------------------------------------------
-  getGroupAttr()->resolveCharacteristicInputs(externalInputs);
-
-  // ---------------------------------------------------------------------
-  // My Characteristic Inputs become the external inputs for my child.
-  // ---------------------------------------------------------------------
-  child(0) = child(0)->preCodeGen(generator, externalInputs, pulledNewInputs);
-  if (! child(0).getPtr())
-    return NULL;
-
-  getGroupAttr()->addCharacteristicInputs(pulledNewInputs);
-
-  // ---------------------------------------------------------------------
-  // Generate the sequence generation expr.
-  // Currently used to generate IDENTITY column values.
-  // ---------------------------------------------------------------------
-  RelExpr *childExpr = child(0)->castToRelExpr();
-  OperatorTypeEnum childOp = childExpr->getOperatorType();
-  NABoolean childIsDP2Insert =
-    (childOp == REL_DP2_INSERT_CURSOR ||
-     childOp == REL_DP2_INSERT_VSBB ||
-     childOp == REL_DP2_INSERT_SIDETREE);
-
-  NABoolean childIsMerge =
-    ((childExpr->getOperator().match(REL_ANY_UPDATE_DELETE)) &&
-     (((GenericUpdate *)childExpr)->isMerge()));
-
-  if ((sequenceGenerationExpr_ == NULL) && 
-      (childIsDP2Insert || childIsMerge))
-    {
-      ValueId identityColumn = ((GenericUpdate *)childExpr)->identityColumn();
-      if (identityColumn != NULL_VALUE_ID)
-	{
-	  createSequenceGenerationExpr(identityColumn, generator->getBindWA());
-
- 	  GenAssert(sequenceGenerationExpr_ != NULL,
-		    "PartitionAccess: Invalid sequence generation expr");
-
-	  sequenceGenerationExpr_->preCodeGen(generator);
-	}
-    }
-
-  // Am not sure about this case.
-  // Disable, for now, if stream is being used.
-  // Maybe this case is already disabled.
-  if (child(0)->getGroupAttr()->isStream())
-    generator->oltOptInfo()->setOltMsgOpt(FALSE);
-
-  oltOptInfo().setOltMsgOpt(generator->oltOptInfo()->oltMsgOpt());
-
-  if (generator->oltOptInfo()->multipleRowsReturned() ||
-      (sequenceGenerationExpr_ != NULL)) //turn off olt opt for IDENTITY value
-    oltOptInfo().setOltMsgOpt(FALSE);
-
-  if ((NOT oltOpt()) &&
-      (child(0)->oltOptLean()))
-    child(0)->oltOptInfo().setOltEidLeanOpt(FALSE);
-
-  if (oltOpt())
-    generator->setSkipUnavailablePartition(FALSE);
-
-  const PartitioningFunction *partFunc =
-    indexDesc_->getPartitioningFunction();
-      
-  if (partFunc && partFunc->partitionRangeRestricted())
-    oltOptInfo().setOltMsgOpt(FALSE);
-    
-  if (indexDesc_->getPrimaryTableDesc()->getNATable()->hasLobColumn())
-    generator->setProcessLOB(TRUE);
-
-  // ---------------------------------------------------------------------
-  // Generate the begin and end keys or the partition Selection
-  // expressions to be used for partitioning.
-  // ---------------------------------------------------------------------
-  if (partSearchKey_)
-    {
-      // If the partitioning function does not use the file system to
-      // determine the partitions to be accessed (eg. Hash, Round
-      // Robin Partitioning), then create the partition selection
-      // expressions.  Otherwise (if it uses the file system to
-      // determine the partitions to be accessed ie.  Range
-      // Partitioning) generate the partitioning key expressions.
-      //
-      //
-      if(partFunc && !partFunc->usesFSForPartitionSelection()) {
-        ItemExpr *partSelection = ((PartitioningFunction *)partFunc)->
-          createPartitionSelectionExpr(partSearchKey_,
-                                       getGroupAttr()->
-                                       getCharacteristicInputs());
-
-        if(partSelection) {
-          // A Partition Selection expression could be generated.  This
-          // expression evaluates to a single partition number and is
-          // used as the  Begin Partition Selection expression.  The End
-          // Partition Selection expression is set to NULL, indicating that
-          // there is only one partition to be accessed.
-          //
-          setBeginPartSelection(partSelection);
-          setEndPartSelection(NULL);
-
-        } else if(partSearchKey_->valuesArePartitionRange()) {
-
-          // A Partition expression could not be generated and the search
-          // key has be modified to indicate that the key values are no
-          // longer key values, but a range of partitions to be accessed.
-          // This comes about when a partition function such as Hash Dist
-          // Partitioning has be scaled for parallel execution.  For range
-          // partitioning, scaling the partitioning function is just a
-          // matter of rewriting the boundaries and constructing the proper
-          // key expressions.  However, with hash dist partitioning, there is
-          // no easy way to construct an expression on partitioning key
-          // values which will group multiple partitions into one logical
-          // partition.  It is difficult to come up with the proper values.
-          // However, when the function is scaled for partition grouping,
-          // the partition search key begin and end key values are set to be
-          // the partition input values for the partitioning function.  In the
-          // case of hash dist partitioning, the partition input values are
-          // variables representing the begin partition and end partition
-          // numbers.  So when the flag 'valuesArePartitionRange' is set,
-          // use the begin/end key values for the begin and end partition
-          // selection expressions.
-          // In this case, there better only be one begin key value
-          // representing the begin partition number.
-          //
-          // For Hash2, groupings are allowed for tables with different
-          // numbers of physical partitions.  In order for this to work
-          // with only one PIV, hash boundaries are passed instead
-          // of partition numbers.  This requires an expression that
-          // converts the hash boundaries back to partition numbers.
-          // This expression is generated within the Hash2 implementation
-          // of createPartSelectionExprFromSearchKey().
-
-          GenAssert(partSearchKey_->getBeginKeyValues().entries() == 1,
-                    "PartitionAccess: Invalid Partition Search Key");
-          ValueId beginPartSelId = partSearchKey_->getBeginKeyValues()[0];
-
-          // In this case, there better only be one end key value
-          // representing the begin partition number.
-          //
-          GenAssert(partSearchKey_->getEndKeyValues().entries() == 1,
-                    "PartitionAccess: Invalid Partition Search Key");
-          ValueId endPartSelId = partSearchKey_->getEndKeyValues()[0];
-
-          // Call createPartSelectionExprFromSearchKey() to copy or
-          // create a proper expression for the determining the
-          // beginning and ending partition numbers.  The results
-          // will be stored in "partSelectionValIds".
-          ValueIdList partSelectionValIds;
-          partFunc->createPartSelectionExprFromSearchKey(
-                  beginPartSelId,
-                  endPartSelId,
-                  partSelectionValIds);
-
-          setBeginPartSelection(partSelectionValIds[0].getItemExpr());
-          setEndPartSelection(partSelectionValIds[1].getItemExpr());
-        }
-
-      } else {
-
-        // Generate the partitioning key expressions
-        generateKeyExpr(getGroupAttr()->getCharacteristicInputs(),
-                        partSearchKey_->getKeyColumns(),
-                        partSearchKey_->getBeginKeyValues(),
-                        beginKeyPred_,
-                        generator);
-        generateKeyExpr(getGroupAttr()->getCharacteristicInputs(),
-                        partSearchKey_->getKeyColumns(),
-                        partSearchKey_->getEndKeyValues(),
-                        endKeyPred_,
-                        generator);
-        beginKeyIsExclusive_   = partSearchKey_->isBeginKeyExclusive();
-        endKeyIsExclusive_     = partSearchKey_->isEndKeyExclusive();
-        beginKeyExclusionExpr_ = partSearchKey_->getBeginKeyExclusionExpr();
-        endKeyExclusionExpr_   = partSearchKey_->getEndKeyExclusionExpr();
-      }
-
-      // -----------------------------------------------------------------
-      // Add the partitioning key columns to the Characteristic outputs
-      // of my children using a recursive descent.
-      // -----------------------------------------------------------------
-      // If needed at all, shouldn't this be done for the partitioning
-      // key of the top partitioning function in an exchange node
-      // which is the function used for repartitioning??
-      // child(0)->addPartitioningKeyColumnsToOutput();
-    }
-  else
-    {
-      RelExpr * childExpr = child(0)->castToRelExpr();
-
-      // non partitioned table.
-      if ((oltOpt()) && // only one partition will be accessed.
-	  (childExpr->oltOpt()) &&
-	  ((ot == REL_DP2_SCAN_UNIQUE) ||
-	   ((ot >= REL_DP2_INSUPDDEL_FIRST) &&
-	    (ot <= REL_DP2_INSUPDDEL_LAST)))) // and child is an IUDS
-	                                      // (not CS/join or anything else)
-	{
-	  // A partn key expr is needed to figure out which partition to
-	  // go to at runtime, if that table has more than one partitions.
-	  // With olt opt, we know that we will only access one partn
-	  // at runtime, so we skip sim check due to partn num change.
-	  // But this change requires that a partn key expr be present.
-	  // If the table was not partitioned at query compile time, then
-	  // this partn key expr is not generated and causes the first partn
-	  // to be accessed at runtime no matter how many partitions there
-	  // are.
-	  // Generate partitioning key expressions based on child's key
-	  // predicates.
-	  const SearchKey * sk = NULL;
-	  if (ot == REL_DP2_SCAN_UNIQUE)
-	    {
-	      sk =
-		((DP2Scan*)childExpr)->getSearchKey();
-	      generateKeyExpr(getGroupAttr()->getCharacteristicInputs(),
-			      sk->getKeyColumns(),
-			      sk->getBeginKeyValues(),
-			      beginKeyPred_,
-			      generator);
-	    }
-	  else if ((ot == REL_DP2_INSERT_CURSOR)||
-                    (ot == REL_DP2_INSERT_VSBB) ||
-                    (ot == REL_DP2_INSERT_SIDETREE))  // highly unlikely to get sidetre insert here
-	    {                                         // but it is better to add this case here than assert below
-	      ValueIdList insertVIDList;
-
-	      for (CollIndex ii = 0;
-		   ii < getIndexDesc()->getIndexKey().entries();
-		   ii++)
-		{
-		  const NAColumn *c =
-		    getIndexDesc()->getNAFileSet()->getIndexKeyColumns()[ii];
-
-		  const ItemExpr *assignExpr =
-		    ((DP2Insert *)childExpr)->
-		    newRecExprArray()[c->getPosition()].getItemExpr();
-
-		    insertVIDList.insert(assignExpr->child(1)->castToItemExpr()->getValueId());
-		}
-
-	      generateKeyExpr(getGroupAttr()->getCharacteristicInputs(),
-			      getIndexDesc()->getIndexKey(),
-			      insertVIDList,
-			      beginKeyPred_,
-			      generator);
-	    }
-	  else if (ot == REL_DP2_DELETE_CURSOR)
-	    {
-	      ValueIdList deleteVIDList;
-
-	      CollIndex total_keys = getIndexDesc()->getIndexKey().entries();
-	      const NAColumnArray &key_column_array = 
-		getIndexDesc()->getNAFileSet()->getIndexKeyColumns();
-	      
-	      for (CollIndex ii = 0; ii < total_keys; ii++)
-		{
-		  const NAColumn *c = getIndexDesc()->getNAFileSet()->getIndexKeyColumns()[ii];
-		  CollIndex tmp = 0;
-		  for (; tmp < total_keys; tmp++)
-		    {
-		      if (c == key_column_array[tmp])
-			break;
-		    }			
-		  
-		  const ItemExpr *assignExpr =
-		    ((DP2Delete *)childExpr)->getBeginKeyPred()[tmp].getItemExpr();
-		  deleteVIDList.insert(assignExpr->child(1)->castToItemExpr()->getValueId());
-		}
-
-	      generateKeyExpr(getGroupAttr()->getCharacteristicInputs(),
-			      getIndexDesc()->getIndexKey(),
-			      deleteVIDList,
-			      beginKeyPred_,
-			      generator);
-	    }
-	  else
-	    {
-	      sk =
-		((GenericUpdate*)childExpr)->getSearchKey();
-              GenAssert(sk, "Error in PreCodeGen while generating the beginKey");
-	      generateKeyExpr(getGroupAttr()->getCharacteristicInputs(),
-			      sk->getKeyColumns(),
-			      sk->getBeginKeyValues(),
-			      beginKeyPred_,
-			      generator);
-	    }
-
-	  endKeyPred_ = beginKeyPred_;
-	} // opt opt being used.
-    } // non partitioned table, no partn key expr
-
-  // The VEG expressions in the selection predicates and the characteristic
-  // outputs can reference any expression that is either a potential output
-  // or a characteristic input for this RelExpr. Supply these values for
-  // rewriting the VEG expressions.
-  ValueIdSet availableValues;
-  getInputAndPotentialOutputValues(availableValues);
-
-  getGroupAttr()->resolveCharacteristicOutputs
-                      (availableValues,
-		       getGroupAttr()->getCharacteristicInputs());
-
-  // Does the generator indicate that there is no ESP exchange between
-  // this PA operator and the blocking SORT operator (which is used to
-  // prevent the Halloween problem in self-referencing updates)? 
-  if (generator->checkUnsyncdSort() || 
-      generator->getPrecodeHalloweenLHSofTSJ())
-    {
-      // If so, check if this PA is accessing a self-referencing
-      // table.
-      if (indexDesc_->
-            getPrimaryTableDesc()->getNATable()->getIsHalloweenTable())
-        {
-          // The SORT above us is unsynchronized.  Use the generator
-          // to indicate that the SORT operator needs an ESP exchange 
-          // below it to achieve the synchronization.  See NestedJoin::
-          // preCodeGen.
-          generator->setUnsyncdSortFound(generator->checkUnsyncdSort());
-          if (generator->getR251HalloweenPrecode())
-            generator->incUnblockedHalloweenScans();
-        }
-    }
-
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
-
-  generator->oltOptInfo()->mayDisableOperStats(&oltOptInfo());
-
-  if (generator->isPartnAccessChildIUD())
-    childIsIUD_ = TRUE;
-
-  markAsPreCodeGenned();
-  return this;
-
-} // PartitionAccess::preCodeGen()
 
 RelExpr * Tuple::preCodeGen(Generator * generator,
 		       const ValueIdSet & externalInputs,
@@ -11398,112 +10944,6 @@ RelExpr * RelLock::preCodeGen (Generator * generator,
   
   if (!RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;
-
-  markAsPreCodeGenned();
-
-  return this;
-}
-
-RelExpr * SequenceGenerator::preCodeGen (Generator * generator,
-                                              const ValueIdSet &externalInputs,
-                                              ValueIdSet &pulledNewInputs)
-{
-
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  // Since the newExch node is added as the parent
-  // to SequenceGenerator node, this method gets
-  // called again during the preCodeGen of t
-  // newExch.
-  if(!addedExchange_) {
-    addedExchange_ = TRUE;
-    RelExpr *newExch = 
-      generator->insertEspExchange(this, getPhysicalProperty());
-    
-    ((Exchange *)newExch)->makeAnESPAccess();
-      
-    RelExpr * exch = 
-      newExch->preCodeGen(generator, externalInputs, pulledNewInputs);
-
-    // The Exchange node has set the update error on error to FALSE.
-    // We need to reset it back to TRUE.
-    // This flag is used in the check to determine
-    // if a transaction rollback should be executed
-    // for an error.  We do not want to automatically
-    // rollback a user's transaction.
-
-    generator->setUpdErrorOnError(TRUE);
-
-    return exch;
-  }
-
-  // turn off oltQueryOptimization as we will always run in an ESP
-  oltOptInfo().setOltOpt(FALSE);
-  
-  // Check if the pivs of this operator and it's child are the same.
-  // If they are not, make them the same.
-  replacePivs();
-
-  // Resolve the VEGReferences and VEGPredicates, if any, that appear
-  // in the Characteristic Inputs, in terms of the externalInputs.
-  getGroupAttr()->resolveCharacteristicInputs(externalInputs);
-
-  // My Characteristic Inputs become the external inputs for my children.
-  ValueIdSet childPulledInputs;
-
-  child(0) = child(0)->preCodeGen(generator,
-                                  externalInputs,
-                                  childPulledInputs);
-
-  if (! child(0).getPtr())
-    return NULL;
-
-  // The PA node has set the update error on error to FALSE.
-  // We need to reset it back to TRUE.
-  // This flag is used in the check to determine
-  // if a transaction rollback should be executed
-  // for an error.  We do not want to automatically
-  // rollback a user's transaction.
-
-  generator->setUpdErrorOnError(TRUE);
-
-  // process additional input value ids the child wants
-  getGroupAttr()->addCharacteristicInputs(childPulledInputs);
-  pulledNewInputs += childPulledInputs;
-
-  // Accumulate the values that are provided as inputs by my parent
-  // together with the values that are produced as outputs by my
-  // children. Use these values for rewriting the VEG expressions.
-  ValueIdSet availableValues;
-  getInputValuesFromParentAndChildren(availableValues);
-
-  ValueIdList sgValuesList;
-  sgValuesList.insert(sgCacheSizeHV_);
-  sgValuesList.insert(sgIncrementHV_);
-  sgValuesList.insert(currentValueFromSGTable_);
-  sgValuesList.replaceVEGExpressions(availableValues,
-				     getGroupAttr()->getCharacteristicInputs());
-  
-  // The VEG expressions in the selection predicates and the characteristic
-  // outputs can reference any expression that is either a potential output
-  // or a characteristic input for this RelExpr. Supply these values for
-  // rewriting the VEG expressions.
-  getInputAndPotentialOutputValues(availableValues);
-
-  // Rewrite the selection predicates.
-  NABoolean replicatePredicates = TRUE;
-  selectionPred().replaceVEGExpressions
-                     (availableValues,
-		      getGroupAttr()->getCharacteristicInputs(),
-		      FALSE, // no need to generate key predicates here
-		      0 /* no need for idempotence here */,
-		      replicatePredicates
-		     );
-
-  getGroupAttr()->resolveCharacteristicOutputs
-                     (availableValues,
-		      getGroupAttr()->getCharacteristicInputs());
 
   markAsPreCodeGenned();
 

@@ -48,6 +48,7 @@ class ElemDDLSGOptionMinValue;
 class ElemDDLSGOptionMaxValue;
 class ElemDDLSGOptionCacheOption;
 class ElemDDLSGOptionCycleOption;
+class ElemDDLSGOptionDatatype;
 
 // -----------------------------------------------------------------------
 // forward references
@@ -312,6 +313,40 @@ private:
   Int64 cacheSize_;
 
 }; // class ElemDDLSGOptionCacheOption
+
+// -----------------------------------------------------------------------
+// definition of class ElemDDLSGOptionDatatype
+// -----------------------------------------------------------------------
+class ElemDDLSGOptionDatatype : public ElemDDLSGOption
+{
+
+public:
+
+  // constructor
+  ElemDDLSGOptionDatatype(ComFSDataType dt);
+  ElemDDLSGOptionDatatype();
+
+  // virtual destructor
+  virtual ~ElemDDLSGOptionDatatype();
+
+  // cast
+  virtual ElemDDLSGOptionDatatype * castToElemDDLSGOptionDatatype();
+
+  // accessors
+  inline ComFSDataType getDatatype() { return dt_;}
+
+  // methods for tracing
+  virtual const NAString displayLabel1() const;
+  virtual const NAString getText() const;
+
+  // method for building text
+  virtual NAString getSyntax() const;
+
+private:
+
+  ComFSDataType dt_;
+
+}; // class ElemDDLSGOptionDatatype
 
 // -----------------------------------------------------------------------
 // definitions of inline methods for class ElemDDLSGOptionStartValue

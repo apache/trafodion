@@ -76,7 +76,6 @@ CPPSRC := Allocator.cpp \
 	ExSample.cpp \
 	ExScheduler.cpp \
 	ExSequence.cpp \
-	ExSequenceGenerator.cpp \
 	ExSimpleSample.cpp \
 	ExSimpleSqlBuffer.cpp \
 	ExStats.cpp \
