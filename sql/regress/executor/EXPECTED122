@@ -49,7 +49,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Fri Nov 14 22:15:35 2014
+-- Definition current  Tue Nov 18 18:53:24 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -108,7 +108,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Fri Nov 14 22:15:49 2014
+-- Definition current  Tue Nov 18 18:53:38 2014
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -581,7 +581,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>drop table t122t3_ri cascade;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>drop table t122t4 cascade;
 
 --- SQL operation complete.
