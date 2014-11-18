@@ -873,7 +873,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 *** ERROR[8110] Duplicate rows detected.
 
---- 1 row(s) loaded.
+--- 0 row(s) loaded.
 >>select * from t015t4 order by a;
 
 --- 0 row(s) selected.

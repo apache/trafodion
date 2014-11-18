@@ -4143,7 +4143,10 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           diagsArea->incrRefCount(); // setDiagsArea call below will decr ref count
 
         if (getDiagsArea())
+        {
           diagsArea->mergeAfter(*getDiagsArea());
+          diagsArea->setRowCount(rowsAffected_);
+        }
 
         up_entry->setDiagsArea(diagsArea);
 
