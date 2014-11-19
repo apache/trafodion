@@ -141,6 +141,7 @@ Lng32 ExpHbaseInterface::checkAndUpdateRow(
 					   HbaseStr &row,
 					   const Text& columnToCheck,
 					   const Text& colValToCheck,
+                                           NABoolean noXn,
 					   const int64_t timestamp,
 					   ExHbaseAccessStats *hbs)
 {
@@ -1030,6 +1031,7 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
 	  HbaseStr &row,
 	  const Text& columnToCheck,
 	  const Text& colValToCheck,
+          NABoolean noXn,
 	  const int64_t timestamp,
 	  ExHbaseAccessStats *hbs)
 {
@@ -1040,7 +1042,16 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
     return HBASE_OPEN_ERROR;
   }
   
-  Int64 transID = getTransactionIDFromContext();
+  Int64 transID;
+  if (noXn)
+    {
+      transID = 0;
+    }
+  else
+    {
+      transID = getTransactionIDFromContext();
+    }
+
   HTC_RetCode rc = htc->checkAndUpdateRow(transID, rowID, row, 
 					  columnToCheck, colValToCheck,
 					  timestamp, hbs);

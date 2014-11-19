@@ -1905,9 +1905,6 @@ static RelExpr *createIMNode(BindWA *bindWA,
   if (isInsert)
     {
       imNode = new (bindWA->wHeap()) LeafInsert(indexCorrName, NULL, colRefList);
-      // Pass on the identityColumnIndexFlag_ to GenericUpdate node.
-      if (bindWA->getDupIdentity())
-	imNode->setIdentityColumnUniqueIndex(index->getIdentityColumnUniqueIndex());
       HostArraysWA * arrayWA = bindWA->getHostArraysArea() ;
       if (arrayWA && arrayWA->hasHostArraysInTuple()) {
 	if (arrayWA->getTolerateNonFatalError() == TRUE)

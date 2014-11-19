@@ -220,6 +220,7 @@ class ElemDDLSGOptionMinValue;
 class ElemDDLSGOptionIncrement;
 class ElemDDLSGOptionCacheOption;
 class ElemDDLSGOptionCycleOption;
+class ElemDDLSGOptionDatatype;
 class ElemDDLStoreOpt;
 class ElemDDLStoreOptDefault;
 class ElemDDLStoreOptEntryOrder;
@@ -272,7 +273,6 @@ class StmtDDLAlterTableRename;
 class StmtDDLAlterTableNamespace;
 class StmtDDLAlterTableAlterColumnDefaultValue;
 class StmtDDLAlterTableAlterColumnSetSGOption;
-class StmtDDLAlterTableAlterColumnRecalibrateSG;
 class StmtDDLAlterTableSetConstraint;
 class StmtDDLAlterTableToggleConstraint;
 class StmtDDLAlterMvRGroup;
@@ -533,6 +533,7 @@ public:
   virtual ElemDDLSGOptionIncrement      * castToElemDDLSGOptionIncrement();
   virtual ElemDDLSGOptionCacheOption    * castToElemDDLSGOptionCacheOption();
   virtual ElemDDLSGOptionCycleOption    * castToElemDDLSGOptionCycleOption();
+  virtual ElemDDLSGOptionDatatype    * castToElemDDLSGOptionDatatype();
   
   virtual ElemDDLStoreOpt               * castToElemDDLStoreOpt();
   virtual ElemDDLStoreOptEntryOrder     * castToElemDDLStoreOptEntryOrder();
@@ -599,8 +600,6 @@ public:
                 castToStmtDDLAlterTableToggleConstraint();
   virtual StmtDDLAlterTableAlterColumnSetSGOption* 
                 castToStmtDDLAlterTableAlterColumnSetSGOption();
-  virtual StmtDDLAlterTableAlterColumnRecalibrateSG* 
-                castToStmtDDLAlterTableAlterColumnRecalibrateSG();
   virtual StmtDDLAlterMvRGroup			* castToStmtDDLAlterMvRGroup();
   virtual StmtDDLAlterRoutine           * castToStmtDDLAlterRoutine();
   virtual StmtDDLAlterTrigger           * castToStmtDDLAlterTrigger();

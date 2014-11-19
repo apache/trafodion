@@ -487,22 +487,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
-    case ex_SEQGEN:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbSequenceGenerator);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
-    case ex_NEXTVALUEFOR:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbNextValueFor);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
     case ex_SEQUENCE_FUNCTION:
     {
 #pragma nowarn(1506)   // warning elimination 

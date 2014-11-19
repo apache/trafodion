@@ -393,6 +393,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
   NAString btCatalogNamePart = tableName.getCatalogNamePartAsAnsiString();
   NAString btSchemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  NAString btObjectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   NAString extTableName = tableName.getExternalName(TRUE);
 
   ComObjectName indexName(createIndexNode->getIndexName());
@@ -867,6 +868,17 @@ void CmpSeabaseDDL::createSeabaseIndex(
 
 	  return;
 	}
+    }
+
+  if (updateObjectRedefTime(&cliInterface,
+                            btCatalogNamePart, btSchemaNamePart, btObjectNamePart,
+                            COM_BASE_TABLE_OBJECT_LIT))
+    {
+      processReturn();
+
+      deallocEHI(ehi);
+
+      return;
     }
 
   deallocEHI(ehi);
@@ -1454,6 +1466,17 @@ void CmpSeabaseDDL::dropSeabaseIndex(
       processReturn();
 
       deallocEHI(ehi); 
+
+      return;
+    }
+
+  if (updateObjectRedefTime(&cliInterface,
+                            btCatName, btSchName, btObjName,
+                            COM_BASE_TABLE_OBJECT_LIT))
+    {
+      processReturn();
+
+      deallocEHI(ehi);
 
       return;
     }

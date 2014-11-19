@@ -42,6 +42,7 @@
 #include "StmtDDLDropIndex.h"
 #include "StmtDDLAlterTableAddColumn.h"
 #include "StmtDDLAlterTableDropColumn.h"
+#include "StmtDDLAlterTableAlterColumnSetSGOption.h"
 #include "StmtDDLAddConstraintPK.h"
 #include "StmtDDLAddConstraintRIArray.h"
 #include "StmtDDLAddConstraintUniqueArray.h"

@@ -121,8 +121,6 @@ public:
 
   NABoolean isClusteringIndex() const     { return clusteringIndexFlag_; }
 
-  NABoolean getIdentityColumnUniqueIndex() const {return identityColumnUniqueIndexFlag_;}
-
   const NAFileSet * getNAFileSet() const              { return fileSet_; }
 
   TableDesc *getPrimaryTableDesc() const      	    { return tableDesc_; }
@@ -139,8 +137,6 @@ public:
   
   // mutator functions
   void markAsClusteringIndex()        { clusteringIndexFlag_ = TRUE; }
-
-  void markIdentityColumnUniqueIndex(TableDesc *tdesc);  
 
   // Is it recommended by user hint
   NABoolean isHintIndex() const;
@@ -233,12 +229,6 @@ private:
   // ---------------------------------------------------------------------
   NABoolean clusteringIndexFlag_;
 
-  // ---------------------------------------------------------------------
-  // Flag for indicating whether this is a clustering index on the
-  // IDENTITY column.
-  // ---------------------------------------------------------------------
-  NABoolean identityColumnUniqueIndexFlag_;
-  
   // ---------------------------------------------------------------------
   // Partitioning function, if the index is horizontally partitioned.
   // ---------------------------------------------------------------------

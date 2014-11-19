@@ -6464,6 +6464,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterAddConstr = FALSE;
   NABoolean alterDropConstr = FALSE;
   NABoolean alterRenameTable = FALSE;
+  NABoolean alterIdentityCol = FALSE;
 
   NABoolean specialType = FALSE;
   if (isUstat())  // special DDLExpr node for an Update Stats statement
@@ -6622,6 +6623,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
          alterDropConstr = TRUE;
       else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableRename())
          alterRenameTable = TRUE;
+      else if (getExprNode()->castToElemDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption())
+         alterIdentityCol = TRUE;
        else
         otherAlters = TRUE;
 
@@ -6784,7 +6787,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
          (isCreate_ || isDrop_ || purgedataHbase_ ||
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
-			alterAddConstr || alterDropConstr || alterRenameTable || otherAlters)))))
+			alterAddConstr || alterDropConstr || alterRenameTable || 
+                        alterIdentityCol || otherAlters)))))
       {
 	if (NOT isNative_)
 	  {

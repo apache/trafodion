@@ -1253,12 +1253,16 @@ short ExeCliInterface::clearExecFetchCloseOpt(char * inputBuf,
 					      // ptr to buf where output values will be copied to. 
 					      // Caller need to allocate this.
 					      char * outputBuf, 
-					      Lng32 * outputBufLen)
+					      Lng32 * outputBufLen,
+                                              Int64 * rowsAffected)
 {
   Lng32 retcode = 0;
 
   if (inputBuf)
     str_cpy_all(inputBuf_, inputBuf, inputDatalen_);
+
+  if (rowsAffected)
+    *rowsAffected = 0;
 
   retcode = SQL_EXEC_ClearExecFetchClose(
 					 stmt_, 
@@ -1266,28 +1270,47 @@ short ExeCliInterface::clearExecFetchCloseOpt(char * inputBuf,
 					 (numOutputEntries_ > 0 ? output_desc_ : NULL),
 					 0, 0, 0);
   
-  if (((retcode == 0) ||
-       ((retcode >= 0) && (retcode != 100))) &&
-      (numOutputEntries_ > 0) &&
-      (outputBuf) &&
-      (outputBufLen))
+  if ((retcode == 0) ||
+      ((retcode >= 0) && (retcode != 100)))
     {
-      *outputBufLen = 0;
-      if (retcode != 100)
-	{
-	  char * currPtr = outputBuf;
-	  for (Int32 j = 0; j < numOutputEntries_; j++)
-	    {
-	      char * ptr;
-	      Lng32   len;
-	      getPtrAndLen(j+1, ptr, len);
-	      
-	      str_cpy_all(currPtr, ptr, len);
-	      currPtr += len;
-
-	      *outputBufLen += len;
-	    }
-	}
+      if ((numOutputEntries_ > 0) &&
+          (outputBuf) &&
+          (outputBufLen))
+        {
+          *outputBufLen = 0;
+          
+          char * currPtr = outputBuf;
+          for (Int32 j = 0; j < numOutputEntries_; j++)
+            {
+              char * ptr;
+              Lng32   len;
+              getPtrAndLen(j+1, ptr, len);
+              
+              str_cpy_all(currPtr, ptr, len);
+              currPtr += len;
+              
+              *outputBufLen += len;
+            }
+          
+          if (rowsAffected)
+            {
+              *rowsAffected = 1;
+            }
+        } // values being returned
+      else if (rowsAffected)
+        {
+          Lng32 tmpRowsAffected = 0;
+          retcode = SQL_EXEC_GetDiagnosticsStmtInfo2(NULL, SQLDIAG_ROW_COUNT,
+                                                     &tmpRowsAffected, NULL,
+                                                     0, NULL);
+          
+          if(retcode == EXE_NUMERIC_OVERFLOW) // rowsAffected > LONG_MAX
+            {
+              GetRowsAffected(rowsAffected);
+            }
+          else
+            *rowsAffected = (Int64)tmpRowsAffected;
+        } // rowsAffected
     }
 
   return (short)retcode;

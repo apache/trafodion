@@ -140,6 +140,7 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_OBJECTUID      "OBJECTUID"
 #define SEABASE_REF_CONSTRAINTS "REF_CONSTRAINTS"
 #define SEABASE_ROUTINES          "ROUTINES"
+#define SEABASE_SEQ_GEN          "SEQ_GEN"
 #define SEABASE_TABLES            "TABLES"
 #define SEABASE_TABLE_CONSTRAINTS "TABLE_CONSTRAINTS"
 #define SEABASE_TEXT            "TEXT"
@@ -150,8 +151,6 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_AUTHS            "AUTHS"
 #define SEABASE_VALIDATE_SPJ      "VALIDATEROUTINE"
 #define SEABASE_VALIDATE_LIBRARY  "UDR_LIBRARY"
-
-#define SEABASE_SEQ_GEN  "SEQ_GEN"
 
 // DTM log files are created in this schema. It is a reserved schema.
 #define SEABASE_DTM_SCHEMA     "_DTM_"

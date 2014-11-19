@@ -116,8 +116,6 @@ struct ex_eye_catcher
 #define eye_UDR                                                     "UDR "
 #define eye_INTERPRET_AS_ROW                                        "IAR"
 #define eye_PARALLEL_LABEL_OP                                       "PLAB"
-#define eye_SEQGEN                                                  "SQGN"
-#define eye_NEXTVALUEFOR                                            "NVFO"
 #define eye_CANCEL                                                  "CNCL"
 #define eye_FAST_EXTRACT                                            "EXTR"
 #define eye_HDFS_SCAN                                            "HDFS"
@@ -309,8 +307,6 @@ public:
     ex_LONG_RUNNING = 116,
     ex_GET_METADATA_INFO = 117,
     ex_GET_VERSION_INFO  = 118,
-    ex_SEQGEN = 119,
-    ex_NEXTVALUEFOR = 120,
     ex_SUSPEND_ACTIVATE  = 121,
     ex_DISK_LABEL_STATISTICS = 122,
     ex_GET_DISK_LABEL_STATS = 123,
@@ -1011,6 +1007,7 @@ struct ComTdbVirtTableSequenceInfo
   Int64                  cache;
   Int64                  seqUID;
   Int64                  nextValue;
+  Int64                  redefTime;
 };
 
 #endif /* COMTDB_H */

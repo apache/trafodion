@@ -1459,7 +1459,7 @@ void ProxyFunc::populateColumnDesc(char *tableNam,
 
    cmpSBD.buildColInfoArray(&colArray, 
                             colInfoArray, 
-                            FALSE, 0, FALSE,
+                            FALSE, 0, FALSE, NULL,
                             CmpCommon::statementHeap());
 
    colDescs = cmpSBD.convertVirtTableColumnInfoArrayToDescStructs(&tableName,

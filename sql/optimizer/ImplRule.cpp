@@ -799,10 +799,6 @@ void copyCommonGenericUpdateFields(GenericUpdate *result,
   result->setIndexDesc(bef->getTableDesc()->getClusteringIndex());
   result->setScanIndexDesc(bef->getScanIndexDesc());
 
-  
-  result->identityColumn() = bef->identityColumn();
-  result->setIdentityColumnUniqueIndex(bef->getIdentityColumnUniqueIndex());
-
   result->setMtsStatement(bef->isMtsStatement());
 
   result->setIsMergeUpdate(bef->isMergeUpdate());

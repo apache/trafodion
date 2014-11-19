@@ -51,7 +51,7 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
                      NAFileSet *fileSet, 
                      CmpContext* cmpContext)
      : tableDesc_(tdesc), clusteringIndexFlag_(FALSE), 
-       identityColumnUniqueIndexFlag_(FALSE), partFunc_(NULL),
+       partFunc_(NULL),
        fileSet_(fileSet), cmpContext_(cmpContext), scanBasicCosts_(NULL)
 {
   DCMPASSERT( tdesc != NULL AND fileSet != NULL );
@@ -158,8 +158,6 @@ IndexDesc::IndexDesc(TableDesc *tdesc,
 	  orderOfKeyValues_.insert(invExpr->getValueId());
 	}
     }
-
-  markIdentityColumnUniqueIndex(tdesc);
 
   // ---------------------------------------------------------------------
   // Find the clustering key columns in the index and store their value
@@ -284,40 +282,6 @@ NABoolean IndexDesc::isHintIndex() const
   IndexDesc* thisIndex = (IndexDesc*) this;
   return tableDesc_->getHintIndexes().contains(thisIndex);
 }
-
-// This flag is set on the IndexDesc which represents
-// the unique index on the IDENTITY column. 
-// Note: For the case where the IDENTITY column is the CK, the IndexDesc
-// representing the base table is marked. Example:
-//    CREATE TABLE t_id_S (surrogate_key LARGEINT GENERATED
-//        BY DEFAULT AS IDENTITY NOT NULL NOT DROPPABLE primary key);
-
-// Here is how we detect that:
-// 1. indexColumn_.entries() == 1. (There can only be one IDENTITY column.)
-// 2. Is this indexColumn_ an IDENTITY column? Look up the 
-//    IDENTITY property in the BaseTable's TableDesc by using 
-//    getPosition().  
-void IndexDesc::markIdentityColumnUniqueIndex(TableDesc *tdesc)
-{
-
-  if(indexKey_.entries() != 1) 
-    {
-      // there can be only one IDENTITY col. id any
-      return;
-    }
-  
-  // Is this indexKey_ column an IDENTITY column? 
-  
-  CollIndex identityColPosition = indexKey_[0].getNAColumn()->getPosition();  
-  ValueId identityValueId = tdesc->getColumnList()[identityColPosition];
-  if (identityValueId.getNAColumn()->isIdentityColumn())
-    identityColumnUniqueIndexFlag_ = TRUE;
- 
-  return;
-}
-
-
-
 
 // Print function
 #pragma nowarn(770)   // warning elimination

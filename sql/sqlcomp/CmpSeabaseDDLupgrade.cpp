@@ -21,8 +21,8 @@
 /* -*-C++-*-
  *****************************************************************************
  *
- * File:         CmpSeabaseDDLcommon.cpp
- * Description:  Implements common methods and operations for SQL/hbase tables.
+ * File:         CmpSeabaseDDLupgrade.cpp
+ * Description:  Implements upgrade of metadata.
  *
  *
  * Created:     6/30/2013

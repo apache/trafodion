@@ -187,7 +187,7 @@ public:
 
   NAString getColDefAsText() const;
 
-void setSGOptions(ElemDDLSGOptions * pSGOptions);
+  void setSGOptions(ElemDDLSGOptions * pSGOptions);
 
   inline void setDivisionColumnFlag(NABoolean bVal);
   inline void setDivisionColumnSequenceNumber(ComSInt32 divColSeqNum);

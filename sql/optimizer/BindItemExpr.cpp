@@ -3101,10 +3101,8 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   if ( getOperatorType() == ITM_RANDOMNUM )
     {
       // if this builtinfunction is a RandomNum(), then it is safe to cast
-      // the this pointer to (Random *). The isIdentityGeneratedRandom()
-      // method is defined only in Class RandomNum.
-      if (castToRandomNum()->isIdentityRandom()  != TRUE AND
-	  CmpCommon::getDefault(ALLOW_RAND_FUNCTION) != DF_ON AND
+      // the this pointer to (Random *). 
+      if (CmpCommon::getDefault(ALLOW_RAND_FUNCTION) != DF_ON AND
 	  QueryAnalysis::Instance() AND
 	  QueryAnalysis::Instance()->getCompilerPhase() == QueryAnalysis::BINDER)
 	{
@@ -4516,7 +4514,8 @@ Int32 ItemExpr::convertToValueIdList(ValueIdList &vl,
 	      currScope->context()->inGroupByOrdinal() = FALSE;
 	    }
 
-	  if (bindWA->errStatus()) return TRUE;		// error
+	  if (!boundExpr || bindWA->errStatus())
+            return TRUE;		// error
 
           if (pcvn &&
               pcvn->isProcessingViewColList() &&
@@ -8140,17 +8139,25 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
 
       // Set the special parser flag to allow IDENTITY as a function.
 
+      ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+      Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+
       Parser parser(bindWA->currentCmpContext());
 
       ItemExpr *defaultValueExpr =
-           parser.getItemExprTree(defaultValueStr);
+        parser.getItemExprTree(defaultValueStr);
+
+      Assign_SqlParser_Flags (savedParserFlags);
 
       // It is possible to have a SQL/MP default value that SQL/MX
       // cannot parser.  In these case SQL/MX is not compatible with
       // SQL/MP and an error is reported.
       //
       if(!defaultValueExpr)
-        return NULL;
+        {
+          bindWA->setErrStatus();
+          return NULL;
+        }
 
       ItemExpr *boundExpr = NULL;
 
@@ -8158,14 +8165,10 @@ ItemExpr *DefaultSpecification::bindNode(BindWA *bindWA)
 
       if (bindWA->errStatus()) return NULL;
 
-      if ((defaultValueExpr->getOperatorType() == ITM_IDENTITY) &&
-          (CmpCommon::getDefault(COMP_BOOL_210) != DF_ON))
-	{
-	  insert->setIdentityColumnUniqueIndex(TRUE);
-
-	  // Column value to the GenericUpdate::identityColumnId_
-	  ((GenericUpdate *)insert)->identityColumn() = boundExpr->getValueId();
-	}
+      if (defaultValueExpr->getOperatorType() == ITM_SEQUENCE_VALUE)
+        {
+          insert->setSystemGeneratesIdentityValue(TRUE);
+        }
 
       // Remember the fact that the literal used to be a DEFAULT spec
       if (boundExpr->getOperatorType() == ITM_CONSTANT)
@@ -8294,74 +8297,6 @@ ItemExpr *CurrentTimestampRunning::bindNode(BindWA *bindWA)
   ItemExpr *boundExpr = ItemExpr::bindNode(bindWA);
   return boundExpr;
 } // CurrentTimestampRunning::bindNode()
-
-ItemExpr *IdentityVar::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound())
-    return getValueId().getItemExpr();
-  
-  if (CmpCommon::getDefault(COMP_BOOL_210) == DF_OFF)
-    {
-      return HostVar::bindNode(bindWA);
-    }
-  else //  CmpCommon::getDefault(COMP_BOOL_210) == DF_ON)
-    {
-      // immediately contained in an Insert, and binding the source
-      // VALUES list
-      BindScope   *scope   = bindWA->getCurrentScope();
-      BindContext *context = scope->context();
-      
-      CMPASSERT(context->inInsert() && context->updateOrInsertScope() == scope); 
-      Insert *insert = (Insert *)context->updateOrInsertNode();
-      
-      CMPASSERT (insert != NULL);
-
-      // This flag is true for the  R2.3 implementation of
-      // of IDENTITY column, which uses the random number generator.
-      // The R2.3 IDENTIY column must have a unique index on it.
-      if(insert->getIdentityColumnUniqueIndex())
-	return insert->identityColumn().getItemExpr();
-      
-      CMPASSERT (insert->getOperatorType() == REL_UNARY_INSERT );
-      
-      const NATable* naTable = insert->getTableDesc()->getNATable();
-      SequenceGeneratorAttributes *sgAttributes = 
-	(SequenceGeneratorAttributes *)naTable->getSGAttributes();
-      
-      ComString internalSGFunnyName = "@@INTERNAL_SG_";
-      char objectUIDString[25];
-      
-      convertInt64ToAscii(naTable->objectUid().get_value(), objectUIDString);
-      
-      internalSGFunnyName += objectUIDString;
-      internalSGFunnyName += "_@@";
-      QualifiedName sgName(internalSGFunnyName,
-			   naTable->getTableName().getSchemaName(),
-			   naTable->getTableName().getCatalogName());
-      
-      // The Sequence Generator attributes
-      // must be available.
-      
-      CMPASSERT(sgAttributes);
-
-      ItemExpr *identityExpr = NULL;
-
-      insert->setSystemGeneratesIdentityValue(TRUE);
-
-      if (!bindWA->inDDL())
-      {
-        identityExpr = 
-	  SequenceGenerator::createSequenceSubqueryExpression(sgName.getQualifiedNameAsAnsiString(),
-							      *sgAttributes, bindWA);
- 
-        return identityExpr->bindNode(bindWA);
-      }
-      else
-       return HostVar::bindNode(bindWA);
-    } // (CmpCommon::getDefault(COMP_BOOL_210) == DF_ON)
-
-
-}
 
 // -----------------------------------------------------------------------
 // member functions for class Parameter
@@ -8827,10 +8762,7 @@ ItemExpr *Subquery::bindNode(BindWA *bindWA)
   NABoolean orig = context->inSubquery();
   NABoolean origRow = context->inRowSubquery();
   context->inSubquery() = TRUE;
-  context->inRowSubquery() = (isARowSubquery() && !isASeqGenSubquery());
-
-  if (isASeqGenSubquery() && bindWA->inDDL())
-    return this;
+  context->inRowSubquery() = (isARowSubquery());
 
   tableExpr_ = getSubquery()->bindNode(bindWA);
 
@@ -8850,7 +8782,7 @@ ItemExpr *Subquery::bindNode(BindWA *bindWA)
   // we don't allow destructive selects or embedded inserts in subqueries.
   // The SeqGenSubquery updating the SG Table and returning the
   // next value is an exception. 
-  if (!isASeqGenSubquery() && 
+  if (1 && 
       ((tableExpr_->getGroupAttr()->isEmbeddedUpdateOrDelete()) 
        || (tableExpr_->getGroupAttr()->isEmbeddedInsert())         
        || (bindWA->isEmbeddedIUDStatement()))
@@ -12712,6 +12644,9 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
   if (bindWA->errStatus()) 
     return NULL;
 
+  ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+  Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+
   // Obtain the NATable for the seq object.
   naTable_ = bindWA->getNATable(seqCorrName_);
   if (bindWA->errStatus())
@@ -12719,6 +12654,8 @@ ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
 
   // BindWA keeps list of sequence generators used, so privileges can be checked.
   bindWA->insertSeqVal(this);
+
+  Assign_SqlParser_Flags (savedParserFlags);
 
   return boundExpr;
 }

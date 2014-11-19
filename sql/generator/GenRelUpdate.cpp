@@ -2189,17 +2189,8 @@ short HbaseUpdate::codeGen(Generator * generator)
     }
   else
     {
-      // if internal update of the sequence generator table, then do not do the update
-      // within the user Xn. Use hbase xn instead.
-      // This allows seqgen updates to complete without being part of an enclosing
-      // transaction.
-      // See cli/Cli.cpp, method  SeqGenCliInterfaceUpdAndValidate for details.
-      if ((getTableDesc()->getNATable()->isSeabaseMDTable()) &&
-	  (getTableDesc()->getNATable()->getTableName().getObjectName() == SEABASE_SEQ_GEN) &&
-	  (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-	{
-	  hbasescan_tdb->setUseHbaseXn(TRUE);
-	}
+      if (noDTMxn())
+        hbasescan_tdb->setUseHbaseXn(TRUE);
     }
 
   generator->setFoundAnUpdate(TRUE);
@@ -2268,7 +2259,8 @@ short HbaseInsert::codeGen(Generator *generator)
       // If used, it will overwrite existing values if this row exists in the table.
       if ((isUpsert()) &&
 	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
-	  (NOT col->isSystemColumn()))
+	  (NOT col->isSystemColumn()) &&
+          (NOT col->isIdentityColumn()))
 	{
 	  upsertColsWereSkipped = TRUE;
 	  continue;
@@ -2361,7 +2353,8 @@ short HbaseInsert::codeGen(Generator *generator)
       
       if ((isUpsert()) &&
 	  (NOT ((Assign*)assignExpr)->isUserSpecified()) &&
-	  (NOT col->isSystemColumn()))
+	  (NOT col->isSystemColumn()) &&
+          (NOT col->isIdentityColumn()))
 	{
 	  continue;
 	}

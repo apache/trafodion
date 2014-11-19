@@ -154,13 +154,10 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL)
      , spHVDPs_ (wHeap ())
      , currSPName_ (NULL)
      , dupWarning_ (FALSE)
-     , dupIdentity_ (FALSE)
-     // QSTUFF
      , inGenericUpdate_ (FALSE)
      , renameToScanTable_ (FALSE)
      , inViewExpansion_ (FALSE)
      , inliningInfoFlagsToSetRecursivly_(0)
-     // QSTUFF
      , inCTAS_(FALSE)
      , viewsUsed_("", wHeap())
      , hasDynamicRowsetsInQuery_(FALSE)

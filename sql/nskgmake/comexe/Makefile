@@ -46,7 +46,6 @@ CPPSRC := CmpMessage.cpp \
 	ComTdbSendBottom.cpp \
 	ComTdbSendTop.cpp \
 	ComTdbSequence.cpp \
-	ComTdbSequenceGenerator.cpp \
 	ComTdbSort.cpp \
 	ComTdbSortGrby.cpp \
 	ComTdbSplitBottom.cpp \

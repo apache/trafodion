@@ -46,18 +46,19 @@
 class SeqGenEntry : public NABasicObject
 {
  public:
-  SeqGenEntry(SequenceGeneratorAttributes &sga, CollHeap * heap);
+  SeqGenEntry(Int64 sgUID, CollHeap * heap);
 
-  SequenceGeneratorAttributes &seqGenAttrs() { return sga_;}
+  short getNextSeqVal(SequenceGeneratorAttributes &sga, Int64 &seqVal);
+  short getCurrSeqVal(SequenceGeneratorAttributes &sga, Int64 &seqVal);
 
-  short getNextSeqVal(Int64 &seqVal);
-  short getCurrSeqVal(Int64 &seqVal);
+  Int64 getSGObjectUID() { return sgUID_; }
 
  private:
-  short fetchNewRange();
+  short fetchNewRange(SequenceGeneratorAttributes &inSGA);
 
-  SequenceGeneratorAttributes sga_;
   CollHeap * heap_;
+
+  Int64 sgUID_;
 
   NABoolean fetchNewRange_;
   Int64 cachedStartValue_;

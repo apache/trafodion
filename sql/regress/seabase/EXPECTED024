@@ -25,7 +25,7 @@
 >>create sequence test024seq1;
 
 --- SQL operation complete.
->>create sequence test024seq2 start with 10 minvalue 1 maxvalue 15 increment by 3 cache 5;
+>>create sequence test024seq2 start with 10 minvalue 1 maxvalue 15 increment by 3 cache 2;
 
 --- SQL operation complete.
 >>create sequence test024seq3 maxvalue 3 cycle;
@@ -53,6 +53,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ0
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -65,6 +66,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ1
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -75,8 +77,9 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ2
   INCREMENT BY 3
   MAXVALUE 15
   MINVALUE 1
-  CACHE 5
+  CACHE 2
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -89,6 +92,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ3
   MINVALUE 1
   CACHE 3
   CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -101,6 +105,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ4
   MINVALUE 1
   NO CACHE
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -113,6 +118,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ5
   MINVALUE 2
   CACHE 4
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -125,22 +131,26 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ6
   MINVALUE 1
   CACHE 3
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
 >>
 >>alter sequence test024seq2 minvalue 5;
 
---- SQL operation complete.
+*** ERROR[1592] Only MAXVALUE or INCREMENT BY options can be specified for ALTER SEQUENCE.
+
+--- SQL operation failed with errors.
 >>showddl sequence test024seq2;
 
 CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ2
   START WITH 10 /* NEXT AVAILABLE VALUE 10 */
   INCREMENT BY 3
   MAXVALUE 15
-  MINVALUE 5
-  CACHE 5
+  MINVALUE 1
+  CACHE 2
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -276,6 +286,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ3
   MINVALUE 1
   CACHE 3
   CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -314,6 +325,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ4
   MINVALUE 1
   NO CACHE
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -515,6 +527,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -535,6 +548,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -550,6 +564,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -569,6 +584,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -592,6 +608,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 25
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -615,6 +632,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 5
   NO CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -654,6 +672,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
   MINVALUE 1
   CACHE 5
   CYCLE
+  LARGEINT
 ;
 
 --- SQL operation complete.
@@ -675,15 +694,34 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
 --- 1 row(s) selected.
 >>execute s;
 
-*** ERROR[1579] This sequence has reached its max and cannot provide a new value.
+(EXPR)              
+--------------------
 
---- 0 row(s) selected.
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>execute s;
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
 >>
 >>-- select from metadata sequences view
 >>invoke trafodion."_MD_".sequences_view;
 
 -- Definition of Trafodion view TRAFODION."_MD_".SEQUENCES_VIEW
--- Definition current  Tue Jul 29 12:15:36 2014
+-- Definition current  Tue Nov 11 18:31:14 2014
 
   (
     CATALOG_NAME                     VARCHAR(256 BYTES) CHARACTER SET UTF8
@@ -712,82 +750,90 @@ CATALOG_NAME                                                                    
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------  --------------------  --------------------  --------------------  ------------  ------------  --------------------  --------------------  --------------------
 
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ1                                                                                                                                                                                                                                                                          1                     1   9223372036854775806                     1  N             Y                               25                    26                     1
-TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ2                                                                                                                                                                                                                                                                         10                     3                    15                     5  N             Y                                5                    16                     2
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ2                                                                                                                                                                                                                                                                         10                     3                    15                     1  N             Y                                2                    16                     2
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ3                                                                                                                                                                                                                                                                          1                     1                     3                     1  Y             Y                                3                     4                     3
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ4                                                                                                                                                                                                                                                                          1                     1                     3                     1  N             N                                0                     4                     3
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ5                                                                                                                                                                                                                                                                          2                     1                     5                     2  N             Y                                4                     6                     2
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ6                                                                                                                                                                                                                                                                          1                     2                     8                     1  N             Y                                3                     9                     3
 TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ7                                                                                                                                                                                                                                                                          1                     1   9223372036854775806                     1  N             Y                               25                    26                     1
-TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ8                                                                                                                                                                                                                                                                          1                     1                     2                     1  Y             Y                                5                     3                     2
+TRAFODION                                                                                                                                                                                                                                                         SEQSCH                                                                                                                                                                                                                                                            TEST024SEQ8                                                                                                                                                                                                                                                                          1                     1                     2                     1  Y             Y                                5                     6                     5
 
 --- 8 row(s) selected.
 >>
 >>obey TEST024(error_cases);
 >>create sequence error_seq maxvalue -1;
 
-*** ERROR[1572] The MAXVALUE value cannot be a negative number for SEQUENCE.
+*** ERROR[1572] MAXVALUE value cannot be a negative number for CREATE SEQUENCE.
 
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation failed with errors.
 >>create sequence error_seq minvalue -1;
 
-*** ERROR[1572] The MINVALUE value cannot be a negative number for SEQUENCE.
+*** ERROR[1572] MINVALUE value cannot be a negative number for CREATE SEQUENCE.
 
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL operation failed with errors.
 >>create sequence error_seq maxvalue 0;
 
-*** ERROR[1571] The MAXVALUE value cannot be zero for CREATE SEQUENCE.
+*** ERROR[1571] MAXVALUE value cannot be zero for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq minvalue 0;
 
-*** ERROR[1571] The MINVALUE value cannot be zero for CREATE SEQUENCE.
+*** ERROR[1571] MINVALUE value cannot be zero for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq minvalue 10 maxvalue 5;
 
-*** ERROR[1570] The MAXVALUE for the sequence generator must be greater than the MINVALUE for CREATE SEQUENCE.
+*** ERROR[1570] MAXVALUE must be greater than MINVALUE for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq increment by  0;
 
-*** ERROR[1571] The INCREMENT BY value cannot be zero for CREATE SEQUENCE.
+*** ERROR[1571] INCREMENT BY value cannot be zero for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq increment by  -1;
 
-*** ERROR[1572] The INCREMENT BY value cannot be a negative number for CREATE SEQUENCE.
+*** ERROR[1572] INCREMENT BY value cannot be a negative number for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq minvalue 11 maxvalue 23 increment by 14;
 
-*** ERROR[1575] The INCREMENT BY value cannot be greater than the difference between MINVALUE and MAXVALUE for CREATE SEQUENCE.
+*** ERROR[1575] INCREMENT BY value cannot be greater than the difference between MINVALUE and MAXVALUE for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq minvalue 5 maxvalue 10 start with 3;
 
-*** ERROR[1573] The START WITH value must be greater than or equal to the MINVALUE and less than or equal to the MAXVALUE for CREATE SEQUENCE.
+*** ERROR[1573] START WITH value must be greater than or equal to MINVALUE and less than or equal to MAXVALUE for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq minvalue 5 maxvalue 10 start with 20;
 
-*** ERROR[1573] The START WITH value must be greater than or equal to the MINVALUE and less than or equal to the MAXVALUE for CREATE SEQUENCE.
+*** ERROR[1573] START WITH value must be greater than or equal to MINVALUE and less than or equal to MAXVALUE for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq cache 1;
 
-*** ERROR[1577] The CACHE value must be greater than 1 and less than or equal to (maxValue-minValue)/incrementValue for CREATE SEQUENCE.
+*** ERROR[1577] CACHE value must be greater than 1 and less than or equal to (maxValue-startValue+1)/incrementValue for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>create sequence error_seq minvalue 1 maxvalue 3 cache 10;
 
-*** ERROR[1577] The CACHE value must be greater than 1 and less than or equal to (maxValue-minValue)/incrementValue for CREATE SEQUENCE.
+*** ERROR[1577] CACHE value must be greater than 1 and less than or equal to (maxValue-startValue+1)/incrementValue for CREATE SEQUENCE.
 
 --- SQL operation failed with errors.
 >>alter sequence error_seq start with 50;
 
-*** ERROR[1578] The START WITH option cannot be used for ALTER SEQUENCE.
+*** ERROR[1389] Object ERROR_SEQ does not exist in Trafodion.
+
+*** ERROR[1389] Object TRAFODION.SEQSCH.ERROR_SEQ does not exist in Trafodion.
+
+--- SQL operation failed with errors.
+>>create sequence error_seq;
+
+--- SQL operation complete.
+>>alter sequence error_seq start with 50;
+
+*** ERROR[1592] Only MAXVALUE or INCREMENT BY options can be specified for ALTER SEQUENCE.
 
 --- SQL operation failed with errors.
 >>
@@ -820,6 +866,9 @@ TRAFODION                                                                       
 
 --- SQL operation complete.
 >>drop sequence test024seq8;
+
+--- SQL operation complete.
+>>drop sequence error_seq;
 
 --- SQL operation complete.
 >>

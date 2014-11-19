@@ -32,6 +32,8 @@
 
 #include "ComSmallDefs.h"
 
+class ComSpace;
+
 // -----------------------------------------------------------------------
 // contents of this file
 // -----------------------------------------------------------------------
@@ -60,6 +62,7 @@ public:
 			      const Int64                         psgCache,
 			      const Int64                         psgNextValue,
 			      const Int64                         psgEndValue = 0,
+                              const Int64                         psgRedefTime = 0,
                               CollHeap * h=0)
     : sgStartValue_(psgStartValue),
     sgIncrement_(psgIncrement),
@@ -72,7 +75,8 @@ public:
     sgObjectUID_(psgObjectUID),
     sgCache_(psgCache),
     sgNextValue_(psgNextValue),
-    sgEndValue_(psgEndValue)
+    sgEndValue_(psgEndValue),
+    sgRedefTime_(psgRedefTime)
   {}
 
       
@@ -88,7 +92,8 @@ public:
     sgObjectUID_(0),
     sgCache_(0),
     sgNextValue_(0),
-    sgEndValue_(0)
+    sgEndValue_(0),
+    sgRedefTime_(0)
       {}
   
   // copy ctor
@@ -105,7 +110,8 @@ public:
     sgObjectUID_(sga.sgObjectUID_),
     sgCache_(sga.sgCache_),
     sgNextValue_(sga.sgNextValue_),
-    sgEndValue_(sga.sgEndValue_)
+    sgEndValue_(sga.sgEndValue_),
+    sgRedefTime_(sga.sgRedefTime_)
       {}
   
   // ---------------------------------------------------------------------
@@ -124,7 +130,7 @@ public:
   const Int64                        &getSGCache()   const     { return sgCache_; }
   const Int64                      &getSGNextValue()   const     { return sgNextValue_; }
   const Int64                      &getSGEndValue()   const     { return sgEndValue_; }
-  
+  const Int64                      &getSGRedefTime() const     { return sgRedefTime_; }
   void setSGStartValue(const Int64 psgStartValue)
   { sgStartValue_= psgStartValue; }
 
@@ -161,6 +167,16 @@ public:
   void setSGEndValue(const Int64 psgEndValue)
   { sgEndValue_= psgEndValue; }
 
+  void setSGRedefTime(const Int64 psgRedefTime)
+  { sgRedefTime_= psgRedefTime; }
+
+  static void genSequenceName(const NAString &catName, const NAString &schName, 
+                              const NAString &tabName, const NAString &colName,
+                              NAString &seqName);
+  
+  const void display (ComSpace *space, NAString * nas, 
+                      NABoolean noNext = FALSE) const;
+ 
 private:
 
   // Sequence generator
@@ -177,6 +193,7 @@ private:
   Int64                        sgCache_;
   Int64                        sgNextValue_;
   Int64                        sgEndValue_;
+  Int64                        sgRedefTime_;
 }; // class SequenceGeneratorAttributes
 #pragma warn(1506)  // warning elimination 
 

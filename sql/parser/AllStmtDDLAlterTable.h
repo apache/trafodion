@@ -63,7 +63,6 @@
 #include "StmtDDLAlterTableToggleConstraint.h"
 #include "StmtDDLAlterTableAlterColumnDefaultValue.h"
 #include "StmtDDLAlterTableAlterColumnSetSGOption.h"
-#include "StmtDDLAlterTableAlterColumnRecalibrateSG.h"
 
 
 //

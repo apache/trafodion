@@ -136,6 +136,7 @@ ElemDDLSGOptions::initializeDataMembers()
   isMaxValueSpec_        = FALSE;
   isCycleSpec_           = FALSE;
   isCacheSpec_           = FALSE;
+  isDatatypeSpec_       = FALSE;
   
   isNoMinValue_        = FALSE;
   isNoMaxValue_        = FALSE;
@@ -147,6 +148,8 @@ ElemDDLSGOptions::initializeDataMembers()
   increment_       = 0;
   minValue_        = 0;
   maxValue_        = 0;
+
+  fsDataType_  = COM_UNKNOWN_FSDT;
 
   //
   // Traverse the parse sub-tree containing the list of SG
@@ -309,6 +312,24 @@ ElemDDLSGOptions::setSGOpt(ElemDDLNode * pSGOpt)
       pSGOpt->castToElemDDLSGOptionCacheOption()->isNoCache();
     break;
 
+    case ELM_SG_OPT_DATATYPE_ELEM :
+    if (isDatatypeSpec_)
+    {
+      // cout << "*** Error *** Duplicate options in sg option list.
+      if (ieType_ == SG_INTERNAL)
+        *SqlParser_Diags << DgSqlCode(-3427)
+                         << DgString0("DATATYPE")
+		         << DgString1("IDENTITY column");
+      else
+        *SqlParser_Diags << DgSqlCode(-3427)
+                         << DgString0("DATATYPE")
+		         << DgString1("sequence generator");
+    }
+    isDatatypeSpec_ = TRUE;
+    fsDataType_ =
+      pSGOpt->castToElemDDLSGOptionDatatype()->getDatatype();
+    break;
+
   default :
     ABORT("internal logic error");
     break;
@@ -335,6 +356,305 @@ ElemDDLSGOptions::bindNode(BindWA * /*pBindWA*/)
 
   markAsBound();
   return this;
+}
+
+// queryType:  0, create sequence.  1, alter sequence.  2, IDENTITY col.
+short ElemDDLSGOptions::validate(short queryType)
+{
+  char queryTypeStr[40];
+
+  Lng32 ij = 0;
+  while (ij)
+    {
+      ij = 2 - ij;
+    }
+
+  if (queryType == 0)
+    strcpy(queryTypeStr, "CREATE SEQUENCE");
+  else if (queryType == 1)
+    strcpy(queryTypeStr, "ALTER SEQUENCE");
+  else
+    strcpy(queryTypeStr, "IDENTITY column");
+
+  Int64 minValue = 0;
+  Int64 startValue = 0;
+  Int64 increment = 0;
+  Int64 maxValue = LONG_MAX - 1;
+
+  NAString dtStr;
+  if (fsDataType_ != COM_UNKNOWN_FSDT)
+    {
+      switch (fsDataType_)
+        {
+        case COM_UNSIGNED_BIN16_FSDT:
+          maxValue = USHRT_MAX;
+          dtStr = COM_SMALLINT_UNSIGNED_SDT_LIT;
+          break;
+        case COM_UNSIGNED_BIN32_FSDT:
+          maxValue = UINT_MAX;
+          dtStr = COM_INTEGER_UNSIGNED_SDT_LIT;
+          break;
+        case COM_SIGNED_BIN64_FSDT:
+          maxValue = LONG_MAX - 1;
+          dtStr =  COM_LARGEINT_SIGNED_SDT_LIT;
+          break;
+        default:
+          *CmpCommon::diags() << DgSqlCode(-1510);
+          return -1;
+        }
+    }
+
+  if (queryType == 1) // alter
+    {
+      if ((isMinValueSpecified()|| isStartValueSpecified()))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1592)
+                              << DgString0(queryTypeStr);
+          return -1;
+        }
+      
+      if ((isMinValueSpecified()) && (isNoMinValue()))
+        minValue = 1LL;
+      else
+        minValue = getMinValue();
+      startValue = getStartValue();
+      increment = getIncrement();
+
+      maxValue = getMaxValue();
+    }
+  else
+    {
+      minValue = ((isMinValueSpecified() && (NOT isNoMinValue())) ? 
+                  getMinValue() : 1LL); 
+      startValue = (isStartValueSpecified() ? getStartValue() : minValue);
+      increment = (isIncrementSpecified() ? getIncrement() : 1LL);
+    } //else
+
+  if (isMaxValueSpecified() && (NOT isNoMaxValue()))
+    {
+      if ((fsDataType_ != COM_UNKNOWN_FSDT) &&
+          (getMaxValue() > maxValue))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1576)
+                              << DgString0("MAXVALUE")
+                              << DgString1(dtStr);
+          
+          return -1;
+        }
+
+      maxValue = getMaxValue();
+    }
+
+  if (minValue == 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1571)
+			  << DgString0("MINVALUE")
+			  << DgString1(queryTypeStr);
+      
+      return -1;
+    }
+
+  if (minValue < 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1572)
+			  << DgString0("MINVALUE")
+			  << DgString1(queryTypeStr);
+      
+      return -1;
+    }
+
+  if (maxValue == 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1571)
+			  << DgString0("MAXVALUE")
+			  << DgString1(queryTypeStr);
+      
+      return -1;
+    }
+
+  if (maxValue < 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1572)
+			  << DgString0("MAXVALUE")
+			  << DgString1(queryTypeStr);
+      
+      return -1;
+    }
+
+  if (increment == 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1571)
+			  << DgString0("INCREMENT BY")
+			  << DgString1(queryTypeStr);
+      
+      return -1;
+    }
+
+  if (increment < 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1572)
+			  << DgString0("INCREMENT BY")
+			  << DgString1(queryTypeStr);  
+      return -1;
+    }
+
+  if (startValue < 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1572)
+			  << DgString0("START WITH")
+			  << DgString1(queryTypeStr);
+      
+      return -1;
+    }
+
+  if (maxValue <= minValue)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1570)
+			  << DgString0(queryTypeStr);      
+      return -1;
+    }
+
+  if (startValue > maxValue)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1573)
+			  << DgString0(queryTypeStr);      
+      return -1;
+    }
+
+  if (startValue < minValue)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1573)
+			  << DgString0(queryTypeStr);      
+      return -1;
+    }
+
+  if (increment > (maxValue - minValue))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1575)
+			  << DgString0(queryTypeStr);      
+      return -1;
+    }
+
+  Int64 cache = 0;
+  double fMaxVal = maxValue;
+  double fMinVal = MAXOF(startValue, minValue);
+  Int64 minVal = MAXOF(startValue, minValue);
+  double fRangeOfVals = ceil((fMaxVal-fMinVal+1)/increment);
+  Int64 rangeOfVals = (maxValue-minVal+1);
+  if (isCacheSpecified())
+    cache = getCache();
+  else
+    {
+      if (increment == 1)
+	cache = MINOF(rangeOfVals, 25);
+      else
+	cache = MINOF(fRangeOfVals, 25);
+    }
+
+  if (NOT isNoCache())
+    {
+      if ((cache <= 1) ||
+	  (cache > (increment == 1 ? rangeOfVals : fRangeOfVals)))
+	{
+	  *CmpCommon::diags() << DgSqlCode(-1577)
+			      << DgString0(queryTypeStr);	  
+	  return -1;
+	}
+    }
+  
+  if (increment == 1)
+    cache = MINOF(rangeOfVals, cache);
+  else
+    cache = MINOF(fRangeOfVals, cache);
+
+  setStartValue(startValue);
+  setIncrement(increment);
+  setMinValue(minValue);
+  setMaxValue(maxValue);
+  if (NOT isCacheSpecified())
+    setCache(cache);
+
+  return 0;
+}
+
+short ElemDDLSGOptions::genSGA(SequenceGeneratorAttributes &sga)
+{
+  sga.setSGStartValue(getStartValue());
+  sga.setSGIncrement(getIncrement());
+  sga.setSGMinValue(getMinValue());
+  sga.setSGMaxValue(getMaxValue());
+
+  sga.setSGCache(getCache());
+  sga.setSGCycleOption(isCycle());
+
+  sga.setSGFSDataType(getFSDataType());
+
+  return 0;
+}
+
+short ElemDDLSGOptions::importSGA(const SequenceGeneratorAttributes *sga)
+{
+  initializeDataMembers();
+
+  setFSDataType(sga->getSGFSDataType());
+  setStartValue(sga->getSGStartValue());
+  setIncrement(sga->getSGIncrement());
+  setMinValue(sga->getSGMinValue());
+  setMaxValue(sga->getSGMaxValue());
+
+  setCache(sga->getSGCache());
+  setCycle(sga->getSGCycleOption());
+
+  return 0;
+}
+
+short ElemDDLSGOptions::importSGO(const ElemDDLSGOptions *sgo)
+{
+  if (sgo->isStartValueSpecified())
+    {
+      setStartValueSpec(TRUE);
+      setStartValue(sgo->getStartValue());
+    }
+
+  if (sgo->isIncrementSpecified())
+    {
+      setIncrementSpec(TRUE);
+      setIncrement(sgo->getIncrement());
+    }
+
+  if (sgo->isMinValueSpecified())
+    {
+      setMinValueSpec(TRUE);
+      
+      if (sgo->isNoMinValue())
+        setNoMinValue(TRUE);
+      else
+        setMinValue(sgo->getMinValue());
+    }
+
+  if (sgo->isMaxValueSpecified())
+    {
+      setMaxValueSpec(TRUE);
+
+      if (sgo->isNoMaxValue())
+        setNoMaxValue(TRUE);
+      else
+        setMaxValue(sgo->getMaxValue());
+    }
+
+  if (sgo->isCacheSpecified())
+    {
+      setCacheSpec(TRUE);
+      setCache(sgo->getCache());
+    }
+
+  if (sgo->isCycleSpecified())
+    {
+      setCycleSpec(TRUE);
+      setCycle(sgo->isCycle());
+    }
+
+  return 0;
 }
 
 //

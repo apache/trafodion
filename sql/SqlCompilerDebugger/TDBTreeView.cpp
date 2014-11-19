@@ -170,14 +170,6 @@ NAString TDBTreeView::TDBNodeTypeToString(ComTdb::ex_node_type nodeType)
       tdbName = "ExSequenceTdb";
       break;
 
-     case ComTdb::ex_SEQGEN:
-      tdbName = "ExSequenceGenerator";
-      break;
-
-    case ComTdb::ex_NEXTVALUEFOR:
-      tdbName = "ExNextValueFor";
-      break;
-
     case ComTdb::ex_UDR:
       tdbName = "ExUdrTdb";
       break;

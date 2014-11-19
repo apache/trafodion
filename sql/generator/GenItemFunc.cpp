@@ -2257,11 +2257,6 @@ short RandomNum::codeGen(Generator *generator)
                                                                space);
 #pragma warn(1506)  // warning elimination 
   
-
-  
-  //pass in the identityRandom_ flag to the clause. 
-  ((ExFunctionRandomNum *)function_clause)->setIdentityRandom(identityRandom_);
- 
   if (function_clause)
     generator->getExpGenerator()->linkClause(this, function_clause);
   
@@ -2808,12 +2803,22 @@ short SequenceValue::codeGen(Generator * generator)
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
 
+  Int64 origCacheSize = naTable_->getSGAttributes()->getSGCache();
+  Lng32 cacheSize = CmpCommon::getDefaultNumeric(TRAF_SEQUENCE_CACHE_SIZE);
+  if (cacheSize > 0)
+    {
+      ((SequenceGeneratorAttributes*)naTable_->getSGAttributes())->setSGCache(cacheSize);
+    }
+
   ExFunctionSequenceValue * sv =
     new(generator->getSpace()) ExFunctionSequenceValue
     (getOperatorType(), 
      attr, 
      *naTable_->getSGAttributes(),
      space);
+
+  if (cacheSize > 0)
+    ((SequenceGeneratorAttributes*)naTable_->getSGAttributes())->setSGCache(origCacheSize);
 
   if (sv)
     generator->getExpGenerator()->linkClause(this, sv);

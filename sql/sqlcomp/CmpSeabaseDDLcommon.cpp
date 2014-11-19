@@ -363,7 +363,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       keyInfoArray = (ComTdbVirtTableKeyInfo*)
         new(CTXTHEAP) char[numKeys * sizeof(ComTdbVirtTableKeyInfo)];
       
-      if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, FALSE, CTXTHEAP))
+      if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, FALSE, NULL, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
 	}
@@ -500,7 +500,10 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       indexInfo->nonKeyColCount = numIndexNonKeys;
       indexInfo->keyInfoArray = indexKeyInfoArray;
       indexInfo->nonKeyInfoArray = indexNonKeyInfoArray;
-      
+
+      indexInfo->hbaseCreateOptions = NULL;
+      indexInfo->numSaltPartns = 0;
+
       numCols = 0;
       colInfoArray = NULL;
       numKeys = 0;
@@ -2198,14 +2201,23 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
   else if (colNode->getDefaultClauseStatus() == ElemDDLColDef::DEFAULT_CLAUSE_SPEC)
     {
       ItemExpr * ie = colNode->getDefaultValueExpr();
-      if (ie == NULL)
-        if (colNode->getComputedDefaultExpr().isNull())
-          defaultClass = COM_NO_DEFAULT;
-        else
-          {
-            defaultClass = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;
-            defVal = colNode->getComputedDefaultExpr();
-          }
+      if (colNode->getSGOptions())
+        {
+          if (colNode->getSGOptions()->isGeneratedAlways())
+            defaultClass = COM_IDENTITY_GENERATED_ALWAYS;
+          else
+            defaultClass = COM_IDENTITY_GENERATED_BY_DEFAULT;
+        }
+      else if (ie == NULL)
+        {
+          if (colNode->getComputedDefaultExpr().isNull())
+            defaultClass = COM_NO_DEFAULT;
+          else
+            {
+              defaultClass = COM_ALWAYS_COMPUTE_COMPUTED_COLUMN_DEFAULT;
+              defVal = colNode->getComputedDefaultExpr();
+            }
+        }
       else if (ie->getOperatorType() == ITM_CURRENT_TIMESTAMP)
         {
           defaultClass = COM_CURRENT_DEFAULT;
@@ -2227,14 +2239,6 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
           
           defaultClass = COM_USER_FUNCTION_DEFAULT;
         }
-     else if (ie->getOperatorType() == ITM_IDENTITY)
-       {
-         // identity column not currently supported.
-         *CmpCommon::diags() << DgSqlCode(-4222)
-                             << DgString0("IDENTITY");
-         
-         return -1;
-       }
       else if (ie->castToConstValue(negateIt) != NULL)
         {
           if (ie->castToConstValue(negateIt)->isNull())
@@ -3208,6 +3212,7 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
     }
   return 0;
 }
+
 short CmpSeabaseDDL::updateSeabaseMDSPJ(
                                         ExeCliInterface *cliInterface,
                                         const char * catName,
@@ -3578,6 +3583,42 @@ short CmpSeabaseDDL::deleteConstraintInfoFromSeabaseMDTables(
   return 0;
 }
 
+short CmpSeabaseDDL::updateObjectRedefTime(
+                                         ExeCliInterface *cliInterface,
+                                         const NAString &catName,
+                                         const NAString &schName,
+                                         const NAString &objName,
+                                         const char * objType,
+                                         Int64 rt)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+
+  Int64 redefTime = (rt == -1 ? NA_JulianTimestamp() : rt);
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, NAString(schName), FALSE);
+  NAString quotedObjName;
+  ToQuotedString(quotedObjName, NAString(objName), FALSE);
+
+  str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %Ld where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              redefTime,
+              catName.data(), quotedSchName.data(), quotedObjName.data(),
+              objType);
+  cliRC = cliInterface->executeImmediate(buf);
+  
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return -1;
+    }
+
+  return 0;
+}
+
 short CmpSeabaseDDL::updateObjectValidDef(
                                            ExeCliInterface *cliInterface,
                                            const char * catName,
@@ -3682,6 +3723,7 @@ short CmpSeabaseDDL::buildColInfoArray(
                                        NABoolean implicitPK,
                                        CollIndex numSysCols,
                                        NABoolean alignedFormat,
+                                       Lng32 *identityColPos,
 				       NAMemory * heap)
 {
   size_t index = 0;
@@ -3741,6 +3783,11 @@ short CmpSeabaseDDL::buildColInfoArray(
           def_val[defVal.length()] = 0;
           colInfoArray[index].defVal = def_val;
         }
+
+      if ((identityColPos) &&
+          ((defaultClass == COM_IDENTITY_GENERATED_BY_DEFAULT) ||
+           (defaultClass == COM_IDENTITY_GENERATED_ALWAYS)))
+        *identityColPos = index;
 
       colInfoArray[index].colHeading = NULL;
       if (heading.length() > 0)
@@ -4599,7 +4646,7 @@ void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequen
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
               (sgo->isExternalSG() ? COM_EXTERNAL_SG_LIT : COM_INTERNAL_SG_LIT),
               seqObjUID, 
-              REC_BIN64_SIGNED, 
+              sgo->getFSDataType(), //REC_BIN64_SIGNED, 
               sgo->getStartValue(),
               sgo->getIncrement(),
               sgo->getMaxValue(),
@@ -4736,14 +4783,15 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
       strcat(setOptions, tmpBuf);
     }
 
- if (sgo->isCycleSpecified())
+  if (sgo->isCycleSpecified())
     {
       str_sprintf(tmpBuf, " cycle_option = '%s',", (sgo->getCycle() ? "Y" : "N"));
       strcat(setOptions, tmpBuf);
     }
-
-  // remove last comma
-  setOptions[strlen(setOptions)-1] = 0;
+  
+  Int64 redefTime = NA_JulianTimestamp();
+  str_sprintf(tmpBuf, " redef_ts = %Ld", redefTime);
+  strcat(setOptions, tmpBuf);
 
   str_sprintf(buf, "update %s.\"%s\".%s %s where seq_uid = %Ld",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_SEQ_GEN,
@@ -4754,6 +4802,16 @@ void  CmpSeabaseDDL::alterSeabaseSequence(StmtDDLCreateSequence  * alterSequence
   if (cliRC < 0)
     {
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+
+  if (updateObjectRedefTime(&cliInterface,
+                            catalogNamePart, schemaNamePart, seqNamePart,
+                            COM_SEQUENCE_GENERATOR_OBJECT_LIT,
+                            redefTime))
+    {
+      processReturn();
+
       return;
     }
 
@@ -5861,7 +5919,15 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            
            dropSeabaseSequence(dropSequenceParseNode, currCatName, currSchName);
          }
-      
+       else if (ddlNode->getOperatorType() ==  DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION)
+         {
+           StmtDDLAlterTableAlterColumnSetSGOption * alterIdentityColNode =
+             ddlNode->castToStmtDDLNode()->castToStmtDDLAlterTableAlterColumnSetSGOption();
+           
+           alterSeabaseTableAlterIdentityColumn(alterIdentityColNode, 
+                                                currCatName, currSchName);
+        }
+       
     } // else
   
 label_return:

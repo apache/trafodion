@@ -69,7 +69,6 @@
 #include "ExExeUtil.h"
 #include "ex_transaction.h"
 #include "ExSequence.h"
-#include "ExSequenceGenerator.h"
 #include "ExStats.h"
 #include "ex_exe_stmt_globals.h"
 #include "ex_timeout.h"   
@@ -250,7 +249,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-#ifndef __EID
     case ex_HASHJ:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -266,15 +264,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 #pragma warn(1506)  // warning elimination 
       break;
     }
-
-    case ex_NEXTVALUEFOR:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ExNextValueForTdb);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-#endif 
 
     case ex_UNION:
     {
@@ -303,14 +292,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
     {
 #pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ExExplainTdb);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
-    case ex_SEQGEN:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ExSequenceGeneratorTdb);
 #pragma warn(1506)  // warning elimination 
       break;
     }

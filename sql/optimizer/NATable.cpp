@@ -4932,7 +4932,9 @@ NATable::NATable(BindWA *bindWA,
 						 sg_desc->cycleOption,
 						 sg_desc->objectUID,
 						 sg_desc->cache,
-						 sg_desc->nextValue);
+						 sg_desc->nextValue,
+                                                 0,
+                                                 sg_desc->redefTime);
       }
   }
 #ifndef NDEBUG

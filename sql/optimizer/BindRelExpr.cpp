@@ -5173,22 +5173,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     return NULL;
   }
 
-  // Set the indicator that this is a unique insert statement.
-  // This is used later by the generator to help determine 
-  // if this is a UNIQUE or NON UNIQUE INSERT for a singleton
-  // insert on a base table with an IDENTITY column using
-  // an internal sequence generator.
-  // We want this to be a REL_UNARY_INSERT, have a grandchild(0)(0)
-  // of REL_TUPLE and not be in a rowset.
-
-  if ((childOperType() == REL_UNARY_INSERT)                  &&
-      ((NOT child(0)->child(0)                               ||
-        child(0)->child(0)->getOperatorType() == REL_TUPLE)) &&
-      ((NOT bindWA->getHostArraysArea()                      ||   
-       (bindWA->getHostArraysArea()                          && 
-        NOT bindWA->getHostArraysArea()->hasHostArraysInTuple()))))
-    setIsUniqueSGInsertType(TRUE);
-
   BindScope *currScope = bindWA->getCurrentScope();
 
   // -- MVs
@@ -5334,16 +5318,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
         oltOptInfo().setOltEidOpt(TRUE); 
       }
     }
-
-  // We can test for the case where we are
-  // in a trigger after the children have
-  // been bound.  If we are in a trigger, and we have
-  // set the IDENTITY column sequence generator
-  // insert type to UNIQUE before the children
-  // are bound, we will reset it to FALSE. 
-
-  if (isTrueRoot() && isUniqueSGInsertType() && bindWA->isInTrigger())
-    setIsUniqueSGInsertType(FALSE);
 
   // If unresolved aggregate functions have been found in the children of the
   // root node, that would mean that we are referencing aggregates before
@@ -7956,8 +7930,7 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
   //
   numberOfTuples_ = tupleList.entries();
   CollIndex prevTupleNumEntries = NULL_COLL_INDEX;
-  CollIndex identityVidUnionIndex = NULL_COLL_INDEX;
-  
+
   // A list of ValueIdUnions nodes.  Will create as many as there are
   // entries in each tuple.  The valIds from corresponding elements of
   // the tuples will be added so that each ValueIdUnion represents a
@@ -8005,12 +7978,6 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
           Assign(castToList()[j].getItemExpr(), src.getItemExpr());
         tmpAssign = (Assign *)tmpAssign->bindNode(bindWA);
         if (bindWA->errStatus()) return this;
-
-        // find the vidUnion that has the values for
-        // the identity column
-        ItemExpr * idExpr = castToList()[j].getItemExpr();
-        if(((BaseColumn *)idExpr)->getNAColumn()->isIdentityColumn())
-          identityVidUnionIndex = j;
       }
  
       if(i == 0) {
@@ -8056,124 +8023,6 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
     return NULL;
   }
 
-
-  // Get the ValueIdUnion node corresponding to the identity 
-  // column from the tuple list virtual table
-  //
-  if (identityVidUnionIndex != NULL_COLL_INDEX)
-    {
-      ValueIdUnion *identityVidUnion = 
-        (ValueIdUnion *)vidUnions[identityVidUnionIndex];
-      
-      // Make sure that there are no mixed user values and DEFAULT
-      // specified for IDENTITY column in a TupleList.
-      // For Example: for Table T(IDENTITY, col2, col3);
-      //  insert into t_id_s values (DEFAULT,'1',1),
-      //                            (1023,'2',2);
-      // is not allowed because for IDENTITY mixed user (1023) and 
-      // DEFAULT are specified.
-      Int64 defaultIdValueEntries = 0;
-      ULng32 entries = identityVidUnion->getSources().entries();
-
-      for (CollIndex i = 0; i < entries; i++)
-        {
-          ItemExpr *expr =identityVidUnion->getSources()[i].getItemExpr();
-          if ((expr->getOperatorType() == ITM_IDENTITY) ||
-              (expr->isASubquery() && ((Subquery *)expr)->isASeqGenSubquery()))
-            defaultIdValueEntries++; 
-        }
-      
-      // if defaultIdValueEntries == 0, then all entries are user supplied 
-      // values.
-      // if defaultIdValueEntries == identityVidUnion->getSources().entries(),
-      // then all entries are DEFAULT.
-      // if neither of the above, then mixed values. Raise an error.
-      
-      if(defaultIdValueEntries != 0) // atleast 1 DEFAULT was specified.
-        {
-          
-          NAColumn *naColId = ((BaseColumn *)castToList()[identityVidUnionIndex].getItemExpr())->getNAColumn();
-          // all tuple in the TupleList must have DEFAULT specified
-          if(defaultIdValueEntries  != entries) 
-            {
-              *CmpCommon::diags() << DgSqlCode(-3414)
-                                  << DgColumnName(naColId->getColName());
-              bindWA->setErrStatus();
-            }
-          
-          if (CmpCommon::getDefault(COMP_BOOL_210) == DF_ON)
-            {
-              // For system generated IDENTITY column values using Sequence 
-              // Generator(SG), we use subquery transformation 
-              // (SeqGenSubquery::transformNode()) to introduce
-              // the NextValueFor operator and SequenceGenerator. For example
-              // For table t(id, b) - id being the IDENTITY column.
-              //        INSERT into t values (DEFAULT, b);
-              // where DEFAULT indicates that the system generates 
-              // the IDENTITY column value using SG.
-              // The SeqGenSubquery::transformNode introduces the
-              // following sub tree.. 
-              //               root
-              ///               |
-              //             NextValueFor
-              //               /   \
-              //          Tuple   SequenceGenerator
-              //   (DEFAULT,b).
-              // For a TupleList such as INSERT INTO t VALUES 
-              //            (DEFAULT,2), (DEFAULT,3), (DEFAULT,4);
-              // we still only want one transformation and not one
-              // for EACH tuple in the tuple list.
-              // So, what we do here is to remove the DEFAULT from the each of
-              // tuple in the tuple list and make it look like the following
-              // query for the Insert::bindNode().
-              //   INSERT INTO T (b) values (2), (3), (4);
-              // Since all of these defaults are the same for IDENTITY,
-              // Remove them from the TupleList and let INSERT take care of it.
-
-              // First check that we have a table with a single IDENTITY column and
-              // only DEFAULT in the tuple list for that single column.
-              // e.g. insert into T1 values(DEFAULT),(DEFAULT).
-              // If so, then post error -3431.
-
-              if (prevTupleNumEntries == 1)
-                {
-                  *CmpCommon::diags() << DgSqlCode(-3431)
-                                      << DgColumnName(naColId->getColName());
-                  bindWA->setErrStatus();
-                  return NULL;
-                }
-
-              vidUnions.removeAt(identityVidUnionIndex);
-              castToList().removeAt(identityVidUnionIndex);
-              prevTupleNumEntries--;
-
-              ItemExpr *newTupleExprTree = NULL;
-              ExprValueId newTLVid(newTupleExprTree);
-              ItemExprTreeAsList newTupleList(&newTLVid, ITM_ITEM_LIST);
-
-              CollIndex nTupleListEntries = (CollIndex)tupleList.entries();
-              for (CollIndex i = 0; i < nTupleListEntries ; i++)
-                {
-                  ItemExpr * tuple =
-                    ((ItemExpr *) tupleList[i])->child(0)->castToItemExpr();
-
-                  ExprValueId tVid(tuple);
-                  ItemExprTreeAsList tupleTree(&tVid, ITM_ITEM_LIST);
-                  
-                  ItemExpr *idDef = tupleTree[identityVidUnionIndex];
-                  tupleTree.remove(idDef);
-                  ItemExpr *newTuple = new(bindWA->wHeap()) Convert(tVid.getPtr());
-
-                  newTupleList.insert(newTuple);
-
-                }
-
-              removeTupleExprTree();
-              addTupleExprTree(newTLVid.getPtr());
-            }
-        }// if (defaultIdValueEntries != 0) 
-    } // if (identityVidUnionIndex != NULL_COLL_INDEX)
-  
   ItemExpr * outputList = NULL;
   for (CollIndex j = 0; j < prevTupleNumEntries; j++) {
 
@@ -9680,49 +9529,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
          }
       }
 
-
-     // If the target is an IDENTITY column, for which the system
-      // generates the value: the user cannot specify expressions such
-      // as DEFAULT + 2 are not allowed as IDENTITY column values.
-      // Eg: insert into t002ut1(b,IDENTITY) values (N'go',
-      // DEFAULT+2);
-      //     
-
-      if(nacol->isIdentityColumn() &&           // it's an IDENTITY column
-         systemGeneratesIdentityValue() &&      // the system generates value for it.
-         CmpCommon::getDefault(COMP_BOOL_210) == DF_ON 
-         )
-        {
-          // We use the following criteria to detect, if an expression
-          // is specified for the IDENTITY column value. 
-          // 
-          // Case 1: For a DML the source must be a seqGenSubquery. 
-          //         If it's NOT seqGenSubquery, we assume it to be an expression;
-          //         raise an error.
-          // Case 2: For a DDL, the source must be an IdentityVar; if it's
-          //         not, we raise the error.
-          //      Example: create view v1 (S) as select surrogate_key 
-          //          from  (insert into B4 values (DEFAULT,20,30))x;
-          //       We don't expand the DEFAULT to SeqGenSubquery during a DDL.
-          //       See IdentityVar::bindNode()
-          ItemExpr * child1 = assign->child(1)->castToItemExpr();
-          if ((NOT (child1->getOperatorType() == ITM_ROW_SUBQUERY
-                    &&
-                    (((Subquery *) child1)->isASeqGenSubquery())
-                    ))             // Case 1:
-              &&
-              ( NOT (child1->getOperatorType() == ITM_IDENTITY &&
-                     bindWA->inDDL()
-                     ))            // Case 2:
-              )
-            {
-              // 3411 - Expressions are not supported for IDENTITY column values.
-              *CmpCommon::diags() << DgSqlCode(-3411);
-              bindWA->setErrStatus();
-              return NULL;
-            }
-        }
-      
       const NAType *colType = nacol->getType();
       if (!colType->isSupportedType()) {
         *CmpCommon::diags() << DgSqlCode(-4027)     // 4027 table not insertable
@@ -9882,15 +9688,23 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           if (nacol->getDefaultClass() == COM_CURRENT_DEFAULT) {
             castType = nacol->getType()->newCopy(bindWA->wHeap());
           }
+          else if ((nacol->getDefaultClass() == COM_IDENTITY_GENERATED_ALWAYS) ||
+                   (nacol->getDefaultClass() == COM_IDENTITY_GENERATED_BY_DEFAULT)) {
+            setSystemGeneratesIdentityValue(TRUE);
+          }
 
           // Bind the default value, make an Assign, etc, as above
           Parser parser(bindWA->currentCmpContext());
 
-          defaultValueExpr = parser.getItemExprTree(defaultValueStr);
+          // save the current parserflags setting
+          ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+          Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
 
-          // Reset Flags to the previous settings.
-          //
-	
+          defaultValueExpr = parser.getItemExprTree(defaultValueStr);
+          CMPASSERT(defaultValueExpr);
+
+          // Restore parser flags settings to what they originally were
+          Assign_SqlParser_Flags (savedParserFlags);
 	} // defaultValueStr != NULL
 
 	Assign *assign = NULL;
@@ -9925,6 +9739,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             }
 
 	  if ((isUpsertLoad()) &&
+              (NOT defaultValueExpr->getOperatorType() == ITM_IDENTITY) &&
 	      (NOT isASystemColumn))
 	    {
 	      // for 'upsert using load' construct, all values must be specified so
@@ -9940,14 +9755,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             Assign(target.getItemExpr(), defaultValueExpr,
                    FALSE /*not user-specified*/);
           assign->bindNode(bindWA);
-
-          // system generates value for IDENTITY column.
-          if (defaultValueExpr->getOperatorType() == ITM_IDENTITY) 
-            {
-              // Add the valueId for the identity hostvar
-              // to the GenericUpdate::identityColumnId_.
-              identityColumn() = defaultValueExpr->getValueId();
-            } 
         }
 
         //
@@ -9976,7 +9783,17 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           break;  // tiny performance hack
 
       }   // NOT newRecExprArray().used(i)
-
+      else {
+        // user specified value.
+        if (nacol->getDefaultClass() == COM_IDENTITY_GENERATED_ALWAYS)
+          {
+            *CmpCommon::diags() << DgSqlCode(-3428)
+                                << DgString0(nacol->getColName());
+            bindWA->setErrStatus();
+            return boundExpr;
+          }
+      }
+        
       if (isASystemColumn)
         sysColIx++;
       else
@@ -10035,26 +9852,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
            return boundExpr;
         }
     }
- 
-  if (identityColumn() != NULL_VALUE_ID)
-    {
-    systemGeneratedIdentityValue = TRUE;
 
-    bindWA->setDupIdentity(TRUE);
-
-    // Fixup GenericUpdate::identityColumnId_. (i.e) 
-    // If the insert is dealing with a tuple list then the 
-    // \:sys_IdentityValue is cast to its type.
-    // In this case grab the cast(\:sys_Identity_value) and store it 
-    // GenericUpdate::identityColumnId_ in place of \:sys_Identity_value
-    //
-    // And do this only for system generated IDENTITY value.
-    // GenericUpdate::identityColumn() is set only for
-    // system generted IDENTIY column value.
-    // Note: For update all values are user specified.
-    fixupIdentityColumn(bindWA);
-    }
-  
   ItemExpr *orderByTree = removeOrderByTree();
   if (orderByTree) {
     bindWA->getCurrentScope()->context()->inOrderBy() = TRUE;
@@ -10081,14 +9879,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       && (getGroupAttr()->getCharacteristicInputs() != NULL)
       && (insertFromValuesList))
     setNoFlow(TRUE);
-
-
-  // handleInlining() does IM and it needs to know if
-  // 8108 must be raised for duplicates of user generated value
-  // and systemGenerateIdentityValue.
-  if (systemGeneratedIdentityValue ||
-      CmpCommon::getDefault(IDENTITY_USER_DUPLICATE_VALUE) == DF_ON) 
-    bindWA->setDupIdentity(TRUE);
 
   if (getUpdateCKorUniqueIndexKey())
   {
@@ -10134,17 +9924,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   }
   if (NOT isMerge())
     boundExpr = handleInlining(bindWA, boundExpr);
-
-  // During handleInlining(), the GenericUpdate::identityColumnUniqueIndex 
-  // is set only for the secondary indexes (LeafInsert nodes) in Inlining.cpp).
-  // Set it here for primary indexes (base tables).
-
-  // Also, only set for system generated Identity value.
-  if (systemGeneratedIdentityValue ||
-      CmpCommon::getDefault(IDENTITY_USER_DUPLICATE_VALUE) == DF_ON) {
-    setIdentityColumnUniqueIndex
-      (getTableDesc()->getIndexes()[0]->getIdentityColumnUniqueIndex());
-  }
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
   // necessary warnings have been generated in handleInlining method.
@@ -10678,8 +10457,6 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
 
       mergeInsertRecExpr() = ins->newRecExpr();
       mergeInsertRecExprArray() = ins->newRecExprArray();
-
-      identityColumn() = ins->identityColumn();
     }
 
   NATable *naTable = bindWA->getNATable(getTableName());
@@ -16306,35 +16083,6 @@ RelExpr * ParallelLabelOp::bindNode (BindWA *bindWA)
   RelExpr *boundExpr = bindSelf(bindWA);
   return boundExpr;
 }
-
-RelExpr *SequenceGenerator::bindNode(BindWA *bindWA)
-{
-  // indicate that this statement uses an internal sequence generator
-  bindWA->getTopRoot()->setContainsSG(TRUE);
-
-  // Set the parser flags to allow the FUNNY character.
-  // Processing for rowsets will need this set.
-
-  ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
-
-  Set_SqlParser_Flags(ALLOW_FUNNY_IDENTIFIER);
-  Set_SqlParser_Flags(ALLOW_SPECIALTABLETYPE);
-
-  RelExpr * bound = RelExpr::bindNode(bindWA);
-
-  // Restore parser flags settings to what they originally were
-  Set_SqlParser_Flags (savedParserFlags);
-
-  return bound;
-} // SequenceGenerator::bindNode()
-
-RelExpr *NextValueFor::bindNode(BindWA *bindWA)
-{
-  // indicate that this statement uses an internal sequence generator
-  bindWA->getTopRoot()->setContainsSG(TRUE);
-
-  return RelExpr::bindNode(bindWA);
-} // NextValueFor::bindNode()
 
 RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
 {

@@ -5826,13 +5826,9 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
 
       seed_ = x + fraction;
 
-      // For IDENTITY columns (Surrogate Keys), use all 32 bits
-      if (!identityRandom())
-      {
-          if (seed_<0)
-	    seed_ += 2147483647;
-	  if ( seed_ < 1 ) seed_ = 1;
-      }
+      if (seed_<0)
+        seed_ += 2147483647;
+      if ( seed_ < 1 ) seed_ = 1;
     }
 }
 
@@ -5863,8 +5859,7 @@ NA_EIDPROC void ExFunctionRandomNum::genRand(char *op_data[])
       t = A*l-R*h;
   }
 
-  // Use entire 32 bits for IDENTITY column
-  if( identityRandom() || (t>0) )
+  if (t>0) 
      seed_ = t;
   else
      seed_ = t + M;
@@ -5877,46 +5872,7 @@ ex_expr::exp_return_type ExFunctionRandomNum::eval(char *op_data[],
 {
   genRand(op_data); // generates and sets the random number in seed_
 
-  if (identityRandom())
-    {
-      // Values generated for insertion into IDENTITY columns are 64 bits
-      // long and have the following format:
-      //
-      // Current default scenario:
-      // Content: zero |  Bits 41-26 of JulianTimestamp  | random number
-      // #bits:    16  |              16                 |     32
-      //
-      // Notes:
-      //  1. The high-order 16 bits must always be zero (for now)
-      //     and is controlled by the IDENTITY_MASK_BITS (internal) CQD.
-      //     {Default value for IDENTITY_MASK_BITS = 16.}
-      //
-      //  2. By using bits 41-26 from the julian timestamp,
-      //     the timed-sequenced field changes every 67 seconds
-      //     and repeats itself approx. every 50.9 days.
-      //
-      //  3. Return the entire 64 bit value in order to provide the
-      //     capability of the IDENTITY_MASK_BITS to completely dictate
-      //     how many bits are used for the ID column.
-
-        Int64 idVal = CONVERTTIMESTAMP(JULIANTIMESTAMP(0,0,0,-1),0,-1,0);
-
-      // Populate bits 47-32 with bits 41-26 of julian timestamp
-      idVal <<= 6;
-
-      // Mask off the lower 32 bits
-      // and the sign bit (to ensure always +values)
-      idVal = idVal & 0x7fffffff00000000LL;
-
-      // Bitwise OR since seed_ could be negative
-      idVal |= (ULng32)seed_;
-
-      *((Int64*)op_data[0]) = idVal;
-    }
-  else
-    {
-      *((ULng32*)op_data[0]) = (ULng32) seed_;
-    }
+  *((ULng32*)op_data[0]) = (ULng32) seed_;
 
   return ex_expr::EXPR_OK;
 }

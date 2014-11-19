@@ -5945,38 +5945,6 @@ RelExpr * NestedJoin::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
 NABoolean NestedJoin::allPartitionsProbed()
 {
-  //search if left child is inner
-  ExprNode* child = getChild(0);
-  if (child -> getOperatorType() == REL_EXCHANGE)
-  {
-    ExprNode* grandchild = child -> getChild(0);
-    if (grandchild -> getOperatorType() == REL_PARTITION_ACCESS)
-    {
-      RelExpr * rel = grandchild -> castToRelExpr();
-      if (rel != NULL)
-      {
-        PartitionAccess* pa = (PartitionAccess*)rel;
-        if (NOT pa->allPartitionsProbed())
-          return FALSE;
-      }
-    }
-  }
-  //search if right child is inner
-  child = getChild(1);
-  if (child -> getOperatorType() == REL_EXCHANGE)
-  {
-    ExprNode* grandchild = child -> getChild(0);
-    if (grandchild -> getOperatorType() == REL_PARTITION_ACCESS)
-    {
-      RelExpr * rel = grandchild -> castToRelExpr();
-      if (rel != NULL)
-      {
-        PartitionAccess* pa = (PartitionAccess*)rel;
-        if (NOT pa->allPartitionsProbed())
-          return FALSE;
-      }
-    }
-  }
   return TRUE;//all partitions probed
 }
 
@@ -10735,11 +10703,9 @@ RelRoot::RelRoot(RelExpr *input,
     hasOlapFunctions_(FALSE),
     hasTDFunctions_(FALSE),
     isAnalyzeOnly_(FALSE),
-    containsSG_(FALSE),
     hasMandatoryXP_(FALSE),
     partReqType_(ANY_PARTITIONING),
     partitionByTree_(NULL),
-    isUniqueSGInsertType_(FALSE),
     predExprTree_(NULL),
     flags_(0)
 {
@@ -10807,11 +10773,9 @@ RelRoot::RelRoot(RelExpr *input,
     hasOlapFunctions_(FALSE),
     hasTDFunctions_(FALSE),
     isAnalyzeOnly_(FALSE),
-    containsSG_(FALSE),
     hasMandatoryXP_(FALSE),
     partReqType_(ANY_PARTITIONING),
     partitionByTree_(NULL),
-    isUniqueSGInsertType_(FALSE),
     predExprTree_(NULL),
     flags_(0)
 {
@@ -10884,11 +10848,9 @@ RelRoot::RelRoot(const RelRoot & other)
     hasOlapFunctions_(other.hasOlapFunctions_),
     hasTDFunctions_(other.hasTDFunctions_ ),
     isAnalyzeOnly_(FALSE),
-    containsSG_(other.containsSG_) ,
     hasMandatoryXP_(other.hasMandatoryXP_),
     partReqType_(other.partReqType_),
     partitionByTree_(other.partitionByTree_),
-    isUniqueSGInsertType_(other.isUniqueSGInsertType_),
     isCIFOn_(other.isCIFOn_),
     predExprTree_(other.predExprTree_),
     flags_(other.flags_)
@@ -11096,16 +11058,12 @@ RelExpr * RelRoot::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->isAnalyzeOnly_ = isAnalyzeOnly_;
 
-  result->containsSG_ = containsSG_;
-
   result->hasMandatoryXP_ = hasMandatoryXP_ ;
 
   if (partitionByTree_ != NULL)
     result->partitionByTree_ = partitionByTree_->copyTree(outHeap)->castToItemExpr();
   
   result->partReqType_ = partReqType_ ;
-
-  result->isUniqueSGInsertType_ = isUniqueSGInsertType_;
 
   result->isQueryNonCacheable_ = isQueryNonCacheable_; 
 
@@ -12083,259 +12041,6 @@ const NAString Describe::getText() const
 }
 
 // -----------------------------------------------------------------------
-// Member functions for class PartitionAccess
-// -----------------------------------------------------------------------
-
-PartitionAccess::~PartitionAccess() {}
-
-NABoolean PartitionAccess::isLogical()  const { return FALSE; }
-
-NABoolean PartitionAccess::isPhysical() const { return TRUE; }
-
-Int32 PartitionAccess::getArity() const { return 1; }
-
-RelExpr * PartitionAccess::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
-{
-  PartitionAccess *result;
-
-  if (derivedNode == NULL)
-    result = new (outHeap)
-                 PartitionAccess(indexDesc_, NULL, NULL, NULL, outHeap);
-  else
-    result = (PartitionAccess *) derivedNode;
-
-  result->beginPartNoExpr_ = beginPartNoExpr_;
-  result->endPartNoExpr_   = endPartNoExpr_;
-
-  result->beginPartSelection_ = beginPartSelection_;
-  result->endPartSelection_   = endPartSelection_;
-
-  result->sequenceGenerationExpr_ = sequenceGenerationExpr_;
-  result->sequenceInitExpr_ = sequenceInitExpr_;
-  result->sidSpaceAlreadySetup_ = sidSpaceAlreadySetup_;
-
-  result->paDp2AlignmentOpt_ = paDp2AlignmentOpt_;
-
-  return RelExpr::copyTopNode(result, outHeap);
-}
-
-const NAString PartitionAccess::getText() const
-{
-  return "partition_access";
-
-//  NAString op("PartitionAccess ");
-//  NAString tname(indexName_.getQualifiedNameAsString());
-//
-//  return op + tname;
-}
-
-void PartitionAccess::createSequenceGenerationExpr(ValueId &valId,
-						   BindWA* bindWA)
-{
-  // Return the cached version if it's already created
-  if(sequenceGenerationExpr_)
-    return;
-
-  CollHeap *heap = CmpCommon::statementHeap();
-
-   // Mask Begin
-  ULng32 bitsToMask = getDefaultAsLong(IDENTITY_MASK_BITS);
-
-
-
-  // 10-070103-1451 - R2.0:RG:Surrogate key tests failed
-  // with CQD IDENTITY_MASK_BIT.
-  // if bitsToMask == 16, (16 is the default value set in
-  // the nadefaults.cpp), then we assume the user has not specified
-  // the value for the IDENTITY_MASK_BIT. In the case where the
-  // user has specifed the value (bitsToMask != 16),
-  // we don't enforce that the IDENTITY column values
-  // must be between 0 - 1023. We do that by checking
-  // if the generated value is < 0 instead of < 1024.
-
-  ItemExpr *count1024Value = NULL;
-  if (bitsToMask == 16)
-    count1024Value = new(heap) SystemLiteral(1024);
-  else
-    count1024Value = new(heap) SystemLiteral(0);
-
-
-  ItemExpr *baseValue = NULL;
-
-  // At runtime this is initialized to a random number
-  baseValue = new (heap) HostVar("_sys_hostVarRandomNum",
-                                 new (heap) SQLLargeInt(TRUE   /*signed  */,
-				                        FALSE  /*not null*/),
-                                                        TRUE); /* is system-supplied */
-
-  baseValue->synthTypeAndValueId();
-  baseValue->getValueId().changeType(new (heap) SQLLargeInt(TRUE   /*signed  */,
-							    FALSE  /*not null*/));
-
-  // Since, currently, negative values are never generated by the system, the ITM_LESS
-  // Item Expr can safely be used
-  ItemExpr *isValReservedRange = new(heap) BiRelat(ITM_LESS,
-                                                   baseValue,
-						   count1024Value);
-
-  ItemExpr *count1Value = new(heap) SystemLiteral(1);
-  count1Value->synthTypeAndValueId();
-  //set type to original type after if has been changed to BigNum above
-  count1Value->getValueId().changeType(new (heap) SQLInt(TRUE /* signed */,
-  							 FALSE /*not nullable */));
-
-
-  ItemExpr *increment1Expr = new(heap) BiArith(ITM_PLUS,
-                                               baseValue,
-                                               count1Value);
-
-  increment1Expr->synthTypeAndValueId();
-  //set type to original type after if has been changed to BigNum above
-  increment1Expr->getValueId().changeType(new (heap) SQLLargeInt(TRUE   /*signed  */,
-							    FALSE  /*not null*/));
-
-  ItemExpr *increment1024Expr = new(heap) BiArith(ITM_PLUS,
-                                                  baseValue,
-                                                  count1024Value);
-
-  // Same Casting is required per above comment
-  increment1024Expr = new(heap) Cast(increment1024Expr,
-				 &(baseValue->getValueId().getType()) );
-
-  increment1024Expr->synthTypeAndValueId();
-
-  // If the value is less than 1024, then add 1024 (since 0-1023 are reserved for
-  // user defined ID Columns); otherwise, add 1
-  ItemExpr *caseExpr = new(heap) Case(NULL,
-                                      new(heap) IfThenElse(isValReservedRange,
-                                                           increment1024Expr,
-                                                           increment1Expr) );
-
-  Int64 maskValue = 0;
-
-  ItemExpr *maskIdentityFunction = caseExpr;
-
-  if (bitsToMask > 0)
-    {
-      ULng32 exposeBits = (64 - bitsToMask);
-      maskValue = 0xffffffffffffffffLL;
-      maskValue <<= exposeBits;
-      maskIdentityFunction = new(heap) Mask(ITM_MASK_CLEAR,
-                                caseExpr,
-	                        new(heap)SystemLiteral (new(heap)
-						SQLLargeInt(TRUE /* signed */,
-							    FALSE /* not null */),
-						(void *)&maskValue,
-					8) );
-    }
-    // Mask End
-
-  ItemExpr *idValExpr = new(heap) Assign(baseValue, maskIdentityFunction);
-
-  idValExpr->synthTypeAndValueId();
-
-  sequenceGenerationExpr_ = new(heap) Assign(valId.getItemExpr(),idValExpr);
-
-  sequenceGenerationExpr_->synthTypeAndValueId(TRUE);
-
-  // populate the sequenceGenerationExprInputs_ with the baseValueExpr
-  sequenceGenerationExprInputs_.insert(baseValue->getValueId());
-
-
-  // Setup the initial values for sequenceInitExpr
-  ItemExpr *initBaseValExpr = NULL;
-
-  initBaseValExpr = new(heap) Cast(new(heap) RandomNum(/* NULL */),
-  				&(baseValue->getValueId().getType()) );
-
-  initBaseValExpr->child(0)->castToRandomNum()->setIdentityRandom(TRUE);
-
-  // Mask base random number before saving so that the "_sys_hostVarRandomNum"
-  // always contains a masked value for the above "IfThenElse" test
-  ItemExpr *maskBaseValExpr = initBaseValExpr;
-
-  if (bitsToMask > 0)
-    {
-      maskBaseValExpr = new(heap)
-	  Mask(ITM_MASK_CLEAR,
-               initBaseValExpr,
-	       new(heap)SystemLiteral (new(heap) SQLLargeInt(TRUE /* signed   */,
-					                     FALSE /* not null */),
-				                            (void *)&maskValue,
-					                     8) );
-    }
-    // Mask End
-
-  maskBaseValExpr->synthTypeAndValueId(TRUE);
-
-  initValuesForSequenceInitExpr_.insert(maskBaseValExpr->getValueId());
-
-  return;
-}
-
-void PartitionAccess::addLocalExpr(LIST(ExprNode *) &xlist,
-				   LIST(NAString) &llist) const
-{
-  if (NOT getBeginKeyPred().isEmpty())
-    {
-      xlist.insert(getBeginKeyPred().rebuildExprTree());
-      if (beginKeyExclusionExpr_)
-	{
-	  llist.insert("begin_key_preds");
-	  xlist.insert(beginKeyExclusionExpr_);
-	  llist.insert("begin_key_exclusion_expr");
-	}
-      else if (beginKeyIsExclusive_)
-	llist.insert("begin_key_preds_(excl)");
-      else
-	llist.insert("begin_key_preds_(incl)");
-    }
-  if (NOT getEndKeyPred().isEmpty())
-    {
-      xlist.insert(getEndKeyPred().rebuildExprTree());
-      if (endKeyExclusionExpr_)
-	{
-	  llist.insert("end_key_preds");
-	  xlist.insert(endKeyExclusionExpr_);
-	  llist.insert("end_key_exclusion_expr");
-	}
-      else if (endKeyIsExclusive_)
-	llist.insert("end_key_preds_(excl)");
-      else
-	llist.insert("end_key_preds_(incl)");
-    }
-  if (beginPartNoExpr_)
-    {
-      xlist.insert(beginPartNoExpr_);
-      llist.insert("begin_part_no_expr");
-    }
-  if (endPartNoExpr_)
-    {
-      xlist.insert(endPartNoExpr_);
-      llist.insert("end_part_no_expr");
-    }
-  if (endPartSelection_)
-    {
-      xlist.insert(endPartSelection_);
-      llist.insert("end_part_selection_expr");
-    }
-
-  if (sequenceInitExpr_)
-    {
-      xlist.insert(sequenceInitExpr_);
-      llist.insert("sequence_init_expr");
-    }
-
-  if (sequenceGenerationExpr_)
-    {
-      xlist.insert(sequenceGenerationExpr_);
-      llist.insert("sequence_generation_expr");
-    }
-
-  RelExpr::addLocalExpr(xlist,llist);
-}
-
-// -----------------------------------------------------------------------
 // Member functions for class ProbeCache
 // -----------------------------------------------------------------------
 
@@ -12527,9 +12232,6 @@ NABoolean GenericUpdate::duplicateMatch(const RelExpr & other) const
   if (NOT (updatedTableName_ == o.updatedTableName_))
     return FALSE;
 
-  if (identityColumnUniqueIndex_ != o.identityColumnUniqueIndex_)
-    return FALSE;
-
   if (mtsStatement_ != o.mtsStatement_)
     return FALSE;
 
@@ -12596,8 +12298,6 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setOptStoi(stoi_);
   result->setNoFlow(noFlow_);
   result->setMtsStatement(mtsStatement_);
-  result->identityColumnId_       = identityColumnId_;
-  result->setIdentityColumnUniqueIndex(identityColumnUniqueIndex_);
   result->setNoRollbackOperation(noRollback_);
   result->setAvoidHalloweenR2(avoidHalloweenR2_);
   result->avoidHalloween_         = avoidHalloween_;
@@ -12612,6 +12312,7 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->uniqueRowsetHbaseOper() = uniqueRowsetHbaseOper();
   result->canDoCheckAndUpdel() = canDoCheckAndUpdel();
   result->setNoCheck(noCheck());
+  result->noDTMxn() = noDTMxn();
 
   if (currOfCursorName())
     result->currOfCursorName_ = currOfCursorName()->copyTree(outHeap)->castToItemExpr();
@@ -12901,118 +12602,6 @@ NABoolean Insert::reconcileGroupAttr(GroupAttributes *newGroupAttr)
   return RelExpr::reconcileGroupAttr(newGroupAttr);
 }
 */
-
-void Insert::fixupIdentityColumn(BindWA *bindWA)
-{
-
-  for (CollIndex colNo = 0; colNo < newRecExprArray().entries(); colNo++) {
-    Assign *assign = (Assign*)newRecExprArray()[colNo].getItemExpr();
-    ItemExpr *left = assign->child(0);
-    ItemExpr *right = assign->child(1);
-
-    // If it is a tuple list then the \:sys_Identity_Value is
-    // casted to its type.
-    // Grab the cast and store it in identityColumn()
-
-     if (left->getOperatorType() == ITM_BASECOLUMN) {
-      const NAColumn *nacol = ((BaseColumn *)left)->getNAColumn();
-
-      if (nacol->isIdentityColumn())
-	{
-	  // First, see if there is a unique index or a primary key
-	  // on the identityColumn().
-	  // Relax the rule of requiring a unique index.
-	  if (CmpCommon::getDefault(COMP_BOOL_114) == DF_OFF)	  
-	    {
-	      
-	      if(!doesIdentityColumnHaveAUniqueIndex(left))
-		{
-		  // 3412 - IDENTITY column does not have a unique index.
-		  *CmpCommon::diags() << DgSqlCode(-3412)
-				      << DgColumnName(nacol->getColName());
-		  bindWA->setErrStatus();
-		  return;
-		};
-	    }
-	  // Disallow expressions for system generated identity column value.
-	  // That means - it is either \:sys_identityValue
-	  // or cast(\:sys_identityValue)
-	  OperatorTypeEnum idOperType = right->getOperatorType();
-
-	  switch (idOperType)
-	    {
-	    case ITM_IDENTITY:
-	      // nothing to do, because DefaultSpecification::bindNode()
-	      // or Insert::bindNode() would have set identityColumn().
-	       CMPASSERT(identityColumn() == right->getValueId());
-	      break;
-
- 	    case ITM_CAST:
-	      // see if the child is an ITM_IDENTITY
-
-	      //  if (right->child(0)->getOperatorType() == ITM_IDENTITY)
-	      // is what we ideally want. But, TupleList already converts
-	      // it to cast(<type>) by the time we reach here. So we only
-	      // see ITM_NATYPE.
-	      // We are going to rely on the fact that any expression
-	      // on the DEFAULT will result in a BIGNUM type.
-	      // Note that this doesn't cover all cases.
-
-	      if (right->child(0)->getOperatorType() == ITM_NATYPE &&
-		  right->child(0)->castToItemExpr()->getValueId().getType().getTypeName() == "LARGEINT")
-		identityColumn() = right->getValueId(); // grab the cast.
-	      else
-		{
-		  // 3411 - Expressions are not supported for IDENTITY column values.
-		  *CmpCommon::diags() << DgSqlCode(-3411);
-		  bindWA->setErrStatus();
-		  return;
-		}
-
-	      break;
-
-	    default:
-	      // 3411 - Expressions are not supported for IDENTITY column values.
-	      *CmpCommon::diags() << DgSqlCode(-3411);
-	      bindWA->setErrStatus();
-	      return;
-	      break;
-	    } // Switch
-
-	} // getNAColumn()->isIdentityColumn()
-     } // (left->getOperatorType() == ITM_BASECOLUMN)
-
-  }
-
-} //fixupIdentity()
-
-
-NABoolean Insert::doesIdentityColumnHaveAUniqueIndex(ItemExpr *expr) const
-{
-  NABoolean  idColHasAUniqueIndex = FALSE;
-  ValueIdSet idColumnSet;
-  idColumnSet.insert(expr->getValueId());
-
-  const LIST(IndexDesc *) indexList = getTableDesc()->getIndexes();
-  for (CollIndex i=0; i<indexList.entries(); i++)
-    {
-      IndexDesc *index = indexList[i];
-
-      ValueIdSet indexKeyColumns = index->getIndexKey();
-      ValueIdSet baseIndexKeyColumns = indexKeyColumns.convertToBaseIds();
-
-      if (baseIndexKeyColumns.contains(idColumnSet) &&
-	  (indexKeyColumns.entries() == 1))
-	{
-	  idColHasAUniqueIndex = TRUE;
-	  break;
-	}
-    }
-
-  return idColHasAUniqueIndex;
-
- }
-
 
 // -----------------------------------------------------------------------
 // member functions for class Insert
@@ -13392,10 +12981,7 @@ DP2Insert::DP2Insert(Insert *insertNode,
     insertSelectQuery_(FALSE)
 {
   setTolerateNonFatalError(insertNode->getTolerateNonFatalError());
-  setIdentityColumnUniqueIndex(insertNode->getIdentityColumnUniqueIndex());
-  identityColumn() = insertNode->identityColumn();
   setInsertSelectQuery(insertNode->isInsertSelectQuery());
-
 }
 
 DP2Insert::DP2Insert(CorrName &name,
@@ -13454,8 +13040,6 @@ DP2Insert::DP2Insert(const DP2Insert & insertNode, OperatorTypeEnum op)
     ignoreDuplicateRows_(FALSE)
 {
   setTolerateNonFatalError(insertNode.getTolerateNonFatalError());
-  setIdentityColumnUniqueIndex(insertNode.getIdentityColumnUniqueIndex());
-  identityColumn() = ((GenericUpdate *)&insertNode)->identityColumn();
   setInsertSelectQuery(insertNode.isInsertSelectQuery());
 }
 
@@ -15917,380 +15501,6 @@ IndexProperty* Scan::findSmallestIndex(const LIST(ScanIndexInfo *)& possibleInde
    }
 
    return smallestIndex;
-}
-
-
-
-// -----------------------------------------------------------------------
-// methods for class SequenceGenerator
-// -----------------------------------------------------------------------
-SequenceGenerator::SequenceGenerator(const SequenceGenerator & other)
-  : RelExpr(REL_SEQUENCE_GENERATOR, other.child(0), NULL)
-{
-  sgAttributes_ = other.sgAttributes_;
-
-  sgIncrementHV_ = other.sgIncrementHV_;
-
-  sgCacheSizeHV_ = other.sgCacheSizeHV_;
-
-  currentValueFromSGTable_ = other.currentValueFromSGTable_;
-
-  addedExchange_ = other.addedExchange_;
-
-  nvfEstRowsUsed_ = other.nvfEstRowsUsed_;
-
-  nvfNumESPs_ = other.nvfNumESPs_;
-}
-
-SequenceGenerator::~SequenceGenerator()
-{
-}
-
-Int32
-SequenceGenerator::getArity() const
-{
-  return 1;
-}
-
-// -----------------------------------------------------------------------
-// A virtual method for computing output values that an operator can
-// produce potentially.
-// -----------------------------------------------------------------------
-void
-SequenceGenerator::getPotentialOutputValues(ValueIdSet & outputValues) const
-{
-  outputValues.clear();
-  outputValues += child(0)->getGroupAttr()->getCharacteristicOutputs();
-  // add sgCacheSizeHV_ (denotes N the next N values) to the output
-  if (sgCacheSizeHV_ != NULL_VALUE_ID)
-    outputValues += sgCacheSizeHV_;
-  // current_Value from SG_TABLE
-  if(currentValueFromSGTable_ != NULL_VALUE_ID)
-    outputValues += currentValueFromSGTable_;
-} // SequenceGenerator::getPotentialOutputValues()
-
-HashValue SequenceGenerator::topHash()
-{
-  return RelExpr::topHash();
-}
-
-NABoolean
-SequenceGenerator::duplicateMatch(const RelExpr & other) const
-{
-  if(NOT RelExpr::duplicateMatch(other))
-    return FALSE;
-
-  SequenceGenerator &o = (SequenceGenerator &)other;
-  
-  // Usually the caller of that method will do that comparison. 
-  // We compare those here because, we want to compare those data members 
-  // (their ValueIds) that really matter to the parent. 
-
-  return (getGroupAttr()->getCharacteristicOutputs() == o.getGroupAttr()->getCharacteristicOutputs());
-}
-
-RelExpr *
-SequenceGenerator::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
-{
-  SequenceGenerator *result;
-
-  CMPASSERT(derivedNode == NULL);
-  result = new (outHeap) SequenceGenerator(NULL,
-					   sgAttributes_,
-                                           outHeap);
-  result->sgIncrementHV_ = sgIncrementHV_;
-
-  result->sgCacheSizeHV_ = sgCacheSizeHV_;
-
-  result->currentValueFromSGTable_ = currentValueFromSGTable_;
-
-  result->addedExchange_ = addedExchange_;
-
-  return RelExpr::copyTopNode(result, outHeap);
-}
-
-void
-SequenceGenerator::addLocalExpr(LIST(ExprNode *) &xlist,
-		      LIST(NAString) &llist) const
-{
-  if(sgIncrementHV_ != NULL_VALUE_ID)
-    {
-      xlist.insert(sgIncrementHV_.getItemExpr());
-      llist.insert("sg_increment_hv");
-    }
-
-  if(sgCacheSizeHV_ != NULL_VALUE_ID)
-    {
-      xlist.insert(sgCacheSizeHV_.getItemExpr());
-      llist.insert("sg_cache_size_hv");
-    }
-
-  if(currentValueFromSGTable_ != NULL_VALUE_ID)
-    {
-      xlist.insert(currentValueFromSGTable_.getItemExpr());
-      llist.insert("current_value_from_sg");
-    }
-
-  RelExpr::addLocalExpr(xlist,llist);
-}
-
-const NAString
-SequenceGenerator::getText() const
-{
-  return "SequenceGenerator";
-}
-
-ItemExpr *
-SequenceGenerator::createSequenceSubqueryExpression(const NAString &sgName,
-                                    SequenceGeneratorAttributes & sgAttributes,
-                                    BindWA *bindWA)
-{
-
-  RelRoot *seqGenRoot = NULL;
-  CMPASSERT(bindWA);
-  CollHeap * heap = bindWA->wHeap();
-
-  if(sgAttributes.getSGSGType() != COM_INTERNAL_COMPUTED_SG) {
-
-    NAString updateText;
-
-    updateText =
-      "select current_value from (update table(sg_table ";
-
-    updateText += sgName;
-
-    updateText += ") set current_value = current_value + (@A1 * @A2) where zero_pkcol = 0"
-                  "return old.current_value) T";
-
-    // using Int64 for the datatype for now
-    ItemExpr *nextNValues = new (heap)
-      HostVar("_sys_hostVarNextNValues",
-              new (heap) SQLLargeInt(TRUE,   // signed
-                                     FALSE),  // not null
-              TRUE       // is system-generated
-              );
-
-    nextNValues->synthTypeAndValueId();
-
-    ItemExpr *sgIncrement = new (heap)
-      HostVar("_sys_hostIncrement",
-              new (heap) SQLLargeInt(TRUE,   // signed
-                                     FALSE),  // not null
-              TRUE // is system-generated
-              );
-
-    sgIncrement->synthTypeAndValueId();
-
-    ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
-
-    Set_SqlParser_Flags(ALLOW_FUNNY_IDENTIFIER);
-    Set_SqlParser_Flags(ALLOW_SPECIALTABLETYPE);
-    Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
-    Parser parser(bindWA->currentCmpContext());
-    ExprNode *updateTree = parser.getExprTree(updateText,
-                                              strlen(updateText),
-                                              OBJECTNAMECHARSET, // updateTextCharSet
-                                              2,
-                                              nextNValues,
-                                              sgIncrement);
-
-    // Restore parser flags settings to what they originally were
-    Set_SqlParser_Flags (savedParserFlags);
-
-    CMPASSERT(updateTree->getOperatorType() == STM_QUERY);
-    RelExpr *queryTree =
-      updateTree->castToStatementExpr()->getQueryExpression();
-
-    CMPASSERT(queryTree->getOperatorType() == REL_ROOT);
-    ((RelRoot *)queryTree)->setRootFlag(FALSE);
-
-    SequenceGenerator *seqGen = new (heap)
-      SequenceGenerator(queryTree,
-                        sgAttributes,
-                        heap);
-
-    seqGen->setSGCacheSizeHV(nextNValues->getValueId());
-    seqGen->setSGIncrementHV(sgIncrement->getValueId());
-
-    seqGenRoot = new (heap) RelRoot(seqGen);
-  }
-
-  else {
-
-    NAString dummyQuery = "select cast(0 as largeint not null) from (values (0)) dummyT;" ;
-    
-    Parser parser(bindWA->currentCmpContext());
-    ExprNode *updateTree = parser.getExprTree(dummyQuery,
-					      strlen(dummyQuery)
-					      );
-
-    CMPASSERT(updateTree->getOperatorType() == STM_QUERY);
-    RelExpr *queryTree =
-      updateTree->castToStatementExpr()->getQueryExpression();
-    
-    CMPASSERT(queryTree->getOperatorType() == REL_ROOT);
-    ((RelRoot *)queryTree)->setRootFlag(FALSE);
-
-    seqGenRoot = (RelRoot *)queryTree;
-  }
-  
-  ItemExpr *seqSubQuery = new (heap) SeqGenSubquery(seqGenRoot);
-
-  return seqSubQuery;
-}
-
-
-
-
-// -----------------------------------------------------------------------
-// methods for class NextValueFor
-// -----------------------------------------------------------------------
-NextValueFor::NextValueFor(RelExpr* child1,
-                           RelExpr* child2,
-                           ValueId resultValueId,
-                           CollHeap *oHeap)
-  : RelExpr(REL_NEXT_VALUE_FOR, child1, child2, oHeap),
-    resultValueId_(resultValueId),
-    sequenceValueIsUnique_(FALSE)
-{
-}
-
-NextValueFor::NextValueFor(const NextValueFor & other)
-  : RelExpr(REL_NEXT_VALUE_FOR,other.child(0), other.child(1)),
-    resultValueId_(other.resultValueId_),
-    sequenceValueIsUnique_(other.sequenceValueIsUnique_),
-    outputsFromSG_(other.outputsFromSG_)
-{
-}
-
-NextValueFor::~NextValueFor()
-{
-}
-
-Int32
-NextValueFor::getArity() const
-{
-  if((child(1).getMode() == ExprGroupId::MEMOIZED) ||
-     (child(1).getPtr() != NULL))
-    return 2;
-  else
-    return 1;
-}
-
-// -----------------------------------------------------------------------
-// A virtual method for computing output values that an operator can
-// produce potentially.
-// -----------------------------------------------------------------------
-void
-NextValueFor::getPotentialOutputValues(ValueIdSet & outputValues) const
-{
-  outputValues.clear();
-  // Get the outputs from the left child for now.
-  outputValues += child(0)->getGroupAttr()->getCharacteristicOutputs();
-  if (resultValueId_ != NULL_VALUE_ID)
-      outputValues += resultValueId_;
-} // NextValueFor::getPotentialOutputValues()
-
-HashValue NextValueFor::topHash()
-{
-  HashValue result = RelExpr::topHash();
-  result ^= resultValueId_;
-  result ^= sequenceValueIsUnique_; 
-  result ^= outputsFromSG_;
-  
-  return result;
-}
-
-NABoolean
-NextValueFor::duplicateMatch(const RelExpr & other) const
-{
-  if(NOT RelExpr::duplicateMatch(other))
-    return FALSE;
-
-  NextValueFor &o = (NextValueFor &)other;
-  
-  return(resultValueId_ == o.resultValueId_ &&
-         sequenceValueIsUnique_ == o.sequenceValueIsUnique_ &&
-         outputsFromSG_ == o.outputsFromSG_);
-}
-
-RelExpr *
-NextValueFor::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
-{
-  NextValueFor *result;
-
-  CMPASSERT(derivedNode == NULL);
-  result = new (outHeap) NextValueFor(NULL,
-				      NULL,
-				      NULL_VALUE_ID,
-				      outHeap);
-
-  result->resultValueId_ = resultValueId_;
-  result->sequenceValueIsUnique_ = sequenceValueIsUnique_;
-  result->outputsFromSG_ = outputsFromSG_;
-
-  return RelExpr::copyTopNode(result, outHeap);
-}
-
-void
-NextValueFor::addLocalExpr(LIST(ExprNode *) &xlist,
-		      LIST(NAString) &llist) const
-{
-  if(resultValueId_ != NULL_VALUE_ID)
-    {
-      xlist.insert(resultValueId_.getItemExpr());
-      llist.insert("generated_next_value");
-    }
-
-  if( NOT outputsFromSG_.isEmpty())
-    {
-      xlist.insert(outputsFromSG_.rebuildExprTree());
-      llist.insert("expected_outputs_from_sg");
-    }
-
-  RelExpr::addLocalExpr(xlist,llist);
-}
-
-const NAString
-NextValueFor::getText() const
-{
-  return "NextValueFor";
-}
-
-// The NextValueFor operator, from the sequence generator operator.
-void NextValueFor::pushdownCoveredExpr(const ValueIdSet& outputExpr,
-                                       const ValueIdSet& newExternalInputs,
-                                       ValueIdSet& predOnOperator,
-			               const ValueIdSet* nonPredExprOnOperator,
-			               Lng32 childId)
-
-{
-  ValueIdSet exprOnParent;
-  if (nonPredExprOnOperator)
-    exprOnParent = *nonPredExprOnOperator;
-
-  if(getArity() == 2) {
-    // whatever values are required by the parent, plus the
-    // current_value, and N (sgCacheSize) that the SG operator will
-    // produce).
-
-    CMPASSERT(child(1).getPtr()->getOperatorType() == REL_SEQUENCE_GENERATOR);
-
-    SequenceGenerator * sgNode = (SequenceGenerator *)(child(1).getPtr());
-    ValueIdList valuesNeededFromSG;
-    valuesNeededFromSG.insert(sgNode->sgCacheSizeHV());
-    valuesNeededFromSG.insert(sgNode->currentValueFromSGTable());
-
-    exprOnParent.insertList(valuesNeededFromSG);
-  }
-
-  RelExpr::pushdownCoveredExpr(outputExpr,
-                               newExternalInputs,
-                               predOnOperator,
-			       &exprOnParent,
-			       childId);
-
 }
 
 // This function checks if the passed RelExpr is a UDF rule created by a CQS

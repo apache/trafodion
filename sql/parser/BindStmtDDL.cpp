@@ -1546,137 +1546,44 @@ StmtDDLCreateSequence::bindNode(BindWA * pBindWA)
   // update default values
   ElemDDLSGOptions * sgo = getSGoptions();
 
-  Int64 minValue = ((sgo->isMinValueSpecified() && (NOT sgo->isNoMinValue())) ? 
-		    sgo->getMinValue() : 1LL); 
-  Int64 maxValue = ((sgo->isMaxValueSpecified() && (NOT sgo->isNoMaxValue())) ? 
-		    sgo->getMaxValue() : (LONG_MAX-1)); 
-  Int64 startValue = (sgo->isStartValueSpecified() ? sgo->getStartValue() : minValue);
-  Int64 increment = (sgo->isIncrementSpecified() ? sgo->getIncrement() : 1LL);
-
-  if ((isAlter()) &&
-      (sgo->isStartValueSpecified()))
+  if (isAlter())
     {
-      *CmpCommon::diags() << DgSqlCode(-1578)
-			  << DgString0("ALTER SEQUENCE");
+      CorrName cn(getSeqNameAsQualifiedName(), (CollHeap*)NULL, NAString());
+      cn.setSpecialType(ExtendedQualName::SG_TABLE);
+      NATable *naTable = pBindWA->getNATable(cn); 
+      if (naTable == NULL || pBindWA->errStatus())
+        {
+          return this;
+        }
       
-      pBindWA->setErrStatus();
-
-      return this;
+      const SequenceGeneratorAttributes* sga = naTable->getSGAttributes();
+      if (sga)
+        {
+          ElemDDLSGOptions tempSGO;
+          tempSGO.importSGA(sga);
+          
+          if (sgo)
+            {
+              tempSGO.importSGO(sgo);
+            }
+          
+          if (tempSGO.validate(1/*alter sequence*/))
+            {
+              return this;
+            }
+        }
     }
-
-  if (minValue == 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1571)
-			  << DgString0("MINVALUE")
-			  << DgString1((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));
-      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (maxValue == 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1571)
-			  << DgString0("MAXVALUE")
-			  << DgString1((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));
-      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (increment == 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1571)
-			  << DgString0("INCREMENT BY")
-			  << DgString1((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));
-      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (increment < 0)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1572)
-			  << DgString0("INCREMENT BY")
-			  << DgString1((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (maxValue <= minValue)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1570)
-			  << DgString0((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (startValue > maxValue)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1573)
-			  << DgString0((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (startValue < minValue)
-    {
-      *CmpCommon::diags() << DgSqlCode(-1573)
-			  << DgString0((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  if (increment > (maxValue - minValue))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1575)
-			  << DgString0((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));      
-      pBindWA->setErrStatus();
-
-      return this;
-    }
-
-  Int64 cache = 0;
-  double fMaxVal = maxValue;
-  double fMinVal = minValue;
-  double fRangeOfVals = ceil((fMaxVal-fMinVal+1)/increment);
-  Int64 rangeOfVals = (maxValue-minValue+1);
-  if (sgo->isCacheSpecified())
-    cache = sgo->getCache();
   else
     {
-      if (increment == 1)
-	cache = MINOF(rangeOfVals, 25);
-      else
-	cache = MINOF(fRangeOfVals, 25);
+      if (sgo->getFSDataType() == COM_UNKNOWN_FSDT)
+        sgo->setFSDataType(COM_SIGNED_BIN64_FSDT);
+      if (sgo->validate(isAlter() ? 1 : 0))
+        {
+          pBindWA->setErrStatus();
+          
+          return this;
+        }
     }
-
-  if (NOT sgo->isNoCache())
-    {
-      if ((cache <= 1) ||
-	  (cache > (increment == 1 ? rangeOfVals : fRangeOfVals)))
-	{
-	  *CmpCommon::diags() << DgSqlCode(-1577)
-			      << DgString0((isAlter() ? "ALTER SEQUENCE" : "CREATE SEQUENCE"));	  
-	  pBindWA->setErrStatus();
-	  
-	  return this;
-	}
-    }
-
-  sgo->setStartValue(startValue);
-  sgo->setIncrement(increment);
-  sgo->setMinValue(minValue);
-  sgo->setMaxValue(maxValue);
-  if (NOT sgo->isCacheSpecified())
-    sgo->setCache(cache);
 
   markAsBound();
 

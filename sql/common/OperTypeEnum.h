@@ -289,8 +289,6 @@ enum OperatorTypeEnum {
 
                         // Parallel extract consumer
                         REL_EXTRACT_SOURCE,
-                        REL_SEQUENCE_GENERATOR,
-                        REL_NEXT_VALUE_FOR,
 
                         // Cancel, Suspend, Activate
                         REL_CONTROL_RUNNING_QUERY,
@@ -870,7 +868,6 @@ enum OperatorTypeEnum {
                         DDL_ALTER_TABLE_NAMESPACE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_DEFAULT_VALUE,
                         DDL_ALTER_TABLE_ALTER_COLUMN_SET_SG_OPTION,
-                        DDL_ALTER_TABLE_ALTER_COLUMN_RECALIBRATE_SG,
                         DDL_ALTER_MV_RENAME,
                         DDL_ALTER_MV_REFRESH_GROUP, // MV
                         DDL_ALTER_TRIGGER,
@@ -1156,6 +1153,7 @@ enum OperatorTypeEnum {
                         ELM_SG_OPT_MAX_VALUE_ELEM,
                         ELM_SG_OPT_CYCLE_OPTION_ELEM,
                         ELM_SG_OPT_CACHE_OPTION_ELEM,
+                        ELM_SG_OPT_DATATYPE_ELEM,
                         ELM_SG_OPTS_DEFAULT_ELEM,
 
                         ELM_STORE_OPT_DEFAULT_ELEM,

@@ -11328,7 +11328,6 @@ const NAString RowSubquery::getText() const
   return tmp;
 }
 
-// <aviv> BEGIN
 ItemExpr *
 RowSubquery::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
@@ -11342,33 +11341,6 @@ RowSubquery::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
   return Subquery::copyTopNode(result, outHeap);
 }
-// <aviv> END
-
-const NAString SeqGenSubquery::getText() const
-{
-  NAString tmp(CmpCommon::statementHeap());
-  tmp += "SequenceGenerator: ";
-  if (getSubquery()->child(0))
-    getSubquery()->child(0)->unparse(tmp);	// unparse below the subq root
-  else
-    getSubquery()->unparse(tmp);		// unparse the tuple
-  return tmp;
-}
-
-ItemExpr *
-SeqGenSubquery::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
-{
-  ItemExpr *result;
-  if (derivedNode == NULL) {
-    RelExpr* tableExprCopy = getSubquery()->copyTree(outHeap);
-    result = new (outHeap) SeqGenSubquery(tableExprCopy);
-  }
-  else
-    result = derivedNode;
-
-  return RowSubquery::copyTopNode(result, outHeap);
-}
-
 
 // -----------------------------------------------------------------------
 // member functions for Quantified comparison subquery operators

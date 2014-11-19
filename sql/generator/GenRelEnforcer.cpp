@@ -1287,25 +1287,6 @@ CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
 
   } else {
     // split top. 
-
-     const LogPhysPartitioningFunction* lpPartFunc = 
-       getBottomPartitioningFunction()->castToLogPhysPartitioningFunction();
-
-     if ( lpPartFunc ) {
-        PartitionAccess *pa = (PartitionAccess *) (child(0).getPtr());
-
-        GenAssert(child(0)->getOperatorType() == REL_PARTITION_ACCESS,
-                       "child of PAPA node must be partition acess");
-
-        Lng32 numPAs =
-          lpPartFunc-> getNumOfClients() /
-           getTopPartitioningFunction()->getCountOfPartitions();
-
-        double PAPAMemEst =
-          pa->getEstimatedRunTimeMemoryUsage(perCPU).value() * (numPAs - 1) ;
-
-        memoryRequired = PAPAMemEst;
-     }
   }
 
   if ( perCPU == FALSE ) {

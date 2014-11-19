@@ -247,28 +247,6 @@ short Exchange::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
   return 0;
 }
 
-short PartitionAccess::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
-{
-  Space * space = (Space *)c;
-  char mybuf[100];
-
-  // ---------------------------------------------------------------------
-  // copy important info from the properties into data members
-  // ---------------------------------------------------------------------
-  //storePhysPropertiesInNode();
-
-  sprintf(mybuf, "partition_access(");
-  outputBuffer(space, buf, mybuf, shapeStr);
-
-  child(0)->generateShape(space, buf, shapeStr);
-
-  mybuf[0] = 0;
-  strcat(mybuf, ")");
-  outputBuffer(space, buf, mybuf, shapeStr);
-
-  return 0;
-}
-
 short Join::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
 {
   Space * space = (Space *)c;

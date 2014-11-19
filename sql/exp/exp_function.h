@@ -2957,23 +2957,12 @@ public:
 
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
 
-  NA_EIDPROC void setIdentityRandom(NABoolean v) 
-    {
-      if (v) 
-	flags_ |= IDENTITY_RANDOM;
-      else 
-	flags_ &= ~IDENTITY_RANDOM;
-    }
   // ---------------------------------------------------------------------
 
 private:
   enum
   {
-    SIMPLE_RANDOM = 0x0001,
-
-    // if this flag is set, generated random values are to be inserted
-    // into an IDENTITY column (currently always of type LARGEINT)
-    IDENTITY_RANDOM = 0x0002
+    SIMPLE_RANDOM = 0x0001
   };
 
   NA_EIDPROC
@@ -2981,9 +2970,6 @@ private:
 
   NA_EIDPROC
   NABoolean simpleRandom() { return (flags_ & SIMPLE_RANDOM) != 0; }
-
-  NA_EIDPROC
-  NABoolean identityRandom() { return (flags_ & IDENTITY_RANDOM) != 0; }
 
   Int32            seed_;                // 00-03
 
