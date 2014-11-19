@@ -114,6 +114,7 @@ ExExeUtilGetStatisticsTcb::~ExExeUtilGetStatisticsTcb()
 // It returns start position and length of the next string delimited by
 // spaces following the token string except spaces inside quotes.
 static short getSubstrInfo(char * str,   // IN
+			   short maxLen, // IN
 			   const char * token, // IN
 			   char * sstrbuf) // OUT
 {
@@ -129,20 +130,26 @@ static short getSubstrInfo(char * str,   // IN
   
   startPos = ptr - str;
   startPos += strlen(token) + 1;
+  if (startPos >= maxLen)
+    {
+      sstrbuf[0] = '\0';
+      return -1;
+    }  
   
   currPos = startPos;
 
   // terminate at space
-  while(str[currPos] != space)
+  while(str[currPos] != space && currPos < maxLen)
   {
     // check for quote
     if(str[currPos] == quote)
     {
       currPos++;
       // find end quote
-      while(str[currPos] != quote)
+      while(str[currPos] != quote && currPos < maxLen)
           currPos++;
-      currPos++;
+      if (currPos < maxLen)
+        currPos++;
     }
     else
       currPos++;
@@ -1004,7 +1011,7 @@ short ExExeUtilGetStatisticsTcb::work()
               if (statsMergeType_ == SQLCLIDEV_PERTABLE_STATS || statsMergeType_ == SQLCLI_PROGRESS_STATS) 
               {
                 cliInterface()->getPtrAndLen(1, statsRow_, statsRowlen_);
-                getSubstrInfo(statsRow_, "statsRowType:", sstrbuf);
+                getSubstrInfo(statsRow_, statsRowlen_, "statsRowType:", sstrbuf);
                 short statsRowType = (short)str_atoi(sstrbuf, str_len(sstrbuf));
                 if (statsRowType == ExOperStats::ROOT_OPER_STATS || statsRowType == ExOperStats::BMO_STATS ||
                   statsRowType == ExOperStats::UDR_BASE_STATS)
@@ -1012,7 +1019,7 @@ short ExExeUtilGetStatisticsTcb::work()
 		    if (statsRowType == ExOperStats::ROOT_OPER_STATS)
 		      {
 			hdfsAccess_ = 0;
-			if (getSubstrInfo(statsRow_, "hdfsAccess:", sstrbuf) == 0)
+			if (getSubstrInfo(statsRow_, statsRowlen_, "hdfsAccess:", sstrbuf) == 0)
 			  {
 			    hdfsAccess_ = (short)str_atoi(sstrbuf, str_len(sstrbuf));
 			  }
@@ -1144,7 +1151,7 @@ short ExExeUtilGetStatisticsTcb::work()
               if (statsMergeType_ == SQLCLIDEV_PERTABLE_STATS || statsMergeType_ == SQLCLI_PROGRESS_STATS) 
               {
                 cliInterface()->getPtrAndLen(1, statsRow_, statsRowlen_);
-                getSubstrInfo(statsRow_, "statsRowType:", sstrbuf);
+                getSubstrInfo(statsRow_, statsRowlen_, "statsRowType:", sstrbuf);
                 short statsRowType = (short)str_atoi(sstrbuf, str_len(sstrbuf));
                 if (statsRowType == ExOperStats::ROOT_OPER_STATS || statsRowType == ExOperStats::BMO_STATS
                   || statsRowType == ExOperStats::UDR_BASE_STATS)
@@ -1182,74 +1189,74 @@ short ExExeUtilGetStatisticsTcb::work()
 	    if ((qparent_.up->getSize() - qparent_.up->getLength()) < 4)
 	      return WORK_CALL_AGAIN;	//come back later
 
-	    getSubstrInfo(statsRow_, "AnsiName:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "AnsiName:", sstrbuf);
 	    str_sprintf(statsBuf_, "%15s", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
 	    if (hdfsAccess_)
             {
 	      str_sprintf(statsBuf_, "%15s", " ");
-	      getSubstrInfo(statsRow_, "AccessedRows:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "AccessedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "UsedRows:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "UsedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "DiskIOs:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "HbaseCalls:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-10s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "MessagesBytes:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "MessagesBytes:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "ProcessBusyTime:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "TimeWaitingOnHbase:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 	    }
             else if (getStatsTdb().oldFormat())
             {
               str_sprintf(statsBuf_, "%15s", " ");
-	      getSubstrInfo(statsRow_, "AccessedRows:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "AccessedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "UsedRows:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "UsedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-12s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "DiskIOs:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "DiskIOs:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-8s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "NumMessages:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "NumMessages:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-10s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "MessagesBytes:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "MessagesBytes:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-13s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "Escalations:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "Escalations:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-6s", sstrbuf);
             }
             else
             {
 	      str_sprintf(statsBuf_, "%15s", " ");
-	      getSubstrInfo(statsRow_, "AccessedRows:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "AccessedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "UsedRows:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "UsedRows:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "DiskIOs:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "DiskIOs:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-10s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "NumMessages:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "NumMessages:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-10s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "MessagesBytes:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "MessagesBytes:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "Escalations:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "Escalations:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-6s", sstrbuf);
 
-	      getSubstrInfo(statsRow_, "LockWaits:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "LockWaits:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-6s", sstrbuf);
   	    
-	      getSubstrInfo(statsRow_, "ProcessBusyTime:", sstrbuf);
+	      getSubstrInfo(statsRow_, statsRowlen_, "ProcessBusyTime:", sstrbuf);
 	      str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", sstrbuf);
 	    }
 
@@ -1265,88 +1272,88 @@ short ExExeUtilGetStatisticsTcb::work()
 	    if ((qparent_.up->getSize() - qparent_.up->getLength()) < 31)
 	      return WORK_CALL_AGAIN;	//come back later
 	   
-	    getSubstrInfo(statsRow_, "AccessedRows:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "AccessedRows:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Accessed Rows", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	
-	    getSubstrInfo(statsRow_, "UsedRows:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "UsedRows:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Used Rows", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "NumMessages:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "NumMessages:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Message Count", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "MessagesBytes:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "MessagesBytes:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Message Bytes", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "StatsBytes:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "StatsBytes:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Stats Bytes", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "DiskIOs:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "DiskIOs:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Disk IOs", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "LockWaits:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "LockWaits:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Lock Waits", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "Escalations:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Escalations:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Lock Escalations", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 		
 	
-	    getSubstrInfo(statsRow_, "CpuTime:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "CpuTime:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "SQL Process Busy Time", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "SpaceTotal:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "SpaceTotal:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "SQL Space Allocated", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "SpaceUsed:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "SpaceUsed:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "SQL Space Used", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "HeapTotal:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "HeapTotal:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "SQL Heap Allocated", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "HeapUsed:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "HeapUsed:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "SQL Heap Used", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "Dp2SpaceTotal:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2SpaceTotal:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "EID Space Allocated", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "Dp2SpaceUsed:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2SpaceUsed:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "EID Space Used", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "Dp2HeapTotal:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2HeapTotal:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "EID Heap Allocated", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "Dp2HeapUsed:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Dp2HeapUsed:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10sKB", "EID Heap Used", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 	    
-	    getSubstrInfo(statsRow_, "Opens:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Opens:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Opens", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
     
-	    getSubstrInfo(statsRow_, "OpenTime:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "OpenTime:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Open Time", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "Newprocess:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "Newprocess:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Processes Created", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 
-	    getSubstrInfo(statsRow_, "NewprocessTime:", sstrbuf);
+	    getSubstrInfo(statsRow_, statsRowlen_, "NewprocessTime:", sstrbuf);
 	    str_sprintf(statsBuf_, "%25s%10s", "Process Create Time", sstrbuf);
 	    moveRowToUpQueue(statsBuf_);
 

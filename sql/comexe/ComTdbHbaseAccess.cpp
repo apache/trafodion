@@ -657,6 +657,182 @@ static void showStrColNames(Queue * listOfColNames, Space * space,
     } // for
 }
 
+const char *
+ComTdbHbaseAccess::getNodeName() const
+{
+  if ((sqHbaseTable()))
+    {
+      switch (accessType_)
+        {
+          case  SELECT_:
+            {
+              if (keyMDAMGen())
+                {
+                  if ((! listOfGetRows()) &&
+                      (! listOfScanRows()))
+                    return (rowsetOper()? "EX_TRAF_MDAM_ROWSET_SELECT":
+                                          "EX_TRAF_MDAM_SELECT");
+                  // else?
+                }
+              else if (keyInfo_)
+                return (rowsetOper()? "EX_TRAF_KEY_ROWSET_SELECT":
+                                      "EX_TRAF_KEY_SELECT");
+              else
+                return (rowsetOper()? "EX_TRAF_ROWSET_SELECT":
+                                      "EX_TRAF_SELECT");
+            }
+            break;
+
+          case INSERT_:
+            {
+              if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+                return ("EX_TRAF_VSBB_INSERT");
+              else
+                return ("EX_TRAF_INSERT");
+            }
+            break;
+
+          case UPSERT_:
+            {
+              if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+                return ("EX_TRAF_VSBB_UPSERT");
+              else
+                return ("EX_TRAF_UPSERT");
+            }
+            break;
+
+          case UPSERT_LOAD_:
+            {
+              if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+                return ("EX_TRAF_VSBB_UPSERT_LOAD");
+              else
+                return ("EX_TRAF_UPSERT_LOAD");
+            }
+            break;
+
+          case UPDATE_:
+            return (rowsetOper()? "EX_TRAF_ROWSET_UPDATE": "EX_TRAF_UPDATE");
+            break;
+
+          case MERGE_:
+            return (rowsetOper()? "EX_TRAF_ROWSET_MERGE": "EX_TRAF_MERGE");
+            break;
+
+          case DELETE_:
+            return (rowsetOper()? "EX_TRAF_ROWSET_DELETE": "EX_TRAF_DELETE");
+            break;
+
+          case COPROC_:
+            return ("EX_TRAF_COPROC_AGGR");
+            break;
+
+          default:
+            // any other Trafodion table operations
+            return ("EX_TRAF_ACCESS");
+        }  // switch accessType_
+    }  // isHbaseTable
+
+  // other (or non-trafodion) operations
+  switch (accessType_)
+    {
+      case SELECT_:
+        {
+          if (keyMDAMGen())
+            {
+              // must be SQ Seabase table and no listOfScan/Get keys
+              if ((! listOfGetRows()) &&
+                  (! listOfScanRows()))
+                return ("EX_HBASE_MDAM_SELECT");
+              // missing else?
+            }
+          else if (keyInfo_)
+            return ("EX_HBASE_KEY_SELECT");
+          else
+            return ("EX_HBASE_SELECT");
+        }
+	break;
+
+      case INSERT_:
+        {
+          if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+            return ("EX_HBASE_VSBB_INSERT");
+          else
+	    return ("EX_HBASE_INSERT");
+        }
+        break;
+
+      case UPSERT_:
+        {
+          if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+            return ("EX_HBASE_VSBB_UPSERT");
+          else
+            return ("EX_HBASE_UPSERT");
+        }
+        break;
+
+      case UPSERT_LOAD_:
+        {
+          if ((vsbbInsert()) && (NOT hbaseSqlIUD()))
+            return ("EX_HBASE_VSBB_UPSERT_LOAD");
+          else
+            return ("EX_HBASE_UPSERT_LOAD");
+        }
+        break;
+
+      case UPDATE_:
+        return (rowsetOper()? "EX_HBASE_ROWSET_UPDATE": "EX_HBASE_UPDATE");
+        break;
+
+      case MERGE_:
+        return (rowsetOper()? "EX_HBASE_ROWSET_MERGE": "EX_HBASE_MERGE");
+        break;
+
+      case DELETE_:
+        return (rowsetOper()? "EX_HBASE_ROWSET_DELETE": "EX_HBASE_DELETE");
+        break;
+
+      case COPROC_:
+        return ("EX_HBASE_COPROC_AGGR");
+        break;
+
+      case CREATE_:
+        return ("EX_TRAF_CREATE");
+        break;
+
+      case DROP_:
+        return ("EX_TRAF_DROP");
+        break;
+
+      case GET_TABLES_:
+        return ("EX_TRAF_GET_TABLES");
+        break;
+
+      case INIT_MD_:
+        return ("EX_INIT_TRAF_METADATA");
+        break;
+
+      case DROP_MD_:
+        return ("EX_DROP_TRAF_METADATA");
+        break;
+
+      case UPGRADE_MD_:
+        return ("EX_UPGRADE_TRAF_METADATA");
+        break;
+
+      case BULK_LOAD_PREP_:
+        return ("EX_TRAF_BULK_LOAD_PREP");
+        break;
+
+      case BULK_LOAD_TASK_:
+        return ("EX_TRAF_BULK_LOAD_TASK");
+        break;
+
+    }
+
+  // all else
+  return ("EX_HBASE_ACCESS");  // default name 
+}
+
 void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 {
   ComTdb::displayContents(space,flag & 0xFFFFFFFE);
@@ -671,75 +847,8 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "accessType_ = %s", (char*)getAccessTypeStr(accessType_));
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      char accessDetail[100];
-      strcpy(accessDetail, "");
-      if ((sqHbaseTable()) &&
-	  ((accessType_ == UPDATE_) ||
-	   (accessType_ == MERGE_) ||
-	   (accessType_ == DELETE_)))
-	{
-	    str_sprintf(accessDetail, "%s%s%s", 
-			(char*)getAccessTypeStr(accessType_),
-			"SEABASE_",
-			(rowsetOper() ? "ROWSET_" : ""));
-	}
-      else if ((sqHbaseTable()) &&
-	   (accessType_ == SELECT_) &&
-	   (rowsetOper()))
-	{
-	  str_sprintf(accessDetail, "%s%s%s", 
-		      (char*)getAccessTypeStr(accessType_),
-		      "SEABASE_",
-		      (rowsetOper() ? "ROWSET_" : ""));
-	}
-      else if (accessType_ == SELECT_)
-	{
-	  if (keyMDAMGen())
-	    {
-	      // must be SQ Seabase table and no listOfScan/Get keys
-	      if ((sqHbaseTable()) &&
-		  (! listOfGetRows()) &&
-		  (! listOfScanRows()))
-		{
-		  str_sprintf(accessDetail, "%s%s%s", 
-			      (char*)getAccessTypeStr(accessType_),
-			      "SEABASE_",
-			      "MDAM_");
-		}
-	    }
-	  else
-	    str_sprintf(accessDetail, "%s%s%s", 
-			(char*)getAccessTypeStr(accessType_),
-			(sqHbaseTable() ? "SEABASE_" : "HBASE_"),
-			"KEY_");
-	}
-      else if ((accessType_ == INSERT_) ||
-	       (accessType_ == UPSERT_))
-	{
-	  if (sqHbaseTable())
-	    {
-	      if ((vsbbInsert()) &&
-		  (NOT hbaseSqlIUD()))
-		str_sprintf(accessDetail, "%s%s%s", 
-			    (char*)getAccessTypeStr(accessType_),
-			    (sqHbaseTable() ? "SEABASE_" : "HBASE_"),
-			    "VSBB_");
-	      else
-		str_sprintf(accessDetail, "%s%s", 
-			    (char*)getAccessTypeStr(accessType_),
-			    "SEABASE_");
-	    }
-	  else
-	    str_sprintf(accessDetail, "%s%s", 
-			(char*)getAccessTypeStr(accessType_),
-			"HBASE_");
-	}
-      
-      if (strlen(accessDetail) > 0)
-	{
-	  str_sprintf(buf, "accessDetail_ = %s", accessDetail);
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-	}
+      str_sprintf(buf, "accessDetail_ = %s", getNodeName());
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
       if (samplingRate_ > 0)
         {

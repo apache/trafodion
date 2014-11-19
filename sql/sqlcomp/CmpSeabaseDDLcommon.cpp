@@ -748,7 +748,7 @@ ExpHbaseInterface* CmpSeabaseDDL::allocEHI(const char * server,
   ehi = ExpHbaseInterface::newInstance
     (heap_, server, port, interface, zkPort);
     
-  Lng32 retcode = ehi->init();
+  Lng32 retcode = ehi->init(NULL);
   if (retcode < 0)
     {
       if (raiseError) {

@@ -92,7 +92,7 @@ class ExpHbaseInterface : public NABasicObject
   virtual ~ExpHbaseInterface()
   {}
   
-  virtual Lng32 init() = 0;
+  virtual Lng32 init(ExHbaseAccessStats *hbs) = 0;
   
   virtual Lng32 cleanup() = 0;
   virtual Lng32 cleanupClient()
@@ -141,7 +141,6 @@ class ExpHbaseInterface : public NABasicObject
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
 			 const TextVec *inColValuesToCompare,
-			 ExHbaseAccessStats *hbs,
 			 Float32 samplePercent = -1.0f) = 0;
 
   virtual Lng32 scanClose() = 0;
@@ -160,8 +159,7 @@ class ExpHbaseInterface : public NABasicObject
 		HbaseStr &tblName,
 		const Text &row, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp,
-		ExHbaseAccessStats *hbs) = 0;
+		const int64_t timestamp) = 0;
 
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
@@ -172,10 +170,9 @@ class ExpHbaseInterface : public NABasicObject
 		HbaseStr &tblName,
 		const std::vector<Text> & rows, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp,
-		ExHbaseAccessStats *hbs) = 0;
+		const int64_t timestamp) = 0;
 
-  virtual Lng32 nextRow(ExHbaseAccessStats *hbs) = 0;
+  virtual Lng32 nextRow() = 0;
   
   virtual Lng32 nextCell(HbaseStr &rowId,
           HbaseStr &colFamName,
@@ -202,23 +199,20 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr &tblName,
 		  HbaseStr& row, 
 		  const std::vector<Text> & columns,
-		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs) = 0;
+		  const int64_t timestamp) = 0;
 
   virtual Lng32 deleteRows(
 		  HbaseStr &tblName,
                   short rowIDLen,
 		  HbaseStr &rowIDs,
-		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs) = 0;
+		  const int64_t timestamp) = 0;
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
-				  const int64_t timestamp,
-				  ExHbaseAccessStats *hbs);
+				  const int64_t timestamp);
 
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
@@ -229,8 +223,7 @@ class ExpHbaseInterface : public NABasicObject
 		  HbaseStr& rowID, 
 		  HbaseStr& row,
 		  NABoolean noXn,
-		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs) = 0;
+		  const int64_t timestamp) = 0;
 
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
@@ -238,7 +231,6 @@ class ExpHbaseInterface : public NABasicObject
                   HbaseStr &rowIDs,
                   HbaseStr &rows,
 		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs,
 		  NABoolean autoFlush = TRUE) = 0; // by default, flush rows after put
  
  virtual Lng32 setWriteBufferSize(
@@ -249,7 +241,7 @@ class ExpHbaseInterface : public NABasicObject
                  HbaseStr &tblName,
                  NABoolean v)=0;
  
- virtual  Lng32 initHBLC()=0;
+ virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL)=0;
 
  virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
@@ -258,8 +250,7 @@ class ExpHbaseInterface : public NABasicObject
 
  virtual Lng32 addToHFile(short rowIDLen,
                           HbaseStr &rowIDs,
-                          HbaseStr &rows,
-			  ExHbaseAccessStats *hbs) = 0;
+                          HbaseStr &rows) = 0;
  
  virtual Lng32 closeHFile(HbaseStr &tblName) = 0;
 
@@ -275,8 +266,7 @@ class ExpHbaseInterface : public NABasicObject
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-				  const int64_t timestamp,
-				  ExHbaseAccessStats *hbs) = 0;
+				  const int64_t timestamp) = 0;
   
   virtual Lng32 checkAndUpdateRow(
 				  HbaseStr &tblName,
@@ -285,8 +275,7 @@ class ExpHbaseInterface : public NABasicObject
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
                                   NABoolean noXn,
-				  const int64_t timestamp,
-				  ExHbaseAccessStats *hbs);
+				  const int64_t timestamp);
  
   virtual Lng32 getClose() = 0;
 
@@ -299,7 +288,6 @@ class ExpHbaseInterface : public NABasicObject
 			 const Text &colName,
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
-			 ExHbaseAccessStats *hbs,
 			 Text &aggrVal); // returned value
  
   virtual Lng32 grant(
@@ -330,6 +318,7 @@ protected:
                     int debugTimeout = 0);
   
   CollHeap * heap_;
+  ExHbaseAccessStats * hbs_;
   char server_[1000];
   char port_[100];
   char zkPort_[100];
@@ -344,13 +333,13 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 {
  public:
 
-  ExpHbaseInterface_JNI(CollHeap* heap, const char* server, 
-                        const char* port, bool useTRex,
+  ExpHbaseInterface_JNI(CollHeap* heap,
+                        const char* server, const char* port, bool useTRex,
                         const char *zkPort, int debugPort, int debugTimeout);
   
   virtual ~ExpHbaseInterface_JNI();
   
-  virtual Lng32 init();
+  virtual Lng32 init(ExHbaseAccessStats *hbs);
   
   virtual Lng32 cleanup();
 
@@ -391,7 +380,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 			 const TextVec *inColNamesToFilter, 
 			 const TextVec *inCompareOpList,
 			 const TextVec *inColValuesToCompare,
-                         ExHbaseAccessStats *hbs,
                          Float32 samplePercent = -1.0f);
   
   virtual Lng32 scanClose();
@@ -400,8 +388,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		HbaseStr &tblName,
 		const Text &row, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp,
-		ExHbaseAccessStats *hbs);
+		const int64_t timestamp);
  
   // return 1 if row exists, 0 if does not exist. -ve num in case of error.
   virtual Lng32 rowExists(
@@ -412,10 +399,9 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		HbaseStr &tblName,
 		const std::vector<Text> & rows, 
 		const std::vector<Text> & columns,
-		const int64_t timestamp,
-		ExHbaseAccessStats *hbs);
+		const int64_t timestamp);
 
-  virtual Lng32 nextRow(ExHbaseAccessStats *hbs);
+  virtual Lng32 nextRow();
 
   virtual Lng32 nextCell( HbaseStr &rowId,
           HbaseStr &colFamName,
@@ -442,23 +428,21 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr &tblName,
 		  HbaseStr &row, 
 		  const std::vector<Text> & columns,
-		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs);
+		  const int64_t timestamp);
 
   virtual Lng32 deleteRows(
 		  HbaseStr &tblName,
                   short rowIDLen,
 		  HbaseStr &rowIDs,
-		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs);
+		  const int64_t timestamp);
 
   virtual Lng32 checkAndDeleteRow(
 				  HbaseStr &tblName,
 				  HbaseStr& row, 
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
-				  const int64_t timestamp,
-				  ExHbaseAccessStats *hbs);
+				  const int64_t timestamp);
+
   virtual Lng32 deleteColumns(
 		  HbaseStr &tblName,
 		  const Text & column);
@@ -468,8 +452,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
 		  HbaseStr& rowID, 
                   HbaseStr& row,
 		  NABoolean noXn,
-		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs);
+		  const int64_t timestamp);
 
  virtual Lng32 insertRows(
 		  HbaseStr &tblName,
@@ -477,7 +460,6 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   HbaseStr &rowIDs,
                   HbaseStr &rows,
 		  const int64_t timestamp,
-		  ExHbaseAccessStats *hbs,
 		  NABoolean autoFlush = TRUE); // by default, flush rows after put
   
   virtual Lng32 setWriteBufferSize(
@@ -488,7 +470,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                   HbaseStr &tblName,
                   NABoolean v);
 
-virtual  Lng32 initHBLC();
+virtual  Lng32 initHBLC(ExHbaseAccessStats* hbs = NULL);
 
 virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Text& hFileLoc,
@@ -496,8 +478,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                            Int64 maxHFileSize);
  virtual Lng32 addToHFile(short rowIDLen,
                           HbaseStr &rowIDs,
-                          HbaseStr &rows,
-			  ExHbaseAccessStats *hbs);
+                          HbaseStr &rows);
 
  virtual Lng32 closeHFile(HbaseStr &tblName);
 
@@ -514,8 +495,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  HbaseStr &tblName,
 				  HbaseStr& rowID, 
 				  HbaseStr& row,
-				  const int64_t timestamp,
-				  ExHbaseAccessStats *hbs);
+				  const int64_t timestamp);
 
 
   virtual Lng32 checkAndUpdateRow(
@@ -525,8 +505,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 				  const Text& columnToCheck,
 				  const Text& colValToCheck,
                                   NABoolean noXn,
-				  const int64_t timestamp,
-				  ExHbaseAccessStats *hbs);
+				  const int64_t timestamp);
 
   virtual Lng32 coProcAggr(
 			 HbaseStr &tblName,
@@ -537,7 +516,6 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 			 const Text &colName,
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
-			 ExHbaseAccessStats *hbs,
 			 Text &aggrVal); // returned value
  
   virtual Lng32 getClose();
