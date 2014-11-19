@@ -172,7 +172,7 @@ if [[ $cloudera_installed -eq 0 ]]; then
       exit -1
    fi
 
-   echo "***INFO: Complete Cloudera setup from http://localhost:7180" | tee -a $SETUP_LOG 
+   echo "***INFO: Complete Cloudera setup from http://$(hostname --long):7180" | tee -a $SETUP_LOG 
 else
    echo
    echo "***INFO: Cloudera previously installed." | tee -a $SETUP_LOG

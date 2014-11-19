@@ -193,6 +193,18 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
+$AMBARI_DIR/configs.sh -port $PORT set $(hostname --long) $CLUSTER_NAME hbase-site hbase.snapshot.master.timeoutMillis 600000
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.snapshot.master.timeoutMillis through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
+$AMBARI_DIR/configs.sh -port $PORT set $(hostname --long) $CLUSTER_NAME hbase-site hbase.snapshot.region.timeout 600000
+if [ $? != 0 ]; then
+    echo "***INFO: unable to modify hbase.snapshot.region.timeout through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
 echo
 echo "***WARNING: Please manually restart HBase through the Ambari web GUI"
 echo

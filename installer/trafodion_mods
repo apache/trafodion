@@ -162,6 +162,50 @@ if [ -z "$MY_NODES" ]; then
    exit -1
 fi
 
+#Check that Hadoop nodes match Trafodion nodes
+
+if [[ $HADOOP_TYPE == "cloudera" ]]; then
+   sudo curl -su $ADMIN:$PASSWORD http://$URL/api/v6/cm/deployment > tempFile
+   numberHadoopNodes=$(grep -r "hostname" tempFile | wc -l)
+   grep -r "hostname" tempFile > tempFile2
+fi
+
+if [[ $HADOOP_TYPE == "ambari" ]]; then
+   sudo curl -u $ADMIN:$PASSWORD http://$URL/api/v1/clusters/$CLUSTER_NAME/hosts > tempFile
+   numberHadoopNodes=$(grep -r "host_name" tempFile | wc -l)
+   grep -r "host_name" tempFile > tempFile2
+fi
+
+if [[ $numberHadoopNodes != $node_count ]]; then
+   echo "***ERROR: Number of Trafodion nodes must match number of $HADOOP_TYPE nodes"
+   echo "***ERROR: Please rerun trafodion_setup with correct set of nodes"
+   echo "***ERROR: Please rerun trafodion_mods after trafodion_setup"
+   echo "***ERROR: Exiting..."
+   rm tempFile
+   rm tempFile2
+   exit -1
+fi
+
+while read line
+do
+   hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
+   echo $hostName
+   echo $NODE_LIST
+   if [[ $NODE_LIST != *$hostName* ]]; then
+      echo "***ERROR: Trafodion must be installed on all $HADOOP_TYPE nodes"
+      echo "***ERROR: Please rerun trafodion_setup with correct set of nodes"
+      echo "***ERROR: Please rerun trafodion_mods after trafodion_setup"
+      echo "***ERROR: Exiting..."
+      #rm tempFile
+      #rm tempFile2
+      exit -1
+   fi
+done < tempFile2
+
+rm tempFile
+rm tempFile2
+
+
 #============================================
 # Determine Trafodion version by parsing it 
 # from the hbase-trx jar filename.
