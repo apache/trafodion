@@ -8773,7 +8773,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
           else
           {
             char buf[5];
-            sprintf(buf,"%u",(unsigned int) lo->stringVal_[0]);
+            sprintf(buf,"%u",(unsigned char) lo->stringVal_[0]);
             delimiterSqlStr.append( buf);
             delimiterSqlStr.append(" ");
           }
@@ -8817,7 +8817,7 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
           else
           {
             char buf[5];
-            sprintf(buf,"%u",(unsigned int) lo->stringVal_[0]);
+            sprintf(buf,"%u",(unsigned char) lo->stringVal_[0]);
             recordSeparatorSqlStr.append( buf);
             recordSeparatorSqlStr.append(" ");
           }
