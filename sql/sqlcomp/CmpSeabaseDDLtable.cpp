@@ -4421,7 +4421,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       deallocEHI(ehi); 
 
       processReturn();
-      
       return;
     }
 
@@ -4674,6 +4673,12 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
   // remove NATable for this table
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn);
 
+  if (isRefConstr && otherNaTable)
+  {
+    CorrName otherCn(
+      otherNaTable->getExtendedQualName().getQualifiedNameObj(), STMTHEAP);
+    ActiveSchemaDB()->getNATableDB()->removeNATable(otherCn); 
+  }
   return;
 }
 
