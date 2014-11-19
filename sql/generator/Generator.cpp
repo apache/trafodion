@@ -231,6 +231,8 @@ Generator::Generator(CmpContext* currentCmpContext) :
      NExDbgInfoObj_.setNExLogPath( &NExLogPathNam_[0] );
   else
      NExDbgInfoObj_.setNExLogPath( NULL );
+  computeStats_ = FALSE;
+  explainInRms_ = TRUE;
 }
 
 void Generator::initTdbFields(ComTdb *tdb)
@@ -376,6 +378,8 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
       else
 	computeStats_ = FALSE;
     }
+    else
+       explainInRms_ = FALSE;
 
   if (CmpCommon::getDefault(COMP_BOOL_156) == DF_ON)
     collectRtsStats_ = TRUE;
@@ -410,19 +414,38 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
        (expr_node->child(0)->getOperatorType() == REL_CONTROL_SESSION) ||
        (expr_node->child(0)->getOperatorType() == REL_SET_SESSION_DEFAULT) ||
        (expr_node->child(0)->getOperatorType() == REL_TRANSACTION) ||
+       (expr_node->child(0)->getOperatorType() == REL_DESCRIBE) ||
+       (expr_node->child(0)->getOperatorType() == REL_LOCK) ||
+       (expr_node->child(0)->getOperatorType() == REL_UNLOCK) ||
+       (expr_node->child(0)->getOperatorType() == REL_SET_TIMEOUT) ||
+       (expr_node->child(0)->getOperatorType() == REL_CONTROL_RUNNING_QUERY) ||
        (expr_node->child(0)->getOperatorType() == REL_SP_PROXY)))
+   {
       computeStats_ = FALSE;
+      explainInRms_ = FALSE;
+   }
+   if (expr_node->child(0) &&
+      ((expr_node->child(0)->getOperatorType() == REL_DDL) ||
+      (expr_node->child(0)->getOperatorType() == REL_CALLSP) ||
+      (expr_node->child(0)->getOperatorType() == REL_EXE_UTIL)))
+     explainInRms_ = FALSE;
    if (expr_node->child(0) &&
     (expr_node->child(0)->getOperatorType() == REL_EXE_UTIL &&
 	((((ExeUtilExpr*)expr_node->child(0)->castToRelExpr())->getExeUtilType() == 
 	 ExeUtilExpr::GET_STATISTICS_) ||
         (((ExeUtilExpr*)expr_node->child(0)->castToRelExpr())->getExeUtilType() == 
 	 ExeUtilExpr::DISPLAY_EXPLAIN_))))
+    {
       computeStats_ = FALSE;
+      explainInRms_ = FALSE;
+    }
    
 #ifdef _DEBUG
   if (getenv("NO_DETAILED_STATS"))
+  {
     computeStats_ = FALSE;
+    explainInRms_ = FALSE;
+  }
 #endif
 
   setUpdatableSelect(((RelRoot *)expr_node)->updatableSelect());

@@ -707,9 +707,65 @@ short ExExplainTcb::work()
 	  break;
         case EXPL_SEND_TO_SSMP:
           {
-          workState_ = EXPL_DONE;
+            RtsExplainFrag *explainInfo = sendToSsmp();
+            if (explainInfo == NULL)
+            {
+              // Pointer to request entry in parent down queue
+              ex_queue_entry *pEntryDown = qParent_.down->getHeadEntry();
+              ComDiagsArea *diagsArea =
+                pEntryDown->getAtp()->getDiagsArea();
+              ExRaiseSqlError(getGlobals()->getDefaultHeap(),
+                              &diagsArea, EXE_NO_EXPLAIN_INFO);
+              if (diagsArea != pEntryDown->getAtp()->getDiagsArea())
+                pEntryDown->getAtp()->setDiagsArea(diagsArea);
+              workState_ = EXPL_ERROR;
+              break;
+            }
+            explainFrag =(char *)explainInfo->getExplainFrag();
+            fragLen = explainInfo->getExplainFragLen();
+            topNodeOffset = explainInfo->getTopNodeOffset();
+            // Get a 'pointer' to the root node of the explain Tree
+            // in the newly copied fragment.
+            fragStart = (char *)explainFrag + topNodeOffset;
+
+            // For now the root of the tree must be at the start of
+            // the EXPLAIN fragment because the root of the tree is
+            // used as a handle on the fragment to delete it.
+            if (fragStart != (char *)explainFrag)
+            {
+              NADELETEBASIC(explainFrag, getHeap());
+              explainFrag = NULL;
+              ex_assert(0,
+                        "Explain: explainTree root is not at the"
+                        "beginning of the fragment\n");
+            }
+
+            // Unpack the EXPLAIN Fragment
+            ExplainDesc *expDesc = (ExplainDesc *)fragStart;
+
+            // Set up space for reallocating objects during unpacking when
+            // there is a difference in image sizes at version migration.
+            //
+            ExplainDesc dummyExpDesc;
+            if ((expDesc = (ExplainDesc *)
+                  expDesc->driveUnpack(explainFrag,&dummyExpDesc,cliGlobals->getIpcHeap())) == NULL )
+            {
+              // ERROR during unpacking.
+              // Most likely case is verison-unsupported.
+              //
+              // Add code for erroring handling !!!
+              workState_ = EXPL_ERROR;
+              break;
+            }
+            explainTree_ = expDesc;
+            // There is an explainTree to be traversed.  Initialize
+            // the state used by the traversal and then travers the tree.
+            currentExplain_ = explainTree_->getExplainTreeRoot();
+            cameFrom_ = 0;
+            seqNum_ = 0;
+            workState_ = EXPL_TRAVERSE_EXPLAINTREE;
           }
-	  break;
+          break;
 	case EXPL_ERROR:
 	  
 	  // Must insert Q_SQLERROR in parent up queue.
@@ -1159,4 +1215,108 @@ void ExExplainTcb::setQid(char *qid, Lng32 len)
   }
 }
 
+RtsExplainFrag *ExExplainTcb::sendToSsmp()
+{
+  RtsExplainFrag *explainFrag = NULL;
+  RtsExplainReq *explainReq;
+  CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
+                        castToExMasterStmtGlobals()->getCliGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+  {
+    // Runtime Stats not running.
+    // Fill in diagsArea with details and return NULL
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_RTS_NOT_STARTED);
+    return NULL;
+  }
 
+  // Verify that we have valid parameters for each kind of request. If not, fill in the diagsArea
+  // and return NULL.
+  ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
+  short cpu;
+  char nodeName[MAX_SEGMENT_NAME_LEN+1];
+  if (getMasterCpu(qid_, (Lng32)str_len(qid_), nodeName, MAX_SEGMENT_NAME_LEN+1, cpu) == -1)
+  {
+    nodeName[0] = '\0';
+    cpu = -1;
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0(stmtPattern_);
+    return NULL;
+  }
+
+  IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, cpu, diagsArea_);
+  if (ssmpServer == NULL)
+    return NULL; // diags are in diagsArea_
+
+  //Create the SsmpClientMsgStream on the IpcHeap, since we don't dispose of it immediately.
+  //We just add it to the list of completed messages in the IpcEnv, and it is disposed of later.
+  //If we create it on the ExStatsTcb's heap, that heap gets deallocated when the statement is
+  //finished, and we can corrupt some other statement's heap later on when we deallocate this stream.
+ SsmpClientMsgStream *ssmpMsgStream  = new (cliGlobals->getIpcHeap())
+        SsmpClientMsgStream((NAHeap *)cliGlobals->getIpcHeap(), ssmpManager);
+
+  ssmpMsgStream->addRecipient(ssmpServer->getControlConnection());
+  RtsHandle rtsHandle = (RtsHandle) this;
+
+  // Retrieve the Rts collection interval and active queries. If they are valid, calculate the timeout
+  // and send to the SSMP process.
+  SessionDefaults *sd = cliGlobals->currContext()->getSessionDefaults();
+  Lng32 RtsTimeout;
+  if (sd)
+    RtsTimeout = sd->getRtsTimeout();
+  else
+    RtsTimeout = 0;
+  explainReq = new (cliGlobals->getIpcHeap()) RtsExplainReq(rtsHandle, cliGlobals->getIpcHeap(),
+            qid_, str_len(qid_));
+  *ssmpMsgStream << *explainReq;
+  if (RtsTimeout != 0)
+  {
+    // We have a valid value for the timeout, so we use it by converting it to centiseconds.
+    RtsTimeout = RtsTimeout * 100;
+  }
+  else
+    //Use the default value of 4 seconds, or 400 centiseconds.
+    RtsTimeout = 400;
+
+  // Send the message
+  ssmpMsgStream->send(FALSE, -1);
+  Int64 startTime = NA_JulianTimestamp();
+  Int64 currTime;
+  Int64 elapsedTime;
+  IpcTimeout timeout = (IpcTimeout) RtsTimeout;
+  while (timeout > 0 && ssmpMsgStream->hasIOPending())
+  {
+    ssmpMsgStream->waitOnMsgStream(timeout);
+    currTime = NA_JulianTimestamp();
+    elapsedTime = (currTime - startTime) / 10000;
+    timeout = (IpcTimeout)(RtsTimeout - elapsedTime);
+  }
+  if (ssmpMsgStream->getState() == IpcMessageStream::ERROR_STATE && retryAttempts_ < 3)
+  {
+    explainReq->decrRefCount();
+    DELAY(100);
+    retryAttempts_++;
+    explainFrag = sendToSsmp();
+    retryAttempts_ = 0;
+    return explainFrag;
+  }
+  if (ssmpMsgStream->getState() == IpcMessageStream::BREAK_RECEIVED)
+  {
+    // Break received - set diags area
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_CANCELED);
+
+    return NULL;
+  }
+  if (! ssmpMsgStream->isReplyReceived())
+  {
+    IpcAllocateDiagsArea(diagsArea_, getHeap());
+    (*diagsArea_) << DgSqlCode(-EXE_RTS_TIMED_OUT)
+      << DgString0(stmtPattern_) << DgInt0(RtsTimeout/100) ;
+    return NULL;
+  }
+  retryAttempts_ = 0;
+  explainFrag = ssmpMsgStream->getExplainFrag();
+  explainReq->decrRefCount();
+  return explainFrag;
+}

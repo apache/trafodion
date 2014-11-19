@@ -85,7 +85,6 @@ static const SessionDefaults::SessionDefaultMap sessionDefaultMap[] =
   SDEntry(SessionDefaults::ESP_PRIORITY_DELTA,       ESP_PRIORITY_DELTA,         SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_STOP_IDLE_TIMEOUT,    ESP_STOP_IDLE_TIMEOUT,      SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
   SDEntry(SessionDefaults::ESP_RELEASE_WORK_TIMEOUT, ESP_RELEASE_WORK_TIMEOUT,   SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
-  SDEntry(SessionDefaults::EXPLAIN_IN_RMS,           EXPLAIN_IN_RMS,             SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  TRUE),
   SDEntry(SessionDefaults::INTERNAL_FORMAT_IO,       INTERNAL_FORMAT_IO,         SessionDefaults::SDT_BOOLEAN,        FALSE,   FALSE, TRUE,  FALSE),
   SDEntry(SessionDefaults::ISO_MAPPING,              ISO_MAPPING,                SessionDefaults::SDT_ASCII,          FALSE,   TRUE,  TRUE,  FALSE),
   SDEntry(SessionDefaults::MASTER_PRIORITY,          MASTER_PRIORITY,            SessionDefaults::SDT_BINARY_SIGNED,  FALSE,   TRUE,  TRUE,  TRUE),
@@ -504,9 +503,6 @@ void SessionDefaults::setSessionDefaultAttributeValue
       {
 	setEspFreeMemTimeout(defaultValueAsLong);
       }
-      break;
-    case EXPLAIN_IN_RMS:
-      setExplainInRMS(defaultValueAsBoolean);
       break;
     case STATISTICS_VIEW_TYPE:
       setStatisticsViewType(defaultValueAsLong);
@@ -1403,7 +1399,7 @@ AQRStatementAttributes::AQRStatementAttributes(CollHeap *heap)
   uniqueStmtIdLen_ = 0;
   parentQID_ = NULL;
   parentQIDSystem_[0] = '\0';
-    
+  exeStartTime_ = -1;    
 }
 
 AQRStatementAttributes::~AQRStatementAttributes()
@@ -1422,6 +1418,7 @@ void AQRStatementAttributes::clear()
   uniqueStmtIdLen_ = 0;
   parentQID_ = NULL;
   parentQIDSystem_[0] = '\0';
+  exeStartTime_ = -1;
 }
 void AQRStatementAttributes::setAttributesInStatement(Statement *targetStmt)
 {
@@ -1434,6 +1431,7 @@ void AQRStatementAttributes::setAttributesInStatement(Statement *targetStmt)
       targetStmt->setUniqueStmtId(uniqueStmtId_);
       targetStmt->setParentQid(parentQID_);
       targetStmt->setParentQidSystem(parentQIDSystem_);
+      targetStmt->setExeStartTime(exeStartTime_);
     }
   return;
   
@@ -1464,6 +1462,9 @@ void AQRStatementAttributes::getAttributesFromStatement(Statement *fromStmt)
        len = str_len(fromStmt->getParentQidSystem());
        str_cpy_all(parentQIDSystem_, fromStmt->getParentQidSystem(), len);
        parentQIDSystem_[len] = '\0';
+       if (fromStmt->getStatsArea() && fromStmt->getStatsArea()->getMasterStats())
+           exeStartTime_ = fromStmt->getStatsArea()->getMasterStats()->getExeStartTime();
+ 
     }
   return;
 }

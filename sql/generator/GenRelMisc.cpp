@@ -2520,6 +2520,8 @@ short RelRoot::codeGen(Generator * generator)
   
   if (childTdbIsNull)
      root_tdb->setChildTdbIsNull(); 
+  if (generator->explainInRms())
+     root_tdb->setExplainInRms();
 
   OperatorTypeEnum childOper = childOperType();
 

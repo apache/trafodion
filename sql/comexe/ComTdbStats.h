@@ -41,6 +41,7 @@
 
 class StatsDesc;
 class StatsTuple;
+class ExMasterStats;
 
 // class to hold cost to be returned. 
 // Used to populate the struct QueryCostInfo defined in cli/sqlcli.h 
@@ -236,7 +237,8 @@ public:
     { cmpCpuTotal_ = cmpCpuTotal; }
   void setCompileEndTime(Int64 endTime)
     { compileEndTime_ = endTime; }
-  void translateToExternalFormat(SQL_COMPILATION_STATS_DATA *cmpData);
+  void translateToExternalFormat(SQL_COMPILATION_STATS_DATA *cmpData, 
+          Int64 cmpStartTime, Int64 cmpEndTime);
 
 private:  
   Int64 compileStartTime_;                          //  0 -  7

@@ -136,6 +136,11 @@ Query_Invalidation_Keys explain output
 >>
 >>-- test the GET STATISTICS reporting of No. Query Invalidation Keys
 >>log;
+No. Query Invalidation Keys
+No. Query Invalidation Keys
+No. Query Invalidation Keys
+numQueryInvKeys:
+numQueryInvKeys:
 >>
 >>exit;
 

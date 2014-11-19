@@ -2743,6 +2743,7 @@ class ExHbaseAccessStats : public ExOperStats {
     virtual void getVariableStatsInfo(char * dataBuffer,
 				      char * datalen,
 				      Lng32 maxLen);
+  Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   
   ExLobStats * lobStats() { return &lobStats_;}
 
@@ -3946,9 +3947,10 @@ public:
   ComDiagsArea * getDiagsArea() { return diagsArea_; }
   
 #ifndef __EID
-  Lng32 str_parse_stmt_name(char *string, Lng32 len, char *nodeName, short *cpu, pid_t *pid, 
-                         short *qidOffset, short *qidLen, short *activeQueryNum, UInt16 *statsMergeType,
-                         short *detailLevel, short *subReqType, Lng32 *filterTimeInSecs);
+  Lng32 str_parse_stmt_name(char *string, Lng32 len, char *nodeName, short *cpu,       pid_t *pid,Int64 *timeStamp, Lng32 *queryNumber,
+       short *qidOffset, short *qidLen, short *activeQueryNum, 
+       UInt16 *statsMergeType, short *detailLevel, short *subReqType, 
+       Lng32 *filterTimeInSecs);
 #endif
   enum StatsStep
   {
@@ -3995,6 +3997,8 @@ private:
   char *qid_;
   pid_t pid_;
   short cpu_;
+  Int64 timeStamp_;
+  Lng32 queryNumber_;
   char nodeName_[MAX_SEGMENT_NAME_LEN+1];
   short reqType_;
   short retryAttempts_;

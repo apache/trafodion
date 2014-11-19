@@ -263,12 +263,7 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
                     master_glob->getStatement()->getContext()->getStats();
                 ExStatisticsArea *prevStats = stmtStats->getStatsArea();
                 if (ctxStats == prevStats)
-                {
-                   master_glob->getStatement()->getContext()->setStatsCopy(TRUE);
-                   stmtStats->setDeleteStats(FALSE);
-                }
-                else
-                  stmtStats->setDeleteStats(TRUE);
+                   cliGlobals->currContext()->setStatsArea(NULL,FALSE, FALSE,FALSE);
                 stmtStats->setStatsArea(statsArea);
               }
               master_glob->setStatsArea(statsArea);

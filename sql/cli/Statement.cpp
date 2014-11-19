@@ -228,6 +228,8 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
   , spaceObject_(new(context_->exHeap())
     Space(Space::EXECUTOR_SPACE, TRUE, (char *)"Stmt Space"))
   , space_(*spaceObject_)
+  , aqrInitialExeStartTime_(-1)
+  , compileEndTime_(-1)
 {
   cliLevel_ = context_->getNumOfCliCalls();
 
@@ -1992,6 +1994,27 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
   Lng32 fragOffset;
   Lng32 fragLen;
   Lng32 topNodeOffset;
+  SessionDefaults *sessionDefaults =
+       context_->getSessionDefaults();
+  if (statsGlobals != NULL && stmtStats_ != NULL && root_tdb != NULL 
+        && getUniqueStmtId() != NULL 
+        && sessionDefaults->isExplainInRMS())
+  {
+    ex_root_tdb *rootTdb = getRootTdb();
+    if (rootTdb->explainInRms() &&
+        rootTdb->getFragDir()->getExplainFragDirEntry
+                 (fragOffset, fragLen, topNodeOffset) == 0)
+    {
+      short savedPriority, savedStopMode;
+      short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+            cliGlobals_->myPin(), savedPriority, savedStopMode, 
+            FALSE /*shouldTimeout*/);
+      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      stmtStats_->setExplainFrag((void *)(((char *)root_tdb)+fragOffset), fragLen, topNodeOffset);
+      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
+                          savedPriority, savedStopMode);
+    }
+  }
   return prepareReturn ((RETCODE)retcode);
 }
 
@@ -3314,6 +3337,8 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
   // from the switch statement.
 
   NABoolean readyToReturn = FALSE;
+  if (stmtStats_ != NULL) 
+     masterStats = stmtStats_->getMasterStats();
   while (readyToReturn == FALSE)  
     {
 #ifdef _DEBUG
@@ -3361,15 +3386,18 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
               context_->reclaimStatements();
               context_->reclaimStatementsForPFS();
             }
-            if ((stmtStats_) && ((masterStats = stmtStats_->getMasterStats()) != NULL))
+            if (masterStats != NULL)
             {
               Int64 jts = NA_JulianTimestamp();
 	      if (NOT masterStats->isPrepAndExec() && (!fixupOnly))
 	      {
 	        masterStats->setElapsedStartTime(jts);
 	      }
-                if (! fixupOnly)
-                masterStats->setExeStartTime(jts);
+              if (! stmtStats_->aqrInProgress())
+                aqrInitialExeStartTime_ = -1;
+              if (! fixupOnly)
+                 masterStats->setExeStartTime(aqrInitialExeStartTime_ == -1 ? 
+                    jts : aqrInitialExeStartTime_);
 	      masterStats->initBeforeExecute(jts);
               if (! stmtStats_->aqrInProgress())
                 masterStats->resetAqrInfo();
@@ -4324,25 +4352,26 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 		state_ = ERROR_RETURN_;
 		break;
 	      }
-	    if ((stmtStats_) && (stmtStats_->getMasterStats()))
+	    if (masterStats != NULL)
 	      {
 	       Int64 jts = NA_JulianTimestamp();
-                if (NOT stmtStats_->getMasterStats()->isPrepAndExec())
+                if (NOT masterStats->isPrepAndExec())
 	        {
-                  stmtStats_->getMasterStats()->setElapsedStartTime(jts);
+                  masterStats->setElapsedStartTime(jts);
                 }
-                 stmtStats_->getMasterStats()->setExeStartTime(jts);
+                masterStats->setExeStartTime(aqrInitialExeStartTime_ == -1
+                     ? jts : aqrInitialExeStartTime_);
               }
 	    state_ = EXECUTE_;
 	  }
 	  break;
 	case EXECUTE_:
 	  {
-	    if ((stmtStats_) && (stmtStats_->getMasterStats()))
+	    if (masterStats != NULL)
 	      {
-		stmtStats_->getMasterStats()->
+		masterStats->
 		  setFixupEndTime(NA_JulianTimestamp());
-                if (!stmtStats_->getMasterStats()->getValidPrivs())
+                if (!masterStats->getValidPrivs())
                   {
                     diagsArea << DgSqlCode(-CLI_INVALID_QUERY_PRIVS);
                     state_ = ERROR_;
@@ -4722,7 +4751,13 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
   
 			if( cmpData )
 			  {
-			    cmpData->translateToExternalFormat(query_cmp_data);
+                           Int64 cmpStartTime = -1;
+                           Int64 cmpEndTime = NA_JulianTimestamp();
+                           if (masterStats != NULL)
+                              cmpStartTime = masterStats->getCompStartTime();
+			    cmpData->translateToExternalFormat(query_cmp_data,
+                                        cmpStartTime, cmpEndTime);
+                            setCompileEndTime(cmpEndTime);
 			  }   
 		      }
 
@@ -4734,9 +4769,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
       // done deciding if this query needs to be monitored and 
       // registered with WMS.
       // now execute it.
-      ExMasterStats *masterStats = 
-	(stmtStats_ ? stmtStats_->getMasterStats() : NULL);
-      if (masterStats)
+      if (masterStats != NULL)
 	{
 	  masterStats->setIsBlocking();
 	  masterStats->setStmtState(STMT_EXECUTE_);
@@ -4745,7 +4778,7 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
       Int32 rc = root_tcb->execute(cliGlobals, statementGlobals_,
 				   input_desc, diagsPtr, reExecute);
 
-      if (masterStats)
+      if (masterStats != NULL)
 	masterStats->setNotBlocking();
       if (rc < 0)
 	retcode = ERROR;
@@ -5503,7 +5536,8 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
 	 masterStats-> setElapsedStartTime(jts);
      masterStats->setFixupStartTime(-1);
      masterStats->setFreeupStartTime(-1);
-     masterStats->setExeStartTime(jts);
+    masterStats->setExeStartTime(aqrInitialExeStartTime_ == -1 ? jts :
+                               aqrInitialExeStartTime_);
      masterStats->setSqlErrorCode(0); 
      masterStats->setStmtState(STMT_EXECUTE_);
    }
@@ -5855,93 +5889,61 @@ void Statement::releaseStats()
   if (ctxStats && (ctxStats == myStats) && 
         ((Int32)myStats->getCollectStatsType() != SQLCLI_NO_STATS))
   {
-    if (statsGlobals != NULL && stmtStats_ != NULL && (Int32)myStats->getCollectStatsType() != SQLCLI_ALL_STATS) 
+    if (statsGlobals != NULL && stmtStats_ != NULL &&
+        (Int32)myStats->getCollectStatsType() != SQLCLI_ALL_STATS) 
     {
       short savedPriority, savedStopMode;
       short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-						    cliGlobals_->myPin(), 
-                                                    savedPriority, savedStopMode, FALSE );
+                            cliGlobals_->myPin(), 
+                            savedPriority, savedStopMode, FALSE );
       ex_assert(error == 0, "getStatsSemaphore() returned an error");
-      // Retain the stats stored in the context since this stats is not part
-      // of Statment heap and the stats will be available even when the statement is deallocated
-      // Set the StatementGlobals stats Area to NULL so that the stats Area is not deleted by the master
-      // in ex_globals::deleteMe. The stats area will be deleted by SSMP or when the context stats 
-      // is replaced depending upon RTS stats is already obtained or not.
-      if ((stmtStats_->getMergedStats() != NULL) || 
-	  stmtStats_->aqrInProgress())
-      {
-        getGlobals()->setStatsArea(NULL);
-        stmtStats_->setDeleteStats(TRUE);
-        stmtStats_->setStmtStatsUsed(TRUE);
-        context_->setStatsArea(myStats, FALSE, TRUE, FALSE);
-        context_->setPrevStmtStats(stmtStats_);
-      }
-      else
-      {
-        getGlobals()->setStatsArea(NULL);
-        stmtStats_->setStatsArea(NULL);
-        if (stmtStats_->getMasterStats() != NULL && myStats->getMasterStats() == NULL)
-	{
-	  ExMasterStats * ems = new(myStats->getHeap())
-	    ExMasterStats((NAHeap *)myStats->getHeap());
-	  ems->copyContents(stmtStats_->getMasterStats());
-	  myStats->setMasterStats(ems);
-	}
-        context_->setStatsArea(myStats, TRUE, TRUE, FALSE);
-      }
-      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(), 
+      // Make sure the ex_globals doesn't delete this stats area
+      // in case of dynamic statements, since stmtStats is also
+      // pointing to the same area
+      getGlobals()->setStatsArea(NULL);
+      // Context is pointing to it. Remove query shouldn't
+      // deallocate it
+      stmtStats_->setStmtStatsUsed(TRUE);
+      context_->setStatsArea(myStats, FALSE, TRUE, FALSE);
+      // Set the StmtStats that can be used to reset the used flag
+      context_->setPrevStmtStats(stmtStats_);
+      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),
+                                cliGlobals_->myPin(), 
                                 savedPriority, savedStopMode);
     }
     else
     {
-  // Resources for this statement are being deallocated. If the
-  // context is pointing to my stats area, make a new copy of the
-  // stats area and attach it to context.
-    newStats = new (context_->exHeap())
-    ExStatisticsArea(context_->exHeap(), 0,
+      // Resources for this statement are being deallocated. If the
+      // context is pointing to my stats area, make a new copy of the
+      // stats area and attach it to context.
+      newStats = new (context_->exHeap())
+      ExStatisticsArea(context_->exHeap(), 0,
                        myStats->getCollectStatsType());
-    newStats->setStatsEnabled(myStats->statsEnabled());
-    newStats->merge(myStats);
-
+      newStats->setStatsEnabled(myStats->statsEnabled());
+      newStats->merge(myStats);
       if (newStats->getMasterStats() == NULL && stmtStats_ != NULL 
-                    && stmtStats_->getMasterStats() != NULL)
+                   && stmtStats_->getMasterStats() != NULL)
       {
-	ExMasterStats * ems = new(context_->exHeap())
-	  ExMasterStats(context_->exHeap());
-	ems->copyContents(stmtStats_->getMasterStats());
-	newStats->setMasterStats(ems);
+        ExMasterStats * ems = new(context_->exHeap())
+              ExMasterStats(context_->exHeap());
+        ems->copyContents(stmtStats_->getMasterStats());
+        newStats->setMasterStats(ems);
       }
       if (stmtStats_ != NULL)
-        stmtStats_->setStatsArea(NULL);
-    // Attach the new stats area to the context
-      context_->setStatsArea(newStats, TRUE, FALSE);
+         stmtStats_->setStatsArea(NULL);
+      // Attach the new stats area to the context
+      context_->setStatsArea(newStats, TRUE, FALSE, TRUE);
     }
   }
   else
-  if (myStats != NULL || myOrigStatsArea != NULL)
+  if (myOrigStatsArea != NULL)
   {
-    if (statsGlobals != NULL && stmtStats_ != NULL)
-    {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-						    cliGlobals_->myPin(), savedPriority, savedStopMode,
-                                                    FALSE );
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
-      if (stmtStats_->getMergedStats() != NULL)
-      {
-        getGlobals()->setStatsArea(NULL);
-        stmtStats_->setDeleteStats(TRUE);
-      }
-      else
-        stmtStats_->setStatsArea(NULL);
-      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                            savedPriority, savedStopMode);
-    }
-    else
-    {
-      if (stmtStats_ != NULL)
-        stmtStats_->setStatsArea(NULL);
-    }
+    // Make sure the ex_globals doesn't delete this stats area
+    // in case of dynamic statements, since stmtStats is also
+    // pointing to the same area
+    if (stmtStats_ != NULL && myOrigStatsArea != NULL &&
+          (Int32)myOrigStatsArea->getCollectStatsType() != SQLCLI_ALL_STATS) 
+       getGlobals()->setStatsArea(NULL);
   }
 }
 
@@ -8992,6 +8994,24 @@ char *Statement::getParentQidSystem()
   }
   return parentQidSystem;
 }
+
+Int64 Statement::getExeStartTime()
+{
+  ExStatisticsArea *statsArea;
+  ExMasterStats *masterStats;
+  statsArea = getStatsArea();
+  
+  if (statsArea != NULL && (masterStats = statsArea->getMasterStats()) != NULL)
+      return masterStats->getExeStartTime();
+  else
+      return -1;
+}
+
+void Statement::setExeStartTime(Int64 exeStartTime)
+{
+   if (exeStartTime != -1)
+      aqrInitialExeStartTime_ = exeStartTime;
+} 
 
 Lng32 Statement::initStrTarget(SQLDESC_ID * sql_source,
                                ContextCli &currContext,

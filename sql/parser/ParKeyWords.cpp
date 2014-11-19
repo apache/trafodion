@@ -812,6 +812,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("PUBLISH",            TOK_PUBLISH,     NONRESTOKEN_),
   ParKeyWord("PURGEDATA",          TOK_PURGEDATA,   NONRESTOKEN_),
   ParKeyWord("QID",                TOK_QID,         NONRESTOKEN_),
+  ParKeyWord("QID_INTERNAL",       TOK_QID_INTERNAL,  NONRESTOKEN_),
   ParKeyWord("QUARTER",            TOK_QUARTER,     NONRESTOKEN_),
   ParKeyWord("QUERY",              TOK_QUERY,       NONRESTOKEN_),
   ParKeyWord("QUERYCACHE",         TOK_QUERY_CACHE, NONRESTOKEN_),

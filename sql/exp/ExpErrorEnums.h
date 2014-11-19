@@ -437,6 +437,7 @@ enum ExeErrorCode
   EXE_SG_UPDATE_FAILURE                 = 8935,
 
   EXE_REORG_STATISTICS_FETCH_ERROR      = 8936,
+  EXE_RTS_INVALID_QID_INTERNAL          = 8937, 
 
   EXE_UDR_INVALID_DATA                  = 8940,
 

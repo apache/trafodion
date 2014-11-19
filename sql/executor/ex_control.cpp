@@ -360,6 +360,13 @@ short ExControlTcb::work()
                           currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
                         }
 		      }
+		    else if (strcmp(value[1], "EXPLAIN_IN_RMS") == 0)
+		      {
+                        NABoolean explainInRMS = TRUE;
+			if (strcmp(value[2], "OFF") == 0)
+                            explainInRMS = FALSE;
+			currContext->getSessionDefaults()->setExplainInRMS(explainInRMS);
+                      }
 		    else if (strcmp(value[1], "MARIAQUEST_PROCESS") == 0)
 		      {
 			if (strcmp(value[2], "ON") == 0)
@@ -532,7 +539,6 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CANCEL_UNIQUE_QUERY") != 0) &&
       (strcmp(defaultName, "CANCEL_LOGGING") != 0) &&
       (strcmp(defaultName, "SUSPEND_LOGGING") != 0) &&
-      (strcmp(defaultName, "EXPLAIN_IN_RMS") != 0) &&
       (strcmp(defaultName, "STATISTICS_VIEW_TYPE") != 0) &&
       (strcmp(defaultName, "RECLAIM_MEMORY_AFTER") != 0) &&
       (strcmp(defaultName, "RECLAIM_FREE_MEMORY_RATIO") != 0) &&
@@ -572,7 +578,6 @@ short ExSetSessionDefaultTcb::work()
       (strcmp(defaultName, "CANCEL_UNIQUE_QUERY") == 0) ||
       (strcmp(defaultName, "CANCEL_LOGGING") == 0) ||
       (strcmp(defaultName, "SUSPEND_LOGGING") == 0) ||
-      (strcmp(defaultName, "EXPLAIN_IN_RMS") == 0) ||
       (strcmp(defaultName, "CALL_EMBEDDED_ARKCMP") == 0) ||
       (strcmp(defaultName, "STATISTICS_VIEW_TYPE") == 0) ||
       (strcmp(defaultName, "EXSM_TRACE_LEVEL") == 0) ||
@@ -1121,15 +1126,6 @@ short ExSetSessionDefaultTcb::work()
       currContext->getSessionDefaults()->
         setCancelEscalationMxosrvrInterval(defaultValueAsLong);
     }  
-  else if (strcmp(defaultName, "EXPLAIN_IN_RMS") == 0)
-    {
-      if ((stricmp(defaultValue, "ON") == 0) ||
-	  (stricmp(defaultValue, "ENABLE") == 0))
-	currContext->getSessionDefaults()->setExplainInRMS(TRUE);
-      else if ((stricmp(defaultValue, "OFF") == 0) ||
-	       (stricmp(defaultValue, "DISABLE") == 0))
-	currContext->getSessionDefaults()->setExplainInRMS(FALSE);
-    }
   else if (strcmp(defaultName, "CALL_EMBEDDED_ARKCMP") == 0)
     {
       if ((stricmp(defaultValue, "TRUE") == 0) ||

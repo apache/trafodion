@@ -203,6 +203,8 @@ IpcMessageObjSize RtsQueryId::packedLength()
   result += sizeof(nodeName_);
   result += sizeof(cpu_);
   result += sizeof(pid_);
+  result += sizeof(timeStamp_);
+  result += sizeof(queryNumber_);
   result += sizeof(reqType_);
   result += sizeof(statsMergeType_);
   result += sizeof(activeQueryNum_);
@@ -226,6 +228,8 @@ IpcMessageObjSize RtsQueryId::packObjIntoMessage(
   buffer += sizeof(nodeName_);
   result += packIntoBuffer(buffer, cpu_);
   result += packIntoBuffer(buffer, pid_);
+  result += packIntoBuffer(buffer, timeStamp_);
+  result += packIntoBuffer(buffer, queryNumber_);
   result += packIntoBuffer(buffer, reqType_);
   result += packIntoBuffer(buffer, statsMergeType_);
   result += packIntoBuffer(buffer, activeQueryNum_);
@@ -253,6 +257,8 @@ void RtsQueryId::unpackObj(IpcMessageObjType objType,
   buffer += sizeof(nodeName_);
   unpackBuffer(buffer, cpu_);
   unpackBuffer(buffer, pid_);
+  unpackBuffer(buffer, timeStamp_);
+  unpackBuffer(buffer, queryNumber_);
   unpackBuffer(buffer, reqType_);
   unpackBuffer(buffer, statsMergeType_);
   unpackBuffer(buffer, activeQueryNum_);
@@ -274,10 +280,12 @@ RtsQueryId::RtsQueryId(NAMemory *heap, char *nodeName, short cpu, UInt16 statsMe
                        short activeQueryNum)
     : RtsMessageObj(RTS_QUERY_ID, currRtsQueryIdVersionNumber, heap),
     cpu_(cpu),
+    timeStamp_(-1),
+    queryNumber_(-1),
     statsMergeType_(statsMergeType)
 {
   short len;
-  if (nodeName_ != NULL)
+  if (nodeName != NULL)
     str_cpy_all(nodeName_, nodeName, str_len(nodeName)+1);
   else
   {
@@ -299,6 +307,8 @@ RtsQueryId::RtsQueryId(NAMemory *heap, char *nodeName, short cpu, pid_t pid, UIn
     : RtsMessageObj(RTS_QUERY_ID, currRtsQueryIdVersionNumber, heap),
     cpu_(cpu),
     pid_(pid),
+    timeStamp_(-1),
+    queryNumber_(-1),
     statsMergeType_(statsMergeType)
 {
   short len;
@@ -316,6 +326,34 @@ RtsQueryId::RtsQueryId(NAMemory *heap, char *nodeName, short cpu, pid_t pid, UIn
   detailLevel_ = 0;
   subReqType_ = -1;
 }
+
+RtsQueryId::RtsQueryId(NAMemory *heap, char *nodeName, short cpu, pid_t pid, Int64 timeStamp, Lng32 queryNumber,
+                       UInt16 statsMergeType,
+                       short activeQueryNum,
+                       short reqType)
+    : RtsMessageObj(RTS_QUERY_ID, currRtsQueryIdVersionNumber, heap),
+    cpu_(cpu),
+    pid_(pid),
+    timeStamp_(timeStamp),
+    queryNumber_(queryNumber),
+    statsMergeType_(statsMergeType)
+{
+  short len;
+  if (nodeName_ != NULL)
+    str_cpy_all(nodeName_, nodeName, str_len(nodeName)+1);
+  else
+  {
+    len = 0;
+    nodeName_[len] = '\0';
+  }
+  reqType_ = reqType;
+  queryId_ = NULL;
+  queryIdLen_ = 0;
+  activeQueryNum_ = activeQueryNum;
+  detailLevel_ = 0;
+  subReqType_ = -1;
+}
+
 
 RtsCpuStatsReq::RtsCpuStatsReq(const RtsHandle &h, NAMemory *heap,
                                char *nodeName, short cpu, short noOfQueries, short reqType)
@@ -464,6 +502,57 @@ IpcMessageObjSize QueryStarted::packedLength()
   result += sizeof(qsFlags_);
   return result;
 }
+
+RtsExplainReq::RtsExplainReq(const RtsHandle &h, NAMemory *heap, char *qid, Lng32 qidLen)
+: RtsMessageObj(RTS_MSG_EXPLAIN_REQ, currRtsExplainReqVersionNumber, heap)
+{
+  setHandle(h);
+  qid_ = new (heap) char[qidLen+1];
+  str_cpy_all(qid_, qid, qidLen);
+  qid_[qidLen] = '\0';
+  qidLen_ = qidLen;
+}
+
+RtsExplainReq::~RtsExplainReq()
+{
+  if (qid_ != NULL)
+    NADELETEBASIC(qid_, getHeap());
+  qid_ = NULL;
+}
+
+IpcMessageObjSize RtsExplainReq::packedLength()
+{
+  IpcMessageObjSize result = baseClassPackedLength();
+
+  result += sizeof(qidLen_);
+  result += qidLen_;
+  return result;
+}
+
+IpcMessageObjSize RtsExplainReq::packObjIntoMessage(
+     IpcMessageBufferPtr buffer)
+{
+  IpcMessageObjSize result = packBaseClassIntoMessage(buffer);
+
+  result += packIntoBuffer(buffer, qidLen_);
+  result += packStrIntoBuffer(buffer, qid_, qidLen_);
+  return result;
+}
+
+void RtsExplainReq::unpackObj(IpcMessageObjType objType,
+                                   IpcMessageObjVersion objVersion,
+                                   NABoolean sameEndianness,
+                                   IpcMessageObjSize objSize,
+                                   IpcConstMessageBufferPtr buffer)
+{
+  unpackBaseClass(buffer);
+
+  unpackBuffer(buffer, qidLen_);
+  qid_ = new (getHeap()) char[qidLen_+1];
+  unpackStrFromBuffer(buffer, qid_, qidLen_);
+  qid_[qidLen_] = '\0';
+}
+
 
 IpcMessageObjSize QueryStarted::packObjIntoMessage(
      IpcMessageBufferPtr buffer)

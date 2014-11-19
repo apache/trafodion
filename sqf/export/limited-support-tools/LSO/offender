@@ -1,0 +1,202 @@
+#!/bin/bash
+#============================
+
+# Constants and Defaults
+MAX_TIME_P1=32768
+MAX_NODE_P1=2048
+DEFAULT_TIME=30
+DEFAULT_MEMSIZE=250
+DEFAULT_PFS_USE_PERCENT=50
+
+function usage()
+{
+    cat <<EOF
+
+    This script runs a Lightweight SQL Offender script
+    syntax:  -s|--script <script-name> [-t|--time <time>] [-n|--node <node>] 
+             [-m|--memsize] [-p|--pfsusepercent]
+             [-h|--help]
+ 
+    Either the short form (-x) or long form (--name) of the parameters can be 
+           used
+
+    -s|--script Manditory. <script-name> must be one of:
+                          cpu_offender
+                          mem_offender
+                          wm_mem_offender
+                          dead
+                          inactive
+                          unmonitored
+                          in_sql
+                          in_client
+
+   -t|--time   Optional Default $DEFAULT_TIME
+               values: 0 < <time> < $MAX_TIME_P1 
+               Time span (in seconds) to search for matching offenders.  
+               Applies to scripts: dead,inactive,in_sql,in_client,unmonitored
+
+   -m|--memsize Optional Default $DEFAULT_MEMSIZE
+                Processes exceeding the given memory threshold in MB
+                Applies to mem_offender and wm_mem_offender
+ 
+   -n|--node   Optional Default ALL NODES
+               values: -1 < <node> < $MAX_NODE_P1
+               Restricts the query to the given SQL node number 
+   
+  -h|--help   Display this text and exit
+
+
+EOF
+}
+
+#===========================
+
+# initialize and clear all options
+SCRIPT=
+TIME=
+NODE=
+MEMSIZE=
+PREAMBLE=
+QUERY_TEXT=
+QUERY_FILE=
+PFS_USE_PERCENT=
+OFFENDER_NODE=-1
+LSO_DIR="$MY_SQROOT/export/limited-support-tools/LSO"
+ERROR_MESSAGE=
+
+# parse command line arguments
+args=$(getopt -o "hs:t:n:m:p:" -l "help,script:,time:,node:,memsize:,pfsusepercent:" -- "$@")
+if [ $? -ne 0 ] ; then
+        printf "\nARGS: $args\n"
+	usage
+	exit 1
+fi
+
+eval set -- "$args"
+while true ; do
+	case "$1" in
+		-h|--help)   usage ; exit 1 ;;
+		-s|--script) SCRIPT=$2; shift ;;
+		-t|--time)   TIME=$2; shift ;;
+		-n|--node)   NODE=$2; shift ;;
+		-m|--memsize)   MEMSIZE=$2; shift ;;
+		-p|--pfsusepercent)   PFS_USE_PERCENT=$2; shift ;;
+                --)                   shift; break;;
+
+		*) printf -v ERROR_MESSAGE "\nbad param: $1\n";;
+	esac
+	shift
+done
+# validate all arguments and make sure they make sense
+
+# echo "SCRIPT: $SCRIPT, TIME: $TIME, NODE $NODE"
+
+# make sure a script was specified	
+if [ -z "$SCRIPT" ]; then
+   printf -v LOCAL_MESSAGE "\nYou must specify a script\n"
+   ERROR_MESSAGE="$ERROR_MESSAGE$LOCAL_MESSAGE"
+fi
+
+# make sure that time (if specified) is > 0 and < MAX_TIME_P1
+if [ -n "$TIME" ]; then
+   if ! [[ "$TIME" =~ ^[0-9]+$ ]]; then
+      printf -v LOCAL_MESSAGE "\nTIme must be a positive integer: $TIME\n"
+      ERROR_MESSAGE="$ERROR_MESSAGE$LOCAL_MESSAGE"
+   else
+      if [ $TIME -lt 1 ]; then
+         printf -v LOCAL_MESSAGE "\nTime (-t) must be > 0: $TIME\n"
+         ERROR_MESSAGE="$ERRORMESSAGE$LOCAL_MESSAGE"
+      else
+        if [ $TIME -ge $MAX_TIME_P1 ]; then 
+           printf "\nTime (-t) must be < $MAX_TIME_P1: $TIME\n"
+           ERROR_MESSAGE="$ERROR_MESSAGE$LOCAL_MESSAGE"
+        fi
+      fi
+   fi
+fi
+
+# make sure that node (if specified) is > -1 and < MAX_NODE_P1
+if [ -n "$NODE" ]; then
+   if ! [[ "$NODE" =~ ^[0-9]+$ ]]; then
+      printf -v LOCAL_MESSAGE "\nNode (-n) must be a positive integer: $NODE\n"
+      ERROR_MESSAGE="$ERROR_MESSAGE$LOCAL_MESSAGE"
+   else
+      if [ $NODE -ge $MAX_NODE_P1 ]; then
+         printf -v LOCAL_MESSAGE "\nNode (-n) must be < $MAX_NODE_P1: $NODE\n"
+         ERROR_MESSAGE="$ERROR_MESSAGE$LOCAL_MESSAGE"
+      fi
+   fi
+fi
+
+if [ -n "$ERROR_MESSAGE" ]; then
+   echo "$ERROR_MESSAGE"
+   usage
+   exit 1
+fi
+
+if [ -n "$NODE" ]; then
+   NODE=",CPU=$NODE"
+   OFFENDER_NODE=$NODE
+fi
+
+if [ -z "$TIME" ]; then
+   TIME="$DEFAULT_TIME"
+fi
+
+if [ -z "$MEMSIZE" ]; then
+   MEMSIZE="$DEFAULT_MEMSIZE"
+fi
+
+if [ -z "$PFS_USE_PERCENT" ]; then
+   PFS_USE_PERCENT="$DEFAULT_PFS_USE_PERCENT"
+fi
+
+case $SCRIPT in
+   dead)
+     PREAMBLE="set param ?filter 'DEAD_QUERIES=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/dead_queries.sql"
+     ;;
+   inactive)
+     PREAMBLE="set param ?filter 'INACTIVE_QUERIES=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/inactive_queries.sql"
+     ;;
+   unmonitored)
+     PREAMBLE="set param ?filter 'UNMONITORED_QUERIES=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/uninstrumented.sql"
+     ;;
+   in_sql)
+     PREAMBLE="set param ?filter 'QUERIES_IN_SQL=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/queries_in_sql.sql"
+     ;;
+   in_client)
+     PREAMBLE="set param ?filter 'QUERIES_IN_CLIENT=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/queries_in_client.sql"
+     ;;
+   cpu_offender)
+     PREAMBLE="set param ?filter 'CPU_OFFENDER=$OFFENDER_NODE'; "
+     QUERY_FILE="$LSO_DIR/cpu_offender.sql"
+     ;;
+   mem_offender)
+     PREAMBLE="set param ?filter 'ALLOC_MEM_OFFENDER=$MEMSIZE$NODE'; "
+     QUERY_FILE="$LSO_DIR/mem_offender.sql"
+     ;;
+   wm_mem_offender)
+     PREAMBLE="set param ?filter 'HIGHWM_MEM_OFFENDER=$MEMSIZE$NODE'; "
+     QUERY_FILE="$LSO_DIR/mem_offender.sql"
+     ;;
+   *) printf "\nInvalid SCRIPT (-s): $SCRIPT\n"
+      usage
+      exit 1
+      ;;
+esac
+
+if ! [ -f "$QUERY_FILE" ]; then
+   printf "\n Internal Error file: $QUERY_FILE not found \n"
+   exit 1
+fi
+
+QUERY_TEXT=$(cat "$QUERY_FILE")
+
+echo "$PREAMBLE$QUERY_TEXT" | sqlci
+
+

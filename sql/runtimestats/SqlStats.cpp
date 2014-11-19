@@ -632,34 +632,33 @@ StmtStats *StatsGlobals::addStmtStats(NAHeap * heap,
 }
 
 short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats, 
-      NABoolean removeAlways, NABoolean globalScan, NABoolean retainStats)
+       NABoolean removeAlways, NABoolean globalScan, 
+       NABoolean calledFromRemoveProcess)
 {
   short retcode = 1;
   NAHeap *heap = stmtStats->getHeap();
   ExMasterStats *masterStats;
-  if (stmtStats->aqrInProgress() && !removeAlways)
-    return 1;
 
 /*
- MergedStats (ExStatisticsArea has virutal functions) 
- is allocated from SSMP and it should be deallocated from SSMP.
-
-Hence, removeQuery called from MASTER and ESPs will not deallocate StmtStats
- by calling removeQuery with removeAlways set to FALSE. Once the mergedStats_ 
- is shipped to the collector SSMP will delete the StmtStats. This way the 
- collector process will have the chance to collect the completed stats
+ * Retain the stats in the shared segment for the following:
+ * a) If it is not already flag to be GCed and
+ * b) Stats from the master and
+ * b) if it is either used by someone else or WMS has shown interest in it
+ *    or if the query is monitored by WMS via CLI 
 */
   masterStats = stmtStats->getMasterStats();
-  if ((retainStats && stmtStats->isMaster() &&
+  if ((!stmtStats->canbeGCed()) && stmtStats->isMaster() &&
            masterStats != NULL && 
            masterStats->getCollectStatsType() != (UInt16)ComTdb::NO_STATS &&
-           masterStats->getCollectStatsType() != (UInt16)ComTdb::ALL_STATS)
-      || stmtStats->isStmtStatsUsed()
-      || (!removeAlways && stmtStats->getMergedStats() != NULL)
-      || (!removeAlways && stmtStats->isWMSMonitoredCliQuery()))
+           masterStats->getCollectStatsType() != (UInt16)ComTdb::ALL_STATS && 
+      (stmtStats->isStmtStatsUsed() || stmtStats->getMergedStats() != NULL
+      || stmtStats->isWMSMonitoredCliQuery() || stmtStats->aqrInProgress()))
    {
-      stmtStats->setTobeGCed();
-      if (retainStats)
+      if (! stmtStats->aqrInProgress())
+         stmtStats->setTobeGCed();
+      else if (calledFromRemoveProcess) // Even if AQR is in progress
+         stmtStats->setTobeGCed();
+      if (calledFromRemoveProcess)
       {
         if (masterStats != NULL)
         {
@@ -667,11 +666,47 @@ Hence, removeQuery called from MASTER and ESPs will not deallocate StmtStats
           masterStats->setEndTimes(TRUE);
         }
         stmtStats->setMergeReqd(TRUE);
+        // When called from removeProces, it is okay to reduce the reference
+        // count because the proces is already gone
+        // if the reference count was incremented by SSMP, then also 
+        // it is ok to reduce the reference count
+        // because the StmtStats will not be GCed for the next 15 minutes 
+        stmtStats->setStmtStatsUsed(FALSE);
+      
       }
    }
    else
    {
-     if (stmtStats->canbeGCed() || stmtStats->getMergedStats() == NULL)
+     // Retain stats if it is in use, 
+     // or 
+     // if it not already flagged as "can be gced" 
+     // and the queries that are getting removed as part of removeProcess
+     // to detect dead queries in case of master
+     if (stmtStats->isStmtStatsUsed() 
+               || (!stmtStats->canbeGCed() && 
+             calledFromRemoveProcess && 
+             masterStats != NULL &&  
+             masterStats->getCollectStatsType() != (UInt16)ComTdb::NO_STATS &&
+             masterStats->getCollectStatsType() != (UInt16)ComTdb::ALL_STATS))
+     {
+       stmtStats->setTobeGCed();
+       if (calledFromRemoveProcess)
+       {
+         if (masterStats != NULL)
+         {
+           masterStats->setStmtState(Statement::PROCESS_ENDED_);
+           masterStats->setEndTimes(TRUE);
+         }
+         stmtStats->setMergeReqd(TRUE);
+         // When called from removeProces, it is okay to reduce the reference
+         // count because the proces is already gone
+         // if the reference count was incremented by SSMP, then also 
+         // it is ok to reduce the reference count
+         // because the StmtStats will not be GCed for the next 15 minutes 
+         stmtStats->setStmtStatsUsed(FALSE);
+       }
+     }
+     else
      {
        if (!stmtStats->isDeleteError()) 
        {
@@ -684,19 +719,6 @@ Hence, removeQuery called from MASTER and ESPs will not deallocate StmtStats
          stmtStats->deleteMe();
          heap->deallocateMemory(stmtStats);
          retcode = 0;
-       }
-     }
-     else 
-     {
-       stmtStats->setTobeGCed();
-       if (retainStats)
-       {
-         if (masterStats != NULL)
-         {
-           masterStats->setStmtState(Statement::PROCESS_ENDED_);
-           masterStats->setEndTimes(TRUE);
-         }
-         stmtStats->setMergeReqd(TRUE);
        }
      }
   }
@@ -871,12 +893,52 @@ StmtStats *StatsGlobals::getStmtStats(pid_t pid, char *queryId, Lng32 queryIdLen
   return ss;
 }
 
+
+StmtStats *StatsGlobals::getStmtStats(short cpu, pid_t pid, Int64 timeStamp, Lng32 queryNumber)
+{
+  StmtStats *ss;
+  char *queryId = (char *)NULL;
+  Lng32 queryIdLen = 0;
+
+  char dp2QueryId[ComSqlId::MAX_DP2_QUERY_ID_LEN];
+  Lng32 dp2QueryIdLen = ComSqlId::MAX_DP2_QUERY_ID_LEN;
+
+  Lng32 l_segment = 0;
+  Lng32 l_cpu = 0;
+  Lng32 l_pid = (pid_t)0;
+  Int64 l_timeStamp = 0;
+  Lng32 l_queryNumber = 0;
+
+  stmtStatsList_->position();
+  while ((ss = (StmtStats *)stmtStatsList_->getNext()) != NULL)
+  {
+     if (ss->isMaster())
+     {
+        queryId = ss->getQueryId();
+        queryIdLen = ss->getQueryIdLen();
+
+        if (-1 != ComSqlId::getDp2QueryIdString(queryId, queryIdLen, dp2QueryId, dp2QueryIdLen))
+        {
+           if (-1 != ComSqlId::decomposeDp2QueryIdString(dp2QueryId, dp2QueryIdLen, &l_queryNumber,
+                                                      &l_segment, &l_cpu, &l_pid, &l_timeStamp))
+           {
+               if( (l_cpu == cpu) && (l_pid == pid) && (l_timeStamp == timeStamp) && (l_queryNumber == queryNumber) )
+                 break;
+           }
+        }
+     }//isMaster()
+  }//while
+  return ss;
+}
+
+#define STATS_RETAIN_TIME_IN_MICORSECS  (15 * 60 * 1000000)
 void StatsGlobals::doFullGC()
 {
   StmtStats *ss;
 
   stmtStatsList_->position();
-  Int64 maxElapsedTime = 15 * 60 *  1000000; 
+  Int64 maxElapsedTime = STATS_RETAIN_TIME_IN_MICORSECS;
+  Int64 currentTimestamp = NA_JulianTimestamp();
   Lng32 retcode;
 
   short stmtStatsGCed = 0;
@@ -887,7 +949,7 @@ void StatsGlobals::doFullGC()
     
     if ((ss->isMaster()) && 
         (ss->canbeGCed()) &&
-        (NA_JulianTimestamp() - ss->getLastMergedTime() > maxElapsedTime))
+        (currentTimestamp - ss->getLastMergedTime() > maxElapsedTime))
     {
       retcode = removeQuery(ss->getPid(), ss, TRUE, TRUE);
       if (retcode == 0)
@@ -978,15 +1040,6 @@ Lng32 StatsGlobals::registerQuery(ComDiagsArea &diags, pid_t pid, SQLQUERY_ID *q
     statsArea->setRootStats(stat);
     ss->setStatsArea(statsArea);
   }
-  if (statsCollectionType == ComTdb::OPERATOR_STATS)
-  {
-    switch ((ComTdb::ex_node_type)tdbType)
-    {
-      default:
-         stat = NULL;
-         break;
-     }
-  }
   QueryIdInfo *queryIdInfo = new(heap) QueryIdInfo(ss, stat);
   processStats->setQueryIdInfo(queryIdInfo);
   // return the QueryIdInfo in the strucutre for easy access later
@@ -1031,7 +1084,6 @@ Lng32 StatsGlobals::deregisterQuery(ComDiagsArea &diags, pid_t pid, SQLQUERY_ID 
     diags << DgSqlCode(-CLI_INTERNAL_ERROR);
     return ERROR;
   }
-  ss->setDeleteStats(TRUE);
   if (removeQuery(pid, ss))
   {
     diags << DgSqlCode(-CLI_INTERNAL_ERROR);
@@ -1252,6 +1304,7 @@ StmtStats::StmtStats(NAHeap *heap, pid_t pid, char *queryId, Lng32 queryIdLen,
   flags_ = 0;
   setMaster(isMaster);
   backRef_ = backRef;
+  explainInfo_ = NULL;
   updateChildQid_ = FALSE;
 }
 
@@ -1275,22 +1328,10 @@ void StmtStats::deleteMe()
 
   if (masterStats_ != NULL)
   {
-    if (mergedStats_ != NULL) // Means that masterStats_ is being deleted 
-                              // is not in the same process as the creator
-    {
-// in case of LINUX always create a temp ExMasterStats to fixup
-      {
-        ExMasterStats masterStats;
-        masterStats_->fixup(&masterStats);
-        NADELETE(masterStats_, ExMasterStats, masterStats_->getHeap());
-        masterStats_ = NULL;
-      }
-    }
-    else
-    {
-      NADELETE(masterStats_, ExMasterStats, masterStats_->getHeap());
-      masterStats_ = NULL;
-    }
+     ExMasterStats masterStats;
+     masterStats_->fixup(&masterStats);
+     NADELETE(masterStats_, ExMasterStats, masterStats_->getHeap());
+     masterStats_ = NULL;
   }
   if (mergedStats_ != NULL)
   {
@@ -1300,8 +1341,32 @@ void StmtStats::deleteMe()
   }
 
   NADELETEBASIC(queryId_, heap_);
+  if (explainInfo_)
+  {
+    RtsExplainFrag explainInfo;
+    explainInfo_->fixup(&explainInfo);
+    NADELETE(explainInfo_, RtsExplainFrag, heap_);
+    explainInfo_ = NULL;
+  }
   return;
 }
+
+void StmtStats::setExplainFrag(void *explainFrag, Lng32 len, Lng32 topNodeOffset)
+{
+  if (explainInfo_ == NULL)
+    explainInfo_ = new (heap_) RtsExplainFrag((NAMemory *)heap_);
+  explainInfo_->setExplainFrag(explainFrag, len, topNodeOffset);
+}
+
+void StmtStats::deleteExplainFrag()
+{
+  if (explainInfo_)
+  {
+    NADELETE(explainInfo_, RtsExplainFrag, heap_);
+    explainInfo_ = NULL;
+  }
+}
+
 
 void StmtStats::setStatsArea(ExStatisticsArea *stats)
 { 
@@ -1335,7 +1400,6 @@ void StmtStats::setStatsArea(ExStatisticsArea *stats)
       if (deleteStats())
       {
         NADELETE(stats_, ExStatisticsArea, stats_->getHeap());
-        setDeleteStats(FALSE);
       }    
     }
   }
@@ -1386,7 +1450,6 @@ void StmtStats::reuse(void *backRef)
     if (deleteStats())
     {
       NADELETE(stats_, ExStatisticsArea, stats_->getHeap());
-      setDeleteStats(FALSE);
       stats_ = NULL;
     }
   }
