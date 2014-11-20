@@ -1049,6 +1049,11 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
   // Check if small sample statistics should be created (because no histograms exist and
   // createStatsSize != 0. Only perform when OSIM is OFF.
 
+  // Generation of small-sample stats on demand currently conflicts with hbase
+  // row count estimation code. There is an LP case filed for this, but in the
+  // meantime, createStatsSize is set to 0 to disable on-demand stats.
+  createStatsSize = 0;
+
   // FetchHistograms does not allow calling update stats to create recursion. 
   // To avoid this, a CQD is checked and if OFF will set it to ON.
   // On demand stats are not created if createStatsSize == 0, the table has 0 rows, 

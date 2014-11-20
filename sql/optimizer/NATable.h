@@ -964,12 +964,6 @@ private:
   CostScalar originalCardinality_;
 
   // ---------------------------------------------------------------------
-  // True iff the table is an HBase table and its cardinality was estimated
-  // (by calling estimateHBaseRowCount()).
-  // ---------------------------------------------------------------------
-  NABoolean hbaseCardEstimated_;
-
-  // ---------------------------------------------------------------------
   // Catalog timestamps
   // ---------------------------------------------------------------------
   Int64 createTime_;

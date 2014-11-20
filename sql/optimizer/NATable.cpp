@@ -4482,7 +4482,6 @@ NATable::NATable(BindWA *bindWA,
     partnsDesc_(NULL),
     colsWithMissingStats_(NULL),
     originalCardinality_(-1.0),
-    hbaseCardEstimated_(FALSE),
     tableIdList_(heap),
     rcb_(NULL),
     rcbLen_(0),
@@ -5255,7 +5254,6 @@ NATable::NATable(BindWA *bindWA,
     partnsDesc_(NULL),
     colsWithMissingStats_(NULL),
     originalCardinality_(-1.0),
-    hbaseCardEstimated_(FALSE),
     tableIdList_(heap),
     rcb_(NULL),
     rcbLen_(0),
@@ -5538,34 +5536,10 @@ NATable::getStatistics()
 
       CURRCONTEXT_HISTCACHE->getHistograms(*this);
 
-      Cardinality defaultCard = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
-      NABoolean assignedDefaultCard = FALSE;
       if ((*colStats_).entries() > 0)
-        {
-          if (!(*colStats_)[0]->isFakeHistogram())
-            originalCardinality_ = (*colStats_)[0]->getRowcount();
-          else if (!hbaseCardEstimated_)
-            {
-              originalCardinality_ = (*colStats_)[0]->getRowcount();
-              assignedDefaultCard = TRUE;
-            }
-        }
-      else if (!hbaseCardEstimated_)
-        {
-          originalCardinality_ = defaultCard;
-          assignedDefaultCard = TRUE;
-        }
-
-      if (assignedDefaultCard && isHbaseTable() && !isSeabaseMDTable() &&
-          CmpCommon::getDefault(ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
-        {
-          originalCardinality_ = estimateHBaseRowCount();
-          hbaseCardEstimated_ = TRUE;
-        }
-
-      // Set cardinality for Indexes on the table.
-      for (CollIndex i=0; i<indexes_.entries(); i++)
-        indexes_[i]->setEstimatedNumberOfRecords(originalCardinality_.value());
+        originalCardinality_ = (*colStats_)[0]->getRowcount();
+      else
+        originalCardinality_ = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
 
       // -----------------------------------------------------------------------
       // So now we have read in the contents of the HISTOGRM & HISTINTS
@@ -7344,7 +7318,7 @@ Int64 NATable::estimateHBaseRowCount()
                 << DgInt0(-retcode)
                 << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
       delete ehi;
-      estRowCount = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+      estRowCount = 0;
     }
   else
     {
@@ -7362,14 +7336,12 @@ Int64 NATable::estimateHBaseRowCount()
                                       estRowCount);
       NADELETEBASIC(fqTblName.val, STMTHEAP);
 
-      // Return the default cardinality if
-      //   a) an error occurred while estimating the row count, or
-      //   b) the value returned by estimateHBaseRowCount() was 0; the only thing
-      //      we can infer from this is that there is less than 1MB of storage
-      //      dedicated to the table -- no HFiles, and < 1MB in MemStore,
-      //      for which size is reported only in megabytes.
-      if (retcode < 0 || estRowCount == 0)
-        estRowCount = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+      // Return 0 as the row count if an error occurred while estimating it.
+      // The estimate could also be 0 if there is less than 1MB of storage
+      // dedicated to the table -- no HFiles, and < 1MB in MemStore, for which
+      // size is reported only in megabytes.
+      if (retcode < 0)
+        estRowCount = 0;
       delete ehi;
     }
 
