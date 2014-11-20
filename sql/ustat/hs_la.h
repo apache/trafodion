@@ -82,7 +82,7 @@ class HSTableDef : public NABasicObject
     virtual Int64 getModTime() const = 0;
     virtual Lng32 getIsFormat2Table() const = 0;
     ComAnsiNameSpace getNameSpace() const {return nameSpace_;}
-    virtual NABoolean isVolatile() const = 0;
+    NABoolean isVolatile() const { return isVolatile_; }
 
     virtual void getRowChangeCounts(Int64 &inserts, Int64 &deletes, Int64 &updates) = 0;
     virtual void resetRowCounts() = 0;
@@ -121,11 +121,11 @@ class HSTableDef : public NABasicObject
     Int64               objectUID_;
     ComDiskFileFormat   objActualFormat_;
     hs_table_type       objFormat_;
-    Lng32                numCols_;
+    Lng32               numCols_;
     NABoolean           labelAccessed_;
     HSColumnStruct     *colInfo_;
-    Lng32                retcode_;
-
+    Lng32               retcode_;
+    NABoolean           isVolatile_;
     ComObjectType       objectType_;
     NABoolean           isMetadataObject_;
     NABoolean           hasSyskey_;
@@ -140,9 +140,12 @@ class HSSqTableDef : public HSTableDef
   public:
     HSSqTableDef(const ComObjectName& tableName,
                  const hs_table_type tableType,
-                 const ComAnsiNameSpace nameSpace = COM_TABLE_NAME);
+                 const ComAnsiNameSpace nameSpace = COM_TABLE_NAME)
+      : HSTableDef(tableName, tableType, nameSpace),
+        inMemoryObjectDefn_(FALSE)
+      {}
     ~HSSqTableDef()
-      {};
+      {}
     NABoolean objExists(labelDetail detail = MIN_INFO);
     NABoolean publicSchemaExists();
     NAString getNodeName() const;
@@ -151,12 +154,12 @@ class HSSqTableDef : public HSTableDef
     Lng32  getFileType()  const
     {
     	return -1;
-    	}
+    }
 
     Lng32  getNumPartitions() const
     {
     	return -1;
-    	}
+    }
     Lng32  getRecordLength() const
     {
     return -1;
@@ -168,8 +171,6 @@ class HSSqTableDef : public HSTableDef
     {
     	return -1;
     }
-
-    NABoolean isVolatile() const {return isVolatile_;}
 
     virtual Lng32 getColumnNames();
 
@@ -203,7 +204,6 @@ class HSSqTableDef : public HSTableDef
   private:
     void GetLabelInfo(labelDetail detail = MIN_INFO);
     Lng32 DescribeColumnNames();
-    NABoolean isVolatile_;
     NABoolean inMemoryObjectDefn_;
   };
 
@@ -256,10 +256,6 @@ class HSHiveTableDef : public HSTableDef
     Lng32 getIsFormat2Table() const
       {
         return 0;  // nsk only
-      }
-    NABoolean isVolatile() const
-      {
-        return FALSE;
       }
 
     virtual Lng32 getColumnNames();
@@ -375,10 +371,6 @@ class HSHbaseTableDef : public HSTableDef
     Lng32 getIsFormat2Table() const
       {
         return 0;  // nsk only
-      }
-    NABoolean isVolatile() const
-      {
-        return FALSE;
       }
 
     virtual Lng32  getColumnNames();

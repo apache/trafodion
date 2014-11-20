@@ -69,16 +69,6 @@ HSTableDef* HSTableDef::create(CollHeap* heap,
     return new(heap) HSSqTableDef(tableName, tableType, nameSpace);
 }
 
-HSSqTableDef::HSSqTableDef(const ComObjectName &tableName, const hs_table_type tableType, const ComAnsiNameSpace nameSpace)
-      : HSTableDef(tableName, tableType, nameSpace),
-        isVolatile_(FALSE),
-        inMemoryObjectDefn_(FALSE)
-{
-  // Set volatile schema flag based on schema name.
-  if (!strncmp(schema_->data(), "VOLATILE_SCHEMA_MX", 18))
-    isVolatile_ = TRUE;
-}
-
 HSTableDef::HSTableDef(const ComObjectName &tableName, const hs_table_type tableType, const ComAnsiNameSpace nameSpace)
        :tableName_(new(STMTHEAP) NAString(STMTHEAP)),
         ansiName_(new(STMTHEAP) NAString(STMTHEAP)),
@@ -92,14 +82,20 @@ HSTableDef::HSTableDef(const ComObjectName &tableName, const hs_table_type table
         numCols_(0),
         colInfo_(NULL),
         retcode_(0),
-
+        isVolatile_(FALSE),
         guardianName_(new(STMTHEAP) NAString(STMTHEAP)),
         nameSpace_(nameSpace),
         labelAccessed_(FALSE),
         objectType_(COM_UNKNOWN_OBJECT),
         isMetadataObject_(FALSE),
         hasSyskey_(FALSE)
-{}
+{
+  // Set volatile schema flag based on schema name.
+  if (!strncmp(schema_->data(),
+               COM_VOLATILE_SCHEMA_PREFIX,
+               strlen(COM_VOLATILE_SCHEMA_PREFIX)))
+    isVolatile_ = TRUE;
+}
 
 
 
@@ -124,6 +120,8 @@ void HSTableDef::setNATable()
   {
     BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
     CorrName corrName(*object_, STMTHEAP, *schema_, *catalog_);
+    if (isVolatile())
+      corrName.setIsVolatile(TRUE);
     Scan scan(corrName, NULL, REL_SCAN, STMTHEAP);
     ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
     if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
