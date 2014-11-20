@@ -228,7 +228,9 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                   'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
                   'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
                                ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
                                ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
                                ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
                                ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
                                ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP')]
@@ -243,7 +245,9 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
                   'TRAF_HBASE_ACS_REGEX': re.compile("^trafodion-HBaseAccess-[\d\.]{3,}jar"),
                   'MVN_DEPS': [('org.apache.hbase', 'hbase-client', '${hbase_version}', 'EDEP'),
                                ('org.apache.hbase', 'hbase-common', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hbase', 'hbase-server', '${hbase_version}', 'EDEP'),
                                ('org.apache.hbase', 'hbase-protocol', '${hbase_version}', 'EDEP'),
+                               ('org.apache.hadoop', 'hadoop-hdfs', '${hadoop_version}', 'EDEP'),
                                ('org.apache.hadoop', 'hadoop-auth', '${hadoop_version}', 'IDEP'),
                                ('org.apache.hadoop', 'hadoop-common', '${hadoop_version}', 'EDEP'),
                                ('org.apache.hive', 'hive-exec', '${hive_version}', 'EDEP')]
