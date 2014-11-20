@@ -64,7 +64,10 @@ class CProcessContainer
     void RemoveFromListL( CProcess *process );
     void Bcast( struct message_def *msg );
     char *BuildOurName( int nid, int pid, char *name );
-    bool CancelDeathNotification( int nid, int pid, _TM_Txid_External trans_id );
+    bool CancelDeathNotification( int nid
+                                , int pid
+                                , Verifier_t verifier
+                                , _TM_Txid_External trans_id );
     void Child_Exit ( CProcess * parent );
     void CleanUpProcesses( void );
     CProcess *CloneProcess( int nid, 
@@ -75,8 +78,10 @@ class CProcessContainer
                             char *name, 
                             char *port, 
                             int os_pid,
+                            int verifier,
                             int parent_nid, 
                             int parent_pid, 
+                            int parent_verifier,
                             bool event_messages,
                             bool system_messages,
                             strId_t pathStrId,
@@ -117,6 +122,8 @@ class CProcessContainer
     inline int GetNumProcs( void ) { return(numProcs_); };
     CProcess *GetProcess( int pid );
     CProcess *GetProcess( const char *name, bool checkstate=true );
+    CProcess *GetProcess( int pid, Verifier_t verifier, bool checkstate=true );
+    CProcess *GetProcess( const char *name, Verifier_t verifier, bool checkstate=true );
     CProcess *GetProcessByType( PROCESSTYPE type );
     inline nameMap_t *GetNameMap() { return nameMap_; };
     inline pidMap_t *GetPidMap() { return pidMap_; };
@@ -124,7 +131,7 @@ class CProcessContainer
     void KillAll( STATE node_State, CProcess *process );
     void KillAllDown();
     char *NormalizeName( char *name );
-    bool Open_Process( int nid, int pid, int death_notification, CProcess *process );
+    bool Open_Process( int nid, int pid, Verifier_t verifier, int death_notification, CProcess *process );
     int ProcessCount( void ) { CAutoLock alock(pidMapLock_.getLocker()); return(numProcs_); }
     void SetProcessState( CProcess *process, STATE state, bool abend, int downNode=-1 );
     void CheckFdState ( int fd );
@@ -199,12 +206,15 @@ class CProcess
 
     typedef struct nidPid_s { int nid; int pid; } nidPid_t;
 
-    bool CancelDeathNotification( int nid, int pid, _TM_Txid_External trans_id );
+    bool CancelDeathNotification( int nid
+                                , int pid
+                                , Verifier_t verifier
+                                , _TM_Txid_External trans_id );
     void CompleteDump(DUMPSTATUS status, char *core_file);
     void CompleteProcessStartup( char *port, int os_pid, bool event_messages, bool system_messages, bool preclone, struct timespec *creation_time );
     bool Create (CProcess *parent, int & result);
     bool Dump (CProcess *dumper, char *core_path);
-    void DumpBegin(int nid, int pid, char *core_path);
+    void DumpBegin(int nid, int pid, Verifier_t verifier, char *core_path);
     void DumpEnd(DUMPSTATUS status, char *core_file);
     void Exit( CProcess *parent );
     void GenerateEvent( int event_id, int length, char *data );
@@ -218,6 +228,9 @@ class CProcess
     inline int GetPid ( ) { return Pid; }
     inline int GetPidAtFork ( ) { return PidAtFork_; }
     inline void SetPid ( pid_t pid ) { Pid = pid; }
+    inline int GetVerifier ( ) { return Verifier; }
+    inline void SetVerifier ( int verifier ) { Verifier = verifier; }
+    inline void SetVerifier ( ); // creates a new verifier based on time
     inline const char * GetName ( ) { return Name; } 
     void SetName ( const char * name )
         { strncpy( Name, name, MAX_PROCESS_NAME);
@@ -248,13 +261,17 @@ class CProcess
     inline CProcess * GetParent ( ) { return Parent; }
     inline int GetParentPid ( ) { return Parent_Pid; }
     inline int GetParentNid ( ) { return Parent_Nid; }
+    inline int GetParentVerifier( ) { return Parent_Verifier; }
     inline void SetParent ( CProcess *parent ) { Parent = parent; }
     inline void SetParentPid ( pid_t pid ) { Parent_Pid = pid; }
     inline void SetParentNid ( int nid)    { Parent_Nid = nid; }
+    inline void SetParentVerifier ( int verifier) { Parent_Verifier = verifier; }
     inline int GetPairParentPid ( ) { return PairParentPid; }
     inline int GetPairParentNid ( ) { return PairParentNid; }
+    inline int GetPairParentVerifier( ) { return PairParentVerifier; }
     inline void SetPairParentPid ( pid_t pid ) { PairParentPid = pid; }
     inline void SetPairParentNid ( int nid )   { PairParentNid = nid; }
+    inline void SetPairParentVerifier( int verifier ) { PairParentVerifier = verifier; }
     inline int GetPriority ( ) { return Priority; }
     inline void SetTag ( long long tag ) { Tag = tag; }
     inline void SetReplyTag ( int tag ) { ReplyTag = tag; }
@@ -272,6 +289,7 @@ class CProcess
     inline void SetDumpStatus ( DUMPSTATUS status ) { DumpStatus = status; }
     inline int GetDumperPid ( ) { return DumperPid; }
     inline int GetDumperNid ( ) { return DumperNid; }
+    inline int GetDumperVerifier ( ) { return DumperVerifier; }
     inline const char * GetDumpFile () { return dumpFile_.c_str(); }
 
     inline CNotice * GetNoticeHead() { return NoticeHead; }
@@ -287,7 +305,11 @@ class CProcess
     bool MakePrimary(void);
     bool MyTransactions( struct message_def *msg );
     bool Open( CProcess *opened_process, int death_notification );
-    CNotice   *RegisterDeathNotification( int nid, int pid, _TM_Txid_External trans_id );
+    CNotice *RegisterDeathNotification( int nid
+                                      , int pid
+                                      , Verifier_t verifier
+                                      , const char *name
+                                      , _TM_Txid_External trans_id );
     void ReplyNewProcess (struct message_def * reply_msg, CProcess * process,
                           int result);
     void SendProcessCreatedNotice(CProcess *parent, int result);
@@ -368,6 +390,7 @@ private:
 
     int            Nid;
     int            Pid;
+    Verifier_t     Verifier; 
     pid_t          PidAtFork_;
     PROCESSTYPE    Type;
     char           Port[MPI_MAX_PORT_NAME];
@@ -394,8 +417,10 @@ private:
     CProcess      *Parent;
     int            Parent_Nid;           // Node ID of process that created this process
     int            Parent_Pid;           // Process ID of process that created this process
+    Verifier_t     Parent_Verifier;      // Verifier of process that created this process
     int            PairParentNid;        // Node ID of process that created this process pair
     int            PairParentPid;        // Process ID of process that created this process pair
+    Verifier_t     PairParentVerifier;   // Verifier of process that created this process pair
     int            ReplyTag;             // MPI message tag to use for pending reply to service request.
     int            OpenedCount;          // Num of current process opens on this proces
     int            LastNid;              // Last nid used for newprocess req from this process
@@ -403,12 +428,13 @@ private:
     DUMPSTATUS     DumpStatus;           // status of core file
     int            DumperNid;            // Node ID of process requesting dump
     int            DumperPid;            // Process ID of process requesting dump
+    Verifier_t     DumperVerifier;       // Verifier of process requesting dump
     string         dumpFile_ ;           // core-file
     struct timespec CreationTime;        // creation time
 
     pid_t        priorPid_; // for restarted persistent process, the
                             // previous process id.
-    STATE          State_;
+    STATE        State_;
 
     CProcess    *next_;     // next process in logical node container list
     CProcess    *prev_;     // previous process in logial node container list

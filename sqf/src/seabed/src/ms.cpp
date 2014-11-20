@@ -102,11 +102,20 @@ static char           *gp_config_arg_file        = NULL;
 // forwards
 static void ms_fsdone_key_dtor(void *pp_queue);
 static void ms_ldone_key_dtor(void *pp_queue);
+#ifdef SQ_PHANDLE_VERIFIER
+static void ms_recv_q_proc_death_md(MS_Md_Type    *pp_md,
+                                    int            pv_nid,
+                                    int            pv_pid,
+                                    SB_Verif_Type  pv_verif,
+                                    bool           pv_use_stream,
+                                    void          *pp_stream);
+#else
 static void ms_recv_q_proc_death_md(MS_Md_Type *pp_md,
                                     int         pv_nid,
                                     int         pv_pid,
                                     bool        pv_use_stream,
                                     void       *pp_stream);
+#endif
 
 // globals
 SB_Comp_Queue          gv_fs_comp_q(QID_FS_COMP, "q-fs-comp-md");
@@ -724,8 +733,13 @@ void ms_gather_info(const char *pp_where) {
     int  lv_err;
 
     if (gv_ms_su_nid >= 0)
+#ifdef SQ_PHANDLE_VERIFIER
+        trace_where_printf(pp_where, "pname=%s, p-id=%d/%d/" PFVY "\n",
+                           ga_ms_su_pname, gv_ms_su_nid, getpid(), gv_ms_su_verif);
+#else
         trace_where_printf(pp_where, "pname=%s, nid=%d, pid=%d\n",
                            ga_ms_su_pname, gv_ms_su_nid, getpid());
+#endif
     else
         trace_where_printf(pp_where, "pname=%s, pid=%d\n", ga_ms_su_pname, getpid());
     lv_err = gethostname(la_host, HOST_NAME_MAX);
@@ -934,58 +948,106 @@ const char *ms_getenv_str(const char *pp_key) {
 //
 // Purpose: mark recv-q items with proc-death
 //
+#ifdef SQ_PHANDLE_VERIFIER
+void ms_recv_q_proc_death(int            pv_nid,
+                          int            pv_pid,
+                          SB_Verif_Type  pv_verif,
+                          bool           pv_use_stream,
+                          void          *pp_stream) {
+#else
 void ms_recv_q_proc_death(int   pv_nid,
                           int   pv_pid,
                           bool  pv_use_stream,
                           void *pp_stream) {
+#endif
     const char *WHERE = "ms_recv_q_proc_death";
     MS_Md_Type *lp_md;
 
     if (gv_ms_trace)
+#ifdef SQ_PHANDLE_VERIFIER
+        trace_where_printf(WHERE, "p-id=%d/%d/" PFVY "\n",
+                           pv_nid, pv_pid, pv_verif);
+#else
         trace_where_printf(WHERE, "nid=%d, pid=%d\n",
                            pv_nid, pv_pid);
+#endif
     gv_ms_recv_q.lock();
     lp_md = reinterpret_cast<MS_Md_Type *>(gv_ms_recv_q.head());
     while (lp_md != NULL) {
+#ifdef SQ_PHANDLE_VERIFIER
+        ms_recv_q_proc_death_md(lp_md,
+                                pv_nid,
+                                pv_pid,
+                                pv_verif,
+                                pv_use_stream,
+                                pp_stream);
+#else
         ms_recv_q_proc_death_md(lp_md,
                                 pv_nid,
                                 pv_pid,
                                 pv_use_stream,
                                 pp_stream);
+#endif
         lp_md = reinterpret_cast<MS_Md_Type *>(lp_md->iv_link.ip_next);
     }
     gv_ms_recv_q.unlock();
     gv_ms_lim_q.lock();
     lp_md = reinterpret_cast<MS_Md_Type *>(gv_ms_lim_q.head());
     while (lp_md != NULL) {
+#ifdef SQ_PHANDLE_VERIFIER
+        ms_recv_q_proc_death_md(lp_md,
+                                pv_nid,
+                                pv_pid,
+                                pv_verif,
+                                pv_use_stream,
+                                pp_stream);
+#else
         ms_recv_q_proc_death_md(lp_md,
                                 pv_nid,
                                 pv_pid,
                                 pv_use_stream,
                                 pp_stream);
+#endif
         lp_md = reinterpret_cast<MS_Md_Type *>(lp_md->iv_link.ip_next);
     }
     gv_ms_lim_q.unlock();
 }
 
+#ifdef SQ_PHANDLE_VERIFIER
+void ms_recv_q_proc_death_md(MS_Md_Type    *pp_md,
+                             int            pv_nid,
+                             int            pv_pid,
+                             SB_Verif_Type  pv_verif,
+                             bool           pv_use_stream,
+                             void          *pp_stream) {
+#else
 void ms_recv_q_proc_death_md(MS_Md_Type *pp_md,
                              int         pv_nid,
                              int         pv_pid,
                              bool        pv_use_stream,
                              void       *pp_stream) {
+#endif
     const char *WHERE = "ms_recv_q_proc_death_md";
 
     if (!pp_md->out.iv_mon_msg) {
+#ifdef SQ_PHANDLE_VERIFIER
+        if ((pp_md->out.iv_nid == pv_nid) &&
+            (pp_md->out.iv_pid == pv_pid) &&
+            (pp_md->out.iv_verif == pv_verif)) {
+#else
         if ((pp_md->out.iv_nid == pv_nid) && (pp_md->out.iv_pid == pv_pid)) {
+#endif
             if (!pv_use_stream ||
                 (pv_use_stream && (pp_stream == pp_md->ip_stream))) {
                 pp_md->out.iv_opts |= SB_Trans::MS_OPTS_PROCDEAD;
                 if (gv_ms_trace)
-                    trace_where_printf(WHERE, "msgid=%d, nid=%d, pid=%d, stream=%p\n",
-                                       pp_md->iv_link.iv_id.i,
-                                       pv_nid,
-                                       pv_pid,
-                                       pp_stream);
+#ifdef SQ_PHANDLE_VERIFIER
+                    trace_where_printf(WHERE, "msgid=%d, p-id=%d/%d/" PFVY "\n",
+                                       pp_md->iv_link.iv_id.i, pv_nid, pv_pid, pv_verif);
+#else
+                    trace_where_printf(WHERE, "msgid=%d, nid=%d, pid=%d\n",
+                                       pp_md->iv_link.iv_id.i, pv_nid, pv_pid);
+#endif
             }
         }
     }
@@ -1231,6 +1293,23 @@ SB_THROWS_FATAL {
 
     // if we're supposed to attach, but we're started by shell, don't attach
     if (pv_attach) {
+#ifdef SQ_PHANDLE_VERIFIER
+        if (*pp_argc >= 10) {
+            // "SQMON1.1" <pnid> <nid> <pid> <pname> <port> <ptype> <zid> <verif> "SPARE"
+            //     [1]     [2]    [3]   [4]    [5]    [6]    [7]     [8]    [9]     [10]
+            if ((!strcmp((*pppp_argv)[1], "SQMON1.1")) &&
+                ms_is_mon_number((*pppp_argv)[2]) && // pnid
+                ms_is_mon_number((*pppp_argv)[3]) && // nid
+                ms_is_mon_number((*pppp_argv)[4]) && // pid
+                ms_is_mon_number((*pppp_argv)[7]) && // ptype
+                ms_is_mon_number((*pppp_argv)[8]) && // zid
+                (strlen((*pppp_argv)[5]) >= 2) &&    // pname
+                ((*pppp_argv)[5][0] == '$')) {
+                pv_forkexec = false;
+                pv_attach = false;
+            }
+        }
+#else
         if (*pp_argc >= 9) {
             // "SQMON1.0" <pnid> <nid> <pid> <pname> <port> <ptype> <zid> "SPARE"
             //     [1]     [2]    [3]   [4]    [5]    [6]    [7]     [8]    [9]
@@ -1246,6 +1325,7 @@ SB_THROWS_FATAL {
                 pv_attach = false;
             }
         }
+#endif
     }
 
     if (gv_ms_trace_enable) {
@@ -1308,9 +1388,16 @@ SB_THROWS_FATAL {
                         true, // args
                         &lv_cmdline,
                         lv_cmdline.size());
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(&lv_line, "msg_init - p-id=%d/%d" PFVY ", tid=%ld, pname=%s, cmdline=%s, %s\n",
+#else
     sprintf(&lv_line, "msg_init - p-id=%d/%d, tid=%ld, pname=%s, cmdline=%s, %s\n",
+#endif
             gv_ms_su_nid,
             gv_ms_su_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+            gv_ms_su_verif,
+#endif
             SB_Thread::Sthr::self_id(),
             ga_ms_su_pname,
             &lv_cmdline,
@@ -1374,11 +1461,6 @@ void msg_init_env(int pv_argc, char **ppp_argv) {
     ms_getenv_bool(gp_ms_env_disc_sem_stats, &gv_ms_disc_sem_stats);
     ms_getenv_int(gp_ms_env_conn_idle_timeout, &gv_ms_conn_idle_timeout);
     ms_getenv_bool(gp_ms_env_shutdown_fast, &gv_ms_shutdown_fast);
-    lp_p = ms_getenv_str(gp_ms_env_sq_ic);
-    if ((lp_p != NULL) &&
-        ((strcmp(lp_p, "IBV") == 0) ||
-         (strcmp(lp_p, "-IBV") == 0)))
-        gv_ms_ic_ibv = true;
     gv_ms_trans_sock = true;
     ms_getenv_bool(gp_ms_env_msg_timestamp, &gv_ms_msg_timestamp);
 
@@ -1429,7 +1511,6 @@ void msg_init_env(int pv_argc, char **ppp_argv) {
     if (gv_ms_trace_enable) {
         ms_getenv_bool(gp_ms_env_trace, &gv_ms_trace);
         ms_getenv_bool(gp_ms_env_trace_abandon, &gv_ms_trace_abandon);
-        ms_getenv_bool(gp_ms_env_trace_aggr, &gv_ms_trace_aggr);
         ms_getenv_bool(gp_ms_env_trace_alloc, &gv_ms_trace_alloc);
         ms_buf_trace_change();
         ms_getenv_bool(gp_ms_env_trace_data, &gv_ms_trace_data);
@@ -1849,10 +1930,6 @@ short xmsg_break_com(int               pv_msgid,
         }
     }
 
-    if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR_C2S)
-        if (!(lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR_S2C))
-            lp_md->iv_send_done = true; // need for md to free
-
     if (ppp_md == NULL)
         SB_Trans::Msg_Mgr::put_md_link(lp_md, "msg-break");
     else
@@ -2223,8 +2300,6 @@ short BMSG_LINK_common(SB_Phandle_Type *pp_phandle,
             lv_opts |= SB_Trans::MS_OPTS_FSDONE;
         else if (pv_linkopts & BMSG_LINK_LDONEQ)
             lv_opts |= SB_Trans::MS_OPTS_LDONE;
-        if (pv_linkopts & BMSG_LINK_AGGR)
-            lv_opts |= SB_Trans::MS_OPTS_AGGR;
         if (pv_linkopts & XMSG_LINK_FSREQ)
             lv_opts |= SB_Trans::MS_OPTS_FSREQ;
         if (pv_linkopts & BMSG_LINK_MSINTERCEPTOR)
@@ -2370,8 +2445,6 @@ static short BMSG_LISTEN_common(short *pp_sre,
                 lp_sre->sre_flags = BSRE_REMM;
                 if (lp_md->out.iv_mon_msg)
                     lp_sre->sre_flags |= BSRE_MON;
-                if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR)
-                    lp_sre->sre_flags |= BSRE_AGGR;
                 if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_PROCDEAD)
                     lp_sre->sre_flags |= BSRE_PROCDEAD;
                 lp_sre->sre_pri = lp_md->out.iv_pri;
@@ -2403,8 +2476,6 @@ static short BMSG_LISTEN_common(short *pp_sre,
                 lp_sre->sre_flags = XSRE_REMM;
                 if (lp_md->out.iv_mon_msg)
                     lp_sre->sre_flags |= XSRE_MON;
-                if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR)
-                    lp_sre->sre_flags |= XSRE_AGGR;
                 if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_PROCDEAD)
                     lp_sre->sre_flags |= XSRE_PROCDEAD;
                 lp_sre->sre_pri = static_cast<short>(lp_md->out.iv_pri);
@@ -2460,8 +2531,6 @@ static short BMSG_LISTEN_common(short *pp_sre,
                 lp_sre->sre_flags = BSRE_REMM;
                 if (lp_md->out.iv_mon_msg)
                     lp_sre->sre_flags |= BSRE_MON;
-                if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR)
-                    lp_sre->sre_flags |= BSRE_AGGR;
                 if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_PROCDEAD)
                     lp_sre->sre_flags |= BSRE_PROCDEAD;
                 lp_sre->sre_pri = lp_md->out.iv_pri;
@@ -2493,8 +2562,6 @@ static short BMSG_LISTEN_common(short *pp_sre,
                 lp_sre->sre_flags = XSRE_REMM;
                 if (lp_md->out.iv_mon_msg)
                     lp_sre->sre_flags |= XSRE_MON;
-                if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR)
-                    lp_sre->sre_flags |= XSRE_AGGR;
                 if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_PROCDEAD)
                     lp_sre->sre_flags |= XSRE_PROCDEAD;
                 lp_sre->sre_pri = static_cast<short>(lp_md->out.iv_pri);
@@ -2599,6 +2666,15 @@ static short BMSG_LISTEN_common(short *pp_sre,
     else
         gv_ms_event_mgr.get_mgr(NULL)->set_event(LREQ, NULL);
     gv_ms_recv_q.unlock();
+    if (pv_listenopts & BLISTEN_ALLOW_ILIMREQM) {
+        // repost INTR if necessary
+        gv_ms_lim_q.lock();
+        if (gv_ms_lim_q.empty())
+            gv_ms_event_mgr.get_mgr(NULL)->clear_event(INTR);
+        else
+            gv_ms_event_mgr.get_mgr(NULL)->set_event(INTR, NULL);
+        gv_ms_lim_q.unlock();
+    }
     // set LCAN if there are more cancel messages (don't clear if there aren't)
     if (!gv_ms_abandon_comp_q.empty())
         gv_ms_event_mgr.get_mgr(NULL)->set_event(LCAN, NULL);
@@ -2669,8 +2745,6 @@ static short BMSG_LISTEN_common(short *pp_sre,
             lp_sre->sre_flags = BSRE_REMM;
             if (lp_md->out.iv_mon_msg)
                 lp_sre->sre_flags |= BSRE_MON;
-            if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR)
-                lp_sre->sre_flags |= BSRE_AGGR;
             if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_PROCDEAD)
                 lp_sre->sre_flags |= BSRE_PROCDEAD;
             lp_sre->sre_pri = lp_md->out.iv_pri;
@@ -2714,8 +2788,6 @@ static short BMSG_LISTEN_common(short *pp_sre,
             lp_sre->sre_flags = XSRE_REMM;
             if (lp_md->out.iv_mon_msg)
                 lp_sre->sre_flags |= XSRE_MON;
-            if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_AGGR)
-                lp_sre->sre_flags |= XSRE_AGGR;
             if (lp_md->out.iv_opts & SB_Trans::MS_OPTS_PROCDEAD)
                 lp_sre->sre_flags |= XSRE_PROCDEAD;
             lp_sre->sre_pri = static_cast<short>(lp_md->out.iv_pri);
@@ -3110,6 +3182,20 @@ SB_Export short XMESSAGESYSTEMINFO(short pv_itemcode, short *pp_value) {
                                    lv_value);
             break;
 
+        case XMSGSYSINFO_RECVSIZE:
+            lv_value = static_cast<short>(gv_ms_recv_q.size());
+            if (gv_ms_trace_params)
+                trace_where_printf(WHERE, "returning RECVSIZE value=%d\n",
+                                   lv_value);
+            break;
+
+        case XMSGSYSINFO_RECVLIMSIZE:
+            lv_value = static_cast<short>(gv_ms_lim_q.size());
+            if (gv_ms_trace_params)
+                trace_where_printf(WHERE, "returning RECVLIMSIZE value=%d\n",
+                                   lv_value);
+            break;
+
         default:
             if (gv_ms_trace_params)
                 trace_where_printf(WHERE, "EXIT bad itemcode\n");
@@ -3312,6 +3398,9 @@ void msg_send_self(SB_Phandle_Type *pp_phandle,
     lp_md->out.iv_nid = gv_ms_su_nid;
     lp_md->out.iv_opts = 0;
     lp_md->out.iv_pid = gv_ms_su_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    lp_md->out.iv_verif = gv_ms_su_verif;
+#endif
     lp_md->out.iv_recv_req_id = 0;
     lp_md->out.iv_pri = -1;
     lp_md->out.iv_recv_mpi_source_rank = -1;

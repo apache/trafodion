@@ -31,8 +31,9 @@ class COpen
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
 public:
-    int  Nid;                   // node id of opened process
-    int  Pid;                   // process id of opened process
+    int  Nid;                    // node id of opened process
+    int  Pid;                    // process id of opened process
+    Verifier_t Verifier;         // target process's verifier
     char Name[MAX_PROCESS_NAME]; // name of opened process
     
     COpen( CProcess *process );

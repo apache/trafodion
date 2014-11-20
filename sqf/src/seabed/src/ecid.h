@@ -59,6 +59,7 @@ const SB_Ecid_Data_Type SB_ECID_MAP_I            = sb_ecid('m','a','p','-','i','
 const SB_Ecid_Data_Type SB_ECID_MAP_L            = sb_ecid('m','a','p','-','l',' ',' ',' ');
 const SB_Ecid_Data_Type SB_ECID_MAP_LL           = sb_ecid('m','a','p','-','l','l',' ',' ');
 const SB_Ecid_Data_Type SB_ECID_MAP_MD           = sb_ecid('m','a','p','-','m','d',' ',' ');
+const SB_Ecid_Data_Type SB_ECID_MAP_NPV          = sb_ecid('m','a','p','-','n','p','v',' ');
 const SB_Ecid_Data_Type SB_ECID_MAP_S            = sb_ecid('m','a','p','-','s',' ',' ',' ');
 const SB_Ecid_Data_Type SB_ECID_MAP_T            = sb_ecid('m','a','p','-','t',' ',' ',' ');
 const SB_Ecid_Data_Type SB_ECID_MAP_TIME         = sb_ecid('m','a','p','-','t','i','m','e');

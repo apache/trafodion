@@ -284,12 +284,19 @@ static void sqstate_pi_openers_com(MS_Mon_Node_Info_Entry_Type *pp_node,
     sb_pi_verb_print_info(pp_node, pp_proc, "sb-openers");
     lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
     lp_prog = basename(pp_proc->program);
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(la_title, "sb-openers for process=%s, type=%d(%s), p-id=%d/%d" PFVY ", prog=%s",
+#else
     sprintf(la_title, "sb-openers for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
+#endif
             pp_proc->process_name,
             pp_proc->type,
             lp_proc_t,
             pp_proc->nid,
             pp_proc->pid,
+#ifdef SQ_PHANDLE_VERIFIER
+            pp_proc->verifier,
+#endif
             lp_prog);
     if (pv_str)
         lp_op = "sb_ic_get_openers";
@@ -327,12 +334,19 @@ static void sqstate_pi_opens_com(MS_Mon_Node_Info_Entry_Type *pp_node,
     sb_pi_verb_print_info(pp_node, pp_proc, "sb-opens");
     lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
     lp_prog = basename(pp_proc->program);
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(la_title, "sb-opens for process=%s, type=%d(%s), p-id=%d/%d" PFVY ", prog=%s",
+#else
     sprintf(la_title, "sb-opens for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
+#endif
             pp_proc->process_name,
             pp_proc->type,
             lp_proc_t,
             pp_proc->nid,
             pp_proc->pid,
+#ifdef SQ_PHANDLE_VERIFIER
+            pp_proc->verifier,
+#endif
             lp_prog);
     if (pv_str)
         lp_op = "sb_ic_get_opens";
@@ -362,7 +376,49 @@ SQSTATE_PI_EP(mymodule,mds,pp_node,pp_proc,pp_info,pp_lib) {
     sb_pi_verb_print_info(pp_node, pp_proc, "sb-mds");
     lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
     lp_prog = basename(pp_proc->program);
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(la_title, "sb-mds for process=%s, type=%d(%s), p-id=%d/%d/" PFVY ", prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            pp_proc->verifier,
+            lp_prog);
+#else
     sprintf(la_title, "sb-mds for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            lp_prog);
+#endif
+    sb_pi_ic_send(pp_node,
+                  pp_proc,
+                  pp_info,
+                  la_title,
+                  true,
+                  pp_lib,
+                  "sb_ic_get_mds",
+                  NULL,
+                  0,
+                  NULL);
+}
+
+//
+// sqstate entry point - metrics
+//
+SQSTATE_PI_EP(mymodule,metrics,pp_node,pp_proc,pp_info,pp_lib) {
+    char        la_title[100];
+    const char *lp_proc_t;
+    char       *lp_prog;
+
+    plugin_get_test_info(pp_info);
+    sb_pi_verb_print_info(pp_node, pp_proc, "sb-metrics");
+    lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
+    lp_prog = basename(pp_proc->program);
+    sprintf(la_title, "sb-metrics for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
             pp_proc->process_name,
             pp_proc->type,
             lp_proc_t,
@@ -375,7 +431,7 @@ SQSTATE_PI_EP(mymodule,mds,pp_node,pp_proc,pp_info,pp_lib) {
                   la_title,
                   true,
                   pp_lib,
-                  "sb_ic_get_mds",
+                  "sb_ic_get_metrics",
                   NULL,
                   0,
                   NULL);
@@ -435,6 +491,16 @@ SQSTATE_PI_EP(mymodule,prog,pp_node,pp_proc,pp_info,pp_lib) {
     sb_pi_verb_print_info(pp_node, pp_proc, "sb-prog");
     lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
     lp_prog = basename(pp_proc->program);
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(la_title, "sb-prog for process=%s, type=%d(%s), p-id=%d/%d/" PFVY ", prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            pp_proc->verifier,
+            lp_prog);
+#else
     sprintf(la_title, "sb-prog for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
             pp_proc->process_name,
             pp_proc->type,
@@ -442,6 +508,7 @@ SQSTATE_PI_EP(mymodule,prog,pp_node,pp_proc,pp_info,pp_lib) {
             pp_proc->nid,
             pp_proc->pid,
             lp_prog);
+#endif
     sb_pi_ic_send(pp_node,
                   pp_proc,
                   pp_info,
@@ -466,6 +533,16 @@ SQSTATE_PI_EP(mymodule,pstate,pp_node,pp_proc,pp_info,pp_lib) {
     sb_pi_verb_print_info(pp_node, pp_proc, "sb-pstate");
     lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
     lp_prog = basename(pp_proc->program);
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(la_title, "sb-pstate for process=%s, type=%d(%s), p-id=%d/%d/" PFVY ", prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            pp_proc->verifier,
+            lp_prog);
+#else
     sprintf(la_title, "sb-pstate for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
             pp_proc->process_name,
             pp_proc->type,
@@ -473,6 +550,7 @@ SQSTATE_PI_EP(mymodule,pstate,pp_node,pp_proc,pp_info,pp_lib) {
             pp_proc->nid,
             pp_proc->pid,
             lp_prog);
+#endif
     sb_pi_ic_send(pp_node,
                   pp_proc,
                   pp_info,
@@ -505,6 +583,16 @@ static void sqstate_pi_trans_com(MS_Mon_Node_Info_Entry_Type *pp_node,
     sb_pi_verb_print_info(pp_node, pp_proc, "sb-trans");
     lp_proc_t = SB_get_label_ms_mon_processtype_short(pp_proc->type);
     lp_prog = basename(pp_proc->program);
+#ifdef SQ_PHANDLE_VERIFIER
+    sprintf(la_title, "sb-trans for process=%s, type=%d(%s), p-id=%d/%d/" PFVY ", prog=%s",
+            pp_proc->process_name,
+            pp_proc->type,
+            lp_proc_t,
+            pp_proc->nid,
+            pp_proc->pid,
+            pp_proc->verifier,
+            lp_prog);
+#else
     sprintf(la_title, "sb-trans for process=%s, type=%d(%s), p-id=%d/%d, prog=%s",
             pp_proc->process_name,
             pp_proc->type,
@@ -512,6 +600,7 @@ static void sqstate_pi_trans_com(MS_Mon_Node_Info_Entry_Type *pp_node,
             pp_proc->nid,
             pp_proc->pid,
             lp_prog);
+#endif
     if (pv_str)
         lp_op = "sb_ic_get_trans";
     else
@@ -588,6 +677,17 @@ static void sb_pi_verb_print_info(MS_Mon_Node_Info_Entry_Type *pp_node,
 
     if (gv_verbose) {
         lp_node_name = plugin_get_node_name(pp_node);
+#ifdef SQ_PHANDLE_VERIFIER
+        sb_pi_printf("in target test=%s for node=%p, proc=%p, p-id=%d/%d/" PFVY ", pname=%s, node-name=%s\n",
+                      pp_test,
+                      static_cast<void *>(pp_node),
+                      static_cast<void *>(pp_proc),
+                      pp_proc->nid,
+                      pp_proc->pid,
+                      pp_proc->verifier,
+                      pp_proc->process_name,
+                      lp_node_name);
+#else
         sb_pi_printf("in target test=%s for node=%p, proc=%p, p-id=%d/%d, pname=%s, node-name=%s\n",
                       pp_test,
                       static_cast<void *>(pp_node),
@@ -596,6 +696,7 @@ static void sb_pi_verb_print_info(MS_Mon_Node_Info_Entry_Type *pp_node,
                       pp_proc->pid,
                       pp_proc->process_name,
                       lp_node_name);
+#endif
     }
 }
 

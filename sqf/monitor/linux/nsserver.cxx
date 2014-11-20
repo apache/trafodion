@@ -71,6 +71,7 @@ MPI_Comm Peer = MPI_COMM_NULL;
 MPI_Errhandler PeerHandler;
 MPI_Request Request[2] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL };
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 void kill_peer (void);
@@ -177,8 +178,8 @@ bool check_notice (struct message_def *notice, MPI_Status *status)
             break;
         case MsgType_Open:     // process open notification
             printf ("[%s] Open notice received from %s.\n", DisplayName,
-                    notice->u.request.u.open.process_name);
-            if (strcmp (MyName, notice->u.request.u.open.process_name) == 0)
+                    notice->u.request.u.open.target_process_name);
+            if (strcmp (MyName, notice->u.request.u.open.target_process_name) == 0)
             {
                 PeerOpenNotice = true;
 #ifndef NO_OPEN_CLOSE_NOTICES
@@ -626,9 +627,12 @@ bool isBackup (void)
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = MyNid;
     msg->u.request.u.process_info.pid = MyPid;
+    msg->u.request.u.process_info.verifier = -1;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = MyNid;
     msg->u.request.u.process_info.target_pid = MyPid;
-    strcpy (msg->u.request.u.process_info.process_name, MyName);
+    msg->u.request.u.process_info.target_verifier = -1;
+    strcpy (msg->u.request.u.process_info.target_process_name, MyName);
     msg->u.request.u.process_info.type = ProcessType_Undefined;
 
     gp_local_mon_io->send_recv( msg );
@@ -705,7 +709,7 @@ void kill_peer (void)
     msg->u.request.u.kill.pid = MyPid;
     msg->u.request.u.kill.target_nid = PeerNid;
     msg->u.request.u.kill.target_pid = PeerPid;
-    strcpy (msg->u.request.u.kill.process_name, MyName);
+    strcpy (msg->u.request.u.kill.target_process_name, MyName);
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
@@ -814,7 +818,7 @@ void open_primary (void)
     msg->u.request.type = ReqType_Open;
     msg->u.request.u.open.nid = MyNid;
     msg->u.request.u.open.pid = MyPid;
-    strcpy (msg->u.request.u.open.process_name, MyName);
+    strcpy (msg->u.request.u.open.target_process_name, MyName);
     msg->u.request.u.open.death_notification = 0;
 
     gp_local_mon_io->send_recv( msg );
@@ -847,7 +851,7 @@ void open_primary (void)
                     msg->u.request.type = ReqType_Notice;
                     msg->u.request.u.open.nid = MyNid;
                     msg->u.request.u.open.pid = MyPid;
-                    strcpy (msg->u.request.u.open.process_name, MyName);
+                    strcpy (msg->u.request.u.open.target_process_name, MyName);
                     MPI_Send(msg,sizeof(struct message_def),MPI_CHAR,0,NOTICE_TAG,Peer);
 #endif
                     printf ("[%s] Primary Connected.\n", DisplayName);
@@ -961,6 +965,7 @@ void process_startup (int argc, char *argv[])
 #endif
     MyNid = atoi(argv[3]);
     MyPid = atoi(argv[4]);
+    gv_ms_su_verif  = atoi(argv[9]);
     printf ("[%s] process_startup, MyNid: %d, lio: %p\n", 
              MyName, MyNid, (void *)gp_local_mon_io );
 
@@ -989,6 +994,8 @@ void process_startup (int argc, char *argv[])
         msg->u.request.u.startup.os_pid = getpid ();
         msg->u.request.u.startup.event_messages = true;
         msg->u.request.u.startup.system_messages = true;
+        msg->u.request.u.startup.verifier = gv_ms_su_verif;
+        msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
         printf ("[%s] sending startup reply to monitor.\n", argv[5]);
         fflush (stdout);
 

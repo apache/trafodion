@@ -22,7 +22,6 @@ ab		- abandon
 acc		- accept
 ack		- acknowledgement
 actr		- API counter
-aggr		- aggregation
 amp		- audit management process
 api		- application programmatic interface
 as		- assert state
@@ -40,11 +39,9 @@ cc		- condition code
 chk		- check
 clio		- client local i/o
 cmsgid		- client message identifier
-comm		- MPI communicator
 comp		- completion
 compid		- component identifier
 con		- connect
-cs		- comm-stream (pair)
 ct		- control type
 ctr		- counter
 ctx		- context
@@ -71,12 +68,8 @@ fs		- file system
 fsdone		- file-system-done
 ft		- file type
 gmgr		- global manager
-gp		- google profiling
 hdr		- header
 ht		- hash table
-ib		- infiniband
-ibv		- infiniband verbs (OFED IB interconnect)
-ic		- interceptor
 iloc		- inline open/close
 imap		- int map (map with an int-key)
 inv		- invalid
@@ -86,8 +79,7 @@ itoa		- int to ascii
 lcan		- link ancel
 ldone		- link done
 le		- little endian
-lf		- (a) lock free
-		  (b) load factor
+lf	  	- load factor
 lfnt		- lock free node type
 ll		- long long
 llmap		- long long map (map with a long long-key)
@@ -109,15 +101,12 @@ mon		- monitor
 mpi		- message passing interface
 mpip		- mpi profiler
 ms		- (a) message system
-		  (b) microsecond
+		  (b) millisecond
 msgid		- message identifier
-msic		- message-system interceptor
 msl		- mutex/spin lock
 mt		- multi threaded
 neg		- negotiation
 nid		- node identifier
-npc		- nid/pid-comm (pair)
-npci		- nid/pid-comm info
 nps		- nid/pid-stream (pair)
 nsem		- named semaphore
 od		- open descriptor

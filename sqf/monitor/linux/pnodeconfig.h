@@ -23,8 +23,11 @@
 #ifndef PNODECONFIG_H_
 #define PNODECONFIG_H_
 
+#include <list>
+
 #include "lnodeconfig.h"
 
+typedef list<CPNodeConfig *>   PNodesConfigList_t;
 
 class CPNodeConfigContainer
 {
@@ -39,6 +42,8 @@ public:
     CPNodeConfig *GetPNodeConfig( int pnid );
     inline int    GetPNodesCount( void ) { return ( pnodesCount_ ); }
     inline int    GetSNodesCount( void ) { return ( snodesCount_ ); }
+    inline PNodesConfigList_t *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
+    void          GetSpareNodesConfigSet( const char *name, PNodesConfigList_t &spareSet );
 
 protected:
     CPNodeConfig  **pnodeConfig_; // array of physical node configuration objects
@@ -46,8 +51,10 @@ protected:
     int             snodesCount_; // # of spare nodes
 
 private:
+    PNodesConfigList_t  spareNodesConfigList_; // configured spare nodes list
     CPNodeConfig  *head_; // head of physical nodes linked list
     CPNodeConfig  *tail_; // tail of physical nodes linked list
+
 };
 
 class CPNodeConfig : public CLNodeConfigContainer

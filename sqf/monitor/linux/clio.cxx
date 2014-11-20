@@ -189,6 +189,7 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
     iv_worker_thread_id=0;
     iv_initted=false;
     iv_pid=pv_pid;
+    iv_verifier = gv_ms_su_verif;
     ip_notice_cb=NULL;
     ip_event_cb=NULL;
     ip_recv_cb=NULL;
@@ -417,7 +418,7 @@ int Local_IO_To_Monitor::mon_port_num()
             }
             else
             {   // Ensure port string is null terminated
-                MonitorPort[lv_stat.st_size] = '\0';
+                MonitorPort[lv_stat.st_size - 1] = '\0';
                 ip_mon_mpi_port = MonitorPort;
             }
 
@@ -549,6 +550,7 @@ int Local_IO_To_Monitor::acquire_msg(struct message_def **pp_msg) {
     memset( (void*)&lp_sr_msg->trailer, 0, sizeof(lp_sr_msg->trailer) );
     lp_sr_msg->trailer.index = lv_cbi.index;
     lp_sr_msg->trailer.OSPid = iv_pid;
+    lp_sr_msg->trailer.verifier = iv_verifier;
     lp_sr_msg->trailer.bufInUse = iv_pid;
     clock_gettime(CLOCK_REALTIME, &lp_sr_msg->trailer.timestamp);
 
@@ -621,6 +623,14 @@ int Local_IO_To_Monitor::get_io(int pv_sig, siginfo_t *pp_siginfo) {
     lv_m = (SharedMsgDef *)(ip_cshm+sizeof(SharedMemHdr)
                             +(lv_idx*sizeof(SharedMsgDef)));
 
+    // Bug catcher: shared buffer pid and verifier must match my process
+    LIOTM_assert((iv_pid ==-1 && iv_verifier ==-1) ||
+                 (iv_pid == lv_m->trailer.OSPid && iv_verifier == -1) ||
+                 (iv_pid == lv_m->trailer.OSPid && 
+                  iv_verifier == lv_m->trailer.verifier) ||
+                 (lv_m->trailer.OSPid == BCAST_PID && 
+                  lv_m->trailer.verifier == -1));
+                            
     switch (lv_type) {
     case MC_ReadySend:
         if (cv_trace)
@@ -765,7 +775,7 @@ bool Local_IO_To_Monitor::init_comm() {
                 int lv_rc = pthread_create(&iv_recv_tid,
                                             NULL,
                                             local_monitor_reader,
-                                            (void *) iv_mpid);
+                                            (void *) (long) iv_mpid);
                 if ( lv_rc != 0) {
                     errno = lv_rc;
                     lv_ret = false;
@@ -1233,8 +1243,11 @@ int Local_IO_To_Monitor::release_msg(struct message_def *pp_msg,
         {  // Unexpectedly, buffer is not owned by this process
             char la_buf[256];
             sprintf(la_buf, "[%s], attempt to release buffer %d but it is not"
-                    " owned by this process.  Last freed by tid=%d\n",
-                    WHERE, lv_buffer_index, lp_sr_msg->trailer.OSPid);
+                    " owned by this process.  Last freed by pid=%d, verifier%d\n",
+                    WHERE, 
+                    lv_buffer_index, 
+                    lp_sr_msg->trailer.OSPid,
+                    lp_sr_msg->trailer.verifier);
             log_error ( MON_CLIO_RELEASE_MSG_1, SQ_LOG_ERR, la_buf );
         }
         else if (lv_buffer_index >= 0
@@ -1245,7 +1258,8 @@ int Local_IO_To_Monitor::release_msg(struct message_def *pp_msg,
             lp_sr_msg->trailer.received = 0;
             lp_sr_msg->trailer.attaching = 0;
             lp_sr_msg->trailer.bufInUse = 0;
-            lp_sr_msg->trailer.OSPid = (pid_t) gettid(); // Identify releaser
+            lp_sr_msg->trailer.OSPid = iv_pid; // Identify releaser
+            lp_sr_msg->trailer.verifier = iv_verifier;   // Identify releaser
 
             // put the buffer back in the shared buffer pool
             lv_cbi.mtype = SQ_LIO_NORMAL_MSG;
@@ -1366,6 +1380,7 @@ int Local_IO_To_Monitor::send_ctl_msg(MonitorCtlType pv_type, int pv_index) {
         lp_msg = ((SharedMsgDef *)(ip_cshm+sizeof(SharedMemHdr)+
                                    (pv_index*sizeof(SharedMsgDef))));
         lp_msg->trailer.OSPid = iv_pid;
+        lp_msg->trailer.verifier = iv_verifier;
     }
 
     if (cv_trace) {
@@ -1837,13 +1852,14 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
 void Local_IO_To_Monitor::trace_print_msg(const char   *pp_where,
                                           SharedMsgDef *pp_msg) {
     trace_where_printf(pp_where,
-                       "shared-msg: addr=%p, msg.type=%d, rcvd=%d, att=%d, index=%d, ospid=%d\n",
+                       "shared-msg: addr=%p, msg.type=%d, rcvd=%d, att=%d, index=%d, ospid=%d, verifier=%d\n",
                        (void *) pp_msg,
                        pp_msg->msg.type,
                        pp_msg->trailer.received,
                        pp_msg->trailer.attaching,
                        pp_msg->trailer.index,
-                       pp_msg->trailer.OSPid);
+                       pp_msg->trailer.OSPid,
+                       pp_msg->trailer.verifier);
 }
 
 // trace routine for localio

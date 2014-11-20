@@ -51,7 +51,8 @@ function Usage
     echo "         5     - Persistent Process"
     echo "         6     - SPX Process"
     echo "         7     - Process Create"
-    echo "         8     - TmSync"
+    echo "         8     - Node down before startup"
+    echo "         9     - TmSync"
     echo
 }
 
@@ -120,6 +121,7 @@ export SQ_SHELL_NOCWD=1
 #
 # Cleanup
 #
+sqipcrm
 if [ "$cluster" = "-cluster" ]; then
     pdsh $MY_NODES "rm -f $MPI_TMPDIR/monitor.port.*"
     pdsh $MY_NODES "rm $PWD/core* $PWD/*.lst $PWD/stdout_*"
@@ -145,30 +147,30 @@ fi
 # Execute tests
 #
 if ( [ $test '==' -1 ] || [ $test '==' 1 ] ); then
-echo "***"
-echo "*** Executing Child Exit test"
-echo "***"
+ echo "***"
+ echo "*** Executing Child Exit test"
+ echo "***"
 shell <<eof
  startup
  exec {name \$CTRLR, nid 0, out $MY_SQROOT/monitor/test/childExit.lst} childExitCtrl $trace
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/childExit.lst
-    pdsh $MY_NODES grep FAILED $PWD/childExit.lst
-else
-    grep PASSED $PWD/childExit.lst
-    grep FAILED $PWD/childExit.lst
-fi
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/childExit.lst
+     pdsh $MY_NODES grep FAILED $PWD/childExit.lst
+ else
+     grep PASSED $PWD/childExit.lst
+     grep FAILED $PWD/childExit.lst
+ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 2 ] ); then
-echo "***"
-echo "*** Executing Multi-Node test"
-echo "***"
+ echo "***"
+ echo "*** Executing Multi-Node test"
+ echo "***"
 shell <<eof
  startup
  ! General tests for monitor functionality. This includes
@@ -183,43 +185,43 @@ shell <<eof
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/multiNode.lst
-    pdsh $MY_NODES grep FAILED $PWD/multiNode.lst
-else
-    grep PASSED $PWD/multiNode.lst
-    grep FAILED $PWD/multiNode.lst
-fi
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/multiNode.lst
+     pdsh $MY_NODES grep FAILED $PWD/multiNode.lst
+ else
+     grep PASSED $PWD/multiNode.lst
+     grep FAILED $PWD/multiNode.lst
+ fi
 fi
 
-if ( [ $test '==' -1 ] || [ $test '==' 3 ] ); then
-echo "***"
-echo "*** Executing Registry test"
-echo "***"
+ if ( [ $test '==' -1 ] || [ $test '==' 3 ] ); then
+ echo "***"
+ echo "*** Executing Registry test"
+ echo "***"
 shell <<eof
  startup
  exec {name \$CTRLR, nid 0, out $MY_SQROOT/monitor/test/regTest.lst} regTestCtrl $trace
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/regTest.lst
-    pdsh $MY_NODES grep FAILED $PWD/regTest.lst
-else
-    grep PASSED $PWD/regTest.lst
-    grep FAILED $PWD/regTest.lst
-fi
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/regTest.lst
+     pdsh $MY_NODES grep FAILED $PWD/regTest.lst
+ else
+     grep PASSED $PWD/regTest.lst
+     grep FAILED $PWD/regTest.lst
+ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 4 ] ); then
-echo "***"
-echo "*** Executing Death Notice test"
-echo "***"
-shell <<eof
+ echo "***"
+ echo "*** Executing Death Notice test"
+ echo "***"
+ shell <<eof
  startup
  ! Test to register and cancel process death
  ! notices from non-parent process.
@@ -236,22 +238,22 @@ shell <<eof
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/deathNotice.lst
-    pdsh $MY_NODES grep FAILED $PWD/deathNotice.lst
-else
-    grep PASSED $PWD/deathNotice.lst
-    grep FAILED $PWD/deathNotice.lst
-fi
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/deathNotice.lst
+     pdsh $MY_NODES grep FAILED $PWD/deathNotice.lst
+ else
+     grep PASSED $PWD/deathNotice.lst
+     grep FAILED $PWD/deathNotice.lst
+ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 5 ] ); then
-if [ "$cluster" = "-cluster" ]; then
-echo "***"
-echo "*** Executing Persistent Process cluster test"
-echo "***"
+ if [ "$cluster" = "-cluster" ]; then
+  echo "***"
+  echo "*** Executing Persistent Process cluster test"
+  echo "***"
 shell <<eof
  startup
  down 2 !
@@ -260,84 +262,99 @@ shell <<eof
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
-    pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
-else
-    grep PASSED $PWD/persistentProc.lst
-    grep FAILED $PWD/persistentProc.lst
-fi
-else
-echo "***"
-echo "*** Executing Persistent Process test"
-echo "***"
+  sleep 1
+  cstat -h
+  pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
+  pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
+ else
+  echo "***"
+  echo "*** Executing Persistent Process test"
+  echo "***"
 shell <<eof
  startup
  exec {name \$PPROC, nid 0, out $MY_SQROOT/monitor/test/persistentProc.lst} persistentProc $trace
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
-    pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
-else
-    grep PASSED $PWD/persistentProc.lst
-    grep FAILED $PWD/persistentProc.lst
-fi
-fi
+  sleep 1
+  cstat -h
+  grep PASSED $PWD/persistentProc.lst
+  grep FAILED $PWD/persistentProc.lst
+ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 6 ] ); then
-echo "***"
-echo "*** Executing SPX Process test"
-echo "***"
+ echo "***"
+ echo "*** Executing SPX Process test"
+ echo "***"
 shell <<eof
  startup
  exec {name \$SPXCTRL, nid 0, out $MY_SQROOT/monitor/test/spxTest.lst} spxCtrl $trace
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/spxTest.lst
-    pdsh $MY_NODES grep FAILED $PWD/spxTest.lst
-else
-    grep PASSED $PWD/spxTest.lst
-    grep FAILED $PWD/spxTest.lst
-fi
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/spxTest.lst
+     pdsh $MY_NODES grep FAILED $PWD/spxTest.lst
+ else
+     grep PASSED $PWD/spxTest.lst
+     grep FAILED $PWD/spxTest.lst
+ fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then
-echo "***"
-echo "*** Executing Process Create test"
-echo "***"
+ echo "***"
+ echo "*** Executing Process Create test"
+ echo "***"
 shell <<eof
  startup
- exec {name \$PCRE8, nid 0, out $MY_SQROOT/monitor/test/procCreate.lst} procCreate $trace
+ exec {name \$PCRE8, nid 0, out $MY_SQROOT/monitor/test/procCreate.lst} procCreate $trace -x
  exit
 eof
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/procCreate.lst
-    pdsh $MY_NODES grep FAILED $PWD/procCreate.lst
-else
-    grep PASSED $PWD/procCreate.lst
-    grep FAILED $PWD/procCreate.lst
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/procCreate.lst
+     pdsh $MY_NODES grep FAILED $PWD/procCreate.lst
+ else
+     grep PASSED $PWD/procCreate.lst
+     grep FAILED $PWD/procCreate.lst
+ fi
 fi
-fi
-
 
 if ( [ $test '==' -1 ] || [ $test '==' 8 ] ); then
-if [ "$cluster" = "-cluster" ]; then
-echo "***"
-echo "*** Executing TmSync cluster test (subtest 7 disabled until it's fixed)"
-echo "***"
+ echo "***"
+ echo "*** Executing Process Creates Node down before startup test"
+ echo "***"
+shell <<eof 
+ startup
+ exec {nowait, name \$PCRE8, nid 0, out $MY_SQROOT/monitor/test/nodeDown.lst} procCreate $trace -y
+ delay 3
+ down 1 !
+ delay 10
+ shutdown
+ exit
+eof
+ sleep 10
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/nodeDown.lst
+     pdsh $MY_NODES grep FAILED $PWD/nodeDown.lst
+ else
+     grep PASSED $PWD/nodeDown.lst
+     grep FAILED $PWD/nodeDown.lst
+ fi
+fi
+
+
+#if ( [ $test '==' -1 ] || [ $test '==' 9 ] ); then
+if ( [ $test '==' 9 ] ); then
+ if [ "$cluster" = "-cluster" ]; then
+  echo "***"
+  echo "*** Executing TmSync cluster test (subtest 7 disabled until it's fixed)"
+  echo "***"
 shell <<eof
  startup
  exec {nowait, nid 0, name \$CTRLR, out $MY_SQROOT/monitor/test/tmSync.lst} tmSyncCtrl -n 1,3,4,5,6 $trace
@@ -345,13 +362,13 @@ shell <<eof
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
-pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
-echo "***"
-echo "*** Executing TmSync cluster test 8"
-echo "***"
+  sleep 1
+  cstat -h
+  pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
+  pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
+  echo "***"
+  echo "*** Executing TmSync cluster test 9"
+  echo "***"
 shell <<eof
  startup
  exec {nowait, nid 0, name \$CTRLR, out $MY_SQROOT/monitor/test/tmSync8.lst} tmSyncCtrl -n 8 $trace
@@ -359,13 +376,13 @@ shell <<eof
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-pdsh $MY_NODES grep PASSED $PWD/tmSync8.lst
-pdsh $MY_NODES grep FAILED $PWD/tmSync8.lst
-echo "***"
-echo "*** Executing TmSync cluster test 10"
-echo "***"
+  sleep 1
+  cstat -h
+  pdsh $MY_NODES grep PASSED $PWD/tmSync9.lst
+  pdsh $MY_NODES grep FAILED $PWD/tmSync9.lst
+  echo "***"
+  echo "*** Executing TmSync cluster test 10"
+  echo "***"
 shell <<eof
  startup
  down 2 !
@@ -375,14 +392,14 @@ shell <<eof
  shutdown
  exit
 eof
-sleep 1
-cstat -h
-pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
-pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
-else
-echo "***"
-echo "*** Executing TmSync test"
-echo "***"
+  sleep 1
+  cstat -h
+  pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
+  pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
+ else
+  echo "***"
+  echo "*** Executing TmSync test"
+  echo "***"
 shell <<eof
  startup
  exec {nowait, nid 0, name \$CTRLR, out $MY_SQROOT/monitor/test/tmSync.lst} tmSyncCtrl -n 3,4,5,6,7 $trace
@@ -390,32 +407,67 @@ shell <<eof
  shutdown
  exit
 eof
-
-
-# Reset SQ virtual cluster parameters
-unset SQ_VIRTUAL_NODES
-unset SQ_VIRTUAL_NID
-fi
-sleep 1
-cstat -h
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
-    pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
-else
-    grep PASSED $PWD/tmSync.lst
-    grep FAILED $PWD/tmSync.lst
-fi
+  # Reset SQ virtual cluster parameters
+  unset SQ_VIRTUAL_NODES
+  unset SQ_VIRTUAL_NID
+ fi
+ 
+ sleep 1
+ cstat -h
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
+     pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
+ else
+     grep PASSED $PWD/tmSync.lst
+     grep FAILED $PWD/tmSync.lst
+ fi
 fi
 
 if ( [ $test '==' -1 ] ); then
-echo "***"
-echo "*** Monitor Test Results"
-echo "***"
-if [ "$cluster" = "-cluster" ]; then
-    pdsh $MY_NODES "grep PASSED $PWD/*.lst"
-    pdsh $MY_NODES "grep FAILED $PWD/*.lst"
-else
-    grep PASSED $PWD/*.lst
-    grep FAILED $PWD/*.lst
-fi
+ echo "***"
+ echo "*** Monitor Test Results"
+ echo "***"
+ if [ "$cluster" = "-cluster" ]; then
+     pdsh $MY_NODES grep PASSED $PWD/childExit.lst
+     pdsh $MY_NODES grep FAILED $PWD/childExit.lst
+     pdsh $MY_NODES grep PASSED $PWD/multiNode.lst
+     pdsh $MY_NODES grep FAILED $PWD/multiNode.lst
+     pdsh $MY_NODES grep PASSED $PWD/regTest.lst
+     pdsh $MY_NODES grep FAILED $PWD/regTest.lst
+     pdsh $MY_NODES grep PASSED $PWD/deathNotice.lst
+     pdsh $MY_NODES grep FAILED $PWD/deathNotice.lst
+     pdsh $MY_NODES grep PASSED $PWD/persistentProc.lst
+     pdsh $MY_NODES grep FAILED $PWD/persistentProc.lst
+     pdsh $MY_NODES grep PASSED $PWD/spxTest.lst
+     pdsh $MY_NODES grep FAILED $PWD/spxTest.lst
+     pdsh $MY_NODES grep PASSED $PWD/procCreate.lst
+     pdsh $MY_NODES grep FAILED $PWD/procCreate.lst
+     pdsh $MY_NODES grep PASSED $PWD/nodeDown.lst
+     pdsh $MY_NODES grep FAILED $PWD/nodeDown.lst
+     pdsh $MY_NODES grep PASSED $PWD/tmSync.lst
+     pdsh $MY_NODES grep FAILED $PWD/tmSync.lst
+     pdsh $MY_NODES grep PASSED $PWD/tmSync9.lst
+     pdsh $MY_NODES grep FAILED $PWD/tmSync9.lst
+     pdsh $MY_NODES grep PASSED $PWD/tmSync10.lst
+     pdsh $MY_NODES grep FAILED $PWD/tmSync10.lst
+ else
+     grep PASSED $PWD/childExit.lst
+     grep FAILED $PWD/childExit.lst
+     grep PASSED $PWD/multiNode.lst
+     grep FAILED $PWD/multiNode.lst
+     grep PASSED $PWD/regTest.lst
+     grep FAILED $PWD/regTest.lst
+     grep PASSED $PWD/deathNotice.lst
+     grep FAILED $PWD/deathNotice.lst
+     grep PASSED $PWD/persistentProc.lst
+     grep FAILED $PWD/persistentProc.lst
+     grep PASSED $PWD/spxTest.lst
+     grep FAILED $PWD/spxTest.lst
+     grep PASSED $PWD/procCreate.lst
+     grep FAILED $PWD/procCreate.lst
+     grep PASSED $PWD/nodeDown.lst
+     grep FAILED $PWD/nodeDown.lst
+#     grep PASSED $PWD/tmSync.lst
+#     grep FAILED $PWD/tmSync.lst
+ fi
 fi

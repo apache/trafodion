@@ -30,11 +30,16 @@
 
 #include "buf.h"
 #include "ecid.h"
+#ifndef SQ_PHANDLE_VERIFIER
 #include "llmap.h"
+#endif
 #include "logaggr.h"
 #include "mapmd.h"
 #include "msi.h"
 #include "mstrace.h"
+#ifdef SQ_PHANDLE_VERIFIER
+#include "npvmap.h"
+#endif
 #include "recvq.h"
 #include "sbconst.h"
 #include "tablemgr.h"
@@ -46,9 +51,6 @@ namespace SB_Trans {
     enum {
         MS_OPTS_FSDONE   = 0x0001,
         MS_OPTS_LDONE    = 0x0002,
-        MS_OPTS_AGGR     = 0x0004,
-        MS_OPTS_AGGR_C2S = 0x0008,
-        MS_OPTS_AGGR_S2C = 0x0010,
         MS_OPTS_FSREQ    = 0x0020,
         MS_OPTS_MSIC     = 0x0040, // message-system interceptor
         MS_OPTS_PROCDEAD = 0x0080,
@@ -157,6 +159,9 @@ namespace SB_Trans {
         static int          get_md_count_recv();
         static int          get_md_count_send();
         static int          get_md_count_total();
+        static int          get_md_hi_recv();
+        static int          get_md_hi_send();
+        static int          get_md_hi_total();
         static int          get_md_max_recv();
         static int          get_md_max_send();
         static int          get_md_max_total();
@@ -217,8 +222,6 @@ namespace SB_Trans {
     //
     class Stream_Base {
     public:
-        //                         add aggr-reply-md
-        virtual void               add_aggr_reply_md(MS_Md_Type *pp_md) = 0;
         //                         error of generation?
         virtual bool               error_of_generation(int pv_generation) = 0;
         //                         error sync
@@ -275,8 +278,6 @@ namespace SB_Trans {
                                            int         pv_opts) = 0;
         //                         free reply-md
         virtual void               free_reply_md(MS_Md_Type *pp_md) = 0;
-        //                         get aggr-reply-md
-        virtual MS_Md_Type        *get_aggr_reply_md() = 0;
         //                         idle-timer-link
         virtual SB_TML_Type       *get_idle_timer_link() = 0;
         //                         stream-name
@@ -291,6 +292,10 @@ namespace SB_Trans {
         virtual int                get_remote_nid() = 0;
         //                         process-id
         virtual int                get_remote_pid() = 0;
+#ifdef SQ_PHANDLE_VERIFIER
+        //                         verif
+        virtual SB_Verif_Type      get_remote_verif() = 0;
+#endif
         //                         is self?
         virtual bool               is_self() = 0;
         //                         remove comp-q
@@ -319,8 +324,6 @@ namespace SB_Trans {
         MS_PMH_Type    iv_hdr;             // header
         int            iv_mpi_source_rank; // MPI transport source rank
         int            iv_mpi_tag;         // MPI transport tag
-        MS_SM_Seg_Mgr  iv_sm_seg_mgr_ctrl; // seg-mgr ctrl
-        MS_SM_Seg_Mgr  iv_sm_seg_mgr_data; // seg-mgr data
         int            iv_sm_tag;          // sm transport tag
     } Rd_Type;
 
@@ -337,8 +340,6 @@ namespace SB_Trans {
         enum {
             INT_MPI_ERR_EXITED = -1 // internal MPI error
         };
-        //                        add aggr-reply-md
-        virtual void              add_aggr_reply_md(MS_Md_Type *pp_md);
         //                        add accept-count
         static void               add_stream_acc_count(int pv_val);
         //                        add connect-count
@@ -370,8 +371,6 @@ namespace SB_Trans {
                                                       SB_Comp_Cb_Type  pv_ms_comp_callback);
         //                        free reply-md
         virtual void              free_reply_md(MS_Md_Type *pp_md);
-        //                        get aggr-reply-md
-        virtual MS_Md_Type       *get_aggr_reply_md();
         //                        idle-timer-link
         virtual SB_TML_Type      *get_idle_timer_link();
         //                        mon-stream
@@ -380,10 +379,16 @@ namespace SB_Trans {
         virtual char             *get_name();
         //                        get accept-count
         static int                get_stream_acc_count();
+        //                        get accept-hi-count
+        static int                get_stream_acc_hi_count();
         //                        get connect-count
         static int                get_stream_con_count();
+        //                        get connect-hi-count
+        static int                get_stream_con_hi_count();
         //                        get total-count
         static int                get_stream_total_count();
+        //                        get total-hi-count
+        static int                get_stream_total_hi_count();
         //                        open-id
         virtual int               get_oid();
         //                        is self?
@@ -396,11 +401,24 @@ namespace SB_Trans {
         virtual int               get_remote_nid();
         //                        process-id
         virtual int               get_remote_pid();
+#ifdef SQ_PHANDLE_VERIFIER
+        //                        verif
+        virtual SB_Verif_Type     get_remote_verif();
+#endif
         //                        map nid/pid to stream
+#ifdef SQ_PHANDLE_VERIFIER
+        static Trans_Stream      *map_nidpid_key_to_stream(SB_NPV_Type pv_npv,
+                                                           bool        pv_lock);
+#else
         static Trans_Stream      *map_nidpid_key_to_stream(SB_Int64_Type pv_nidpid,
                                                            bool pv_lock);
+#endif
         //                        get nid/pid map keys
+#ifdef SQ_PHANDLE_VERIFIER
+        static SB_NPVmap_Enum    *map_nidpid_keys();
+#else
         static SB_LLmap_Enum     *map_nidpid_keys();
+#endif
         //                        lock nid/pid map
         static void               map_nidpid_lock();
         //                        remove stream from nid/pid map
@@ -408,9 +426,12 @@ namespace SB_Trans {
         //                        get nid/pid map size
         static int                map_nidpid_size();
         //                        map nid/pid to stream
-        static Trans_Stream      *map_nidpid_to_stream(int  pv_nid,
-                                                       int  pv_pid,
-                                                       bool pv_lock);
+        static Trans_Stream      *map_nidpid_to_stream(int           pv_nid,
+                                                       int           pv_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                                       SB_Verif_Type pv_verif,
+#endif
+                                                       bool          pv_lock);
         //                        trylock nid/pid map
         static int                map_nidpid_trylock();
         //                        unlock nid/pid map
@@ -490,12 +511,16 @@ namespace SB_Trans {
                      SB_Ms_Tl_Event_Mgr   *pp_event_mgr,
                      int                   pv_open_nid,
                      int                   pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                     SB_Verif_Type         pv_open_verif,
+#endif
                      int                   pv_opened_nid,
                      int                   pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                     SB_Verif_Type         pv_opened_verif,
+#endif
                      int                   pv_opened_type);
         virtual ~Trans_Stream();
-        virtual void              add_aggr_reply(Rd_Type     *pp_rd,
-                                                 MS_PMH_Type *pp_hdr);
         void                      add_msgid_to_reqid_map(int pv_reqid,
                                                          int pv_msgid);
         void                      add_reply_piggyback(MS_Md_Type *pp_md);
@@ -516,8 +541,6 @@ namespace SB_Trans {
         void                      finish_recv(Rd_Type     *pp_rd,
                                               MS_PMH_Type *pp_hdr,
                                               bool         pv_client);
-        void                      finish_recv_server_deaggr(Rd_Type     *pp_rd,
-                                                            MS_PMH_Type *pp_hdr);
         void                      finish_recv_server_fsreq(Rd_Type     *pp_rd,
                                                            MS_PMH_Type *pp_hdr);
         void                      finish_recv_server_msinterceptor(Rd_Type     *pp_rd,
@@ -542,10 +565,18 @@ namespace SB_Trans {
                                        const char *pp_pname,
                                        const char *pp_prog);
         void                      map_nidpid_add_stream(int pv_nid,
-                                                        int pv_pid);
+                                                        int pv_pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                                       ,SB_Verif_Type pv_verif
+#endif
+                                                       );
         void                      map_nidpid_remove_stream(const char *pp_where,
                                                            int         pv_nid,
-                                                           int         pv_pid);
+                                                           int         pv_pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                                          ,SB_Verif_Type pv_verif
+#endif
+                                                          );
         void                      process_abandon(const char *pp_where,
                                                   int         pv_abandon_reqid,
                                                   int         pv_req_reqid);
@@ -584,15 +615,17 @@ protected:
         static SB_D_Queue         cv_del_q;
         static bool               cv_shutdown;
         static SB_Atomic_Int      cv_stream_acc_count;
+        static SB_Atomic_Int      cv_stream_acc_hi_count;
         static SB_Atomic_Int      cv_stream_con_count;
+        static SB_Atomic_Int      cv_stream_con_hi_count;
         static SB_Atomic_Int      cv_stream_total_count;
+        static SB_Atomic_Int      cv_stream_total_hi_count;
         char                      ia_stream_name[MAX_NAME];
         char                      ia_pname[MAX_NAME];
         char                      ia_prog[SB_MAX_PROG];
         SB_Ms_Tl_Event_Mgr       *ip_event_mgr;
         SB_Recv_Queue            *ip_ms_lim_q;
         SB_Recv_Queue            *ip_ms_recv_q;
-        SB_Ts_Queue               iv_aggr_reply_q;
         SB_DQL_Type               iv_close_link;
         SB_DQL_Type               iv_del_link;
         SB_Thread::ECM            iv_error_mutex;
@@ -608,11 +641,20 @@ protected:
         SB_Ts_Imap                iv_msgid_reqid_map;
         int                       iv_open_nid;
         int                       iv_open_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_Verif_Type             iv_open_verif;
+#endif
         int                       iv_opened_nid;
         int                       iv_opened_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_Verif_Type             iv_opened_verif;
+#endif
         int                       iv_opened_type;
         int                       iv_remote_nid;
         int                       iv_remote_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_Verif_Type             iv_remote_verif;
+#endif
         bool                      iv_post_mon_messages;
         SB_Thread::ECM            iv_post_mutex;
         SB_Atomic_Int             iv_ref_count;

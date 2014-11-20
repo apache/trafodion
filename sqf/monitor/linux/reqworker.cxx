@@ -70,11 +70,13 @@ void CReqWorker::reqWorkerThread()
         else
         {
             // Record statistics (sonar counters): record start of request
+            if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                 MonStats->RequestServiceTimeIncr();
 
             request->performRequest();
 
             // Record statistics (sonar counters): record request finished
+            if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                 MonStats->RequestServiceTimeDecr();
 
             ReqQueue.finishRequest(request);

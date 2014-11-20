@@ -20,7 +20,7 @@ include ./macros.gmk
 
 
 # set USE_DMALLOC=1 to setup dmalloc
-USE_DMALLOC=0
+USE_DMALLOC=1
 OPTIONS =
 
 ifdef SQ_VIRTUAL_NODE
@@ -61,14 +61,8 @@ endif
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)
     FLAGS+= -DUSE_FORK_SUSPEND_RESUME
 endif
-ifeq ($(WDT_CHECK_CLUSTER_STATE),1)
-    FLAGS+= -DWDT_CHECK_CLUSTER_STATE
-endif
 ifeq ($(USE_SEQUENCE_NUM),1)
-	FLAGS+= -DUSE_SEQUENCE_NUM
-endif
-ifeq ($(USE_NODE_READINESS),1)
-    FLAGS+= -DUSE_NODE_READINESS
+    FLAGS+= -DUSE_SEQUENCE_NUM
 endif
 ifeq ($(SQ_BUILD_TYPE), debug)
     FLAGS+= -DMON_DEBUG
@@ -82,10 +76,12 @@ endif
 INCLUDES+= -I../../inc
 
 LIBS+=  -lsqlite3
-FLAGS+= -DUSE_CONFIG_DB
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
+endif
+ifeq ($(USE_SONAR),1)
+   FLAGS+= -DUSE_SONAR
 endif
 
 MONITORSRC = monitor.cxx
@@ -225,7 +221,6 @@ WATCHDOGOBJS += $(OUTDIR)/monlogging.o
 WATCHDOGOBJS += $(OUTDIR)/props.o
 WATCHDOGOBJS += $(OUTDIR)/sdtimer.o
 WATCHDOGOBJS += $(OUTDIR)/wdtimer.o
-WATCHDOGOBJS += $(OUTDIR)/lunmgr.o
 WATCHDOGOBJS += $(OUTDIR)/pkillall.o
 WATCHDOGOBJS += $(OUTDIR)/procmon.o
 WATCHDOGOBJS += $(OUTDIR)/system.o

@@ -36,9 +36,6 @@ enum {
     MS_PMH_SIG3             = 'K',
     MS_PMH_MAJOR            =  1,
     MS_PMH_MINOR            =  0,
-    MS_PMH_OPT_AGGR         =  1,
-    MS_PMH_OPT_AGGR_C2S     =  2,
-    MS_PMH_OPT_AGGR_S2C     =  4,
     MS_PMH_OPT_FSREQ        =  8,
     MS_PMH_OPT_MSIC         = 16, // message-system interceptor
     MS_PMH_OPT2_C_ZERO      =  1,
@@ -156,61 +153,16 @@ enum MS_Md_Op_Type {
 
 // place in ctrl
 typedef struct Ms_Sm_Conn_Type {
-    int  iv_ic;
-    int  iv_nid;
-    int  iv_pid;
-    char ia_pname[34];
-    char ia_prog[32];
-    int  iv_fserr;
+    int           iv_ic;
+    int           iv_nid;
+    int           iv_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type iv_verif;
+#endif
+    char          ia_pname[34];
+    char          ia_prog[32];
+    int           iv_fserr;
 } Ms_Sm_Conn_Type;
-
-//
-// Segment manager
-//
-// i.e. a data-block may be a sequence of segments
-// this manages the segments
-//
-class MS_SM_Seg_Mgr {
-public:
-    MS_SM_Seg_Mgr();
-    ~MS_SM_Seg_Mgr();
-
-    // add a segment
-    void seg_mgr_add_seg(char *pp_seg, int pv_len);
-    // copy manager
-    void seg_mgr_copy_mgr(MS_SM_Seg_Mgr *pp_mgr);
-    // copy segments into block
-    void seg_mgr_copy_segs_to_block(char *pp_block, int pv_len);
-    // count segments
-    int  seg_mgr_count_segs();
-    // create manager
-    void seg_mgr_create(int pv_len, int pv_segsize);
-    // delete segments
-    void seg_mgr_del_segs();
-    // get length
-    int seg_mgr_get_len();
-    // get segment
-    void seg_mgr_get_seg(int pv_inx, char **ppp_seg, int *pp_len);
-    // reset manager
-    void seg_mgr_reset(bool pv_curr, bool pv_max, bool pv_map);
-    // trace segments into block
-    void seg_mgr_trace_segs_to_block(const char *pp_where,
-                                     char       *pp_block,
-                                     int         pv_len);
-
-private:
-    class Seg_Desc {
-    public:
-        Seg_Desc();
-        ~Seg_Desc();
-
-        char *ip_seg;
-        int   iv_seg_len;
-    };
-    Seg_Desc *ip_segs;
-    int       iv_seg_count_curr;
-    int       iv_seg_count_max;
-};
 
 typedef struct MS_SS_Type {
     char           *ip_buf;             // sock
@@ -265,8 +217,6 @@ typedef struct MS_Md_Type {
     int              iv_sm_queued_cnt;    // sm-queued-cnt
     int              iv_sm_recv_state;    // sm-recv-state
     int              iv_sm_rep_tag;       // sm-reply-tag
-    MS_SM_Seg_Mgr    iv_sm_seg_mgr_ctrl;  // sm-seg-mgr-ctrl
-    MS_SM_Seg_Mgr    iv_sm_seg_mgr_data;  // sm-seg-mgr-data
     long             iv_tag;              // tag
     long             iv_tid;              // thread id
     struct timeval   iv_ts_msg_cli_break; // break time
@@ -300,6 +250,9 @@ typedef struct MS_Md_Type {
         bool            iv_reply;                // reply?
         bool            iv_requeue;              // re-queue msg?
         uint64_t        iv_sm_smid;              // smid
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_Verif_Type   iv_verif;                // verif
+#endif
 
         struct timeval  iv_comp_q_off_tod;       // comp queue off time
         struct timeval  iv_comp_q_on_tod;        // comp queue on time
@@ -385,20 +338,24 @@ typedef struct MS_Buf_Mgr_Type {
     } ufi; // internal free
 } MS_Buf_Mgr_Type;
 
-extern char       ga_ms_su_a_port[];
-extern char       ga_ms_su_pname[];
-extern char       ga_ms_su_prog[];
-extern char      *gp_ms_trace_file;
-extern char      *gp_ms_trace_file_dir;
-extern char      *gp_ms_trace_prefix;
-extern bool       gv_ms_su_called;
-extern int        gv_ms_su_nid;
-extern pthread_t  gv_ms_su_pthread_self;
-extern int        gv_ms_su_pid;
-extern int        gv_ms_su_ptype;
-extern char       ga_ms_su_sock_a_port[];
-extern bool       gv_ms_su_sysmsgs;
-extern int        gv_ms_su_pnid;
+extern char           ga_ms_su_a_port[];
+extern char           ga_ms_su_pname[];
+extern char           ga_ms_su_pname_seq[];
+extern char           ga_ms_su_prog[];
+extern char          *gp_ms_trace_file;
+extern char          *gp_ms_trace_file_dir;
+extern char          *gp_ms_trace_prefix;
+extern bool           gv_ms_su_called;
+extern int            gv_ms_su_nid;
+extern pthread_t      gv_ms_su_pthread_self;
+extern int            gv_ms_su_pid;
+extern int            gv_ms_su_pnid;
+extern int            gv_ms_su_ptype;
+extern char           ga_ms_su_sock_a_port[];
+extern bool           gv_ms_su_sysmsgs;
+#ifdef SQ_PHANDLE_VERIFIER
+extern SB_Verif_Type  gv_ms_su_verif;
+#endif
 
 extern void  ms_buf_trace_change();
 extern void  ms_od_get_my_phandle(SB_Phandle_Type *pp_phandle);

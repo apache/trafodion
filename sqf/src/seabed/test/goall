@@ -1,0 +1,272 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+export TEST_STOP=test.status
+export SQ_MON_ENV_CHECK_DISABLE=1
+cluster=
+if [ "$1" = "-cluster" ]; then
+	cluster=-cluster
+	host1=`gohost 1`
+	host2=`gohost 2`
+	host3=`gohost 3`
+	conf="cluster.conf"
+	ssh $host1 "echo $conf - $host1"
+	ssh $host2 "echo $conf - $host2"
+	ssh $host3 "echo $conf - $host3"
+	shift
+fi
+verbose=
+if [ "$1" = "-verbose" ]; then
+	verbose=-verbose
+	shift
+fi
+gostart
+go2 $cluster $verbose
+go3 $cluster $verbose
+go4 $cluster $verbose
+go5 $cluster $verbose
+go6 $cluster $verbose
+go9 $cluster $verbose
+go9 -check -noout -vg
+go14 $cluster $verbose
+go15 $cluster $verbose
+go16 $cluster $verbose
+go17 $cluster $verbose
+go18 $cluster $verbose
+go19 $cluster $verbose
+go20 $cluster $verbose
+go21 $cluster $verbose
+go22 $cluster $verbose
+go23 $cluster $verbose
+go24 $cluster $verbose
+go25 $cluster $verbose
+go27 $cluster $verbose
+go30 $cluster $verbose
+go31 $cluster $verbose
+go32x $cluster $verbose
+go35 $cluster $verbose
+go36 $cluster $verbose
+go37 $cluster $verbose
+go37 $cluster $verbose -dup
+go37 $cluster $verbose -nowait
+go37 $cluster $verbose -nowait -dup
+go38 $cluster $verbose
+go38 $cluster $verbose -nowait
+go39 $cluster $verbose
+go40 $cluster $verbose
+go40 $cluster $verbose -nowait
+go41 $cluster $verbose
+go42 $cluster $verbose
+go43 $cluster $verbose
+go43 $cluster $verbose -breaklisten
+go44 $cluster $verbose
+go45 $cluster $verbose
+go45 $cluster $verbose -nowait
+go48 $cluster $verbose
+go49 $cluster $verbose
+go50 $cluster $verbose
+go50 $cluster $verbose -nowait
+go51 $cluster $verbose
+go52 $cluster $verbose
+go53 $cluster $verbose
+go53 $cluster $verbose -nowait
+go54 $cluster $verbose
+go54 $cluster $verbose -nowait
+go55 $cluster $verbose
+go55 $cluster $verbose -nowait
+go56 $cluster $verbose
+go57 $cluster $verbose
+go58 $cluster $verbose
+go61 $cluster $verbose
+go62 $cluster $verbose
+go63 $cluster $verbose
+go64 $cluster $verbose
+go65 $cluster $verbose
+go66 $cluster $verbose
+go66 $cluster $verbose -factory
+go67 $cluster $verbose -check
+go67 $cluster $verbose -check -nowait
+go67 $cluster $verbose -check -copy
+go67 $cluster $verbose -check -nowait -copy
+go68 $cluster $verbose
+go69 $cluster $verbose
+go70 $verbose
+go71 $cluster $verbose
+go71 $cluster $verbose -sysmsg
+go72 $cluster $verbose
+go73 $cluster $verbose -quiet
+go74 $cluster $verbose
+go75 $cluster $verbose -quiet
+go76 $cluster $verbose
+go77 $cluster $verbose
+go78 $cluster $verbose
+go79 $cluster $verbose
+go79 $cluster $verbose -nowait
+go80 $cluster $verbose
+go83 $cluster $verbose
+go84 $cluster $verbose
+go84 $cluster $verbose -nowait
+go85 $cluster $verbose
+go86 $cluster $verbose
+go88 $cluster $verbose
+go91 $cluster $verbose
+go92 $cluster $verbose
+go93 $cluster $verbose
+go94 $cluster $verbose
+go95 $cluster $verbose
+go96 $cluster $verbose
+go98 $cluster $verbose
+go100 $cluster $verbose
+go101 $cluster $verbose
+go102 $cluster $verbose
+go103 $cluster $verbose
+go104 $cluster $verbose
+go105 $cluster $verbose
+go115 $cluster $verbose
+go118 $cluster $verbose
+go118 $cluster $verbose -nowait
+go124 $cluster $verbose -maxcp 2 -maxsp 4
+go126 $cluster $verbose
+go127 $cluster $verbose
+go128 $cluster $verbose
+go129 $cluster $verbose
+go130 $cluster $verbose
+go131 $cluster $verbose
+go132 $cluster $verbose
+go133 $cluster $verbose
+go135 $cluster $verbose
+go137 $cluster $verbose
+go138 $cluster $verbose
+go139 $cluster $verbose
+go141 $cluster $verbose -linker
+go141 $cluster $verbose -listener
+go142 $cluster $verbose
+go145 $cluster $verbose -level 0
+go145 $cluster $verbose -level 1
+go145 $cluster $verbose -level 2
+go149 $cluster $verbose
+go151 $cluster $verbose
+go152 $cluster $verbose
+go153 $cluster $verbose
+go155 $cluster $verbose
+go155 $cluster $verbose -abandon
+go156 $cluster $verbose
+go157 $cluster $verbose
+go160 $cluster $verbose
+go160 $cluster $verbose -maxs 10
+go161 $cluster $verbose
+go161 $cluster $verbose -maxth 10
+go162 $cluster $verbose
+go162 $cluster $verbose -nowait
+go162 $cluster $verbose -threads 5
+go162 $cluster $verbose -threads 5 -onercv
+go163 $cluster $verbose
+go164 $cluster $verbose
+go164 $cluster $verbose -specific
+go164 $cluster $verbose -sysmsg -aborto
+go164 $cluster $verbose -shutdown
+go164 $cluster $verbose -maxsp 64
+go165 $cluster $verbose -maxsp 10
+go165 $cluster $verbose -maxsp 10 -nowait
+go167 $cluster $verbose
+go168 $cluster $verbose -maxsp 10 -loop 100
+go169 $cluster $verbose -maxcp 5 -maxs 5
+go170 $cluster $verbose
+go172 $cluster $verbose
+go176 $cluster $verbose -maxcp 5 -maxsp 5
+go180 $cluster $verbose
+go180 $cluster $verbose -maxcp 5 -maxsp 1
+go180 $cluster $verbose -maxcp 1 -maxsp 5
+go182 $cluster $verbose
+go183 $cluster $verbose -loop 5000
+go184 $cluster $verbose
+go185 $cluster $verbose
+go186 $cluster $verbose
+go186 $cluster $verbose -nowait
+go187 $cluster $verbose
+go188 $cluster $verbose
+go190 $cluster $verbose
+go192 $cluster $verbose
+go194 $cluster $verbose
+go195 $cluster $verbose -maxsp 7 -loop 2 -dup 2
+go195 $cluster $verbose -maxsp 7 -loop 2 -dup 2 -nowaito
+go195 $cluster $verbose -maxsp 7 -loop 2 -nowaits
+go195 $cluster $verbose -maxsp 7 -loop 2 -nowaito -nowaits
+go197 $cluster $verbose
+go197 $cluster $verbose -recvdepth 256
+go198 $cluster $verbose
+go201 $cluster $verbose -solo
+go202 $cluster $verbose
+go205 $cluster $verbose
+go206 $cluster $verbose -abort
+go206 $cluster $verbose
+go207 $cluster $verbose
+go207 $cluster $verbose -cancel
+go207 $cluster $verbose -rand
+go208 $cluster $verbose
+go208 $cluster $verbose -nowait
+go209 $cluster $verbose -loop 2
+go209 $cluster $verbose -id
+go209vc $cluster $verbose
+go209sh $cluster $verbose
+go210 $cluster $verbose
+go212 $cluster $verbose
+go213 $cluster $verbose -threads 10
+go213 $cluster $verbose -threads 10 -nowait
+go214 $cluster $verbose -maxcp 5 -maxsp 5
+go215 $cluster $verbose -maxwp 5 -loopwp 5
+go216 $cluster $verbose -maxcp 2
+go216 $cluster $verbose -maxcp 2 -abandon 5
+go217 $cluster $verbose -maxcp 5 -maxout 5
+go217 $cluster $verbose -maxcp 5 -maxout 5 -cancel 4
+go219 $cluster $verbose
+go220 $cluster $verbose
+go221 $cluster $verbose
+go222 $cluster $verbose
+go222 $cluster $verbose -nowait
+go226 $cluster $verbose -loop 50
+go227 $cluster $verbose
+go228 $cluster $verbose
+go231 $cluster $verbose
+go233 $cluster $verbose
+go234 $cluster $verbose -maxsp 10
+go235 $cluster $verbose
+go238
+go240 $cluster $verbose
+go241 $cluster $verbose
+go242 $cluster $verbose
+go245 $cluster $verbose
+go246 $cluster $verbose
+go249 $cluster $verbose
+go250 $cluster $verbose
+go253 $cluster $verbose
+go261 $cluster $verbose
+go262 $cluster $verbose
+go263 $cluster $verbose
+go266 $cluster $verbose
+go277 $cluster $verbose
+go277 $cluster $verbose -thread
+go277 $cluster $verbose -thread -any1
+go277 $cluster $verbose -thread -any2
+go279 $cluster $verbose
+go280 $cluster $verbose
+go280 $cluster $verbose -death
+go281 $cluster $verbose
+goend
+date

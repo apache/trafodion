@@ -80,7 +80,7 @@ using namespace std;
 // Global Variables
 struct rlimit Rl;
 bool PidMap=false;
-bool usingCpuAffinity=true;
+bool usingCpuAffinity=false;
 bool usingTseCpuAffinity=false;
 bool genSnmpTrapEnabled = false;
 int Measure=0;
@@ -96,8 +96,10 @@ bool IAmIntegrating = false;
 bool IAmIntegrated = false;
 char IntegratingMonitorPort[MPI_MAX_PORT_NAME] = {'\0'};
 bool IsRealCluster = true;
+CommType_t CommType = CommType_Undefined;
 bool SMSIntegrating = false;
 int  CreatorShellPid = -1;
+Verifier_t CreatorShellVerifier = -1;
 
 // Lock to manage memory modifications during fork/exec
 CLock MemModLock;
@@ -108,6 +110,7 @@ CDeviceContainer *Devices = NULL;
 int MyPNID = -1;
 CNode *MyNode;
 CMonLog *MonLog =  NULL;
+CMonLog *SnmpLog =  NULL;
 CMonStats * MonStats = NULL;
 extern CMonTrace *MonTrace;
 CRedirector Redirector;
@@ -281,6 +284,27 @@ void monMallocStats()
     malloc_stats();
 }
 
+const char *CommTypeString( CommType_t commType)
+{
+    const char *str;
+    
+    switch( commType )
+    {
+        case CommType_InfiniBand:
+            str = "InfiniBand";
+            break;
+        case CommType_Sockets:
+            str = "Sockets";
+            break;
+        default:
+            str = "Undefined";
+            break;
+    }
+
+    return( str );
+}
+
+
 CMonitor::CMonitor (int procTermSig)
     : CTmSync_Container (),
       OpenCount (0),
@@ -378,9 +402,14 @@ void CMonitor::writeProcessMapEntry ( const char * buf )
         write( processMapFd, buf, strlen(buf));
 }
 
-void CMonitor::writeProcessMapBegin ( const char *Name, int Nid, int Pid,
-                                      int Parent_Nid, int Parent_Pid,
-                                      const char *program )
+void CMonitor::writeProcessMapBegin( const char *name
+                                   , int nid
+                                   , int pid
+                                   , int verifier
+                                   , int parentNid
+                                   , int parentPid
+                                   , int parentVerifier
+                                   , const char *program )
 {
     char buf[55+MAX_PROCESS_NAME+MAX_PROCESS_PATH];
 
@@ -388,8 +417,32 @@ void CMonitor::writeProcessMapBegin ( const char *Name, int Nid, int Pid,
     char *timestamp = ctime(&mytime);
     timestamp[strlen(timestamp)-1] = '\0';
 
-    snprintf(buf, sizeof(buf), "BEGIN %s %-8s (%d, %d) P(%d, %d) %s\n",
-             timestamp, Name, Nid, Pid, Parent_Nid, Parent_Pid, program);
+    snprintf( buf, sizeof(buf)
+            , "BEGIN %s %-8s (%d, %d:%d) P(%d, %d:%d) %s\n"
+            , timestamp, name, nid, pid, verifier
+            , parentNid, parentPid, parentVerifier, program);
+    writeProcessMapEntry ( buf );
+}
+
+void CMonitor::writeProcessMapEnd( const char *name
+                                 , int nid
+                                 , int pid
+                                 , int verifier
+                                 , int parentNid
+                                 , int parentPid
+                                 , int parentVerifier
+                                 , const char *program )
+{
+    char buf[55+MAX_PROCESS_NAME+MAX_PROCESS_PATH];
+
+    time_t mytime = time(NULL);
+    char *timestamp = ctime(&mytime);
+    timestamp[strlen(timestamp)-1] = '\0';
+
+    snprintf( buf, sizeof(buf)
+            , "END   %s %-8s (%d, %d:%d) P(%d, %d:%d) %s\n"
+            , timestamp, name, nid, pid, verifier
+            , parentNid, parentPid, parentVerifier, program);
     writeProcessMapEntry ( buf );
 }
 
@@ -445,6 +498,7 @@ bool CMonitor::CompleteProcessStartup (struct message_def * msg)
         msg->u.reply.type = ReplyType_Generic;
         msg->u.reply.u.generic.nid = -1;
         msg->u.reply.u.generic.pid = -1;
+        msg->u.reply.u.generic.verifier = -1;
         msg->u.reply.u.generic.process_name[0] = '\0';
         msg->u.reply.u.generic.return_code = MPI_ERR_NAME;
         status = FAILURE;
@@ -470,9 +524,11 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
     procObj->ldpathStrId = process->ldPathStrId();
     procObj->programStrId = process->programStrId();
     procObj->os_pid = process->GetPid();
+    procObj->verifier = process->GetVerifier();
     procObj->prior_pid = process->GetPriorPid ();
     procObj->parent_nid = process->GetParentNid();
     procObj->parent_pid = process->GetParentPid();
+    procObj->parent_verifier = process->GetParentVerifier();
     procObj->persistent_retries = process->GetPersistentRetries();
     procObj->event_messages = process->IsEventMessages();
     procObj->system_messages = process->IsSystemMessages();
@@ -636,8 +692,10 @@ void CMonitor::UnpackProcObjs( char *&buffer, int procCount )
                                       &stringData[0], // process name
                                       &stringData[procObj->nameLen],  // port
                                       procObj->os_pid,
+                                      procObj->verifier, 
                                       procObj->parent_nid,
                                       procObj->parent_pid,
+                                      procObj->parent_verifier,
                                       procObj->event_messages,
                                       procObj->system_messages,
                                       procObj->pathStrId,
@@ -670,11 +728,8 @@ int CMonitor::Receive(char *buf, int size, int source, MonXChngTags tag, MPI_Com
     const char method_name[] = "CMonitor::Receive";
     TRACE_ENTRY;
 
-    MPI_Status status;  
-#if 0
-    int error = MPI_Recv(buf, size, MPI_CHAR, source, tag, comm, &status);
-#else
     MPI_Request request;
+    MPI_Status status;  
     int received = 0;
 
     int error = MPI_Irecv(buf, size, MPI_CHAR, source, tag, comm, &request);
@@ -699,7 +754,6 @@ int CMonitor::Receive(char *buf, int size, int source, MonXChngTags tag, MPI_Com
             }
          }
     }
-#endif
 
     TRACE_EXIT;
     return error;
@@ -710,9 +764,6 @@ int CMonitor::Send(char *buf, int size, int source, MonXChngTags tag, MPI_Comm c
     const char method_name[] = "CMonitor::Send";
     TRACE_ENTRY;
 
-#if 0
-    int error = MPI_Send(buf, size, MPI_CHAR, source, tag, comm);
-#else
     MPI_Request request;
     MPI_Status status;  
     int sent = 0;
@@ -739,7 +790,6 @@ int CMonitor::Send(char *buf, int size, int source, MonXChngTags tag, MPI_Comm c
             }
          }
     }
-#endif
 
     TRACE_EXIT;
     return error;
@@ -823,6 +873,7 @@ int main (int argc, char *argv[])
     const char method_name[] = "main";
 
     MonLog = new CMonLog( "mon" );
+    SnmpLog = new CMonLog( "snmp.mon" );
 
     MonLog->setupInMemoryLog();
 
@@ -840,6 +891,7 @@ int main (int argc, char *argv[])
     if ( getenv("SQ_VIRTUAL_NODES") )
     {
         IsRealCluster = false;
+        Emulate_Down = true;
     }
 
     // Save our execution path
@@ -875,7 +927,14 @@ int main (int argc, char *argv[])
     }
 
     env = getenv("SQ_IC");
-    Emulate_Down = ! ( ( env != NULL ) && ( strcmp(env, "IBV") == 0) );
+    if ( env != NULL && strcmp(env, "IBV") == 0 )
+    {
+        CommType = CommType_InfiniBand;
+    }
+    else
+    {
+        CommType = CommType_Sockets;
+    }
 
     // Mask all allowed signals
     sigset_t              mask;
@@ -899,8 +958,10 @@ int main (int argc, char *argv[])
     MPI_Init (&argc, &argv);
 
     env = getenv("MON_PROF_ENABLE");
-    if (env != NULL)
+    if ( env )
+    {
         mon_profiler_init(env); // LCOV_EXCL_LINE
+    }
 
     env = getenv("MON_SNMP_ENABLE");
     if ( env )
@@ -980,6 +1041,17 @@ int main (int argc, char *argv[])
             printf ( "Invalid creator shell pid: %s\n", argv[4]);
             abort();
         }
+        if ( isdigit (*argv[5]) )
+        {
+            
+            CreatorShellVerifier = atoi( argv[5] );
+        }
+        else
+        {
+            printf ( "Invalid creator shell verifier: %s\n", argv[5]);
+            abort();
+        }
+
         // Trace cannot be specified on startup command but need to
         // check for trace environment variable settings.
         MonTrace->mon_trace_init("0", NULL);
@@ -1013,7 +1085,22 @@ int main (int argc, char *argv[])
         trace_printf("%s@%d next_test_delay=%ld\n", method_name, __LINE__,
                      next_test_delay);
 
+#ifdef USE_SONAR
+    if ( (env = getenv("SQ_SONAR") ) != NULL )
+    {
+        sonar_state_init();
+        if ( IsRealCluster && sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
+        {  // Not a virtual cluster and sonar is enabled.
 
+            if (trace_settings & TRACE_INIT)
+            {
+                trace_printf("%s@%d Enabling Sonar\n", method_name, __LINE__);
+            }
+
+            MonStats = new CMonSonarStats();
+        }
+    }
+#endif
     if ( MonStats == NULL )
     {
         if (trace_settings & TRACE_INIT)
@@ -1056,10 +1143,12 @@ int main (int argc, char *argv[])
     }
 
     // Record statistics (sonar counters): monitor is busy
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->MonitorBusyIncr();
 
     snprintf(buf, sizeof(buf),
-             "[CMonitor::main], %s, Started.\n", CALL_COMP_GETVERS2(monitor));
+                 "[CMonitor::main], %s, Started! CommType: %s\n"
+                , CALL_COMP_GETVERS2(monitor), CommTypeString( CommType ));
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
        
     warmstart = (strcmp(argv[1],"WARM") == 0);
@@ -1223,12 +1312,9 @@ int main (int argc, char *argv[])
 
 
         if ( IAmIntegrating )
-             // MyNode->GetState() == State_Merging )
         {
             // This monitor is integrating to (joining) an existing cluster
             Monitor->ReIntegrate( 0 );
-
-            // This monitor is integrating to (joining) an existing cluster
             MyNode->SetPhase( Phase_Activating );
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -1288,11 +1374,11 @@ int main (int argc, char *argv[])
     }
 
     env = getenv( "SQ_USE_CPU_AFFINITY" );
-    if ( env && strcmp( env, "0" ) == 0 )
+    if ( env && strcmp( env, "1" ) == 0 )
     {   // Set flag to indicate that logical node CPU affinity is used for 
         // processes.
         // (see CNode::SetAffinity)
-        usingCpuAffinity = false;
+        usingCpuAffinity = true;
     }
 
     env = getenv( "SQ_USE_TSE_CPU_AFFINITY" );
@@ -1314,6 +1400,7 @@ int main (int argc, char *argv[])
     while (!done)
     {
         // Record statistics (sonar counters): monitor is NOT busy
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->MonitorBusyDecr();
 
         // Sleep for a maximum of next_test_delay.  Reduce
@@ -1340,6 +1427,7 @@ int main (int argc, char *argv[])
         gettimeofday(&awakenedAt, NULL);
 
         // Record statistics (sonar counters): monitor is busy
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->MonitorBusyIncr();
 
         Monitor->EnterSyncCycle();
@@ -1379,8 +1467,6 @@ int main (int argc, char *argv[])
     // shut down health check thread before shutting down reqWorker thread.
     HealthCheck.shutdownWork();
 
-    CommAccept.shutdownWork();
-
     ReqQueue.stats();
     // Stop request worker threads
     CReqWorker::shutdownWork();
@@ -1390,6 +1476,8 @@ int main (int argc, char *argv[])
 
     // Tell the LIO worker threads to exit
     SQ_theLocalIOToClient->shutdownWork();
+
+    CommAccept.shutdownWork();
 
     // Rename the monitor "port" file
     sprintf(temp_fname, "%s.bak", port_fname);
@@ -1408,6 +1496,10 @@ int main (int argc, char *argv[])
         RobSem::destroy_sem( sbDiscSem );
     }
      
+    MPI_Close_port( MyPort );
+    if (trace_settings & TRACE_INIT)
+       trace_printf("%s@%d" "- Calling MPI_Finalize()" "\n", method_name, __LINE__);
+    MPI_Finalize ();
 
     if (trace_settings & TRACE_STATS)
     {
@@ -1421,6 +1513,7 @@ int main (int argc, char *argv[])
       trace_printf("%s@%d" "- LIO Stats: almost-dead pids=%d\n",
                    method_name, __LINE__,
                    SQ_theLocalIOToClient->getAlmostDeadPids());
+      trace_printf("%s@%d" "- LIO Stats: verifierMap="  "%d" "\n", method_name, __LINE__, SQ_theLocalIOToClient->getVerifierMapCount());
     }
     delete SQ_theLocalIOToClient;
 
@@ -1429,10 +1522,12 @@ int main (int argc, char *argv[])
 
     if (trace_settings & TRACE_STATS)
     {
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->displayStats();
     }
 
     // Record statistics (sonar counters): monitor is NOT busy
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->MonitorBusyDecr();
 
     delete MonLog;

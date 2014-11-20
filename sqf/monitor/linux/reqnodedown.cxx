@@ -25,6 +25,7 @@
 #include "montrace.h"
 #include "monsonar.h"
 #include "monlogging.h"
+#include "gentrap.h"
 
 extern CMonStats *MonStats;
 extern CNode *MyNode;
@@ -63,11 +64,13 @@ void CExtNodeDownReq::performRequest()
     const char method_name[] = "CExtNodeDownReq::performRequest";
     TRACE_ENTRY;
 
-    CNode      *node = NULL;
+    CNode    *node = NULL;
+    CProcess *requester = NULL;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_nodedown_Incr();
-
+       
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -75,21 +78,52 @@ void CExtNodeDownReq::performRequest()
                      __LINE__, id_, msg_->u.request.u.down.nid);
     }
 
-    node = Nodes->GetLNode(msg_->u.request.u.down.nid)->GetNode();
-    Monitor->MarkDown( node->GetPNid(), true );
-    if (!msg_->noreply)  // client needs a reply 
+    requester = MyNode->GetProcess( pid_ );
+    if ( requester )
     {
-        CProcess *requester;
-        requester = MyNode->GetProcess( pid_ );
+        node = Nodes->GetLNode( msg_->u.request.u.down.nid )->GetNode();
+        Monitor->MarkDown( node->GetPNid(), true );
 
-        msg_->u.reply.type = ReplyType_Generic;
-        msg_->u.reply.u.generic.nid = requester ? requester->GetNid() : 0;
-        msg_->u.reply.u.generic.pid = pid_;
-        msg_->u.reply.u.generic.process_name[0] = '\0';
-        msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
+        char la_buf[MON_STRING_BUF_SIZE*2];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s], %s (%d,%d:%d) requested node down %d on Node %s (%s) \n"
+                , method_name
+                , requester->GetName()
+                , requester->GetNid()
+                , requester->GetPid()
+                , requester->GetVerifier()
+                , msg_->u.request.u.down.nid
+                , node->GetName()
+                , msg_->u.request.u.down.reason);
+        mon_log_write(MON_EXT_NODEDOWN_REQ, SQ_LOG_CRIT, la_buf); 
+        snprintf( la_buf, sizeof(la_buf)
+                , "%s (%d,%d:%d) requested node down %d on Node %s (%s) \n"
+                , requester->GetName()
+                , requester->GetNid()
+                , requester->GetPid()
+                , requester->GetVerifier()
+                , msg_->u.request.u.down.nid
+                , node->GetName()
+                , msg_->u.request.u.down.reason);
+        genSnmpTrap( la_buf );
 
-        // Send reply to requester
-        lioreply(msg_, pid_);
+        if (!msg_->noreply)  // client needs a reply 
+        {
+            msg_->u.reply.type = ReplyType_Generic;
+            msg_->u.reply.u.generic.nid = requester->GetNid();
+            msg_->u.reply.u.generic.pid = pid_;
+            msg_->u.reply.u.generic.verifier = requester->GetVerifier() ;
+            msg_->u.reply.u.generic.process_name[0] = '\0';
+            msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
+    
+            // Send reply to requester
+            lioreply(msg_, pid_);
+        }
+    }
+    else
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Can't find requester, rc=%d\n", method_name, __LINE__, MPI_ERR_NAME);
     }
 
     TRACE_EXIT;

@@ -181,3 +181,122 @@ void CMonStats::displayStats ()
 }
 
 
+#ifdef USE_SONAR
+CMonSonarStats::CMonSonarStats()
+{
+    monCounter monCounterList[] =
+        { {MONITOR_REQTYPE_ATTACH_CTR, &req_type_attach},
+          {MONITOR_REQTYPE_DUMP_CTR, &req_type_dump},
+          {MONITOR_REQTYPE_EVENT_CTR, &req_type_event},
+          {MONITOR_REQTYPE_EXIT_CTR, &req_type_exit},
+          {MONITOR_REQTYPE_GET_CTR, &req_type_get},
+          {MONITOR_REQTYPE_KILL_CTR, &req_type_kill},
+          {MONITOR_REQTYPE_MOUNT_CTR, &req_type_mount},
+          {MONITOR_REQTYPE_NEWPROCESS_CTR, &req_type_newprocess},
+          {MONITOR_REQTYPE_NODEDOWN_CTR, &req_type_nodedown},
+          {MONITOR_REQTYPE_NODEINFO_CTR, &req_type_nodeinfo},
+          {MONITOR_REQTYPE_NODEUP_CTR, &req_type_nodeup},
+          {MONITOR_REQTYPE_NOTIFY_CTR, &req_type_notify},
+          {MONITOR_REQTYPE_OPEN_CTR, &req_type_open},
+          {MONITOR_REQTYPE_PROCESSINFO_CTR, &req_type_processinfo},
+          {MONITOR_REQTYPE_PROCESSINFOCONT_CTR, &req_type_processinfocont},
+          {MONITOR_REQTYPE_SET_CTR, &req_type_set},
+          {MONITOR_REQTYPE_SHUTDOWN_CTR, &req_type_shutdown},
+          {MONITOR_REQTYPE_STARTUP_CTR, &req_type_startup},
+          {MONITOR_REQTYPE_TMLEADER_CTR, &req_type_tmleader},
+          {MONITOR_REQTYPE_TMSEQNUM_CTR, &req_type_tmseqnum},
+          {MONITOR_REQTYPE_TMSYNC_CTR, &req_type_tmsync},
+          {MONITOR_REQTYPE_ZONEINFO_CTR, &req_type_zoneinfo},
+          {MONITOR_SYNC_CYCLES_CTR, &req_sync},
+
+          {MONITOR_NOTICE_DEATH_CTR, &monitor_notice_death},
+          {MONITOR_NOTICE_NODE_UP_CTR, &monitor_notice_node_up},
+          {MONITOR_NOTICE_NODE_DOWN_CTR, &monitor_notice_node_down},
+          {MONITOR_NOTICE_REGISTRY_CHANGE_CTR, &monitor_notice_registry_change},
+
+          {MONITOR_PROCESS_OBJECTS_CTR, &monitor_process_objects},
+          {MONITOR_NOTICE_OBJECTS_CTR, &monitor_notice_objects},
+          {MONITOR_OPEN_OBJECTS_CTR, &monitor_open_objects},
+
+          {MONITOR_OBJS_REPLICATED_CTR, &monitor_objs_replicated},
+
+          {MONITOR_BARRIER_WAIT_TIME_CTR, &monitor_barrier_wait_time},
+          {MONITOR_SERVICE_TIME_CTR, &monitor_service_time},
+          {MONITOR_BUSY_CTR, &monitor_busy},
+
+          {MONITOR_LOCALIO_BUFFERS_CTR, &monitor_localio_buffers},
+          {MONITOR_LOCALIO_BUFFERSMAX_CTR, &monitor_localio_buffersmax},
+          {MONITOR_LOCALIO_BUFFERMISSES_CTR, &monitor_localio_buffermisses},
+
+          {MONITOR_LOCALIO_MESSAGEBYTES_CTR, &monitor_localio_messagebytes},
+
+          {MONITOR_REQUEST_QUEUE_CTR, &monitor_reqqueue}
+/* Monitor counters not yet in use
+          {FILE_OPEN_SERVICE_TIME_CTR, &file_open_service_time},
+          {PROCESS_CREATE_SERVICE_TIME_CTR, &process_create_service_time},
+          {MONITOR_MPI_SEND_MESSAGES_SENT_CTR, &mpi_send_messages_sent},
+          {MONITOR_MPI_SEND_BYTES_SENT_CTR, &mpi_send_bytes_sent},
+          {MONITOR_MPI_IRECV_MESSAGES_RECEIVED_CTR, &mpi_irecv_messages_received},
+          {MONITOR_MPI_IRECV_BYTES_RECEIVED_CTR, &mpi_irecv_bytes_received},
+          {MONITOR_MPI_SENDRECV_MESSAGES_SENT_CTR, &mpi_sendrecv_messages_sent},
+          {MONITOR_MPI_SENDRECV_BYTES_SENT_CTR, &mpi_sendrecv_bytes_sent},
+          {MONITOR_MPI_SENDRECV_MESSAGES_RECEIVED_CTR, &mpi_sendrecv_messages_received},
+          {MONITOR_MPI_SENDRECV_BYTES_RECEIVED_CTR, &mpi_sendrecv_bytes_received},
+          {MONITOR_LOCALIO_BUFFERSFREE_CTR, &monitor_localio_buffersfree},
+          {MONITOR_LOCALIO_MESSAGES_CTR, &monitor_localio_messages},
+*/
+        };
+    char errbuf[MON_STRING_BUF_SIZE];
+
+    char nodeName[25];
+    gethostname(nodeName, sizeof(nodeName));
+
+    // Initialize Sonar
+    sonar =  new SONARObject( SONAR_COUNTER_VERSION );
+    DWORD result = sonar->instantiate( "Monitor", nodeName,
+                                       SONAR_DEFAULT_TIMEOUT );
+    if( result != INFO_SONAR_SUCCESS )
+    {
+        sprintf(errbuf,
+                "[CMonSonar::CMonSonar], Sonar instantiate error=%d\n", result);
+        mon_log_write(MON_SONAR_INIT_1, SQ_LOG_ERR, errbuf);
+    }
+    else
+    {
+        sonar->setInstanceInfo( SONARObject::ProcessType_Monitor );
+        sonar->setInstancePid( getpid() );
+
+        // Register the Sonar counters used by the monitor
+        int numCounters = sizeof(monCounterList)/sizeof(monCounter);
+
+        for (int i=0; i<numCounters; i++)
+        {
+            result = sonar->registerCounter( monCounterList[i].counterId,
+                                             monCounterList[i].pCounter );
+            if (result != INFO_SONAR_SUCCESS )
+            {
+                sprintf(errbuf,
+                        "[CMonSonar::CMonSonar], Sonar registerCounter error=%d, counterId=%d\n",
+                        result, monCounterList[i].counterId);
+
+                mon_log_write(MON_SONAR_INIT_2, SQ_LOG_ERR, errbuf);
+
+            }
+        }
+        sonar_state_init();
+    }
+}
+
+CMonSonarStats::~CMonSonarStats()
+{
+}
+
+void CMonSonarStats::displayStats ()
+{
+}
+
+#endif
+
+// used for sonar dynamic on/off
+SONARState_t gv_sonar_state;
+

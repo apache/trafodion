@@ -58,13 +58,17 @@ int MyNid = -1;
 int MyPid = -1;
 int Event_id = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+int gv_ms_su_pid = -1;          // Local IO nid to make compatible w/ Seabed
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connection port - not used
+SB_Verif_Type  gv_ms_su_verif = -1;
+Verifier_t  MyVerifier = -1;
 int Timeout = 0;
 bool genSnmpTrapEnabled = false;
 
 class CWatchdog;
 
 CMonLog *MonLog = NULL;
+CMonLog *SnmpLog = NULL;
 CWatchdog *Watchdog = NULL;
 CProcessMonitor *ProcessMonitor = NULL;
 
@@ -283,6 +287,8 @@ void exit_process(void)
     msg->u.request.type = ReqType_Exit;
     msg->u.request.u.exit.nid = MyNid;
     msg->u.request.u.exit.pid = MyPid;
+    msg->u.request.u.exit.verifier = MyVerifier;
+    msg->u.request.u.exit.process_name[0] = 0;
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
@@ -385,6 +391,8 @@ void process_startup(int argc, char *argv[])
         msg->u.request.u.startup.os_pid = getpid ();
         msg->u.request.u.startup.event_messages = true;
         msg->u.request.u.startup.system_messages = true;
+        msg->u.request.u.startup.verifier = MyVerifier;
+        msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
         if (trace_settings & TRACE_INIT)
         {
             trace_printf( "%s@%d %s sending startup reply to monitor.\n",
@@ -536,7 +544,7 @@ void InitLocalIO( void )
 
         lnodeConfig = ClusterConfig.GetLNodeConfig( MyNid );
         pnodeConfig = lnodeConfig->GetPNodeConfig();
-        gv_ms_su_nid = MyPNID = pnodeConfig->GetPNid();
+        MyPNID = pnodeConfig->GetPNid();
     }
 
     gp_local_mon_io = new Local_IO_To_Monitor( -1 );
@@ -739,6 +747,7 @@ int main (int argc, char *argv[])
     }
 
     MonLog = new CMonLog( "wdt" );
+    SnmpLog = new CMonLog( "snmp.wdt" );
     Watchdog = new CWatchdog();
     ProcessMonitor = new CProcessMonitor();
 
@@ -746,6 +755,8 @@ int main (int argc, char *argv[])
     strcpy( MyName, argv[5] );
     gv_ms_su_nid = MyPNID = atoi(argv[2]);
     MyNid = atoi(argv[3]);
+    MyPid = atoi (argv[4]);
+    gv_ms_su_verif  = MyVerifier = atoi(argv[9]);
 
     if ( ! gp_local_mon_io )
     {
@@ -753,6 +764,11 @@ int main (int argc, char *argv[])
         assert (gp_local_mon_io);
     }
     
+    gv_ms_su_pid = MyPid;
+    gv_ms_su_verif = MyVerifier;
+    gp_local_mon_io->iv_pid = MyPid;
+    gp_local_mon_io->iv_verifier = MyVerifier;
+
     gp_local_mon_io->set_cb(localIORecvCallback, "notice");
     gp_local_mon_io->set_cb(localIORecvCallback, "event");
     gp_local_mon_io->set_cb(localIORecvCallback, "recv");

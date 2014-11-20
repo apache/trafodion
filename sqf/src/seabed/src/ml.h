@@ -26,5 +26,6 @@
 typedef SB_QL_Type SB_ML_Type;
 typedef SB_QL_Type SB_LML_Type;
 typedef SB_QL_Type SB_LLML_Type;
+typedef SB_QL_Type SB_NPVML_Type;
 
 #endif // !__SB_ML_H_

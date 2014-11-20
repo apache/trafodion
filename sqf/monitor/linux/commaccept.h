@@ -33,15 +33,17 @@ public:
     CCommAccept();
     virtual ~CCommAccept();
 
-    void processNewComm(MPI_Comm interComm);
     void commAcceptor( void );
-
+    void processNewComm( MPI_Comm interComm );
+//    void processNewSock( int sockFd );
     void start( void );
     void shutdownWork( void );
 
 private:
     struct message_def *Notice( const char *msgText );
 
+    void commAcceptorIB( void );
+    void commAcceptorSock( void );
     bool sendNodeInfo ( MPI_Comm interComm );
 
     bool shutdown_;

@@ -32,11 +32,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 #include "spxCtrl.h"
 
 MonTestUtil util;
@@ -48,6 +48,7 @@ bool tracing = false;
 const char *MyName;
 int MyRank = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 struct NodeInfo_reply_def * nodeData = NULL;
@@ -57,6 +58,7 @@ typedef struct spx_process_def {
     bool dead;
     int  nid;
     int  pid;
+    Verifier_t verifier;
     char procName[MAX_PROCESS_NAME];    // SPX process Name
     MPI_Comm comm;
 } spxProcess_t;
@@ -72,12 +74,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     if ( recv_msg->type == MsgType_ProcessDeath )
     {
         if ( tracing )
-            printf("[%s] Process death notice received for %s (%d, %d),"
+            printf("[%s] Process death notice received for %s (%d, %d:%d),"
                    " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier,
                    recv_msg->u.request.u.death.trans_id.txid[0],
                    recv_msg->u.request.u.death.trans_id.txid[1],
                    recv_msg->u.request.u.death.trans_id.txid[2],
@@ -195,17 +198,20 @@ bool SPX_test1 ()
                                         ((tracing) ? 1: 0), childArgs,
                                         spxProcess[spxProcessCount].nid,
                                         spxProcess[spxProcessCount].pid,
+                                        spxProcess[spxProcessCount].verifier,
                                         spxProcess[spxProcessCount].procName))
             {
-                printf("[%s] Started SPX process %s (%d, %d)\n", MyName,
+                printf("[%s] Started SPX process %s (%d, %d:%d)\n", MyName,
                        spxProcess[spxProcessCount].procName,
                        spxProcess[spxProcessCount].nid,
-                       spxProcess[spxProcessCount].pid);
-
+                       spxProcess[spxProcessCount].pid,
+                       spxProcess[spxProcessCount].verifier);
 
                 // Open the SPX process
-                if ( util.openProcess (spxProcess[spxProcessCount].procName, 0,
-                                       spxProcess[spxProcessCount].comm) )
+                if ( util.openProcess( spxProcess[spxProcessCount].procName
+                                     , spxProcess[spxProcessCount].verifier
+                                     , 0
+                                     , spxProcess[spxProcessCount].comm) )
                 {
                     if ( tracing ) printf ("[%s] connected to SPX process %s.\n",
                                            MyName,
@@ -260,7 +266,7 @@ bool SPX_test2 ()
 
     // Cause one SPX process to terminate
     sendbuf = CMD_END;
-    rc = MPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
+    rc = XMPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
                        &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
                        MPI_ANY_TAG, spxProcess[2].comm, &status);
 
@@ -272,7 +278,7 @@ bool SPX_test2 ()
         if ( i != 2)
         {
             sendbuf = CMD_GET_STATUS;
-            rc = MPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
+            rc = XMPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
                                &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
                                MPI_ANY_TAG, spxProcess[i].comm, &status);
             if (rc == MPI_SUCCESS)
@@ -299,17 +305,17 @@ bool SPX_test3 ()
     bool testSuccess = true;
     int nid;
     int pid;
+    Verifier_t verifier;
     char procName[25];
 
     if (util.requestNewProcess (0, ProcessType_SPX, false,
                                 (char *) "", // Name
                                 "spxProc", "", "",
                                 ((tracing) ? 1: 0), childArgs,
-                                nid, pid, procName))
+                                nid, pid, verifier, procName))
     {
-        printf("[%s] *** Error *** successfully started second SPX process %s "
-               "(%d, %d) on node 0.\n", MyName, procName, nid, pid);
-
+        printf("[%s] *** Error *** sucessfully started second SPX process %s "
+               "(%d, %d:%d) on node 0.\n", MyName, procName, nid, pid, verifier);
         testSuccess = false;
     }
     else
@@ -340,6 +346,7 @@ bool SPX_test4 ()
            // logical node.
             int nid;
             int pid;
+            Verifier_t verifier;
             char procName[25];
 
             if ( tracing )
@@ -355,9 +362,9 @@ bool SPX_test4 ()
                                         false, (char *) "", // Name
                                         "spxProc", "", "",
                                         ((tracing) ? 1: 0), childArgs,
-                                        nid, pid, procName))
+                                        nid, pid, verifier, procName))
             {
-                printf("[%s] *** Error *** successfully started second SPX "
+                printf("[%s] *** Error *** sucessfully started second SPX "
                        "process %s (%d, %d) on physical node %d / logical "
                        "node %d.\n", MyName,
                        procName, nid, pid, nodeData->node[i].pnid,
@@ -389,9 +396,6 @@ int main (int argc, char *argv[])
 {
 
     bool testSuccess = true;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
@@ -458,7 +462,7 @@ int main (int argc, char *argv[])
     {
         // Tell the SPX process to exit
         sendbuf = CMD_END;
-        rc = MPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
+        rc = XMPI_Sendrecv (&sendbuf, 1, MPI_INT, 0, clientTag,
                            &recvbuf, 1, MPI_INT, MPI_ANY_SOURCE,
                            MPI_ANY_TAG, spxProcess[i].comm, &status);
     }
@@ -468,8 +472,7 @@ int main (int argc, char *argv[])
     // tell monitor we are exiting
     util.requestExit ( );
 
-    MPI_Close_port (util.getPort());
-    MPI_Finalize ();
+    XMPI_Close_port (util.getPort());
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

@@ -526,7 +526,11 @@ SB_Export short XPROCESS_GETPAIRINFO_(SB_Phandle_Type *pp_phandle,
                 ms_util_fill_phandle_name(&lv_phandle,
                                           la_name,
                                           lv_pi.nid,
-                                          lv_pi.pid);
+                                          lv_pi.pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                         ,lv_pi.verifier
+#endif
+                                         );
                 lv_pi_ok = true;
             } else if (lv_fserr == XZFIL_ERR_NOTFOUND)
                 lv_ret = XPROC_NONEXTANT;
@@ -554,7 +558,11 @@ SB_Export short XPROCESS_GETPAIRINFO_(SB_Phandle_Type *pp_phandle,
             ms_util_fill_phandle_name(&lv_phandle,
                                       lp_name,
                                       lv_pi.nid,
-                                      lv_pi.pid);
+                                      lv_pi.pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                     ,lv_pi.verifier
+#endif
+                                     );
             if (pp_pair_length != NULL) { // out
                 *pp_pair_length = static_cast<short>(strlen(lp_name));
                 memcpy(pp_pair, lp_name, *pp_pair_length);
@@ -577,7 +585,11 @@ SB_Export short XPROCESS_GETPAIRINFO_(SB_Phandle_Type *pp_phandle,
                 ms_util_fill_phandle_name(pp_primary_phandle,
                                           lp_name,
                                           !lv_pi.backup ? lv_pi.nid : lv_pi.parent_nid,
-                                          !lv_pi.backup ? lv_pi.pid : lv_pi.parent_pid);
+                                          !lv_pi.backup ? lv_pi.pid : lv_pi.parent_pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                         ,!lv_pi.backup ? lv_pi.verifier : lv_pi.parent_verifier
+#endif
+                                         );
                 if (gv_ms_trace_params) {
                     char la_phandlet[MSG_UTIL_PHANDLE_LEN];
                     msg_util_format_phandle(la_phandlet, pp_primary_phandle);
@@ -589,7 +601,11 @@ SB_Export short XPROCESS_GETPAIRINFO_(SB_Phandle_Type *pp_phandle,
                     ms_util_fill_phandle_name(pp_backup_phandle,
                                               lp_name,
                                               !lv_pi.backup ? lv_pi.parent_nid : lv_pi.nid,
-                                              !lv_pi.backup ? lv_pi.parent_pid : lv_pi.pid);
+                                              !lv_pi.backup ? lv_pi.parent_pid : lv_pi.pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                             ,!lv_pi.backup ? lv_pi.parent_verifier : lv_pi.verifier
+#endif
+                                             );
                 else {
                     lv_status = XPROCESSHANDLE_NULLIT_(pp_backup_phandle);
                     CHK_FEIGNORE(lv_status);
@@ -614,7 +630,7 @@ SB_Export short XPROCESS_GETPAIRINFO_(SB_Phandle_Type *pp_phandle,
                     (lv_pi.pid == gv_ms_su_pid))
                     lv_ret = XPROC_PRIMARY;
                 else if ((lv_pi.parent_nid == gv_ms_su_nid) &&
-                          (lv_pi.parent_pid == gv_ms_su_pid))
+                         (lv_pi.parent_pid == gv_ms_su_pid))
                     lv_ret = XPROC_BACKUP;
                 else
                     lv_ret = XPROC_OK; // not the calling process
@@ -719,10 +735,17 @@ SB_Export short XPROCESSHANDLE_DECOMPOSE_(SB_Phandle_Type *pp_phandle,
             *pp_procname_length = static_cast<short>(lv_proclen);
     }
     if (pp_sequence_number != NULL) {
+#ifdef SQ_PHANDLE_VERIFIER
+        *pp_sequence_number = lp_phandle->iv_verifier;
+        if (gv_ms_trace_params)
+            trace_where_printf(WHERE, "sequence_number=%p(" PF64 ")\n",
+                               pfp(pp_sequence_number), *pp_sequence_number);
+#else
         if (gv_ms_trace_params)
             trace_where_printf(WHERE, "sequence_number=%p(0)\n",
                                pfp(pp_sequence_number));
         *pp_sequence_number = 0;
+#endif
     }
     if (gv_ms_trace_params)
         trace_where_printf(WHERE, "EXIT OK\n");
@@ -763,6 +786,17 @@ SB_Export short XPROCESSHANDLE_COMPARE_(SB_Phandle_Type *pp_phandle1,
     } else if ((lp_phandle1->iv_type == PH_NAMED) &&
                (lp_phandle2->iv_type == PH_NAMED)) {
         if (strcmp(lp_phandle1->ia_name, lp_phandle2->ia_name) == 0) {
+#ifdef SQ_PHANDLE_VERIFIER
+            if ((lp_phandle1->iv_nid == lp_phandle2->iv_nid) &&
+                (lp_phandle1->iv_pid == lp_phandle2->iv_pid) &&
+                (lp_phandle1->iv_verifier == lp_phandle2->iv_verifier)) {
+                lp_ret_text = "IDENTICAL, name, nid/pid/verifier match";
+                lv_ret = RET_IDENTICAL;
+            } else {
+                lp_ret_text = "PAIR, names match, nid/pid/verifier do not match";
+                lv_ret = RET_PAIR;
+            }
+#else
             if ((lp_phandle1->iv_nid == lp_phandle2->iv_nid) &&
                 (lp_phandle1->iv_pid == lp_phandle2->iv_pid)) {
                 lp_ret_text = "IDENTICAL, name, nid/pid match";
@@ -771,6 +805,7 @@ SB_Export short XPROCESSHANDLE_COMPARE_(SB_Phandle_Type *pp_phandle1,
                 lp_ret_text = "PAIR, names match, nid/pid do not match";
                 lv_ret = RET_PAIR;
             }
+#endif
         } else {
             lp_ret_text = "UNRELATED, names do not match";
             lv_ret = RET_UNRELATED;

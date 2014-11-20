@@ -40,7 +40,6 @@ SQSTATE_IC_VAR_TABLE_END(ga_ms_ic_var_test_table)
 SQSTATE_IC_VAR_TABLE_BEGIN(ga_ms_ic_var_trace_table)
     SQSTATE_IC_VAR_ENTRY(gv_ms_trace),
     SQSTATE_IC_VAR_ENTRY(gv_ms_trace_abandon),
-    SQSTATE_IC_VAR_ENTRY(gv_ms_trace_aggr),
     SQSTATE_IC_VAR_ENTRY(gv_ms_trace_alloc),
     SQSTATE_IC_VAR_ENTRY(gv_ms_trace_data),
     SQSTATE_IC_VAR_ENTRY(gv_ms_trace_data_max),

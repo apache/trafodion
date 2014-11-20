@@ -53,8 +53,12 @@ void CExtMountReq::populateRequestString( void )
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
-              "ExtReq(%s) req #=%ld requester(pid=%d)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_ );
+              "ExtReq(%s) req #=%ld requester(pid=%d) (name=%s/nid=%d/pid=%d/verifier=%d)"
+              , CReqQueue::svcReqType[reqType_], getId(), pid_
+              , msg_->u.request.u.mount.process_name
+              , msg_->u.request.u.mount.nid
+              , msg_->u.request.u.mount.pid
+              , msg_->u.request.u.mount.verifier );
     requestString_.assign( strBuf );
 }
 
@@ -68,13 +72,18 @@ void CExtMountReq::performRequest()
     CLogicalDevice *ldevice = NULL;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_mount_Incr();
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf("%s@%d request #%ld: Mount, for pid=%d\n",
-                     method_name, __LINE__, id_, pid_);
+        trace_printf( "%s@%d request #%ld: Mount, requester %s (%d, %d:%d)\n"
+                    , method_name, __LINE__, id_
+                    , msg_->u.request.u.mount.process_name
+                    , msg_->u.request.u.mount.nid
+                    , msg_->u.request.u.mount.pid
+                    , msg_->u.request.u.mount.verifier );
     }
 
     requester = MyNode->GetProcess( pid_ );

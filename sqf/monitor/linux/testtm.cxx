@@ -57,6 +57,7 @@ int MyNid = -1;
 int MyPid = -1;
 int NumNodes = 0;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 MPI_Comm Monitor;
 
@@ -108,11 +109,12 @@ pthread_mutex_t     unsolicited_mutex;
 pthread_cond_t      unsolicited_cv;
 bool                unsolicited_signaled = false;
 
-struct sync_buf_def {
+struct sync_buf_def
+{
     int seq_number;
     int length;
     char string[132];
-};
+} __attribute__((__may_alias__));
 
 queue<struct message_def> unsolicited_queue; // unsolicited msg queue
 
@@ -491,11 +493,14 @@ int get_tm_processes( int tmCount )
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = MyNid;
     msg->u.request.u.process_info.pid = MyPid;
+    msg->u.request.u.process_info.verifier = -1;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = -1;
     msg->u.request.u.process_info.target_pid = -1;
+    msg->u.request.u.process_info.target_verifier = -1;
     msg->u.request.u.process_info.type = ProcessType_DTM;
 
-    msg->u.request.u.process_info.process_name[0] = 0;
+    msg->u.request.u.process_info.target_process_name[0] = 0;
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
     status.MPI_TAG = msg->reply_tag;
@@ -720,6 +725,7 @@ void process_startup (int argc, char *argv[])
 #endif
     MyNid = atoi(argv[3]);
     MyPid = atoi(argv[4]);
+    gv_ms_su_verif  = atoi(argv[9]);
     trace_printf ("[%s] process_startup, MyNid: %d, lio: %p\n", 
              MyName, MyNid, (void *)gp_local_mon_io );
 
@@ -749,6 +755,8 @@ void process_startup (int argc, char *argv[])
         msg->u.request.u.startup.os_pid = getpid ();
         msg->u.request.u.startup.event_messages = true;
         msg->u.request.u.startup.system_messages = true;
+        msg->u.request.u.startup.verifier = gv_ms_su_verif;
+        msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
         trace_printf ("[%s] sending startup reply to monitor.\n", argv[5]);
         fflush (stdout);
 

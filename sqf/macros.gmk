@@ -28,14 +28,17 @@ ifndef USE_SINGLE_THREADED_MPI
 endif
 
     GCC_TOOL_ROOT     ?= /usr
-  CC32             = $(GCC_TOOL_ROOT)/bin/gcc $(SCOPEFLAGS)
-  CXX32            = $(GCC_TOOL_ROOT)/bin/g++ $(SCOPEFLAGS)
+  ifeq ($(SQ_PHANDLE_VERIFIER),1)
+    PHVERIF		= -DSQ_PHANDLE_VERIFIER
+  endif
+  CC32             = $(GCC_TOOL_ROOT)/bin/gcc $(SCOPEFLAGS) $(PHVERIF)
+  CXX32            = $(GCC_TOOL_ROOT)/bin/g++ $(SCOPEFLAGS) $(PHVERIF)
   CC64             = $(CC32)      # for gcc the toolsets are the same
   CXX64            = $(CXX32)
   GCCMODE32        = -m32
   GCCMODE64        = -m64
-  OCC32            = $(GCC_TOOL_ROOT)/bin/gcc $(SCOPEFLAGS)
-  OCXX32           = $(GCC_TOOL_ROOT)/bin/g++ $(SCOPEFLAGS)
+  OCC32            = $(GCC_TOOL_ROOT)/bin/gcc $(SCOPEFLAGS) $(PHVERIF)
+  OCXX32           = $(GCC_TOOL_ROOT)/bin/g++ $(SCOPEFLAGS) $(PHVERIF)
   OCC64            = $(OCC32)
   OCXX64           = $(OCXX32)
   SCOPEFLAGS       = $(CLOSED_SOURCE_GPP_OPTS)

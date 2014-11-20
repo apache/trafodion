@@ -82,6 +82,7 @@ void CExtPNodeInfoReq::performRequest()
     }
     
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_nodeinfo_Incr();
 
     // Trace info about request

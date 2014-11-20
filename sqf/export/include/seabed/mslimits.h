@@ -35,6 +35,7 @@ enum { MS_MON_MAX_PROC_LIST      =   256 };
 enum { MS_MON_MAX_PROCESS_NAME   =    32 };
 enum { MS_MON_MAX_PROCESS_PATH   =   256 };
 enum { MS_MON_MAX_PROCESSOR_NAME =   128 };
+enum { MS_MON_MAX_REASON_TEXT    =   256 };
 enum { MS_MON_MAX_SYNC_DATA      =  4096 };
 enum { MS_MON_MAX_STFSD_DATA     = 32767 };
 enum { MS_MON_MAX_VALUE_SIZE     =   512 };

@@ -32,7 +32,6 @@
 
 #include <sys/stat.h>
 
-
 #include "seabed/debug.h"
 #include "seabed/trace.h"
 
@@ -43,10 +42,7 @@
 enum { MAX_ADDR = 400 };
 enum { MAX_BT   = 25 };
 
-
 typedef char Addr_Type[MAX_BT][MAX_ADDR];
-
-
 
 static bool debug_exec_exists(char *pp_exec) {
     char         la_fname[PATH_MAX];
@@ -186,7 +182,6 @@ static void debug_th(int pv_sig) {
         abort(); // in case execvp doesn't work - can't use SB_util_abort
     }
 }
-
 
 //
 // Pupose: backtrace

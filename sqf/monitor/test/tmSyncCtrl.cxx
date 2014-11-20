@@ -22,6 +22,7 @@
 
 // Test TM sync requests with and without collisions
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <queue>
@@ -30,6 +31,7 @@ using namespace std;
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 #include "tmSyncCtrl.h"
 
 MonTestUtil util;
@@ -42,6 +44,7 @@ bool realCluster = false;
 const char *MyName;
 int MyRank = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 struct NodeInfo_reply_def * nodeData = NULL;
@@ -69,6 +72,14 @@ typedef struct
 const int MAX_TEST_NODES = 6;
 
 list<struct message_def> deathMsgs;
+list<struct message_def> nodeDownMsgs;
+
+pthread_mutex_t     notice_mutex;
+pthread_cond_t      notice_cv;
+bool                notice_signaled = false;
+
+bool                processDied = false;
+bool                nodeDown = false;
 
 // "transaction manager" process info.  Indexed by node number.
 tmProcess_t tmProcess[MAX_TEST_NODES] = {
@@ -345,6 +356,82 @@ expectedResults_t expectedVirtualResults[MAX_TESTS+1][MAX_TEST_NODES] =
         }
     };
 
+void lock_notice()
+{
+    int rc = pthread_mutex_lock(&notice_mutex);
+
+    if (rc != 0)
+    {
+        printf("[%s] - Unable to lock notice mutex: %s (%d)\n",
+                     MyName, strerror(errno), errno);
+    }
+}
+
+
+void unlock_notice()
+{
+    int rc = pthread_mutex_unlock(&notice_mutex);
+
+    if (rc != 0)
+    {
+        printf("[%s] - Unable to unlock notice mutex: %s (%d)\n",
+                     MyName, strerror(errno), errno);
+    }
+}
+
+int signal_notice() 
+{
+    int rc = 0;
+
+    notice_signaled = true;
+    rc = pthread_cond_broadcast(&notice_cv);
+    if ( rc != 0) 
+    {
+        errno = rc;
+        printf("[%s] - Unable to signal notice: %s (%d)\n",
+                     MyName, strerror(errno), errno);
+        rc = -1;
+    }
+
+    return( rc );
+}
+
+int wait_on_notice( void ) 
+{
+    int rc = 0;
+
+    if ( ! notice_signaled ) 
+    {
+        rc = pthread_cond_wait(&notice_cv, &notice_mutex);
+        if ( rc != 0) 
+        {
+            errno = rc;
+            printf("[%s] - Unable to signal notice: %s (%d)\n",
+                         MyName, strerror(errno), errno);
+            rc = -1;
+        }
+    }
+    notice_signaled = false;
+
+    return( rc );
+}
+
+bool wait_for_notice()
+{
+    int rc = -1;
+    printf ("[%s] Waiting for notice.\n", MyName);
+
+    lock_notice();
+    rc = wait_on_notice();
+    if ( rc == -1 )
+    {
+        exit( 1);
+    }
+    unlock_notice();
+
+    return ( rc == 0 );
+}
+
 // Routine for handling notices:
 //   NodeDown, NodeUp, ProcessDeath, Shutdown, TmSyncAbort, TmSyncCommit
 void recv_notice_msg(struct message_def *recv_msg, int )
@@ -353,12 +440,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
         {
-            printf("[%s] Process death notice received for %s (%d, %d),"
+            printf("[%s] Process death notice received for %s (%d, %d:%d),"
                    " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier,
                    recv_msg->u.request.u.death.trans_id.txid[0],
                    recv_msg->u.request.u.death.trans_id.txid[1],
                    recv_msg->u.request.u.death.trans_id.txid[2],
@@ -366,18 +454,30 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                    recv_msg->u.request.u.death.aborted);
         }
         deathMsgs.push_back( *recv_msg );
+        processDied = true;
+        
     }
     else if ( recv_msg->type == MsgType_NodeDown )
     {
-        printf("[%s] Node %d (%s) is DOWN.\n", MyName,
+        printf("[%s] Node DOWN notice received for %d (%s)\n", MyName,
                recv_msg->u.request.u.down.nid,
                recv_msg->u.request.u.down.node_name);
+        nodeDownMsgs.push_back( *recv_msg );
+        nodeDown = true;
     }
     else
     {
         printf("[%s] unexpected notice, type=%s\n", MyName,
                MessageTypeString( recv_msg->type));
     }
+
+    lock_notice();
+    int rc = signal_notice();
+    if ( rc == -1 )
+    {
+        exit( 1);
+    }
+    unlock_notice();
 }
 
 
@@ -466,17 +566,17 @@ bool initChildComm ( )
     bool result = true;
     MPI_Comm comm;
 
-    rc = MPI_Comm_accept( util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
+    rc = XMPI_Comm_accept( util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
                           &comm );
 
     if (rc == MPI_SUCCESS)
     {
-        MPI_Comm_set_errhandler (comm, MPI_ERRORS_RETURN);
+        XMPI_Comm_set_errhandler (comm, MPI_ERRORS_RETURN);
 
         MPI_Status status;
         tmSyncResults_t recvBuf;
 
-        rc = MPI_Recv (&recvBuf, sizeof(tmSyncResults_t)/sizeof(int),
+        rc = XMPI_Recv (&recvBuf, sizeof(tmSyncResults_t)/sizeof(int),
                        MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                        comm, &status);
         if (rc == MPI_SUCCESS)
@@ -491,13 +591,13 @@ bool initChildComm ( )
         }
         else
         {
-            printf ("[%s] MPI_Recv failed for child, rc=%d\n", MyName, rc);
+            printf ("[%s] XMPI_Recv failed for child, rc=%d\n", MyName, rc);
             result = false;
         }
     }
     else
     {
-        printf ("[%s] MPI_Comm_accept failed, rc=%d\n", MyName, rc);
+        printf ("[%s] XMPI_Comm_accept failed, rc=%d\n", MyName, rc);
         result = false;
     }
 
@@ -511,13 +611,13 @@ void initChildRecv()
 
     for (int i = 0; i < MAX_TEST_NODES; ++i)
     {
-        rc = MPI_Irecv(&tmProcess[i].results, sizeof(tmSyncResults_t)/sizeof(int),
+        rc = XMPI_Irecv(&tmProcess[i].results, sizeof(tmSyncResults_t)/sizeof(int),
                        MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                        tmProcess[i].comm, &workerReq[i] );
 
         if (rc != MPI_SUCCESS)
         {
-            printf ("[%s] MPI_Irecv failed for tmProcess #%d, rc=%d\n", MyName,
+            printf ("[%s] XMPI_Irecv failed for tmProcess #%d, rc=%d\n", MyName,
                     i, rc);
         }
     }
@@ -535,12 +635,12 @@ void checkChildComm ( )
     do
     {
         outcount = 0;
-        rc = MPI_Testsome(MAX_TEST_NODES, workerReq, &outcount, completedOp,
+        rc = XMPI_Testsome(MAX_TEST_NODES, workerReq, &outcount, completedOp,
                           completedStatus);
         MPI_Error_class(rc, &errClass);
 
         if (errClass == MPI_SUCCESS && outcount == MPI_UNDEFINED)
-        {   // MPI_Testsome returned no results
+        {   // XMPI_Testsome returned no results
             break;
         }
         else if (errClass == MPI_SUCCESS)
@@ -590,7 +690,7 @@ void checkChildComm ( )
             char buf[200];
             int count;
             MPI_Error_string(rc, buf, &count);
-            printf ("[%s] MPI_Testsome failed, rc=%d (%s), outcount=%d, errClass=%d\n", MyName, rc, buf, outcount, errClass);
+            printf ("[%s] XMPI_Testsome failed, rc=%d (%s), outcount=%d, errClass=%d\n", MyName, rc, buf, outcount, errClass);
 
             break;
         }
@@ -603,6 +703,7 @@ bool createTMProcess ( int tmNum )
 {
     int nid;
     int pid;
+    Verifier_t verifier;
     char procName[25];
     char *tmSyncTestArgs[1] = {(char *) "-t"};
     bool result = false;
@@ -613,10 +714,10 @@ bool createTMProcess ( int tmNum )
                                 tmProcess[tmNum].procName,
                                 "tmSyncTest", "", tmProcess[tmNum].outFile,
                                 ((tracing) ? 1: 0), tmSyncTestArgs, nid, pid,
-                                procName) )
+                                verifier, procName) )
     {
-        printf("[%s] created process %s (%d, %d), output file %s\n",
-               MyName, procName, nid, pid, tmProcess[tmNum].outFile);
+        printf("[%s] created process %s (%d, %d:%d), output file %s\n",
+               MyName, procName, nid, pid,verifier, tmProcess[tmNum].outFile);
 
         if ( initChildComm ( ) )
         {
@@ -665,10 +766,13 @@ bool getTmProcStatus( int expectedTms )
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = util.getNid();
     msg->u.request.u.process_info.pid = util.getPid();
+    msg->u.request.u.process_info.verifier = util.getVerifier();
+    msg->u.request.u.process_info.process_name[0] = '\0';
     msg->u.request.u.process_info.target_nid = -1;
     msg->u.request.u.process_info.target_pid = -1;
+    msg->u.request.u.process_info.target_verifier = -1;
     msg->u.request.u.process_info.type = ProcessType_DTM;
-    msg->u.request.u.process_info.process_name[0] = '\0';
+    msg->u.request.u.process_info.target_process_name[0] = '\0';
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
@@ -757,7 +861,7 @@ bool doTmSyncTest ( int test )
             printf("[%s] sending event %d to all DTM processes.\n",
                    MyName, test);
         }
-        util.requestSendEvent(-1, -1, ProcessType_DTM, test, "");
+        util.requestSendEvent(-1, -1, -1, "", ProcessType_DTM, test, "");
 
         int retries = 0;
         // temp for debugging
@@ -781,18 +885,49 @@ bool doTmSyncTest ( int test )
         }
 
 
-        struct message_def msg;
-        while (!deathMsgs.empty())
+        if ( test == 7  || test == 10 )
         {
-            msg = deathMsgs.front();
-            deathMsgs.pop_front();
-            if ( tracing )
+            struct message_def msg;
+            fflush (stdout);
+            if ( !processDied )
             {
-                printf("[%s] tmProcess #%d is down\n", MyName,
-                       msg.u.request.u.death.nid);
+                printf("[%s] Waiting for process death.\n", MyName);
+                if( !wait_for_notice() )
+                {
+                    printf("[%s] Failed to receive notice! Aborting\n",MyName);
+                }
             }
+            while (!deathMsgs.empty())
+            {
+                msg = deathMsgs.front();
+                deathMsgs.pop_front();
+                if ( tracing )
+                {
+                    printf("[%s] tmProcess #%d is down\n", MyName,
+                           msg.u.request.u.death.nid);
+                }
 
-            tmProcess[msg.u.request.u.death.nid].state = Down;
+                tmProcess[msg.u.request.u.death.nid].state = Down;
+            }
+            if ( !nodeDown )
+            {
+                printf("[%s] Waiting for Node DOWN.\n", MyName);
+                if( !wait_for_notice() )
+                {
+                    printf("[%s] Failed to receive notice! Aborting\n",MyName);
+                }
+            }
+            while (!nodeDownMsgs.empty())
+            {
+                msg = nodeDownMsgs.front();
+                nodeDownMsgs.pop_front();
+                if ( tracing )
+                {
+                    printf("[%s] Node %d (%s) is DOWN.\n", MyName, 
+                           msg.u.request.u.down.nid,
+                           msg.u.request.u.down.node_name);
+                }
+            }
         }
 
         for (int i = 0; i < MAX_TEST_NODES; ++i)
@@ -843,13 +978,10 @@ bool doTmSyncTest ( int test )
 
 int main (int argc, char *argv[])
 {
-    int MyRank = -1;
     bool testSuccess;
 
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
-    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-    MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
+    XMPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    XMPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
@@ -858,6 +990,14 @@ int main (int argc, char *argv[])
     util.InitLocalIO( );
     assert (gp_local_mon_io);
 
+    int rc = pthread_mutex_init( &notice_mutex, NULL );
+    if (rc)
+    {
+        printf("[%s] Error initializing notice mutex: %s (%d)\n",
+                     MyName, strerror(errno), errno);
+        exit(1);
+    }
+    
     // Set local io callback function for "notices"
     gp_local_mon_io->set_cb(recv_notice_msg, "notice");
 
@@ -1048,8 +1188,7 @@ int main (int argc, char *argv[])
 
     util.requestShutdown ( ShutdownLevel_Normal );
 
-    MPI_Close_port (util.getPort());
-    MPI_Finalize ();
+    XMPI_Close_port (util.getPort());
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

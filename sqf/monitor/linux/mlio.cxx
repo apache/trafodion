@@ -270,6 +270,7 @@ void SQ_LocalIOToClient::nudgeNotifier ( void )
 void 
 SQ_LocalIOToClient::putOnNoticeQueue( 
   int                osPID, 
+  Verifier_t         verifier,
   struct message_def *notice,
   bcastPids_t        *bcastPids
 )
@@ -285,6 +286,7 @@ SQ_LocalIOToClient::putOnNoticeQueue(
     PendingNotice pn;
     pn.msg = notice;
     pn.pid = osPID;
+    pn.verifier = verifier;
     pn.bcastPids = bcastPids;
 
     // Protect access to pending notice data structure during modification.
@@ -408,6 +410,7 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
 
     msgSize = getSizeOfMsg( pn.msg );
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->localio_messagebytes(msgSize);
 
     if ( msgSize > sizeof ( message_def ) )
@@ -429,24 +432,26 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
             // Verify that each process in the broadcast list is still
             // alive.  Remove any that are not alive from the
             // broadcast list.
-            int pid;
+            pidVerifier_t pv;
             for (bcastPids_t::const_iterator it = bcastPids->begin();
                  it != bcastPids->end();)
             {
-                pid = *it;
+                pv.pnv = *it;
                 ++it;
 
-               if (kill((pid_t)pid,0) == -1 && errno == ESRCH) 
+                if (kill((pid_t)pv.pv.pid,0) == -1 && errno == ESRCH) 
                 {
                     if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
                         trace_printf( "%s@%d No process associated with "
                                       "notice, decrementing shared buffer, "
-                                      "pid=%d, idx=%d\n",
-                                      method_name, __LINE__, pid,
-                                      msg->trailer.index );
+                                      "pid=%d:%d, idx=%d\n"
+                                    , method_name, __LINE__
+                                    , pv.pv.pid
+                                    , pv.pv.verifier
+                                    , msg->trailer.index );
                     // Target process no longer exists so remove it from
                     // the list of pids receiving this notice.
-                    bcastPids->erase ( pid );
+                    bcastPids->erase ( pv.pnv );
                 }
             }
 
@@ -455,9 +460,10 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
 
                 if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
                     trace_printf( "%s@%d broadcasting notice to %d processes"
-                                  " using local io buffer=%d\n",
-                                  method_name, __LINE__, (int)bcastPids->size(),
-                                  msg->trailer.index);
+                                  " using local io buffer=%d\n"
+                                , method_name, __LINE__
+                                , (int)bcastPids->size()
+                                , msg->trailer.index);
 
                 bcastPids_t bcastPidsCopy;
                 // Use a copy of the broadcast pid list to send control
@@ -491,7 +497,21 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
                 // broadcast clients.
                 CNoticeMsg *       noticeMsg;
                 int msgIndex = msg->trailer.index;
-                noticeMsg = new CNoticeMsg ( msgIndex, msg, pn.pid, bcastPids );
+
+                if (trace_settings & TRACE_NOTICE_DETAIL)
+                {
+                    trace_printf( "%s@%d Creating notice message: index=%d, pid=%d, verifier=%d\n"
+                                , method_name, __LINE__
+                                , msgIndex
+                                , pn.pid
+                                , pn.verifier );
+                }
+
+                noticeMsg = new CNoticeMsg( msgIndex
+                                          , msg
+                                          , pn.pid
+                                          , pn.verifier
+                                          , bcastPids );
                 manageNotice ( msgIndex, noticeMsg );
 
                 // Notify all processes in the broadcast pid list that
@@ -499,24 +519,24 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
                 for (bcastPids_t::const_iterator it = bcastPidsCopy.begin();
                      it != bcastPidsCopy.end();)
                 {
-                    pid = *it;
+                    pv.pnv = *it;
                     ++it;
 
                     if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
-                        trace_printf( "%s@%d Sending notice to pid=%d\n",
-                                      method_name, __LINE__, pid );
+                        trace_printf( "%s@%d Sending notice to pid=%d:%d\n",
+                                      method_name, __LINE__, pv.pv.pid, pv.pv.verifier );
 
                     // send a notice ready control message to the client
-                    rc = sendCtlMsg( pid, MC_NoticeReady, msg->trailer.index );
+                    rc = sendCtlMsg( pv.pv.pid, MC_NoticeReady, msg->trailer.index );
                     if ( rc )
                     {
                         if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
-                            trace_printf( "%s@%d failed broadcast send to target process for notice, pid=%d\n",
-                                          method_name, __LINE__, pid);
+                            trace_printf( "%s@%d failed broadcast send to target process for notice, pid=%d:%d\n",
+                                          method_name, __LINE__, pv.pv.pid, pv.pv.verifier );
                         // Could not send the notice to the target process
                         // so remove it from the list of pids receiving
                         // the notice.
-                        decrNoticeMsgRef ( msgIndex, pid);
+                        decrNoticeMsgRef ( msgIndex, pv.pv.pid, pv.pv.verifier );
                     }
                 }
             }
@@ -559,22 +579,35 @@ void SQ_LocalIOToClient::sendNotice(SharedMsgDef *msg, PendingNotice &pn)
             // Add a notice message object to the set of those
             // being managed by the monitor.
             CNoticeMsg *       noticeMsg;
-            noticeMsg = new CNoticeMsg ( msg->trailer.index, msg, pn.pid,
-                                         NULL );
+
+            if (trace_settings & TRACE_NOTICE_DETAIL)
+            {
+                trace_printf( "%s@%d Creating notice message: index=%d, pid=%d, verifier=%d\n"
+                            , method_name, __LINE__
+                            , msg->trailer.index
+                            , pn.pid
+                            , pn.verifier );
+            }
+
+            noticeMsg = new CNoticeMsg( msg->trailer.index
+                                      , msg
+                                      , pn.pid
+                                      , pn.verifier
+                                      , NULL );
             manageNotice ( msg->trailer.index, noticeMsg );
  
             if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
             {
-                trace_printf( "%s@%d Sending notice to process %d\n",
-                              method_name, __LINE__, pn.pid );
+                trace_printf( "%s@%d Sending notice to process %d:%d\n",
+                              method_name, __LINE__, pn.pid, pn.verifier );
             }
 
             rc = sendCtlMsg( pn.pid, MC_NoticeReady, msg->trailer.index );
             if ( rc )
             {   
                 if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
-                    trace_printf( "%s@%d Failed sending notice to process %d\n",
-                                  method_name, __LINE__, pn.pid);
+                    trace_printf( "%s@%d Failed sending notice to process %d:%d\n",
+                                  method_name, __LINE__, pn.pid, pn.verifier);
                 // Could not send the notice to the target process
                 noticeCompleted ( msg->trailer.index );
                 // Return shared buffer to free pool
@@ -614,11 +647,11 @@ void SQ_LocalIOToClient::handleSSMPNotices()
                     PendingNotice pn;
                     pn.msg = notice;
                     pn.pid = ssmProc->GetPid();
+                    pn.verifier = ssmProc->GetVerifier();
                     pn.bcastPids = NULL;
 
                     // try to acquire a client buffer
-                    msg = (SharedMsgDef *) acquireMsg( pn.pid );
-
+                    msg = (SharedMsgDef *) acquireMsg( pn.pid, pn.verifier );
                     if (msg)
                     {
                         // deliver notice
@@ -687,8 +720,7 @@ void SQ_LocalIOToClient::processNotices() throw()
         pn = pendingNotices_.front( );
 
         // try to acquire a client buffer
-        msg = (SharedMsgDef *) acquireMsg( pn.pid );
-
+        msg = (SharedMsgDef *) acquireMsg( pn.pid, pn.verifier );
         if (msg)
         {
             pendingNotices_.pop_front( );
@@ -768,19 +800,28 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
       trace_printf("%s@%d" " got ctl msg: type=%d(%s), value=0x%x, pid=%d, idx=%d, trailer.idx=%d\n", method_name, __LINE__, type, type_str, siginfo->si_int, siginfo->si_pid, cidx, cmsg->trailer.index);
   }
 
-  long msgSize = getSizeOfRequest( msg );
   // Record statistics (sonar counters)
+  long msgSize = getSizeOfRequest( msg );
+  if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
      MonStats->localio_messagebytes(msgSize);
 
   switch( type )
   {
     case MC_NoticeClear:
-      if (trace_settings & TRACE_NOTICE_DETAIL)
-        trace_printf("%s@%d" " Got Notice Clear from client, pid=%d, buf pid=%d, idx=%d, cidx=%d\n", method_name, __LINE__, siginfo->si_pid, cmsg->trailer.OSPid, cmsg->trailer.index, cidx);
+      if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
+        trace_printf( "%s@%d" " Got Notice Clear from client, si_pid=%d, buf pid=%d, buf verifier=%d, idx=%d, cidx=%d\n"
+                    , method_name, __LINE__
+                    , siginfo->si_pid
+                    , cmsg->trailer.OSPid
+                    , cmsg->trailer.verifier
+                    , cmsg->trailer.index
+                    , cidx);
 
-      if (!decrNoticeMsgRef ( cmsg->trailer.index, siginfo->si_pid ))
+      if (!decrNoticeMsgRef( cmsg->trailer.index
+                           , siginfo->si_pid
+                           , cmsg->trailer.verifier ))
       {
-          if (trace_settings & TRACE_NOTICE)
+          if (trace_settings & (TRACE_NOTICE | TRACE_NOTICE_DETAIL))
           { // Unexpectedly, could not find notice associated with the buffer
               trace_printf("%s@%d Got notice clear but could not locate "
                            "associated notice, idx=%d\n", method_name,
@@ -794,10 +835,16 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
     case MC_AttachStartup:
     {
       int pid = cmsg->trailer.OSPid;
+      Verifier_t verifier = cmsg->trailer.verifier;
 
       if (trace_settings & (TRACE_MLIO_DETAIL | TRACE_REQUEST_DETAIL))
       {
-          trace_printf("%s@%d Got %s from client, pid=%d, si_pid=%d\n", method_name, __LINE__, (type == MC_SReady ? "message" : "Attach Startup"), pid, siginfo->si_pid);
+          trace_printf( "%s@%d Got %s from client, pid=%d, verifier=%d, si_pid=%d\n"
+                      , method_name, __LINE__
+                      , (type == MC_SReady ? "message" : "Attach Startup")
+                      , pid
+                      , verifier
+                      , siginfo->si_pid);
       }
       assert( msg );
 
@@ -816,6 +863,7 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
               msg->u.reply.type = ReplyType_Startup;
               msg->u.reply.u.startup_info.nid = -1;
               msg->u.reply.u.startup_info.pid = -1;
+              msg->u.reply.u.startup_info.verifier = -1;
               msg->u.reply.u.startup_info.process_name[0] = '\0';
               msg->u.reply.u.startup_info.return_code = MPI_ERR_OP;
           }
@@ -824,6 +872,7 @@ SQ_LocalIOToClient::processLocalIO( siginfo_t *siginfo )
               msg->u.reply.type = ReplyType_Generic;
               msg->u.reply.u.generic.nid = -1;
               msg->u.reply.u.generic.pid = -1;
+              msg->u.reply.u.generic.verifier = -1;
               msg->u.reply.u.generic.process_name[0] = '\0';
               msg->u.reply.u.generic.return_code = MPI_ERR_OP;
           }
@@ -898,12 +947,13 @@ serialRequestThread( void * )
     }
 
     // Record statistics (sonar counters): monitor is busy
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->MonitorBusyIncr();
 
     // Setup signal handling
     sigemptyset(&sig_set);
     sigaddset(&sig_set, SQ_LIO_SIGNAL_REQUEST_REPLY);
-    sigaddset(&sig_set, SIGWINCH);
+    sigaddset(&sig_set, SIGUSR1);
 
     if (trace_settings & TRACE_MLIO)
        trace_printf("%s@%d" " Thread started, shutdown=%d\n", method_name, __LINE__, SQ_theLocalIOToClient->isShutdown());
@@ -912,12 +962,14 @@ serialRequestThread( void * )
     while (!SQ_theLocalIOToClient->isShutdown()) 
     {
         // Record statistics (sonar counters): monitor is NOT busy
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->MonitorBusyDecr();
 
         // Wait for a request to arrive or for shutdown to be signaled.
         sig = sigwaitinfo ( &sig_set, &sig_info );
 
         // Record statistics (sonar counters): monitor is busy
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->MonitorBusyIncr();
 
         if (sig == -1)
@@ -931,7 +983,7 @@ serialRequestThread( void * )
             }
             assert(err == EAGAIN || err == EINTR);
         }
-        else if (!SQ_theLocalIOToClient->isShutdown() && sig != SIGWINCH )
+        else if (!SQ_theLocalIOToClient->isShutdown() && sig != SIGUSR1 )
         {
             if (trace_settings & TRACE_MLIO_DETAIL)
                 trace_printf("%s@%d got signal: %d, OSpid: %d, uid: %d, "
@@ -944,6 +996,7 @@ serialRequestThread( void * )
 
 
     // Record statistics (sonar counters): monitor is NOT busy
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->MonitorBusyDecr();
 
     if (trace_settings & TRACE_MLIO)
@@ -1004,10 +1057,10 @@ lioBufCleanupThread( void * )
     if (trace_settings & TRACE_MLIO)
        trace_printf("%s@%d Thread started\n", method_name, __LINE__);
 
-    // Mask all allowed signals except SIGWINCH and SIGPROF
+    // Mask all allowed signals except SIGUSR1 and SIGPROF
     sigset_t              mask;
     sigfillset(&mask);
-    sigdelset(&mask, SIGWINCH);
+    sigdelset(&mask, SIGUSR1);
     sigdelset(&mask, SIGPROF); // allows profiling such as google profiler
 
     int rc = pthread_sigmask(SIG_SETMASK, &mask, NULL);
@@ -1020,7 +1073,7 @@ lioBufCleanupThread( void * )
 
     sigset_t          sig_set;
     sigemptyset(&sig_set);
-    sigaddset(&sig_set, SIGWINCH);
+    sigaddset(&sig_set, SIGUSR1);
 
     // until there is a monitor shutdown
     while (!SQ_theLocalIOToClient->isShutdown()) 
@@ -1327,7 +1380,7 @@ SQ_LocalIOToClient::SQ_LocalIOToClient(int nid)
 
 
   if (trace_settings & TRACE_INIT)
-     trace_printf("%s@%d" " - Exit" "\n", method_name, __LINE__);
+     trace_printf("%s@%d" " - Created shared memory (cmid=%d) and message queue (qid=%d)\n", method_name, __LINE__, cmid, qid );
 }
 
 
@@ -1394,11 +1447,13 @@ SQ_LocalIOToClient::~SQ_LocalIOToClient()
     const char method_name[] = "SQ_LocalIOToClient::~SQ_LocalIOToClient";
     TRACE_ENTRY;
 
+    int rc;
+    
     if (trace_settings & TRACE_INIT)
-       trace_printf("%s@%d" " removing shared memory and message queue" "\n", method_name, __LINE__);
+       trace_printf("%s@%d" " removing shared memory (cmid=%d) and message queue (qid=%d)\n", method_name, __LINE__, cmid, qid );
 
     // remove shared memory
-    int rc = shmctl( cmid, IPC_RMID, NULL );
+    rc = shmctl( cmid, IPC_RMID, NULL );
     if (rc)
     {
         int err = errno;
@@ -1406,7 +1461,7 @@ SQ_LocalIOToClient::~SQ_LocalIOToClient()
         sprintf(la_buf, "[%s], Error= Can't remove shared memory segment! - errno=%d (%s)\n", method_name, err, strerror(err));
         mon_log_write(MON_MLIO_DESTRUCT_1, SQ_LOG_ERR, la_buf);
     }
-    
+
     rc = msgctl( qid, IPC_RMID, NULL );
     if (rc)
     {
@@ -1447,7 +1502,7 @@ void SQ_LocalIOToClient::msgQueueStats( void )
 
 // get a client buffer from the available pool
 struct message_def *
-SQ_LocalIOToClient::acquireMsg( int pid )
+SQ_LocalIOToClient::acquireMsg( int pid, Verifier_t verifier )
 {
     struct message_def *msg = NULL;
     struct msqid_ds  mds;
@@ -1473,6 +1528,7 @@ SQ_LocalIOToClient::acquireMsg( int pid )
             memset( &shm->trailer, 0, sizeof( shm->trailer ) );
             shm->trailer.index = cbi.index;
             shm->trailer.OSPid = pid;
+            shm->trailer.verifier = verifier;
             shm->trailer.bufInUse = getpid();
             clock_gettime(CLOCK_REALTIME, &shm->trailer.timestamp);
             msg = &shm->msg;
@@ -1481,8 +1537,10 @@ SQ_LocalIOToClient::acquireMsg( int pid )
             __sync_fetch_and_add( &acquiredBufferCount, 1 );
 
             // Record statistics (sonar counters)
+            if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                MonStats->LocalIOBuffersIncr();
             if (acquiredBufferCount > acquiredBufferCountMax) {
+                if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                    MonStats->LocalIOBuffersMaxSet(acquiredBufferCount);
             }
 
@@ -1500,6 +1558,7 @@ SQ_LocalIOToClient::acquireMsg( int pid )
     else
     {
         // Record statistics (sonar counter)
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->LocalIOBufferMissesIncr();
 
         missedBufferCount++;
@@ -1527,7 +1586,7 @@ SQ_LocalIOToClient::acquireMsg( int pid )
     return msg;
 }
 
-bool SQ_LocalIOToClient::decrNoticeMsgRef ( int bufIndex, int pid )
+bool SQ_LocalIOToClient::decrNoticeMsgRef ( int bufIndex, int pid, Verifier_t verifier )
 {
     const char method_name[] = "SQ_LocalIOToClient::decrRef";
     TRACE_ENTRY;
@@ -1552,10 +1611,19 @@ bool SQ_LocalIOToClient::decrNoticeMsgRef ( int bufIndex, int pid )
         // Indicate that the given bufIndex holds a monitor notice
         foundNotice = true;
 
-        if ( noticeMsg->clientDone ( pid ) == 0 )
+        if ( noticeMsg->clientDone( pid, verifier ) == 0 )
         {   // Remove notice from the map
             noticeMap_.erase( it );
 
+            if (trace_settings & TRACE_NOTICE_DETAIL)
+            {
+                trace_printf( "%s@%d Removing notice message map entry: "
+                              "index=%d, pid=%d, verifier=%d\n"
+                            , method_name, __LINE__
+                            , bufIndex
+                            , pid 
+                            , verifier );
+            }
             noticeReleased = true;
         }
     }
@@ -1586,6 +1654,74 @@ bool SQ_LocalIOToClient::decrNoticeMsgRef ( int bufIndex, int pid )
     return foundNotice;
 }
 
+// release a message based on a pid to the available client buffer pool.
+// This routine is called from the child death signal handler to cleanup
+// any orphaned client buffers
+void
+SQ_LocalIOToClient::releaseMsg( pid_t pid, Verifier_t verifier )
+{
+    SharedMsgDef *shm;
+    ClientBufferInfo cbi;
+
+    const char method_name[] = "SQ_LocalIOToClient::releaseMsg";
+    TRACE_ENTRY;
+      
+    if (trace_settings & TRACE_MLIO_DETAIL)
+    {
+        trace_printf("%s@%d releasing shared buffers for pid=%d, verifier=%d\n",
+                     method_name, __LINE__, pid, verifier);
+      
+        msgQueueStats();
+    }
+    
+    cbi.index = 0;
+    cbi.mtype = SQ_LIO_NORMAL_MSG;
+    while (cbi.index < sharedBuffersMax)
+    {
+        shm = (SharedMsgDef *)(clientBuffers+sizeof(SharedMemHdr)
+                                           +(cbi.index*sizeof(SharedMsgDef)));
+        if ( shm->trailer.bufInUse != 0 )
+        {   // Buffer is in use
+            if ( decrNoticeMsgRef ( cbi.index, pid, verifier ) )
+            {   // Buffer is a monitor generated notice.  decrNoticeMsgRef
+                // took appropriate actions to indicate notice no longer
+                // used by "pid".
+            }
+            else if ( shm->trailer.OSPid == pid && 
+                      shm->trailer.verifier == verifier )
+            {   // The buffer was client allocated and the client
+                // is a dead process.  Release the shared buffer.
+                releaseMsg ( shm, false );
+            }
+            else
+            {
+                if (kill( (pid_t)shm->trailer.bufInUse, 0 ) == -1
+                    && errno == ESRCH) 
+                {   // Owning process no longer exists, release the buffer
+                    releaseMsg ( shm, false );
+                }
+                else if (trace_settings & TRACE_MLIO_DETAIL)
+                {
+                    trace_printf("%s@%d shared buffer idx=%d in use by pid=%d\n",
+                                 method_name, __LINE__, shm->trailer.index,
+                                 shm->trailer.bufInUse);
+                }
+            }
+        }
+        cbi.index++;
+    }
+
+    if (trace_settings & TRACE_MLIO_DETAIL)
+    {
+        msgQueueStats();
+
+        trace_printf("%s@%d monitor is managing %d shared buffers for "
+                     "notices\n", method_name, __LINE__, (int) noticeMap_.size());
+    }
+
+    TRACE_EXIT;
+}
+
 // release a message back to the available client buffer pool
 void
 SQ_LocalIOToClient::releaseMsg( SharedMsgDef *shm, bool monitorOwned )
@@ -1613,6 +1749,7 @@ SQ_LocalIOToClient::releaseMsg( SharedMsgDef *shm, bool monitorOwned )
         // buffer is not in use.
         memset( (void*)&shm->trailer, 0, sizeof(shm->trailer) );
         shm->trailer.index = -1;
+        shm->trailer.OSPid = getpid(); // Identify releaser - monitor thread
 
         if (monitorOwned)
         {
@@ -1620,6 +1757,7 @@ SQ_LocalIOToClient::releaseMsg( SharedMsgDef *shm, bool monitorOwned )
             // to multi-threaded access.
             __sync_fetch_and_add( &acquiredBufferCount, -1 );
 
+            if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                MonStats->LocalIOBuffersDecr();
         }
 
@@ -1737,7 +1875,7 @@ void SQ_LocalIOToClient::handleDeadPid( pid_t pid )
     deadPidsLock_.unlock();
 
    // Wake up local io buffer cleanup thread so it can invoke recycleProcessBufs
-    pthread_kill(lioBufCleanupTid_, SIGWINCH);
+    pthread_kill(lioBufCleanupTid_, SIGUSR1);
 }
 
 // Examine info queued by child_death_signal_handler2 regarding
@@ -1804,7 +1942,10 @@ SQ_LocalIOToClient::recycleProcessBufs( void )
         // Queue request for processing by worker thread
         ReqQueue.enqueueChildDeathReq ( nextPid );
 
-        releaseMsg(nextPid);
+        // Get verifier from dead process verifier map
+        Verifier_t verifier = getVerifier( nextPid );
+        releaseMsg(nextPid, verifier);
+        delFromVerifierMap( nextPid );
     }
 
     // Periodically check to see if any notice buffers have expired.
@@ -1872,73 +2013,6 @@ SQ_LocalIOToClient::recycleProcessBufs( void )
     TRACE_EXIT;
 }
 
-// release a message based on a pid to the available client buffer pool.
-// This routine is called from the child death signal handler to cleanup
-// any orphaned client buffers
-void
-SQ_LocalIOToClient::releaseMsg( pid_t pid )
-{
-    SharedMsgDef *shm;
-    ClientBufferInfo cbi;
-
-    const char method_name[] = "SQ_LocalIOToClient::releaseMsg";
-    TRACE_ENTRY;
-      
-    if (trace_settings & TRACE_MLIO_DETAIL)
-    {
-        trace_printf("%s@%d releasing shared buffers for pid=%d\n",
-                     method_name, __LINE__, pid);
-      
-        msgQueueStats();
-    }
-    
-    cbi.index = 0;
-    cbi.mtype = SQ_LIO_NORMAL_MSG;
-    while (cbi.index < sharedBuffersMax)
-    {
-        shm = (SharedMsgDef *)(clientBuffers+sizeof(SharedMemHdr)
-                                           +(cbi.index*sizeof(SharedMsgDef)));
-        if ( shm->trailer.bufInUse != 0 )
-        {   // Buffer is in use
-            if ( decrNoticeMsgRef ( cbi.index, pid ) )
-            {   // Buffer is a monitor generated notice.  decrNoticeMsgRef
-                // took appropriate actions to indicate notice no longer
-                // used by "pid".
-            }
-            else if ( shm->trailer.OSPid == pid )
-            {   // The buffer was client allocated and the client
-                // is a dead process.  Release the shared buffer.
-                releaseMsg ( shm, false );
-            }
-            else
-            {
-                if (kill( (pid_t)shm->trailer.bufInUse, 0 ) == -1
-                    && errno == ESRCH) 
-                {   // Owning process no longer exists, release the buffer
-                    releaseMsg ( shm, false );
-                }
-                else if (trace_settings & TRACE_MLIO_DETAIL)
-                {
-                    trace_printf("%s@%d shared buffer idx=%d in use by pid=%d\n",
-                                 method_name, __LINE__, shm->trailer.index,
-                                 shm->trailer.bufInUse);
-                }
-            }
-        }
-        cbi.index++;
-    }
-
-    if (trace_settings & TRACE_MLIO_DETAIL)
-    {
-        msgQueueStats();
-
-        trace_printf("%s@%d monitor is managing %d shared buffers for "
-                     "notices\n", method_name, __LINE__, (int) noticeMap_.size());
-    }
-
-    TRACE_EXIT;
-}
-
 // Get the size of the message.  there is an equivalent routine on the
 // seabed/shell side.  This routine is used so that only the data needed
 // to be copied, is copied.
@@ -1994,7 +2068,7 @@ SQ_LocalIOToClient::shutdownWork(void)
     
     int rc;
     // Signal the serial request thread so it will wake up and exit
-    if ((rc = pthread_kill(serialRequestTid_, SIGWINCH)) != 0)
+    if ((rc = pthread_kill(serialRequestTid_, SIGUSR1)) != 0)
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], pthread_kill error=%d\n", method_name, rc);
@@ -2011,7 +2085,7 @@ SQ_LocalIOToClient::shutdownWork(void)
     }
 
     // Signal the lioBufCleanup thread so it will wake up and exit
-    if ((rc = pthread_kill(lioBufCleanupTid_, SIGWINCH)) != 0)
+    if ((rc = pthread_kill(lioBufCleanupTid_, SIGUSR1)) != 0)
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], pthread_kill error=%d\n", method_name, rc);
@@ -2055,17 +2129,127 @@ void SQ_LocalIOToClient::waitForNoticeWork( void )
     TRACE_EXIT;
 }
 
-CNoticeMsg::CNoticeMsg ( int bufIndex, SharedMsgDef * buf, pid_t pid,
-                         SQ_LocalIOToClient::bcastPids_t *bcastPids ) :
-    bufIndex_ ( bufIndex ),
-    buf_ ( buf ),
-    pid_ ( pid ),
-    bcastPids_ ( bcastPids )
+void SQ_LocalIOToClient::addToVerifierMap(int pid, Verifier_t verifier)
 {
+    const char method_name[] = "SQ_LocalIOToClient::addToVerifierMap";
+    TRACE_ENTRY;
+
+    pair<verifierMap_t::iterator, bool> ret;
+
+    if (pid != -1)
+    {
+        // temp trace
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf( "%s@%d inserting into verifierMap_ %p: (%d:%d)\n"
+                        , method_name, __LINE__
+                        , &verifierMap_
+                        , pid
+                        , verifier );
+        }
+
+        verifierMapLock_.lock();
+        ret = verifierMap_.insert( verifierMap_t::value_type ( pid, verifier ));
+        verifierMapLock_.unlock();
+        if (ret.second == false)
+        {   // Already had an entry with the given key value
+            if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+            {
+                trace_printf("%s@%d verifier map already contained pid=%d\n",
+                             method_name, __LINE__, pid);
+            }
+        }
+
+        // temp trace
+        if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+        {
+            trace_printf( "%s@%d verifierMap_ (%p) now has %d entries\n"
+                        , method_name, __LINE__
+                        , &verifierMap_, (int)verifierMap_.size());
+        }
+
+    }
+
+    TRACE_EXIT;
+}
+
+void SQ_LocalIOToClient::delFromVerifierMap( int pid )
+{
+    const char method_name[] = "SQ_LocalIOToClient::delFromVerifierMap";
+    TRACE_ENTRY;
+
+    verifierMapLock_.lock();
+    int count = verifierMap_.erase ( pid );
+    verifierMapLock_.unlock();
+
+    if (trace_settings & (TRACE_PROCESS | TRACE_PROCESS_DETAIL))
+    {
+        if (count != 0)
+        {
+            trace_printf( "%s@%d removed pid=%d - verifierMap_ (%p) now has %d entries\n"
+                        , method_name, __LINE__
+                        , pid, &verifierMap_, (int)verifierMap_.size());
+        }
+    }
+
+    TRACE_EXIT;
+}
+
+Verifier_t SQ_LocalIOToClient::getVerifier( int pid )
+{
+    const char method_name[] = "SQ_LocalIOToClient::getVerifier(pid)";
+    TRACE_ENTRY;
+
+    verifierMap_t::iterator it;
+    Verifier_t verifier = -1;
+
+    verifierMapLock_.lock();
+    it = verifierMap_.find(pid);
+    if (it != verifierMap_.end())
+    {
+        verifier = it->second;
+    }
+    verifierMapLock_.unlock();
+
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+    {
+        trace_printf("%s@%d - pidmap_ (%p) pid=%d, verifier=%d\n",
+                     method_name, __LINE__, &verifierMap_, pid, verifier );
+    }
+
+    TRACE_EXIT;
+    return verifier;
+}
+
+CNoticeMsg::CNoticeMsg( int bufIndex
+                      , SharedMsgDef *buf
+                      , pid_t pid
+                      , Verifier_t verifier
+                      , SQ_LocalIOToClient::bcastPids_t *bcastPids )
+           : bufIndex_( bufIndex )
+           , buf_( buf )
+           , pid_( pid )
+           , verifier_( verifier )
+           , bcastPids_( bcastPids )
+{
+    const char method_name[] = "CNoticeMsg::CNoticeMsg";
+    TRACE_ENTRY;
+
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "NMSG", 4);
 
     clock_gettime(CLOCK_REALTIME, &timestamp_);
+    
+    if (trace_settings & TRACE_NOTICE_DETAIL)
+    {
+        trace_printf( "%s@%d New notice message: index=%d, pid=%d, verifier=%d\n"
+                    , method_name, __LINE__
+                    , bufIndex_ 
+                    , pid_ 
+                    , verifier_ );
+    }
+
+    TRACE_EXIT;
 }
 
 // CNoticeMsg is used to manage a message sent from the monitor to a
@@ -2078,23 +2262,38 @@ CNoticeMsg::~CNoticeMsg ( )
 
     char buf[MON_STRING_BUF_SIZE];
 
+    if (trace_settings & TRACE_NOTICE_DETAIL)
+    {
+        trace_printf( "%s@%d Deleting notice message: index=%d, pid=%d, verifier=%d\n"
+                    , method_name, __LINE__
+                    , bufIndex_ 
+                    , pid_ 
+                    , verifier_ );
+    }
+
     // Log information about processes that did not respond to the notice
     bcastPidsLock_.lock();
     if ( pid_ == BCAST_PID )
     {
         if ( !bcastPids_->empty() )
         {  // One or more processes did not respond to the notice
-            int pid;
+            SQ_LocalIOToClient::pidVerifier_t pv;
             for (SQ_LocalIOToClient::bcastPids_t::const_iterator
                      it = bcastPids_->begin(); it != bcastPids_->end();)
             {
-                pid = *it;
+                pv.pnv = *it;
                 ++it;
 
-                if ( kill( (pid_t)pid, 0 ) == 0 )
+                if ( kill( (pid_t)pv.pv.pid, 0 ) == 0 )
                 {   // Process exists but did not respond to the notice
-                    sprintf(buf, "[%s], Process %d did not respond to notice\n",
-                            method_name, pid );
+                    sprintf(buf, "[%s], Process %d:%d did not respond to notice"
+                                 ": index=%d, pid=%d, verifier=%d\n"
+                               , method_name
+                               , pv.pv.pid
+                               , pv.pv.verifier
+                               , bufIndex_ 
+                               , pid_ 
+                               , verifier_ );
                     mon_log_write(MON_MLIO_NOTICE_DEST_1, SQ_LOG_ERR, buf);
                 }
             }
@@ -2123,25 +2322,46 @@ CNoticeMsg::~CNoticeMsg ( )
     TRACE_EXIT;
 }
 
-int CNoticeMsg::clientDone ( pid_t pid )
+int CNoticeMsg::clientDone ( pid_t pid, Verifier_t verifier )
 {
     const char method_name[] = "SQ_LocalIOToClient::clientDone";
     TRACE_ENTRY;
     int refCount = -1;
+    CProcess *client = NULL;
+
+    if ( pid_ == BCAST_PID )
+    {
+        client = MyNode->GetProcess( pid );
+    }
+
+    if (trace_settings & TRACE_NOTICE_DETAIL)
+    {
+        trace_printf( "%s@%d Client (%d:%d) done with notice message: index=%d, pid=%d, verifier=%d\n"
+                    , method_name, __LINE__
+                    , pid
+                    , client ? client->GetVerifier() : verifier
+                    , bufIndex_ 
+                    , pid_ 
+                    , verifier_ );
+    }
 
     if ( pid_ == BCAST_PID )
     {   // The buffer was used for a broadcast message so remove the
         // pid from the broadcast list.
         bcastPidsLock_.lock();
-        bcastPids_->erase( pid );
+        SQ_LocalIOToClient::pidVerifier_t pv;
+        pv.pv.pid = pid;
+        pv.pv.verifier = client ? client->GetVerifier() : verifier;
+        bcastPids_->erase( pv.pnv );
         refCount = bcastPids_->size();
         bcastPidsLock_.unlock();
     }
-    else if ( pid_ == pid )
+    else if ( pid_ == pid && verifier_ == verifier )
     {
         pid_ = 0;
         refCount = 0;
     }
+
 
     TRACE_EXIT;
 

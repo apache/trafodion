@@ -33,6 +33,7 @@ SB_Table_Mgr<T>::SB_Table_Mgr(const char                     *pp_name,
   iv_cap_init(pv_cap_init),
   iv_cap_max(0),
   iv_inuse(0),
+  iv_inuse_hi(0),
   iv_table_blks(0) {
     SB_Slot_Mgr::Alloc_Type lv_alloc;
     size_t                  lv_inx;
@@ -139,6 +140,8 @@ size_t SB_Table_Mgr<T>::alloc_entry() {
         ip_slot_mgr->resize(static_cast<int>(lv_cap));
     }
     iv_inuse++;
+    if (iv_inuse > iv_inuse_hi)
+        iv_inuse_hi = iv_inuse;
     if (iv_cap_max)
         SB_util_assert_stlt(iv_inuse, iv_cap_max);
     lv_slot = ip_slot_mgr->alloc();
@@ -174,6 +177,12 @@ size_t SB_Table_Mgr<T>::get_cap() {
 template <class T>
 size_t SB_Table_Mgr<T>::get_inuse() {
     return iv_inuse;
+}
+
+// get max inuse count
+template <class T>
+size_t SB_Table_Mgr<T>::get_hi_inuse() {
+    return iv_inuse_hi;
 }
 
 // print table
@@ -288,6 +297,12 @@ T *SB_Ts_Table_Mgr<T>::get_entry_lock(size_t pv_inx, bool pv_lock) {
 template <class T>
 size_t SB_Ts_Table_Mgr<T>::get_inuse() {
     size_t lv_ret = SB_Table_Mgr<T>::get_inuse();
+    return lv_ret;
+}
+
+template <class T>
+size_t SB_Ts_Table_Mgr<T>::get_hi_inuse() {
+    size_t lv_ret = SB_Table_Mgr<T>::get_hi_inuse();
     return lv_ret;
 }
 

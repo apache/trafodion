@@ -51,13 +51,16 @@
 #define DTM_BASE_NICE    1
 #define APP_BASE_NICE    1
 
+#define BCAST_PID -255
+
 #define WATCHDOG_TICKS   250
 #define MAX_ARGS         60
 #define MAX_ARG_SIZE     256
-#define MAX_CORES        16
 
+#define MAX_CORES        32
 #define MAX_NODES        256
-#define MAX_LNODES       256
+#define MAX_LNODES       (MAX_NODES*4)
+#define MAX_NODE_MASKS   (MAX_NODES/64)
 
 #define MAX_FAULT_ZONES  16 
 #define MAX_KEY_NAME     32
@@ -72,6 +75,7 @@
 #define MAX_PROCESS_NAME MAX_KEY_NAME
 #define MAX_PROCESS_NAME_STR 12 
 #define MAX_PROCESS_PATH 256
+#define MAX_REASON_TEXT  256
 #define MAX_ROLEBUF_SIZE 84
 #define MAX_SEARCH_PATH  BUFSIZ
 #define MAX_SEQ_VALUE    0x7FFFFFFF
@@ -88,7 +92,7 @@
 // source string.  If not, source string is truncated.
 #define STRCPY(dest,src) \
 { \
-    unsigned int dlen = sizeof(dest) - 1; \
+    unsigned int dlen = (unsigned int) (sizeof(dest) - 1); \
     if (strlen(src) <= dlen) \
     { \
         strcpy(dest, src); \
@@ -100,13 +104,20 @@
     } \
 }
 
-    typedef struct { int nid; int id; } strId_t;
+typedef int Verifier_t;                  // Process verifier typedef
+
+typedef struct { int nid; int id; } strId_t;
 
 typedef long long _TM_Native_Type;          // Native Data Type for Transaction ID
 
 typedef union {                             // External Extended Transaction ID
     _TM_Native_Type txid[4];
 } _TM_Txid_External;
+
+typedef enum {
+    SMS_Undefined=1100,     // Invalid
+    SMS_Exit                // Monitor Event to exit the SMService process 
+} SMServiceEvent_t;
 
 typedef enum {
     Watchdog_Start=1000,    // Monitor Event to start the Watchdog Process timer
@@ -130,6 +141,12 @@ typedef enum {
     ConfigType_Node,                        // Local to node configuration data
     ConfigType_Process                      // Gobal to process configuration data
 } ConfigType;
+
+typedef enum {
+    CommType_Undefined=0,
+    CommType_InfiniBand,
+    CommType_Sockets
+} CommType_t;
 
 typedef enum 
 {
@@ -330,9 +347,9 @@ struct Change_def
 struct Close_def
 {
     int  nid;                              // requesting process's node id
-    int  pid;                              // requesting process id
-    char process_name[MAX_PROCESS_NAME];   // Name of process to close or if notification
-                                           // then it's the name of the requesting process
+    int  pid;                              // requesting process's id
+    Verifier_t verifier;                   // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];   // requesting process's name
     int  aborted;                          // Non-zero if close because of process abort
     int  mon;                              // Non-zero if monitor close
 };
@@ -340,18 +357,22 @@ struct Close_def
 struct Dump_def
 {
     int  nid;                              // requesting process's node id
-    int  pid;                              // requesting process id
+    int  pid;                              // requesting process's id
+    Verifier_t verifier;                   // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];   // requesting process's name
     char path[MAX_PROCESS_PATH];           // path for dump-file
     int  target_nid;                       // Nid of process to dump ( -1 if using name )
     int  target_pid;                       // Pid of process to dump ( -1 if using name )
-    char process_name[MAX_PROCESS_NAME];   // Name of process to dump
+    Verifier_t target_verifier;            // Verifier of process to dump ( -1 if using name )
+    char target_process_name[MAX_PROCESS_NAME];   // Name of process to dump
 };
 
 struct Dump_reply_def
 {
     int nid;                                // target process's node id
     int pid;                                // target process's process id
-    char process_name[MAX_PROCESS_NAME];    // Name of target process
+    Verifier_t verifier;                    // target process's verifier
+    char process_name[MAX_PROCESS_NAME];    // target process's name
     char core_file[MAX_PROCESS_PATH];       // name of core-file
     int return_code;                        // error returned to sender
 };
@@ -360,8 +381,12 @@ struct Event_def
 {
     int  nid;                  // requesting process's node id
     int  pid;                  // requesting process id
+    Verifier_t verifier;       // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];   // requesting process's name
     int  target_nid;           // Node id of processes to receive event (-1 for all all nodes)
     int  target_pid;           // Process id of processes to receive event (-1 for all in node)
+    Verifier_t target_verifier; // Process verifier of processes to receive event (-1 for all in node)
+    char target_process_name[MAX_PROCESS_NAME];    // Name of target process
     PROCESSTYPE type;          // Process type of processes to receive event 
                                //   (ProcessType_Undefined for not type filtering)
     int  event_id;             // Non-Zero user defined event id to be pass in event notice
@@ -380,13 +405,16 @@ struct Exit_def
 {                                               
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
 };
 
 struct Generic_reply_def
 {
     int nid;                                // target process's node id
     int pid;                                // target process's process id
-    char process_name[MAX_PROCESS_NAME];    // Name of target process
+    Verifier_t verifier;                    // target process's verifier
+    char process_name[MAX_PROCESS_NAME];    // target process's name
     int return_code;                        // error returned to sender
 };
 
@@ -394,6 +422,8 @@ struct Get_def
 {
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
     ConfigType type;                        // type of group being requested
     bool next;                              // if true, get key list starting after key 
                                             // else start new list
@@ -418,9 +448,12 @@ struct Kill_def
 {
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
     int  target_nid;                        // Node id of processes to kill (-1 for all)
     int  target_pid;                        // Process id of process to kill (-1 for all)
-    char process_name[MAX_PROCESS_NAME];    // Name of process to kill
+    Verifier_t target_verifier;             // Process verifier of processes to kill (-1 if process name only)
+    char target_process_name[MAX_PROCESS_NAME];    // Name of process to kill
     bool persistent_abort;                  // when true, persistent process is not restarted
                                             // otherwise, it is ignored
 };
@@ -441,13 +474,15 @@ struct Mount_def                            // to mount device associated with p
 {                                               
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
 };
 
 struct Mount_reply_def
 {
     DEVICESTATE  primary_state;             // State of primary device
     DEVICESTATE  mirror_state;              // State of mirror device
-    int  return_code;                       // mpi error code of spawn operation
+    int          return_code;               // mpi error code of spawn operation
 }; 
 
 struct NewProcess_def
@@ -469,12 +504,14 @@ struct NewProcess_def
     char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
     char infile[MAX_PROCESS_PATH];          // if null then use monitor's infile
     char outfile[MAX_PROCESS_PATH];         // if null then use monitor's outfile
+    int  fill1;                             // filler to fill out struct
 };
 
 struct NewProcess_reply_def
 {
     int  nid;                               // node id of started process
     int  pid;                               // internal process id of started process
+    Verifier_t verifier;                    // Process verifier
     char process_name[MAX_PROCESS_NAME];    // NSK process names assigned to started process
     int  return_code;                       // mpi error code of spawn operation
 };
@@ -483,6 +520,7 @@ struct NewProcess_Notice_def
 {
     int  nid;                               // node id of started process
     int  pid;                               // internal process id of started process
+    Verifier_t verifier;                    // Process verifier
     long long tag;                          // user tag sent with original request
     char port[MPI_MAX_PORT_NAME];           // mpi port to started process
     char process_name[MAX_PROCESS_NAME];    // NSK process names assigned to started process
@@ -497,6 +535,7 @@ struct NodeDown_def
 #ifdef USE_SEQUENCE_NUM
     long long seqnum;                       // sequence number
 #endif
+    char reason[MAX_REASON_TEXT];           // text describing reason for down node
 };
 
 struct NodeInfo_def
@@ -634,9 +673,14 @@ struct Notify_def                           // Register for death notification
 {
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
     int  cancel;                            // Zero to set notice else cancel current notice
     int  target_nid;                        // Nid of process to be monitored, if -1 cancel all associated with trans_id
     int  target_pid;                        // Pid of process to be monitored, if -1 cancel all associated with trans_id
+    Verifier_t target_verifier;             // Verifier of process to be monitored, if -1 cancel all associated with trans_id
+    char target_process_name[MAX_PROCESS_NAME];    // monitored process's name
+    int  fill1;                             // filler to trans_id
     _TM_Txid_External trans_id;             // associated transaction id, zero for none.
 };                                          // note: cancel=0, target_nid or target_pid = -1 is invalid
 
@@ -644,8 +688,12 @@ struct Open_def
 {
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
-    char process_name[MAX_PROCESS_NAME];    // Name of process to open or if notification
-                                            // then it's the name of the requesting process
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name (if notification)
+    int  target_nid;                        // Process to open node id
+    int  target_pid;                        // Process to open id
+    Verifier_t target_verifier;             // Process to open verifier
+    char target_process_name[MAX_PROCESS_NAME]; // Process to open name
     int  death_notification;                // true if death notice needed on process failure
 };
 
@@ -653,6 +701,8 @@ struct Open_reply_def
 {
     int  nid;                               // opened process's node id 
     int  pid;                               // opened process's process id
+    Verifier_t verifier;                    // opened process's process verifier
+    char process_name[MAX_PROCESS_NAME];    // opened process's name
     char port[MPI_MAX_PORT_NAME];           // opened process's mpi port used in MPI_Comm_connect
     PROCESSTYPE type;                       // opened process's process type
     int  return_code;                       // mpi error code
@@ -662,6 +712,8 @@ struct Close_reply_def
 {
     int  nid;                               // Close requesting process's node id
     int  pid;                               // Close requesting process's process id
+    Verifier_t verifier;                    // Close requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // Close requesting process's name
     int  return_code;                       // mpi error code
 };
 
@@ -697,11 +749,12 @@ struct OpenInfo_reply_def
 
 struct ProcessDeath_def
 {
-    int nid;
-    int pid;
+    int nid;                                // dead process's node id
+    int pid;                                // dead process's process id
+    Verifier_t verifier;                    // dead process's verifier
     _TM_Txid_External trans_id;
     int aborted;                            // Non-zero indicates abnormal termination
-    char process_name[MAX_PROCESS_NAME];    // process's Name
+    char process_name[MAX_PROCESS_NAME];    // dead process's name
     PROCESSTYPE type;                       // Process type
 #ifdef USE_SEQUENCE_NUM
     long long seqnum;                       // sequence number
@@ -712,9 +765,12 @@ struct ProcessInfo_def
 {
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process' verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process' name
     int  target_nid;                        // Node id of processes for status request (-1 for all)
     int  target_pid;                        // Process id of process for status request (-1 for all)
-    char process_name[MAX_PROCESS_NAME];    // Name of process for status request (NULL if not used)
+    Verifier_t target_verifier;             // Verifier of process for status request (-1 for if not used)
+    char target_process_name[MAX_PROCESS_NAME]; // Name of process for status request (NULL if not used)
     PROCESSTYPE type;                       // Return only processes of this type (ProcessType_Undefined for all)
 };
 
@@ -723,12 +779,14 @@ struct ProcessInfoState
 {
     int   nid;                              // process's node id
     int   pid;                              // process's process id
+    Verifier_t verifier;                    // process's process verifier
     PROCESSTYPE type;                       // process handling catagory
     char  process_name[MAX_PROCESS_NAME];   // process's Name
     int   os_pid;                           // process's OS based process id
     int   priority;                         // process's OS based priority
     int   parent_nid;                       // process's parent's node id
     int   parent_pid;                       // process's parent's process id
+    Verifier_t parent_verifier;             // process's parent's process verifier
     char  parent_name[MAX_PROCESS_NAME];    // process's Name
     char  program[MAX_PROCESS_PATH];        // process's object file name
     STATE state;                            // process's current state
@@ -770,6 +828,8 @@ struct Set_def
 {
     int  nid;                               // requesting process's node id
     int  pid;                               // requesting process id
+    Verifier_t verifier;                    // requesting process's verifier
+    char process_name[MAX_PROCESS_NAME];    // requesting process's name
     ConfigType type;                        // type of group being set
     char group[MAX_KEY_NAME];               // name of group, if NULL and type=ConfigNode assume local node 
     char key[MAX_KEY_NAME];                 // key name of the item being set
@@ -800,12 +860,16 @@ struct Startup_def
     bool  event_messages;                   // true if want event messages
     bool  system_messages;                  // true if want system messages
     bool  paired;                           // true if should pair with name process
+    Verifier_t  verifier;                   // process's verifier
+    int   startup_size;                     // size of this struct
 };
 
 struct Startup_reply_def
 {
     int nid;                                // target process's node id
     int pid;                                // target process's process id
+    Verifier_t  verifier;                   // process's verifier
+    int   startup_size;                     // size of this struct
     int return_code;                        // error returned to sender
     char process_name[MAX_PROCESS_NAME];    // Name of target process
     char fifo_stdin  [MAX_PROCESS_PATH];
@@ -880,7 +944,7 @@ struct UnsolicitedTmSync_def
 };
 
 struct TransInfo_def
-{
+{ // Deprecated
     int  nid;                               // Requesting process's node id
     int  pid;                               // Requesting process id
     char process_name[MAX_PROCESS_NAME];    // Name of process to list associated transactions
@@ -889,7 +953,7 @@ struct TransInfo_def
 };
 
 struct TransInfo_reply_def
-{
+{ // Deprecated
     int  num_processes;                     // Number of process returned
     struct 
     {

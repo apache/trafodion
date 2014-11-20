@@ -1,0 +1,81 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+echo "********* TEST `date` t9 - t9thread *********"
+check=0
+if [ "$1" = "-check" ]; then
+	check=1
+	shift
+fi
+noout=0
+if [ "$1" = "-noout" ]; then
+	noout=1
+	shift
+fi
+if [ $check = 1 ]; then
+	pushd ../evsim; make local; popd
+	export LD_LIBRARY_PATH=../evsim:$LD_LIBRARY_PATH
+	vg=`which valgrind`
+	# strlen/strcmp/memcmp problem workaround on RH6
+	sed "s|MY_SQROOT|$MY_SQROOT|" ./t9thread.rh6.supp > ./t9thread.rh6x.supp
+	supp="--suppressions=./t9thread.rh6x.supp"
+	# To rebuild the suppressions file:
+	# uncomment the following
+	# go9 -check -vg 2>zx
+	# edit zx:
+        #   remove all lines that start with '=='
+        #   change expanded version of $MY_SQROOT with 'MY_SQROOT' (no $!)
+        #   edit <insert_a_suppression_name_here>
+	# copy zx to t9thread.rh6.supp
+	# svn commit t9thread.rh6.supp
+	# comment the following line back
+	#supp="--gen-suppressions=all"
+	# sometimes, running it a second time - it fails
+	# so run it again and add the second zx (processed)
+	# to t9thread.rh6.supp
+	# Also, once for debug and once for release (add)
+	#supp="$supp --gen-suppressions=all"
+	if [ -x "$vg" ]; then
+		if [ $noout = 1 ]; then
+			#$vg --tool=memcheck $supp --undef-value-errors=no --leak-check=full --free-fill=0xfd --show-reachable=yes --error-exitcode=1 t9thread $* 1>/dev/null
+			$vg --tool=memcheck $supp --undef-value-errors=no --leak-check=full --free-fill=0xfd --error-exitcode=1 t9thread $* 1>/dev/null
+		else
+			#$vg --tool=memcheck $supp --undef-value-errors=no --leak-check=full --free-fill=0xfd --show-reachable=yes --error-exitcode=1 t9thread $*
+			$vg --tool=memcheck $supp --undef-value-errors=no --leak-check=full --free-fill=0xfd --error-exitcode=1 t9thread $*
+		fi
+		cc=$?
+	else
+		echo "$vg not executable - not running"
+		cc=0
+	fi
+else
+	grep '^SQ_TRANS_SM=1' ms.env > /dev/null 2> /dev/null
+	if [ $? = 0 ]; then
+		t9thread $*
+		cc=$?
+	else
+		mpirun t9thread $*
+		cc=$?
+	fi
+fi
+if [ $cc != 0 ]; then
+	echo "t9thread did not succeed - $cc"
+	gokill
+fi
+exit $cc

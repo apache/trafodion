@@ -63,6 +63,7 @@ MPI_Comm Server = MPI_COMM_NULL;
 MPI_Errhandler CommHandler;
 MPI_Request Request[3] = { MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL };
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 //forward procedures
@@ -499,7 +500,7 @@ int open_server (char *process_name, MPI_Comm * comm)
     msg->u.request.type = ReqType_Open;
     msg->u.request.u.open.nid = MyNid;
     msg->u.request.u.open.pid = MyPid;
-    strcpy (msg->u.request.u.open.process_name, process_name);
+    strcpy (msg->u.request.u.open.target_process_name, process_name);
     msg->u.request.u.open.death_notification = 1;
     sendrecv (Monitor, msg, sizeof (struct message_def), MPI_CHAR,
               msg, sizeof (struct message_def), MPI_CHAR, SERVICE_TAG, REPLY_TAG, &status);
@@ -529,7 +530,7 @@ int open_server (char *process_name, MPI_Comm * comm)
                     msg->u.request.type = ReqType_Notice;
                     msg->u.request.u.open.nid = MyNid;
                     msg->u.request.u.open.pid = MyPid;
-                    strcpy (msg->u.request.u.open.process_name, MyName);
+                    strcpy (msg->u.request.u.open.target_process_name, MyName);
                     MPI_Send(msg,sizeof(struct message_def),MPI_CHAR,0,NOTICE_TAG,*comm);
 #endif
                     printf ("[%s] connected to process.\n", MyName);
@@ -633,6 +634,7 @@ void process_startup (int argc, char *argv[])
 #endif
     MyNid = atoi(argv[3]);
     MyPid = atoi(argv[4]);
+    gv_ms_su_verif  = atoi(argv[9]);
     printf ("[%s] process_startup, MyNid: %d, lio: %p\n", 
              MyName, MyNid, (void *)gp_local_mon_io );
 
@@ -661,6 +663,8 @@ void process_startup (int argc, char *argv[])
         msg->u.request.u.startup.os_pid = getpid ();
         msg->u.request.u.startup.event_messages = true;
         msg->u.request.u.startup.system_messages = true;
+        msg->u.request.u.startup.verifier = true;
+        msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
         printf ("[%s] sending startup reply to monitor.\n", argv[5]);
         fflush (stdout);
 

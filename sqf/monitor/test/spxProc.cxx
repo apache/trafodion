@@ -22,10 +22,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 #include "spxCtrl.h"
 
 MonTestUtil util;
@@ -36,6 +36,7 @@ bool tracing = false;
 
 const char *MyName;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0};
 
 int deathNoticesReceived = 0;
@@ -48,12 +49,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     if ( recv_msg->type == MsgType_ProcessDeath )
     {
         if ( tracing )
-            printf("[%s] Process death notice received for %s (%d, %d),"
+            printf("[%s] Process death notice received for %s (%d, %d:%d),"
                    " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier,
                    recv_msg->u.request.u.death.trans_id.txid[0],
                    recv_msg->u.request.u.death.trans_id.txid[1],
                    recv_msg->u.request.u.death.trans_id.txid[2],
@@ -91,9 +93,9 @@ void processCommands()
         printf ("[%s] Wait to connect.\n", MyName);
     }
 
-    MPI_Comm_accept (util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
+    XMPI_Comm_accept (util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
                      &ctrlComm);
-    MPI_Comm_set_errhandler (ctrlComm, MPI_ERRORS_RETURN);
+    XMPI_Comm_set_errhandler (ctrlComm, MPI_ERRORS_RETURN);
 
     if ( tracing )
     {
@@ -104,7 +106,7 @@ void processCommands()
 
     do
     {
-        rc = MPI_Recv (recvbuf, 6, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+        rc = XMPI_Recv (recvbuf, 6, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                        ctrlComm, &status);
 
         if (rc == MPI_SUCCESS)
@@ -134,13 +136,13 @@ void processCommands()
                         recvbuf[0], recvbuf[1]);
             }
 
-            rc = MPI_Send (&replyMsg, (int) sizeof(replyMsg_t), MPI_CHAR, 0,
+            rc = XMPI_Send (&replyMsg, (int) sizeof(replyMsg_t), MPI_CHAR, 0,
                            serverTag, ctrlComm);
 
         }
         else
         {  // Receive failed
-            printf("[%s] MPI_Recv failed, rc = (%d) %s\n",
+            printf("[%s] XMPI_Recv failed, rc = (%d) %s\n",
                    MyName, rc, util.MPIErrMsg(rc));
             done = true;
         }
@@ -158,10 +160,6 @@ void processCommands()
 
 int main (int argc, char *argv[])
 {
-    int MyRank = -1;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
@@ -183,8 +181,7 @@ int main (int argc, char *argv[])
 
     printf ("[%s] calling Finalize!\n", MyName);
     fflush (stdout);
-    MPI_Close_port( util.getPort() );
-    MPI_Finalize ();
+    XMPI_Close_port( util.getPort() );
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

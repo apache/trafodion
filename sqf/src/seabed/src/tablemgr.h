@@ -191,6 +191,8 @@ public:
     virtual T      *get_entry(size_t pv_inx);
     // get inuse
     virtual size_t  get_inuse();
+    // get hi
+    virtual size_t  get_hi_inuse();
     // print table (info is for entry printing)
     virtual void    print(char *pp_info);
     // set max-cap
@@ -211,6 +213,7 @@ protected:
     size_t                  iv_cap_init;           // initial capacity of table
     size_t                  iv_cap_max;            // max capacity of table
     size_t                  iv_inuse;              // count of inuse entries
+    size_t                  iv_inuse_hi;           // hi-count of inuse entries
     size_t                  iv_table_blks;         // table entry-block cnts
 };
 
@@ -235,6 +238,7 @@ public:
     virtual T      *get_entry(size_t pv_inx);
     virtual T      *get_entry_lock(size_t pv_inx, bool pv_lock);
     virtual size_t  get_inuse();
+    virtual size_t  get_hi_inuse();
     virtual void    lock();
     virtual void    print(char *pp_info);
     virtual void    set_cap_max(size_t pv_max_cap);

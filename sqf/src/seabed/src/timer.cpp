@@ -532,6 +532,19 @@ void *sb_timer_comp_q_remove() {
     return lp_tle;
 }
 
+//
+// timer-module hi
+//
+int sb_timer_hi() {
+    int lv_ret;
+
+    if (gp_timer_tle_mgr == NULL)
+        lv_ret = 0;
+    else
+        lv_ret = gp_timer_tle_mgr->hi();
+    return lv_ret;
+}
+
 static void sb_timer_key_dtor(void *pp_queue) {
     SB_Timer_Comp_Queue *lp_comp_q = static_cast<SB_Timer_Comp_Queue *>(pp_queue);
     if (lp_comp_q != NULL) {
@@ -855,6 +868,19 @@ void sb_timer_shutdown() {
     }
     if (gv_ms_trace_params || gv_ms_trace_timer)
         trace_where_printf(WHERE, "EXIT\n");
+}
+
+//
+// timer-module size
+//
+int sb_timer_size() {
+    int lv_ret;
+
+    if (gp_timer_tle_mgr == NULL)
+        lv_ret = 0;
+    else
+        lv_ret = gp_timer_tle_mgr->size();
+    return lv_ret;
 }
 
 //

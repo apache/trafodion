@@ -33,14 +33,10 @@ DEFINES		= -D_MPICC_H
 ifeq ($(USE_LOGGING),1)
 DEFINES	       += -DUSE_LOGGING
 endif
-ifeq ($(SQ_STFSD),1)
-DEFINES	       += -DSQ_STFSD
-endif
 DEFINES	       += -DUSE_RH=$(RH_MAJ_VERS)
 
 INCLUDESINC	= $(INCLUDES) -I../../../inc
 
-CFILES		= `ls *.c`
 LIBS		= $(LIBSBFS) \
 		  $(LIBSBMS) \
 		  $(LIBSBGPCON) \
@@ -70,10 +66,8 @@ OBJSBMS		= $(OUTDIR)/apictr.o \
 		  $(OUTDIR)/cpu.o \
 		  $(OUTDIR)/debug.o \
 		  $(OUTDIR)/env.o \
-		  $(OUTDIR)/ilrumap.o \
 		  $(OUTDIR)/imap.o \
 		  $(OUTDIR)/llmap.o \
-		  $(OUTDIR)/llrumap.o \
 		  $(OUTDIR)/lmap.o \
 		  $(OUTDIR)/loopstream.o \
 		  $(OUTDIR)/map64.o \
@@ -85,16 +79,15 @@ OBJSBMS		= $(OUTDIR)/apictr.o \
 		  $(OUTDIR)/ms.o \
 		  $(OUTDIR)/mserr.o \
 		  $(OUTDIR)/mseventmgr.o \
-		  $(OUTDIR)/msi.o \
 		  $(OUTDIR)/msic.o \
 		  $(OUTDIR)/msicctr.o \
 		  $(OUTDIR)/msmon.o \
 		  $(OUTDIR)/mstrace.o \
 		  $(OUTDIR)/msutil.o \
+		  $(OUTDIR)/npvmap.o \
 		  $(OUTDIR)/otimer.o \
 		  $(OUTDIR)/pctl.o \
 		  $(OUTDIR)/props.o \
-		  $(OUTDIR)/ptree.o \
 		  $(OUTDIR)/queue.o \
 		  $(OUTDIR)/queuemd.o \
 		  $(OUTDIR)/recvq.o \
@@ -106,8 +99,6 @@ OBJSBMS		= $(OUTDIR)/apictr.o \
 		  $(OUTDIR)/timer.o \
 		  $(OUTDIR)/timermap.o \
 		  $(OUTDIR)/tmap.o \
-		  $(OUTDIR)/tlrumap.o \
-		  $(OUTDIR)/ttree.o \
 		  $(OUTDIR)/utilalloc.o \
 		  $(OUTDIR)/versms.o \
 		  $(OPTOBJSBMS)
@@ -125,7 +116,6 @@ OBJSBUTIL	= $(OUTDIR)/cap.o \
 		  $(OUTDIR)/mstracevars.o \
 		  $(OUTDIR)/msvars.o \
 		  $(OUTDIR)/otrace.o \
-		  $(OUTDIR)/robsemfe.o \
 		  $(OUTDIR)/thread.o \
 		  $(OUTDIR)/threadl.o \
 		  $(OUTDIR)/threadltls.o \

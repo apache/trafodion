@@ -22,7 +22,6 @@ document psb
 	psbmdall      - ts/delta- print sb all mds
 	psbmdmap      - map     - print sb mdmap
 	psbmds        - ts/delta- print sb mds
-	psbmpi        - none    - print sb mpi
 	psbmsctrl     - addr    - print sb ms-control
 	psbmsopens    - none    - print sb ms-opens
 	psbnidpidmap  - none    - print sb nidpidmap (nidpid/stream map)
@@ -329,7 +328,7 @@ define psbcompq
 			set $mdl = $compq->ip_head
 			while $inx < $count
 				set $md = (MS_Md_Type *) $mdl
-				set $stream = ('SB_Trans::MPI_Stream' *) $md->ip_stream
+				set $stream = ('SB_Trans::Sock_Stream' *) $md->ip_stream
 				printf "  md[%d]=%p, stream=%p ", $mdl->iv_id.i, $mdl, $stream
 				if $stream == 0
 					printf "?"
@@ -410,16 +409,7 @@ end
 
 define psbenvvars
 	printf "psbenvvars\n"
-	printf "gv_ms_sq_msg_flow=%d\n", gv_ms_sq_msgflow
-	printf "gv_ms_conn_reuse=%d\n", gv_ms_conn_reuse
-	printf "gv_ms_disc_sem=%d\n", gv_ms_disc_sem
-	printf "gv_ms_ms_disc_sem_rob=%d\n", gv_ms_disc_sem_rob
-	printf "gv_ms_ms_disc_sem_stats=%d\n", gv_ms_disc_sem_stats
-	printf "gv_ms_conn_idle_timeout=%d\n", gv_ms_conn_idle_timeout
 	printf "gv_ms_shutdown_fast=%d\n", gv_ms_shutdown_fast
-	printf "gv_ms_sonar=%d\n", gv_ms_sonar
-	printf "gv_ms_sq_mpi_aggressive=%d\n", gv_ms_sq_mpi_aggressive
-	printf "gv_ms_trans_mpi=%d\n", gv_ms_trans_mpi
 	printf "gv_ms_max_phandles=%d\n", gv_ms_max_phandles
 	printf "gv_ms_streams_max=%d\n", gv_ms_streams_max
 	printf "\n"
@@ -761,7 +751,7 @@ define psbmdall
 	printf "psbmdall - SB_Trans::Msg_Mgr::cv_md_table: cap=%d, inuse=%d\n", $cap, $inuse
 	while ++$inx < $cap
 		set $md = SB_Trans::Msg_Mgr::cv_md_table.ipp_table[$inx]
-		set $stream = ('SB_Trans::MPI_Stream' *) $md->ip_stream
+		set $stream = ('SB_Trans::Sock_Stream' *) $md->ip_stream
 		printf "md[%d]=%p, inuse=%d, stream=%p ", $inx, $md, $md->iv_inuse, $stream
 		if $stream == 0
 			printf "?"
@@ -837,11 +827,7 @@ define psbmds
 	while ++$inx < $cap
 		set $md = SB_Trans::Msg_Mgr::cv_md_table.ipp_table[$inx]
 		if $md->iv_inuse != 0
-			if gv_ms_trans_sock
-				set $stream = ('SB_Trans::Sock_Stream' *) $md->ip_stream
-			else
-				set $stream = ('SB_Trans::MPI_Stream' *) $md->ip_stream
-			end
+			set $stream = ('SB_Trans::Sock_Stream' *) $md->ip_stream
 			printf "md[%d]=%p, stream=%p ", $inx, $md, $stream
 			if $stream == 0
 				printf "?"
@@ -875,58 +861,6 @@ document psbmds
 	psbmds     - Prints sb mds
 	psbmds 1   - Prints sb mds with timestamp
 	psbmds 1 1 - Prints sb mds with timestamp/delta
-end
-
-define psbmpi
-	set $cp_state = SB_Trans::MPI_Stream::cp_state
-	set $hash = 0
-	if $cp_state == 0
-		set $cscount = 0
-		set $hash_end = 0
-		set $hash = $hash_end
-		set $maxsend = 0
-		set $maxrecv = 0
-	else
-		set $csmap = &$cp_state->iv_stream_comm_map
-		set $hash_end = $csmap->iv_buckets
-		set $cscount = $csmap->iv_count
-		set $maxsend = $cp_state->ip_send_slot_mgr.iv_max
-		set $maxrecv = $cp_state->ip_recv_slot_mgr.iv_max
-	end
-	printf "psbmpi - SB_Trans::MPI_Stream::cp_state=%p, comm-count=%d, max-send-slot=%d, max-recv-slot=%d\n", $cp_state, $cscount, $maxsend, $maxrecv
-
-	printf "csmap (comm-stream map)\n"
-	while $hash < $hash_end
-		set $node = $csmap->ipp_HT[$hash]
-		set $i = 0
-		while $node != 0
-			set $csnode = (CS_Node *) $node
-			set $stream = $csnode->ip_stream
-			printf "  h=%d, c=%d: comm=0x%lx-stream=%p (%s)\n", $hash, $i, $csnode->iv_link.iv_id.l, $stream, $stream->ia_stream_name
-			set $node = $node->ip_next
-			set $i++
-		end
-		set $hash++
-	end
-
-	printf "send-reqs\n"
-	set $inx = 0
-	while $inx <= $maxsend
-		if $cp_state->ip_send_req[$inx] != 0
-			printf "  req[%d]=%p, msgid=%d\n", $inx, $cp_state->ip_send_req[$inx], $cp_state->ipp_send_md[$inx].iv_msgid
-		end
-		set $inx++
-	end
-	printf "recv-reqs\n"
-	set $inx = 0
-	while $inx < $maxrecv
-		if $cp_state->ip_recv_req[$inx] != 0
-			set $stream = $cp_state->ipp_recv_stream[$inx]
-			printf "  req[%d]=%p, stream=%p (%s)\n", $inx, $cp_state->ip_recv_req[$inx], $stream, $stream.ia_stream_name
-		end
-		set $inx++
-	end
-	printf "\n"
 end
 
 define psbmsctrl
@@ -1093,7 +1027,6 @@ define psbover
 	psbstreamdelq
 	psbstreams
 	psbmds
-	psbmpi
 	psblocio
 end
 
@@ -1112,7 +1045,6 @@ define psboverwfs
 	psbstreamdelq
 	psbstreams
 	psbmds
-	psbmpi
 	psblocio
 end
 
@@ -1247,57 +1179,28 @@ define psbstreamdelq
 end
 
 define psbstreams
-	if SB_Trans::MPI_Stream::cp_state == 0
-		set $max = 0
-		set $maxinuse = 0
-		set $total_count = 0
-		set $con_count = 0
-		set $acc_count = 0
-	else
-		set $max = SB_Trans::MPI_Stream::cp_state->iv_max_streams
-		set $total_count = SB_Trans::Trans_Stream::cv_stream_total_count.iv_val
-		set $con_count = SB_Trans::Trans_Stream::cv_stream_con_count.iv_val
-		set $acc_count = SB_Trans::Trans_Stream::cv_stream_acc_count.iv_val
-		set $maxinuse = $total_count
-		if SB_Trans::MPI_Stream::cp_state->ip_mon_stream == SB_Trans::MPI_Stream::cp_state->ipp_streams_all[0]
-			set $maxinuse++
-		end
-	end
-	set $count = 0
-	set $inx = 0
-	if $maxinuse <= 0
-		set $inx = $max + 1
-	end
-	printf "psbstreams - SB_Trans::MPI_Stream::cp_state->ipp_streams_all: max=%d, maxinuse=%d\n", $max, $maxinuse
+	set $acc_count = SB_Trans::Trans_Stream::cv_stream_acc_count.iv_val
+	set $con_count = SB_Trans::Trans_Stream::cv_stream_con_count.iv_val
+	set $total_count = SB_Trans::Trans_Stream::cv_stream_total_count.iv_val
+	set $acc_hi_count = SB_Trans::Trans_Stream::cv_stream_acc_hi_count.iv_val
+	set $con_hi_count = SB_Trans::Trans_Stream::cv_stream_con_hi_count.iv_val
+	set $total_hi_count = SB_Trans::Trans_Stream::cv_stream_total_hi_count.iv_val
+	printf "psbstreams - SB_Trans::Trans_Stream\n"
 	printf "stream counts total=%d, con=%d, acc=%d\n", $total_count, $con_count, $acc_count
-	psbaintlabelget gv_sb_mpistream_print.iv_mon_recv_id_label_map 0
-	set $monr0id = $label
-	psbaintlabelget gv_sb_mpistream_print.iv_mon_recv_id_label_map 1
-	set $monr1id = $label
-	psbaintlabelget gv_sb_mpistream_print.iv_recv_id_label_map 0
-	set $r0id = $label
-	psbaintlabelget gv_sb_mpistream_print.iv_recv_id_label_map 1
-	set $r1id = $label
-	while $inx <= $max
-		set $stream = SB_Trans::MPI_Stream::cp_state->ipp_streams_all[$inx]
-		if $stream != 0
-			set $r0state = $stream->ia_r[0].iv_rsm_state
-			set $r1state = $stream->ia_r[1].iv_rsm_state
-			psbaintlabelget gv_sb_mpistream_print.iv_recv_state_label_map $r0state
-			set $r0label = $label
-			psbaintlabelget gv_sb_mpistream_print.iv_recv_state_label_map $r1state
-			set $r1label = $label
-			if $stream->iv_mon_msg_size > 0
-				printf "stream[%d]=%p, name=%s, r[0(%s)].state=%d(%s), slot-hdr=%d, ctrl=%d, data=%d, r[1(%s)]=.state=%d(%s), slot-hdr=%d, ctrl=%d, data=%d\n", $inx, $stream, $stream->ia_stream_name, $monr0id, $r0state, $r0label, $stream->ia_r[0].iv_slot_hdr, $stream->ia_r[0].iv_slot_ctrl, $stream->ia_r[0].iv_slot_data, $monr1id, $r1state, $r1label, $stream->ia_r[1].iv_slot_hdr, $stream->ia_r[1].iv_slot_ctrl, $stream->ia_r[1].iv_slot_data
-			else
-				printf "stream[%d]=%p, name=%s, r[0(%s)].state=%d(%s), slot-hdr=%d, ctrl=%d, data=%d, r[1(%s)]=.state=%d(%s), slot-hdr=%d, ctrl=%d, data=%d\n", $inx, $stream, $stream->ia_stream_name, $r0id, $r0state, $r0label, $stream->ia_r[0].iv_slot_hdr, $stream->ia_r[0].iv_slot_ctrl, $stream->ia_r[0].iv_slot_data, $r1id, $r1state, $r1label, $stream->ia_r[1].iv_slot_hdr, $stream->ia_r[1].iv_slot_ctrl, $stream->ia_r[1].iv_slot_data
-			end
-			set $count++
-			if $count >= $maxinuse
-				set $inx = $max
-			end
+	printf "stream counts hi-total=%d, hi-con=%d, hi-acc=%d\n", $total_hi_count, $con_hi_count, $acc_hi_count
+	set $smap = SB_Trans::Sock_Stream::cv_stream_map
+	set $hash = 0
+	set $hash_end = $smap.iv_buckets
+	while $hash < $hash_end
+		set $link = (SS_Node *) $smap.ipp_HT[$hash]
+		set $i = 0
+		while $link != 0
+			set $stream = $link->ip_stream
+			printf "hash=%d, i=%d, stream=%p, name=%s\n", $hash, $i, $link, $stream->ia_stream_name
+			set $link = (SS_Node *) $link->iv_link.ip_next
+			set $i++
 		end
-		set $inx++
+		set $hash++
 	end
 	printf "\n"
 end

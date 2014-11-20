@@ -35,15 +35,25 @@ class CNotice
 public:
     int  Nid;                  // node id of requesting process
     int  Pid;                  // process id of requesting process
+    Verifier_t verifier_;      // verifier of requesting process
+    string name_;
     _TM_Txid_External TransID; // Associated Transaction ID, zero is not associated.
        
-    CNotice( int nid, int pid, _TM_Txid_External trans_id, CProcess *process );
+    CNotice( int nid
+           , int pid
+           , Verifier_t verifier
+           , const char *name
+           , _TM_Txid_External trans_id
+           , CProcess *process );
     ~CNotice( void );
 
     void Cancel( void );
     void DeLink( CNotice **head, CNotice **tail );
     CNotice *GetNext( void );
-    CNotice *GetNotice( int nid, int pid, _TM_Txid_External trans_id );
+    CNotice *GetNotice( int nid
+                      , int pid
+                      , Verifier_t verifier
+                      , _TM_Txid_External trans_id );
     CNotice *Link( CNotice *entry );
     void NotifyAll( void );
     bool isCanceled ( void ) { return canceled_; }

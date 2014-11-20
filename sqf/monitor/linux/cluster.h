@@ -56,6 +56,12 @@ class CCluster
  protected:
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
+    int           *socks_;
+    int           *sockPorts_;
+    int            serverSock_;
+    int            serverSockPort_;
+    int            epollFD_;
+
 public:
 
     enum ReintegrateError
@@ -83,6 +89,8 @@ public:
     CCluster( void );
     virtual ~CCluster( void );
 
+    int  AcceptSock( void );
+    void ConnectToSelf( void );
 #ifndef USE_BARRIER
     void ArmWakeUpSignal (void);
 #endif
@@ -110,7 +118,7 @@ public:
     int  MapRank( int current_rank );
     void MarkDown( int nid, bool communicate_state=false );
     bool CheckSpareSet( int pnid );
-    inline bool  IsIntegrating( void ) { return( (joinComm_ != MPI_COMM_NULL) || integratingPNid_ != -1 ); }
+    inline bool  IsIntegrating( void ) { return( (joinSock_ != -1 || joinComm_ != MPI_COMM_NULL) || integratingPNid_ != -1 ); }
     struct message_def *JoinMessage( const char *node_name, int pnid, JOINING_PHASE phase );
     struct message_def *SpareUpMessage( const char *node_name, int nid );
     struct message_def *ReIntegErrorMessage( const char *msgText );
@@ -126,14 +134,18 @@ public:
                      void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm Comm);
     void ReIntegrate( int initProblem );
     void SetJoinComm(MPI_Comm joinComm) { joinComm_ = joinComm; }
+    void SetJoinSock( int  joinSock ) { joinSock_ = joinSock; }
     unsigned long long getSeqNum() { return seqNum_; }
     MPI_Comm getJoinComm() { return joinComm_; }
+    int getJoinSock() { return joinSock_; }
     void ActivateSpare( CNode *spareNode, CNode *downNode, bool checkHealth=false );
     void NodeTmReady( int nid );
     void NodeReady( CNode *spareNode );
     bool isMonSyncResponsive() { return monSyncResponsive_; }
     void SaveSchedData( struct internal_msg_def *recv_msg );
     bool IsNodeDownDeathNotices() { return nodeDownDeathNotices_; }
+
+    int incrGetVerifierNum();
 
     enum { SYNC_MAX_RESPONSIVE = 1 }; // Max seconds before sync thread is "stuck"
 
@@ -214,6 +226,7 @@ private:
 
     int integratingPNid_;       // pnid of node when re-integration in progress
     MPI_Comm  joinComm_;        // new to creator communicator (1-to-1)
+    int joinSock_;              // new to creator socket used at join phase
     unsigned long long seqNum_;
     int cumulativeDelaySec_;
 
@@ -261,11 +274,11 @@ private:
     int *  otherMonRank_;
 
     // Set of nodes that are up, one bit per node
-    unsigned long long upNodes_;
+    upNodes_t upNodes_;  // Array of 64 bits
 
-    // Container to store new communicators from MarkUp
+    // Container to store new communicators or socket from MarkUp
     typedef struct commInfo_s
-    { int pnid; int otherRank; MPI_Comm comm; struct timespec ts;} commInfo_t;
+    { int pnid; int otherRank; MPI_Comm comm; int socket; struct timespec ts;} commInfo_t;
     typedef list<commInfo_t> newComms_t;
     newComms_t newComms_;
     CLock newCommsLock_;
@@ -280,7 +293,11 @@ private:
 
     bool nodeDownDeathNotices_; // default true
 
-    int ag(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
+    Verifier_t verifierNum_; // part of phandle that uniquely identifies a process 
+
+    int Allgather(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
+    int AllgatherIB(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
+    int AllgatherSock(int nbytes, void *sbuf, char *rbuf, int tag, MPI_Status *stats);
 
     void ValidateClusterState( cluster_state_def_t nodestate[],
                                bool haveDivergence );
@@ -289,6 +306,7 @@ private:
     void HandleReintegrateError( int rc, int err,
                                  int nid, nodeId_t *nodeInfo,
                                  bool abort );
+    void ReIntegrateMPI( int initProblem );
     void SendReIntegrateStatus( STATE nodeState, int status );
 
     void UpdateClusterState( bool & shutdown,
@@ -311,6 +329,13 @@ private:
     void InitializeCluster( void );
     void InitializeConfigCluster( void );
     void InitializeVirtualConfigCluster( int rank );
+
+    void InitClusterSocks( int worldSize, int myRank, char *nodeNames );
+    int AcceptSock( int sock );
+    void EpollCtl( int efd, int op, int fd, struct epoll_event *event );
+    int  MkSrvSock( int *pport );
+    int  MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port );
+
 };
 
 extern bool Emulate_Down;

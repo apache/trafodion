@@ -41,10 +41,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
@@ -54,17 +54,19 @@ bool tracing = false;
 
 const char *MyName;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 
 class CreatedProcess
 {
 public:
-    CreatedProcess(const char * name, int nid, int pid);
+    CreatedProcess(const char * name, int nid, int pid, Verifier_t verifier);
     ~CreatedProcess(){}
     const char * getName() { return name_.c_str(); }
     int getNid() { return nid_; }
     int getPid() { return pid_; }
+    int getVerifier() { return verifier_; }
     void setDeathNotice() { deathNotice_ = true; }
     bool getDeathNotice() { return deathNotice_; }
 
@@ -72,11 +74,19 @@ private:
     string name_;
     int nid_;
     int pid_;
+    Verifier_t verifier_;
     bool deathNotice_;
 };
 
-CreatedProcess::CreatedProcess (const char * name, int nid, int pid)
-    : name_(name), nid_(nid), pid_(pid), deathNotice_ (false)
+CreatedProcess::CreatedProcess( const char *name
+                              , int nid
+                              , int pid
+                              , Verifier_t verifier)
+               : name_(name)
+               , nid_(nid)
+               , pid_(pid)
+               , verifier_(verifier)
+               , deathNotice_ (false)
 {
 }
 
@@ -92,16 +102,19 @@ void recv_notice_msg(struct message_def *recv_msg, int )
 {
     if ( recv_msg->type == MsgType_ProcessDeath )
     {
-        printf("[%s] Process death notice received for (%d, %d)\n",
+        printf("[%s] Process death notice received for %s (%d, %d:%d)\n", 
                MyName,
+               recv_msg->u.request.u.death.process_name,
                recv_msg->u.request.u.death.nid,
-               recv_msg->u.request.u.death.pid);
+               recv_msg->u.request.u.death.pid,
+               recv_msg->u.request.u.death.verifier);
 
         bool found = false;
         for (int i=0; i<procListCount; i++)
         {
             if (procList[i]->getNid() == recv_msg->u.request.u.death.nid
-             && procList[i]->getPid() == recv_msg->u.request.u.death.pid)
+             && procList[i]->getPid() == recv_msg->u.request.u.death.pid
+             && procList[i]->getVerifier() == recv_msg->u.request.u.death.verifier)
             {
                 procList[i]->setDeathNotice();
                 ++deathNoticeCount;
@@ -111,7 +124,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find procList object for (%d, %d)\n",
+            printf("[%s] Could not find procList object for (%d, %d)\n", 
                    MyName, recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid);
         }
@@ -134,25 +147,26 @@ bool getProcesses ( )
     bool done = false;
     int nid;
     int pid;
+    Verifier_t verifier;
     _TM_Txid_External transid = {{0LL, 0LL, 0LL, 0LL}};
 
-    rc = MPI_Comm_accept( util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
+    rc = XMPI_Comm_accept( util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
                           &CtrlComm);
     if (rc == MPI_SUCCESS)
     {
-        MPI_Comm_set_errhandler (CtrlComm, MPI_ERRORS_RETURN);
+        XMPI_Comm_set_errhandler (CtrlComm, MPI_ERRORS_RETURN);
         if ( tracing )
             printf ("[%s] Connected to childExitParent\n", MyName);
     }
     else
     {
-        printf ("[%s] MPI_Comm_accept failed, rc=%d\n", MyName, rc);
+        printf ("[%s] XMPI_Comm_accept failed, rc=%d\n", MyName, rc);
         return false;
     }
 
     do
     {
-        rc = MPI_Recv (recvbuf, 25, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,
+        rc = XMPI_Recv (recvbuf, 25, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,
                        CtrlComm, &status);
         if (rc == MPI_SUCCESS)
         {
@@ -164,15 +178,15 @@ bool getProcesses ( )
             {   // Got a process name, keep track of it
                 for (int i=0; i<3; i++)
                 {
-                    if (util.requestProcInfo ( recvbuf, nid, pid ))
+                    if (util.requestProcInfo ( recvbuf, nid, pid, verifier ))
                     {
-                        printf ("[%s] registering process %s (%d, %d)\n",
-                                MyName, recvbuf, nid, pid);
+                        printf ("[%s] registering process %s (%d, %d:%d)\n",
+                                MyName, recvbuf, nid, pid, verifier);
 
                         procList[procListCount]
-                            = new CreatedProcess ( recvbuf, nid, pid );
+                            = new CreatedProcess( recvbuf, nid, pid, verifier );
                         ++procListCount;
-                        util.requestNotice ( nid, pid, false, transid );
+                        util.requestNotice ( nid, pid, verifier, "", false, transid );
                         break;
                     }
                     // Allow more time for process startup
@@ -182,7 +196,8 @@ bool getProcesses ( )
         }
         else
         {
-            printf ("[%s] MPI_Recv failed, rc=%d\n", MyName, rc);
+            printf ("[%s] XMPI_Recv failed, rc=%d\n", MyName, rc);
+            return false;
         }
 
     }
@@ -198,8 +213,7 @@ void cleanup ()
 
     if ( tracing ) printf ("[%s] calling Finalize!\n", MyName);
 
-    MPI_Close_port( util.getPort() );
-    MPI_Finalize ();
+    XMPI_Close_port( util.getPort() );
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;
@@ -209,15 +223,10 @@ void cleanup ()
 int main (int argc, char *argv[])
 {
     bool testSuccess = true;
-    int MyRank = -1;
-
-    if ( tracing ) util.setTrace (tracing);
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     MyName = util.getProcName();
+    tracing = util.getTrace();
 
     util.InitLocalIO( );
     assert (gp_local_mon_io);
@@ -227,24 +236,37 @@ int main (int argc, char *argv[])
 
     util.requestStartup ();
 
+    printf ("[%s] tracing=%d\n", MyName, tracing);
+
     // Start process "childExitParent" that will start several child processes
     int nid;
     int pid;
-    char *childArgs[0];
+    Verifier_t verifier;
+    char *childArgs[1] = {(char *) "-t"};
     char procName[25];
     childDeathParent = NULL;
-    if (util.requestNewProcess (1, ProcessType_Generic, false,
-                                (char *) "$PROCA", "childExitParent", "", "",
-                                0, childArgs, nid, pid, procName))
+    if (util.requestNewProcess ( 1
+                               , ProcessType_Generic
+                               , false     // nowait
+                               , (char *) "$PROCA"
+                               , "childExitParent"
+                               , ""        // inFile
+                               , ""        // outFile
+                               , ((tracing) ? 1: 0)
+                               , childArgs
+                               , nid
+                               , pid
+                               , verifier
+                               , procName))
     {
-        procList[0] = new CreatedProcess ( "$PROCA", nid, pid );
+        procList[0] = new CreatedProcess ( "$PROCA", nid, pid, verifier );
         ++procListCount;
     }
     else
     {
         printf ("[%s] error starting childExitParent process\n", MyName);
         printf ("[%s] test failed\n", MyName);
-
+        
         printf("[%s] Test FAILED\n", MyName);
 
         cleanup();
@@ -264,7 +286,7 @@ int main (int argc, char *argv[])
     }
 
     // Kill "childExitParent"
-    util.requestKill ( "$PROCA" );
+    util.requestKill ( "$PROCA", verifier );
 
     // Wait until all death notices received or time-out
     for (int i=0; i<5; i++)

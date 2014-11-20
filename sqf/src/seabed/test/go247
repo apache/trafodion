@@ -1,0 +1,323 @@
+#!/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+# setup
+. ./gosetupcl
+
+echo "********* TEST `date` t247 *********"
+TMP=/tmp/go247$$
+
+go69mon -start
+sleep 2
+sqstate -selprog sqstate -self sbtest1-t1 $*
+rc=$?
+echo $rc
+rc=0
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self sbtest2-t1 $*
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self sbtest3-t1 $*
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self sb-opens $*
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self sb-pstate $*
+	rc=$?
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg get:gv_ms_ic_var8 -icarg set:gv_ms_ic_var8=0x21 -icarg get:gv_ms_ic_var8 -icarg set:gv_ms_ic_var8=123 -icarg get:gv_ms_ic_var8 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  get:gv_ms_ic_var8:0x01 set:gv_ms_ic_var8=0x21:<ok> get:gv_ms_ic_var8:0x21 set:gv_ms_ic_var8=123:<ok> get:gv_ms_ic_var8:0x7b"
+	out=`grep "^  get:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg get:gv_ms_ic_var16 -icarg set:gv_ms_ic_var16=0x4321 -icarg get:gv_ms_ic_var16 -icarg set:gv_ms_ic_var16=12345 -icarg get:gv_ms_ic_var16 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  get:gv_ms_ic_var16:0x0123 set:gv_ms_ic_var16=0x4321:<ok> get:gv_ms_ic_var16:0x4321 set:gv_ms_ic_var16=12345:<ok> get:gv_ms_ic_var16:0x3039"
+	out=`grep "^  get:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg get:gv_ms_ic_var32 -icarg set:gv_ms_ic_var32=0x87654321 -icarg get:gv_ms_ic_var32 -icarg set:gv_ms_ic_var32=1234567890 -icarg get:gv_ms_ic_var32 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  get:gv_ms_ic_var32:0x01234567 set:gv_ms_ic_var32=0x87654321:<ok> get:gv_ms_ic_var32:0x87654321 set:gv_ms_ic_var32=1234567890:<ok> get:gv_ms_ic_var32:0x499602d2"
+	out=`grep "^  get:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg get:gv_ms_ic_var64 -icarg set:gv_ms_ic_var64=0xfedcba9876543210 -icarg get:gv_ms_ic_var64 -icarg set:gv_ms_ic_var64=12345678901234567 -icarg get:gv_ms_ic_var64 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  get:gv_ms_ic_var64:0x0123456789abcdef set:gv_ms_ic_var64=0xfedcba9876543210:<ok> get:gv_ms_ic_var64:0xfedcba9876543210 set:gv_ms_ic_var64=12345678901234567:<ok> get:gv_ms_ic_var64:0x002bdc545d6b4b87"
+	out=`grep "^  get:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg getd:gv_ms_ic_var8 -icarg getd:gv_ms_ic_var16 -icarg getd:gv_ms_ic_var32 -icarg getd:gv_ms_ic_var64 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  getd:gv_ms_ic_var8:1 getd:gv_ms_ic_var16:291 getd:gv_ms_ic_var32:19088743 getd:gv_ms_ic_var64:81985529216486895"
+	out=`grep "^  getd:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg getd:gv_ms_ic_var8 -icarg getd:gv_ms_ic_var16 -icarg getd:gv_ms_ic_var32 -icarg getd:gv_ms_ic_var64 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  getd:gv_ms_ic_var8:1 getd:gv_ms_ic_var16:291 getd:gv_ms_ic_var32:19088743 getd:gv_ms_ic_var64:81985529216486895"
+	out=`grep "^  getd:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg getd:gv_ms_ic_var8 -icarg getd:gv_ms_ic_var16 -icarg getd:gv_ms_ic_var32 -icarg getd:gv_ms_ic_var64 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  getd:gv_ms_ic_var8:1 getd:gv_ms_ic_var16:291 getd:gv_ms_ic_var32:19088743 getd:gv_ms_ic_var64:81985529216486895"
+	out=`grep "^  getd:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg get:xx -icarg set:xx=4 -icarg badcmd sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  get:xx:<no-var> set:xx=4:<no-var> badcmd:<uknown-cmd>"
+	out=`grep "^  get:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg list sb-prog
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg call:ms_trace_on sb-prog
+	rc=$?
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg call:ms_trace_on -icarg set:gv_ms_trace_mon=1 -icarg set:gv_ms_trace_params=1 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  call:ms_trace_on:ms_trace_on=<ok> set:gv_ms_trace_mon=1:<ok> set:gv_ms_trace_params=1:<ok>"
+	out=`grep "^  call:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg listd sb-prog
+	rc=$?
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_1=0x0102030405060708090a0b0c -icarg get:gp_ms_ic_test_dyn_1 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_1=0x0102030405060708090a0b0c:<ok> get:gp_ms_ic_test_dyn_1:0x0102030405060708090a0b0c"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_2 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_2:<no-value>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:xx sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:xx:<no-value>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_2=0x01 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_2=0x01:<no-write-acc>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_1=0x1 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_1=0x1:<odd-num-digits>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_1=0x01 sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_1=0x01:<size-mismatch-tgt-size=12-set-size=1>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_1=0xw102030405060708090a0b0c sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_1=0xw102030405060708090a0b0c:<invalid-digit=w>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_1=0x0z02030405060708090a0b0c sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_1=0x0z02030405060708090a0b0c:<invalid-digit=z>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -self -icarg set:gp_ms_ic_test_dyn_1=a sb-prog | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	exp="  set:gp_ms_ic_test_dyn_1=a:<must-start-with-0x>"
+	out=`grep "^  set:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+if [ $rc = 0 ]; then
+	sqstate -selprog sqstate -v -self -icarg get:t5_var sbtest5-t1 sb-prog $* | tee $TMP
+	rc=$?
+fi
+if [ $rc = 0 ]; then
+	file -L `which sqstate`| grep 64-bit > /dev/null
+	if [ $? = 0 ]; then
+		exp="  get:t5_var:t5_var(Struct_Test5)={ s1_c=0x01, s1_s=0x0002, s1_i=0x00000003, s1_l=0x0000000000000004, s1_ll=0x0000000000000005, { s2_c=0x81, s2_s=0x8002, s2_i=0x80000003, s2_l=0x8000000000000004, s2_ll=0x8000000000000005 } }"
+	else
+		exp="  get:t5_var:t5_var(Struct_Test5)={ s1_c=0x01, s1_s=0x0002, s1_i=0x00000003, s1_l=0x00000004, s1_ll=0x0000000000000005, { s2_c=0x81, s2_s=0x8002, s2_i=0x80000003, s2_l=0x80000004, s2_ll=0x8000000000000005 } }"
+	fi
+	out=`grep "^  get:" $TMP`
+	if [ "$exp" != "$out" ]; then
+		echo "ERROR expected $exp"
+		rc=1
+	fi
+fi
+
+rm -f $TMP
+
+
+go69mon -stop
+echo
+if [ $rc != 0 ]; then
+	tcheck -fail t247
+fi
+exit $rc

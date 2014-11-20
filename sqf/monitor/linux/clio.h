@@ -33,7 +33,9 @@ using namespace std;
 #include "localio.h"
 
 
-extern int   gv_ms_su_nid;
+extern int  gv_ms_su_nid;
+extern int  gv_ms_su_pid;
+extern SB_Verif_Type  gv_ms_su_verif;
 extern char ga_ms_su_c_port[MPI_MAX_PORT_NAME];
 
 typedef void (*CallBack)(struct message_def *, int);
@@ -133,6 +135,7 @@ public:
     bool                       iv_monitor_down;
     bool                       iv_shutdown;
     int                        iv_pid;
+    Verifier_t                 iv_verifier;
 
 private:
     // callback routines here

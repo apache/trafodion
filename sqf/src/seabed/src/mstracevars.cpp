@@ -27,7 +27,6 @@ char           *gp_ms_trace_file_dir       = NULL;
 char           *gp_ms_trace_prefix         = const_cast<char *>("MS");
 bool            gv_ms_trace                = false;
 bool            gv_ms_trace_abandon        = false;
-bool            gv_ms_trace_aggr           = false;
 bool            gv_ms_trace_alloc          = false;
 bool            gv_ms_trace_data           = false;
 int             gv_ms_trace_data_max       = -1;

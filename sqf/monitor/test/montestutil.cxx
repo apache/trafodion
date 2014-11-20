@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "clio.h"
 #include "clusterconf.h"
@@ -38,9 +40,9 @@
 #endif
 
 #include "montestutil.h"
+#include "xmpi.h"
 
 extern FILE *shell_locio_trace_file;
-
 
 const char *MessageTypeString( MSGTYPE type )
 {
@@ -92,17 +94,23 @@ const char *MessageTypeString( MSGTYPE type )
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Monitor test utility 
+//////////////////////////////////////////////////////////////////////////////
 void MonTestUtil::processArgs( int argc, char *argv[] )
 {
     int i;
+    shutdownBeforeStartup_ = false;
+    nodedownBeforeStartup_ = false;
+    trace_ = false;
 
     // enable tracing if trace flag supplied
     for (i=0; i<argc; i++)
     {
-        //printf( "[%s] MonTestUtil::processArgs processing argv[%d]=%s.\n",
-        //        argv[0], i, argv[i] );
-        if ( strcmp(argv[i], "-t") == 0 ) trace_ = true;
+        if ( strcmp(argv[i], "-t") == 0 ) gv_xmpi_trace = trace_ = true;
+//        if ( strcmp(argv[i], "-t") == 0 ) trace_ = true;
         if ( strcmp(argv[i], "-x") == 0 ) shutdownBeforeStartup_ = true;
+        if ( strcmp(argv[i], "-y") == 0 ) nodedownBeforeStartup_ = true;
     }
 
     if ( trace_ )
@@ -131,9 +139,11 @@ void MonTestUtil::processArgs( int argc, char *argv[] )
 
     nid_ = atoi(argv[3]);
     pid_ = atoi(argv[4]);
+    gv_ms_su_verif = verifier_ = atoi(argv[9]);
     strcpy( processName_, argv[5] );
-
-    MPI_Open_port( MPI_INFO_NULL, port_ );
+    strcpy (ga_ms_su_c_port, argv[6]);
+    
+    XMPI_Open_port( MPI_INFO_NULL, port_ );
 
     if ( trace_ )
     {
@@ -153,7 +163,7 @@ void MonTestUtil::processArgs( int argc, char *argv[] )
         }
         else if (testList)
         {
-            num = strtol(argv[i], &ptr, 10);
+            num = static_cast<int>(strtol(argv[i], &ptr, 10));
             if (ptr == argv[i] || errno != 0)
             {   // Encountered non-numeric argument
                 break;
@@ -258,6 +268,8 @@ void MonTestUtil::requestStartup ( )
     msg->u.request.u.startup.os_pid = getpid ();
     msg->u.request.u.startup.event_messages = true;
     msg->u.request.u.startup.system_messages = true;
+    msg->u.request.u.startup.verifier = verifier_;
+    msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
 
     if ( trace_ )
     {
@@ -413,6 +425,8 @@ void MonTestUtil::requestExit ( void )
     msg->u.request.type = ReqType_Exit;
     msg->u.request.u.exit.nid = nid_;
     msg->u.request.u.exit.pid = pid_;
+    msg->u.request.u.exit.verifier = verifier_;
+    strcpy (msg->u.request.u.exit.process_name, processName_);
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
@@ -527,7 +541,7 @@ void MonTestUtil::InitLocalIO( int MyPNid )
         char tracefile[MAX_SEARCH_PATH];
         char *tmpDir;
 
-        tmpDir = getenv( "MPI_TMPDIR" );
+        tmpDir = getenv( "XMPI_TMPDIR" );
         if (tmpDir)
         {
             sprintf( tracefile, "%s/shell.trace.%d", tmpDir, getpid() );
@@ -555,8 +569,10 @@ int mon_log_write(int pv_event_type, posix_sqlog_severity_t pv_severity, char *p
     return lv_err;
 }
 
-bool MonTestUtil::requestOpen (const char *openProcessName, int deathNotice,
-                               char *port)
+bool MonTestUtil::requestOpen( const char *openProcessName
+                             , Verifier_t openProcessVerifier
+                             , int deathNotice
+                             , char *port)
 {
     int count;
     struct message_def *msg;
@@ -565,7 +581,10 @@ bool MonTestUtil::requestOpen (const char *openProcessName, int deathNotice,
 
     if ( trace_ )
     {
-        printf ("[%s] opening process %s.\n", processName_, openProcessName);
+        printf( "[%s] opening process %s:%d.\n"
+              , processName_
+              , openProcessName
+              , openProcessVerifier);
     }
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
@@ -580,12 +599,24 @@ bool MonTestUtil::requestOpen (const char *openProcessName, int deathNotice,
     msg->u.request.type = ReqType_Open;
     msg->u.request.u.open.nid = nid_;
     msg->u.request.u.open.pid = pid_;
-    strcpy (msg->u.request.u.open.process_name, openProcessName);
+    msg->u.request.u.open.verifier = verifier_;
+    strcpy (msg->u.request.u.open.process_name, processName_);
+    msg->u.request.u.open.target_nid = -1;
+    msg->u.request.u.open.target_pid = -1;
+    msg->u.request.u.open.target_verifier = openProcessVerifier;
+    strcpy (msg->u.request.u.open.target_process_name, openProcessName);
     msg->u.request.u.open.death_notification = deathNotice;
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
     status.MPI_TAG = msg->reply_tag;
+    if ( trace_ )
+    {
+        printf( "[%s] opening request completed %s:%d.\n"
+              , processName_
+              , openProcessName
+              , openProcessVerifier);
+    }
 
     if ((status.MPI_TAG == REPLY_TAG) &&
         (count == sizeof (struct message_def)))
@@ -597,11 +628,13 @@ bool MonTestUtil::requestOpen (const char *openProcessName, int deathNotice,
             {
                 if ( trace_ )
                 {
-                    printf("[%s] opened process %s successfully. Nid=%d, "
-                           "Pid=%d, Port=%s, rtn=%d\n",
+                    printf("[%s] opened process %s successfully. Nid=%d, Pid=%d, "
+                           "Verifier=%d, "
+                           "Port=%s, rtn=%d\n",
                            processName_, openProcessName,
                            msg->u.reply.u.open.nid,
                            msg->u.reply.u.open.pid,
+                           msg->u.reply.u.open.verifier,
                            msg->u.reply.u.open.port,
                            msg->u.reply.u.open.return_code);
                 }
@@ -610,8 +643,8 @@ bool MonTestUtil::requestOpen (const char *openProcessName, int deathNotice,
             }
             else
             {
-                printf ("[%s] open process %s failed, rc=%d\n",
-                        processName_, openProcessName,
+                printf ("[%s] open process %s:%d failed, rc=%d\n",
+                        processName_, openProcessName, openProcessVerifier,
                         msg->u.reply.u.open.return_code);
             }
         }
@@ -634,7 +667,8 @@ bool MonTestUtil::requestOpen (const char *openProcessName, int deathNotice,
     return result;
 }
 
-bool MonTestUtil:: requestClose(const char *closeProcessName)
+bool MonTestUtil:: requestClose( const char *closeProcessName
+                               , Verifier_t closeProcessVerifier )
 {
     int count;
     struct message_def *msg;
@@ -658,6 +692,7 @@ bool MonTestUtil:: requestClose(const char *closeProcessName)
     msg->u.request.type = ReqType_Close;
     msg->u.request.u.close.nid = nid_;
     msg->u.request.u.close.pid = pid_;
+    msg->u.request.u.close.verifier = closeProcessVerifier;
     strcpy (msg->u.request.u.close.process_name, closeProcessName);
 
     gp_local_mon_io->send_recv( msg );
@@ -737,9 +772,13 @@ void get_server_death (char *my_name)
         if ((msg->type == MsgType_ProcessDeath) &&
             (msg->u.request.type == ReqType_Notice))
         {
-            printf ("[%s] process death successfully. Nid=%d, Pid=%d\n",
+            printf ("[%s] process death successfully. "
+                    "Name=%s, Nid=%d, Pid=%d, Verifier=%d\n",
                     my_name,
-                    msg->u.request.u.death.nid, msg->u.request.u.death.pid);
+                    msg->u.request.u.death.process_name,
+                    msg->u.request.u.death.nid,
+                    msg->u.request.u.death.pid,
+                    msg->u.request.u.death.verifier);
         }
         else
         {
@@ -796,13 +835,16 @@ void get_shutdown (char *my_name)
     }
     else
     {
-        printf ("[%s] Invalid process death message\n", my_name);
+        printf ("[%s] Invalid shutdown message\n", my_name);
     }
     fflush (stdout);
     delete msg;
 }
 
-bool MonTestUtil::requestProcInfo( const char *processName, int &nid, int &pid )
+bool MonTestUtil::requestProcInfo( const char *processName
+                                 , int &nid
+                                 , int &pid 
+                                 , Verifier_t &verifier )
 {
     int count;
     MPI_Status status;
@@ -821,9 +863,12 @@ bool MonTestUtil::requestProcInfo( const char *processName, int &nid, int &pid )
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = nid_;
     msg->u.request.u.process_info.pid = pid_;
+    msg->u.request.u.process_info.verifier = verifier_;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = -1;
     msg->u.request.u.process_info.target_pid = -1;
-    strcpy(msg->u.request.u.process_info.process_name, processName);
+    msg->u.request.u.process_info.target_verifier = -1;
+    strcpy(msg->u.request.u.process_info.target_process_name, processName);
     msg->u.request.u.process_info.type = ProcessType_Undefined;
 
     gp_local_mon_io->send_recv( msg );
@@ -842,15 +887,17 @@ bool MonTestUtil::requestProcInfo( const char *processName, int &nid, int &pid )
                 {
                     if ( trace_ )
                     {
-                        printf ( "[%s] Got process status for %s (%d, %d), state=%s\n",
+                        printf ( "[%s] Got process status for %s (%d, %d:%d), state=%s\n",
                              processName_,
                              msg->u.reply.u.process_info.process[0].process_name,
                              msg->u.reply.u.process_info.process[0].nid,
                              msg->u.reply.u.process_info.process[0].pid,
+                             msg->u.reply.u.process_info.process[0].verifier,
                              (msg->u.reply.u.process_info.process[0].state == State_Up) ? "Up" : "not Up");
                     }
                     nid = msg->u.reply.u.process_info.process[0].nid;
                     pid = msg->u.reply.u.process_info.process[0].pid;
+                    verifier = msg->u.reply.u.process_info.process[0].verifier;
                     result = true;
                 }
                 else
@@ -868,7 +915,7 @@ bool MonTestUtil::requestProcInfo( const char *processName, int &nid, int &pid )
             else
             {
                 printf( "[%s] ProcessInfo failed, error=%s\n", processName_,
-                        MPIErrMsg(msg->u.reply.u.process_info.return_code) );
+                        XMPIErrMsg(msg->u.reply.u.process_info.return_code) );
             }
         }
         else
@@ -957,7 +1004,7 @@ bool MonTestUtil::requestNodeInfo ( int targetNid,
             else
             {
                 printf( "[%s] NodeInfo failed, error=%s\n", processName_,
-                        MPIErrMsg( msg->u.reply.u.node_info.return_code ) );
+                        XMPIErrMsg( msg->u.reply.u.node_info.return_code ) );
             }
         }
         else
@@ -978,8 +1025,12 @@ bool MonTestUtil::requestNodeInfo ( int targetNid,
     return result;
 }
 
-bool MonTestUtil::requestNotice( int nid, int pid, bool cancelFlag,
-                                 _TM_Txid_External &transid )
+bool MonTestUtil::requestNotice( int nid
+                               , int pid
+                               , Verifier_t verifier
+                               , const char *name
+                               , bool cancelFlag
+                               , _TM_Txid_External &transid )
 {
     int count;
     MPI_Status status;
@@ -988,10 +1039,10 @@ bool MonTestUtil::requestNotice( int nid, int pid, bool cancelFlag,
 
     if ( trace_ )
     {
-        printf ("[%s] Request notification on process death for (%d, %d), "
+        printf ("[%s] Request notification on process death for %s (%d, %d:%d), "
                 "trans_id=%lld.%lld.%lld.%lld.\n",
-                processName_, nid, pid, transid.txid[0], transid.txid[1],
-                transid.txid[2], transid.txid[3] );
+                processName_, name, nid, pid, verifier, transid.txid[0],
+                transid.txid[1], transid.txid[2], transid.txid[3] );
     }
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
@@ -1009,6 +1060,10 @@ bool MonTestUtil::requestNotice( int nid, int pid, bool cancelFlag,
     msg->u.request.u.notify.cancel = cancelFlag ? 1: 0;
     msg->u.request.u.notify.target_nid = nid;
     msg->u.request.u.notify.target_pid = pid;
+    msg->u.request.u.notify.verifier = verifier_;
+    strcpy(msg->u.request.u.notify.process_name, processName_);
+    msg->u.request.u.notify.target_verifier = verifier;
+    strcpy(msg->u.request.u.notify.target_process_name, name);
     msg->u.request.u.notify.trans_id = transid;
 
     gp_local_mon_io->send_recv( msg );
@@ -1059,7 +1114,7 @@ bool MonTestUtil::requestNotice( int nid, int pid, bool cancelFlag,
 }
 
 
-void MonTestUtil::requestKill( const char *name )
+void MonTestUtil::requestKill( const char *name, Verifier_t verifier )
 {
     int count;
     MPI_Status status;
@@ -1067,8 +1122,8 @@ void MonTestUtil::requestKill( const char *name )
 
     if ( trace_ )
     {
-        printf ("[%s] sending kill request for process %s.\n",
-                processName_, name);
+        printf ("[%s] sending kill request for process %s:%d.\n",
+                processName_, name, verifier );
     }
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
@@ -1085,7 +1140,10 @@ void MonTestUtil::requestKill( const char *name )
     msg->u.request.u.kill.pid = pid_;
     msg->u.request.u.kill.target_nid = -1;
     msg->u.request.u.kill.target_pid = -1;
-    strcpy (msg->u.request.u.kill.process_name, name);
+    msg->u.request.u.kill.verifier = verifier_;
+    strcpy(msg->u.request.u.kill.process_name, processName_);
+    msg->u.request.u.kill.target_verifier = verifier;
+    strcpy (msg->u.request.u.kill.target_process_name, name);
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
@@ -1099,8 +1157,8 @@ void MonTestUtil::requestKill( const char *name )
         {
             if (msg->u.reply.u.generic.return_code != MPI_SUCCESS)
             {
-                printf ("[%s] Kill failed, rc=%d\n", processName_,
-                        msg->u.reply.u.generic.return_code);
+                printf ("[%s] Kill %s:%d failed, rc=%d\n", processName_, name,
+                        verifier, msg->u.reply.u.generic.return_code);
             }
         }
         else
@@ -1126,7 +1184,8 @@ bool MonTestUtil::requestNewProcess (int nid, PROCESSTYPE type, bool nowait,
                                      const char *progName, const char *inFile,
                                      const char *outFile,
                                      int progArgC, char *progArgV[],
-                                     int& newNid, int& newPid,
+                                     int &newNid, int &newPid,
+                                     Verifier_t &newVerifier,
                                      char *newProcName)
 {
     int count;
@@ -1185,15 +1244,18 @@ bool MonTestUtil::requestNewProcess (int nid, PROCESSTYPE type, bool nowait,
                 if ( trace_ )
                 {
                     printf
-                        ("[%s] started process successfully. Nid=%d, Pid=%d, Process_name=%s, rtn=%d\n",
-                         processName_, msg->u.reply.u.new_process.nid,
-                         msg->u.reply.u.new_process.pid,
-                         msg->u.reply.u.new_process.process_name,
-                         msg->u.reply.u.new_process.return_code);
+                        ( "[%s] started process successfully. Nid=%d, Pid=%d:%d, Process_name=%s, rtn=%d\n"
+                        , processName_
+                        , msg->u.reply.u.new_process.nid
+                        , msg->u.reply.u.new_process.pid
+                        , msg->u.reply.u.new_process.verifier
+                        , msg->u.reply.u.new_process.process_name
+                        , msg->u.reply.u.new_process.return_code);
                 }
                 result = true;
                 newNid = msg->u.reply.u.new_process.nid;
                 newPid = msg->u.reply.u.new_process.pid;
+                newVerifier = msg->u.reply.u.new_process.verifier;
                 strcpy(newProcName, msg->u.reply.u.new_process.process_name);
             }
             else
@@ -1201,7 +1263,7 @@ bool MonTestUtil::requestNewProcess (int nid, PROCESSTYPE type, bool nowait,
                 printf ("[%s] new process failed to spawn, rc=%d (%s)\n",
                         processName_,
                         msg->u.reply.u.new_process.return_code,
-                        MPIErrMsg(msg->u.reply.u.new_process.return_code));
+                        XMPIErrMsg(msg->u.reply.u.new_process.return_code));
             }
         }
         else
@@ -1255,6 +1317,8 @@ bool MonTestUtil::requestGet ( ConfigType type,
     msg->u.request.type = ReqType_Get;
     msg->u.request.u.get.nid = nid_;
     msg->u.request.u.get.pid = pid_;
+    msg->u.request.u.get.verifier = verifier_;
+    strcpy(msg->u.request.u.get.process_name, processName_);
     msg->u.request.u.get.type = type;
     msg->u.request.u.get.next = resumeFlag;
     STRCPY(msg->u.request.u.get.group, group);
@@ -1324,6 +1388,8 @@ bool MonTestUtil::requestSet ( ConfigType type,
     msg->u.request.type = ReqType_Set;
     msg->u.request.u.set.nid = nid_;
     msg->u.request.u.set.pid = pid_;
+    msg->u.request.u.set.verifier = verifier_;
+    strcpy(msg->u.request.u.set.process_name, processName_);
     msg->u.request.u.set.type = type;
     STRCPY(msg->u.request.u.set.group, group);
     STRCPY(msg->u.request.u.set.key, key);
@@ -1350,7 +1416,7 @@ bool MonTestUtil::requestSet ( ConfigType type,
             else
             {
                 printf ("[%s] Set failed, error=%s (%d)\n", processName_,
-                        MPIErrMsg(msg->u.reply.u.generic.return_code),
+                        XMPIErrMsg(msg->u.reply.u.generic.return_code),
                         msg->u.reply.u.generic.return_code);
             }
         }
@@ -1405,9 +1471,13 @@ bool MonTestUtil::requestNodeDown( int nid )
     return result;
 }
 
-bool MonTestUtil::requestSendEvent (int targetNid, int targetPid,
-                                    PROCESSTYPE type, int eventId,
-                                    const char *eventData)
+bool MonTestUtil::requestSendEvent( int targetNid
+                                  , int targetPid
+                                  , Verifier_t targetVerifier
+                                  , const char * targetProcessName
+                                  , PROCESSTYPE type
+                                  , int eventId
+                                  , const char *eventData)
 {
     int count;
     MPI_Status status;
@@ -1434,9 +1504,13 @@ bool MonTestUtil::requestSendEvent (int targetNid, int targetPid,
     msg->u.request.u.event.pid = pid_;
     msg->u.request.u.event.target_nid = targetNid;
     msg->u.request.u.event.target_pid = targetPid;
+    msg->u.request.u.event.verifier = verifier_;
+    strcpy(msg->u.request.u.event.process_name, processName_);
+    msg->u.request.u.event.target_verifier = targetVerifier;
+    strcpy(msg->u.request.u.event.target_process_name, targetProcessName);
     msg->u.request.u.event.type = type;
     msg->u.request.u.event.event_id = eventId;
-    msg->u.request.u.event.length = strlen(eventData);
+    msg->u.request.u.event.length = static_cast<int>(strlen(eventData));
     STRCPY(msg->u.request.u.event.data, eventData);
 
     gp_local_mon_io->send_recv( msg );
@@ -1461,7 +1535,7 @@ bool MonTestUtil::requestSendEvent (int targetNid, int targetPid,
             else
             {
                 printf ("[%s] Send event failed, error=%s (%d)\n", processName_,
-                        MPIErrMsg(msg->u.reply.u.generic.return_code),
+                        XMPIErrMsg(msg->u.reply.u.generic.return_code),
                         msg->u.reply.u.generic.return_code);
             }
         }
@@ -1492,7 +1566,7 @@ char * MonTestUtil::MPIErrMsg ( int code )
     if (MPI_Error_string (code, buffer, &length) != MPI_SUCCESS)
     {
         sprintf(buffer,"MPI_Error_string: Invalid error code (%d)\n", code);
-        length = strlen(buffer);
+        length = static_cast<int>(strlen(buffer));
     }
     buffer[length] = '\0';
 
@@ -1547,25 +1621,35 @@ int MonTestUtil::getNodeCount ( void )
     return nodeCount;
 }
 
-bool MonTestUtil::openProcess (const char * procName, int deathNotice,
-                               MPI_Comm &comm)
+bool MonTestUtil::openProcess( const char *procName
+                             , Verifier_t procVerifier
+                             , int deathNotice
+                             , MPI_Comm &comm)
 {
     char procPort[MPI_MAX_PORT_NAME];
     bool result = false;
 
-    if ( requestOpen ( procName, deathNotice, procPort ) )
+    if ( trace_ )
     {
-        int rc = MPI_Comm_connect (procPort, MPI_INFO_NULL,
+        printf ("[%s] opening process %s\n",
+                processName_, procName );
+    }
+
+    if ( requestOpen( procName, procVerifier, deathNotice, procPort ) )
+    {
+        if ( trace_ ) printf ("[%s] XMPI_Comm_connect(port=%s)\n", processName_, procPort);
+
+        int rc = XMPI_Comm_connect (procPort, MPI_INFO_NULL,
                                    0, MPI_COMM_SELF, &comm);
         if (rc == MPI_SUCCESS)
         {
-            MPI_Comm_set_errhandler (comm, MPI_ERRORS_RETURN);
+            XMPI_Comm_set_errhandler (comm, MPI_ERRORS_RETURN);
             result = true;
         }
         else
         {
             printf ("[%s] failed to connect. rc = %d (%s)\n", processName_, rc,
-                    MPIErrMsg(rc));
+                    XMPIErrMsg(rc));
         }
     }
     else
@@ -1580,7 +1664,7 @@ bool MonTestUtil::closeProcess ( MPI_Comm &comm )
 {
     bool result = false;
 
-    int rc = MPI_Comm_disconnect ( &comm );
+    int rc = XMPI_Comm_disconnect ( &comm );
     if (rc == MPI_SUCCESS)
     {
         result = true;
@@ -1592,12 +1676,11 @@ bool MonTestUtil::closeProcess ( MPI_Comm &comm )
     else
     {
         printf ("[%s] failed to disconnect. rc=%d (%s)\n",
-                processName_, rc, MPIErrMsg(rc));
+                processName_, rc, XMPIErrMsg(rc));
     }
 
     return result;
 }
-
 
 // Notes:
 // todo:

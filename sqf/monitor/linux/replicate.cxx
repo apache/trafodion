@@ -65,10 +65,9 @@ void CReplObj::validateObj()
 // Determine the maximum size of a replication object (excluding CReplEvent)
 int CReplObj::calcAllocSize()
 {
-    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSchedData),
-                                                                                sizeof(CReplActivateSpare)),
-                                                                        sizeof(CReplConfigData)),
-                                                                    sizeof(CReplClose)),
+    return  max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(max(sizeof(CReplSchedData),
+                                                                        sizeof(CReplActivateSpare)),
+                                                                    sizeof(CReplConfigData)),
                                                                 sizeof(CReplOpen)),
                                                             sizeof(CReplProcInit)),
                                                         sizeof(CReplProcess)),
@@ -300,83 +299,6 @@ bool CReplUniqStr::replicate(struct internal_msg_def *&msg)
 
 //===========================================================================
 
-CReplClose::CReplClose(CProcess *process, int openedNid, int openedPid,
-                       char *openedName)
-    : process_(process), openedNid_(openedNid), openedPid_(openedPid)
-{
-    // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RPLB", 4);
-
-    strncpy(openedName_, openedName, MAX_PROCESS_NAME);
-    openedName_[MAX_PROCESS_NAME-1] = '\0';
-
-    // Compute message size (adjust if needed to conform to
-    // internal_msg_def structure alignment).
-    replSize_ = (MSG_HDR_SIZE + sizeof ( close_def ) + msgAlignment_)
-                  & ~msgAlignment_;
-
-    if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
-    {
-        const char method_name[] = "CReplClose::CReplClose";
-        trace_printf("%s@%d  - Queuing close for %s (%d, %d), "
-                     "opened %s (%d, %d)\n", method_name, __LINE__,
-                     process_->GetName(), process_->GetNid(), process_->GetPid(),
-                     openedName_, openedNid_, openedPid_);
-    }
-
-    // Increment reference count for process object
-    process_->incrReplRef();
-}
-
-CReplClose::~CReplClose()
-{
-    const char method_name[] = "CReplClose::~CReplClose";
-    // Decrement reference count for process object.  Then, if reference
-    // count is zero and process object has been removed from list of
-    // processes, delete it.
-    if (process_->decrReplRef() == 0 && process_->GetState() == State_Unlinked)
-    {
-        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
-            trace_printf("%s@%d - Deleting process %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid() );
-        delete process_;
-    }
-
-    // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rplb", 4);
-}
-
-bool CReplClose::replicate(struct internal_msg_def *&msg)
-{
-    const char method_name[] = "CReplClose::replicate";
-    TRACE_ENTRY;
-
-    if (process_->GetState() != State_Unlinked)
-    {
-        if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
-            trace_printf("%s@%d" " - Replicating close for %s (%d, %d), opened %s (%d, %d)\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid(), openedName_, openedNid_, openedPid_);
-
-        // Build message to replicate this close to other nodes
-        msg->type = InternalType_Close;
-        msg->u.close.nid = process_->GetNid();
-        msg->u.close.pid = process_->GetPid();
-        msg->u.close.opened_nid = openedNid_;
-        msg->u.close.opened_pid = openedPid_;
-        strcpy (msg->u.close.name, openedName_);
-
-        // Advance sync buffer pointer
-        Nodes->AddMsg( msg, replSize() );
-    }
-    else
-    {
-        if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
-            trace_printf("%s@%d" " - Not replicating close for %s (%d, %d), opened %s (%d, %d) since process has stopped.\n", method_name, __LINE__, process_->GetName(), process_->GetNid(), process_->GetPid(), openedName_, openedNid_, openedPid_);
-    }
-
-    TRACE_EXIT;
-
-    return true;
-}
-
 CReplOpen::CReplOpen(CProcess *process, COpen *open)
   : process_(process), open_(open)
 {
@@ -437,8 +359,10 @@ bool CReplOpen::replicate(struct internal_msg_def *&msg)
         msg->type = InternalType_Open;
         msg->u.open.nid = process_->GetNid();
         msg->u.open.pid = process_->GetPid();
+        msg->u.open.verifier = process_->GetVerifier();
         msg->u.open.opened_nid = open_->Nid;
         msg->u.open.opened_pid = open_->Pid;
+        msg->u.open.opened_verifier = open_->Verifier;
 
         // Advance sync buffer pointer
         Nodes->AddMsg( msg, replSize() );
@@ -459,10 +383,18 @@ bool CReplOpen::replicate(struct internal_msg_def *&msg)
     return true;
 }
 
-CReplEvent::CReplEvent(int event_id, int length, char * data,
-                       int targetNid, int targetPid)
-    : event_id_(event_id), length_(length), targetNid_(targetNid),
-      targetPid_(targetPid), bigData_(NULL)
+CReplEvent::CReplEvent( int event_id
+                      , int length
+                      , char *data
+                      , int targetNid
+                      , int targetPid
+                      , Verifier_t targetVerifier)
+           : event_id_(event_id)
+           , length_(length)
+           , targetNid_(targetNid)
+           , targetPid_(targetPid)
+           , targetVerifier_(targetVerifier)
+           , bigData_(NULL)
 
 {
     // Add eyecatcher sequence as a debugging aid
@@ -528,12 +460,13 @@ bool CReplEvent::replicate(struct internal_msg_def *&msg)
     TRACE_ENTRY;
 
     if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
-        trace_printf("%s@%d - Event id=%d for process (%d, %d)\n", method_name, __LINE__, event_id_, targetNid_, targetPid_);
+        trace_printf("%s@%d - Event id=%d for process (%d, %d:%d)\n", method_name, __LINE__, event_id_, targetNid_, targetPid_, targetVerifier_);
 
     // Build message to replicate this event to other nodes
     msg->type = InternalType_Event;
     msg->u.event.nid = targetNid_;
     msg->u.event.pid = targetPid_;
+    msg->u.event.verifier = targetVerifier_;
     msg->u.event.event_id = event_id_;
     msg->u.event.length = length_;
     memset(&msg->u.event.data, 0, MAX_SYNC_DATA);
@@ -619,8 +552,10 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
         msg->u.process.tag = process_;
         msg->u.process.parent_nid = process_->GetParentNid();
         msg->u.process.parent_pid = process_->GetParentPid();
+        msg->u.process.parent_verifier = process_->GetParentVerifier();
         msg->u.process.pair_parent_nid = process_->GetPairParentNid();
         msg->u.process.pair_parent_pid = process_->GetPairParentPid();
+        msg->u.process.pair_parent_verifier = process_->GetPairParentVerifier();
         msg->u.process.pathStrId =  process_->pathStrId();
         msg->u.process.ldpathStrId = process_->ldPathStrId();
         msg->u.process.programStrId = process_->programStrId();
@@ -670,10 +605,17 @@ bool CReplProcess::replicate(struct internal_msg_def *&msg)
 
 
 
-CReplProcInit::CReplProcInit(CProcess *process, void * tag, int result,
-                             int parentNid)
-    : result_ (result), nid_(0), pid_(0), state_(State_Unknown),
-      parentNid_(parentNid), tag_(tag)
+CReplProcInit::CReplProcInit( CProcess *process
+                            , void *tag
+                            , int result
+                            , int parentNid)
+              : result_(result)
+              , nid_(0)
+              , pid_(0)
+              , verifier_(-1)
+              , state_(State_Unknown)
+              , parentNid_(parentNid)
+              , tag_(tag)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RPLG", 4);
@@ -683,6 +625,7 @@ CReplProcInit::CReplProcInit(CProcess *process, void * tag, int result,
     {
         nid_ = process->GetNid();
         pid_ = process->GetPid();
+        verifier_ = process->GetVerifier();
         strcpy(name_, process->GetName());
         state_ = process->GetState();
     }
@@ -726,6 +669,7 @@ bool CReplProcInit::replicate(struct internal_msg_def *&msg)
     msg->type = InternalType_ProcessInit;
     msg->u.processInit.nid = nid_;
     msg->u.processInit.pid = pid_;
+    msg->u.processInit.verifier = verifier_;
     strcpy (msg->u.processInit.name, name_);
     msg->u.processInit.state = state_;
     msg->u.processInit.result = result_;
@@ -759,9 +703,9 @@ CReplClone::CReplClone(CProcess *process) : process_(process)
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
         const char method_name[] = "CReplClone::CReplClone";
-        trace_printf("%s@%d  - Queuing replicate process %s (%d, %d)\n",
+        trace_printf("%s@%d  - Queuing replicate process %s (%d, %d:%d)\n",
                      method_name, __LINE__, process_->GetName(), process_->GetNid(),
-                     process_->GetPid());
+                     process_->GetPid(), process_->GetVerifier());
     }
 
     // Increment reference count for process object
@@ -793,10 +737,10 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     TRACE_ENTRY;
 
     if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
-        trace_printf("%s@%d - Replicating process %s (%d, %d) %s\n",
+        trace_printf("%s@%d - Replicating process %s (%d, %d:%d) %s\n",
                      method_name, __LINE__,
                      process_->GetName(), process_->GetNid(), process_->GetPid(),
-                     (process_->IsBackup()?" Backup":""));
+                     process_->GetVerifier(), (process_->IsBackup()?" Backup":""));
 
     // Build message to replicate this process to other nodes
     msg->type = InternalType_Clone;
@@ -809,10 +753,12 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
     msg->u.clone.ldpathStrId = process_->ldPathStrId();
     msg->u.clone.programStrId = process_->programStrId();
     msg->u.clone.os_pid = process_->GetPid();
+    msg->u.clone.verifier = process_->GetVerifier();
     msg->u.clone.prior_pid = process_->GetPriorPid ();
     process_->SetPriorPid ( 0 );
     msg->u.clone.parent_nid = process_->GetParentNid();
     msg->u.clone.parent_pid = process_->GetParentPid();
+    msg->u.clone.parent_verifier = process_->GetParentVerifier();
     msg->u.clone.persistent = process_->IsPersistent();
     msg->u.clone.persistent_retries = process_->GetPersistentRetries();
     msg->u.clone.event_messages = process_->IsEventMessages();
@@ -862,8 +808,15 @@ bool CReplClone::replicate(struct internal_msg_def *&msg)
 }
 
 
-CReplExit::CReplExit(int nid, int pid, const char * name, bool abended)
-    : nid_(nid), pid_(pid), abended_(abended)
+CReplExit::CReplExit( int nid
+                    , int pid
+                    , Verifier_t verifier
+                    , const char *name
+                    , bool abended)
+          : nid_(nid)
+          , pid_(pid)
+          , verifier_(verifier)
+          , abended_(abended)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RPLI", 4);
@@ -878,9 +831,9 @@ CReplExit::CReplExit(int nid, int pid, const char * name, bool abended)
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
         const char method_name[] = "CReplExit::CReplExit";
-        trace_printf("%s@%d  - Queuing replicating process exit %s (%d, %d),"
+        trace_printf("%s@%d  - Queuing replicating process exit %s (%d, %d:%d),"
                      " abended=%d\n",
-                     method_name, __LINE__, name_, nid_, pid_, abended_);
+                     method_name, __LINE__, name_, nid_, pid_, verifier_, abended_);
     }
 }
 
@@ -897,14 +850,15 @@ bool CReplExit::replicate(struct internal_msg_def *&msg)
     TRACE_ENTRY;
 
     if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
-        trace_printf("%s@%d" " - Replicating process exit %s (%d, %d),"
+        trace_printf("%s@%d" " - Replicating process exit %s (%d, %d:%d),"
                      " abended=%d\n", method_name, __LINE__,
-                     name_, nid_, pid_, abended_);
+                     name_, nid_, pid_, verifier_, abended_);
 
     // Build message to replicate this process exit to other nodes
     msg->type = InternalType_Exit;
     msg->u.exit.nid = nid_;
     msg->u.exit.pid = pid_;
+    msg->u.exit.verifier = verifier_;
     strcpy(msg->u.exit.name, name_);
     msg->u.exit.abended = abended_;
 
@@ -917,7 +871,14 @@ bool CReplExit::replicate(struct internal_msg_def *&msg)
 }
 
 
-CReplKill::CReplKill(int nid, int pid, bool abort) : nid_(nid), pid_(pid), abort_(abort)
+CReplKill::CReplKill( int nid
+                    , int pid
+                    , Verifier_t verifier
+                    , bool abort) 
+          : nid_(nid)
+          , pid_(pid)
+          , verifier_(verifier)
+          , abort_(abort)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RPLJ", 4);
@@ -930,8 +891,8 @@ CReplKill::CReplKill(int nid, int pid, bool abort) : nid_(nid), pid_(pid), abort
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
         const char method_name[] = "CReplKill::CReplKill";
-        trace_printf("%s@%d  - Queuing replicating process kill (%d, %d)\n",
-                     method_name, __LINE__, nid, pid);
+        trace_printf( "%s@%d  - Queuing replicating process kill (%d, %d:%d)\n"
+                    , method_name, __LINE__, nid, pid, verifier );
     }
 }
 
@@ -940,8 +901,8 @@ CReplKill::~CReplKill()
     const char method_name[] = "CReplKill::~CReplKill";
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
-        trace_printf("%s@%d - Kill replication for process (%d, %d)\n",
-                     method_name, __LINE__, nid_, pid_);
+        trace_printf("%s@%d - Kill replication for process (%d, %d:%d)\n",
+                     method_name, __LINE__, nid_, pid_, verifier_ );
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
     memcpy(&eyecatcher_, "rplj", 4);
@@ -953,12 +914,14 @@ bool CReplKill::replicate(struct internal_msg_def *&msg)
     TRACE_ENTRY;
 
     if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
-        trace_printf("%s@%d" " - Replicating process kill (%d, %d)\n", method_name, __LINE__, nid_, pid_);
+        trace_printf( "%s@%d" " - Replicating process kill (%d, %d:%d)\n"
+                    , method_name, __LINE__, nid_, pid_, verifier_ );
 
     // build message to replicate this process kill to other nodes
     msg->type = InternalType_Kill;
     msg->u.kill.nid = nid_;
     msg->u.kill.pid = pid_;
+    msg->u.kill.verifier = verifier_;
     msg->u.kill.persistent_abort = abort_;
 
     // Advance sync buffer pointer
@@ -1101,8 +1064,10 @@ bool CReplDump::replicate(struct internal_msg_def *&msg)
     msg->type = InternalType_Dump;
     msg->u.dump.nid = process_->GetNid();
     msg->u.dump.pid = process_->GetPid();
+    msg->u.dump.verifier = process_->GetVerifier();
     msg->u.dump.dumper_nid = process_->GetDumperNid();
     msg->u.dump.dumper_pid = process_->GetDumperPid();
+    msg->u.dump.dumper_verifier = process_->GetDumperVerifier();
     strcpy(msg->u.dump.core_file, process_->GetDumpFile());
 
     // Advance sync buffer pointer
@@ -1126,10 +1091,11 @@ CReplDumpComplete::CReplDumpComplete(CProcess *process) : process_(process)
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_PROCESS_DETAIL))
     {
         const char method_name[] = "CReplDumpComplete::CReplDumpComplete";
-        trace_printf("%s@%d  - Queuing dump complete (%d, %d) dumper "
+        trace_printf("%s@%d  - Queuing dump complete (%d, %d:%d) dumper "
                      "(%d, %d)\n", method_name, __LINE__,
                      process_->GetNid(), process_->GetPid(),
-                     process_->GetDumperNid(), process_->GetDumperPid());
+                     process_->GetDumperNid(), process_->GetDumperPid(),
+                     process_->GetDumperVerifier());
     }
 
     // Increment reference count for process object
@@ -1159,20 +1125,24 @@ bool CReplDumpComplete::replicate(struct internal_msg_def *&msg)
     const char method_name[] = "CReplDumpComplete::replicate";
     TRACE_ENTRY;
 
-    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf("%s@%d" " - Replicating dump complete (%d, %d) "
-                     "dumper (%d, %d)\n",
+        trace_printf("%s@%d" " - Replicating dump complete (%d, %d:%d) "
+                     "dumper (%d, %d:%d)\n",
                      method_name, __LINE__,
                      process_->GetNid(), process_->GetPid(),
-                     process_->GetDumperNid(), process_->GetDumperPid());
+                     process_->GetVerifier(),
+                     process_->GetDumperNid(), process_->GetDumperPid(),
+                     process_->GetDumperVerifier());
     }
 
     msg->type = InternalType_DumpComplete;
     msg->u.dump.nid = process_->GetNid();
     msg->u.dump.pid = process_->GetPid();
+    msg->u.dump.verifier = process_->GetVerifier();
     msg->u.dump.dumper_nid = process_->GetDumperNid();
     msg->u.dump.dumper_pid = process_->GetDumperPid();
+    msg->u.dump.dumper_verifier = process_->GetDumperVerifier();
     msg->u.dump.status = process_->GetDumpStatus();
     strcpy(msg->u.dump.core_file, process_->GetDumpFile());
 
@@ -1614,6 +1584,7 @@ void CReplicate::FillSyncBuffer(struct internal_msg_def *&msg)
                 delReplList.push_back( replItem );
  
                 // Record statistics (sonar counters)
+                if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                    MonStats->ObjsReplicatedIncr();
             }
             else

@@ -49,10 +49,23 @@ void CExtEventReq::populateRequestString( void )
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
-              "ExtReq(%s) req #=%ld requester(pid=%d) (group=%s/key=%s)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_,
-              msg_->u.request.u.set.group,
-              msg_->u.request.u.set.key );
+              "ExtReq(%s) req #=%ld "
+              "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
+              "target(name=%s/nid=%d/pid=%d/verifier=%d)"
+              "type=%d, event_id=%d, event bytes=%d\n"
+            , CReqQueue::svcReqType[reqType_], getId()
+            , msg_->u.request.u.event.process_name
+            , msg_->u.request.u.event.nid
+            , msg_->u.request.u.event.pid
+            , pid_
+            , msg_->u.request.u.event.verifier
+            , msg_->u.request.u.event.target_process_name
+            , msg_->u.request.u.event.target_nid
+            , msg_->u.request.u.event.target_pid
+            , msg_->u.request.u.event.target_verifier
+            , msg_->u.request.u.event.type
+            , msg_->u.request.u.event.event_id
+            , msg_->u.request.u.event.length );
     requestString_.assign( strBuf );
 }
 
@@ -62,6 +75,8 @@ void CExtEventReq::performRequest()
     TRACE_ENTRY;
 
     int rc = MPI_ERR_NAME;
+    Verifier_t target_verifier = -1;
+    string target_process_name;
     int nid;
     int target_nid;
     int pid;
@@ -71,27 +86,52 @@ void CExtEventReq::performRequest()
     CProcess *requester;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_event_Incr();
+
+    nid_ = msg_->u.request.u.event.nid;
+    verifier_ = msg_->u.request.u.event.verifier;
+    processName_ = msg_->u.request.u.event.process_name;
 
     // Trace info about request
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf("%s@%d request #%ld: Event, nid=%d, pid=%d, type=%d, "
-                     "event_id=%d, event bytes=%d\n", method_name, __LINE__,
-                     id_, msg_->u.request.u.event.target_nid,
-                     msg_->u.request.u.event.target_pid,
-                     msg_->u.request.u.event.type,
-                     msg_->u.request.u.event.event_id,
-                     msg_->u.request.u.event.length);
+        trace_printf( "%s@%d request #%ld: Event, requester %s (%d, %d:%d), "
+                      "target %s (%d, %d:%d), "
+                      "type=%d, event_id=%d, event bytes=%d\n"
+                    , method_name, __LINE__, id_
+                    , msg_->u.request.u.event.process_name
+                    , msg_->u.request.u.event.nid
+                    , msg_->u.request.u.event.pid
+                    , msg_->u.request.u.event.verifier
+                    , msg_->u.request.u.event.target_process_name
+                    , msg_->u.request.u.event.target_nid
+                    , msg_->u.request.u.event.target_pid
+                    , msg_->u.request.u.event.target_verifier
+                    , msg_->u.request.u.event.type
+                    , msg_->u.request.u.event.event_id
+                    , msg_->u.request.u.event.length);
     }
 
-    requester = MyNode->GetProcess( pid_ );
+    if ( processName_.size() )
+    { // find by name
+        requester = MyNode->GetProcess( processName_.c_str()
+                                      , verifier_ );
+    }
+    else
+    { // find by pid
+        requester = MyNode->GetProcess( pid_
+                                      , verifier_ );
+    }
+
     if ( requester )
     {
         // setup for type of status request
         type = msg_->u.request.u.event.type;
+
+        // Only monitor can send events to SQWatchdog process
         if ( type != ProcessType_Watchdog )
-        {
+        { // Only monitor can send events to SQWatchdog process
             if (msg_->u.request.u.event.target_nid == -1)
             {
                 if (trace_settings & TRACE_REQUEST)
@@ -103,22 +143,72 @@ void CExtEventReq::performRequest()
             }
             else
             {
-                if (trace_settings & TRACE_REQUEST)
-                    trace_printf("%s@%d - Event for (%d, %d)\n", method_name, __LINE__, msg_->u.request.u.event.target_nid, msg_->u.request.u.event.target_pid);
-                nid = msg_->u.request.u.event.target_nid;
-                target_nid = nid;
+                target_nid = nid = msg_->u.request.u.event.target_nid;
                 pid = msg_->u.request.u.event.target_pid;
-                if (pid == -1)
-                {
-                    // get info for all processes in node
+                target_process_name = (const char *) msg_->u.request.u.event.target_process_name;
+                target_verifier  = msg_->u.request.u.event.target_verifier;
+
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d - Event for %s (%d, %d:%d)\n"
+                                , method_name, __LINE__
+                                , msg_->u.request.u.event.target_process_name
+                                , msg_->u.request.u.event.target_nid
+                                , msg_->u.request.u.event.target_pid
+                                , msg_->u.request.u.event.target_verifier);
+
+                if ( target_process_name.size() )
+                { // find by name
+                    process = Nodes->GetProcess( target_process_name.c_str()
+                                               , target_verifier );
+                    if ( process && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d - Found target by name %s (%d, %d:%d)\n"
+                                    , method_name, __LINE__
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , process->GetVerifier());
+                    }
+                    pid = process ? process->GetPid() : -1;
+                }
+                else if (pid == -1)
+                { // get info for all processes in node
                     process = Nodes->GetLNode(nid)->GetFirstProcess();
+                    if ( process && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d - Found target first process %s (%d, %d:%d)\n"
+                                    , method_name, __LINE__
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , process->GetVerifier());
+                    }
                 }
                 else
-                {
-                    // get info for single process in node
-                    process = Nodes->GetLNode(nid)->GetProcessL(pid);
+                { // get info for single process in node by pid
+                    process = Nodes->GetProcess( target_nid
+                                               , pid
+                                               , target_verifier );
+                    if ( process && trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                        trace_printf( "%s@%d - Found target by nid,pid %s (%d, %d:%d)\n"
+                                    , method_name, __LINE__
+                                    , process->GetName()
+                                    , process->GetNid()
+                                    , process->GetPid()
+                                    , process->GetVerifier());
+                    }
                 }
             }
+            
+            if ( !process && target_nid != -1 && 
+                 (trace_settings & (TRACE_REQUEST | TRACE_PROCESS)))
+                trace_printf("%s@%d" " - Target process not found! %s (%d, %d:%d)\n"
+                            , method_name, __LINE__
+                            , msg_->u.request.u.event.target_process_name
+                            , msg_->u.request.u.event.target_nid
+                            , msg_->u.request.u.event.target_pid
+                            , msg_->u.request.u.event.target_verifier);
 
             // process events
             num_procs = 0;
@@ -140,7 +230,13 @@ void CExtEventReq::performRequest()
                                                         msg_->u.request.u.event.length,
                                                         msg_->u.request.u.event.data );
                                 if (trace_settings & TRACE_REQUEST)
-                                    trace_printf("%s@%d - Event %d sent to (%d, %d)\n", method_name, __LINE__, msg_->u.request.u.event.event_id, process->GetNid(), process->GetPid());
+                                    trace_printf( "%s@%d - Event %d sent to %s (%d, %d:%d)\n"
+                                                , method_name, __LINE__
+                                                , msg_->u.request.u.event.event_id
+                                                , process->GetName()
+                                                , process->GetNid()
+                                                , process->GetPid()
+                                                , process->GetVerifier());
                                 rc = MPI_SUCCESS;
                             }
                         }
@@ -152,17 +248,23 @@ void CExtEventReq::performRequest()
                     process = process->GetNextL();
                 }
             }
+
+            // build reply
+            msg_->u.reply.type = ReplyType_Generic;
+            msg_->u.reply.u.generic.nid = requester->GetNid();
+            msg_->u.reply.u.generic.pid = requester->GetPid();
+            msg_->u.reply.u.generic.verifier = requester->GetVerifier();
+            strcpy (msg_->u.reply.u.generic.process_name, requester->GetName());
+            msg_->u.reply.u.generic.return_code = rc;
+
+            // Send reply to requester
+            lioreply(msg_, pid_);
         }
-
-        // build reply
-        msg_->u.reply.type = ReplyType_Generic;
-        msg_->u.reply.u.generic.nid = requester->GetNid();
-        msg_->u.reply.u.generic.nid = requester->GetPid();
-        strcpy (msg_->u.reply.u.generic.process_name, requester->GetName());
-        msg_->u.reply.u.generic.return_code = rc;
-
-        // Send reply to requester
-        lioreply(msg_, pid_);
+        else
+        {
+            // Invalid when SQWatchdog process
+            errorReply( MPI_ERR_OP );
+        }
     }
     else
     {   // Reply to requester so it can release the buffer.  

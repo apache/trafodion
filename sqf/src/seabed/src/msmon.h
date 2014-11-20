@@ -42,10 +42,9 @@ extern int  msg_mon_init_process_args(const char *pp_where,
                                       int        *pp_argc,
                                       char     ***pppp_argv);
 extern bool msg_mon_is_self(SB_Phandle_Type *pp_phandle);
-#ifdef USE_MPISIM
-extern void msg_mon_open_process_sim(short                *pp_phandle,
-                                     SB_Trans::MPI_Stream *pp_stream);
-#endif
+extern int  msg_mon_open_process_fs(char            *pp_name,
+                                    SB_Phandle_Type *pp_phandle,
+                                    int             *pp_oid);
 extern void msg_mon_recv_msg(MS_Md_Type *pp_md);
 
 #endif // !__SB_MSMON_H_

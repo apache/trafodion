@@ -74,6 +74,7 @@ void CExtZoneInfoReq::performRequest()
     char la_buf[MON_STRING_BUF_SIZE];
     
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_zoneinfo_Incr();
 
     // Trace info about request

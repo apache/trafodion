@@ -175,7 +175,7 @@ const char *LunmgrErrorString( int state)
     return( str );
 }
 
-bool CDevice::Mount( CProcess *process, const char *device, string type )
+bool CDevice::Mount( CProcess *process, const char *device )
 {
     bool rstate;
     char cmd[132];

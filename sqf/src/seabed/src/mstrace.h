@@ -24,7 +24,6 @@
 // globals
 extern bool        gv_ms_trace;
 extern bool        gv_ms_trace_abandon;
-extern bool        gv_ms_trace_aggr;
 extern bool        gv_ms_trace_alloc;
 extern bool        gv_ms_trace_data;
 extern int         gv_ms_trace_data_max;

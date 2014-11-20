@@ -515,9 +515,10 @@ void CTmSync_Container::EndTmSync( MSGTYPE type )
                 notice = new struct message_def;
                 memmove( notice, msg, sizeof(message_def) );
 
-                SQ_theLocalIOToClient->putOnNoticeQueue( mytm->GetPid(),
-                                                         notice,
-                                                         NULL);
+                SQ_theLocalIOToClient->putOnNoticeQueue( mytm->GetPid()
+                                                       , mytm->GetVerifier()
+                                                       , notice
+                                                       , NULL);
             }
         }
     }
@@ -623,9 +624,10 @@ void CTmSync_Container::EndPendingTmSync( struct sync_def *sync )
                     }
                     notice = new struct message_def;
                     memmove( notice, msg, sizeof(message_def) );
-                    SQ_theLocalIOToClient->putOnNoticeQueue( mytm->GetPid(),
-                                                             notice,
-                                                             NULL);
+                    SQ_theLocalIOToClient->putOnNoticeQueue( mytm->GetPid()
+                                                           , mytm->GetVerifier()
+                                                           , notice
+                                                           , NULL);
                 }
             }
         }
@@ -969,9 +971,10 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                             }
                             notice = new struct message_def;
                             memmove( notice, msg, sizeof(message_def) );
-                            SQ_theLocalIOToClient->putOnNoticeQueue( mytm->GetPid(),
-                                                                     notice,
-                                                                     NULL);
+                            SQ_theLocalIOToClient->putOnNoticeQueue( mytm->GetPid()
+                                                                   , mytm->GetVerifier()
+                                                                   , notice
+                                                                   , NULL);
                             mytm->IncrUnsolTmSyncCount();
                             PendingSlaveTmSyncCount++;
                         }

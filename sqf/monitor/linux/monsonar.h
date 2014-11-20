@@ -23,8 +23,26 @@
 #ifndef MONSONAR_H_
 #define MONSONAR_H_
 
-typedef unsigned short      WORD;
-typedef unsigned int       DWORD;
+#ifdef USE_SONAR
+#include "sonar/sonarobject.h"
+#include "sonar/sonarcounterdata.h"
+#include "sonar/sonarcounters.h"
+#include "sonar/client/monitor/monitorsonarcounters.h"
+#else
+typedef unsigned short  WORD;
+typedef unsigned int    DWORD;
+typedef unsigned long   SONARState_t;       // Sonar State type
+
+extern SONARState_t gv_sonar_state;
+
+const SONARState_t  SONAR_ENABLED           = 0x80000000U;
+const SONARState_t  SONAR_MONITOR_ENABLED   = 0x00000010U;
+
+inline bool sonar_verify_state(SONARState_t state)
+{
+     return ((gv_sonar_state & state) == state);
+}
+#endif
 
 #include <stdio.h>
 
@@ -383,6 +401,316 @@ class CMonStats
 
     unsigned long long reqqueue_;
 };
+
+#ifdef USE_SONAR
+class CMonSonarStats: public CMonStats
+{
+ public:
+    CMonSonarStats();
+    virtual ~CMonSonarStats();
+
+    // Sonar statistics are displayed via the Sonar facility (external
+    // to the monitor.)
+    virtual void displayStats();
+
+    virtual inline void BarrierWaitIncr()
+    {
+        monitor_barrier_wait_time.increment();
+    }
+
+    virtual inline void BarrierWaitDecr()
+    {
+       monitor_barrier_wait_time.decrement();
+    }
+
+    virtual inline void RequestServiceTimeIncr()
+    {
+        monitor_service_time.increment();
+    }
+
+    virtual inline void RequestServiceTimeDecr()
+    {
+       monitor_service_time.decrement();
+    }
+
+    virtual inline void MonitorBusyIncr()
+    {
+        monitor_busy.increment();
+    }
+
+    virtual inline void MonitorBusyDecr()
+    {
+        monitor_busy.decrement();
+    }
+
+    virtual inline void getMonitorBusy(WORD &state)
+    {
+        LONGLONG value;
+        monitor_busy.getData(state, value);
+    }
+
+    virtual inline void req_attach_Incr()
+    {
+        req_type_attach.increment();
+    }
+
+    virtual inline void req_type_dump_Incr()
+    {
+        req_type_dump.increment();
+    }
+
+    virtual inline void req_type_event_Incr()
+    {
+        req_type_event.increment();
+    }
+
+    virtual inline void req_type_exit_Incr()
+    {
+        req_type_exit.increment();
+    }
+
+    virtual inline void req_type_get_Incr()
+    {
+        req_type_get.increment();
+    }
+
+    virtual inline void req_type_kill_Incr()
+    {
+        req_type_kill.increment();
+    }
+
+    virtual inline void req_type_mount_Incr()
+    {
+        req_type_mount.increment();
+    }
+
+    virtual inline void req_type_newprocess_Incr()
+    {
+        req_type_newprocess.increment();
+    }
+
+    virtual inline void req_type_nodedown_Incr()
+    {
+        req_type_nodedown.increment();
+    }
+
+    virtual inline void req_type_nodeinfo_Incr()
+    {
+        req_type_nodeinfo.increment();
+    }
+
+    virtual inline void req_type_nodeup_Incr()
+    {
+        req_type_nodeup.increment();
+    }
+
+    virtual inline void req_type_notify_Incr()
+    {
+        req_type_notify.increment();
+    }
+
+    virtual inline void req_type_open_Incr()
+    {
+        req_type_open.increment();
+    }
+
+    virtual inline void req_type_processinfo_Incr()
+    {
+        req_type_processinfo.increment();
+    }
+
+    virtual inline void req_type_processinfocont_Incr()
+    {
+        req_type_processinfocont.increment();
+    }
+
+    virtual inline void req_type_set_Incr()
+    {
+        req_type_set.increment();
+    }
+
+    virtual inline void req_type_shutdown_Incr()
+    {
+        req_type_shutdown.increment();
+    }
+
+    virtual inline void req_type_startup_Incr()
+    {
+        req_type_startup.increment();
+    }
+
+    virtual inline void req_type_tmleader_Incr()
+    {
+        req_type_tmleader.increment();
+    }
+
+    virtual inline void req_type_tmseqnum_Incr()
+    {
+        req_type_tmseqnum.increment();
+    }
+
+    virtual inline void req_type_tmsync_Incr()
+    {
+        req_type_tmsync.increment();
+    }
+
+    virtual inline void req_type_zoneinfo_Incr()
+    {
+        req_type_zoneinfo.increment();
+    }
+
+    virtual inline void req_sync_Incr()
+    {
+        req_sync.increment();
+    }
+
+
+
+    virtual inline void notice_death_Incr()
+    {
+        monitor_notice_death.increment();
+    }
+
+    virtual inline void notice_node_up_Incr()
+    {
+        monitor_notice_node_up.increment();
+    }
+
+    virtual inline void notice_node_down_Incr()
+    {
+        monitor_notice_node_down.increment();
+    }
+
+    virtual inline void notice_registry_change_Incr()
+    {
+        monitor_notice_registry_change.increment();
+    }
+
+    virtual inline void NumProcsIncr()
+    {
+        monitor_process_objects.increment();
+    }
+
+    virtual inline void NumProcsDecr()
+    {
+        monitor_process_objects.decrement();
+    }
+
+    virtual inline void NumOpensIncr()
+    {
+        monitor_open_objects.increment();
+    }
+
+    virtual inline void NumOpensDecr()
+    {
+        monitor_open_objects.decrement();
+    }
+
+    virtual inline void NumNoticesIncr()
+    {
+        monitor_notice_objects.increment();
+    }
+
+    virtual inline void NumNoticesDecr()
+    {
+        monitor_notice_objects.decrement();
+    }
+
+    virtual inline void ObjsReplicatedIncr()
+    {
+        monitor_objs_replicated.increment();
+    }
+
+    virtual inline void LocalIOBuffersIncr()
+    {
+        monitor_localio_buffers.increment();
+    }
+
+    virtual inline void LocalIOBuffersDecr()
+    {
+        monitor_localio_buffers.decrement();
+    }
+
+    virtual inline void LocalIOBuffersMaxSet(DWORD val)
+    {
+        monitor_localio_buffersmax.set(val);
+    }
+
+    virtual inline void LocalIOBufferMissesIncr()
+    {
+        monitor_localio_buffermisses.increment();
+    }
+
+    virtual inline void localio_messagebytes(unsigned long count)
+    {
+        monitor_localio_messagebytes.add(count);
+    }
+
+    virtual inline void ReqQueueIncr()
+    {
+        monitor_reqqueue.increment();
+    }
+
+    virtual inline void ReqQueueDecr()
+    {
+        monitor_reqqueue.decrement();
+    }
+
+
+ private:
+    typedef struct {SONARCId_t counterId;
+                    SONARCounter * pCounter;} monCounter;
+
+    SONARObject *sonar;
+
+    IncrementingCounter req_type_attach;
+    IncrementingCounter req_type_dump;
+    IncrementingCounter req_type_event;
+    IncrementingCounter req_type_exit;
+    IncrementingCounter req_type_get;
+    IncrementingCounter req_type_kill;
+    IncrementingCounter req_type_mount;
+    IncrementingCounter req_type_newprocess;
+    IncrementingCounter req_type_nodedown;
+    IncrementingCounter req_type_nodeinfo;
+    IncrementingCounter req_type_nodeup;
+    IncrementingCounter req_type_notify;
+    IncrementingCounter req_type_open;
+    IncrementingCounter req_type_processinfo;
+    IncrementingCounter req_type_processinfocont;
+    IncrementingCounter req_type_set;
+    IncrementingCounter req_type_shutdown;
+    IncrementingCounter req_type_startup;
+    IncrementingCounter req_type_tmleader;
+    IncrementingCounter req_type_tmseqnum;
+    IncrementingCounter req_type_tmsync;
+    IncrementingCounter req_type_zoneinfo;
+    IncrementingCounter req_sync;
+
+    IncrementingCounter monitor_notice_death;
+    IncrementingCounter monitor_notice_node_up;
+    IncrementingCounter monitor_notice_node_down;
+    IncrementingCounter monitor_notice_registry_change;
+
+    IncrementingCounter monitor_process_objects;
+    IncrementingCounter monitor_notice_objects;
+    IncrementingCounter monitor_open_objects;
+
+    IncrementingCounter monitor_objs_replicated;
+
+    BusyCounter monitor_barrier_wait_time;
+    BusyCounter monitor_service_time;
+    BusyCounter monitor_busy;
+
+    IncrementingCounter monitor_localio_buffers;
+    SnapshotCounter monitor_localio_buffersmax;
+    IncrementingCounter monitor_localio_buffermisses;
+
+    Accumulating64Counter monitor_localio_messagebytes;
+
+    QueueCounter monitor_reqqueue;
+};
+#endif
 
 
 

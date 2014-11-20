@@ -27,36 +27,39 @@ include $(MY_SQROOT)/macros.gmk
 # Enables test point code for development testing
 USE_TESTPOINTS=1
 
+# Enables Sonar instrumentation statistics gathering
+#USE_SONAR=1
+
 ifndef SQ_MTYPE
-SQ_MTYPE	= 32
+   SQ_MTYPE	= 32
 endif
 
 TOOLBASE	:= $(shell echo `pwd` | sed -e 's|/src\/.*||')
-DEPTOOL		:= $(TOOLBASE)/tools/make/deptool
+DEPTOOL 	:= $(TOOLBASE)/tools/make/deptool
 DEPFLAGS	= $(DEFINES) $(INCLUDES) -f $(DEPFILE)
 DEPFILE		= depend.mk
 
 ifeq ($(SQ_MTYPE),32)
-CC		:= $(CC32)
-CXX		:= $(CXX32)
+   CC		:= $(CC32)
+   CXX		:= $(CXX32)
 else
-CC		:= $(CC64)
-CXX		:= $(CXX64)
+   CC		:= $(CC64)
+   CXX		:= $(CXX64)
 endif
+
 MPI_CC		:= $(CC)
 MPI_CXX		:= $(CXX)
 
 CC		= mpicc
-
 CXX		= $(MPICH_ROOT)/bin/mpicxx
 
 ifeq ($(SQ_MTYPE),32)
-CC		+= -mpi32
-CXX		+= -mpi32
-ifeq ($(SQ_USE_INTC),0)
-CC		+= $(GCCMODE32)
-CXX		+= $(GCCMODE32)
-endif
+   CC		+= -mpi32
+   CXX		+= -mpi32
+   ifeq ($(SQ_USE_INTC),0)
+      CC		+= $(GCCMODE32)
+      CXX		+= $(GCCMODE32)
+   endif
 endif
 
 

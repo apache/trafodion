@@ -69,6 +69,7 @@ void CExtNodeUpReq::performRequest()
     int     rc = MPI_SUCCESS;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_nodeup_Incr();
 
     // Trace info about request
@@ -116,12 +117,13 @@ void CExtNodeUpReq::performRequest()
         msg_->u.reply.type = ReplyType_Generic;
         msg_->u.reply.u.generic.nid = requester ? requester->GetNid() : 0;
         msg_->u.reply.u.generic.pid = pid_;
+        msg_->u.reply.u.generic.verifier = verifier_;
         msg_->u.reply.u.generic.process_name[0] = '\0';
         msg_->u.reply.u.generic.return_code = rc;
 
         if ( rc != MPI_SUCCESS )
         {
-            MyNode->SetCreator( false, -1 );
+            MyNode->SetCreator( false, -1, -1 );
         }
         // Send reply to requester
         lioreply(msg_, pid_);

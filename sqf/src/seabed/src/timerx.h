@@ -23,10 +23,12 @@
 
 #include "seabed/ms.h" // BMS_SRE_TPOP
 
-void  sb_timer_init();
-bool  sb_timer_comp_q_empty();
-void *sb_timer_comp_q_remove();
-void  sb_timer_set_sre_tpop(BMS_SRE_TPOP *pp_sre, void *pp_tle);
-void  sb_timer_shutdown();
+extern void  sb_timer_init();
+extern bool  sb_timer_comp_q_empty();
+extern void *sb_timer_comp_q_remove();
+extern int   sb_timer_hi();
+extern void  sb_timer_set_sre_tpop(BMS_SRE_TPOP *pp_sre, void *pp_tle);
+extern int   sb_timer_size();
+extern void  sb_timer_shutdown();
 
 #endif // !__SB_TIMERX_H_

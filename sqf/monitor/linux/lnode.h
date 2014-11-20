@@ -68,6 +68,12 @@ public:
     inline long long GetCpuSoftIrq( void ) { return( cpuSoftIrq_ ); }
     CProcess *GetProcessL( int pid );
     CProcess *GetProcessL( char *name, bool checkstate=true );
+    CProcess *GetProcessL( int pid
+                         , Verifier_t verifier
+                         , bool checkstate=true );
+    CProcess *GetProcessL( const char *name
+                         , Verifier_t verifier
+                         , bool checkstate=true );
     CProcess *CompleteProcessStartup( char *process_name, 
                                       char *port, 
                                       int os_pid, 
@@ -94,10 +100,10 @@ public:
     void    SetAffinity( CProcess *process );
 
     inline void      SetLNodeContainer( CLNodeContainer *lnodes ) { lnodes_ = lnodes; }
+    inline CProcess *GetSSMProc () { return SSMProc; }
+    inline void      SetSSMProc ( CProcess * proc ) { SSMProc = proc; } 
+
     void    Up( void );
-    void    Up( int pid );
-    inline CProcess * GetSSMProc () { return SSMProc; }
-    inline void       SetSSMProc ( CProcess * proc ) { SSMProc = proc; } 
 
 protected:
 private:
@@ -141,7 +147,10 @@ public:
     ~CLNodeContainer( void );
 
     CLNode *AddLNode( CLNodeConfig   *lnodeConfig );
-    void    CancelDeathNotification( int nid, int pid, _TM_Txid_External trans_id );
+    void    CancelDeathNotification( int nid
+                                   , int pid
+                                   , int verifier
+                                   , _TM_Txid_External trans_id );
     void    CheckForPendingCreates( CProcess *process=NULL );
     inline  CLNode *GetFirstLNode( void ) { return ( head_ ); }
     inline  CLNode *GetLastLNode( void ) { return ( tail_ ); }

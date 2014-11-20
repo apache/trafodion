@@ -34,6 +34,59 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CDeviceContainer *Devices;
 
+const char *ProcessTypeString( PROCESSTYPE type )
+{
+    const char *str;
+    
+    switch( type )
+    {
+        case ProcessType_TSE:
+            str = "TSE";
+            break;
+        case ProcessType_DTM:
+            str = "DTM";
+            break;
+        case ProcessType_ASE:
+            str = "ASE";
+            break;
+        case ProcessType_Generic:
+            str = "Generic";
+            break;
+        case ProcessType_Watchdog:
+            str = "Watchdog";
+            break;
+        case ProcessType_AMP:
+            str = "AMP";
+            break;
+        case ProcessType_Backout:
+            str = "Backout";
+            break;
+        case ProcessType_VolumeRecovery:
+            str = "VolumeRecovery";
+            break;
+        case ProcessType_MXOSRVR:
+            str = "MXOSRVR";
+            break;
+        case ProcessType_SPX:
+            str = "SPX";
+            break;
+        case ProcessType_SSMP:
+            str = "SSMP";
+            break;
+        case ProcessType_PSD:
+            str = "PSD";
+            break;
+        case ProcessType_SMS:
+            str = "SMS";
+            break;
+        default:
+            str = "Undefined";
+            break;
+    }
+
+    return( str );
+}
+
 CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType, int pid,
                                 struct message_def *msg )
     : CExternalReq(msgType, pid, msg)
@@ -53,10 +106,17 @@ void CExtNewProcReq::populateRequestString( void )
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
-              "ExtReq(%s) req #=%ld requester(pid=%d) (name=%s/nid=%d)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_,
-              msg_->u.request.u.new_process.process_name,
-              msg_->u.request.u.new_process.nid );
+              "ExtReq(%s) req #=%ld requester(pid=%d) (nid=%d/name=%s/"
+              "type=%s/backup=%d/unhooked=%d/nowait=%d/priority=%d)"
+              , CReqQueue::svcReqType[reqType_], getId()
+              , pid_
+              , msg_->u.request.u.new_process.nid
+              , msg_->u.request.u.new_process.process_name
+              , ProcessTypeString(msg_->u.request.u.new_process.type)
+              , msg_->u.request.u.new_process.backup
+              , msg_->u.request.u.new_process.unhooked
+              , msg_->u.request.u.new_process.nowait
+              , msg_->u.request.u.new_process.priority );
     requestString_.assign( strBuf );
 }
 
@@ -67,8 +127,10 @@ void CExtNewProcReq::performRequest()
     TRACE_ENTRY;
 
     int zone;
-    int requester_nid;
-    int requester_pid;
+    int requester_nid = -1;
+    int requester_pid = -1;
+    int target_nid = -1;
+    Verifier_t requester_verifier = -1;
     CProcess *process = NULL;
     CNode *node = NULL;
     CLNode *lnode = NULL;
@@ -79,8 +141,9 @@ void CExtNewProcReq::performRequest()
     CProcess *parent;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_newprocess_Incr();
-
+  
     // Trace info about request
     if (trace_settings &  (TRACE_REQUEST | TRACE_PROCESS))
     {
@@ -100,6 +163,7 @@ void CExtNewProcReq::performRequest()
     requester = MyNode->GetProcess( pid_ );
     if ( requester )
     {
+        target_nid = msg_->u.request.u.new_process.nid;
         if ( msg_->u.request.u.new_process.type == ProcessType_SSMP ) 
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
@@ -112,7 +176,7 @@ void CExtNewProcReq::performRequest()
                 lioreply(msg_, pid_);
 
                 sprintf(la_buf, "[%s], Invalid Node ID (%d).\n", method_name,
-                        msg_->u.request.u.new_process.nid);
+                        target_nid);
                 mon_log_write(MON_MONITOR_STARTPROCESS_1, SQ_LOG_ERR, la_buf);
                 return;
             }
@@ -127,7 +191,7 @@ void CExtNewProcReq::performRequest()
 
                 sprintf(la_buf, "[%s], SSMP process already exists in logical "
                         "node %d.\n", method_name,
-                        msg_->u.request.u.new_process.nid);
+                        target_nid);
                 mon_log_write(MON_MONITOR_STARTPROCESS_2, SQ_LOG_ERR, la_buf);
                 return;
             }
@@ -144,7 +208,7 @@ void CExtNewProcReq::performRequest()
                 lioreply(msg_, pid_);
 
                 sprintf(la_buf, "[%s], Invalid Node ID (%d).\n", method_name,
-                        msg_->u.request.u.new_process.nid);
+                        target_nid);
                 mon_log_write(MON_MONITOR_STARTPROCESS_3, SQ_LOG_ERR, la_buf);
                 return;
             }
@@ -160,7 +224,7 @@ void CExtNewProcReq::performRequest()
 
                 sprintf(la_buf, "[%s], SPX process already exists in physical"
                         " node %d.\n", method_name,
-                        msg_->u.request.u.new_process.nid);
+                        target_nid);
                 mon_log_write(MON_MONITOR_STARTPROCESS_4, SQ_LOG_ERR, la_buf);
                 return;
             }
@@ -305,7 +369,7 @@ void CExtNewProcReq::performRequest()
             lioreply(msg_, pid_);
 
             sprintf(la_buf, "[%s], Invalid Node ID (%d).\n", method_name,
-                    msg_->u.request.u.new_process.nid);
+                    target_nid);
             mon_log_write(MON_MONITOR_STARTPROCESS_6, SQ_LOG_ERR, la_buf);
     
             return;
@@ -320,7 +384,7 @@ void CExtNewProcReq::performRequest()
             lioreply(msg_, pid_);
 
             sprintf(la_buf, "[%s], Invalid Node ID (%d).\n", method_name,
-                    msg_->u.request.u.new_process.nid);
+                    target_nid);
             mon_log_write(MON_MONITOR_STARTPROCESS_7, SQ_LOG_ERR, la_buf);
 
             return;
@@ -381,7 +445,9 @@ void CExtNewProcReq::performRequest()
         }
     
         // Check if node is available and within limits
-        if ( !lnode || lnode->GetState() != State_Up)
+        if ( !lnode || 
+             (lnode->GetState() != State_Up &&
+              lnode->GetState() != State_Shutdown) )
         {
             msg_->u.reply.type = ReplyType_NewProcess;
             msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
@@ -389,7 +455,7 @@ void CExtNewProcReq::performRequest()
             lioreply(msg_, pid_);
     
             sprintf(la_buf, "[%s], Unsuccessful, node is not up (%d)\n",
-                    method_name, (lnode ? lnode->GetNid(): -1));
+                    method_name, (lnode ? lnode->GetNid(): target_nid));
             mon_log_write(MON_MONITOR_STARTPROCESS_11, SQ_LOG_ERR, la_buf);
 
             return;
@@ -429,6 +495,14 @@ void CExtNewProcReq::performRequest()
                     MyNode->AddToNameMap(process);
                     MyNode->AddToPidMap(process->GetPid(), process);
                 }
+                // if error, do necessary cleanup of process object.
+                // DeleteFromList ultimately deletes the process object
+                // if not referenced.
+                if( process && (result != MPI_SUCCESS))
+                {
+                    node->DeleteFromList(process);
+                    process = NULL;
+                }
             }
             else
             {
@@ -436,20 +510,19 @@ void CExtNewProcReq::performRequest()
                 {
                     requester_nid = requester->GetNid();
                     requester_pid = requester->GetPid();
+                    requester_verifier = requester->GetVerifier();
                     if (msg_->u.request.u.new_process.backup && 
                         (requester->GetPairParentNid() == -1 && 
                          requester->GetPairParentPid() == -1))
                     {
                         // preserve the true parent of a process pair in the first 
                         // primary only
-                        requester->SetPairParentNid ( requester->GetParentNid() );
-                        requester->SetPairParentPid ( requester->GetParentPid() );
+                        requester->SetPairParentNid( requester->GetParentNid() );
+                        requester->SetPairParentPid( requester->GetParentPid() );
+                        requester->SetPairParentVerifier( requester->GetParentVerifier() );
                     }
                 }
-                else
-                {
-                    requester_nid = requester_pid = -1;
-                }
+
                 node = lnode->GetNode();
                 process = node->CloneProcess (lnode->GetNid(), 
                                               msg_->u.request.u.new_process.type,
@@ -459,8 +532,10 @@ void CExtNewProcReq::performRequest()
                                               msg_->u.request.u.new_process.process_name, 
                                               (char *) "", 
                                               -1, 
+                                              -1, // verifier
                                               requester_nid,
                                               requester_pid, 
+                                              requester_verifier,
                                               false,
                                               false,
                                               pathStrId,
@@ -491,6 +566,7 @@ void CExtNewProcReq::performRequest()
                     msg_->u.reply.type = ReplyType_NewProcess;
                     msg_->u.reply.u.new_process.nid = process->GetNid();
                     msg_->u.reply.u.new_process.pid = process->GetPid();
+                    msg_->u.reply.u.new_process.verifier = process->GetVerifier();
                     strcpy(msg_->u.reply.u.new_process.process_name,process->GetName());
                     msg_->u.reply.u.new_process.return_code = MPI_SUCCESS;
                 }
@@ -502,6 +578,7 @@ void CExtNewProcReq::performRequest()
                     msg_->u.reply.type = ReplyType_NewProcess;
                     msg_->u.reply.u.new_process.nid = process->GetNid();
                     msg_->u.reply.u.new_process.pid = process->GetPid();
+                    msg_->u.reply.u.new_process.verifier = process->GetVerifier();
                     strcpy(msg_->u.reply.u.new_process.process_name,process->GetName());
                     msg_->u.reply.u.new_process.return_code = MPI_SUCCESS;
                 }

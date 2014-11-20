@@ -95,23 +95,6 @@ private:
     CConfigKey *key_;
 };
 
-
-class CReplClose: public CReplObj
-{
-public:
-    CReplClose(CProcess *process, int openedNid, int openedPid,
-               char *openedName);
-    virtual ~CReplClose();
-
-    bool replicate(struct internal_msg_def *& msg);
-
-private:
-    CProcess * process_;
-    int openedNid_;
-    int openedPid_;
-    char openedName_[MAX_PROCESS_NAME];
-};
-
 class CReplOpen: public CReplObj
 {
 public:
@@ -129,6 +112,12 @@ private:
 class CReplEvent: public CReplObj
 {
 public:
+    CReplEvent( int event_id
+              , int length
+              , char *data
+              , int targetNid
+              , int targetPid
+              , Verifier_t targetVerifier);
     CReplEvent(int, int, char *, int, int);
     virtual ~CReplEvent();
 
@@ -142,6 +131,7 @@ private:
     int length_;
     int targetNid_;
     int targetPid_;
+    Verifier_t targetVerifier_;
 
     enum {SMALL_DATA_SIZE=50};
     char data_[SMALL_DATA_SIZE];
@@ -176,6 +166,7 @@ private:
     int       result_;
     int       nid_;
     int       pid_;
+    Verifier_t verifier_;
     STATE     state_;
     int       parentNid_;
     void *    tag_;
@@ -202,7 +193,7 @@ private:
 class CReplExit: public CReplObj
 {
 public:
-    CReplExit(int nid, int pid, const char * name, bool abended);
+    CReplExit(int nid, int pid, Verifier_t verifier, const char * name, bool abended);
     virtual ~CReplExit();
 
     bool replicate(struct internal_msg_def *& msg);
@@ -210,6 +201,7 @@ public:
 private:
     int nid_;
     int pid_;
+    Verifier_t verifier_;
     char name_[MAX_PROCESS_NAME];
     bool abended_;
 };
@@ -217,7 +209,7 @@ private:
 class CReplKill: public CReplObj
 {
 public:
-    CReplKill(int nid, int pid, bool abort);
+    CReplKill(int nid, int pid, Verifier_t verifier, bool abort);
     virtual ~CReplKill();
 
     bool replicate(struct internal_msg_def *& msg);
@@ -225,6 +217,7 @@ public:
 private:
     int nid_;
     int pid_;
+    Verifier_t verifier_;
     bool abort_;
 };
 

@@ -167,6 +167,18 @@ int SB_Trans::Msg_Mgr::get_md_count_total() {
     return cv_md_table_count_total.read_val();
 }
 
+int SB_Trans::Msg_Mgr::get_md_hi_recv() {
+    return cv_md_table_hi_recv;
+}
+
+int SB_Trans::Msg_Mgr::get_md_hi_send() {
+    return cv_md_table_hi_send;
+}
+
+int SB_Trans::Msg_Mgr::get_md_hi_total() {
+    return cv_md_table_hi_total;
+}
+
 int SB_Trans::Msg_Mgr::get_md_max_recv() {
     return cv_md_table_max_recv;
 }

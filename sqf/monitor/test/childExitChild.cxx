@@ -24,30 +24,29 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
 long trace_settings = 0;
 FILE *shell_locio_trace_file = NULL;
+bool tracing = false;
 
 const char *MyName;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0};
 
 
 int main (int argc, char *argv[])
 {
-    int MyRank = -1;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     MyName = util.getProcName();
+    tracing = util.getTrace();
 
     util.InitLocalIO( );
     assert (gp_local_mon_io);
@@ -56,18 +55,19 @@ int main (int argc, char *argv[])
 
     for (int i=0; i<10; i++)
     {
-        printf ("[%s] delaying...\n", MyName);
+        if ( tracing )
+            printf ("[%s] delaying...\n", MyName);
 
         sleep(1);
     }
-
+                
     // tell monitor we are exiting
     util.requestExit ( );
 
-    printf ("[%s] calling Finalize!\n", MyName);
+    if ( tracing )
+        printf ("[%s] calling Finalize!\n", MyName);
     fflush (stdout);
-    MPI_Close_port( util.getPort() );
-    MPI_Finalize ();
+    XMPI_Close_port( util.getPort() );
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

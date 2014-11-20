@@ -46,11 +46,12 @@ extern CMonStats *MonStats;
 
 extern char *ErrorMsg (int error_code);
 
-COpen::COpen ( CProcess *process )
-     : Nid (process->GetNid()),
-       Pid (process->GetPid()),
-       Next (NULL),
-       Prev (NULL)
+COpen::COpen( CProcess *process )
+      :Nid(process->GetNid())
+      ,Pid(process->GetPid())
+      ,Verifier(process->GetVerifier())
+      ,Next(NULL)
+      ,Prev(NULL)
 {
     const char method_name[] = "COpen::COpen";
     TRACE_ENTRY;
@@ -62,6 +63,7 @@ COpen::COpen ( CProcess *process )
     Monitor->IncOpenCount();
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->NumOpensIncr();
 
     TRACE_EXIT;
@@ -74,6 +76,7 @@ COpen::~COpen (void)
     Monitor->DecrOpenCount();
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->NumOpensDecr();
 
     // Alter eyecatcher sequence as a debugging aid to identify deleted object

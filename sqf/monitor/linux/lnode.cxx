@@ -39,6 +39,7 @@ using namespace std;
 #include "mlio.h"
 
 extern bool IsRealCluster;
+extern CommType_t CommType;
 extern CNodeContainer *Nodes;
 extern CNode *MyNode;
 extern CMonitor *Monitor;
@@ -161,6 +162,7 @@ void CLNode::Down( void )
     if ( MyNode->GetState() == State_Up )
     {
         // Record statistics (sonar counters)
+        if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
            MonStats->notice_node_down_Incr();
     
         // send node down message to local node's processes
@@ -204,7 +206,7 @@ CProcess *CLNode::GetProcessL(int pid)
     TRACE_ENTRY;
 
     // Temporary trace
-    if (trace_settings & TRACE_PROCESS)
+    if (trace_settings & TRACE_PROCESS_DETAIL)
         trace_printf("%s@%d - pid %d\n",
                      method_name, __LINE__, pid);
 
@@ -217,15 +219,65 @@ CProcess *CLNode::GetProcessL(int pid)
 CProcess *CLNode::GetProcessL(char *name, bool checkstate)
 {
     CProcess *entry = NULL;
-    const char method_name[] = "CLNode::GetProcess";
+    const char method_name[] = "CLNode::GetProcessL";
     TRACE_ENTRY;
 
     // Temporary trace
-    if (trace_settings & TRACE_PROCESS)
+    if (trace_settings & TRACE_PROCESS_DETAIL)
         trace_printf("%s@%d - name=%s, checkstate=%d\n",
                      method_name, __LINE__, name, checkstate);
 
     entry = GetNode()->GetProcess(name, checkstate);
+
+    TRACE_EXIT;
+    return entry;
+}
+
+CProcess *CLNode::GetProcessL( int pid
+                             , Verifier_t verifier
+                             , bool checkstate )
+{
+    CProcess *entry = NULL;
+    const char method_name[] = "CLNode::GetProcessL(pid,verifier)";
+    TRACE_ENTRY;
+
+    // Temporary trace
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+        trace_printf("%s@%d - nid, %d, pid=%d, verifier=%d, checkstate=%d\n",
+                     method_name, __LINE__, GetNid(), pid, verifier, checkstate);
+
+    entry = GetNode()->GetProcess( pid, verifier, checkstate );
+
+    // Temporary trace
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+        trace_printf("%s@%d - entry=%p, pid=%d, Name=%s\n",
+                     method_name, __LINE__, entry, pid,
+                     ((entry != NULL) ? entry->GetName(): ""));
+
+    TRACE_EXIT;
+    return entry;
+}
+
+CProcess *CLNode::GetProcessL( const char *name
+                             , Verifier_t verifier
+                             , bool checkstate )
+{
+    CProcess *entry = NULL;
+    const char method_name[] = "CLNode::GetProcessL(name,verifier)";
+    TRACE_ENTRY;
+
+    // Temporary trace
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+        trace_printf("%s@%d - name=%s, verifier=%d, checkstate=%d\n",
+                      method_name, __LINE__, name, verifier, checkstate);
+
+    entry = GetNode()->GetProcess( name, verifier, checkstate );
+
+    // Temporary trace
+    if (trace_settings & TRACE_PROCESS_DETAIL)
+        trace_printf("%s@%d - entry=%p, Name=%s\n",
+                     method_name, __LINE__, entry,
+                     ((entry != NULL) ? entry->GetName(): ""));
 
     TRACE_EXIT;
     return entry;
@@ -328,6 +380,7 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
             if ( process )
             {
                 // Record statistics (sonar counters)
+                if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                    MonStats->notice_node_up_Incr();
             
                 // send node prepare notice to our node's DTM process
@@ -339,7 +392,10 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
                 msg->u.request.u.prepare.takeover = activatingSpare ? true : false;
                 const char * nodeName = GetNode()->GetName();
                 STRCPY(msg->u.request.u.prepare.node_name, nodeName);
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid(), msg, NULL );
+                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
+                                                       , process->GetVerifier()
+                                                       , msg
+                                                       , NULL);
             
                 if ( trace_settings & 
                     (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC | TRACE_INIT) )
@@ -358,6 +414,7 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
             if ( process )
             {
                 // Record statistics (sonar counters)
+                if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
                    MonStats->notice_node_up_Incr();
             
                 // send node prepare notice to our node's DTM process
@@ -369,7 +426,10 @@ void CLNode::PrepareForTransactions( bool activatingSpare )
                 msg->u.request.u.prepare.takeover = activatingSpare ? true : false;
                 const char * nodeName = GetNode()->GetName();
                 STRCPY(msg->u.request.u.prepare.node_name, nodeName);
-                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid(), msg, NULL );
+                SQ_theLocalIOToClient->putOnNoticeQueue( process->GetPid()
+                                                       , process->GetVerifier()
+                                                       , msg
+                                                       , NULL);
             
                 if ( trace_settings & 
                     (TRACE_RECOVERY | TRACE_REQUEST | TRACE_INIT) )
@@ -461,202 +521,130 @@ void CLNode::SetAffinity( pid_t pid, PROCESSTYPE type )
 void CLNode::SetAffinity( CProcess *process )
 {
     int rc = 0;
-    char coreMaskStr[33] = {'0','0','0','0','0','0','0','0'
-                           ,'0','0','0','0','0','0','0','0'
-                           ,'0','0','0','0','0','0','0','0'
-                           ,'0','0','0','0','0','0','0','0','\0'};
+    char coreMaskStr[MAX_CORES+1];
     cpu_set_t mask;
     char la_buf[MON_STRING_BUF_SIZE];
 
     const char method_name[] = "CLNode::SetAffinity";
     TRACE_ENTRY;
 
-    if ( usingCpuAffinity )
+    if ( usingTseCpuAffinity && process->GetType( ) == ProcessType_TSE )
     {
-        switch( process->GetType() )
+        // round-robin the TSE affinity within the logical node mask
+        if ( !process->IsBackup() )
         {
-            case ProcessType_TSE:
-                if ( usingTseCpuAffinity )
+            if ( lastTseCoreAssigned_ == -1 )
+            {
+                // always start with the first core and count it
+                lastTseCoreAssigned_ = firstCore_;
+                ++tseCnt_;
+            }
+            else
+            {
+                // check for wrap around time
+                if ( tseCnt_ == numCores_ )
                 {
-                    // round-robin the TSE affinity within the logical node mask
-                    if ( !process->IsBackup() )
-                    {
-                        if ( lastTseCoreAssigned_ == -1 )
-                        {
-                            // always start with the first core and count it
-                            lastTseCoreAssigned_ = firstCore_;
-                            ++tseCnt_;
-                        }
-                        else
-                        {
-                            // check for wrap around time
-                            if ( tseCnt_ == numCores_ )
-                            {
-                                tseCnt_ =  1;
-                                lastTseCoreAssigned_ = firstCore_;
-                            }
-                            else
-                            {
-                                ++tseCnt_;
-                                ++lastTseCoreAssigned_;
-                            }
-                        }
-                        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                        {
-                            trace_printf("%s@%d - TSE process %s%s (%d, %d) affinity set to core=%d, tseCount=%d, numCores=%d." "\n"
-                                         , method_name, __LINE__, process->GetName(), process->IsBackup() ? "-B" : "-P"
-                                         , process->GetNid(), process->GetPid(), lastTseCoreAssigned_, tseCnt_, numCores_ );
-                        
-                        }
-                        CPU_ZERO( &mask );
-                        CPU_SET( lastTseCoreAssigned_, &mask );
-                    }
-                    else
-                    {
-                        if ( lastBackupTseCoreAssigned_ == -1 )
-                        {
-                            // always start with the first core and count it
-                            lastBackupTseCoreAssigned_ = firstCore_;
-                            ++tseBackupCnt_;
-                        }
-                        else
-                        {
-                            // check for wrap around time
-                            if ( tseBackupCnt_ == numCores_ )
-                            {
-                                tseBackupCnt_ =  1;
-                                lastBackupTseCoreAssigned_ = firstCore_;
-                            }
-                            else
-                            {
-                                ++tseBackupCnt_;
-                                ++lastBackupTseCoreAssigned_;
-                            }
-                        }
-                        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                        {
-                            trace_printf("%s@%d - TSE process %s%s (%d, %d) affinity set to core=%d, tseCount=%d, numCores=%d." "\n"
-                                         , method_name, __LINE__, process->GetName(), process->IsBackup() ? "-B" : "-P"
-                                         , process->GetNid(), process->GetPid(), lastBackupTseCoreAssigned_, tseBackupCnt_, numCores_ );
-                        
-                        }
-                        CPU_ZERO( &mask );
-                        CPU_SET( lastBackupTseCoreAssigned_, &mask );
-                    }
-#if 0
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        CoreMaskString( coreMaskStr, mask, GetNode()->GetNumCores() );
-                        trace_printf("%s@%d - TSE process %s%s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
-                                     , method_name, __LINE__, process->Name, process->Backup ? "-B" : "-P"
-                                     , process->Nid, process->Pid, GetNode()->GetNumCores(), coreMaskStr );
-                        
-                    }
-#endif
-                    rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &mask );
+                    tseCnt_ =  1;
+                    lastTseCoreAssigned_ = firstCore_;
                 }
                 else
                 {
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    {
-                        CoreMaskString( coreMaskStr, CoreMask, GetNode()->GetNumCores() );
-                        trace_printf("%s@%d - TSE process %s%s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
-                                     , method_name, __LINE__, process->GetName(), process->IsBackup() ? "-B" : "-P"
-                                     , process->GetNid(), process->GetPid(), GetNode()->GetNumCores(), coreMaskStr );
-                        
-                    }
-                    // Use the configured cores
-                    rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &CoreMask );
+                    ++tseCnt_;
+                    ++lastTseCoreAssigned_;
                 }
-                break;
-
-            case ProcessType_Generic:
-                if ( process->isCmpOrEsp() )
+            }
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf("%s@%d - TSE process %s%s (%d, %d) affinity set to core=%d, tseCount=%d, numCores=%d." "\n"
+                             , method_name, __LINE__, process->GetName(), process->IsBackup() ? "-B" : "-P"
+                             , process->GetNid(), process->GetPid(), lastTseCoreAssigned_, tseCnt_, numCores_ );
+            
+            }
+            CPU_ZERO( &mask );
+            CPU_SET( lastTseCoreAssigned_, &mask );
+        }
+        else
+        {
+            if ( lastBackupTseCoreAssigned_ == -1 )
+            {
+                // always start with the first core and count it
+                lastBackupTseCoreAssigned_ = firstCore_;
+                ++tseBackupCnt_;
+            }
+            else
+            {
+                // check for wrap around time
+                if ( tseBackupCnt_ == numCores_ )
                 {
-                    CPU_ZERO(&mask);
-		    short lv_corenum = 0;
-		    do {
-		      CPU_SET(lv_corenum, &mask);
-		      lv_corenum++;
-		    }
-		    while (lv_corenum < (GetNode()->GetNumCores() - 1));
+                    tseBackupCnt_ =  1;
+                    lastBackupTseCoreAssigned_ = firstCore_;
                 }
-                else {
-                    memcpy(&mask, &CoreMask, sizeof(cpu_set_t));
-                }
-
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                else
                 {
-                    CoreMaskString( coreMaskStr, mask, GetNode()->GetNumCores() );
-                    trace_printf("%s@%d - Generic process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
-                                 , method_name, __LINE__, process->GetName()
-                                 , process->GetNid(), process->GetPid(), GetNode()->GetNumCores(), coreMaskStr );
-
+                    ++tseBackupCnt_;
+                    ++lastBackupTseCoreAssigned_;
                 }
-                // Use the configured cores
-                rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &mask );
-                break;
+            }
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            {
+                trace_printf("%s@%d - TSE process %s%s (%d, %d) affinity set to core=%d, tseCount=%d, numCores=%d." "\n"
+                             , method_name, __LINE__, process->GetName(), process->IsBackup() ? "-B" : "-P"
+                             , process->GetNid(), process->GetPid(), lastBackupTseCoreAssigned_, tseBackupCnt_, numCores_ );
+            
+            }
+            CPU_ZERO( &mask );
+            CPU_SET( lastBackupTseCoreAssigned_, &mask );
+        }
 
-            case ProcessType_DTM:
-            case ProcessType_ASE:
-            case ProcessType_Watchdog:
-            case ProcessType_AMP:
-            case ProcessType_Backout:
-            case ProcessType_VolumeRecovery:
-            case ProcessType_MXOSRVR:
-            case ProcessType_SPX:
-            case ProcessType_SSMP:
-            case ProcessType_PSD:
-            default:
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                {
-                    CoreMaskString( coreMaskStr, CoreMask, GetNode()->GetNumCores() );
-                    trace_printf("%s@%d - process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
-                                 , method_name, __LINE__, process->GetName()
-                                 , process->GetNid(), process->GetPid(), GetNode()->GetNumCores(), coreMaskStr );
-                    
-                }
-                // Use the configured cores
-                rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &CoreMask );
-                break;
+        rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &mask );
+    }
+    else if ( CommType == CommType_InfiniBand &&
+              process->GetType( ) == ProcessType_Generic &&
+              process->isCmpOrEsp( ) )
+    {
+        CPU_ZERO( &mask );
+        short lv_corenum = 0;
+        do
+        {
+            CPU_SET( lv_corenum, &mask );
+            lv_corenum++;
+        }
+        while ( lv_corenum < (GetNode( )->GetNumCores( ) - 1) );
+        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+        {
+            CoreMaskString( coreMaskStr, mask, GetNode( )->GetNumCores( ) );
+            trace_printf( "%s@%d - Generic process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
+                , method_name, __LINE__, process->GetName( )
+                , process->GetNid( ), process->GetPid( ), GetNode( )->GetNumCores( ), coreMaskStr );
 
         }
+        rc = sched_setaffinity( process->GetPid( ), sizeof(cpu_set_t), &mask );
+    }
+    else if ( usingCpuAffinity )
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+            CoreMaskString( coreMaskStr, CoreMask, GetNode()->GetNumCores() );
+            trace_printf("%s@%d - process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
+                         , method_name, __LINE__, process->GetName()
+                         , process->GetNid(), process->GetPid(), GetNode()->GetNumCores(), coreMaskStr );
+            
+        }
+        // Use the configured cores
+        rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &CoreMask );
     }
     else
     {
-        if ( process->GetType() == ProcessType_Generic
-          && process->isCmpOrEsp() )
-      {
-          CPU_ZERO(&mask);
-	  short lv_corenum = 0;
-	  do {
-	    CPU_SET(lv_corenum, &mask);
-	    lv_corenum++;
-	  }
-	  while (lv_corenum < (GetNode()->GetNumCores() - 1));
-          if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-          {
-              CoreMaskString( coreMaskStr, mask, GetNode()->GetNumCores() );
-              trace_printf("%s@%d - Generic process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
-                           , method_name, __LINE__, process->GetName()
-                           , process->GetNid(), process->GetPid(), GetNode()->GetNumCores(), coreMaskStr );
-	    
-          }
-          // Use the configured cores
-          rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &mask );
-      }
-      else {
-          // Let it float in the physical node
-          mask = GetNode()->GetAffinityMask();
-          if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-          {
-              CoreMaskString( coreMaskStr, mask, GetNode()->GetNumCores() );
-              trace_printf("%s@%d - process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
-                           , method_name, __LINE__, process->GetName()
-                           , process->GetNid(), process->GetPid(), GetNode()->GetNumCores(), coreMaskStr );
-          }
-          rc = sched_setaffinity( process->GetPid(), sizeof(cpu_set_t), &mask );
-      }
+        // Let it float in the physical node
+        mask = GetNode( )->GetAffinityMask( );
+        if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+        {
+            CoreMaskString( coreMaskStr, mask, GetNode( )->GetNumCores( ) );
+            trace_printf( "%s@%d - process %s (%d, %d), cores=%d, affinity set to mask=%s" "\n"
+                , method_name, __LINE__, process->GetName( )
+                , process->GetNid( ), process->GetPid( ), GetNode( )->GetNumCores( ), coreMaskStr );
+        }
+        rc = sched_setaffinity( process->GetPid( ), sizeof(cpu_set_t), &mask );
     }
 
     if ( rc )
@@ -680,6 +668,7 @@ void CLNode::Up( void )
     mon_log_write(MON_LNODE_MARKUP, SQ_LOG_INFO, la_buf); 
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->notice_node_up_Incr();
 
     // send node up message to our node's processes
@@ -712,49 +701,6 @@ void CLNode::Up( void )
     MyNode->Bcast( msg );
     delete msg;
 
-    TRACE_EXIT;
-}
-
-void CLNode::Up( int pid )
-{
-    struct  message_def *msg;
-    
-    const char method_name[] = "CLNode::Up";
-    TRACE_ENTRY;
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - Sending Node Up %d (%s) to pid=%d.\n", method_name, __LINE__, GetNid(), GetNode()->GetName(), pid);
-
-    // Record statistics (sonar counters)
-       MonStats->notice_node_up_Incr();
-
-    // send node up message to our node's processes
-    msg = new struct message_def;
-    msg->type = MsgType_NodeUp;
-    msg->noreply = true;
-    msg->u.request.type = ReqType_Notice;
-    msg->u.request.u.up.nid = Nid;
-    msg->u.request.u.up.takeover = GetNode()->IsActivatingSpare();
-    const char * nodeName = GetNode()->GetName();
-    if (IsRealCluster)
-    {
-        STRCPY(msg->u.request.u.up.node_name, nodeName);
-    }
-    else
-    {
-        sprintf(msg->u.request.u.up.node_name,"%s:%d", nodeName, Nid);
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d - Sending Node Up nid=%d to pid=%d, name=(%s), takeover=%d\n"
-                    , method_name, __LINE__, GetNid(), pid 
-                    , GetNode()->GetName(), msg->u.request.u.up.takeover);
-    }
-    
-    SQ_theLocalIOToClient->putOnNoticeQueue( pid
-                                           , msg
-                                           , NULL);
     TRACE_EXIT;
 }
 
@@ -824,8 +770,10 @@ CLNode *CLNodeContainer::AddLNode( CLNodeConfig   *lnodeConfig )
     return lnode;
 }
 
-void CLNodeContainer::CancelDeathNotification (int nid, int pid, _TM_Txid_External trans_id)
-
+void CLNodeContainer::CancelDeathNotification( int nid
+                                             , int pid
+                                             , int verifier
+                                             , _TM_Txid_External trans_id )
 {
     CLNode *lnode;
     
@@ -834,7 +782,7 @@ void CLNodeContainer::CancelDeathNotification (int nid, int pid, _TM_Txid_Extern
 
     for ( lnode=head_; lnode; lnode=lnode->GetNext() )
     {
-        lnode->CancelDeathNotification (nid,pid,trans_id);
+        lnode->CancelDeathNotification( nid, pid, verifier, trans_id);
     }
 
     TRACE_EXIT;

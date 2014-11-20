@@ -36,7 +36,7 @@ using namespace std;
 
 #include "msgdef.h"
 
-#define SQ_LIO_MAX_BUFFERS     1000 // shared buffers per node in real cluster,
+#define SQ_LIO_MAX_BUFFERS      1000 // shared buffers per node in real cluster,
                                      // SQ_LIO_MAX_BUFFERS/4 in virtual cluster
 #define SQ_LIO_SHM_PERMISSIONS  0640 // shared memory permissions
 #define SQ_LIO_MSQ_PERMISSIONS  0640 // message queue permissions
@@ -62,6 +62,7 @@ typedef struct
   bool               received;
   bool               attaching;
   int                OSPid;     // Buffer owning pid (owner process)
+  Verifier_t         verifier;  // pid verifier (owner process)
   int                index;     // Shared buffer relative index location 
                                 // in SQ_LIO_MAX_BUFFERS array
   struct timespec    timestamp; // Last time buffer actively used
@@ -87,5 +88,7 @@ typedef struct LioSharedMemHdr
   int  wdtEnabler;
   int  lastMonRefresh; 
 } SharedMemHdr;
+
+typedef int SB_Verif_Type;
 #endif
 

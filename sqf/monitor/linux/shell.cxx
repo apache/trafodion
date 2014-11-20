@@ -101,18 +101,20 @@ char nodeUpName[MPI_MAX_PROCESSOR_NAME];
 CLock                 nodeUpLock;
 CClusterConfig ClusterConfig; // 'cluster.conf' objects
 char PNode[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
-char NodeRoles[MAX_CORES][MAX_NODES][MAX_ROLEBUF_SIZE];
 char Node[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
+char MyNode[MPI_MAX_PROCESSOR_NAME];
 char MyPort[MPI_MAX_PORT_NAME];
-//char MyName[MAX_PROCESS_NAME];
 int MyRank = -1;
 int MyPNid = -1;
 int MyNid = -1;
 int MyPid = -1;
+Verifier_t  MyVerifier = -1;
 int LastNid = -1;               // Node id of last process started
 int LastPid = -1;               // Process id of last process started
 int MonitorNid = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+int gv_ms_su_pid = -1;          // Local IO pid to make compatible w/ Seabed
+SB_Verif_Type gv_ms_su_verif = -1; // Local IO verifier to make compatible w/ Seabed
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // monitor port
 struct message_def *msg;
 
@@ -236,6 +238,37 @@ bool set_pnode_state( const char *name, NodeState_t &state )
 
 bool update_cluster_state( bool displayState, bool checkSpareColdStandby = true )
 {
+#if 0
+    //
+    // TODO: Enable this logic when node status utility is implemented
+    //
+    int rc, rc2;
+    CCmsh cmshcmd( "ssh master trafnodestatus $MY_NODES" );
+
+    // save, close and restore stdin when executing ssh command 
+    // because ssh, by design, would consume contents of stdin.
+    int savedStdIn = dup(STDIN_FILENO);
+    if ( savedStdIn == -1 )
+    {
+        fprintf(stderr, "[%s] Error: dup() failed for STDIN_FILENO: %s (%d)\n", MyName, strerror(errno), errno );
+        exit(1);
+    }
+    close(STDIN_FILENO);
+
+    rc = cmshcmd.GetClusterState( PhysicalNodeMap );
+    rc2 = dup2(savedStdIn, STDIN_FILENO);
+    if ( rc2 == -1 )
+    {
+        fprintf(stderr, "[%s] Error: dup2() failed for STDIN_FILENO: %s (%d)\n", MyName, strerror(errno), errno );
+        exit(1);
+    }
+    close(savedStdIn);
+
+    if ( rc == -1 )
+    {
+        return( false );
+    }
+#endif
 
     NumDown = 0;
 
@@ -718,6 +751,7 @@ bool attach( int nid, char *name, char *program )
     STRCPY (msg->u.request.u.startup.port_name, MyPort);
     STRCPY (msg->u.request.u.startup.program, program);
     msg->u.request.u.startup.os_pid = getpid ();
+    msg->u.request.u.startup.verifier = MyVerifier;
     msg->u.request.u.startup.event_messages = true;
     msg->u.request.u.startup.system_messages = true;
     if ( strcmp(name, "SHELL") == 0 )
@@ -738,6 +772,7 @@ bool attach( int nid, char *name, char *program )
         msg->u.request.u.startup.paired = true;
         STRCPY(msg->u.request.u.startup.process_name, name);
     }    
+    msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
 
     gp_local_mon_io->send_recv( msg );
     status.MPI_TAG = msg->reply_tag;
@@ -757,8 +792,13 @@ bool attach( int nid, char *name, char *program )
                 }
                 MyPid = msg->u.reply.u.startup_info.pid;
                 strcpy (MyName, msg->u.reply.u.startup_info.process_name);
+                gv_ms_su_pid = MyPid;
+                gv_ms_su_verif = MyVerifier = msg->u.reply.u.startup_info.verifier;
                 if (gp_local_mon_io)
+                {
                     gp_local_mon_io->iv_pid = MyPid;
+                    gp_local_mon_io->iv_verifier = MyVerifier;
+                }
                 if ( MonitorNid == -1 )
                 {
                     // set the monitor to the first connection monitor process
@@ -1110,6 +1150,24 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     fflush( stdout );
 }
 
+bool is_spare_node( char *node_name )
+{
+    bool rs = false; // Assume it's not a spare node
+    CPNodeConfig *pNodeConfig;
+
+    // Any spare nodes in configuration?
+    if ( ClusterConfig.GetSNodesCount() )
+    {
+        pNodeConfig =
+            ClusterConfig.GetPNodeConfig( ClusterConfig.GetPNid( node_name ) );
+        if ( pNodeConfig )
+        {
+            rs = pNodeConfig->IsSpareNode();
+        }
+    }
+
+    return( rs );
+}
 
 bool is_environment_up( void )
 {
@@ -1333,6 +1391,7 @@ void down_cmd ( int nid, char *cmd_tail )
     msg->u.request.type = ReqType_NodeDown;
     msg->u.request.u.down.nid = nid;
     STRCPY(msg->u.request.u.down.node_name, Node[nid]); 
+    STRCPY(msg->u.request.u.down.reason, cmd_tail);
 
     gp_local_mon_io->send( msg );
     
@@ -1343,10 +1402,10 @@ void dump_cmd (char *cmd_tail, char delimiter)
 {
     int count;
     char *dir;
-    char name[MAX_PROCESS_NAME];
+    char name[MAX_PROCESS_NAME] = {0};
     int nid;
-    char path[MAX_PROCESS_PATH];
-    char path2[MAX_PROCESS_PATH];
+    char path[MAX_PROCESS_PATH] = {0};
+    char path2[MAX_PROCESS_PATH] = {0};
     int pid;
     MPI_Status status;
     char token[MAX_TOKEN];
@@ -1435,10 +1494,13 @@ void dump_cmd (char *cmd_tail, char delimiter)
     msg->u.request.type = ReqType_Dump;
     msg->u.request.u.dump.nid = MyNid;
     msg->u.request.u.dump.pid = MyPid;
+    msg->u.request.u.dump.verifier = MyVerifier;
+    msg->u.request.u.dump.process_name[0] = 0;
     STRCPY(msg->u.request.u.dump.path, path);
     msg->u.request.u.dump.target_nid = nid;
     msg->u.request.u.dump.target_pid = pid;
-    STRCPY(msg->u.request.u.dump.process_name, name);
+    msg->u.request.u.dump.target_verifier = -1;
+    STRCPY(msg->u.request.u.dump.target_process_name, name);
 
     gp_local_mon_io->send_recv( msg );
     if (gp_local_mon_io->iv_shutdown)
@@ -1624,8 +1686,12 @@ void event_cmd (char *cmd_tail, char delimiter)
     msg->u.request.type = ReqType_Event;
     msg->u.request.u.event.nid = MyNid;
     msg->u.request.u.event.pid = MyPid;
+    msg->u.request.u.event.verifier = MyVerifier;
+    msg->u.request.u.event.process_name[0] = 0;
     msg->u.request.u.event.target_nid = nid;
     msg->u.request.u.event.target_pid = pid;
+    msg->u.request.u.event.target_verifier = -1;
+    msg->u.request.u.event.target_process_name[0] = 0;
     msg->u.request.u.event.type = process_type;
     msg->u.request.u.event.event_id = event_id;
     if (*cmd_tail)
@@ -1870,6 +1936,8 @@ void exit_process (void)
     msg->u.request.type = ReqType_Exit;
     msg->u.request.u.exit.nid = MyNid;
     msg->u.request.u.exit.pid = MyPid;
+    msg->u.request.u.exit.verifier = MyVerifier;
+    msg->u.request.u.exit.process_name[0] = 0;
 
     gp_local_mon_io->send_recv( msg );
     if (gp_local_mon_io->iv_shutdown)
@@ -2191,6 +2259,95 @@ bool get_node_state( int nid, char *node_name, int &pnid, STATE &state, bool &in
     return( rs );
 }
 
+// This returns a StateDown in state if any node in the spare set is down,
+// except the node_name passed in.
+// Used with cold standby spare node activation where there must be at least
+// one logical nodel in the configured spare in a down state. Otherwise,
+// a spare node could be brought up and not activated and therefore become
+// a hot standby.
+bool get_spare_set_state( char *node_name, STATE &spare_set_state )
+{
+    const char method_name[] = "get_spare_set_state";
+    
+    bool rs = false;  // Assume failure
+    bool integrating = false;
+    int  pnid;
+    STATE state = spare_set_state = State_Up;
+    CPNodeConfig *spareNodeConfig;
+
+    if ( trace_settings & TRACE_SHELL_CMD )
+        trace_printf( "%s@%d [%s] Getting spare set for node=%s\n"
+                     , method_name, __LINE__, MyName, node_name );
+
+    // Any spare nodes in configuration?
+    if ( ClusterConfig.GetSNodesCount() )
+    {
+        // Get the spare set that corresponds to node_name, if it exists
+        PNodesConfigList_t spareNodesConfigSet;
+        ClusterConfig.GetSpareNodesConfigSet( node_name
+                                            , spareNodesConfigSet );
+        if (spareNodesConfigSet.size())
+        {
+            // Check each node in the spare set against the current operational node state
+            PNodesConfigList_t::iterator itSnSet;
+            for ( itSnSet = spareNodesConfigSet.begin(); 
+                  itSnSet != spareNodesConfigSet.end(); 
+                  itSnSet++ ) 
+            {
+                spareNodeConfig = *itSnSet;
+
+                if ( trace_settings & TRACE_SHELL_CMD )
+                    trace_printf( "%s@%d [%s] Spare set member node=%s\n"
+                                , method_name, __LINE__, MyName
+                                , spareNodeConfig->GetName() );
+
+                if ( strcmp( spareNodeConfig->GetName(), node_name ) == 0 )
+                {
+                    if ( trace_settings & TRACE_SHELL_CMD )
+                        trace_printf( "%s@%d [%s] Skipping member node=%s\n"
+                                    , method_name, __LINE__, MyName
+                                    , spareNodeConfig->GetName() );
+                    continue;
+                }
+
+                // Check monitors state of the target node
+                if ( !get_node_state( -1
+                                    , (char *)spareNodeConfig->GetName()
+                                    , pnid
+                                    , state
+                                    , integrating ) )
+                {
+                    // Something went wrong, error was already displayed
+                    break;
+                }
+                else
+                {
+                    if ( trace_settings & TRACE_SHELL_CMD )
+                        trace_printf( "%s@%d [%s] Member node=%s, state=%s\n"
+                                    , method_name, __LINE__, MyName
+                                    , spareNodeConfig->GetName()
+                                    , state_string(state) );
+                    if (state == State_Down)
+                    {
+                        // Found one member in the set down, so we are done
+                        spare_set_state = State_Down;
+                        break;
+                    }
+                }
+            }
+            rs = true;
+        }
+    }
+    else
+    {
+        // No spare nodes to check, so assume node_name is down
+        spare_set_state = State_Down;
+        rs = true;
+    }
+
+    return( rs );
+}
+
 bool get_zone_state( int &nid, int &zid , char *node_name, int &pnid, STATE &state )
 {
     bool rs = false;
@@ -2287,13 +2444,16 @@ bool getpid( char *name, int &nid, int &pid )
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = MyNid;
     msg->u.request.u.process_info.pid = MyPid;
+    msg->u.request.u.process_info.verifier = MyVerifier;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = nid;
     msg->u.request.u.process_info.target_pid = pid;
+    msg->u.request.u.process_info.target_verifier = -1;
     if (strlen(name) >= MAX_PROCESS_NAME)
     {
         name[MAX_PROCESS_NAME-1] = '\0';
     }
-    STRCPY (msg->u.request.u.process_info.process_name, name);
+    STRCPY (msg->u.request.u.process_info.target_process_name, name);
     msg->u.request.u.process_info.type = ProcessType_Undefined;
 
     gp_local_mon_io->send_recv( msg );
@@ -2352,9 +2512,12 @@ void cancel_notice( _TM_Txid_External trans_id )
     msg->u.request.type = ReqType_Notify;
     msg->u.request.u.notify.nid = MyNid;
     msg->u.request.u.notify.pid = MyPid;
+    msg->u.request.u.notify.verifier = MyVerifier;
+    msg->u.request.u.notify.process_name[0] = 0;
     msg->u.request.u.notify.cancel = 1;
     msg->u.request.u.notify.target_nid = -1;
     msg->u.request.u.notify.target_pid = -1;
+    msg->u.request.u.notify.target_verifier = -1;
     msg->u.request.u.notify.trans_id = trans_id;
 
     gp_local_mon_io->send_recv( msg );
@@ -2416,9 +2579,12 @@ void request_notice( int nid,int pid,  _TM_Txid_External trans_id )
     msg->u.request.type = ReqType_Notify;
     msg->u.request.u.notify.nid = MyNid;
     msg->u.request.u.notify.pid = MyPid;
+    msg->u.request.u.notify.verifier = MyVerifier;
+    msg->u.request.u.notify.process_name[0] = 0;
     msg->u.request.u.notify.cancel = 0;
     msg->u.request.u.notify.target_nid = nid;
     msg->u.request.u.notify.target_pid = pid;
+    msg->u.request.u.notify.target_verifier = -1;
     msg->u.request.u.notify.trans_id = trans_id;
 
     gp_local_mon_io->send_recv( msg );
@@ -2645,7 +2811,7 @@ void help_cmd (void)
     if ( Debug && (trace_settings & TRACE_SHELL_CMD) )
         trace_printf ("%s@%d [%s] -- debug\n", method_name, __LINE__, MyName);
     printf ("[%s] -- delay <seconds>\n", MyName);
-    printf ("[%s] -- down <nid>\n", MyName);
+    printf ("[%s] -- down <nid> [, <reason-string>]\n", MyName);
     printf ("[%s] -- dump [{path <pathname>}] <process name> | <nid,pid>\n", MyName);
     printf ("[%s] -- echo [<string>]\n", MyName);
     printf ("[%s] -- event [{ASE|TSE|DTM|AMP|BO|VR|CS}] <event_id> [<nid,pid> [ event-data] ]\n", MyName);
@@ -2658,7 +2824,6 @@ void help_cmd (void)
     printf ("[%s] -- ldpath [<directory>[,<directory>]...]\n", MyName);
     printf ("[%s] -- ls [{[detail]}] [<path>]\n", MyName);
     printf ("[%s] -- measure | measure_cpu\n", MyName);
-    printf ("[%s] -- monitor [<nid>]\n", MyName);
     printf ("[%s] -- monstats\n", MyName);
     printf ("[%s] -- node [info [<nid>]]\n", MyName);
     printf ("[%s] -- path [<directory>[,<directory>]...]\n", MyName);
@@ -2709,6 +2874,7 @@ void kill_cmd( char *cmd_tail, char delimiter )
     char token[MAX_TOKEN];
     bool abort = false;
     bool found = false;
+    bool isValidNidPid = false;
     MPI_Status status;
     char * token_next;
     char * token_end;
@@ -2728,6 +2894,7 @@ void kill_cmd( char *cmd_tail, char delimiter )
             else
             {
                 printf ("[%s] Invalid kill option syntax!\n", MyName);
+                return;
             }
         }
     }
@@ -2740,8 +2907,6 @@ void kill_cmd( char *cmd_tail, char delimiter )
         number = strtol(token, &token_end, 10);
         if (token != token_end && *token_end == 0)
         {   // Entire first token is a number, assume user specified nid,pid
-            bool isValidNidPid = false;
-
             nid = number;
             if (delimiter == ',')
             {   // Try interpreting next token as a number
@@ -2792,15 +2957,22 @@ void kill_cmd( char *cmd_tail, char delimiter )
     msg->u.request.type = ReqType_Kill;
     msg->u.request.u.kill.nid = MyNid;
     msg->u.request.u.kill.pid = MyPid;
+    msg->u.request.u.kill.verifier = MyVerifier;
+    msg->u.request.u.kill.process_name[0] = 0;
     msg->u.request.u.kill.target_nid = nid;
     msg->u.request.u.kill.target_pid = pid;
+    msg->u.request.u.kill.target_verifier = -1;
     msg->u.request.u.kill.persistent_abort = abort;
-    if (strlen(cmd_tail) >= MAX_PROCESS_NAME)
+    msg->u.request.u.kill.target_process_name[0] = 0;
+    if ( token[0] == '$' )
     {
-        cmd_tail[MAX_PROCESS_NAME-1] = '\0';
+        if (strlen(cmd_tail) >= MAX_PROCESS_NAME)
+        {
+            cmd_tail[MAX_PROCESS_NAME-1] = '\0';
+        }
+        remove_trailing_white_space(cmd_tail);
+        STRCPY (msg->u.request.u.kill.target_process_name, cmd_tail);
     }
-    remove_trailing_white_space(cmd_tail);
-    STRCPY (msg->u.request.u.kill.process_name, cmd_tail);
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof( *msg );
@@ -3477,12 +3649,14 @@ void process_startup (int nid,char *port)
     msg->u.request.type = ReqType_Startup;
     msg->u.request.u.startup.nid = MyNid;
     msg->u.request.u.startup.pid = MyPid;
+    msg->u.request.u.startup.verifier = MyVerifier;
     msg->u.request.u.startup.paired = false;
     STRCPY (msg->u.request.u.startup.process_name, MyName);
     STRCPY (msg->u.request.u.startup.port_name, MyPort);
     msg->u.request.u.startup.os_pid = getpid ();
     msg->u.request.u.startup.event_messages = true;
     msg->u.request.u.startup.system_messages = true;
+    msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
     if ( trace_settings & TRACE_SHELL_CMD )
         trace_printf ("%s@%d [%s] sending startup reply to monitor.\n",
                       method_name, __LINE__, MyName);
@@ -3720,14 +3894,17 @@ void ps_cmd (char *cmd_tail, char delimiter)
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = MyNid;
     msg->u.request.u.process_info.pid = MyPid;
+    msg->u.request.u.process_info.verifier = MyVerifier;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = nid;
     msg->u.request.u.process_info.target_pid = pid;
+    msg->u.request.u.process_info.target_verifier = -1;
     if (strlen(cmd_tail) >= MAX_PROCESS_NAME)
     {
         cmd_tail[MAX_PROCESS_NAME-1] = '\0';
     }
     remove_trailing_white_space(cmd_tail);
-    STRCPY (msg->u.request.u.process_info.process_name, cmd_tail);
+    STRCPY (msg->u.request.u.process_info.target_process_name, cmd_tail);
     msg->u.request.u.process_info.type = process_type;
  
     bool fail = gp_local_mon_io->send_recv( msg );
@@ -3803,9 +3980,12 @@ bool FoundDTM (void)
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = MyNid;
     msg->u.request.u.process_info.pid = MyPid;
+    msg->u.request.u.process_info.verifier = MyVerifier;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = -1;
     msg->u.request.u.process_info.target_pid = -1;
-    msg->u.request.u.process_info.process_name[0] = 0;
+    msg->u.request.u.process_info.target_verifier = -1;
+    msg->u.request.u.process_info.target_process_name[0] = 0;
     msg->u.request.u.process_info.type = process_type;
  
     gp_local_mon_io->send_recv( msg );
@@ -3956,6 +4136,8 @@ void set_cmd (char *cmd, char delimiter)
     msg->u.request.type = ReqType_Set;
     msg->u.request.u.set.nid = MyNid;
     msg->u.request.u.set.pid = MyPid;
+    msg->u.request.u.set.verifier = MyVerifier;
+    msg->u.request.u.set.process_name[0] = 0;
     msg->u.request.u.set.type = type;
     STRCPY(msg->u.request.u.set.group,name);
     STRCPY(msg->u.request.u.set.key,token);
@@ -4072,6 +4254,8 @@ void show_cmd (char *cmd, char delimiter)
         msg->u.request.type = ReqType_Get;
         msg->u.request.u.get.nid = MyNid;
         msg->u.request.u.get.pid = MyPid;
+        msg->u.request.u.get.verifier = MyVerifier;
+        msg->u.request.u.get.process_name[0] = 0;
         msg->u.request.u.get.type = type;
         msg->u.request.u.get.next = next;
         STRCPY(msg->u.request.u.get.group,name);
@@ -4333,12 +4517,13 @@ int start_process (int *nid, PROCESSTYPE type, char *name, bool debug, int prior
                 LastPid = msg->u.reply.u.new_process.pid;
                 if ( trace_settings & TRACE_SHELL_CMD )
                     trace_printf (
-                         "%s@%d [%s] Started process successfully. "
-                         "Nid=%d, Pid=%d, Process_name=%s, rtn=%d\n",
+                         "%s@%d [%s] Started process successfully. Nid=%d, "
+                         "Pid=%d, Process_name=%s, Verifier=%d,rtn=%d\n",
                          method_name, __LINE__,
                          MyName, msg->u.reply.u.new_process.nid,
                          msg->u.reply.u.new_process.pid,
                          msg->u.reply.u.new_process.process_name,
+                         msg->u.reply.u.new_process.verifier,
                          msg->u.reply.u.new_process.return_code);
                 *nid = msg->u.reply.u.new_process.nid;
             }
@@ -4493,7 +4678,7 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
             char *xkey = xenum.next();
             const char *xvalue = xprops.get(xkey);
             xvals[xinx] = new char[strlen(xkey)+1];
-            xvals[xinx+1] = new char[strlen(xkey)+1];
+            xvals[xinx+1] = new char[strlen(xvalue)+1];
             strcpy(xvals[xinx], xkey);
             strcpy(xvals[xinx+1], xvalue);
             argv[idx+1] = (char *) "-env";
@@ -4617,16 +4802,19 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     idx++;
     if ( reintegrate )
     {
-        // NEW monitor argv1 argv2 argv3 argv4: 
-        // monitor -integrate <creator-monitor-port> <creator-shell-pid>
+        // NEW monitor argv1 argv2 argv3 argv4 argv5: 
+        // monitor -integrate <creator-monitor-port> <creator-shell-pid> <creator_shell_verifier>
         argv[idx+1] = (char *) "-integrate";
-        static char mon_port[MPI_MAX_PORT_NAME];
+        char mon_port[MPI_MAX_PORT_NAME];
         strcpy( mon_port, gp_local_mon_io->mon_port() );
         argv[idx+2] = mon_port;
         char creator_shell_pid[MPI_MAX_PORT_NAME];
         sprintf( creator_shell_pid, "%d", MyPid );
         argv[idx+3] = creator_shell_pid;
-        idx+=3;
+        char creator_shell_verifier[MPI_MAX_PORT_NAME];
+        sprintf( creator_shell_verifier, "%d", MyVerifier );
+        argv[idx+4] = creator_shell_verifier;
+        idx+=4;
         argv[idx+1] = NULL;
     }
     else
@@ -4713,6 +4901,7 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
             }
             else if (child == 0)
             {  // mpirun has not yet changed state, delay.
+                // do not wait for mpirun to complete when using mpich!
                 done = true;
             }
             else
@@ -4906,24 +5095,25 @@ int up_node( int nid, char *node_name, bool nowait )
     // If this is a real cluster
     if ( nid == -1 )
     {
-        // Check the physical state of the node
+        // Get current physical state of all nodes
         if ( !update_cluster_state( true, false ) )
         {
             return( rc ) ;
         }
         NodeState_t nodeState;
+        // Check physical state of the target node
         if ( get_pnode_state( node_name, nodeState ) )
         {
             if ( nodeState != StateUp )
             {
                 sprintf( msgString, "[%s] Node %s is not available.", MyName, node_name);
                 write_startup_log( msgString );
-                fprintf(stderr, "[%s] Node %s is not available.\n"
-                              , MyName, node_name);
+                printf("[%s] Node %s is not available.\n", MyName, node_name);
                 return( rc ) ;
             }
         }
         STATE state;
+        // Check monitors state of the target node
         if ( !get_node_state( nid, node_name, pnid, state, integrating ) )
         {
             return( rc ) ;
@@ -4943,6 +5133,27 @@ int up_node( int nid, char *node_name, bool nowait )
             return( rc ) ;
         }
 
+        if ( SpareNodeColdStandby )
+        {
+            // Check monitors state of all logical nodes of the spare set.
+            // There must be at least one logical node down that is associated.
+            // with the spare set or the command is rejected (cold standby).
+            // Otherwise, the spare node comes up and it becomes a hot standby
+            // which is not currenly supported.
+            STATE spare_set_state = State_Up;
+            if ( !get_spare_set_state( node_name, spare_set_state ) )
+            {
+                return( rc ) ;
+            }
+            if ( spare_set_state != State_Down )
+            {
+                sprintf( msgString, "[%s] No nodes in the down state for spare node activation on %s!", MyName, node_name );
+                write_startup_log( msgString );
+                printf ("[%s] No nodes in the down state for spare node activation on %s!\n", MyName, node_name );
+                return( rc ) ;
+            }
+        }
+
         // remove shared segment on the node
         char cmd[256];
         sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $MY_SQROOT/logs/node_up_%s.log\"", node_name, node_name, node_name);
@@ -4953,8 +5164,7 @@ int up_node( int nid, char *node_name, bool nowait )
         {
             sprintf( msgString, "[%s] Unable to start monitor process in node %s.", MyName, node_name );
             write_startup_log( msgString );
-            fprintf(stderr, "[%s] Unable to start monitor process in node %s.\n"
-                          , MyName, node_name);
+            printf ("[%s] Unable to start monitor process in node %s.\n", MyName, node_name );
             return( rc ) ;
         }
     }
@@ -5396,7 +5606,18 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
         cmd_tail = get_token( cmd_tail, token, &delim );
         if ( isNumeric( token ) )
         {
-            sprintf( msgString, "[%s] Executing node down. (nid=%s)", MyName, token);
+            if (cmd_tail[0] != 0)
+            {
+                snprintf( msgString, sizeof(msgString)
+                        , "[%s] Executing node down. (nid=%s) \"%s\""
+                        , MyName, token, cmd_tail );
+            }
+            else
+            {
+                snprintf( msgString, sizeof(msgString)
+                        , "[%s] Executing node down. (nid=%s)"
+                        , MyName, token );
+            }
             write_startup_log( msgString );
             i = atoi (token);
             if (i < 0 || i > NumLNodes - 1)
@@ -5516,37 +5737,6 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
             setenv("SQ_PIDMAP", "1", 1);
         }
     }
-    else if (strcmp (token, "monitor") == 0)
-    {
-        if ( cmd_tail && *cmd_tail )
-        {
-            i = atoi (cmd_tail);
-            if (i < 0 || i > CurNodes - 1)
-            {
-                printf ("[%s] Invalid Node ID!\n", MyName);
-            }
-            else
-            {
-                assert(gp_local_mon_io);
-
-                if ( VirtualNodes )
-                {
-                    exit_process();
-                    delete gp_local_mon_io;
-                    gv_ms_su_nid = MyNid = MonitorNid = i;
-                    gp_local_mon_io = new Local_IO_To_Monitor( -1 );
-                    setCallbacks();
-                    strcpy(MyName,"SHELL");
-                    Attached = attach(i,MyName,(char *) "shell");
-                }
-                else
-                {
-                    printf ("[%s] Command not supported with localio on real clusters.\n", MyName); 
-                }
-            }
-        }
-        printf ("[%s] Node %d will process shell commands.\n",MyName,MonitorNid);
-    }
     else if (strcmp (token, "node") == 0)
     {
         node_cmd (cmd_tail);
@@ -5651,6 +5841,12 @@ bool process_command( char *token, char *cmd_tail, char delimiter )
             sprintf( msgString, "[%s] Environment already started!",MyName);
             write_startup_log( msgString );
             printf ("[%s] Environment already started!\n", MyName);
+        }
+        else if ( is_spare_node( MyNode ) )
+        {
+            sprintf( msgString, "[%s] Current node (%s) is a configured spare node! Must use non-spare node to startup environment.", MyName, MyNode);
+            write_startup_log( msgString );
+            printf ("[%s] Current node (%s) is a configured spare node! Must use non-spare node to startup environment.\n", MyName, MyNode);
         }
         else
         {
@@ -5853,7 +6049,7 @@ int main (int argc, char *argv[])
     char *input_file;
     char *cmd_buffer;
     char token[MAX_TOKEN];
-    char cmd_string[MAX_TOKEN];
+    char cmd_string[MAX_CMDLINE];
     char *cmd_tail = NULL;
     int i;
     bool alloc_new = false;
@@ -5928,6 +6124,7 @@ int main (int argc, char *argv[])
     }
     else
     {
+        gethostname(MyNode, MPI_MAX_PROCESSOR_NAME);
         if ( !load_nodes() )
         {
             exit (1);
@@ -6035,7 +6232,8 @@ int main (int argc, char *argv[])
         }
         if ( trace_settings & TRACE_SHELL_CMD )
             trace_printf("%s@%d [%s] Startup case %d - child attached batch "
-                         "shell\n",  method_name, __LINE__, MyName, argc);
+                         "shell, command: %s\n",  method_name, __LINE__, MyName
+                         , argc, cmd_string);
         if ( ! gp_local_mon_io )
         {
             InitLocalIO();
@@ -6062,12 +6260,12 @@ int main (int argc, char *argv[])
         }
         break;
 
-    case 10:
     case 11:
     case 12:
+    case 13:
         // Started as child shell
         if ( trace_settings & TRACE_SHELL_CMD )
-            trace_printf("%s@%d [%s] Startup case 10/11/12 - child shell\n",
+            trace_printf("%s@%d [%s] Startup case 11/12/13 - child shell\n",
                          method_name, __LINE__, MyName);
         Started = true;
         MonitorNid = MyNid = atoi (argv[3]);
@@ -6076,22 +6274,23 @@ int main (int argc, char *argv[])
             InitLocalIO();
         }
         MyPid = atoi (argv[4]);
+        gv_ms_su_verif  = MyVerifier = atoi(argv[9]);
         strcpy (MyName, argv[5]);
         tty = (isatty (fileno (stdin)) ? true : false);
         process_startup (MyNid, argv[6]);
         Attached = true;
-        if (argv[10] && argv[11] && strcmp (argv[10], "-c") == 0)
+        if (argv[11] && argv[12] && strcmp (argv[11], "-c") == 0)
         {
-            cmd_tail = get_token (argv[11], token, &delimiter);
+            cmd_tail = get_token (argv[12], token, &delimiter);
             normalize_case (token);
             exec_one_command = true;
             tty = false;
             break;
         }
-        else if (argv[10] && argv[10][0] != '-')
+        else if (argv[11] && argv[11][0] != '-')
         {
             tty = false;
-            input_file = argv[10];
+            input_file = argv[11];
             if (freopen (input_file, "r", stdin) == NULL)
             {
                 printf ("[%s] Can't open input file '%s'.\n", MyName, input_file);

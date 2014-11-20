@@ -50,7 +50,7 @@ public:
 class CReqResourceProc: public CReqResource
 {
 public:
-    CReqResourceProc(int nid, int pid);
+    CReqResourceProc(int nid, int pid, const char *name, Verifier_t verifier );
     virtual ~CReqResourceProc();
 
     ResourceStatus_t acquireResource( long requestId );
@@ -61,6 +61,8 @@ private:
     CReqResourceProc();
     int       nid_;
     int       pid_;
+    Verifier_t verifier_;
+    string     processName_;
 };
 
 class CReqResourceConfig: public CReqResource
@@ -155,9 +157,14 @@ public:
         ShutdownWork
     } reqQueueMsg_t;
 
-    CExternalReq(reqQueueMsg_t msgType, int pid, struct message_def *msg)
-        : msgType_(msgType), pid_(pid), msg_(msg), 
-        reqType_(msg?msg->u.request.type:ReqType_Invalid) {}
+    CExternalReq( reqQueueMsg_t msgType
+                , int pid
+                , struct message_def *msg)
+        : msgType_(msgType)
+        , pid_(pid)
+        , verifier_(-1)
+        , msg_(msg)
+        , reqType_(msg?msg->u.request.type:ReqType_Invalid) {}
 
     virtual ~CExternalReq() {}
 
@@ -175,7 +182,10 @@ private:
 
 protected:
     reqQueueMsg_t msgType_;
+    int nid_;
     int pid_;
+    Verifier_t verifier_;
+    string processName_;
     struct message_def * msg_;
     // Request save data
     REQTYPE reqType_;
@@ -402,7 +412,10 @@ class CExtProcInfoBase: public CExternalReq
     virtual ~CExtProcInfoBase() {}
 
  protected:
+    void ProcessInfo_CopyPairData( CProcess *process
+                                 , ProcessInfoState &procState );
     void ProcessInfo_CopyData(CProcess *process, ProcessInfoState &procState);
+
     CProcess * ProcessInfo_GetProcess (int &nid, bool getDataForAllNodes);
     int ProcessInfo_BuildReply(CProcess *process,
                                struct message_def * msg,
@@ -575,7 +588,7 @@ private:
 class CIntCloneProcReq: public CInternalReq
 {
 public:
-    CIntCloneProcReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int osPid, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData);
+    CIntCloneProcReq( bool backup, bool unhooked, bool eventMessages, bool systemMessages, int nid, PROCESSTYPE type, int priority, int parentNid, int parentPid, int parentVerifier, int osPid, int verifier, pid_t priorPid, int persistentRetries, int  argc, struct timespec creationTime, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int portLen, int infileLen, int outfileLen, int argvLen, const char * stringData);
     virtual ~CIntCloneProcReq();
 
     void performRequest();
@@ -592,7 +605,9 @@ private:
     int priority_;
     int parentNid_;
     int parentPid_;
+    int parentVerifier_;
     int osPid_;
+    int verifier_; 
     pid_t priorPid_;
     int persistentRetries_;
     int  argc_;
@@ -636,6 +651,7 @@ private:
 
     int nid_;
     int pid_;
+    Verifier_t verifier_;
     bool abended_;
     char name_[MAX_PROCESS_NAME];
 };
@@ -643,7 +659,7 @@ private:
 class CIntKillReq: public CInternalReq
 {
 public:
-    CIntKillReq( int killNid, int killPid, bool abort );
+    CIntKillReq( struct kill_def *killDef );
     virtual ~CIntKillReq();
 
     void performRequest();
@@ -651,15 +667,36 @@ public:
 private:
     void populateRequestString( void );
 
-    int killNid_;
-    int killPid_;
+    int nid_;
+    int pid_;
+    Verifier_t verifier_;
     bool abort_;
 };
 
 class CIntNewProcReq: public CInternalReq
 {
 public:
-    CIntNewProcReq( int nid, PROCESSTYPE type, int priority, int backup, int parentNid, int parentPid, int pairParentNid, int pairParentPid, int  argc, bool unhooked, void *reqTag, strId_t pathStrId, strId_t ldpathStrId, strId_t programStrId, int nameLen, int infileLen, int outfileLen, int argvLen, const char * stringData );
+    CIntNewProcReq( int nid
+                  , PROCESSTYPE type
+                  , int priority
+                  , int backup
+                  , int parentNid
+                  , int parentPid
+                  , Verifier_t parentVerifier
+                  , int pairParentNid
+                  , int pairParentPid
+                  , Verifier_t pairParentVerifier
+                  , int argc
+                  , bool unhooked
+                  , void *reqTag
+                  , strId_t pathStrId
+                  , strId_t ldpathStrId
+                  , strId_t programStrId
+                  , int nameLen
+                  , int infileLen
+                  , int outfileLen
+                  , int argvLen
+                  , const char * stringData );
 
     virtual ~CIntNewProcReq ( );
 
@@ -674,8 +711,10 @@ private:
     int backup_;
     int parentNid_;
     int parentPid_;
+    Verifier_t parentVerifier_;
     int pairParentNid_;
     int pairParentPid_;
+    Verifier_t pairParentVerifier_;
     int  argc_;
     bool unhooked_;
     void *reqTag_;
@@ -692,7 +731,7 @@ private:
 class CIntOpenReq: public CInternalReq
 {
 public:
-    CIntOpenReq ( int nid, int pid, int opened_nid, int opened_pid );
+    CIntOpenReq ( struct open_def *openDef  );
     virtual ~CIntOpenReq ( );
 
     void performRequest();
@@ -702,16 +741,17 @@ private:
 
     int openerNid_;
     int openerPid_;
+    Verifier_t openerVerifier_;
     int openedNid_;
     int openedPid_;
+    Verifier_t openedVerifier_;
 };
 
 
 class CIntProcInitReq: public CInternalReq
 {
 public:
-    CIntProcInitReq ( int nid, int pid, STATE state, int result, void* tag,
-                      const char *name  );
+    CIntProcInitReq ( struct process_init_def *procInitDef  );
     virtual ~CIntProcInitReq ( );
 
     void performRequest();
@@ -721,6 +761,7 @@ private:
 
     int nid_;
     int pid_;
+    Verifier_t verifier_;
     STATE state_;
     int result_;
     CProcess *process_;
@@ -946,7 +987,7 @@ class CReqQueue
     void enqueueCloneReq( struct clone_def *cloneDef );
     void enqueueDeviceReq( char *ldevName );
     void enqueueExitReq( struct exit_def *exitDef );
-    void enqueueKillReq( int nid, int pid, bool abort );
+    void enqueueKillReq( struct kill_def *killDef );
     void enqueueNewProcReq( struct process_def *procDef );
     void enqueueOpenReq( struct open_def *openDef );
     void enqueueProcInitReq( struct process_init_def *procInitDef );

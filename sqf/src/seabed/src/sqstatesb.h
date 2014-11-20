@@ -30,9 +30,12 @@
 #include "sbconst.h"
 
 typedef struct sb_ic_get_opener_od_type {
-    char ia_name[MS_MON_MAX_PROCESS_NAME+1];
-    int  iv_nid;
-    int  iv_pid;
+    char          ia_name[MS_MON_MAX_PROCESS_NAME+1];
+    int           iv_nid;
+    int           iv_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type iv_verif;
+#endif
 } SB_IC_Get_Opener_Od_Type;
 typedef struct sb_ic_get_opener_type {
     int                      iv_count;
@@ -40,10 +43,13 @@ typedef struct sb_ic_get_opener_type {
 } SB_IC_Get_Opener_Type;
 
 typedef struct sb_ic_get_opens_od_type {
-    char ia_process_name[MS_MON_MAX_PROCESS_NAME+1];
-    char ia_prog[SB_MAX_PROG];
-    int  iv_nid;
-    int  iv_pid;
+    char          ia_process_name[MS_MON_MAX_PROCESS_NAME+1];
+    char          ia_prog[SB_MAX_PROG];
+    int           iv_nid;
+    int           iv_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type iv_verif;
+#endif
 } SB_IC_Get_Opens_Od_Type;
 typedef struct sb_ic_get_opens_type {
     int                     iv_count;

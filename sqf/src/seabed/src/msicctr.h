@@ -51,6 +51,10 @@ public:
         return gv_ms_lim_q.size();
     }
 
+    inline int ctr_get_limq_hi() {
+        return gv_ms_lim_q.hi();
+    }
+
     inline long long ctr_get_msgs_rcvd() {
         return iv_msg_count_rcvd.read_val();
     }
@@ -61,6 +65,10 @@ public:
 
     inline int ctr_get_recvq_len() {
         return gv_ms_recv_q.size();
+    }
+
+    inline int ctr_get_recvq_hi() {
+        return gv_ms_recv_q.hi();
     }
 
 private:

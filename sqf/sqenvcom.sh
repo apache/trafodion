@@ -491,6 +491,9 @@ export SQ_MON_ALTLOG=1
 # default 15 mins
 export SQ_MON_SYNC_TIMEOUT=900
 
+# set to 0 to disable phandle verifier
+export SQ_PHANDLE_VERIFIER=1
+
 
 # Check the state of the node with the cluster manager during regroup
 export SQ_WDT_CHECK_CLUSTER_STATE=0

@@ -46,6 +46,9 @@ static void sb_log_key_dtor(void *pp_log_buf);
 static bool gv_logging       = true;
 int         gv_ms_su_compid  = 0;
 char        ga_ms_su_pname[MS_MON_MAX_PROCESS_NAME] = "$<unkwn>";
+#ifdef SQ_PHANDLE_VERIFIER
+char        ga_ms_su_pname_seq[MS_MON_MAX_PROCESS_NAME] = "$<unkwn>";
+#endif
 int         gv_ms_su_zid     = -1;
 static int  gv_log_tls_inx =
               SB_create_tls_key(sb_log_key_dtor, "log-buf");

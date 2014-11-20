@@ -46,13 +46,23 @@ CExtNotifyReq::~CExtNotifyReq()
 
 void CExtNotifyReq::populateRequestString( void )
 {
-    char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
+    char strBuf[MON_STRING_BUF_SIZE] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
-              "ExtReq(%s) req #=%ld requester(pid=%d) (nid=%d/pid=%d)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_,
-              msg_->u.request.u.notify.target_nid, 
-              msg_->u.request.u.notify.target_pid );
+              "ExtReq(%s) req #=%ld "
+              "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
+              "target(name=%s/nid=%d/pid=%d/verifier=%d) (cancel=%d)"
+            , CReqQueue::svcReqType[reqType_], getId()
+            , msg_->u.request.u.notify.process_name
+            , msg_->u.request.u.notify.nid
+            , msg_->u.request.u.notify.pid
+            , pid_
+            , msg_->u.request.u.notify.verifier
+            , msg_->u.request.u.notify.target_process_name
+            , msg_->u.request.u.notify.target_nid
+            , msg_->u.request.u.notify.target_pid
+            , msg_->u.request.u.notify.target_verifier
+            , msg_->u.request.u.notify.cancel );
     requestString_.assign( strBuf );
 }
 
@@ -62,39 +72,91 @@ void CExtNotifyReq::performRequest()
     TRACE_ENTRY;
 
     bool status = FAILURE;
-    CProcess *sourceProcess = NULL;
     CProcess *requester;
-    CLNode *node;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_notify_Incr();
+
+    int pid = -1;
+    int target_nid = -1;
+    int target_pid = -1;
+    Verifier_t target_verifier = -1;
+    string target_process_name;
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
     {
-        trace_printf("%s@%d request #%ld: Notify, requester (%d, %d), "
-                     "target (%d, %d), cancel=%d\n", method_name, __LINE__,
-                     id_, msg_->u.request.u.notify.nid,
-                     msg_->u.request.u.notify.pid,
-                     msg_->u.request.u.notify.target_nid,
-                     msg_->u.request.u.notify.target_pid,
-                     msg_->u.request.u.notify.cancel );
+        trace_printf( "%s@%d request #%ld: Notify, requester %s (%d, %d:%d), "
+                      "target %s (%d, %d:%d), cancel=%d\n"
+                    , method_name, __LINE__, id_
+                    , msg_->u.request.u.notify.process_name
+                    , msg_->u.request.u.notify.nid
+                    , msg_->u.request.u.notify.pid
+                    , msg_->u.request.u.notify.verifier
+                    , msg_->u.request.u.notify.target_process_name
+                    , msg_->u.request.u.notify.target_nid
+                    , msg_->u.request.u.notify.target_pid
+                    , msg_->u.request.u.notify.target_verifier
+                    , msg_->u.request.u.notify.cancel );
     }
 
-    requester = MyNode->GetProcess( pid_ );
+    nid_ = msg_->u.request.u.notify.nid;
+    pid = msg_->u.request.u.notify.pid;
+    verifier_ = msg_->u.request.u.notify.verifier;
+    processName_ = msg_->u.request.u.notify.process_name;
+    target_nid = msg_->u.request.u.notify.target_nid;
+    target_pid = msg_->u.request.u.notify.target_pid;
+    target_process_name = (const char *) msg_->u.request.u.notify.target_process_name;
+    target_verifier  = msg_->u.request.u.notify.target_verifier;
+    
+    if ( processName_.size() )
+    { // find by name
+        requester = MyNode->GetProcess( processName_.c_str()
+                                      , verifier_ );
+    }
+    else
+    { // find by pid
+        requester = MyNode->GetProcess( pid_
+                                      , verifier_ );
+    }
+
     if ( requester )
     {
+        CProcess *sourceProcess = NULL;
 
-        node = Nodes->GetLNode (msg_->u.request.u.notify.nid);
-        if ( node )
+        if ( processName_.size() )
+        { // find by name (check node state, don't check process state, not backup)
+            if (trace_settings & TRACE_REQUEST)
+                trace_printf("%s@%d" " - Finding sourceProcess (name,verifier)" "\n", method_name, __LINE__);
+            sourceProcess = Nodes->GetProcess( processName_.c_str()
+                                             , verifier_
+                                             , true, false, false );
+        }     
+        else
+        { // find by nid (check node state, don't check process state, backup is Ok)
+            if (trace_settings & TRACE_REQUEST)
+                trace_printf("%s@%d" " - Finding sourceProcess (nid,pid,verifier)" "\n", method_name, __LINE__);
+            sourceProcess = Nodes->GetProcess( nid_
+                                             , pid
+                                             , verifier_
+                                             , true, false, true );
+        }
+        
+        if ( sourceProcess )
         {
-            sourceProcess = node->GetProcessL(msg_->u.request.u.notify.pid);
+            if (trace_settings & TRACE_REQUEST)
+                trace_printf("%s@%d - Found sourceProcess" "\n", method_name, __LINE__);
+        }
+        else
+        {
+            if (trace_settings & TRACE_REQUEST)
+                trace_printf("%s@%d - Can't find sourceProcess\n", method_name, __LINE__);
         }
 
-        if ( msg_->u.request.u.notify.target_nid == -1 )
+        if ( msg_->u.request.u.notify.cancel )
         {
-            if ( sourceProcess
-                 && msg_->u.request.u.notify.target_pid == -1
-                 && msg_->u.request.u.notify.cancel)
+            if ( sourceProcess &&
+                 msg_->u.request.u.notify.cancel)
             {   // Cancel all death notification requests for the source
                 // process (considering transaction id)
                 sourceProcess->procExitUnregAll(msg_->u.request.u.notify.trans_id);
@@ -105,34 +167,85 @@ void CExtNotifyReq::performRequest()
         {
             CProcess *targetProcess = NULL;
 
-            node = Nodes->GetLNode (msg_->u.request.u.notify.target_nid);
-            if  (node)
-            {
-                targetProcess = node->GetProcessL(msg_->u.request.u.notify.target_pid);
-            }
 
+            if ( target_process_name.size() )
+            { // find by name (check node state, don't check process state, not backup)
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Finding targetProcess (%s:%d)" "\n"
+                                , method_name, __LINE__
+                                , target_process_name.c_str()
+                                , target_verifier );
+                targetProcess = Nodes->GetProcess( target_process_name.c_str()
+                                                 , target_verifier
+                                                 , true, false, false );
+            }     
+            else
+            { // find by nid (check node state, don't check process state, backup is Ok)
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf( "%s@%d" " - Finding targetProcess (%d,%d:%d)\n"
+                                , method_name, __LINE__
+                                , target_nid
+                                , target_pid
+                                , target_verifier );
+                targetProcess = Nodes->GetProcess( target_nid
+                                                 , target_pid
+                                                 , target_verifier
+                                                 , true, false, true );
+            }
+            
+            if ( targetProcess )
+            {
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf("%s@%d" " - Found targetProcess" "\n", method_name, __LINE__);
+            }
+            else
+            {
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf("%s@%d - Can't find targetProcess\n", method_name, __LINE__);
+            }
+            
             if ( targetProcess )
             { 
-                if ( msg_->u.request.u.notify.cancel )
-                {   // Unregister interest in death of target process 
-                    status = targetProcess->CancelDeathNotification (
-                                                                     msg_->u.request.u.notify.nid,
-                                                                     msg_->u.request.u.notify.pid,
-                                                                     msg_->u.request.u.notify.trans_id);
-
+                int verifier = msg_->u.request.u.notify.target_verifier;
+                if ( (verifier != -1) && (verifier != targetProcess->GetVerifier()) )
+                {
+                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                    {
+                       trace_printf("%s@%d - Notify, target (%d, %d:%d) failed -- verifier mismatch (%d)\n",
+                                    method_name, __LINE__,
+                                    target_nid,
+                                    target_pid,
+                                    target_verifier,
+                                    targetProcess->GetVerifier());
+                    }            
+                } else
+                {
+                    if ( msg_->u.request.u.notify.cancel )
+                    {   // Unregister interest in death of target process 
+                        status = targetProcess->CancelDeathNotification( nid_
+                                                                       , pid
+                                                                       , verifier_
+                                                                       , msg_->u.request.u.notify.trans_id);
+                    }
+                    else if ( sourceProcess)
+                    {   // Register interest in death of target process 
+                        sourceProcess->procExitReg( targetProcess,
+                                                    msg_->u.request.u.notify.trans_id);
+                        status = SUCCESS;
+                    }
                 }
-                else if ( sourceProcess)
-                {   // Register interest in death of target process 
-                    sourceProcess->procExitReg( targetProcess,
-                                                msg_->u.request.u.notify.trans_id);
-                    status = SUCCESS;
-                }
+            }
+            else
+            {
+                if (trace_settings & TRACE_REQUEST)
+                    trace_printf("%s@%d" " - Can't find targerProcess" "\n", method_name, __LINE__);
             }
         }
 
         msg_->u.reply.type = ReplyType_Generic;
         msg_->u.reply.u.generic.nid = requester->GetNid();
         msg_->u.reply.u.generic.pid = requester->GetPid();
+        msg_->u.reply.u.generic.verifier = requester->GetVerifier();
         strcpy (msg_->u.reply.u.generic.process_name, requester->GetName());
         if (status == SUCCESS)
         {
@@ -153,6 +266,8 @@ void CExtNotifyReq::performRequest()
     else
     {   // Reply to requester so it can release the buffer.  
         // We don't know about this process.
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Can't find requester, rc=%d\n", method_name, __LINE__, MPI_ERR_NAME);
         errorReply( MPI_ERR_EXITED );
     }
 

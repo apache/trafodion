@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "pstartd.h"
 #include "clio.h"
@@ -38,12 +39,14 @@ char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connection port - not used
 
 long trace_settings = 0;
 int MyPNID = -1;
+SB_Verif_Type  gv_ms_su_verif = -1;
 bool tracing = false;
 bool shuttingDown = false;
 
 CMonUtil monUtil;
 CPStartD *pStartD;
 CMonLog *MonLog = NULL;
+CMonLog *SnmpLog =  NULL;
 
 DEFINE_EXTERN_COMP_DOVERS(pstartd)
 DEFINE_EXTERN_COMP_PRINTVERS(pstartd)
@@ -186,7 +189,7 @@ void localIOEventCallback(struct message_def *recv_msg, int )
     }
 }
 
-CMonUtil::CMonUtil(): nid_(-1), pid_(-1), trace_(false)
+CMonUtil::CMonUtil(): nid_(-1), pid_(-1), verifier_(-1), trace_(false)
 {
     processName_[0] = '\0';
     port_[0] = '\0';
@@ -249,6 +252,8 @@ bool CMonUtil::requestGet ( ConfigType type,
     msg->u.request.type = ReqType_Get;
     msg->u.request.u.get.nid = nid_;
     msg->u.request.u.get.pid = pid_;
+    msg->u.request.u.get.verifier = verifier_;
+    msg->u.request.u.get.process_name[0] = 0;
     msg->u.request.u.get.type = type;
     msg->u.request.u.get.next = resumeFlag;
     STRCPY(msg->u.request.u.get.group, group);
@@ -324,6 +329,8 @@ void CMonUtil::requestExit ( void )
     msg->u.request.type = ReqType_Exit;
     msg->u.request.u.exit.nid = nid_;
     msg->u.request.u.exit.pid = pid_;
+    msg->u.request.u.exit.verifier = verifier_;
+    msg->u.request.u.exit.process_name[0] = 0;
 
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
@@ -514,9 +521,12 @@ bool CMonUtil::requestProcInfo( const char *processName, int &nid, int &pid )
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = nid_;
     msg->u.request.u.process_info.pid = pid_;
+    msg->u.request.u.process_info.verifier = verifier_;
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = -1;
     msg->u.request.u.process_info.target_pid = -1;
-    strcpy(msg->u.request.u.process_info.process_name, processName);
+    msg->u.request.u.process_info.target_verifier = -1;
+    strcpy(msg->u.request.u.process_info.target_process_name, processName);
     msg->u.request.u.process_info.type = ProcessType_Undefined;
 
     gp_local_mon_io->send_recv( msg );
@@ -603,6 +613,7 @@ void CMonUtil::requestStartup ( )
     struct message_def *msg;
 
     gp_local_mon_io->iv_pid = pid_;
+    gp_local_mon_io->iv_verifier = verifier_;
     gp_local_mon_io->init_comm();
 
     if ( gp_local_mon_io->acquire_msg( &msg ) != 0 )
@@ -626,6 +637,8 @@ void CMonUtil::requestStartup ( )
     msg->u.request.u.startup.os_pid = getpid ();
     msg->u.request.u.startup.event_messages = true;
     msg->u.request.u.startup.system_messages = true;
+    msg->u.request.u.startup.verifier = gv_ms_su_verif;
+    msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
 
     if ( trace_ )
     {
@@ -650,12 +663,14 @@ void CMonUtil::processArgs( int argc, char *argv[] )
                       method_name, __LINE__ );
     }
 
-    if (argc < 7)
+    if (argc < 11)
     {
         printf("Error: Invalid startup arguments, argc=%d, argv[0]=%s, "
                "argv[1]=%s, argv[2]=%s, argv[3]=%s, argv[4]=%s, argv[5]=%s, "
-               "argv[6]=%s\n", argc, argv[0], argv[1], argv[2], argv[3],
-               argv[4], argv[5], argv[6]);
+               "argv[6]=%s, argv[7]=%s, argv[8]=%s, argv[9]=%s, argv[10]=%s, "
+               "argv[11]=%s\n"
+               , argc, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]
+               , argv[6], argv[7], argv[8], argv[9], argv[10], argv[11]);
         exit (1);
     }
 
@@ -676,6 +691,8 @@ void CMonUtil::processArgs( int argc, char *argv[] )
 
     nid_ = atoi(argv[3]);
     pid_ = atoi(argv[4]);
+    gv_ms_su_verif  = verifier_ = atoi(argv[9]);
+
     strncpy( processName_, argv[5], sizeof(processName_) );
     processName_[sizeof(processName_)-1] = '\0';
 
@@ -710,17 +727,18 @@ void CNodeUpReq::performRequest()
     }
 }
 
-CPStartD::CPStartD(): db_ (NULL)
+CPStartD::CPStartD()
+        : db_(NULL)
 {
     const char method_name[] = "CPStartD::CPStartD";
 
-	// Open the configuration database file
+    // Open the configuration database file
     char dbase[MAX_PROCESS_PATH];
     snprintf(dbase, sizeof(dbase), "%s/sql/scripts/sqconfig.db",
              getenv("MY_SQROOT"));
-	int rc = sqlite3_open_v2(dbase, &db_, SQLITE_OPEN_READONLY, NULL);
+    int rc = sqlite3_open_v2(dbase, &db_, SQLITE_OPEN_READONLY, NULL);
 
-	if ( rc )
+    if ( rc )
     {
         db_ = NULL;
 
@@ -738,7 +756,7 @@ CPStartD::CPStartD(): db_ (NULL)
 
             abort();
         }
-	}
+       }
 
     if ( db_ != NULL )
     {
@@ -752,6 +770,18 @@ CPStartD::CPStartD(): db_ (NULL)
                       method_name,  dbase, sqlite3_errmsg(db_), rc );
             mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
         }
+
+        char *sErrMsg = NULL;
+        sqlite3_exec(db_, "PRAGMA synchronous = OFF", NULL, NULL, &sErrMsg);
+        if (sErrMsg != NULL)
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf), "[%s] Can't set PRAGMA synchronous for "
+                      "database %s: %s\n",
+                      method_name,  dbase, sErrMsg );
+            mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        }
+
     }
 }
 
@@ -821,8 +851,8 @@ void CPStartD::startProcess ( const char * pName )
     }
 
     // Execute query and process results
-    int progType;
-    int progNid;
+    int progType = -1;
+    int progNid = -1;
     int newNid;
     int newPid;
     char newProcName[MAX_PROCESS_PATH];
@@ -904,14 +934,11 @@ void CPStartD::startProcess ( const char * pName )
         }
         else
         {
-            // todo: handle error
-
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf), 
                       "[%s] step failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
             mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
             break;
         }
     }
@@ -1091,7 +1118,6 @@ void CPStartD::startProcs ( int nid, bool requiresDTM )
                       "[%s] step failed: %s (%d)\n",
                       method_name,  sqlite3_errmsg(db_), rc );
             mon_log_write( PSTARTD_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
             break;
         }
     }
@@ -1196,8 +1222,6 @@ int main (int argc, char *argv[])
 
     CALL_COMP_DOVERS(pstartd, argc, argv);
 
-    pStartD = new CPStartD;
-
     TraceInit ( argc, argv );
 
     // This process does not use MPI.  But unless MPI is initialized
@@ -1214,7 +1238,10 @@ int main (int argc, char *argv[])
     gv_ms_su_nid = MyPNID = monUtil.getNid();
 
     MonLog = new CMonLog( "pstartd" );
+    SnmpLog = new CMonLog( "snmp" );
     MonLog->setUseAltLog(true);
+
+    pStartD = new CPStartD;
 
     InitLocalIO( );
 

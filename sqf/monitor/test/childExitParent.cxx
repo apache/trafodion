@@ -25,10 +25,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
@@ -40,39 +40,24 @@ const char *MyName;
 
 int MyRank = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 MPI_Comm CtrlComm = MPI_COMM_NULL;
 
 bool openCtrl ()
 {
-    char   ctrlPort[MPI_MAX_PORT_NAME];
     bool result = false;
-
-    if (util.requestOpen ( "$CTRLR", 0, ctrlPort ))
+    if (util.openProcess( "$CTRLR", -1, 0, CtrlComm ))
     {
         if ( tracing )
-            printf ("[%s] opened $CTRLR port=%s\n", MyName, ctrlPort);
-
-        int rc = MPI_Comm_connect (ctrlPort, MPI_INFO_NULL,
-                                   0, MPI_COMM_SELF, &CtrlComm);
-        if (rc == MPI_SUCCESS)
-        {
-            MPI_Comm_set_errhandler (CtrlComm, MPI_ERRORS_RETURN);
-            if ( tracing )
-                printf ("[%s] connected to process.\n", MyName);
-            result = true;
-        }
-        else
-        {
-            printf ("[%s] failed to connect. rc = (%d)\n", MyName, rc);
-        }
+            printf ("[%s] connected to process $CTRLR\n", MyName);
+        result = true;
     }
     else
     {
         printf ("[%s] failed to open $CTRLR\n", MyName);
     }
-
     return result;
 }
 
@@ -83,53 +68,67 @@ void sendToCtrl( const char * sendbuf )
     if ( tracing )
         printf("[%s] sending to CTRLR: %s\n", MyName, sendbuf );
 
-    rc = MPI_Send ((void *) sendbuf, (int) strlen (sendbuf) + 1, MPI_CHAR, 0,
+    rc = XMPI_Send ((void *) sendbuf, (int) strlen (sendbuf) + 1, MPI_CHAR, 0,
                    100 /* USER_TAG */, CtrlComm);
     if (rc != MPI_SUCCESS)
     {
-        printf ("[%s] MPI_Send failed. rc = (%d)\n", MyName, rc);
+        printf ("[%s] XMPI_Send failed. rc = (%d)\n", MyName, rc);
     }
 }
 
 int main (int argc, char *argv[])
 {
-    int MyRank = -1;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     MyName = util.getProcName();
+    tracing = util.getTrace();
 
     util.InitLocalIO( );
     assert (gp_local_mon_io);
 
     util.requestStartup ();
 
+#if 0
+    sleep( 20 );
+#endif    
     // Open control process
     if (!openCtrl())
     {
-        printf ("[%s] FAILED opened $CTRLR\n", MyName);
+        printf ("[%s] FAILED open to $CTRLR\n", MyName);
         exit(0);
     }
 
     int nid;
     int pid;
-    char *childArgs[0];
+    Verifier_t verifier;
+    char *childArgs[1] = {(char *) "-t"};
     char procName[25];
 
-    util.requestNewProcess (0, ProcessType_Generic, false, (char *) "$A01",
-                            "childExitChild", "", "", 0, childArgs,
-                            nid, pid, procName);
+    util.requestNewProcess ( 0      // target nid
+                           , ProcessType_Generic
+                           , false
+                           , (char *) "$A01"
+                           , "childExitChild"
+                           , ""     // inFile
+                           , ""     // outFile
+                           , ((tracing) ? 1: 0)
+                           , childArgs
+                           , nid
+                           , pid
+                           , verifier
+                           , procName);
     util.requestNewProcess (1, ProcessType_Generic, false, (char *) "$A11",
-                            "childExitChild", "", "", 0, childArgs,
-                            nid, pid, procName);
+                            "childExitChild", "", "", ((tracing) ? 1: 0), childArgs,
+                           
+                            nid, pid, verifier, procName);
     util.requestNewProcess (1, ProcessType_Generic, false, (char *) "$A12",
-                            "childExitChild", "", "", 0, childArgs,
-                            nid, pid, procName);
+                            "childExitChild", "", "", ((tracing) ? 1: 0), childArgs,
+                           
+                            nid, pid, verifier, procName);
     util.requestNewProcess (1, ProcessType_Generic, false, (char *) "$A13",
-                            "childExitChild", "", "", 0, childArgs,
-                            nid, pid, procName);
+                            "childExitChild", "", "", ((tracing) ? 1: 0), childArgs,
+                           
+                            nid, pid, verifier, procName);
 
     sendToCtrl( "$A01" );
     sendToCtrl( "$A11" );
@@ -137,10 +136,6 @@ int main (int argc, char *argv[])
     sendToCtrl( "$A13" );
     sendToCtrl( "FINIS" );
 
-    //    start_process (2, (char *) "$A01");
-    // start_process (2, (char *) "$A01");
-
-    // temp print
     printf ("[%s] children created, ready to be killed ...\n", MyName);
 
     for (int i=0; i<7; i++)
@@ -150,13 +145,12 @@ int main (int argc, char *argv[])
 
         sleep(1);
     }
-
+                
     // exit my process
     util.requestExit ( );
 
     printf ("[%s] calling Finalize!\n", MyName);
-    MPI_Close_port( util.getPort() );
-    MPI_Finalize ();
+    XMPI_Close_port( util.getPort() );
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

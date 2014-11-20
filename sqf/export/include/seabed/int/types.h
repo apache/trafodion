@@ -52,4 +52,7 @@ typedef struct SB_Phandle_Type {
 
 typedef int SB_Uid_Type;
 
+typedef int SB_Verif_Type;
+#define PFVY "%d"
+
 #endif // !__SB_INT_TYPES_H_

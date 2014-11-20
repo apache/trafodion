@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <string.h>
 #include <iostream>
+#include <unistd.h>
 
 using namespace std;
 
@@ -37,7 +38,6 @@ using namespace std;
 #include "montrace.h"
 #include "msgdef.h"
 #include "lock.h"
-#include "lunmgr.h"
 #include "pkillall.h"
 #include "procmon.h"
 #include "watchdog.h"
@@ -66,10 +66,10 @@ static void *SoftdogThread( void *arg )
         trace_printf( "%s@%d Thread started\n", method_name, __LINE__ );
     }
 
-    // Mask all allowed signals except SIGWINCH and SIGPROF
+    // Mask all allowed signals except SIGUSR1 and SIGPROF
     sigset_t    mask;
     sigfillset( &mask);
-    sigdelset( &mask, SIGWINCH );
+    sigdelset( &mask, SIGUSR1 );
     sigdelset( &mask, SIGPROF ); // allows profiling such as google profiler
 
     int rc = pthread_sigmask( SIG_SETMASK, &mask, NULL );

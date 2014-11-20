@@ -1,0 +1,82 @@
+# @@@ START COPYRIGHT @@@
+#
+# (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# @@@ END COPYRIGHT @@@
+
+cluster=
+if [ "$1" = "-cluster" ]; then
+	cluster=-cluster
+	shift
+fi
+clustern=
+if [ "$1" = "-clustern" ]; then
+	clustern=-cluster
+	shift
+fi
+verbose=
+if [ "$1" = "-verbose" ]; then
+	verbose=-verbose
+	shift
+fi
+if [ "$1" = "-smsim" ]; then
+	export smsim=-smsim
+	shift
+fi
+keep=0
+if [ "$1" = "-keep" ]; then
+	keep=1
+	shift
+fi
+if [ $keep = 0 ]; then
+	if [ ! -z "$MPI_TMPDIR" ]; then
+		if [ -f $MPI_TMPDIR/cluster.conf ]; then
+			rm -f $MPI_TMPDIR/cluster.conf
+		fi
+	fi
+fi
+if [ $keep = 0 ]; then
+	rm -f $MPI_TMPDIR/monitor.port.*
+fi
+if [ -z "$TEST_CLUSTER_CONF" ]; then
+	export SQ_VIRTUAL_NODES=1
+	export SQ_VIRTUAL_NID=0
+	if [ $keep = 0 ]; then
+		head -n 1 cluster.conf > $MPI_TMPDIR/cluster.conf
+	fi
+else
+	if [ $keep = 0 ]; then
+		cp cluster.conf $MPI_TMPDIR/cluster.conf
+	fi
+fi
+if [ "$cluster" = "-cluster" ]; then
+	unset SQ_VIRTUAL_NODES
+	unset SQ_VIRTUAL_NID
+	if [ $keep = 0 ]; then
+		host1=`gohost 1`
+		host2=`gohost 2`
+		head -n 2 cluster.conf > $MPI_TMPDIR/cluster.conf
+		gocleanport
+	fi
+fi
+if [ "$clustern" = "-cluster" ]; then
+	unset SQ_VIRTUAL_NODES
+	unset SQ_VIRTUAL_NID
+	if [ $keep = 0 ]; then
+		cp clustern.conf $MPI_TMPDIR/cluster.conf
+		gocleanport
+	fi
+fi
+export SQ_SHELL_NOCWD=1

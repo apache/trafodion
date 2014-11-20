@@ -45,13 +45,22 @@ CExtOpenReq::~CExtOpenReq()
 
 void CExtOpenReq::populateRequestString( void )
 {
-    char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
+    char strBuf[MON_STRING_BUF_SIZE] = { 0 };
 
-    snprintf( strBuf, sizeof(strBuf),
-              "ExtReq(%s) req #=%ld requester (%d, %d), opening %s"
-              , CReqQueue::svcReqType[reqType_], getId(), 
-              msg_->u.request.u.open.nid, msg_->u.request.u.open.pid,
-              msg_->u.request.u.open.process_name );
+    snprintf( strBuf, sizeof(strBuf), 
+              "ExtReq(%s) req #=%ld "
+              "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
+              "target(name=%s/nid=%d/pid=%d/verifier=%d)"
+            , CReqQueue::svcReqType[reqType_], getId()
+            , msg_->u.request.u.open.process_name
+            , msg_->u.request.u.open.nid
+            , msg_->u.request.u.open.pid
+            , pid_
+            , msg_->u.request.u.open.verifier
+            , msg_->u.request.u.open.target_process_name
+            , msg_->u.request.u.open.target_nid
+            , msg_->u.request.u.open.target_pid
+            , msg_->u.request.u.open.target_verifier );
     requestString_.assign( strBuf );
 }
 
@@ -62,7 +71,25 @@ void CExtOpenReq::performRequest()
 
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_open_Incr();
+
+    // Trace info about request
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d request #%ld: Open process: opener %s (%d, %d:%d), "
+                      "open target %s (%d, %d:%d), death notify=%s\n"
+                    , method_name, __LINE__, id_
+                    , msg_->u.request.u.open.process_name
+                    , msg_->u.request.u.open.nid
+                    , msg_->u.request.u.open.pid
+                    , msg_->u.request.u.open.verifier
+                    , msg_->u.request.u.open.target_process_name
+                    , msg_->u.request.u.open.target_nid
+                    , msg_->u.request.u.open.target_pid
+                    , msg_->u.request.u.open.target_verifier
+                    , msg_->u.request.u.open.death_notification ? "true" : "false");
+    }
 
     bool status;
     CProcess *opener = ((CReqResourceProc *) resources_[0])->getProcess();
@@ -81,15 +108,27 @@ void CExtOpenReq::performRequest()
         return;
     }
 
-    // Trace info about request
-    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    // check the verifier
+    int verifier = msg_->u.request.u.open.verifier;
+    if ( (verifier != -1) && (verifier != opener->GetVerifier()) )
     {
-        trace_printf("%s@%d request #%ld: open process: opener=%s (%d, %d), "
-                     "opened=%s (%d, %d), notify=%d\n",
-                     method_name, __LINE__, id_,
-                     opener->GetName(), opener->GetNid(), opener->GetPid(),
-                     opened->GetName(), opened->GetNid(), opened->GetPid(),
-                     msg_->u.request.u.open.death_notification);
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+        {
+           trace_printf( "%s@%d - Opener %s (%d, %d:%d) lookup failed -- "
+                         "verifier mismatch %s (%d, %d:%d)\n"
+                       , method_name, __LINE__
+                       , msg_->u.request.u.open.process_name
+                       , msg_->u.request.u.open.nid
+                       , msg_->u.request.u.open.pid
+                       , msg_->u.request.u.open.verifier
+                       , opener->GetName()
+                       , opener->GetNid()
+                       , opener->GetPid()
+                       , opener->GetVerifier());
+        }            
+        errorReply( MPI_ERR_NAME );
+        TRACE_EXIT;
+        return;
     }
 
     status = opener->Open (opened, msg_->u.request.u.open.death_notification);
@@ -100,6 +139,7 @@ void CExtOpenReq::performRequest()
         msg_->u.reply.type = ReplyType_Open;
         msg_->u.reply.u.open.nid = opened->GetNid();
         msg_->u.reply.u.open.pid = opened->GetPid();
+        msg_->u.reply.u.open.verifier = opened->GetVerifier();
         STRCPY (msg_->u.reply.u.open.port, opened->GetPort());
         msg_->u.reply.u.open.type = opened->GetType();
         msg_->u.reply.u.open.return_code = MPI_SUCCESS;
@@ -165,27 +205,53 @@ bool CExtOpenReq::prepare()
         return false;
     }
 
-    // Get process object for opener process
-    CProcess *openerProcess = Nodes->GetProcess( msg_->u.request.u.open.nid, 
-                                                 msg_->u.request.u.open.pid );
+    CProcess * openerProcess;
+    CProcess * openedProcess;
 
+    // Get process object for opener process
+    if ( msg_->u.request.u.open.process_name[0] )
+    { // find by name (check node state, don't check process state, not backup)
+        openerProcess = Nodes->GetProcess( msg_->u.request.u.open.process_name
+                                         , msg_->u.request.u.open.verifier
+                                         , true, false, false );
+    }
+    else
+    { // find by nid (check node state, don't check process state, backup is Ok)
+        openerProcess = Nodes->GetProcess( msg_->u.request.u.open.nid
+                                         , msg_->u.request.u.open.pid
+                                         , msg_->u.request.u.open.verifier
+                                         , true, false, true );
+    }
     if (!openerProcess)
     {  // Could not find the process
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            trace_printf("%s@%d - Process (%d,%d) not found\n",
-                         method_name, __LINE__,
-                         msg_->u.request.u.open.nid,
-                         msg_->u.request.u.open.pid);
+            trace_printf( "%s@%d - Process %s (%d,%d:%d) not found\n"
+                        , method_name, __LINE__
+                        , msg_->u.request.u.open.process_name
+                        , msg_->u.request.u.open.nid
+                        , msg_->u.request.u.open.pid
+                        , msg_->u.request.u.open.verifier);
         errorReply( MPI_ERR_NAME );
         TRACE_EXIT;
         return false;
     }
 
     // Get process object for process to open
-    CProcess * openedProcess;
+    if ( msg_->u.request.u.open.target_process_name[0] ) 
+    { // find by name (check node state, don't check process state, backup is NOT Ok)
+        openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_process_name
+                                         , msg_->u.request.u.open.target_verifier
+                                         , true, false, false );
+    }
+    else
+    { // find by nid (check node state, don't check process state, backup is Ok)
+        openedProcess = Nodes->GetProcess( msg_->u.request.u.open.target_nid
+                                         , msg_->u.request.u.open.target_pid
+                                         , msg_->u.request.u.open.target_verifier
+                                         , true, false, true );
+    }
 
-    if (Nodes->GetLNode( msg_->u.request.u.open.process_name, &openedProcess,
-                        false, true ))
+    if ( openedProcess )
     {
         if ( openedProcess->IsBackup() )
         {
@@ -242,7 +308,7 @@ bool CExtOpenReq::prepare()
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d - Bad state (%d) for process %s\n",
                              method_name, __LINE__, openedProcess->GetState(),
-                             msg_->u.request.u.open.process_name);
+                             msg_->u.request.u.open.target_process_name);
 
             errorReply( MPI_ERR_NAME );
             TRACE_EXIT;
@@ -252,8 +318,8 @@ bool CExtOpenReq::prepare()
     else
     {
         if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-            trace_printf("%s@%d - Can't find process %s\n", method_name,
-                         __LINE__, msg_->u.request.u.open.process_name);
+            trace_printf("%s@%d - Can't find target process %s\n", method_name,
+                         __LINE__, msg_->u.request.u.open.target_process_name);
 
         errorReply( MPI_ERR_NAME );
         TRACE_EXIT;
@@ -262,18 +328,26 @@ bool CExtOpenReq::prepare()
 
     // Add the opener process and the opened process to the resource
     // list for this request.
-    addResource(new CReqResourceProc(openerProcess->GetNid(),
-                                     openerProcess->GetPid()));
-    addResource(new CReqResourceProc(openedProcess->GetNid(),
-                                     openedProcess->GetPid()));
+    addResource(new CReqResourceProc( openerProcess->GetNid()
+                                    , openerProcess->GetPid()
+                                    , openerProcess->GetName()
+                                    , openerProcess->GetVerifier()));
+    addResource(new CReqResourceProc( openedProcess->GetNid()
+                                    , openedProcess->GetPid()
+                                    , openedProcess->GetName()
+                                    , openedProcess->GetVerifier()));
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        trace_printf("%s@%d - opener=%s (%d, %d), opened=%s (%d, %d)\n",
-                     method_name, __LINE__,
-                     openerProcess->GetName(), openerProcess->GetNid(),
-                     openerProcess->GetPid(),
-                     openedProcess->GetName(), openedProcess->GetNid(),
-                     openedProcess->GetPid());
+        trace_printf( "%s@%d - opener= %s (%d, %d:%d), opened= %s (%d, %d:%d)\n"
+                    , method_name, __LINE__
+                    , openerProcess->GetName()
+                    , openerProcess->GetNid()
+                    , openerProcess->GetPid()
+                    , openerProcess->GetVerifier()
+                    , openedProcess->GetName()
+                    , openedProcess->GetNid()
+                    , openedProcess->GetPid()
+                    , openedProcess->GetVerifier() );
 
     prepared_ = true;
 

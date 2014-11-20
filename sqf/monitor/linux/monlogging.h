@@ -43,8 +43,11 @@ int mon_log_write(int event_type, posix_sqlog_severity_t severity, char *evl_buf
 
 void mem_log_write(int eventType, int value1 = 0, int value2 = 0);
 
-// Used by watchdog process (does not use Sealog by intention )
+// Used by SQWatchdog process (does not use Sealog by intention )
 int wdt_log_write(int event_type, posix_sqlog_severity_t severity, char *evl_buf);
+
+// Used by monitor and SQWatchdog process (does not use Sealog by intention )
+int snmp_log_write(int event_type, const char *evl_buf);
 
 // header of the memory log buffer
 typedef struct memLogHeader
@@ -72,6 +75,8 @@ public:
     void memLogWrite(int event_type, int value1 = 0, int value2 = 0);
 
     void writeAltLog(int event_type, posix_sqlog_severity_t severity, char *msg);
+
+    void writeSnmpLog(int event_type, const char *msg);
 
     int getLogFileNum();
 

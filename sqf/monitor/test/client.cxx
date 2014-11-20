@@ -22,11 +22,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
@@ -45,12 +45,14 @@ bool tracing = false;
 const char *MyName;
 int MyRank = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 const int MAX_WORKERS = 4;
 int deathNoticeCount = 0;
 int workerNid[MAX_WORKERS];
 int workerPid[MAX_WORKERS];
+int workerVerifier[MAX_WORKERS];
 bool workerDeathNotice[] = { false, false, false, false };
 
 bool testSuccess = true;
@@ -59,15 +61,14 @@ void connectServer (char *port, MPI_Comm * comm)
 {
     int rc;
 
-    rc = MPI_Comm_connect (port, MPI_INFO_NULL, 0, MPI_COMM_SELF, comm);
+    rc = XMPI_Comm_connect (port, MPI_INFO_NULL, 0, MPI_COMM_SELF, comm);
     if (rc == MPI_SUCCESS)
     {
-        MPI_Comm_set_errhandler (*comm, MPI_ERRORS_RETURN);
+        XMPI_Comm_set_errhandler (*comm, MPI_ERRORS_RETURN);
     }
     else
     {
-        printf ("[%s] failed to connect to %s. rc = (%d)\n", MyName, port,
-                rc);
+        printf ("[%s] failed to connect to %s. rc = (%d)\n", MyName, port, rc);
         abort();
     }
 }
@@ -79,17 +80,20 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     {
         if ( tracing )
         {
-            printf("[%s] Process death notice received for (%d, %d)\n",
+            printf("[%s] Process death notice received for %s (%d, %d:%d)\n", 
                    MyName,
+                   recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
-                   recv_msg->u.request.u.death.pid);
+                   recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier);
         }
 
         bool found = false;
         for (int i=0; i<MAX_WORKERS; i++)
         {
             if (workerNid[i] == recv_msg->u.request.u.death.nid
-             && workerPid[i] == recv_msg->u.request.u.death.pid)
+             && workerPid[i] == recv_msg->u.request.u.death.pid
+             && workerVerifier[i] == recv_msg->u.request.u.death.verifier)
             {
                 workerDeathNotice[i] = true;
                 ++deathNoticeCount;
@@ -99,9 +103,11 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find worker for (%d, %d)\n",
-                   MyName, recv_msg->u.request.u.death.nid,
-                   recv_msg->u.request.u.death.pid);
+            printf("[%s] Could not find worker for (%d, %d:%d)\n", 
+                   MyName, 
+                   recv_msg->u.request.u.death.nid,
+                   recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier);
         }
     }
     else
@@ -133,9 +139,11 @@ int main (int argc, char *argv[])
     int workerChildren = 0;
     char procName[25];
 
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
-
+    for (i = 0; i < MAX_WORKERS; i++)
+    {
+        workerVerifier[i] = -1;
+    }
+    
     util.processArgs (argc, argv);
     tracing = util.getTrace();
     MyName = util.getProcName();
@@ -157,17 +165,33 @@ int main (int argc, char *argv[])
 
         if ( workerStartProcess[i] )
         {
-            // ?? original test set "unhooked=true" for NewProcess request.
-            // Is this needed?
-            util.requestNewProcess ( 1, ProcessType_Generic, false,
-                                     workerName[i], "server", "", "",
-                                     ((tracing) ? 1: 0), serverArgs,
-                                     workerNid[i], workerPid[i], procName);
+            if ( tracing ) printf ("[%s] util.requestNewProcess(workerName[%d]=%s)\n", MyName, i, workerName[i]);
+            fflush (stdout);
+            util.requestNewProcess( 1
+                                  , ProcessType_Generic
+                                  , false
+                                  , workerName[i]
+                                  , "server"
+                                  , ""
+                                  , ""
+                                  , ((tracing) ? 1: 0)
+                                  , serverArgs
+                                  , workerNid[i]
+                                  , workerPid[i]
+                                  , workerVerifier[i]
+                                  , procName);
             ++workerChildren;
         }
 
-        if (util.requestOpen ( workerName[i], 0,  workerPort[i] ) )
+        if ( tracing ) printf ("[%s] util.requestOpen(workerName[%d]=%s)\n", MyName, i, workerName[i]);
+        fflush (stdout);
+        if (util.requestOpen( workerName[i]
+                            , workerVerifier[i]
+                            , 0
+                            , workerPort[i] ))
         {
+            if ( tracing ) printf ("[%s] connectServer(workerName[%d]=%s)\n", MyName, i, workerName[i]);
+            fflush (stdout);
             connectServer (workerPort[i], &manager_comm[i]);
         }
 
@@ -182,6 +206,7 @@ int main (int argc, char *argv[])
             testSuccess = false;
             printf ("[%s] worker %d failed to connect.\n", MyName, i);
         }
+        fflush (stdout);
     }
 
     // do the work
@@ -208,7 +233,7 @@ int main (int argc, char *argv[])
                 default:
                     sendbuf[2] = CMD_CONT;
                 }
-                rc = MPI_Sendrecv (sendbuf, 3, MPI_INT, 0, USER_TAG,
+                rc = XMPI_Sendrecv (sendbuf, 3, MPI_INT, 0, USER_TAG,
                                    recvbuf, 100, MPI_CHAR, MPI_ANY_SOURCE,
                                    USER_TAG, manager_comm[i], &status);
                 if (rc != MPI_SUCCESS)
@@ -220,7 +245,10 @@ int main (int argc, char *argv[])
                     util.closeProcess( manager_comm[i] );
                     sleep (5);
 
-                    if (util.requestOpen ( workerName[i], 0, workerPort[i] ) )
+                    if (util.requestOpen( workerName[i]
+                                        , workerVerifier[i]
+                                        , 0
+                                        , workerPort[i] ))
                     {
                         connectServer (workerPort[i], &manager_comm[i]);
                     }
@@ -255,7 +283,7 @@ int main (int argc, char *argv[])
         {
             printf ("[%s] for worker %d, expecting %d messages but got %d\n",
                     MyName, i, ( MAX_CYCLES + 1 ), workerMsgCount[i]);
-            testSuccess = false;
+            testSuccess = false;            
         }
     }
 
@@ -285,8 +313,7 @@ int main (int argc, char *argv[])
     // tell monitor we are exiting
     util.requestExit ( );
 
-    MPI_Close_port (util.getPort());
-    MPI_Finalize ();
+    XMPI_Close_port (util.getPort());
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

@@ -56,6 +56,13 @@ SB_Export bool sqstateic_format_transid(SB_Transid_Type *transid_in,
                                         char            *transid_out,
                                         int              transid_out_len);
 
+//
+// ICs can call this to transid from ctrl.
+// Returns non-NULL if there's a transid.
+//
+SB_Export SB_Transid_Type *sqstateic_get_transid(void *ctrl,
+                                                 int   ctrl_len);
+
 
 //
 // sqstate-ic (interceptor) variable template for use by IC macros below.

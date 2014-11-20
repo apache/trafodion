@@ -38,6 +38,7 @@ void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState 
 
     procState.nid = process->GetNid();
     procState.pid = process->GetPid();
+    procState.verifier = process->GetVerifier();
     procState.type = process->GetType();
     strncpy (procState.process_name, process->GetName(), MAX_PROCESS_NAME);
     strncpy (procState.program, process->program(), MAX_PROCESS_PATH);
@@ -61,16 +62,49 @@ void CExtProcInfoBase::ProcessInfo_CopyData(CProcess *process, ProcessInfoState 
     {
         procState.parent_nid = parent->GetNid();
         procState.parent_pid = parent->GetPid();
+        procState.parent_verifier = parent->GetVerifier();
         strcpy (procState.parent_name, parent->GetName());
     }
     else
     {
         procState.parent_nid = -1;
         procState.parent_pid = -1;
+        procState.parent_verifier = -1;
         procState.parent_name[0] = '\0';
     }
 }
 
+
+void CExtProcInfoBase::ProcessInfo_CopyPairData( CProcess *process
+                                               , ProcessInfoState &procState )
+{
+    CProcess *parent = (process->GetParentNid() == -1 ? 
+                        NULL : 
+                        Nodes->GetLNode(process->GetParentNid())
+                            ->GetProcessL(process->GetParentPid()));
+    if ( parent )
+    {
+        if ( process->IsBackup() || parent->IsBackup())
+        {
+            if ( parent->IsBackup())
+            {
+                ProcessInfo_CopyData( process, procState );
+            }
+            else
+            {
+                ProcessInfo_CopyData( parent, procState );
+            }
+        }
+        else
+        {
+            ProcessInfo_CopyData( process, procState );
+        }
+    }
+    else
+    {
+        ProcessInfo_CopyData( process, procState );
+    }
+}
 
 // Get a pointer to the first process object for node specified by
 // "nid".  If there are no processes on that node and
@@ -171,14 +205,22 @@ CExtProcInfoReq::~CExtProcInfoReq()
 
 void CExtProcInfoReq::populateRequestString( void )
 {
-    char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
+    char strBuf[MON_STRING_BUF_SIZE] = { 0 };
 
-    snprintf( strBuf, sizeof(strBuf),
-              "ExtReq(%s) req #=%ld requester(pid=%d) (name=%s/nid=%d/pid=%d)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_,
-              msg_->u.request.u.process_info.process_name,
-              msg_->u.request.u.process_info.target_nid,
-              msg_->u.request.u.process_info.target_pid );
+    snprintf( strBuf, sizeof(strBuf), 
+              "ExtReq(%s) req #=%ld "
+              "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
+              "target(name=%s/nid=%d/pid=%d/verifier=%d)"
+            , CReqQueue::svcReqType[reqType_], getId()
+            , msg_->u.request.u.process_info.process_name
+            , msg_->u.request.u.process_info.nid
+            , msg_->u.request.u.process_info.pid
+            , pid_
+            , msg_->u.request.u.process_info.verifier
+            , msg_->u.request.u.process_info.target_process_name
+            , msg_->u.request.u.process_info.target_nid
+            , msg_->u.request.u.process_info.target_pid
+            , msg_->u.request.u.process_info.target_verifier );
     requestString_.assign( strBuf );
 }
 
@@ -187,53 +229,89 @@ void CExtProcInfoReq::performRequest()
     const char method_name[] = "CExtProcInfoReq::performRequest";
     TRACE_ENTRY;
 
-    CProcess *requester;
     int count = 0;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_processinfo_Incr();
 
-    requester = MyNode->GetProcess( pid_ );
+    nid_ = msg_->u.request.u.process_info.nid;
+    verifier_ = msg_->u.request.u.process_info.verifier;
+    processName_ = msg_->u.request.u.process_info.process_name;
+
+    int       target_nid = -1;
+    int       target_pid = -1;
+    string    target_process_name;
+    Verifier_t target_verifier = -1;
+    CProcess *requester = NULL;
+
+    target_nid = msg_->u.request.u.process_info.target_nid;
+    target_pid = msg_->u.request.u.process_info.target_pid;
+    target_process_name = (const char *) msg_->u.request.u.process_info.target_process_name;
+    target_verifier  = msg_->u.request.u.process_info.target_verifier;
+
+    if ( processName_.size() )
+    { // find by name
+        requester = MyNode->GetProcess( processName_.c_str()
+                                      , verifier_ );
+    }
+    else
+    { // find by pid
+        requester = MyNode->GetProcess( pid_
+                                      , verifier_ );
+    }
+
     if ( requester )
     {
-
-#ifdef DELAY_TP
-        Delay_TP("REQUESTDELAY_TP");
-#endif
-
         msg_->u.reply.u.process_info.more_data = false;
 
         // setup for type of status request
-        if ((*msg_->u.request.u.process_info.process_name) &&
-            (msg_->u.request.u.process_info.target_pid == -1))
-        {
+        if ( target_process_name.size() )
+        { // find by name 
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
             {
-                trace_printf("%s@%d request #%ld: ProcessInfo, for %s, "
-                             "process type=%d\n", method_name, __LINE__, id_,
-                             msg_->u.request.u.process_info.process_name,
-                             msg_->u.request.u.process_info.type);
+                trace_printf( "%s@%d request #%ld: ProcessInfo from %s (%d, %d:%d) "
+                              "by name for %s:%d, process type=%d\n"
+                            , method_name, __LINE__, id_
+                            , requester->GetName()
+                            , requester->GetNid()
+                            , requester->GetPid()
+                            , requester->GetVerifier()
+                            , target_process_name.c_str(), target_verifier
+                            , msg_->u.request.u.process_info.type);
             }
 
-            //if the requester is tse or ASE, and it is requesting info for itself. monitor will always return local process info
-            if ((requester->GetType() == ProcessType_TSE || requester->GetType() == ProcessType_ASE ||
-                 requester->GetType() == ProcessType_AMP) &&
-                strcmp(requester->GetName(),  msg_->u.request.u.process_info.process_name) == 0 )
+            //if requester is requesting info for itself, return local process info
+            if ( strcmp( requester->GetName()
+                       , msg_->u.request.u.process_info.target_process_name) == 0 )
             {
                 ProcessInfo_CopyData(requester,
                                      msg_->u.reply.u.process_info.process[0]);
                 count = 1;
             }
             else
-            {  // get info for single named process
-                CProcess *process;
-
-                Nodes->GetLNode(msg_->u.request.u.process_info.process_name, &process, false);
+            {
+                // find by name (check node state, don't check process state, 
+                //               if verifier is -1, backup is NOT Ok, else is Ok)
+                CProcess *process = Nodes->GetProcess( target_process_name.c_str()
+                                                     , target_verifier
+                                                     , true, false
+                                                     , target_verifier == -1 ? false : true );
                 if (process)
                 {
-                    ProcessInfo_CopyData(process,
-                                         msg_->u.reply.u.process_info.process[0]);
-                    count = 1;
+                    if ( target_verifier == -1 )
+                    { // the name may represent process pair, return primary only
+                        ProcessInfo_CopyPairData( process
+                                                , msg_->u.reply.u.process_info.process[0] );
+                        count = 1;
+                
+                    }
+                    else
+                    { 
+                        ProcessInfo_CopyData( process
+                                            , msg_->u.reply.u.process_info.process[0] );
+                        count = 1;
+                    }
                 }
             }
         }
@@ -247,30 +325,28 @@ void CExtProcInfoReq::performRequest()
 
             // get info for all processes in all nodes
             int nid = 0;
-            count = ProcessInfo_BuildReply(ProcessInfo_GetProcess (nid, true),
-                                           msg_,
-                                           msg_->u.request.u.process_info.type,
-                                           true);
+            count = ProcessInfo_BuildReply( ProcessInfo_GetProcess(nid, true)
+                                          , msg_
+                                          , msg_->u.request.u.process_info.type
+                                          , true);
         }
         else
         {
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
             {
-                trace_printf("%s@%d request #%ld: ProcessInfo, for (%d, %d), "
-                             "process type=%d\n", method_name, __LINE__, id_,
-                             msg_->u.request.u.process_info.target_nid,
-                             msg_->u.request.u.process_info.target_pid,
-                             msg_->u.request.u.process_info.type);
+                trace_printf( "%s@%d request #%ld: ProcessInfo, for (%d, %d:%d), "
+                              "process type=%d\n"
+                            , method_name, __LINE__, id_
+                            , target_nid, target_pid, target_verifier
+                            , msg_->u.request.u.process_info.type);
             }
 
-            int nid = msg_->u.request.u.process_info.target_nid;
-            int pid = msg_->u.request.u.process_info.target_pid;
-            if (pid == -1)
+            if (target_pid == -1)
             {
                 // get info for all processes in node
-                if (nid >= 0 && nid < Nodes->NumberLNodes)
+                if (target_nid >= 0 && target_nid < Nodes->NumberLNodes)
                 {
-                    count = ProcessInfo_BuildReply(Nodes->GetNode(nid)->GetFirstProcess(), 
+                    count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
                                                    msg_,
                                                    msg_->u.request.u.process_info.type,
                                                    false);
@@ -279,21 +355,22 @@ void CExtProcInfoReq::performRequest()
             else
             {
                 // get info for single process in node
-                if ((requester->GetType() == ProcessType_TSE
-                     || requester->GetType() == ProcessType_ASE
-                     || requester->GetType() == ProcessType_AMP)
-                    &&
-                    (requester->GetNid() == msg_->u.request.u.process_info.target_nid &&
-                     requester->GetPid() == msg_->u.request.u.process_info.target_pid))
+                if ((requester->GetType() == ProcessType_TSE ||
+                     requester->GetType() == ProcessType_ASE ||
+                     requester->GetType() == ProcessType_AMP)  &&
+                    (requester->GetNid() == target_nid &&
+                     requester->GetPid() == target_pid))
                 {
                     ProcessInfo_CopyData(requester,
                                          msg_->u.reply.u.process_info.process[0]);
                     count = 1;
                 }
-                else if (nid >= 0 && nid < Nodes->NumberLNodes)
-                {
-                    CProcess *process;
-                    process = Nodes->GetLNode(nid)->GetProcessL(pid);
+                else if (target_nid >= 0 && target_nid < Nodes->NumberLNodes)
+                { // find by nid/pid (check node state, don't check process state, backup is Ok)
+                    CProcess *process = Nodes->GetProcess( target_nid
+                                                         , target_pid
+                                                         , target_verifier
+                                                         , true, false, true );
                     if (process)
                     {
                         ProcessInfo_CopyData(process,
@@ -357,6 +434,7 @@ void CExtProcInfoContReq::performRequest()
     int pid;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_processinfocont_Incr();
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))

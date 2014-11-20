@@ -39,14 +39,20 @@
 
 #include "fsi.h"
 #include "labelmapsx.h"
+#ifndef SQ_PHANDLE_VERIFIER
 #include "llmap.h"
+#endif
 #include "msicctr.h"
 #include "msix.h"
 #include "mslabelmapsx.h"
 #include "msod.h"
+#ifdef SQ_PHANDLE_VERIFIER
+#include "npvmap.h"
+#endif
 #include "smap.h"
 #include "sqstatesb.h"
 #include "sqstateicvars.h"
+#include "timerx.h"
 
 enum { MAX_IC_ARGS = 100 };
 enum { MAX_RSP     = 1024 * 1024 }; // 1MB
@@ -54,6 +60,7 @@ enum { MAX_RSP     = 1024 * 1024 }; // 1MB
 extern "C" {
     void sb_ic_call_test();
     void sb_ic_get_mds(BMS_SRE *sre);
+    void sb_ic_get_metrics(BMS_SRE *sre);
     void sb_ic_get_openers(BMS_SRE *sre);
     void sb_ic_get_openers_bin(BMS_SRE *sre);
     void sb_ic_get_opens(BMS_SRE *sre);
@@ -73,8 +80,8 @@ typedef struct Sqstate_Ic_Format_Desc {
 typedef MS_Mon_Process_Info_Type  Proc_Info_Type;
 typedef MS_Mon_Node_Info_Type     Node_Info_Type;
 
-extern Ms_Od_Table_Mgr            gv_ms_od_mgr;
 extern SB_Table_Mgr<FS_Fd_Type>   gv_fs_filenum_table;
+extern Ms_Od_Table_Mgr            gv_ms_od_mgr;
 
 static char                      *ga_ic_argv[MAX_IC_ARGS];
 static int                        gv_ic_argc;
@@ -145,6 +152,7 @@ namespace SB_Trans {
     class SB_IC_Msg_Mgr {
     public:
         static int get_mds(char *pp_rsp, int pv_rsp_len);
+        static int get_metrics(char *pp_rsp, int pv_rsp_len);
         static int get_openers(char *pp_rsp, bool pv_str);
         static int get_opens(char *pp_rsp, bool pv_str);
         static int get_pstate(char *pp_rsp, int pv_rsp_len);
@@ -215,6 +223,33 @@ namespace SB_Trans {
                                      const char     **ppp_max,
                                      const char      *pp_label,
                                      struct timeval  *pp_tv);
+        static int   get_metric_fd_cap_count();
+        static int   get_metric_fd_inuse_count();
+        static int   get_metric_fd_hi_inuse_count();
+        static int   get_metric_limq_count();
+        static int   get_metric_limq_hi_count();
+        static int   get_metric_md_curr_recv_count();
+        static int   get_metric_md_curr_send_count();
+        static int   get_metric_md_curr_total_count();
+        static int   get_metric_md_hi_recv_count();
+        static int   get_metric_md_hi_send_count();
+        static int   get_metric_md_hi_total_count();
+        static int   get_metric_md_max_recv_count();
+        static int   get_metric_md_max_send_count();
+        static int   get_metric_md_max_total_count();
+        static int   get_metric_od_cap_count();
+        static int   get_metric_od_inuse_count();
+        static int   get_metric_od_hi_inuse_count();
+        static int   get_metric_recvq_count();
+        static int   get_metric_recvq_hi_count();
+        static int   get_metric_stream_acc_count();
+        static int   get_metric_stream_acc_hi_count();
+        static int   get_metric_stream_con_count();
+        static int   get_metric_stream_con_hi_count();
+        static int   get_metric_stream_total_count();
+        static int   get_metric_stream_total_hi_count();
+        static int   get_metric_timer_count();
+        static int   get_metric_timer_hi();
         static int   get_pstate_creator(char       *pp_rsp,
                                         const char *pp_indent,
                                         int         pv_nid,
@@ -606,8 +641,63 @@ namespace SB_Trans {
     //
     // typically ms-interceptors are friends to get private access to data
     //
+    int SB_IC_Msg_Mgr::get_metrics(char *pp_rsp, int pv_rsp_len) {
+        int lv_len;
+
+        pv_rsp_len = pv_rsp_len; // touch
+
+        lv_len = 0;
+        lv_len += sprintf(&pp_rsp[lv_len], "Metrics\n");
+        lv_len += sprintf(&pp_rsp[lv_len], "  FD cap=%d, inuse=%d, inuse-high=%d\n",
+                          get_metric_fd_cap_count(),
+                          get_metric_fd_inuse_count(),
+                          get_metric_fd_hi_inuse_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  MD send=%d, recv=%d, total=%d\n",
+                          get_metric_md_curr_send_count(),
+                          get_metric_md_curr_recv_count(),
+                          get_metric_md_curr_total_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  MD send-high=%d, recv-high=%d, total-high=%d\n",
+                          get_metric_md_hi_send_count(),
+                          get_metric_md_hi_recv_count(),
+                          get_metric_md_hi_total_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  MD send-max=%d, recv-max=%d, total-max=%d\n",
+                          get_metric_md_max_send_count(),
+                          get_metric_md_max_recv_count(),
+                          get_metric_md_max_total_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  OD cap=%d, inuse=%d, inuse-high=%d\n",
+                          get_metric_od_cap_count(),
+                          get_metric_od_inuse_count(),
+                          get_metric_od_hi_inuse_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  RECEIVE queue length=%d, high=%d\n",
+                          get_metric_recvq_count(),
+                          get_metric_recvq_hi_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  RECEIVE-LIMIT queue length=%d, high=%d\n",
+                          get_metric_limq_count(),
+                          get_metric_limq_hi_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  Stream accept=%d, connect=%d, total=%d\n",
+                          get_metric_stream_acc_count(),
+                          get_metric_stream_con_count(),
+                          get_metric_stream_total_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  Stream accept-high=%d, connect-high=%d, total-high=%d\n",
+                          get_metric_stream_acc_hi_count(),
+                          get_metric_stream_con_hi_count(),
+                          get_metric_stream_total_hi_count());
+        lv_len += sprintf(&pp_rsp[lv_len], "  Timer count=%d, high=%d\n",
+                          get_metric_timer_count(),
+                          get_metric_timer_hi());
+
+        return lv_len;
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
     int SB_IC_Msg_Mgr::get_openers(char *pp_rsp, bool pv_str) {
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_NPVmap_Enum           *lp_enum;
+#else
         SB_LLmap_Enum            *lp_enum;
+#endif
         SB_IC_Get_Opener_Type    *lp_rsp_bin;
         SB_IC_Get_Opener_Od_Type *lp_rsp_od;
         SB_Trans::Trans_Stream   *lp_stream;
@@ -631,7 +721,11 @@ namespace SB_Trans {
         }
 
         while (lp_enum->more()) {
+#ifdef SQ_PHANDLE_VERIFIER
+            lp_stream = SB_Trans::Trans_Stream::map_nidpid_key_to_stream(lp_enum->next()->iv_id.npv, false);
+#else
             lp_stream = SB_Trans::Trans_Stream::map_nidpid_key_to_stream(lp_enum->next()->iv_id.ll, false);
+#endif
             if (pv_str) {
                 lv_len = sprintf(&pp_rsp[lv_rsp_len],
                                 "stream=%p %s\n",
@@ -642,6 +736,9 @@ namespace SB_Trans {
                 strcpy(lp_rsp_od->ia_name, lp_stream->get_name());
                 lp_rsp_od->iv_nid = lp_stream->get_remote_nid();
                 lp_rsp_od->iv_pid = lp_stream->get_remote_pid();
+#ifdef SQ_PHANDLE_VERIFIER
+                lp_rsp_od->iv_verif = lp_stream->get_remote_verif();
+#endif
                 lp_rsp_od++;
                 lv_rsp_len += static_cast<int>(sizeof(*lp_rsp_od));
             }
@@ -695,12 +792,19 @@ namespace SB_Trans {
                                         "od[%d]=self\n", lv_oid);
                     else if (lp_od->ip_stream != NULL)
                         lv_len = sprintf(&pp_rsp[lv_rsp_len],
+#ifdef SQ_PHANDLE_VERIFIER
+                                        "od[%d]=%s-%s, p-id=%d/%d" PFVY ", ref=%d\n",
+#else
                                         "od[%d]=%s-%s, p-id=%d/%d, ref=%d\n",
+#endif
                                         lv_oid,
                                         lp_od->ia_process_name,
                                         lp_od->ia_prog,
                                         lp_od->iv_nid,
                                         lp_od->iv_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                        lp_od->iv_verif,
+#endif
                                         lp_od->iv_ref_count);
                     else
                         lv_len = sprintf(&pp_rsp[lv_rsp_len],
@@ -711,6 +815,9 @@ namespace SB_Trans {
                     strcpy(lp_rsp_od->ia_prog, lp_od->ia_prog);
                     lp_rsp_od->iv_nid = lp_od->iv_nid;
                     lp_rsp_od->iv_pid = lp_od->iv_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+                    lp_rsp_od->iv_verif = lp_od->iv_verif;
+#endif
                     lp_rsp_od++;
                     lv_rsp_len += static_cast<int>(sizeof(*lp_rsp_od));
                 }
@@ -721,6 +828,195 @@ namespace SB_Trans {
             lv_rsp_len++;
         }
         return lv_rsp_len;
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_fd_cap_count() {
+        return static_cast<int>(gv_fs_filenum_table.get_cap());
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_fd_inuse_count() {
+        return static_cast<int>(gv_fs_filenum_table.get_inuse());
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_fd_hi_inuse_count() {
+        return static_cast<int>(gv_fs_filenum_table.get_hi_inuse());
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_limq_count() {
+        return gv_ms_ic_ctr.ctr_get_limq_len();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_limq_hi_count() {
+        return gv_ms_ic_ctr.ctr_get_limq_hi();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_curr_recv_count() {
+        return SB_Trans::Msg_Mgr::get_md_count_recv();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_curr_send_count() {
+        return SB_Trans::Msg_Mgr::get_md_count_send();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_curr_total_count() {
+        return SB_Trans::Msg_Mgr::get_md_count_total();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_hi_recv_count() {
+        return SB_Trans::Msg_Mgr::get_md_hi_recv();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_hi_send_count() {
+        return SB_Trans::Msg_Mgr::get_md_hi_send();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_hi_total_count() {
+        return SB_Trans::Msg_Mgr::get_md_hi_total();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_max_recv_count() {
+        return SB_Trans::Msg_Mgr::get_md_max_recv();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_max_send_count() {
+        return SB_Trans::Msg_Mgr::get_md_max_send();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_md_max_total_count() {
+        return SB_Trans::Msg_Mgr::get_md_max_total();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_od_cap_count() {
+        return static_cast<int>(gv_ms_od_mgr.get_cap());
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_od_inuse_count() {
+        return static_cast<int>(gv_ms_od_mgr.get_inuse());
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_od_hi_inuse_count() {
+        return static_cast<int>(gv_ms_od_mgr.get_hi_inuse());
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_recvq_count() {
+        return gv_ms_ic_ctr.ctr_get_recvq_len();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_recvq_hi_count() {
+        return gv_ms_ic_ctr.ctr_get_recvq_hi();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_stream_acc_count() {
+        return Trans_Stream::get_stream_acc_count();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_stream_acc_hi_count() {
+        return Trans_Stream::get_stream_acc_hi_count();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_stream_con_count() {
+        return Trans_Stream::get_stream_con_count();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_stream_con_hi_count() {
+        return Trans_Stream::get_stream_con_hi_count();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_stream_total_count() {
+        return Trans_Stream::get_stream_total_count();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_stream_total_hi_count() {
+        return Trans_Stream::get_stream_total_hi_count();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_timer_count() {
+        return sb_timer_size();
+    }
+
+    //
+    // typically ms-interceptors are friends to get private access to data
+    //
+    int SB_IC_Msg_Mgr::get_metric_timer_hi() {
+        return sb_timer_hi();
     }
 
     //
@@ -1521,7 +1817,6 @@ namespace SB_Trans {
         return lv_len;
     }
 
-
     //
     // typically ms-interceptors are friends to get private access to data
     //
@@ -1901,6 +2196,25 @@ void sb_ic_get_mds(BMS_SRE *pp_sre) {
 //
 // ms-interceptor entry point
 //
+void sb_ic_get_metrics(BMS_SRE *pp_sre) {
+    char la_rsp[MAX_RSP];
+    int  lv_rsp_len;
+
+    if (sqstateic_get_ic_args(pp_sre,
+                              &gv_ic_argc,
+                              ga_ic_argv,
+                              MAX_IC_ARGS,
+                              la_rsp,
+                              MAX_RSP,
+                              &lv_rsp_len)) {
+        lv_rsp_len = SB_Trans::SB_IC_Msg_Mgr::get_metrics(la_rsp, MAX_RSP);
+    }
+    sqstateic_reply(pp_sre, la_rsp, lv_rsp_len);
+}
+
+//
+// ms-interceptor entry point
+//
 void sb_ic_get_openers(BMS_SRE *pp_sre) {
     char la_rsp[MAX_RSP];
     int  lv_rsp_len;
@@ -1984,7 +2298,6 @@ void sb_ic_get_pstate(BMS_SRE *pp_sre) {
     }
     sqstateic_reply(pp_sre, la_rsp, lv_rsp_len);
 }
-
 
 //
 // ms-interceptor entry point

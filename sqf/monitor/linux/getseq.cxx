@@ -44,6 +44,7 @@ int MyPNid = -1;
 int MyNid = -1;
 int MyPid = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 MPI_Comm Monitor;
 struct message_def *msg;
@@ -139,6 +140,7 @@ void process_startup (int argc, char *argv[])
 #endif
     MyNid = atoi(argv[3]);
     MyPid = atoi(argv[4]);
+    gv_ms_su_verif  = atoi(argv[9]);
     printf ("[%s] process_startup, MyNid: %d, lio: %p\n", 
              MyName, MyNid, (void *)gp_local_mon_io );
 
@@ -167,6 +169,8 @@ void process_startup (int argc, char *argv[])
         msg->u.request.u.startup.os_pid = getpid ();
         msg->u.request.u.startup.event_messages = true;
         msg->u.request.u.startup.system_messages = true;
+        msg->u.request.u.startup.verifier = gv_ms_su_verif;
+        msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
         printf ("[%s] sending startup reply to monitor.\n", argv[5]);
         fflush (stdout);
 

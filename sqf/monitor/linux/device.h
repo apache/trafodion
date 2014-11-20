@@ -45,7 +45,7 @@ public:
     void     DeLink( CDevice **head, CDevice **tail );
     CDevice *GetNext( void );
     CDevice *Link( CDevice *entry );   
-    bool     Mount( CProcess *process, const char *device, string type = "" );
+    bool     Mount( CProcess *process, const char *device );
     bool     UnMount( void );
     const char *GetName( void ) { return name_.c_str(); }
 

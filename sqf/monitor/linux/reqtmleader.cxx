@@ -65,6 +65,7 @@ void CExtTmLeaderReq::performRequest()
     CProcess *requester;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_tmleader_Incr();
 
     // Trace info about request
@@ -91,6 +92,7 @@ void CExtTmLeaderReq::performRequest()
             msg_->u.reply.type = ReplyType_Generic;
             msg_->u.reply.u.generic.nid = -1;
             msg_->u.reply.u.generic.pid = -1;
+            msg_->u.reply.u.generic.verifier = -1;
             msg_->u.reply.u.generic.process_name[0] = '\0';
             msg_->u.reply.u.generic.return_code = MPI_ERR_UNKNOWN;
  
@@ -124,6 +126,7 @@ void CExtTmLeaderReq::performRequest()
             msg_->u.reply.type = ReplyType_Generic;
             msg_->u.reply.u.generic.nid = process->GetNid();
             msg_->u.reply.u.generic.pid = process->GetPid();
+            msg_->u.reply.u.generic.verifier = process->GetVerifier();
             strcpy (msg_->u.reply.u.generic.process_name, process->GetName());
         }
         else
@@ -132,6 +135,7 @@ void CExtTmLeaderReq::performRequest()
             msg_->u.reply.type = ReplyType_Generic;
             msg_->u.reply.u.generic.nid = -1;
             msg_->u.reply.u.generic.pid = -1;
+            msg_->u.reply.u.generic.verifier = -1;
             msg_->u.reply.u.generic.process_name[0] = 0;
         }
 

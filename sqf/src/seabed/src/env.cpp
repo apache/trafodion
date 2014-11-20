@@ -73,7 +73,6 @@ const char *gp_ms_env_streams_min        = "MS_STREAMS_MIN";
 
 const char *gp_ms_env_trace              = "MS_TRACE";
 const char *gp_ms_env_trace_abandon      = "MS_TRACE_ABANDON";
-const char *gp_ms_env_trace_aggr         = "MS_TRACE_AGGR";
 const char *gp_ms_env_trace_alloc        = "MS_TRACE_ALLOC";
 const char *gp_ms_env_trace_data         = "MS_TRACE_DATA";
 const char *gp_ms_env_trace_data_max     = "MS_TRACE_DATA_MAX";

@@ -32,6 +32,8 @@
 #include "lnode.h"
 #include "monlogging.h"
 
+typedef int * __attribute__((__may_alias__)) intBuffPtr_t;
+
 typedef set<int>  pids_set_t;
 
 class CNode;
@@ -63,7 +65,10 @@ public:
     void    AddNodes( void );
     void    AddToSpareNodesList( int pnid );
     CLNode *AssignLNode( CProcess *requester, PROCESSTYPE type, int nid, int not_nid );
-    void    CancelDeathNotification( int nid, int pid, _TM_Txid_External trans_id );
+    void    CancelDeathNotification( int nid
+                                   , int pid
+                                   , int verifier
+                                   , _TM_Txid_External trans_id );
     inline CClusterConfig *GetClusterConfig( void ) { return ( clusterConfig_ ); }
     CLNode *GetLNode( int nid );
     CLNode *GetLNode( char *process_name, CProcess **process,
@@ -74,12 +79,12 @@ public:
                      bool checkstate=true );
     inline NodesList *GetSpareNodesList( void ) { return ( &spareNodesList_ ); }
     inline NodesList *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
-    int    PackSpareNodesList( int *&buffer );
-    void   UnpackSpareNodesList( int *&buffer, int spareNodesCount );
-    int    PackNodeMappings( int *&buffer );
-    void   UnpackNodeMappings( int *&buffer, int nodeMapCount );
-    void   PackZids( int *&buffer );
-    void   UnpackZids( int *&buffer );
+    int    PackSpareNodesList( intBuffPtr_t &buffer );
+    void   UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount );
+    int    PackNodeMappings( intBuffPtr_t &buffer );
+    void   UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount );
+    void   PackZids( intBuffPtr_t &buffer );
+    void   UnpackZids( intBuffPtr_t &buffer );
     inline int GetNodesCount( void ) { return ( NumberPNodes ); }
     inline int GetLNodesCount( void ) { return ( NumberLNodes ); }
     inline int GetSNodesCount( void ) { return ( clusterConfig_->GetSNodesCount() ); }
@@ -87,18 +92,29 @@ public:
 
     int     GetPNid( char *nodeName );
     CProcess *GetProcess( int nid, int pid, bool checknode=true );
+    CProcess *GetProcess( int nid
+                        , int pid
+                        , Verifier_t verifier
+                        , bool checknode=true
+                        , bool checkprocess=true
+                        , bool backupOk=false );
+    CProcess *GetProcess( const char *name
+                        , Verifier_t verifier
+                        , bool checknode=true
+                        , bool checkstate=true
+                        , bool backupOk=false );
     CProcess *GetProcessByName( const char *name, bool checkstate=true );
     SyncState GetTmState( SyncState check_state );
     CNode  *GetZoneNode( int zid );
 
-    struct internal_msg_def *InitSyncBuffer( struct sync_buffer_def *syncBuf,
-                                             unsigned long long seqNum,
-                                             unsigned long long upNodes );
+    struct internal_msg_def *InitSyncBuffer( struct sync_buffer_def *syncBuf
+                                           , unsigned long long seqNum
+                                           , upNodes_t upNodes );
     int GetSyncSize() { return  sizeof(cluster_state_def_t)
                               + sizeof(msgInfo_t)
                               + SyncBuffer->msgInfo.msg_offset; };
-    int GetSyncHdrSize() { return  sizeof(cluster_state_def_t)
-                                 + sizeof(msgInfo_t); };
+    inline int GetSyncHdrSize() { return  sizeof(cluster_state_def_t)
+                                          + sizeof(msgInfo_t); };
     struct sync_buffer_def * GetSyncBuffer() { return SyncBuffer; };
     bool    IsShutdownActive( void );
     void    KillAll( CProcess *process );
@@ -184,6 +200,7 @@ public:
     inline int   GetPNid( void ) { return( pnid_ ); }
     inline NodePhase     GetPhase( void ) { return( phase_ ); }
     inline int   GetCreatorPid( void ) { return( creatorPid_ ); }
+    inline int   GetCreatorVerifier( void ) { return( creatorVerifier_ ); }
     inline JOINING_PHASE GetJoiningPhase( void ) { return( joiningPhase_ ); }
     inline int   GetRank( void ) { return( rank_ ); }
     inline ShutdownLevel GetShutdownLevel( void) { return( shutdownLevel_ ); }
@@ -227,7 +244,7 @@ public:
                       { memInfoData_[memVmallocUsed] = vmallocUsed; }
     inline void SetChangeState( int changeState ) { changeState_ = changeState; }
     inline void SetBTime( unsigned int btime ) { bTime_ = btime; }
-    inline void SetCreator( bool creator, int pid ) { creator_ = creator; creatorPid_ = pid; }
+    inline void SetCreator( bool creator, int pid, Verifier_t verifier ) { creator_ = creator; creatorPid_ = pid; creatorVerifier_ = verifier; }
     inline void SetJoiningPhase( JOINING_PHASE phase ) { joiningPhase_ = phase; }
     inline void SetDTMAborted( bool dtmAborted ) { dtmAborted_ = dtmAborted; }
     inline void SetSMSAborted( bool smsAborted ) { smsAborted_ = smsAborted; }
@@ -251,9 +268,9 @@ public:
     void    StartWatchdogProcess( void );
     void    StartWatchdogTimer( void );
     void    StopWatchdogTimer( void );
-    inline void addToQuiesceSendPids( int pid ) { quiesceSendPids_->insert(pid); }
-    inline void addToQuiesceExitPids( int pid ) { quiesceExitPids_->insert(pid); }
-    inline void delFromQuiesceExitPids( int pid ) { quiesceExitPids_->erase(pid); }
+    void addToQuiesceSendPids( int pid, Verifier_t verifier );
+    void addToQuiesceExitPids( int pid, Verifier_t verifier );
+    void delFromQuiesceExitPids( int pid, Verifier_t verifier );
     inline bool isQuiesceExitPidsEmpty() { return quiesceExitPids_->empty(); }
     inline int getNumQuiesceExitPids() { return quiesceExitPids_->size(); }
     inline int getNumQuiesceSendPids() { return quiesceExitPids_->size(); }
@@ -309,6 +326,7 @@ private:
     bool          rankFailure_;  // true when this is has failed in CCluster::ReGroup()
     bool          creator_;      // true when this physical node where node up (re-integration) is initiated
     int           creatorPid_;   // pid of shell process that initated node up
+    Verifier_t    creatorVerifier_; // verifier of shell process that initated node up
     JOINING_PHASE joiningPhase_; // node re-integration joining phase progress phase
     bool          activatingSpare_; // true when spare node activation in process
     bool          spareNode_;    // true when this is a spare physical node
@@ -322,8 +340,8 @@ private:
     int           wdtKeepAliveTimerValue_; // expiration time
     struct timeval todStart_;    // time of last watchdog reset
 
-    pids_set_t   *quiesceSendPids_;   // list of pids on this node that needs quiescing.
-    pids_set_t   *quiesceExitPids_;   // list of pids on this node that will exit on quiescing
+    SQ_LocalIOToClient::bcastPids_t   *quiesceSendPids_;   // list of pids on this node that needs quiescing.
+    SQ_LocalIOToClient::bcastPids_t   *quiesceExitPids_;   // list of pids on this node that will exit on quiescing
     IntNodeState  internalState_;     // internal state of a node, not externalized to users 
     
     int           zid_;

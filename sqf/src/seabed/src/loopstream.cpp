@@ -65,8 +65,14 @@ SB_Trans::Loop_Stream::Loop_Stream(const char           *pp_name,
                pp_event_mgr,
                -1,                      // open_nid
                -1,                      // open_pid
+#ifdef SQ_PHANDLE_VERIFIER
+               -1,                      // open_verif
+#endif
                -1,                      // opened_nid
                -1,                      // opened_pid
+#ifdef SQ_PHANDLE_VERIFIER
+               -1,                      // opened_verif
+#endif
                0) {                     // opened_type
 }
 
@@ -382,6 +388,9 @@ short SB_Trans::Loop_Stream::exec_wr(MS_Md_Type *pp_md,
     lp_md->out.iv_nid = gv_ms_su_nid;
     lp_md->out.iv_opts = pv_opts;
     lp_md->out.iv_pid = gv_ms_su_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    lp_md->out.iv_verif = gv_ms_su_verif;
+#endif
     lp_md->out.iv_ptype = gv_ms_su_ptype;
     lp_md->out.iv_pri = pv_pri;
 
@@ -453,6 +462,9 @@ void SB_Trans::Loop_Stream::mon_init(MS_Md_Type *pp_dest_md,
     pp_dest_md->out.iv_ldone = false;
     pp_dest_md->out.iv_nid = gv_ms_su_nid;
     pp_dest_md->out.iv_pid = gv_ms_su_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    pp_dest_md->out.iv_verif = gv_ms_su_verif;
+#endif
     pp_dest_md->out.iv_recv_req_id = 0;
     pp_dest_md->out.iv_pri = -1;
     pp_dest_md->out.iv_recv_mpi_source_rank = -1;

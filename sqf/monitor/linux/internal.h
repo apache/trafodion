@@ -28,7 +28,6 @@ enum InternalType
     InternalType_Null,              // Noop
     InternalType_ActivateSpare,     // activate a spare node
     InternalType_Clone,             // Add clone process to monitor
-    InternalType_Close,             // Delete open from monitor
     InternalType_Device,            // Add or Change device to monitor
     InternalType_Down,              // Node down (watchdog not enabled)
     InternalType_Dump,              // Dump process
@@ -82,6 +81,13 @@ typedef enum {
     State_Ready_To_Exit
 } IntNodeState; 
 
+typedef unsigned long long upNode_t;
+typedef struct 
+{
+    upNode_t upNodes[MAX_NODE_MASKS];
+} upNodes_t;
+    
+typedef int Verifier_t;             // Process verifier typedef
 
 struct clone_def
 {
@@ -90,10 +96,12 @@ struct clone_def
     bool event_messages;   // true if wants to receive notices
     bool system_messages;  // true if wants to system messages
     int nid;               // node id of process
+    Verifier_t verifier;   // verifier of the process
     PROCESSTYPE type;      // process handling catagory
     int priority;          // process priority
     int parent_nid;        // node id of parent process
     int parent_pid;        // process id of parent process
+    Verifier_t parent_verifier; // verifier of parent process
     int os_pid;            // native OS process id
     pid_t prior_pid;       // for restarted persistent process, the
                            // previous process id.  Otherwise zero.
@@ -113,16 +121,6 @@ struct clone_def
     int  infileLen;
     int  outfileLen;
     char stringData;       // variable length string data
-};
-
-
-struct close_def
-{
-    int nid;            // Node id of process holding open
-    int pid;            // Process id of process holding open
-    int opened_nid;         // Node id of process opened
-    int opened_pid;         // Process id of process opened
-    char name[MAX_PROCESS_NAME];    // Name of process opened
 };
 
 struct device_def
@@ -146,17 +144,20 @@ struct dump_def
 {
     int        nid;                         // Node id of process to dump
     int        pid;                         // Process id of process to dump
+    Verifier_t verifier;                    // verifier of the process to dump
     int        dumper_nid;                  // Requesting process's node id
     int        dumper_pid;                  // Requesting process's process id
+    Verifier_t dumper_verifier;             // Requesting process's verifier
     char       core_file[MAX_PROCESS_PATH]; // target core path
     DUMPSTATUS status;                      // completion status
 };
 
 struct exit_def
 {
-    int nid;                        // Node id of child process
-    int pid;                        // Process id of child process
-    char name[MAX_PROCESS_NAME];    // Name of process opened
+    int nid;                        // Node id of process exiting
+    int pid;                        // Process id of process exiting
+    Verifier_t verifier;            // Verifier of the process exiting
+    char name[MAX_PROCESS_NAME];    // Name of process exiting
     bool abended;
 };
 
@@ -164,6 +165,7 @@ struct event_def
 {
     int  nid;                        // Nid id of process to receive event
     int  pid;                        // Process id of process to receive event
+    Verifier_t verifier;             // Verifier of the process to receive event
     int  event_id;                   // Event id to send to nid,pid
     int  length;                     // Length in byte of Data buffer used
     char data;                       // Data to be replicated across cluster
@@ -204,6 +206,7 @@ struct kill_def
 {
     int nid;                // Node id of process to kill
     int pid;                // Process id of process to kill
+    Verifier_t verifier;    // Verifier of the process to kill
     bool persistent_abort;  // when true, persistent process is not restarted
                             // otherwise, it is ignored
 };
@@ -229,8 +232,10 @@ struct process_def
     int priority;          // process priority
     int parent_nid;        // node id of parent process
     int parent_pid;        // process id of parent process
+    Verifier_t parent_verifier; // process id of parent process
     int pair_parent_nid;   // node id of real process pair parent process
     int pair_parent_pid;   // process id of real process pair parent process
+    Verifier_t pair_parent_verifier; // process id of real process pair parent process
     int  argc;             // number of command line arguments
 
     strId_t pathStrId;     // program lookup path (string id)
@@ -251,6 +256,7 @@ struct process_init_def
 {
     int nid;             // Node id of child process
     int pid;             // Process id of child process
+    Verifier_t verifier; // Verifier of child process
     STATE state;
     int origNid;         // Node id where the "new process" request originated
     int result;          // zero if process created, error code otherwise
@@ -262,8 +268,10 @@ struct open_def
 {
     int nid;                            // Node id of process performing open
     int pid;                            // Process id of process performing open
+    Verifier_t verifier;                // verifier of the process performing open
     int opened_nid;                     // Node id of process to be opened
     int opened_pid;                     // Process id of process to be opened
+    Verifier_t opened_verifier;         // verifier of the process to be opened
 };
 
 // Processor status for a given core
@@ -342,7 +350,6 @@ struct internal_msg_def
     union 
     {
         struct clone_def   clone;
-        struct close_def   close;
         struct device_def  device;
         struct down_def    down;
         struct dump_def    dump;
@@ -363,7 +370,7 @@ struct internal_msg_def
         struct shutdown_def shutdown;
         struct scheddata_def scheddata;
     } u;
-};
+} __attribute__((__may_alias__));
 
 // Define a constant giving the "header" size of the internal_msg_def above
 #define MSG_HDR_SIZE  ( sizeof (InternalType) + sizeof (int) )
@@ -374,6 +381,7 @@ typedef struct nodeId_s
     char nodeName[MPI_MAX_PROCESSOR_NAME];
     char port[MPI_MAX_PORT_NAME];
     int  creatorShellPid;
+    Verifier_t creatorShellVerifier;
     bool creator;  // NEW monitor set to true to tell creator it is the CREATOR
 } nodeId_t;
 
@@ -391,7 +399,7 @@ typedef struct cluster_state_def
     ShutdownLevel sdLevel;              // Node's current shutdown level
     int change_nid;
     unsigned long long seq_num;
-    unsigned long long upNodes;         // Set of nodes currently "up"
+    upNodes_t nodeMask;                 // Set of nodes currently "up"
 } cluster_state_def_t;
 
 typedef struct msgInfo

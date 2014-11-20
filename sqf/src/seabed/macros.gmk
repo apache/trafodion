@@ -39,6 +39,7 @@ SBROOT		= ..
 INCSBDIR	= $(SBROOT)/src
 
 # tools
+CXX		+= $(PHVERIF)
 ifeq ($(SQ_MTYPE),32)
 CC		+= -mpi32
 CXX		+= -mpi32

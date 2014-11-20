@@ -78,6 +78,7 @@ void CExtTmReadyReq::performRequest()
     msg_->u.reply.type = ReplyType_Generic;
     msg_->u.reply.u.generic.nid = nid_;
     msg_->u.reply.u.generic.pid = pid_;
+    msg_->u.reply.u.generic.verifier = verifier_;
     msg_->u.reply.u.generic.process_name[0] = 0;
     msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
 

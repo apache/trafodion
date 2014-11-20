@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2009-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ CHealthCheck::CHealthCheck()
     state_ = HC_AVAILABLE; // default state
     param1_ = 0;
     watchdogProcess_ = NULL;
+    smserviceProcess_ = NULL;
 
     initializeVars();
 
@@ -191,8 +192,9 @@ void CHealthCheck::healthCheckThread()
                 state_ = HC_AVAILABLE;
                 break;
 
-            case MON_EXIT_WATCHDOG:
-                // Exit the watchdog process.
+            case MON_EXIT_PRIMITIVES:
+                // Exit the critical primitive processes.
+                sendEventToSMService(SMS_Exit); // SMS process will exit
                 sendEventToWatchDog(Watchdog_Exit); // WDT process will exit
                 state_ = HC_AVAILABLE;
                 break;
@@ -263,6 +265,12 @@ void CHealthCheck::healthCheckThread()
             case HC_EXIT:
                 // health check thread should exit.
                 done = true;
+                break;
+
+            case HC_UPDATE_SMSERVICE:
+                // update watchdog process object. 
+                updateSMServiceProcess();
+                state_ = HC_AVAILABLE;
                 break;
 
             case HC_UPDATE_WATCHDOG:
@@ -416,6 +424,20 @@ void CHealthCheck::setState(HealthCheckStates st, long long param1 /* optional *
     TRACE_EXIT; 
 }
 
+// Send an event to the SMService process
+void CHealthCheck::sendEventToSMService(SMServiceEvent_t event)
+{
+    const char method_name[] = "CHealthCheck::sendEventToSMService";
+    TRACE_ENTRY;
+
+    if ( smserviceProcess_ ) 
+    {
+        smserviceProcess_->GenerateEvent( event, 0, NULL );
+    }
+
+    TRACE_EXIT;
+}
+
 // Send an event to the watch dog process
 void CHealthCheck::sendEventToWatchDog(WatchdogEvent_t event)
 {
@@ -536,6 +558,16 @@ void CHealthCheck::setTimeToWakeUp( struct timespec &ts)
     ts.tv_sec += 1; // wake up every second
 
     wakeupTimeSaved_ = ts.tv_sec;
+
+    TRACE_EXIT;
+}
+
+void CHealthCheck::updateSMServiceProcess()
+{
+    const char method_name[] = "CHealthCheck::updateSMServiceProcess";
+    TRACE_ENTRY;
+
+    smserviceProcess_ = (CProcess *)param1_; 
 
     TRACE_EXIT;
 }

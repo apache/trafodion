@@ -29,4 +29,10 @@
 #define SB_DIAG_UNUSED
 #endif
 
+#ifdef USE_SB_DEPRECATED
+#define SB_DIAG_DEPRECATED __attribute__((deprecated))
+#else
+#define SB_DIAG_DEPRECATED
+#endif
+
 #endif // !__SB_INT_DIAG_H_

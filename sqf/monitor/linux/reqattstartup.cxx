@@ -47,11 +47,15 @@ void CExtAttachStartupReq::populateRequestString( void )
 {
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
-    sprintf( strBuf, "ExtReq(%s) req #=%ld requester(pid=%d) (name=%s/nid=%d/pid=%d)"
-             , CReqQueue::svcReqType[reqType_], getId(), pid_,
-             msg_->u.request.u.startup.process_name,
-             msg_->u.request.u.startup.nid,
-             msg_->u.request.u.startup.pid );
+    snprintf( strBuf, sizeof(strBuf), 
+              "ExtReq(%s) req #=%ld "
+              "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
+            , CReqQueue::svcReqType[reqType_], getId()
+            , msg_->u.request.u.startup.process_name
+            , msg_->u.request.u.startup.nid
+            , pid_
+            , msg_->u.request.u.startup.os_pid
+            , msg_->u.request.u.startup.verifier );
     requestString_.assign( strBuf );
 }
 
@@ -73,6 +77,7 @@ void CExtAttachStartupReq::performRequest()
     }
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_startup_Incr();
 
     // Process the request

@@ -171,6 +171,8 @@ void attach( int nid, char *name )
     msg->u.request.u.startup.event_messages = true;
     msg->u.request.u.startup.system_messages = true;
     msg->u.request.u.startup.paired = false;
+    msg->u.request.u.startup.verifier = true;
+    msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
     strcpy(msg->u.request.u.startup.program, "<unknown>");
 
 

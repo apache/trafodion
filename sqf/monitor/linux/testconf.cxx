@@ -37,6 +37,8 @@
 // Functions:   None
 //                                                                           
 ///////////////////////////////////////////////////////////////////////////////
+using namespace std;
+
 #include <sched.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -175,7 +177,9 @@ int TestClusterConfig( void )
     int rc   = -1;
     int pnodesCount;
     int lnodesCount;
-    int spareCount;
+    int sparesCount;
+    int sparesInSetCount;
+    int spareListCount;
     int sparePNids[MAX_NODES];
     char coreMaskStr[17] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','\0'};
     char zoneTypeStr[30] = {'\0'};
@@ -204,10 +208,10 @@ int TestClusterConfig( void )
                 {
                     coreMask = pnodeConfig->GetExcludedCoreMask();
                     CoreMaskString( coreMaskStr, coreMask );
-                    spareCount = pnodeConfig->GetSpareList( sparePNids );
-                    if ( spareCount )
+                    spareListCount = pnodeConfig->GetSpareList( sparePNids );
+                    if ( spareListCount )
                     {
-                        SpareListString( spareListStr, sparePNids, spareCount );
+                        SpareListString( spareListStr, sparePNids, spareListCount );
                     }
                     printf( "pnid=%d, nodename=%s, excluded=%s%s %s\n"
                           , pnodeConfig->GetPNid()
@@ -227,10 +231,10 @@ int TestClusterConfig( void )
                 {
                     coreMask = pnodeConfig->GetExcludedCoreMask();
                     CoreMaskString( coreMaskStr, coreMask );
-                    spareCount = pnodeConfig->GetSpareList( sparePNids );
-                    if ( spareCount )
+                    spareListCount = pnodeConfig->GetSpareList( sparePNids );
+                    if ( spareListCount )
                     {
-                        SpareListString( spareListStr, sparePNids, spareCount );
+                        SpareListString( spareListStr, sparePNids, spareListCount );
                     }
                     printf( "pnid=%d, nodename=%s, excluded=%s%s %s\n"
                           , pnodeConfig->GetPNid()
@@ -317,6 +321,41 @@ int TestClusterConfig( void )
                     }
                 }
             }
+
+            sparesCount = clusterConfig.GetSNodesCount();
+            // Print spare nodes sets
+            printf( "\nspares nodes=%d\n", sparesCount );
+            printf( "spare node sets test\n" );
+
+            CPNodeConfig *spareNodeConfig;
+            PNodesConfigList_t *spareNodesConfigList =
+                                clusterConfig.GetSpareNodesConfigList();
+            PNodesConfigList_t::iterator itSn;
+            for ( itSn = spareNodesConfigList->begin(); 
+                  itSn != spareNodesConfigList->end(); 
+                  itSn++ ) 
+            {
+                spareNodeConfig = *itSn;
+                PNodesConfigList_t spareNodesConfigSet;
+                clusterConfig.GetSpareNodesConfigSet( spareNodeConfig->GetName()
+                                                    , spareNodesConfigSet );
+                sparesInSetCount = spareNodesConfigSet.size();
+                printf( " configured spare node=%s, nodes in spare set count=%d\n"
+                      , spareNodeConfig->GetName()
+                      , sparesInSetCount
+                      );
+                PNodesConfigList_t::iterator itSnSet;
+                for ( itSnSet = spareNodesConfigSet.begin(); 
+                      itSnSet != spareNodesConfigSet.end(); 
+                      itSnSet++ ) 
+                {
+                    spareNodeConfig = *itSnSet;
+                    printf( "   spare set member node=%s\n"
+                          , spareNodeConfig->GetName()
+                          );
+                }
+            }
+
             rc = 0;
         }
         else

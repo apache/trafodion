@@ -27,6 +27,14 @@
 
 #include "seabed/int/types.h" // SB_Int64_Type
 
+#ifdef SQ_PHANDLE_VERIFIER
+typedef struct sb_npv_type {
+    int           iv_nid;
+    int           iv_pid;
+    SB_Verif_Type iv_verif;
+} SB_NPV_Type;
+#endif
+
 // singly-linked (for covenience contains prev)
 typedef struct sb_ql_type {
     struct sb_ql_type *ip_next;
@@ -37,6 +45,9 @@ typedef struct sb_ql_type {
         int                i;
         long               l;
         SB_Int64_Type      ll;
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_NPV_Type        npv;
+#endif
     } iv_id;
 } SB_QL_Type;
 // doubly-linked (match SB_QL_Type)
@@ -49,6 +60,9 @@ typedef struct sb_dql_type {
         int                i;
         long               l;
         SB_Int64_Type      ll;
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_NPV_Type        npv;
+#endif
     } iv_id;
 } SB_DQL_Type;
 

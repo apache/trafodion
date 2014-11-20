@@ -597,7 +597,7 @@ void SB_Trace::trace_set_lock(bool pv_lock) {
 // Purpose: set name
 //
 void SB_Trace::trace_set_pname(const char *pp_pname) {
-    int lv_lim = sizeof(ia_trace_pname) - 2;
+    int lv_lim = static_cast<int>(sizeof(ia_trace_pname) - 2);
     ia_trace_pname[lv_lim] = '\0';
     strncpy(ia_trace_pname, pp_pname, lv_lim);
     strcat(ia_trace_pname,  "-");

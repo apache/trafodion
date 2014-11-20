@@ -260,8 +260,14 @@ namespace SB_Trans {
                                    SB_Ms_Tl_Event_Mgr   *pp_event_mgr,
                                    int                   pv_open_nid,
                                    int                   pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                   SB_Verif_Type         pv_open_verif,
+#endif
                                    int                   pv_opened_nid,
                                    int                   pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                   SB_Verif_Type         pv_opened_verif,
+#endif
                                    int                   pv_opened_type);
 
         friend class Sock_Stream_Accept_Thread;
@@ -403,8 +409,14 @@ namespace SB_Trans {
                     SB_Ms_Tl_Event_Mgr   *pp_event_mgr,
                     int                   pv_open_nid,
                     int                   pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                    SB_Verif_Type         pv_open_verif,
+#endif
                     int                   pv_opened_nid,
                     int                   pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                    SB_Verif_Type         pv_opened_verif,
+#endif
                     int                   pv_opened_type);
         ~Sock_Stream();
 

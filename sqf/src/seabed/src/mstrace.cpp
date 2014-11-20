@@ -126,8 +126,6 @@ void ms_trace_change_item(const char *pp_key, const char *pp_value) {
     ms_help_bool(pp_key, pp_value,
                  gp_ms_env_trace_abandon, &gv_ms_trace_abandon);
     ms_help_bool(pp_key, pp_value,
-                 gp_ms_env_trace_aggr, &gv_ms_trace_aggr);
-    ms_help_bool(pp_key, pp_value,
                  gp_ms_env_trace_alloc, &gv_ms_trace_alloc);
     ms_buf_trace_change();
     ms_help_bool(pp_key, pp_value,

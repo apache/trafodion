@@ -2,7 +2,7 @@
 //
 // @@@ START COPYRIGHT @@@
 //
-// (C) Copyright 2011-2014 Hewlett-Packard Development Company, L.P.
+// (C) Copyright 2008-2014 Hewlett-Packard Development Company, L.P.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -130,9 +130,12 @@ int CSystem::ExecuteCommand( const char *command, LineList_t &outList )
     }
     else
     {
-        saveCommand = command_;
-        command_ += " ";
-        command_ += command;
+        if ( command )
+        {
+            saveCommand = command_;
+            command_ += " ";
+            command_ += command;
+        }
     }
 
     int rc = CSystem::ExecuteCommand( outList );
@@ -237,16 +240,14 @@ int CSystem::LaunchCommand( int &commandPid )
         mon_log_write(MON_SYSTEM_LAUNCH_COMMAND_1, SQ_LOG_ERR, la_buf);
         return( -1 );
     }
-    if ( ! S_ISREG(stdoutStat.st_mode) )
+
+    if ( pipe( pFd ) == -1 )
     {
-        if ( pipe( pFd ) == -1 )
-        {
-            int err = errno;
-            char la_buf[MON_STRING_BUF_SIZE];
-            sprintf(la_buf, "[%s], Error: Internal error while creating pipe, errno=%d(%s)\n", method_name, err, strerror(errno));
-            mon_log_write(MON_SYSTEM_LAUNCH_COMMAND_1, SQ_LOG_ERR, la_buf);
-            return( -1 );
-        }
+        int err = errno;
+        char la_buf[MON_STRING_BUF_SIZE];
+        sprintf(la_buf, "[%s], Error: Internal error while creating pipe, errno=%d(%s)\n", method_name, err, strerror(errno));
+        mon_log_write(MON_SYSTEM_LAUNCH_COMMAND_1, SQ_LOG_ERR, la_buf);
+        return( -1 );
     }
 
     sigset_t forkMask;
@@ -301,20 +302,17 @@ int CSystem::LaunchCommand( int &commandPid )
             exit( EXIT_FAILURE );
         }
 
-        if ( ! S_ISREG(stdoutStat.st_mode) )
+        close( STDOUT_FILENO );
+        // Dup the write end of the pipe
+        outPFd = dup( pFd[1] ); 
+        if ( outPFd == -1 )
         {
-            close( STDOUT_FILENO );
-            // Dup the write end of the pipe
-            outPFd = dup( pFd[1] ); 
-            if ( outPFd == -1 )
-            {
-                int err = errno;
-                fprintf( stderr,"[%s] Error: Internal error on fork child dup(), errno=%d(%s)\n", newArgs[0], err, strerror(errno) );
-                exit( EXIT_FAILURE );
-            }
-            close( pFd[0] );        // Close unused pipe read fd
-            close( pFd[1] );        // Close unused pipe write fd
+            int err = errno;
+            fprintf( stderr,"[%s] Error: Internal error on fork child dup(), errno=%d(%s)\n", newArgs[0], err, strerror(errno) );
+            exit( EXIT_FAILURE );
         }
+        close( pFd[0] );        // Close unused pipe read fd
+        close( pFd[1] );        // Close unused pipe write fd
         
         //fprintf( stderr,"[Child - err]: execvp(%s), newArgs[1]=%s, newArgs[1]=%s\n", newArgs[0], newArgs[1], newArgs[2] );
         rc = execvp( newArgs[0], newArgs );
@@ -330,11 +328,8 @@ int CSystem::LaunchCommand( int &commandPid )
     }
     else
     {
-        if ( ! S_ISREG(stdoutStat.st_mode) )
-        {
-            close( pFd[1] );        // Close unused write end of pipe
-            commandOutFd_ = pFd[0]; // Save read end of pipe (child stdout)
-        }
+        close( pFd[1] );        // Close unused write end of pipe
+        commandOutFd_ = pFd[0]; // Save read end of pipe (child stdout)
         commandPid = cPid;      // Return the child pid
     }
 

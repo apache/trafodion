@@ -62,6 +62,8 @@ SB_INLINE int SB_Slot_Mgr::alloc() {
     iv_size++;
     if (lv_slot > iv_max)
         iv_max = lv_slot;
+    if (iv_size > iv_hi)
+        iv_hi = iv_size;
     return lv_slot;
 }
 
@@ -147,6 +149,10 @@ SB_INLINE void SB_Slot_Mgr::free_slot(int pv_slot) {
 
 SB_INLINE int SB_Slot_Mgr::get_cap() {
     return iv_cap;
+}
+
+SB_INLINE int SB_Slot_Mgr::hi() {
+    return iv_hi;
 }
 
 SB_INLINE bool SB_Slot_Mgr::inuse(int pv_slot) {

@@ -33,8 +33,7 @@ using namespace std;
 
 #include "localio.h"
 
-#define BCAST_PID -255
-#define NO_PID 0
+typedef map<int, Verifier_t> verifierMap_t;  // (pid, verifier)
 
 class CNoticeMsg;
 
@@ -54,7 +53,18 @@ public:
   SQ_LocalIOToClient( int nid );
   ~SQ_LocalIOToClient();
 
-  typedef set<int>           bcastPids_t;
+  struct pidVerifier
+  {
+      Verifier_t  verifier; // verifier first so map to long is (pid:verifier)
+      int         pid;
+  };
+  union pidver
+  {
+      struct pidVerifier pv;
+      long   pnv;
+  };
+  typedef union pidver pidVerifier_t;
+  typedef set<long> bcastPids_t;
 
   inline int getAcquiredBufferCount() { return(acquiredBufferCountMax); }
   inline int getAvailableBufferCount() { return(availableBufferCountMin); }
@@ -62,13 +72,19 @@ public:
   inline int getSharedBufferCount() { return(sharedBuffersMax); }
   inline int getMaxChildDeathCount() { return deadPidsMax_; }
   int sendCtlMsg( int osPid, MonitorCtlType type, int data = -1, int *error = NULL );
-  void putOnNoticeQueue( int osPid, struct message_def *msg,
-                         bcastPids_t *bcastPids);
+  void putOnNoticeQueue( int osPid
+                       , Verifier_t verifier
+                       , struct message_def *msg
+                       , bcastPids_t *bcastPids);
   void nudgeNotifier ( void );
   int getSizeOfMsg ( struct message_def *myMsg );
   int getSizeOfRequest ( struct message_def *myMsg );
   void releaseMsg( SharedMsgDef *shm, bool monitorOwned );
-  void releaseMsg( pid_t pid );
+  void addToVerifierMap(int pid, Verifier_t verifier);
+  void delFromVerifierMap( int pid );
+  Verifier_t getVerifier( int pid );
+  inline int getVerifierMapCount() { return verifierMap_.size(); }
+  void releaseMsg( pid_t pid, Verifier_t verifier );
   int  initWorker();
   bool isMonitorHeap( struct message_def *msg );
   inline bool isShutdown() { return(shutdown); }
@@ -94,6 +110,7 @@ private:
   {
       struct message_def *msg;
       int                pid;
+      Verifier_t         verifier;
       bcastPids_t        *bcastPids;
   } PendingNotice;
 
@@ -105,7 +122,7 @@ private:
 
   // Container to hold set of outstanding shared buffers used by the
   // monitor to send info to clients.
-  typedef map<int, CNoticeMsg *> noticeMap_t;
+  typedef map<int, CNoticeMsg *> noticeMap_t;  // LIO buf index, CNotice*
   noticeMap_t                noticeMap_;
   CLock                      noticeMapLock_;
   
@@ -117,8 +134,8 @@ private:
   void processNotices() throw();
   void sendNotice(SharedMsgDef *msg, PendingNotice &pn) throw( int, std::exception );
   void handleSSMPNotices();
-  struct message_def *acquireMsg( int pid );
-  bool decrNoticeMsgRef ( int bufIndex, int pid );
+  struct message_def *acquireMsg( int pid, Verifier_t verifier );
+  bool decrNoticeMsgRef ( int bufIndex, int pid, Verifier_t verifier );
   void msgQueueStats( void );
 
   bool                       shutdown;
@@ -168,6 +185,9 @@ private:
   static const int serviceReplySize[];
   static const int requestSize[];
 
+  verifierMap_t              verifierMap_;
+  CLock                      verifierMapLock_;
+
 };
 
 class CNoticeMsg
@@ -176,12 +196,15 @@ class CNoticeMsg
     int            eyecatcher_;      // Debuggging aid -- leave as first
                                      // member variable of the class
  public:
-    CNoticeMsg ( int bufIndex, SharedMsgDef * buf, pid_t pid,
-                 SQ_LocalIOToClient::bcastPids_t *bcastPids);
+    CNoticeMsg( int bufIndex
+              , SharedMsgDef *buf
+              , pid_t pid
+              , Verifier_t verifier
+              , SQ_LocalIOToClient::bcastPids_t *bcastPids);
     ~CNoticeMsg();
 
     // Indicate the the given pid is no longer using the buffer
-    int clientDone ( pid_t pid );
+    int clientDone ( pid_t pid, Verifier_t verifier );
 
     int getIndex ( ) { return bufIndex_; }
 
@@ -196,6 +219,7 @@ class CNoticeMsg
     int bufIndex_;
     SharedMsgDef * buf_;
     pid_t pid_;
+    Verifier_t verifier_;
     SQ_LocalIOToClient::bcastPids_t *bcastPids_;
     CLock bcastPidsLock_;
     struct timespec    timestamp_;

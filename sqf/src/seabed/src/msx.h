@@ -83,9 +83,6 @@ extern void                  msg_init_env(int pv_argc, char **ppp_argv);
 extern int                   msg_test_assert_disable();
 extern void                  msg_test_assert_enable(int pv_state);
 extern void                  ms_abandon_cbt(MS_Md_Type *pp_md, bool pv_add);
-extern short                 ms_aggr_copy_server_to_client(MS_Md_Type     *pp_md,
-                                                           bool            pv_self,
-                                                           SB_Comp_Queue  *pp_fs_comp_q);
 extern void                  ms_buf_free(void *);
 extern void                 *ms_buf_malloc(size_t);
 extern void                  ms_err_check_mpi_pathdown_ok(const char *pp_where,
@@ -117,10 +114,13 @@ extern void                  ms_msg_set_requeue(const char *pp_where,
 extern SB_Trans::Stream_Base*ms_od_map_oid_to_stream(int pv_oid);
 extern char                 *ms_od_map_phandle_to_name(SB_Phandle_Type *pp_phandle);
 extern SB_Trans::Stream_Base*ms_od_map_phandle_to_stream(SB_Phandle_Type *pp_phandle);
-extern void                  ms_recv_q_proc_death(int   pv_nid,
-                                                  int   pv_pid,
-                                                  bool  pv_use_stream,
-                                                  void *pp_stream);
+extern void                  ms_recv_q_proc_death(int            pv_nid,
+                                                  int            pv_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                                  SB_Verif_Type  pv_verif,
+#endif
+                                                  bool           pv_use_stream,
+                                                  void          *pp_stream);
 extern "C" const char       *ms_seabed_vers();
 extern void                  ms_shutdown();
 extern void                  ms_transid_clear(MS_Mon_Transid_Type);
@@ -132,7 +132,11 @@ extern int                   ms_transid_reinstate(MS_Mon_Transid_Type);
 extern void                  ms_util_fill_phandle_name(SB_Phandle_Type *pp_phandle,
                                                        char            *pp_name,
                                                        int              pv_nid,
-                                                       int              pv_pid);
+                                                       int              pv_pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                                      ,SB_Verif_Type    pv_verif
+#endif
+                                                      );
 extern int                   msg_mon_process_shutdown_ph1(const char                    *pp_where,
                                                           bool                           pv_finalize,
                                                           Msg_Mon_Process_Shutdown_Type  pv_shutdown_type);

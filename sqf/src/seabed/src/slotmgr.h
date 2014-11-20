@@ -53,6 +53,7 @@ public:
     virtual void check_min();
     virtual void free_slot(int pv_slot);
     virtual int  get_cap();
+    int          hi();
     bool         inuse(int pv_slot);
     virtual int  max_slot();
     virtual void print(int pv_print_type);
@@ -77,6 +78,7 @@ protected:
     bool        iv_change;
     int         iv_free;
     int         iv_head;
+    int         iv_hi;
     int         iv_max;
     int         iv_size;
     int         iv_tail;

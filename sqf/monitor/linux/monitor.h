@@ -75,10 +75,22 @@ public:
     void  StartPrimitiveProcesses( void );  
     void  openProcessMap ( void );
     void  writeProcessMapEntry ( const char * buf );
-    void  writeProcessMapBegin ( const char *Name, int Nid, int Pid,
-                                 int Parent_Nid, int Parent_Pid,
-                                 const char *program );
-
+    void  writeProcessMapBegin( const char *name
+                              , int nid
+                              , int pid
+                              , int verifier
+                              , int parentNid
+                              , int parentPid
+                              , int parentVerifier
+                              , const char *program );
+    void  writeProcessMapEnd( const char *name
+                            , int nid
+                            , int pid
+                            , int verifier
+                            , int parentNid
+                            , int parentPid
+                            , int parentVerifier
+                            , const char *program );
     int   GetProcTermSig() { return procTermSig_; }
     int   PackProcObjs(char *&buffer);
     void  UnpackProcObjs(char *&buffer, int procCount);

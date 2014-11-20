@@ -28,6 +28,7 @@
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
@@ -38,6 +39,7 @@ bool tracing = false;
 const char *MyName;
 int MyRank = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 
@@ -48,12 +50,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     if ( recv_msg->type == MsgType_ProcessDeath )
     {
         if ( tracing )
-            printf("[%s] Process death notice received for %s (%d, %d),"
-                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
+            printf("[%s] Process death notice received for %s (%d, %d:%d),"
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier,
                    recv_msg->u.request.u.death.trans_id.txid[0],
                    recv_msg->u.request.u.death.trans_id.txid[1],
                    recv_msg->u.request.u.death.trans_id.txid[2],
@@ -80,6 +83,7 @@ bool testPersistent ()
     bool testSuccess = true;
     int procNid;
     int procPid;
+    Verifier_t procVerifier;
     char procName[25];
     char *serverArgs[1] = {(char *) "-t"};
     enum { TEST_FAILED=0 };
@@ -115,7 +119,7 @@ bool testPersistent ()
     if (!util.requestNewProcess ( persistNode1, ProcessType_Generic, false,
                                   "$ABC", "server", "", "",
                                   ((tracing) ? 1: 0), serverArgs,
-                                  procNid, procPid, procName))
+                                  procNid, procPid, procVerifier, procName))
     {
         return TEST_FAILED;
     }
@@ -126,20 +130,21 @@ bool testPersistent ()
     // Verify process is running
     int statNid1;
     int statPid1;
-    if (util.requestProcInfo ( "$ABC", statNid1, statPid1))
+    Verifier_t statVerifier1;
+    if (util.requestProcInfo ( "$ABC", statNid1, statPid1, statVerifier1))
     {
 
         if ( statNid1 != persistNode1 )
         {
-            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+            printf ("[%s] process $ABC (%d, %d:%d) is not running on node %d "
                     "as expected.\n", MyName, statNid1, statPid1,
-                    persistNode1);
+                    statVerifier1, persistNode1);
             return TEST_FAILED;
         }
         else
         {
-            printf ("[%s] Started persistent process $ABC (%d, %d)\n",
-                    MyName, statNid1, statPid1);
+            printf ("[%s] Started persistent process $ABC (%d, %d:%d)\n",
+                    MyName, statNid1, statPid1, statVerifier1 );
         }
     }
     else
@@ -152,7 +157,7 @@ bool testPersistent ()
     printf ("[%s] Killing process $ABC\n", MyName);
 
     // Kill the server process, expect it to be restarted on the same node
-    util.requestKill ( "$ABC" );
+    util.requestKill ( "$ABC", procVerifier );
 
     // Allow time for process kill and after-effects
     sleep(1);
@@ -160,13 +165,14 @@ bool testPersistent ()
     // Verify process was restarted on original node
     int statNid2;
     int statPid2;
-    if (util.requestProcInfo ( "$ABC", statNid2, statPid2))
+    Verifier_t statVerifier2;
+    if (util.requestProcInfo ( "$ABC", statNid2, statPid2, statVerifier2))
     {
         if ( statNid2 != persistNode1 )
         {
-            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+            printf ("[%s] process $ABC (%d, %d:%d) is not running on node %d "
                     "as expected.\n", MyName, statNid2, statPid2,
-                    persistNode1);
+                    statVerifier2, persistNode1);
             return TEST_FAILED;
         }
         if ( statPid2 == statPid1 )
@@ -177,9 +183,9 @@ bool testPersistent ()
         }
         else
         {
-            printf ("[%s] Persistent process $ABC (%d, %d) was restarted as "
+            printf ("[%s] Persistent process $ABC (%d, %d:%d) was restarted as "
                     "expected.\n",
-                    MyName, statNid2, statPid2);
+                    MyName, statNid2, statPid2, statVerifier2);
         }
     }
     else
@@ -192,15 +198,15 @@ bool testPersistent ()
 
     // Kill the server process again, do not expect restart since persistent
     // retry count has been exceeded.
-    util.requestKill ( "$ABC" );
+    util.requestKill ( "$ABC", -1 );
 
     // Allow time for process kill and after-effects
     sleep(1);
 
-    if (util.requestProcInfo ( "$ABC", statNid2, statPid2))
+    if (util.requestProcInfo ( "$ABC", statNid2, statPid2, statVerifier2))
     {
-        printf("[%s] Unexpectedly got $ABC (%d, %d) process status\n",
-               MyName, statNid2, statPid2);
+        printf("[%s] Unexpectedly got $ABC (%d, %d:%d) process status\n",
+               MyName, statNid2, statPid2, statVerifier2);
         return TEST_FAILED;
     }
     else
@@ -213,7 +219,7 @@ bool testPersistent ()
     if (!util.requestNewProcess ( persistNode1, ProcessType_Generic, false,
                                   "$ABC", "server", "", "",
                                   ((tracing) ? 1: 0), serverArgs,
-                                  procNid, procPid, procName))
+                                  procNid, procPid, procVerifier, procName))
     {
         return TEST_FAILED;
     }
@@ -222,19 +228,19 @@ bool testPersistent ()
     sleep(1);
 
     // Verify process is running
-    if (util.requestProcInfo ( "$ABC", statNid1, statPid1))
+    if (util.requestProcInfo ( "$ABC", statNid1, statPid1, statVerifier1))
     {
         if ( statNid1 != persistNode1 )
         {
-            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
-                    "as expected.\n", MyName, statNid1, statPid1,
+            printf ("[%s] process $ABC (%d, %d:%d) is not running on node %d "
+                    "as expected.\n", MyName, statNid1, statPid1, statVerifier1,
                     persistNode1);
             return TEST_FAILED;
         }
         else
         {
-            printf ("[%s] Started persistent process $ABC (%d, %d)\n",
-                    MyName, statNid1, statPid1);
+            printf ("[%s] Started persistent process $ABC (%d, %d:%d)\n",
+                    MyName, statNid1, statPid1, statVerifier1);
         }
     }
     else
@@ -278,23 +284,22 @@ bool testPersistent ()
                 "state=2\n", MyName, nodeData->node[2].state);
         return TEST_FAILED;
     }
-
-
+    
     // Verify process was restarted on new node
-    if (util.requestProcInfo ( "$ABC", statNid1, statPid1))
+    if (util.requestProcInfo ( "$ABC", statNid1, statPid1, statVerifier1))
     {
         if ( statNid1 != persistNode2 )
         {
-            printf ("[%s] process $ABC (%d, %d) is not running on node %d "
+            printf ("[%s] process $ABC (%d, %d:%d) is not running on node %d "
                     "as expected.\n", MyName, statNid1, statPid1,
-                    persistNode2);
+                    statVerifier1, persistNode2);
             testSuccess = false;
         }
         else
         {
-            printf ("[%s] Persistent process $ABC (%d, %d) was restarted as "
+            printf ("[%s] Persistent process $ABC (%d, %d:%d) was restarted as "
                     "expected.\n",
-                    MyName, statNid1, statPid1);
+                    MyName, statNid1, statPid1, statVerifier1);
         }
     }
     else
@@ -307,16 +312,16 @@ bool testPersistent ()
 
     // Kill the server process again, do not expect restart because
     // restart count exceeded.
-    util.requestKill ( "$ABC" );
+    util.requestKill ( "$ABC", -1 );
 
     // Allow time for process kill and after-effects
     sleep(1);
 
     // Verify process not restarted
-    if (util.requestProcInfo ( "$ABC", statNid2, statPid2))
+    if (util.requestProcInfo( "$ABC", statNid2, statPid2, statVerifier2 ))
     {
-        printf("[%s] Unexpectedly got $ABC (%d, %d) process status\n",
-               MyName, statNid2, statPid2);
+        printf("[%s] Unexpectedly got $ABC (%d, %d:%d) process status\n",
+               MyName, statNid2, statPid2, statVerifier2);
         testSuccess = false;
     }
     else
@@ -333,9 +338,6 @@ int main (int argc, char *argv[])
 {
 
     bool testSuccess;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
@@ -363,8 +365,7 @@ int main (int argc, char *argv[])
     // tell monitor we are exiting
     util.requestExit ( );
 
-    MPI_Close_port (util.getPort());
-    MPI_Finalize ();
+    XMPI_Close_port (util.getPort());
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

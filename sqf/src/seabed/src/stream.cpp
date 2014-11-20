@@ -31,12 +31,16 @@
 
 #include "compq.h"
 #include "labelmapsx.h"
+#ifndef SQ_PHANDLE_VERIFIER
 #include "llmap.h"
-#include "msaggr.h"
+#endif
 #include "msic.h"
 #include "msicctr.h"
 #include "mstrace.h"
 #include "msx.h"
+#ifdef SQ_PHANDLE_VERIFIER
+#include "npvmap.h"
+#endif
 #include "threadtlsx.h"
 #include "transport.h"
 
@@ -69,15 +73,27 @@ typedef struct RM_Node {
 // forwards
 static void thread_key_dtor(void *pp_buf);
 
+#ifdef SQ_PHANDLE_VERIFIER
+static SB_Ts_NPVmap        gv_sb_stream_nidpid_map("map-stream-npv");
+#else
 static SB_Ts_LLmap         gv_sb_stream_nidpid_map("map-stream-nidpid");
+#endif
 static int                 gv_sb_stream_tls_inx =
                              SB_create_tls_key(thread_key_dtor,
                                                "stream-marker");
 
+#ifdef SQ_PHANDLE_VERIFIER
+static NPS_Node *new_NPS_Node(SB_NPV_Type             pv_npv,
+#else
 static NPS_Node *new_NPS_Node(SB_Int64_Type           pv_nidpid,
+#endif
                               SB_Trans::Trans_Stream *pp_stream) {
     NPS_Node *lp_node = new NPS_Node();
+#ifdef SQ_PHANDLE_VERIFIER
+    lp_node->iv_link.iv_id.npv = pv_npv;
+#else
     lp_node->iv_link.iv_id.ll = pv_nidpid;
+#endif
     lp_node->ip_stream = pp_stream;
     return lp_node;
 }
@@ -104,8 +120,11 @@ SB_Thread::ECM          SB_Trans::Trans_Stream::cv_del_mutex("mutex-Trans_Stream
 SB_D_Queue              SB_Trans::Trans_Stream::cv_del_q(QID_STREAM_DEL, "q-stream-del");
 bool                    SB_Trans::Trans_Stream::cv_shutdown = false;
 SB_Atomic_Int           SB_Trans::Trans_Stream::cv_stream_acc_count;
+SB_Atomic_Int           SB_Trans::Trans_Stream::cv_stream_acc_hi_count;
 SB_Atomic_Int           SB_Trans::Trans_Stream::cv_stream_con_count;
+SB_Atomic_Int           SB_Trans::Trans_Stream::cv_stream_con_hi_count;
 SB_Atomic_Int           SB_Trans::Trans_Stream::cv_stream_total_count;
+SB_Atomic_Int           SB_Trans::Trans_Stream::cv_stream_total_hi_count;
 
 SB_Trans::Stream_Base::Stream_Base() {
 }
@@ -118,7 +137,6 @@ SB_Trans::Trans_Stream::Trans_Stream(int pv_stream_type)
   ip_event_mgr(NULL),
   ip_ms_lim_q(NULL),
   ip_ms_recv_q(NULL),
-  iv_aggr_reply_q("q-trans-stream-aggr-reply-md"),
   iv_generation(0),
   iv_ic(false),
   iv_ms_abandon_callback(NULL),
@@ -128,8 +146,14 @@ SB_Trans::Trans_Stream::Trans_Stream(int pv_stream_type)
   iv_msgid_reqid_map("map-trans-stream-msgid-reqid"),
   iv_open_nid(-1),
   iv_open_pid(-1),
+#ifdef SQ_PHANDLE_VERIFIER
+  iv_open_verif(-1),
+#endif
   iv_opened_nid(-1),
   iv_opened_pid(-1),
+#ifdef SQ_PHANDLE_VERIFIER
+  iv_opened_verif(-1),
+#endif
   iv_opened_type(-1),
   iv_post_mon_messages(true),
   iv_rep_map(QID_REP_MAP, "map-rep"),
@@ -153,14 +177,19 @@ SB_Trans::Trans_Stream::Trans_Stream(int                   pv_stream_type,
                                      SB_Ms_Tl_Event_Mgr   *pp_event_mgr,
                                      int                   pv_open_nid,
                                      int                   pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                     SB_Verif_Type         pv_open_verif,
+#endif
                                      int                   pv_opened_nid,
                                      int                   pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                     SB_Verif_Type         pv_opened_verif,
+#endif
                                      int                   pv_opened_type)
 : iv_aecid_trans_stream(SB_ECID_STREAM_TRANS),
   ip_event_mgr(pp_event_mgr),
   ip_ms_lim_q(pp_ms_lim_q),
   ip_ms_recv_q(pp_ms_recv_q),
-  iv_aggr_reply_q("q-trans-stream-aggr-reply-md"),
   iv_generation(0),
   iv_ic(pv_ic),
   iv_ms_abandon_callback(pv_ms_abandon_callback),
@@ -170,8 +199,15 @@ SB_Trans::Trans_Stream::Trans_Stream(int                   pv_stream_type,
   iv_msgid_reqid_map("map-trans-stream-msgid-reqid"),
   iv_open_nid(pv_open_nid),
   iv_open_pid(pv_open_pid),
+#ifdef SQ_PHANDLE_VERIFIER
+  iv_open_verif(pv_open_verif),
+#endif
   iv_opened_nid(pv_opened_nid),
   iv_opened_pid(pv_opened_pid),
+#ifdef SQ_PHANDLE_VERIFIER
+  iv_opened_verif(pv_opened_verif),
+#else
+#endif
   iv_opened_type(pv_opened_type),
   iv_post_mon_messages(true),
   iv_rep_map(QID_REP_MAP, "map-rep"),
@@ -221,43 +257,6 @@ SB_Trans::Trans_Stream::~Trans_Stream() {
 }
 
 //
-// Purpose: add aggr-reply
-//
-void SB_Trans::Trans_Stream::add_aggr_reply(Rd_Type     *pp_rd,
-                                            MS_PMH_Type *pp_hdr) {
-    const char *WHERE = "Trans_Stream::add_aggr_reply";
-    MS_Md_Type *lp_md;
-
-    Msg_Mgr::get_md(&lp_md, // add_aggr_reply
-                    this,
-                    NULL,
-                    true,   // send
-                    NULL,   // fserr
-                    WHERE,
-                    MD_STATE_RCVD_AGGR_REPLY);
-    SB_util_assert_pne(lp_md, NULL); // TODO: can't get md
-    set_basic_md(pp_rd, pp_hdr, lp_md, false);
-    lp_md->out.ip_recv_ctrl = NULL;
-    lp_md->out.iv_recv_ctrl_size = 0;
-    lp_md->out.ip_recv_data = NULL;
-    lp_md->out.iv_recv_data_size = 0;
-    add_aggr_reply_md(lp_md);
-}
-
-//
-// Purpose: add aggr-reply-md
-//
-void SB_Trans::Trans_Stream::add_aggr_reply_md(MS_Md_Type *pp_md) {
-    const char *WHERE = "Trans_Stream::add_aggr_reply_md";
-
-    if (gv_ms_trace)
-        trace_where_printf(WHERE, "stream=%p %s, adding msgid=%d, md=%p\n",
-                           pfp(this), ia_stream_name,
-                           pp_md->iv_link.iv_id.i, pfp(pp_md));
-    iv_aggr_reply_q.add(reinterpret_cast<SB_QL_Type *>(&pp_md->iv_link));
-}
-
-//
 // Purpose: add msgid to reqid map
 //
 void SB_Trans::Trans_Stream::add_msgid_to_reqid_map(int pv_reqid,
@@ -286,9 +285,14 @@ void SB_Trans::Trans_Stream::add_reply_piggyback(MS_Md_Type *pp_md) {
 //
 void SB_Trans::Trans_Stream::add_stream_acc_count(int pv_val) {
     const char *WHERE = "Trans_Stream::add_stream_acc_count";
+    int         lv_val;
 
-    cv_stream_total_count.add_val(pv_val);
-    cv_stream_acc_count.add_val(pv_val);
+    lv_val = cv_stream_total_count.add_and_fetch(pv_val);
+    if (lv_val > cv_stream_total_hi_count.read_val())
+        cv_stream_total_hi_count.set_val(lv_val);
+    lv_val = cv_stream_acc_count.add_and_fetch(pv_val);
+    if (lv_val > cv_stream_acc_hi_count.read_val())
+        cv_stream_acc_hi_count.set_val(lv_val);
     if (gv_ms_trace)
         trace_where_printf(WHERE, "stream acc-count=%d, total-count=%d\n",
                            get_stream_acc_count(),
@@ -301,9 +305,14 @@ void SB_Trans::Trans_Stream::add_stream_acc_count(int pv_val) {
 //
 void SB_Trans::Trans_Stream::add_stream_con_count(int pv_val) {
     const char *WHERE = "Trans_Stream::add_stream_con_count";
+    int         lv_val;
 
-    cv_stream_total_count.add_val(pv_val);
-    cv_stream_con_count.add_val(pv_val);
+    lv_val = cv_stream_total_count.add_and_fetch(pv_val);
+    if (lv_val > cv_stream_total_hi_count.read_val())
+        cv_stream_total_hi_count.set_val(lv_val);
+    lv_val = cv_stream_con_count.add_and_fetch(pv_val);
+    if (lv_val > cv_stream_con_hi_count.read_val())
+        cv_stream_con_hi_count.set_val(lv_val);
     if (gv_ms_trace)
         trace_where_printf(WHERE, "stream con-count=%d, total-count=%d\n",
                            get_stream_con_count(),
@@ -431,7 +440,11 @@ void SB_Trans::Trans_Stream::checksum_send_check(MS_Md_Type *pp_md,
 //
 void SB_Trans::Trans_Stream::close_nidpid_streams(bool pv_lock) {
     const char  *WHERE = "Trans_Stream::close_nidpid_streams";
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_NPV_Type *lp_npv;
+#else
     NidPid_Type *lp_nidpid;
+#endif
     int          lv_status;
 
     while (gv_sb_stream_nidpid_map.size()) {
@@ -447,24 +460,55 @@ void SB_Trans::Trans_Stream::close_nidpid_streams(bool pv_lock) {
             SB_util_assert_ieq(lv_status, 0); // sw fault
         }
 
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_NPVmap_Enum *lp_enum = gv_sb_stream_nidpid_map.keys();
+#else
         SB_LLmap_Enum *lp_enum = gv_sb_stream_nidpid_map.keys();
+#endif
         enum { MAX_STREAMS = 10 };
+#ifdef SQ_PHANDLE_VERIFIER
+        SB_NPV_Type   la_npv[MAX_STREAMS];
+#else
         SB_Int64_Type la_nidpids[MAX_STREAMS];
+#endif
         int lv_max;
         for (lv_max = 0;
              lp_enum->more() && (lv_max < MAX_STREAMS);
-             lv_max++)
+             lv_max++) {
+#ifdef SQ_PHANDLE_VERIFIER
+            la_npv[lv_max] = lp_enum->next()->iv_id.npv;
+#else
             la_nidpids[lv_max] = lp_enum->next()->iv_id.ll;
+#endif
+        }
         map_nidpid_unlock();
         for (int lv_inx = 0; lv_inx < lv_max; lv_inx++) {
             NPS_Node *lp_node =
+#ifdef SQ_PHANDLE_VERIFIER
+              static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.remove_lock(la_npv[lv_inx], true));
+#else
               static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.remove_lock(la_nidpids[lv_inx], true));
+#endif
             if (lp_node != NULL) {
+#ifdef SQ_PHANDLE_VERIFIER
+                lp_npv = reinterpret_cast<SB_NPV_Type *>(&lp_node->iv_link.iv_id);
+#else
                 lp_nidpid = reinterpret_cast<NidPid_Type *>(&lp_node->iv_link.iv_id);
+#endif
                 if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+                    trace_where_printf(WHERE, "removed/closing p-id=%d/%d/" PFVY ", stream=%p %s\n",
+#else
                     trace_where_printf(WHERE, "removed/closing p-id=%d/%d, stream=%p %s\n",
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+                                       lp_npv->iv_nid,
+                                       lp_npv->iv_pid,
+                                       lp_npv->iv_verif,
+#else
                                        lp_nidpid->u.i.iv_nid,
                                        lp_nidpid->u.i.iv_pid,
+#endif
                                        pfp(lp_node->ip_stream),
                                        lp_node->ip_stream->ia_stream_name);
                 close_stream(WHERE, lp_node->ip_stream, true, false, false);
@@ -935,9 +979,7 @@ void SB_Trans::Trans_Stream::finish_recv(Rd_Type     *pp_rd,
         //
 
         if (pp_hdr->iv_opts) {
-            if (pp_hdr->iv_opts & MS_PMH_OPT_AGGR_C2S)
-                finish_recv_server_deaggr(pp_rd, pp_hdr);
-            else if (pp_hdr->iv_opts & MS_PMH_OPT_FSREQ)
+            if (pp_hdr->iv_opts & MS_PMH_OPT_FSREQ)
                 finish_recv_server_fsreq(pp_rd, pp_hdr);
             else if (pp_hdr->iv_opts & MS_PMH_OPT_MSIC)
                 finish_recv_server_msinterceptor(pp_rd, pp_hdr);
@@ -946,132 +988,6 @@ void SB_Trans::Trans_Stream::finish_recv(Rd_Type     *pp_rd,
         } else
             finish_recv_server_normal(pp_rd, pp_hdr);
 
-    }
-}
-
-void SB_Trans::Trans_Stream::finish_recv_server_deaggr(Rd_Type     *pp_rd,
-                                                       MS_PMH_Type *pp_hdr) {
-    const char          *WHERE = "Trans_Stream::finish_recv_server_deaggr";
-    SB_Ms_Aggr_C2S_Type *lp_aggr;
-    MS_Md_Type          *lp_md;
-    char                *lp_req;
-    char                *lp_req_ctrl;
-    char                *lp_req_data;
-    char                *lp_req_end;
-    int                  lv_req_ctrl_len;
-    int                  lv_req_data_len;
-    int                  lv_reqid;
-
-    if (gv_ms_assert_chk) // finish_recv_server_deaggr (check client req)
-        checksum_recv_check(pp_rd, pp_hdr, false);
-
-
-    if (pp_hdr->iv_opts & MS_PMH_OPT_AGGR_S2C)
-        add_aggr_reply(pp_rd, pp_hdr);
-
-    lp_req = pp_rd->ip_data;
-    lp_req_end = lp_req + pp_rd->iv_data_len;
-    while (lp_req < lp_req_end) {
-        // get reqid/pri/rep-ctrl-max/rep-data-max
-        lp_req = reinterpret_cast<char *>(SB_AGGR_ALIGN_INT(lp_req));
-        SB_util_assert_ple(lp_req, lp_req_end);
-        lp_aggr = reinterpret_cast<SB_Ms_Aggr_C2S_Type *>(lp_req);
-        lv_reqid = lp_aggr->iv_reqid;
-        lp_req += sizeof(*lp_aggr);
-        SB_util_assert_ple(lp_req, lp_req_end);
-
-        // req-ctrl/req-data
-        lv_req_ctrl_len = lp_aggr->iv_req_ctrl_len;
-        lv_req_data_len = lp_aggr->iv_req_data_len;
-        if (lv_req_ctrl_len > 0) {
-            lp_req_ctrl = static_cast<char *>(MS_BUF_MGR_ALLOC(lv_req_ctrl_len));
-            // TODO: if can't get buffer
-            memcpy(lp_req_ctrl, lp_req, lv_req_ctrl_len);
-        } else
-            lp_req_ctrl = NULL;
-        lp_req += lv_req_ctrl_len;
-        SB_util_assert_ple(lp_req, lp_req_end);
-        if (lv_req_data_len > 0) {
-            lp_req_data = static_cast<char *>(MS_BUF_MGR_ALLOC(lv_req_data_len));
-            // TODO: if can't get buffer
-            memcpy(lp_req_data, lp_req, lv_req_data_len);
-        } else
-            lp_req_data = NULL;
-        lp_req += lv_req_data_len;
-        SB_util_assert_ple(lp_req, lp_req_end);
-
-        // fill out md for delivery
-        Msg_Mgr::get_md(&lp_md, // finish_recv_server_deaggr
-                        this,
-                        NULL,
-                        false,  // recv
-                        NULL,   // fserr
-                        WHERE,
-                        MD_STATE_RCVD_AGGR);
-        SB_util_assert_pne(lp_md, NULL); // TODO: can't get md
-        add_msgid_to_reqid_map(lv_reqid, lp_md->iv_link.iv_id.i);
-
-        if (gv_ms_trace)
-            trace_where_printf(WHERE,
-                               "stream=%p %s, adding md (reqid=%d, msgid=%d, md=%p) to server recv queue\n",
-                               pfp(this), ia_stream_name,
-                               lv_reqid,
-                               lp_md->iv_link.iv_id.i, pfp(lp_md));
-
-        set_basic_md(pp_rd, pp_hdr, lp_md, false);
-        lp_md->out.iv_pri = lp_aggr->iv_pri;
-        lp_md->out.ip_recv_ctrl = lp_req_ctrl;
-        lp_md->out.iv_recv_ctrl_size = lv_req_ctrl_len;
-        lp_md->out.ip_recv_data = lp_req_data;
-        lp_md->out.iv_recv_data_size = lv_req_data_len;
-        lp_md->out.iv_recv_ctrl_max = lp_aggr->iv_rep_ctrl_max;
-        lp_md->out.iv_recv_data_max = lp_aggr->iv_rep_data_max;
-
-        // add it to recv q
-        if ((iv_ms_lim_callback != NULL) &&
-            iv_ms_lim_callback(lp_md->out.iv_ptype, // non-mon-msg
-                               reinterpret_cast<short *>(lp_md->out.ip_recv_ctrl),
-                               lp_md->out.iv_recv_ctrl_size,
-                               lp_md->out.ip_recv_data,
-                               lp_md->out.iv_recv_data_size)) {
-            ip_ms_lim_q->add(&lp_md->iv_link);
-#ifdef USE_EVENT_REG
-            ip_event_mgr->set_event_reg(INTR);
-#else
-            ip_event_mgr->set_event_all(INTR);
-#endif
-        } else {
-            ip_ms_recv_q->add(&lp_md->iv_link);
-#ifdef USE_EVENT_REG
-            ip_event_mgr->set_event_reg(LREQ);
-#else
-            ip_event_mgr->set_event_all(LREQ);
-#endif
-        }
-    }
-    // we own the buffers until they're copied
-    pp_rd->ip_ctrl = NULL;
-    pp_rd->ip_data = NULL;
-
-    if (!(pp_hdr->iv_opts & MS_PMH_OPT_AGGR_S2C)) {
-        Msg_Mgr::get_md(&lp_md, // finish_recv_server_deaggr
-                        this,
-                        NULL,
-                        false,  // recv
-                        NULL,   // fserr
-                        WHERE,
-                        MD_STATE_MSG_DEAGGR);
-        SB_util_assert_pne(lp_md, NULL); // TODO: can't get md
-        // send reply
-        exec_reply(lp_md,
-                   0,                         // src
-                   pp_rd->iv_mpi_source_rank, // dest
-                   pp_hdr->iv_reqid,    // reqid
-                   NULL,                      // req_ctrl
-                   0,                         // req_ctrl_size
-                   NULL,                      // req_data
-                   0,                         // req_data_size
-                   XZFIL_ERR_OK);             // fserr
     }
 }
 
@@ -1270,30 +1186,26 @@ void SB_Trans::Trans_Stream::finish_recv_server_normal(Rd_Type     *pp_rd,
 
         gv_ms_ic_ctr.ctr_bump_msgs_rcvd();
 
-        if (pp_hdr->iv_opts & MS_PMH_OPT_AGGR_S2C)
-            add_aggr_reply(pp_rd, pp_hdr);
-        else {
-            // add it to recv q
-            if ((iv_ms_lim_callback != NULL) &&
-                iv_ms_lim_callback(lp_md->out.iv_ptype, // non-mon-msg
-                                   reinterpret_cast<short *>(lp_md->out.ip_recv_ctrl),
-                                   lp_md->out.iv_recv_ctrl_size,
-                                   lp_md->out.ip_recv_data,
-                                   lp_md->out.iv_recv_data_size)) {
-                ip_ms_lim_q->add(&lp_md->iv_link);
+        // add it to recv q
+        if ((iv_ms_lim_callback != NULL) &&
+            iv_ms_lim_callback(lp_md->out.iv_ptype, // non-mon-msg
+                               reinterpret_cast<short *>(lp_md->out.ip_recv_ctrl),
+                               lp_md->out.iv_recv_ctrl_size,
+                               lp_md->out.ip_recv_data,
+                               lp_md->out.iv_recv_data_size)) {
+            ip_ms_lim_q->add(&lp_md->iv_link);
 #ifdef USE_EVENT_REG
-                ip_event_mgr->set_event_reg(INTR);
+            ip_event_mgr->set_event_reg(INTR);
 #else
-                ip_event_mgr->set_event_all(INTR);
+            ip_event_mgr->set_event_all(INTR);
 #endif
-            } else {
-                ip_ms_recv_q->add(&lp_md->iv_link);
+        } else {
+            ip_ms_recv_q->add(&lp_md->iv_link);
 #ifdef USE_EVENT_REG
-                ip_event_mgr->set_event_reg(LREQ);
+            ip_event_mgr->set_event_reg(LREQ);
 #else
-                ip_event_mgr->set_event_all(LREQ);
+            ip_event_mgr->set_event_all(LREQ);
 #endif
-            }
         }
     }
 }
@@ -1622,26 +1534,6 @@ void SB_Trans::Trans_Stream::free_reply_md(MS_Md_Type *pp_md) {
 }
 
 //
-// Purpose: get aggr-reply-md
-//
-MS_Md_Type *SB_Trans::Trans_Stream::get_aggr_reply_md() {
-    const char *WHERE = "Trans_Stream::get_aggr_reply_md";
-    MS_Md_Type *lp_md;
-    int         lv_msgid;
-
-    lp_md = static_cast<MS_Md_Type *>(iv_aggr_reply_q.remove());
-    if (lp_md == NULL)
-        lv_msgid = -1;
-    else
-        lv_msgid = lp_md->iv_link.iv_id.i;
-    if (gv_ms_trace)
-        trace_where_printf(WHERE, "stream=%p %s, removing msgid=%d, md=%p\n",
-                           pfp(this), ia_stream_name,
-                           lv_msgid, pfp(lp_md));
-    return lp_md;
-}
-
-//
 // Purpose: get hdr type
 //
 void SB_Trans::Trans_Stream::get_hdr_type(int pv_hdr_type, char *pp_hdr_type) {
@@ -1742,6 +1634,15 @@ int SB_Trans::Trans_Stream::get_remote_pid() {
     return iv_remote_pid;
 }
 
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Purpose: get remote pid
+//
+SB_Verif_Type SB_Trans::Trans_Stream::get_remote_verif() {
+    return iv_remote_verif;
+}
+#endif
+
 //
 // Purpose: get shutdown
 //
@@ -1758,6 +1659,14 @@ int SB_Trans::Trans_Stream::get_stream_acc_count() {
 }
 
 //
+// Purpose: get accept stream hi-count
+// (static)
+//
+int SB_Trans::Trans_Stream::get_stream_acc_hi_count() {
+    return cv_stream_acc_hi_count.read_val();
+}
+
+//
 // Purpose: get connect stream count
 // (static)
 //
@@ -1766,11 +1675,26 @@ int SB_Trans::Trans_Stream::get_stream_con_count() {
 }
 
 //
+// Purpose: get connect stream hi-count
+// (static)
+//
+int SB_Trans::Trans_Stream::get_stream_con_hi_count() {
+    return cv_stream_con_hi_count.read_val();
+}
+//
 // Purpose: get total stream count
 // (static)
 //
 int SB_Trans::Trans_Stream::get_stream_total_count() {
     return cv_stream_total_count.read_val();
+}
+
+//
+// Purpose: get total stream hi-count
+// (static)
+//
+int SB_Trans::Trans_Stream::get_stream_total_hi_count() {
+    return cv_stream_total_hi_count.read_val();
 }
 
 //
@@ -1811,17 +1735,40 @@ bool SB_Trans::Trans_Stream::is_self() {
 //
 // Purpose: add stream to nid/pid map
 //
+#ifdef SQ_PHANDLE_VERIFIER
+void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid, SB_Verif_Type pv_verif) {
+#else
 void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid) {
+#endif
     const char  *WHERE = "Trans_Stream::map_nidpid_add_stream";
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_NPV_Type  lv_npv;
+#else
     NidPid_Type  lv_nidpid;
+#endif
 
     if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+        trace_where_printf(WHERE, "ENTER stream=%p %s, p-id=%d/%d/" PFVY "\n",
+#else
         trace_where_printf(WHERE, "ENTER stream=%p %s, p-id=%d/%d\n",
+#endif
                            pfp(this), ia_stream_name,
+#ifdef SQ_PHANDLE_VERIFIER
+                           pv_nid, pv_pid, pv_verif);
+#else
                            pv_nid, pv_pid);
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+    lv_npv.iv_nid = pv_nid;
+    lv_npv.iv_pid = pv_pid;
+    lv_npv.iv_verif = pv_verif;
+    NPS_Node *lp_node = new_NPS_Node(lv_npv, this);
+#else
     lv_nidpid.u.i.iv_nid = pv_nid;
     lv_nidpid.u.i.iv_pid = pv_pid;
     NPS_Node *lp_node = new_NPS_Node(lv_nidpid.u.iv_nidpid, this);
+#endif
     gv_sb_stream_nidpid_map.put(&lp_node->iv_link);
 }
 
@@ -1829,6 +1776,16 @@ void SB_Trans::Trans_Stream::map_nidpid_add_stream(int pv_nid, int pv_pid) {
 // Purpose: map nid/pid to stream
 // (static)
 //
+#ifdef SQ_PHANDLE_VERIFIER
+SB_Trans::Trans_Stream *SB_Trans::Trans_Stream::map_nidpid_key_to_stream(SB_NPV_Type pv_npv,
+                                                                         bool         pv_lock) {
+
+    return map_nidpid_to_stream(pv_npv.iv_nid,
+                                pv_npv.iv_pid,
+                                pv_npv.iv_verif,
+                                pv_lock);
+}
+#else
 SB_Trans::Trans_Stream *SB_Trans::Trans_Stream::map_nidpid_key_to_stream(SB_Int64_Type pv_nidpid,
                                                                          bool          pv_lock) {
     NidPid_Type lv_nidpid;
@@ -1836,9 +1793,18 @@ SB_Trans::Trans_Stream *SB_Trans::Trans_Stream::map_nidpid_key_to_stream(SB_Int6
     lv_nidpid.u.iv_nidpid = pv_nidpid;
     return map_nidpid_to_stream(lv_nidpid.u.i.iv_nid, lv_nidpid.u.i.iv_pid, pv_lock);
 }
+#endif
 
+#ifdef SQ_PHANDLE_VERIFIER
+SB_NPVmap_Enum *SB_Trans::Trans_Stream::map_nidpid_keys() {
+#else
 SB_LLmap_Enum *SB_Trans::Trans_Stream::map_nidpid_keys() {
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_NPVmap_Enum *lp_enum;
+#else
     SB_LLmap_Enum *lp_enum;
+#endif
 
     lp_enum = gv_sb_stream_nidpid_map.keys();
     return lp_enum;
@@ -1857,30 +1823,66 @@ int SB_Trans::Trans_Stream::map_nidpid_trylock() {
 //
 bool SB_Trans::Trans_Stream::map_nidpid_remove(bool pv_lock) {
     const char  *WHERE = "Trans_Stream::map_nidpid_remove";
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_NPV_Type  lv_npv;
+#else
     NidPid_Type  lv_nidpid;
+#endif
     bool         lv_ret;
 
     if (iv_open_nid >= 0) {
         if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+            trace_where_printf(WHERE, "ENTER stream=%p %s, p-id=%d/%d/" PFVY "\n",
+#else
             trace_where_printf(WHERE, "ENTER stream=%p %s, p-id=%d/%d\n",
+#endif
                                pfp(this), ia_stream_name,
+#ifdef SQ_PHANDLE_VERIFIER
+                               iv_open_nid, iv_open_pid, iv_open_verif);
+#else
                                iv_open_nid, iv_open_pid);
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+        lv_npv.iv_nid = iv_open_nid;
+        lv_npv.iv_pid = iv_open_pid;
+        lv_npv.iv_verif = iv_open_verif;
+        NPS_Node *lp_node =
+          static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.remove_lock(lv_npv, pv_lock));
+#else
         lv_nidpid.u.i.iv_nid = iv_open_nid;
         lv_nidpid.u.i.iv_pid = iv_open_pid;
         NPS_Node *lp_node =
           static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.remove_lock(lv_nidpid.u.iv_nidpid, pv_lock));
+#endif
         if (lp_node == NULL) {
             lv_ret = false;
             if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+                trace_where_printf(WHERE, "no stream removed, p-id=%d/%d/" PFVY "\n",
+#else
                 trace_where_printf(WHERE, "no stream removed, p-id=%d/%d\n",
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+                                   iv_open_nid, iv_open_pid, iv_open_verif);
+#else
                                    iv_open_nid, iv_open_pid);
+#endif
         } else {
             lv_ret = true;
             if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+                trace_where_printf(WHERE, "removed actual stream=%p %s, p-id=%d/%d/" PFVY "\n",
+#else
                 trace_where_printf(WHERE, "removed actual stream=%p %s, p-id=%d/%d\n",
+#endif
                                    pfp(lp_node->ip_stream),
                                    lp_node->ip_stream->ia_stream_name,
+#ifdef SQ_PHANDLE_VERIFIER
+                                   iv_open_nid, iv_open_pid, iv_open_verif);
+#else
                                    iv_open_nid, iv_open_pid);
+#endif
             delete lp_node;
         }
     } else
@@ -1893,31 +1895,71 @@ bool SB_Trans::Trans_Stream::map_nidpid_remove(bool pv_lock) {
 //
 void SB_Trans::Trans_Stream::map_nidpid_remove_stream(const char *pp_where,
                                                       int         pv_nid,
-                                                      int         pv_pid) {
+                                                      int         pv_pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                                     ,SB_Verif_Type  pv_verif
+#endif
+                                                     ) {
     const char  *WHERE = "Trans_Stream::map_nidpid_remove_stream";
     char         la_where[100];
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_NPV_Type  lv_npv;
+#else
     NidPid_Type  lv_nidpid;
+#endif
 
     if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
         sprintf(la_where, "%s(%s)", WHERE, pp_where);
     if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+        trace_where_printf(la_where, "ENTER stream=%p %s, p-id=%d/%d/" PFVY "\n",
+#else
         trace_where_printf(la_where, "ENTER stream=%p %s, p-id=%d/%d\n",
+#endif
                            pfp(this), ia_stream_name,
+#ifdef SQ_PHANDLE_VERIFIER
+                           pv_nid, pv_pid, pv_verif);
+#else
                            pv_nid, pv_pid);
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+    lv_npv.iv_nid = pv_nid;
+    lv_npv.iv_pid = pv_pid;
+    lv_npv.iv_verif = pv_verif;
+    NPS_Node *lp_node =
+      static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.remove(lv_npv));
+#else
     lv_nidpid.u.i.iv_nid = pv_nid;
     lv_nidpid.u.i.iv_pid = pv_pid;
     NPS_Node *lp_node =
       static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.remove(lv_nidpid.u.iv_nidpid));
+#endif
     if (lp_node == NULL) {
         if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+            trace_where_printf(la_where, "no stream removed, p-id=%d/%d/" PFVY "\n",
+#else
             trace_where_printf(la_where, "no stream removed, p-id=%d/%d\n",
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+                               pv_nid, pv_pid, pv_verif);
+#else
                                pv_nid, pv_pid);
+#endif
     } else {
         if (gv_ms_trace || (gv_ms_trace_xx & MS_TRACE_XX_NIDPID))
+#ifdef SQ_PHANDLE_VERIFIER
+            trace_where_printf(la_where, "removed actual stream=%p %s, p-id=%d/%d/" PFVY "\n",
+#else
             trace_where_printf(la_where, "removed actual stream=%p %s, p-id=%d/%d\n",
+#endif
                                pfp(lp_node->ip_stream),
                                lp_node->ip_stream->ia_stream_name,
+#ifdef SQ_PHANDLE_VERIFIER
+                               pv_nid, pv_pid, pv_verif);
+#else
                                pv_nid, pv_pid);
+#endif
         delete lp_node;
     }
 }
@@ -1933,18 +1975,34 @@ int SB_Trans::Trans_Stream::map_nidpid_size() {
 // Purpose: map nid/pid to stream
 // (static)
 //
-SB_Trans::Trans_Stream *SB_Trans::Trans_Stream::map_nidpid_to_stream(int  pv_nid,
-                                                                     int  pv_pid,
-                                                                     bool pv_lock) {
+SB_Trans::Trans_Stream *SB_Trans::Trans_Stream::map_nidpid_to_stream(int           pv_nid,
+                                                                     int           pv_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                                                     SB_Verif_Type pv_verif,
+#endif
+                                                                     bool          pv_lock) {
     const char *WHERE = "Trans_Stream::map_nidpid_to_stream";
     NPS_Node   *lp_node;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_NPV_Type lv_npv;
+#else
     NidPid_Type lv_nidpid;
+#endif
 
+#ifdef SQ_PHANDLE_VERIFIER
+    lv_npv.iv_nid = pv_nid;
+    lv_npv.iv_pid = pv_pid;
+    lv_npv.iv_verif = pv_verif;
+    lp_node =
+      static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.get_lock(lv_npv,
+                                                               pv_lock));
+#else
     lv_nidpid.u.i.iv_nid = pv_nid;
     lv_nidpid.u.i.iv_pid = pv_pid;
     lp_node =
       static_cast<NPS_Node *>(gv_sb_stream_nidpid_map.get_lock(lv_nidpid.u.iv_nidpid,
                                                                pv_lock));
+#endif
     if (lp_node == NULL) {
         if (gv_ms_trace)
             trace_where_printf(WHERE, "no stream for p-id=%d/%d\n",
@@ -2348,6 +2406,9 @@ void SB_Trans::Trans_Stream::send_close_ind() {
         lp_md->out.iv_fserr = XZFIL_ERR_OK;
         lp_md->out.iv_nid = iv_remote_nid;
         lp_md->out.iv_pid = iv_remote_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        lp_md->out.iv_verif = iv_remote_verif;
+#endif
         lp_md->out.iv_msg_type = MS_PMH_TYPE_CLOSE;
         lp_md->out.iv_ptype = iv_opened_type;
         lp_md->out.iv_recv_req_id = -1;
@@ -2422,14 +2483,11 @@ void SB_Trans::Trans_Stream::set_basic_md(Rd_Type     *pp_rd,
     pp_md->out.iv_ldone = false;
     pp_md->out.iv_fserr = XZFIL_ERR_OK;
     pp_md->out.iv_nid = iv_remote_nid;
+#ifdef SQ_PHANDLE_VERIFIER
+    pp_md->out.iv_verif = iv_remote_verif;
+#endif
     lv_opts = 0;
     if (pp_hdr->iv_opts) {
-        if (pp_hdr->iv_opts & MS_PMH_OPT_AGGR)
-            lv_opts |= MS_OPTS_AGGR;
-        if (pp_hdr->iv_opts & MS_PMH_OPT_AGGR_C2S)
-            lv_opts |= MS_OPTS_AGGR_C2S;
-        if (pp_hdr->iv_opts & MS_PMH_OPT_AGGR_S2C)
-            lv_opts |= MS_OPTS_AGGR_S2C;
         if (pp_hdr->iv_opts & MS_PMH_OPT_FSREQ)
             lv_opts |= MS_OPTS_FSREQ;
         if (pp_hdr->iv_opts & MS_PMH_OPT_MSIC)
@@ -2468,24 +2526,49 @@ void SB_Trans::Trans_Stream::set_prog(const char *pp_prog) {
 }
 
 void SB_Trans::Trans_Stream::set_stream_name() {
-    char *lp_p;
-    int   lv_nid;
-    int   lv_pid;
+    char          *lp_p;
+    int            lv_nid;
+    int            lv_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type  lv_verif;
+#endif
 
     if (iv_open_nid >= 0) {
         lv_nid = iv_open_nid;
         lv_pid = iv_open_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        lv_verif = iv_open_verif;
+#endif
     } else {
         lv_nid = iv_opened_nid;
         lv_pid = iv_opened_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        lv_verif = iv_opened_verif;
+#endif
     }
     lp_p = strchr(ia_stream_name, '=');
     if (lp_p == NULL)
+#ifdef SQ_PHANDLE_VERIFIER
+        sprintf(ia_stream_name, "p-id=%d/%d/" PFVY " (%s-%s)",
+#else
         sprintf(ia_stream_name, "p-id=%d/%d (%s-%s)",
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+                lv_nid, lv_pid, lv_verif, ia_pname, ia_prog);
+#else
                 lv_nid, lv_pid, ia_pname, ia_prog);
+#endif
     else 
+#ifdef SQ_PHANDLE_VERIFIER
+        sprintf(&lp_p[1], "%d/%d/" PFVY " (%s-%s)",
+#else
         sprintf(&lp_p[1], "%d/%d (%s-%s)",
+#endif
+#ifdef SQ_PHANDLE_VERIFIER
+                lv_nid, lv_pid, lv_verif, ia_pname, ia_prog);
+#else
                 lv_nid, lv_pid, ia_pname, ia_prog);
+#endif
 }
 
 //

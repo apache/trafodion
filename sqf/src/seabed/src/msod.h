@@ -37,6 +37,8 @@ typedef struct Ms_Od_Type {
     char                    ia_prog[SB_MAX_PROG+1];
     SB_Trans::Trans_Stream *ip_stream;
     bool                    iv_death_notif;
+    bool                    iv_fs_closed;
+    bool                    iv_fs_open;
     SB_Thread::ECM          iv_mutex;
     bool                    iv_need_open;
     int                     iv_nid;
@@ -44,6 +46,9 @@ typedef struct Ms_Od_Type {
     int                     iv_pid;
     int                     iv_ref_count;
     bool                    iv_self;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type           iv_verif;
+#endif
 } Ms_Od_Type;
 
 class Ms_Od_Table_Entry_Mgr : public SB_Table_Entry_Mgr<Ms_Od_Type> {

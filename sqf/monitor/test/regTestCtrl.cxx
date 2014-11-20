@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include <set>
 
@@ -31,6 +30,7 @@ using namespace std;
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
@@ -40,6 +40,7 @@ bool tracing = false;
 
 const char *MyName;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 typedef struct {
@@ -149,7 +150,7 @@ void cleanup ()
 
     if ( tracing ) printf ("[%s] calling Finalize!\n", MyName);
 
-    MPI_Close_port( util.getPort() );
+    XMPI_Close_port( util.getPort() );
     MPI_Finalize ();
     if ( gp_local_mon_io )
     {
@@ -375,12 +376,8 @@ bool getAllRegValues( ConfigType type, const char *group)
 int main (int argc, char *argv[])
 {
     bool testSuccess = true;
-    int MyRank = -1;
 
     if ( tracing ) util.setTrace (tracing);
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     MyName = util.getProcName();

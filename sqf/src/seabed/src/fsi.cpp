@@ -1910,7 +1910,11 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
             ms_util_fill_phandle_name(&lv_phandle,
                                       lp_mon_msg->u.request.u.close.process_name,
                                       lp_mon_msg->u.request.u.close.nid,
-                                      lp_mon_msg->u.request.u.close.pid);
+                                      lp_mon_msg->u.request.u.close.pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                     ,lp_mon_msg->u.request.u.close.verifier
+#endif
+                                     );
             lp_phandle = &lv_phandle;
             SB_UTRACE_API_ADD3(SB_UTRACE_API_OP_FS_COMP_SM_CLOSE,
                                lv_sre.sre_msgId,
@@ -1953,7 +1957,11 @@ short fs_int_fs_file_awaitiox_ms(FS_Fd_Type      *pp_fd,
             ms_util_fill_phandle_name(&lv_phandle,
                                       lp_mon_msg->u.request.u.death.process_name,
                                       lp_mon_msg->u.request.u.death.nid,
-                                      lp_mon_msg->u.request.u.death.pid);
+                                      lp_mon_msg->u.request.u.death.pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                     ,lp_mon_msg->u.request.u.death.verifier
+#endif
+                                     );
             lp_phandle = &lv_phandle;
             memcpy(&lv_sys_msg.u_z_msg.z_procdeath.z_phandle,
                    lp_phandle,
@@ -2671,7 +2679,7 @@ short fs_int_fs_file_open_ph2(FS_Fd_Type *pp_fd,
                                     &pp_fd->iv_oid));
     else
         lv_fserr = static_cast<short>(
-          msg_mon_open_process(const_cast<char *>(pp_filename),
+          msg_mon_open_process_fs(const_cast<char *>(pp_filename),
                                &pp_fd->iv_phandle,
                                &pp_fd->iv_oid));
     if (lv_fserr != XZFIL_ERR_OK)
@@ -3460,6 +3468,9 @@ void fs_int_process_fsreq(MS_Md_Type *pp_md) {
         lp_md->out.iv_ldone = false;
         lp_md->out.iv_nid = gv_ms_su_nid;
         lp_md->out.iv_pid = gv_ms_su_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        lp_md->out.iv_verif = gv_ms_su_verif;
+#endif
         lp_md->out.iv_recv_req_id = 0;
         lp_md->out.iv_pri = -1;
         lp_md->out.iv_recv_mpi_source_rank = -1;

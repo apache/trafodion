@@ -23,10 +23,10 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 #include "tmSyncCtrl.h"
 
 #include <sys/time.h>
@@ -40,6 +40,7 @@ bool tracing = false;
 
 const char *MyName;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0};
 
 #include <queue>
@@ -391,11 +392,13 @@ int get_tm_processes( int tmCount )
     msg->u.request.type = ReqType_ProcessInfo;
     msg->u.request.u.process_info.nid = util.getNid();
     msg->u.request.u.process_info.pid = util.getPid();
+    msg->u.request.u.process_info.verifier = util.getVerifier();
+    msg->u.request.u.process_info.process_name[0] = 0;
     msg->u.request.u.process_info.target_nid = -1;
     msg->u.request.u.process_info.target_pid = -1;
     msg->u.request.u.process_info.type = ProcessType_DTM;
 
-    msg->u.request.u.process_info.process_name[0] = 0;
+    msg->u.request.u.process_info.target_process_name[0] = 0;
     gp_local_mon_io->send_recv( msg );
     count = sizeof (*msg);
     status.MPI_TAG = msg->reply_tag;
@@ -1076,15 +1079,15 @@ bool openCtrl ()
     char   ctrlPort[MPI_MAX_PORT_NAME];
     bool result = false;
 
-    if (util.requestOpen ( "$CTRLR", 0, ctrlPort ))
+    if (util.requestOpen ( "$CTRLR", -1, 0, ctrlPort ))
     {
         printf ("[%s] opened $CTRLR port=%s\n", MyName, ctrlPort);
 
-        int rc = MPI_Comm_connect (ctrlPort, MPI_INFO_NULL,
+        int rc = XMPI_Comm_connect (ctrlPort, MPI_INFO_NULL,
                                    0, MPI_COMM_SELF, &CtrlComm);
         if (rc == MPI_SUCCESS)
         {
-            MPI_Comm_set_errhandler (CtrlComm, MPI_ERRORS_RETURN);
+            XMPI_Comm_set_errhandler (CtrlComm, MPI_ERRORS_RETURN);
 
             printf ("[%s] connected to process.\n", MyName);
             result = true;
@@ -1095,12 +1098,12 @@ bool openCtrl ()
             tmSyncResults_t sendBuf
                 = {util.getNid(), util.getPid(), 0, 0, 0, 0, 0};
 
-            rc = MPI_Send ((void *) &sendBuf,
+            rc = XMPI_Send ((void *) &sendBuf,
                            sizeof(tmSyncResults_t)/sizeof(int),
                            MPI_INT, 0, 100 /* USER_TAG */, CtrlComm);
             if (rc != MPI_SUCCESS)
             {
-                printf ("[%s] MPI_Send failed. rc = (%d)\n", MyName, rc);
+                printf ("[%s] XMPI_Send failed. rc = (%d)\n", MyName, rc);
             }
 
         }
@@ -1136,7 +1139,7 @@ void doTest1(  )
                 printf("[%s] - Test1 - Stopping to halt node\n",MyName);
                 fflush (stdout);
                 util_set_core_free();
-                MPI_Abort (MPI_COMM_WORLD, 99);
+                abort();
              }
              else
              {
@@ -1155,7 +1158,7 @@ void doTest1(  )
                 {
                     printf("[%s] Test1 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
                 printf("[%s] Test1 - Wait to commit or abort TM sync data.\n",MyName);
              }
@@ -1168,7 +1171,7 @@ void doTest1(  )
                     {
                         printf("[%s] Test1 - Failed to receive notice! Aborting\n",MyName);
                         fflush (stdout);
-                        MPI_Abort( MPI_COMM_WORLD, 99 );
+                        abort();
                     }
                 }
                 printf("[%s] Test1 - Dead TM count =%d\n",MyName,dead_tm_count);
@@ -1204,7 +1207,7 @@ void doTest3()
                 {
                     printf("[%s] Test3 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
             }
             else
@@ -1214,7 +1217,7 @@ void doTest3()
                 {
                     printf("[%s] Test3 - Failed to receive unsolicited message! Aborting\n",MyName);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99 );
+                    abort();
                 }
             }
             printf("[%s] Test3 - Wait to commit or abort TM sync data.\n",MyName);
@@ -1224,7 +1227,7 @@ void doTest3()
                 {
                     printf("[%s] Test3 - Failed to receive notice! Aborting\n",MyName);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99 );
+                    abort();
                 }
                 else
                 {
@@ -1256,7 +1259,7 @@ void doTest4()
                 {
                     printf("[%s] Test4 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
             }
             else
@@ -1266,7 +1269,7 @@ void doTest4()
                 {
                     printf("[%s] Test4 - Failed to receive unsolicited message! Aborting\n",MyName);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99 );
+                    abort();
                 }
             }
             printf("[%s] Test4 - Wait to commit or abort TM sync data.\n",MyName);
@@ -1276,7 +1279,7 @@ void doTest4()
                 {
                     printf("[%s] Test4 - Failed to receive notice! Aborting\n",MyName);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99 );
+                    abort();
                 }
                 else
                 {
@@ -1311,7 +1314,7 @@ void doTest5()
                 {
                     printf("[%s] Test5 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
                 trans_starts++;
                 if ( trans_starts%(util.getNid()+1) == 0 ) usleep(1000*util.getNid());
@@ -1326,7 +1329,7 @@ void doTest5()
                     {
                         printf("[%s] Test5 - Failed to receive notice! Aborting\n",MyName);
                         fflush (stdout);
-                        MPI_Abort( MPI_COMM_WORLD, 99 );
+                        abort();
                     }
                 }
             }
@@ -1357,7 +1360,7 @@ void doTest6()
                 {
                     printf("[%s] Test6 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
                 trans_starts++;
                 if ( trans_starts%(util.getNid()+1) == 0 ) usleep(1000*util.getNid());
@@ -1372,7 +1375,7 @@ void doTest6()
                     {
                         printf("[%s] Test6 - Failed to receive notice! Aborting\n",MyName);
                         fflush (stdout);
-                        MPI_Abort( MPI_COMM_WORLD, 99 );
+                        abort();
                     }
                 }
             }
@@ -1392,7 +1395,7 @@ void doTest7()
                 printf("[%s] - Test7 - Stopping to halt node\n",MyName);
                 fflush (stdout);
                 util_set_core_free();
-                MPI_Abort (MPI_COMM_WORLD, 99);
+                abort();
             }
             else
             {
@@ -1411,7 +1414,7 @@ void doTest7()
                 {
                     printf("[%s] Test7 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
                 printf("[%s] Test7 - Wait to commit or abort TM sync data.\n",MyName);
             }
@@ -1423,7 +1426,7 @@ void doTest7()
                     {
                         printf("[%s] Test7 - Failed to receive notice! Aborting\n",MyName);
                         fflush (stdout);
-                        MPI_Abort( MPI_COMM_WORLD, 99 );
+                        abort();
                     }
                 }
 #if 0
@@ -1464,7 +1467,7 @@ void doTest8()
                 printf("[%s] - Test8 - Stopping to halt node\n",MyName);
                 fflush (stdout);
                 util_set_core_free();
-                MPI_Abort (MPI_COMM_WORLD, 99);
+                abort();
              }
              else
              {
@@ -1479,7 +1482,7 @@ void doTest8()
                         // does not know about the testtm program
                         usleep(SYNC_DELAY*3);
                         util_set_core_free();
-                        MPI_Abort (MPI_COMM_WORLD, 99);
+                        abort();
                     }
                 }
                 else
@@ -1503,7 +1506,7 @@ void doTest8()
                     {
                         printf("[%s] Test8 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                         fflush (stdout);
-                        MPI_Abort( MPI_COMM_WORLD, 99);
+                        abort();
                     }
                     trans_starts++;
                 } while ( trans_starts < MAX_SYNCS );
@@ -1546,7 +1549,7 @@ void doTest8()
                     {
                         printf("[%s] Test8 - Failed to receive notice! Aborting\n",MyName);
                         fflush (stdout);
-                        MPI_Abort( MPI_COMM_WORLD, 99 );
+                        abort();
                     }
                 }
                 printf("[%s] Test8 - Dead TM count =%d\n",MyName,dead_tm_count);
@@ -1586,7 +1589,7 @@ void doTest9()
                 {
                     printf("[%s] Test9 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                     fflush (stdout);
-                    MPI_Abort( MPI_COMM_WORLD, 99);
+                    abort();
                 }
                 trans_starts++;
             } while ( trans_starts < MAX_SYNCS );
@@ -1600,7 +1603,7 @@ void doTest9()
                    {
                        printf("[%s] Test9 - Failed to receive notice! Aborting\n",MyName);
                        fflush (stdout);
-                       MPI_Abort( MPI_COMM_WORLD, 99 );
+                       abort();
                    }
                }
                printf("[%s] Test9 - DEBUG commit=%d, abort=%d, nodes=%d, active=%d\n",MyName,trans_commit,trans_abort,NumNodes,trans_active);
@@ -1636,7 +1639,7 @@ void doTest10()
                printf("[%s] - Test10 - Stopping to halt node\n",MyName);
                fflush (stdout);
                util_set_core_free();
-               MPI_Abort (MPI_COMM_WORLD, 99);
+               abort();
             }
             else
             {
@@ -1667,7 +1670,7 @@ void doTest10()
                    {
                        printf("[%s] Test10 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
                        fflush (stdout);
-                       MPI_Abort( MPI_COMM_WORLD, 99);
+                       abort();
                    }
                    trans_starts++;
                } while ( trans_starts < MAX_SYNCS );
@@ -1709,7 +1712,7 @@ void doTest10()
                    {
                        printf("[%s] Test10 - Failed to receive notice! Aborting\n",MyName);
                        fflush (stdout);
-                       MPI_Abort( MPI_COMM_WORLD, 99 );
+                       abort();
                    }
                }
                printf("[%s] Test10 - Dead TM count =%d\n",MyName,dead_tm_count);
@@ -1754,7 +1757,7 @@ void doTest11()
         {
             printf("[%s] Test11 - Can't start TM Sync, err=%d\n",MyName,status.MPI_ERROR);
             fflush (stdout);
-            MPI_Abort( MPI_COMM_WORLD, 99);
+            abort();
         }
         trans_starts++;
     } while ( trans_starts < MAX_SYNCS );
@@ -1768,7 +1771,7 @@ void doTest11()
             {
                 printf("[%s] Test11 - Failed to receive notice! Aborting\n",MyName);
                 fflush (stdout);
-                MPI_Abort( MPI_COMM_WORLD, 99 );
+                abort();
             }
         }
         printf("[%s] Test11 - DEBUG commit=%d, abort=%d, nodes=%d, active=%d\n",MyName,trans_commit,trans_abort,NumNodes,trans_active);
@@ -1779,10 +1782,6 @@ void doTest11()
 
 int main (int argc, char *argv[])
 {
-    int MyRank = -1;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
@@ -1928,12 +1927,12 @@ int main (int argc, char *argv[])
 
                 printf("[%s] Sending results to controller, elements=%d\n",
                        MyName, (int)(sizeof(tmSyncResults_t)/sizeof(int)));
-                rc = MPI_Send ((void *) &sendBuf,
+                rc = XMPI_Send ((void *) &sendBuf,
                                sizeof(tmSyncResults_t)/sizeof(int),
                                MPI_INT, 0, 100 /* USER_TAG */, CtrlComm);
                 if (rc != MPI_SUCCESS)
                 {
-                    printf ("[%s] MPI_Send failed. rc = (%d)\n", MyName, rc);
+                    printf ("[%s] XMPI_Send failed. rc = (%d)\n", MyName, rc);
                 }
             }
         }
@@ -1943,8 +1942,7 @@ int main (int argc, char *argv[])
     // tell monitor we are exiting
     util.requestExit ( );
 
-    MPI_Close_port (util.getPort());
-    MPI_Finalize ();
+    XMPI_Close_port (util.getPort());
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

@@ -34,7 +34,7 @@
 
 SB_Queue::SB_Queue(const char *pp_name)
 : iv_aecid_queue(SB_ECID_QUEUE),
-  ip_head(NULL), ip_tail(NULL), iv_count(0), iv_multi_reader(false) {
+  ip_head(NULL), ip_tail(NULL), iv_count(0), iv_hi(0), iv_multi_reader(false) {
     ia_q_name[sizeof(ia_q_name) - 1] = '\0';
     SB_util_assert_cpne(pp_name, NULL);
     strncpy(ia_q_name, pp_name, sizeof(ia_q_name) - 1);
@@ -55,7 +55,7 @@ void SB_Queue::printself(bool pv_traverse) {
 // SB_D_Queue constructor
 SB_D_Queue::SB_D_Queue(int pv_qid, const char *pp_name)
 : iv_aecid_d_queue(SB_ECID_QUEUE_D),
-  ip_head(NULL), ip_tail(NULL), iv_count(0), iv_qid(pv_qid),
+  ip_head(NULL), ip_tail(NULL), iv_count(0), iv_hi(0), iv_qid(pv_qid),
   iv_multi_reader(false) {
     ia_d_q_name[sizeof(ia_d_q_name) - 1] = '\0';
     SB_util_assert_cpne(pp_name, NULL);

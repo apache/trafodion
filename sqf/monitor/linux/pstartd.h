@@ -73,6 +73,7 @@ class CMonUtil
     char   processName_[MAX_PROCESS_PATH];   // current process name
     int    nid_;           // current process node id
     int    pid_;           // current process process id
+    Verifier_t verifier_;   // current process verifier
     char   port_[MPI_MAX_PORT_NAME]; // current process port
     bool   trace_;
 };

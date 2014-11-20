@@ -22,11 +22,23 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "common/evl_sqlog_eventnum.h"
+#include "montrace.h"
+#include "monlogging.h"
 
 extern int genSnmpTrapEnabled;
 
-void genSnmpTrap ( const char * event )
+void genSnmpTrap ( const char *event )
 {
+    const char method_name[] = "genSnmpTrap";
+    TRACE_ENTRY;
+
+    if (trace_settings & TRACE_EVLOG_MSG)
+       trace_printf( "%s@%d - snmptrap(%d): %s\n"
+                   , method_name, __LINE__, genSnmpTrapEnabled, event);
+
+    snmp_log_write( MON_GEN_SNMP_TRAP, event );
+
     if ( genSnmpTrapEnabled )
     {
         char snmpCmd[300];
@@ -38,4 +50,6 @@ void genSnmpTrap ( const char * event )
                   "snmptrap -v 1 -c public 172.31.2.241 NET-SNMP-EXAMPLES-MIB::netSnmpExampleHeartbeatNotification \"\" 5  99 \"\"  text string \"%s\"", event);
         system( snmpCmd );
     }
+
+    TRACE_EXIT;
 }

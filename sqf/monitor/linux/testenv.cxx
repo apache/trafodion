@@ -119,6 +119,8 @@ void process_startup (int argc, char *argv[])
         msg->u.request.u.startup.os_pid = getpid ();
         msg->u.request.u.startup.event_messages = true;
         msg->u.request.u.startup.system_messages = true;
+        msg->u.request.u.startup.verifier = true;
+        msg->u.request.u.startup.startup_size = sizeof(msg->u.request.u.startup);
         printf ("[%s] sending startup reply to monitor.\n", argv[5]);
         fflush (stdout);
         MPI_Send (msg, sizeof (struct message_def), MPI_CHAR, 0, SERVICE_TAG,

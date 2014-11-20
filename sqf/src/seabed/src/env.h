@@ -76,7 +76,6 @@ extern const char *gp_ms_env_streams_min;
 
 extern const char *gp_ms_env_trace;
 extern const char *gp_ms_env_trace_abandon;
-extern const char *gp_ms_env_trace_aggr;
 extern const char *gp_ms_env_trace_alloc;
 extern const char *gp_ms_env_trace_data;
 extern const char *gp_ms_env_trace_data_max;

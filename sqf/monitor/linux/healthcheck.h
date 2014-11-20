@@ -38,6 +38,7 @@
 typedef enum
 {
   HC_AVAILABLE = 1, // default state
+  HC_UPDATE_SMSERVICE, 
   HC_UPDATE_WATCHDOG, 
   MON_READY,
   MON_SHUT_DOWN,
@@ -46,7 +47,7 @@ typedef enum
   MON_NODE_DOWN,
   MON_STOP_WATCHDOG,
   MON_START_WATCHDOG,
-  MON_EXIT_WATCHDOG,
+  MON_EXIT_PRIMITIVES,
   HC_EXIT
 } HealthCheckStates;
 
@@ -61,6 +62,7 @@ public:
     void start();
     void shutdownWork();
     void setState(HealthCheckStates st, long long param1 = 0);
+    void updateSMServiceProcess();
     void updateWatchdogProcess();
     void healthCheckThread();
     void initializeVars();
@@ -73,6 +75,7 @@ public:
 private:
 
     void setTimeToWakeUp( struct timespec &ts);
+    void sendEventToSMService(SMServiceEvent_t event);
     void sendEventToWatchDog(WatchdogEvent_t event);
     void processTimerEvent();
     void startQuiesce();
@@ -89,6 +92,7 @@ private:
     struct timespec nonresponsiveTime_; // start time when Sync thread became unresponsive
     long long wakeupTimeSaved_;         // time when healthcheck thread should wakeup, in secs.
     CProcess * watchdogProcess_;        // ptr to the watchdog process object
+    CProcess * smserviceProcess_;       // ptr to the smservice process object
     int quiesceTimeoutSec_;             // quiesce timeout (in secs) 
     bool quiesceCountingDown_;          // started quiesce count down 
     bool nodeDownScheduled_;            // node down req scheduled or not

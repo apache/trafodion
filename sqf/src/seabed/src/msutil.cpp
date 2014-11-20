@@ -48,10 +48,11 @@
 //   0123456789012345.
 //   0123456789012345]
 //   (12345678901234567890123456789012-    - 34
-//   0123456789/                           - 11 * 2 = 22
+//   0123456789/                           - 11 * 3 = 33
+//   0123456789/
 //   0123456789)
 //
-// 20 + 136 + 34 + 22 = 212
+// 20 + 136 + 34 + 33 = 222
 //
 void msg_util_format_phandle(char *pp_buf, SB_Phandle_Type *pp_phandle) {
     if (pp_phandle == NULL)
@@ -72,6 +73,22 @@ void msg_util_format_phandle(char *pp_buf, SB_Phandle_Type *pp_phandle) {
             } else
                 la_name[lv_inx] = '.';
         }
+#ifdef SQ_PHANDLE_VERIFIER
+        sprintf(pp_buf, "%p [" PF64X "." PF64X "." PF64X "." PF64X "." PF64X "." PF64X "." PF64X "." PF64X "](%s-%d/%d/%d)",
+                pfp(pp_phandle),
+                pp_phandle->_data[0],
+                pp_phandle->_data[1],
+                pp_phandle->_data[2],
+                pp_phandle->_data[3],
+                pp_phandle->_data[4],
+                pp_phandle->_data[5],
+                pp_phandle->_data[6],
+                pp_phandle->_data[7],
+                la_name,
+                lp_phandle->iv_nid,
+                lp_phandle->iv_pid,
+                lp_phandle->iv_verifier);
+#else
         sprintf(pp_buf, "%p [" PF64X "." PF64X "." PF64X "." PF64X "." PF64X "." PF64X "." PF64X "." PF64X "](%s-%d/%d)",
                 pfp(pp_phandle),
                 pp_phandle->_data[0],
@@ -85,6 +102,7 @@ void msg_util_format_phandle(char *pp_buf, SB_Phandle_Type *pp_phandle) {
                 la_name,
                 lp_phandle->iv_nid,
                 lp_phandle->iv_pid);
+#endif
     }
 }
 

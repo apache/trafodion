@@ -22,6 +22,7 @@
 
 using namespace std;
 
+#include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
@@ -779,6 +780,7 @@ void CRedirectStdinRemote::handleOutput(ssize_t count, char *buffer)
     CReplStdioData *repl
         = new CReplStdioData(requesterNid_, pid_, STDIN_DATA, count, buffer );
     Replicator.addItem(repl);
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdinRemoteDataReplIncr();
 
     TRACE_EXIT;
@@ -1067,6 +1069,7 @@ void CRedirectAncestorStdout::handleOutput(ssize_t count, char *buffer)
         = new CReplStdioData(ancestor_nid_, ancestor_pid_, STDOUT_DATA, 
                               count, buffer );
     Replicator.addItem(repl);
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->StdioDataReplIncr();
 
 
@@ -1109,6 +1112,12 @@ void CRedirectStderr::handleHangup()
         process = MyNode->GetProcess ( pid_ );
     }
 
+    if ( process )
+    { // Save the pid/verifier to cleanup LIO buffers
+        SQ_theLocalIOToClient->addToVerifierMap( process->GetPid()
+                                               , process->GetVerifier() );
+    }
+
     if ( process && process->IsAttached() )
     {
         if (trace_settings & (TRACE_PROCESS | TRACE_REDIRECTION))
@@ -1142,11 +1151,17 @@ void CRedirectStderr::handleHangup()
 
         // Child death signal is not delivered on an 'attached' process
         // since it is not created by the monitor, so queue 
-        // process termination request since stderr pipe is broken.
-        ReqQueue.enqueueAttachedDeathReq( pid_ );
+        // process termination request since stderr pipe is broken,
+        // and add the pid to the dead pids list which is used to process 
+        // the verifier map entries.
+        SQ_theLocalIOToClient->handleDeadPid(pid_);
     }
     else if ( process )
     {
+        if ( process->GetState() != State_Down && !process->IsAbended() )
+        {
+            process->SetAbended( true );
+        }
         if (trace_settings & (TRACE_PROCESS | TRACE_REDIRECTION))
             trace_printf("%s@%d Detected broken stderr pipe for child "
                          "process, pid=%d; waiting for child death signal\n",
@@ -1183,11 +1198,16 @@ void CRedirectStderr::handleOutput(ssize_t count, char *buffer)
     const char method_name[] = "CRedirectStderr::handleOutput";
     TRACE_ENTRY;
     
-    char *buf = new char[header_count_+count+1];
+    ssize_t buf_size = header_count_+count+2;
+    char *buf = new char[buf_size];
     if ( buf )
     {
-        sprintf(buf, "STDERR redirected from %s.%s.%d.%d: %s",
-                nodeName(), processName(), nid(), pid(), buffer);
+        memset(buf, 0, buf_size);
+        ssize_t size = snprintf(buf, 
+                                (buf_size<MON_EVENT_BUF_SIZE)?buf_size:MON_EVENT_BUF_SIZE, 
+                                "STDERR redirected from %s.%s.%d.%d: %s",
+                                nodeName(), processName(), nid(), pid(), buffer );
+        if ( size > 0 && buf[size-1] != '\n') buf[size-1] = '\n';
         mon_log_write(MON_REDIR_STDERR, SQ_LOG_INFO, buf);
 
         delete [] buf;
@@ -1731,7 +1751,7 @@ void CRedirector::shutdownWork(void)
     shutdown_ = true;   
 
     // Signal the redirector thread so it will wake up and exit
-    if ((rc = pthread_kill(Redirector.tid(), SIGWINCH)) != 0)
+    if ((rc = pthread_kill(Redirector.tid(), SIGUSR1)) != 0)
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[%s], pthread_kill error=%d\n", method_name, rc);
@@ -1772,14 +1792,14 @@ void CRedirector::redirectThread()
     const char method_name[] = "CRedirector::redirectThread";
     TRACE_ENTRY;
 
-    // Set sigaction such that SIGWINCH signal is caught.  We use this
+    // Set sigaction such that SIGUSR1 signal is caught.  We use this
     // to detect that main thread is shutting us down.
     struct sigaction act;
     act.sa_sigaction = sigusr1_signal_handler;
     act.sa_flags = SA_SIGINFO;
     sigemptyset (&act.sa_mask);
-    sigaddset (&act.sa_mask, SIGWINCH);
-    sigaction (SIGWINCH, &act, NULL);
+    sigaddset (&act.sa_mask, SIGUSR1);
+    sigaction (SIGUSR1, &act, NULL);
 
     while(true)
     {
@@ -1869,7 +1889,8 @@ void CRedirector::redirectThread()
                     }
                     else
                     {
-                        buffer[count] = '\0';
+                        if ((size_t) count < sizeof(buffer)) //buffer overflow
+                            buffer[count] = '\0';
                         if (redirect != NULL)
                             redirect->handleOutput(count, buffer);
                     }
@@ -1968,10 +1989,10 @@ static void *redirect(void *arg)
     // Parameter passed to the thread is an instance of the CRedirector object
     CRedirector *rdo = (CRedirector *) arg;
 
-    // Mask all allowed signals except SIGWINCH which is used for shutdown
+    // Mask all allowed signals except SIGUSR1 which is used for shutdown
     sigset_t              mask;
     sigfillset(&mask);
-    sigdelset(&mask, SIGWINCH);
+    sigdelset(&mask, SIGUSR1);
     sigdelset(&mask, SIGPROF); // allows profiling such as google profiler
 #ifdef USE_FORK_SUSPEND_RESUME
     sigdelset(&mask, SIGURG);

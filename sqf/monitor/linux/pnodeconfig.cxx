@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 // @@@ END COPYRIGHT @@@
-// 
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -227,6 +227,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int pnid
         if ( spare )
         {
             snodesCount_++;
+            spareNodesConfigList_.push_back( pnodeConfig );
         }
 
         pnodesCount_++;
@@ -306,4 +307,96 @@ CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( int pnid )
 
     TRACE_EXIT;
     return config;
+}
+
+void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
+                                                  , PNodesConfigList_t &spareSet )
+{
+    bool foundInSpareSet = false;
+    CPNodeConfig *spareNodeConfig;
+    CPNodeConfig *pNodeconfig;
+    PNodesConfigList_t tempSpareSet;
+
+    const char method_name[] = "CPNodeConfigContainer::GetSpareNodesConfigSet";
+    TRACE_ENTRY;
+
+    PNodesConfigList_t::iterator itSn;
+    for ( itSn = spareNodesConfigList_.begin(); 
+          itSn != spareNodesConfigList_.end(); 
+          itSn++ ) 
+    {
+        spareNodeConfig = *itSn;
+        if (trace_settings & TRACE_INIT)
+        {
+            trace_printf( "%s@%d - %s is a configured spare node\n"
+                        , method_name, __LINE__
+                        , spareNodeConfig->GetName());
+        }
+
+        // Build the set of pnids that constitute the 'spare set'
+        int sparePNidsCount = spareNodeConfig->GetSparesCount()+1;
+        int *sparePNids = new int [sparePNidsCount];
+        spareNodeConfig->GetSpareList( sparePNids );
+        sparePNids[spareNodeConfig->GetSparesCount()] = spareNodeConfig->GetPNid();
+
+        // Build the list of configured physical nodes that
+        // constitute the 'spare set'
+        for ( int i = 0; i < sparePNidsCount ; i++ )
+        {
+            pNodeconfig = GetPNodeConfig( sparePNids[i] );
+            if ( pNodeconfig )
+            {
+                tempSpareSet.push_back( pNodeconfig );
+                if (trace_settings & TRACE_INIT)
+                {
+                    trace_printf( "%s@%d - Added %s as member of spare set (%s, count=%ld)\n"
+                                , method_name, __LINE__
+                                , pNodeconfig->GetName()
+                                , spareNodeConfig->GetName()
+                                , tempSpareSet.size() );
+                }
+            }
+        }
+        
+        // Check each node in the 'spare set'
+        PNodesConfigList_t::iterator itSnSet;
+        for ( itSnSet = tempSpareSet.begin(); 
+              itSnSet != tempSpareSet.end(); 
+              itSnSet++ ) 
+        {
+            pNodeconfig = *itSnSet;
+            if (trace_settings & TRACE_INIT)
+            {
+                trace_printf( "%s@%d - %s is in spare set (%s, count=%ld)\n"
+                            , method_name, __LINE__
+                            , pNodeconfig->GetName()
+                            , spareNodeConfig->GetName()
+                            , tempSpareSet.size() );
+            }
+            if ( strcmp( pNodeconfig->GetName(), name ) == 0 )
+            {
+                foundInSpareSet = true;
+                spareSet = tempSpareSet;
+                if (trace_settings & TRACE_INIT)
+                {
+                    trace_printf( "%s@%d - Found %s in spare set (%s, count=%ld)\n"
+                                , method_name, __LINE__
+                                , pNodeconfig->GetName()
+                                , spareNodeConfig->GetName()
+                                , tempSpareSet.size() );
+                }
+            }
+        }
+        if (sparePNids)
+        {
+            tempSpareSet.clear();
+            delete [] sparePNids;
+        }
+        if (foundInSpareSet)
+        {
+            break;
+        }
+    }
+
+    TRACE_EXIT;
 }

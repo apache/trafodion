@@ -35,12 +35,15 @@
 SB_Export short XFILENAME_TO_PROCESSHANDLE_(const char      *pp_filename,
                                             short            pv_length,
                                             SB_Phandle_Type *pp_processhandle) {
-    const char *WHERE = "XFILENAME_TO_PROCESSHANDLE_";
-    char        la_filename[XZSYS_VAL_LEN_FILENAME + 1];
-    int         lv_fserr = XZFIL_ERR_OK;
-    int         lv_nid;
-    int         lv_pid;
-    SB_API_CTR (lv_zctr, XFILENAME_TO_PROCESSHANDLE_);
+    const char    *WHERE = "XFILENAME_TO_PROCESSHANDLE_";
+    char           la_filename[XZSYS_VAL_LEN_FILENAME + 1];
+    int            lv_fserr = XZFIL_ERR_OK;
+    int            lv_nid;
+    int            lv_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type  lv_verif;
+#endif
+    SB_API_CTR    (lv_zctr, XFILENAME_TO_PROCESSHANDLE_);
 
     if (gv_fs_trace_params)
         trace_where_printf(WHERE,
@@ -56,12 +59,20 @@ SB_Export short XFILENAME_TO_PROCESSHANDLE_(const char      *pp_filename,
     else {
         memcpy(la_filename, pp_filename, pv_length);
         la_filename[pv_length] = '\0';
+#ifdef SQ_PHANDLE_VERIFIER
+        lv_fserr = msg_mon_get_process_info2(la_filename, &lv_nid, &lv_pid, &lv_verif);
+#else
         lv_fserr = msg_mon_get_process_info(la_filename, &lv_nid, &lv_pid);
+#endif
         if (lv_fserr == XZFIL_ERR_OK) {
             ms_util_fill_phandle_name(pp_processhandle,
                                       la_filename,
                                       lv_nid,
-                                      lv_pid);
+                                      lv_pid
+#ifdef SQ_PHANDLE_VERIFIER
+                                     ,lv_verif
+#endif
+                                     );
         }
     }
     if (gv_fs_trace_params) {

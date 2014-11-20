@@ -25,6 +25,7 @@
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <unistd.h>
 
 #include "monlogging.h"
 #include "msgdef.h"
@@ -339,7 +340,7 @@ void printEntry(memLogEntry_t *entry, int eventStart, int eventEnd)
         }
         case MON_REQQUEUE_SNAPSHOT_5:
         {
-            printf("Unable to malloc snapshot buffer.\n", entry->value1_);
+            printf("Unable to malloc(%d) snapshot buffer.\n", entry->value1_);
             break;
         }
         case MON_REQQUEUE_SNAPSHOT_6:

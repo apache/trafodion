@@ -22,11 +22,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 
 MonTestUtil util;
 
@@ -48,6 +48,7 @@ bool shutdownSent = false;
 int MyRank = -1;
 const char *MyName;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 MPI_Comm worker_comm;
 
@@ -84,7 +85,7 @@ void server ()
         {
             printf("[%s] waiting for message.\n",MyName);
         }
-        rc = MPI_Recv (recvbuf, 3, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+        rc = XMPI_Recv (recvbuf, 3, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                        worker_comm, &status);
         if (rc == MPI_SUCCESS)
         {
@@ -115,7 +116,7 @@ void server ()
             {
                 printf("[%s] message received <%s>.\n", MyName, sendbuf);
             }
-            rc = MPI_Send (sendbuf, (int) strlen (sendbuf) + 1, MPI_CHAR, 0,
+            rc = XMPI_Send (sendbuf, (int) strlen (sendbuf) + 1, MPI_CHAR, 0,
                            USER_TAG, worker_comm);
         }
         if (rc != MPI_SUCCESS)
@@ -124,9 +125,9 @@ void server ()
                     util.MPIErrMsg(rc));
             util.closeProcess ( worker_comm );
             printf ("[%s] Waiting to Accept connection.\n", MyName);
-            MPI_Comm_accept (util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
+            XMPI_Comm_accept (util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
                              &worker_comm);
-            MPI_Comm_set_errhandler (worker_comm, MPI_ERRORS_RETURN);
+            XMPI_Comm_set_errhandler (worker_comm, MPI_ERRORS_RETURN);
             printf ("[%s] Reconnected.\n", MyName);
         }
         else
@@ -143,20 +144,16 @@ void server ()
 
 int main (int argc, char *argv[])
 {
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
-    shutdownBeforeStartup = util.getShutdownBeforeStartup();
     MyName = util.getProcName();
 
     util.InitLocalIO( );
     assert (gp_local_mon_io);
 
-    if ( shutdownBeforeStartup )
+    if (util.getShutdownBeforeStartup())
     {
-#if 1
         sleep(2);  // wait for shutdown to be sent
         if ( tracing )
         {
@@ -172,20 +169,10 @@ int main (int argc, char *argv[])
             sleep(1);
         }
         while (!shutdownSent);
-#else
-        sleep(2);  // wait for shutdown to be sent
-        if ( tracing )
-        {
-            printf ("[%s] Sending startup message\n", MyName);
-        }
-        util.requestStartup ();
-        get_shutdown( (char *)MyName );
-#endif
 
         // tell monitor we are exiting
         util.requestExit ( );
 
-        MPI_Finalize ();
         if ( tracing )
         {
             printf ("[%s] exiting.\n", MyName);
@@ -196,11 +183,35 @@ int main (int argc, char *argv[])
         }
         exit (0);
     }
+    else if ( util.getNodedownBeforeStartup() )
+    {
+		if ( tracing )
+        {
+           printf ("[%s] nodedownBeforeStartup mode, going to sleep\n", MyName);
+           fflush (stdout);
+        } 
+			
+		sleep(8);
+        
+        // tell monitor we are exiting
+		util.requestExit ( );
+		
+        // now exit
+		if ( tracing )
+		{
+		  printf ("[%s] exiting.\n", MyName);
+		}
+		if (gp_local_mon_io)
+		{
+			   delete gp_local_mon_io;
+		}
+		exit (0);
+    }
     else
     {
         if ( tracing )
         {
-            printf ("[%s] Shutdown before startup not set\n", MyName);
+            printf ("[%s] Shutdown or Nodedown before startup not set\n", MyName);
         }
     }
 
@@ -216,9 +227,9 @@ int main (int argc, char *argv[])
         printf ("[%s] Wait to connect.\n", MyName);
     }
 
-    MPI_Comm_accept (util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
+    XMPI_Comm_accept (util.getPort(), MPI_INFO_NULL, 0, MPI_COMM_SELF,
                      &worker_comm);
-    MPI_Comm_set_errhandler (worker_comm, MPI_ERRORS_RETURN);
+    XMPI_Comm_set_errhandler (worker_comm, MPI_ERRORS_RETURN);
 
     if ( tracing )
     {
@@ -250,7 +261,7 @@ int main (int argc, char *argv[])
     }
     util.closeProcess ( worker_comm );
 
-    MPI_Close_port (util.getPort());
+    XMPI_Close_port (util.getPort());
 
     // need to decide if any test requires the server to exit abnormally.
     // if so probably would be best to have a server argument that specifies
@@ -262,7 +273,6 @@ int main (int argc, char *argv[])
     */
         // tell monitor we are exiting
         util.requestExit ( );
-        MPI_Finalize ();
     /*
     }
     */

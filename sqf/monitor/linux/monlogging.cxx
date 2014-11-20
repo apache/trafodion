@@ -25,6 +25,7 @@
 using namespace std;
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <linux/unistd.h>
 #include <limits.h>
 #include <sys/time.h>
@@ -42,6 +43,7 @@ using namespace std;
 
 extern int MyPNID;
 extern CMonLog *MonLog;
+extern CMonLog *SnmpLog;
 
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
@@ -52,6 +54,12 @@ int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 int wdt_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
     MonLog->writeAltLog(eventType, severity, msg);
+    return(0);
+}
+
+int snmp_log_write(int eventType, const char *msg)
+{
+    SnmpLog->writeSnmpLog(eventType, msg);
     return(0);
 }
 
@@ -141,6 +149,48 @@ void CMonLog::writeAltLog(int eventType, posix_sqlog_severity_t severity, char *
     {
         logFileType_ |= SBX_LOG_TYPE_LOGFILE_PERSIST;
     }
+
+    return;
+}
+
+void CMonLog::writeSnmpLog(int eventType, const char *msg)
+{
+    char   logFileDir[PATH_MAX];
+    char  *logFileDirPtr;
+    char   logFilePrefix[30];
+    char  *rootDir;
+
+    rootDir = getenv("MY_SQROOT");
+    if (rootDir == NULL) 
+    {
+        logFileDirPtr = NULL;
+    }
+    else 
+    {
+        sprintf(logFileDir, "%s/logs", rootDir);
+        logFileDirPtr = logFileDir;
+    }
+
+    // log file prefix will be snmp.mon.nn
+    // nn is the file number. If the log file becomes too big, 
+    // LogFileNum can be incremented.
+    sprintf( logFilePrefix, "%s.%s.%02d"
+           , logFileNamePrefix_.c_str(), (char *)&startTimeFmt_, logFileNum_);
+
+    SBX_log_write(logFileType_,            // log_type
+                  logFileDirPtr,           // log_file_dir
+                  logFilePrefix,           // log_file_prefix
+                  SQEVL_MONITOR,           // component id
+                  eventType,               // event id
+                  SQ_LOG_SEAQUEST,         // facility
+                  SQ_LOG_CRIT,             // severity
+                  "monitor",               // name
+                  NULL,                    // msg_prefix
+                  msg,                     // msg
+                  NULL,                    // snmptrap_cmd
+                  NULL,                    // msg_snmptrap
+                  NULL,                    // msg_ret
+                  0);                      // msg_ret size
 
     return;
 }

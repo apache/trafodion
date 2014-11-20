@@ -28,11 +28,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include "clio.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "montestutil.h"
+#include "xmpi.h"
 #include "deathNotice.h"
 
 MonTestUtil util;
@@ -44,6 +44,7 @@ bool tracing = false;
 const char *MyName;
 int MyRank = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
+SB_Verif_Type  gv_ms_su_verif = -1;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connect
 
 const int MAX_WORKERS = 5;
@@ -60,11 +61,16 @@ const int workerExpNotices[] = { 1, 0, 0, 1, 1};
 class WorkerProcess
 {
 public:
-    WorkerProcess(const char * name, int nid, int pid, int expNotices);
+    WorkerProcess( const char * name
+                 , int nid
+                 , int pid
+                 , Verifier_t verifier
+                 , int expNotices);
     ~WorkerProcess(){}
     const char * getName() { return name_.c_str(); }
     int getNid() { return nid_; }
     int getPid() { return pid_; }
+    int getVerifier() { return verifier_; }
     void incrDeathNotice() { ++deathNotices_; }
     int getExpNoticeCount() { return expNotices_; }
     int getDeathNoticeCount() { return deathNotices_; }
@@ -73,14 +79,22 @@ private:
     string name_;
     int nid_;
     int pid_;
+    Verifier_t verifier_;
     int expNotices_;
     int deathNotices_;
 };
 
-WorkerProcess::WorkerProcess (const char * name, int nid, int pid,
-                              int expNotices)
-    : name_(name), nid_(nid), pid_(pid), expNotices_(expNotices),
-      deathNotices_ (0)
+WorkerProcess::WorkerProcess( const char * name
+                            , int nid
+                            , int pid
+                            , Verifier_t verifier
+                            , int expNotices)
+              : name_(name)
+              , nid_(nid)
+              , pid_(pid)
+              , verifier_(verifier)
+              , expNotices_(expNotices)
+              , deathNotices_ (0)
 {
 }
 
@@ -96,12 +110,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
     if ( recv_msg->type == MsgType_ProcessDeath )
     {
         if ( tracing )
-            printf("[%s] Process death notice received for %s (%d, %d),"
-                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n",
+            printf("[%s] Process death notice received for %s (%d, %d:%d),"
+                   " trans_id=%lld.%lld.%lld.%lld., aborted=%d\n", 
                    MyName,
                    recv_msg->u.request.u.death.process_name,
                    recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid,
+                   recv_msg->u.request.u.death.verifier,
                    recv_msg->u.request.u.death.trans_id.txid[0],
                    recv_msg->u.request.u.death.trans_id.txid[1],
                    recv_msg->u.request.u.death.trans_id.txid[2],
@@ -112,7 +127,8 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         for (int i=0; i<procListCount; i++)
         {
             if (procList[i]->getNid() == recv_msg->u.request.u.death.nid
-             && procList[i]->getPid() == recv_msg->u.request.u.death.pid)
+             && procList[i]->getPid() == recv_msg->u.request.u.death.pid
+             && procList[i]->getVerifier() == recv_msg->u.request.u.death.verifier)
             {
                 procList[i]->incrDeathNotice();
                 found = true;
@@ -121,7 +137,7 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         }
         if (!found)
         {
-            printf("[%s] Could not find procList object for (%d, %d)\n",
+            printf("[%s] Could not find procList object for (%d, %d)\n", 
                    MyName, recv_msg->u.request.u.death.nid,
                    recv_msg->u.request.u.death.pid);
         }
@@ -145,7 +161,7 @@ void sendCommand(int command, const char *msg, MPI_Comm &comm)
     sendbuf[0] = command;
     strcpy((char *) &sendbuf[1], msg);
 
-    rc = MPI_Sendrecv (sendbuf, 6, MPI_INT, 0, clientTag,
+    rc = XMPI_Sendrecv (sendbuf, 6, MPI_INT, 0, clientTag,
                        recvbuf, 100, MPI_CHAR, MPI_ANY_SOURCE,
                        MPI_ANY_TAG, comm, &status);
     if (rc != MPI_SUCCESS)
@@ -163,6 +179,7 @@ bool testUnregister ()
 
     int nid;
     int pid;
+    Verifier_t verifier;
     MPI_Comm comm;
     char procName[25];
 
@@ -171,17 +188,18 @@ bool testUnregister ()
         if (util.requestNewProcess (1, ProcessType_Generic, false, (char *) "",
                                     "deathUnreg", "", "",
                                     ((tracing) ? 1: 0), childArgs, nid, pid,
+                                    verifier,
                                     procName))
         {
             if ( tracing )
                 printf("[%s] created new process %s (%d, %d)\n",
                        MyName, procName, nid, pid);
-            procList[0] = new WorkerProcess ( procName, nid, pid, 1);
+            procList[0] = new WorkerProcess ( procName, nid, pid, verifier, 1);
             procListCount = 1;
 
 
             // Open process and send commands to it
-            if ( util.openProcess (procName, 0, comm) )
+            if ( util.openProcess (procName, verifier, 0, comm) )
             {
                 for ( int p=0; p < MAX_WORKERS; p++ )
                 {
@@ -215,7 +233,7 @@ bool testUnregister ()
         else
         {
             printf ("[%s] error starting deathUnreg process\n", MyName);
-
+            
             testSuccess = false;
         }
     }
@@ -228,6 +246,7 @@ bool testDeathNotices ()
     MPI_Comm manager_comm[MAX_WORKERS];
     int workerNid[MAX_WORKERS];
     int workerPid[MAX_WORKERS];
+    Verifier_t workerVerifier[MAX_WORKERS];
     bool workerUp[MAX_WORKERS];
     char *serverArgs[1] = {(char *) "-t"};
     int workerChildren = 0;
@@ -245,24 +264,24 @@ bool testDeathNotices ()
 
         if ( workerStartProcess[i] )
         {
-            util.requestNewProcess ( 1, ProcessType_Generic, false,
+            util.requestNewProcess ( 1, ProcessType_Generic, false, 
                                      workerName[i], "server", "", "",
                                      ((tracing) ? 1: 0), serverArgs,
-                                     workerNid[i], workerPid[i], procName);
+                                     workerNid[i], workerPid[i], 
+                                     workerVerifier[i], procName);
             ++workerChildren;
 
         }
 
-        if (util.requestProcInfo ( workerName[i], workerNid[i], workerPid[i]))
+        if (util.requestProcInfo ( workerName[i], workerNid[i], workerPid[i], workerVerifier[i]))
         {
             procList[procListCount]
                 = new WorkerProcess ( workerName[i], workerNid[i], workerPid[i],
-                                      workerExpNotices[i] );
+                                      workerVerifier[i], workerExpNotices[i] );
             if ( tracing )
-                printf ("[%s] Worker #%d: %s is (%d, %d)\n", MyName,
-                        procListCount,
-                        workerName[i], workerNid[i], workerPid[i] );
-
+                printf ("[%s] Worker #%d: %s is (%d, %d:%d)\n", MyName,
+                        procListCount, workerName[i],
+                        workerNid[i], workerPid[i], workerVerifier[i]);
             ++procListCount;
         }
         else
@@ -272,8 +291,10 @@ bool testDeathNotices ()
             testSuccess = false;
         }
 
-        if ( util.openProcess( workerName[i], workerReqNotice[i],
-                               manager_comm[i] ))
+        if ( util.openProcess( workerName[i]
+                             , workerVerifier[i]
+                             , workerReqNotice[i]
+                             , manager_comm[i] ))
         {
             workerUp[i] = true;
             if ( tracing ) printf ("[%s] worker %d connected.\n", MyName, i);
@@ -293,40 +314,40 @@ bool testDeathNotices ()
         printf ("[%s] Starting work with %d workers\n", MyName, MAX_WORKERS);
     }
 
-    util.requestNotice(workerNid[3], workerPid[3], false, transid);
-    util.requestNotice(workerNid[4], workerPid[4], false, transid);
+    util.requestNotice(workerNid[3], workerPid[3], workerVerifier[3], "", false, transid);
+    util.requestNotice(-1, -1, workerVerifier[4], workerName[4], false, transid);
 
 #ifdef USE_NOTICE_TRANSID
     transid.txid[0] = 1;
-    util.requestNotice(workerNid[2], workerPid[2], false, transid);
-    util.requestNotice(workerNid[3], workerPid[3], false, transid);
-    util.requestNotice(workerNid[4], workerPid[4], false, transid);
+    util.requestNotice(workerNid[2], workerPid[2], workerVerifier[2], false, transid);
+    util.requestNotice(workerNid[3], workerPid[3], workerVerifier[3], false, transid);
+    util.requestNotice(workerNid[4], workerPid[4], workerVerifier[4], false, transid);
 
     transid.txid[0] = 2;
-    util.requestNotice(workerNid[4], workerPid[4], false, transid);
+    util.requestNotice(workerNid[4], workerPid[4], workerVerifier[4], false, transid);
 
     transid.txid[0] = 3;
-    util.requestNotice(workerNid[4], workerPid[4], false, transid);
+    util.requestNotice(workerNid[4], workerPid[4], workerVerifier[4], false, transid);
 
     // Cancel all death notices associated with transaction id 1
     transid.txid[0] = 1;
-    util.requestNotice( -1, -1, true, transid );
+    util.requestNotice( -1, -1, -1, true, transid );
 #endif
 
     // close $SERV1
     sendbuf[0] = MyRank;
     sendbuf[1] = 1;
     sendbuf[2] = 2; // CMD_END;
-    MPI_Sendrecv (sendbuf, 3, MPI_INT, 0, 100  /* USER_TAG */,
+    XMPI_Sendrecv (sendbuf, 3, MPI_INT, 0, 100  /* USER_TAG */,
                   recvbuf, 100, MPI_CHAR, MPI_ANY_SOURCE,
                   100 /* USER_TAG */, manager_comm[1], &status);
 
-    util.requestClose( workerName[1] );
+    util.requestClose( workerName[1], workerVerifier[1]);
 
-    util.requestKill ( workerName[0] );
-    util.requestKill ( workerName[2] );
-    util.requestKill ( workerName[3] );
-    util.requestKill ( workerName[4] );
+    util.requestKill ( workerName[0], -1 );
+    util.requestKill ( workerName[2], workerVerifier[2] );
+    util.requestKill ( workerName[3], workerVerifier[3] );
+    util.requestKill ( workerName[4], -1 );
 
 
     // close the server processes
@@ -334,7 +355,7 @@ bool testDeathNotices ()
     {
         if (workerUp[i])
         {
-            util.requestClose ( workerName[i] );
+            util.requestClose ( workerName[i], workerVerifier[i] );
         }
     }
 
@@ -347,11 +368,11 @@ bool testDeathNotices ()
         if (procList[i]->getDeathNoticeCount()
             != procList[i]->getExpNoticeCount())
         {
-            printf("[%s] For %s (%d, %d) expected %d notices but got %d.\n",
+            printf("[%s] For %s (%d, %d:%d) expected %d notices but got %d.\n",
                    MyName, procList[i]->getName(), procList[i]->getNid(),
-                   procList[i]->getPid(), procList[i]->getExpNoticeCount(),
+                   procList[i]->getPid(), procList[i]->getVerifier(), 
+                   procList[i]->getExpNoticeCount(),
                    procList[i]->getDeathNoticeCount());
-
             testSuccess = false;
         }
     }
@@ -366,6 +387,7 @@ bool testMultipleDeathNotices ()
     MPI_Comm deathWatcherComm[MAX_WATCHERS];
     int deathWatcherNid[MAX_WATCHERS];
     int deathWatcherPid[MAX_WATCHERS];
+    Verifier_t deathWatcherVerifier[MAX_WATCHERS];
     char deathWatcherName[MAX_WATCHERS][25];
     bool deathWatcherUp[MAX_WATCHERS];
     char *serverArgs[1] = {(char *) "-t"};
@@ -374,26 +396,28 @@ bool testMultipleDeathNotices ()
     const int victimReqNid = 1;
     int victimNid;
     int victimPid;
+    Verifier_t victimVerifier;
     char victimName[25];
     int resultNid;
     int resultPid;
+    Verifier_t resultVerifier;
     bool testSuccess = true;
 
     // Create victim process
     if (!util.requestNewProcess ( victimReqNid, ProcessType_Generic, false, "",
                                   "server", "", "", ((tracing) ? 1: 0),
                                   serverArgs,
-                                  victimNid, victimPid, victimName))
+                                  victimNid, victimPid, victimVerifier, victimName))
     {
         printf("[%s] Failed to create victim process\n", MyName);
         return false;
     }
 
     if ( tracing )
-        printf ("[%s] Created victim process: %s (%d, %d)\n", MyName,
-                victimName, victimNid, victimPid);
+        printf ("[%s] Created victim process: %s (%d, %d:%d)\n", MyName,
+                victimName, victimNid, victimPid, victimVerifier);
 
-    if ( !util.requestProcInfo ( victimName, resultNid, resultPid))
+    if ( !util.requestProcInfo ( victimName, resultNid, resultPid, resultVerifier))
     {
         printf ("[%s] Unable to get process info for victim process %s\n",
                 MyName, victimName);
@@ -401,14 +425,15 @@ bool testMultipleDeathNotices ()
         // Clean up and return
 
         // Kill victim process
-        util.requestKill ( victimName );
+        util.requestKill ( victimName, victimVerifier );
 
         return false;
     }
     else
     {
         procList[procListCount]
-            = new WorkerProcess ( victimName, victimNid, victimPid, true );
+            = new WorkerProcess( victimName, victimNid
+                               , victimPid, victimVerifier, true );
         ++procListCount;
     }
 
@@ -418,12 +443,20 @@ bool testMultipleDeathNotices ()
         deathWatcherComm[i] = MPI_COMM_NULL;
         deathWatcherUp[i] = false;
 
-        if (!util.requestNewProcess ( victimReqNid, ProcessType_Generic, false,
-                                      "",
-                                      "deathWatch", "", "", ((tracing) ? 1: 0),
-                                      serverArgs, deathWatcherNid[i],
-                                      deathWatcherPid[i], deathWatcherName[i]))
-        {  // Failed to create process.
+        if (!util.requestNewProcess( i  // created death watcher in different nids
+                                   , ProcessType_Generic
+                                   , false
+                                   , ""
+                                   , "deathWatch"
+                                   , ""
+                                   , ""
+                                   , ((tracing) ? 1: 0)
+                                   , serverArgs
+                                   , deathWatcherNid[i]
+                                   , deathWatcherPid[i]
+                                   , deathWatcherVerifier[i]
+                                   , deathWatcherName[i]))
+        {  // Failed to create process.  
             testSuccess = false;
             break;
         }
@@ -431,12 +464,15 @@ bool testMultipleDeathNotices ()
         ++deathWatchers;
 
         if ( tracing )
-            printf ("[%s] Death watcher #%d process: %s is (%d, %d)\n",
+            printf ("[%s] Death watcher #%d process: %s is (%d, %d:%d)\n",
                     MyName, i, deathWatcherName[i], deathWatcherNid[i],
-                    deathWatcherPid[i] );
+                    deathWatcherPid[i], deathWatcherVerifier[i] );
 
         // Verify process start by getting process info
-        if (!util.requestProcInfo ( deathWatcherName[i], resultNid, resultPid))
+        if (!util.requestProcInfo( deathWatcherName[i]
+                                 , resultNid
+                                 , resultPid
+                                 , resultVerifier))
         {
             printf ("[%s] Unable to get process info for %s\n", MyName,
                     deathWatcherName[i]);
@@ -445,14 +481,19 @@ bool testMultipleDeathNotices ()
         }
         else
         {
-            procList[procListCount]
-                = new WorkerProcess ( deathWatcherName[i], deathWatcherNid[i],
-                                      deathWatcherPid[i], true );
+            procList[procListCount] = new WorkerProcess( deathWatcherName[i]
+                                                       , deathWatcherNid[i]
+                                                       , deathWatcherPid[i]
+                                                       , deathWatcherVerifier[i]
+                                                       , true );
             ++procListCount;
         }
 
         // Open process and send command to it
-        if ( util.openProcess (deathWatcherName[i], 0, deathWatcherComm[i]) )
+        if ( util.openProcess( deathWatcherName[i]
+                             , deathWatcherVerifier[i]
+                             , 0
+                             , deathWatcherComm[i]) )
         {
             if ( tracing ) printf ("[%s] connected to death watcher %s.\n",
                                    MyName, deathWatcherName[i]);
@@ -470,15 +511,16 @@ bool testMultipleDeathNotices ()
             break;
         }
     }
-
+    
     if (!testSuccess)
     {
         // Clean up and return.
-        util.requestKill ( victimName );
+        //util.requestKill ( victimName, victimVerifier );
+        util.requestKill ( victimName, -1 );
 
         for (int i=0; i<deathWatchers; ++i)
         {
-            util.requestKill ( deathWatcherName[i] );
+            util.requestKill( deathWatcherName[i], -1 );
         }
 
         return testSuccess;
@@ -488,7 +530,7 @@ bool testMultipleDeathNotices ()
     sleep(1);
 
     // kill victim process
-    util.requestKill ( victimName );
+    util.requestKill( victimName, victimVerifier );
 
     sleep(1);
 
@@ -502,7 +544,7 @@ bool testMultipleDeathNotices ()
     for ( int i=0; i < MAX_WATCHERS; i++ )
     {
         sendbuf[0] = CMD_GET_STATUS;
-        rc = MPI_Sendrecv (sendbuf, 6, MPI_INT, 0, clientTag,
+        rc = XMPI_Sendrecv (sendbuf, 6, MPI_INT, 0, clientTag,
                            recvbuf, 100, MPI_CHAR, MPI_ANY_SOURCE,
                            MPI_ANY_TAG, deathWatcherComm[i], &status);
         if (rc == MPI_SUCCESS)
@@ -545,9 +587,6 @@ int main (int argc, char *argv[])
 {
 
     bool testSuccess;
-
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &MyRank);
 
     util.processArgs (argc, argv);
     tracing = util.getTrace();
@@ -608,8 +647,7 @@ int main (int argc, char *argv[])
     // tell monitor we are exiting
     util.requestExit ( );
 
-    MPI_Close_port (util.getPort());
-    MPI_Finalize ();
+    XMPI_Close_port (util.getPort());
     if ( gp_local_mon_io )
     {
         delete gp_local_mon_io;

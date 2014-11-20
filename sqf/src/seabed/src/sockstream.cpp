@@ -122,8 +122,14 @@ SB_Trans::Sock_Stream::Sock_Stream(const char           *pp_name,
                                    SB_Ms_Tl_Event_Mgr   *pp_event_mgr,
                                    int                   pv_open_nid,
                                    int                   pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                   SB_Verif_Type         pv_open_verif,
+#endif
                                    int                   pv_opened_nid,
                                    int                   pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                                   SB_Verif_Type         pv_opened_verif,
+#endif
                                    int                   pv_opened_type)
 : Trans_Stream(STREAM_TYPE_SOCK,
                pp_name,
@@ -139,8 +145,14 @@ SB_Trans::Sock_Stream::Sock_Stream(const char           *pp_name,
                pp_event_mgr,
                pv_open_nid,
                pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+               pv_open_verif,
+#endif
                pv_opened_nid,
                pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+               pv_opened_verif,
+#endif
                pv_opened_type),
   iv_aecid_sock_stream(SB_ECID_STREAM_SOCK),
   ip_sock(pp_sock),
@@ -159,9 +171,15 @@ SB_Trans::Sock_Stream::Sock_Stream(const char           *pp_name,
     if (pv_open_nid < 0) {
         iv_remote_nid = pv_opened_nid;
         iv_remote_pid = pv_opened_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        iv_remote_verif = pv_opened_verif;
+#endif
     } else {
         iv_remote_nid = pv_open_nid;
         iv_remote_pid = pv_open_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+        iv_remote_verif = pv_open_verif;
+#endif
     }
     SS_Node *lp_node = new_SS_Node(iv_sock, this);
     cv_stream_map.put(&lp_node->iv_link);
@@ -325,8 +343,14 @@ SB_Trans::Sock_Stream::create(const char           *pp_name,
                               SB_Ms_Tl_Event_Mgr   *pp_event_mgr,
                               int                   pv_open_nid,
                               int                   pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                              SB_Verif_Type         pv_open_verif,
+#endif
                               int                   pv_opened_nid,
                               int                   pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                              SB_Verif_Type         pv_opened_verif,
+#endif
                               int                   pv_opened_type) {
     Sock_Stream *lp_stream =
       new Sock_Stream(pp_name,
@@ -345,8 +369,14 @@ SB_Trans::Sock_Stream::create(const char           *pp_name,
                       pp_event_mgr,
                       pv_open_nid,
                       pv_open_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                      pv_open_verif,
+#endif
                       pv_opened_nid,
                       pv_opened_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                      pv_opened_verif,
+#endif
                       pv_opened_type);
     if (pp_sock != NULL) {
         pp_sock->set_nonblock();
@@ -963,12 +993,6 @@ short SB_Trans::Sock_Stream::exec_wr(MS_Md_Type *pp_md,
     // need to fill out md in case there's an error
     lv_opts = 0;
     if (pv_opts) {
-        if (pv_opts & MS_OPTS_AGGR)
-            lv_opts |= MS_PMH_OPT_AGGR;
-        if (pv_opts & MS_OPTS_AGGR_C2S)
-            lv_opts |= MS_PMH_OPT_AGGR_C2S;
-        if (pv_opts & MS_OPTS_AGGR_S2C)
-            lv_opts |= MS_PMH_OPT_AGGR_S2C;
         if (pv_opts & MS_OPTS_FSREQ)
             lv_opts |= MS_PMH_OPT_FSREQ;
         if (pv_opts & MS_OPTS_MSIC)
@@ -981,6 +1005,9 @@ short SB_Trans::Sock_Stream::exec_wr(MS_Md_Type *pp_md,
     pp_md->out.iv_reply_data_max = pv_rep_max_data_size;
     pp_md->out.iv_nid = iv_opened_nid;
     pp_md->out.iv_pid = iv_opened_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    pp_md->out.iv_verif = iv_opened_verif;
+#endif
     pp_md->out.iv_msg_type = 0;
     pp_md->out.iv_ptype = iv_opened_type;
     pp_md->out.iv_pri = pv_pri;
@@ -1058,7 +1085,7 @@ bool SB_Trans::Sock_Stream::get_ib_addr(void *pp_addr) {
         return lv_ret;
     }
 
-    lv_ifconf.ifc_len = sizeof(*lp_ifreq) * MAX_IFS;
+    lv_ifconf.ifc_len = static_cast<int>(sizeof(*lp_ifreq) * MAX_IFS);
     lv_ifconf.ifc_req = la_ifreqs;
     lv_ioctl_req = SIOCGIFCONF;
     if (ioctl(lv_sock, lv_ioctl_req, &lv_ifconf) == -1) {
@@ -1281,7 +1308,11 @@ void SB_Trans::Sock_Stream::process_hdr(MS_Md_Type **ppp_md, bool *pp_cont) {
         char la_hdr_type[100];
         get_hdr_type(lp_hdr->iv_type, la_hdr_type);
         trace_where_printf(lp_rd->ip_where,
+#ifdef SQ_PHANDLE_VERIFIER
+                          "recv hdr %s majv=%d, minv=%d, type=%d(%s), ptype=%d, opts=%d/%d, fserr=%d, reqid=%d, pri=%d, tag=%d, seq=%d.%d, p-id=%d/%d/" PFVY ", csize=%d, dsize=%d, cmax=%d, dmax=%d\n",
+#else
                           "recv hdr %s majv=%d, minv=%d, type=%d(%s), ptype=%d, opts=%d/%d, fserr=%d, reqid=%d, pri=%d, tag=%d, seq=%d.%d, p-id=%d/%d, csize=%d, dsize=%d, cmax=%d, dmax=%d\n",
+#endif
                           ia_stream_name,
                           lp_hdr->iv_maj,
                           lp_hdr->iv_min,
@@ -1298,6 +1329,9 @@ void SB_Trans::Sock_Stream::process_hdr(MS_Md_Type **ppp_md, bool *pp_cont) {
                           lp_hdr->iv_seq2,
                           iv_remote_nid,
                           iv_remote_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                          iv_remote_verif,
+#endif
                           lp_hdr->iv_csize,
                           lp_hdr->iv_dsize,
                           lp_hdr->iv_cmaxsize,
@@ -1685,7 +1719,11 @@ int SB_Trans::Sock_Stream::send_md(MS_Md_Op_Type  pv_op,
         get_hdr_type(lp_s->iv_hdr.iv_type, la_hdr_type);
         sprintf(la_where, "%s %s", WHERE, pp_md->ip_where);
         trace_where_printf(la_where,
+#ifdef SQ_PHANDLE_VERIFIER
+                           "send hdr %s msgid=%d, md=%p majv=%d, minv=%d, type=%d(%s), ptype=%d, opts=%d/%d, fserr=%d, reqid=%d, pri=%d, tag=%d, seq=%d.%d, p-id=%d/%d/" PFVY ", csize=%d, dsize=%d, cmax=%d, dmax=%d\n",
+#else
                            "send hdr %s msgid=%d, md=%p majv=%d, minv=%d, type=%d(%s), ptype=%d, opts=%d/%d, fserr=%d, reqid=%d, pri=%d, tag=%d, seq=%d.%d, p-id=%d/%d, csize=%d, dsize=%d, cmax=%d, dmax=%d\n",
+#endif
                            ia_stream_name,
                            pp_md->iv_msgid,
                            pfp(pp_md),
@@ -1704,6 +1742,9 @@ int SB_Trans::Sock_Stream::send_md(MS_Md_Op_Type  pv_op,
                            lp_s->iv_hdr.iv_seq2,
                            iv_remote_nid,
                            iv_remote_pid,
+#ifdef SQ_PHANDLE_VERIFIER
+                           iv_remote_verif,
+#endif
                            lp_s->iv_hdr.iv_csize,
                            lp_s->iv_hdr.iv_dsize,
                            lp_s->iv_hdr.iv_cmaxsize,
@@ -1767,6 +1808,7 @@ int SB_Trans::Sock_Stream::send_md(MS_Md_Op_Type  pv_op,
             pp_md->iv_cv.reset_flag();
         }
     }
+    lv_abandoned = lv_abandoned; // touch
     lv_status = iv_send_mutex.unlock();
     SB_util_assert_ieq(lv_status, 0);
 

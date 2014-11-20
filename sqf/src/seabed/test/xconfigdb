@@ -1,0 +1,33 @@
+--------------------------------------------------------------------
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- (C) Copyright 2006-2014 Hewlett-Packard Development Company, L.P.
+--
+--  Licensed under the Apache License, Version 2.0 (the "License");
+--  you may not use this file except in compliance with the License.
+--  You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+--  Unless required by applicable law or agreed to in writing, software
+--  distributed under the License is distributed on an "AS IS" BASIS,
+--  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+--  See the License for the specific language governing permissions and
+--  limitations under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+CREATE TABLE lnode(lNid integer primary key, pNid integer, processors integer, roles integer, firstCore integer, lastCore integer);
+CREATE TABLE monRegProcData(procId integer, keyId integer, dataValue varchar (4096), primary key (procId, keyId));
+CREATE TABLE procs(procType integer, name varchar(32), nid integer, program varchar(32), stdoutFile varchar(256), args varchar(4096));
+CREATE TABLE monRegClusterData(keyId integer primary key, dataValue varchar (4096));
+CREATE TABLE monRegProcName(procId integer primary key autoincrement, procName varchar(32) unique);
+CREATE TABLE seconfig(procname varchar(32), pnid integer, bnid integer);
+CREATE TABLE monRegKeyName(keyId integer primary key autoincrement, keyname varchar(32) unique);
+CREATE TABLE monRegUniqueStrings(nid integer, id integer, dataValue varchar (4096), primary key(nid, id ));
+CREATE TABLE spare(pNid integer, spareFor integer );
+CREATE TABLE monRegNodeData(nodeId integer, keyId integer, dataValue varchar (4096), primary key (nodeId, keyId));
+CREATE TABLE persist(procName varchar(32), zone integer, reqTm integer );
+CREATE TABLE monRegNodeName(nodeId integer primary key, nodeName varchar(32) unique);
+CREATE TABLE pnode(pNid integer primary key, nodeName varchar(32) unique);

@@ -49,11 +49,19 @@ void CExtDumpReq::populateRequestString( void )
     char strBuf[MON_STRING_BUF_SIZE/2] = { 0 };
 
     snprintf( strBuf, sizeof(strBuf), 
-              "ExtReq(%s) req #=%ld requester(pid=%d) (name=%s/nid=%d/pid=%d)"
-              , CReqQueue::svcReqType[reqType_], getId(), pid_
-              , msg_->u.request.u.dump.process_name
-              , msg_->u.request.u.dump.target_nid
-              , msg_->u.request.u.dump.target_pid );
+              "ExtReq(%s) req #=%ld "
+              "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
+              "target(name=%s/nid=%d/pid=%d/verifier=%d)"
+            , CReqQueue::svcReqType[reqType_], getId()
+            , msg_->u.request.u.dump.process_name
+            , msg_->u.request.u.dump.nid
+            , msg_->u.request.u.dump.pid
+            , pid_
+            , msg_->u.request.u.dump.verifier
+            , msg_->u.request.u.dump.target_process_name
+            , msg_->u.request.u.dump.target_nid
+            , msg_->u.request.u.dump.target_pid
+            , msg_->u.request.u.dump.target_verifier );
     requestString_.assign( strBuf );
 }
 
@@ -64,65 +72,68 @@ void CExtDumpReq::performRequest()
 
     CProcess *target;
     CProcess *requester;
-    CLNode    *node;
-    int        rc = MPI_SUCCESS;
+    CLNode   *node;
+    string    target_process_name;
+    int       target_nid = -1;
+    int       target_pid = -1;
+    Verifier_t target_verifier = -1;
+    int       rc = MPI_SUCCESS;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_dump_Incr();
 
-    requester = MyNode->GetProcess( pid_ );
+    // Trace info about request
+    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d request #%ld: Dump, requester %s (%d, %d:%d), "
+                      "target %s (%d, %d:%d), path=%s\n"
+                    , method_name, __LINE__, id_
+                    , msg_->u.request.u.dump.process_name
+                    , msg_->u.request.u.dump.nid
+                    , msg_->u.request.u.dump.pid
+                    , msg_->u.request.u.dump.verifier
+                    , msg_->u.request.u.dump.target_process_name
+                    , msg_->u.request.u.dump.target_nid
+                    , msg_->u.request.u.dump.target_pid
+                    , msg_->u.request.u.dump.target_verifier
+                    , msg_->u.request.u.dump.path);
+    }
+
+    target_nid = msg_->u.request.u.dump.target_nid;
+    target_pid = msg_->u.request.u.dump.target_pid;
+    target_process_name = (const char *) msg_->u.request.u.dump.target_process_name;
+    nid_ = msg_->u.request.u.dump.nid;
+    verifier_ = msg_->u.request.u.dump.verifier;
+    processName_ = msg_->u.request.u.dump.process_name;
+    target_verifier  = msg_->u.request.u.dump.target_verifier;
+
+    if ( processName_.size() )
+    { // find by name
+        requester = MyNode->GetProcess( processName_.c_str()
+                                      , verifier_ );
+    }
+    else
+    { // find by pid
+        requester = MyNode->GetProcess( pid_
+                                      , verifier_ );
+    }
+
     if ( requester )
     {
-        // Trace info about request
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-        {
-            trace_printf("%s@%d request #%ld: Dump, requester (%d, %d), "
-                         "target %s (%d, %d), path=%s\n",
-                         method_name, __LINE__, id_,
-                         requester->GetNid(), requester->GetPid(),
-                         msg_->u.request.u.dump.process_name,
-                         msg_->u.request.u.dump.target_nid,
-                         msg_->u.request.u.dump.target_pid,
-                         msg_->u.request.u.dump.path);
+        if ( target_process_name.size() )
+        { // find by name
+            target = Nodes->GetProcess( target_process_name.c_str()
+                                      , target_verifier );
+        }
+        else
+        { // find by nid, pid
+            target = Nodes->GetProcess( target_nid
+                                      , target_pid
+                                      , target_verifier );
         }
 
-        if (msg_->u.request.u.dump.target_nid == -1)
-        {
-            node = Nodes->GetLNode(msg_->u.request.u.dump.process_name,
-                                   &target);
-            if (!target)
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    trace_printf("%s@%d - Can't Find Process name=%s\n",
-                                 method_name, __LINE__,
-                                 msg_->u.request.u.dump.process_name);
-        } else
-        {
-            node = Nodes->GetLNode (msg_->u.request.u.dump.target_nid);
-            if (node)
-            {
-                target = node->GetProcessL(msg_->u.request.u.dump.target_pid);
-                if (!target)
-                    if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                        trace_printf("%s@%d - Can't Find Process nid=%d, "
-                                     "pid=%d\n", method_name, __LINE__,
-                                     msg_->u.request.u.dump.target_nid,
-                                     msg_->u.request.u.dump.target_pid);
-            } else
-            {
-                target = NULL;
-                if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-                    trace_printf("%s@%d - Can't Find Process's Node nid=%d\n",
-                                 method_name, __LINE__,
-                                 msg_->u.request.u.dump.target_nid);
-            }
-        }
-
-        if (!target)
-        {
-            rc = MPI_ERR_NAME;
-        }
-
-        if (rc == MPI_SUCCESS)
+        if ( target )
         {
             if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
                 trace_printf("%s@%d - Dump Process name=%s, nid=%d, pid=%d\n",
@@ -134,8 +145,13 @@ void CExtDumpReq::performRequest()
                                    msg_->u.request.u.dump.path) != SUCCESS)
                 rc = MPI_ERR_SPAWN;
         }
+        else
+        {
+            if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+                trace_printf("%s@%d - Can't find target, rc=%d\n", method_name, __LINE__, rc);
+            rc = MPI_ERR_NAME;
+        }
 
-        msg_->u.reply.u.dump.return_code = rc;
         if (rc != MPI_SUCCESS)
         {   // Unable to dump process so send an error reply.
             //
@@ -146,10 +162,12 @@ void CExtDumpReq::performRequest()
                 trace_printf("%s@%d - Unsuccessful rc=%d\n", method_name, __LINE__, rc);
             // build reply
             msg_->u.reply.type = ReplyType_Dump;
-            msg_->u.reply.u.dump.nid = requester->GetNid();
-            msg_->u.reply.u.dump.nid = requester->GetPid();
-            strcpy (msg_->u.reply.u.dump.process_name, requester->GetName());
+            msg_->u.reply.u.dump.nid = target_nid;
+            msg_->u.reply.u.dump.pid = target_pid;
+            msg_->u.reply.u.dump.verifier = target_verifier;
+            strcpy (msg_->u.reply.u.dump.process_name, target_process_name.c_str());
             msg_->u.reply.u.dump.core_file[0] = 0;
+            msg_->u.reply.u.dump.return_code = rc;
 
             // Send reply to requester
             lioreply(msg_, pid_);
@@ -157,6 +175,8 @@ void CExtDumpReq::performRequest()
     }
     else
     {   // Reply to requester so it can release the buffer.  
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Can't find requester, rc=%d\n", method_name, __LINE__, MPI_ERR_EXITED);
         // We don't know about this process.
         errorReply( MPI_ERR_EXITED );
     }

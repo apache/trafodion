@@ -52,6 +52,8 @@ SB_INLINE void SB_Queue::add(SB_QL_Type *pp_item) {
         ip_head = pp_item;
     ip_tail = pp_item;
     INC_COUNT(iv_count);
+    if (iv_count > iv_hi)
+        iv_hi = iv_count;
 }
 
 SB_INLINE void SB_Queue::add_at_front(SB_QL_Type *pp_item) {
@@ -60,10 +62,16 @@ SB_INLINE void SB_Queue::add_at_front(SB_QL_Type *pp_item) {
         ip_tail = pp_item;
     ip_head = pp_item;
     INC_COUNT(iv_count);
+    if (iv_count > iv_hi)
+        iv_hi = iv_count;
 }
 
 SB_INLINE bool SB_Queue::empty() {
     return (iv_count == 0);
+}
+
+SB_INLINE int SB_Queue::hi() {
+    return iv_hi;
 }
 
 SB_INLINE void *SB_Queue::remove() {
@@ -100,6 +108,8 @@ SB_INLINE void SB_D_Queue::add(SB_DQL_Type *pp_item) {
         ip_tail->ip_next = pp_item;
     ip_tail = pp_item;
     INC_COUNT(iv_count);
+    if (iv_count > iv_hi)
+        iv_hi = iv_count;
 }
 
 SB_INLINE void SB_D_Queue::add_at_front(SB_DQL_Type *pp_item) {
@@ -112,6 +122,8 @@ SB_INLINE void SB_D_Queue::add_at_front(SB_DQL_Type *pp_item) {
     pp_item->iv_qid = iv_qid;
     ip_head = pp_item;
     INC_COUNT(iv_count);
+    if (iv_count > iv_hi)
+        iv_hi = iv_count;
 }
 
 SB_INLINE void SB_D_Queue::add_list(SB_DQL_Type *pp_prev, SB_DQL_Type *pp_item) {
@@ -124,6 +136,8 @@ SB_INLINE void SB_D_Queue::add_list(SB_DQL_Type *pp_prev, SB_DQL_Type *pp_item) 
         ip_tail = pp_item;
     pp_prev->ip_next = pp_item;
     INC_COUNT(iv_count);
+    if (iv_count > iv_hi)
+        iv_hi = iv_count;
 }
 
 SB_INLINE bool SB_D_Queue::empty() {
@@ -132,6 +146,10 @@ SB_INLINE bool SB_D_Queue::empty() {
 
 SB_INLINE SB_DQL_Type *SB_D_Queue::head() {
     return ip_head;
+}
+
+SB_INLINE int SB_D_Queue::hi() {
+    return iv_hi;
 }
 
 //

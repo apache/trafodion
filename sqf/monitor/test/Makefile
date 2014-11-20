@@ -29,6 +29,7 @@ INCLUDES =  -I$(INCEXPDIR) -I../linux
 MONOUTDIR = ../linux/$(OUTDIR)
 
 CLIENTOBJS	 = $(OUTDIR)/montestutil.o
+CLIENTOBJS	+= $(OUTDIR)/xmpi.o
 CLIENTOBJS	+= $(MONOUTDIR)/monclio.o
 CLIENTOBJS	+= $(MONOUTDIR)/clusterconf.o
 CLIENTOBJS	+= $(MONOUTDIR)/lnodeconfig.o
@@ -36,22 +37,23 @@ CLIENTOBJS	+= $(MONOUTDIR)/pnodeconfig.o
 CLIENTOBJS	+= $(MONOUTDIR)/trace.o
 CLIENTOBJS	+= $(MONOUTDIR)/otrace.o
 CLIENTOBJS	+= $(MONOUTDIR)/threadtls.o
+CLIENTOBJS	+= $(MONOUTDIR)/rtsigblock.o
 
 TEST_PGMS	 = $(OUTDIR)/childExitCtrl
 TEST_PGMS	+= $(OUTDIR)/childExitParent
 TEST_PGMS	+= $(OUTDIR)/childExitChild
 TEST_PGMS	+= $(OUTDIR)/client
 TEST_PGMS	+= $(OUTDIR)/server
-TEST_PGMS       += $(OUTDIR)/regTestCtrl
-TEST_PGMS       += $(OUTDIR)/deathNotice
-TEST_PGMS       += $(OUTDIR)/deathUnreg
-TEST_PGMS       += $(OUTDIR)/deathWatch
-TEST_PGMS       += $(OUTDIR)/persistentProc
-TEST_PGMS	+= $(OUTDIR)/tmSyncCtrl
-TEST_PGMS       += $(OUTDIR)/tmSyncTest
-TEST_PGMS       += $(OUTDIR)/spxCtrl
-TEST_PGMS       += $(OUTDIR)/spxProc
-TEST_PGMS       += $(OUTDIR)/procCreate
+TEST_PGMS	+= $(OUTDIR)/regTestCtrl
+TEST_PGMS	+= $(OUTDIR)/deathNotice
+TEST_PGMS	+= $(OUTDIR)/deathUnreg
+TEST_PGMS	+= $(OUTDIR)/deathWatch
+TEST_PGMS	+= $(OUTDIR)/persistentProc
+TEST_PGMS	+= $(OUTDIR)/procCreate
+TEST_PGMS	+= $(OUTDIR)/spxCtrl
+TEST_PGMS	+= $(OUTDIR)/spxProc
+#TEST_PGMS	+= $(OUTDIR)/tmSyncTest
+#TEST_PGMS	+= $(OUTDIR)/tmSyncCtrl
 
 # Compile rules for building tests
 $(OUTDIR)/%:%.cxx $(CLIENTOBJS)
@@ -71,8 +73,10 @@ $(OUTDIR)/%.o:%.cxx
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-
 # Targets
+# Uncomment the following target to disable parallel make
+.NOTPARALLEL: $(PGMS)
+
 all: $(TEST_PGMS)
 
 $(OUTDIR)/childExitCtrl : childExitCtrl.cxx $(CLIENTOBJS)
@@ -85,11 +89,11 @@ $(OUTDIR)/deathNotice: deathNotice.cxx $(CLIENTOBJS)
 $(OUTDIR)/deathUnreg: deathUnreg.cxx $(CLIENTOBJS)
 $(OUTDIR)/deathWatch: deathWatch.cxx $(CLIENTOBJS)
 $(OUTDIR)/persistentProc: persistentProc.cxx $(CLIENTOBJS)
-$(OUTDIR)/tmSyncCtrl: tmSyncCtrl.cxx  $(CLIENTOBJS)
-$(OUTDIR)/tmSyncTest: tmSyncTest.cxx  $(CLIENTOBJS)
+$(OUTDIR)/procCreate : procCreate.cxx $(CLIENTOBJS)
 $(OUTDIR)/spxCtrl : spxCtrl.cxx $(CLIENTOBJS)
 $(OUTDIR)/spxProc : spxProc.cxx $(CLIENTOBJS)
-$(OUTDIR)/procCreate : procCreate.cxx $(CLIENTOBJS)
+$(OUTDIR)/tmSyncTest: tmSyncTest.cxx  $(CLIENTOBJS)
+$(OUTDIR)/tmSyncCtrl: tmSyncCtrl.cxx  $(CLIENTOBJS)
 
 montestutil.cxx: montestutil.h
 

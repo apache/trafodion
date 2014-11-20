@@ -28,6 +28,9 @@
 #include <set>
 #include "msgdef.h"
 
+//
+// Monitor test utility 
+//
 class MonTestUtil
 {
  public:
@@ -35,37 +38,58 @@ class MonTestUtil
 
     void InitLocalIO( int my_pnid = -1 );
 
-    bool requestClose (const char * closeProcessName);
-
     bool requestNodeDown (int nid);
 
     void requestExit ( void );
+    
+    bool requestClose( const char * closeProcessName
+                     , Verifier_t closeProcessVerifier );
 
-    void requestKill( const char *name );
+    void requestKill( const char *name, Verifier_t verifier );
 
-    bool requestNewProcess (int nid, PROCESSTYPE type, bool nowait,
-                            const char *processName,
-                            const char *progName, const char *inFile,
-                            const char *outFile, int progArgC, char *progArgV[],
-                            int& newNid, int& newPid, char *newProcName );
+    bool requestNewProcess( int nid
+                          , PROCESSTYPE type
+                          , bool nowait
+                          , const char *processName
+                          , const char *progName
+                          , const char *inFile
+                          , const char *outFile
+                          , int progArgC
+                          , char *progArgV[]
+                          , int &newNid
+                          , int &newPid
+                          , Verifier_t &newVerifier
+                          , char *newProcName );
 
-    bool requestNotice( int nid, int pid, bool cancelFlag,
-                        _TM_Txid_External &transid );
+    bool requestNotice( int nid
+                      , int pid
+                      , Verifier_t verifier
+                      , const char *processName
+                      , bool cancelFlag
+                      , _TM_Txid_External &transid );
 
-    bool requestOpen( const char *processName, int deathNotice, char *port );
+    bool requestOpen( const char *processName
+                    , Verifier_t openProcessVerifier
+                    , int deathNotice
+                    , char *port );
 
-    // Get process info from monitor by process name
-    bool requestProcInfo( const char *processName, int &nid, int &pid );
+    bool requestSendEvent( int targetNid
+                         , int targetPid
+                         , Verifier_t targetVerifier
+                         , const char * targetProcessName
+                         , PROCESSTYPE type
+                         , int eventId
+                         , const char *eventData );
 
+    bool requestProcInfo( const char *processName
+                        , int &nid
+                        , int &pid
+                        , Verifier_t &verifier );
     bool requestSet ( ConfigType type, const char *group, const char *key,
                       const char *value );
 
     bool requestGet ( ConfigType type, const char *group, const char *key,
                       bool resumeFlag, struct Get_reply_def *& regData );
-
-    bool requestSendEvent (int targetNid, int targetPid,
-                           PROCESSTYPE type, int eventId,
-                           const char *eventData );
 
     void requestShutdown ( ShutdownLevel level );
 
@@ -83,13 +107,19 @@ class MonTestUtil
     int getPid() { return pid_; }
     void setShutdownBeforeStartup ( bool flag ) { shutdownBeforeStartup_ = flag; }
     bool getShutdownBeforeStartup () { return shutdownBeforeStartup_; }
+    void setNodedownBeforeStartup ( bool flag ) { nodedownBeforeStartup_ = flag; }
+    bool getNodedownBeforeStartup () { return  nodedownBeforeStartup_; }
     void setTrace ( bool flag ) { trace_ = flag; }
     bool getTrace () { return trace_; }
 
     bool validateNodeCount(int minNodesExpected);
     int  getNodeCount ( void );
     char * MPIErrMsg ( int code );
-    bool openProcess (const char * procName, int deathNotice, MPI_Comm &comm);
+    int getVerifier() { return verifier_; }
+    bool openProcess( const char *procName
+                    , Verifier_t procVerifier
+                    , int deathNotice
+                    , MPI_Comm &comm);
     bool closeProcess ( MPI_Comm &comm );
     std::list<int> getTests() { return testNums_; }
 
@@ -99,8 +129,10 @@ class MonTestUtil
     char   processName_[MAX_PROCESS_PATH];   // current process name
     int    nid_;           // current process node id
     int    pid_;           // current process process id
+    Verifier_t verifier_;  // current process verifier
     char   port_[MPI_MAX_PORT_NAME]; // current process port
     bool   shutdownBeforeStartup_;
+    bool   nodedownBeforeStartup_;
     bool   trace_;
     std::list<int> testNums_;  // specified test numbers to run
 };

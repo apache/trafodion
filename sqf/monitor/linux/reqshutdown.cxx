@@ -68,6 +68,7 @@ void CExtShutdownReq::performRequest()
     bool shutdownRejected = false;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_shutdown_Incr();
 
     // Trace info about request
@@ -132,6 +133,7 @@ void CExtShutdownReq::performRequest()
         msg_->u.reply.type = ReplyType_Generic;
         msg_->u.reply.u.generic.nid = requester->GetNid();
         msg_->u.reply.u.generic.pid = requester->GetPid();
+        msg_->u.reply.u.generic.verifier = requester->GetVerifier();
         msg_->u.reply.u.generic.process_name[0] = '\0';
 
         // Send reply to requester

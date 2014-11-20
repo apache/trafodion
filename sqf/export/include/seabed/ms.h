@@ -40,7 +40,6 @@
 // SRE flags
 enum {
     BSRE_PROCDEAD = 32,
-    BSRE_AGGR     = 16,
     BSRE_MON      = 8,
     BSRE_REMM     = 4,
     BSRE_REMIDM   = 2,
@@ -48,7 +47,6 @@ enum {
 };
 enum {
     XSRE_PROCDEAD = 32,
-    XSRE_AGGR     = 16,
     XSRE_MON      = 8,
     XSRE_REMM     = 4,
     XSRE_REMIDM   = 2,
@@ -86,7 +84,6 @@ enum {
     BMSG_LINK_MSINTERCEPTOR  = 0x800, // msinterceptor (should only be set by interceptor user)
     //                         0x400, // unused (legacy-MSG_LINK_BIG)
     BMSG_LINK_FSREQ          = 0x200, // fsreq (should only be set by fs)
-    BMSG_LINK_AGGR           = 0x020, // aggregate
     BMSG_LINK_FSDONEQ        = 0x010, // fs DONE queueing
     BMSG_LINK_LDONEQ         = 0x008, // LDONE queueing
     BMSG_LINK_FSDONETSQ      = 0x004  // fs TS DONE queueing
@@ -269,12 +266,18 @@ typedef struct MS_Mon_Node_Info_Type {
 typedef struct MS_Mon_Process_Info_Type {
     int               nid;
     int               pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type     verifier;
+#endif
     int               type;
     char              process_name[MS_MON_MAX_PROCESS_NAME];
     int               os_pid;
     int               priority;
     int               parent_nid;
     int               parent_pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type     parent_verifier;
+#endif
     char              parent_name[MS_MON_MAX_PROCESS_NAME];
     char              program[MS_MON_MAX_PROCESS_PATH];
     MS_MON_PROC_STATE state;
@@ -427,15 +430,21 @@ struct MS_Mon_Change_def {
     char              value[MS_MON_MAX_VALUE_SIZE];
 };
 struct MS_Mon_Close_def {
-    int  nid;
-    int  pid;
-    char process_name[MS_MON_MAX_PROCESS_NAME];
-    int  aborted;
-    int  mon;
+    int           nid;
+    int           pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type verifier;
+#endif
+    char          process_name[MS_MON_MAX_PROCESS_NAME];
+    int           aborted;
+    int           mon;
 };
 struct MS_Mon_NewProcess_Notice_def {
     int             nid;
     int             pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type   verifier;
+#endif
     long long       tag;
     char            port[MS_MON_MAX_PORT_NAME];
     char            process_name[MS_MON_MAX_PROCESS_NAME];
@@ -445,6 +454,7 @@ struct MS_Mon_NodeDown_def {
     int  nid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
     int  takeover;
+    char reason[MS_MON_MAX_REASON_TEXT];
 };
 struct MS_Mon_NodePrepare_def {
     int  nid;
@@ -461,14 +471,24 @@ struct MS_Mon_NodeUp_def {
     int  takeover;
 };
 struct MS_Mon_Open_def {
-    int  nid;
-    int  pid;
-    char process_name[MS_MON_MAX_PROCESS_NAME];
-    int  death_notification;
+    int           nid;
+    int           pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type verifier;
+    char          process_name[MS_MON_MAX_PROCESS_NAME];
+    int           target_nid;
+    int           target_pid;
+    SB_Verif_Type target_verifier;
+#endif
+    char          target_process_name[MS_MON_MAX_PROCESS_NAME];
+    int           death_notification;
 };
 struct MS_Mon_ProcessDeath_def {
     int                 nid;
     int                 pid;
+#ifdef SQ_PHANDLE_VERIFIER
+    SB_Verif_Type       verifier;
+#endif
     MS_Mon_Transid_Type transid;
     int                 aborted;
     char                process_name[MS_MON_MAX_PROCESS_NAME];
@@ -643,6 +663,17 @@ SB_Export void msg_init_trace();
 SB_Export int msg_mon_close_process(SB_Phandle_Type *phandle)
 SB_DIAG_UNUSED;
 
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to create process name with seq #
+//
+SB_Export int msg_mon_create_name_seq(char          *name,
+                                      SB_Verif_Type  verifier,
+                                      char          *name_seq,
+                                      int            name_seq_len)
+SB_DIAG_UNUSED;
+#endif
+
 //
 // Call this to deregister for death notifications
 //
@@ -651,7 +682,7 @@ SB_DIAG_UNUSED;
 SB_Export int msg_mon_deregister_death_notification(int                 target_nid,
                                                     int                 target_pid,
                                                     MS_Mon_Transid_Type target_transid)
-SB_DIAG_UNUSED;
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
 
 //
 // Call this to deregister for death notifications (for notify_nid/notify_pid)
@@ -663,7 +694,42 @@ SB_Export int msg_mon_deregister_death_notification2(int                 notify_
                                                      int                 target_nid,
                                                      int                 target_pid,
                                                      MS_Mon_Transid_Type target_transid)
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to deregister for death notifications (for notify_nid/notify_pid/notify_verifier)
+//
+// target_nid/target_pid may be -1 to deregister all associated with target_transid.
+//
+SB_Export int msg_mon_deregister_death_notification3(int                 notify_nid,
+                                                     int                 notify_pid,
+                                                     SB_Verif_Type       notify_verifier,
+                                                     int                 target_nid,
+                                                     int                 target_pid,
+                                                     SB_Verif_Type       target_verifier,
+                                                     MS_Mon_Transid_Type target_transid)
 SB_DIAG_UNUSED;
+
+//
+// Call this to deregister for death notifications
+//
+// target_name may not be NULL!
+//
+SB_Export int msg_mon_deregister_death_notification_name(const char          *target_name,
+                                                         MS_Mon_Transid_Type  target_transid)
+SB_DIAG_UNUSED;
+
+//
+// Call this to deregister for death notifications (for notify_name)
+//
+// target_name may not be NULL!
+//
+SB_Export int msg_mon_deregister_death_notification_name2(const char          *notify_name,
+                                                          const char          *target_name,
+                                                          MS_Mon_Transid_Type  target_transid)
+SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to dump process by id
@@ -672,7 +738,7 @@ SB_Export int msg_mon_dump_process_id(const char *path,
                                       int         nid,
                                       int         pid,
                                       char       *core_file)
-SB_DIAG_UNUSED;
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
 
 //
 // Call this to dump process by name
@@ -702,7 +768,27 @@ SB_Export int msg_mon_event_send(int   nid,
                                  int   event_id,
                                  int   event_len,
                                  char *event_data)
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to send an event.
+//
+// name may not be NULL!
+// To send to all nodes or processes in a node, use msg_mon_event_send
+//
+// process_type must be a value in the enumeration MS_Mon_PROCESSTYPE.
+// If event_len is 0, event_data will be ignored;
+// otherwise, event_data will be expected to be non-NULL.
+// The event data max size is MS_MON_MAX_SYNC_DATA.
+//
+SB_Export int msg_mon_event_send_name(const char *name,
+                                      int         process_type,
+                                      int         event_id,
+                                      int         event_len,
+                                      char       *event_data)
 SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to wait for the event to occur.
@@ -772,6 +858,21 @@ SB_Export int msg_mon_get_my_info3(int  *mon_nid,        // mon node-id
                                    int  *compid,         // component-id
                                    int  *pnid)           // physical node-id
 SB_DIAG_UNUSED;
+
+#ifdef SQ_PHANDLE_VERIFIER
+SB_Export int msg_mon_get_my_info4(int           *mon_nid,        // mon node-id
+                                   int           *mon_pid,        // mon process-id
+                                   char          *mon_name,       // mon name
+                                   int            mon_name_len,   // mon name-len
+                                   int           *mon_ptype,      // mon process-type
+                                   int           *mon_zid,        // mon zone-id
+                                   int           *os_pid,         // os process-id
+                                   long          *os_tid,         // os thread-id
+                                   int           *compid,         // component-id
+                                   int           *pnid,           // physical node-id
+                                   SB_Verif_Type *mon_verifier)   // mon process-verifier
+SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to get process name
@@ -847,12 +948,14 @@ SB_DIAG_UNUSED;
 // opened: true (opened) or false (opens)
 // info:   returned info
 //
+// deprecated
+//
 SB_Export int msg_mon_get_open_info(int                    nid,
                                     int                    pid,
                                     char                  *name,
                                     int                    opened,
                                     MS_Mon_Open_Info_Type *info)
-SB_DIAG_UNUSED;
+SB_DIAG_DEPRECATED;
 
 //
 // Call this to get open info for a nid/pid or name (max specified).
@@ -865,6 +968,8 @@ SB_DIAG_UNUSED;
 // max:    max number of opens returned
 // info:   returned info
 //
+// deprecated
+//
 SB_Export int msg_mon_get_open_info_max(int                        nid,
                                         int                        pid,
                                         char                      *name,
@@ -872,7 +977,7 @@ SB_Export int msg_mon_get_open_info_max(int                        nid,
                                         int                       *count,
                                         int                        max,
                                         MS_Mon_Open_Info_Max_Type *info)
-SB_DIAG_UNUSED;
+SB_DIAG_DEPRECATED;
 
 //
 // Call this to get process info
@@ -884,7 +989,23 @@ SB_DIAG_UNUSED;
 SB_Export int msg_mon_get_process_info(char *name,
                                        int  *nid,
                                        int  *pid)
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to get process info
+//
+// name:     process name to get info on
+// nid:      is returned
+// pid:      is returned
+// verifier: is returned
+//
+SB_Export int msg_mon_get_process_info2(char          *name,
+                                        int           *nid,
+                                        int           *pid,
+                                        SB_Verif_Type *verifier)
 SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to get process info
@@ -921,7 +1042,23 @@ SB_DIAG_UNUSED;
 SB_Export int msg_mon_get_process_name(int   nid,
                                        int   pid,
                                        char *name)
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to get process name
+//
+// nid:      is nid
+// pid:      is pid
+// verifier: is verifier
+// name:     is returned name
+//
+SB_Export int msg_mon_get_process_name2(int            nid,
+                                        int            pid,
+                                        SB_Verif_Type  verifier,
+                                        char          *name)
 SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to get tm seq number
@@ -983,6 +1120,14 @@ SB_DIAG_UNUSED;
 //
 SB_Export int msg_mon_node_down(int nid)
 SB_DIAG_UNUSED;
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to down node (with reason).
+//
+SB_Export int msg_mon_node_down2(int nid, const char *reason)
+SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to up node.
@@ -1111,7 +1256,7 @@ SB_DIAG_UNUSED;
 //
 SB_Export int msg_mon_register_death_notification(int target_nid,
                                                   int target_pid)
-SB_DIAG_UNUSED;
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
 
 //
 // Call this to register for death notifications (to notify_nid/notify_pid)
@@ -1120,14 +1265,42 @@ SB_Export int msg_mon_register_death_notification2(int notify_nid,
                                                    int notify_pid,
                                                    int target_nid,
                                                    int target_pid)
-SB_DIAG_UNUSED;
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
 
 //
 // Call this to register for death notifications
 //
 SB_Export int msg_mon_register_death_notification3(int target_nid,
                                                    int target_pid)
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to register for death notifications (internal use)
+//
+SB_Export int msg_mon_register_death_notification4(int           target_nid,
+                                                   int           target_pid,
+                                                   SB_Verif_Type target_verifier)
 SB_DIAG_UNUSED;
+
+//
+// Call this to register for death notifications
+//
+// target_name may not be NULL!
+//
+SB_Export int msg_mon_register_death_notification_name(const char *target_name)
+SB_DIAG_UNUSED;
+
+//
+// Call this to register for death notifications (to notify_name)
+//
+// notify_name may not be NULL!
+// target_name may not be NULL!
+//
+SB_Export int msg_mon_register_death_notification_name2(const char *notify_name,
+                                                        const char *target_name)
+SB_DIAG_UNUSED;
+#endif
 
 //
 // Call this to re-open process (not normally called by application)
@@ -1160,6 +1333,7 @@ SB_DIAG_UNUSED;
 // pid:      returned pid
 // infile:   input file
 // outfile:  output file
+// verifier: verifier
 //
 SB_Export int msg_mon_start_process(char             *prog,
                                     char             *name,
@@ -1176,7 +1350,11 @@ SB_Export int msg_mon_start_process(char             *prog,
                                     int              *nid,
                                     int              *pid,
                                     char             *infile,
-                                    char             *outfile)
+                                    char             *outfile
+#ifdef SQ_PHANDLE_VERIFIER
+                                   ,SB_Verif_Type    *verifier = NULL
+#endif
+                                   )
 SB_DIAG_UNUSED;
 
 //
@@ -1201,7 +1379,11 @@ SB_Export int msg_mon_start_process2(char             *prog,
                                      int              *pid,
                                      char             *infile,
                                      char             *outfile,
-                                     int               unhooked)
+                                     int               unhooked
+#ifdef SQ_PHANDLE_VERIFIER
+                                    ,SB_Verif_Type    *verifier = NULL
+#endif
+                                    )
 SB_DIAG_UNUSED;
 
 //
@@ -1219,6 +1401,7 @@ SB_DIAG_UNUSED;
 // nid:      nid
 // infile:   input file
 // outfile:  output file
+// verifier: verifier
 //
 SB_Export int msg_mon_start_process_nowait(char             *prog,
                                            char             *name,
@@ -1234,7 +1417,11 @@ SB_Export int msg_mon_start_process_nowait(char             *prog,
                                            int              *nid,
                                            int              *pid,
                                            char             *infile,
-                                           char             *outfile)
+                                           char             *outfile
+#ifdef SQ_PHANDLE_VERIFIER
+                                          ,SB_Verif_Type    *verifier = NULL
+#endif
+                                          )
 SB_DIAG_UNUSED;
 
 //
@@ -1256,7 +1443,11 @@ SB_Export int msg_mon_start_process_nowait2(char             *prog,
                                             int              *pid,
                                             char             *infile,
                                             char             *outfile,
-                                            int               unhooked)
+                                            int               unhooked
+#ifdef SQ_PHANDLE_VERIFIER
+                                           ,SB_Verif_Type    *verifier = NULL
+#endif
+                                           )
 SB_DIAG_UNUSED;
 
 //
@@ -1275,6 +1466,7 @@ SB_DIAG_UNUSED;
 // nid:      nid
 // infile:   input file
 // outfile:  output file
+// verifier: verifier
 //
 SB_Export int msg_mon_start_process_nowait_cb(MS_Mon_Start_Process_Cb_Type  callback,
                                               char                         *prog,
@@ -1290,7 +1482,11 @@ SB_Export int msg_mon_start_process_nowait_cb(MS_Mon_Start_Process_Cb_Type  call
                                               int                          *nid,
                                               int                          *pid,
                                               char                         *infile,
-                                              char                         *outfile)
+                                              char                         *outfile
+#ifdef SQ_PHANDLE_VERIFIER
+                                             ,SB_Verif_Type                 *verifier = NULL
+#endif
+                                             )
 SB_DIAG_UNUSED;
 
 //
@@ -1312,7 +1508,11 @@ SB_Export int msg_mon_start_process_nowait_cb2(MS_Mon_Start_Process_Cb_Type  cal
                                                int                          *pid,
                                                char                         *infile,
                                                char                         *outfile,
-                                               int                           unhooked)
+                                               int                           unhooked
+#ifdef SQ_PHANDLE_VERIFIER
+                                              ,SB_Verif_Type                 *verifier = NULL
+#endif
+                                              )
 SB_DIAG_UNUSED;
 
 //
@@ -1321,7 +1521,17 @@ SB_DIAG_UNUSED;
 SB_Export int msg_mon_stop_process(char *name,
                                    int   nid,
                                    int   pid)
+SB_DIAG_UNUSED; // TODO: ->SB_DIAG_DEPRECATED
+
+#ifdef SQ_PHANDLE_VERIFIER
+//
+// Call this to stop process
+//
+// target_name may not be NULL!
+//
+SB_Export int msg_mon_stop_process_name(const char *name)
 SB_DIAG_UNUSED;
+#endif
 
 #ifdef SQ_STFSD
 //
@@ -1492,7 +1702,6 @@ SB_Export void msg_test_disable_wait(int disable_wait);
 SB_Export int msg_test_enable_client_only()
 SB_DIAG_UNUSED;
 
-
 //
 // For testing
 //
@@ -1511,12 +1720,10 @@ SB_Export void msg_test_openers_close();
 //
 SB_Export void msg_test_openers_del();
 
-
 //
 // For testing
 //
 SB_Export void msg_test_set_md_count(int count);
-
 
 //
 // emulation functions
@@ -1766,7 +1973,9 @@ enum {
     XMSGSYSINFO_RECVLIMIT       = 0,
     XMSGSYSINFO_SENDLIMIT       = 1,
     XMSGSYSINFO_RECVUSE         = 4,
-    XMSGSYSINFO_SENDUSE         = 5
+    XMSGSYSINFO_SENDUSE         = 5,
+    XMSGSYSINFO_RECVSIZE        = 100,
+    XMSGSYSINFO_RECVLIMSIZE     = 101
 };
 
 #endif // !__SB_MS_H_

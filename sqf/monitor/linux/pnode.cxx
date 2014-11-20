@@ -130,6 +130,7 @@ CNode::CNode( char *name, int pnid, int rank )
       ,rankFailure_(false)
       ,creator_(false)
       ,creatorPid_(-1)
+      ,creatorVerifier_(-1)
       ,joiningPhase_(JoiningPhase_Unknown)
       ,activatingSpare_(false)
       ,spareNode_(false)
@@ -221,8 +222,8 @@ CNode::CNode( char *name, int pnid, int rank )
 
     gettimeofday(&todStart_, NULL);
 
-    quiesceSendPids_ = new pids_set_t;
-    quiesceExitPids_ = new pids_set_t;
+    quiesceSendPids_ = new SQ_LocalIOToClient::bcastPids_t;
+    quiesceExitPids_ = new SQ_LocalIOToClient::bcastPids_t;
     internalState_ = State_Default; 
 
     uniqStrId_ = Config->getMaxUniqueId ( pnid_ ) + 1;
@@ -253,6 +254,7 @@ CNode::CNode( char *name
       ,rankFailure_(false)
       ,creator_(false)
       ,creatorPid_(-1)
+      ,creatorVerifier_(-1)
       ,joiningPhase_(JoiningPhase_Unknown)
       ,activatingSpare_(false)
       ,spareNode_(true)
@@ -335,8 +337,8 @@ CNode::CNode( char *name
     
     gettimeofday(&todStart_, NULL);
 
-    quiesceSendPids_ = new pids_set_t;
-    quiesceExitPids_ = new pids_set_t;
+    quiesceSendPids_ = new SQ_LocalIOToClient::bcastPids_t;
+    quiesceExitPids_ = new SQ_LocalIOToClient::bcastPids_t;
     internalState_ = State_Default; 
 
     uniqStrId_ = Config->getMaxUniqueId ( pnid_ ) + 1;
@@ -369,6 +371,30 @@ CNode::~CNode( void )
     }
     
     TRACE_EXIT;
+}
+
+void CNode::addToQuiesceSendPids( int pid, Verifier_t verifier )
+{
+    SQ_LocalIOToClient::pidVerifier_t pv;
+    pv.pv.pid = pid;
+    pv.pv.verifier = verifier;
+    quiesceSendPids_->insert( pv.pnv );
+}
+
+void CNode::addToQuiesceExitPids( int pid, Verifier_t verifier )
+{
+    SQ_LocalIOToClient::pidVerifier_t pv;
+    pv.pv.pid = pid;
+    pv.pv.verifier = verifier;
+    quiesceExitPids_->insert( pv.pnv );
+}
+
+void CNode::delFromQuiesceExitPids( int pid, Verifier_t verifier )
+{
+    SQ_LocalIOToClient::pidVerifier_t pv;
+    pv.pv.pid = pid;
+    pv.pv.verifier = verifier;
+    quiesceExitPids_->erase( pv.pnv );
 }
 
 int CNode::AssignNid(void)
@@ -518,10 +544,13 @@ void CNode::SendQuiescingNotices( void )
            trace_printf("%s@%d" " - Broadcasting Quiesce notice to TSE and DTMs" "\n", method_name, __LINE__);
 
     // make a copy because the notice clear will delete the pids list if empty. 
-    pids_set_t *quiesceSendPidsCopy = new pids_set_t;
+    SQ_LocalIOToClient::bcastPids_t *quiesceSendPidsCopy = new SQ_LocalIOToClient::bcastPids_t;
     *quiesceSendPidsCopy = *quiesceSendPids_;
 
-    SQ_theLocalIOToClient->putOnNoticeQueue( BCAST_PID, msg, quiesceSendPidsCopy );
+    SQ_theLocalIOToClient->putOnNoticeQueue( BCAST_PID
+                                           , -1
+                                           , msg
+                                           , quiesceSendPidsCopy);
 
     TRACE_EXIT;
 }
@@ -991,6 +1020,7 @@ void CNode::MoveLNodes( CNode *spareNode )
     SetFirstLNode( NULL );
     SetLastLNode( NULL );
     SetNumLNodes( 0 );
+    lastLNode_ = NULL;
 
     // Move the physical node's process list
     nameMap_t *nameMap = spareNode->GetNameMap();
@@ -1067,8 +1097,7 @@ void CNode::StartWatchdogProcess( void )
     CProcess * watchdogProcess;
     CConfigGroup *group;
     
-    sprintf( name, "$WDT%03d", MyPNID);
-#if 1
+    sprintf( name, "$WDT%03d", MyNode->GetZone() );
     group = Config->GetGroup( name );
     if (group==NULL)
     {
@@ -1078,7 +1107,6 @@ void CNode::StartWatchdogProcess( void )
         group->Set( persistZonesKey , persistZones );
         group->Set( persistRetriesKey , (char *)"10,60" );
     }
-#endif    
     // The following variables are used to retrieve the proper startup and keepalive environment variable
     // values, and to use as arguments for the lower level ioctl calls that interface with the watchdog 
     // timer package.
@@ -1161,8 +1189,8 @@ void CNode::StartPStartDProcess( void )
     CProcess * pstartdProcess;
     CConfigGroup *group;
     
-    snprintf( name, sizeof(name), "$PSD%03d", MyPNID);
-    snprintf( stdout, sizeof(stdout), "stdout_PSD%03d", MyPNID );
+    snprintf( name, sizeof(name), "$PSD%03d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_PSD%03d", MyNode->GetZone() );
 
     group = Config->GetGroup( name );
     if (group==NULL)
@@ -1348,8 +1376,8 @@ void CNode::StartSMServiceProcess( void )
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
        trace_printf("%s@%d" " - Creating SMService Process\n", method_name, __LINE__);
 
-    snprintf( name, sizeof(name), "$SMS%03d", MyPNID);
-    snprintf( stdout, sizeof(stdout), "stdout_SMS%03d", MyPNID );
+    snprintf( name, sizeof(name), "$SMS%03d", MyNode->GetZone() );
+    snprintf( stdout, sizeof(stdout), "stdout_SMS%03d", MyNode->GetZone() );
 #if 0
     CConfigGroup *group;
     // TODO: when Synchronized request fully implemented
@@ -1666,7 +1694,7 @@ void CNodeContainer::AddToSpareNodesList( int pnid )
     TRACE_EXIT;
 }
 
-int CNodeContainer::PackSpareNodesList( int *&buffer )
+int CNodeContainer::PackSpareNodesList( intBuffPtr_t &buffer )
 { 
     const char method_name[] = "CNodeContainer::PackSpareNodesList";
     TRACE_ENTRY;
@@ -1686,7 +1714,7 @@ int CNodeContainer::PackSpareNodesList( int *&buffer )
     return spareNodesList_.size();
 }
 
-void CNodeContainer::UnpackSpareNodesList( int *&buffer, int spareNodesCount )
+void CNodeContainer::UnpackSpareNodesList( intBuffPtr_t &buffer, int spareNodesCount )
 {
     const char method_name[] = "CNodeContainer::UnpackSpareNodesList";
     TRACE_ENTRY;
@@ -1714,7 +1742,7 @@ void CNodeContainer::UnpackSpareNodesList( int *&buffer, int spareNodesCount )
     return;
 }
 
-int CNodeContainer::PackNodeMappings( int *&buffer )
+int CNodeContainer::PackNodeMappings( intBuffPtr_t &buffer )
 {
     const char method_name[] = "CNodeContainer::PackNodeMappings";
     TRACE_ENTRY;
@@ -1752,7 +1780,7 @@ int CNodeContainer::PackNodeMappings( int *&buffer )
     return count;
 }
 
-void CNodeContainer::UnpackNodeMappings( int *&buffer, int nodeMapCount )
+void CNodeContainer::UnpackNodeMappings( intBuffPtr_t &buffer, int nodeMapCount )
 {
     const char method_name[] = "CNodeContainer::UnpackNodeMappings";
     TRACE_ENTRY;
@@ -1775,7 +1803,7 @@ void CNodeContainer::UnpackNodeMappings( int *&buffer, int nodeMapCount )
     return;
 }
 
-void CNodeContainer::PackZids( int *&buffer )
+void CNodeContainer::PackZids( intBuffPtr_t &buffer )
 { 
     const char method_name[] = "CNodeContainer::PackZids";
     TRACE_ENTRY;
@@ -1790,7 +1818,7 @@ void CNodeContainer::PackZids( int *&buffer )
     return;
 }
 
-void CNodeContainer::UnpackZids( int *&buffer )
+void CNodeContainer::UnpackZids( intBuffPtr_t &buffer )
 { 
     const char method_name[] = "CNodeContainer::UnpackZids";
     TRACE_ENTRY;
@@ -1829,7 +1857,8 @@ CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int 
         }
         else
         {
-            if ( LNode[nid]->GetState() == State_Up  &&
+            if ((LNode[nid]->GetState() == State_Up || 
+                 LNode[nid]->GetState() == State_Shutdown) &&
                 !LNode[nid]->IsKillingNode() &&
                 (LNode[nid]->GetZoneType() == ZoneType_Any ||
                  LNode[nid]->GetZoneType() == ZoneType_Backend ||
@@ -1847,7 +1876,8 @@ CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int 
         }
         else
         {
-            if ( LNode[nid]->GetState() == State_Up  &&
+            if ((LNode[nid]->GetState() == State_Up || 
+                 LNode[nid]->GetState() == State_Shutdown) &&
                 !LNode[nid]->IsKillingNode() &&
                 (LNode[nid]->GetZoneType() == ZoneType_Any ||
                  LNode[nid]->GetZoneType() == ZoneType_Backend ||
@@ -1869,7 +1899,8 @@ CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int 
 
             nid = 0;
         }
-        if ( LNode[nid]->GetState() == State_Up &&
+        if ((LNode[nid]->GetState() == State_Up || 
+             LNode[nid]->GetState() == State_Shutdown) &&
             !LNode[nid]->IsKillingNode() )
         {
             lnode = LNode[nid]; // use the configured nid passed in
@@ -1882,7 +1913,8 @@ CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int 
         }
         else
         {
-            if ( LNode[nid]->GetState() == State_Up &&
+            if ((LNode[nid]->GetState() == State_Up || 
+                 LNode[nid]->GetState() == State_Shutdown) &&
                 !LNode[nid]->IsKillingNode() )
             {
                 lnode = LNode[nid]; // use the configured nid passed in
@@ -1896,7 +1928,8 @@ CLNode *CNodeContainer::AssignLNode( CProcess *requester, PROCESSTYPE type, int 
         }
         else
         {
-            if ( LNode[nid]->GetState() == State_Up  &&
+            if ((LNode[nid]->GetState() == State_Up || 
+                 LNode[nid]->GetState() == State_Shutdown)  &&
                 !LNode[nid]->IsKillingNode() &&
                 (LNode[nid]->GetZoneType() == ZoneType_Any ||
                  LNode[nid]->GetZoneType() == ZoneType_Frontend ||
@@ -1953,8 +1986,10 @@ void CNodeContainer::AvgNodeData(ZoneType type, int *avg_pcount, unsigned int *a
     TRACE_EXIT;
 }
 
-void CNodeContainer::CancelDeathNotification (int nid, int pid, _TM_Txid_External trans_id)
-
+void CNodeContainer::CancelDeathNotification( int nid
+                                            , int pid
+                                            , int verifier
+                                            , _TM_Txid_External trans_id)
 {
     CNode *node;
     
@@ -1963,7 +1998,10 @@ void CNodeContainer::CancelDeathNotification (int nid, int pid, _TM_Txid_Externa
 
     for ( node=head_; node; node=node->GetNext() )
     {
-        node->CLNodeContainer::CancelDeathNotification (nid,pid,trans_id);
+        node->CLNodeContainer::CancelDeathNotification( nid
+                                                      , pid
+                                                      , verifier
+                                                      , trans_id);
     }
 
     TRACE_EXIT;
@@ -2142,10 +2180,245 @@ CProcess *CNodeContainer::GetProcess( int nid, int pid, bool checknode )
     return( process );
 }
 
+CProcess *CNodeContainer::GetProcess( int nid
+                                    , int pid
+                                    , Verifier_t verifier
+                                    , bool checknode
+                                    , bool checkprocess
+                                    , bool backupOk )
+{
+    const char method_name[] = "CNodeContainer::GetProcess(nid,pid,verifier)";
+    TRACE_ENTRY;
+
+    CProcess *process = NULL;
+
+    if ( nid != -1 )
+    {
+        CLNode   *lnode = GetLNode( nid );
+        if ( lnode )
+        {
+            if ( checknode )
+            {
+                if ( lnode->GetState() == State_Up ||
+                     lnode->GetState() == State_Shutdown )
+                {
+                    process = lnode->GetProcessL( pid, verifier, checkprocess );
+                    if ( process ) 
+                    {
+                        if ( nid != process->GetNid() )
+                        {
+                           if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                           {
+                              trace_printf( "%s@%d - Get (%d, %d:%d) failed -- nid mismatch (%d)\n"
+                                          , method_name, __LINE__
+                                          , nid
+                                          , pid
+                                          , verifier
+                                          , process->GetNid() );
+                           }            
+                           process = NULL;
+                        }
+                        else if ( !backupOk && process->IsBackup() )
+                        {
+                            if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                            {
+                                trace_printf( "%s@%d - Get (%d, %d:%d) failed -- backupOk=%d backup=%d\n"
+                                            , method_name, __LINE__
+                                            , nid
+                                            , pid
+                                            , verifier
+                                            , backupOk
+                                            , process->IsBackup() );
+                            }
+                            process = NULL;
+                        }
+                    }
+                    else
+                    {
+                        if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                        {
+                           trace_printf( "%s@%d - Get (%d, %d:%d) failed\n"
+                                       , method_name, __LINE__
+                                       , nid
+                                       , pid
+                                       , verifier );
+                        }            
+                    }
+                }
+                else
+                {
+                    if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                       trace_printf("%s@%d" " - Node is not up, nid=%d, state=%d, \n", method_name, __LINE__, lnode->GetNid(), lnode->GetState());
+                }
+            }
+            else
+            {
+                process = lnode->GetProcessL( pid, verifier, checkprocess );
+                if ( process ) 
+                {
+                    if ( nid != process->GetNid() )
+                    {
+                       if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                       {
+                          trace_printf( "%s@%d - Get (%d, %d:%d) failed -- nid mismatch (%d)\n"
+                                      , method_name, __LINE__
+                                      , nid
+                                      , pid
+                                      , verifier
+                                      , process->GetNid() );
+                       }            
+                       process = NULL;
+                    }
+                    else if ( !backupOk && process->IsBackup() )
+                    {
+                        if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                        {
+                            trace_printf( "%s@%d - Get (%d, %d:%d) failed -- backupOk=%d backup=%d\n"
+                                        , method_name, __LINE__
+                                        , nid
+                                        , pid
+                                        , verifier
+                                        , backupOk
+                                        , process->IsBackup() );
+                        }
+                        process = NULL;
+                    }
+                }
+                else
+                {
+                    if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    {
+                       trace_printf( "%s@%d - Get (%d, %d:%d) failed\n"
+                                   , method_name, __LINE__
+                                   , nid
+                                   , pid
+                                   , verifier );
+                    }            
+                }
+            }
+        }
+    }
+
+    TRACE_EXIT;
+    return( process );
+}
+
+CProcess *CNodeContainer::GetProcess( const char *name
+                                    , Verifier_t verifier
+                                    , bool checknode
+                                    , bool checkprocess
+                                    , bool backupOk )
+{
+    CNode *node = head_;
+    CProcess *process = NULL;
+    const char method_name[] = "CNodeContainer::GetProcess(name,verifier)";
+    TRACE_ENTRY;
+
+    while ( node )
+    {
+        if ( checknode )
+        {
+            if ( node->GetState() == State_Up ||
+                 node->GetState() == State_Shutdown )
+            {
+                process = node->CProcessContainer::GetProcess( name
+                                                             , verifier
+                                                             , checkprocess );
+                if ( process ) 
+                {
+                    if ( !backupOk && process->IsBackup() )
+                    {
+                        if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                        {
+                            trace_printf( "%s@%d - Get (%s:%d) failed -- backupOk=%d backup=%d\n"
+                                        , method_name, __LINE__
+                                        , name
+                                        , verifier
+                                        , backupOk
+                                        , process->IsBackup() );
+                        }
+                        process = NULL;
+                    }
+                    else
+                    {
+                        if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                        {
+                            trace_printf( "%s@%d - Found (%s:%d) (%d, %d) backup=%d\n"
+                                        , method_name, __LINE__
+                                        , name
+                                        , verifier
+                                        , process->GetNid()
+                                        , process->GetPid()
+                                        , process->IsBackup() );
+                        }
+                        break;
+                    }
+                }
+                else
+                {
+                    if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    {
+                       trace_printf( "%s@%d - Get (%s:%d) in pnid=%d failed\n"
+                                   , method_name, __LINE__
+                                   , name
+                                   , verifier
+                                   , node->GetPNid() );
+                    }            
+                }
+            }
+            else
+            {
+                if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                   trace_printf("%s@%d" " - Node is not up, pnid=%d, state=%d, \n", method_name, __LINE__, node->GetPNid(), node->GetState());
+            }
+        }
+        else
+        {
+            process = node->CProcessContainer::GetProcess( name
+                                                         , verifier
+                                                         , checkprocess );
+            if ( process)
+            { 
+                if ( !backupOk && process->IsBackup() )
+                {
+                    if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    {
+                        trace_printf( "%s@%d - Get (%s:%d) failed -- backupOk=%d backup=%d\n"
+                                    , method_name, __LINE__
+                                    , name
+                                    , verifier
+                                    , backupOk
+                                    , process->IsBackup() );
+                    }
+                    process = NULL;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            else
+            {
+                if (trace_settings & (TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                {
+                   trace_printf( "%s@%d - Get (%s:%d) failed\n"
+                               , method_name, __LINE__
+                               , name
+                               , verifier );
+                }            
+            }
+        }
+        node = node->GetNext ();
+    }
+
+    TRACE_EXIT;
+    return( process );
+}
+
 CProcess *CNodeContainer::GetProcessByName( const char *name, bool checkstate )
 {
     CNode *node = head_;
-    CProcess *process;
+    CProcess *process = NULL;
     const char method_name[] = "CNodeContainer::GetProcessByName";
     TRACE_ENTRY;
 
@@ -2237,6 +2510,7 @@ CNode *CNodeContainer::GetZoneNode(int zid)
         if ( ! Node[pnid]->IsSpareNode() && Node[pnid]->GetZone() == zid )
         {
             node = Node[pnid];
+            break;
         }
     }
 
@@ -2245,9 +2519,9 @@ CNode *CNodeContainer::GetZoneNode(int zid)
 }
 
 struct internal_msg_def *
-CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf, 
-                                unsigned long long seqNum,
-                                unsigned long long upNodes )
+CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf
+                              , unsigned long long seqNum
+                              , upNodes_t upNodes )
 {
     const char method_name[] = "CNodeContainer::InitSyncBuffer";
     TRACE_ENTRY;
@@ -2260,7 +2534,7 @@ CNodeContainer::InitSyncBuffer( struct sync_buffer_def *syncBuf,
     syncBuf->nodeInfo.internalState = MyNode->getInternalState();
     syncBuf->nodeInfo.change_nid    = -1;
     syncBuf->nodeInfo.seq_num       = seqNum;
-    syncBuf->nodeInfo.upNodes       = upNodes;
+    syncBuf->nodeInfo.nodeMask      = upNodes;
 
     for (int i = 0; i < NumberPNodes; i++)
     {
@@ -2482,7 +2756,12 @@ void CNodeContainer::SetupCluster( CNode ***pnode_list, CLNode ***lnode_list )
     for ( int i = 0; i < GetNodesCount(); i++ )
     {
         if (trace_settings & TRACE_INIT)
-            trace_printf("%s@%d - pnid=%d is Spare=%d\n", method_name, __LINE__, Node[i]->GetPNid(), Node[i]->IsSpareNode());
+            trace_printf( "%s@%d - Node %s (pnid=%d, state=%s) is Spare=%d\n"
+                        , method_name, __LINE__
+                        , Node[i]->GetName()
+                        , Node[i]->GetPNid()
+                        , StateString(Node[i]->GetState())
+                        , Node[i]->IsSpareNode());
         if ( Node[i]->GetState() == State_Up && Node[i]->IsSpareNode() )
         {
             spareNodesConfigList_.push_back( Node[i] );

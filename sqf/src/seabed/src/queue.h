@@ -60,6 +60,7 @@ public:
     virtual void  add(SB_QL_Type *pp_item);
     virtual void  add_at_front(SB_QL_Type *pp_item);
     virtual bool  empty();
+    virtual int   hi();
     virtual void  printself(bool pv_traverse);
     virtual void *remove();
     virtual int   size();
@@ -69,6 +70,7 @@ protected:
     SB_QL_Type *ip_head;
     SB_QL_Type *ip_tail;
     int         iv_count;
+    int         iv_hi;
     bool        iv_multi_reader;
 };
 
@@ -88,6 +90,7 @@ public:
     virtual void          add_list(SB_DQL_Type *pp_prev, SB_DQL_Type *pp_item);
     virtual bool          empty();
     virtual SB_DQL_Type  *head();
+    virtual int           hi();
     virtual void          printself(bool pv_traverse);
     virtual void         *remove();
     virtual bool          remove_list(SB_DQL_Type *pp_item);
@@ -98,6 +101,7 @@ protected:
     SB_DQL_Type *ip_head;
     SB_DQL_Type *ip_tail;
     int          iv_count;
+    int          iv_hi;
     int          iv_qid;
     bool         iv_multi_reader;
 };

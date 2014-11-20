@@ -60,6 +60,7 @@ void CExtTmSeqNumReq::performRequest()
     TRACE_ENTRY;
 
     // Record statistics (sonar counters)
+    if (sonar_verify_state(SONAR_ENABLED | SONAR_MONITOR_ENABLED))
        MonStats->req_type_tmseqnum_Incr();
 
     if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
