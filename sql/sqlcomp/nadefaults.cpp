@@ -3419,7 +3419,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC,       "OFF"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_LOOP,  "ON"),
   DDkwd__(USTAT_USE_INTERNAL_SORT_FOR_MC_NEW_HIST,       "OFF"),  // TEMP FOR TESTING -- SHOULD REMOVE
-  DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "OFF"), // use IS when no histograms exist for the column
+  DDkwd__(USTAT_USE_IS_WHEN_NO_STATS,           "ON"), // use IS when no histograms exist for the column
   DDkwd__(USTAT_USE_SIDETREE_INSERT,            "ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
