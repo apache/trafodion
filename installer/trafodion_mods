@@ -186,25 +186,44 @@ if [[ $numberHadoopNodes != $node_count ]]; then
    exit -1
 fi
 
+hadoopNodes=""
+
+#Get list of all hadoop nodes 
 while read line
 do
    hostName=$(echo $line | awk '{print $3}' | sed 's/\"//g' | sed 's/\..*//' | sed 's/\,//g')
-   echo $hostName
-   echo $NODE_LIST
-   if [[ $NODE_LIST != *$hostName* ]]; then
-      echo "***ERROR: Trafodion must be installed on all $HADOOP_TYPE nodes"
-      echo "***ERROR: Please rerun trafodion_setup with correct set of nodes"
-      echo "***ERROR: Please rerun trafodion_mods after trafodion_setup"
-      echo "***ERROR: Exiting..."
-      #rm tempFile
-      #rm tempFile2
-      exit -1
-   fi
+   hadoopNodes="$hadoopNodes $hostName"
+
 done < tempFile2
-
-rm tempFile
 rm tempFile2
+rm tempFile
 
+#Check to see that each Hadoop node is in the Trafodion list of nodes
+for node in $hadoopNodes
+do
+   if [[ $node_count -eq "1" ]]; then
+      #In the case that someone uses "localhost"
+      if [[ $(hostname -s) != *$node* ]]; then
+         echo "***ERROR: Trafodion must be installed on all $HADOOP_TYPE nodes"
+         echo "***ERROR: $HADOOP_TYPE Nodes: $hadoopNodes"
+         echo "***ERROR: Trafodion Nodes: $NODE_LIST"
+         echo "***ERROR: Please rerun trafodion_setup with correct set of nodes"
+         echo "***ERROR: Please rerun trafodion_mods after trafodion_setup"
+         echo "***ERROR: Exiting..."
+         exit -1
+      fi
+   else 
+      if [[ $NODE_LIST != *$node* ]]; then
+         echo "***ERROR: Trafodion must be installed on all $HADOOP_TYPE nodes"
+         echo "***ERROR: $HADOOP_TYPE Nodes: $hadoopNodes"
+         echo "***ERROR: Trafodion Nodes: $NODE_LIST"
+         echo "***ERROR: Please rerun trafodion_setup with correct set of nodes"
+         echo "***ERROR: Please rerun trafodion_mods after trafodion_setup"
+         echo "***ERROR: Exiting..."
+         exit -1
+      fi
+   fi   
+done
 
 #============================================
 # Determine Trafodion version by parsing it 
@@ -232,7 +251,7 @@ TRAF_VERSION=$(ls export/lib | \
 
 # test for java 1.7
 java_17=$(ps -C java --noheader -o pid,user,cmd \
-   | grep --max-count=1 hbase \
+   | grep --max-count=1 " hbase" \
    | awk '{print $3}' \
    | grep "1.7." \
    | wc -l)
@@ -240,7 +259,7 @@ java_17=$(ps -C java --noheader -o pid,user,cmd \
 # if not java 1.7 then test for java 1.6
 if [ "$java_17" == "0" ]; then
    java_16=$(ps -C java --noheader -o pid,user,cmd \
-      | grep --max-count=1 hbase \
+      | grep --max-count=1 " hbase" \
       | awk '{print $3}' \
       | grep "1.6." \
       | wc -l)
