@@ -69,8 +69,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   FALSE, NULL, NULL, NULL,
-					   tcb_->getHbaseAccessStats());
+					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -79,7 +78,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 	  break;
 	case NEXT_ROW:
  	  {
-	    retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
 	       step_ = SCAN_CLOSE;
@@ -223,8 +222,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   FALSE, NULL, NULL, NULL,
-					   tcb_->getHbaseAccessStats());
+					   FALSE, NULL, NULL, NULL);
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -237,7 +235,7 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 	case NEXT_ROW:
 	  {
 	    tcb_->rowwiseRowLen_ = 0;
-	    retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
 	       step_ = SCAN_CLOSE;
@@ -416,7 +414,6 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 					    &tcb_->hbaseFilterOps_ : NULL),
 					   (tcb_->hbaseFilterValues_.size() > 0 ?
 					    &tcb_->hbaseFilterValues_ : NULL),
-					    tcb_->getHbaseAccessStats(),
 					    tcb_->getSamplePercentage());
 
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
@@ -428,7 +425,7 @@ ExWorkProcRetcode ExHbaseScanSQTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
-	    retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	      {
 		step_ = SCAN_CLOSE;
@@ -537,15 +534,14 @@ Lng32 ExHbaseScanSQTaskTcb::getProbeResult(char* &keyData)
 				 tcb_->hbaseAccessTdb().readUncommittedScan(),
 				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 				 tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-				 TRUE, NULL, NULL, NULL,
-				 tcb_->getHbaseAccessStats());
+				 TRUE, NULL, NULL, NULL);
   if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
     {
       rc = -1;
       goto label_return;
     }
   
-  retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+  retcode = tcb_->ehi_->nextRow();
   if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
     {
       rc = 1; // no row found
@@ -637,8 +633,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	    if (tcb_->rowIds_.size() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
-					     tcb_->columns_, -1,
-					     tcb_->getHbaseAccessStats());
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowOpen"))
 		  step_ = HANDLE_ERROR;
 		else
@@ -647,8 +642,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	    else
 	      {
 		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
-					     tcb_->columns_, -1,
-					     tcb_->getHbaseAccessStats());
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
 		else
@@ -660,7 +654,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {       
-	    retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
  	       step_ = GET_CLOSE;
@@ -812,8 +806,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	    if (tcb_->rowIds_.size() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
-					     tcb_->columns_, -1,
-					     tcb_->getHbaseAccessStats());
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowOpen"))
 		  step_ = HANDLE_ERROR;
 		else
@@ -822,8 +815,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	    else
 	      {
 		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
-					     tcb_->columns_, -1,
-					     tcb_->getHbaseAccessStats());
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
 		else
@@ -835,7 +827,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
-	    retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+	    retcode = tcb_->ehi_->nextRow();
 	    if (retcode == HBASE_ACCESS_EOD || retcode == HBASE_ACCESS_EOR)
 	    {
 	       step_ = GET_CLOSE;
@@ -980,8 +972,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    if (tcb_->rowIds_.size() == 1)
 	      {
 		retcode = tcb_->ehi_->getRowOpen(tcb_->table_, tcb_->rowIds_[0],
-					     tcb_->columns_, -1,
-					     tcb_->getHbaseAccessStats());
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowOpen"))
 		  step_ = HANDLE_ERROR;
 		else
@@ -990,8 +981,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 	    else
 	      {
 		retcode = tcb_->ehi_->getRowsOpen(tcb_->table_, tcb_->rowIds_,
-					     tcb_->columns_, -1,
-					     tcb_->getHbaseAccessStats());
+					     tcb_->columns_, -1);
 		if (tcb_->setupError(retcode, "ExpHbaseInterface::getRowsOpen"))
 		  step_ = HANDLE_ERROR;
 		else
@@ -1003,7 +993,7 @@ ExWorkProcRetcode ExHbaseGetSQTaskTcb::work(short &rc)
 
 	case NEXT_ROW:
 	  {
-	    retcode = tcb_->ehi_->nextRow(tcb_->getHbaseAccessStats());
+	    retcode = tcb_->ehi_->nextRow();
             // EOD is end of data, EOR is end of result set. 
             // for single get, EOD or EOR indicates DONE
             // for multi get, only EOR indicates DONE
@@ -1215,7 +1205,7 @@ ExWorkProcRetcode ExHbaseAccessSelectTcb::work()
 
 	case SELECT_INIT:
 	  {
-	    retcode = ehi_->init();
+	    retcode = ehi_->init(getHbaseAccessStats());
 	    if (setupError(retcode, "ExpHbaseInterface::init"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -1486,7 +1476,7 @@ ExWorkProcRetcode ExHbaseAccessMdamSelectTcb::work()
 
 	case SELECT_INIT:
 	  {
-	    retcode = ehi_->init();
+	    retcode = ehi_->init(getHbaseAccessStats());
 	    if (setupError(retcode, "ExpHbaseInterface::init"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -1677,7 +1667,7 @@ ExWorkProcRetcode ExHbaseCoProcAggrTcb::work()
 
 	case COPROC_INIT:
 	  {
-	    retcode = ehi_->init();
+	    retcode = ehi_->init(getHbaseAccessStats());
 	    if (setupError(retcode, "ExpHbaseInterface::init"))
 	      {
 		step_ = HANDLE_ERROR;
@@ -1719,7 +1709,6 @@ ExWorkProcRetcode ExHbaseCoProcAggrTcb::work()
 				       colName, 
 				       FALSE, // cacheBlocks
 				       100, //numCacheRows
-				       getHbaseAccessStats(),
 				       aggrVal);
 	    if (setupError(retcode, "ExpHbaseInterface::coProcAggr"))
 	      {

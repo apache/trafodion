@@ -2879,66 +2879,6 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap,
       tableName_ = NULL;
     }
 
-  NAString operNm(hbaseTdb->getAccessTypeStr(hbaseTdb->getAccessType()),
-		  heap);
-  if ((hbaseTdb->sqHbaseTable()) &&
-      ((hbaseTdb->getAccessType() == ComTdbHbaseAccess::UPDATE_) ||
-       (hbaseTdb->getAccessType() == ComTdbHbaseAccess::MERGE_) ||
-       (hbaseTdb->getAccessType() == ComTdbHbaseAccess::DELETE_)))
-    {
-      operNm += (hbaseTdb->rowsetOper() ? "SEABASE_ROWSET_" : "SEABASE_");
-    }
-  else if ((hbaseTdb->sqHbaseTable()) &&
-           (hbaseTdb->getAccessType() == ComTdbHbaseAccess::SELECT_) &&
-           (hbaseTdb->rowsetOper()))
-    {
-       operNm += (hbaseTdb->rowsetOper() ? "SEABASE_ROWSET_" : "SEABASE_");
-    }
-  else if (hbaseTdb->getAccessType() == ComTdbHbaseAccess::SELECT_)
-    {
-      if (hbaseTdb->keyMDAMGen())
-        {
-          // must be SQ Seabase table and no listOfScan/Get keys
-          if ((hbaseTdb->sqHbaseTable()) &&
-              (! hbaseTdb->listOfGetRows()) &&
-              (! hbaseTdb->listOfScanRows()))
-            {
-              operNm += "SEABASE_MDAM_";
-            }
-        }
-      else
-        {
-          operNm += (hbaseTdb->sqHbaseTable() ? "SEABASE_" : "HBASE_");
-          operNm += "KEY_";
-        }
-    }
-  else if ((hbaseTdb->getAccessType() == ComTdbHbaseAccess::INSERT_) ||
-           (hbaseTdb->getAccessType() == ComTdbHbaseAccess::UPSERT_))
-    {
-      if (hbaseTdb->sqHbaseTable())
-        {
-          if ((hbaseTdb->vsbbInsert()) && (NOT hbaseTdb->hbaseSqlIUD()))
-            {
-	      operNm += (hbaseTdb->sqHbaseTable() ? "SEABASE_" : "HBASE_");
-              operNm += "VSBB_";
-            }
-          else
-            {
-	      operNm += "SEABASE_";
-            }
-        }
-      else
-        {
-	  operNm += "HBASE_";
-        }
-    }
-
-  Int32 len = operNm.length();
-  if (len > MAX_TDB_NAME_LEN)
-    len = MAX_TDB_NAME_LEN;
-  if (len > 0)
-    setTdbName(operNm.data(), len);
-
   init();
 }
 
@@ -5379,11 +5319,9 @@ void ExMeasStats::merge(ExHbaseAccessStats* other)
 {
   exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
   exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
-  exeDp2Stats()->incDiskReads(other->lobStats()->numReadReqs);
-  exeDp2Stats()->incProcessBusyTime(other->lobStats()->hdfsAccessLayerTime/1000);
-  exeDp2Stats()->incProcessBusyTime(0);
-			      
-  fsDp2MsgsStats() ->incMessageBytes(other->numBytesRead());
+  exeDp2Stats()->incDiskReads(other->hbaseCalls());
+  exeDp2Stats()->incProcessBusyTime(other->getTimer().getTime());
+  fsDp2MsgsStats() ->incMessageBytes(0);
 }
 
 void ExMeasStats::merge(ExMeasStats* other)

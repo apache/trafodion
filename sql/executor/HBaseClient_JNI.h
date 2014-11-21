@@ -229,6 +229,7 @@ public:
      colName_ = NULL;
      numReqRows_ = -1;
      cleanupDone_ = FALSE;
+     hbs_ = NULL;
      p_kvValLen_ = NULL;
      p_kvValOffset_ = NULL;
      p_kvFamLen_ = NULL;
@@ -256,23 +257,22 @@ public:
 			const TextVec *inColNamesToFilter, 
 			const TextVec *inCompareOpList,
 			const TextVec *inColValuesToCompare,
-			ExHbaseAccessStats *hbs,
 			Float32 samplePercent = -1.0f);
   HTC_RetCode startGet(Int64 transID, const Text& rowID, const TextVec& cols, 
-		Int64 timestamp, ExHbaseAccessStats *hbs);
+		Int64 timestamp);
   HTC_RetCode startGets(Int64 transID, const TextVec& rowIDs, const TextVec& cols, 
-		Int64 timestamp, ExHbaseAccessStats *hbs);
-  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp, ExHbaseAccessStats *hbs);
-  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp, ExHbaseAccessStats *hbs);
-  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, ExHbaseAccessStats *hbs);
+		Int64 timestamp);
+  HTC_RetCode deleteRow(Int64 transID, HbaseStr &rowID, const TextVec& columns, Int64 timestamp);
+  HTC_RetCode deleteRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, Int64 timestamp);
+  HTC_RetCode checkAndDeleteRow(Int64 transID, HbaseStr &rowID, const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode insertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       Int64 timestamp, ExHbaseAccessStats *hbs);
-  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush, ExHbaseAccessStats *hbs);
+       Int64 timestamp);
+  HTC_RetCode insertRows(Int64 transID, short rowIDLen, HbaseStr &rowIDs, HbaseStr &rows, Int64 timestamp, bool autoFlush);
   HTC_RetCode setWriteBufferSize(Int64 size);
   HTC_RetCode setWriteToWAL(bool vWAL);
-  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp, ExHbaseAccessStats *hbs);
+  HTC_RetCode checkAndInsertRow(Int64 transID, HbaseStr &rowID, HbaseStr &row, Int64 timestamp);
   HTC_RetCode checkAndUpdateRow(Int64 transID, HbaseStr &rowID, HbaseStr &row,
-       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp, ExHbaseAccessStats *hbs);
+       const Text &columnToCheck, const Text &colValToCheck, Int64 timestamp);
   HTC_RetCode coProcAggr(Int64 transID, 
 			 int aggrType, // 0:count, 1:min, 2:max, 3:sum, 4:avg
 			 const Text& startRow, 
@@ -281,7 +281,6 @@ public:
 			 const Text &colName,
 			 const NABoolean cacheBlocks,
 			 const Lng32 numCacheRows,
-			 ExHbaseAccessStats *hbs,
 			 Text &aggrVal); // returned value
   void setResultInfo( jintArray jKvValLen, jintArray jKvValOffset,
         jintArray jKvQualLen, jintArray jKvQualOffset,
@@ -290,8 +289,8 @@ public:
         jobjectArray jKvBuffer, jobjectArray jRowIDs,
         jintArray jKvsPerRow, jint numCellsReturned);
   void cleanupResultInfo();
-  HTC_RetCode fetchRows(ExHbaseAccessStats *hbs);
-  HTC_RetCode nextRow(ExHbaseAccessStats *hbs);
+  HTC_RetCode fetchRows();
+  HTC_RetCode nextRow();
   HTC_RetCode getColName(int colNo,
               char **colName,
               short &colNameLen,
@@ -332,6 +331,11 @@ public:
     strcpy(tableName_, tableName);
   } 
   HTC_RetCode setJniObject();
+
+  void setHbaseStats(ExHbaseAccessStats *hbs)
+  {
+    hbs_ = hbs;
+  }
 
 private:
   NAString getLastJavaError();
@@ -403,6 +407,7 @@ private:
   short colNameAllocLen_;
   FETCH_MODE fetchMode_; 
   NABoolean cleanupDone_;
+  ExHbaseAccessStats *hbs_;
   static jclass          javaClass_;  
   static JavaMethodInit* JavaMethods_;
   static bool javaMethodsInitialized_;
@@ -469,7 +474,7 @@ public:
 
   HBC_RetCode cleanup();
   HTableClient_JNI* getHTableClient(NAHeap *heap, const char* tableName, 
-               bool useTRex);
+               bool useTRex, ExHbaseAccessStats *hbs);
   HBulkLoadClient_JNI* getHBulkLoadClient(NAHeap *heap);
   HBC_RetCode releaseHBulkLoadClient(HBulkLoadClient_JNI* hblc);
   HBC_RetCode releaseHTableClient(HTableClient_JNI* htc);

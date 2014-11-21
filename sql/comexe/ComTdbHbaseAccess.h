@@ -457,7 +457,8 @@ public:
   // numChildren always returns 0 for ComTdbStats
   virtual Int32 numChildren() const { return 0; };
 
-  virtual const char *getNodeName() const { return "EX_HBASE_ACCESS"; };
+  virtual const char *getNodeName() const;
+  // virtual const char *getNodeName() const { return "EX_HBASE_ACCESS"; };
 
   // numExpressions always returns 2 for ComTdbStats
   virtual Int32 numExpressions() const;
@@ -487,8 +488,8 @@ public:
   char * getTableName() { return tableName_; }
 
   Queue* getColFamNameList()       { return colFamNameList_; }
-  Queue* listOfScanRows()       { return listOfScanRows_; }
-  Queue* listOfGetRows()       { return listOfGetRows_; }
+  Queue* listOfScanRows() const { return listOfScanRows_; }
+  Queue* listOfGetRows() const { return listOfGetRows_; }
   Queue* listOfFetchedColNames() { return listOfFetchedColNames_; }
   Queue* listOfUpDeldColNames() { return listOfUpDeldColNames_; }
   Queue* listOfUpdatedColNames() { return listOfUpDeldColNames_; }
@@ -524,7 +525,7 @@ public:
 
   void setSQHbaseTable(NABoolean v)
   {(v ? flags_ |= SQ_HBASE : flags_ &= ~SQ_HBASE); };
-  NABoolean sqHbaseTable() { return (flags_ & SQ_HBASE) != 0; };
+  NABoolean sqHbaseTable() const { return (flags_ & SQ_HBASE) != 0; };
 
   // Hbase silently inserts a duplicate row. 
   // Hbase doesn't tell whether a row got deleted.
@@ -534,7 +535,7 @@ public:
   // This requires a check to be made before doing the IUD operation.
   void setHbaseSqlIUD(NABoolean v)
   {(v ? flags_ |= HBASE_SQL_IUD : flags_ &= ~HBASE_SQL_IUD); };
-  NABoolean hbaseSqlIUD() { return (flags_ & HBASE_SQL_IUD) != 0; };
+  NABoolean hbaseSqlIUD() const { return (flags_ & HBASE_SQL_IUD) != 0; };
  
   void setReturnRow(NABoolean v)
   {(v ? flags_ |= RETURN_ROW : flags_ &= ~RETURN_ROW); };
@@ -554,11 +555,11 @@ public:
 
   void setVsbbInsert(NABoolean v)
   {(v ? flags_ |= VSBB_INSERT : flags_ &= ~VSBB_INSERT); };
-  NABoolean vsbbInsert() { return (flags_ & VSBB_INSERT) != 0; };
+  NABoolean vsbbInsert() const { return (flags_ & VSBB_INSERT) != 0; };
 
   void setRowsetOper(NABoolean v)
   {(v ? flags_ |= ROWSET_OPER : flags_ &= ~ROWSET_OPER); };
-  NABoolean rowsetOper() { return (flags_ & ROWSET_OPER) != 0; };
+  NABoolean rowsetOper() const { return (flags_ & ROWSET_OPER) != 0; };
 
   void setCanDoCheckAndUpdel(NABoolean v)
   {(v ? flags_ |= CHECK_AND_UPDEL : flags_ &= ~CHECK_AND_UPDEL); };

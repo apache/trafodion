@@ -933,17 +933,6 @@ NA_EIDPROC
 NA_EIDPROC
   inline char * getTdbName() {return tdbName_;}
 
-  inline void setTdbName(const char *nm, Int32 len)
-  {
-    if (len > MAX_TDB_NAME_LEN)
-      len = MAX_TDB_NAME_LEN;
-    if (len > 0)
-      {
-        str_cpy_all(tdbName_, nm, len); 
-        tdbName_[len] = 0;
-      }
-  }
-
 NA_EIDPROC
   inline ComTdb::ex_node_type getTdbType() const {return tdbType_;}
    
