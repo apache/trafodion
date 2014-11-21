@@ -844,6 +844,9 @@ static const AQRInfo::AQRErrorMap aqrErrorMap[] =
   // privileges may have been revoked
   AQREntry(   8734,      0,      1,     0,      1,   0, "",    0,     0),
 
+  // DDL change detected before query started
+  AQREntry(   8738,      0,      1,     0,      1,   0, "",    0,     0),
+
   // internal error, no entries in diags.
   AQREntry(   8810,      0,      1,    60,      0,   0, "",    0,     1), 
 

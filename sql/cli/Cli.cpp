@@ -267,8 +267,9 @@ static Lng32 SQLCLI_Prepare_Setup_Post(
         masterStats->setCompEndTime(compEndTime);
         rootTdb = (stmt ? stmt->getRootTdb() : NULL);
         if (rootTdb)
-            stmtStats->getMasterStats()->setSIKeys(
-                 currContext.getCliGlobals(), rootTdb->getSikInfo());
+            stmtStats->getMasterStats()->setInvalidationKeys(
+                 currContext.getCliGlobals(), rootTdb->getSikInfo(),
+                 rootTdb->getNumObjectUIDs(), rootTdb->getObjectUIDs());
 
         if (rootTdb != NULL && rootTdb->getCollectStatsType() != ComTdb::NO_STATS)
 	{

@@ -130,17 +130,19 @@ Query_Invalidation_Keys explain output
 >>
 >>execute sel_abc;
 
-*** ERROR[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.SCH.T131C.
+
+*** ERROR[8822] The statement was not prepared.
 
 --- 0 row(s) selected.
 >>
 >>-- test the GET STATISTICS reporting of No. Query Invalidation Keys
 >>log;
-No. Query Invalidation Keys
-No. Query Invalidation Keys
-No. Query Invalidation Keys
-numQueryInvKeys:
-numQueryInvKeys:
+No. Query Invalidation Keys 
+No. Query Invalidation Keys 
+No. Query Invalidation Keys 
+numQueryInvKeys: 
+numQueryInvKeys: 
 >>
 >>exit;
 

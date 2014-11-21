@@ -4353,7 +4353,13 @@ NA_EIDPROC
   // Security Invalidation Keys -- no need to pack or unpack.
   Int32 getNumSIKeys() const { return numSIKeys_; }
   SQL_QIKEY *getSIKeys() const { return sIKeys_; }
-  void setSIKeys( CliGlobals *cliGlobals, SecurityInvKeyInfo *sikInfo);
+  void setInvalidationKeys( CliGlobals *cliGlobals, 
+                            SecurityInvKeyInfo *sikInfo, Int32 numObjUIDs,
+                            const Int64 *objectUIDs );
+  void setValidDDL(bool v) { validDDL_ = v; }
+  bool getValidDDL()       { return validDDL_; }
+  Int32 getNumObjUIDs() const { return numObjUIDs_; }
+  Int64 *getObjUIDs() const { return objUIDs_; }
 
 private:
   enum Flags
@@ -4443,11 +4449,20 @@ private:
 #else
   30 
 #endif
+       , PreAllocatedObjUIDs =
+#ifdef _DEBUG
+  1
+#else
+  20
+#endif
   };
   Int32 numSIKeys_;
   SQL_QIKEY * sIKeys_;
   SQL_QIKEY preallocdSiKeys_[PreAllocatedSikKeys];
-
+  bool validDDL_;
+  Int32 numObjUIDs_;
+  Int64 *objUIDs_;
+  Int64  preallocdObjUIDs_[PreAllocatedObjUIDs];
 };
 
 

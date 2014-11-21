@@ -4371,6 +4371,12 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
 	      {
 		masterStats->
 		  setFixupEndTime(NA_JulianTimestamp());
+                if (!masterStats->getValidDDL())
+                  {
+                    diagsArea << DgSqlCode(-CLI_DDL_REDEFINED);
+                    state_ = ERROR_;
+                    break;
+                  }
                 if (!masterStats->getValidPrivs())
                   {
                     diagsArea << DgSqlCode(-CLI_INVALID_QUERY_PRIVS);
@@ -5523,6 +5529,11 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
   if (root_tdb && getStmtStats() && 
       (NULL != (masterStats = getStmtStats()->getMasterStats())))
     {
+      if (!masterStats->getValidDDL())
+        {
+          diagsArea << DgSqlCode(-CLI_DDL_REDEFINED);
+          return ERROR;
+        }
       if (!masterStats->getValidPrivs())
         {
           diagsArea << DgSqlCode(-CLI_INVALID_QUERY_PRIVS);
@@ -6784,6 +6795,7 @@ short Statement::rollbackTransaction(ComDiagsArea & diagsArea,
 	  if (root_tdb->aqrEnabled() &&
 	      ((diagsArea.mainSQLCODE() == -EXE_TIMESTAMP_MISMATCH)  ||
                (diagsArea.mainSQLCODE() == -CLI_INVALID_QUERY_PRIVS) ||
+               (diagsArea.mainSQLCODE() == -CLI_DDL_REDEFINED)       ||
                (diagsArea.mainSQLCODE() == -EXE_SCHEMA_SECURITY_CHANGED)))
 	    {
 	      rollbackXn = FALSE;

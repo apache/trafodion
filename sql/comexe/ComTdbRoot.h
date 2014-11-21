@@ -375,7 +375,7 @@ class ComTdbRoot : public ComTdb
 	 CANT_RECLAIM_QUERY     = 0x00000010,
 	 UNC_PROCESS            = 0x00000020,
 	 DP2_XNS_ENABLED        = 0x00000040,
-         QI_ALWAYS_AQR          = 0x00000080,
+         AVAILABLE_TO_REUSE     = 0x00000080,  // unused
          NO_ESPS_FIXUP          = 0x00000100,
          WMS_MONITOR_QUERY      = 0x00000200,
          WMS_CHILD_MONITOR_QUERY= 0x00000400,
@@ -1059,11 +1059,6 @@ public:
       (v ? rtFlags4_ |= UNC_PROCESS : rtFlags4_ &= ~UNC_PROCESS); 
     }
 
-  void setAqrQiAlways(NABoolean v)
-    {
-      (v ? rtFlags4_ |= QI_ALWAYS_AQR : rtFlags4_ &= ~QI_ALWAYS_AQR);
-    }
-
   NABoolean getDp2XnsEnabled() 
       {return ((rtFlags4_ & DP2_XNS_ENABLED) != 0);};
 
@@ -1128,8 +1123,8 @@ public:
   CompilationStatsData * getCompilationStatsData() 
   { return (CompilationStatsData*)compilationStatsData_.getPointer();}
   CompilationStatsDataPtr getCompilationStatsDataPtr() { return compilationStatsData_; }
-  SecurityInvKeyInfo *getSikInfo() { return (SecurityInvKeyInfo *)
-                                            sikPtr_.getPointer(); }
+  SecurityInvKeyInfo *getSikInfo() const 
+    { return (SecurityInvKeyInfo *) sikPtr_.getPointer(); }
   void setSikInfo(SecurityInvKeyInfo * sikInfo) { sikPtr_ = sikInfo; }
 
   Int32 getNumberOfUnpackedSecKeys( char * base );

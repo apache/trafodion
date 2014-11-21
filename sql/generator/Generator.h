@@ -217,7 +217,7 @@ class Generator : public NABasicObject
   enum 
   {
     DP2_XNS_ENABLED     = 0x00000001   // could use dp2 transactions at runtime
-    , QI_ALWAYS_AQR     = 0x00000002   //retry query invalidation error 8743.
+    , UNUSED_1          = 0x00000002   // available for reuse
     
     // if set, then sidetreeinsert operator need to be added.
     , ENABLE_TRANSFORM_TO_STI = 0x00000004
@@ -1209,11 +1209,6 @@ public:
     { return (flags_ & AQR_ENABLED) != 0; }
   void setAqrEnabled(NABoolean v)
     { (v ? flags_ |= AQR_ENABLED : flags_ &= ~AQR_ENABLED); }
-
-  NABoolean aqrQiAlways()
-    { return (flags2_ & QI_ALWAYS_AQR) != 0; }
-  void setAqrQiAlways(NABoolean v)
-    { (v ? flags2_ |= QI_ALWAYS_AQR : flags2_ &= ~QI_ALWAYS_AQR); }
 
   NABoolean inMemoryObjectDefn()
     { return (flags_ & IN_MEMORY_OBJECT_DEFN) != 0; }

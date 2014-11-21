@@ -1,4 +1,8 @@
 >>
+>>control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>
 >>obey TEST122(test_drop_tab);
 >>
 >>create table t122t1 ( a int not null );
@@ -49,7 +53,7 @@ A
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Tue Nov 18 18:53:24 2014
+-- Definition current  Wed Nov 19 17:36:02 2014
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -73,6 +77,58 @@ A
 >>delete from t122t1 where a = 55;
 
 --- 1 row(s) deleted.
+>>
+>>prepare s2 from insert into t122t1 values (8);
+
+--- SQL command prepared.
+>>
+>>prepare s3 from invoke t122t1;
+
+--- SQL command prepared.
+>>
+>>prepare s4 from select count(*) from t122t1;
+
+--- SQL command prepared.
+>>
+>>prepare s5 from update t122t1 set a = 55 where a = 5;
+
+--- SQL command prepared.
+>>
+>>prepare s6 from delete from t122t1 where a = 55;
+
+--- SQL command prepared.
+>>
+>>execute s2;
+
+--- 1 row(s) inserted.
+>>
+>>execute s3;
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Wed Nov 19 17:36:02 2014
+
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>
+>>execute s4;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>
+>>execute s5;
+
+--- 0 row(s) updated.
+>>
+>>execute s6;
+
+--- 0 row(s) deleted.
 >>
 >>sh sqlci -i"TEST122(drop_tab)";
 >>
@@ -108,7 +164,7 @@ iv
 >>invoke t122t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T122T1
--- Definition current  Tue Nov 18 18:53:38 2014
+-- Definition current  Wed Nov 19 17:36:16 2014
 
   (
     A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -137,6 +193,72 @@ iv
 >>delete from t122t1 where a = 'i';
 
 --- 2 row(s) deleted.
+>>
+>>execute s2;
+
+*** ERROR[4039] Column A is of type CHAR(4), incompatible with the value's type, NUMERIC(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+--- 0 row(s) inserted.
+>>
+>>execute s3;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+
+-- Definition of Trafodion table TRAFODION.SCH.T122T1
+-- Definition current  Wed Nov 19 17:36:17 2014
+
+  (
+    A                                CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation completed with warnings.
+>>
+>>execute s4;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+(EXPR)              
+--------------------
+
+                   6
+
+--- 1 row(s) selected.
+>>
+>>execute s5;
+
+*** ERROR[4041] Type CHAR(4) cannot be compared with type NUMERIC(1).
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+--- 0 row(s) updated.
+>>
+>>execute s6;
+
+*** ERROR[4041] Type CHAR(4) cannot be compared with type NUMERIC(2).
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8738] Statement must be recompiled due to redefinition of the object(s) accessed.
+
+--- 0 row(s) deleted.
 >>
 >>
 >>obey TEST122(test_alter_tab);

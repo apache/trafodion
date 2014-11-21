@@ -3,6 +3,8 @@ obey TEST122(clnup);
 
 log LOG122 clear;
 
+control query default AUTO_QUERY_RETRY_WARNINGS 'ON';
+
 obey TEST122(test_drop_tab);
 
 obey TEST122(test_alter_tab);
@@ -39,6 +41,26 @@ update t122t1 set a = 55 where a = 5;
 
 delete from t122t1 where a = 55;
     
+prepare s2 from insert into t122t1 values (8);
+
+prepare s3 from invoke t122t1;
+
+prepare s4 from select count(*) from t122t1;
+
+prepare s5 from update t122t1 set a = 55 where a = 5;
+
+prepare s6 from delete from t122t1 where a = 55;
+
+execute s2;
+
+execute s3;
+
+execute s4;
+
+execute s5;
+
+execute s6;
+
 sh sqlci -i"TEST122(drop_tab)";
 
 select * from t122t1;
@@ -52,6 +74,16 @@ select count(*) from t122t1;
 update t122t1 set a = 'ix' where a = 'ii';
 
 delete from t122t1 where a = 'i';
+
+execute s2;
+
+execute s3;
+
+execute s4;
+
+execute s5;
+
+execute s6;
 
 ?section test_alter_tab
 
