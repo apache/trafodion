@@ -9697,6 +9697,12 @@ void ExMasterStats::init()
     NADELETEBASIC(sIKeys_, getHeap());
   sIKeys_ = &preallocdSiKeys_[0];
   memset(sIKeys_, 0, PreAllocatedSikKeys * sizeof(SQL_QIKEY));
+  validDDL_ = false;
+  numObjUIDs_ = 0;
+  if ((objUIDs_ != NULL) && (objUIDs_ != &preallocdObjUIDs_[0]))
+    NADELETEBASIC(objUIDs_, getHeap());
+  objUIDs_ = &preallocdObjUIDs_[0];
+  memset(objUIDs_, 0, PreAllocatedObjUIDs * sizeof(Int64));
   isBlocking_ = false;
   lastActivity_ = 0;
   blockOrUnblockSince_.tv_sec = blockOrUnblockSince_.tv_usec = 0;
@@ -9754,6 +9760,7 @@ ExMasterStats::ExMasterStats(NAHeap *heap)
   numAqrRetries_=0;
   delayBeforeAqrRetry_=0;
   sIKeys_ = NULL;
+  objUIDs_ = NULL;
   init();
 }
 
@@ -9770,6 +9777,7 @@ ExMasterStats::ExMasterStats()
   numAqrRetries_=0;
   delayBeforeAqrRetry_=0;
   sIKeys_ = NULL;
+  objUIDs_ = NULL;
   init();
 }
 
@@ -9809,6 +9817,7 @@ ExMasterStats::ExMasterStats(NAHeap *heap, char *sourceStr, Lng32 storedSqlTextL
   numAqrRetries_=0;
   delayBeforeAqrRetry_=0;
   sIKeys_ = NULL;
+  objUIDs_ = NULL;
   init();
 }
 
@@ -9848,6 +9857,13 @@ void ExMasterStats::deleteMe()
   {
     NADELETEBASIC(sIKeys_, getHeap());
     sIKeys_ = NULL;
+    numSIKeys_ = 0;
+  }
+  if ((objUIDs_ != NULL) && (objUIDs_ != &preallocdObjUIDs_[0]))
+  {
+    NADELETEBASIC(objUIDs_, getHeap());
+    objUIDs_ = NULL;
+    numObjUIDs_ = 0;
   }
 }
 
@@ -9914,9 +9930,12 @@ void ExMasterStats::unpack(const char* &buffer)
     cancelComment_ = NULL;
   // SQL_QIKEY array was not packed, so make sure the local copy's values are
   // consistent.  We don't pack them because they aren't reported in GET
-  // STATISTICS and so they don't need to leave the local node.
+  // STATISTICS and so they don't need to leave the local node.  Same issue
+  // for objectUIDs_.
   numSIKeys_ = 0;
   sIKeys_ = NULL;
+  numObjUIDs_ = 0;
+  objUIDs_ = NULL;
 }
 
 UInt32 ExMasterStats::pack(char* buffer)
@@ -10202,22 +10221,10 @@ void ExMasterStats::copyContents(ExMasterStats * other)
   }
   isBlocking_ = other->isBlocking_;
   blockOrUnblockSince_ = other->blockOrUnblockSince_;
-  if (other->numSIKeys_ != 0)
-  {
-    if (other->numSIKeys_ > PreAllocatedSikKeys)
-      sIKeys_ =
-       new ((NAHeap *) getHeap()) SQL_QIKEY[other->numSIKeys_];
-    else
-      sIKeys_ = &preallocdSiKeys_[0];
-    memcpy((void *)sIKeys_, other->sIKeys_, 
-                            (other->numSIKeys_* sizeof(SQL_QIKEY)));
-    numSIKeys_ = other->numSIKeys_;
-  }
-  else
-  {
-    sIKeys_ = NULL;
-    numSIKeys_ = 0;
-  }
+  sIKeys_ = NULL;
+  numSIKeys_ = 0;
+  objUIDs_ = NULL;
+  numObjUIDs_ = 0;
 }
 
 void ExMasterStats::setEndTimes(NABoolean updateExeEndTime)
@@ -10676,12 +10683,14 @@ NABoolean ExMasterStats::filterForCpuStats(short subReqType,
    return retcode;
 }
 
-void ExMasterStats::setSIKeys(CliGlobals *cliGlobals, 
-                              SecurityInvKeyInfo *sikInfo)
+void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals, 
+        SecurityInvKeyInfo *sikInfo, Int32 numObjUIDs, 
+        const Int64 *objectUIDs)
 {
-  ex_assert((numSIKeys_ == 0), "setKeys called twice.");
+  ex_assert((numObjUIDs_ ==0) && (numSIKeys_ == 0), "setKeys called twice.");
   Int32 numSIKeys = sikInfo ? sikInfo->getNumSiks() : 0;
-  if (numSIKeys > PreAllocatedSikKeys)
+  if ((numSIKeys > PreAllocatedSikKeys) || 
+      (numObjUIDs > PreAllocatedObjUIDs))
   {
     short savedPriority, savedStopMode;
     Long semId = cliGlobals->getSemId();
@@ -10695,9 +10704,18 @@ void ExMasterStats::setSIKeys(CliGlobals *cliGlobals,
       ex_assert(error == 0, "getStatsSemaphore() returned an error");
     }
 
-    if (sIKeys_ != &preallocdSiKeys_[0])
-      NADELETEBASIC(sIKeys_, (NAHeap *) getHeap());
-    sIKeys_ = new ((NAHeap *)(getHeap())) SQL_QIKEY[numSIKeys];
+    if (numSIKeys > PreAllocatedSikKeys)
+    {
+      if (sIKeys_ != &preallocdSiKeys_[0])
+        NADELETEBASIC(sIKeys_, (NAHeap *) getHeap());
+      sIKeys_ = new ((NAHeap *)(getHeap())) SQL_QIKEY[numSIKeys];
+    }
+    if (numObjUIDs > PreAllocatedObjUIDs)
+    {
+      if (objUIDs_ != &preallocdObjUIDs_[0])
+        NADELETEBASIC(objUIDs_, (NAHeap *) getHeap());
+      objUIDs_ =  new ((NAHeap *)(getHeap())) Int64[numObjUIDs];
+    }
 
     if (statsGlobals)
       statsGlobals->releaseStatsSemaphore(
@@ -10723,6 +10741,11 @@ void ExMasterStats::setSIKeys(CliGlobals *cliGlobals,
     }
   }
   validPrivs_ = true;
+
+  numObjUIDs_ = numObjUIDs;
+  memcpy(objUIDs_, objectUIDs, numObjUIDs_ * sizeof(Int64));
+  validDDL_ = true;
+
 }
 Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
                          short *cpu, pid_t *pid, 

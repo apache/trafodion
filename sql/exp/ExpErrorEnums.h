@@ -272,7 +272,9 @@ enum ExeErrorCode
   CLI_USER_NOT_REGISTERED               = 8732,
   CLI_USER_NOT_VALID                    = 8733,
   CLI_INVALID_QUERY_PRIVS               = 8734,
+ 
   CLI_INVALID_ROWS_AFFECTED             = 8737,
+  CLI_DDL_REDEFINED                     = 8738,
 
   CLI_UNUSED                            = 8740,
   CLI_CANNOT_EXECUTE_IN_MEM_DEFN        = 8741,

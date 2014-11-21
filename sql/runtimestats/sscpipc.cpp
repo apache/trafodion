@@ -808,26 +808,37 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
       ExMasterStats *masterStats = kqStmtStats->getMasterStats();
       if (masterStats)
       {
-        bool privsAreInvalid = false;
+        bool keysAreInvalid = false;
         // for each new invalidation key
-        for (Int32 i = 0; i < numSiks && !privsAreInvalid; i++)
+        for (Int32 i = 0; i < numSiks && !keysAreInvalid; i++)
         {
           if (COM_QI_OBJECT_REDEF == 
             ComQIActionTypeLiteralToEnum(request->getSik()[i].operation))
           {
-            // tbd -- use objectUID list
+            // compare the new DDL invalidation key to each key in the
+            // master stats.
+            for (Int32 m = 0; m < masterStats->getNumObjUIDs()
+                              && !keysAreInvalid; m++)            
+            {
+              if (masterStats->getObjUIDs()[m] ==
+                  request->getSik()[i].ddlObjectUID)
+              {
+                keysAreInvalid = true;
+                masterStats->setValidDDL(false);
+              }
+            }
           }
           else
           {
-            // compare the new invalidation key to each key in the 
+            // compare the new REVOKE invalidation key to each key in the 
             // master stats.
             for (Int32 m = 0; m < masterStats->getNumSIKeys() 
-                              && !privsAreInvalid; m++)
+                              && !keysAreInvalid; m++)
             {
               if (!memcmp(&masterStats->getSIKeys()[m], 
                           &request->getSik()[i], sizeof(SQL_QIKEY)))
               {
-                privsAreInvalid = true;
+                keysAreInvalid = true;
                 masterStats->setValidPrivs(false);
               } 
             }  // for each key in master stats.

@@ -633,9 +633,9 @@ const char *ComTdbRoot::getSubqueryTypeText(Int16 subqueryType)
 
 NABoolean ComTdbRoot::aqrEnabledForSqlcode(Lng32 sqlcode)
 {
-  if ( (rtFlags1_ & AQR_ENABLED) ||
-      ((sqlcode == -CLI_INVALID_QUERY_PRIVS) &&
-       (rtFlags4_ & QI_ALWAYS_AQR)) )
+  if ( (rtFlags1_ & AQR_ENABLED)              ||
+        (sqlcode == -CLI_INVALID_QUERY_PRIVS) ||
+        (sqlcode == -CLI_DDL_REDEFINED) )
     return TRUE;
   else
     return FALSE;

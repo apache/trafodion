@@ -1876,10 +1876,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
         }
 
       if (generator->getBindWA()->getUdrStoiList().entries () > 0)
-	{
-	  generator->setAqrEnabled(FALSE);
-          generator->setAqrQiAlways(TRUE);
-	}
+        generator->setAqrEnabled(FALSE);
 
       // Reset the accumulated # of BMOs and memory usages in 
       // the generator 
@@ -4228,10 +4225,7 @@ RelExpr * DP2Scan::preCodeGen(Generator * generator,
     }
 
   if (getGroupAttr()->isStream())
-    {
-      generator->setAqrEnabled(FALSE);
-      generator->setAqrQiAlways(TRUE);
-    }
+    generator->setAqrEnabled(FALSE);
 
   NAString tnstring = GenGetQualifiedName(getTableName());
   RelExpr * rvp = FileScan::preCodeGen(generator,
@@ -4575,10 +4569,7 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
   // will not be cached, and this should reduce the need to handle
   // errors with AQR, e.g., timestamp mismatch errors.
   if (updateCurrentOf())
-    {
-      generator->setAqrEnabled(FALSE);
-      generator->setAqrQiAlways(TRUE);
-    }
+    generator->setAqrEnabled(FALSE);
 
   if (getTableDesc()->getNATable()->hasLobColumn())
     {
@@ -10789,7 +10780,6 @@ RelExpr * RelRoutine::preCodeGen (Generator * generator,
   const ValueIdSet &inputValues = getGroupAttr()->getCharacteristicInputs();
   getProcInputParamsVids().replaceVEGExpressions(availableValues, inputValues);
   generator->setAqrEnabled(FALSE);
-  generator->setAqrQiAlways(TRUE);
 
   markAsPreCodeGenned();
   

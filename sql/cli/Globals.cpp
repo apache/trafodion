@@ -383,6 +383,7 @@ void CliGlobals::init( NABoolean espProcess,
 
   // could initialize the program file name here but ...
   myProgName_[0] = '\0';
+
 }
 //ss_cc_change
 //LCOV_EXCL_START

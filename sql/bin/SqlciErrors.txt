@@ -1632,6 +1632,8 @@ $1~String1 --------------------------------
 8735 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The value $0~int0 is not a valid tenant ID.
 8736 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The tenant ID has already been set for this session.
 8737 ZZZZZ 99999 ADVANCED INFRM LOGONLY Unknown number of rows affected, due to NO ROLLBACK transaction.
+8738 ZZZZZ 99999 ADVANCED INFRM LOGONLY Statement must be recompiled due to redefinition of the object(s) accessed.
+8739 ZZZZZ 99999 ADVANCED INFRM LOGONLY Reserve for QI
 8740 ZZZZZ 99999 ADVANCED MAJOR DIALOUT CLI Authorization failure: Password expired and is in grace period
 8741 ZZZZZ 99999 BEGINNER MINOR LOGONLY This query contains a reference to an object that was created only in compiler memory. It cannot be executed.
 8742 ZZZZZ 99999 BEGINNER MINOR LOGONLY GetMetaDataInfo operation could not be completed. Reason: $0~String0

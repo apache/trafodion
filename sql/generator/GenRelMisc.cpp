@@ -2759,9 +2759,6 @@ short RelRoot::codeGen(Generator * generator)
   if (generator->aqrEnabled())
     root_tdb->setAqrEnabled(TRUE);
 
-  if (generator->aqrQiAlways())
-    root_tdb->setAqrQiAlways(TRUE);
-
   if (generator->cantReclaimQuery())
     root_tdb->setCantReclaimQuery(TRUE);
 
