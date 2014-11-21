@@ -44,7 +44,7 @@ static const ComTdbVirtTableColumnInfo hbaseTableColumnInfo[] =
 static const ComTdbVirtTableKeyInfo hbaseTableKeyInfo[] =
 {
   // columnname      keyseqnumber tablecolnumber ordering nonkeycol
-  {    "ROW_ID",                 1,                                0,            0  ,         0}
+  {    "ROW_ID",                 1,                                0,            0  ,         0, NULL, NULL}
 };
 
 struct HbaseTableColInfoStruct
@@ -68,7 +68,7 @@ static const ComTdbVirtTableColumnInfo hbaseTableRowwiseColumnInfo[] =
 static const ComTdbVirtTableKeyInfo hbaseTableRowwiseKeyInfo[] =
 {
   // indexname keyseqnumber tablecolnumber ordering
-  {    NULL,          1,                                0,            0  , 0}
+  {    NULL,          1,                                0,            0  , 0, NULL, NULL}
 };
 
 struct HbaseTableRowwiseColInfoStruct

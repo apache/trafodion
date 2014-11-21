@@ -39,7 +39,6 @@ CPPSRC := CmpMessage.cpp \
 	ComTdbMj.cpp \
 	ComTdbOnlj.cpp \
 	ComTdbPackRows.cpp \
-	ComTdbParLab.cpp \
 	ComTdbProbeCache.cpp \
 	ComTdbRoot.cpp \
 	ComTdbSample.cpp \

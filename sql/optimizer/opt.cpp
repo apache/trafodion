@@ -2457,8 +2457,6 @@ NABoolean PlanWorkSpace::getRightLeaf(Lng32 planNumber, FileScan **rLeaf) const
   OperatorTypeEnum rOp = rChild->getOperatorType();
   switch (rOp) {
   case REL_FILE_SCAN:
-  case REL_DP2_SCAN:
-  case REL_DP2_SCAN_UNIQUE:
     *rLeaf = static_cast<FileScan*>(rChild);
     return TRUE;
   case REL_NESTED_JOIN:
@@ -2475,8 +2473,7 @@ NABoolean PlanWorkSpace::getRightLeaf(Lng32 planNumber, FileScan **rLeaf) const
         rChild = rPlan ? rPlan->getPhysicalExpr() : NULL;
       }
       if (rChild && 
-          ((rOp=rChild->getOperatorType())== REL_FILE_SCAN ||
-           rOp == REL_DP2_SCAN || rOp == REL_DP2_SCAN_UNIQUE)) {
+          (rOp=rChild->getOperatorType())== REL_FILE_SCAN) {
         *rLeaf = static_cast<FileScan*>(rChild);
         return TRUE;
       }
@@ -5978,8 +5975,6 @@ void OptDebug::showCosts( const RelExpr *re,
   switch (ot)
   {
     case REL_FILE_SCAN:
-    case REL_DP2_SCAN:
-    case REL_DP2_SCAN_UNIQUE:
     {
       // Print the number plan fragments per cpu:
       // !!! The following function is not available at this time.

@@ -7089,11 +7089,9 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
     case REL_SCAN:
     case REL_LOCK:
     case REL_UNLOCK:
-    case REL_PARALLEL_LABEL_DISK_COUNT:
     case REL_HBASE_COPROC_AGGR:
       stoi_->setSelectAccess();
       break;
-    case REL_PARALLEL_LABEL_PURGEDATA:
     case REL_EXE_UTIL:
 
       stoi_->setSelectAccess();
@@ -15974,115 +15972,6 @@ RelExpr *ProxyFunc::bindNode(BindWA *bindWA)
   return boundExpr;
 
 } // ProxyFunc::bindNode()
-
-// ParallelLabelOp::bindNode - binds the ParallelLabelOp node.
-// This does the following:
-// - Checks objectName_ to make sure it refers to a SQL/MX table or index,
-//   For ParallelLabelCreate, metadata must be flushed to disk before using it.
-//   It is used internally, and it assumes that the catalog manager has flushed
-//   all metadata related to the table being created to disk.
-RelExpr * ParallelLabelOp::bindNode (BindWA *bindWA)
-{
-  if (nodeIsBound())
-  {
-    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-    return this;
-  }
-
-  // do not do override schema for this
-  bindWA->setToOverrideSchema(FALSE);
-
-  // Get the NATable for the object whose label and rfork are to be created
-  // or dropped. Note that the assumption is that for creates, the metadata 
-  // for the object has already been flushed to disk, and all that needs to 
-  // be done is the actual object creation. 
-  NATable * naTable = NULL;
-  if (!strcmp(getText(),"parallel_label_create"))
-    {
-      CmpCommon::statement()->setParallelLabelOp(TRUE);
-      CorrName cn = getTableName();
-      cn.setGenRcb(TRUE);
-      naTable = bindWA->getNATable(cn);
-    }
-  else
-    naTable = bindWA->getNATable(getTableName());
- 
-  if ((bindWA->errStatus()) &&
-      (getOperatorType() == REL_PARALLEL_LABEL_ALTER))
-    {
-      naTable = NULL;
- 
-    }
-
-  if (bindWA->errStatus() || (NOT naTable))
-    return this;
-
-  if ((getTableName().getSpecialType() == ExtendedQualName::NORMAL_TABLE) &&
-      ((naTable->getObjectType() != COM_BASE_TABLE_OBJECT) &&
-       (naTable->getObjectType() != COM_MV_OBJECT)))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1004) <<
-        DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
-      bindWA->setErrStatus();
-      return this;
-    }
-
-  // Allocate a TableDesc and attach it to this.
-  //
-  setTableDesc(bindWA->createTableDesc(naTable, getTableName()));
-  if (bindWA->errStatus())
-    return this;
-
-  if ((producesOutput()) &&
-      (getVirtualTableName()))
-    {
-      CorrName corrName(getVirtualTableName());
-      corrName.setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
-      NATable *naTable = bindWA->getSchemaDB()->getNATableDB()->
-        get(&corrName.getExtendedQualNameObj());
-      
-      if (NOT naTable) {
-        desc_struct *tableDesc = createVirtualTableDesc();
-        naTable = bindWA->getNATable(corrName, FALSE/*catmanUsages*/, tableDesc);
-        if (bindWA->errStatus())
-          return this;
-      }
-      
-      // Allocate a TableDesc for value that will be returned from this node,
-      // and attach it to the RETDesc.
-      //
-      setVirtualTableDesc(bindWA->createTableDesc(naTable, corrName));
-      if (bindWA->errStatus())
-        return this;
-      
-      setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, getVirtualTableDesc()));
-    }
-  else
-    {
-  // Allocate an empty RETDesc and attach it to this node and the BindScope.
-  // This is because there is nothing to return from this node, i.e.,
-  // there is no output expression.
-  setRETDesc(new(bindWA->wHeap()) RETDesc(bindWA));
-    }
-
-  bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-
-  // Make sure the metadata doesn't indicate that the table is a SQL/MP table.
-  // The internal parallel label create/drop code does not support the creation
-  // or dropping of SQL/MP tables.
-  if (naTable->isSQLMPTable())
-  {
-// LCOV_EXCL_START - nsk
-     *CmpCommon::diags() << DgSqlCode(-4082) <<
-     DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
-     bindWA->setErrStatus();
-     return this;
-// LCOV_EXCL_STOP
-  }
-
-  RelExpr *boundExpr = bindSelf(bindWA);
-  return boundExpr;
-}
 
 RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
 {

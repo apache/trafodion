@@ -371,17 +371,18 @@ short ExDDLTcb::work()
 
 	      *cpDiagsArea << DgSqlCode(15371) << DgString0("MXCMP");
 	    }
+        }
 
-	  if (cpDiagsArea)
-	    {
-	      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
-	      if (diagsArea == NULL)
-		diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
+      if (cpDiagsArea)
+        {
+          ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+          if (diagsArea == NULL)
+            diagsArea = ComDiagsArea::allocate(this->getGlobals()->getDefaultHeap());
 	  
-	      diagsArea->mergeAfter (*cpDiagsArea);
-	      up_entry->setDiagsArea(diagsArea);
-	    }
-	}
+          diagsArea->mergeAfter (*cpDiagsArea);
+          up_entry->setDiagsArea(diagsArea);
+        }
+
       up_entry->upState.parentIndex = 
 	pentry_down->downState.parentIndex;
       

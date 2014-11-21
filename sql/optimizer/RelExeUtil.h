@@ -445,9 +445,6 @@ public:
     GET_METADATA_INFO_        = 12,
     GET_VERSION_INFO_         = 13,
     SUSPEND_ACTIVATE_         = 14,
-    GET_DISK_LABEL_STATS_     = 15,
-    GET_DP2_STATS_            = 16,
-    GET_FORMATTED_DISK_STATS_ = 17,
     SHOWSET_DEFAULTS_         = 18,
     AQR_                      = 19,
     DISPLAY_EXPLAIN_COMPLEX_  = 20,
@@ -2231,53 +2228,6 @@ private:
   AQRTask task_;
 };
 
-class ExeUtilGetDiskLabelStats : public ExeUtilExpr 
-{
-public:
-
-  ExeUtilGetDiskLabelStats(RelExpr * child,
-			   char * optionsStr,
-			   NABoolean isIndex,
-			   NABoolean isIudLog,
-			   NABoolean isRangeLog,
-			   NABoolean isTempTable,
-			   CollHeap *oHeap = CmpCommon::statementHeap());
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  // a method used for recomputing the outer references (external dataflow
-  // input values) that are needed by this operator.
-  virtual void recomputeOuterReferences();
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-  virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
-
-  virtual NABoolean producesOutput() { return TRUE; }
-
-  virtual Int32 getArity() const { return ((child(0) == NULL) ? 0 : 1); }
-
- virtual NABoolean aqrSupported() { return TRUE; }
-
-private:
-  ItemExpr * inputColList_;
-
-  NAString optionsStr_;
-
-  NABoolean isIndex_;
-  NABoolean isIudLog_;
-  NABoolean isRangeLog_;
-  NABoolean isTempTable_;
-  NABoolean displayFormat_;
-
-  NABoolean errorInParams_;
-};
-
 class ExeUtilLongRunning : public ExeUtilExpr 
 {
 public:
@@ -2365,86 +2315,6 @@ private:
   // MV NOMVLOG option for LRU operations
   NABoolean isNoLogOperation_;
 
-};
-
-
-// this operator retrieves dp2 stats related to sqlmxbuffer usage
-// and returns it.
-// The child of this operator is a dp2 scan node. The Dp2Stats operator
-// executes in the same dp2 as the child operator.
-// The child operator is really a no-op since it doesn't do anything.
-// Its purpose is to get a plan that can be executed in dp2.
-class ExeUtilGetDiskStats : public ExeUtilExpr 
-{
-public:
-
-  ExeUtilGetDiskStats(RelExpr * child,
-		      NABoolean resetStats,
-		      CollHeap *oHeap = CmpCommon::statementHeap())
-       : ExeUtilExpr(GET_DP2_STATS_, CorrName("DUMMY"), 
-		     NULL, child, NULL, CharInfo::UnknownCharSet, oHeap),
-	 resetStats_(resetStats)
-  {
-  };
-
-  // cost functions
-  virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32     planNumber);
-
-  virtual NABoolean producesOutput() { return TRUE; }
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-  virtual const char 	*getVirtualTableName();
-  virtual desc_struct 	*createVirtualTableDesc();
-
-  // get the degree of this node
-  virtual Int32 getArity() const { return 1; }
-
-  virtual NABoolean pilotAnalysis(QueryAnalysis* qa) {return FALSE;}
-
-  virtual NABoolean aqrSupported() { return TRUE; }
-
-private:
-  NABoolean resetStats_;
-};
-
-class ExeUtilGetFormattedDiskStats : public ExeUtilExpr 
-{
-public:
-
-  ExeUtilGetFormattedDiskStats(const CorrName &cn,
-			       char * optionsStr,
-			       CollHeap *oHeap = CmpCommon::statementHeap());
-
-  virtual NABoolean producesOutput() { return TRUE; }
-
-  virtual RelExpr * bindNode(BindWA *bindWAPtr);
-
-  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
-				CollHeap* outHeap = 0);
-
-  // method to do code generation
-  virtual short codeGen(Generator*);
-
-private:
-  CorrName cn_;
-
-  NAString optionsStr_;
-
-  NAString getDiskStatsStr_;
-
-  NABoolean reset_;
-  NABoolean shortFormat_;
-  NABoolean longFormat_;
-
-  NABoolean errorInParams_;
 };
 
 ////////////////////////////////////////////////////////////////////

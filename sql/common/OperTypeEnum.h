@@ -178,8 +178,6 @@ enum OperatorTypeEnum {
                         REL_DELETE,
                         // relational operators with variable arity
                         REL_MULTI_JOIN,
-                        REL_DP2_SCAN,           // cursor/subset scan
-                        REL_DP2_SCAN_UNIQUE,    // unique scan
                         REL_FILE_SCAN,
                         REL_HDFS_SCAN,
                         REL_DDL,
@@ -281,11 +279,6 @@ enum OperatorTypeEnum {
                         REL_SP_PROXY, // Stored procedure result set proxy
 
                         REL_INTERPRET_AS_ROW,
-                        REL_PARALLEL_LABEL_CREATE,
-                        REL_PARALLEL_LABEL_DROP,
-                        REL_PARALLEL_LABEL_ALTER,
-                        REL_PARALLEL_LABEL_PURGEDATA,
-                        REL_PARALLEL_LABEL_DISK_COUNT,
 
                         // Parallel extract consumer
                         REL_EXTRACT_SOURCE,

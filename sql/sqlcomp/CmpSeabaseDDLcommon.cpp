@@ -357,12 +357,10 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       numCols = colArray.entries();
       numKeys = keyArray.entries();
       
-      colInfoArray = (ComTdbVirtTableColumnInfo*)
-        new(CTXTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
-      
-      keyInfoArray = (ComTdbVirtTableKeyInfo*)
-        new(CTXTHEAP) char[numKeys * sizeof(ComTdbVirtTableKeyInfo)];
-      
+      colInfoArray = new(CTXTHEAP) ComTdbVirtTableColumnInfo[numCols];
+
+      keyInfoArray = new(CTXTHEAP) ComTdbVirtTableKeyInfo[numKeys];
+
       if (buildColInfoArray(&colArray, colInfoArray, FALSE, 0, FALSE, NULL, CTXTHEAP))
 	{
 	  return resetCQDs(hbaseSerialization, hbVal, -1);
@@ -406,7 +404,6 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComObjectName tableName(createIndexNode->getTableName());
       NAString extTableName = tableName.getExternalName(TRUE);
       
-      //      ComObjectName indexName(createIndexNode->getIndexName());
       NAString extIndexName = TRAFODION_SYSCAT_LIT;
       extIndexName += ".";
       extIndexName += "\"";
@@ -453,9 +450,11 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       numIndexNonKeys = numIndexCols - numIndexKeys;
       
       if (numIndexNonKeys > 0)
-        indexNonKeyInfoArray = (ComTdbVirtTableKeyInfo*)
-          new(CTXTHEAP) char[numIndexNonKeys *  sizeof(ComTdbVirtTableKeyInfo)];
-      
+        {
+          indexNonKeyInfoArray = 
+            new(CTXTHEAP) ComTdbVirtTableKeyInfo[numIndexNonKeys];
+        }
+
       Lng32 ink = 0;
       for (Lng32 i = numIndexKeys; i < numIndexCols; i++)
         {
@@ -484,8 +483,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
           ink++;
         } // for
       
-      indexInfo = (ComTdbVirtTableIndexInfo*)
-        new(CTXTHEAP) char[1 * sizeof(ComTdbVirtTableIndexInfo)];
+      indexInfo = new(CTXTHEAP) ComTdbVirtTableIndexInfo[1];
       indexInfo->baseTableName = new(CTXTHEAP) char[extTableName.length()+ 1];
       strcpy((char*)indexInfo->baseTableName, extTableName.data());
 
@@ -1951,16 +1949,24 @@ short CmpSeabaseDDL::checkDefaultValue(
 {
   short rc = 0;
 
+  ItemExpr * defExpr = colNode->getDefaultValueExpr();
   ConstValue *cvDefault = (ConstValue *)colNode->getDefaultValueExpr();
 
   NAType * newType = (NAType *)colType;
   if ((colType->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-      (cvDefault->getType()->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-      (colType->getNominalSize() > cvDefault->getType()->getNominalSize()))
+      (cvDefault->getType()->getTypeQualifier() == NA_CHARACTER_TYPE))
     {
-      newType = colType->newCopy(STMTHEAP);
-      newType->setNominalSize(
-                              MAXOF(cvDefault->getType()->getNominalSize(), 1));
+      if (colType->getNominalSize() > cvDefault->getType()->getNominalSize())
+        {
+          newType = colType->newCopy(STMTHEAP);
+          newType->setNominalSize(
+                                  MAXOF(cvDefault->getType()->getNominalSize(), 1));
+        }
+      else if (colType->getNominalSize() < cvDefault->getType()->getNominalSize())
+        {
+          defExpr = new(STMTHEAP) Cast(defExpr, colType);
+          ((Cast*)defExpr)->setCheckTruncationError(TRUE);
+        }
     }
 
   NAString castToTypeStr(newType->getTypeSQLname(TRUE));
@@ -1969,7 +1975,7 @@ short CmpSeabaseDDL::checkDefaultValue(
   str_sprintf(buf, "CAST(@A1 AS %s)", castToTypeStr.data());
 
   rc = Generator::genAndEvalExpr(CmpCommon::context(),
-                                 buf, 1, colNode->getDefaultValueExpr(), NULL,
+                                 buf, 1, defExpr, NULL,
                                  CmpCommon::diags());
 
   if (rc)
@@ -2451,6 +2457,7 @@ Int64 CmpSeabaseDDL::getObjectUID(
                                    const char * schName,
                                    const char * objName,
                                    const char * inObjType,
+                                   const char * inObjTypeStr,
                                    char * outObjType)
 {
   Lng32 retcode = 0;
@@ -2467,6 +2474,11 @@ Int64 CmpSeabaseDDL::getObjectUID(
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
                 catName, quotedSchName.data(), quotedObjName.data(),
                 inObjType);
+  else if (inObjTypeStr)
+    str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and ( %s ) ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+                catName, quotedSchName.data(), quotedObjName.data(),
+                inObjTypeStr);
   else
     str_sprintf(buf, "select object_uid, object_type from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -2883,6 +2895,34 @@ short CmpSeabaseDDL::getSaltText(
   saltText = vi->get(0);
 
   return 1;
+}
+
+short CmpSeabaseDDL::getAllIndexes(ExeCliInterface *cliInterface,
+                                   Int64 objUID,
+                                   NABoolean includeInvalidDefs,
+                                   Queue * &indexInfoQueue)
+{
+  Lng32 cliRC = 0;
+
+  char query[4000];
+  str_sprintf(query, "select O.catalog_name, O.schema_name, O.object_name from %s.\"%s\".%s I, %s.\"%s\".%s O ,  %s.\"%s\".%s T where I.base_table_uid = %Ld and I.index_uid = O.object_uid %s and I.index_uid = T.table_uid and I.keytag != 0 for read committed access ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLES,
+              objUID,
+              (includeInvalidDefs ? " " : " and O.valid_def = 'Y' "));
+
+  cliRC = cliInterface->fetchAllRows(indexInfoQueue, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+      processReturn();
+
+      return -1;
+    }
+  
+  return 0;
 }
 
 // Convert from hbase options string format to list of structs.

@@ -834,6 +834,26 @@ public:
                                ValueIdSet &pulledNewInputs);
   virtual short codeGen(Generator*);
 
+  short codeGenForHive(Generator*);
+  short genForTextAndSeq(Generator * generator,
+                             Queue * &hdfsFileInfoList,
+                             Queue * &hdfsFileRangeBeginList,
+                             Queue * &hdfsFileRangeNumList,
+                             char* &hdfsHostName,
+                             Int32 &hdfsPort,
+                             NABoolean &doMultiCursor,
+                             NABoolean &doSplitFileOpt);
+  static short genForOrc(Generator * generator,
+                         const HHDFSTableStats* hTabStats,
+                         const PartitioningFunction * mypart,
+                         Queue * &hdfsFileInfoList,
+                         Queue * &hdfsFileRangeBeginList,
+                         Queue * &hdfsFileRangeNumList,
+                         char* &hdfsHostName,
+                         Int32 &hdfsPort);
+  
+ static desc_struct *createHbaseTableDesc(const char * table_name);
+
   // Return a (short-lived) reference to the respective predicates
   const ValueIdList & getBeginKeyPred() const    { return beginKeyPred_; }
   const ValueIdList & getEndKeyPred() const        { return endKeyPred_; }
@@ -1086,67 +1106,14 @@ public:
   DP2Scan(const CorrName & name,
           TableDesc *tableDesc,
           const IndexDesc *indexDesc,
-          OperatorTypeEnum otype = REL_DP2_SCAN)
-  : FileScan (name, tableDesc, indexDesc, otype),
-    fastReplyDataMove_(FALSE)
+          OperatorTypeEnum otype = REL_FILE_SCAN)
+  : FileScan (name, tableDesc, indexDesc, otype)
     {
     }
-
-
-  // used to get the operator name
-  const NAString getText() const;
-  //used to retrieve the description
-  virtual const NAString getTypeText() const;
 
   // Obtain a pointer to a CostMethod object that provides access
   // to the cost estimation functions for nodes of this type.
   virtual CostMethod* costMethod() const;
-
-  // method to do code generation
-  virtual RelExpr * preCodeGen(Generator * generator,
-                               const ValueIdSet & externalInputs,
-                               ValueIdSet &pulledNewInputs);
-
-
-  virtual short codeGen(Generator*);
-
-  short codeGenForHive(Generator*);
-  short genForTextAndSeq(Generator * generator,
-                             Queue * &hdfsFileInfoList,
-                             Queue * &hdfsFileRangeBeginList,
-                             Queue * &hdfsFileRangeNumList,
-                             char* &hdfsHostName,
-                             Int32 &hdfsPort,
-                             NABoolean &doMultiCursor,
-                             NABoolean &doSplitFileOpt);
-  static short genForOrc(Generator * generator,
-                         const HHDFSTableStats* hTabStats,
-                         const PartitioningFunction * mypart,
-                         Queue * &hdfsFileInfoList,
-                         Queue * &hdfsFileRangeBeginList,
-                         Queue * &hdfsFileRangeNumList,
-                         char* &hdfsHostName,
-                         Int32 &hdfsPort);
-  
- static desc_struct *createHbaseTableDesc(const char * table_name);
-
-  NABoolean &fastReplyDataMove() {return fastReplyDataMove_;};
-
-  const ValueIdList &fastReplyDataCols() const { return fastReplyDataCols_; }
-private:
-  // this flag is set if data could be moved directly from
-  // DP2 Scan operator to the reply buffer. The reply buffer
-  // what is sent back from EID to EXE/ESP. This flag is
-  // set if DP2 Scan is the only operator below the
-  // PartitionAccess operator. If there are other operators,
-  // like aggregate or group by, that are pushed down to EID,
-  // then this optimization is not done. This flag is set in
-  // PartitionAccess::preCodeGen. The value id list is set
-  // in the generator and indicates the columns produced by
-  // the scan node that tunnel right through to the PA node.
-  NABoolean fastReplyDataMove_;
-  ValueIdList fastReplyDataCols_;
-
 };
 
 // -----------------------------------------------------------------------

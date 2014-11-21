@@ -494,7 +494,7 @@ static const ComTdbVirtTableColumnInfo statsVirtTableColumnInfo[] =
 static const ComTdbVirtTableKeyInfo statsVirtTableKeyInfo[] =
 {
   // indexname keyseqnumber tablecolnumber ordering
-  {    NULL,          1,            0,            0 , 0 }
+  {    NULL,          1,            0,            0 , 0, NULL, NULL }
 };
 
 //

@@ -729,6 +729,18 @@ NA_EIDPROC
   ex_cri_desc *getCriDescUp() { return criDescUp_; };
   void setCriDescUp(ex_cri_desc *cri) { criDescUp_ = cri; };
 
+  enum Type
+  {
+    TABLE_INFO,
+    COLUMN_INFO,
+    KEY_INFO,
+    INDEX_INFO,
+    REF_CONSTRAINTS_INFO,
+    CONSTRAINTS_INFO,
+    VIEW_INFO,
+    ROUTINE_INFO,
+    SEQUENCE_INFO
+  };
 
 private:
   enum FlagsType
@@ -866,8 +878,34 @@ protected:
 };
 #pragma warn(1506)  // warning elimination 
 
-struct ComTdbVirtTableTableInfo
+class ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableBase()
+    {
+    }
+
+  virtual void init() 
+  {
+    // skip virtual table pointer stored as first eight bytes (64 bit pointer)
+    char * vtblPtr = (char*)this;
+    char * dataMem = vtblPtr + sizeof(vtblPtr);
+    memset(dataMem, '\0', (size() - sizeof(vtblPtr)));
+  }
+  virtual Int32 size() { return 0;}
+};
+
+class ComTdbVirtTableTableInfo  : public ComTdbVirtTableBase
+{
+ public:
+  ComTdbVirtTableTableInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size(){ return sizeof(ComTdbVirtTableTableInfo); };
+
   const char * tableName;
   Int64 createTime;
   Int64 redefTime;
@@ -880,11 +918,36 @@ struct ComTdbVirtTableTableInfo
   Lng32 rowFormat; //hbase format = 0, aligned format = 1
 };
 
-struct ComTdbVirtTableColumnInfo
+class ComTdbVirtTableColumnInfo : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableColumnInfo(const char * cName, Lng32 cNum, const char * cc,
+                            Lng32 dt, Lng32 l, Lng32 n, SQLCHARSET_CODE cs,
+                            Lng32 p, Lng32 s, Lng32 dtS, Lng32 dtE, Lng32 u,
+                            const char * ch, ULng32 flags, ComColumnDefaultClass dc,
+                            const char * defVal, const char * hcf, const char * hcq,
+                            const char * pd, Lng32 io) 
+    : ComTdbVirtTableBase(),
+    colName(cName), colNumber(cNum), 
+    datatype(dt), length(l), nullable(n), charset(cs), precision(p), scale(s),
+    dtStart(dtS), dtEnd(dtE), upshifted(u), colHeading(ch), hbaseColFlags(flags),
+    defaultClass(dc), hbaseColFam(hcf), hbaseColQual(hcq), isOptional(io)
+  {
+    strcpy(columnClass, cc);
+    strcpy(paramDirection, pd);
+  };
+  
+  ComTdbVirtTableColumnInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  Int32 size() { return sizeof(ComTdbVirtTableColumnInfo);}
+
   const char * colName;
   Lng32   colNumber;
-  char columnClass[3];
+  char columnClass[4];
   Lng32   datatype;
   Lng32   length;
   Lng32   nullable;
@@ -900,12 +963,29 @@ struct ComTdbVirtTableColumnInfo
   const char * defVal;
   const char * hbaseColFam;
   const char * hbaseColQual;
-  char paramDirection[3];
+  char paramDirection[4];
   Lng32 isOptional; // 0, regular (does not apply OR FALSE). 1, Param is optional
 };
 
-struct ComTdbVirtTableKeyInfo
+class ComTdbVirtTableKeyInfo : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableKeyInfo(const char * cn, Lng32 ksn, Lng32 tcn,
+                         Lng32 o, Lng32 nkc, const char * hcf, const char * hcq) 
+    : ComTdbVirtTableBase(),
+    colName(cn), keySeqNum(ksn), tableColNum(tcn), ordering(o), nonKeyCol(nkc),
+    hbaseColFam(hcf), hbaseColQual(hcq)
+  {
+  }
+
+ ComTdbVirtTableKeyInfo() 
+  : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableKeyInfo);}
+
   const char * colName;
   Lng32   keySeqNum;
   Lng32   tableColNum;
@@ -917,8 +997,17 @@ struct ComTdbVirtTableKeyInfo
   const char * hbaseColQual;
 };
 
-struct ComTdbVirtTableIndexInfo
+class ComTdbVirtTableIndexInfo : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableIndexInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableIndexInfo);}
+
   const char * baseTableName;
   const char * indexName;
   Lng32 keytag;
@@ -934,18 +1023,37 @@ struct ComTdbVirtTableIndexInfo
 };
 
 // referencing and referenced constraints
-struct ComTdbVirtTableRefConstraints
+class ComTdbVirtTableRefConstraints : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableRefConstraints()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableRefConstraints);}
+
   char * constrName;
   char * baseTableName;
 };
 
-struct ComTdbVirtTableConstraintInfo
+class ComTdbVirtTableConstraintInfo : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableConstraintInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableConstraintInfo);}
+  
   char * baseTableName;
   char * constrName;
   Lng32 constrType; // unique constr = 0, ref constr = 1, check constr = 2, pkey constr = 3
   Lng32 colCount;
+  Lng32 isEnforced;
 
   ComTdbVirtTableKeyInfo * keyInfoArray;
 
@@ -962,8 +1070,17 @@ struct ComTdbVirtTableConstraintInfo
   char * checkConstrText;
 };
 
-struct ComTdbVirtTableViewInfo
+class ComTdbVirtTableViewInfo : ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableViewInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableViewInfo);}
+
   char * viewName;
   char * viewText;
   char * viewCheckText;
@@ -972,8 +1089,38 @@ struct ComTdbVirtTableViewInfo
 };
 
 
-struct ComTdbVirtTableRoutineInfo
+class ComTdbVirtTableRoutineInfo : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableRoutineInfo(const char * rn, const char * ut, const char * lt,
+                             Int16 d, const char * sa, Int16 con, Int16 i, const char * ps,
+                             const char * ta, Int32 mr, Int32 sas, const char * en,
+                             const char * p, const char * uv, const char * es, const char * em,
+                             const char * lf, Int32 lv, const char * s)
+    : ComTdbVirtTableBase(),
+    routine_name(rn), deterministic(d), call_on_null(con), isolate(i), max_results(mr),
+    state_area_size(sas), external_name(en), library_filename(lf), library_version(lv),
+    signature(s)
+      {
+        strcpy(UDR_type, ut);
+        strcpy(language_type, lt);
+        strcpy(sql_access, sa);
+        strcpy(param_style, ps);
+        strcpy(transaction_attributes, ta);
+        strcpy(parallelism, p);
+        strcpy(user_version, uv);
+        strcpy(external_security, es);
+        strcpy(execution_mode, em);
+      }
+
+  ComTdbVirtTableRoutineInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableRoutineInfo);}
+
   const char *routine_name;
   char UDR_type[3];
   char language_type[3];
@@ -995,8 +1142,17 @@ struct ComTdbVirtTableRoutineInfo
   const char * signature;
 };
 
-struct ComTdbVirtTableSequenceInfo
+class ComTdbVirtTableSequenceInfo : public ComTdbVirtTableBase
 {
+ public:
+  ComTdbVirtTableSequenceInfo()
+    : ComTdbVirtTableBase()
+    {
+      init();
+    }
+
+  virtual Int32 size() { return sizeof(ComTdbVirtTableSequenceInfo);}
+
   Lng32                seqType; // ComSequenceGeneratorType 
   Lng32                datatype;
   Int64                 startValue;

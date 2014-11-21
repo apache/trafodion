@@ -69,7 +69,7 @@
 >>create table nt001 (c char(10) HEADING _UCS2'MYUCS2HEADING');
 
 --- SQL operation complete.
->>create table nt002 (c char(10) character set UCS2 default 'default');
+>>create table nt002 (c char(10) character set UCS2 default _UCS2'default');
 
 --- SQL operation complete.
 >>

@@ -44,7 +44,6 @@
 #include "ComTdbMj.cpp"
 #include "ComTdbOnlj.cpp"
 #include "ComTdbPackRows.cpp"
-#include "ComTdbParLab.cpp"
 #include "ComTdbPartnAccess.cpp"
 #include "ComTdbProbeCache.cpp"
 #include "ComTdbRoot.cpp"

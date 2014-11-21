@@ -1573,20 +1573,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       setFirstNRows(-1);
     }
 
-  if ((child(0)->getOperatorType() == REL_PARALLEL_LABEL_CREATE) ||
-      (child(0)->getOperatorType() == REL_PARALLEL_LABEL_DROP)   ||
-      (child(0)->getOperatorType() == REL_PARALLEL_LABEL_ALTER)  ||
-      (child(0)->getOperatorType() == REL_PARALLEL_LABEL_PURGEDATA)  
-     )
-  {
-     // Add an exchange node here. For parallel label creates, drops, alter
-     // need to execute in ESPs.
-     RelExpr * exchange = new(generator->wHeap()) Exchange (child(0));
-     exchange->setPhysicalProperty(child(0)->getPhysicalProperty());
-     exchange->setGroupAttr(child(0)->getGroupAttr());
-     setChild(0, exchange);
-  }
-
   if (isTrueRoot())
     {
       // Set the internal format to use for the plan being generated ...
@@ -1814,8 +1800,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 		  //		  (ge->newRecBeforeExprArray().entries() > 0))
 		doMaxOneInputRowOpt = FALSE;
 	    }
-	  else if ((childExpr->getOperatorType() == REL_DP2_SCAN) ||
-		   (childExpr->getOperatorType() == REL_FILE_SCAN))
+	  else if (childExpr->getOperatorType() == REL_FILE_SCAN)
 	    {
 	      FileScan * s = (FileScan *)childExpr;
 	      if (NOT firstN)
@@ -2161,8 +2146,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 	  child(0)->child(0)->castToRelExpr()->getOperatorType();
 
 	if ((CmpCommon::getDefault(ENABLE_DP2_XNS) == DF_ON) &&
-	    ((currGrandChildOper == REL_DP2_SCAN_UNIQUE) ||
-	     (currGrandChildOper == REL_DP2_INSERT_CURSOR) ||
+            ((currGrandChildOper == REL_DP2_INSERT_CURSOR) ||
 	     (currGrandChildOper == REL_DP2_UPDATE_UNIQUE) ||
 	     (currGrandChildOper == REL_DP2_DELETE_UNIQUE)) &&
 	    (oltOptInfo().oltCliOpt() &&
@@ -3882,8 +3866,7 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
       // key is already unique or if both the begin and end key are
       // exclusive (min max are inclusive and no easy way to mix
       // them).
-      if(getOperatorType() != REL_DP2_SCAN_UNIQUE &&
-         generator->getMinMaxKeys().entries() &&
+      if (generator->getMinMaxKeys().entries() &&
          (getSearchKey()->getBeginKeyValues()[0] !=
           getSearchKey()->getEndKeyValues()[0]) &&
          (!getSearchKey()->isBeginKeyExclusive() ||
@@ -4110,153 +4093,6 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
   return this;
 } // FileScan::preCodeGen()
 
-
-RelExpr * DP2Scan::preCodeGen(Generator * generator,
-			      const ValueIdSet & externalInputs,
-			      ValueIdSet &pulledNewInputs)
-{
-  // Commented out because if we ever really *were* called twice,
-  // "return this" would return the wrong thing --
-  // {rvp|dss|vpjoin...} ought to be setReplacementExpr()'d, and
-  // getReplacementExpr() should be returned.
-  // That can be done if ever this assert is triggered.
-  //
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  // start with input olt eid opt indication
-  oltOptInfo().setOltEidOpt(generator->oltOptInfo()->oltEidOpt());
-
-  generator->oltOptInfo()->setMultipleRowsReturned(FALSE);
-
-  if ( getTableDesc()->getNATable()->hasAddedColumn() &&
-       (CmpCommon::getDefault(EXPAND_DP2_SHORT_ROWS) == DF_ON) &&
-       (NOT getTableDesc()->getNATable()->isSQLMPTable()) &&
-       (NOT isVerticalPartitionTableScan()) &&
-       getIndexDesc()->isClusteringIndex()   // true if base table not an index
-       )
-  {
-    // In specific cases for SQL/MX tables that have added columns then expand
-    // the row data to include any missing column default values allowing
-    // other optimizations and PCode.
-    setExpandShortRows( TRUE );
-  }
-
-  if (getOperatorType() != REL_DP2_SCAN_UNIQUE)
-    {
-      // set all olt optimizations (cli, msgs and eid) to false.
-      // Olt opt (all 3 kinds) can only handle the case where atmost
-      // one row is being returned.
-
-      // set eid olt opt for this node to false.
-      oltOptInfo().setOltEidOpt(FALSE);
-
-      generator->oltOptInfo()->setOltMsgOpt(FALSE);
-      generator->oltOptInfo()->setOltCliOpt(FALSE);
-
-      // set an indication that multiple rows will be returned.
-      generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
-    }
-  else
-    {
-      // cannot do olt eid or msg opt if stream or skip conflict.
-      if ((getGroupAttr()->isStream()) ||
-          (accessOptions().accessType() == SKIP_CONFLICT_))
-        {
-          generator->oltOptInfo()->setOltEidOpt(FALSE);
-          generator->oltOptInfo()->setOltMsgOpt(FALSE);
-	  oltOptInfo().setOltEidOpt(FALSE);
-          setExpandShortRows( FALSE );
-
-	  generator->setSkipUnavailablePartition(FALSE);
-        }
-
-      // cannot do olt eid opt if PA is not doing olt msg opt.
-      if (NOT generator->oltOptInfo()->oltMsgOpt())
-	oltOptInfo().setOltEidOpt(FALSE);
-
-      const int fudgeFactor = 500;
-      if (getGroupAttr()->getCharacteristicOutputs().getRowLength()  // 56000
-          > (getDefaultAsLong(DP2_MESSAGE_BUFFER_SIZE)*1024 - fudgeFactor)) 
-      {
-        generator->oltOptInfo()->setOltEidOpt(FALSE);
-        generator->oltOptInfo()->setOltMsgOpt(FALSE);
-        oltOptInfo().setOltEidOpt(FALSE);
-      }
-    }
-
-  // eid olt opt done for key seq non-compressed tables with user
-  // defined primary key.
-  if ((NOT getIndexDesc()->getNAFileSet()->isKeySequenced()) ||
-//      (getIndexDesc()->getAllColumns()[0]->isSystemColumn()) ||
-      (getIndexDesc()->getNAFileSet()->isCompressed()))
-  {
-    generator->oltOptInfo()->setOltMsgOpt(FALSE);
-
-    oltOptInfo().setOltEidOpt(FALSE);
-    setExpandShortRows(FALSE);
-  }
-
-  if(getIndexDesc()->getAllColumns()[0]->isSyskeyColumn())
-  {
-    generator->oltOptInfo()->setOltMsgOpt(FALSE);
-    oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  if (oltOpt() &&        // returns true if any OLT opt is on
-      (NOT expandShortRows()) &&
-      getTableDesc()->getNATable()->hasAddedColumn())
-  {
-    oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  // see if 'lean' olt opt could be done.
-  oltOptInfo().setOltEidLeanOpt(FALSE);
-  if ((oltOpt()) &&     // returns true if any OLT opt is on
-      (generator->oltOptInfo()->oltEidLeanOpt()))
-    {
-      if ((NOT isinBlockStmt()) &&
-	  (NOT getTableDesc()->getNATable()->hasAddedColumn()) &&
-          (NOT getTableDesc()->getNATable()->hasVarcharColumn()))
-      {
-	oltOptInfo().setOltEidLeanOpt(TRUE);
-        setExpandShortRows( FALSE );
-      }
-    }
-
-  if (getGroupAttr()->isStream())
-    generator->setAqrEnabled(FALSE);
-
-  NAString tnstring = GenGetQualifiedName(getTableName());
-  RelExpr * rvp = FileScan::preCodeGen(generator,
-				       externalInputs,
-				       pulledNewInputs);
-
-  generator->compilerStatsInfo().dp2RowsAccessed() += 
-    (Cardinality)getEstRowsAccessed().getValue();
-
-  generator->compilerStatsInfo().dp2RowsUsed() += 
-    (Cardinality)getEstRowsAccessed().getValue();
-
-  // set fullScanOnTable indication in generator.
-  if ((isFullScanPresent() && (!getMdamKeyPtr())) && // fullScanOnTable
-      ((Cardinality)getEstRowsAccessed().getValue() > 
-       generator->compilerStatsInfo().dp2RowsAccessedForFullScan()))
-    {
-      generator->compilerStatsInfo().setFullScanOnTable(TRUE);
-      generator->compilerStatsInfo().dp2RowsAccessedForFullScan() =
-	(Cardinality)getEstRowsAccessed().getValue();
-    }
-
-  if (getTableDesc()->getNATable()->isHiveTable()) {
-    generator->setHdfsAccess(TRUE); // hive and hbase access
-    generator->setHiveAccess(TRUE);
-  }
-
-  // Done.
-  return rvp;
-
-} // DP2Scan::preCodeGen()
 
 RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 				    const ValueIdSet & externalInputs,
@@ -10957,35 +10793,6 @@ RelExpr * StatisticsFunc::preCodeGen(Generator * generator,
 
   // Done.
   return this;
-}
-
-RelExpr * DiskLabelStatistics::preCodeGen(Generator * generator,
-					  const ValueIdSet & externalInputs,
-					  ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-  if (! ParallelLabelOp::preCodeGen(generator,externalInputs,pulledNewInputs))
-    return NULL;
-
-  markAsPreCodeGenned();
-
-  // serial execution seems to run faster than with ESPs.
-  // Use serial, unless cqd is set. After testing, if serial always
-  // performs well, remove the following cqd and code.
-  if (CmpCommon::getDefault(COMP_BOOL_209) == DF_ON)
-    {
-      // Add an exchange node here so this could be executed in ESP.
-      RelExpr * exchange = new(generator->wHeap()) Exchange (this);
-      exchange->setPhysicalProperty(this->getPhysicalProperty());
-      exchange->setGroupAttr(this->getGroupAttr());
-      
-      exchange = exchange->preCodeGen(generator, externalInputs, pulledNewInputs);
-      // Done.
-      return exchange;
-    }
-  else
-    return this;
 }
 
 RelExpr * ExeUtilGetStatistics::preCodeGen(Generator * generator,

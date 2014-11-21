@@ -4746,30 +4746,6 @@ CostMethodDP2Scan::computeOperatorCostInternal(RelExpr* op,
   Cost *costPtr = CostMethodFileScan::computeOperatorCostInternal( op,
                      myContext, countOfStreams );
 
-  // However, in DP2Scan need to check for a unique SearchKey:
-
-  if (p->getSearchKey() &&
-      p->getSearchKey()->isUnique()
-      )
-  {
-    p->setOperatorType (REL_DP2_SCAN_UNIQUE);
-    // This was a temporary workaround. For RI constraint check all
-    // N partitions of multipartitioned table were considered active.
-    // This caused file_scan_unique of base table (which was referenced)
-    // to look more expensive than full index scan. Idle time was
-    // calculataed as proportional to (N-1), and should be zero for
-    // file_scan_unique in case of one probe. This should be fixed by
-    // recent change from offshore group introducing a new attribute -
-    // estimated number of active partition at run time. Leave patch
-    // here until thaf fix verified to be working.
-    if ( NOT (*costPtr).cplr().getNumProbes().isGreaterThanOne() )
-    {
-      (*costPtr).cpfr().setIdleTime(csZero);
-      (*costPtr).cplr().setIdleTime(csZero);
-      (*costPtr).totalCost().setIdleTime(csZero);
-    }
-  }
-
   return costPtr;
 
 } // CostMethodDP2Scan::computeOperatorCostInternal()

@@ -309,6 +309,14 @@ OBJECT_PRIVILEGES
 >>
 >>initialize authorization;
 
+*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.OBJECT_PRIVILEGES already exists in Trafodion.
+
+*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.COMPONENTS already exists in Trafodion.
+
+*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.COMPONENT_OPERATIONS already exists in Trafodion.
+
+*** WARNING[1390] Object TRAFODION.PRIVMGR_MD.COMPONENT_PRIVILEGES already exists in Trafodion.
+
 --- SQL operation complete.
 >>get tables;
 

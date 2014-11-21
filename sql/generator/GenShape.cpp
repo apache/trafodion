@@ -324,8 +324,6 @@ short Join::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
      switch( lChild->castToRelExpr()->getOperatorType())
      {
        case REL_SCAN:
-       case REL_DP2_SCAN:
-       case REL_DP2_SCAN_UNIQUE:
        case REL_FILE_SCAN:
        case REL_HBASE_ACCESS:
        case REL_HDFS_SCAN:
@@ -341,8 +339,6 @@ short Join::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
      switch (rChild->castToRelExpr()->getOperatorType())
      {
        case REL_SCAN:
-       case REL_DP2_SCAN:
-       case REL_DP2_SCAN_UNIQUE:
        case REL_FILE_SCAN:
        case REL_HBASE_ACCESS:
        case REL_HDFS_SCAN:

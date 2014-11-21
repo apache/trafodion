@@ -567,7 +567,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    Lng32 intParam1 = -retcode;
 		    ComDiagsArea * diagsArea = NULL;
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8442), NULL, 
+                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
                                     &cliError, 
                                     NULL, 
@@ -695,7 +695,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    Lng32 intParam1 = -retcode;
 		    ComDiagsArea * diagsArea = NULL;
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8442), NULL, 
+                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
                                     &cliError, 
                                     NULL, 
@@ -1118,7 +1118,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		    Lng32 intParam1 = -retcode;
 		    ComDiagsArea * diagsArea = NULL;
 		    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8442), NULL, 
+                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
                                     &cliError, 
                                     NULL, 
@@ -1228,7 +1228,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     Lng32 intParam1 = -retcode;
                     ComDiagsArea * diagsArea = NULL;
                     ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(8442), NULL, 
+                                    (ExeErrorCode)(EXE_ERROR_FROM_LOB_INTERFACE), NULL, 
                                     &intParam1, 
                                     &cliError, 
                                     NULL, 
@@ -1702,7 +1702,7 @@ ExWorkProcRetcode ExOrcScanTcb::work()
                                       orcStartRowNum_, orcStopRowNum_);
             if (retcode < 0)
               {
-                setupError(8442, retcode, "ORC", "scanOpen", 
+                setupError(EXE_ERROR_FROM_LOB_INTERFACE, retcode, "ORC", "scanOpen", 
                            orci_->getErrorText(-retcode));
 
                 step_ = HANDLE_ERROR;
@@ -1721,7 +1721,7 @@ ExWorkProcRetcode ExOrcScanTcb::work()
                                        numOrcCols_);
             if (retcode < 0)
               {
-                setupError(8442, retcode, "ORC", "scanFetch", 
+                setupError(EXE_ERROR_FROM_LOB_INTERFACE, retcode, "ORC", "scanFetch", 
                           orci_->getErrorText(-retcode));
 
                 step_ = HANDLE_ERROR;
@@ -1746,7 +1746,6 @@ ExWorkProcRetcode ExOrcScanTcb::work()
 	      extractAndTransformOrcSourceToSqlRow(orcRow_, orcRowLen_,
                                                    numOrcCols_, transformDiags);
             
-	    bool rowWillBeSelected = true;
 	    if (err)
 	      {
 		if (transformDiags)
@@ -1761,6 +1760,7 @@ ExWorkProcRetcode ExOrcScanTcb::work()
 	    workAtp_->getTupp(hdfsScanTdb().workAtpIndex_) = 
 	      hdfsSqlTupp_;
 
+	    bool rowWillBeSelected = true;
 	    if (selectPred())
 	      {
 		ex_expr::exp_return_type evalRetCode =
@@ -1908,7 +1908,7 @@ ExWorkProcRetcode ExOrcScanTcb::work()
             retcode = orci_->scanClose();
             if (retcode < 0)
               {
-                setupError(8442, retcode, "ORC", "scanClose", 
+                setupError(EXE_ERROR_FROM_LOB_INTERFACE, retcode, "ORC", "scanClose", 
                            orci_->getErrorText(-retcode));
                 
                 step_ = HANDLE_ERROR;
@@ -2024,7 +2024,7 @@ ExWorkProcRetcode ExOrcFastAggrTcb::work()
             retcode = orci_->getRowCount(hdfsFileName_, currRowCount);
             if (retcode < 0)
               {
-                setupError(8442, retcode, "ORC", "getRowCount", 
+                setupError(EXE_ERROR_FROM_LOB_INTERFACE, retcode, "ORC", "getRowCount", 
                            orci_->getErrorText(-retcode));
 
                 step_ = HANDLE_ERROR;

@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Tue Aug  5 10:10:06 2014
+-- Definition current  Wed Nov 19 00:06:00 2014
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -48,7 +48,7 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Tue Aug  5 10:10:09 2014
+-- Definition current  Wed Nov 19 00:06:02 2014
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -158,7 +158,7 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Tue Aug  5 10:10:24 2014
+-- Definition current  Wed Nov 19 00:06:22 2014
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -251,7 +251,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Tue Aug  5 10:10:46 2014
+-- Definition current  Wed Nov 19 00:07:09 2014
 
   (
     C                                INT DEFAULT NULL
@@ -3001,4 +3001,94 @@ VCH15            NINT         CH3  NLARGE
 
 --- 5 row(s) selected.
 >>
+>>-- enforced option
+>>create table test020_t33 (a int not null primary key);
+
+--- SQL operation complete.
+>>create table test020_t34 (a int not null primary key, b int not null,
++>   constraint t34_1 foreign key (b) references test020_t33 not enforced);
+
+*** WARNING[1313] The referential integrity constraint TRAFODION.SCH.T34_1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation complete.
+>>showddl test020_t34;
+
+CREATE TABLE TRAFODION.SCH.TEST020_T34
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX T34_1 ON TRAFODION.SCH.TEST020_T34
+  (
+    B ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
+  FOREIGN KEY
+  (
+    B
+  )
+ REFERENCES TRAFODION.SCH.TEST020_T33
+  (
+    A
+  )
+ NOT ENFORCED
+;
+
+--- SQL operation complete.
+>>-- should succeed, ref constr not enforced
+>>insert into test020_t34 values (1,1);
+
+--- 1 row(s) inserted.
+>>
+>>delete from test020_t34;
+
+--- 1 row(s) deleted.
+>>alter table test020_t34 drop constraint t34_1;
+
+--- SQL operation complete.
+>>alter table test020_t34 add constraint t34_1 foreign key(b) references test020_t33(a) not enforced;
+
+*** WARNING[1313] The referential integrity constraint TRAFODION.SCH.T34_1 has been created with the NOT ENFORCED attribute and will not be enforced during INSERT, UPDATE, OR DELETE statements.
+
+--- SQL operation complete.
+>>showddl test020_t34;
+
+CREATE TABLE TRAFODION.SCH.TEST020_T34
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , PRIMARY KEY (A ASC)
+  )
+;
+
+-- The following index is a system created index --
+CREATE INDEX T34_1 ON TRAFODION.SCH.TEST020_T34
+  (
+    B ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
+  FOREIGN KEY
+  (
+    B
+  )
+ REFERENCES TRAFODION.SCH.TEST020_T33
+  (
+    A
+  )
+ NOT ENFORCED
+;
+
+--- SQL operation complete.
+>>-- should succeed, ref constr not enforced
+>>insert into test020_t34 values (1,1);
+
+--- 1 row(s) inserted.
 >>log;

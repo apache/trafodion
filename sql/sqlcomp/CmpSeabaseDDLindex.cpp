@@ -94,11 +94,9 @@ CmpSeabaseDDL::createIndexColAndKeyInfoArrays(
 
   totalColCount = keyColCount + nonKeyColCount;
 
-  colInfoArray = (ComTdbVirtTableColumnInfo*)
-    new(heap) char[totalColCount *  sizeof(ComTdbVirtTableColumnInfo)];
+  colInfoArray = new(heap) ComTdbVirtTableColumnInfo[totalColCount];
 
-  keyInfoArray = (ComTdbVirtTableKeyInfo*)
-    new(heap) char[totalColCount * sizeof(ComTdbVirtTableKeyInfo)];
+  keyInfoArray = new(heap) ComTdbVirtTableKeyInfo[totalColCount];
 
   CollIndex i = 0;
   NABoolean syskeyOnly = TRUE;
@@ -742,24 +740,26 @@ void CmpSeabaseDDL::createSeabaseIndex(
       }
   }
 
-  ComTdbVirtTableTableInfo tableInfo;
-  tableInfo.tableName = NULL,
-  tableInfo.createTime = 0;
-  tableInfo.redefTime = 0;
-  tableInfo.objUID = 0;
-  tableInfo.objOwnerID = naTable->getOwner(); 
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = NULL,
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = 0;
+  tableInfo->objOwnerID = naTable->getOwner(); 
 
   if (NOT createIndexNode->isNoPopulateOptionSpecified())
     // if index is to be populated during create index, then initially create it as an
     // unaudited index. That would avoid any transactional inserts.
     // After the index has been populated, make it audited.
-    tableInfo.isAudited = 0;
+    tableInfo->isAudited = 0;
   else
-    tableInfo.isAudited = (nafs->isAudited() ? 1 : 0);
+    tableInfo->isAudited = (nafs->isAudited() ? 1 : 0);
 
-  tableInfo.validDef = 0;
-  tableInfo.hbaseCreateOptions = NULL;
-  tableInfo.numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
+  tableInfo->validDef = 0;
+  tableInfo->hbaseCreateOptions = NULL;
+  tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
+
+  ComTdbVirtTableIndexInfo * iii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
 
   ComTdbVirtTableIndexInfo ii;
   ii.baseTableName = (char*)extTableName.data();
@@ -788,21 +788,21 @@ void CmpSeabaseDDL::createSeabaseIndex(
     processReturn();
     return;
   }
-  tableInfo.hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
+  tableInfo->hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
   
   Int64 objUID = -1;
   if (updateSeabaseMDTable(&cliInterface, 
 			 catalogNamePart, schemaNamePart, objectNamePart,
 			 COM_INDEX_OBJECT_LIT,
 			 "N",
-			 &tableInfo,
+			 tableInfo,
 			 totalColCount,
 			 colInfoArray,
 			 totalColCount,
 			 keyInfoArray,
 			 1, // numIndex
                          &ii,
-                         tableInfo.objOwnerID,
+                         tableInfo->objOwnerID,
                          objUID))
     {
       deallocEHI(ehi); 

@@ -439,6 +439,7 @@ class CmpSeabaseDDL
                      const char * schName,
                      const char * objName,
                      const char * inObjType,
+                     const char * inObjTypeStr = NULL,
                      char * outObjType = NULL);
 
    Int64 getObjectUIDandOwner(
@@ -474,6 +475,11 @@ class CmpSeabaseDDL
 		      NABoolean isTable,
 		      Queue * &usingViewsQueue);
   
+  short getAllIndexes(ExeCliInterface *cliInterface,
+                      Int64 objUID,
+                      NABoolean includeInvalidDefs,
+                      Queue * &indexInfoQueue);
+
   short updateSeabaseMDTable(
 			     ExeCliInterface *cliInterface,
 			     const char * catName,
@@ -635,6 +641,7 @@ class CmpSeabaseDDL
 			   Int64 uniqueUID,
 			   NATable * naTable,
 			   ComConstraintType ct,
+                           NABoolean enforced,
 			   ExeCliInterface *cliInterface);
 
   short updateRIConstraintMD(

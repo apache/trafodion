@@ -4810,38 +4810,34 @@ NATable::NATable(BindWA *bindWA,
         return; // colcount_ == 0 indicates an error
       }
 
-      if ((!bindWA->inDDL()) || bindWA->isBindingMvRefresh())
-        {
-	  //
-	  // Add constraint info.
-	  //
-          // This call to createConstraintInfo, calls the parser on
-          // the constraint name
-          //
-
-          NABoolean  errorOccurred =
-            createConstraintInfo(table_desc        /*IN*/,
-                                 getTableName()    /*IN*/,
-                                 getNAColumnArray()/*IN (some columns updated)*/,
-                                 checkConstraints_ /*OUT*/,
-                                 uniqueConstraints_/*OUT*/,
-                                 refConstraints_   /*OUT*/,
-                                 heap_,
-                                 bindWA);
-
-          if (errorOccurred) {
-            // return before setting colcount_, indicating that there
-            // was an error in constructing this NATable.
-            //
-            return;
-          }
-
-	  //
-	  // FetchHistograms call used to be here -- moved to getStatistics().
-	  //
-	}
+      // Add constraint info.
+      //
+      // This call to createConstraintInfo, calls the parser on
+      // the constraint name
+      //
+      
+      NABoolean  errorOccurred =
+        createConstraintInfo(table_desc        /*IN*/,
+                             getTableName()    /*IN*/,
+                             getNAColumnArray()/*IN (some columns updated)*/,
+                             checkConstraints_ /*OUT*/,
+                             uniqueConstraints_/*OUT*/,
+                             refConstraints_   /*OUT*/,
+                             heap_,
+                             bindWA);
+      
+      if (errorOccurred) {
+        // return before setting colcount_, indicating that there
+        // was an error in constructing this NATable.
+        //
+        return;
+      }
+      
+      //
+      // FetchHistograms call used to be here -- moved to getStatistics().
+      //
     }
-
+  
     // change partFunc for base table if PARTITION clause has been used
     // to limit the number of partitions that will be accessed.
     if ((qualifiedName_.isPartitionNameSpecified()) ||

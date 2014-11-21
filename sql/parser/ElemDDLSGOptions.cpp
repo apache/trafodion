@@ -363,12 +363,6 @@ short ElemDDLSGOptions::validate(short queryType)
 {
   char queryTypeStr[40];
 
-  Lng32 ij = 0;
-  while (ij)
-    {
-      ij = 2 - ij;
-    }
-
   if (queryType == 0)
     strcpy(queryTypeStr, "CREATE SEQUENCE");
   else if (queryType == 1)

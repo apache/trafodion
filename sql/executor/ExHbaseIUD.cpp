@@ -1960,12 +1960,6 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	case UPDATE_ROW:
 	  {
-            Lng32 ij = 0;
-            while (ij)
-              {
-                ij = 2 - ij;
-              }
-
             HbaseStr rowID;
             rowID.val = (char *) tcb_->rowIds_[tcb_->currRowidIdx_].data();
             rowID.len = tcb_->rowIds_[tcb_->currRowidIdx_].size();

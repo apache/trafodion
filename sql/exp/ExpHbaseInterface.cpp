@@ -50,17 +50,18 @@ ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
   hbs_ = NULL;
 
   if (server)
-    strncpy(server_, server, sizeof(server_));
+    strcpy(server_, server);
   else
     server_[0] = 0;
 
   if (port)
-    strncpy(port_, port, sizeof(port_));
+    //    strncpy(port_, port, sizeof(port_));
+    strcpy(port_, port);
   else
     port_[0] = 0;
 
   if (zkPort)
-    strncpy(zkPort_, zkPort, sizeof(zkPort_));
+    strcpy(zkPort_, zkPort); //, sizeof(zkPort_));
   else
     zkPort_[0] = 0;
 

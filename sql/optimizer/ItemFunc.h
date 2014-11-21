@@ -2405,6 +2405,7 @@ public:
   virtual short codeGen(Generator*);
 
   NABoolean checkTruncationError()	{ return checkForTruncation_; }
+  void setCheckTruncationError(NABoolean v) { checkForTruncation_ = v; }
 
   NABoolean noStringTruncationWarnings() { return noStringTruncationWarnings_; }
 

@@ -803,7 +803,7 @@ $1~String1 --------------------------------
 3066 42000 99999 BEGINNER MAJOR DBADMIN $0~String0
 3067 42000 99999 BEGINNER MAJOR DBADMIN ALTER TABLE ADD CONSTRAINT allows only DROPPABLE constraints.
 3068 42000 99999 BEGINNER MAJOR DBADMIN The ALLOCATE and DEALLOCATE clauses cannot coexist in the same ALTER INDEX statement.
-3069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $0~TableName created in ORC(Optimized Row Columnar) format is not yet supported.
+3069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $0~TableName created in ORC (Optimized Row Columnar) format is not yet supported.
 3070 0A000 99999 BEGINNER MAJOR DBADMIN The [NO]AUDIT clause is not supported.
 3071 42000 99999 BEGINNER MAJOR DBADMIN Duplicate [NO]AUDITCOMPRESS clauses were specified.
 3072 42000 99999 BEGINNER MAJOR DBADMIN The $0~String0 clause is not allowed in the ALTER $1~String1 ... ATTRIBUTE(S) statement.

@@ -62,7 +62,6 @@
 #include "ComTdbFirstN.h"
 #include "ComTdbStats.h"
 #include "ComTdbInterpretAsRow.h"
-#include "ComTdbParLab.h"
 #include "ComTdbCancel.h"
 #include "ExplainTuple.h"
 #include "ComTdbHbaseAccess.h"
@@ -2523,9 +2522,6 @@ short RelRoot::codeGen(Generator * generator)
 
       if (childOperType() == REL_SCAN)
 	{
-	  if (currGrandChildOper == REL_DP2_SCAN_UNIQUE)
-	    root_tdb->setQueryType(ComTdbRoot::SQL_SELECT_UNIQUE);
-	  else
 	    root_tdb->setQueryType(ComTdbRoot::SQL_SELECT_NON_UNIQUE);
 	}
       else if (childOperType() == REL_UNARY_INSERT)
@@ -5678,95 +5674,6 @@ desc_struct *ProxyFunc::createVirtualTableDesc()
   table_desc->body.table_desc.indexes_desc = index_desc;
  
   return table_desc;
-}
-
-
-Int32 ParallelLabelOp::populateRtmdObject(RtmdCompileTimeObj *rtmd,
-                                        Generator *generator)
-{
-  GenAssert(0, "ParallelLabelOp::populateRtmdObject. Should not reach here.");
-
-  return 0;
-}
-
-Int32 ParallelLabelCreate::populateRtmdObject(RtmdCompileTimeObj *rtmd,
-                                        Generator *generator)
-{
-   *CmpCommon::diags() << DgSqlCode(-4222)
-                       << DgString0("Parallel Label Create");
-   return 0;
-}
-
-Int32 ParallelLabelDrop::populateRtmdObject(RtmdCompileTimeObj *rtmd,
-                                          Generator *generator) 
-{
-  return 0;
-}
-
-Int32 ParallelLabelAlter::populateRtmdObject(RtmdCompileTimeObj *rtmd,
-                                           Generator *generator)
-{
-   return 0;
-}
-
-short PhysicalParallelLabelDrop::codeGen(Generator *generator)
-{
-   GenAssert(FALSE, "Parallel label drop not supported");
-   return 0;
-}
-
-short PhysicalParallelLabelCreate::codeGen(Generator *generator)
-{
-   GenAssert(FALSE, "Parallel label create not supported");
-   return 0;
-}
-
-short PhysicalParallelLabelAlter::codeGen(Generator *generator)
-{
-   GenAssert(FALSE, "Parallel label alter not supported");
-   return 0;
-}
-
-
-/////////////////////////////////////////////////////////
-//
-// ParallelLabelPurgedata::codeGen()
-//
-/////////////////////////////////////////////////////////
-short PhysicalParallelLabelPurgedata::codeGen(Generator * generator)
-{
-  GenAssert(FALSE, "Parallel DP2 purgedata not supported");
-  return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// class DiskLabelStatistics
-//////////////////////////////////////////////////////////////////////////
-Int32 DiskLabelStatistics::populateRtmdObject(RtmdCompileTimeObj *rtmd,
-					       Generator *generator) 
-{
-  return 0;
-}
-
-const char * DiskLabelStatistics::getVirtualTableName()
-{ return ("DISK_LABEL_STATISTICS__"); }
-
-desc_struct *DiskLabelStatistics::createVirtualTableDesc()
-{
-  desc_struct * table_desc =
-    Generator::createVirtualTableDesc(
-	 getVirtualTableName(),
-	 ComTdbDiskLabelStatistics::getVirtTableNumCols(),
-	 ComTdbDiskLabelStatistics::getVirtTableColumnInfo(),
-	 ComTdbDiskLabelStatistics::getVirtTableNumKeys(),
-	 ComTdbDiskLabelStatistics::getVirtTableKeyInfo());
-  return table_desc;
-}
-
-short DiskLabelStatistics::codeGen(Generator * generator)
-{
-  GenAssert(FALSE, "Disk label stats not supported");
-  return 0;
 }
 
 short PhysicalExtractSource::codeGen(Generator *)

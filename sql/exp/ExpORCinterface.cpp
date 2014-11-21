@@ -37,7 +37,7 @@ ExpORCinterface::ExpORCinterface(CollHeap * heap,
   heap_ = heap;
 
   if (server)
-    strncpy(server_, server, sizeof(server_));
+    strcpy(server_, server);
   else
     server_[0] = 0;
 
@@ -48,6 +48,8 @@ ExpORCinterface::ExpORCinterface(CollHeap * heap,
 
 ExpORCinterface::~ExpORCinterface()
 {
+  // close. Ignore errors.
+  scanClose();
 }
 
 Lng32 ExpORCinterface::init()

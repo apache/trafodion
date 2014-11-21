@@ -1584,76 +1584,6 @@ void ComTdbExeUtilGetErrorInfo::displayContents(Space * space,ULng32 flag)
     }
 }
 
-//LCOV_EXCL_START
-///////////////////////////////////////////////////////////////////////////
-//
-// Methods for class ComTdbExeUtilGetVotalileInfo
-//
-///////////////////////////////////////////////////////////////////////////
-ComTdbExeUtilGetFormattedDiskStats::ComTdbExeUtilGetFormattedDiskStats
-(
- char * diskStatsStr,
- ex_cri_desc * work_cri_desc,
- const unsigned short work_atp_index,
- ex_cri_desc * given_cri_desc,
- ex_cri_desc * returned_cri_desc,
- queue_index down,
- queue_index up,
- Lng32 num_buffers,
- ULng32 buffer_size)
-     : ComTdbExeUtil(ComTdbExeUtil::GET_FORMATTED_DISK_STATS_,
-		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
-		     NULL, 0,
-		     NULL, 0,
-		     NULL, 0,
-		     NULL,
-		     work_cri_desc, work_atp_index,
-		     given_cri_desc, returned_cri_desc,
-		     down, up, 
-		     num_buffers, buffer_size),
-       flags_(0),
-       diskStatsStr_(diskStatsStr)
-{
-  setNodeType(ComTdb::ex_GET_FORMATTED_DISK_STATS);
-}
-
-Long ComTdbExeUtilGetFormattedDiskStats::pack(void * space)
-{
-  if (diskStatsStr_) 
-    diskStatsStr_.pack(space);
-  return ComTdbExeUtil::pack(space);
-}
-
-Lng32 ComTdbExeUtilGetFormattedDiskStats::unpack(void * base, void * reallocator)
-{
-  if(diskStatsStr_.unpack(base))
-    return -1;
-  return ComTdbExeUtil::unpack(base, reallocator);
-}
-
-void ComTdbExeUtilGetFormattedDiskStats::displayContents(Space * space,ULng32 flag)
-{
-  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
-  
-  if(flag & 0x00000008)
-    {
-      char buf[400];
-      str_sprintf(buf, "\nFor ComTdbExeUtilGetFormattedDiskStats :");
-      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-      
-      if (getDiskStatsStr() != NULL)
-	{
-	  str_sprintf(buf,"diskStatsStr_ = %s ",getDiskStatsStr());
-	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-	}
-    }
-  
-  if (flag & 0x00000001)
-    {
-      displayExpression(space,flag);
-      displayChildren(space,flag);
-    }
-}
 //LCOV_EXCL_STOP
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -2896,49 +2826,6 @@ void ComTdbExeUtilGetHiveMetadataInfo::displayContents(Space * space,ULng32 flag
     }
 }
 
-
-// On Linux, suspend/activate uses ComTdbCancel
-///////////////////////////////////////////////////////////////////////////
-//
-// Methods for class ComTdbExeUtilGetDiskLabelStats
-//
-///////////////////////////////////////////////////////////////////////////
-ComTdbExeUtilGetDiskLabelStats::ComTdbExeUtilGetDiskLabelStats
-(
-     ex_expr_base * input_expr,
-     ULng32 input_rowlen,
-     ex_cri_desc * work_cri_desc,
-     const unsigned short work_atp_index,
-     ex_cri_desc * given_cri_desc,
-     ex_cri_desc * returned_cri_desc,
-     queue_index down,
-     queue_index up,
-     Lng32 num_buffers,
-     ULng32 buffer_size)
-     : ComTdbExeUtil(ComTdbExeUtil::GET_DISK_LABEL_STATS_,
-		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
-		     NULL, 0,
-		     input_expr, input_rowlen,
-		     NULL, 0,
-		     NULL,
-		     work_cri_desc, work_atp_index,
-		     given_cri_desc, returned_cri_desc,
-		     down, up, 
-		     num_buffers, buffer_size),
-       flags_(0)
-{
-  setNodeType(ComTdb::ex_GET_DISK_LABEL_STATS);
-}
-
-Long ComTdbExeUtilGetDiskLabelStats::pack(void * space)
-{
-  return ComTdbExeUtil::pack(space);
-}
-
-Lng32 ComTdbExeUtilGetDiskLabelStats::unpack(void * base, void * reallocator)
-{
-  return ComTdbExeUtil::unpack(base, reallocator);
-}
 
 ///////////////////////////////////////////////////////////////////////////
 //

@@ -1191,7 +1191,7 @@ desc_struct * Generator::createVirtualTableDesc(
 	  curr_constr_desc->body.constrnts_desc.indexname = NULL;
 
 	  curr_constr_desc->body.constrnts_desc.check_constrnts_desc = NULL;
-	  curr_constr_desc->body.constrnts_desc.isEnforced = 1;
+	  curr_constr_desc->body.constrnts_desc.isEnforced = constrInfo[i].isEnforced;
 
 	  switch (constrInfo[i].constrType)
 	    {

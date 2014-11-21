@@ -73,7 +73,6 @@
 #include "ComTdbExeUtil.h"
 #include "ComTdbUdr.h"
 #include "ComTdbFastTransport.h"
-#include "ComTdbParLab.h"
 #include "ComTdbCancel.h"
 #include "ComTdbHdfsScan.h"
 #include "ComTdbHbaseAccess.h"

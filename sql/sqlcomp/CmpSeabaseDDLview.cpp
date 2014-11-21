@@ -289,6 +289,7 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 				      catalogNamePart.data(), schemaNamePart.data(), 
 				      objectNamePart.data(),
 				      NULL,
+                                      NULL,
 				      objType);
       if (usedObjUID < 0)
 	{
@@ -390,6 +391,7 @@ short CmpSeabaseDDL::gatherViewPrivileges (const StmtDDLCreateView * createViewN
                                               catalogNamePart.data(), 
                                               schemaNamePart.data(),
                                               objectNamePart.data(),
+                                              NULL,
                                               NULL,
                                               objType);
           
@@ -625,8 +627,8 @@ void CmpSeabaseDDL::createSeabaseView(
     }
 
   Lng32 numCols = colDefArray.entries();
-  ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
-   new(STMTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
+  ComTdbVirtTableColumnInfo * colInfoArray = 
+    new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
 
   if (buildColInfoArray(&colDefArray, colInfoArray, FALSE, 0, FALSE))
     {

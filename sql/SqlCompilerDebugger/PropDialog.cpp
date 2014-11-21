@@ -812,8 +812,6 @@ void PropDialog::UpdatePropList()
               switch (ot)
               {
                  case REL_FILE_SCAN:
-                 case REL_DP2_SCAN:
-                 case REL_DP2_SCAN_UNIQUE:
                  {
                     // Print the number plan fragments per cpu:
                     sprintf(validascii, "Blocks to read per DP2 access: %d",

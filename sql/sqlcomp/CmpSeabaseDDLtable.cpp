@@ -471,43 +471,25 @@ short CmpSeabaseDDL::constraintErrorChecks(
   const NAString &addConstrName = addConstrNode->
     getConstraintNameAsQualifiedName().getQualifiedNameAsAnsiString();
 
+  // make sure that there is no other constraint on this table with this name.
   NABoolean foundConstr = FALSE;
-  if (ct == COM_CHECK_CONSTRAINT)
+  const CheckConstraintList &checkList = naTable->getCheckConstraints();
+  for (Int32 i = 0; i < checkList.entries(); i++)
     {
-      const CheckConstraintList &checkList = naTable->getCheckConstraints();
+      CheckConstraint *checkConstr = (CheckConstraint*)checkList[i];
       
-      for (Int32 i = 0; i < checkList.entries(); i++)
+      const NAString &tableConstrName = 
+        checkConstr->getConstraintName().getQualifiedNameAsAnsiString();
+      
+      if (addConstrName == tableConstrName)
         {
-          CheckConstraint *checkConstr = (CheckConstraint*)checkList[i];
-          
-          const NAString &tableConstrName = 
-            checkConstr->getConstraintName().getQualifiedNameAsAnsiString();
-          
-          if (addConstrName == tableConstrName)
-            {
-              foundConstr = TRUE;
-            }
-        } // for
-  
-     if (foundConstr)
-        {
-          *CmpCommon::diags()
-            << DgSqlCode(-1043)
-            << DgConstraintName(addConstrName);
-          
-          processReturn();
-          
-          return -1;
+          foundConstr = TRUE;
         }
- 
-    }
-  else if ((ct == COM_UNIQUE_CONSTRAINT) || 
-           (ct == COM_FOREIGN_KEY_CONSTRAINT) ||
-           (ct == COM_PRIMARY_KEY_CONSTRAINT))
+    } // for
+  
+  if (NOT foundConstr)
     {
-      const AbstractRIConstraintList &ariList = 
-        ((ct == COM_UNIQUE_CONSTRAINT) ? naTable->getUniqueConstraints() : 
-         naTable->getRefConstraints());
+      const AbstractRIConstraintList &ariList = naTable->getUniqueConstraints();
       for (Int32 i = 0; i < ariList.entries(); i++)
         {
           AbstractRIConstraint *ariConstr = (AbstractRIConstraint*)ariList[i];
@@ -520,18 +502,40 @@ short CmpSeabaseDDL::constraintErrorChecks(
               foundConstr = TRUE;
             }
         } // for
-      
-      if (foundConstr)
+    }
+
+  if (NOT foundConstr)
+    {
+      const AbstractRIConstraintList &ariList = naTable->getRefConstraints();
+      for (Int32 i = 0; i < ariList.entries(); i++)
         {
-          *CmpCommon::diags()
-            << DgSqlCode(-1043)
-            << DgConstraintName(addConstrName);
+          AbstractRIConstraint *ariConstr = (AbstractRIConstraint*)ariList[i];
           
-          processReturn();
+          const NAString &tableConstrName = 
+            ariConstr->getConstraintName().getQualifiedNameAsAnsiString();
           
-          return -1;
-        }
+          if (addConstrName == tableConstrName)
+            {
+              foundConstr = TRUE;
+            }
+        } // for
+    }
+  
+  if (foundConstr)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1043)
+        << DgConstraintName(addConstrName);
       
+      processReturn();
+      
+      return -1;
+    }
+  
+  if ((ct == COM_UNIQUE_CONSTRAINT) || 
+      (ct == COM_FOREIGN_KEY_CONSTRAINT) ||
+      (ct == COM_PRIMARY_KEY_CONSTRAINT))
+    {
       for (CollIndex ndx = 0; ndx < keyColList.entries(); ndx++)
         {
           const ComString intColName = keyColList[ndx];
@@ -659,6 +663,7 @@ short CmpSeabaseDDL::updateConstraintMD(
                                         Int64 constrUID,
                                         NATable * naTable,
                                         ComConstraintType ct,
+                                        NABoolean enforced,
                                         ExeCliInterface *cliInterface)
 {
   Lng32 retcode = 0;
@@ -709,7 +714,7 @@ short CmpSeabaseDDL::updateConstraintMD(
               COM_NO_LIT,
               COM_NO_LIT,
               COM_NO_LIT,
-              COM_YES_LIT,
+              (enforced ? COM_YES_LIT : COM_NO_LIT),
               COM_YES_LIT,
               createTime,
               keyColList.entries(),
@@ -1213,11 +1218,11 @@ void CmpSeabaseDDL::createSeabaseTable(
   Lng32 numCols = colArray.entries();
   Lng32 numKeys = keyArray.entries();
   
-  ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
-    new(STMTHEAP) char[numCols * sizeof(ComTdbVirtTableColumnInfo)];
+  ComTdbVirtTableColumnInfo * colInfoArray = 
+    new(STMTHEAP) ComTdbVirtTableColumnInfo[numCols];
 
-  ComTdbVirtTableKeyInfo * keyInfoArray = (ComTdbVirtTableKeyInfo*)
-    new(STMTHEAP) char[numKeys * sizeof(ComTdbVirtTableKeyInfo)];
+  ComTdbVirtTableKeyInfo * keyInfoArray = 
+    new(STMTHEAP) ComTdbVirtTableKeyInfo[numKeys];
 
   ParDDLFileAttrsCreateTable &fileAttribs =
     createTableNode->getFileAttributes();
@@ -1283,15 +1288,15 @@ void CmpSeabaseDDL::createSeabaseTable(
       }
   }
 
-  ComTdbVirtTableTableInfo tableInfo;
-  tableInfo.tableName = NULL;
-  tableInfo.createTime = 0;
-  tableInfo.redefTime = 0;
-  tableInfo.objUID = 0;
-  tableInfo.isAudited = (fileAttribs.getIsAudit() ? 1 : 0);
-  tableInfo.validDef = 1;
-  tableInfo.hbaseCreateOptions = NULL;
-
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = NULL;
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = 0;
+  tableInfo->isAudited = (fileAttribs.getIsAudit() ? 1 : 0);
+  tableInfo->validDef = 1;
+  tableInfo->hbaseCreateOptions = NULL;
+  
   Int32 objOwnerID = 0;
   if (fileAttribs.isOwnerSpecified())
   {
@@ -1304,10 +1309,10 @@ void CmpSeabaseDDL::createSeabaseTable(
     
     objOwnerID = verifyAuth.getEffectiveUserID(ComUser::CREATE_TABLE);
   }
-  tableInfo.objOwnerID = objOwnerID;
+  tableInfo->objOwnerID = objOwnerID;
 
-  tableInfo.numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
-  tableInfo.rowFormat = (alignedFormat ? 1 : 0);
+  tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
 
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
@@ -1327,7 +1332,7 @@ void CmpSeabaseDDL::createSeabaseTable(
       hco += "ROW_FORMAT=>ALIGNED ";
     }
 
-  tableInfo.hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
+  tableInfo->hbaseCreateOptions = (hco.isNull() ? NULL : hco.data());
      
   Int64 objUID = -1;
   if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
@@ -1344,7 +1349,7 @@ void CmpSeabaseDDL::createSeabaseTable(
                            catalogNamePart, schemaNamePart, objectNamePart,
                            COM_BASE_TABLE_OBJECT_LIT,
                            COM_YES_LIT,
-                           &tableInfo,
+                           tableInfo,
                            numCols,
                            colInfoArray,
                            numKeys,
@@ -1613,6 +1618,7 @@ void CmpSeabaseDDL::addConstraints(
           const NAString constrCatalogNamePart = constrName.getCatalogNamePartAsAnsiString();
           const NAString constrSchemaNamePart = constrName.getSchemaNamePartAsAnsiString(TRUE);
           const NAString constrObjectNamePart = constrName.getObjectNamePartAsAnsiString(TRUE);
+          const NAString &addConstrName = constrName.getExternalName();
 
           ElemDDLConstraintRI *constraintNode = 
             ( refConstr->getConstraint() )->castToElemDDLConstraintRI();
@@ -1644,12 +1650,13 @@ void CmpSeabaseDDL::addConstraints(
           if (refdColumnArray.entries() > 0)
             refdColNameStr += ")";
 
-          str_sprintf(buf, "alter table \"%s\".\"%s\".\"%s\" add constraint \"%s\".\"%s\".\"%s\" foreign key (%s) references \"%s\".\"%s\".\"%s\" %s",
+          str_sprintf(buf, "alter table \"%s\".\"%s\".\"%s\" add constraint \"%s\".\"%s\".\"%s\" foreign key (%s) references \"%s\".\"%s\".\"%s\" %s %s",
                       catalogNamePart.data(), schemaNamePart.data(), objectNamePart.data(),
                       constrCatalogNamePart.data(), constrSchemaNamePart.data(), constrObjectNamePart.data(),
                       ringColNameStr.data(),
                       refdCatNamePart.data(), refdSchNamePart.data(), refdObjNamePart.data(),
-                      (refdColumnArray.entries() > 0 ? refdColNameStr.data() : " "));
+                      (refdColumnArray.entries() > 0 ? refdColNameStr.data() : " "),
+                      (NOT constraintNode->isEnforced() ? " not enforced " : ""));
                       
           cliRC = cliInterface.executeImmediate(buf);
           if (cliRC < 0)
@@ -1670,6 +1677,14 @@ void CmpSeabaseDDL::addConstraints(
 
           if (cliRC < 0)
             goto label_return;
+
+          if (NOT constraintNode->isEnforced())
+            {
+              *CmpCommon::diags()
+                << DgSqlCode(1313)
+                << DgString0(addConstrName);
+            }
+          
         } // for
     } // if
 
@@ -2407,22 +2422,37 @@ void CmpSeabaseDDL::dropSeabaseTable(
   const NAFileSetList &indexList = naTable->getIndexList();
 
   // first drop all index objects from metadata.
-  for (Int32 i = 0; i < indexList.entries(); i++)
+  Queue * indexInfoQueue = NULL;
+  if (getAllIndexes(&cliInterface, objUID, TRUE, indexInfoQueue))
     {
-      const NAFileSet * naf = indexList[i];
-      if (naf->getKeytag() == 0)
-        continue;
+      processReturn();
+      return;
+    }
 
-      const QualifiedName &qn = naf->getFileSetName();
-      NAString ansiName = qn.getQualifiedNameAsAnsiString();
+  indexInfoQueue->position();
+  for (int idx = 0; idx < indexInfoQueue->numEntries(); idx++)
+    {
+      OutputInfo * vi = (OutputInfo*)indexInfoQueue->getNext(); 
       
+      NAString idxCatName = (char*)vi->get(0);
+      NAString idxSchName = (char*)vi->get(1);
+      NAString idxObjName = (char*)vi->get(2);
+
+      NAString qCatName = "\"" + idxCatName + "\"";
+      NAString qSchName = "\"" + idxSchName + "\"";
+      NAString qObjName = "\"" + idxObjName + "\"";
+
+      ComObjectName coName(qCatName, qSchName, qObjName);
+      NAString ansiName = coName.getExternalName(TRUE);
+
       if (dropSeabaseObject(ehi, ansiName,
-                            currCatName, currSchName, COM_INDEX_OBJECT_LIT, TRUE, FALSE))
+                            idxCatName, idxSchName, COM_INDEX_OBJECT_LIT, TRUE, FALSE))
         {
           processReturn();
           
           return;
         }
+
     } // for
 
   // if there is an identity column, drop sequence corresponding to it.
@@ -2483,28 +2513,36 @@ void CmpSeabaseDDL::dropSeabaseTable(
   }
 
   // if metadata drop succeeds, drop indexes from hbase.
-  for (Int32 i = 0; i < indexList.entries(); i++)
+  indexInfoQueue->position();
+  for (int idx = 0; idx < indexInfoQueue->numEntries(); idx++)
     {
-      const NAFileSet * naf = indexList[i];
-      if (naf->getKeytag() == 0)
-        continue;
+      OutputInfo * vi = (OutputInfo*)indexInfoQueue->getNext(); 
+      
+      NAString idxCatName = (char*)vi->get(0);
+      NAString idxSchName = (char*)vi->get(1);
+      NAString idxObjName = (char*)vi->get(2);
 
-      const QualifiedName &qn = naf->getFileSetName();
-      NAString ansiName = qn.getQualifiedNameAsAnsiString();
+      NAString qCatName = "\"" + idxCatName + "\"";
+      NAString qSchName = "\"" + idxSchName + "\"";
+      NAString qObjName = "\"" + idxObjName + "\"";
+
+      ComObjectName coName(qCatName, qSchName, qObjName);
+      NAString ansiName = coName.getExternalName(TRUE);
 
       if (dropSeabaseObject(ehi, ansiName,
-                            currCatName, currSchName, COM_INDEX_OBJECT_LIT, FALSE, TRUE))
+                            idxCatName, idxSchName, COM_INDEX_OBJECT_LIT, FALSE, TRUE))
         {
           processReturn();
           
           return;
         }
 
-      CorrName cni(qn);
+      CorrName cni(qObjName, STMTHEAP, qSchName, qCatName);
       ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
 
-        cni.setSpecialType(ExtendedQualName::INDEX_TABLE);
-        ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
+      cni.setSpecialType(ExtendedQualName::INDEX_TABLE);
+      ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
+
     } // for
 
   if (dropSeabaseObject(ehi, tabName,
@@ -3798,7 +3836,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
   Int64 uniqueUID = comUID.get_value();
 
   if (updateConstraintMD(keyColList, keyColOrderList, uniqueStr, tableUID, uniqueUID, 
-                         naTable, COM_UNIQUE_CONSTRAINT, &cliInterface))
+                         naTable, COM_UNIQUE_CONSTRAINT, TRUE, &cliInterface))
     {
       *CmpCommon::diags()
         << DgSqlCode(-1029)
@@ -4282,7 +4320,8 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
   Int64 ringConstrUID = comUID.get_value();
 
   if (updateConstraintMD(ringKeyColList, ringKeyColOrderList, uniqueStr, tableUID, ringConstrUID, 
-                         ringNaTable, COM_FOREIGN_KEY_CONSTRAINT, &cliInterface))
+                         ringNaTable, COM_FOREIGN_KEY_CONSTRAINT, 
+                         constraintNode->isEnforced(), &cliInterface))
     {
       *CmpCommon::diags()
         << DgSqlCode(-1029)
@@ -4317,6 +4356,13 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
         << DgTableName(uniqueStr);
 
       return;
+    }
+
+  if (NOT constraintNode->isEnforced())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(1313)
+        << DgString0(addConstrName);
     }
 
   if (updateObjectRedefTime(&cliInterface,
@@ -4663,7 +4709,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
 
   NAList<NAString> emptyList;
   if (updateConstraintMD(keyColList, emptyList, uniqueStr, tableUID, checkUID, 
-                         naTable, COM_CHECK_CONSTRAINT, &cliInterface))
+                         naTable, COM_CHECK_CONSTRAINT, TRUE, &cliInterface))
     {
       *CmpCommon::diags()
         << DgSqlCode(-1029)
@@ -4695,7 +4741,6 @@ void CmpSeabaseDDL::alterSeabaseTableAddCheckConstraint(
 
   return;
 }
-
 
 void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
                                                 StmtDDLDropConstraint * alterDropConstraint,
@@ -4761,131 +4806,86 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
 
   const NAString &dropConstrName = alterDropConstraint->
     getConstraintNameAsQualifiedName().getQualifiedNameAsAnsiString();
+  const NAString &constrCatName = alterDropConstraint->
+    getConstraintNameAsQualifiedName().getCatalogName();
+  const NAString &constrSchName = alterDropConstraint->
+    getConstraintNameAsQualifiedName().getSchemaName();
+  const NAString &constrObjName = alterDropConstraint->
+    getConstraintNameAsQualifiedName().getObjectName();
 
-  NABoolean isUniqConstr = FALSE;
-  NABoolean isRefConstr = FALSE;
-  NABoolean isPkeyConstr = FALSE;
-  NABoolean isCheckConstr = FALSE;
-  AbstractRIConstraint *ariConstr = NULL;
-  const AbstractRIConstraintList &ariList = naTable->getUniqueConstraints();
-  for (Int32 i = 0; ((NOT isUniqConstr) && (i < ariList.entries())); i++)
+  char outObjType[10];
+  Int64 constrUID = getObjectUID(&cliInterface,
+                                 constrCatName.data(), constrSchName.data(), constrObjName.data(),
+                                 NULL,
+                                 "object_type = '"COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT"' or object_type = '"COM_UNIQUE_CONSTRAINT_OBJECT_LIT"' or object_type = '"COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT"' or object_type = '"COM_CHECK_CONSTRAINT_OBJECT_LIT"' ",
+                                 outObjType);
+  if (constrUID < 0)
     {
-      ariConstr = ariList[i];
-      UniqueConstraint * uniqueConstr = (UniqueConstraint*)ariList[i];
-      
-      const NAString &tableConstrName = 
-        uniqueConstr->getConstraintName().getQualifiedNameAsAnsiString();
+      *CmpCommon::diags()
+        << DgSqlCode(-1005)
+        << DgConstraintName(dropConstrName);
 
-      if (dropConstrName == tableConstrName)
+      processReturn();
+
+      return;
+    }
+
+  NABoolean isUniqConstr = 
+    ((strcmp(outObjType, COM_UNIQUE_CONSTRAINT_OBJECT_LIT) == 0) ||
+     (strcmp(outObjType, COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT) == 0));
+  NABoolean isRefConstr = 
+    (strcmp(outObjType, COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT) == 0);
+  NABoolean isPkeyConstr = 
+    (strcmp(outObjType, COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT) == 0);
+  NABoolean isCheckConstr = 
+    (strcmp(outObjType, COM_CHECK_CONSTRAINT_OBJECT_LIT) == 0);
+
+  if (isUniqConstr)
+    {
+      const AbstractRIConstraintList &ariList = naTable->getUniqueConstraints();
+      for (Int32 i = 0; i < ariList.entries(); i++)
         {
-          if (uniqueConstr->isPrimaryKeyConstraint())
-            isPkeyConstr = TRUE;
-
-          isUniqConstr = TRUE;
+          AbstractRIConstraint *ariConstr = ariList[i];
+          UniqueConstraint * uniqueConstr = (UniqueConstraint*)ariList[i];
           
-          if (uniqueConstr->hasRefConstraintsReferencingMe())
-          {
-             *CmpCommon::diags()
-             << DgSqlCode(-1050);
-
-             deallocEHI(ehi);
-             processReturn();
-             return;
-          }
-        }
-    } // for
-
-  if (NOT isUniqConstr)
+          const NAString &tableConstrName = 
+            uniqueConstr->getConstraintName().getQualifiedNameAsAnsiString();
+          
+          if (dropConstrName == tableConstrName)
+            {
+              if (uniqueConstr->hasRefConstraintsReferencingMe())
+                {
+                  *CmpCommon::diags()
+                    << DgSqlCode(-1050);
+                  
+                  deallocEHI(ehi);
+                  processReturn();
+                  return;
+                }
+            }
+        } // for
+    }
+  
+  NATable *otherNaTable = NULL;
+  Int64 otherConstrUID = 0;
+  if (isRefConstr)
     {
-      const AbstractRIConstraintList &ariList2 = naTable->getRefConstraints();
-      for (Int32 i = 0; ((NOT isRefConstr) && (i < ariList2.entries())); i++)
+      RefConstraint * refConstr = NULL;
+      
+      const AbstractRIConstraintList &ariList = naTable->getRefConstraints();
+      for (Int32 i = 0; i < ariList.entries(); i++)
         {
-          ariConstr = ariList2[i];
+          AbstractRIConstraint *ariConstr = ariList[i];
           
           const NAString &tableConstrName = 
             ariConstr->getConstraintName().getQualifiedNameAsAnsiString();
           
           if (dropConstrName == tableConstrName)
             {
-              isRefConstr = TRUE;
+              refConstr = (RefConstraint*)ariConstr;
             }
         } // for
-    }
-
-  if ((NOT isUniqConstr) && (NOT isRefConstr))
-    {
-      const CheckConstraintList &checkList = naTable->getCheckConstraints();
-      for (Int32 i = 0; i < checkList.entries(); i++)
-        {
-          CheckConstraint *cc = checkList[i];
-        
-          const NAString &tableConstrName = 
-            cc->getConstraintName().getQualifiedNameAsAnsiString();
-          
-          if (dropConstrName == tableConstrName)
-            {
-              isCheckConstr = TRUE;
-            }
-        }
-    }
-
-  if ((NOT isUniqConstr) && (NOT isRefConstr) && (NOT isCheckConstr))
-    {
-      *CmpCommon::diags()
-        << DgSqlCode(-1005)
-        << DgConstraintName(dropConstrName);
-      
-      deallocEHI(ehi); 
-      
-      processReturn();
-      
-      return;
-    }
-
-  NAString indexName;
-
-  // find the index that corresponds to this constraint
-  if ((isUniqConstr || isRefConstr) && (NOT isPkeyConstr))
-    {
-      NAList<NAString> keyColList(HEAP, ariConstr->keyColumns().entries());
-      NAList<NAString> keyColOrderList(HEAP, ariConstr->keyColumns().entries());
-      for (Lng32 j = 0; j < ariConstr->keyColumns().entries(); j++)
-        {
-          const NAString &colName = ariConstr->keyColumns()[j]->getColName();
-          keyColList.insert(colName);
-
-          if (ariConstr->keyColumns()[j]->getClusteringKeyOrdering() == DESCENDING)
-            keyColOrderList.insert("DESC");
-          else
-            keyColOrderList.insert("ASC");
-        }
-      
-      if (NOT naTable->getCorrespondingIndex(keyColList,
-                                             FALSE, // implicit index 
-                                             isUniqConstr,  // look for unique index
-                                             TRUE, // look for pkey as well. //FALSE, // dont look for pkey
-                                             isRefConstr, // look for any index if ref constr
-                                             &indexName))
-        {
-          *CmpCommon::diags()
-            << DgSqlCode(-1005)
-            << DgConstraintName("");
-          
-          deallocEHI(ehi); 
-          
-          processReturn();
-          
-          return;
-        }
-    }
-
-  NATable *otherNaTable = NULL;
-  Int64 otherConstrUID = 0;
-  //  if (NOT isUniqConstr)
-  if (isRefConstr)
-    {
-      RefConstraint * refConstr = (RefConstraint*)ariConstr;
-      
+ 
       CorrName otherCN(refConstr->getUniqueConstraintReferencedByMe().getTableName());
       otherNaTable = bindWA.getNATable(otherCN);
       if (otherNaTable == NULL || bindWA.errStatus())
@@ -4927,32 +4927,53 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
         }
     }
 
-  const NAFileSetList &indexes = naTable->getIndexList();
-  NAFileSet * constrIndex = NULL;
-  for (Int32 i = 0; i < indexes.entries(); i++)
+  NABoolean indexFound = FALSE;
+  Lng32 isExplicit = 0;
+  Lng32 keytag = 0;
+  if ((isUniqConstr || isRefConstr) && (NOT isPkeyConstr))
     {
-      if ((NOT indexName.isNull()) && (indexName == indexes[i]->getExtFileSetName()))
-        constrIndex = indexes[i];
-    }
+      // find the index that corresponds to this constraint
+      char query[1000];
+      
+      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I where T.table_uid = %Ld and T.constraint_uid = %Ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
+                  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
+                  naTable->objectUid().castToInt64(),
+                  constrUID);
+      
+      Queue * indexQueue = NULL;
+      ExeCliInterface cliInterface(STMTHEAP);
 
-  const NAString &constrCatName = alterDropConstraint->
-    getConstraintNameAsQualifiedName().getCatalogName();
-  const NAString &constrSchName = alterDropConstraint->
-    getConstraintNameAsQualifiedName().getSchemaName();
-  const NAString &constrObjName = alterDropConstraint->
-    getConstraintNameAsQualifiedName().getObjectName();
+      cliRC = cliInterface.fetchAllRows(indexQueue, query, 0, FALSE, FALSE, TRUE);
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          
+          processReturn();
+          
+          return;
+        }
 
-  Int64 constrUID = getObjectUID(&cliInterface,
-                                 constrCatName.data(), constrSchName.data(), constrObjName.data(),
-                                 (isPkeyConstr ? COM_PRIMARY_KEY_CONSTRAINT_OBJECT_LIT :
-                                  (isUniqConstr ? COM_UNIQUE_CONSTRAINT_OBJECT_LIT :
-                                   (isRefConstr ? COM_REFERENTIAL_CONSTRAINT_OBJECT_LIT :
-                                    COM_CHECK_CONSTRAINT_OBJECT_LIT))));
-  if (constrUID < 0)
-    {
-      processReturn();
+      if (indexQueue->numEntries() > 1)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-1005)
+            << DgConstraintName(dropConstrName);
+          
+          processReturn();
+          
+          return;
+        }
 
-      return;
+      if (indexQueue->numEntries() ==1)
+        {
+          indexFound = TRUE;
+          indexQueue->position();
+      
+          OutputInfo * oi = (OutputInfo*)indexQueue->getCurr(); 
+          keytag = *(Lng32*)oi->get(0);
+          isExplicit = *(Lng32*)oi->get(1);
+        }
     }
 
   if (deleteConstraintInfoFromSeabaseMDTables(&cliInterface,
@@ -4975,8 +4996,7 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
                                               
   // if the index corresponding to this constraint is an implicit index and 'no check'
   // option is not specified, drop it.
-  if (((constrIndex) && ((NOT constrIndex->isCreatedExplicitly()) &&
-                         (constrIndex->getKeytag() != 0))) &&
+  if (((indexFound) && (NOT isExplicit) && (keytag != 0)) &&
       (alterDropConstraint->getDropBehavior() != COM_NO_CHECK_DROP_BEHAVIOR))
     {
       char buf[4000];
@@ -4991,7 +5011,6 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
           cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
           return;
         }
-      
     }
 
   if (updateObjectRedefTime(&cliInterface,
@@ -5944,8 +5963,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
 
   Parser parser(CmpCommon::context());
 
-  ComTdbVirtTableConstraintInfo * constrInfo = (ComTdbVirtTableConstraintInfo*)
-        new(STMTHEAP) char[sizeof(ComTdbVirtTableConstraintInfo)];
+  ComTdbVirtTableConstraintInfo * constrInfo =
+    new(STMTHEAP) ComTdbVirtTableConstraintInfo[1];
 
   NAString constrName;
   if (objName == HBASE_HIST_NAME)
@@ -6046,8 +6065,8 @@ Lng32 CmpSeabaseDDL::getSeabaseColumnInfo(ExeCliInterface *cliInterface,
   }
 
   *numCols = tableColInfo->numEntries();
-  ComTdbVirtTableColumnInfo *colInfoArray = (ComTdbVirtTableColumnInfo*)
-    new(STMTHEAP) char[*numCols * sizeof(ComTdbVirtTableColumnInfo)];
+  ComTdbVirtTableColumnInfo *colInfoArray = 
+    new(STMTHEAP) ComTdbVirtTableColumnInfo[*numCols];
   NABoolean tableIsSalted = FALSE;
   tableColInfo->position();
   for (Lng32 idx = 0; idx < *numCols; idx++)
@@ -6233,9 +6252,8 @@ ComTdbVirtTableSequenceInfo * CmpSeabaseDDL::getSeabaseSequenceInfo
       return NULL;
     }
 
-  ComTdbVirtTableSequenceInfo *seqInfo =
-     (ComTdbVirtTableSequenceInfo *)new (STMTHEAP) 
-             ComTdbVirtTableSequenceInfo;
+  ComTdbVirtTableSequenceInfo *seqInfo = 
+    new (STMTHEAP) ComTdbVirtTableSequenceInfo();
 
   seqQueue->position();
   OutputInfo * vi = (OutputInfo*)seqQueue->getNext(); 
@@ -6273,16 +6291,17 @@ desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
       return NULL;
     }
 
-  ComTdbVirtTableTableInfo tableInfo;
-  tableInfo.tableName = extSeqName.data();
-  tableInfo.createTime = 0;
-  tableInfo.redefTime = 0;
-  tableInfo.objUID = seqUID;
-  tableInfo.isAudited = 0;
-  tableInfo.validDef = 1;
-  tableInfo.objOwnerID = objectOwner;
-  tableInfo.hbaseCreateOptions = NULL;
-  
+  ComTdbVirtTableTableInfo * tableInfo =
+    new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = extSeqName.data();
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = seqUID;
+  tableInfo->isAudited = 0;
+  tableInfo->validDef = 1;
+  tableInfo->objOwnerID = objectOwner;
+  tableInfo->hbaseCreateOptions = NULL;
+
   tableDesc =
     Generator::createVirtualTableDesc
     ((char*)extSeqName.data(),
@@ -6291,7 +6310,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
      0, NULL,
      0, NULL, //indexInfo
      0, NULL, // viewInfo
-     &tableInfo,
+     tableInfo,
      seqInfo);
   
   return tableDesc;
@@ -6473,8 +6492,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   
   if (tableKeyInfo->numEntries() > 0)
     {
-      keyInfoArray = (ComTdbVirtTableKeyInfo*)
-        new(STMTHEAP) char[tableKeyInfo->numEntries() * sizeof(ComTdbVirtTableKeyInfo)];
+      keyInfoArray = 
+        new(STMTHEAP) ComTdbVirtTableKeyInfo[tableKeyInfo->numEntries()];
     }
 
   tableKeyInfo->position();
@@ -6506,8 +6525,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   ComTdbVirtTableIndexInfo * indexInfoArray = NULL;
   if (indexInfoQueue->numEntries() > 0)
     {
-      indexInfoArray = (ComTdbVirtTableIndexInfo*)
-        new(STMTHEAP) char[indexInfoQueue->numEntries() * sizeof(ComTdbVirtTableIndexInfo)];
+      indexInfoArray = 
+        new(STMTHEAP) ComTdbVirtTableIndexInfo[indexInfoQueue->numEntries()];
     }
 
   NAString qCatName = "\"";
@@ -6619,14 +6638,14 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           return NULL;
         }
 
-      ComTdbVirtTableKeyInfo * keyInfoArray = (ComTdbVirtTableKeyInfo*)
-        new(STMTHEAP) char[keyColCount * sizeof(ComTdbVirtTableKeyInfo)];
+      ComTdbVirtTableKeyInfo * keyInfoArray = 
+        new(STMTHEAP) ComTdbVirtTableKeyInfo[keyColCount];
 
       ComTdbVirtTableKeyInfo * nonKeyInfoArray = NULL;
       if (nonKeyColCount > 0)
         {
-          nonKeyInfoArray = (ComTdbVirtTableKeyInfo*)
-            new(STMTHEAP) char[nonKeyColCount * sizeof(ComTdbVirtTableKeyInfo)];
+          nonKeyInfoArray = 
+            new(STMTHEAP) ComTdbVirtTableKeyInfo[nonKeyColCount];
         }
 
       keyInfoQueue->position();
@@ -6658,7 +6677,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
     } // for
 
   // get constraint info
-  str_sprintf(query, "select O.object_name, C.constraint_type, C.col_count, C.constraint_uid from %s.\"%s\".%s O, %s.\"%s\".%s C where O.catalog_name = '%s' and O.schema_name = '%s' and C.table_uid = %Ld and O.object_uid = C.constraint_uid order by 1",
+  str_sprintf(query, "select O.object_name, C.constraint_type, C.col_count, C.constraint_uid, C.enforced from %s.\"%s\".%s O, %s.\"%s\".%s C where O.catalog_name = '%s' and O.schema_name = '%s' and C.table_uid = %Ld and O.object_uid = C.constraint_uid order by 1",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
               catName.data(), schName.data(), 
@@ -6678,8 +6697,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
   ComTdbVirtTableConstraintInfo * constrInfoArray = NULL;
   if (constrInfoQueue->numEntries() > 0)
     {
-      constrInfoArray = (ComTdbVirtTableConstraintInfo*)
-        new(STMTHEAP) char[constrInfoQueue->numEntries() * sizeof(ComTdbVirtTableConstraintInfo)];
+      constrInfoArray =
+        new(STMTHEAP) ComTdbVirtTableConstraintInfo[constrInfoQueue->numEntries()];
     }
 
   NAString tableCatName = "\"";
@@ -6705,6 +6724,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       char * constrType = (char*)vi->get(1);
       Lng32 colCount = *(Lng32*)vi->get(2);
       Int64 constrUID = *(Int64*)vi->get(3);
+      char * enforced = (char*)vi->get(4);
 
       constrInfoArray[idx].baseTableName = (char*)extTableName->data();
 
@@ -6726,6 +6746,11 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
         constrInfoArray[idx].constrType = 2; // check_constr
      else if (strcmp(constrType, COM_PRIMARY_KEY_CONSTRAINT_LIT) == 0)
         constrInfoArray[idx].constrType = 3; // pkey_constr
+
+      if (strcmp(enforced, COM_YES_LIT) == 0)
+        constrInfoArray[idx].isEnforced = 1;
+      else
+        constrInfoArray[idx].isEnforced = 0;
 
       Queue * keyInfoQueue = NULL;
       str_sprintf(query, "select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from %s.\"%s\".%s where object_uid = %Ld for read committed access order by keyseq_number",
@@ -6754,8 +6779,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
       ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
       if (colCount > 0)
         {
-          keyInfoArray = (ComTdbVirtTableKeyInfo*)
-            new(STMTHEAP) char[colCount * sizeof(ComTdbVirtTableKeyInfo)];
+          keyInfoArray = 
+            new(STMTHEAP) ComTdbVirtTableKeyInfo[colCount];
           
           keyInfoQueue->position();
           Lng32 jk = 0;
@@ -6803,8 +6828,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           ComTdbVirtTableRefConstraints * ringInfoArray = NULL;
           if (ringInfoQueue->numEntries() > 0)
             {
-              ringInfoArray = (ComTdbVirtTableRefConstraints*)
-                new(STMTHEAP) char[ringInfoQueue->numEntries() * sizeof(ComTdbVirtTableRefConstraints)];
+              ringInfoArray = 
+                new(STMTHEAP) ComTdbVirtTableRefConstraints[ringInfoQueue->numEntries()];
             }
           
           ringInfoQueue->position();
@@ -6845,8 +6870,8 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           ComTdbVirtTableRefConstraints * refdInfoArray = NULL;
           if (refdInfoQueue->numEntries() > 0)
             {
-              refdInfoArray = (ComTdbVirtTableRefConstraints*)
-                new(STMTHEAP) char[refdInfoQueue->numEntries() * sizeof(ComTdbVirtTableRefConstraints)];
+              refdInfoArray = 
+                new(STMTHEAP) ComTdbVirtTableRefConstraints[refdInfoQueue->numEntries()];
             }
           
           refdInfoQueue->position();
@@ -6909,8 +6934,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
           return NULL;
         }
 
-      viewInfoArray = (ComTdbVirtTableViewInfo*)
-        new(STMTHEAP) char[sizeof(ComTdbVirtTableViewInfo)];
+      viewInfoArray = new(STMTHEAP) ComTdbVirtTableViewInfo[1];
 
       viewInfoQueue->position();
       
@@ -6960,18 +6984,18 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
                                        extSeqName, objectOwner, seqUID);
     }
 
-  ComTdbVirtTableTableInfo tableInfo;
-  tableInfo.tableName = extTableName->data();
-  tableInfo.createTime = 0;
-  tableInfo.redefTime = 0;
-  tableInfo.objUID = objUID;
-  tableInfo.isAudited = (isAudited ? -1 : 0);
-  tableInfo.validDef = 1;
-  tableInfo.objOwnerID = objectOwner;
-  tableInfo.numSaltPartns = numSaltPartns;
-  tableInfo.hbaseCreateOptions = 
+  ComTdbVirtTableTableInfo * tableInfo = new(STMTHEAP) ComTdbVirtTableTableInfo[1];
+  tableInfo->tableName = extTableName->data();
+  tableInfo->createTime = 0;
+  tableInfo->redefTime = 0;
+  tableInfo->objUID = objUID;
+  tableInfo->isAudited = (isAudited ? -1 : 0);
+  tableInfo->validDef = 1;
+  tableInfo->objOwnerID = objectOwner;
+  tableInfo->numSaltPartns = numSaltPartns;
+  tableInfo->hbaseCreateOptions = 
     (hbaseCreateOptions->isNull() ? NULL : hbaseCreateOptions->data());
-  tableInfo.rowFormat = (alignedFormat ? 1 : 0);
+  tableInfo->rowFormat = (alignedFormat ? 1 : 0);
 
   tableDesc =
     Generator::createVirtualTableDesc
@@ -6987,7 +7011,7 @@ desc_struct * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
      indexInfoArray,
      viewInfoQueue->numEntries(),
      viewInfoArray,
-     &tableInfo,
+     tableInfo,
      seqInfo);
 
  // reset the SMD table flag
@@ -7278,9 +7302,7 @@ desc_struct *CmpSeabaseDDL::getSeabaseRoutineDescInternal(const NAString &catNam
   char * ptr = NULL;
   Lng32 len = 0;
 
-  ComTdbVirtTableRoutineInfo *routineInfo =
-     (ComTdbVirtTableRoutineInfo *)new (STMTHEAP) 
-             ComTdbVirtTableRoutineInfo;
+  ComTdbVirtTableRoutineInfo *routineInfo = new (STMTHEAP) ComTdbVirtTableRoutineInfo();
 
   routineInfo->routine_name = objName.data();
   cliInterface.getPtrAndLen(1, ptr, len);

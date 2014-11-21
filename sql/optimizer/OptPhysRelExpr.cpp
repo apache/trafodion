@@ -2323,7 +2323,7 @@ void Exchange::storePhysPropertiesInNode(const ValueIdList &partialSortKey)
     RelExpr *relExpr = child(0)->castToRelExpr();
     NABoolean noScanFound = FALSE;
 
-    while (ot != REL_SCAN && ot != REL_FILE_SCAN && ot != REL_DP2_SCAN_UNIQUE)
+    while (ot != REL_SCAN && ot != REL_FILE_SCAN)
     {
       if (relExpr->getArity() > 1 ||
         relExpr->getOperatorType() == REL_EXCHANGE
@@ -2345,13 +2345,11 @@ void Exchange::storePhysPropertiesInNode(const ValueIdList &partialSortKey)
       }
     }
 
-    DP2Scan *scan = NULL;
+    FileScan *scan = NULL;
     if (relExpr->getOperatorType() == REL_FILE_SCAN ||
-        relExpr->getOperatorType() == REL_SCAN ||
-        relExpr->getOperatorType() == REL_DP2_SCAN ||
-        relExpr->getOperatorType() == REL_DP2_SCAN_UNIQUE)
+        relExpr->getOperatorType() == REL_SCAN)
        {
-         scan = (DP2Scan *) relExpr;
+         scan = (FileScan *) relExpr;
        }
        else
        {
@@ -12037,11 +12035,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     }
 
     if ((CmpCommon::getDefault(ASG_FEATURE) == DF_ON) &&
-        (childOpType != REL_PARALLEL_LABEL_CREATE) &&
-        (childOpType != REL_PARALLEL_LABEL_DROP) &&
         (childOpType != REL_EXE_UTIL) &&
-        (childOpType != REL_PARALLEL_LABEL_ALTER) &&
-        (childOpType != REL_PARALLEL_LABEL_PURGEDATA) &&
         (numExtractStreams_ == 0) &&
         !isFastLoadIntoTrafodion)
     {
@@ -12100,40 +12094,6 @@ Context* RelRoot::createContextForAChild(Context* myContext,
        } 
     }
           
-    // Check whether the query is 
-    // <label_op> <obj_type> <t> PARALLEL EXECUTION ON, where
-    // <label_op> is LABEL_CREATE, LABEL_DROP or LABEL_ALTER. 
-    // 
-    //  Examples of such DDLs.
-    // 
-    //  1. prepare x from label_create table aa parallel execution off;
-    //  2. prepare x from label_alter table aa parallel execution off 
-    //     opcode 9 'aa';
-    // 
-    // We force the ESP parallelism for these DDLs.
-    // 
-    if (x && 
-          ( x->getOperatorType() == REL_PARALLEL_LABEL_CREATE ||
-            x->getOperatorType() == REL_PARALLEL_LABEL_DROP ||
-            x->getOperatorType() == REL_PARALLEL_LABEL_ALTER ||
-            x->getOperatorType() == REL_PARALLEL_LABEL_PURGEDATA )
-       ) {
-       PartitioningFunction *pf = ((ParallelLabelOp*)x)->getTableDesc()
-                                      ->getClusteringIndex()
-                                      ->getPartitioningFunction();
- 
-       const NodeMap* np;
-       if ( pf && (np = pf->getNodeMap()) && np->getNumEntries() > 1 ) {
-         // set countOfCPUs to the number of partitions
-         UInt32 partns = np->getNumEntries();
-         countOfCPUs = partns;
-         pipelinesPerCPU = 1;
-         CURRSTMT_OPTDEFAULTS->setRequiredESPs(partns);
-
-         canAdjustDoP = FALSE;
-       }
-    } 
-
     // for multi-commit DELETE (expressed as DELETE WITH MULTI COMMIT FROM <t>)
     if ( containsLRU() ) 
     {
@@ -12828,8 +12788,7 @@ computeDP2CostDataThatDependsOnSPP(
 
       if ( physicalPartFunc.isARangePartitioningFunction() AND
            ( (scan.getOperatorType() == REL_FILE_SCAN) OR
-             (scan.getOperatorType() == REL_HBASE_ACCESS) OR 
-             (scan.getOperatorType() == REL_DP2_SCAN)
+             (scan.getOperatorType() == REL_HBASE_ACCESS)
            )
          )
         {
@@ -12940,8 +12899,7 @@ computeDP2CostDataThatDependsOnSPP(
 
 	  OperatorTypeEnum opType = ITM_FIRST_ITEM_OP;
           if ( (scan.getOperatorType() == REL_FILE_SCAN) OR
-               (scan.getOperatorType() == REL_HBASE_ACCESS) OR 
-             (scan.getOperatorType() == REL_DP2_SCAN))
+               (scan.getOperatorType() == REL_HBASE_ACCESS))
 	     opType = REL_SCAN;
 
           if ( (probes.isGreaterThanZero())
@@ -13141,8 +13099,6 @@ computeDP2CostDataThatDependsOnSPP(
            AND
 	     (
                 (scan.getOperatorType() == REL_FILE_SCAN)
-                OR
-                (scan.getOperatorType() == REL_DP2_SCAN)
              )
            )
         {
@@ -13939,7 +13895,7 @@ PhysicalProperty * RelExpr::synthDP2PhysicalProperty(
       // Only do this if it's not a unique scan or if we must do a merge of
       // sorted streams.
       // If there is grouping going on, then we do not need to multiply.
-      if ((((getOperatorType() != REL_DP2_SCAN_UNIQUE) OR mergeOfSortedStreams) ||
+      if (((mergeOfSortedStreams) ||
            (CmpCommon::getDefault(COMP_BOOL_67) == DF_OFF)) && !grouping)
         numPAs = numPAs * numEsps;
     }
@@ -15140,6 +15096,7 @@ DP2Scan::costMethod() const
   return m;
 
 } // DP2Scan::costMethod()
+
 
 //<pb>
 //==============================================================================
@@ -17374,253 +17331,6 @@ CostMethod * PhysicalInterpretAsRow::costMethod(void) const
    return TableValuedFunction::costMethod();
 }
 
-CostMethod *PhysicalParallelLabelCreate::costMethod() const
-{
-   return RelExpr::costMethod();
-}
-
-PhysicalProperty * ParallelLabelOp::synthPhysicalProperty(const Context * context,
-							  const Lng32 planNumber)
-{
-  PartitioningFunction *myPartFunc = NULL;
-  PlanExecutionEnum plenum = EXECUTE_IN_MASTER;
-  const ReqdPhysicalProperty* rpp = context->getReqdPhysicalProperty();
-  
-  if ((CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) != DF_OFF) &&
-      (isParallelOp()) &&
-      (rpp->getCountOfAvailableCPUs() > 1))
-    {
-      plenum = EXECUTE_IN_ESP;
-      
-      myPartFunc = NULL;
-      if ((CmpCommon::getDefault(EXE_PARALLEL_DDL) == DF_ON) &&
-	  (getTableDesc()->getClusteringIndex()->getPartitioningFunction()) &&
-	  (getTableDesc()->getClusteringIndex()->getPartitioningFunction()->isAHash2PartitioningFunction()))
-	{ 
-	  Lng32 forcedEsps = 0;
-	  if (getOperatorType() == REL_PARALLEL_LABEL_PURGEDATA)
-	    {
-	      if (CmpCommon::getDefault(PARALLEL_NUM_ESPS_PD, 0) != DF_SYSTEM)
-		forcedEsps =
-		  ActiveSchemaDB()->getDefaults().getAsLong(PARALLEL_NUM_ESPS_PD);
-	      else
-		forcedEsps = 32; // this seems to be an optimum number
-	    }
-	  else
-	    {
-	      if (CmpCommon::getDefault(PARALLEL_NUM_ESPS_DDL, 0) != DF_SYSTEM)
-		forcedEsps =
-		  ActiveSchemaDB()->getDefaults().getAsLong(PARALLEL_NUM_ESPS_DDL);
-	      else
-		forcedEsps = 32; // this seems to be an optimum number
-	    }
-	  
-	  const Hash2PartitioningFunction * h2pf =
-	    getTableDesc()->getClusteringIndex()->getPartitioningFunction()->
-	    castToHash2PartitioningFunction();
-	  Lng32 numPartns = h2pf->getCountOfPartitions();
-	  if ((forcedEsps > 0) && (forcedEsps <= numPartns))
-	    {
-	      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-		NodeMap(CmpCommon::statementHeap(),
-			forcedEsps,
-			NodeMapEntry::ACTIVE);
-	      
-	      CollIndex entryNum = 0;
-	      Int32 currNodeNum = -1;
-	      Int32 i = 0;
-	      while (i < forcedEsps)
-		{
-		  if (entryNum == h2pf->getNodeMap()->getNumEntries())
-		    {
-		      entryNum = 0;
-		      currNodeNum = -1;
-		      continue;
-		    }
-		  
-		  const NodeMapEntry * entry = 
-		    h2pf->getNodeMap()->getNodeMapEntry(entryNum);
-		  
-		  if (entry->getNodeNumber() == currNodeNum)
-		    {
-		      entryNum++;
-		      continue;
-		    }
-		  
-		  myNodeMap->setNodeMapEntry(i, *entry);
-		  currNodeNum = entry->getNodeNumber();
-		  
-		  entryNum++;
-		  i++;
-		}
-	      
-	      myPartFunc = new(CmpCommon::statementHeap())
-		Hash2PartitioningFunction(
-					  h2pf->getPartitioningKey(),
-					  h2pf->getKeyColumnList(),
-					  forcedEsps, myNodeMap);
-	      myPartFunc->createPartitioningKeyPredicates();
-	    }
-	}
-      
-      if (myPartFunc == NULL)
-	myPartFunc = 
-	  getTableDesc()->getClusteringIndex()->getPartitioningFunction();
-    }
-  
-  
-  if (!myPartFunc)
-    {
-      //----------------------------------------------------------
-      // Create a node map with a single, active, wild-card entry.
-      //----------------------------------------------------------
-      NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-	NodeMap(CmpCommon::statementHeap(),
-		1,
-		NodeMapEntry::ACTIVE);
-      
-      //------------------------------------------------------------
-      // The table is not partitioned. Do not need to start ESPs.
-      // Synthesize a partitioning function with a single partition.
-      //------------------------------------------------------------
-      myPartFunc = new(CmpCommon::statementHeap())
-	SinglePartitionPartitioningFunction(myNodeMap);
-      plenum = EXECUTE_IN_MASTER;
-    }
-  
-  PhysicalProperty * sppForMe = new(CmpCommon::statementHeap())
-    PhysicalProperty(myPartFunc,
-		     plenum,
-		     SOURCE_VIRTUAL_TABLE);
-  // remove anything that's not covered by the group attributes
-  sppForMe->enforceCoverageByGroupAttributes(getGroupAttr());
-  return sppForMe;
-}
-
-CostMethod *PhysicalParallelLabelDrop::costMethod() const
-{
-   return RelExpr::costMethod();
-}
-
-CostMethod *PhysicalParallelLabelAlter::costMethod() const
-{
-   return RelExpr::costMethod();
-}
-
-CostMethod *PhysicalParallelLabelPurgedata::costMethod() const
-{
-   return RelExpr::costMethod();
-}
-
-PhysicalProperty * DiskLabelStatistics::synthPhysicalProperty(const Context * context,
-							      const Lng32 planNumber)
-{
-   PartitioningFunction *myPartFunc = NULL;
-   PlanExecutionEnum plenum = EXECUTE_IN_MASTER;
-   const ReqdPhysicalProperty* rpp = context->getReqdPhysicalProperty();
-
-   if ((CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) != DF_OFF) &&
-       (isParallelOp()) &&
-       (rpp->getCountOfAvailableCPUs() > 1))
-     {
-       plenum = EXECUTE_IN_ESP;
-
-       if ((CmpCommon::getDefault(COMP_BOOL_225) == DF_OFF) ||
-	   (NOT ((getTableDesc()->getClusteringIndex()->getPartitioningFunction()) &&
-		 (getTableDesc()->getClusteringIndex()->getPartitioningFunction()->isAHash2PartitioningFunction()))))
-	 {
-	   myPartFunc =
-	     getTableDesc()->getClusteringIndex()->getPartitioningFunction();
-	 }
-       else
-	 {
-	   Lng32 forcedEsps = 0;
-	   if (CmpCommon::getDefault(PARALLEL_NUM_ESPS_PD, 0) != DF_SYSTEM)
-	     forcedEsps =
-	       ActiveSchemaDB()->getDefaults().getAsLong(PARALLEL_NUM_ESPS_PD);
-	   else
-	     forcedEsps = 32; // this seems to be an optimum number
-       
-	   const Hash2PartitioningFunction * h2pf =
-	     getTableDesc()->getClusteringIndex()->getPartitioningFunction()->
-	     castToHash2PartitioningFunction();
-	   Lng32 numPartns = h2pf->getCountOfPartitions();
-	   if ((forcedEsps > 0) && (forcedEsps <= numPartns))
-	     {
-	       NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-		 NodeMap(CmpCommon::statementHeap(),
-			 forcedEsps,
-			 NodeMapEntry::ACTIVE);
-	       
-	       CollIndex entryNum = 0;
-	       Int32 currNodeNum = -1;
-	       Int32 i = 0;
-	       while (i < forcedEsps)
-		 {
-		   if (entryNum == h2pf->getNodeMap()->getNumEntries())
-		     {
-		       entryNum = 0;
-		       currNodeNum = -1;
-		       continue;
-		     }
-		   
-		   const NodeMapEntry * entry = 
-		     h2pf->getNodeMap()->getNodeMapEntry(entryNum);
-		   
-		   if (entry->getNodeNumber() == currNodeNum)
-		     {
-		       entryNum++;
-		       continue;
-		     }
-		   
-		   myNodeMap->setNodeMapEntry(i, *entry);
-		   currNodeNum = entry->getNodeNumber();
-		   
-		   entryNum++;
-		   i++;
-		 } // while
-	       
-	       myPartFunc = new(CmpCommon::statementHeap())
-		 Hash2PartitioningFunction(
-					   h2pf->getPartitioningKey(),
-					   h2pf->getKeyColumnList(),
-					   forcedEsps, myNodeMap);
-	       myPartFunc->createPartitioningKeyPredicates();
-	     } // if 
-	   
-	   if (myPartFunc == NULL)
-	     myPartFunc = 
-	       getTableDesc()->getClusteringIndex()->getPartitioningFunction();
-	 } // else
-     }
-   
-   if (!myPartFunc)
-     {
-       //----------------------------------------------------------
-       // Create a node map with a single, active, wild-card entry.
-       //----------------------------------------------------------
-       NodeMap* myNodeMap = new(CmpCommon::statementHeap())
-	 NodeMap(CmpCommon::statementHeap(),
-		 1,
-		 NodeMapEntry::ACTIVE);
-       
-       //------------------------------------------------------------
-       // The table is not partitioned. Do not need to start ESPs.
-       // Synthesize a partitioning function with a single partition.
-       //------------------------------------------------------------
-       myPartFunc = new(CmpCommon::statementHeap())
-	 SinglePartitionPartitioningFunction(myNodeMap);
-       plenum = EXECUTE_IN_MASTER;
-     }
-   
-   PhysicalProperty * sppForMe = new(CmpCommon::statementHeap())
-     PhysicalProperty(myPartFunc,
-		      plenum,
-		      SOURCE_VIRTUAL_TABLE);
-   // remove anything that's not covered by the group attributes
-   sppForMe->enforceCoverageByGroupAttributes(getGroupAttr());
-   return sppForMe;
-}
 
 PhysicalProperty*
 ControlRunningQuery::synthPhysicalProperty(const Context* myContext,

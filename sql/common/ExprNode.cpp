@@ -116,18 +116,10 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_DP2_DELETE_UNIQUE:
 	    case REL_DP2_DELETE_CURSOR:
 	    case REL_DP2_DELETE_SUBSET:
-#if 0
-// replaced by subset delete, done as part of SQ SQL code cleanup effort
-	    case REL_DP2_DELETE_RANGE:
-#endif // if 0
 	    case REL_DP2_UPDATE_UNIQUE:
 	    case REL_DP2_UPDATE_CURSOR:
 	    case REL_DP2_UPDATE_SUBSET:
 	    case REL_SP_PROXY:
-	    case REL_PARALLEL_LABEL_CREATE:
-	    case REL_PARALLEL_LABEL_DROP:
-	    case REL_PARALLEL_LABEL_ALTER:
-	    case REL_PARALLEL_LABEL_PURGEDATA:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -137,8 +129,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	  switch (op_)
 	    {
 	    case REL_SCAN:
-	    case REL_DP2_SCAN:
-	    case REL_DP2_SCAN_UNIQUE:
 	    case REL_FILE_SCAN:
 	    case REL_HBASE_ACCESS:
 	      return TRUE;

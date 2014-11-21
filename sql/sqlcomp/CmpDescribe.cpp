@@ -783,9 +783,7 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       ExplainFunc explainF;
       StatisticsFunc statisticsF;
       HiveMDaccessFunc hiveMDF;
-      ExeUtilGetDiskStats getDiskStats(NULL, FALSE);
-      DiskLabelStatistics diskLabStats(CorrName("DUMMY"), TRUE, FALSE);
-       const NAString& virtualTableName =
+      const NAString& virtualTableName =
         d->getDescribedTableName().getQualifiedNameObj().getObjectName();
       if (virtualTableName == explainF.getVirtualTableName())
         {
@@ -794,14 +792,6 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
       else if (virtualTableName == statisticsF.getVirtualTableName())
         {
           tabledesc = statisticsF.createVirtualTableDesc();
-        }
-      else if (virtualTableName == diskLabStats.getVirtualTableName())
-        {
-          tabledesc = diskLabStats.createVirtualTableDesc();
-        }
-      else if (virtualTableName == getDiskStats.getVirtualTableName())
-        {
-          tabledesc = getDiskStats.createVirtualTableDesc();
         }
       else if (strncmp(virtualTableName.data(), "HIVEMD_", 7) == 0)
         {
@@ -2989,6 +2979,11 @@ short CmpDescribeSeabaseTable (
                                    otherConstr->keyColumns().entries(),
                                    FALSE,
                                    space, &buf[strlen(buf)], FALSE, FALSE);
+
+              if (NOT refConstr->getIsEnforced())
+                {
+                  outputShortLine(space, " NOT ENFORCED ");
+                }
 
               outputShortLine(space, ";");
             } // for

@@ -689,7 +689,7 @@ void CmpSeabaseDDL::createSeabaseRoutine(
   }
 
   ComTdbVirtTableColumnInfo * colInfoArray = (ComTdbVirtTableColumnInfo*)
-    new(STMTHEAP) char[numParams * sizeof(ComTdbVirtTableColumnInfo)];
+    new(STMTHEAP) ComTdbVirtTableColumnInfo[numParams];
 
   if (buildColInfoArray(&routineParamArray, colInfoArray))
     {

@@ -754,14 +754,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
-    case ex_GET_FORMATTED_DISK_STATS:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbExeUtilGetFormattedDiskStats);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
     case ex_PROCESS_INMEMORY_TABLE:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -814,17 +806,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
     {
 #pragma nowarn(1506)   // warning elimination 
       GetVTblPtr(vtblptr,ComTdbExeUtilGetHiveMetadataInfo);
-#pragma warn(1506)  // warning elimination 
-      break;
-    }
-
-
-// On Linux, Suspend/Activate uses ComTdbCancel
-
-    case ex_GET_DISK_LABEL_STATS:
-    {
-#pragma nowarn(1506)   // warning elimination 
-      GetVTblPtr(vtblptr,ComTdbExeUtilGetDiskLabelStats);
 #pragma warn(1506)  // warning elimination 
       break;
     }
@@ -887,14 +868,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
     {
 #pragma nowarn(1506)   // warning elimination
       GetVTblPtr(vtblptr,ComTdbCancel);
-#pragma warn(1506)  // warning elimination
-      break;
-    }
-
-    case ex_DISK_LABEL_STATISTICS:
-    {
-#pragma nowarn(1506)   // warning elimination
-      GetVTblPtr(vtblptr,ComTdbDiskLabelStatistics);
 #pragma warn(1506)  // warning elimination
       break;
     }
@@ -966,5 +939,4 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
   }
   return vtblptr;
 }
-
 

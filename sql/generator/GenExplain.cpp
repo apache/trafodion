@@ -517,19 +517,16 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     }
   // find direction
 
-  if (getOperatorType() != REL_DP2_SCAN_UNIQUE)
-  {
-    description += " scan_direction: ";
-
-    if (reverseScan_)
+  description += " scan_direction: ";
+  
+  if (reverseScan_)
     {
       description += "reverse ";
     }
-    else
+  else
     {
       description += "forward ";
     }
-  }
 
   // MDAM information
   if (getMdamKeyPtr())

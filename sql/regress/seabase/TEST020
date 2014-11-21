@@ -81,6 +81,8 @@ drop table test020_movie_titles cascade;
 drop table test020t31;
 drop table test020_10_030916_9668;
 drop table test020_LP_1360493;
+drop table test020_t34 cascade;
+drop table test020_t33 cascade;
 
 ?section tests
 create table  test020t1 (c1 int not null primary key,
@@ -685,3 +687,17 @@ drop table tmp_LP_1360493 cascade;
 
 select * from test020_LP_1360493;
 
+-- enforced option
+create table test020_t33 (a int not null primary key);
+create table test020_t34 (a int not null primary key, b int not null,
+   constraint t34_1 foreign key (b) references test020_t33 not enforced);
+showddl test020_t34;
+-- should succeed, ref constr not enforced
+insert into test020_t34 values (1,1);  
+
+delete from test020_t34;
+alter table test020_t34 drop constraint t34_1;
+alter table test020_t34 add constraint t34_1 foreign key(b) references test020_t33(a) not enforced;
+showddl test020_t34;
+-- should succeed, ref constr not enforced
+insert into test020_t34 values (1,1);  

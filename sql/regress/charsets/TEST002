@@ -70,7 +70,7 @@ create table t012 (a char(10) character set ISO88591 COLLATE default,
 
 
 create table nt001 (c char(10) HEADING _UCS2'MYUCS2HEADING');
-create table nt002 (c char(10) character set UCS2 default 'default');
+create table nt002 (c char(10) character set UCS2 default _UCS2'default');
 
 --UCS2 strings are NOW allowed in a constraint
 create table nt003 (c char(10) character set UCS2 check (c > _UCS2'aaaa'));

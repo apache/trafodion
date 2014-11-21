@@ -72,8 +72,6 @@ public:
     GET_METADATA_INFO_       = 14,
     GET_VERSION_INFO_        = 15,
     SUSPEND_ACTIVATE_        = 16,
-    GET_DISK_LABEL_STATS_    = 17,
-    GET_FORMATTED_DISK_STATS_= 18,
     SHOW_SET_                = 19,
     AQR_                     = 20,
     DISPLAY_EXPLAIN_COMPLEX_ = 21,
@@ -2423,75 +2421,6 @@ private:
   char fillersComTdbExeUtilGetErrorInfo_[80];              // 08-87
 };
 
-class ComTdbExeUtilGetFormattedDiskStats : public ComTdbExeUtil
-{
-  friend class ExExeUtilGetFormattedDiskStatsTcb;
-  friend class ExExeUtilGetFormattedDiskStatsPrivateState;
-
-public:
-  ComTdbExeUtilGetFormattedDiskStats()
-  : ComTdbExeUtil()
-  {}
-
-  ComTdbExeUtilGetFormattedDiskStats(
-       char * diskStatsStr,
-       ex_cri_desc * work_cri_desc,
-       const unsigned short work_atp_index,
-       ex_cri_desc * given_cri_desc,
-       ex_cri_desc * returned_cri_desc,
-       queue_index down,
-       queue_index up,
-       Lng32 num_buffers,
-       ULng32 buffer_size
-       );
-
-  Long pack(void *);
-  Lng32 unpack(void *, void * reallocator);
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilGetFormattedDiskStats);}
-
-  virtual const char *getNodeName() const
-  {
-    return "GET_FORMATTED_DISK_STATS";
-  };
-
-  char * getDiskStatsStr() { return diskStatsStr_; }
-
-  void setShortFormat(NABoolean v)
-  {(v ? flags_ |= SHORT_FORMAT : flags_ &= ~SHORT_FORMAT); };
-  NABoolean shortFormat() { return (flags_ & SHORT_FORMAT) != 0; };
-
-  void setLongFormat(NABoolean v)
-  {(v ? flags_ |= LONG_FORMAT : flags_ &= ~LONG_FORMAT); };
-  NABoolean longFormat() { return (flags_ & LONG_FORMAT) != 0; };
-
-  void setResetStats(NABoolean v)
-  {(v ? flags_ |= RESET_STATS : flags_ &= ~RESET_STATS); };
-  NABoolean resetStats() { return (flags_ & RESET_STATS) != 0; };
-
-  // ---------------------------------------------------------------------
-  // Used by the internal SHOWPLAN command to get attributes of a TDB.
-  // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
-
-private:
-  enum
-  {
-    SHORT_FORMAT = 0x0001,
-    LONG_FORMAT  = 0x0002,
-    RESET_STATS  = 0x0004
-  };
-
-  NABasicPtr diskStatsStr_;                                  // 00-07
-
-  UInt32 flags_;                                             // 08-11
-
-  char fillersComTdbExeUtilGetFormattedDiskStats_[116];      // 12-127
-};
-
 class ComTdbExeUtilCreateTableAs : public ComTdbExeUtil
 {
   friend class ExExeUtilCreateTableAsTcb;
@@ -3936,73 +3865,6 @@ public:
   NABasicPtr unused4_;
 };
 
-
-// See ConTdbCancel
-
-class ComTdbExeUtilGetDiskLabelStats : public ComTdbExeUtil
-{
-  friend class ExExeUtilGetDiskLabelStatsTcb;
-  friend class ExExeUtilGetDiskLabelStatsPrivateState;
-
-public:
-  ComTdbExeUtilGetDiskLabelStats()
-       : ComTdbExeUtil()
-  {}
-
-  ComTdbExeUtilGetDiskLabelStats(
-       ex_expr_base * input_expr,
-       ULng32 input_rowlen,
-       ex_cri_desc * work_cri_desc,
-       const unsigned short work_atp_index,
-       ex_cri_desc * given_cri_desc,
-       ex_cri_desc * returned_cri_desc,
-       queue_index down,
-       queue_index up,
-       Lng32 num_buffers,
-       ULng32 buffer_size
-       );
-
-  Long pack(void *);
-  Lng32 unpack(void *, void * reallocator);
-
-  void setIsIndex(NABoolean v)
-  {(v ? flags_ |= IS_INDEX : flags_ &= ~IS_INDEX); };
-  NABoolean isIndex() { return (flags_ & IS_INDEX) != 0; };
-  void setIsIudLog(NABoolean v)
-  {(v ? flags_ |= IS_IUD_LOG : flags_ &= ~IS_IUD_LOG); };
-  NABoolean isIudLog() { return (flags_ & IS_IUD_LOG) != 0; };
-  void setIsRangeLog(NABoolean v)
-  {(v ? flags_ |= IS_RANGE_LOG : flags_ &= ~IS_RANGE_LOG); };
-  NABoolean isRangeLog() { return (flags_ & IS_RANGE_LOG) != 0; };
-  void setIsTempTable(NABoolean v)
-  {(v ? flags_ |= IS_TEMP_TABLE : flags_ &= ~IS_TEMP_TABLE); };
-  NABoolean isTempTable() { return (flags_ & IS_TEMP_TABLE) != 0; };
-
-
-  // ---------------------------------------------------------------------
-  // Redefine virtual functions required for Versioning.
-  //----------------------------------------------------------------------
-  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilGetDiskLabelStats);}
-
-  virtual const char *getNodeName() const
-  {
-    return "GET_DISK_LABEL_STATS";
-  };
-
-private:
-  enum
-  {
-    IS_INDEX    = 0x0001,
-    IS_IUD_LOG  = 0x0002,
-    IS_RANGE_LOG = 0x0004,
-    IS_TEMP_TABLE= 0x0008
-  };
-
-  UInt32 flags_;                                     // 00-03
-
-  char fillersComTdbExeUtilGetDiskLabelStats_[76];      // 04-79
-};
-
 class ComTdbExeUtilLobExtract : public ComTdbExeUtil
 {
   friend class ExExeUtilLobExtractTcb;
@@ -4290,8 +4152,8 @@ static const ComTdbVirtTableColumnInfo hiveMDViewsColInfo[] =
 {                                                                                    
   { "CATALOG_NAME",   0,      COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
   { "SCHEMA_NAME",   1,      COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "VIEW_NAME",    2,     COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL}
-,COM_UNKNOWN_DIRECTION_LIT, 0};
+  { "VIEW_NAME",    2,     COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}
+};
 
 struct HiveMDViewsColInfoStruct
 {
@@ -4305,8 +4167,9 @@ static const ComTdbVirtTableColumnInfo hiveMDAliasColInfo[] =
   { "CATALOG_NAME",   0,      COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
   { "SCHEMA_NAME",    1,     COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
   { "TABLE_NAME",    2,     COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "ALIAS_NAME",   3,   COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL}
-,COM_UNKNOWN_DIRECTION_LIT, 0};
+  { "ALIAS_NAME",   3,   COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL
+,COM_UNKNOWN_DIRECTION_LIT, 0}
+};
 
 struct HiveMDAliasColInfoStruct
 {
@@ -4321,8 +4184,9 @@ static const ComTdbVirtTableColumnInfo hiveMDSynonymColInfo[] =
   { "CATALOG_NAME",  0,       COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
   { "SCHEMA_NAME",   1,      COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
   { "TABLE_NAME",    2,     COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "SYN_NAME",   3,   COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL}
-,COM_UNKNOWN_DIRECTION_LIT, 0};
+  { "SYN_NAME",   3,   COM_USER_COLUMN_LIT, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL
+,COM_UNKNOWN_DIRECTION_LIT, 0}
+};
 
 struct HiveMDSynonymColInfoStruct
 {

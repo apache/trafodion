@@ -180,25 +180,14 @@ short Describe::codeGen(Generator * generator)
 /////////////////////////////////////////////////////////////
 short FileScan::codeGen(Generator * generator)
 {
-  GenAssert(0, "FileScan::codeGen. Should never reach here.");
-
-  return 0;
-}
-
-/////////////////////////////////////////////////////////////
-//
-// DP2Scan::codeGen()
-//
-/////////////////////////////////////////////////////////////
-short DP2Scan::codeGen(Generator * generator)
-{
   if (getTableDesc()->getNATable()->isHiveTable())
   {
     short retval = codeGenForHive(generator);
     return retval ;
   }
 
-  GenAssert(FALSE, "DP2 scan not supported");
+  GenAssert(0, "FileScan::codeGen. Should never reach here.");
+
   return 0;
 }
 
@@ -321,7 +310,7 @@ int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
   return 1;
 }
 
-short DP2Scan::genForTextAndSeq(Generator * generator,
+short FileScan::genForTextAndSeq(Generator * generator,
                                 Queue * &hdfsFileInfoList,
                                 Queue * &hdfsFileRangeBeginList,
                                 Queue * &hdfsFileRangeNumList,
@@ -451,7 +440,7 @@ short DP2Scan::genForTextAndSeq(Generator * generator,
   return 0;
 }
 
-short DP2Scan::genForOrc(Generator * generator,
+short FileScan::genForOrc(Generator * generator,
                          const HHDFSTableStats* hTabStats,
                          const PartitioningFunction * mypart,
                          Queue * &hdfsFileInfoList,
@@ -494,7 +483,6 @@ short DP2Scan::genForOrc(Generator * generator,
   // If no scanInfo entries are specified, then scan all rows.
   if (emptyScan)
     {
-      // If no scanInfo entries are specified, then scan all rows.
       const char * fname = hTabStats->tableDir();
       
       if (hTabStats->entries() > 0)
@@ -689,10 +677,10 @@ move_expr is the outputTupp which is in the upEntry's atp.
 
 /////////////////////////////////////////////////////////////
 //
-// DP2Scan::codeGenForHive()
+// FileScan::codeGenForHive()
 //
 /////////////////////////////////////////////////////////////
-short DP2Scan::codeGenForHive(Generator * generator)
+short FileScan::codeGenForHive(Generator * generator)
 {
 
   Space * space          = generator->getSpace();

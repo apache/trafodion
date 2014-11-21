@@ -1931,15 +1931,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                    modified_field_map
 %type <uint>                    audit_compression_value
 
-//PARALLEL CREATE,DROP,ALTER LABEL/RFORK
-%type <relx>                    internal_parallel_create
-%type <relx>                    internal_parallel_drop
-%type <relx>                    internal_parallel_alter
-%type <relx>                    internal_parallel_purgedata
-%type <uint>			rfork_only
-
-//PARALLEL CREATE,DROP,ALTER LABEL/RFORK
-
 %type <relx>      		table_as_procedure
 %type <relx>      		joined_table
 %type <relx>      		joined_table_needing_spec
@@ -2837,8 +2828,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_fast_delete
 %type <longint>                 purgedata_options
 
-%type <relx>                    exe_util_get_disk_label_stats
-
 %type <relx>                    exe_util_get_metadata_info
 %type <relx>                    exe_util_get_version_info
 %type <stringval> 		object_identifier
@@ -2853,10 +2842,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval>               get_info_aus_clause
 %type <ptr_placeholder>         optional_no_header_and_match_pattern_clause
 
-%type <relx>                    exe_util_get_disk_buffer_stats
-%type <corrName>  		optional_disk_buffer_stats_object
-%type <stringval>               optional_disk_buffer_stats_options
-%type <boolean>                 disk_buffer_stats_reset
 %type <stringval>               explain_starting_tokens
 %type <stringval> 		explain_identifier
 %type <stmt_ptr> 		explain_stmt_finalized
@@ -6116,112 +6101,6 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
     $$ = new (PARSERHEAP()) ExtractSource(columns, espPhandle, securityKey,
                                           PARSERHEAP());
   }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' table_name ')' ')'
-  {
-    $$ = new (PARSERHEAP()) DiskLabelStatistics(*$7, TRUE, FALSE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_INDEX table_name ')' ')'
-  {
-    $8->setSpecialType(ExtendedQualName::INDEX_TABLE);
-    $$ = new (PARSERHEAP()) DiskLabelStatistics(*$8, TRUE, FALSE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_IUD_LOG_TABLE table_name ')' ')'
-  {
-    $8->setSpecialType(ExtendedQualName::IUD_LOG_TABLE);
-    $$ = new (PARSERHEAP()) DiskLabelStatistics(*$8, TRUE, FALSE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_RANGE_LOG_TABLE         table_name ')' ')'
-   {
-    $8->setSpecialType(ExtendedQualName::RANGE_LOG_TABLE);
-    $$ = new (PARSERHEAP()) DiskLabelStatistics(*$8, TRUE, FALSE, PARSERHEAP());
-  }
-
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_TEMP_TABLE table_name ')' ')'
-  {
-    $8->setSpecialType(ExtendedQualName::TRIGTEMP_TABLE);
-    $$ = new (PARSERHEAP()) DiskLabelStatistics(*$8, TRUE, FALSE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_COUNT TOK_STATISTICS '(' table_name ')' ')'
-  {
-    $$ = new (PARSERHEAP()) DiskLabelStatistics(*$8, TRUE, TRUE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_USING rel_subquery ')' ')'
-  {
-    $$ = new (PARSERHEAP()) ExeUtilGetDiskLabelStats($8, NULL, FALSE, FALSE,FALSE,FALSE,PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_INDEXES TOK_USING rel_subquery ')' ')'
-  {
-    $$ = new (PARSERHEAP()) ExeUtilGetDiskLabelStats($9, NULL, TRUE,FALSE, FALSE,FALSE,PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_IUD_LOG_TABLE TOK_USING rel_subquery ')' ')'
-  {
-    $$ = new (PARSERHEAP()) ExeUtilGetDiskLabelStats($9, NULL, FALSE,TRUE,FALSE,FALSE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_RANGE_LOG_TABLE TOK_USING rel_subquery ')' ')'
-  {
-    $$ = new (PARSERHEAP()) ExeUtilGetDiskLabelStats($9, NULL, FALSE,FALSE,TRUE,FALSE, PARSERHEAP());
-  }
-| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_TEMP_TABLE TOK_USING rel_subquery ')' ')'
-  {
-    $$ = new (PARSERHEAP()) ExeUtilGetDiskLabelStats($9, NULL, FALSE,FALSE,FALSE,TRUE, PARSERHEAP());
-  }
-
-/*| TOK_TABLE '(' TOK_DISK TOK_LABEL TOK_STATISTICS '(' TOK_USING rel_subquery as_clause '(' derived_column_list ')' ')' ')'
-  {
-    RelExpr * re = NULL;
-
-    RelExpr * sq = new (PARSERHEAP())
-      RenameTable($8, *$9, $11);
-    delete $9;
-
-    re = new (PARSERHEAP()) ExeUtilGetDiskLabelStats($11, NULL, PARSERHEAP());
-
-    re = new(PARSERHEAP()) Join
-      (sq, re, REL_TSJ_FLOW, NULL);
-    ((Join*)re)->doNotTransformToTSJ();
-    ((Join*)re)->setTSJForWrite(TRUE);
-
-    $$ = re;
-  }
-  */
-| TOK_TABLE '(' disk_buffer_stats_reset '(' ')' ')' 
-  {
-    CorrName cn("@MAINTAIN_CONTROL_INFO@", 
-		PARSERHEAP(),
-		"@MAINTAIN_SCHEMA@",
-		"NEO");
-    $$ = new (PARSERHEAP()) 
-      ExeUtilGetDiskStats((new (PARSERHEAP()) Scan(cn)), 
-			  $3,PARSERHEAP());
-  }
-| TOK_TABLE '(' disk_buffer_stats_reset '(' TOK_DEFAULT optional_special_table_loc_clause ')' ')'
-  {
-    CorrName cn("@MAINTAIN_CONTROL_INFO@", 
-		PARSERHEAP(),
-		"@MAINTAIN_SCHEMA@",
-		"NEO");
-    if ($6)
-      {
-	cn.setPartnClause(*$6);
-	delete $6;
-      }
-
-    $$ = new (PARSERHEAP()) 
-      ExeUtilGetDiskStats((new (PARSERHEAP()) Scan(cn)), 
-			  $3, PARSERHEAP());
-  }
-| TOK_TABLE '(' disk_buffer_stats_reset '(' actual_table_name optional_special_table_loc_clause ')' ')'
-  {
-    if ($6)
-      {
-	$5->setPartnClause(*$6);
-	delete $6;
-      }
-
-    $$ = new (PARSERHEAP()) 
-      ExeUtilGetDiskStats((new (PARSERHEAP()) Scan(*$5)),
-			  $3, PARSERHEAP());
-  }
 
 hivemd_identifier : 
                     TOK_ALIAS { $$ = new (PARSERHEAP()) NAString("ALIAS"); }
@@ -6239,10 +6118,6 @@ sp_proxy_stmt_prefix : TOK_TABLE '(' TOK_SP_RESULT_SET
    beginRSProxyStmtParsing();
    $$ = TRUE;
 }
-
-/* type boolean */
-disk_buffer_stats_reset : TOK_DISK TOK_BUFFER TOK_STATISTICS { $$ = FALSE; }
-                   | TOK_DISK TOK_BUFFER TOK_STATISTICS TOK_RESET { $$ = TRUE; }
 
 /* type extractType */
 extract_type : QUOTED_STRING
@@ -13647,27 +13522,6 @@ query_specification : unload_statement
   RelRoot *root = new (PARSERHEAP()) RelRoot($1, REL_ROOT);
 }
 
-
-query_specification : select_token TOK_ROW TOK_COUNT TOK_FROM table_name
-  {
-    // gets translated to:
-    // select sum(row_count) from table(disk count statistics(table_name))
-    
-    ColRefName   * crn   = new (PARSERHEAP()) ColRefName("ROW_COUNT");
-    ColReference * cRef  = new (PARSERHEAP()) ColReference(crn);
-    
-    Aggregate * agg = 
-      new (PARSERHEAP()) Aggregate(ITM_SUM, cRef, FALSE);
-    
-    DiskLabelStatistics * pldc = 
-      new (PARSERHEAP()) DiskLabelStatistics(*$5, TRUE, TRUE, PARSERHEAP());
-    
-    RelRoot * rr =  new (PARSERHEAP())
-      RelRoot(pldc, REL_ROOT, agg);
-    
-    $$ = rr;
-  }
-
 /* type relx */
 query_specification : select_token '[' firstn_sorted NUMERIC_LITERAL_EXACT_NO_SCALE ']' set_quantifier query_spec_body
 	{
@@ -14894,10 +14748,6 @@ interactive_query_expression:
 		  }
               | standalone_call_statement
               | exe_util_statement
-              | internal_parallel_create
-              | internal_parallel_drop
-	      | internal_parallel_alter
-              | internal_parallel_purgedata
               | exe_util_cleanup_volatile_tables
                                 {
 				  $$ = finalize($1);
@@ -14943,14 +14793,6 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
-              | exe_util_get_disk_label_stats
-                                {
-				  $$ = finalize($1);
-				}
-              | exe_util_get_disk_buffer_stats
-                  {
-		    $$ = finalize($1);
-		  }
               | exe_util_get_uid
                                 {
 				  $$ = finalize($1);
@@ -15004,20 +14846,6 @@ dml_query : query_expression order_by_clause access_type
 #endif
                 {
                   $$ = finalize($1);
-
-		  // if a SELECT ROW COUNT query, then no other clauses
-		  // (order by, etc) are allowed.
-		  if (($$->child(0)) &&
-		      ($$->child(0)->castToRelExpr()) &&
-		      ($$->child(0)->castToRelExpr()->getOperatorType() == REL_PARALLEL_LABEL_DISK_COUNT) &&
-		      (((DiskLabelStatistics*)$$->child(0)->castToRelExpr())->labelCountStats()) &&
-		      (($2 != NULL) || // ORDER BY specified
-		       ($3 != ACCESS_TYPE_NOT_SPECIFIED_) ||
-		       ($4 != LOCK_MODE_NOT_SPECIFIED_) ||
-		       ($5->explicitSpec())))
-		    {
-		      YYERROR;
-		    }
 
                   ((RelRoot *)$$)->addOrderByTree($2);
                   if (!finalizeAccessOptions($$, $3, $4))
@@ -15313,108 +15141,6 @@ exe_util_get_volatile_info : TOK_GET TOK_ALL TOK_VOLATILE TOK_SCHEMAS
 
 		 $$ = volSch;
 	       }
-
-exe_util_get_disk_buffer_stats : TOK_GET TOK_DISK TOK_BUFFER TOK_STATISTICS optional_disk_buffer_stats_object optional_disk_buffer_stats_options 
-               {
-		 ExeUtilGetFormattedDiskStats * ds =
-		    new (PARSERHEAP ()) ExeUtilGetFormattedDiskStats(
-			 *$5, ($6 ? (char *)$6->data() : NULL),
-			 PARSERHEAP ());
-		 delete $5;
-
-		 $$ = ds;
-	       }
-
-optional_disk_buffer_stats_object : /*empty*/
-                                 {
-				   CorrName * cn = 
-				     new(PARSERHEAP()) CorrName("",
-					  PARSERHEAP());
-
-				   $$ = cn;
-				 }
-/*                               | TOK_FOR special_table_loc_clause
-                                 {
-				   CorrName * cn = 
-				     new(PARSERHEAP()) CorrName("",
-					  PARSERHEAP());
-
-				   cn->setPartnClause(*$2);
-				   delete $2;
-				   
-				   $$ = cn;
-				 }
-				 */
-                               | TOK_FOR TOK_DISK system_volume_name
-                                 {
-				   CorrName * cn = 
-				     new(PARSERHEAP()) CorrName("",
-					  PARSERHEAP());
-
-				   PartitionClause pc(PARSERHEAP());
-
-				   NAString fullyQualName = "\"";
-				   fullyQualName += *$3;
-				   fullyQualName += "\"";
-				   fullyQualName += ".DUMMYSV.DUMMYOBJ";
-
-				   pc.setLocationName(fullyQualName);
-
-				   cn->setPartnClause(pc);
-				   
-				   delete $3;
-
-				   $$ = cn;
-				 }
-                               | TOK_FOR TOK_DISK volume_name
-                                 {
-				   CorrName * cn = 
-				     new(PARSERHEAP()) CorrName("",
-					  PARSERHEAP());
-
-				   PartitionClause pc(PARSERHEAP());
-
-				   NAString fullyQualName = "\"";
-				   fullyQualName += *$3;
-				   fullyQualName += "\"";
-				   fullyQualName += ".DUMMYSV.DUMMYOBJ";
-
-				   pc.setLocationName(fullyQualName);
-
-				   cn->setPartnClause(pc);
-				   
-				   delete $3;
-
-				   $$ = cn;
-				 }
-
-                               | TOK_FOR TOK_TABLE actual_table_name
-                                 {
-				   $$ = $3;
-				 }
-
-/*                               | TOK_FOR TOK_TABLE actual_table_name special_table_loc_clause
-                                 {
-				   if ($4)
-				     {
-				       $3->setPartnClause(*$4);
-				       delete $4;
-				     }
-				   $$ = $3;
-				 }
-				 */
-
-/* type stringval */
-optional_disk_buffer_stats_options : /* empty */
-             { $$ = NULL; }
-          | ',' TOK_OPTIONS QUOTED_STRING
-             { $$ = $3; }
-          | ',' TOK_RESET
-             { 
-	       NAString * option = new(PARSERHEAP ()) NAString(PARSERHEAP ());
-	       option->append("RS");
-	       $$ = option; 
-	     }
 
 explain_starting_tokens : TOK_EXPLAIN optional_explain_options
                                 {
@@ -19596,17 +19322,6 @@ purgedata_options : /*empty*/ { $$ = 0; }
                   | TOK_IGNORE_TRIGGER TOK_WAITEDIO TOK_NOLOG { $$ = 7; }
 
 
-exe_util_get_disk_label_stats : TOK_GET TOK_DISK TOK_LABEL TOK_STATISTICS TOK_FOR table_name
-                  {
-                     if (!Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-		       {
-			 yyerror(""); YYERROR; /*internal syntax only!*/
-		       }
-
-		     $$ = new (PARSERHEAP()) 
-		       ExeUtilGetDiskLabelStats(NULL, NULL, FALSE,FALSE,FALSE,FALSE, PARSERHEAP());
-		  }
-
 exe_util_aqr: TOK_GET TOK_ALL TOK_AQR TOK_ENTRIES
                {
 		 ExeUtilAQR * eua = 
@@ -19766,324 +19481,6 @@ aqr_option : TOK_SQLCODE '=' NUMERIC_LITERAL_EXACT_NO_SCALE
 			
 			$$ = o;
 		      }
-
-// rules for internal parallel create syntax.
-internal_parallel_create: TOK_LABEL_CREATE TOK_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off 
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$3, $6);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               |
-               TOK_LABEL_CREATE TOK_INDEX_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::INDEX_TABLE);
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$3, $6);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               |
-               TOK_LABEL_CREATE TOK_IUD_LOG_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::IUD_LOG_TABLE);
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$3, $6);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | 
-               TOK_LABEL_CREATE TOK_TEMP_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::TRIGTEMP_TABLE);
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$3, $6);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               |
-               TOK_LABEL_CREATE TOK_EXCEPTION_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  CHECK_DBTRANSPORTER ;
-                  $3->setSpecialType(ExtendedQualName::EXCEPTION_TABLE);
-                  ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$3, $6);
-                  $$ = finalize(plc);
-               }
-               |
-               TOK_LABEL_CREATE TOK_GHOST TOK_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $4->setSpecialType(ExtendedQualName::GHOST_TABLE);
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$4, $7);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-	       |
-               TOK_LABEL_CREATE TOK_GHOST TOK_INDEX_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $4->setSpecialType(ExtendedQualName::GHOST_INDEX_TABLE);
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$4, $7);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               |
-               TOK_LABEL_CREATE TOK_GHOST TOK_IUD_LOG_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $4->setSpecialType(ExtendedQualName::GHOST_IUD_LOG_TABLE);
-                     ParallelLabelCreate *plc = new (PARSERHEAP()) ParallelLabelCreate(*$4, $7);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-
-internal_parallel_drop: TOK_LABEL_DROP TOK_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off 
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$3, $6);
-                     $$ = finalize(pld);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | TOK_LABEL_DROP TOK_INDEX_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::INDEX_TABLE);
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$3, $6);
-                     $$ = finalize(pld);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | TOK_LABEL_DROP TOK_IUD_LOG_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::IUD_LOG_TABLE);
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$3, $6);
-                     $$ = finalize(pld);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | TOK_LABEL_DROP TOK_TEMP_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::TRIGTEMP_TABLE);
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$3, $6);
-                     $$ = finalize(pld);                 
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | TOK_LABEL_DROP TOK_EXCEPTION_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  CHECK_DBTRANSPORTER ;
-                  $3->setSpecialType(ExtendedQualName::EXCEPTION_TABLE);
-                  ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$3, $6);
-                  $$ = finalize(pld);                 
-               }
-               | TOK_LABEL_DROP TOK_GHOST TOK_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $4->setSpecialType(ExtendedQualName::GHOST_TABLE);
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$4, $7);
-                     $$ = finalize(pld);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | TOK_LABEL_DROP TOK_GHOST TOK_INDEX_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $4->setSpecialType(ExtendedQualName::GHOST_INDEX_TABLE);
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$4, $7);
-                     $$ = finalize(pld);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               | TOK_LABEL_DROP TOK_GHOST TOK_IUD_LOG_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $4->setSpecialType(ExtendedQualName::GHOST_IUD_LOG_TABLE);
-                     ParallelLabelDrop *pld = new (PARSERHEAP()) ParallelLabelDrop(*$4, $7);
-                     $$ = finalize(pld);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-
-
-// end of rules for internal parallel create syntax.
-
-// rules for internal parallel alter syntax
-internal_parallel_alter: TOK_LABEL_ALTER TOK_TABLE actual_table_name rfork_only TOK_PARALLEL TOK_EXECUTION on_off 
-			 TOK_OPCODE unsigned_integer character_string_literal
-               {
-                 // DEFAULT_CHARSET has no effect on character_string_literal in this context
-		  if (true)
-                  {
-		     // opcode specific value checks
-		     switch ($9) 
-		     {
-		     default:
-  			     yyerror("Opcode not supported\n");
-			     YYERROR;
-			     break;
-		     }
-
-                     ParallelLabelAlter *pla = 
-		       new (PARSERHEAP()) 
-		       ParallelLabelAlter(*$3, $7, $9, *$10,
-					  (($4 == 1) ? TRUE : FALSE));
-                     $$ = finalize(pla);
-                  }  
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-	       | TOK_LABEL_ALTER TOK_INDEX_TABLE actual_table_name rfork_only TOK_PARALLEL TOK_EXECUTION on_off 
-		 TOK_OPCODE unsigned_integer character_string_literal
-	       {
-                 // DEFAULT_CHARSET has no effect on character_string_literal in this context
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-		     // opcode specific value checks
-		     switch ($9) 
-		     {
-		     default:
-  			     yyerror("Opcode not supported\n");
-			     YYERROR;
-			     break;
-		     }
-		     $3->setSpecialType(ExtendedQualName::INDEX_TABLE);
-                     ParallelLabelAlter *pla = 
-		       new (PARSERHEAP()) 
-		       ParallelLabelAlter(*$3, $7, $9, *$10,
-					  (($4 == 1) ? TRUE : FALSE));
-                     $$ = finalize(pla);
-                  }  
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-
-rfork_only: empty         { $$ = 0; }
-            | TOK_RESOURCE_FORK TOK_ONLY 
-              { 
-		if (CmpCommon::getDefault(VALIDATE_RFORK_REDEF_TS) == DF_OFF)
-		  $$ = 0;
-		else
-		  $$ = 1; 
-               }
-
-// end of rules for internal parallel alter syntax
-
-
-internal_parallel_purgedata: TOK_LABEL_PURGEDATA TOK_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off 
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     ParallelLabelPurgedata *plc = new (PARSERHEAP()) ParallelLabelPurgedata(*$3, $6);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
-               |
-               TOK_LABEL_PURGEDATA TOK_INDEX_TABLE actual_table_name TOK_PARALLEL TOK_EXECUTION on_off
-               {
-                  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-                  {
-                     $3->setSpecialType(ExtendedQualName::INDEX_TABLE);
-                     ParallelLabelPurgedata *plc = new (PARSERHEAP()) ParallelLabelPurgedata(*$3, $6);
-                     $$ = finalize(plc);
-                  }
-                  else
-                  {
-                     yyerror("");
-                     YYERROR;
-                  }
-               }
 
 /* type relx */
 //HBASE LOAD 
@@ -24810,22 +24207,6 @@ show_statement:
 			     new (PARSERHEAP())
 			     ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
 		   delete c;
-		 }
-	       else if ($2->getOperatorType() == REL_PARALLEL_LABEL_DISK_COUNT)
-		 {
-		   c = new(PARSERHEAP())
-		     CorrName(((DiskLabelStatistics *)$2)->
-		     		getVirtualTableName());
-		   c->setSpecialType(ExtendedQualName::VIRTUAL_TABLE);
-
-		   $$ = new (PARSERHEAP())
-		     RelRoot(new (PARSERHEAP())
-			     Describe(SQLTEXT(), *c, Describe::INVOKE_),
-			     REL_ROOT,	
-			     new (PARSERHEAP())
-			     ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
-		   delete c;
-		   
 		 }
 	       else {
 		 // error here  SOLN 10-050216-4754
