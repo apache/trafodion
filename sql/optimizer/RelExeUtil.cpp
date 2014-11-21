@@ -8766,6 +8766,28 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
           delimiterSqlStr = " DELIMITER ";
           if (lo->numericVal_ == 0)
           {
+            if (strlen(lo->stringVal_) != 1 )
+            {
+              char c;
+              if (!PhysicalFastExtract::isSpecialChar(lo->stringVal_, c))
+              {
+                if (lo->stringVal_[0]== '\\')
+                {
+                  //if it start with '\' and not a valid escape character produce an error
+                  //4374 - Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator.
+                  //       Only the following escape sequences are allowed: \a, \b, \f, \n, \r, \t, or \v.
+                  *da << DgSqlCode(-4374);
+                  return 1;
+                }
+                else
+                {
+                  // 4379 - Invalid BULK UNLOAD field delimiter or record separator.
+                  //        A valid field delimiter or record separator must be a single character or an integer between 1 and 255.
+                  *da << DgSqlCode(-4379);
+                  return 1;
+                }
+              }
+            }
             delimiterSqlStr.append(" '");
             delimiterSqlStr.append( lo->stringVal_);
             delimiterSqlStr.append("' ");
@@ -8810,6 +8832,28 @@ short ExeUtilHBaseBulkUnLoad::setOptions(NAList<UnloadOption*>  *
           recordSeparatorSqlStr = " RECORD_SEPARATOR ";
           if (lo->numericVal_ == 0)
           {
+            if (strlen(lo->stringVal_) != 1 )
+            {
+              char c;
+              if (!PhysicalFastExtract::isSpecialChar(lo->stringVal_, c))
+              {
+                if (lo->stringVal_[0]== '\\')
+                {
+                  //if it start with '\' and not a valid escape character produce an error
+                  //4374 - Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator.
+                  //       Only the following escape sequences are allowed: \a, \b, \f, \n, \r, \t, or \v.
+                  *da << DgSqlCode(-4374);
+                  return 1;
+                }
+                else
+                {
+                  // 4379 - Invalid BULK UNLOAD field delimiter or record separator.
+                  //        A valid field delimiter or record separator must be a single character or an integer between 1 and 255.
+                  *da << DgSqlCode(-4379);
+                  return 1;
+                }
+              }
+            }
             recordSeparatorSqlStr.append(" '");
             recordSeparatorSqlStr.append( lo->stringVal_);
             recordSeparatorSqlStr.append("' ");

@@ -1324,12 +1324,12 @@ $1~String1 --------------------------------
 4371 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
 4372 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
 4373 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
-4374 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
+4374 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator. Only the following escape sequences are allowed: \\a, \\b, \\f, \\n, \\r, \\t, or \\v.
 4375 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Window or Sequence function $0~String0 nested within an aggregate function in the same scope is not supported. 
 4376 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~String0 option was used more than once in an UNLOAD statement.
 4377 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SELECT query specified in the UNLOAD statement is not supported.
 4378 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Target location name specified for UNLOAD is invalid. $0~String0.
-4379 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Reserved for UNLOAD ----
+4379 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid BULK UNLOAD field delimiter or record separator. A valid field delimiter or record separator must be a single character or an integer between 1 and 255.
 4380 0A000 99999 BEGINNER MAJOR DBADMIN $0~String0 collation is not supported with sequence functions when collated character expressions are used with SEQUENCE BY, RUNNING/MOVING MIN/MAX, or ROWS SINCE CHANGED.
 4381 42000 99999 BEGINNER MINOR LOGONLY Holdable cursor attribute is incompatible for the isolation level.
 4382 42000 99999 BEGINNER MINOR LOGONLY Holdable cursor attribute cannot be set for a CALL statement.

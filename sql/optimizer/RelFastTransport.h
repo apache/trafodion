@@ -373,7 +373,7 @@ public:
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb) ;
 
   virtual short codeGen(Generator *);
-  NABoolean isSpecialChar(char * str , char & chr);
+  static NABoolean isSpecialChar(char * str , char & chr);
 
   
   virtual ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple, ComTdb * tdb, Generator *generator);
