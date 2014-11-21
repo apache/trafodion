@@ -1253,6 +1253,38 @@ unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
 *** ERROR[8822] The statement was not prepared.
 
 >>
+>>--unload  22 -- should not give an error
+>>unload with delimiter '\a' into '/bulkload/test' select * from customer_address;
+Task: UNLOAD           Status: Started
+Task:  EXTRACT         Status: Started
+       Rows Processed: 50000 
+Task:  EXTRACT         Status: Ended      ET: 00:00:01.239
+
+--- 50000 row(s) unloaded.
+>>--unload  24 -- should give an error
+>>unload with delimiter 'abca' into '/bulkload/test' select * from customer_address;
+
+*** ERROR[4379] Invalid BULK UNLOAD field delimiter or record separator. A valid field delimiter or record separator must be a single character or an integer between 1 and 255.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--unload  25 -- should give an error
+>>unload with record_separator '\abca' into '/bulkload/test' select * from customer_address;
+
+*** ERROR[4374] Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator. Only the following escape sequences are allowed: \a, \b, \f, \n, \r, \t, or \v.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>--unload  25 -- should give an error
+>>unload with record_separator '\z' into '/bulkload/test' select * from customer_address;
+
+*** ERROR[4374] Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator. Only the following escape sequences are allowed: \a, \b, \f, \n, \r, \t, or \v.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>
 >>--unload 100
 >>CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
 

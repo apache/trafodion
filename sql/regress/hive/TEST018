@@ -487,6 +487,17 @@ unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
 --unload 21 --should give an error
 unload with MERGE FILE 'folder/cust_addr' into '/bulkload/test' select * from customer_address;
 
+--unload  22 -- should not give an error
+unload with delimiter '\a' into '/bulkload/test' select * from customer_address;
+--unload  24 -- should give an error
+unload with delimiter 'abca' into '/bulkload/test' select * from customer_address;
+
+--unload  25 -- should give an error
+unload with record_separator '\abca' into '/bulkload/test' select * from customer_address;
+--unload  25 -- should give an error
+unload with record_separator '\z' into '/bulkload/test' select * from customer_address;
+
+
 --unload 100
 CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
 UNLOAD  
