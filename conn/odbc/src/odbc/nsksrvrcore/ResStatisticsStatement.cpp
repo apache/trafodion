@@ -1279,9 +1279,14 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 	char* tblName_ = NULL;
 	char* subQueryType_ = NULL;
 	char* parentSystem_ = NULL;
+	// To pass either query ID or statement name to CLI
+	// Default is CURRENT if pSrvrStmt is NULL.
+	//
+	char *reqStr = NULL;
+	short reqStrLen = 0;
+	char *reqStrCurrent = "CURRENT";
 
 	// Check the undocumented flag if the stats needs to collected.
-	// For more info see mapConnRulesToService()
 	if (srvrGlobal->m_rule_endstats_off)	// perf
 		return;
 
@@ -1298,7 +1303,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 	if (statsType == SQLCLI_ACCUMULATED_STATS && pSrvrStmt != NULL)
 	{
 		// Populate the short query text
-		if (pSrvrStmt->comp_stats_info.statsCollectionType == SQLCLI_NO_STATS)
+		if (pSrvrStmt->comp_stats_info.statsCollectionType == SQLCLI_NO_STATS && pSrvrStmt->comp_stats_info.compilationStats.compilerId[0] != 0)
 		{
 			if (pSrvrStmt->sqlString != NULL && pSrvrStmt->m_bNewQueryId == true )
 			{
@@ -1308,28 +1313,50 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 				translateToUTF8(srvrGlobal->isoMapping, pSrvrStmt->sqlString, len, pSrvrStmt->m_shortQueryText, RMS_STORE_SQL_SOURCE_LEN);
 				pSrvrStmt->m_bNewQueryId = false;
 			}
+			init_rms_counters();
 			return;
 		}
+	}
+
+	if (qIdLen != 0)
+	{
+		reqStr = qID;
+		reqStrLen = qIdLen;
 	}
 
 	switch( statsType )
 	{
 	case SQLCLI_ACCUMULATED_STATS :
-			maxStatsDescEntries_ = MAX_ACCUMULATED_STATS_DESC;
-			mergeType = SQLCLI_ACCUMULATED_STATS;
-            if( qIdLen !=0 )
-            	reqType = SQLCLI_STATS_REQ_QID ;
-            else
-            	reqType = SQLCLI_STATS_REQ_QID_CURRENT;
-			break;
+		maxStatsDescEntries_ = MAX_ACCUMULATED_STATS_DESC;
+		mergeType = SQLCLI_ACCUMULATED_STATS;
+		if( qIdLen !=0 )
+			reqType = SQLCLI_STATS_REQ_QID ;
+		else
+		{
+			if (pSrvrStmt != NULL && 
+			    pSrvrStmt->stmtName != NULL &&
+			    pSrvrStmt->stmtNameLen > 0)
+			{
+				reqType = SQLCLI_STATS_REQ_STMT;
+				reqStr = pSrvrStmt->stmtName;
+				reqStrLen = pSrvrStmt->stmtNameLen;
+			}
+			else
+			{
+				reqType = SQLCLI_STATS_REQ_QID_CURRENT;
+				reqStr = reqStrCurrent;
+				reqStrLen = strlen(reqStrCurrent);
+			}
+		}
+		break;
 
 	case SQLCLI_PERTABLE_STATS :
-			maxStatsDescEntries_ = MAX_PERTABLE_STATS_DESC;
-			reqType = SQLCLI_STATS_REQ_QID;
-			mergeType = SQLCLI_PERTABLE_STATS;
-			if( !qID )
-				;	// error
-			break;
+		maxStatsDescEntries_ = MAX_PERTABLE_STATS_DESC;
+		reqType = SQLCLI_STATS_REQ_QID;
+		mergeType = SQLCLI_PERTABLE_STATS;
+		if( !qID )
+			;	// error
+		break;
 	}
 	try
 	{
@@ -1337,12 +1364,12 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 		perTableRowSize = 0;
 
 		sqlStatsDesc_ = new (nothrow) SQLSTATS_DESC[maxStatsDescEntries_];
-		if (sqlStatsDesc_ == NULL) { cliRC = 991; throw("error");}
+		if (sqlStatsDesc_ == NULL) { cliRC = 990; throw("error");}
 
 		    cliRC = SQL_EXEC_GetStatistics2(
 		    	    reqType,
-		    	    qIdLen != 0 ? qID : (char*)"CURRENT",		//  see comment for bugzilla 2388 fix above,
-		    	    qIdLen,
+		    	    reqStr,
+		    	    reqStrLen,
 		    	    activeQueryNum,
 		    	    mergeType,
 		    	    &statsCollectType_,
@@ -1351,6 +1378,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 		    	    &retStatsDescEntries_);
 
 		if (cliRC != 0) throw("error");
+		if (retStatsDescEntries_ <= 0) { cliRC = 991; throw("error");}
 
 		while (currStatsDescEntry_ < retStatsDescEntries_)
 		{
@@ -1427,8 +1455,8 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 
 				cliRC = SQL_EXEC_GetStatisticsItems(
 					reqType,
-					qID,
-					qIdLen,
+					reqStr,
+					reqStrLen,
 					MAX_MASTERSTATS_ENTRY,
 					masterStatsItems_);
 				if (cliRC != 0) throw("error");
@@ -1480,8 +1508,8 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 
 				cliRC = SQL_EXEC_GetStatisticsItems(
 					reqType,
-					qID,
-					qIdLen,
+					reqStr,
+					reqStrLen,
 					MAX_MEASSTATS_ENTRY,
 					measStatsItems_);
 				if (cliRC != 0) throw("error");
@@ -1523,8 +1551,8 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 
 				cliRC = SQL_EXEC_GetStatisticsItems(
 					reqType,
-					qID,
-					qIdLen,
+					reqStr,
+					reqStrLen,
 					MAX_PERTABLE_ENTRY,
 					pertableStatsItems_);
 				if (cliRC != 0) throw("error");
@@ -1718,6 +1746,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 			}
 
 		if (measStatsItems_ != NULL)
+		{
 			for (i = 0; i < MAX_MEASSTATS_ENTRY; i++)
 			{
 				if (measStatsItems_[i].error_code != 0) continue;
@@ -1828,25 +1857,26 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 				default:
 					break;
 				}
-	                        
-				if(pSrvrStmt != NULL){	
-					pSrvrStmt->m_execOverflow.m_OvfFileCount = ScratchFileCount;
-					pSrvrStmt->m_execOverflow.m_OvfSpaceAllocated = (ScratchFileCount * 2 * ONE_GB) / ONE_KB;
-					pSrvrStmt->m_execOverflow.m_OvfSpaceUsed = ScratchBufferBlocksWritten * ScratchBufferBlockSize;
-					pSrvrStmt->m_execOverflow.m_OvfBlockSize = ScratchBufferBlockSize;
-					pSrvrStmt->m_execOverflow.m_OvfIOs = ScratchBufferReadCount + ScratchBufferWriteCount;
-					pSrvrStmt->m_execOverflow.m_OvfMessageBuffersTo = ScratchBufferBlocksWritten;
-					pSrvrStmt->m_execOverflow.m_OvfMessageTo = ScratchBufferWriteCount;
-					pSrvrStmt->m_execOverflow.m_OvfMessageBytesTo = ScratchBufferBlocksWritten * ScratchBufferBlockSize;
-					pSrvrStmt->m_execOverflow.m_OvfMessageBuffersFrom = ScratchBufferBlocksRead;
-					pSrvrStmt->m_execOverflow.m_OvfMessageFrom = ScratchBufferReadCount;
-					pSrvrStmt->m_execOverflow.m_OvfMessageBytesFrom = ScratchBufferBlocksRead * ScratchBufferBlockSize;
-				}
 			}
-		
-		TotalMemAlloc = SpaceUsed + HeapUsed;
-		MaxMemUsed = SpaceTotal + HeapTotal +  Dp2SpaceTotal + Dp2HeapTotal;
+			if (pSrvrStmt != NULL)
+			{
+				pSrvrStmt->m_execOverflow.m_OvfFileCount = ScratchFileCount;
+				pSrvrStmt->m_execOverflow.m_OvfSpaceAllocated = (ScratchFileCount * 2 * ONE_GB) / ONE_KB;
+				pSrvrStmt->m_execOverflow.m_OvfSpaceUsed = ScratchBufferBlocksWritten * ScratchBufferBlockSize;
+				pSrvrStmt->m_execOverflow.m_OvfBlockSize = ScratchBufferBlockSize;
+				pSrvrStmt->m_execOverflow.m_OvfIOs = ScratchBufferReadCount + ScratchBufferWriteCount;
+				pSrvrStmt->m_execOverflow.m_OvfMessageBuffersTo = ScratchBufferBlocksWritten;
+				pSrvrStmt->m_execOverflow.m_OvfMessageTo = ScratchBufferWriteCount;
+				pSrvrStmt->m_execOverflow.m_OvfMessageBytesTo = ScratchBufferBlocksWritten * ScratchBufferBlockSize;
+				pSrvrStmt->m_execOverflow.m_OvfMessageBuffersFrom = ScratchBufferBlocksRead;
+				pSrvrStmt->m_execOverflow.m_OvfMessageFrom = ScratchBufferReadCount;
+				pSrvrStmt->m_execOverflow.m_OvfMessageBytesFrom = ScratchBufferBlocksRead * ScratchBufferBlockSize;
+			}
 
+			TotalMemAlloc = SpaceUsed + HeapUsed;
+			MaxMemUsed = SpaceTotal + HeapTotal +  Dp2SpaceTotal + Dp2HeapTotal;
+
+		}
 	}
 //LCOV_EXCL_START
 	catch(...)
