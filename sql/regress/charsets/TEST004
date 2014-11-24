@@ -141,7 +141,7 @@ select replace(_ucs2'abc', _ucs2'', _ucs2 x'') from (values(1))x;
 -- ANSI char matching rules are preserved (i.e., relaxation only done on UCS2 hostvars)
 select _ucs2'abc' || '' from (values(1))x;
 
-select repeat(_ucs2 x'00c0 00d6', 25000) from (values(1))x;
+select left(repeat(_ucs2 x'00c0 00d6', 25000), 10) from (values(1))x;
 select _iso88591 x'$#' from (values(1))x;
 select _ucs2 x'0a$#' from (values(1))x;
 

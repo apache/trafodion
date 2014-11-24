@@ -1114,6 +1114,55 @@ A            B
 --- 0 row(s) selected.
 >>
 >>
+>>-- tests for large columns
+>>create table t011t4 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200000 bytes) character set utf8);
+
+--- SQL operation complete.
+>>insert into t011t4 values ('a', repeat('b', 200), 'c', repeat('d', 400));
+
+--- 1 row(s) inserted.
+>>select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
+
+(EXPR)                (EXPR)      (EXPR)                                    (EXPR)
+--------------------  ----------  ----------------------------------------  --------------------------------------------
+
+a                     bbbbbbbbbb  c                                         ddddddddddd                                 
+
+--- 1 row(s) selected.
+>>
+>>update t011t4 set b = repeat('b', 100000);
+
+--- 1 row(s) updated.
+>>select left(b, 50) from t011t4;
+
+(EXPR)                                            
+--------------------------------------------------
+
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+--- 1 row(s) selected.
+>>
+>>upsert into t011t4 values ('a', repeat('b', 100000), 'c', repeat('d', 100000)),
++>                               ('a', repeat('b', 50000), 'c', repeat('d', 50000));
+
+--- 2 row(s) inserted.
+>>select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
+
+(EXPR)                (EXPR)      (EXPR)                                    (EXPR)
+--------------------  ----------  ----------------------------------------  --------------------------------------------
+
+a                     bbbbbbbbbb  c                                         ddddddddddd                                 
+a                     bbbbbbbbbb  c                                         ddddddddddd                                 
+a                     bbbbbbbbbb  c                                         ddddddddddd                                 
+
+--- 3 row(s) selected.
+>>
+>>-- negative test
+>>create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200001 bytes) character set utf8);
+
+*** ERROR[4247] Specified size in bytes (200001) exceeds the maximum size allowed (200000) for column D.
+
+--- SQL operation failed with errors.
 >>
 >>
 >>log;

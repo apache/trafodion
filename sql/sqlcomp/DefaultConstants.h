@@ -3642,6 +3642,9 @@ enum DefaultConstants
   TRAF_LOAD_FORCE_CIF,
   TRAF_ENABLE_ORC_FORMAT,
 
+ // max size in bytes of a char or varchar column.
+  MAX_CHARACTER_COL_SIZE,
+
   // The threshold on the number of rows scanned in an index join scan. 
   // If the estimated value is below the threshold, the index will be 
   // subjected to the elimination heuristics.

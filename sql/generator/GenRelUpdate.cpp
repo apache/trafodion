@@ -597,28 +597,6 @@ static short genHbaseUpdOrInsertExpr(
   return 0;
 }
 
-///////////////////////////////////////////////////////////
-//
-// DP2Delete::codeGen()
-//
-// Returned Atp Layout
-//
-// +-------------+----------------+
-// | input data  |  sql table row |
-// | ( I tupps)  |   (1 tupp)     |
-// +-------------+----------------+
-//
-// Input Data -- Atp input to the node from its parent.
-// Output Data -- Row deleted from table (for base tables only).
-//
-//
-///////////////////////////////////////////////////////////
-short DP2Delete::codeGen(Generator * generator)
-{
-  GenAssert(FALSE, "DP2 delete not supported");
-  return 0;
-}
-
 //
 // Create and bind an assign node for each vertical-partition column
 // (i.e., a column in a partition of a VP table).  The assign node
@@ -654,29 +632,6 @@ static void bindVPCols(Generator *generator,
     }
 }
   
-
-///////////////////////////////////////////////////////////
-//
-// DP2Insert::codeGen()
-//
-//
-// Returned Atp Layout
-//
-// +-------------+----------------+
-// | input data  |  sql table row |
-// | ( I tupps)  |   (1 tupp)     |
-// +-------------+----------------+
-//
-// input data -- the atp input to the node from its parent.
-// sql table row -- tupp for row read from sql table.
-//
-///////////////////////////////////////////////////////////
-short DP2Insert::codeGen(Generator * generator)
-{
-  GenAssert(FALSE, "DP2 insert not supported");
-  return 0;
-}
-
 short HiveInsert::codeGen(Generator *generator)
 {
   if(!generator->explainDisabled()) {
@@ -776,26 +731,6 @@ static void orderColumnsByAlignment(NAArray<BaseColumn *>   columns,
     for( i = 0; i < varCols.entries(); i++ )
       orderedCols->insertAt( k++, varCols[ i ] );
 }
-
-ModifiedFieldMap * DP2Update::createMFMap(Generator * generator,
-					  NABoolean addedColumnPresent)
-{
-  GenAssert(FALSE, "Modified field map not supported");
-  return NULL;
-}
-
-///////////////////////////////////////////////////////////
-//
-// DP2Update::codeGen()
-//
-///////////////////////////////////////////////////////////
-#pragma nowarn(770)  // warning elimination 
-short DP2Update::codeGen(Generator * generator)
-{
-  GenAssert(FALSE, "DP2 update not supported");
-  return 0;
-}
-#pragma warn(770)  // warning elimination 
 
 short Delete::codeGen(Generator * /*generator*/)
 {

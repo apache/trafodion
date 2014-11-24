@@ -63,19 +63,33 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
 
+	    if (tcb_->setupHbaseFilterPreds())
+	      {
+		step_ = HANDLE_ERROR;
+		break;
+	      }
+
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   FALSE, NULL, NULL, NULL);
+					   FALSE, 
+					   (tcb_->hbaseFilterColumns_.size() > 0 ?
+					    &tcb_->hbaseFilterColumns_ : NULL),
+					   (tcb_->hbaseFilterOps_.size() > 0 ?
+					    &tcb_->hbaseFilterOps_ : NULL),
+					   (tcb_->hbaseFilterValues_.size() > 0 ?
+					    &tcb_->hbaseFilterValues_ : NULL),
+					   tcb_->getSamplePercentage());
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
 	      step_ = NEXT_ROW;
 	  }
 	  break;
+
 	case NEXT_ROW:
  	  {
 	    retcode = tcb_->ehi_->nextRow();
@@ -109,6 +123,7 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
                step_ = CREATE_ROW;
 	  }
 	  break;
+
 	case CREATE_ROW:
 	  {
 	    rc = tcb_->createColumnwiseRow();
@@ -117,7 +132,12 @@ ExWorkProcRetcode ExHbaseScanTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
-
+            else if (tcb_->setupError(rc, "ExHbaseAccessTcb::createColumnwiseRow", "Not enough space in target buffer to move data"))
+              {
+                step_ = HANDLE_ERROR;
+                break;
+              }
+            
 	    step_ = APPLY_PRED;
 	  }
 	  break;
@@ -216,13 +236,26 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
 
+	    if (tcb_->setupHbaseFilterPreds())
+	      {
+		step_ = HANDLE_ERROR;
+		break;
+	      }
+
 	    retcode = tcb_->ehi_->scanOpen(tcb_->table_, 
 					   tcb_->beginRowId_, tcb_->endRowId_,
 					   tcb_->columns_, -1,
 					   tcb_->hbaseAccessTdb().readUncommittedScan(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->cacheBlocks(),
 					   tcb_->hbaseAccessTdb().getHbasePerfAttributes()->numCacheRows(),
-					   FALSE, NULL, NULL, NULL);
+					   FALSE, 
+					   (tcb_->hbaseFilterColumns_.size() > 0 ?
+					    &tcb_->hbaseFilterColumns_ : NULL),
+					   (tcb_->hbaseFilterOps_.size() > 0 ?
+					    &tcb_->hbaseFilterOps_ : NULL),
+					   (tcb_->hbaseFilterValues_.size() > 0 ?
+					    &tcb_->hbaseFilterValues_ : NULL),
+					   tcb_->getSamplePercentage());
 	    if (tcb_->setupError(retcode, "ExpHbaseInterface::scanOpen"))
 	      step_ = HANDLE_ERROR;
 	    else
@@ -271,8 +304,11 @@ ExWorkProcRetcode ExHbaseScanRowwiseTaskTcb::work(short &rc)
 
 	case APPEND_ROW:
 	  {
-	    tcb_->copyCell();
-	    step_ = NEXT_CELL;
+	    retcode = tcb_->copyCell();
+            if (tcb_->setupError(retcode, "ExHbaseAccessTcb::copyCell", "Not enough space in target buffer to move data"))
+              step_ = HANDLE_ERROR;
+            else
+              step_ = NEXT_CELL;
 	  }
 	  break;
 
@@ -695,6 +731,11 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 		step_ = HANDLE_ERROR;
 		break;
 	      }
+            else if (tcb_->setupError(rc, "ExHbaseAccessTcb::createColumnwiseRow", "Not enough space in target buffer to move data"))
+              {
+                step_ = HANDLE_ERROR;
+                break;
+              }
 	    
 	    step_ = APPLY_PRED;
 	  }
@@ -860,8 +901,11 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 
 	case APPEND_ROW:
 	  {
-	    tcb_->copyCell();
-	    step_ = NEXT_CELL;
+	    retcode = tcb_->copyCell();
+            if (tcb_->setupError(retcode, "ExHbaseAccessTcb::copyCell", "Not enough space in target buffer to move data"))
+              step_ = HANDLE_ERROR;
+            else
+              step_ = NEXT_CELL;
 	  }
 	  break;
 

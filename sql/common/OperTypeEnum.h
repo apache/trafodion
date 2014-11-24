@@ -183,23 +183,6 @@ enum OperatorTypeEnum {
                         REL_DDL,
                         REL_DESCRIBE,
                         REL_EXE_UTIL,
-                        // for use with REL_ANY_DP2_INSUPDDEL
-                        REL_DP2_INSUPDDEL_FIRST,
-                        REL_DP2_INSERT_CURSOR,
-                        REL_DP2_INSERT_VSBB,
-                        REL_DP2_INSERT_SIDETREE,
-                        REL_DP2_DELETE_UNIQUE,
-                        REL_DP2_DELETE_CURSOR,
-                        REL_DP2_DELETE_SUBSET,
-#if 0
-// use subset delete instead, done as part of SQ SQL code cleanup effort
-                        REL_DP2_DELETE_RANGE,
-#endif // if 0
-                        REL_DP2_UPDATE_UNIQUE,
-                        REL_DP2_UPDATE_CURSOR,
-                        REL_DP2_UPDATE_SUBSET,
-                        REL_DP2_INSUPDDEL_LAST,
-                        REL_ANY_DP2_INSUPDDEL,  // wildcard (match() param)
 
                         REL_SORT_LOGICAL,
 

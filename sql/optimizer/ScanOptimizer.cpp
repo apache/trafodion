@@ -3326,6 +3326,12 @@ ScanOptimizer::isMdamEnabled() const
 
   const IndexDesc* idesc = getIndexDesc();
 
+  NABoolean isHbaseNativeTable = 
+    idesc->getPrimaryTableDesc()->getNATable()->isHbaseCellTable() ||
+    idesc->getPrimaryTableDesc()->getNATable()->isHbaseRowTable();
+  if (isHbaseNativeTable)
+    mdamIsEnabled = FALSE;
+
   // If the table to be optimized is the base table and has divisioning
   // columns defined on it, no more check is necessary.
   if ( idesc == idesc->getPrimaryTableDesc()->getClusteringIndex() ) {

@@ -57,15 +57,10 @@ class LeafDelete;
 
 // The following are physical operators
 class InsertCursor;
-class DP2Insert;
-class DP2VSBBInsert;
-class DP2SideTreeInsert;
 
 class UpdateCursor;
-class DP2Update;
 
 class DeleteCursor;
-class DP2Delete;
 
 // -----------------------------------------------------------------------
 // forward references
@@ -1713,127 +1708,6 @@ private:
 
 };
 
-// -----------------------------------------------------------------------
-// executor-in-dp2 insert operator
-// -----------------------------------------------------------------------
-class DP2Insert : public InsertCursor
-{
-public:
-
-  // constructor
-  DP2Insert(Insert *insertNode,
-            CollHeap  *oHeap = CmpCommon::statementHeap());
-
-  DP2Insert(CorrName &name,
-            TableDesc *tableDesc,
-            CollHeap  *oHeap = CmpCommon::statementHeap());
-
-  // copy ctor
-  DP2Insert (const DP2Insert &, const OperatorTypeEnum) ; // not written
-
-  // get the degree of this node (it is a leaf op).
-  virtual Int32 getArity() const;
-
-  // Obtain a pointer to a CostMethod object that provides access
-  // to the cost estimation functions for nodes of this type.
-  virtual CostMethod *costMethod() const;
-
-  // cost functions
-  virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
-
-  // method to do code generation
-  virtual RelExpr *preCodeGen(Generator * generator,
-                              const ValueIdSet & externalInputs,
-                              ValueIdSet &pulledNewInputs);
-  virtual short codeGen(Generator *);
-  // virtual short imCodeGen(Generator *, IndexMaintenanceData *);
-
-  virtual RelExpr *copyTopNode(RelExpr *derivedNode = NULL,
-			       CollHeap *outHeap = CmpCommon::statementHeap());
-
-  NABoolean getProjectMidRangeRows() const
-    { return projectMidRangeRows_; }
-  void setProjectMidRangeRows()
-    { projectMidRangeRows_ = TRUE; }
-
-  NABoolean getRequireStrongRangeLock() const
-  { return requireStrongRangeLock_; }
-  void setRequireStrongRangeLock()
-  { requireStrongRangeLock_ = TRUE; }
-
-  NABoolean getUseDP2LocksToPreventHalloween() const
-  { return useDP2LocksToPreventHalloween_; }
-  void setUseDP2LocksToPreventHalloween()
-  { useDP2LocksToPreventHalloween_ = TRUE; }
-
-  NABoolean getIgnoreDuplicateRows() const
-  { return ignoreDuplicateRows_; }
-  void setIgnoreDuplciateRows()
-  { ignoreDuplicateRows_ = TRUE; }
-  
-  NABoolean isInsertSelectQuery() const
-  { return insertSelectQuery_; }
-  void setInsertSelectQuery(NABoolean v)
-  { insertSelectQuery_ = v; }
-
-  ValueIdList &lobLoadExpr()                    { return lobLoadExpr_; }
-
-private:
-
-  // -- MVs
-  // This flag is on when:
-  //   1) This is a VSBB Insert node.
-  //   2) MV logging is inlined in Range logging mode.
-  //   3) The inserted rows are also used for IM etc.
-  NABoolean projectMidRangeRows_;
-
-  // -- MVs
-  // When MV range logging is using the VSBB method, the lock needs to cover
-  // the entire range until the end of the transaction.
-  NABoolean requireStrongRangeLock_;
-
-  // Pass special lock flags to DP2 to signal that DP2 should help
-  // prevent Halloween.
-  NABoolean useDP2LocksToPreventHalloween_;
-      
-  // For SET tables, duplicate rows must be ignored silently. This
-  // flag is passed to DP2 when certain conditions are met. For
-  // applicable conditions, see Dp2Insert::PreCodeGen().
-  NABoolean ignoreDuplicateRows_;
-  
-  // Identifies if insert-select query  
-  NABoolean insertSelectQuery_;
-
-  // used when lob colums are being loaded. Set in GenPreCode.
-  ValueIdList lobLoadExpr_;
-};
-
-class DP2VSBBInsert : public DP2Insert
-{
-public:
-
-  // constructor
-  DP2VSBBInsert(DP2Insert *insert
-               );
-
-  // Obtain a pointer to a CostMethod object that provides access
-  // to the cost estimation functions for VSBB Inserts.
-  virtual CostMethod *costMethod() const;
-};
-
-class DP2SideTreeInsert : public DP2Insert
-{
-public:
-  // constructor
-  DP2SideTreeInsert(DP2Insert *insert );
-
-  // Obtain a pointer to a CostMethod object that provides access
-  // to the cost estimation functions for SideTree Inserts.
-  virtual CostMethod *costMethod() const;
-};
-
-
 // physical Hive Insert
 class HiveInsert: public Insert
 {
@@ -1996,65 +1870,6 @@ private:
 
 };
 
-// -----------------------------------------------------------------------
-// executor-in-dp2 update operator
-// -----------------------------------------------------------------------
-class DP2Update : public UpdateCursor
-{
-public:
-
-  // constructor
-  DP2Update(const CorrName &name,
-            TableDesc *tableDesc,
-            OperatorTypeEnum opType,
-            CollHeap *oHeap = CmpCommon::statementHeap())
-    : UpdateCursor(name, tableDesc, opType, NULL, oHeap)
-    // QSTUFF
-    ,reverseScan_(FALSE)
-    // QSTUFF
-  {}
-
-  // get the degree of this node (it is a leaf op).
-  virtual Int32 getArity() const;
-
-  const NAString getText() const;
-
-  // The set of values that I can potentially produce as output.
-  virtual void getPotentialOutputValues(ValueIdSet &vs) const;
-
-  // Obtain a pointer to a CostMethod object that provides access
-  // to the cost estimation functions for nodes of this type.
-  virtual CostMethod *costMethod() const;
-
-  // QSTUFF
-  virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
-  //QSTUFF
-
-  // method to do code generation
-  virtual RelExpr *preCodeGen(Generator * generator,
-                              const ValueIdSet & externalInputs,
-                              ValueIdSet &pulledNewInputs);
-  virtual short codeGen(Generator *);
-  // virtual short imCodeGen(Generator *, IndexMaintenanceData *);
-
-  // creates the modified field map which is used to compress the audit
-  // log for audit-compressed tables. This method is defined in file
-  // GenRelUpdate.C
-  ModifiedFieldMap *createMFMap(Generator *, NABoolean);
-
-  // QSTUFF
-  inline void setReverseScan(NABoolean rs) { reverseScan_ = rs; }
-  inline NABoolean getReverseScan() { return reverseScan_; }
-  // QSTUFF
-
-  // QSTUFF
-private:
-
-  NABoolean reverseScan_;
-  // QSTUFF
-};
-
 class HbaseUpdate : public UpdateCursor
 {
 public:
@@ -2181,65 +1996,6 @@ public:
   const NAString getText() const;
 
 private:
-
-};
-
-// -----------------------------------------------------------------------
-// executor-in-dp2 delete operator
-// -----------------------------------------------------------------------
-class DP2Delete : public DeleteCursor
-{
-public:
-
-  // constructor
-  DP2Delete(const CorrName &name,
-            TableDesc *tableDesc,
-            OperatorTypeEnum opType,
-            CollHeap *oHeap = CmpCommon::statementHeap())
-    : DeleteCursor(name, tableDesc, opType, NULL, oHeap)
-     // QSTUFF
-    ,reverseScan_(FALSE)
-    // QSTUFF
-  {}
-
-  // copy ctor
-  DP2Delete (const DP2Delete &) ; // not written
-
-  // get the degree of this node (it is a leaf op).
-  virtual Int32 getArity() const;
-
-  const NAString getText() const;
-
-  // The set of values that I can potentially produce as output.
-  virtual void getPotentialOutputValues(ValueIdSet &vs) const;
-
-  // Obtain a pointer to a CostMethod object that provides access
-  // to the cost estimation functions for nodes of this type.
-  virtual CostMethod *costMethod() const;
-
-  // QSTUFF
-  // cost functions
-  virtual PhysicalProperty *synthPhysicalProperty(const Context *context,
-                                                  const Lng32    planNumber);
-  // QSTUFF
-
-  // method to do code generation
-  virtual RelExpr *preCodeGen(Generator * generator,
-                              const ValueIdSet & externalInputs,
-                              ValueIdSet &pulledNewInputs);
-  virtual short codeGen(Generator *);
-  // virtual short imCodeGen(Generator *, IndexMaintenanceData *);
-
-  // QSTUFF
-  inline void setReverseScan(NABoolean rs) { reverseScan_ = rs; }
-  inline NABoolean getReverseScan() { return reverseScan_; }
-  // QSTUFF
-
-  // QSTUFF
-private:
-
-  NABoolean reverseScan_;
-  // QSTUFF
 
 };
 

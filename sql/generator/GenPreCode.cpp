@@ -1783,22 +1783,9 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 	{
 	  exchExpr = childExpr;
 	  childExpr = childExpr->child(0)->castToRelExpr();
-	  if ((NOT childExpr->getOperator().match(REL_ANY_DP2_INSUPDDEL)) &&
-	      (NOT childExpr->getOperator().match(REL_FORCE_ANY_SCAN)))
+          if (NOT childExpr->getOperator().match(REL_FORCE_ANY_SCAN))
 	    {
 	      doMaxOneInputRowOpt = FALSE;
-	    }
-	  else if ((childExpr->getOperatorType() == REL_DP2_UPDATE_SUBSET) ||
-		   (childExpr->getOperatorType() == REL_DP2_DELETE_SUBSET))
-	    {
-	      GenericUpdate * ge = (GenericUpdate*)childExpr;
-	      if (ge->producesOutputs())
-		doMaxOneRowOpt = FALSE;
-	      if (ge->getGroupAttr()->isEmbeddedUpdateOrDelete())
-		  //		  (ge->accessOptions().accessType() == SKIP_CONFLICT_) ||
-		  //		  (ge->getGroupAttr()->isStream()) ||
-		  //		  (ge->newRecBeforeExprArray().entries() > 0))
-		doMaxOneInputRowOpt = FALSE;
 	    }
 	  else if (childExpr->getOperatorType() == REL_FILE_SCAN)
 	    {
@@ -2137,24 +2124,6 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
 
   if (isTrueRoot())
     {
-      //
-      if ((child(0)) &&
-	  (child(0)->castToRelExpr()->getOperatorType() == REL_PARTITION_ACCESS) &&
-	  (child(0)->child(0)))
-      {
-	OperatorTypeEnum currGrandChildOper =
-	  child(0)->child(0)->castToRelExpr()->getOperatorType();
-
-	if ((CmpCommon::getDefault(ENABLE_DP2_XNS) == DF_ON) &&
-            ((currGrandChildOper == REL_DP2_INSERT_CURSOR) ||
-	     (currGrandChildOper == REL_DP2_UPDATE_UNIQUE) ||
-	     (currGrandChildOper == REL_DP2_DELETE_UNIQUE)) &&
-	    (oltOptInfo().oltCliOpt() &&
-	     oltOptInfo().oltMsgOpt() &&
-	     oltOptInfo().oltEidOpt()))
-	  generator->setDp2XnsEnabled(TRUE);
-      }
-
       if (generator->enableTransformToSTI())
 	//	  (NOT generator->noTransformToSTI()))
 	{
@@ -4334,24 +4303,7 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 	  identityCol = valId.getNAColumn();
 	}
 
-      // merge not allowed with subset operations.
-      // merge also not allowed if cursor merge/update is chosen
-      // and a mergeInsert expression was specified.
-      if ((getOperatorType() != REL_DP2_UPDATE_UNIQUE) &&
-	  (getOperatorType() != REL_DP2_DELETE_UNIQUE))
-	{
-	  if (CmpCommon::getDefault(COMP_BOOL_174) == DF_OFF)
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-3241)
-	                          << DgString0(" Non-unique ON clause not allowed.");
-	      GenExit();
-	    }
-	}
-
-      if ((getOperatorType() != REL_DP2_UPDATE_UNIQUE) &&
-          (getOperatorType() != REL_DP2_UPDATE_CURSOR) &&
-	  (getOperatorType() != REL_DP2_DELETE_UNIQUE) &&
-	  (getOperatorType() != REL_HBASE_UPDATE) &&
+      if ((getOperatorType() != REL_HBASE_UPDATE) &&
 	  (mergeInsertRecExpr().entries() > 0))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-3241)
@@ -4359,21 +4311,18 @@ RelExpr * GenericUpdate::preCodeGen(Generator * generator,
 	  GenExit();
 	}
 
-      if (((getOperatorType() == REL_DP2_UPDATE_UNIQUE) ||
-	   (getOperatorType() == REL_DP2_DELETE_UNIQUE) ||
-	   (getOperatorType() == REL_HBASE_DELETE) ||
-	   (getOperatorType() == REL_HBASE_UPDATE)) &&
-	  (getTableDesc()->getNATable()->getClusteringIndex()->hasSyskey()))
+      if (((getOperatorType() == REL_HBASE_DELETE) ||
+           (getOperatorType() == REL_HBASE_UPDATE)) &&
+          (getTableDesc()->getNATable()->getClusteringIndex()->hasSyskey()))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-3241) 
 			      << DgString0(" SYSKEY not allowed.");
 	  GenExit();
 	}
 
-      if (((getOperatorType() == REL_DP2_DELETE_UNIQUE) ||
-	   (getOperatorType() == REL_HBASE_DELETE)) &&
-	  (mergeInsertRecExpr().entries() > 0) &&
-	  (CmpCommon::getDefault(COMP_BOOL_175) == DF_OFF))
+      if ((getOperatorType() == REL_HBASE_DELETE) &&
+          (mergeInsertRecExpr().entries() > 0) &&
+          (CmpCommon::getDefault(COMP_BOOL_175) == DF_OFF))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-3241)
 			      << DgString0(" MERGE delete not allowed with INSERT.");
@@ -4524,127 +4473,6 @@ RelExpr * UpdateCursor::preCodeGen(Generator * generator,
   return this;
 } // UpdateCursor::preCodeGen()
 
-RelExpr * DP2Update::preCodeGen(Generator * generator,
-				const ValueIdSet & externalInputs,
-				ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  // start with input olt eid opt indication
-  oltOptInfo().setOltEidOpt(generator->oltOptInfo()->oltEidOpt());
-
-  generator->oltOptInfo()->setMultipleRowsReturned(FALSE);
-
-  if (getOperatorType() != REL_DP2_UPDATE_UNIQUE)
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  // 'merge' stmt not supported for olt opt, if values are being returned.
-  if ((isMergeUpdate()) && (producesOutputs()))
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-    
-  if ( getTableDesc()->getNATable()->hasAddedColumn() &&
-       (CmpCommon::getDefault(EXPAND_DP2_SHORT_ROWS) == DF_ON) &&
-       (NOT getTableDesc()->getNATable()->isSQLMPTable()) &&
-       getTableDesc()->getVerticalPartitions().isEmpty() &&
-       getIndexDesc()->isClusteringIndex()   // true if base table not an index
-       )
-  {
-    // In specific cases for SQL/MX tables that have added columns we will expand
-    // the row data to include any missing column default values allowing
-    // other optimizations and PCode.
-    setExpandShortRows( TRUE );
-  }
-
-  // if subset update or a non-update-curr-of cursor update,
-  // turn off 'error on error'.
-  // A non-update-curr-of cursor could be chosen for an
-  // update query with the shape:    tuple_flow(scan, update)
-  if ((getOperatorType() == REL_DP2_UPDATE_SUBSET) ||
-      (getOperatorType() == REL_DP2_UPDATE_CURSOR &&
-       NOT updateCurrentOf()))
-    {
-      generator->setUpdErrorOnError(FALSE);
-    }
-
-  PartitioningFunction *partFunc =
-    getTableDesc() ?
-      getTableDesc()->getClusteringIndex()->
-        getNAFileSet()->getPartitioningFunction()
-    : 0;
-
-  // Cannot do olt msg opt if:
-  //   -- values are to be returned and unique operation is not being used.
-  //   -- or table is partitioned and unique operation is not being used.
-  GenAssert(partFunc, "DP2Update::preCodeGen : missing partition");
-
-  if ((getOperatorType() != REL_DP2_UPDATE_UNIQUE) &&
-      ((producesOutputs()) || (partFunc->isPartitioned())))
-    {
-      generator->oltOptInfo()->setOltMsgOpt(FALSE);
-
-      if (producesOutputs())
-	{
-	  // set an indication that multiple rows will be returned.
-	  generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
-	}
-    }
-
-  // eid olt opt not yet enabled, if constraints are present
-  if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
-    oltOptInfo().setOltEidOpt(FALSE);
-
-  // eid olt opt done for key seq non-compressed tables with user
-  // defined primary key.
-  if ((NOT getIndexDesc()->getNAFileSet()->isKeySequenced()) ||
-      //      (getIndexDesc()->getAllColumns()[0]->isSystemColumn()) ||
-      (getIndexDesc()->getNAFileSet()->isCompressed()))
-  {
-    oltOptInfo().setOltEidOpt(FALSE);
-    setExpandShortRows( FALSE );
-  }
-
-  if (getIndexDesc()->getAllColumns()[0]->isSyskeyColumn())
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  // The OLT optimized nodes do not support logging yet.  
-  ValueId   epochValueId;
-  if (getOutputFunctionsForMV(epochValueId, ITM_CURRENTEPOCH))
-  {
-    oltOptInfo().setOltEidOpt(FALSE);    
-  }
-
-  if (oltOpt() &&        // true if any olt optimization is on
-      (NOT expandShortRows()) &&
-      getTableDesc()->getNATable()->hasAddedColumn())
-  {
-    oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  // see if 'lean' olt opt can be done
-  oltOptInfo().setOltEidLeanOpt(FALSE);
-  if ((oltOpt()) &&
-      (generator->oltOptInfo()->oltEidLeanOpt()) &&
-      (NOT producesOutputs()))
-  {
-    oltOptInfo().setOltEidLeanOpt(TRUE);
-    setExpandShortRows( FALSE );
-  }
-
-
-  generator->compilerStatsInfo().dp2RowsAccessed() += 
-    getEstRowsUsed().value();
-  //    getEstRowsAccessed().value();
-
-  return UpdateCursor::preCodeGen(generator, externalInputs, pulledNewInputs);
-}
-
 RelExpr * MergeDelete::preCodeGen(Generator * generator,
 				  const ValueIdSet & externalInputs,
 				  ValueIdSet &pulledNewInputs)
@@ -4658,441 +4486,6 @@ RelExpr * MergeDelete::preCodeGen(Generator * generator,
   markAsPreCodeGenned();
 
   return this;
-}
-
-RelExpr * DP2Delete::preCodeGen(Generator * generator,
-				const ValueIdSet & externalInputs,
-				ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  // start with input olt eid opt indication
-  oltOptInfo().setOltEidOpt(generator->oltOptInfo()->oltEidOpt());
-
-  generator->oltOptInfo()->setMultipleRowsReturned(FALSE);
-
-  NABoolean isAUniqueDelete = FALSE;
-  if ((getOperatorType() == REL_DP2_DELETE_UNIQUE) ||
-      ((getOperatorType() == REL_DP2_DELETE_CURSOR) &&
-       (! getenv("NO_OLT_DELETE_CURSOR"))))
-    isAUniqueDelete = TRUE;
-
-  if (NOT isAUniqueDelete)
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  // 'merge' stmt not supported for olt opt delete
-  if (isMergeDelete())
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  if (isFastDelete())
-    {
-      generator->setUpdAbortOnError(TRUE);
-      generator->setUpdSavepointOnError(FALSE);
-    }
-    
-  // Make sure we don't try to expand short rows if
-  //  - there are no added columns
-  //  - the feature is turned off
-  //  - a vertical partition table
-  //  - is not a base table (no expand needed for index tables)
-  if ( getTableDesc()->getNATable()->hasAddedColumn() &&
-       (CmpCommon::getDefault(EXPAND_DP2_SHORT_ROWS) == DF_ON) &&
-       (NOT getTableDesc()->getNATable()->isSQLMPTable()) &&
-       getTableDesc()->getVerticalPartitions().isEmpty() &&
-       getIndexDesc()->isClusteringIndex()   // true if base table not an index
-       )
-  {
-    // In specific cases for SQL/MX tables that have added columns we will expand
-    // the row data to include any missing column default values allowing
-    // other optimizations and PCode.
-    setExpandShortRows( TRUE );
-  }
-
-  // if subset delete or a non-delete-curr-of cursor delete,
-  // turn off 'error on error'.
-  // A non-delete-curr-of cursor could be chosen for a
-  // delete query with the shape:    tuple_flow(scan, delete)
-  if ((getOperatorType() == REL_DP2_DELETE_SUBSET) ||
-      (getOperatorType() == REL_DP2_DELETE_CURSOR &&
-       NOT updateCurrentOf()))
-    {
-      generator->setUpdErrorOnError(FALSE);
-    }
-
-
-  PartitioningFunction *partFunc =
-    getTableDesc() ?
-      getTableDesc()->getClusteringIndex()->
-        getNAFileSet()->getPartitioningFunction()
-    : 0;
-
-  // Cannot do olt msg opt if:
-  //   -- values are to be returned and unique operation is not being used.
-  //   -- or table is partitioned and unique operation is not being used.
-
-  GenAssert(partFunc, "DP2Delete::preCodeGen : missing partition");
-  if ((NOT isAUniqueDelete) &&
-      ((producesOutputs()) || (partFunc->isPartitioned())))
-    {
-      generator->oltOptInfo()->setOltMsgOpt(FALSE);
-
-      if (producesOutputs())
-	{
-	  // set an indication that multiple rows will be returned.
-	  generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
-	}
-    }
-
-  // eid olt opt done for key seq non-compressed tables with user
-  // defined primary key.
-  if ((NOT getIndexDesc()->getNAFileSet()->isKeySequenced()) ||
-      //      (getIndexDesc()->getAllColumns()[0]->isSystemColumn()) ||
-      (getIndexDesc()->getNAFileSet()->isCompressed()))
-  {
-    oltOptInfo().setOltOpt(FALSE);
-    setExpandShortRows( FALSE );
-  }
-
-
-  if (getIndexDesc()->getAllColumns()[0]->isSyskeyColumn())
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-    }
-
-  // The OLT optimized nodes do not support logging yet.
-  ValueId   epochValueId;
-  if (getOutputFunctionsForMV(epochValueId, ITM_CURRENTEPOCH))
-  {
-    oltOptInfo().setOltOpt(FALSE);
-    setExpandShortRows( FALSE );
-  }
-
-  if (oltOpt() &&
-      (NOT expandShortRows()) &&
-      getTableDesc()->getNATable()->hasAddedColumn())
-  {
-    oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  // see if 'lean' olt opt could be done.
-  oltOptInfo().setOltEidLeanOpt(FALSE);
-  if ((oltOpt()) &&
-      (generator->oltOptInfo()->oltEidLeanOpt()))
-  {
-    oltOptInfo().setOltEidLeanOpt(TRUE);
-    setExpandShortRows( FALSE );   // not yet for opt lean ...
-  }
-
-  generator->compilerStatsInfo().dp2RowsAccessed() += 
-    getEstRowsUsed().value();
-
-  return DeleteCursor::preCodeGen(generator, externalInputs, pulledNewInputs);
-}
-
-
-RelExpr * DP2Insert::preCodeGen(Generator * generator,
-				const ValueIdSet & externalInputs,
-				ValueIdSet &pulledNewInputs)
-{
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  if ((generator->getUserSidetreeInsert()) &&
-      (insertType_ == VSBB_LOAD_USER_SIDEINSERTS))
-    {
-      GenAssert(FALSE,
-		"Cannot have more than one UserLoad sidetree insert operators");
-    }
-
-  if (insertType_ == VSBB_LOAD_USER_SIDEINSERTS)
-    {
-      generator->setUserSidetreeInsert(TRUE);
-
-      if ((getInliningInfo().hasInlinedActions()) ||
-	  (getInliningInfo().isEffectiveGU()) ||
-	  (getTableDesc()->getNATable()->hasLobColumn()))
-	{
-	  GenAssert(FALSE, "IM, RI, Triggers, MV, and Blob columns are not supported with UserLoad");
-	}
-
-    }
-
-  // start with input olt eid opt indication
-  oltOptInfo().setOltEidOpt(generator->oltOptInfo()->oltEidOpt());
-
-  const Int32 isVPTable =
-    getTableDesc() && !getTableDesc()->getVerticalPartitions().isEmpty();
-
-  if (isVPTable)
-    {
-      oltOptInfo().setOltEidOpt(FALSE);
-      generator->setUpdAbortOnError(TRUE);
-      generator->setUpdSavepointOnError(FALSE);
-      generator->setUpdPartialOnError(FALSE);
-      generator->setUpdErrorOnError(FALSE);
-    }
-
-  // olt opt not yet enabled, if constraints are present
-  if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries())
-    oltOptInfo().setOltEidOpt(FALSE);
-
-  // if the syskey is used as a USER_COLUMN then don't enable olt opt.
-  // When the CQD OVERRIDE_SYSKEY is set to 'ON' the SYSKEY is treated
-  // as a USER_COLUMN, which means the user can specify a value for the SYSKEY.
-  // The system does not generate one.
-
-  if (getTableDesc()->getNATable()->hasSystemColumnUsedAsUserColumn())
-      oltOptInfo().setOltOpt(FALSE);
-
-  // eid olt opt done for key seq non-compressed tables with user
-  // defined primary key.
-  if ((NOT getIndexDesc()->getNAFileSet()->isKeySequenced()) ||
-      (getIndexDesc()->getAllColumns()[0]->isSyskeyColumn()) ||
-      (getIndexDesc()->getNAFileSet()->isCompressed()))
-    oltOptInfo().setOltEidOpt(FALSE);
-
-  // don't use olt eid optimization for table with added column
-  // or IUD log tables
-  if (oltOpt() && 
-      ((getTableDesc()->getNATable()->hasAddedColumn()) ||       
-       (ExtendedQualName::IUD_LOG_TABLE == 
-            getTableDesc()->getNATable()->getSpecialType())))
-  {
-    oltOptInfo().setOltEidOpt(FALSE);
-  }
-
-  // Choose not to use VSBB or sidetree insert if the number of rows is
-  // less than MIN_ROWS_FOR_VSBB.
-  // An estimate for the number of rows being inserted
-  // is obtained from inputCardinality of the Insert RelExpr.
-  // Do not do this if there are 'inlined' actions, they are
-  // handled in optimizer (ImplRule.cpp).
-  if ((NOT getInliningInfo().hasInlinedActions()) &&
-      (getInsertType() != Insert::SIMPLE_INSERT) &&
-      (getInsertType() != Insert::VSBB_LOAD) &&
-      (getInsertType() != Insert::VSBB_LOAD_USER_SIDEINSERTS) &&
-      (getInsertType() != Insert::VSBB_LOAD_AUDITED) &&
-      (CmpCommon::getDefault(INSERT_VSBB) != DF_USER) &&
-      (getInputCardinality().getValue() <= MIN_ROWS_FOR_VSBB))
-    setInsertType(Insert::SIMPLE_INSERT);
-
-  // Also choose not to use VSBB inserts when SET tables
-  // and ON STATEMENT MV is involved. The rowset counts 
-  // Dp2 reports on the rows ignored, at present is not 
-  // handled properly and cause row count mismatch. There
-  // is no problem when regular inserts are used.
-  const UsingMvInfoList &usingMvList = 
-    getTableDesc()->getNATable()->getMvsUsingMe();
-  if((getInsertType() != Insert::SIMPLE_INSERT )&&
-     getTableDesc()->getNATable()->isSetTable() &&
-     usingMvList.entries())
-    setInsertType(Insert::SIMPLE_INSERT);
-
-  if ((getInsertType() == Insert::VSBB_INSERT_SYSTEM) ||
-      (getInsertType() == Insert::VSBB_INSERT_USER) ||
-      (getInsertType() == Insert::VSBB_LOAD_AUDITED))
-    {
-      // cannot use DP2 savepoints for VSBB inserts. DP2 restriction.
-      //      generator->setUpdAbortOnError(TRUE);
-      generator->setUpdSavepointOnError(FALSE);
-      generator->setUpdErrorOnError(FALSE);
-    }
-
-
-  // The OLT optimized nodes do not support logging.
-  ValueId   epochValueId;
-  if (getOutputFunctionsForMV(epochValueId, ITM_CURRENTEPOCH))
-    oltOptInfo().setOltEidOpt(FALSE);
-
-  // see if 'lean' olt opt could be done.
-  oltOptInfo().setOltEidLeanOpt(FALSE);
-  if ((oltOpt()) &&
-      (generator->oltOptInfo()->oltEidLeanOpt()))
-    {
-      unsigned short keytag = 0;
-      if ((getTableDesc()->getNATable()->isSQLMPTable()) &&
-	  (getIndexDesc()->getNAFileSet()->getSQLMPKeytag() > 0))
-	{
-	  keytag = getIndexDesc()->getNAFileSet()->getSQLMPKeytag();
-	}
-
-      oltOptInfo().setOltEidLeanOpt(TRUE);
-
-      if ((insertType_ != SIMPLE_INSERT) ||
-	  (keytag != 0))
-	oltOptInfo().setOltEidLeanOpt(FALSE);
-    }
-
-#if 0
-  // Stats collection for sidetree insert is not being done correctly
-  // and results in a stats counter overflow on large inserts.
-  // Turn statistics off, if sidetree insert is being used.
-  // This will be enabled after stats collection pbm is fixed.
-  if ((getInsertType() == Insert::VSBB_LOAD) ||
-      (getInsertType() == Insert::VSBB_LOAD_USER_SIDEINSERTS) ||
-      (getInsertType() == Insert::VSBB_LOAD_AUDITED))
-    {
-    // If plan stealing is OFF then assume this insert statement is coming
-    // from update stats. Update stats needs to collect statsitics so that
-    // it can accurately compute the rowcount of the source table.
-      if (CmpCommon::getDefault(PLAN_STEALING) != DF_OFF)
-	generator->setComputeStats(FALSE);
-    }
-#endif
-
-   if (Generator::DP2LOCKS == generator->getHalloweenProtection())
-    {
-      // Keep track of all DP2Inserts in case the DP2Locks method is 
-      // used for Halloween protection.
-
-      // If the table type is for a temporary TRIGGER table,
-      // then do not insert the table into the InsertNodesList
-
-      if (getTableDesc()->getNATable()->getExtendedQualName().getSpecialType() != ExtendedQualName::TRIGTEMP_TABLE) // Triggers
-        generator->getInsertNodesList().insert(this);
-
-    }
-   
-  // Set IgnoreDuplicateRow flag if SET behavior is required.
-  // SET behavior only applicable on base table, no RI, no MV etc.
-  // SET behavior slightly varies between general mode verses
-  // mode_special_1 mode. Details as follows:
-  //
-  // MODE_SPECIAL_1 mode:
-  // --------------------
-  // 1. if the query is an INSERT-VALUES, then duplicate rows are *not* ignored.
-  // A duplicate key insert error is returned.
-  //
-  // 2. if the query is an INSERT-SELECT, then duplicate rows are silently ignored
-  // and no error is returned.
-  //
-  // 3. if the query is a loader query, then duplicate rows are *not* ignored.
-  // All error rows are captured and returned to user through a log file.
-  //
-  // Enabling ignoreDuplicateRows only when mode_special_1 is set and if
-  // Insert-select query, will take care of above three cases.
-  //
-  // General Mode:
-  // -------------
-  // 1. if the query is an INSERT-VALUES with no rowsets, or is an
-  // INSERT-SELECT query, then duplicate rows will be silently
-  // ignored and no error will be returned.
-  //
-  // 2. if the query is an INSERT-rowset without any indices, 
-  // then duplicate rows will be silently ignored and no error 
-  // will be returned.
-  //
-  // 3.if the query is an INSERT rowset with indices, then the
-  // base table will be treated as a SET table. All rules that
-  // apply to SET table will be applied. The index table will
-  // still be treated as a non-SET table. 
-  //
-  // Enabling ignoreDuplicateRows only when index table is not
-  // asociated with the SET base table should take care of all
-  // the above three cases in general mode.
-  
-  if ((getTableDesc()->getNATable()->getInsertMode() == COM_SET_TABLE_INSERT_MODE) &&
-      (getTableName().getSpecialType() == ExtendedQualName::NORMAL_TABLE) &&
-      (getIndexDesc()->getNAFileSet()->isKeySequenced()) &&
-      (getIndexDesc()->getNAFileSet()->getKeytag() == 0) &&
-      (computeRowsAffected()) &&
-      (generator->currentCmpContext()->internalCompile() !=
-	   CmpContext::INTERNAL_MODULENAME) &&
-      (NOT CmpCommon::statement()->isSMDRecompile()) &&
-      (NOT getIndexDesc()->getNAFileSet()->isSystemTable()) &&
-      (NOT getIndexDesc()->getNAFileSet()->hasSyskey()))
-    {
-      // Once all the above conditions are met, then there is one 
-      // additional restriction if mode_special_1. In mode_special_1,
-      // ignoring duplicate rows is only applicable for insert-select
-      // queries. Rest of the queries will have non-SET behavior in 
-      // mode_special_1.  This check is deferred for now. Can be
-      // forced if IGNORE_DUPLICATE_ROWS is enabled. 
-      if(CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-        {
-           if(isInsertSelectQuery())
-              setIgnoreDuplciateRows();
-        }
-      else
-      //General mode
-        setIgnoreDuplciateRows();
-    }
-    
-  /*  generator->incEstRowsUsed((Cardinality)(getInputCardinality() * getEstRowsUsed()).getValue());
-  generator->incEstRowsAccessed((Cardinality)(getInputCardinality() * getEstRowsUsed()).getValue());
-  */
-
-  generator->compilerStatsInfo().dp2RowsAccessed() += 
-    getEstRowsUsed().value();
-  generator->compilerStatsInfo().dp2RowsUsed() += 
-    getEstRowsUsed().value();
-
-  RelExpr * re =
-    InsertCursor::preCodeGen(generator, externalInputs, pulledNewInputs);
-  if (re == NULL)
-    return NULL;
-
-  if (enableTransformToSTI_)
-    {
-      NABoolean isVT = FALSE;
-      if (getTableDesc() && getTableDesc()->getNATable()->isVolatileTable())
-	isVT = TRUE;
-
-      if ((getPhysicalProperty()->getInsertedDataIsSorted()) &&
-	  (insertType_ != SIMPLE_INSERT) &&
-	  (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries() == 0) &&
-	  ((NOT isVT) ||
-	   (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT_WITH_ALTER) == DF_OFF)))
-	{
-	  if (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT_WITH_ALTER) == DF_ON)
-	    setInsertType(Insert::VSBB_LOAD_USER_SIDEINSERTS);
-	  else
-	    setInsertType(Insert::VSBB_LOAD_AUDITED);
-	}
-      else
-	{
-	  if (CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT_WARNINGS) == DF_ON)
-	    {
-	      NAString reason;
-	      
-	      if (NOT getPhysicalProperty()->getInsertedDataIsSorted())
-		reason = "Incoming data is not sorted";
-	      else if (insertType_ == SIMPLE_INSERT)
-		reason = "VSBB insert was not chosen";
-	      else if (getIndexDesc()->isClusteringIndex() && getCheckConstraints().entries() > 0)
-		reason = "Table has check constraints";
-	      else if (isVT)
-		reason = "Cannot alter a Volatile table";
-
-	      *CmpCommon::diags() << DgSqlCode(8587)
-				  << DgString0(reason.data());
-	    }
-
-	  enableTransformToSTI_ = FALSE;
-	}
-    }
-
-  if (enableTransformToSTI_)
-    {
-      generator->setEnableTransformToSTI(TRUE);
-      generator->utilInsertTable() = getTableName();
-    }
-  else
-    {
-      generator->setEnableTransformToSTI(FALSE);
-      if (enableAqrWnrEmpty_)
-        {
-          generator->setAqrWnrInsert(TRUE);
-          generator->utilInsertTable() = getTableName();
-        }
-    }
-
-  return re;
 }
 
 static NABoolean hasColReference(ItemExpr * ie)
@@ -5298,7 +4691,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	  if (nas)
 	    {
 	      ExFunctionHbaseColumnLookup::extractColFamilyAndName(
-								   nas->data(), FALSE, colFam, colName);
+								   nas->data(), -1, FALSE, colFam, colName);
 	    }
 	  
 	  if (colFam.empty())
@@ -10818,147 +10211,6 @@ RelExpr * ExeUtilUserLoad::preCodeGen(Generator * generator,
 				      const ValueIdSet & externalInputs,
 				      ValueIdSet &pulledNewInputs)
 {
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  ValueIdSet availableValues = getGroupAttr()->getCharacteristicInputs();
-  
-  if (rwrsInputSizeExpr())
-    ((ItemExpr*)rwrsInputSizeExpr())->
-      replaceVEGExpressions(availableValues,
-			    getGroupAttr()->getCharacteristicInputs());
-  
-  if (rwrsMaxInputRowlenExpr())
-    ((ItemExpr*)rwrsMaxInputRowlenExpr())->
-      replaceVEGExpressions(availableValues,
-			    getGroupAttr()->getCharacteristicInputs());
-  
-  if (rwrsBufferAddrExpr())
-    ((ItemExpr*)rwrsBufferAddrExpr())->
-      replaceVEGExpressions(availableValues,
-			    getGroupAttr()->getCharacteristicInputs());
-
-  if ((doFastLoad()) ||
-      (partnNumExpr_))
-    {
-      // fastpath user load. Rows flow from this node to the child which
-      // is a PA (or splitTop) node. It doesn't flow through a tuple flow
-      // or an unpack node.
-      //
-      // If caller has specified the partition
-      // the input buffer need to go to then
-      // only one partition will be accessed for each execute of this
-      // statement.
-      //
-      // If child is tupleFlow node, remove it, and make the target
-      // of that tupleFlow node my child. 
-      if (child(0)->getOperatorType() == REL_NESTED_JOIN_FLOW)
-	{
-	  // move a copy of value ids of all the rowwise rowset params
-	  // from the unpack node to this node. This will be used at codegen
-	  // time to fixup the atp and atp index of these input rwrs params.
-	  if (child(0)->castToRelExpr()->child(0)->castToRelExpr()->getOperatorType() == REL_UNPACKROWS)
-	    {
-
-	      for (ValueId exprId = getGroupAttr()->getCharacteristicInputs().init();
-		   getGroupAttr()->getCharacteristicInputs().next(exprId);
-		   getGroupAttr()->getCharacteristicInputs().advance(exprId) )
-		{
-		  if (exprId.getItemExpr()->getOperatorType() == ITM_DYN_PARAM)
-		    rwrsInputParamVids().insert(exprId);
-		}
-	    }
-
-	  child(0) = 
-	    child(0)->castToRelExpr()->child(1)->
-	    preCodeGen(generator,externalInputs,pulledNewInputs);
-	  if (! child(0).getPtr())
-	    return NULL;
-	}
-    }
-
-  if (sortFromTop())
-    {
-      SortFromTop *sortNode = new(generator->wHeap()) SortFromTop(child(0));
-     
-      if (NOT excpTabNam().isEmpty())
-	sortNode->setTolerateNonFatalError(RelExpr::NOT_ATOMIC_);
-
-      RelExpr * insertNode = NULL;
-      DP2Insert *insertExpr = NULL;
-      
-      insertNode = child(0)->castToRelExpr();
-
-      if (insertNode->getOperatorType() == REL_EXCHANGE)
-	insertNode = insertNode->child(0)->castToRelExpr();
-
-      if (insertNode->getOperatorType() == REL_PARTITION_ACCESS)
-	insertNode = insertNode->child(0)->castToRelExpr();
-      
-      insertExpr = (DP2Insert*)insertNode->castToRelExpr();
-
-      if ((insertExpr) &&
-	  ((insertExpr->getOperatorType() ==  REL_DP2_INSERT_CURSOR) ||
-	   (insertExpr->getOperatorType() ==  REL_DP2_INSERT_VSBB) ||
-	   (insertExpr->getOperatorType() ==  REL_DP2_INSERT_SIDETREE)))
-	{
-	  sortNode->getSortRecExpr() = insertExpr->newRecExprArray();
-
-	  // now create the sort key
-	  sortNode->getSortKey() 	
-	    = insertExpr->getIndexDesc()->getIndexKey();
-	}
-      else
-	{
-	  GenAssert(FALSE,
-		    "Child(or grandchild) of UserLoad must be insert operator.");
-	}
-
-      // Use the same characteristic inputs and outputs as me
-      sortNode->setGroupAttr(new(generator->wHeap())
-			     GroupAttributes(*(child(0)->getGroupAttr())));
-      //pass along some of the  estimates 
-      sortNode->setEstRowsUsed(child(0)->getEstRowsUsed());
-      sortNode->setMaxCardEst(child(0)->getMaxCardEst());
-      sortNode->setInputCardinality(child(0)->getInputCardinality());
-      sortNode->setPhysicalProperty(child(0)->getPhysicalProperty());
-      sortNode->setOperatorCost(0);
-      sortNode->setRollUpCost(child(0)->getRollUpCost());
-      
-      RelExpr * re = 
-	sortNode->preCodeGen(generator,
-			     getGroupAttr()->getCharacteristicInputs(),
-			     pulledNewInputs);
-      if (re == NULL)
-	return re;
-
-      if (ingestMaster())
-	{
-
-	  PhysicalProperty * pp = 
-	    generator->genPartitionedPhysProperty(insertExpr->getTableDesc()->getClusteringIndex());
-	  RelExpr *newExch = 
-	    generator->insertEspExchange(insertExpr, pp);
-	  
-	  //((Exchange *)newExch)->makeAnESPAccess();
-
-	  re = 
-	    newExch->preCodeGen(generator, 
-				getGroupAttr()->getCharacteristicInputs(),//externalInputs, 
-				pulledNewInputs);
-	}
-
-      child(0) = re;
-    }
-
-  if (! ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
-    return NULL;
-
-  // don't reclaim this statement
-  generator->setCantReclaimQuery(TRUE);
-
-  markAsPreCodeGenned();
-
   // Done.
   return this;
 }
@@ -10967,30 +10219,9 @@ RelExpr * ExeUtilSidetreeInsert::preCodeGen(Generator * generator,
 					    const ValueIdSet & externalInputs,
 					    ValueIdSet &pulledNewInputs)
 {
-  if (nodeIsPreCodeGenned())
-    return this;
-
-  if (! ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
-    return NULL;
-
-  // don't reclaim this statement
-  generator->setCantReclaimQuery(TRUE);
-
-  markAsPreCodeGenned();
-
-  //  if (generator->noTransformToSTI())
-  //    return child(0);
-
-  // if table is empty at runtime, then aqr will be done.
-  if ( CmpCommon::getDefault(TRANSFORM_TO_SIDETREE_INSERT_AQR) == DF_ON )
-    generator->setAqrEnabled(TRUE);
-
   // Done.
   return this;
 }
-
-
-
 
 RelExpr * ExeUtilWnrInsert::preCodeGen(Generator * generator,
                                    const ValueIdSet & externalInputs,
@@ -11459,7 +10690,13 @@ NABoolean HbaseAccess::isHbaseFilterPred(Generator * generator, ItemExpr * ie,
 	      valueVID = newCV->getValueId();
 	    }
 
-	  ItemExpr * castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &colType);
+	  ItemExpr * castValue = NULL;
+          if (NOT hbaseLookupPred)
+            castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &colType);
+          else
+            {
+              castValue = new(generator->wHeap()) Cast(valueVID.getItemExpr(), &valueVID.getType());
+            }
 
 	  if ((NOT hbaseLookupPred) &&
 	      (isEncodingNeededForSerialization(colVID.getItemExpr())))
@@ -11539,43 +10776,42 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
     {
       ItemExpr * ie = vid.getItemExpr();
 
-	  // if it is AND operation, recurse through left and right children
-	  if (ie->getOperatorType() == ITM_AND)
-	  {
-	    ValueIdSet leftPreds;
-		ValueIdSet rightPreds;
-		leftPreds += ie->child(0)->castToItemExpr()->getValueId();
-		rightPreds += ie->child(1)->castToItemExpr()->getValueId();
-		extractHbaseFilterPreds(generator, leftPreds, newExePreds);
-		extractHbaseFilterPreds(generator, rightPreds, newExePreds);
-		continue; 
-	  }
-
+      // if it is AND operation, recurse through left and right children
+      if (ie->getOperatorType() == ITM_AND)
+        {
+          ValueIdSet leftPreds;
+          ValueIdSet rightPreds;
+          leftPreds += ie->child(0)->castToItemExpr()->getValueId();
+          rightPreds += ie->child(1)->castToItemExpr()->getValueId();
+          extractHbaseFilterPreds(generator, leftPreds, newExePreds);
+          extractHbaseFilterPreds(generator, rightPreds, newExePreds);
+          continue; 
+        }
+      
       ValueId colVID;
       ValueId valueVID;
       NABoolean removeFromOrigList = FALSE;
       NAString op;
       NABoolean isHFP =
-	    isHbaseFilterPred(generator, ie, colVID, valueVID, op, removeFromOrigList);
+        isHbaseFilterPred(generator, ie, colVID, valueVID, op, removeFromOrigList);
       
       if (isHFP) 
-      {
-	    hbaseFilterColVIDlist_.insert(colVID);
-	    hbaseFilterValueVIDlist_.insert(valueVID);
-
-	    opList_.insert(op);
-
-	    if (NOT removeFromOrigList)
-	      newExePreds.insert(vid);
-
-	    numFilters++;
-	  }
-      else {
-	    newExePreds.insert(vid);
-      }
-
+        {
+          hbaseFilterColVIDlist_.insert(colVID);
+          hbaseFilterValueVIDlist_.insert(valueVID);
+          
+          opList_.insert(op);
+          
+          if (NOT removeFromOrigList)
+            newExePreds.insert(vid);
+        }
+      else 
+        {
+          newExePreds.insert(vid);
+        }
+      
     } // end for
-
+  
   return 0;
 }
 
@@ -11725,10 +10961,12 @@ RelExpr * HbaseAccess::preCodeGen(Generator * generator,
   if ((NOT isUnique) &&
       (extractHbaseFilterPreds(generator, executorPred(), newExePreds)))
     return this;
- 
-  if (newExePreds.entries() > 0) {
+
+  // if some filter preds were found, then initialize executor preds with new exe preds.
+  // newExePreds may be empty which means that all predicates were changed into
+  // hbase preds. In this case, nuke existing exe preds.
+  if (hbaseFilterColVIDlist_.entries() > 0)
     setExecutorPredicates(newExePreds);
-  }
 
   markAsPreCodeGenned();
   

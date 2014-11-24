@@ -485,7 +485,8 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 		  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
-		    return -1;
+                    step_ = HANDLE_ERROR;
+                    break;
 		  }
 	      }
 	  
@@ -496,11 +497,14 @@ ExWorkProcRetcode ExHbaseAccessInsertTcb::work()
 	    for (Lng32 i = 0; i <  convertRowTD->numAttrs(); i++)
 	      {
 		Attributes * attr = convertRowTD->getAttr(i);
-		short len = 0;
+		Lng32 len = 0;
 		if (attr)
 		  {
-		    len = *(short*)&convertRow_[attr->getVCLenIndOffset()];
-
+                    if (attr->getVCIndicatorLength() == sizeof(short))
+                      len = *(short*)&convertRow_[attr->getVCLenIndOffset()];
+                    else
+                     len = *(Lng32*)&convertRow_[attr->getVCLenIndOffset()];
+                      
 		    switch (i)
 		      {
 		      case HBASE_ROW_ID_INDEX:
@@ -666,7 +670,8 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 		  convertExpr()->eval(pentry_down->getAtp(), workAtp_);
 		if (evalRetCode == ex_expr::EXPR_ERROR)
 		  {
-		    return -1;
+                    step_ = HANDLE_ERROR;
+                    break;
 		  }
 	      }
 	  
@@ -701,8 +706,6 @@ ExWorkProcRetcode ExHbaseAccessInsertRowwiseTcb::work()
 		      } // switch
 		  } // if attr
 	      }	// for
-
-	    //	    *insColTS_ = -1;
 
 	    step_ = PROCESS_INSERT;
 	  }

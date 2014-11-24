@@ -759,17 +759,15 @@ void CmpSeabaseDDL::createSeabaseIndex(
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = (numSplits > 0 ? numSplits+1 : 0);
 
-  ComTdbVirtTableIndexInfo * iii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
-
-  ComTdbVirtTableIndexInfo ii;
-  ii.baseTableName = (char*)extTableName.data();
-  ii.indexName = (char*)extIndexName.data();
-  ii.keytag = 1;
-  ii.isUnique = createIndexNode->isUniqueSpecified() ? 1 : 0;
-  ii.isExplicit = 1;
-  ii.keyColCount = keyColCount;
-  ii.nonKeyColCount = nonKeyColCount;
-  ii.keyInfoArray = NULL; //keyInfoArray;
+  ComTdbVirtTableIndexInfo * ii = new(STMTHEAP) ComTdbVirtTableIndexInfo();
+  ii->baseTableName = (char*)extTableName.data();
+  ii->indexName = (char*)extIndexName.data();
+  ii->keytag = 1;
+  ii->isUnique = createIndexNode->isUniqueSpecified() ? 1 : 0;
+  ii->isExplicit = 1;
+  ii->keyColCount = keyColCount;
+  ii->nonKeyColCount = nonKeyColCount;
+  ii->keyInfoArray = NULL; //keyInfoArray;
 
   NAList<HbaseCreateOption*> hbaseCreateOptions;
   NAString hco;
@@ -801,7 +799,7 @@ void CmpSeabaseDDL::createSeabaseIndex(
 			 totalColCount,
 			 keyInfoArray,
 			 1, // numIndex
-                         &ii,
+                         ii,
                          tableInfo->objOwnerID,
                          objUID))
     {

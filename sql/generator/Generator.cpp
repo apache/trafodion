@@ -1131,7 +1131,12 @@ desc_struct * Generator::createVirtualTableDesc(
     {
       *(Int64*)&table_desc->body.table_desc.createtime = 0;
       *(Int64*)&table_desc->body.table_desc.redeftime = 0;
-      *(Int64*)&table_desc->body.table_desc.objectUID = 0;
+
+      ComUID comUID;
+      comUID.make_UID();
+      Int64 objUID = comUID.get_value();
+
+      *(Int64*)&table_desc->body.table_desc.objectUID = objUID;
     }
 
   table_desc->body.table_desc.issystemtablecode = 1;

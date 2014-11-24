@@ -26,14 +26,18 @@ cqd hbase_filter_preds 'ON';
 drop hbase table T022HBT1;
 create hbase table T022HBT1 (column family 'cf');
 
+drop hbase table T022HBT2;
+create hbase table T022HBT2 (column family 'cf');
+
 drop table if exists t022t1;
 create table if not exists t022t1 (a int not null primary key, b int not null);
 
 insert into hbase."_CELL_".t022hbt1 values ('1', 'cf', '1a', -1, '101');
 insert into hbase."_ROW_".t022hbt1 values ('2', column_create('cf:2b', '201')),
                               ('1', column_create('cf:1b', '102'));
-insert into hbase."_ROW_".t022hbt1 values 
-       ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
+prepare s from insert into hbase."_ROW_".t022hbt1 values 
+         (?, column_create((?, ?), ('cf:3b', '302')));
+execute s using '3', 'cf:3a', '301';
 
 select left(row_id, 10) row_id, column_display(column_details, 40) column_details
            from hbase."_ROW_".t022hbt1;
@@ -84,6 +88,8 @@ insert into hbase."_ROW_".t022hbt1 values
 select left(row_id, 10) row_id, left(column_display(column_details), 40) 
            from hbase."_ROW_".t022hbt1 where row_id = '4';
 rollback work;
+
+select col_family, col_name, left(col_value, 20) from hbase."_CELL_".t022hbt1;
 select left(row_id, 10) row_id, left(column_display(column_details), 40) 
            from hbase."_ROW_".t022hbt1 where row_id = '4';
 
@@ -148,9 +154,35 @@ update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022'
 select left(row_id, 10) row_id, left(column_display(column_details), 40) 
            from hbase."_ROW_".t022hbt1;
 
-
 -- negative tests
 delete from hbase."_CELL_".t022hbt1;
 insert into hbase."_ROW_".t022hbt1 values ('2', column_create(':b', '201'));
+
+
+-- tests with large rows
+invoke hbase."_CELL_".t022hbt2;
+invoke hbase."_ROW_".t022hbt2;
+cqd hbase_max_column_val_length '100000';
+cqd hbase_max_column_info_length '100000';
+invoke hbase."_CELL_".t022hbt2;
+invoke hbase."_ROW_".t022hbt2;
+insert into hbase."_CELL_".t022hbt2 values ('1', 'cf', 'a', -1, repeat('a', 100000));
+insert into hbase."_ROW_".t022hbt2 values 
+                              ('2', column_create(
+                                       ('cf:1a', repeat('a', 40000)),
+                                       ('cf:1b', repeat('z', 40000))));
+select count(*) from hbase."_CELL_".t022hbt2;
+select char_length(col_value) from hbase."_CELL_".t022hbt2;
+select count(*) from hbase."_CELL_".t022hbt2;
+select char_length(col_value) from hbase."_CELL_".t022hbt2;
+select count(*) from hbase."_ROW_".t022hbt2;
+select char_length(column_details) from hbase."_ROW_".t022hbt2;
+select left(row_id, 10) row_id, left(column_display(column_details), 40) 
+           from hbase."_ROW_".t022hbt2;
+
+?section cleanup
+drop hbase table t022hbt1;
+drop hbase table t022hbt2;
+drop table t022t1;
 
 log;

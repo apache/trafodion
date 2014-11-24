@@ -49,19 +49,21 @@ ExpHbaseInterface::ExpHbaseInterface(CollHeap * heap,
   heap_ = heap;
   hbs_ = NULL;
 
-  if (server)
+  if ((server) &&
+      (strlen(server) <= MAX_SERVER_SIZE))
     strcpy(server_, server);
   else
     server_[0] = 0;
 
-  if (port)
-    //    strncpy(port_, port, sizeof(port_));
+  if ((port) &&
+      (strlen(port) <= MAX_PORT_SIZE))
     strcpy(port_, port);
   else
     port_[0] = 0;
 
-  if (zkPort)
-    strcpy(zkPort_, zkPort); //, sizeof(zkPort_));
+  if ((zkPort) &&
+      (strlen(zkPort) <= MAX_PORT_SIZE))
+    strcpy(zkPort_, zkPort);
   else
     zkPort_[0] = 0;
 

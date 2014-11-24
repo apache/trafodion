@@ -317,7 +317,7 @@ protected:
   Lng32 copyColToDirectBuffer( BYTE *rowCurPtr, 
                 char *colName, short colNameLen,
                 NABoolean prependNullVal, char nullVal, 
-                char *colVal, short colValLen);
+                char *colVal, Int32 colValLen);
   short copyRowIDToDirectBuffer(HbaseStr &rowID);
 
   short numColsInDirectBuffer()

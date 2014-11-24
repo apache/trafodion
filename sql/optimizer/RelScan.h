@@ -1238,6 +1238,11 @@ public:
 					     NAList<char*> &colNameList,
 					     NAList<char*> &colValList);
 
+  // return TRUE, if col lengths in virtual desc is same as current default values.
+  // return FALSE, if they are different. If they are, caller will clear the cache
+  // and generate a new descriptor.
+  static NABoolean validateVirtualTableDesc(NATable * naTable);
+
   NAList<HbaseSearchKey*>& getHbaseSearchKeys() { return listOfSearchKeys_; };
   void addSearchKey(HbaseSearchKey* sk) 
     { listOfSearchKeys_.insertAt(listOfSearchKeys_.entries(), sk); };

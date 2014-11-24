@@ -639,33 +639,6 @@ QuerySimilarityInfo * RelRoot::genSimilarityInfo(Generator *generator)
   GenOperSimilarityInfo * iudSimInfo = NULL;
   short iudSimInfoPosition = 0;
   CollIndex i = 0;
-  for (i = 0;
-       ((NOT recompOnTSMismatch) && (i < generator->genOperSimInfoList().entries()));
-	i++)
-    {
-      GenOperSimilarityInfo * osi=
-	(GenOperSimilarityInfo *)(generator->genOperSimInfoList()[i]);
-
-      if (osi->getOper() >= REL_DP2_INSUPDDEL_FIRST &&
-	  osi->getOper() <= REL_DP2_INSUPDDEL_LAST &&
-	  (osi->getIndexDesc()->getPrimaryTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::NORMAL_TABLE  ||
-       osi->getIndexDesc()->getPrimaryTableDesc()->getNATable()->getExtendedQualName().getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE))
-	{
-	  if (iudSeen) // second time around
-	    recompOnTSMismatch = TRUE; // disable sim check
-	  else
-	    {
-#pragma warning (disable : 4244)  //warning elimination
-#pragma nowarn(1506)   // warning elimination
-	      iudSimInfoPosition = i;
-#pragma warn(1506)  // warning elimination
-#pragma warning (default : 4244)  //warning elimination
-	      iudSimInfo = osi;
-	    }
-
-	  iudSeen = TRUE;
-	}
-    }
 
   // disable similarity check if a view was referenced in the query.
   if (getViewStoiList().entries() > 0)
@@ -1395,6 +1368,7 @@ short RelRoot::codeGen(Generator * generator)
 
     GenAssert(update != NULL, "UPDATE CURRENT OF: NULL update node");
 
+    /*
     // create the update col list for UPDATE...WHERE CURRENT OF CURSOR only.
     // The updateCurrentOf() is set for both UPDATE and DELETE queries.
     if ((update->getOperatorType() == REL_DP2_UPDATE_CURSOR) ||
@@ -1419,16 +1393,15 @@ short RelRoot::codeGen(Generator * generator)
             updateColList[i] = updateStoi->getUpdateColumn(i);
 	  }
       } // update...where current of.
+    */
   }
   else if (updatableSelect())
-  {
-#pragma nowarn(1506)   // warning elimination
-    numUpdateCol = updateCol().entries();
-#pragma warn(1506)  // warning elimination
-
-    if (numUpdateCol > 0)
     {
-      // Allocate an array for the column list.
+      numUpdateCol = updateCol().entries();
+      
+      if (numUpdateCol > 0)
+        {
+          // Allocate an array for the column list.
       updateColList = new(space) Lng32[numUpdateCol];
 
       // Populate the array with the update columns of this node.
@@ -2483,24 +2456,15 @@ short RelRoot::codeGen(Generator * generator)
     {
       if ((childOper == REL_UNARY_INSERT) ||
 	  (childOper == REL_LEAF_INSERT) ||
-	  (childOper == REL_INSERT_CURSOR) ||
-	  (childOper == REL_DP2_INSERT_CURSOR) ||
-	  (childOper == REL_DP2_INSERT_VSBB) ||
-	  (childOper == REL_DP2_INSERT_SIDETREE))
+	  (childOper == REL_INSERT_CURSOR))
 	root_tdb->setQueryType(ComTdbRoot::SQL_INSERT_NON_UNIQUE);
       else if ((childOper == REL_UNARY_UPDATE) ||
 	       (childOper == REL_LEAF_UPDATE) ||
-	       (childOper == REL_UPDATE_CURSOR) ||
-	       (childOper == REL_DP2_UPDATE_UNIQUE) ||
-	       (childOper == REL_DP2_UPDATE_CURSOR) ||
-	       (childOper == REL_DP2_UPDATE_SUBSET))
+	       (childOper == REL_UPDATE_CURSOR))
 	root_tdb->setQueryType(ComTdbRoot::SQL_UPDATE_NON_UNIQUE);
       else if ((childOper == REL_UNARY_DELETE) ||
 	       (childOper == REL_LEAF_DELETE) ||
-	       (childOper == REL_DELETE_CURSOR) ||
-	       (childOper == REL_DP2_DELETE_UNIQUE) ||
-	       (childOper == REL_DP2_DELETE_CURSOR) ||
-	       (childOper == REL_DP2_DELETE_SUBSET))
+	       (childOper == REL_DELETE_CURSOR))
 	root_tdb->setQueryType(ComTdbRoot::SQL_DELETE_NON_UNIQUE);
     }
   
@@ -2512,39 +2476,6 @@ short RelRoot::codeGen(Generator * generator)
       (rwrsInfo))
     {
       root_tdb->setQueryType(ComTdbRoot::SQL_INSERT_RWRS);
-    }
-  else if ((child(0)) &&
-	   (child(0)->castToRelExpr()->getOperatorType() == REL_PARTITION_ACCESS) &&
-	   (child(0)->child(0)))
-    {
-      OperatorTypeEnum currGrandChildOper =
-	child(0)->child(0)->castToRelExpr()->getOperatorType();
-
-      if (childOperType() == REL_SCAN)
-	{
-	    root_tdb->setQueryType(ComTdbRoot::SQL_SELECT_NON_UNIQUE);
-	}
-      else if (childOperType() == REL_UNARY_INSERT)
-	{
-	  if (currGrandChildOper == REL_DP2_INSERT_CURSOR)
-	    root_tdb->setQueryType(ComTdbRoot::SQL_INSERT_UNIQUE);
-	  else
-	    root_tdb->setQueryType(ComTdbRoot::SQL_INSERT_NON_UNIQUE);
-	}
-      else if (childOperType() == REL_UNARY_UPDATE)
-	{
-	  if (currGrandChildOper == REL_DP2_UPDATE_UNIQUE)
-	    root_tdb->setQueryType(ComTdbRoot::SQL_UPDATE_UNIQUE);
-	  else
-	    root_tdb->setQueryType(ComTdbRoot::SQL_UPDATE_NON_UNIQUE);
-	}
-      else if (childOperType() == REL_UNARY_DELETE)
-	{
-	  if (currGrandChildOper == REL_DP2_DELETE_UNIQUE)
-	    root_tdb->setQueryType(ComTdbRoot::SQL_DELETE_UNIQUE);
-	  else
-	    root_tdb->setQueryType(ComTdbRoot::SQL_DELETE_NON_UNIQUE);
-	}
     }
   else if ((child(0)) &&
 	   (child(0)->castToRelExpr()->getOperatorType() == REL_UTIL_INTERNALSP))

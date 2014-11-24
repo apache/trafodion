@@ -3729,15 +3729,15 @@ const NAType *Repeat::synthesizeType()
       size_in_chars = ctyp1.getStrCharLimit() * repeatCount;
       // check size limit only for fixed character type
       if ( ! typ1.isVaryingLen() ) {
-         if ( size_in_bytes > CONST_32K ) {
+         if ( size_in_bytes > CONST_100K ) {
 	    *CmpCommon::diags() << DgSqlCode(-4129)
                                 << DgString0(getTextUpper());
             return NULL;
          }
        } else // varchar. The nominal size of the result is
-              // the min of (size, CONST_32K).
+              // the min of (size, CONST_100K).
          {
-            size_in_bytes = MINOF(CONST_32K, size_in_bytes);
+            size_in_bytes = MINOF(CONST_100K, size_in_bytes);
             size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
          }
     }

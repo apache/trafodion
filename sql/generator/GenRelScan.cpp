@@ -1177,9 +1177,63 @@ if (hTabStats->isOrcFile())
 
 /////////////////////////////////////////////////////////////
 //
-// HbaseAccess::createVirtualTableDesc
+// HbaseAccess::validateVirtualTableDesc
 //
 /////////////////////////////////////////////////////////////
+NABoolean HbaseAccess::validateVirtualTableDesc(NATable * naTable)
+{
+  if ((NOT naTable->isHbaseCellTable()) && (NOT naTable->isHbaseRowTable()))
+    return FALSE;
+
+  NABoolean isRW = naTable->isHbaseRowTable();
+
+  const NAColumnArray &naColumnArray = naTable->getNAColumnArray();
+  
+  Lng32 v1 = 
+    (Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH);
+  Lng32 v2 = 
+    (Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_VAL_LENGTH);
+  Lng32 v3 = 
+    (Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_INFO_LENGTH);
+
+  NAColumn * nac = NULL;
+  for (Lng32 i = 0; i < naColumnArray.entries(); i++)
+    {
+      nac = naColumnArray[i];
+      Lng32 length = nac->getType()->getNominalSize();
+      if (isRW)
+        {
+          if (i == HBASE_ROW_ROWID_INDEX)
+            {
+              if (length != v1)
+                return FALSE;
+            }
+          else if (i == HBASE_COL_DETAILS_INDEX)
+            {
+              if (length != v3)
+                return FALSE;
+            }
+        }
+      else
+        {
+          if ((i == HBASE_ROW_ID_INDEX) ||
+              (i == HBASE_COL_NAME_INDEX) ||
+              (i == HBASE_COL_FAMILY_INDEX))
+            {
+              if (length != v1)
+                return FALSE;
+            }
+          else if (i == HBASE_COL_VALUE_INDEX)
+            {
+              if (length != v2)
+                return FALSE;
+            }
+        }
+    } // for
+  
+  return TRUE;
+}
+
 desc_struct *HbaseAccess::createVirtualTableDesc(const char * name,
 						 NABoolean isRW, NABoolean isCW)
 {

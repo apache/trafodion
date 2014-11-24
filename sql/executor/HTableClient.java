@@ -626,7 +626,8 @@ public class HTableClient {
 		Put put;
 		ByteBuffer bb;
 		short numCols;
-		short colNameLen, colValueLen;
+		short colNameLen;
+                int colValueLen;
 		QualifiedColumn qc = null;
 		byte[] family = null;
 		byte[] qualifier = null;
@@ -640,7 +641,7 @@ public class HTableClient {
 			colNameLen = bb.getShort();
 			colName = new byte[colNameLen];
 			bb.get(colName, 0, colNameLen);
-			colValueLen = bb.getShort();	
+			colValueLen = bb.getInt();	
 			colValue = new byte[colValueLen];
 			bb.get(colValue, 0, colValueLen);
 			qc = new QualifiedColumn(colName);
@@ -692,7 +693,8 @@ public class HTableClient {
 		Put put;
 		ByteBuffer bbRows, bbRowIDs;
 		short numCols, numRows;
-		short colNameLen, colValueLen;
+		short colNameLen;
+                int colValueLen;
 		QualifiedColumn qc = null;
 		byte[] colName, colValue, rowID;
 
@@ -712,7 +714,7 @@ public class HTableClient {
 				colNameLen = bbRows.getShort();
 				colName = new byte[colNameLen];
 				bbRows.get(colName, 0, colNameLen);
-				colValueLen = bbRows.getShort();	
+				colValueLen = bbRows.getInt();	
 				colValue = new byte[colValueLen];
 				bbRows.get(colValue, 0, colValueLen);
 				qc = new QualifiedColumn(colName);

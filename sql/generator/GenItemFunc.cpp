@@ -2633,7 +2633,7 @@ short HbaseColumnLookup::codeGen(Generator * generator)
   std::string colFam;
   std::string colName;
   ExFunctionHbaseColumnLookup::extractColFamilyAndName(
-						       hbaseCol_.data(), FALSE, colFam, colName);
+						       hbaseCol_.data(), -1, FALSE, colFam, colName);
 
   if (colFam.empty())
     {
@@ -2716,50 +2716,34 @@ short HbaseColumnCreate::codeGen(Generator * generator)
   NAString colNames;
   NAString colValues;
 
-  for (Lng32 i = 0; i < numEntries; i++)
-    {
-      HbaseColumnCreateOptions * hcco = (*hccol_)[i];
-
-      std::string colFam;
-      std::string colName;
-      ExFunctionHbaseColumnLookup::extractColFamilyAndName(
-							   hcco->hbaseCol().data(), FALSE, colFam, colName);
-      
-      if (colFam.empty())
-	{
-	  *CmpCommon::diags() << DgSqlCode(-1426)
-			      << DgString0(hcco->hbaseCol().data());
-	  GenExit();
-	}
-    }
-
   ValueIdList colCreateVIDlist;
 
   for (Lng32 i = 0; i < numEntries; i++)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
 
-      hcco->colNameIE()->preCodeGen(generator);
-      hcco->child0()->preCodeGen(generator);
+      hcco->colName()->preCodeGen(generator);
+      hcco->colVal()->preCodeGen(generator);
 
-      const NAType &childType = hcco->child0()->getValueId().getType();
+      const NAType &childType = hcco->colVal()->getValueId().getType();
 
       if (NOT childType.supportsSQLnull())
 	{
 	  NAType *newType= childType.newCopy(generator->wHeap());
 	  newType->setNullable(TRUE);
-	  ItemExpr * ne = new (generator->wHeap()) Cast(hcco->child0(), 
+	  ItemExpr * ne = new (generator->wHeap()) Cast(hcco->colVal(), 
 							 newType);
 	  ne = ne->bindNode(generator->getBindWA());
 	  ne->preCodeGen(generator);
-	  hcco->setChild0(ne);
+	  hcco->setColVal(ne);
 	}
 
-      colCreateVIDlist.insert(hcco->colNameIE()->getValueId());
-      colCreateVIDlist.insert(hcco->child0()->getValueId());
+      colCreateVIDlist.insert(hcco->colName()->getValueId());
+      colCreateVIDlist.insert(hcco->colVal()->getValueId());
     }
 									
   ULng32 tupleLength = 0;
+  short colValVCIndLen = 0;
   generator->getExpGenerator()->processValIdList(colCreateVIDlist,
 						 ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
 						 tupleLength,
@@ -2769,15 +2753,18 @@ short HbaseColumnCreate::codeGen(Generator * generator)
 						 ExpTupleDesc::SHORT_FORMAT,
 						 attr[0]->getOffset() + 
 						 (sizeof(numEntries) + sizeof(colNameMaxLen_) +
-						  sizeof(colValMaxLen_)));
+						  sizeof(colValVCIndLen) + sizeof(colValMaxLen_)));
 			
-  //  ne->codeGen(generator);
   for (Lng32 i = 0; i < numEntries; i++)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
 
-      hcco->colNameIE()->codeGen(generator);
-      hcco->child0()->codeGen(generator);
+      hcco->colName()->codeGen(generator);
+      hcco->colVal()->codeGen(generator);
+
+      const NAType &childType = hcco->colVal()->getValueId().getType();
+      colValVCIndLen = (childType.isVaryingLen() ?
+                        childType.getVarLenHdrSize() : 0);
     }
 			 
   ExFunctionHbaseColumnCreate * cl =
@@ -2787,6 +2774,7 @@ short HbaseColumnCreate::codeGen(Generator * generator)
      numEntries,
      colNameMaxLen_,
      colValMaxLen_,
+     colValVCIndLen,
      generator->getSpace());
 
   generator->getExpGenerator()->linkClause(this, cl);

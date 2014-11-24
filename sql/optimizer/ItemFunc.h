@@ -4946,28 +4946,29 @@ public:
     };
     
     HbaseColumnCreateOptions
-      (const NAString &hbaseCol,
-       ItemExpr * child0,
+      (ItemExpr * colName,
+       ItemExpr * colVal,
        const NAType * naType,
        ConvType convType) 
-      : hbaseCol_(hbaseCol),
-      child0_(child0),
+      : colName_(colName),
+      colVal_(colVal),
       naType_(naType),
       convType_(convType)
       {}
 
-    const NAString &hbaseCol() { return hbaseCol_;}
     const NAType * naType() { return naType_;}
     ConvType convType() { return convType_;}
-    ItemExpr * child0() { return child0_; }
-    void setChild0(ItemExpr * c) { child0_ = c; }
+    ItemExpr * colName() { return colName_; }
+    ItemExpr * colVal() { return colVal_; }
+    void setColName(ItemExpr * c) { colName_ = c; }
+    void setColVal(ItemExpr * c) { colVal_ = c; }
     ItemExpr * colNameIE() { return colNameIE_; }
     void setColNameIE(ItemExpr * cn) { colNameIE_ = cn; }
 
   private:
-    NAString hbaseCol_;
     ItemExpr * colNameIE_;
-    ItemExpr * child0_;
+    ItemExpr * colName_;
+    ItemExpr * colVal_;
     const NAType * naType_;
     ConvType convType_;
 
@@ -5008,7 +5009,7 @@ public:
   const NAType *resultType_;
 
   short colNameMaxLen_;
-  short colValMaxLen_;
+  Int32 colValMaxLen_;
 
   NAList<HbaseColumnCreateOptions*> * hccol_;
 }; // class HbaseColumnCreate

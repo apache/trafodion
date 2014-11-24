@@ -49,15 +49,10 @@
 // -----------------------------------------------------------------------
 // classes defined in this file
 // -----------------------------------------------------------------------
-class DP2DeleteRule;
-class DP2UpdateRule;
-class DP2DeleteCursorRule;
-class DP2InsertCursorRule;
 class HbaseDeleteRule;
 class HbaseUpdateRule;
 class HiveInsertRule;
 class HbaseInsertRule;
-class DP2UpdateCursorRule;
 class ExchangeEnforcerRule;
 class HbaseScanRule;
 class FileScanRule;
@@ -93,67 +88,6 @@ class UnionRule;
 // -----------------------------------------------------------------------
 void CreateImplementationRules(RuleSet*);
 
-// -----------------------------------------------------------------------
-// implementation rule subclasses
-// -----------------------------------------------------------------------
-
-class DP2DeleteRule : public Rule
-{
-public:
-  DP2DeleteRule(const char * name,
-                RelExpr * pattern,
-                RelExpr * substitute) : 
-       Rule(name,pattern,substitute) {}
-  
-  // copy ctor
-  DP2DeleteRule (const DP2DeleteRule &) ; // not written
-
-  virtual ~DP2DeleteRule();
-  virtual NABoolean topMatch (RelExpr * relExpr,
-			      Context *context);
-  virtual RelExpr * nextSubstitute(RelExpr * before,
-				   Context * context,
-				   RuleSubstituteMemory * & memory);
-};
-
-class DP2DeleteCursorRule : public DP2DeleteRule
-{
-public:
-  DP2DeleteCursorRule(const char * name,
-                      RelExpr * pattern,
-                      RelExpr * substitute) : 
-       DP2DeleteRule(name,pattern,substitute) {}
-
-  // copy ctor
-  DP2DeleteCursorRule (const DP2DeleteCursorRule &) ; // not written
-
-  virtual ~DP2DeleteCursorRule();
-  virtual NABoolean topMatch (RelExpr * relExpr,
-			      Context *context);
-  virtual RelExpr * nextSubstitute(RelExpr * before,
-				   Context * context,
-				   RuleSubstituteMemory * & memory);
-};
-
-class DP2InsertCursorRule : public Rule
-{
-public:
-  DP2InsertCursorRule(const char * name,
-                      RelExpr * pattern,
-                      RelExpr * substitute) : 
-       Rule(name,pattern,substitute) {}
-
-  // copy ctor
-  DP2InsertCursorRule (const DP2InsertCursorRule &) ; // not written
-
-  virtual ~DP2InsertCursorRule();
-  virtual NABoolean topMatch (RelExpr * relExpr,
-			      Context *context);
-  virtual RelExpr * nextSubstitute(RelExpr * before,
-				   Context * context,
-				   RuleSubstituteMemory * & memory);
-};
-
 class HbaseDeleteRule : public Rule
 {
 public:
@@ -182,7 +116,7 @@ public:
        HbaseDeleteRule(name,pattern,substitute) {}
 
   // copy ctor
-  HbaseDeleteCursorRule (const DP2DeleteCursorRule &) ; // not written
+  HbaseDeleteCursorRule (const HbaseDeleteCursorRule &) ; // not written
 
   virtual ~HbaseDeleteCursorRule();
   virtual NABoolean topMatch (RelExpr * relExpr,
@@ -220,7 +154,7 @@ public:
        HbaseUpdateRule(name,pattern,substitute) {}
 
   // copy ctor
-  HbaseUpdateCursorRule (const DP2UpdateCursorRule &) ; // not written
+  HbaseUpdateCursorRule (const HbaseUpdateCursorRule &) ; // not written
 
   virtual ~HbaseUpdateCursorRule();
   virtual NABoolean topMatch (RelExpr * relExpr,
@@ -286,44 +220,6 @@ public:
   virtual RelExpr * nextSubstitute(RelExpr * before,
                                    Context * context,
                                    RuleSubstituteMemory * & memory);
-};
-
-class DP2UpdateRule : public Rule
-{
-public:
-  DP2UpdateRule(const char * name,
-                RelExpr * pattern,
-                RelExpr * substitute) : 
-       Rule(name,pattern,substitute) {}
-
-  // copy ctor
-  DP2UpdateRule (const DP2UpdateRule &) ; // not written
-
-  virtual ~DP2UpdateRule();
-  virtual NABoolean topMatch (RelExpr * relExpr,
-			      Context *context);
-  virtual RelExpr * nextSubstitute(RelExpr * before,
-				   Context * context,
-				   RuleSubstituteMemory * & memory);
-};
-
-class DP2UpdateCursorRule : public DP2UpdateRule
-{
-public:
-  DP2UpdateCursorRule(const char * name,
-                      RelExpr * pattern,
-                      RelExpr * substitute) : 
-       DP2UpdateRule(name,pattern,substitute) {}
-
-  // copy ctor
-  DP2UpdateCursorRule (const DP2UpdateCursorRule &) ; // not written
-
-  virtual ~DP2UpdateCursorRule();
-  virtual NABoolean topMatch (RelExpr * relExpr,
-			      Context *context);
-  virtual RelExpr * nextSubstitute(RelExpr * before,
-				   Context * context,
-				   RuleSubstituteMemory * & memory);
 };
 
 class ExchangeEnforcerRule : public Rule

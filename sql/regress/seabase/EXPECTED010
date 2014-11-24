@@ -7847,7 +7847,6 @@ DESCRIPTION
   probes ................. 1
   rows_accessed ........ 100
   key_columns ............ A, B, C
-  executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
 
@@ -8246,7 +8245,6 @@ DESCRIPTION
   probes ................. 1
   rows_accessed ........ 100
   key_columns ............ A, B, C
-  executor_predicates .... (B = %('a'))
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = %('a'))
 
@@ -9517,7 +9515,6 @@ DESCRIPTION
   probes ................. 1
   rows_accessed ........ 100
   key_columns ............ A, B, C
-  executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
 
@@ -9914,7 +9911,6 @@ DESCRIPTION
   probes ................. 1
   rows_accessed ........ 100
   key_columns ............ A, B, C
-  executor_predicates .... (B = 'a')
   mdam_disjunct .......... (((A = 2) or (A = 4)) or (A = 6)) and ((C = 1) or (C
                              = 3)) and (B = 'a')
 

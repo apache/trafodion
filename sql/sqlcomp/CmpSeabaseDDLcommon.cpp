@@ -2188,6 +2188,16 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
       return rc;
     }
 
+  if ((naType->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+      (naType->getNominalSize() > CmpCommon::getDefaultNumeric(MAX_CHARACTER_COL_SIZE)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4247)
+                          << DgInt0(naType->getNominalSize())
+                          << DgInt1(CmpCommon::getDefaultNumeric(MAX_CHARACTER_COL_SIZE))
+                          << DgColumnName(ToAnsiIdentifier(colName));
+      return -1;
+    }
+
   lobStorage = Lob_Invalid_Storage;
   if (naType->getTypeQualifier() == NA_LOB_TYPE)
     lobStorage = colNode->getLobStorage();

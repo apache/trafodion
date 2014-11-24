@@ -230,7 +230,8 @@ public class HBulkLoadClient
     }
      ByteBuffer bbRows, bbRowIDs;
      short numCols, numRows;
-     short colNameLen, colValueLen;
+     short colNameLen;
+     int colValueLen;
      HTableClient.QualifiedColumn qc = null;
      byte[] colName, colValue, rowID;
 
@@ -249,7 +250,7 @@ public class HBulkLoadClient
             colNameLen = bbRows.getShort();
             colName = new byte[colNameLen];
             bbRows.get(colName, 0, colNameLen);
-            colValueLen = bbRows.getShort();
+            colValueLen = bbRows.getInt();
             colValue = new byte[colValueLen];
             bbRows.get(colValue, 0, colValueLen);
             qc = htc.new QualifiedColumn(colName);

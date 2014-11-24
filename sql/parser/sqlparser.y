@@ -10082,26 +10082,26 @@ hbase_column_create_list : '(' hbase_column_create_value ')'
 				   $5->insert($2);
 				   $$ = $5;
 				 }
-hbase_column_create_value : QUOTED_STRING ',' value_expression ',' TOK_TYPE TOK_AS Set_Cast_Global_False_and_data_type
+hbase_column_create_value : value_expression ',' value_expression ',' TOK_TYPE TOK_AS Set_Cast_Global_False_and_data_type
                                 {
 				  HbaseColumnCreate::HbaseColumnCreateOptions * hcco =
 				    new (PARSERHEAP()) HbaseColumnCreate::HbaseColumnCreateOptions
-				    (*$1, $3, $7, HbaseColumnCreate::HbaseColumnCreateOptions::TYPE_AS);
+				    ($1, $3, $7, HbaseColumnCreate::HbaseColumnCreateOptions::TYPE_AS);
 				  $$ = hcco;
 				}
-                             | QUOTED_STRING ',' value_expression ',' TOK_CAST TOK_AS data_type
+                             | value_expression ',' value_expression ',' TOK_CAST TOK_AS data_type
                                 {
 				  HbaseColumnCreate::HbaseColumnCreateOptions * hcco =
 				    new (PARSERHEAP()) HbaseColumnCreate::HbaseColumnCreateOptions
-				    (*$1, $3, $7, HbaseColumnCreate::HbaseColumnCreateOptions::CAST_AS);
+				    ($1, $3, $7, HbaseColumnCreate::HbaseColumnCreateOptions::CAST_AS);
 				  $$ = hcco;
 				}
  
-                            | QUOTED_STRING ',' value_expression 
+                            | value_expression ',' value_expression 
                                 {
 				  HbaseColumnCreate::HbaseColumnCreateOptions * hcco =
 				    new (PARSERHEAP()) HbaseColumnCreate::HbaseColumnCreateOptions
-				    (*$1, $3, NULL, HbaseColumnCreate::HbaseColumnCreateOptions::NONE);
+				    ($1, $3, NULL, HbaseColumnCreate::HbaseColumnCreateOptions::NONE);
 				  $$ = hcco;
 				}
 

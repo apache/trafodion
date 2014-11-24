@@ -112,13 +112,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_ISOLATED_SCALAR_UDF:
 	    case REL_HIVE_INSERT:
 	    case REL_HBASE_INSERT:
-	    case REL_DP2_INSERT_CURSOR:
-	    case REL_DP2_DELETE_UNIQUE:
-	    case REL_DP2_DELETE_CURSOR:
-	    case REL_DP2_DELETE_SUBSET:
-	    case REL_DP2_UPDATE_UNIQUE:
-	    case REL_DP2_UPDATE_CURSOR:
-	    case REL_DP2_UPDATE_SUBSET:
 	    case REL_SP_PROXY:
 	      return TRUE;
 	    default:
@@ -212,19 +205,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HBASE_INSERT:
 	    case REL_HBASE_DELETE:
 	    case REL_HBASE_UPDATE:
-	    case REL_DP2_INSERT_CURSOR:
-	    case REL_DP2_INSERT_VSBB:
-	    case REL_DP2_INSERT_SIDETREE:
-	    case REL_DP2_DELETE_UNIQUE:
-	    case REL_DP2_DELETE_CURSOR:
-	    case REL_DP2_DELETE_SUBSET:
-#if 0
-// replaced by subset delete, done as part of SQ SQL code cleanup effort
-	    case REL_DP2_DELETE_RANGE:
-#endif // if 0
-	    case REL_DP2_UPDATE_UNIQUE:
-	    case REL_DP2_UPDATE_CURSOR:
-	    case REL_DP2_UPDATE_SUBSET:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -240,19 +220,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HBASE_INSERT:
 	    case REL_HBASE_DELETE:
 	    case REL_HBASE_UPDATE:
-	    case REL_DP2_INSERT_CURSOR:
-	    case REL_DP2_INSERT_VSBB:
-	    case REL_DP2_INSERT_SIDETREE:
-	    case REL_DP2_DELETE_UNIQUE:
-	    case REL_DP2_DELETE_CURSOR:
-	    case REL_DP2_DELETE_SUBSET:
-#if 0
-// replaced by subset delete, done as part of SQ SQL code cleanup effort
-	    case REL_DP2_DELETE_RANGE:
-#endif // if 0
-	    case REL_DP2_UPDATE_UNIQUE:
-	    case REL_DP2_UPDATE_CURSOR:
-	    case REL_DP2_UPDATE_SUBSET:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -285,16 +252,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_LEAF_DELETE:
 	    case REL_DELETE_CURSOR:
 	    case REL_UPDATE_CURSOR:
-	    case REL_DP2_DELETE_UNIQUE:
-	    case REL_DP2_DELETE_CURSOR:
-	    case REL_DP2_DELETE_SUBSET:
-#if 0
-// replaced by subset delete, done as part of SQ SQL code cleanup effort
-	    case REL_DP2_DELETE_RANGE:
-#endif // if 0
-	    case REL_DP2_UPDATE_UNIQUE:
-	    case REL_DP2_UPDATE_CURSOR:
-	    case REL_DP2_UPDATE_SUBSET:
 	    case REL_HBASE_UPDATE:
 	    case REL_HBASE_DELETE:
 	      return TRUE;
@@ -309,14 +266,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_UNARY_DELETE:
 	    case REL_LEAF_DELETE:
 	    case REL_DELETE_CURSOR:
-	    case REL_DP2_DELETE_UNIQUE:
-	    case REL_DP2_DELETE_CURSOR:
-	    case REL_DP2_DELETE_SUBSET:
 	    case REL_HBASE_DELETE:
-#if 0
-// replaced by subset delete, done as part of SQ SQL code cleanup effort
-	    case REL_DP2_DELETE_RANGE:
-#endif // if 0
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -727,10 +677,6 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	      return FALSE;
 	    }
 
-	case REL_ANY_DP2_INSUPDDEL:
-	  return REL_DP2_INSUPDDEL_FIRST <= op_ &&
-	         op_ <= REL_DP2_INSUPDDEL_LAST;
-
 	case ANY_REL_OR_ITM_OP:
 	  ABORT("internal error in OperatorType::match()");
 
@@ -749,7 +695,6 @@ NABoolean OperatorType::isWildcard() const
     case ITM_ANY_CAST:
     case ITM_WILDCARD_EQ_NE:
     case REL_ANY_BINARY_OP:
-    case REL_ANY_DP2_INSUPDDEL:
     case REL_ANY_GEN_UPDATE:
     case REL_ANY_GROUP:
     case REL_ANY_INNER_JOIN:

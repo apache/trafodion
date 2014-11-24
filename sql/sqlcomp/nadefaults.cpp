@@ -1746,7 +1746,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui___(HBASE_MAX_NUM_SEARCH_KEYS,                  "512"),
  DDui1__(HBASE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
 
-  DDkwd__(HBASE_NATIVE_IUD,		"OFF"),
+  DDkwd__(HBASE_NATIVE_IUD,		"ON"),
  DDui1__(HBASE_NUM_CACHE_ROWS_MAX,	"10000"),
  DDui1__(HBASE_NUM_CACHE_ROWS_MIN,	"100"),
 
@@ -2065,6 +2065,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(MATCH_CONSTANTS_OF_EQUALITY_PREDICATES, "2"),
 
   DDui1__(MAX_ACCESS_NODES_PER_ESP,	"1024"),
+
+ // max size in bytes of a char or varchar column.
+  DDui2__(MAX_CHARACTER_COL_SIZE,	"200000"),
+
  // this is the default length of a param which is typed as a VARCHAR.
   DDui2__(MAX_CHAR_PARAM_DEFAULT_SIZE,	"32"),
 

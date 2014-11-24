@@ -13,6 +13,13 @@
 
 --- SQL operation complete.
 >>
+>>drop hbase table T022HBT2;
+
+--- SQL operation complete.
+>>create hbase table T022HBT2 (column family 'cf');
+
+--- SQL operation complete.
+>>
 >>drop table if exists t022t1;
 
 --- SQL operation complete.
@@ -27,8 +34,11 @@
 +>                              ('1', column_create('cf:1b', '102'));
 
 --- 2 row(s) inserted.
->>insert into hbase."_ROW_".t022hbt1 values 
-+>       ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
+>>prepare s from insert into hbase."_ROW_".t022hbt1 values 
++>         (?, column_create((?, ?), ('cf:3b', '302')));
+
+--- SQL command prepared.
+>>execute s using '3', 'cf:3a', '301';
 
 --- 1 row(s) inserted.
 >>
@@ -172,6 +182,19 @@ ROW_ID      (EXPR)
 >>rollback work;
 
 --- SQL operation complete.
+>>
+>>select col_family, col_name, left(col_value, 20) from hbase."_CELL_".t022hbt1;
+
+COL_FAMILY                                                                                            COL_NAME                                                                                              (EXPR)
+----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------
+
+cf                                                                                                    1a                                                                                                    101                 
+cf                                                                                                    1b                                                                                                    102                 
+cf                                                                                                    2b                                                                                                    201                 
+cf                                                                                                    3a                                                                                                    3010103             
+cf                                                                                                    3b                                                                                                    302                 
+
+--- 5 row(s) selected.
 >>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
 +>           from hbase."_ROW_".t022hbt1 where row_id = '4';
 
@@ -374,7 +397,6 @@ ROW_ID      (EXPR)
 
 --- 1 row(s) selected.
 >>
->>
 >>-- negative tests
 >>delete from hbase."_CELL_".t022hbt1;
 
@@ -386,7 +408,160 @@ ROW_ID      (EXPR)
 
 *** ERROR[1426] An invalid hbase column name :b was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
 
-*** ERROR[8822] The statement was not prepared.
+--- 0 row(s) inserted.
+>>
+>>
+>>-- tests with large rows
+>>invoke hbase."_CELL_".t022hbt2;
 
+-- Definition of Trafodion table HBASE."_CELL_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>invoke hbase."_ROW_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_ROW_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>cqd hbase_max_column_val_length '100000';
+
+--- SQL operation complete.
+>>cqd hbase_max_column_info_length '100000';
+
+--- SQL operation complete.
+>>invoke hbase."_CELL_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_CELL_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COL_VALUE                        VARCHAR(100000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>invoke hbase."_ROW_".t022hbt2;
+
+-- Definition of Trafodion table HBASE."_ROW_".T022HBT2
+-- Definition current  Wed Nov 19 08:50:56 2014
+
+  (
+    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , COLUMN_DETAILS                   VARCHAR(100000) CHARACTER SET ISO88591
+      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+
+--- SQL operation complete.
+>>insert into hbase."_CELL_".t022hbt2 values ('1', 'cf', 'a', -1, repeat('a', 100000));
+
+--- 1 row(s) inserted.
+>>insert into hbase."_ROW_".t022hbt2 values 
++>                              ('2', column_create(
++>                                       ('cf:1a', repeat('a', 40000)),
++>                                       ('cf:1b', repeat('z', 40000))));
+
+--- 1 row(s) inserted.
+>>select count(*) from hbase."_CELL_".t022hbt2;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2;
+
+(EXPR)    
+----------
+
+    100000
+     40000
+     40000
+
+--- 3 row(s) selected.
+>>select count(*) from hbase."_CELL_".t022hbt2;
+
+(EXPR)              
+--------------------
+
+                   3
+
+--- 1 row(s) selected.
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2;
+
+(EXPR)    
+----------
+
+    100000
+     40000
+     40000
+
+--- 3 row(s) selected.
+>>select count(*) from hbase."_ROW_".t022hbt2;
+
+(EXPR)              
+--------------------
+
+                   2
+
+--- 1 row(s) selected.
+>>select char_length(column_details) from hbase."_ROW_".t022hbt2;
+
+(EXPR)    
+----------
+
+    100010
+     80022
+
+--- 2 row(s) selected.
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
++>           from hbase."_ROW_".t022hbt2;
+
+ROW_ID      (EXPR)                                  
+----------  ----------------------------------------
+
+1           cf:a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+2           cf:1a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+--- 2 row(s) selected.
+>>
+>>?section cleanup
+>>drop hbase table t022hbt1;
+
+--- SQL operation complete.
+>>drop hbase table t022hbt2;
+
+--- SQL operation complete.
+>>drop table t022t1;
+
+--- SQL operation complete.
 >>
 >>log;

@@ -3678,6 +3678,7 @@ public:
   NA_EIDPROC Int32 isNullRelevant() const { return 0; };
   
   static short extractColFamilyAndName(const char * input, 
+                                       short len,
 				       NABoolean isVarchar,
 				       std::string &colFam, std::string &colName);
  private:
@@ -3725,7 +3726,8 @@ public:
 					 Attributes ** attr,
 					 short numEntries,
 					 short colNameMaxLen,
-					 short colValMaxLen,
+					 Int32 colValMaxLen,
+                                         short colValVCIndLen,
 					 Space * space);
   NA_EIDPROC ExFunctionHbaseColumnCreate();
 
@@ -3741,7 +3743,8 @@ public:
 
   short numEntries_;
   short colNameMaxLen_;
-  short colValMaxLen_;
+  Int32 colValMaxLen_;
+  short colValVCIndLen_; // 2 or 4 bytes
   char filler1_[2];
 };
 

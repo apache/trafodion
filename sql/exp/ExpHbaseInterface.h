@@ -310,6 +310,12 @@ class ExpHbaseInterface : public NABasicObject
                                  Int64& estRC) = 0;
 
 protected:
+  enum 
+    {
+      MAX_SERVER_SIZE = 999,
+      MAX_PORT_SIZE = 99
+    };
+
   ExpHbaseInterface(CollHeap * heap,
                     const char * server = NULL,
                     const char * port = NULL,
@@ -319,9 +325,9 @@ protected:
   
   CollHeap * heap_;
   ExHbaseAccessStats * hbs_;
-  char server_[1000];
-  char port_[100];
-  char zkPort_[100];
+  char server_[MAX_SERVER_SIZE+1];
+  char port_[MAX_PORT_SIZE+1];
+  char zkPort_[MAX_PORT_SIZE+1];
   int  debugPort_;
   int  debugTimeout_;
 };

@@ -1266,6 +1266,7 @@ $1~String1 --------------------------------
 4244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN When using the DATE_PART function in DIVISION BY, only leading parts of the date, including the year, can be extracted.
 4245 42000 99999 BEGINNER MAJOR DBADMIN Table $0~TableName is defined as INSERT_ONLY.  You cannot delete rows or update the contents of this table.
 4246 ZZZZZ 99999 BEGINNER MINOR DBADMIN All column values must be specified when loading data by UPSERT USING LOAD syntax.
+4247 0A000 99999 BEGINNER MAJOR DBADMIN Specified size in bytes ($0~Int0) exceeds the maximum size allowed ($1~Int1) for column $0~ColumnName.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

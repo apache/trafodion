@@ -7477,6 +7477,15 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 	}
     }
 
+  if (table && (corrName.isHbaseCell() || corrName.isHbaseRow()))
+    {
+      if (NOT HbaseAccess::validateVirtualTableDesc(table))
+        {
+          remove(table->getKey());
+          table = NULL;
+        }
+    }
+
   // for caching statistics
   if ((cacheMetaData_ && useCache_) && corrName.isCacheable())
   {

@@ -498,44 +498,6 @@ short GenericUpdate::generateShape(CollHeap * c, char * buf, NAString * shapeStr
 
   switch (getOperatorType())
     {
-    case REL_DP2_INSERT_CURSOR:
-    case REL_DP2_INSERT_VSBB:
-    case REL_DP2_INSERT_SIDETREE:
-      {
-	sprintf (mybuf, "insert");
-      }
-    break;
-
-    case REL_DP2_DELETE_SUBSET:
-#if 0
-// replaced by subset delete, done as part of SQ SQL code cleanup effort
-    case REL_DP2_DELETE_RANGE:
-#endif // if 0
-      {
-	sprintf (mybuf, "delete");
-      }
-    break;
-
-    case REL_DP2_DELETE_UNIQUE:
-    case REL_DP2_DELETE_CURSOR:
-      {
-	sprintf (mybuf, "delete_unique");
-      }
-    break;
-
-    case REL_DP2_UPDATE_SUBSET:
-      {
-	sprintf (mybuf, "update");
-      }
-    break;
-
-    case REL_DP2_UPDATE_UNIQUE:
-    case REL_DP2_UPDATE_CURSOR:
-      {
-	sprintf (mybuf, "update_unique");
-      }
-    break;
-
     default:
       {
 	sprintf (mybuf, "anything");

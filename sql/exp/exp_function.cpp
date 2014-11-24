@@ -589,12 +589,14 @@ ExFunctionHbaseColumnCreate::ExFunctionHbaseColumnCreate(OperatorTypeEnum oper_t
 							 Attributes ** attr, 
 							 short numEntries,
 							 short colNameMaxLen,
-							 short colValMaxLen,
+							 Int32 colValMaxLen,
+                                                         short colValVCIndLen,
 							 Space * space)
   : ex_function_clause(oper_type, 1, attr, space),
     numEntries_(numEntries),
     colNameMaxLen_(colNameMaxLen),
-    colValMaxLen_(colValMaxLen)
+    colValMaxLen_(colValMaxLen),
+    colValVCIndLen_(colValVCIndLen)
 {
 };
 
@@ -6640,13 +6642,13 @@ ex_expr::exp_return_type ExFunctionRowNum::eval(char *op_data[],
 }
 
 short ExFunctionHbaseColumnLookup::extractColFamilyAndName(const char * input, 
+                                                           short len,
 							   NABoolean isVarchar,
 							   std::string &colFam, std::string &colName)
 {
   if (! input)
     return -1;
 
-  short len = 0;
   Lng32 i = 0;
   Lng32 startPos = 0;
   if (isVarchar)
@@ -6654,9 +6656,13 @@ short ExFunctionHbaseColumnLookup::extractColFamilyAndName(const char * input,
       len = *(short*)input;
       startPos = sizeof(len);
     }
-  else
+  else if (len == -1)
     {
       len = strlen(input);
+      startPos = 0;
+    }
+  else
+    {
       startPos = 0;
     }
 
@@ -6738,8 +6744,6 @@ ExFunctionHbaseColumnLookup::eval(char *op_data[], CollHeap *heap,
 	  memcpy((char*)&colValueLen, pos, sizeof(Lng32));
 	  pos  += sizeof(Lng32);
 
-	  //	  memcpy(result, pos, colValueLen);
-
 	  NABoolean charType = DFS2REC::isAnyCharacter(resultAttr->getDatatype());
 	  if (! charType)
 	    {
@@ -6748,7 +6752,6 @@ ExFunctionHbaseColumnLookup::eval(char *op_data[], CollHeap *heap,
 		continue;
 	    }
 
-	  //	  Lng32 dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_OK; 
 	  UInt32 flags = 0;
 	  
 	  ex_expr::exp_return_type rc = 
@@ -6926,22 +6929,43 @@ ExFunctionHbaseColumnCreate::eval(char *op_data[], CollHeap *heap,
   str_cpy_all(result, (char*)&colNameMaxLen_, sizeof(colNameMaxLen_));
   result += sizeof(short);
 
-  str_cpy_all(result, (char*)&colValMaxLen_, sizeof(colValMaxLen_));
+  str_cpy_all(result, (char*)&colValVCIndLen_, sizeof(colValVCIndLen_));
   result += sizeof(short);
   
+  str_cpy_all(result, (char*)&colValMaxLen_, sizeof(colValMaxLen_));
+  result += sizeof(Int32);
+
   for (Lng32 i = 0; i < numEntries_; i++)
     {
-      short colNameLen;
-      //      str_cpy_all((char*)&colNameLen, result, sizeof(short));
+      // validate that column name is of right format:   colfam:colname
+      std::string colFam;
+      std::string colNam;
+      ExFunctionHbaseColumnLookup::extractColFamilyAndName(
+                                                           result, -1, TRUE/*isVarchar*/, colFam, colNam);
+      if (colFam.empty())
+        {
+          short colNameLen;
+          str_cpy_all((char*)&colNameLen, result, sizeof(short));
+          result += sizeof(short);
+          std::string colNamData(result, colNameLen);
+          ExRaiseSqlError(heap, diagsArea, (ExeErrorCode)1426, NULL, NULL, NULL, NULL,
+                          colNamData.data());
+          return ex_expr::EXPR_ERROR;
+        }
+
       result += sizeof(short);
       result += ROUND2(colNameMaxLen_);
 
       // skip the nullable bytes
       result += sizeof(short);
 
-      short colValLen;
-      //      str_cpy_all((char*)&colValLen, result, sizeof(short));
-      result += sizeof(short);
+      if (colValVCIndLen_ == sizeof(short))
+        result += sizeof(short);
+      else
+        {
+          result = (char*)ROUND4((Int64)result);
+          result += sizeof(Lng32);
+        }
       result += ROUND2(colValMaxLen_);
     }  
 
