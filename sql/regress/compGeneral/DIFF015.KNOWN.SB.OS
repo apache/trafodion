@@ -3,13 +3,13 @@
 ---
 > HYBRID_#HASH_JOIN
 1300,1302c1300
-< SEABASE_SCAN
+< TRAFODION_SCAN
 < NESTED_JOIN
 < PROBE_CACHE 1.000E+000 10 fragment_
 ---
 > HYBRID_#HASH_JOIN
 1304a1303
-> SEABASE_SCAN
+> TRAFODION_SCAN
 1306c1305
 < --- 5 row(s) selected.
 ---
@@ -18,6 +18,22 @@
 < join_method: hash parallel_join_
 ---
 > join_method: hash hash_join_predi
+1797c1796
+< 1.2
+---
+> 1.0
+1801c1800
+< 1.2
+---
+> 1.0
+2112c2111
+< 1.2
+---
+> 1.0
+2116c2115
+< 1.2
+---
+> 1.0
 2259c2258
 < NESTED_JOIN
 ---
@@ -49,7 +65,7 @@
 ---
 > --- 0 row(s) selected.
 2763c2752
-< +>where operator in ('SEABASE_SCAN') and position('mdam_disjunct' in description) > 0
+< +>where operator in ('TRAFODION_SCAN') and position('mdam_disjunct' in description) > 0
 ---
 > +>where operator in ('FILE_SCAN') and position('mdam_disjunct' in description) > 0
 2794,2799c2783

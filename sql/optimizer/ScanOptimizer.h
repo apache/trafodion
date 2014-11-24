@@ -344,6 +344,7 @@ public:
   virtual CollIndex getNumActivePartitions() const;
   virtual CollIndex getEstNumActivePartitionsAtRuntime() const;
   virtual CollIndex getNumActiveDP2Volumes() const;
+  virtual CollIndex getEstNumActivePartitionsAtRuntimeForHbaseRegions() const;
 
   Lng32 getNumberOfBlocksToReadPerAccess() const
   {

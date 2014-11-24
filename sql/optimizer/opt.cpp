@@ -7521,7 +7521,6 @@ double OptDefaults::riskPremiumSerial()
     return riskPremiumSerial_;
 }
 
-
 OptGlobals::OptGlobals(NAHeap* heap)
    : heap_(heap)
 {

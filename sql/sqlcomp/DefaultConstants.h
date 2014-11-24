@@ -3657,6 +3657,11 @@ enum DefaultConstants
   NSK_DBG_QUERY_PREFIX,
 
   EXPLAIN_IN_RMS,
+  NCM_HBASE_COSTING,
+  NCM_IND_JOIN_SELECTIVITY,
+  NCM_IND_SCAN_SELECTIVITY,
+  NCM_OLTP_ET_THRESHOLD,
+  NCM_SKEW_COST_ADJ_FOR_PROBES, 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

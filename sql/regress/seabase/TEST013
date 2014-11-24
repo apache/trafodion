@@ -33,6 +33,7 @@ order by seq_num, tdb_name, inst_num;
 
 obey TEST013(setup);
 
+cqd risk_premium_serial '1.2';
 cqd HBASE_MIN_BYTES_PER_ESP_PARTITION '10';
 control query default detailed_statistics 'ALL';
 cqd query_cache '0';
