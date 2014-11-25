@@ -23,7 +23,7 @@ set schema trafodion.hbase;
 cqd comp_bool_226 'on';
 
 cqd hive_max_string_length '60';
-
+cqd query_cache '0';
 
 obey TEST018(clean_up);
 
