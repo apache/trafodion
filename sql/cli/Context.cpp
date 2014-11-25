@@ -4287,13 +4287,16 @@ ExStatisticsArea *ContextCli::getMergedStats(
         statsTmp = getStats(); 
     if (statsTmp != NULL)
     {
-      if (getStats()->getCollectStatsType() ==
+      if (statsTmp->getCollectStatsType() ==
           (ComTdb::CollectStatsType) SQLCLI_ALL_STATS)
         tmpStatsMergeType = SQLCLI_SAME_STATS;
       if (tmpStatsMergeType == SQLCLI_SAME_STATS  || 
-          (tmpStatsMergeType == getStats()->getCollectStatsType()))
+          (tmpStatsMergeType == statsTmp->getCollectStatsType()))
       {
-        setDeleteStats(FALSE);
+        if (deleteStats)
+           setDeleteStats(TRUE);
+        else
+           setDeleteStats(FALSE);
         stats = statsTmp;
       }
       else
