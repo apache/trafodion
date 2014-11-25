@@ -3495,9 +3495,7 @@ short NestedJoin::codeGen(Generator * generator)
     
   RelExpr *rightChildExpr = MvLogExpr->child(1)->castToRelExpr();
   OperatorTypeEnum rightChildOp = rightChildExpr->getOperatorType();
-  NABoolean childIsDP2Insert = FALSE;
-  NABoolean usedForMvLogging = (childIsDP2Insert &&
-                                (rightChildExpr->getTableName().getSpecialType() == ExtendedQualName::IUD_LOG_TABLE));
+  NABoolean usedForMvLogging = FALSE;
 
 #pragma nowarn(1506)   // warning elimination
   ComTdbOnlj * nlj_tdb =

@@ -692,26 +692,6 @@ const char * NodeTypeToString(ComTdb::ex_node_type nodeType)
       tdbName = "ExExeUtil";
       break;
 
-    case ComTdb::ex_DP2_INSERT:     
-      tdbName = "ExDp2Insert";
-      break;
-
-    case ComTdb::ex_DP2_SUBS_OPER:  
-      tdbName = "ExDp2SubsOper";
-      break;
-
-    case ComTdb::ex_DP2_UNIQUE_OPER:  
-      tdbName = "ExDp2UniqueOper";
-      break;
-
-    case ComTdb::ex_DP2_VSBB_INSERT:
-      tdbName = "ExDp2VSBBInsert";
-      break;
-
-    case ComTdb::ex_DP2_VSBB_SIDETREE_INSERT:
-      tdbName = "ExDp2VSBBSidetree";
-      break;
-
     case ComTdb::ex_ROOT:               
       tdbName = "ex_root";
       break;
@@ -774,10 +754,6 @@ const char * NodeTypeToString(ComTdb::ex_node_type nodeType)
 
     case ComTdb::ex_PARTN_ACCESS:
       tdbName = "ex_partn_access";
-      break;
-
-    case ComTdb::ex_EID_ROOT:    
-      tdbName = "ExEIDRoot";
       break;
 
     case ComTdb::ex_SEND_TOP:       

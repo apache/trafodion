@@ -73,7 +73,6 @@
 #include "ex_exe_stmt_globals.h"
 #include "ex_timeout.h"   
 #include "ExUdr.h"
-#include "ExIar.h"
 #include "ExProbeCache.h"
 #include "ExCancel.h"
 #include "ExHdfsScan.h"
@@ -549,13 +548,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-    case ex_INTERPRET_AS_ROW:
-    {
-#pragma nowarn(1506)   // warning elimination
-      GetVTblPtr(vtblptr,ExIarTdb);
-#pragma warn(1506)  // warning elimination
-      break;
-    }
     case ex_PROBE_CACHE:
     {
 #pragma nowarn(1506)   // warning elimination

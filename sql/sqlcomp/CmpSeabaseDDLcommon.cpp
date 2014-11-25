@@ -2189,11 +2189,11 @@ short CmpSeabaseDDL::getColInfo(ElemDDLColDef * colNode,
     }
 
   if ((naType->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-      (naType->getNominalSize() > CmpCommon::getDefaultNumeric(MAX_CHARACTER_COL_SIZE)))
+      (naType->getNominalSize() > CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH)))
     {
       *CmpCommon::diags() << DgSqlCode(-4247)
                           << DgInt0(naType->getNominalSize())
-                          << DgInt1(CmpCommon::getDefaultNumeric(MAX_CHARACTER_COL_SIZE))
+                          << DgInt1(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH))
                           << DgColumnName(ToAnsiIdentifier(colName));
       return -1;
     }

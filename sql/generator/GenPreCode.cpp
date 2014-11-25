@@ -9969,25 +9969,6 @@ RelExpr * FirstN::preCodeGen(Generator * generator,
   return this;
 } // FirstN::preCodeGen
 
-RelExpr * PhysicalInterpretAsRow::preCodeGen (Generator * generator,
-                                              const ValueIdSet &externalInputs,
-                                              ValueIdSet &pulledNewInputs)
-{
-   if (nodeIsPreCodeGenned())
-      return this;
-
-   if (!RelRoutine::preCodeGen(generator,externalInputs,pulledNewInputs))
-      return NULL;
-
-   ValueIdSet availableValues = getGroupAttr()->getCharacteristicInputs();
-   availableValues += getGroupAttr()->getCharacteristicOutputs();
-
-   const ValueIdSet &inputValues = getGroupAttr()->getCharacteristicInputs();
-   columnsToExtract().replaceVEGExpressions(availableValues, inputValues);
-
-   return this;
-}
-
 RelExpr * RelRoutine::preCodeGen (Generator * generator,
 					     const ValueIdSet &externalInputs,
 					     ValueIdSet &pulledNewInputs)
@@ -10769,7 +10750,6 @@ short HbaseAccess::extractHbaseFilterPreds(Generator * generator,
       (getTableDesc()->getNATable()->isSQLMXAlignedTable()))
     return 0;
  
-  Lng32 numFilters = 0;
   for (ValueId vid = preds.init(); 
        (preds.next(vid)); 
        preds.advance(vid))

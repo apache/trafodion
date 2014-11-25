@@ -1548,10 +1548,7 @@ NA_EIDPROC
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   void setCpuStatsHistory() 
   { 
-    if (getTdbType() == ComTdb::ex_EID_ROOT)
-       histDp2CpuTime_ = dp2CpuTime_; 
-    else
-       histCpuTime_ = cpuTime_; 
+    histCpuTime_ = cpuTime_; 
   }
 
   NABoolean filterForCpuStats();

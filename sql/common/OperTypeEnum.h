@@ -261,8 +261,6 @@ enum OperatorTypeEnum {
                         REL_CALLSP,   // CALL statement
                         REL_SP_PROXY, // Stored procedure result set proxy
 
-                        REL_INTERPRET_AS_ROW,
-
                         // Parallel extract consumer
                         REL_EXTRACT_SOURCE,
 

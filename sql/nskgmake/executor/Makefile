@@ -67,7 +67,6 @@ CPPSRC := Allocator.cpp \
 	ExHbaseSelect.cpp \
 	ExHbaseIUD.cpp \
 	ExHbaseDDL.cpp \
-	ExIar.cpp \
 	ExMeas.cpp \
 	ExPack.cpp \
 	ExPackedRows.cpp \

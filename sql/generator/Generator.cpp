@@ -293,7 +293,6 @@ void Generator::initTdbFields(ComTdb *tdb)
   if(largeQueueSize_ > 0 &&
      tdb->getInitialQueueSizeDown() < largeQueueSize_ &&
      tdb->getNodeType() != ComTdb::ex_ROOT &&
-     tdb->getNodeType() != ComTdb::ex_EID_ROOT &&
      (ActiveSchemaDB()->getDefaults().getToken(USE_LARGE_QUEUES) == DF_ON)) {
 
     tdb->setQueueResizeParams(largeQueueSize_,

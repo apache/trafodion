@@ -974,7 +974,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RESET
 %token <tokval> TOK_RESTORE
 %token <tokval> TOK_RESUME
-%token <tokval> TOK_RESOURCE_FORK      /* Tandem extension non-reserved word */
 %token <tokval> TOK_REWRITE              
 %token <tokval> TOK_RESULT
 %token <tokval> TOK_RETRIES
@@ -1356,7 +1355,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ALIAS               /* Tandem extension */
 %token <tokval> TOK_SYNONYM             /* Tandem extension */
 %token <tokval> TOK_SYNONYMS             /* Tandem extension */
-%token <tokval> TOK_SQLMP               /* Tandem extension */
 %token <tokval> TOK_LONG                /* Tandem extension */
 %token <tokval> TOK_BIGINT              /* Tandem extension */
 %token <tokval> TOK_LEVEL
@@ -1515,7 +1513,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_POOL
 
 %token <tokval> TOK_MTS
-%token <tokval> TOK_INTERPRET_AS_ROW
 
 %token <tokval> TOK_CHECKSUM
 %token <tokval> TOK_FALLBACK
@@ -1926,10 +1923,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>            table_as_stream_any
 //QSTUFF
 %type <relx>                    table_as_tmudf_function
-%type <relx>                    table_as_interpret_as_row
-%type <item>                    audit_row_image
-%type <item>                    modified_field_map
-%type <uint>                    audit_compression_value
 
 %type <relx>      		table_as_procedure
 %type <relx>      		joined_table
@@ -2453,7 +2446,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval>               guardian_location_name
 %type <stringval>               guardian_subvolume_name
 %type <stringval>               partition_name
-%type <stringval>		sg_location
 %type <pElemDDL>  		location_list
 %type <pElemDDL>  		source_location_list
 %type <pElemDDL>  		dest_location_list
@@ -5067,20 +5059,6 @@ special_table_name : special_regular_table_name
 
 	   | special_index_table_name
 
-           | TOK_TABLE '(' TOK_RESOURCE_FORK actual_table_name ')'
-		{
-		  if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-		    {
-		      // We don't allow a user to do ANY dml on an RFORK,
-		      // including no SELECTs; thus it remains a black box.
-		      // See fs_rfork.cpp & Parser::parseDML.
-		      //
-		      $4->setSpecialType(ExtendedQualName::RESOURCE_FORK);
-		      $$ = $4;  // actual_table_name
-		    }
-		  else
-		    { yyerror(""); YYERROR; /*internal syntax only!*/}
-		}
 	   | TOK_TABLE '(' TOK_TEMP_TABLE actual_table_name
              optional_special_table_loc_clause ')'
 		{
@@ -5394,82 +5372,8 @@ actual_table_name : qualified_name
                      $$->setUgivenName(*tmpName);
                     //ct-bug-10-030102-3803 End
 		  }
-              | qualified_guardian_name '.' subvolume_name '.' identifier
-                  {
-		     // ##SQLMP-SYNTAX-KLUDGE##
-                    // ##SQLMP-SYNTAX-KLUDGE##
-                    // SQL/MP (NSK) name; for initial (non-ANSI) release only##
-                    // We non-ANSIly default the object's correlation name
-                    // to be the tablename (simple) name.
-                    // This *should* only be done for SELECTed tables;
-                    // GenericUpdate::bindNode has to UNDO this kludge
-                    // for INSERT/UPDATE/DELETEd tables.
-                    //
-                    // There's a kludge in ObjectNames.C setCorrName	##
-                    // to be removed too!				##
-                    $$ = new (PARSERHEAP()) CorrName(*$5, PARSERHEAP(),
-                                                     *$3,
-                                                     *$1,
-                                                     *$5);
-                    //ct-bug-10-030102-3803 -Begin
-                    NAString *tmpName =
-			    new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
-                    tmpName->append(".", 1);
-                    tmpName->append(($3->data()), $3->length());
-                    tmpName->append(".", 1);
-                    tmpName->append(($5->data()), $5->length());
-                    $$->setUgivenName(*tmpName);
-                    //ct-bug-10-030102-3803 -End
-
-                    assert($$);
-                    delete $1;
-                    delete $3;
-                    delete $5;
-                    //
-                    // does not support computing view text yet
-                  }
-              | DOLLAR_IDENTIFIER
-                  {
-                    YYERROR ;
-
-		    // see hostvar&envvar comments above
-		    NAString *StrippedNameX = new (PARSERHEAP())
-		      NAString(($1)->remove(0,1), PARSERHEAP());
-		    // lose the '$'
-		    delete $1;
-		    HostVar *vvX = new (PARSERHEAP()) 
-		      HostVar(*StrippedNameX, new (PARSERHEAP()) 
-			      SQLChar(
-				   ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN));
-		    vvX->setIsEnvVar();
-		    //		    AllHostVars.insert(vvX);
-		    //		    TheHostVarRoles->addARole(HV_IS_INPUT);
-		    $$ = new (PARSERHEAP())
-		      CorrName("envVar$", 
-			       PARSERHEAP(),
-			       vvX->getName(),  // debugging ease
-			       "$bogus");
-		    assert($$);
-		    $$->setPrototype(vvX);
-		    //
-		    // does not support computing view text yet
-
-                                  //ct-bug-10-030102-3803 -Begin
-                                  NAString *tmpName =
-				    new (PARSERHEAP()) NAString(("$"),PARSERHEAP());
-                                    tmpName->append(vvX->getName(),(vvX->getName()).length());
-                                  $$->setUgivenName(*tmpName);
-                                  //ct-bug-10-030102-3803 -End
-                  }
               | '=' identifier
                                 {
-// EJF 8/24/01 CR 10-010824-4916
-//   NT for NSK preprocessors need this syntax to work.
-//   Besides, who's got the code for NT only anyhow?
-//
-//				  #ifdef NA_WINNT  
-//				  { yyerror(""); YYERROR;} //internal syntax only!
-//				  #endif
                                   NAString *defineName =
 				    new (PARSERHEAP()) NAString('=', PARSERHEAP());
 				  defineName->append($2->data(), $2->length());
@@ -5480,9 +5384,6 @@ actual_table_name : qualified_name
 				      SQLChar(
 				        ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN));
 				  vvX->setIsDefine();
-				  //                                  AllHostVars.insert(vvX);
-                                  //TheHostVarRoles->addUnassigned();
-				  //                                  TheHostVarRoles->addARole(HV_IS_DEFINE);
                                   $$ = new (PARSERHEAP())
 				    CorrName("envVar$", 
                                              PARSERHEAP(),
@@ -5621,58 +5522,6 @@ actual_table_name2 : qualified_name
                      $$->setUgivenName(*tmpName);
                      //ct-bug-10-030102-3803 End
 		  }
-	    | SYSTEM_VOLUME_NAME '.' identifier '.' identifier
-                  {
-		     // ##SQLMP-SYNTAX-KLUDGE## cloned from previous production
-                     $$ = new (PARSERHEAP()) CorrName(*$5, PARSERHEAP(), *$3, *$1, *$5);
-                    //ct-bug-10-030102-3803 -Begin
-                    NAString *tmpName =
-			    new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
-                    tmpName->append(".", 1);
-                    tmpName->append(($3->data()), $3->length());
-                    tmpName->append(".", 1);
-                    tmpName->append(($5->data()), $5->length());
-                    $$->setUgivenName(*tmpName);
-                    //ct-bug-10-030102-3803 -End
-                     assert($$);
-                     delete $1;
-                     delete $3;
-                     delete $5;
-                     //
-                     // does not support computing view text yet
-                  }
-              | DOLLAR_IDENTIFIER
-                  {
-                    YYERROR;
-		    
-		    // see hostvar&envvar comments above
-		    NAString *StrippedName = new (PARSERHEAP())
-		      NAString(($1)->remove(0,1), PARSERHEAP());
-		    // lose the '$'
-		    delete $1;
-		    HostVar *vv = new (PARSERHEAP()) 
-		      HostVar(*StrippedName, new (PARSERHEAP()) 
-			      SQLChar(
-				   ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN));
-		    vv->setIsEnvVar();
-		    AllHostVars->insert(vv);
-		    TheHostVarRoles->addARole(HV_IS_INPUT);
-		    $$ = new (PARSERHEAP())
-		      CorrName("envVar$", 
-			       PARSERHEAP(), 
-			       vv->getName(),  // debugging ease
-			       "$bogus");
-		    assert($$);
-		    $$->setPrototype(vv);
-		    //ct-bug-10-030102-3803 -Begin
-		    NAString *tmpName =
-		      new (PARSERHEAP()) NAString(("$"),PARSERHEAP());
-		    tmpName->append(vv->getName(),(vv->getName()).length());
-		    $$->setUgivenName(*tmpName);
-		    //ct-bug-10-030102-3803 -End
-		    //
-		    // does not support computing view text yet
-		  }
 | hostvar_and_prototype
 {
                                   // don't delete hostvar because it's also
@@ -5699,18 +5548,6 @@ actual_table_name2 : qualified_name
                                 // superset of Fortran ones, and COBOL words.
                                 // We need to allow other funny host-language
                                 // characters ('-' Cobol, '&' Mumps, ...).
-
-/* type stringval */
-//cased_identifier : regular_identifier
-//				{
-//				   $$=$1;
-//				   if ( ($$==NULL) || transformIdentifier(*$$,FALSE)) YYERROR;
-//				}
-//              | DELIMITED_IDENTIFIER
-//				{
-//				   $$=$1;
-//				   if ( ($$==NULL) || transformIdentifier(*$$)) YYERROR;
-//				}
 
 /* type stringval */
 identifier : regular_identifier
@@ -6643,17 +6480,6 @@ table_reference : table_name_and_hint
                                   delete $2;
                                 }
 
-              | table_as_interpret_as_row
-              | table_as_interpret_as_row as_clause
-                                {
-                                  $$=new(PARSERHEAP()) RenameTable($1, *$2);
-                                  delete $2;
-                                }
-              | table_as_interpret_as_row as_clause '(' derived_column_list ')'
-                                {
-                                  $$ = new(PARSERHEAP()) RenameTable($1,*$2,$4);
-                                  delete $2;
-                                }
               | table_as_tmudf_function as_clause
 				{
 					$$=new(PARSERHEAP()) RenameTable($1, *$2);
@@ -6689,120 +6515,6 @@ table_as_tmudf_function : TOK_UDF '(' user_defined_table_mapping_function ')'
   {
     $$ = $3;
   }
-
-table_as_interpret_as_row :  TOK_TABLE '(' TOK_INTERPRET_AS_ROW '(' audit_row_image ',' modified_field_map ',' audit_compression_value ',' TOK_TABLE actual_table_name ')' ')'
-           {
-              const NAString * val =
-                        ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-              if (((val) && (*val == "ON")) ||
-                  (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-#ifdef _DEBUG
-                  || (getenv("TEST_INTERNAL_SYNTAX"))
-#endif // _DEBUG
-                 )
-              {
-                 // This syntax is only allowed if the internal 
-                 // parser flag is set, since this is internal syntax. For
-                 // showplan, note that currently, the internal sqlparser
-                 // flags are not correctly propagated to the second mxcmp,
-                 // hence a check for the control session value for showplan
-                 // is also needed.
-                 $$ = new (PARSERHEAP()) 
-                       InterpretAsRow($5,$7,
-                                      (InterpretAsRow::AuditCompressionEnum)$9,
-                                      *$12);
-              }
-              else
-              {
-                 yyerror("");
-                 YYERROR;
-              }
-           }
-        |
-      TOK_TABLE '(' TOK_INTERPRET_AS_ROW '(' audit_row_image ',' modified_field_map ',' audit_compression_value ',' TOK_INDEX_TABLE actual_table_name ')' ')'
-           {
-              const NAString * val =
-                        ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-              if (((val) && (*val == "ON")) ||
-                  (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-#ifdef _DEBUG
-                  || (getenv("TEST_INTERNAL_SYNTAX"))
-#endif // _DEBUG
-                 )
-              {
-                 // This syntax is only allowed if the internal
-                 // parser flag is set, since this is internal syntax. For
-                 // showplan, note that currently, the internal sqlparser
-                 // flags are not correctly propagated to the second mxcmp,
-                 // hence a check for the control session value for showplan
-                 // is also needed.
-                 $12->setSpecialType(ExtendedQualName::INDEX_TABLE);
-                 $$ = new (PARSERHEAP()) 
-                        InterpretAsRow($5,$7,
-                                       (InterpretAsRow::AuditCompressionEnum)$9,
-                                       *$12);
-              }
-              else
-              { 
-                 yyerror(""); 
-                 YYERROR;
-              }
-           } 
-
-modified_field_map : hostvar_expression
-           {
-              TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
-              $$ = $1;
-           }
-           | dynamic_parameter
-           | TOK_CAST '(' dynamic_parameter  TOK_AS  Set_Cast_Global_False_and_data_type
-                                  optional_cast_spec_not_null_spec ')'
-           {
-              $$ = new (PARSERHEAP()) Cast($3, $5);
-              if ($6) // NOT NULL phrase specified
-              {
-                 $5->setNullable(FALSE);
-              }
-              if ( cast_target_cs_specified )
-              {
-                 ((Cast *)$$)->setTgtCSSpecified(TRUE);
-                 cast_target_cs_specified = FALSE ;
-              }
-           }
-           | null_constant
-
-audit_row_image : hostvar_expression
-           {
-              TheHostVarRoles->setLastUnassignedTo(HV_IS_INPUT);
-              $$ = $1;
-           }
-           | dynamic_parameter
-           | TOK_CAST '(' dynamic_parameter  TOK_AS  Set_Cast_Global_False_and_data_type
-                                  optional_cast_spec_not_null_spec ')'
-           {
-              $$ = new (PARSERHEAP()) Cast($3, $5);
-              if ($6) // NOT NULL phrase specified
-              {
-                 $5->setNullable(FALSE);
-              }
-              if ( cast_target_cs_specified )
-              {
-                 ((Cast *)$$)->setTgtCSSpecified(TRUE);
-                 cast_target_cs_specified = FALSE ;
-              }
-           }
-
-audit_compression_value : unsigned_integer
-           {
-              UInt32 value = $1;
-              if ((value != 0) && (value != 1) && (value != 2))
-              {
-                 // Error: Invalid value for compression flag
-                 *SqlParser_Diags << DgSqlCode(-4330) << DgInt0((Int32)value);
-                 yyerror(""); YYABORT;
-              }
-              $$ = $1;
-           }
 
 table_name_and_hint : table_name optimizer_hint
                       {
@@ -25226,18 +24938,6 @@ extended_label_name : label_name
                  yyerror(""); YYERROR; /*internal syntax only!*/
               }
            }
-     | TOK_TABLE '(' TOK_RESOURCE_FORK label_name ')'
-           {
-              if (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-              {
-                 $$ = $4  /* label_name */;
-                 $$->setSpecialType(ExtendedQualName::RESOURCE_FORK);
-              }
-              else
-              { 
-                 yyerror(""); YYERROR;  /*internal syntax only!*/
-              }
-           } 
 
 schema_location_clause: TOK_LOCATION schema_subvolume
                       {
@@ -27095,7 +26795,7 @@ col_def_default_clause : TOK_DEFAULT enableCharsetInferenceInColDefaultVal col_d
 				    ElemDDLColDefault(
                                        ElemDDLColDefault::COL_NO_DEFAULT);
                                 }
-                | TOK_GENERATED sg_type sg_identity_option sg_location
+                | TOK_GENERATED sg_type sg_identity_option
                                 {
 				 				
 			          // Process GENERATED BY DEFAULT or GENERATED ALWAYS AS					  
@@ -27108,8 +26808,6 @@ col_def_default_clause : TOK_DEFAULT enableCharsetInferenceInColDefaultVal col_d
 		                         pSGOptions->setCDType($2);
 			               else
 				         YYERROR;
-                                       if ($4)
-                                         $3->castToElemDDLColDefault()->setSGLocation($4); 
 				    }
 				  else
 				    YYERROR;
@@ -27170,16 +26868,6 @@ sg_type : TOK_BY TOK_DEFAULT TOK_AS
 						      (ElemDDLSGOptions *)$1  /* ElemDDLSGOptions */
 						      );
                                 }                               
-
-/* type stringval */
-sg_location : empty
-            {
-              $$ = NULL;
-            }
-            | TOK_LOCATION fully_expanded_guardian_loc_name
-            {
-              $$ = $2;
-            }
 
 /* type pElemDDL */
 optional_column_attributes : empty
@@ -34693,7 +34381,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_INDEXES
                       | TOK_INS
                       | TOK_INTERVALS
-                      | TOK_INTERPRET_AS_ROW
                       | TOK_INVOKER
                       | TOK_IO
                       | TOK_ISLACK
@@ -34861,12 +34548,9 @@ nonreserved_word :      TOK_ABORT
                       | TOK_RELOAD
                       | TOK_REMOTE
                       | TOK_RENAME
-//                      | TOK_REORG
-//                      | TOK_REPLICATE
                       | TOK_REQUEST // MV
                       | TOK_REQUIRED
                       | TOK_RESET
-                      | TOK_RESOURCE_FORK
                       | TOK_RETURNED_LENGTH
                       | TOK_RETURNED_OCTET_LENGTH
                       | TOK_RETURNED_SQLSTATE
@@ -34879,7 +34563,6 @@ nonreserved_word :      TOK_ABORT
 		      | TOK_ROWS_UPDATED  // MV REFRESH
 		      | TOK_ROWS_COVERED  // MV AB_REFRESH
 		      | TOK_NUM_OF_RANGES // MV AB_REFRESH
-//                      | TOK_ROWSET       //->nonreserved_datatype
                       | TOK_ROWWISE
 		      | TOK_ROWSET_IND_LAYOUT_SIZE
 		      | TOK_ROWSET_SIZE
@@ -34918,7 +34601,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_SOURCE_FILE
                       | TOK_SP_RESULT_SET
                       | TOK_SQL_WARNING
-                      | TOK_SQLMP
                       | TOK_SQLROW
 		      | TOK_START  /* used in nist618 for column name */
 		      | TOK_STATE  /* used internally? qat tests */

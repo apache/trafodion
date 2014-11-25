@@ -573,16 +573,6 @@ void CreateImplementationRules(RuleSet* set)
   set->insert(r);
   set->enable(r->getNumber());
 
-  r = new(CmpCommon::contextHeap()) PhysicalInterpretAsRowRule
-    ("Implement InterpretAsRow by a PhysicalInterpretAsRow",
-     new(CmpCommon::contextHeap()) 
-                       InterpretAsRow(CmpCommon::contextHeap()), 
-     new(CmpCommon::contextHeap())
-                       PhysicalInterpretAsRow(CmpCommon::contextHeap())
-    );
-  set->insert(r);
-  set->enable(r->getNumber());
-
   r = new (CmpCommon::contextHeap()) PhysicalSPProxyFuncRule
     ("Implement SPProxyFunc by a PhysicalSPProxyFunc",
      new (CmpCommon::contextHeap())
@@ -5078,43 +5068,6 @@ RelExpr * PhysicalSampleRule::nextSubstitute(RelExpr * before,
   substitute->child(0) = sampleBinding->child(0);
 
   return substitute;
-}
-
-// -----------------------------------------------------------------------
-// methods for class PhysicalInterpretAsRowRule
-// -----------------------------------------------------------------------
-PhysicalInterpretAsRowRule::~PhysicalInterpretAsRowRule() {} // LCOV_EXCL_LINE 
-
-NABoolean PhysicalInterpretAsRowRule::topMatch(RelExpr *relExpr,
-                                               Context *context)
-{
-   if (NOT Rule::topMatch(relExpr,context))
-      return FALSE;
-   
-   // Check for required physical properties that require an enforcer operator 
-   // to succeed.
-   const ReqdPhysicalProperty *rppForMe = context->getReqdPhysicalProperty();
-   if (relExpr->rppRequiresEnforcer(rppForMe))
-      return FALSE;
-   
-   return TRUE;
-}
-
-RelExpr * PhysicalInterpretAsRowRule::nextSubstitute
-                                              (RelExpr *before,
-                                               Context *context,
-                                               RuleSubstituteMemory * &memory)
-{
-   PhysicalInterpretAsRow *result =  new (CmpCommon::statementHeap()) 
-                                               PhysicalInterpretAsRow();
-
-   ((InterpretAsRow *)before)->copyTopNode(result);
-
-
-   // now set the group attributes of the result's top node
-   result->setGroupAttr(before->getGroupAttr());
-
-   return (RelExpr *) result;
 }
 
 // -----------------------------------------------------------------------
