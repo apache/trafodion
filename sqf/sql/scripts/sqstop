@@ -86,6 +86,10 @@ rm -f $SQSTOP_EXIT_STATUS
 # Stop the DCS Service
 dcsstop
 
+# Stop the lob Service
+lobstop
+
+
 
 
 # Issue the shutdown request

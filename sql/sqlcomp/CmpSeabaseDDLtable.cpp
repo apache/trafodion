@@ -1467,6 +1467,75 @@ void CmpSeabaseDDL::createSeabaseTable(
       return;
     }
 
+
+  // if this table has lob columns, create the lob files
+  short *lobNumList = new (STMTHEAP) short[numCols];
+  short *lobTypList = new (STMTHEAP) short[numCols];
+  char  **lobLocList = new (STMTHEAP) char*[numCols];
+  Lng32 j = 0;
+  for (Int32 i = 0; i < colArray.entries(); i++)
+    {
+      ElemDDLColDef *column = colArray[i];
+      
+      Lng32 datatype = column->getColumnDataType()->getFSDatatype();
+      if ((datatype == REC_BLOB) ||
+	  (datatype == REC_CLOB))
+	{
+	  lobNumList[j] = i; //column->getColumnNumber();
+	  lobTypList[j] = 
+	    (short)(column->getLobStorage() == Lob_Invalid_Storage
+		    ? Lob_HDFS_File : column->getLobStorage());
+	  
+	  //	   lobTypList[j] = (short)
+	  //	     CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE); 
+	  char * loc = new (STMTHEAP) char[1024];
+	  
+	  const char* f = ActiveSchemaDB()->getDefaults().
+	    getValue(LOB_STORAGE_FILE_DIR);
+	  
+	  strcpy(loc, f);
+	  
+	  lobLocList[j] = loc;
+	  j++;
+	}
+    }
+  
+  if (j > 0)
+     {
+       Int64 objUID = getObjectUID(&cliInterface,
+				   catalogNamePart.data(), schemaNamePart.data(), 
+				   objectNamePart.data(),
+				   COM_BASE_TABLE_OBJECT_LIT);
+       
+       ComString newSchName = "\"";
+       newSchName += catalogNamePart;
+       newSchName.append("\".\"");
+       newSchName.append(schemaNamePart);
+       newSchName += "\"";
+       Lng32 rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
+					   newSchName.length(),
+					   objUID,
+					   j,
+					   LOB_CLI_CREATE,
+					   lobNumList,
+					   lobTypList,
+					   lobLocList);
+       if (rc < 0)
+	 {
+	   //sss TBD need to retrive the cli diags here.
+	   *CmpCommon::diags() << DgSqlCode(-CAT_CREATE_OBJECT_ERROR)
+			       << DgTableName(extTableName);
+	   deallocEHI(ehi); 
+	   
+	   processReturn();
+	   
+	   return;
+	 }
+     }
+  // sss #endif
+
+
+
   CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable(cn, FALSE);
   
@@ -1880,6 +1949,9 @@ void CmpSeabaseDDL::dropSeabaseTable(
   NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
   const NAString extTableName = tableName.getExternalName(TRUE);
 
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+ 
+
   ExeCliInterface cliInterface(STMTHEAP);
 
   ExpHbaseInterface * ehi = allocEHI();
@@ -2028,7 +2100,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
   ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
   Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
 
-  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+  
 
   CorrName cn(objectNamePart,
               STMTHEAP,
@@ -2036,7 +2108,8 @@ void CmpSeabaseDDL::dropSeabaseTable(
               catalogNamePart);
 
   NATable *naTable = bindWA.getNATable(cn); 
-
+ 
+  const NAColumnArray &nacolArr =  naTable->getNAColumnArray();
   // Restore parser flags settings to what they originally were
   Set_SqlParser_Flags (savedParserFlags);
 
@@ -2522,6 +2595,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
       NAString idxSchName = (char*)vi->get(1);
       NAString idxObjName = (char*)vi->get(2);
 
+
       NAString qCatName = "\"" + idxCatName + "\"";
       NAString qSchName = "\"" + idxSchName + "\"";
       NAString qObjName = "\"" + idxObjName + "\"";
@@ -2531,19 +2605,91 @@ void CmpSeabaseDDL::dropSeabaseTable(
 
       if (dropSeabaseObject(ehi, ansiName,
                             idxCatName, idxSchName, COM_INDEX_OBJECT_LIT, FALSE, TRUE))
+
         {
           processReturn();
           
           return;
         }
 
+
       CorrName cni(qObjName, STMTHEAP, qSchName, qCatName);
       ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
-
       cni.setSpecialType(ExtendedQualName::INDEX_TABLE);
+
       ActiveSchemaDB()->getNATableDB()->removeNATable(cni);
 
     } // for
+
+  // If blob/clob columns are present, drop all the depenedent files.
+
+  Lng32 numCols = nacolArr.entries();
+  
+  // if this table has lob columns, drop the lob files
+  short *lobNumList = new (STMTHEAP) short[numCols];
+  short *lobTypList = new (STMTHEAP) short[numCols];
+  char  **lobLocList = new (STMTHEAP) char*[numCols];
+  Lng32 j = 0;
+  for (Int32 i = 0; i < nacolArr.entries(); i++)
+    {
+      NAColumn *naColumn = nacolArr[i];
+      
+      Lng32 datatype = naColumn->getType()->getFSDatatype();
+      if ((datatype == REC_BLOB) ||
+	  (datatype == REC_CLOB))
+	{
+	  lobNumList[j] = i; //column->getColumnNumber();
+	  lobTypList[j] = 
+	    (short)(naColumn->lobStorageType() == Lob_Invalid_Storage
+		    ? Lob_HDFS_File : naColumn->lobStorageType());
+	  
+	  //	   lobTypList[j] = (short)
+	  //	     CmpCommon::getDefaultNumeric(LOB_STORAGE_TYPE); 
+	  char * loc = new (STMTHEAP) char[1024];
+	  
+	  const char* f = ActiveSchemaDB()->getDefaults().
+	    getValue(LOB_STORAGE_FILE_DIR);
+	  
+	  strcpy(loc, f);
+	  
+	  lobLocList[j] = loc;
+	  j++;
+	}
+    }
+  if (j > 0)
+    {
+      Int64 objUID = getObjectUID(&cliInterface,
+				  catalogNamePart.data(), schemaNamePart.data(), 
+				  objectNamePart.data(),
+				  COM_BASE_TABLE_OBJECT_LIT);
+       
+      ComString newSchName = "\"";
+      newSchName += catalogNamePart;
+      newSchName.append("\".\"");
+      newSchName.append(schemaNamePart);
+      newSchName += "\"";
+      Lng32 rc = SQL_EXEC_LOBddlInterface((char*)newSchName.data(),
+					  newSchName.length(),
+					  objUID,
+					  j,
+					  LOB_CLI_DROP,
+					  lobNumList,
+					  lobTypList,
+					  lobLocList);
+      if (rc < 0)
+	{
+	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)
+			      << DgTableName(extTableName);
+	  deallocEHI(ehi); 
+	   
+	  processReturn();
+	   
+	  return;
+	}
+    }
+  
+   
+  //Finally drop the table
 
   if (dropSeabaseObject(ehi, tabName,
                         currCatName, currSchName, COM_BASE_TABLE_OBJECT_LIT))
@@ -2552,7 +2698,7 @@ void CmpSeabaseDDL::dropSeabaseTable(
       
       return;
     }
-
+ 
   processReturn();
 
   CorrName cn2(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);

@@ -2686,6 +2686,296 @@ private:
 }; // class Format
 
 
+class LOBoper : public BuiltinFunction
+{
+public:
+
+ enum ObjectType
+ {
+   STRING_, FILE_, BUFFER_, CHUNK_, STREAM_, LOB_, LOAD_, EXTERNAL_, 
+   EXTRACT_, NOOP_
+ };
+
+ LOBoper(OperatorTypeEnum otype,
+	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL, 
+	 ObjectType obj = NOOP_)
+   : BuiltinFunction(otype,  CmpCommon::statementHeap(),
+                     2, val1Ptr, val2Ptr),
+   obj_(obj),
+   lobNum_(-1),
+   lobStorageType_(Lob_Invalid_Storage)
+   {}
+
+ // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  virtual NABoolean hasEquivalentProperties(ItemExpr * other) { return TRUE;}
+
+  virtual NABoolean isCovered
+    (const ValueIdSet& newExternalInputs,
+     const GroupAttributes& coveringGA,
+     ValueIdSet& referencedInputs,
+     ValueIdSet& coveredSubExpr,
+     ValueIdSet& unCoveredExpr) const;
+  
+  // method to do precode generation
+  virtual ItemExpr * preCodeGen(Generator*);
+
+  ObjectType getObj() { return obj_; }
+
+  short &lobNum() {return lobNum_; }
+  LobsStorage &lobStorageType() { return lobStorageType_; }
+  NAString &lobStorageLocation() { return lobStorageLocation_; }
+
+ protected:
+  ObjectType obj_;
+
+  short lobNum_;
+  LobsStorage lobStorageType_;
+  NAString lobStorageLocation_;
+  
+}; // LOBoper
+
+class LOBinsert : public LOBoper
+{
+ public:
+  
+ LOBinsert(ItemExpr *val1Ptr, 
+	   ItemExpr *val2Ptr,
+	   ObjectType fromObj, 
+	   NABoolean isAppend = FALSE,
+	   OperatorTypeEnum otype = ITM_LOBINSERT)
+   : LOBoper(otype, val1Ptr, val2Ptr, fromObj),
+    objectUID_(-1),
+    append_(isAppend),
+    lobSize_(0),
+    fsType_(REC_BLOB)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  ItemExpr *bindNode(BindWA *bindWA);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  // returns TRUE so this could be evaluated in master.
+  virtual NABoolean isAUserSuppliedInput() const { return TRUE; };
+
+  Int64 & insertedTableObjectUID() { return objectUID_; }
+  
+  NAString &insertedTableSchemaName() { return schName_; }
+
+  //  Lng32 & lobNum() { return lobNum_; }
+
+  Lng32 & lobSize() { return lobSize_; }
+
+  Lng32 & lobFsType() { return fsType_; }
+
+ protected:
+  // ---------------------------------------------------------------//
+  // ObjectUID of the table this blob is being inserted into
+  // -------------------------------------------------------------- //
+  Int64 objectUID_;
+
+  // schemaname of the table
+  NAString schName_;
+
+  // column this blob is being inserted into.
+  //  Lng32 lobNum_;
+
+  Lng32 lobSize_;
+
+  Lng32 fsType_;
+
+  NABoolean append_;
+}; // class LOBinsert
+
+class LOBselect : public LOBoper
+{
+ public:
+  
+ LOBselect(ItemExpr *val1Ptr, ItemExpr *val2Ptr, ObjectType toObj)
+   : LOBoper(ITM_LOBSELECT, val1Ptr, val2Ptr, toObj)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+  
+  ItemExpr *bindNode(BindWA *bindWA);
+  
+  // a virtual function for type propagating the node
+  //  virtual const NAType * synthesizeType();
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+ private:
+}; // class LOBselect
+
+class LOBdelete : public LOBoper
+{
+ public:
+  
+ LOBdelete(ItemExpr *val1Ptr)
+   : LOBoper(ITM_LOBDELETE, val1Ptr)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+ private:
+}; // class LOBdelete
+
+
+class LOBupdate : public LOBoper
+{
+ public:
+  
+  LOBupdate(ItemExpr *val1Ptr,
+	    ItemExpr *val2Ptr,
+	    ObjectType fromObj, 
+	    NABoolean isAppend = FALSE)
+    : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr, fromObj),
+    objectUID_(-1),
+    append_(isAppend)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+  // method to do precode generation
+  virtual ItemExpr * preCodeGen(Generator*);
+
+  NABoolean isAppend() { return append_; };
+
+  Int64 & updatedTableObjectUID() { return objectUID_; }
+  
+  NAString &updatedTableSchemaName() { return schName_; }
+
+ private:
+  // ---------------------------------------------------------------//
+  // ObjectUID of the table this blob is being inserted into
+  // -------------------------------------------------------------- //
+  Int64 objectUID_;
+
+  // schemaname of the table
+  NAString schName_;
+
+
+  NABoolean append_;
+}; // class LOBupdate
+
+class LOBconvert : public LOBoper
+{
+ public:
+  
+ LOBconvert(ItemExpr *val1Ptr, ObjectType toObj, Lng32 tgtSize = 1000)
+   : LOBoper(ITM_LOBCONVERT, val1Ptr, NULL, toObj),
+    tgtSize_(tgtSize)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+  
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  // method to do precode generation
+  virtual ItemExpr * preCodeGen(Generator*);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  Lng32 getTgtSize() { return tgtSize_; }
+ private:
+  Lng32 tgtSize_;
+}; // class LOBconvert
+
+class LOBconvertHandle : public LOBoper
+{
+ public:
+  
+ LOBconvertHandle(ItemExpr *val1Ptr, ObjectType toObj)
+   : LOBoper(ITM_LOBCONVERTHANDLE, val1Ptr, NULL, toObj)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+  
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+ private:
+}; // class LOBconvertHandle
+
+class LOBload : public LOBinsert
+{
+ public:
+  
+ LOBload(ItemExpr *val1Ptr, ObjectType fromObj)
+   : LOBinsert(val1Ptr, NULL, fromObj, FALSE, ITM_LOBLOAD)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+ private:
+}; // class LOBload
+
+class LOBextract : public LOBoper
+{
+ public:
+  
+ LOBextract(ItemExpr *val1Ptr, Lng32 tgtSize = 1000)
+    : LOBoper(ITM_LOBEXTRACT, val1Ptr, NULL, EXTRACT_),
+    tgtSize_(tgtSize)
+    {};
+  
+  // copyTopNode method
+  virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+  
+  // a virtual function for type propagating the node
+  virtual const NAType * synthesizeType();
+
+  // method to do code generation
+  //virtual short codeGen(Generator*);
+  
+  Lng32 getTgtSize() { return tgtSize_; }
+ private:
+  Lng32 tgtSize_;
+}; // class LOBext
+
 class CompEncode : public BuiltinFunction
 {
 protected:

@@ -8008,6 +8008,163 @@ PhysicalProperty * ExeUtilLongRunning::synthPhysicalProperty(const Context * con
 }
 
 // -----------------------------------------------------------------------
+// Member functions for class ExeUtilLobExtract
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilLobExtract::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilLobExtract *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilLobExtract(NULL, NOOP_,
+					     NULL, NULL, 0, 0, NULL, NULL, NULL,NULL,
+					     outHeap);
+  else
+    result = (ExeUtilLobExtract *) derivedNode;
+
+  result->handle_ = handle_;
+  result->toType_ = toType_;
+  result->bufAddrExpr_ = bufAddrExpr_;
+  result->bufSizeExpr_ = bufSizeExpr_;
+  result->intParam_ = intParam_;
+  result->intParam2_ = intParam2_;
+  result->stringParam_ = stringParam_;
+  result->stringParam2_ = stringParam2_;
+  result->stringParam3_ = stringParam3_;
+  result->handleInStringFormat_ = handleInStringFormat_;
+  result->withCreate_ = withCreate_;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilLobExtract::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // BindScope *currScope = bindWA->getCurrentScope();
+ 
+  //
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  //  currScope = bindWA->getCurrentScope();
+  // bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+  
+  if (handle_)
+    {
+      handle_->bindNode(bindWA);
+      if (bindWA->errStatus())
+	return NULL;
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
+}
+
+void ExeUtilLobExtract::transformNode(NormWA & normWARef,
+				      ExprGroupId & locationOfPointerToMe)
+{
+  RelExpr::transformNode(normWARef, locationOfPointerToMe);
+
+  /*
+  ExprValueId nePtr(handle_);                   // normalized expr.
+   
+  handle_->getReplacementExpr()->
+    transformNode(normWARef, nePtr, locationOfPointerToMe,
+		  getGroupAttr()->getCharacteristicInputs());			
+  if ((const ItemExpr *)handle_ != nePtr)
+    handle_ = nePtr;
+  */
+}
+
+RelExpr * ExeUtilLobExtract::normalizeNode(NormWA & normWARef)
+{
+  
+  return RelExpr::normalizeNode(normWARef);
+}
+
+void ExeUtilLobExtract::pushdownCoveredExpr(const ValueIdSet & outputExpr,
+					    const ValueIdSet & newExternalInputs,
+					    ValueIdSet & predicatesOnParent,
+					    const ValueIdSet * setOfValuesReqdByParent,
+					    Lng32 childIndex
+					    )
+{
+  ValueIdSet exprOnParent;
+
+  if (handle_) // && handle_->child(0))
+    {
+      exprOnParent += handle_->getValueId(); //child(0)->getValueId();
+    }
+
+  // ---------------------------------------------------------------------
+  RelExpr::pushdownCoveredExpr(outputExpr,
+                               newExternalInputs,
+                               predicatesOnParent,
+			       &exprOnParent,
+                               childIndex
+                               );
+
+}
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilLobShowddl
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilLobShowddl::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilLobShowddl *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) 
+      ExeUtilLobShowddl(getTableName(), sdOptions_, outHeap);
+  else
+    result = (ExeUtilLobShowddl *) derivedNode;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilLobShowddl::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) 
+    return this;
+
+  NATable *naTable = NULL;
+
+  naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return this;
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  // Allocate a TableDesc and attach it to this.
+  //
+  setUtilTableDesc(bindWA->createTableDesc(naTable, getTableName()));
+  if (bindWA->errStatus())
+    return this;
+
+  objectUID_ = naTable->objectUid().get_value();
+
+  return boundExpr;
+}
+
+
+// -----------------------------------------------------------------------
 // Member functions for class ExeUtilHbaseCoProcAggr
 // -----------------------------------------------------------------------
 RelExpr * ExeUtilHbaseCoProcAggr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)

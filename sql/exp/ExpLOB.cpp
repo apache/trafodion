@@ -192,7 +192,7 @@ Lng32 ExpLOBoper::dropLOB(void * lobGlob, void * lobHeap,
     lobGlobL = lobGlob;
 
   // Call ExeLOBinterface to drop the LOB
-  rc = ExpLOBinterfaceDrop(lobGlobL, lobName, lobLoc);
+  rc = ExpLOBinterfaceDrop(lobGlobL,(char *)"default", 0, lobName, lobLoc);
 
   return rc;
 }
@@ -207,7 +207,7 @@ Lng32 ExpLOBoper::purgedataLOB(void * lobGlob, char * lobLoc,
     return -1;
 
   // Call ExeLOBinterface to purgedata the LOB
-  Lng32 rc = ExpLOBInterfacePurgedata(lobGlob, lobName, lobLoc);
+  Lng32 rc = ExpLOBInterfacePurgedata(lobGlob,(char *)"default", 0, lobName, lobLoc);
   if (rc < 0)
     return ex_expr::EXPR_ERROR;
 
@@ -230,6 +230,7 @@ ExpLOBoper::ExpLOBoper(OperatorTypeEnum oper_type,
   lobHandleSaved_[0] = 0;
   lobStorageLocation_[0] = 0;
   lobHdfsServer_[0] = 0;
+  strcpy(lobHdfsServer_,"default");
   lobHdfsPort_ = 0;
   descSchName_[0] = 0;
 };
@@ -317,7 +318,7 @@ void ExpLOBoper::updLOBhandle(Int64 descSyskey,
 }
 
 // Extracts values from the LOB handle stored at ptr
-Lng32 ExpLOBoper::extractFromLOBhandle(Lng32 *flags,
+Lng32 ExpLOBoper::extractFromLOBhandle(Int16 *flags,
 				       Lng32 *lobType,
 				       Lng32 *lobNum,
 				       Int64 *uid, 
@@ -353,7 +354,7 @@ Lng32 ExpLOBoper::extractFromLOBhandle(Lng32 *flags,
 }
 
 // creates LOB handle in string format.
-void ExpLOBoper::createLOBhandleString(Lng32 flags,
+void ExpLOBoper::createLOBhandleString(Int16 flags,
 				       Lng32 lobType,
 				       Int64 uid, 
 				       Lng32 lobNum,
@@ -384,7 +385,8 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
 				       Lng32 &lobNum,
 				       Int64 &descPartnKey,
 				       Int64 &descSyskey,
-				       Lng32 &flags,
+				       Int16 &flags,
+				       Lng32 &lobType,
 				       short &schNameLen,
 				       char * schName,
 				       char * handle,
@@ -396,7 +398,6 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
   //  str_sprintf(lobHandleBuf, "LOBH%04d%02d%04d%020d%02d%Ld%02d%Ld%03d%s",
   //		  header, flags, lobtype, lobNum, uid, descPartnKey, descSyskey, schNameLen/SchName
 
-  Lng32 lobType;
 
   if (handleLen < (4 + 4 + 2 + 4 + 20 + 2))
     return -1;
@@ -455,20 +456,20 @@ Lng32 ExpLOBoper::genLOBhandleFromHandleString(char * lobHandleString,
   
   Int64 uid;
   Lng32 lobNum;
-  short lobType;
+  Int32 lobType;
   Int64 descPartnKey;
   Int64 descSyskey;
-  Lng32 flags;
+  Int16 flags;
   short schNameLen;
   char  schNameLenBuf[1024];
   Lng32 handleLen;
 
   if (extractFromLOBstring(uid, lobNum, descPartnKey, descSyskey, flags,
-			   schNameLen, schNameLenBuf, 
+			   lobType,schNameLen, schNameLenBuf, 
 			   lobHandleString, lobHandleStringLen))
     return -1;
 
-  lobType = 1;
+  
   char lLobHandle[4096];
   genLOBhandle(uid, lobNum, lobType, descPartnKey, descSyskey, flags,
 	       schNameLen, schNameLenBuf, handleLen, lLobHandle);
@@ -723,7 +724,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 					       CollHeap*h,
 					       ComDiagsArea** diagsArea)
 {
-  Lng32 rc;
+  Lng32 rc = 0;
 
   Lng32 lobOperStatus = checkLobOperStatus();
   if (lobOperStatus == DO_NOTHING_)
@@ -926,7 +927,9 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
 
   // call function with the lobname and offset to delete it.
   rc = ExpLOBInterfaceDelete
-    (getExeGlobals()->lobGlobal(), 
+    (getExeGlobals()->lobGlobal(),
+     getLobHdfsServer(),
+     getLobHdfsPort(),
      lobName, 
      lobStorageLocation(),
      handleLen, op_data[1],
@@ -1042,7 +1045,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   Lng32 sLobNum;
   Int64 sDescSyskey = -1;
   Int64 sDescTS = -1;
-  Lng32 sFlags;
+  Int16 sFlags;
   short sSchNameLen = 0;
   char sSchName[500];
 
@@ -1090,7 +1093,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
       Lng32 fromLobType;
       Int64 fromLobUid;
       Lng32 fromLobNum;
-      Lng32 fromFlags;
+      Int16 fromFlags;
       extractFromLOBhandle(&fromFlags, &fromLobType, &fromLobNum, &fromLobUid,
 			   &fromDescKey, &fromDescTS, 
 			   &fromSchNameLen, fromSchName,
@@ -1133,6 +1136,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     {
       rc = ExpLOBInterfaceUpdateAppend
 	(getExeGlobals()->lobGlobal(), 
+	 getLobHdfsServer(),
+	 getLobHdfsPort(),
 	 tgtLobName, 
 	 lobStorageLocation(),
 	 handleLen, op_data[2],
@@ -1153,6 +1158,8 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     {
       rc = ExpLOBInterfaceUpdate
 	(getExeGlobals()->lobGlobal(), 
+	 getLobHdfsServer(),
+	 getLobHdfsPort(),
 	 tgtLobName, 
 	 lobStorageLocation(),
 	 handleLen, op_data[2],
@@ -1221,7 +1228,7 @@ ex_expr::exp_return_type ExpLOBselect::eval(char *op_data[],
   Lng32 lobType;
   Lng32 lobNum;
   Int64 descKey;
-  Lng32 flags;
+  Int16 flags;
   Int64 descTS = -1;
   short schNameLen = 0;
   char  schName[500];
@@ -1283,7 +1290,7 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
   Lng32 lobNum;
   Int64 descKey;
   Int64 descTS;
-  Lng32 flags;
+  Int16 flags;
   short schNameLen = 0;
   char schName[500];
 
@@ -1397,21 +1404,23 @@ ex_expr::exp_return_type ExpLOBconvertHandle::eval(char *op_data[],
   Lng32 lobType;
   Int64 uid = 0;
   Lng32 lobNum = 0;
-  Int64 descKey = 0;
+  Int64 descPartnKey = 0;
+  Int64 descSysKey = 0;
   Int64 descTS = 0;
-  Lng32 flags = 0;
-  short schNameLen = 0;
-  char schName[500];
+  Int16 flags = 0;
+  Int16 schNameLen = 0;
+  char schName[1024];
+  long handleLen = 0;
   if (toString())
     {
       extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,
-			   &descKey, &descTS, 
+			   &descSysKey, &descTS, 
 			   &schNameLen, schName,
 			   source);
       
-      char lobHandleBuf[500];
+      char lobHandleBuf[LOB_HANDLE_LEN];
       createLOBhandleString(flags, lobType, uid, lobNum, 
-			    descKey, descTS, 
+			    descSysKey, descTS, 
 			    schNameLen, schName,
 			    lobHandleBuf);
       
@@ -1421,16 +1430,40 @@ ex_expr::exp_return_type ExpLOBconvertHandle::eval(char *op_data[],
     }
   else if (toLob())
     {
-      //extractFromLOBstring(uid, lobNum, descKey, flags, source);
+       Int64 addrOfLobHandleLen = (Int64)source-sizeof(short) ;  
+       Int32 lobHandleLen = *(short *)addrOfLobHandleLen;
+      if (strncmp(source,"LOBH",4)== 0)
+	{
+	  // This is the external string format of the handle
+
+	  extractFromLOBstring(uid, 
+			       lobNum, 
+			       descPartnKey,
+			       descSysKey, 
+			       flags,
+			       lobType,
+			       schNameLen,
+			       schName,
+			       source, 
+			       lobHandleLen);
       
-      Lng32 handleLen = 0;
-      short lobType = 1;
-      genLOBhandle(uid, lobNum, lobType, descKey, 0, flags,
-		   0, NULL,
+	  Lng32 handleLen = 0;
+	  short lobType = 1;
+	  genLOBhandle(uid, lobNum, lobType, descPartnKey, descSysKey, flags,
+		   schNameLen, schName,
 		   handleLen,
 		   result);
 
-      getOperand(0)->setVarLength(handleLen, op_data[-MAX_OPERANDS]);
+	  getOperand(0)->setVarLength(handleLen, op_data[-MAX_OPERANDS]);
+	}
+      else 
+	{
+	  // Source is pointing to the internal packed format as stored on disk.
+	  // Simply cast result to source so it can be interpreted/cast 
+	  // as LOBhandle.
+	  str_cpy_all(result, source, sizeof(Int64));
+	  getOperand(0)->setVarLength(lobHandleLen, op_data[-MAX_OPERANDS]);
+	}
     }
 
   return ex_expr::EXPR_OK;

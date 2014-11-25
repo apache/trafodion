@@ -2188,6 +2188,47 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
           child(0) = wi;
         }
 
+    }
+
+  
+  // if blob values are being selected out, retrieve them and return them either in file
+  // or as a stream
+  if (isTrueRoot())
+    {
+      RETDesc * rd = getRETDesc();
+      const ColumnDescList * cdl = rd->getColumnList();
+      for (CollIndex i = 0; i < compExpr().entries(); i++)
+	{
+	  ValueId val_id = compExpr()[i];
+	  ItemExpr * expr = val_id.getItemExpr();
+	  if ((val_id.getType().isLob()) &&
+	      ((expr->getOperatorType() == ITM_BASECOLUMN) ||
+	       (expr->getOperatorType() == ITM_INDEXCOLUMN)))
+	    {
+	      LOBconvertHandle * lc = new(generator->wHeap())
+		LOBconvertHandle(val_id.getItemExpr(), LOBoper::STRING_);
+	      
+	      lc->bindNode(generator->getBindWA());
+	      lc->preCodeGen(generator);
+	      
+	      compExpr().removeAt(i);
+	      compExpr().insertAt(i, lc->getValueId());
+
+	      ColumnDesc  *cd = (*cdl)[i];
+	      
+	      NAColumn * col = cd->getValueId().getNAColumn(TRUE);
+	      lc->lobNum() = col->lobNum();
+	      lc->lobStorageType() = col->lobStorageType();
+	      lc->lobStorageLocation() = col->lobStorageLocation();
+	      
+	      cd->setValueId(lc->getValueId());
+
+	      rd->changeNATypeForUserColumnList(i, &lc->getValueId().getType());
+
+	    }
+	} // for
+
+   
       if (getPredExprTree())
         {
           getPredExprTree()->preCodeGen(generator);
@@ -4488,6 +4529,181 @@ RelExpr * MergeDelete::preCodeGen(Generator * generator,
   return this;
 }
 
+
+#ifdef __ignore
+RelExpr * DP2Delete::preCodeGen(Generator * generator,
+				const ValueIdSet & externalInputs,
+				ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  // start with input olt eid opt indication
+  oltOptInfo().setOltEidOpt(generator->oltOptInfo()->oltEidOpt());
+
+  generator->oltOptInfo()->setMultipleRowsReturned(FALSE);
+
+  NABoolean isAUniqueDelete = FALSE;
+  if ((getOperatorType() == REL_DP2_DELETE_UNIQUE) ||
+      ((getOperatorType() == REL_DP2_DELETE_CURSOR) &&
+       (! getenv("NO_OLT_DELETE_CURSOR"))))
+    isAUniqueDelete = TRUE;
+
+  if (NOT isAUniqueDelete)
+    {
+      oltOptInfo().setOltEidOpt(FALSE);
+    }
+
+  // 'merge' stmt not supported for olt opt delete
+  if (isMergeDelete())
+    {
+      oltOptInfo().setOltEidOpt(FALSE);
+    }
+
+  if (isFastDelete())
+    {
+      generator->setUpdAbortOnError(TRUE);
+      generator->setUpdSavepointOnError(FALSE);
+    }
+    
+  // Make sure we don't try to expand short rows if
+  //  - there are no added columns
+  //  - the feature is turned off
+  //  - a vertical partition table
+  //  - is not a base table (no expand needed for index tables)
+  if ( getTableDesc()->getNATable()->hasAddedColumn() &&
+       (CmpCommon::getDefault(EXPAND_DP2_SHORT_ROWS) == DF_ON) &&
+       (NOT getTableDesc()->getNATable()->isSQLMPTable()) &&
+       getTableDesc()->getVerticalPartitions().isEmpty() &&
+       getIndexDesc()->isClusteringIndex()   // true if base table not an index
+       )
+  {
+    // In specific cases for SQL/MX tables that have added columns we will expand
+    // the row data to include any missing column default values allowing
+    // other optimizations and PCode.
+    setExpandShortRows( TRUE );
+  }
+
+  // if subset delete or a non-delete-curr-of cursor delete,
+  // turn off 'error on error'.
+  // A non-delete-curr-of cursor could be chosen for a
+  // delete query with the shape:    tuple_flow(scan, delete)
+  if ((getOperatorType() == REL_DP2_DELETE_SUBSET) ||
+      (getOperatorType() == REL_DP2_DELETE_CURSOR &&
+       NOT updateCurrentOf()))
+    {
+      generator->setUpdErrorOnError(FALSE);
+    }
+
+
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      ValueIdSet vidL;
+      
+      for (CollIndex i = 0; i < getIndexDesc()->getIndexColumns().entries(); i++)
+	{
+	  ValueId vid = getIndexDesc()->getIndexColumns()[i];
+
+	  if (vid.getType().isLob())
+	    {
+	      LOBdelete * ld = new(generator->wHeap())
+		LOBdelete(vid.getItemExpr());
+
+	      NAColumn * col = getIndexDesc()->getIndexColumns()[i].getNAColumn(TRUE);
+	      if (col)
+		{
+		  ld->lobNum() = col->lobNum();
+		  ld->lobStorageType() = col->lobStorageType();
+		  ld->lobStorageLocation() = col->lobStorageLocation();
+		}
+
+	      // evaluate ld expr and return TRUE. This is needed so
+	      // the executorPred processing works right.
+	      ItemExpr * ie
+		= new(generator->wHeap()) BoolVal(ITM_RETURN_TRUE, ld);
+
+	      ie->bindNode(generator->getBindWA());
+	      ie->preCodeGen(generator);
+	      
+	      vidL.insert(ie->getValueId());
+	    }
+	}
+
+      executorPred().insert(vidL);
+    }
+  // ssss #endif
+
+  PartitioningFunction *partFunc =
+    getTableDesc() ?
+      getTableDesc()->getClusteringIndex()->
+        getNAFileSet()->getPartitioningFunction()
+    : 0;
+
+  // Cannot do olt msg opt if:
+  //   -- values are to be returned and unique operation is not being used.
+  //   -- or table is partitioned and unique operation is not being used.
+
+  GenAssert(partFunc, "DP2Delete::preCodeGen : missing partition");
+  if ((NOT isAUniqueDelete) &&
+      ((producesOutputs()) || (partFunc->isPartitioned())))
+    {
+      generator->oltOptInfo()->setOltMsgOpt(FALSE);
+
+      if (producesOutputs())
+	{
+	  // set an indication that multiple rows will be returned.
+	  generator->oltOptInfo()->setMultipleRowsReturned(TRUE);
+	}
+    }
+
+  // eid olt opt done for key seq non-compressed tables with user
+  // defined primary key.
+  if ((NOT getIndexDesc()->getNAFileSet()->isKeySequenced()) ||
+      //      (getIndexDesc()->getAllColumns()[0]->isSystemColumn()) ||
+      (getIndexDesc()->getNAFileSet()->isCompressed()))
+  {
+    oltOptInfo().setOltOpt(FALSE);
+    setExpandShortRows( FALSE );
+  }
+
+
+  if (getIndexDesc()->getAllColumns()[0]->isSyskeyColumn())
+    {
+      oltOptInfo().setOltEidOpt(FALSE);
+    }
+
+  // The OLT optimized nodes do not support logging yet.
+  ValueId   epochValueId;
+  if (getOutputFunctionsForMV(epochValueId, ITM_CURRENTEPOCH))
+  {
+    oltOptInfo().setOltOpt(FALSE);
+    setExpandShortRows( FALSE );
+  }
+
+  if (oltOpt() &&
+      (NOT expandShortRows()) &&
+      getTableDesc()->getNATable()->hasAddedColumn())
+  {
+    oltOptInfo().setOltEidOpt(FALSE);
+  }
+
+  // see if 'lean' olt opt could be done.
+  oltOptInfo().setOltEidLeanOpt(FALSE);
+  if ((oltOpt()) &&
+      (generator->oltOptInfo()->oltEidLeanOpt()))
+  {
+    oltOptInfo().setOltEidLeanOpt(TRUE);
+    setExpandShortRows( FALSE );   // not yet for opt lean ...
+  }
+
+  generator->compilerStatsInfo().dp2RowsAccessed() += 
+    getEstRowsUsed().value();
+
+  return DeleteCursor::preCodeGen(generator, externalInputs, pulledNewInputs);
+}
+#endif
+
+
 static NABoolean hasColReference(ItemExpr * ie)
 {
   if (! ie)
@@ -5087,7 +5303,43 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 
   // flag for hbase tables
   generator->setHdfsAccess(TRUE);
+  if (getTableDesc()->getNATable()->hasLobColumn())
+    {
+      for (CollIndex i = 0; i < newRecExprArray().entries(); i++)
+	{
+	  NAColumn * col = 
+	    newRecExprArray()[i].getItemExpr()->child(0)->castToItemExpr()->
+	    getValueId().getNAColumn(TRUE);
 
+	  ItemExpr * val = 
+	    newRecExprArray()[i].getItemExpr()->child(1)->castToItemExpr();
+	  
+	  if ((col->getType()->isLob()) &&
+	      (val->getOperatorType() == ITM_LOBUPDATE))
+	    {
+	      LOBupdate * lu = (LOBupdate*)val;
+
+	      lu->updatedTableObjectUID() = 
+		getIndexDesc()->getPrimaryTableDesc()->
+		getNATable()->objectUid().castToInt64();
+	      
+	      lu->updatedTableSchemaName() = "\"";
+	      lu->updatedTableSchemaName() += 
+		getTableDesc()->getNATable()->
+		getTableName().getCatalogName();
+	      lu->updatedTableSchemaName().append("\".\"");
+	      lu->updatedTableSchemaName().
+		append(getTableDesc()->getNATable()->
+		       getTableName().getSchemaName());
+	      lu->updatedTableSchemaName() += "\"";
+
+	      lu->lobNum() = col->lobNum();
+	      lu->lobStorageType() = col->lobStorageType();
+	      lu->lobStorageLocation() = col->lobStorageLocation();
+	    }
+	} // for
+    } // if
+ 
   markAsPreCodeGenned();
 
   return this;  
@@ -5140,6 +5392,143 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
  	setInsertType(Insert::SIMPLE_INSERT);
     }
 
+  
+  // if there are blob columns, use simple inserts.
+  if ( getTableDesc()->getNATable()->hasLobColumn())
+    {
+      setInsertType(Insert::SIMPLE_INSERT);
+
+      NAColumnArray colArray;
+      NAColumn *col;
+
+      for (CollIndex ii = 0;
+           ii < newRecExprArray().entries(); ii++)
+	{
+	  ItemExpr *assignExpr =
+	    newRecExprArray()[ii].getItemExpr();
+	  
+	  ValueId tgtValueId =
+	    assignExpr->child(0)->castToItemExpr()->getValueId();
+
+	  ValueId srcValueId =
+	    assignExpr->child(1)->castToItemExpr()->getValueId();
+
+	  col = tgtValueId.getNAColumn( TRUE );
+	  
+	  ItemExpr * child1Expr = assignExpr->child(1);
+	  if (srcValueId.getType().isLob())
+	    {
+	      LOBinsert * li = NULL;
+	      if ((child1Expr->getOperatorType() != ITM_LOBINSERT) &&
+		  (child1Expr->getOperatorType() != ITM_LOBUPDATE))
+		{
+		  li = new(generator->wHeap())
+		    LOBinsert(child1Expr, NULL, LOBoper::LOB_);
+
+		  li->insertedTableObjectUID() = 
+		    getIndexDesc()->getPrimaryTableDesc()->
+		    getNATable()->objectUid().castToInt64();
+
+		  li->insertedTableSchemaName() = "\"";
+		  li->insertedTableSchemaName() += 
+		    getTableDesc()->getNATable()->
+		    getTableName().getCatalogName();
+		  li->insertedTableSchemaName().append("\".\"");
+		  li->insertedTableSchemaName().
+		    append(getTableDesc()->getNATable()->
+			   getTableName().getSchemaName());
+		  li->insertedTableSchemaName() += "\"";
+		  
+		  //		  li->lobNum() = col->getPosition();
+		  li->lobSize() = srcValueId.getType().getPrecision();
+		  li->lobFsType() = tgtValueId.getType().getFSDatatype();
+
+		  li->lobNum() = col->lobNum();
+		  li->lobStorageType() = col->lobStorageType();
+		  li->lobStorageLocation() = col->lobStorageLocation();
+
+		  li->bindNode(generator->getBindWA());
+
+		  child1Expr = li;
+
+		  assignExpr->child(1) = child1Expr;
+		}
+	      else if (child1Expr->getOperatorType() == ITM_LOBINSERT)
+		{
+		  li = (LOBinsert*)child1Expr;
+		  li->insertedTableObjectUID() = 
+		    getIndexDesc()->getPrimaryTableDesc()->
+		    getNATable()->objectUid().castToInt64();
+
+		  li->insertedTableSchemaName() = "\"";
+		  li->insertedTableSchemaName() += 
+		    getTableDesc()->getNATable()->
+		    getTableName().getCatalogName();
+		  li->insertedTableSchemaName().append("\".\"");
+		  li->insertedTableSchemaName().
+		    append(getTableDesc()->getNATable()->
+			   getTableName().getSchemaName());
+		  li->insertedTableSchemaName() += "\"";
+		  
+		  li->lobNum() = col->lobNum();
+		  li->lobStorageType() = col->lobStorageType();
+		  li->lobStorageLocation() = col->lobStorageLocation();
+		  
+		  li->lobSize() = srcValueId.getType().getPrecision();
+
+		  if (li->lobFsType() != tgtValueId.getType().getFSDatatype())
+		    {
+		      // create a new LOBinsert node since fsType has changed.
+		      ItemExpr * liChild = li->child(0);
+		      ItemExpr * liChild1 = li->child(1);
+		      li = new(generator->wHeap())
+			LOBinsert(liChild, liChild1, li->getObj());
+		      
+		      li->insertedTableObjectUID() = 
+			getIndexDesc()->getPrimaryTableDesc()->
+			getNATable()->objectUid().castToInt64();
+		      
+		      li->insertedTableSchemaName() = "\"";
+		      li->insertedTableSchemaName() += 
+			getTableDesc()->getNATable()->
+			getTableName().getCatalogName();
+		      li->insertedTableSchemaName().append("\".\"");
+		      li->insertedTableSchemaName().
+			append(getTableDesc()->getNATable()->
+			       getTableName().getSchemaName());
+		      li->insertedTableSchemaName() += "\"";
+		      
+		      li->lobSize() = srcValueId.getType().getPrecision();
+		      li->lobFsType() = tgtValueId.getType().getFSDatatype();
+
+		      li->lobNum() = col->lobNum();
+		      li->lobStorageType() = col->lobStorageType();
+		      li->lobStorageLocation() = col->lobStorageLocation();
+		      
+		      li->bindNode(generator->getBindWA());
+
+		      assignExpr->child(1) = li;
+		    }
+		} // lobinsert
+
+	      GenAssert(li, "must have a LobInsert node");
+
+	      LOBload * ll = new(generator->wHeap()) 
+		LOBload(li->child(0), li->getObj());
+	      ll->insertedTableObjectUID() = li->insertedTableObjectUID();
+	      ll->insertedTableSchemaName() = li->insertedTableSchemaName();
+
+	      ll->lobNum() = col->lobNum();
+	      ll->lobStorageType() = col->lobStorageType();
+	      ll->lobStorageLocation() = col->lobStorageLocation();
+	      ll->bindNode(generator->getBindWA());
+	      lobLoadExpr_.insert(ll->getValueId());
+	    } // lob
+	}
+    }
+  // sss #endif
+
+
   if ((getInsertType() == Insert::SIMPLE_INSERT)  &&
       (NOT getTableDesc()->getNATable()->hasLobColumn()))
     uniqueHbaseOper() = TRUE;
@@ -5187,7 +5576,15 @@ RelExpr * ExeUtilFastDelete::preCodeGen(Generator * generator,
 
   return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
 }
+RelExpr * ExeUtilLobExtract::preCodeGen(Generator * generator,
+					const ValueIdSet & externalInputs,
+					ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
 
+  return ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs);
+}
 RelExpr * HashGroupBy::preCodeGen(Generator * generator,
                                  const ValueIdSet & externalInputs,
                                  ValueIdSet &pulledNewInputs)
@@ -8432,6 +8829,20 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	}
     }
 
+ 
+  if ((sourceTypeQual == NA_CHARACTER_TYPE) &&
+      ((tgtFsType == REC_BLOB) ||
+       (tgtFsType == REC_CLOB)))
+    {
+      LOBconvertHandle * lc = new(generator->wHeap())
+	LOBconvertHandle(child(0), LOBoper::LOB_);
+
+      lc->bindNode(generator->getBindWA());
+      lc->preCodeGen(generator);
+      
+      child(0) = lc;
+    }
+  // sss #endif
 
   if (getArity() > 1)
     {
@@ -9107,6 +9518,31 @@ ItemExpr * Generator::addCompDecodeForDerialization(ItemExpr * ie)
   return ie;
 }
 
+
+ItemExpr * LOBoper::preCodeGen(Generator * generator)
+{
+  generator->setProcessLOB(TRUE);
+
+  return BuiltinFunction::preCodeGen(generator);
+}
+
+ItemExpr * LOBconvert::preCodeGen(Generator * generator)
+{
+  NAColumn * col = child(0)->getValueId().getNAColumn(TRUE);
+  if (col)
+    {
+      lobNum() = col->lobNum();
+      lobStorageType() = col->lobStorageType();
+      lobStorageLocation() = col->lobStorageLocation();
+    }
+  
+  return LOBoper::preCodeGen(generator);
+}
+ItemExpr * LOBupdate::preCodeGen(Generator * generator)
+{
+  return LOBoper::preCodeGen(generator);
+}
+// sss #endif
 
 ItemExpr * MathFunc::preCodeGen(Generator * generator)
 {

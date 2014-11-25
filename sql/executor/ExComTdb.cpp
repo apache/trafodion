@@ -624,6 +624,23 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
    }
 
+   case ex_LOB_EXTRACT:
+    {
+#pragma nowarn(1506)   // warning elimination
+      GetVTblPtr(vtblptr,ExExeUtilLobExtractTdb);
+#pragma warn(1506)  // warning elimination
+
+      break;
+    }
+
+   case ex_LOB_SHOWDDL:
+    {
+#pragma nowarn(1506)   // warning elimination
+      GetVTblPtr(vtblptr,ExExeUtilLobShowddlTdb);
+#pragma warn(1506)  // warning elimination
+
+      break;
+    }
 
   case ex_HIVE_MD_ACCESS:
     {

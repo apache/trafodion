@@ -12649,18 +12649,52 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
   return boundExpr;
 }
 
-//---------------------------------------------------------------------------
-//
-// member functions for class SequenceValue
-//
-//---------------------------------------------------------------------------
-ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
+
+// -----------------------------------------------------------------------
+// member functions for class Loboper, LOBinsert, LOBselect, LOBdelete
+// -----------------------------------------------------------------------
+
+ItemExpr *LOBinsert::bindNode(BindWA *bindWA)
 {
   ItemExpr * boundExpr = NULL;
 
   if (nodeIsBound())
     return getValueId().getItemExpr();
 
+  // Binds self; Binds children; LOBoper::synthesize();
+  boundExpr = LOBoper::bindNode(bindWA);
+  if (bindWA->errStatus()) return NULL;
+ 
+  return boundExpr;
+} // LOBinsert::bindNode()
+
+ItemExpr *LOBselect::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
+
+
+  // For now LOBselect is allowed only in the top most select list
+  // check that first, or else give an error
+
+
+  // Binds self; Binds children; LOBoper::synthesize();
+  boundExpr = LOBoper::bindNode(bindWA);
+  if (bindWA->errStatus()) return NULL;
+ 
+  return boundExpr;
+} // LOBselect::bindNode()
+
+
+
+ItemExpr *SequenceValue::bindNode(BindWA *bindWA)
+{
+  ItemExpr * boundExpr = NULL;
+
+  if (nodeIsBound())
+    return getValueId().getItemExpr();
   // Binds self; Binds children; SequenceValue::synthesize();
   boundExpr = Function::bindNode(bindWA);
   if (bindWA->errStatus()) 
@@ -12758,3 +12792,4 @@ NABoolean RowNumFunc::canBeUsedInGBorOB(NABoolean setErr)
 
   return FALSE;
 }
+

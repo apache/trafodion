@@ -42,7 +42,7 @@ Lng32 hashKey();  // a dummy -- hopefully the linker won't look for it ...
 #include "str.h"
 #include "nawstring.h"
 #include "charinfo.h"
-
+#include "ExpLOBenums.h"
 // -----------------------------------------------------------------------
 // contents of this file
 // -----------------------------------------------------------------------
@@ -694,5 +694,146 @@ private:
 
 }; // class SQLLongVarChar
 
+
+// **********************************************************************
+// 
+// SQLLOB: 
+// Purpose: This class was added to provide support for the LOB datatype.
+// 
+// **********************************************************************
+
+class SQLlob : public NAType
+{
+
+public: 
+
+  SQLlob(NABuiltInTypeEnum  ev,
+	 Int64 lobLength, 
+	 LobsStorage lobStorage,
+	 NABoolean allowSQLnull	= TRUE,
+	 NABoolean inlineIfPossible = FALSE,
+	 NABoolean externalFormat = FALSE,
+	 Lng32 extFormatLen = 100);
+ SQLlob(const SQLlob & aLob,NAMemory * heap)
+   :NAType(aLob,heap),
+    charSet_(CharInfo::UnknownCharSet)
+    {}
+  
+ //is this type a blob/clob
+ virtual NABoolean isLob() const {return TRUE;};
+ 
+ // ---------------------------------------------------------------------
+ // A method which tells if a conversion error can occur when converting
+ // a value of this type to the target type.
+ // ---------------------------------------------------------------------
+ NABoolean errorsCanOccur (const NAType& target, NABoolean lax=TRUE) const;
+ 
+ // ---------------------------------------------------------------------
+ // A name that expresses the characteristics of the type.
+ // ---------------------------------------------------------------------
+ virtual NAString getTypeSQLname(NABoolean terse = FALSE) const;
+ 
+ Int64 getLobLength() {return lobLength_;}
+ Lng32 extFormatLen() { return extFormatLen_; }
+
+ virtual Lng32 getPrecision() const { return (Lng32)lobLength_; }
+
+ virtual CharInfo::CharSet getCharSet() const	{ return charSet_; }
+ void setCharSet(CharInfo::CharSet cs)
+ {
+   charSet_ = cs;
+ }
+ LobsStorage getLobStorage() {return lobStorage_;}
+private:
+ Int64 lobLength_;
+ 
+ NABoolean externalFormat_;
+
+ Lng32 extFormatLen_;
+
+ NABoolean inlineIfPossible_;
+
+ CharInfo::CharSet charSet_;
+ LobsStorage lobStorage_;
+}; // class SQLlob
+
+// **********************************************************************
+// 
+// SQLBLOB: 
+// Purpose: This class was added to provide support for the BLOB datatype.
+// 
+// **********************************************************************
+
+class SQLBlob : public SQLlob
+{
+
+public: 
+
+  SQLBlob(Int64 blobLength, 
+	  LobsStorage lobStorage = Lob_Invalid_Storage,
+	  NABoolean allowSQLnull	= TRUE,
+	  NABoolean inlineIfPossible = FALSE,
+	  NABoolean externalFormat = FALSE,
+	  Lng32 extFormatLen = 100);
+ SQLBlob(const SQLBlob & aBlob,NAMemory * heap)
+   :SQLlob(aBlob,heap)
+    {}
+  virtual short getFSDatatype() const
+  {return REC_BLOB;}
+  
+// ---------------------------------------------------------------------
+// A virtual function to return a copy of the type.
+// ---------------------------------------------------------------------
+ virtual NAType *newCopy(NAMemory* h=0) const;
+ 
+ const NAType* synthesizeType(NATypeSynthRuleEnum synthRule,
+			      const NAType& operand1,
+			      const NAType& operand2,
+			      CollHeap* h,
+			      UInt32 *flags) const;
+
+private:
+
+}; // class SQLBlob
+
+// **********************************************************************
+// 
+// SQLCLOB: 
+// Purpose: This class was added to provide support for the CLOB datatype.
+// 
+// **********************************************************************
+
+class SQLClob : public SQLlob
+{
+
+public: 
+
+  SQLClob(Int64 blobLength, 
+	  LobsStorage lobStorage = Lob_Invalid_Storage,
+	  NABoolean allowSQLnull	= TRUE,
+	  NABoolean inlineIfPossible = FALSE,
+	  NABoolean externalFormat = FALSE,
+	  Lng32 extFormatLen = 100);
+ SQLClob(const SQLClob & aClob,NAMemory * heap)
+   :SQLlob(aClob,heap)
+    {}
+  virtual short getFSDatatype() const
+  {return REC_CLOB;}
+  
+// ---------------------------------------------------------------------
+// A virtual function to return a copy of the type.
+// ---------------------------------------------------------------------
+ virtual NAType *newCopy(NAMemory* h=0) const;
+ 
+ const NAType* synthesizeType(NATypeSynthRuleEnum synthRule,
+			      const NAType& operand1,
+			      const NAType& operand2,
+			      CollHeap* h,
+			      UInt32 *flags) const;
+
+private:
+
+}; // class SQLClob
+// sss #endif
 
 #endif /* CHARTYPE_H */

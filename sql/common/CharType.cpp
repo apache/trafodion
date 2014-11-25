@@ -1582,3 +1582,159 @@ short SQLLongVarChar::getTrueFSDatatype() const
    return REC_BYTE_V_ASCII_LONG;
 }
 
+
+//////////////////////////////
+// class SQLlob
+//////////////////////////////
+SQLlob::SQLlob( 
+	       NABuiltInTypeEnum  ev,
+	       Int64 lobLength, 
+	       LobsStorage ls,
+	       NABoolean allowSQLnull,
+	       NABoolean inlineIfPossible,
+	       NABoolean externalFormat,
+	       Lng32 extFormatLen
+		)
+  : NAType( (ev == NA_LOB_TYPE ? LiteralLOB : LiteralLOB)
+	    , ev
+	    , (externalFormat ? extFormatLen : 512)
+	    , allowSQLnull
+	    , allowSQLnull ? SQL_NULL_HDR_SIZE : 0
+	    , TRUE
+	    , SQL_VARCHAR_HDR_SIZE
+	    ),
+    inlineIfPossible_(inlineIfPossible),
+    externalFormat_(externalFormat),
+    extFormatLen_(extFormatLen),
+    lobStorage_(ls),
+    lobLength_(lobLength)
+{
+}
+
+// ---------------------------------------------------------------------
+// A method which tells if a conversion error can occur when converting
+// a value of this type to the target type.
+// ---------------------------------------------------------------------
+NABoolean SQLlob::errorsCanOccur (const NAType& target, NABoolean lax) const
+{
+  if (!NAType::errorsCanOccur(target))
+    {return FALSE;}
+  else
+    {return TRUE;}
+}
+
+NAString SQLlob::getTypeSQLname(NABoolean terse) const
+{
+  NAString rName = "LOB";
+
+  getTypeSQLnull(rName, terse);
+
+  return rName;
+
+} // getTypeSQLname()
+
+/////////////////////////////////////
+// class SQLBlob
+/////////////////////////////////////
+SQLBlob::SQLBlob( 
+  Int64 blobLength, 
+  LobsStorage lobStorage,
+  NABoolean allowSQLnull,
+  NABoolean inlineIfPossible,
+  NABoolean externalFormat,
+  Lng32 extFormatLen
+)
+  : SQLlob(NA_LOB_TYPE,
+	   blobLength,
+	   lobStorage,
+	   allowSQLnull,
+	   inlineIfPossible,
+	   externalFormat,
+	   extFormatLen)
+{
+}
+
+NAType *SQLBlob::newCopy(NAMemory* h) const
+{ return new(h) SQLBlob(*this,h); }
+
+// -----------------------------------------------------------------------
+// Type synthesis for binary operators
+// -----------------------------------------------------------------------
+const NAType* SQLBlob::synthesizeType(NATypeSynthRuleEnum synthRule,
+				      const NAType& operand1,
+				      const NAType& operand2,
+				      CollHeap* h,
+				      UInt32 *flags) const
+{
+  if (operand1.getFSDatatype() != REC_BLOB ||
+      operand2.getFSDatatype() != REC_BLOB)
+    return NULL;
+  
+  SQLBlob& op1 = (SQLBlob &) operand1;
+  SQLBlob& op2 = (SQLBlob &) operand2;
+
+  NABoolean null = op1.supportsSQLnull() OR op2.supportsSQLnull();
+
+  if (synthRule == SYNTH_RULE_UNION)
+    {
+      return new(h) SQLBlob(MAXOF(op1.getLobLength(), op2.getLobLength()),
+			    op1.getLobStorage(),
+			    null);
+    }
+
+  return NULL;
+}
+
+/////////////////////////////////////
+// class SQLClob
+/////////////////////////////////////
+SQLClob::SQLClob( 
+  Int64 clobLength, 
+  LobsStorage lobStorage,
+  NABoolean allowSQLnull,
+  NABoolean inlineIfPossible,
+  NABoolean externalFormat,
+  Lng32 extFormatLen
+)
+  : SQLlob(NA_LOB_TYPE,
+	   clobLength,
+	   lobStorage,
+	   allowSQLnull,
+	   inlineIfPossible,
+	   externalFormat,
+	   extFormatLen)
+{
+  setCharSet(CharInfo::DefaultCharSet);
+}
+
+NAType *SQLClob::newCopy(NAMemory* h) const
+{ return new(h) SQLClob(*this,h); }
+
+// -----------------------------------------------------------------------
+// Type synthesis for binary operators
+// -----------------------------------------------------------------------
+const NAType* SQLClob::synthesizeType(NATypeSynthRuleEnum synthRule,
+				      const NAType& operand1,
+				      const NAType& operand2,
+				      CollHeap* h,
+				      UInt32 *flags) const
+{
+  if (operand1.getFSDatatype() != REC_CLOB ||
+      operand2.getFSDatatype() != REC_CLOB)
+    return NULL;
+  
+  SQLClob& op1 = (SQLClob &) operand1;
+  SQLClob& op2 = (SQLClob &) operand2;
+
+  NABoolean null = op1.supportsSQLnull() OR op2.supportsSQLnull();
+
+  if (synthRule == SYNTH_RULE_UNION)
+    {
+      return new(h) SQLClob(MAXOF(op1.getLobLength(), op2.getLobLength()),
+			    op1.getLobStorage(),
+			    null);
+    }
+
+  return NULL;
+}
+

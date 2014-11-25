@@ -269,8 +269,7 @@ private:
 
   // pointer passed to interface methods that store and retrieve lob data
   // from flatfile or hdfs filesystem.
-  // This pointer is initialized once per process(master or esp).
-  // It is not used by eid process.
+  // This pointer is initialized once per tcb.
   // Contents are set and used only by methods behind the interface.
   // Executor code does not access the contents.
   //  void * lobGlob_;

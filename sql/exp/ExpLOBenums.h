@@ -83,6 +83,7 @@ typedef enum {
   LOB_DATA_FILE_NOT_EMPTY_ERROR,
   LOB_DATA_FILE_POSITION_ERROR,
   LOB_CURSOR_NOT_OPEN_ERROR,
+  LOB_OPER_CONTINUE,
   LOB_INVALID_ERROR_VAL,
   LOB_MAX_ERROR_NUM     // keep this as the last element in enum list.
 } Ex_Lob_Error;
@@ -145,6 +146,7 @@ static const char * const lobErrorEnumStr[] =
   "LOB_DATA_FILE_NOT_EMPTY_ERROR",
   "LOB_DATA_FILE_POSITION_ERROR",
   "LOB_CURSOR_NOT_OPEN_ERROR",
+  "LOB_OPER_CONTINUE",
   "LOB_INVALID_ERROR_VAL",
   "LOB_MAX_ERROR_NUM"     // keep this as the last element in enum list.
 };

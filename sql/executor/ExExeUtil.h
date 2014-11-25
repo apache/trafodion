@@ -1479,6 +1479,9 @@ class ExExeUtilFastDeleteTcb : public ExExeUtilTcb
   
   short injectError(const char * val);
 
+  
+  short purgedataLOBs();
+  
 
   Step step_;
 
@@ -3189,6 +3192,7 @@ public:
     INSERT_FROM_SOURCE_FILE_,
     READ_STRING_FROM_SOURCE_FILE_,
     CREATE_TARGET_FILE_,
+    OPEN_TARGET_FILE_,
     CLOSE_TARGET_FILE_,
     COLLECT_STATS_,
     DONE_,
@@ -3227,6 +3231,8 @@ public:
   char lobLoc_[1024];
 
   ExLobStats lobStats_;
+
+  fstream indata_;
 };
 
 // -----------------------------------------------------------------------
@@ -3271,8 +3277,113 @@ public:
   virtual short work();
 
  private:
-  fstream indata_;
   Int64 srcFileRemainingBytes_;
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobShowddlTdb
+// -----------------------------------------------------------------------
+class ExExeUtilLobShowddlTdb : public ComTdbExeUtilLobShowddl
+{
+ public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExExeUtilLobShowddlTdb()
+    {}
+
+  NA_EIDPROC virtual ~ExExeUtilLobShowddlTdb()
+    {}
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+ private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDB's
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the ComTdbDLL instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  //
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobShowddlTcb
+// -----------------------------------------------------------------------
+class ExExeUtilLobShowddlTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilLobShowddlTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilLobShowddlTcb(const ComTdbExeUtilLobShowddl & exe_util_tdb,
+			 ex_globals * glob = 0);
+
+  virtual short work();
+
+  ExExeUtilLobShowddlTdb & lobTdb() const
+  {
+    return (ExExeUtilLobShowddlTdb &) tdb;
+  };
+
+ private:
+  short fetchRows(char * query, short &rc);
+  short returnRows(short &rc);
+
+  enum Step
+  {
+    INITIAL_,
+    FETCH_TABLE_SHOWDDL_,
+    RETURN_TABLE_SHOWDDL_,
+    FETCH_METADATA_SHOWDDL_,
+    RETURN_METADATA_SHOWDDL_,
+    RETURN_LOB_NAME_,
+    FETCH_LOB_DESC_HANDLE_SHOWDDL_,
+    RETURN_LOB_DESC_HANDLE_SHOWDDL_,
+    FETCH_LOB_DESC_CHUNKS_SHOWDDL_,
+    RETURN_LOB_DESC_CHUNKS_SHOWDDL_,
+    DONE_,
+    HANDLE_ERROR_,
+    CANCELLED_
+  };
+
+  Step step_;
+
+  char lobMDNameBuf_[1024];
+  Lng32 lobMDNameLen_;
+  char * lobMDName_;
+  
+  Lng32 currLobNum_;
+
+  char sdOptionStr_[100];
 };
 
 class ExExeUtilGetProcessStatisticsTcb : public ExExeUtilGetStatisticsTcb

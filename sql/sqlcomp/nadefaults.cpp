@@ -2037,11 +2037,12 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // default size is 2 G  (2000 M)
   DDint__(LOB_MAX_SIZE,                         "2000"),
 
-  DD_____(LOB_STORAGE_FILE_DIR,                 "/h/linuxusr"), 
+  DD_____(LOB_STORAGE_FILE_DIR,                 "/lobs"), 
+  //DD_____(LOB_STORAGE_FILE_DIR,                 "/h/linuxusr"), 
 
   // storage types defined in exp/ExpLOBenum.h. 
-  // Default is Local_file (value = 1)
-  DDint__(LOB_STORAGE_TYPE,                     "1"),
+  // Default is hdfs_file (value = 1)
+  DDint__(LOB_STORAGE_TYPE,                     "2"),
 
   //New default size for buffer size for local node
   DDui2__(LOCAL_MESSAGE_BUFFER_SIZE,		"50"),
@@ -3198,7 +3199,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(TOTAL_RESOURCE_COSTING,               "ON"),
 
-  DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"),   
+ DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
   DDkwd__(TRAF_COL_LENGTH_IS_CHAR,                 "ON"),   
 

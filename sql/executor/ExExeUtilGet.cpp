@@ -3983,6 +3983,392 @@ ExExeUtilGetErrorInfoPrivateState::~ExExeUtilGetErrorInfoPrivateState()
 {
 }
 
+///////////////////////////////////////////////////////////////////
+// class ExExeUtilLobShowddlTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilLobShowddlTdb::build(ex_globals * glob)
+{
+  ExExeUtilLobShowddlTcb * exe_util_tcb;
+
+  exe_util_tcb = new(glob->getSpace()) ExExeUtilLobShowddlTcb(*this, glob);
+
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+ExExeUtilLobShowddlTcb::ExExeUtilLobShowddlTcb
+(
+ const ComTdbExeUtilLobShowddl & exe_util_tdb,
+ ex_globals * glob)
+  : ExExeUtilTcb(exe_util_tdb, NULL, glob),
+    step_(INITIAL_)
+{
+}
+
+short ExExeUtilLobShowddlTcb::fetchRows(char * query, short &rc)
+{
+  Lng32 cliRC = 0;
+
+  if (initializeInfoList(infoList_)) 
+    {
+      step_ = HANDLE_ERROR_;
+      
+      return -1;
+    }
+  
+  rc = 0;
+  cliRC = 
+    fetchAllRows(infoList_, query, 1, FALSE, rc);
+  if (cliRC < 0) 
+    {
+      cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+
+      step_ = HANDLE_ERROR_;
+
+      return -1;
+    }
+  
+  infoList_->position();
+  
+  return 0;
+}
+
+short ExExeUtilLobShowddlTcb::returnRows(short &rc)
+{
+  if (infoList_->atEnd())
+    {
+      return 100;
+    }
+  
+  if (qparent_.up->isFull())
+    {
+      rc = WORK_OK;
+      return -1;
+    }
+  
+  OutputInfo * vi = (OutputInfo*)infoList_->getCurr();
+  
+  char * ptr = vi->get(0);
+  short len = (short)(ptr ? strlen(ptr) : 0);
+  
+  if (moveRowToUpQueue(ptr, len, &rc))
+    {
+      return -1;
+    }
+  
+  infoList_->advance();
+
+  return 0;
+}
+
+short ExExeUtilLobShowddlTcb::work()
+{
+  Lng32 cliRC = 0;
+  short retcode = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  // if no room in up queue, won't be able to return data/status.
+  // Come back later.
+  if (qparent_.up->isFull())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+
+  while (1)
+    {
+      switch (step_) 
+	{
+	case INITIAL_:
+	  {
+	    query_ = new(getGlobals()->getDefaultHeap()) char[4096];
+
+	    lobMDNameLen_ = 1024;
+	    lobMDName_ = 
+	      ExpLOBoper::ExpGetLOBMDName
+	      (lobTdb().schNameLen_, lobTdb().schName(), lobTdb().objectUID_,
+	       lobMDNameBuf_, lobMDNameLen_);
+
+	    strcpy(sdOptionStr_, " ");
+
+	    switch (lobTdb().sdOptions_)
+	      {
+	      case 4:
+		strcpy(sdOptionStr_, ", detail");
+		break;
+
+	      case 8:
+		strcpy(sdOptionStr_, ", brief");
+		break;
+
+	      case 32:
+		strcpy(sdOptionStr_, ", external");
+		break;
+
+	      case 64:
+		strcpy(sdOptionStr_, ", internal");
+		break;
+	      }
+
+	    step_ = FETCH_TABLE_SHOWDDL_;
+	  }
+	  break;
+
+	case FETCH_TABLE_SHOWDDL_:
+	  {
+	    str_sprintf(query_, "showddl %s %s", 
+			lobTdb().getTableName(),
+			sdOptionStr_);
+
+	    if (fetchRows(query_, retcode))
+	      {
+		break;
+	      }
+
+	    step_ = RETURN_TABLE_SHOWDDL_;
+	  }
+	  break;
+
+	case RETURN_TABLE_SHOWDDL_:
+	  {
+	    cliRC = returnRows(retcode);
+	    if (cliRC == -1)
+	      {
+		return retcode;
+	      }
+	    else if (cliRC == 100)
+	      {
+		step_ = FETCH_METADATA_SHOWDDL_;
+		return WORK_RESCHEDULE_AND_RETURN;
+	      }
+	  }
+	  break;
+
+	case FETCH_METADATA_SHOWDDL_:
+	  {
+	    if ((qparent_.up->getSize() - qparent_.up->getLength()) < 6)
+	      return WORK_OK;	//come back later
+
+	    moveRowToUpQueue("");	    
+	    moveRowToUpQueue("LOB Metadata");
+	    moveRowToUpQueue("============");
+
+	    str_sprintf(query_, "showddl table(ghost table %s) %s", 
+			lobMDName_,
+			sdOptionStr_);
+
+	    // set parserflags to allow ghost table
+	    currContext->setSqlParserFlags(0x1);
+
+	    cliRC = fetchRows(query_, retcode);
+
+	    currContext->resetSqlParserFlags(0x1);
+
+	    if (cliRC < 0)
+	      {
+		break;
+	      }
+
+	    step_ = RETURN_METADATA_SHOWDDL_;
+	  }
+	  break;
+
+	case RETURN_METADATA_SHOWDDL_:
+	  {
+	    cliRC = returnRows(retcode);
+	    if (cliRC == -1)
+	      {
+		return retcode;
+	      }
+	    else if (cliRC == 100)
+	      {
+		currLobNum_ = 1;
+		step_ = RETURN_LOB_NAME_;
+		return WORK_RESCHEDULE_AND_RETURN;
+	      }
+	  }
+	  break;
+
+	case RETURN_LOB_NAME_:
+	  {
+	    if ((qparent_.up->getSize() - qparent_.up->getLength()) < 15)
+	      return WORK_OK;	//come back later
+
+	    if (currLobNum_ > lobTdb().numLOBs())
+	      {
+		step_ = DONE_;
+		break;
+	      }
+
+	    moveRowToUpQueue(" ");
+	    moveRowToUpQueue("************************************************");
+	    str_sprintf(query_, "LobNum: %d", currLobNum_);
+	    moveRowToUpQueue(query_);
+	    moveRowToUpQueue(" ");
+
+	    moveRowToUpQueue("Data Storage");
+	    moveRowToUpQueue("============");
+	    moveRowToUpQueue(" ");
+
+	    char tgtLobNameBuf[100];
+	    char * tgtLobName = 
+	      ExpLOBoper::ExpGetLOBname
+	      (lobTdb().objectUID_, lobTdb().getLOBnum(currLobNum_), 
+	       tgtLobNameBuf, 100);
+	    
+	    str_sprintf(query_, "Location: %s", 
+			lobTdb().getLOBloc(currLobNum_));
+	    moveRowToUpQueue(query_);
+
+	    str_sprintf(query_, "DataFile: %s", tgtLobName);
+	    moveRowToUpQueue(query_);
+
+	    step_ = FETCH_LOB_DESC_HANDLE_SHOWDDL_;
+
+	    return WORK_RESCHEDULE_AND_RETURN;
+	  }
+	  break;
+
+	case FETCH_LOB_DESC_HANDLE_SHOWDDL_:
+	  {
+	    if ((qparent_.up->getSize() - qparent_.up->getLength()) < 6)
+	      return WORK_OK;	//come back later
+
+	    moveRowToUpQueue("");	    
+	    moveRowToUpQueue("LOB Descriptor Handle");
+	    moveRowToUpQueue("=====================");
+
+	    char lobDescNameBuf[1024];
+	    Lng32 lobDescNameLen = 1024;
+	    char * lobDescName = 
+	      ExpLOBoper::ExpGetLOBDescHandleName
+	      (lobTdb().schNameLen_, lobTdb().schName(), 
+	       lobTdb().objectUID_,
+	       lobTdb().getLOBnum(currLobNum_), 
+	       lobDescNameBuf, lobDescNameLen);
+	    str_sprintf(query_, "showddl table(ghost table %s) %s", 
+			lobDescName,
+			sdOptionStr_);
+
+	    // set parserflags to allow ghost table
+	    currContext->setSqlParserFlags(0x1);
+
+	    cliRC = fetchRows(query_, retcode);
+
+	    currContext->resetSqlParserFlags(0x1);
+
+	    if (cliRC < 0)
+	      {
+		break;
+	      }
+
+	    step_ = RETURN_LOB_DESC_HANDLE_SHOWDDL_;
+	  }
+	  break;
+
+	case RETURN_LOB_DESC_HANDLE_SHOWDDL_:
+	  {
+	    cliRC = returnRows(retcode);
+	    if (cliRC == -1)
+	      {
+		return retcode;
+	      }
+	    else if (cliRC == 100)
+	      {
+		step_ = FETCH_LOB_DESC_CHUNKS_SHOWDDL_;
+		return WORK_RESCHEDULE_AND_RETURN;
+	      }
+	  }
+	  break;
+
+	case FETCH_LOB_DESC_CHUNKS_SHOWDDL_:
+	  {
+	    if ((qparent_.up->getSize() - qparent_.up->getLength()) < 6)
+	      return WORK_OK;	//come back later
+
+	    moveRowToUpQueue("");	    
+	    moveRowToUpQueue("LOB Descriptor Chunks");
+	    moveRowToUpQueue("=====================");
+
+	    char lobDescNameBuf[1024];
+	    Lng32 lobDescNameLen = 1024;
+	    char * lobDescName = 
+	      ExpLOBoper::ExpGetLOBDescChunksName
+	      (lobTdb().schNameLen_, lobTdb().schName(), 
+	       lobTdb().objectUID_,
+	       lobTdb().getLOBnum(currLobNum_), 
+	       lobDescNameBuf, lobDescNameLen);
+	    str_sprintf(query_, "showddl table(ghost table %s) %s", 
+			lobDescName,
+			sdOptionStr_);
+
+	    // set parserflags to allow ghost table
+	    currContext->setSqlParserFlags(0x1);
+
+	    cliRC = fetchRows(query_, retcode);
+
+	    currContext->resetSqlParserFlags(0x1);
+
+	    if (cliRC < 0)
+	      {
+		break;
+	      }
+
+	    step_ = RETURN_LOB_DESC_CHUNKS_SHOWDDL_;
+	  }
+	  break;
+
+	case RETURN_LOB_DESC_CHUNKS_SHOWDDL_:
+	  {
+	    cliRC = returnRows(retcode);
+	    if (cliRC == -1)
+	      {
+		return retcode;
+	      }
+	    else if (cliRC == 100)
+	      {
+		currLobNum_++;
+		step_ = RETURN_LOB_NAME_;
+		return WORK_RESCHEDULE_AND_RETURN;
+	      }
+	  }
+	  break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = DONE_;
+	  }
+	  break;
+
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = INITIAL_;
+	    return WORK_OK;
+	  }
+	  break;
+
+	} // switch
+    }
+
+  return 0;
+}
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilHiveMDaccessTdb::build(ex_globals * glob)

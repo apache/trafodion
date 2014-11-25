@@ -418,6 +418,7 @@ ex_hashj_tcb::ex_hashj_tcb(const ex_hashj_tdb & hashJoinTdb,
   if (beforeJoinPred2_) 
     (void) beforeJoinPred2_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred1_) 
+
     (void) afterJoinPred1_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred2_) 
     (void) afterJoinPred2_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
@@ -427,6 +428,7 @@ ex_hashj_tcb::ex_hashj_tcb(const ex_hashj_tdb & hashJoinTdb,
     (void) afterJoinPred4_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
   if (afterJoinPred5_) 
     (void) afterJoinPred5_->fixup(0, getExpressionMode(), this, space_, heap_, FALSE, glob);
+
   if ( isReuse() ) {
     if (checkInputPred_)
       (void) checkInputPred_->fixup(0, getExpressionMode(),this,space_, heap_, FALSE, glob);

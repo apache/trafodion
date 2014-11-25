@@ -19,6 +19,7 @@
 
 function StartLobProcesses
 {
+echo Starting lob server processes
 let count=0
 tmp_node_status=`mktemp -t`
 sqshell -c zone > $tmp_node_status
@@ -30,7 +31,7 @@ set {process \zlobsrv${count} } PERSIST_RETRIES=10,60
 set {process \zlobsrv${count} } PERSIST_ZONES=0,1
 exec {name \$zlobsrv${count}, nowait, nid ${count}, out stdout_\$ZLOBSRV${count} } mxlobsrvr
 eof
-echo started \$zlobsrv${count}
+echo Successfully started \$zlobsrv${count}
 let count=count+1
 done
 }

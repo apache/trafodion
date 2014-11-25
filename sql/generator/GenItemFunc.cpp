@@ -228,6 +228,15 @@ short BuiltinFunction::codeGen(Generator * generator)
     case ITM_SUBSTR:
       {
 
+	if (getValueId().getType().isLob())
+	  {
+	   function_clause = new(generator->getSpace()) 
+		ExpLOBfuncSubstring(getOperatorType(), 
+				    (1+getArity()), attr, space);
+	   break;
+	  }
+	
+
 #pragma nowarn(1506)   // warning elimination 
         const CharType& substringOperandType = 
            (CharType&)((child(0)->getValueId()).getType());
@@ -2782,7 +2791,8 @@ short HbaseColumnCreate::codeGen(Generator * generator)
   return 0;
 }
 
-short SequenceValue::codeGen(Generator * generator)
+
+short LOBinsert::codeGen(Generator * generator)
 {
   Attributes ** attr;
   
@@ -2791,6 +2801,230 @@ short SequenceValue::codeGen(Generator * generator)
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
 
+  char * loc = NULL;
+  if (NOT lobStorageLocation().isNull())
+    {
+      //      loc = space->AllocateAndCopyToAlignedSpace(lobStorageLocation(), 0);
+    }
+
+  ExpLOBinsert * li =
+    new(generator->getSpace()) ExpLOBinsert
+    (getOperatorType(), 
+     attr, 
+     objectUID_,
+     (short)insertedTableSchemaName().length(),
+     (char*)insertedTableSchemaName().data(),
+     space);
+  
+  if (obj_ == LOBoper::STRING_)
+    li->setFromString(TRUE);
+  else if (obj_ == LOBoper::FILE_)
+    li->setFromFile(TRUE);
+  else if (obj_ == LOBoper::LOAD_)
+    li->setFromLoad(TRUE);
+  else if (obj_ == LOBoper::LOB_)
+    li->setFromLob(TRUE);
+  else if (obj_ == LOBoper::EXTERNAL_)
+    li->setFromExternal(TRUE);
+
+  li->lobNum() = lobNum();
+  li->setLobStorageType(lobStorageType());
+  li->setLobStorageLocation((char*)lobStorageLocation().data());
+
+  generator->getExpGenerator()->linkClause(this, li);
+ 
+  return 0;
+}
+
+short LOBdelete::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExpLOBdelete * ld =
+    new(generator->getSpace()) ExpLOBdelete(getOperatorType(), 
+					    attr, 
+					    space);
+  
+  ld->getOperand(0)->setAtp(ld->getOperand(1)->getAtp());
+  ld->getOperand(0)->setAtpIndex(ld->getOperand(1)->getAtpIndex());
+
+  ld->lobNum() = lobNum();
+  ld->setLobStorageType(lobStorageType());
+  ld->setLobStorageLocation((char*)lobStorageLocation().data());
+  
+  generator->getExpGenerator()->linkClause(this, ld);
+ 
+  return 0;
+}
+
+short LOBupdate::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExpLOBupdate * lu =
+    new(generator->getSpace()) ExpLOBupdate
+    (getOperatorType(), 
+     (1+getArity()),
+     attr, 
+     objectUID_,
+     (short)updatedTableSchemaName().length(),
+     (char*)updatedTableSchemaName().data(),
+     space);
+  
+ if (append_)
+    lu->setIsAppend(TRUE);
+  
+  if (obj_ == LOBoper::STRING_)
+    lu->setFromString(TRUE);
+  else if (obj_ == LOBoper::FILE_)
+    lu->setFromFile(TRUE);
+  else if (obj_ == LOBoper::LOB_)
+    lu->setFromLob(TRUE);
+  else if (obj_ == LOBoper::EXTERNAL_)
+    lu->setFromExternal(TRUE);
+
+  lu->lobNum() = lobNum();
+  lu->setLobStorageType(lobStorageType());
+  lu->setLobStorageLocation((char*)lobStorageLocation().data());
+
+  generator->getExpGenerator()->linkClause(this, lu);
+ 
+  return 0;
+}
+
+short LOBselect::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExpLOBselect * ls =
+    new(generator->getSpace()) ExpLOBselect(getOperatorType(), 
+					    attr, 
+					    space);
+
+  ls->lobNum() = lobNum();
+  ls->setLobStorageType(lobStorageType());
+  ls->setLobStorageLocation((char*)lobStorageLocation().data());
+  
+  generator->getExpGenerator()->linkClause(this, ls);
+ 
+  return 0;
+}
+
+short LOBconvertHandle::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExpLOBconvertHandle * lu =
+    new(generator->getSpace()) ExpLOBconvertHandle(getOperatorType(), 
+						   attr, 
+						   space);
+  
+  if (obj_ == STRING_)
+    lu->setToString(TRUE);
+  else if (obj_ == LOB_)
+    lu->setToLob(TRUE);
+
+  lu->lobNum() = lobNum();
+  lu->setLobStorageType(lobStorageType());
+  lu->setLobStorageLocation((char*)lobStorageLocation().data());
+
+  generator->getExpGenerator()->linkClause(this, lu);
+ 
+  return 0;
+}
+
+short LOBconvert::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExpLOBconvert * lc =
+    new(generator->getSpace()) ExpLOBconvert(getOperatorType(), 
+					     attr, 
+					     space);
+  
+  if (obj_ == STRING_)
+    lc->setToString(TRUE);
+  else if (obj_ == LOB_)
+    lc->setToLob(TRUE);
+
+  lc->lobNum() = lobNum();
+  lc->setLobStorageType(lobStorageType());
+  lc->setLobStorageLocation((char*)lobStorageLocation().data());
+
+  generator->getExpGenerator()->linkClause(this, lc);
+ 
+  return 0;
+}
+
+short LOBload::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+
+  ExpLOBload * ll =
+    new(generator->getSpace()) ExpLOBload
+    (getOperatorType(), 
+     attr, 
+     objectUID_,
+     (short)insertedTableSchemaName().length(),
+     (char*)insertedTableSchemaName().data(),
+     space);
+  
+  if (obj_ == LOBoper::STRING_)
+    ll->setFromString(TRUE);
+  else if (obj_ == LOBoper::FILE_)
+    ll->setFromFile(TRUE);
+  else if (obj_ == LOBoper::LOAD_)
+    ll->setFromLoad(TRUE);
+  else if (obj_ == LOBoper::LOB_)
+    ll->setFromLob(TRUE);
+
+  ll->lobNum() = lobNum();
+  ll->setLobStorageType(lobStorageType());
+  ll->setLobStorageLocation((char*)lobStorageLocation().data());
+  
+  generator->getExpGenerator()->linkClause(this, ll);
+ return 0;
+}
+ 
+
+short SequenceValue::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
   Int64 origCacheSize = naTable_->getSGAttributes()->getSGCache();
   Lng32 cacheSize = CmpCommon::getDefaultNumeric(TRAF_SEQUENCE_CACHE_SIZE);
   if (cacheSize > 0)

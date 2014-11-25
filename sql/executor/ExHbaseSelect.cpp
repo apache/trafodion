@@ -25,6 +25,9 @@
 #include "ex_tcb.h"
 #include "ExHbaseAccess.h"
 #include "ex_exe_stmt_globals.h"
+
+#include "ExpLOBinterface.h"
+
 #include "SQLTypeDefs.h"
 
 #include "ExpHbaseInterface.h"

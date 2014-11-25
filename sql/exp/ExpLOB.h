@@ -157,6 +157,7 @@ class LOBglobals : public NABasicObject {
   NAArray<Lng32> lobOperInProgressList_;
 
   NABoolean currLobOperInProgress_;
+ 
 };
 
 
@@ -241,7 +242,7 @@ public:
   static Lng32 initLOBglobal(void *& lobGlob, void * heap);
 
   // Extracts values from the LOB handle stored at ptr
-  static Lng32 extractFromLOBhandle(Lng32 *flags,
+  static Lng32 extractFromLOBhandle(Int16 *flags,
 				    Lng32 *lobType,
 				    Lng32 *lobNum,
 				    Int64 *uid, 
@@ -300,28 +301,29 @@ public:
   } LobOperStatus;
 
   static Lng32 extractFromLOBstring(Int64 &uid, 
-				    Lng32 &lobNum,
+				    Int32 &lobNum,
 				    Int64 &descPartnKey,
 				    Int64 &descSyskey,
-				    Lng32 &flags,
+				    Int16 &flags,
+				    Int32 &lobType,
 				    short &schNameLen,
 				    char * schName,
 				    char * handle,
-				    Lng32 handleLen);
+				    Int32 handleLen);
   
-  void createLOBhandleString(Lng32 flags,
-			     Lng32 lobType,
+  void createLOBhandleString(Int16 flags,
+			     Int32 lobType,
 			     Int64 uid, 
 			     Lng32 lobNum,
 			     Int64 descKey, 
 			     Int64 descTS,
-			     short schNameLen,
+			     Int16 schNameLen,
 			     char * schName,
 			     char * ptrToLobHandle);
 
   struct LOBHandle
   {
-    //    Lng32 flags_;
+    
     short flags_;
     char  lobType_;
     char  filler1_;

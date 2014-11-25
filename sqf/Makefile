@@ -175,7 +175,7 @@ EXPORTSQLLIBS= libarkcmplib.so libarkcmp.so libarkesp.so libarkfsindp2.so libcat
 EXPORTUTILLIBS= libds.a libdmol.a libddol.a libuol.a libqol.a libdup.a libPaUtiParser.a \
 	libuofs.a libpurgedata.a libtse_interface.so
 # SQL system executables
-EXPORTSQLEXE= tdm_sqlc tdm_arkcmp tdm_arkesp sqlci tdm_udrserv
+EXPORTSQLEXE= tdm_sqlc tdm_arkcmp tdm_arkesp sqlci tdm_udrserv mxlobsrvr
 # SQL Utilities executables
 EXPORTUTILS= mxtool sup   mxexportddl mximportddl
 

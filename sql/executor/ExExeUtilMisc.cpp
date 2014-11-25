@@ -352,6 +352,22 @@ short ExExeUtilFastDeleteTcb::injectError(const char * val)
 }
 
 
+short ExExeUtilFastDeleteTcb::purgedataLOBs()
+{
+  // purgedata from lobs for this table
+  if (fdTdb().numLOBs() > 0)
+    {
+      for (Lng32 i = 1; i <= fdTdb().numLOBs(); i++)
+	{
+	  Lng32 rc = ExpLOBoper::purgedataLOB
+	    (NULL, NULL, fdTdb().getObjectUID(), fdTdb().getLOBnum(i));
+	}
+    }
+
+  return 0;
+}
+
+
 //////////////////////////////////////////////////////
 // work() for ExExePurgedataUtilTcb
 //////////////////////////////////////////////////////
@@ -2240,7 +2256,7 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
   lobGlob_ = NULL;
 
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap());
+    (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
 
   return 0;
 }

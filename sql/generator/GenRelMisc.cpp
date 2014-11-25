@@ -2756,6 +2756,10 @@ short RelRoot::codeGen(Generator * generator)
       root_tdb->setDp2XnsEnabled(generator->dp2XnsEnabled());
     }
 
+  
+  if (generator->processLOB())
+    root_tdb->setProcessLOB(TRUE);
+ 
 
   // Self-referencing updates
   if (avoidHalloween_)

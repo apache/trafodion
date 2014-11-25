@@ -544,10 +544,13 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   ex_tcb::fixup();
 
+
   if(!myTdb().getSkipWritingToFiles() &&
      !myTdb().getBypassLibhdfs())
+
     ExpLOBinterfaceInit
-      (lobGlob_, getGlobals()->getDefaultHeap());
+      (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
+
 
   return 0;
 }

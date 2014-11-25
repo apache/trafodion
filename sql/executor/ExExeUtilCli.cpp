@@ -1209,7 +1209,7 @@ short ExeCliInterface::clearExecFetchClose(char * inputBuf,
   if (inputBuf)
     str_cpy_all(inputBuf_, inputBuf, inputDatalen_);
 
-  retcode = exec();
+  retcode = exec(inputBuf_,inputDatalen_);
   if (retcode < 0)
     {
       return (short)retcode;

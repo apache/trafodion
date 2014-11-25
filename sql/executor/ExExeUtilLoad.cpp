@@ -4660,3 +4660,1141 @@ ExExeUtilHbaseUnLoadPrivateState::~ExExeUtilHbaseUnLoadPrivateState()
 {
 };
 
+///////////////////////////////////////////////////////////////////
+// class ExExeUtilLobExtractTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilLobExtractTdb::build(ex_globals * glob)
+{
+  ExExeUtilLobExtractTcb * exe_util_tcb;
+
+  ex_tcb * childTcb = NULL;
+  if (child_)
+    {
+      // build the child first
+      childTcb = child_->build(glob);
+    }
+
+  if ((getToType() == ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_) ||
+      (getToType() == ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_))
+     exe_util_tcb = new(glob->getSpace()) 
+       ExExeUtilFileLoadTcb(*this, childTcb, glob);
+   else if (srcIsFile())
+    exe_util_tcb = new(glob->getSpace()) 
+      ExExeUtilFileExtractTcb(*this, childTcb, glob);
+  else
+    exe_util_tcb = new(glob->getSpace()) 
+      ExExeUtilLobExtractTcb(*this, childTcb, glob);
+
+  exe_util_tcb->registerSubtasks();
+
+  return (exe_util_tcb);
+}
+
+ExExeUtilLobExtractTcb::ExExeUtilLobExtractTcb
+(
+ const ComTdbExeUtilLobExtract & exe_util_tdb,
+ const ex_tcb * child_tcb, 
+ ex_globals * glob)
+  : ExExeUtilTcb(exe_util_tdb, child_tcb, glob),
+    step_(EMPTY_)
+{
+}
+
+short ExExeUtilLobExtractTcb::work()
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+
+  ComDiagsArea & diags       = currContext->diags();
+
+  if (! currContext->currLobGlobals())
+    {
+      currContext->currLobGlobals() = 
+	new(currContext->exHeap()) LOBglobals(currContext->exHeap());
+      ExpLOBoper::initLOBglobal
+	(currContext->currLobGlobals()->lobAccessGlobals(), 
+	 currContext->exHeap());
+    }
+
+  void * lobGlobs = currContext->currLobGlobals()->lobAccessGlobals();
+
+  ex_queue_entry * centry = NULL;
+  
+  while (1)
+    {
+      switch (step_)
+	{
+	case EMPTY_:
+	  {
+	    workAtp_->getTupp(lobTdb().workAtpIndex())
+	      .setDataPointer(lobInputHandleBuf_);
+
+	    if (getChild(0))
+	      step_ = SEND_REQ_TO_CHILD_;
+	    else
+	      step_ = GET_NO_CHILD_HANDLE_;
+	  }
+	  break;
+	  
+	case GET_NO_CHILD_HANDLE_:
+	  {
+	    ex_expr::exp_return_type exprRetCode =
+	      lobTdb().inputExpr_->eval(NULL, 
+					workAtp_);
+	    if (exprRetCode == ex_expr::EXPR_ERROR)
+	      {
+		step_ = CANCEL_;
+		break;
+	      }
+	    
+	    step_ = GET_LOB_HANDLE_;
+	  }
+	  
+	case SEND_REQ_TO_CHILD_:
+	  {
+	    if (qchild_.down->isFull())
+	      return WORK_OK;
+
+	    ex_queue_entry * centry = qchild_.down->getTailEntry();
+
+	    centry->downState.request = ex_queue::GET_ALL;
+	    centry->downState.requestValue = 
+	      pentry_down->downState.requestValue;
+	    centry->downState.parentIndex = qparent_.down->getHeadIndex();
+	    
+	    // set the child's input atp
+	    centry->passAtp(pentry_down->getAtp());
+	    
+	    qchild_.down->insert();
+
+	    numChildRows_ = 0;
+
+	    step_ = GET_REPLY_FROM_CHILD_;
+	  }
+	break;
+
+	case GET_REPLY_FROM_CHILD_:
+	  {
+	    // if nothing returned from child. Get outta here.
+	    if (qchild_.up->isEmpty())
+	      return WORK_OK;
+
+	    // check if we've got room in the up queue
+	    if (qparent_.up->isFull())
+	      return WORK_OK; // parent queue is full. Just return
+
+	    centry = qchild_.up->getHeadEntry();
+	    
+	    ex_queue::up_status child_status = centry->upState.status;
+	    switch(child_status)
+	      {
+	      case ex_queue::Q_NO_DATA:
+		{
+		  qchild_.up->removeHead();	    
+
+		  if (numChildRows_ == 0)
+		    step_ = DONE_;
+		  else if (numChildRows_ == 1)
+		    step_ = GET_LOB_HANDLE_;
+		  else
+		    {
+		      Lng32 cliError = 0;
+		      
+		      Lng32 intParam1 = 0;
+		      ComDiagsArea * diagsArea = getDiagsArea();
+		      ExRaiseSqlError(getHeap(), &diagsArea, 
+				      (ExeErrorCode)(8444), NULL, &intParam1, 
+				      &cliError, NULL, NULL);
+
+		      step_ = HANDLE_ERROR_;
+		    }
+		}
+	      break;
+
+	      case ex_queue::Q_OK_MMORE:
+		{
+		  if (numChildRows_ == 0) // first child row
+		    {
+		      ex_expr::exp_return_type exprRetCode =
+			lobTdb().inputExpr_->eval(centry->getAtp(), 
+						  workAtp_);
+		      if (exprRetCode == ex_expr::EXPR_ERROR)
+			{
+			  step_ = CANCEL_;
+			  break;
+			}
+
+		    }
+
+		  qchild_.up->removeHead();	    
+		  numChildRows_++;
+		  //		  step_ = GET_LOB_HANDLE_;
+		}
+		break;
+
+	      case ex_queue::Q_INVALID:
+		{
+		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+		  // invalid state, should not be reached.
+		  ComDiagsArea * da = up_entry->getDiagsArea();
+		  ExRaiseSqlError(getMyHeap(),
+				  &da,
+				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
+		  step_ = CANCEL_;
+		}
+		break;
+
+	      case ex_queue::Q_SQLERROR:
+		{
+		  step_ = ERROR_FROM_CHILD_;
+		}
+	      break;
+	      }
+	  }
+	break;
+
+	case ERROR_FROM_CHILD_:
+	  {
+            // check if we've got room in the up queue
+	    if (qparent_.up->isFull())
+	      return WORK_OK; // parent queue is full. Just return
+
+	    ex_queue_entry *pentry_up = qparent_.up->getTailEntry();
+	    ex_queue_entry * centry = qchild_.up->getHeadEntry();
+	    
+	    qchild_.down->cancelRequestWithParentIndex(qparent_.down->getHeadIndex());
+            pentry_up->copyAtp(centry);
+	    pentry_up->upState.status = ex_queue::Q_SQLERROR;
+	    pentry_up->upState.parentIndex = pentry_down->downState.parentIndex;
+	    pentry_up->upState.downIndex = qparent_.down->getHeadIndex();
+
+            qparent_.up->insert();
+	    qchild_.up->removeHead();	    
+
+	    step_ = CANCEL_;
+	  }
+	break;
+
+	case CANCEL_:
+	  {
+            // ignore all up rows from child. wait for Q_NO_DATA.
+	    if (qchild_.up->isEmpty())
+	      return WORK_OK;
+
+	    ex_queue_entry * centry = qchild_.up->getHeadEntry();
+	
+	    switch(centry->upState.status)
+	      {
+	      case ex_queue::Q_OK_MMORE:
+	      case ex_queue::Q_SQLERROR:
+	      case ex_queue::Q_INVALID:
+		{
+		  qchild_.up->removeHead();
+		}
+	      break;
+	      
+	      case ex_queue::Q_NO_DATA:
+		{
+		  qchild_.up->removeHead();
+
+		  step_ = HANDLE_ERROR_;
+		}
+	      break;
+	      
+	      }
+	  }
+	break;
+	
+	case GET_LOB_HANDLE_:
+	  { 
+	    Int16 flags;
+	    Lng32  lobNum;
+	    Int64 uid, inDescSyskey, descPartnKey;
+	    short schNameLen;
+	    char schName[1024];
+	    
+	    if (lobTdb().handleInStringFormat())
+	      {
+		// lobInputHandleBuf_ is in varchar format.
+		// Null terminate it.
+		short VClen;
+		str_cpy_all((char*)&VClen, (char*)lobInputHandleBuf_, sizeof(short));
+		lobInputHandleBuf_[sizeof(short)+VClen]=0;
+
+		lobHandleLen_ = 2048;
+		if (ExpLOBoper::genLOBhandleFromHandleString
+		    (&lobInputHandleBuf_[sizeof(short)], //lobTdb().getHandle(),
+		     strlen(&lobInputHandleBuf_[sizeof(short)]), //strlen(lobTdb().getHandle()),
+		     lobHandleBuf_,
+		     lobHandleLen_))
+		  {
+		    ComDiagsArea * da = getDiagsArea();
+		    ExRaiseSqlError(getMyHeap(),
+				    &da,
+				    (ExeErrorCode)(EXE_INVALID_LOB_HANDLE));
+		    step_ = HANDLE_ERROR_;
+		    break;
+		  }
+
+		lobHandle_ = lobHandleBuf_;
+	      }
+	    else
+	      {
+		lobHandle_ = &lobInputHandleBuf_[sizeof(short)+sizeof(short)]; //lobTdb().getHandle();
+		lobHandleLen_ = *(short*)&lobInputHandleBuf_[sizeof(short)]; //lobTdb().getHandleLen();
+
+		if (*(short*)lobInputHandleBuf_ != 0) //null value
+		  {
+		    step_ = DONE_;
+		    break;
+		  }
+
+	      }
+
+	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
+					     &inDescSyskey, &descPartnKey, 
+					     &schNameLen, (char *)schName,
+					     (char *)lobHandle_, (Lng32)lobHandleLen_);
+	    
+	    lobName_ = 
+	      ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
+
+	    lobDataMaxLen_ = lobTdb().size2_; //100000;
+	    if (lobDataMaxLen_ == 0)
+	      lobDataMaxLen_ = 100000;
+
+	    lobData_ = new(getHeap()) char[(UInt32)lobDataMaxLen_];
+
+	    short *lobNumList = new (getHeap()) short[1];
+	    short *lobTypList = new (getHeap()) short[1];
+	    char  **lobLocList = new (getHeap()) char*[1];
+	    lobLocList[0] = new (getHeap()) char[1024];
+	    
+	    Lng32 numLobs = lobNum;
+	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
+	      (
+	       schName,
+	       schNameLen,
+	       uid,
+	       numLobs,
+	       LOB_CLI_SELECT_UNIQUE,
+	       lobNumList,
+	       lobTypList,
+	       lobLocList);
+	    if (cliRC < 0)
+	      {
+		getDiagsArea()->mergeAfter(diags);
+
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    strcpy(lobLoc_, lobLocList[0]);
+
+           if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_)
+             step_ = OPEN_TARGET_FILE_;
+           else
+             step_ = OPEN_CURSOR_;
+	  }
+	  break;
+
+        case OPEN_TARGET_FILE_:
+          {
+	    char fname[400];
+	    str_sprintf(fname, "%s", lobTdb().getFileName());
+
+	    indata_.open(fname, fstream::out | fstream::binary);
+	    if (! indata_)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -1;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"SourceFile open");
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+            //	    indata_.seekg (0, indata_.end);
+	    indata_.seekg (0, indata_.beg);
+
+            step_ = OPEN_CURSOR_;
+          }
+          break;
+
+	case OPEN_CURSOR_:
+	  {
+	    retcode = ExpLOBInterfaceSelectCursor
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       lobHandleLen_, lobHandle_,
+               0, // cursor bytes 
+               NULL, //cursor id
+	       requestTag_, 
+	       0, // not check status
+	       1, // waited op
+
+	       0, lobDataMaxLen_, 
+	       lobDataLen_, lobData_, 
+	       1 // open
+	       );
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    step_ = READ_CURSOR_;
+	  }
+	  break;
+
+	case READ_CURSOR_:
+	  {
+	    retcode = ExpLOBInterfaceSelectCursor
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       lobHandleLen_, lobHandle_,
+               0 , //cursor bytes,
+	       NULL, //cursor id
+	       requestTag_, 
+	       0, // not check status
+	       1, // waited op
+
+	       0, lobDataMaxLen_, 
+	       lobDataLen_, lobData_, 
+	       2 // read
+	       );
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    if (lobDataLen_ == 0)
+	      {
+		step_ = CLOSE_CURSOR_;
+		break;
+	      }
+
+	    remainingBytes_ = (Lng32)lobDataLen_;
+	    currPos_ = 0;
+
+            if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_FILE_)
+              step_ = INSERT_FROM_STRING_;
+            else
+              step_ = RETURN_STRING_;
+	  }
+	  break;
+
+	case CLOSE_CURSOR_:
+	  {
+	    retcode = ExpLOBInterfaceSelectCursor
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       lobHandleLen_, lobHandle_,
+               0, //cursor bytes
+               NULL, //cursor id
+	       requestTag_, 
+	       0, // not check status
+	       1, // waited op
+
+	       0, lobDataMaxLen_, 
+	       lobDataLen_, lobData_, 
+	       3); // close
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    step_ = DONE_;
+	  }
+	  break;
+
+
+	case RETURN_STRING_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    Lng32 size = MINOF((Lng32)lobTdb().size_, (Lng32)remainingBytes_);
+
+	    moveRowToUpQueue(&lobData_[currPos_], size);
+
+	    remainingBytes_ -= size;
+	    currPos_ += size;
+
+	    if (remainingBytes_ <= 0)
+	      step_ = READ_CURSOR_;
+
+	    return WORK_RESCHEDULE_AND_RETURN;
+	  }
+	  break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = DONE_;
+	  }
+	  break;
+
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = EMPTY_;
+	    return WORK_OK;
+	  }
+	  break;
+
+	} // switch
+    }
+
+  return 0;
+}
+
+ExExeUtilFileExtractTcb::ExExeUtilFileExtractTcb
+(
+ const ComTdbExeUtilLobExtract & exe_util_tdb,
+ const ex_tcb * child_tcb, 
+ ex_globals * glob)
+  : ExExeUtilLobExtractTcb(exe_util_tdb, child_tcb, glob)
+{
+}
+
+NABoolean ExExeUtilFileExtractTcb::needStatsEntry()
+{
+  // stats are collected for ALL and OPERATOR options.
+  if ((getGlobals()->getStatsArea()->getCollectStatsType() == 
+       ComTdb::ALL_STATS) ||
+      (getGlobals()->getStatsArea()->getCollectStatsType() == 
+      ComTdb::OPERATOR_STATS))
+    return TRUE;
+  else
+    return FALSE;
+}
+
+ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
+							    CollHeap *heap,
+							    ComTdb *tdb)
+{
+  ExOperStats * stat = NULL;
+  ComTdb::CollectStatsType statsType = 
+    getGlobals()->getStatsArea()->getCollectStatsType();
+  if (statsType == ComTdb::OPERATOR_STATS)
+    {
+      return ex_tcb::doAllocateStatsEntry(heap, tdb);
+    }
+  else
+    {
+      return new(heap) ExHdfsScanStats(heap,
+					       this,
+					       tdb);
+    }
+}
+
+short ExExeUtilFileExtractTcb::work()
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+
+  ComDiagsArea & diags       = currContext->diags();
+
+  if (! currContext->currLobGlobals())
+    {
+      currContext->currLobGlobals() = 
+	new(currContext->exHeap()) LOBglobals(currContext->exHeap());
+      ExpLOBoper::initLOBglobal
+	(currContext->currLobGlobals()->lobAccessGlobals(), 
+	 currContext->exHeap());
+    }
+
+  void * lobGlobs = currContext->currLobGlobals()->lobAccessGlobals();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case EMPTY_:
+	  {
+	    lobName_ = lobNameBuf_;
+	    strcpy(lobName_, lobTdb().getFileName());
+
+	    strcpy(lobLoc_, lobTdb().getStringParam2());
+
+	    lobType_ =  lobTdb().lobStorageType_; //(Lng32)Lob_External_HDFS_File;
+
+	    lobDataMaxLen_ = lobTdb().size2_; 
+	    if (lobDataMaxLen_ == 0)
+	      lobDataMaxLen_ = 100000; // default 100K
+
+	    // allocate 2 buffers for double buffering.
+	    lobData_ = new(getHeap()) char[(UInt32)lobDataMaxLen_];
+	    lobData2_ = new(getHeap()) char[(UInt32)lobDataMaxLen_];
+
+	    eodReturned_ = FALSE;
+
+	    step_ = OPEN_CURSOR_;
+	  }
+	  break;
+	  
+	case OPEN_CURSOR_:
+	  {
+	    eodReturned_ = FALSE;
+
+	    retcode = ExpLOBInterfaceSelectCursor
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       0, NULL, // handleLen, handle
+               0, NULL, //cursor bytes, cursor id
+	       requestTag_, 
+	       0, // not check status
+	       1, // waited op
+
+	       0, lobDataMaxLen_, 
+	       lobDataLen_, lobData_, 
+	       1 // open
+	       );
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/open",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    step_ = READ_CURSOR_;
+	  }
+	  break;
+
+	case READ_CURSOR_:
+	  {
+	    if (eodReturned_)
+	      {
+		// eod was previously returned. close the cursor.
+		step_ = CLOSE_CURSOR_;
+		break;
+	      }
+
+	    retcode = ExpLOBInterfaceSelectCursor
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       0, NULL,
+               0, NULL ,//cursor bytes, cursor id
+	       requestTag_, 
+	       0, // not check status
+	       1, // waited op
+
+	       0, lobDataMaxLen_, 
+	       lobDataLen_, lobData_, 
+	       2 // read
+	       );
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/read",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    if (lobDataLen_ == 0)
+	      {
+		// EOD with no data: close cursor
+		eodReturned_ = TRUE;
+
+		step_ = CLOSE_CURSOR_;
+		break;
+	      }
+
+	    if (lobDataLen_ < lobDataMaxLen_)
+	      {
+		// EOD with data: return data and then close cursor
+		eodReturned_ = TRUE;
+	      }
+
+	    remainingBytes_ = (Lng32)lobDataLen_;
+	    currPos_ = 0;
+
+	    step_ = RETURN_STRING_;
+	  }
+	  break;
+
+	case CLOSE_CURSOR_:
+	  {
+	    retcode = ExpLOBInterfaceSelectCursor
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       0, NULL,
+               0, NULL, //cursor bytes, cursor id
+	       requestTag_, 
+	       0, // not check status
+	       1, // waited op
+
+	       0, lobDataMaxLen_, 
+	       lobDataLen_, lobData_, 
+	       3); // close
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceSelectCursor/close",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    step_ = COLLECT_STATS_;
+	  }
+	  break;
+
+
+	case RETURN_STRING_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    Lng32 size = MINOF((Lng32)lobTdb().size_, (Lng32)remainingBytes_);
+
+	    // eval expression to convert lob data to sql row.
+	    // TBD.
+
+	    moveRowToUpQueue(&lobData_[currPos_], size);
+
+	    remainingBytes_ -= size;
+	    currPos_ += size;
+
+	    if (remainingBytes_ <= 0)
+	      step_ = READ_CURSOR_;
+
+	    return WORK_RESCHEDULE_AND_RETURN;
+	  }
+	  break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = DONE_;
+	  }
+	  break;
+
+	case COLLECT_STATS_:
+	  {
+	    if (! getStatsEntry())
+	      {
+		step_ = DONE_;
+		break;
+	      }
+
+	    ExHdfsScanStats * stats =
+	      getStatsEntry()->castToExHdfsScanStats();
+
+	    retcode = ExpLOBinterfaceStats
+	      (lobGlobs,
+	       stats->lobStats(),
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort());
+	    
+	    step_ = DONE_;
+	  }
+	  break;
+
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = EMPTY_;
+	    return WORK_OK;
+	  }
+	  break;
+
+	} // switch
+    }
+
+  return 0;
+}
+ExExeUtilFileLoadTcb::ExExeUtilFileLoadTcb
+(
+ const ComTdbExeUtilLobExtract & exe_util_tdb,
+ const ex_tcb * child_tcb, 
+ ex_globals * glob)
+  : ExExeUtilLobExtractTcb(exe_util_tdb, child_tcb, glob)
+{
+}
+
+short ExExeUtilFileLoadTcb::work()
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+
+  ComDiagsArea & diags       = currContext->diags();
+
+  if (! currContext->currLobGlobals())
+    {
+      currContext->currLobGlobals() = 
+	new(currContext->exHeap()) LOBglobals(currContext->exHeap());
+      ExpLOBoper::initLOBglobal
+	(currContext->currLobGlobals()->lobAccessGlobals(), 
+	 currContext->exHeap());
+    }
+
+  void * lobGlobs = currContext->currLobGlobals()->lobAccessGlobals();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case EMPTY_:
+	  {
+	    lobName_ = lobNameBuf_;
+	    strcpy(lobName_, lobTdb().getStringParam2());
+
+	    strcpy(lobLoc_, lobTdb().getStringParam3());
+
+	    lobType_ =  lobTdb().lobStorageType_; //(Lng32)Lob_HDFS_File;
+
+	    lobDataMaxLen_ = lobTdb().size2_; //100000;
+	    if (lobDataMaxLen_ == 0)
+	      lobDataMaxLen_ = 100000;
+
+	    lobData_ = new(getHeap()) char[(UInt32)lobDataMaxLen_];
+
+	    srcFileRemainingBytes_ = 0;
+
+	    step_ = CREATE_TARGET_FILE_;
+	  }
+	  break;
+
+	case CREATE_TARGET_FILE_:
+	  {
+	    if (lobTdb().withCreate())
+	      {
+		retcode = ExpLOBinterfaceCreate
+		  (lobGlobs,
+		   lobName_, 
+		   lobLoc_,
+		   lobType_,
+		   lobTdb().getLobHdfsServer(),
+		   lobTdb().getLobHdfsPort());
+
+		if (retcode < 0)
+		  {
+		    Lng32 cliError = 0;
+		    
+		    Lng32 intParam1 = -retcode;
+		    ComDiagsArea * diagsArea = getDiagsArea();
+		    ExRaiseSqlError(getHeap(), &diagsArea, 
+				    (ExeErrorCode)(8442), NULL, &intParam1, 
+				    &cliError, NULL, (char*)"ExpLOBInterfaceCreate",
+				    getLobErrStr(intParam1));
+		    step_ = HANDLE_ERROR_;
+		    break;
+		  }
+	      }
+	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_)
+	      {
+		strcpy(lobData_, lobTdb().getStringParam1());
+		lobDataLen_ = strlen(lobData_);
+		step_ = INSERT_FROM_STRING_;
+	      }
+	    else
+	      step_ = INSERT_FROM_SOURCE_FILE_;
+	  }
+	  break;
+
+	case INSERT_FROM_SOURCE_FILE_:
+	  {
+	    char fname[400];
+	    str_sprintf(fname, "%s", lobTdb().getStringParam1());
+
+	    indata_.open(fname, fstream::in | fstream::binary);
+	    if (! indata_)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -1;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"SourceFile open");
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    indata_.seekg (0, indata_.end);
+	    srcFileRemainingBytes_ = indata_.tellg();
+	    indata_.seekg (0, indata_.beg);
+
+	    step_ = READ_STRING_FROM_SOURCE_FILE_;
+	  }
+	  break;
+
+	case READ_STRING_FROM_SOURCE_FILE_:
+	  {
+	    if (! indata_.good())
+	      {
+		indata_.close();
+		step_ = CLOSE_TARGET_FILE_;
+		break;
+	      }
+
+	    if (srcFileRemainingBytes_ == 0)
+	      {
+		indata_.close();
+		step_ = CLOSE_TARGET_FILE_;
+		break;
+	      }
+	      
+	    Int64 length = MINOF(srcFileRemainingBytes_, lobDataMaxLen_);
+
+	    indata_.read (lobData_, (std::streamsize)length);
+	      
+	    if (indata_.fail())
+	      {
+		indata_.close();
+
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -1;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"SourceFile read");
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+	    
+	    lobDataLen_ = length;
+	    srcFileRemainingBytes_ -= length;
+
+	    step_ = INSERT_FROM_STRING_;
+	  }
+	  break;
+
+	case INSERT_FROM_STRING_:
+	  {
+	    Int64 requestTag;
+	    Int64 dummy;
+	    retcode = ExpLOBInterfaceInsert
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort(),
+
+	       0, NULL, NULL, NULL, 0, NULL,
+
+	       requestTag, 
+	       0, // no xn id
+	       dummy,
+
+	       NULL, Lob_Memory,
+	       0, // not check status
+	       1, // waited
+
+	       lobData_, lobDataLen_
+	       );
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceInsert",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    if (lobTdb().getToType() == ComTdbExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_)
+	      step_ = READ_STRING_FROM_SOURCE_FILE_;
+	    else
+	      step_ = CLOSE_TARGET_FILE_;
+	  }
+	  break;
+
+	case CLOSE_TARGET_FILE_:
+	  {
+	    retcode = ExpLOBinterfaceCloseFile
+	      (lobGlobs,
+	       lobName_, 
+	       lobLoc_,
+	       lobType_,
+	       lobTdb().getLobHdfsServer(),
+	       lobTdb().getLobHdfsPort());
+
+	    if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+		
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceCloseFile",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+	    
+	    step_ = DONE_;
+	  }
+	  break;
+
+	case HANDLE_ERROR_:
+	  {
+	    retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = DONE_;
+	  }
+	  break;
+
+	case DONE_:
+	  {
+	    retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = EMPTY_;
+	    return WORK_OK;
+	  }
+	  break;
+
+	} // switch
+    }
+
+  return 0;
+}

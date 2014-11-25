@@ -2111,6 +2111,25 @@ short CmpSeabaseDDL::getTypeInfo(const NAType * naType,
       }
       break;
       
+      
+    case NA_LOB_TYPE:
+      {
+	if (datatype == REC_BLOB)
+	  {
+	    SQLBlob *blobType = (SQLBlob *) naType;
+	    
+	    precision = (ComSInt32)blobType->getLobLength();
+	  }
+	else
+	  {
+	    SQLClob *clobType = (SQLClob *)naType;
+	    
+	    precision = (ComSInt32)clobType->getLobLength();
+	  }
+	
+      }
+      break;
+      
 
     default:
       {

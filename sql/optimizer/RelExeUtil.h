@@ -2401,6 +2401,136 @@ private:
   SchemaName sourceStatsSchemaName_;
 };
 
+class ExeUtilLobExtract : public ExeUtilExpr
+{
+public:
+  enum ExtractToType
+  {
+    TO_FILE_, TO_STRING_, TO_BUFFER_, TO_EXTERNAL_FROM_STRING_,
+    TO_EXTERNAL_FROM_FILE_, NOOP_
+  };
+  
+ ExeUtilLobExtract(ItemExpr * handle, 
+		   ExtractToType toType,
+		   ItemExpr * bufaddr,
+		   ItemExpr * bufsize,
+		   Int64 intParam = 0,
+		   Int64 intParam2 = 0,
+		   char * stringParam = NULL,
+		   char *stringParam2 = NULL,
+		   char *stringParam3 = NULL,
+		   RelExpr * childNode = NULL,
+		   CollHeap *oHeap = CmpCommon::statementHeap())
+   : ExeUtilExpr(LOB_EXTRACT_, CorrName("dummyExtractName"),
+		 NULL, childNode, 
+		 NULL, CharInfo::UnknownCharSet, oHeap),
+    handle_(handle),
+    toType_(toType),
+    bufAddrExpr_(bufaddr),
+    bufSizeExpr_(bufsize),
+    intParam_(intParam),
+    intParam2_(intParam2),
+    handleInStringFormat_(TRUE),
+    withCreate_(FALSE)
+    {
+      if (stringParam)
+	stringParam_ = stringParam;
+      if (stringParam2)
+	stringParam2_ = stringParam2;
+      if (stringParam3)
+	stringParam3_ = stringParam3;
+    };
+
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+  
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
+  
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+  
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  virtual void transformNode(NormWA & normWARef,
+			     ExprGroupId & locationOfPointerToMe);
+
+  virtual RelExpr * normalizeNode(NormWA & normWARef);
+
+  virtual void pushdownCoveredExpr(const ValueIdSet & outputExpr,
+				   const ValueIdSet & newExternalInputs,
+				   ValueIdSet & predicatesOnParent,
+				   const ValueIdSet * setOfValuesReqdByParent,
+				   Lng32 childIndex
+				   );
+  
+  virtual RelExpr * preCodeGen(Generator * generator,
+			       const ValueIdSet & externalInputs,
+			       ValueIdSet &pulledNewInputs);
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  void setHandleInStringFormat(NABoolean v)
+  {
+    handleInStringFormat_ = v;
+  }
+
+  NABoolean &withCreate() { return withCreate_; }
+
+ private:
+  //  NAString handle_;
+  ItemExpr * handle_;
+  ExtractToType toType_;
+  
+  ItemExpr * bufAddrExpr_;
+  ItemExpr * bufSizeExpr_;
+  
+  Int64 intParam_;  // output row size of each row for TO_STRING_.  Max file size for TO_FILE_.
+  Int64 intParam2_;
+  NAString stringParam_; // output file name for TO_FILE_.
+
+  NAString stringParam2_;
+  NAString stringParam3_;
+
+  NABoolean handleInStringFormat_;
+
+  // create file during load (type TO_EXTERNAL_FROM...)
+  NABoolean withCreate_;
+};
+
+class ExeUtilLobShowddl : public ExeUtilExpr
+{
+public:
+ ExeUtilLobShowddl(const CorrName &lobTableName,
+		   Lng32 sdOptions,
+		   CollHeap *oHeap = CmpCommon::statementHeap())
+   : ExeUtilExpr(LOB_SHOWDDL_, lobTableName,
+		 NULL, NULL, 
+		 NULL, CharInfo::UnknownCharSet, oHeap),
+    sdOptions_(sdOptions),
+    objectUID_(0)
+  {
+  };
+
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  virtual NABoolean producesOutput() { return TRUE; }
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+  
+private:
+  Lng32 sdOptions_;
+
+  Int64 objectUID_;
+};
+// sss #endif
 
 class ExeUtilHbaseDDL : public ExeUtilExpr
 {

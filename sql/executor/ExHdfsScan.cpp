@@ -301,8 +301,8 @@ Int32 ExHdfsScanTcb::fixup()
   lobGlob_ = NULL;
 
   ExpLOBinterfaceInit
-    (lobGlob_, getGlobals()->getDefaultHeap());
-
+    (lobGlob_, getGlobals()->getDefaultHeap(),TRUE);
+  
   return 0;
 }
 
@@ -487,7 +487,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		       (Lng32)Lob_External_HDFS_File,
 		       hdfsScanTdb().hostName_,
 		       hdfsScanTdb().port_,
-		       
+		       0, NULL, // handle not valid for non lob access
 		       bytesLeft_, // max bytes
 		       cursorId_, 
 		       
@@ -519,7 +519,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                            (Lng32)Lob_External_HDFS_File,
                            hdfsScanTdb().hostName_,
                            hdfsScanTdb().port_,
-                           
+                           0, NULL,//handle not relevant for non lob access
                            hdfo->getBytesToRead(), // max bytes
                            cursorId, 
                            
@@ -649,7 +649,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		       (Lng32)Lob_External_HDFS_File,
 		       hdfsScanTdb().hostName_,
 		       hdfsScanTdb().port_,
-		       
+                       0, NULL,		       
 		       0, cursorId_,
 		       
 		       requestTag_, 
@@ -1076,7 +1076,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 		       (Lng32)Lob_External_HDFS_File,
 		       hdfsScanTdb().hostName_,
 		       hdfsScanTdb().port_,
-		       
+		       0,NULL, //handle not relevant for non lob access
 		       0, cursorId_,
 		       
 		       requestTag_, 

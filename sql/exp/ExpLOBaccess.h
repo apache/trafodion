@@ -71,7 +71,7 @@ using namespace std;
 #define MAX_HANDLE_IN_LEN 1024
 #define MAX_HANDLE_OUT_LEN 1024
 #define MAX_BLACK_BOX_LEN 2048
-
+#define LOB_DESC_HEADER_KEY 1
 #define NUM_WORKER_THREADS 4
 
 #define LOB_CURSOR_PREFETCH_BYTES_MAX (1 << 27) // 128MB
@@ -101,6 +101,8 @@ Ex_Lob_Error ExLobsOper (
     LobsStorage storage,           // storage type
     char        *source,           // source (memory addr, filename, foreign lob etc)
     Int64       sourceLen,         // source len (memory len, foreign desc offset etc)
+    Int64 cursorBytes,
+    char *cursorId,
     LobsOper    operation,         // LOB operation
     LobsSubOper subOperation,      // LOB sub operation
     Int64       waited,            // waited or nowaited
@@ -400,7 +402,8 @@ class ExLob
 
     Ex_Lob_Error lockDesc();
     Ex_Lob_Error unlockDesc();
-    int getfdDesc() { return fdDesc_; }
+    //int getfdDesc() { return fdDesc_; }
+    hdfsFile *getfdDesc() { return &fdDesc_;}
     char *getDescFileName() { return lobDescFile_; }
     char *getDataFileName() { return lobDataFile_; }
 
@@ -420,28 +423,28 @@ class ExLob
     Ex_Lob_Error emptyDirectory();
 
     ExLobStats *getStats() { return &stats_; }
-
+    NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
   public:
 
     char lobDataFile_[MAX_LOB_FILE_NAME_LEN];
     char lobDescFile_[MAX_LOB_FILE_NAME_LEN];
-    int fdDesc_;
+    //int fdDesc_;
+    hdfsFile fdDesc_;
     lobCursors_t lobCursors_;
     ExLobLock lobCursorLock_;
     LobsStorage storage_;
-    string dir_; // lob directory
+    string dir_; // lob data directory
 #ifdef SQ_USE_HDFS
     char *hdfsServer_;
     Int64 hdfsPort_;
     hdfsFS fs_;
     hdfsFile fdData_;
     int openFlags_;
-#else
-    int fdData_;
 #endif
     ExLobRequest request_; 
     ExLobStats stats_;
     bool prefetchQueued_;
+    NAHeap *lobGlobalHeap_;
 };
 
 typedef map<string, ExLob *> lobMap_t;
@@ -524,7 +527,32 @@ class ExLobGlobals
     Ex_Lob_Error performRequest(ExLobHdfsRequest *request);
     Ex_Lob_Error addToPreOpenList(ExLobPreOpen *preOpenObj);
     Ex_Lob_Error processPreOpens();
-    
+    NABoolean isCliInitialized()
+    {
+      return isCliInitialized_;
+    }
+ 
+    void setCliInitialized()
+    {
+      isCliInitialized_ = TRUE;
+    }
+     NABoolean isHive()
+    {
+      return isHive_;
+    }
+ 
+    void setIsHive(NABoolean TorF)
+    {
+      isHive_ = TorF;
+    }
+    void setHeap(void * heap)
+    {
+      heap_ = (NAHeap *) heap;
+    }
+    NAHeap * getHeap()
+    {
+      return heap_;
+    }
   public :
     lobMap_t *lobMap_;
     hdfsFS fs_;
@@ -538,6 +566,9 @@ class ExLobGlobals
     typedef list<ExLobCursorBuffer *> bufferList_t;
     bufferList_t postfetchBufList_;
     ExLobLock postfetchBufListLock_;
+    NABoolean isCliInitialized_;
+    NABoolean isHive_;
+    NAHeap *heap_;
 };
 
 #endif 

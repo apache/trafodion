@@ -900,7 +900,12 @@ const char * getAnsiTypeStrFromFSType(Lng32 datatype)
    case REC_INT_DAY_SECOND:
      return COM_INTERVAL_SDT_LIT;
      break;
-
+   case REC_BLOB:
+     return COM_BLOB_SDT_LIT;
+     break;
+   case REC_CLOB:
+       return COM_CLOB_SDT_LIT;
+     break;
    default:
       // error
       break;

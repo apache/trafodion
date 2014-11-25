@@ -1,0 +1,250 @@
+>>obey TEST130(setup);
+>>
+>>create table t130lob1 (c1 blob);
+
+--- SQL operation complete.
+>>create table t130lob2 (c1 int not null, c2 blob , primary key (c1));
+
+--- SQL operation complete.
+>>create table t130lob3 (c1 int not null,
++>c2 blob, c3 blob, primary key (c1));
+
+--- SQL operation complete.
+>>create table t130lob4 (c1 int not null,
++>c2 char(10), c3 clob, primary key (c1));
+
+--- SQL operation complete.
+>>
+>>
+>>obey TEST130(dml_insert);
+>>insert into t130lob1 values(NULL);
+
+--- 1 row(s) inserted.
+>>select * from t130lob1;
+
+C1
+----------------------------------------------------------------------------------------------------
+
+?                                                                                                   
+
+--- 1 row(s) selected.
+>>
+>>insert into t130lob2 values(1,stringtolob('inserted row11'));
+
+--- 1 row(s) inserted.
+>>insert into t130lob2 values(2,stringtolob('inserted row12'));
+
+--- 1 row(s) inserted.
+>>insert into t130lob2 values(3,stringtolob('inserted row13'));
+
+--- 1 row(s) inserted.
+>>insert into t130lob2 values(3,stringtolob('xxxx'));
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>select * from t130lob2;
+
+C1           C2
+-----------  ----------------------------------------------------------------------------------------------------
+
+          1  LOBH000002000100006241560996850124178899520421158119818212281244010242037017"TRAFODION"."SCH"       
+          2  LOBH000002000100006241560996850124178899520421504829018212281244013708245017"TRAFODION"."SCH"       
+          3  LOBH000002000100006241560996850124178899520421839730618212281244017058536017"TRAFODION"."SCH"       
+
+--- 3 row(s) selected.
+>>
+>>
+>>select lobtostring(c2,10) from t130lob2;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)    
+----------
+
+inserted r
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+inserted r
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+inserted r
+
+--- 3 row(s) selected.
+>>select lobtostring(c2,2) from t130lob2;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+(EXPR)
+------
+
+in    
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+in    
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+in    
+
+--- 3 row(s) selected.
+>>select c1,lobtostring(c2) from t130lob2;
+
+C1           (EXPR)
+-----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+          1  inserted row11                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+          2  inserted row12                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+          3  inserted row13                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+--- 3 row(s) selected.
+>>
+>>
+>>obey TEST130(dml_join);
+>>insert into t130lob3 values (1,stringtolob('inserted row21a'),stringtolob('inserted row21b'));
+
+--- 1 row(s) inserted.
+>>insert into t130lob3 values (2,stringtolob('inserted row22a'),stringtolob('inserted row22b'));
+
+--- 1 row(s) inserted.
+>>insert into t130lob3 values (3,stringtolob('inserted row23a'),stringtolob('inserted row23b'));
+
+--- 1 row(s) inserted.
+>>insert into t130lob3 values (4,stringtolob('inserted row24a'),stringtolob('inserted row24b'));
+
+--- 1 row(s) inserted.
+>>
+>>prepare s from 
++>select c1, lobtostring(c2,25), lobtostring(c3,25)  from t130lob3;
+
+--- SQL command prepared.
+>>
+>>
+>>
+>>select lobtostring(t130lob2.c2,30) from t130lob2, t130lob3 where t130lob2.c1 = t130lob3.c1;
+
+(EXPR)                        
+------------------------------
+
+inserted row11                
+inserted row12                
+inserted row13                
+
+--- 3 row(s) selected.
+>>
+>>
+>>
+>>obey TEST130(dml_update);
+>>
+>>update t130lob2 set c2=stringtolob('updated c2 in all rows');
+
+--- 3 row(s) updated.
+>>select c1, lobtostring(c2,30) from t130lob2;
+
+C1           (EXPR)                        
+-----------  ------------------------------
+
+          1  updated c2 in all rows        
+          2  updated c2 in all rows        
+          3  updated c2 in all rows        
+
+--- 3 row(s) selected.
+>>
+>>update t130lob2 set c2=stringtolob('updated row21a') where c1=1;
+
+--- 1 row(s) updated.
+>>select c1, lobtostring(c2,30) from t130lob2;
+
+C1           (EXPR)                        
+-----------  ------------------------------
+
+          1  updated row21a                
+          2  updated c2 in all rows        
+          3  updated c2 in all rows        
+
+--- 3 row(s) selected.
+>>select c1, lobtostring(c2,30) from t130lob2 where c1=1;
+
+C1           (EXPR)                        
+-----------  ------------------------------
+
+          1  updated row21a                
+
+--- 1 row(s) selected.
+>>
+>>obey TEST130(dml_update_append);
+>>
+>>update t130lob2 set c2=stringtolob('appended row21a',append) where c1=1;
+
+--- 1 row(s) updated.
+>>select c1, lobtostring(c2) from t130lob2;
+
+C1           (EXPR)
+-----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+          1  updated row21aappended row21a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+          2  updated c2 in all rows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+          3  updated c2 in all rows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+--- 3 row(s) selected.
+>>select c1, lobtostring(c2) from t130lob2 where c1=1;
+
+C1           (EXPR)
+-----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+          1  updated row21aappended row21a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+--- 1 row(s) selected.
+>>
+>>
+>>update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);
+
+--- 3 row(s) updated.
+>>select c1, lobtostring(c2,50) from t130lob2;
+
+*** WARNING[8402] A string overflow occurred during the evaluation of a character expression.
+
+C1           (EXPR)                                            
+-----------  --------------------------------------------------
+
+          1  updated row21aappended row21a appended c2 to all r
+          2  updated c2 in all rows appended c2 to all rows    
+          3  updated c2 in all rows appended c2 to all rows    
+
+--- 3 row(s) selected.
+>>
+>>obey(dml_delete);
+
+*** ERROR[15007] Error 2 while opening file DML_DELETE.
+
+>>
+>>
+>>
+>>
+>>
+>>obey TEST130(dml);
+
+*** ERROR[15014] Section dml was not found in file TEST130.
+
+>>obey TEST130(clnup);
+>>drop table t130lob1 cascade;
+
+--- SQL operation complete.
+>>drop table t130lob2 cascade;
+
+--- SQL operation complete.
+>>drop table t130lob3 cascade;
+
+--- SQL operation complete.
+>>drop table t130lob4 cascade;
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+

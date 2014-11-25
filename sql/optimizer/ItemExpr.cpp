@@ -7510,6 +7510,28 @@ const NAString BuiltinFunction::getText() const
     case ITM_ZEROIFNULL:
       return "zeroifnull";
 
+      
+    case ITM_LOBINSERT:
+      return "lobinsert";
+
+    case ITM_LOBSELECT:
+      return "lobselect";
+
+    case ITM_LOBDELETE:
+      return "lobdelete";
+
+    case ITM_LOBUPDATE:
+      return "lobupdate";
+
+    case ITM_LOBCONVERTHANDLE:
+      return "lobconverthandle";
+
+    case ITM_LOBCONVERT:
+      return "lobconvert";
+
+    case ITM_LOBLOAD:
+      return "lobload";
+    
 
     default:
       return "unknown func";
@@ -12357,6 +12379,131 @@ ItemExpr * CompDecode::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 
 // --------------------------------------------------------------
+// member functions for LOBoper operator
+// --------------------------------------------------------------
+ItemExpr * LOBoper::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  LOBoper *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBoper(getOperatorType(), NULL, NULL, obj_);
+  else
+    result = (LOBoper*)derivedNode;
+
+  result->lobNum() = lobNum();
+  result->lobStorageType() = lobStorageType();
+  result->lobStorageLocation() = lobStorageLocation();
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBinsert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  LOBinsert *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBinsert(NULL, NULL, obj_, append_);
+  else
+    result = (LOBinsert*)derivedNode;
+
+  result->insertedTableObjectUID() = insertedTableObjectUID();
+  result->insertedTableSchemaName() = insertedTableSchemaName();
+  //  result->lobNum() = lobNum();
+  result->lobSize() = lobSize();
+  result->lobFsType() = lobFsType();
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBselect::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBselect(NULL, NULL, obj_);
+  else
+    result = derivedNode;
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBdelete::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBdelete(NULL);
+  else
+    result = derivedNode;
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBupdate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  LOBupdate *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBupdate(NULL, NULL, obj_, append_);
+  else
+    result = (LOBupdate*)derivedNode;
+
+  result->updatedTableObjectUID() = updatedTableObjectUID();
+  result->updatedTableSchemaName() = updatedTableSchemaName();
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBconvert(NULL, obj_, tgtSize_);
+  else
+    result = derivedNode;
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBconvertHandle::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBconvertHandle(NULL, obj_);
+  else
+    result = derivedNode;
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBload::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBload(NULL, obj_);
+  else
+    result = derivedNode;
+
+  return LOBinsert::copyTopNode(result, outHeap);
+}
+
+ItemExpr * LOBextract::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) LOBextract(NULL, tgtSize_);
+  else
+    result = derivedNode;
+
+  return LOBoper::copyTopNode(result, outHeap);
+}
+
+
+// --------------------------------------------------------------
 // member functions for Concat operator
 // --------------------------------------------------------------
 ItemExpr * Concat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
@@ -14506,5 +14653,31 @@ void revertBackToOldTreeUsingValueIdSet(  ValueIdSet& inputSet /* IN */, ValueId
 	  inputItemExprTree = NULL;
 	  outorSet.clear();
 	}
+}
+
+
+NABoolean LOBoper::isCovered
+(const ValueIdSet& newExternalInputs,
+ const GroupAttributes& coveringGA,
+ ValueIdSet& referencedInputs,
+ ValueIdSet& coveredSubExpr,
+ ValueIdSet& unCoveredExpr) const
+{
+  // If the argument is not a constant then it can be
+  // evaluated anywhere in the tree. So check for its coverage
+  ValueIdSet localSubExpr;
+  for (Lng32 i = 0; i < (Lng32)getArity(); i++)
+    {
+      if ( coveringGA.covers(child(i)->getValueId(),
+			     newExternalInputs,
+			     referencedInputs,
+			     &localSubExpr) )
+	{
+	  coveredSubExpr += child(i)->getValueId();
+	}
+    }
+
+  // cannot be pushed down. Must be evaluated in master exe.
+  return FALSE;
 }
 

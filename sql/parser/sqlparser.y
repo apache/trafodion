@@ -744,6 +744,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_STRINGTOLOB
 %token <tokval> TOK_STRINGTOEXTERNAL
 %token <tokval> TOK_LOB
+%token <tokval> TOK_LOBLENGTH
 %token <tokval> TOK_LOBTOBUFFER
 %token <tokval> TOK_LOBTOFILE
 %token <tokval> TOK_LOBTOSTRING
@@ -1875,6 +1876,9 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stmt_ptr>  	     sql_statement
 %type <item>      		literal
 %type <item>      		literal_negatable
+%type <item>                   numeric_literal
+%type <item>                   numeric_literal_exact
+%type <item>                   character_literal_sbyte
 %type <stringval> 		literal_as_string
 %type <stringval> 		character_string_literal
 %type <stringval>		sbyte_string_literal
@@ -2978,12 +2982,15 @@ enableCharsetInferenceInColDefaultVal :
 	}
 
 /* type item */
-literal :       NUMERIC_LITERAL_EXACT_NO_SCALE
+numeric_literal_exact :       NUMERIC_LITERAL_EXACT_NO_SCALE
                 {
 #pragma warn(1506)   // warning elimination  (goes with the nowarn above. do not remove.
                   $$ = literalOfNumericNoScale($1);
                   if (! $$) YYERROR;
                 }
+
+/* type item */
+numeric_literal :       numeric_literal_exact
 	      |	NUMERIC_LITERAL_EXACT_WITH_SCALE
                 {
                   $$ = literalOfNumericWithScale($1);
@@ -2994,123 +3001,15 @@ literal :       NUMERIC_LITERAL_EXACT_NO_SCALE
                   $$ = literalOfApproxNumeric($1);
 		  if (! $$) YYERROR;
 		}
-              | TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-#pragma nowarn(1506)   // warning elimination
-                  $$ = literalOfInterval($4, $5, $3);
-#pragma warn(1506)   // warning elimination
-		  if (! $$) YYERROR;
 
-                  restoreInferCharsetState();
-
-                }
-              | TOK_INTERVAL disableCharsetInference QUOTED_STRING interval_qualifier
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfInterval($3, $4);
-		  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | '{' TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier '}'
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-#pragma nowarn(1506)   // warning elimination
-                  $$ = literalOfInterval($5, $6, $4);
-#pragma warn(1506)   // warning elimination
-		  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | '{' TOK_INTERVAL disableCharsetInference QUOTED_STRING interval_qualifier '}'
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfInterval($4, $5);
-		  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | '{' TOK_D disableCharsetInference QUOTED_STRING '}'
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfDate($4);
-                  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | TOK_DATE_BEFORE_QUOTE disableCharsetInference QUOTED_STRING
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfDate($3);
-		  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | QUOTED_STRING TOK_LPAREN_BEFORE_DATE_COMMA_AND_FORMAT TOK_DATE ',' TOK_FORMAT QUOTED_STRING  ')'
-                {
-		  // CheckModeSpecial1(); -- Allow general NEO users to use
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-		  // in MS2, formatting is done as part of Format function.
-		  // Right now limit this to MS2. Once it is tested, we can do
-		  // it for all modes.
-		  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-		    {
-                      $$ = new (PARSERHEAP()) ConstValue
-                        (*$1, getStringCharSet(&$1));
-		      $$ = new (PARSERHEAP()) Format($$, *$6, TRUE);
-		    }
-		  else
-		    {
-		      $$ = literalOfDate($1);
-		      if (! $$) YYERROR;
-		      restoreInferCharsetState();
-		      $$ = new (PARSERHEAP()) Format($$, *$6, FALSE);
-		    }
-
-                }
-              | '{' TOK_T disableCharsetInference QUOTED_STRING '}'
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfTime($4);
-                  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | TOK_TIME_BEFORE_QUOTE disableCharsetInference QUOTED_STRING
-                {
-                  $$ = literalOfTime($3);
-		  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | TOK_TIMESTAMP disableCharsetInference QUOTED_STRING
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfTimestamp($3);
-		  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | '{' TOK_TS disableCharsetInference QUOTED_STRING '}'
-                {
-                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-                  $$ = literalOfTimestamp($4);
-                  if (! $$) YYERROR;
-                  restoreInferCharsetState();
-                }
-              | sbyte_string_literal character_literal_notcasespecific_option
+/* type item */
+character_literal_sbyte : sbyte_string_literal character_literal_notcasespecific_option
                 {
 //
 // literal <-- sbyte_string_literal  character_literal_notcasespecific_option
 //
                   CharInfo::CharSet cs = getStringCharSet(&$1);
                   const NAString& ns = *$1;
-
-                  if (CharInfo::is_NCHAR_MP(cs) &&
-                      ns.length() % 2 != 0 ) {
-                      // E.g., disallow odd-length SQLC/C++ hostvars like
-                      // "kodd" below, whose SQL len is 3
-                      // (the 4th byte is the C nul-terminator):
-                      //      EXEC SQL BEGIN DECLARE SECTION;
-                      //        char  CHARACTER SET KANJI  kodd[4];
-                      //      EXEC SQL END   DECLARE SECTION;
-                    *SqlParser_Diags << DgSqlCode(-3177)
-                                     << DgString0(CharInfo::getCharSetName(cs));
-                    YYERROR;
-                  }
 
                   $$ = new (PARSERHEAP()) ConstValue(*$1, cs);
                   ((ConstValue*)$$)->setStrLitWithCharSetPrefixFlag(TRUE); // for use with DDL col def DEFAULT str lit only
@@ -3123,7 +3022,7 @@ literal :       NUMERIC_LITERAL_EXACT_NO_SCALE
                   }
                   delete $1/*sbyte_string_literal*/;
                 }
-              | /*no_charset_prefix*/std_char_string_literal character_literal_notcasespecific_option
+             | /*no_charset_prefix*/std_char_string_literal character_literal_notcasespecific_option
                 {
 //
 // literal <-- /*no_charset_prefix*/std_char_string_literal  character_literal_notcasespecific_option
@@ -3232,6 +3131,107 @@ literal :       NUMERIC_LITERAL_EXACT_NO_SCALE
 
                   delete $1;
                 }
+
+/* type item */
+literal :       numeric_literal
+              | TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+#pragma nowarn(1506)   // warning elimination
+                  $$ = literalOfInterval($4, $5, $3);
+#pragma warn(1506)   // warning elimination
+		  if (! $$) YYERROR;
+
+                  restoreInferCharsetState();
+
+                }
+              | TOK_INTERVAL disableCharsetInference QUOTED_STRING interval_qualifier
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfInterval($3, $4);
+		  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | '{' TOK_INTERVAL disableCharsetInference sign QUOTED_STRING interval_qualifier '}'
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+#pragma nowarn(1506)   // warning elimination
+                  $$ = literalOfInterval($5, $6, $4);
+#pragma warn(1506)   // warning elimination
+		  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | '{' TOK_INTERVAL disableCharsetInference QUOTED_STRING interval_qualifier '}'
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfInterval($4, $5);
+		  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | '{' TOK_D disableCharsetInference QUOTED_STRING '}'
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfDate($4);
+                  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | TOK_DATE_BEFORE_QUOTE disableCharsetInference QUOTED_STRING
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfDate($3);
+		  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | QUOTED_STRING TOK_LPAREN_BEFORE_DATE_COMMA_AND_FORMAT TOK_DATE ',' TOK_FORMAT QUOTED_STRING  ')'
+                {
+		  // CheckModeSpecial1(); -- Allow general NEO users to use
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+		  // in MS2, formatting is done as part of Format function.
+		  // Right now limit this to MS2. Once it is tested, we can do
+		  // it for all modes.
+		  if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
+		    {
+                      $$ = new (PARSERHEAP()) ConstValue
+                        (*$1, getStringCharSet(&$1));
+		      $$ = new (PARSERHEAP()) Format($$, *$6, TRUE);
+		    }
+		  else
+		    {
+		      $$ = literalOfDate($1);
+		      if (! $$) YYERROR;
+		      restoreInferCharsetState();
+		      $$ = new (PARSERHEAP()) Format($$, *$6, FALSE);
+		    }
+
+                }
+              | '{' TOK_T disableCharsetInference QUOTED_STRING '}'
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfTime($4);
+                  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | TOK_TIME_BEFORE_QUOTE disableCharsetInference QUOTED_STRING
+                {
+                  $$ = literalOfTime($3);
+		  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | TOK_TIMESTAMP disableCharsetInference QUOTED_STRING
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfTimestamp($3);
+		  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | '{' TOK_TS disableCharsetInference QUOTED_STRING '}'
+                {
+                  // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                  $$ = literalOfTimestamp($4);
+                  if (! $$) YYERROR;
+                  restoreInferCharsetState();
+                }
+              | character_literal_sbyte 
               | unicode_string_literal
                 {
                   $$ = new (PARSERHEAP()) ConstValue(*$1, getStringCharSet(&$1));
@@ -6101,6 +6101,17 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
     $$ = new (PARSERHEAP()) ExtractSource(columns, espPhandle, securityKey,
                                           PARSERHEAP());
   }
+| TOK_TABLE '(' TOK_LOB QUOTED_STRING ')'
+  {
+    ConstValue * handle = new(PARSERHEAP()) ConstValue(*$4);
+
+    ExeUtilLobExtract * lle =
+      new (PARSERHEAP ()) ExeUtilLobExtract
+      (handle, 
+       ExeUtilLobExtract::TO_STRING_,
+       NULL, NULL, 0, 0);
+  }
+
 
 hivemd_identifier : 
                     TOK_ALIAS { $$ = new (PARSERHEAP()) NAString("ALIAS"); }
@@ -11607,41 +11618,70 @@ tok_char_or_character_or_byte : TOK_CHAR | TOK_CHARACTER
 /* type na_type */
 blob_type : TOK_BLOB blob_optional_left_len_right 
             {
+	
 	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
 		}
 	      else
 		{
-		  YYERROR;
+    
+		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
+	     
+
 		}
             }
           | TOK_CLOB blob_optional_left_len_right 
             {
+
+	      
+
 	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 		{
 		  $$ = new (PARSERHEAP()) SQLVarChar($2);
 		}
 	      else
 		{
-	      YYERROR;
+
+
+	      $$ = new (PARSERHEAP()) SQLClob ( $2 );
+	      
 		}
             }
 
 blob_optional_left_len_right: '(' TOK_LENGTH NUMERIC_LITERAL_EXACT_NO_SCALE optional_blob_unit ')'
         {
-	  YYERROR;
+	 
+	  Int64 longIntVal = atoInt64($3->data());
+	  if (longIntVal < 0)
+	  {
+	    // Error: Expected an unsigned integer
+	    *SqlParser_Diags << DgSqlCode(-3017) 
+			     << DgString0(*$3);
+	  }
+	  
+	  longIntVal = longIntVal * $4;
+
+	  $$ = (Lng32)longIntVal;
+	  delete $3;
+	 
 	}
 
 	| empty
 	{ 
+
+
+
 	  if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 	    {
 	      $$ = (Lng32)100000;
 	    }
 	  else
 	    {
-	      YYERROR;
+	 
+	      $$ = (Lng32)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE);
+
+
 	    }
         }
 
@@ -12852,80 +12892,128 @@ insert_value_expression_list_paren : '(' insert_value_expression_list_comma ')'
 insert_value_expression : value_expression 
                           | insert_obj_to_lob_function
 
-insert_obj_to_lob_function : TOK_FILETOLOB '(' literal ')'
+insert_obj_to_lob_function : 
+			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::STRING_, FALSE);
+				}
+                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
+			        {
+				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::FILE_, FALSE);
+				}
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
+			        {
+				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				}
+                          | TOK_FILETOLOB '(' literal ')'
+			        {
+                                  YYERROR;
+                                  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::FILE_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ')'
 			        {
-				  YYERROR;
-
-				}
-			  | TOK_STRINGTOLOB '(' literal ')'
-			        {
-				  YYERROR;
+                                  YYERROR;
+                                  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::LOAD_);
 				}
 			  | TOK_EXTERNALTOLOB '(' literal ')'
 			        {
-				  YYERROR;
+                                  YYERROR;
+                                  $$ = new (PARSERHEAP()) LOBinsert( $3, NULL, LOBoper::EXTERNAL_);
 				}
 			  | TOK_EXTERNALTOLOB '(' literal ',' literal ')'
 			        {
-				  YYERROR;
+                                  YYERROR;
+                                  $$ = new (PARSERHEAP()) LOBinsert( $3, $5, LOBoper::EXTERNAL_);
 				}
 
-update_obj_to_lob_function : TOK_FILETOLOB '(' literal ')'
+update_obj_to_lob_function : 
+			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, FALSE);
 				}
-			  | TOK_LOADTOLOB '(' literal ')'
+			  | TOK_STRINGTOLOB '(' value_expression ',' TOK_APPEND ')'
 			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::STRING_, TRUE);
 				}
-			  | TOK_STRINGTOLOB '(' literal ')'
+                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ')'
 			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, FALSE);
 				}
-			  | TOK_EXTERNALTOLOB '(' literal ')'
+                          | TOK_FILETOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_FILE character_literal_sbyte ',' TOK_APPEND ')'
 			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $4, $7, LOBoper::FILE_, TRUE);
 				}
-			  | TOK_EXTERNALTOLOB '(' literal ',' literal ')'
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ')'
 			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, FALSE);
+				}
+			  | TOK_BUFFERTOLOB '(' TOK_LOCATION character_literal_sbyte ',' TOK_SIZE numeric_literal_exact ',' TOK_APPEND')'
+			        {
+				  $$ = new (PARSERHEAP()) LOBinsert( $4, $7, LOBoper::BUFFER_, TRUE);
+				}
+                          | TOK_FILETOLOB '(' literal ')'
+			        {
+                                  YYERROR;
+                                  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::FILE_, FALSE);
 				}
                           | TOK_FILETOLOB '(' literal ',' TOK_APPEND ')'
 			        {
 				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::FILE_, TRUE);
+				}
+ 			  | TOK_LOADTOLOB '(' literal ')'
+			        {
+				  YYERROR;
+                                  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::LOAD_, FALSE);
+				}
+			  | TOK_EXTERNALTOLOB '(' literal ')'
+			        {
+                                  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::EXTERNAL_, FALSE);
+				}
+			  | TOK_EXTERNALTOLOB '(' literal ',' literal ')'
+			        {
+                                  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, $5, LOBoper::EXTERNAL_, FALSE);
 				}
 			  | TOK_LOADTOLOB '(' literal ',' TOK_APPEND ')'
 			        {
 				  YYERROR;
-				}
-			  | TOK_STRINGTOLOB '(' literal ',' TOK_APPEND ')'
-			        {
-				  YYERROR;
+				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, LOBoper::LOAD_, TRUE);
 				}
 
 select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 			        {
-				  YYERROR;
+				  
+				  $$ = new (PARSERHEAP()) LOBselect( $3, $5, LOBoper::FILE_);
+				  
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ')'
 			        {
-				  YYERROR;
+				  
+				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_);
+				 
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
 			        {
-				  YYERROR;
+				 
+				  Int64 tgtSize = atoInt64($5->data());
+				  $$ = new (PARSERHEAP()) LOBconvert( $3, LOBoper::STRING_, (Lng32)tgtSize);
+				  
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' TOK_EXTRACT ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
 			        {
-				  YYERROR;
+				  
+				  Int64 rowSize = atoInt64($10->data());
+				  $$ = new (PARSERHEAP()) LOBextract( $3, (Lng32)rowSize);
+				  
 				}
 			  | TOK_LOBTOSTRING '(' value_expression ',' TOK_EXTRACT ')'
 			        {
-				  YYERROR;
+				  
+				  Int64 rowSize = 1000;
+				  $$ = new (PARSERHEAP()) LOBextract( $3, (Lng32)rowSize);
+				  
 				}
 
 table_value_constructor : TOK_VALUES '(' insert_value_expression_list ')' 
@@ -15849,72 +15937,329 @@ exe_util_populate_in_memory_statistics : TOK_GENERATE TOK_STATISTICS TOK_FOR TOK
 	       }
 
 /* type relx */
-exe_util_lob_extract : TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_OUTPUT TOK_BUFFER dynamic_parameter ',' TOK_OUTPUT TOK_BUFFER TOK_SIZE dynamic_parameter ')'
+exe_util_lob_extract : TOK_EXTRACT TOK_LOBLENGTH '(' TOK_LOB QUOTED_STRING  ')'
                {
-		 YYERROR;
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, 0, 0);
+
+		 $$ = lle;
 	       }
 
-               | TOK_EXTRACT TOK_LOBTOSTRING '(' TOK_LOB QUOTED_STRING ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
+               | TOK_EXTRACT TOK_LOBTOSTRING '(' TOK_LOB QUOTED_STRING ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+		  Int64 rowSize = atoInt64($8->data());
+
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, rowSize, 0);
+
+		 $$ = lle;
 	       }
+
+              | TOK_EXTRACT TOK_LOBTOBUFFER '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ')'
+               {
+                 if (NOT (($8->getOperatorType() == ITM_DYN_PARAM) ||
+                          ($8->getOperatorType() == ITM_CONSTANT)))
+                   {
+                     YYERROR;
+                   }
+
+                 if (NOT (($11->getOperatorType() == ITM_DYN_PARAM) ||
+                          ($11->getOperatorType() == ITM_CONSTANT)))
+                   {
+                     YYERROR;
+                   }
+
+                 ItemExpr * bufaddr = $8;
+		 bufaddr = new (PARSERHEAP()) 
+		   Cast(bufaddr, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+
+		 ItemExpr * bufsize = $11;
+		 bufsize = new (PARSERHEAP()) 
+		   Cast(bufsize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_BUFFER_,
+		    bufaddr, bufsize, 0, 0);
+
+		 $$ = lle;
+	       }
+
+               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ')'
+               {
+                 // if file exists, truncate and replace contents. if file doesn't exist, error
+                 // extract lobtofile (lob 'abc', output file 'file');
+
+		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_FILE_,
+		    NULL, NULL, 0, 0 /* truncate*/,
+		    (char*)$8->data(), (char*)$11->data());
+
+		 $$ = lle;
+	       }
+
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE  ')'
+               {
+                 // if file exists, truncate and replace contents. if file doesn't exist, create
+                 // extract lobtofile (lob 'abc', output file 'file', create);
+
+		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_FILE_,
+		    NULL, NULL, 1 /*CreateIfNotExist*/, 0 /* truncate */,
+		    (char*)$8->data(), (char*)$11->data());
+
+		 $$ = lle;
+	       }
+
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_CREATE ',' TOK_APPEND  ')'
+               {
+                 // if file exists, append. if file doesn't exist, create
+                 // extract lobtofile (lob 'abc', output file 'file', create);
+
+		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_FILE_,
+		    NULL, NULL, 1 /*CreateIfNotExist*/, 1 /* append */,
+		    (char*)$8->data(), (char*)$11->data());
+
+		 $$ = lle;
+	       }
+
+              | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION QUOTED_STRING ',' TOK_FILE QUOTED_STRING ',' TOK_APPEND ')'
+               {
+                 // if file exists, append. if file doesn't exist, error
+                 // extract lobtofile (lob 'abc', output file 'file', append);
+
+		  ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, 
+		    ExeUtilLobExtract::TO_FILE_,
+		    NULL, NULL, 0, 1 /*append*/,
+		    (char*)$8->data(), (char*)$11->data());
+
+		 $$ = lle;
+	       }
+
                | TOK_EXTRACT TOK_LOBTOSTRING '(' TOK_LOB QUOTED_STRING ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_LOB TOK_BUFFER TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		 Int64 rowSize = atoInt64($10->data());
+		 Int64 bufSize = atoInt64($15->data());
+
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$5);
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (handle, //(char*)$5->data(), 
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, rowSize, bufSize); 
+                    $$ = lle;
+                 */
 	       }
 
            | TOK_EXTRACT TOK_EXTERNALTOSTRING '(' QUOTED_STRING ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
-	       }
+                 YYERROR;
+                 /*
+		 Int64 rowSize = atoInt64($9->data());
 
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, rowSize, 0,
+		    (char*)$4->data());
+
+		 $$ = lle;
+                 */
+	       }
 
           | TOK_EXTRACT TOK_EXTERNALTOSTRING '(' QUOTED_STRING ',' QUOTED_STRING ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		  Int64 rowSize = atoInt64($11->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, rowSize, 0,
+		    (char*)$4->data(), (char*)$6->data());
+
+		 $$ = lle; 
+                 */
 	       }
 
           | TOK_EXTRACT TOK_EXTERNALTOSTRING '(' QUOTED_STRING ',' QUOTED_STRING ',' TOK_BUFFER TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		 Int64 rowSize = atoInt64($15->data());
+		 Int64 bufSize = atoInt64($10->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, rowSize, bufSize,
+		    (char*)$4->data(), (char*)$6->data());
+
+		 $$ = lle;
+                 */
 	       }
 
           | TOK_EXTRACT TOK_EXTERNALTOSTRING '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING ',' TOK_OUTPUT TOK_ROW TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		 Int64 rowSize = atoInt64($13->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_STRING_,
+		    NULL, NULL, rowSize, 0,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 $$ = lle;
+                 */
 	       }
 
-               | TOK_EXTRACT TOK_LOBTOFILE '(' TOK_LOB QUOTED_STRING ',' TOK_OUTPUT TOK_FILE QUOTED_STRING ')'
-               {
-		 YYERROR;
-	       }
           | TOK_LOAD TOK_STRINGTOEXTERNAL '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING  ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		 Int64 offset = atoInt64($10->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_,
+		    NULL, NULL, offset, 0,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 $$ = lle;
+                 */
 	       }
 
          | TOK_LOAD TOK_STRINGTOEXTERNAL '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING  ',' NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_WITH TOK_CREATE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		  Int64 offset = atoInt64($10->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_EXTERNAL_FROM_STRING_,
+		    NULL, NULL, offset, 0,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 lle->withCreate() = TRUE;
+
+		 $$ = lle;
+                 */
 	       }
 
           | TOK_LOAD TOK_FILETOEXTERNAL '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING  ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		 Int64 offset = atoInt64($10->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
+		    NULL, NULL, offset, 0,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 $$ = lle;
+                 */
 	       }
 
          | TOK_LOAD TOK_FILETOEXTERNAL '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING  ',' NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_WITH  TOK_CREATE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		  Int64 offset = atoInt64($10->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
+		    NULL, NULL, offset, 0,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 lle->withCreate() = TRUE;
+
+		 $$ = lle;
+                 */
 	       }
           | TOK_LOAD TOK_FILETOEXTERNAL '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING  ',' NUMERIC_LITERAL_EXACT_NO_SCALE ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		 Int64 offset = atoInt64($10->data());
+		 Int64 bufSize = atoInt64($12->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
+		    NULL, NULL, offset, bufSize,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 $$ = lle;
+                 */
 	       }
 
          | TOK_LOAD TOK_FILETOEXTERNAL '(' QUOTED_STRING ',' QUOTED_STRING ',' QUOTED_STRING  ',' NUMERIC_LITERAL_EXACT_NO_SCALE ',' NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_WITH  TOK_CREATE ')'
                {
-		 YYERROR;
+                 YYERROR;
+                 /*
+		  Int64 offset = atoInt64($10->data());
+		 Int64 bufSize = atoInt64($12->data());
+
+		 ExeUtilLobExtract * lle =
+		   new (PARSERHEAP ()) ExeUtilLobExtract
+		   (NULL,
+		    ExeUtilLobExtract::TO_EXTERNAL_FROM_FILE_,
+		    NULL, NULL, offset, bufSize,
+		    (char*)$4->data(), (char*)$6->data(), (char*)$8->data());
+
+		 lle->withCreate() = TRUE;
+
+		 $$ = lle;
+                 */
 	       }
 
 
@@ -21774,7 +22119,28 @@ set_clause : identifier '=' value_expression
 				}
                               | identifier '=' update_obj_to_lob_function
 				{
-				  YYERROR;
+				    ItemExpr * rc = $3;
+				  if (rc->getOperatorType() == ITM_LOBUPDATE)
+				    {
+				      LOBupdate * lu = (LOBupdate*)rc;
+				    
+				      ColReference * cr = 
+					new (PARSERHEAP())
+					ColReference(new (PARSERHEAP()) ColRefName(*$1, PARSERHEAP()));
+				      
+				      LOBupdate * nlu = 
+					new (PARSERHEAP()) LOBupdate(lu->child(0), cr, 
+								     lu->getObj(), lu->isAppend());
+				      
+				      rc = nlu;
+				    }
+
+				  $$ = new (PARSERHEAP())
+				    Assign(new (PARSERHEAP())
+					   ColReference(
+					     new (PARSERHEAP()) ColRefName(*$1, PARSERHEAP())),
+					   rc);
+				  delete $1;
 				}
 
 /* type relx */
@@ -23985,7 +24351,9 @@ show_statement:
 	     }
            | TOK_SHOWDDL table_name ',' TOK_LOB TOK_DETAILS optional_showddl_object_options_list
 	     {
-	       YYERROR;
+	       ExeUtilLobShowddl * ls = new(PARSERHEAP()) 
+		 ExeUtilLobShowddl(*$2, $6, PARSERHEAP());
+	       $$ = ls;
 	     }
           | TOK_SHOWDDL TOK_TABLE table_name optional_showddl_object_options_list
 	     {
@@ -35218,6 +35586,7 @@ nonreserved_func_word:  TOK_ABS
 		      | TOK_STRINGTOLOB
                       | TOK_STRINGTOEXTERNAL
                       | TOK_LOB
+                      | TOK_LOBLENGTH
                       | TOK_LOBTOBUFFER
 		      | TOK_LOBTOFILE
 		      | TOK_LOBTOSTRING

@@ -68,25 +68,29 @@ class HdfsFileInfo
 #define LOB_ACCESS_SUCCESS 0
 #define LOB_ACCESS_PREEMPT 1
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, NABoolean isHive=FALSE);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 
 Lng32 ExpLOBinterfaceCreate(void * lobGlob, 
 			    char * lobName,
 			    char * lobLoc,
-			    Lng32 lobType = (Lng32)Lob_Local_File,
-			    char * lobHdfsServer = NULL,
+			    Lng32 lobType = (Lng32)Lob_HDFS_File,
+			    char * lobHdfsServer = (char *)"default",
 			    Lng32 lobHdfsPort = 0,
 	                    int    bufferSize = 0,
 	                    short  replication =0,
 	                    int    blocksize=0);
 
-Lng32 ExpLOBinterfaceDrop(void * lobGlob, 
+Lng32 ExpLOBinterfaceDrop(void * lobGlob,
+			  char * lobHdfsServer ,
+			  Lng32 lobHdfsPort ,
 			  char * lobName,
 			  char * lobLoc);
 
 Lng32 ExpLOBInterfacePurgedata(void * lobGlob, 
+			       char * lobHdfsServer ,
+			       Lng32 lobHdfsPort ,
 			       char * lobName,
 			       char * lobLoc);
 
@@ -94,9 +98,24 @@ Lng32 ExpLOBinterfaceCloseFile(void * lobGlob,
 			       char * lobName,
 			       char * lobLoc,
 			       Lng32 lobType,
-			       char * lobHdfsServer = NULL,
-			       Lng32 lobHdfsPort = 0);
-
+			       char * lobHdfsServer ,
+			       Lng32 lobHdfsPort );
+Lng32 ExpLOBInterfaceInsertSelect(void * lobGlob, 
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort ,
+				  char * tgtLobName,
+				  char * lobStorageLocation,
+				  Lng32 handleLen,
+				  char * lobHandle,
+				  Int64 &descSyskey,
+				  Int64 &lobLen,
+				  char * lobData, 
+				  char * srcLobName, 
+				  short srcDescSchNameLen,
+				  char * srcDescSchName,
+				  
+				  Int64 srcDescKey, 
+				  Int64 srcDescTS);
 Lng32 ExpLOBInterfaceInsert(void * lobGlob, 
 			    char * tgtLobName,
 			    char * lobLocation,
@@ -131,6 +150,8 @@ Lng32 ExpLOBInterfaceInsert(void * lobGlob,
 			    );
 
 Lng32 ExpLOBInterfaceUpdate(void * lobGlob, 
+			    char * lobHdfsServer ,
+			    Lng32 lobHdfsPort,	 
 			    char * tgtLobName,
 			    char * lobLocation,
 			    Lng32 handleLen,
@@ -156,6 +177,8 @@ Lng32 ExpLOBInterfaceUpdate(void * lobGlob,
 			    Int64 srcDescTS);
 
 Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob, 
+				  char * lobHdfsServer ,
+				  Lng32 lobHdfsPort ,
 				  char * tgtLobName,
 				  char * lobLocation,
 				  Lng32 handleLen,
@@ -181,6 +204,8 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * lobGlob,
 				  Int64 srcDescTS);
 
 Lng32 ExpLOBInterfaceDelete(void * lobGlob, 
+			    char * lobHdfsServer ,
+			    Lng32 lobHdfsPort ,
 			    char * lobName,
 			    char * lobLocation,
 			    Lng32 handleLen,
@@ -218,7 +243,8 @@ Lng32 ExpLOBInterfaceSelectCursor(void * lobGlob,
 
 				  Int64 handleLen,  
 				  char * lobHandle,
-				  
+				  Int64 cusrorBytes,
+				  char *cursorId,
 				  Int64 &requestTag,
 				  Lng32 checkStatus,
 				  Lng32 waitedOp,
@@ -253,8 +279,8 @@ Lng32 ExpLOBinterfaceStats(void * lobGlob,
 			   ExLobStats * lobStats,
 			   char * lobName,
 			   char * lobLoc,
-			   Lng32 lobType = (Lng32)Lob_Local_File,
-			   char * lobHdfsServer = NULL,
+			   Lng32 lobType = (Lng32)Lob_HDFS_File,
+			   char * lobHdfsServer = (char *)"default",
 			   Lng32 lobHdfsPort = 0,
 			   NABoolean lobMulti = FALSE);
 
@@ -264,7 +290,7 @@ Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             char * lobName,
                             char * lobLoc,
                             Lng32 lobType = (Lng32)Lob_Empty_Directory,
-                            char * lobHdfsServer = NULL,
+			    char * lobHdfsServer = (char *)"default",
                             Lng32 lobHdfsPort = 0,
                             int    bufferSize = 0,
                             short  replication =0,

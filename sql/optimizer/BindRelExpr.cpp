@@ -4862,6 +4862,38 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
               ins->enableAqrWnrEmpty() = TRUE;
           }
 	}
+      
+      // if lob is being extracted as chunks of string, then only one
+      // such expression could be specified in the select list.
+      // If this is the case, then insert ExeUtilLobExtract operator.
+      // This operator reads lob contents and returns them to caller as
+      // multiple rows.
+      // This lobextract function could only be used in the outermost select
+      // list and must be converted at this point.
+      // It is not evaluated on its own.
+      if (getCompExprTree())
+	{
+	  ItemExprList selList(bindWA->wHeap());
+	  selList.insertTree(getCompExprTree());
+	  if ((selList.entries() == 1) &&
+	      (selList[0]->getOperatorType() == ITM_LOBEXTRACT))
+	    {
+	      LOBextract * lef = (LOBextract*)selList[0];
+	      
+	      ExeUtilLobExtract * le =
+		new (PARSERHEAP()) ExeUtilLobExtract
+		(lef, ExeUtilLobExtract::TO_STRING_,
+		 NULL, NULL, lef->getTgtSize(), 0,
+		 NULL, NULL, NULL, child(0), PARSERHEAP());
+	      le->setHandleInStringFormat(FALSE);
+	      setChild(0, le);
+	 
+	    }
+	     
+
+	}
+	
+      
 
       processRownum(bindWA);
       
@@ -9141,6 +9173,55 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       setInsertSelectQuery(TRUE);
     }
 
+ 
+  // if table has a lob column, then fix up any reference to LOBinsert
+  // function in the source values list
+  if ((getOperatorType() == REL_UNARY_INSERT) &&
+      (getTableDesc()->getNATable()->hasLobColumn()) &&
+      (child(0)->getOperatorType() == REL_TUPLE || // VALUES (1,'b')
+       child(0)->getOperatorType() == REL_TUPLE_LIST)) // VALUES (1,'b'),(2,'Y')
+    {
+      if (child(0)->getOperatorType() == REL_TUPLE_LIST)
+	{
+	  TupleList * tl = (TupleList*)(child(0)->castToRelExpr());
+	  for (CollIndex x = 0; x < (UInt32)tl->numTuples(); x++)
+	    {
+	      ValueIdList tup;
+	      if (!tl->getTuple(bindWA, tup, x)) 
+		{
+		  bindWA->setErrStatus();
+
+		  return boundExpr; // something went wrong
+		}
+	      
+	      for (CollIndex n = 0; n < tup.entries(); n++)
+		{
+		  ItemExpr * ie = tup[n].getItemExpr();
+		  if (ie->getOperatorType() == ITM_LOBINSERT)
+		    {
+		      // cannot have this function in a values list with multiple
+		      // tuples. Use a single tuple.
+		      *CmpCommon::diags() << DgSqlCode(-4483);
+		      bindWA->setErrStatus();
+		      
+		      return boundExpr; 
+		      
+   
+		      LOBinsert * li = (LOBinsert*)ie;
+		      li->insertedTableObjectUID() = 
+			getTableDesc()->getNATable()->objectUid().castToInt64();
+		      li->lobNum() = n;
+
+		      li->insertedTableSchemaName() = 
+			getTableDesc()->getNATable()->
+			getTableName().getSchemaName();
+		    }
+		} // for
+	    } // for
+	} // if tuplelist
+
+    } // if
+ 
 
   // Prepare for any IDENTITY column checking later on
   NAString identityColumnName;

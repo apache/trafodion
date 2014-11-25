@@ -498,7 +498,17 @@ NABoolean NAColumn::createNAType(columns_desc_struct *column_desc	/*IN*/,
 
       }
       break;
+case REC_BLOB :
+      type = new (heap)
+	SQLBlob(column_desc->precision, Lob_Invalid_Storage,
+		column_desc->null_flag);
+      break;
 
+    case REC_CLOB :
+      type = new (heap)
+	SQLClob(column_desc->precision, Lob_Invalid_Storage,
+		column_desc->null_flag);
+      break;
 
     default:
       {

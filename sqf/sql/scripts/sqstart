@@ -523,6 +523,8 @@ fi
 
 # Start the DCS Service
 dcsstart
+# Start the LOB Service
+lobstart
 
 echo
 echo "You can monitor the SQ shell log file : $SQMON_LOG"
