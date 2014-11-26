@@ -518,6 +518,11 @@ ExSsmpManager *CliGlobals::getSsmpManager()
   return currContext()->getSsmpManager();
 }
 
+IpcServerClass *CliGlobals::getCbServerClass()
+{
+  return currContext()->getCbServerClass();
+}
+
 ExeTraceInfo *CliGlobals::getExeTraceInfo()
 {
   return currContext()->getExeTraceInfo();
